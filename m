@@ -1,58 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:59630 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755263Ab3KNTy2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 14:54:28 -0500
-Received: by mail-wi0-f179.google.com with SMTP id fb10so3252888wid.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Nov 2013 11:54:27 -0800 (PST)
-Received: from android-dc17a983a0b2c4a9 (host86-132-102-132.range86-132.btcentralplus.com. [86.132.102.132])
-        by mx.google.com with ESMTPSA id dz5sm1704456wib.7.2013.11.14.11.54.26
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Thu, 14 Nov 2013 11:54:26 -0800 (PST)
-MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: "No space left on device"
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Date: Thu, 14 Nov 2013 19:54:21 +0000
+Received: from bay0-omc1-s19.bay0.hotmail.com ([65.54.190.30]:6943 "EHLO
+	bay0-omc1-s19.bay0.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755568Ab3KNT7t convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Nov 2013 14:59:49 -0500
+Message-ID: <BAY172-W19DB3582277113696E3F3FB0F80@phx.gbl>
+From: Kyle Gates <kylegates@hotmail.com>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <ecb3dcc9-c636-4fa7-b41f-e9021411a09a@email.android.com>
+Subject: RE: Does btrfs "raid1" actually provide any resilience?
+Date: Thu, 14 Nov 2013 13:59:48 -0600
+In-Reply-To: <l631kn$5i4$1@ger.gmane.org>
+References: <l62akc$ujc$1@ger.gmane.org>
+ <528505E2.3060501@chinilu.com>,<l631kn$5i4$1@ger.gmane.org>
+Content-Type: text/plain; charset="iso-8859-1"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 11/14/2013 11:35 AM, Lutz Vieweg wrote:
+> 
+> On 11/14/2013 06:18 PM, George Mitchell wrote:
+>> The read only mount issue is by design.  It is intended to make sure you know exactly what is going
+>> on before you proceed.
+> 
+> Hmmm... but will a server be able to continue its operation (including writes) on
+> an already mounted btrfs when a storage device in a btrfs-raid1 fails?
+> (If not, that would contradict the idea of achieving a higher reliability.)
+> 
+>> The read only function is designed to make certain you know that you are
+>> simplex before you proceed further.
+> 
+> Ok, but once I know - e.g. by verifying that indeed, one storage device is broken -
+> is there any option to proceed (without redundancy) until I can replace the broken
+> device?
 
-I've been following this list for years and I see during various situations
-this message coming up. Some times it's a genuine problem that there is
-actually not enough space. In other cases it's some by-product of something
-else. I have seen this error personality on a broken system ( which I never
-figured out what had happened).
-I know this is still experimental but I just want to make sure my
-expectations are not really out on sync with the others.
-
-As an end user when I see an error like this the first thing I will do is
-check the space (using 'df' command) [1]. If I see more that 7% I usually
-think it's OK, (depends on the size of partition as well).
-
-- Is this unreasonable in btrfs filesystem? Is there a formula to calculate
-how much space btrfs _might_ need?
-- It's probably not your job but can df reports correct sizes for btrfs?
-I've seen some threads on trying to show the actual space occupied by data
-and/or metadata with btrfs command. Can we expect this someone to be
-incorporated into df command?
-- In cases that btrfs reports this error but there's something else that's
-causing it, can we expect better error handling from btrfs so the end user
-is pointed to the correct direction?
-
-[1]: one could argue that an end user should use the btrfs commands instead
-but let's leave that for now.
-
-Apologies if these have already been answered or are already on roadmap.
-
-Thanks in advanced, your comments are appreciated.
-
-Kind regards,
-Leonidas
-
+Bonus points if the raid mode is maintained during degraded operation via either dup (2 disk array) or allocating additional chunks (3+ disk array).
+ 
+>> I certainly wouldn't trust it just yet as it is not fully production ready.
+> 
+> Sure, the server we intend to try btrfs on is one that we can restore when required,
+> and there is a redundant server (without btrfs) that can stand in. I was just
+> hoping for some good experiences to justify a larger field-trial.
+> 
+>> That said, I have been using it for over six
+>> months now, coming off of 3ware RAID, and I have no regrets.
+> 
+> I guess every Linux software RAID option is an improvement when
+> you come from those awful hardware RAID controllers, which caused
+> us additional downtime more often than they prevented downtime.
+> 
+> Regards,
+> 
+> Lutz Vieweg
+> 
+> 
+>> On 11/14/2013 03:02 AM, Lutz Vieweg wrote:
+>>> Hi,
+>>>
+>>> on a server that so far uses an MD RAID1 with XFS on it we wanted
+>>> to try btrfs, instead.
+>>>
+>>> But even the most basic check for btrfs actually providing
+>>> resilience against one of the physical storage devices failing
+>>> yields a "does not work" result - so I wonder whether I misunderstood
+>>> that btrfs is meant to not require block-device level RAID
+>>> functionality underneath.
+>>>
+>>> Here are the test procedure:
+>>>
+>>> Testing was done using vanilla linux-3.12 (x86_64) plus btrfs-progs at
+>>> commit c652e4efb8e2dd76ef1627d8cd649c6af5905902.
+>>>
+>>> Preparing two 100 MB image files:
+>>>> # dd if=/dev/zero of=/tmp/img1 bs=1024k count=100
+>>>> 100+0 records in
+>>>> 100+0 records out
+>>>> 104857600 bytes (105 MB) copied, 0.201003 s, 522 MB/s
+>>>>
+>>>> # dd if=/dev/zero of=/tmp/img2 bs=1024k count=100
+>>>> 100+0 records in
+>>>> 100+0 records out
+>>>> 104857600 bytes (105 MB) copied, 0.185486 s, 565 MB/s
+>>>
+>>> Preparing two loop devices on those images to act as the underlying
+>>> block devices for btrfs:
+>>>> # losetup /dev/loop1 /tmp/img1
+>>>> # losetup /dev/loop2 /tmp/img2
+>>>
+>>> Preparing the btrfs filesystem on the loop devices:
+>>>> # mkfs.btrfs --data raid1 --metadata raid1 --label test /dev/loop1 /dev/loop2
+>>>> SMALL VOLUME: forcing mixed metadata/data groups
+>>>>
+>>>> WARNING! - Btrfs v0.20-rc1-591-gc652e4e IS EXPERIMENTAL
+>>>> WARNING! - see http://btrfs.wiki.kernel.org before using
+>>>>
+>>>> Performing full device TRIM (100.00MiB) ...
+>>>> Turning ON incompat feature 'mixed-bg': mixed data and metadata block groups
+>>>> Created a data/metadata chunk of size 8388608
+>>>> Performing full device TRIM (100.00MiB) ...
+>>>> adding device /dev/loop2 id 2
+>>>> fs created label test on /dev/loop1
+>>>>         nodesize 4096 leafsize 4096 sectorsize 4096 size 200.00MiB
+>>>> Btrfs v0.20-rc1-591-gc652e4e
+>>>
+>>> Mounting the btfs filesystem:
+>>>> # mount -t btrfs /dev/loop1 /mnt/tmp
+>>>
+>>> Copying just 70MB of zeroes into a test file:
+>>>> # dd if=/dev/zero of=/mnt/tmp/testfile bs=1024k count=70
+>>>> 70+0 records in
+>>>> 70+0 records out
+>>>> 73400320 bytes (73 MB) copied, 0.0657669 s, 1.1 GB/s
+>>>
+>>> Checking that the testfile can be read:
+>>>> # md5sum /mnt/tmp/testfile
+>>>> b89fdccdd61d57b371f9611eec7d3cef  /mnt/tmp/testfile
+>>>
+>>> Unmounting before further testing:
+>>>> # umount /mnt/tmp
+>>>
+>>>
+>>> Now we assume that one of the two "storage devices" is broken,
+>>> so we remove one of the two loop devices:
+>>>> # losetup -d /dev/loop1
+>>>
+>>> Trying to mount the btrfs filesystem from the one storage device that is left:
+>>>> # mount -t btrfs -o device=/dev/loop2,degraded /dev/loop2 /mnt/tmp
+>>>> mount: wrong fs type, bad option, bad superblock on /dev/loop2,
+>>>>        missing codepage or helper program, or other error
+>>>>        In some cases useful info is found in syslog - try
+>>>>        dmesg | tail  or so
+>>> ... does not work.
+>>>
+>>> In /var/log/messages we find:
+>>>> kernel: btrfs: failed to read chunk root on loop2
+>>>> kernel: btrfs: open_ctree failed
+>>>
+>>> (The same happenes when adding ",ro" to the mount options.)
+>>>
+>>> Ok, so if the first of two disks was broken, so is our filesystem.
+>>> Isn't that what RAID1 should prevent?
+>>>
+>>> We tried a different scenario, now the first disk remains
+>>> but the second is broken:
+>>>
+>>>> # losetup -d /dev/loop2
+>>>> # losetup /dev/loop1 /tmp/img1
+>>>>
+>>>> # mount -t btrfs -o degraded /dev/loop1 /mnt/tmp
+>>>> mount: wrong fs type, bad option, bad superblock on /dev/loop1,
+>>>>        missing codepage or helper program, or other error
+>>>>        In some cases useful info is found in syslog - try
+>>>>        dmesg | tail  or so
+>>>>
+>>>> In /var/log/messages:
+>>>> kernel: Btrfs: too many missing devices, writeable mount is not allowed
+>>>
+>>> The message is different, but still unsatisfactory: Not being
+>>> able to write to a RAID1 because one out of two disks failed
+>>> is not what one would expect - the machine should be operable just
+>>> normal with a degraded RAID1.
+>>>
+>>> But let's try if at least a read-only mount works:
+>>>> # mount -t btrfs -o degraded,ro /dev/loop1 /mnt/tmp
+>>> The mount command itself does work.
+>>>
+>>> But then:
+>>>> # md5sum /mnt/tmp/testfile
+>>>> md5sum: /mnt/tmp/testfile: Input/output error
+>>>
+>>> The testfile is not readable anymore. (At this point, no messages
+>>> are to be found in dmesg/syslog - I would expect such on an
+>>> input/output error.)
+>>>
+>>> So the bottom line is: All the double writing that comes with RAID1
+>>> mode did not provide any usefule resilience.
+>>>
+>>> I am kind of sure this is not as intended, or is it?
+>>>
+>>> Regards,
+>>>
+>>> Lutz Vieweg
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html 		 	   		  

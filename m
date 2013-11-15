@@ -1,68 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53726 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753488Ab3KNOJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 09:09:57 -0500
-From: David Sterba <dsterba@suse.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:20093 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753494Ab3KOLC1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 06:02:27 -0500
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: mkfs: enable extended refs by default
-Date: Thu, 14 Nov 2013 15:09:53 +0100
-Message-Id: <1384438193-13237-1-git-send-email-dsterba@suse.cz>
+Cc: dsterba@suse.cz, chris.mason@fusionio.com
+Subject: [PATCH v2] btrfs-progs: for mixed group check opt before default raid profile is enforced
+Date: Fri, 15 Nov 2013 19:11:09 +0800
+Message-Id: <1384513869-24525-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1384490079-19872-1-git-send-email-anand.jain@oracle.com>
+References: <1384490079-19872-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The feature has been introduced in kernel 3.7 and enabling it by
-default is desired.
+This fixes the regression introduced with the patch
 
-All features enabled by default are marked as such in
-'mkfs.btrfs -O list-all' output.
+    btrfs-progs: avoid write to the disk before sure to create fs
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+what happened with this patch is it missed the check to see if the
+user has the option set before pushing the defaults.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- mkfs.c | 13 ++++++++++---
- 1 file changed, 10 insertions(+), 3 deletions(-)
+ v2: accepts G.Baroncelli sugested
+     rebased on integration-20131114
+
+ mkfs.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/mkfs.c b/mkfs.c
-index cd0af9ef8b4f..bdfc4b170700 100644
+index 4e99c16..de1beed 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -46,6 +46,8 @@
- 
- static u64 index_cnt = 2;
- 
-+#define DEFAULT_MKFS_FEATURES	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-+
- #define DEFAULT_MKFS_LEAF_SIZE 16384
- 
- struct directory_name_entry {
-@@ -1155,10 +1157,15 @@ static void list_all_fs_features(void)
- 
- 	fprintf(stderr, "Filesystem features available at mkfs time:\n");
- 	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
--		fprintf(stderr, "%-20s- %s (0x%llx)\n",
-+		char *is_default = "";
-+
-+		if (mkfs_features[i].flag & DEFAULT_MKFS_FEATURES)
-+			is_default = ", default";
-+		fprintf(stderr, "%-20s- %s (0x%llx%s)\n",
- 				mkfs_features[i].name,
- 				mkfs_features[i].desc,
--				mkfs_features[i].flag);
-+				mkfs_features[i].flag,
-+				is_default);
+@@ -1375,14 +1375,8 @@ int main(int ac, char **av)
+ 	if (is_vol_small(file)) {
+ 		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
+ 		mixed = 1;
+-		if (metadata_profile != data_profile) {
+-			if (metadata_profile_opt || data_profile_opt) {
+-				fprintf(stderr,
+-	"With mixed block groups data and metadata profiles must be the same\n");
+-				exit(1);
+-			}
+-		}
  	}
- }
++
+ 	/*
+ 	* Set default profiles according to number of added devices.
+ 	* For mixed groups defaults are single/single.
+@@ -1404,8 +1398,14 @@ int main(int ac, char **av)
+ 		}
+ 	} else {
+ 		u32 best_leafsize = max_t(u32, sysconf(_SC_PAGESIZE), sectorsize);
+-		metadata_profile = 0;
+-		data_profile = 0;
++
++		if (metadata_profile_opt || data_profile_opt) {
++			if (metadata_profile != data_profile) {
++				fprintf(stderr,
++	"ERROR: With mixed block groups data and metadata profiles must be the same\n");
++				exit(1);
++			}
++		}
  
-@@ -1249,7 +1256,7 @@ int main(int ac, char **av)
- 	int dev_cnt = 0;
- 	int saved_optind;
- 	char estr[100];
--	u64 features = 0;
-+	u64 features = DEFAULT_MKFS_FEATURES;
- 
- 	while(1) {
- 		int c;
+ 		if (!leaf_forced) {
+ 			leafsize = best_leafsize;
 -- 
-1.8.4.2
+1.7.1
 

@@ -1,158 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43619 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751104Ab3KOPA3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 10:00:29 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VhKsl-0008KT-A3
-	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 16:00:27 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 16:00:27 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 16:00:27 +0100
+Received: from old.lon-b.elastichosts.com ([84.45.121.3]:39386 "EHLO
+	lon-b.elastichosts.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752476Ab3KOPEj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 10:04:39 -0500
+Received: from [79.135.116.105] (helo=[192.168.0.103])
+	by lon-b.elastichosts.com with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <alin.dobre@elastichosts.com>)
+	id 1VhKTY-00070H-GW
+	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 14:34:24 +0000
+Message-ID: <528630D6.5090103@elastichosts.com>
+Date: Fri, 15 Nov 2013 14:33:58 +0000
+From: Alin Dobre <alin.dobre@elastichosts.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: "btrfs: 1 enospc errors during balance" when balancing after
- formerly failed raid1 device re-appeared
-Date: Fri, 15 Nov 2013 15:00:07 +0000 (UTC)
-Message-ID: <pan$60165$d2183833$89d72951$862c11b1@cox.net>
-References: <l650m2$njg$1@ger.gmane.org>
-	<20131115123841.GP4315@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Subvolume creation returns file exists
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Fri, 15 Nov 2013 12:38:41 +0000 as excerpted:
+Hello,
 
->> I also wonder: Would btrfs try to write _two_ copies of everything to
->> _one_ remaining device of a degraded two-disk raid1?
-> 
-> No. It would have to degrade from RAID-1 to DUP to do that (and I
-> think we prevent DUP data for some reason).
+We are using btrfs filesystems in our infrastructure and, at some point 
+of time, they start refusing to create new subvolumes.
 
-You may be correct about DUP data, but that is unlikely to be the issue 
-here, because he's likely using the mixed-mode default due to the <1GB 
-filesystem size, and on a multi-device filesystem that should default to 
-RAID1 just as metadata by itself does.
+Each file system is being quota initialized immediately after its 
+creation (with "btrfs quota enable") and then all subfolders under the 
+root directory are created as subvolumes (btrfs subvolume create). Over 
+time, these subvolumes may also be deleted. What's under subvolumes are 
+just various files and directories, should not be related to this problem.
 
-However, I noticed that his outlined duplicator SKIPPED the mkfs.btrfs 
-command part, and there's no btrfs filesystem show and btrfs filesystem df 
-to verify how the kernel's actually treating the filesystem, so...
+After a while of using this setup, without any obvious steps to 
+reproduce it, the filesystem goes into a state where the following happens:
+     # btrfs subvolume create btrfs_mount/test_subvolume
+     Create subvolume 'btrfs_mount/test_subvolume'
+     ERROR: cannot create subvolume - File exists
 
-@ LV:
+In regards to data, the filesystem is pretty empty, it only has a single 
+empty directory. I don't know about the metadata, at this point.
 
-For further tests, please include these commands and their output:
+The problem goes away if we disable and re-enable the quota. It all 
+seems to be some dead metadata lying around.
 
-1) your mkfs.btrfs command
+Next are some facts about this. Since we found that it's the ioctl call 
+which returns EEXIST, the place to further track the problem down was 
+into the kernel module, which assumes that the userspace tools are not 
+generating the problem. Here is a high level traceback of the problem:
+     ioctl.c:create_subvol() returns -EEXIST
+     cgroup.c:btrfs_qgroup_inherit() returns -EEXIST
+     qgroup.c:add_qgroup_item() returns -EEXIST
+     ctree.c:btrfs_insert_empty_item() returns -EEXIST
+     ctree.c:btrfs_search_slot() returns 0
+     ctree.c:key_search() returns 0
 
-[Then mount, and after mount...]
+The problem appeared before our current kernel, which is a 3.8 version 
+(along with Btrfs progs v0.19), however mounting an already broken 
+filesystem in a 3.12 kernel (with Btrfs progs v0.20-rc1-358-g194aa4a) 
+doesn't do any better.
 
-2) btrfs filesystem show <path>
+Any thoughts on this? We can provide you with more information, if 
+needed, even the broken filesystem itself.
 
-3) btrfs filesystem df <path>
-
-Thanks.  These should make what btrfs is doing far clearer.
-
-
-Meanwhile, I've been following your efforts with quite some interest as 
-they correspond to some of the pre-deployment btrfs raid1 mode testing I 
-did.  This was several kernels ago, however, so I had been wondering if 
-the behavior had changed, hopefully for the better, and your testing 
-looks to be headed toward the same test I did at some point.
-
-Back then, I found a rather counterintuitive result of my own.
-
-Basically, take a two-device raid1 mode (both data and metadata; in my 
-case the devices were over a gig so mixed data+metadata wasn't invoked 
-and I specified -m raid1 -d raid1 when doing the mkfs.btrfs) btrfs, mount 
-it, copy some files to it, unmount it.
-
-Then disconnect one device (I was using actual devices not the loop 
-devices you're using) and mount degraded.  Make a change to the degraded 
-filesystem.  Unmount.
-
-Then disconnect that device and reconnect the other.  Mount degraded.  
-Make a *DIFFERENT* change to the same file.  Unmount.  The two copies 
-have now forked in an incompatible manner.
-
-Now reconnect both devices and remount, this time without degraded.
-
-As you, here I expected btrfs to protest, particularly so since the two 
-copies were incompatible.  *NO* *PROTEST*!!
-
-OK, so check that file to see which version I got.  I've now forgotten 
-which one it was, but it was definitely one of the two forks, not the 
-original version.
-
-Now unmount and disconnect the device with the copy it said it had.  
-Mount the filesystem degraded with the other device.  Check the file 
-again.
-
-!!  I got the other fork! !!
-
-Not only did btrfs not protest when I mounted a raid1 device undegraded 
-after making incompatible changes to the file with each of the two 
-devices mounted degraded separately, but accessing the file on the 
-undegraded filesystem neither protested nor corrected the other copy, 
-which remained the incompatibly forked copy as confirmed by remounting 
-the filesystem degraded with just that device in ordered to access it.
-
-To my way of thinking, that's downright dangerous, as well as being 
-entirely unintuitive.
-
-Unfortunately, I didn't actually do a balance to see what btrfs would do 
-with the incompatible versions, I simply blew away that testing 
-filesystem with a new mkfs.btrfs (I'm on SSD so mkfs.btrfs automatically 
-issues a trim/discard to clear the new filesystem space before mking it), 
-and I've been kicking myself for not doing so ever since, because I 
-really would like to know balance actually /does/ in such a case!  But I 
-was still new enough to btrfs at that time that I didn't really know what 
-I was doing, so I didn't realize I'd omitted a critical part of the test 
-until it was too late, and I've not been interested /enough/ in the 
-outcome to redo the test again, with a newer kernel and tools and a 
-balance this time.
-
-What scrub would have done with it would be an interesting testcase as 
-well, but I don't know that either, because I never tried it.
-
-At least I hadn't redone the test yet.  But I keep thinking about it, and 
-I guess I would have one of these days.  But now it seems like you're 
-heading toward doing it for me. =:^)
-
-Meanwhile, the conclusion I took from the test was that if I ever had to 
-mount degraded in read/write mode, I should make *VERY* sure I 
-CONSISTENTLY used the same device when I did so.  And when I undegraded, 
-/hopefully/ a balance would choose the newer version.  Unfortunately I 
-never did actually test that, so I figured should I actually need to use 
-degraded, even if the degrade was only temporary, the best way to recover 
-was probably to trim that entire partition on the lost device and then 
-proceed to add it back into the filesystem as if it were a new device and 
-do a balance to finally recover raid1 mode.
-
-Meanwhile (2), what btrfs raid1 mode /has/ been providing me with is data 
-integrity via the checksumming and scrub features.  And with raid1 
-providing a second copy of the data to work with, scrub really does 
-appear to do what it says on the tin, copy the good copy over the bad, if 
-there's a checksum mismatch on the bad one.  What I do NOT know is what 
-happens in /either/ a scrub or balance case, when the metadata of both 
-copies is valid, but they differ from each other!
-
-FWIW, here's my original list post on the subject, tho it doesn't seem to 
-have generated any followup (beyond my own).  IIRC I did get a reply from 
-another sysadmin on another thread, but I can't find it now, and all it 
-did was echo my concern, no reply from a dev or the like.
-
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/26096
-
-So anyway, yes, I'm definitely following your results with interest! =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Cheers,
+Alin.

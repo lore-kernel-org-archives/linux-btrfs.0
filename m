@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:51607 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751619Ab3KOSBK (ORCPT
+Received: from dkim1.fusionio.com ([66.114.96.53]:43940 "EHLO
+	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751144Ab3KOT1V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 13:01:10 -0500
+	Fri, 15 Nov 2013 14:27:21 -0500
 Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id AF0C39A0371
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 11:01:09 -0700 (MST)
+	by dkim1.fusionio.com (Postfix) with ESMTP id D5F307C0688
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 12:27:20 -0700 (MST)
 From: Josef Bacik <jbacik@fusionio.com>
-To: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] xfstests: add a rename fsync test
-Date: Fri, 15 Nov 2013 13:01:04 -0500
-Message-ID: <1384538464-7384-2-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1384538464-7384-1-git-send-email-jbacik@fusionio.com>
-References: <1384538464-7384-1-git-send-email-jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: add basic qgroup testing
+Date: Fri, 15 Nov 2013 14:27:18 -0500
+Message-ID: <1384543638-19686-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs was screwing up rename+fsync, add some regression tests for the various
-scenarios it was screwing up.  Thanks,
+We have no tests for testing qgroups, so we have no way of knowing if our
+changes are breaking qgroups at all.  Get the ball rolling with some basic
+functionality tests, these just make sure we can enable quotas and do rescan and
+get sane values back, as well as make sure the limiting stuff works properly.
+Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- tests/generic/322     | 111 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/322.out |   7 ++++
- tests/generic/group   |   1 +
- 3 files changed, 119 insertions(+)
- create mode 100644 tests/generic/322
- create mode 100644 tests/generic/322.out
+ tests/btrfs/022     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/022.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 132 insertions(+)
+ create mode 100644 tests/btrfs/022
+ create mode 100644 tests/btrfs/022.out
 
-diff --git a/tests/generic/322 b/tests/generic/322
+diff --git a/tests/btrfs/022 b/tests/btrfs/022
 new file mode 100644
-index 0000000..1cea133
+index 0000000..5b18643
 --- /dev/null
-+++ b/tests/generic/322
-@@ -0,0 +1,111 @@
++++ b/tests/btrfs/022
+@@ -0,0 +1,129 @@
 +#! /bin/bash
-+# FS QA Test No. 322
++# FS QA Test No. 022
 +#
-+# Runs various rename fsync tests to cover some rename fsync corner cases.
++# Test the basic functionality of qgroups
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO. All Rights Reserved.
++# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -65,111 +66,124 @@ index 0000000..1cea133
 +echo "QA output created by $seq"
 +
 +here=`pwd`
++tmp=/tmp/$$
 +status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+	_cleanup_flakey
++    cd /
++    rm -f $tmp.*
 +}
-+trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
 +
-+# real QA test starts here
-+_supported_fs generic
++_supported_fs btrfs
 +_supported_os Linux
-+_need_to_be_root
 +_require_scratch
-+_require_dm_flakey
 +
 +rm -f $seqres.full
 +
-+_clean_working_dir()
++# Test to make sure we can actually turn it on and it makes sense
++_basic_test()
 +{
-+	_mount_flakey
-+	rm -rf $SCRATCH_MNT/*
-+	_unmount_flakey
++	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
++	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
++	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
++	$BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid >> \
++		$seqres.full 2>&1
++	[ $? -eq 0 ] || _fail "couldn't find our subvols quota group"
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
++		$FSSTRESS_AVOID
++	run_check $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT/a \
++		$SCRATCH_MNT/b
++
++	# the shared values of both the original subvol and snapshot should
++	# match
++	a_shared=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
++	a_shared=$(echo $a_shared | awk '{ print $2 }')
++	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT b)
++	b_shared=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
++	b_shared=$(echo $b_shared | awk '{ print $2 }')
++	[ $b_shared -eq $a_shared ] || _fail "shared values don't match"
 +}
 +
-+# Btrfs wasn't making sure the new file after rename survived the fsync
-+_rename_test()
++#enable quotas, do some work, check our values and then rescan and make sure we
++#come up with the same answer
++_rescan_test()
 +{
-+	echo "fsync rename test"
-+	_mount_flakey
-+	$XFS_IO_PROG -f -c "pwrite 0 1M" -c "fsync" $SCRATCH_MNT/foo \
-+		> $seqres.full 2>&1 || _fail "xfs_io failed"
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $FLAKEY_DROP_WRITES
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+
-+	_load_flakey_table $FLAKEY_ALLOW_WRITES
-+	_mount_flakey
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
++	# first with a blank subvol
++	run_check $BTRFS_UTIL_PROG subvol create $SCRATCH_MNT/a
++	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
++	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
++	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
++		$FSSTRESS_AVOID
++	sync
++	output=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
++	echo $output >> $seqres.full
++	refer=$(echo $output | awk '{ print $2 }')
++	excl=$(echo $output | awk '{ print $3 }')
++	run_check $BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT
++	output=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
++	echo $output >> $seqres.full
++	[ $refer -eq $(echo $output | awk '{ print $2 }') ] || \
++		_fail "reference values don't match after rescan"
++	[ $excl -eq $(echo $output | awk '{ print $3 }') ] || \
++		_fail "exclusive values don't match after rescan"
 +}
 +
-+# Btrfs was dropping some of the modified extents in between fsyncs if we
-+# renamed.
-+_write_after_fsync_rename_test()
++#basic limit testing
++_limit_test()
 +{
-+	echo "fsync rename test"
-+	_mount_flakey
-+	$XFS_IO_PROG -f -c "pwrite 0 1M" -c "fsync" -c "pwrite 2M 1M" \
-+		-c "sync_range -b" $SCRATCH_MNT/foo > $seqres.full 2>&1 || _fail "xfs_io failed"
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $FLAKEY_DROP_WRITES
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+
-+	_load_flakey_table $FLAKEY_ALLOW_WRITES
-+	_mount_flakey
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
++	run_check $BTRFS_UTIL_PROG subvol create $SCRATCH_MNT/a
++	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
++	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
++	run_check $BTRFS_UTIL_PROG qgroup limit 5M 0/$subvolid $SCRATCH_MNT
++	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=10M count=1 >> \
++		$seqres.full 2>&1
++	[ $? -ne 0 ] || _fail "quota should have limited us"
++	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=4M count=1 >> \
++		$seqres.full 2>&1
++	[ $? -eq 0 ] || _fail "should have been allowed to write"
 +}
 +
-+_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++_basic_test
++_scratch_unmount
 +
-+# Create a basic flakey device that will never error out
-+_init_flakey
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++_rescan_test
++_scratch_unmount
 +
-+_rename_test
-+_clean_working_dir
-+_write_after_fsync_rename_test
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++_limit_test
 +
++# success, all done
++echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/generic/322.out b/tests/generic/322.out
+diff --git a/tests/btrfs/022.out b/tests/btrfs/022.out
 new file mode 100644
-index 0000000..0d9f274
+index 0000000..394c6a7
 --- /dev/null
-+++ b/tests/generic/322.out
-@@ -0,0 +1,7 @@
-+QA output created by 322
-+fsync rename test
-+ca539970d4b1fa1f34213ba675007381  /mnt/scratch/bar
-+ca539970d4b1fa1f34213ba675007381  /mnt/scratch/bar
-+fsync rename test
-+d34ff04c17ef7068d78d0c4be49cfe57  /mnt/scratch/bar
-+d34ff04c17ef7068d78d0c4be49cfe57  /mnt/scratch/bar
-diff --git a/tests/generic/group b/tests/generic/group
-index 25dddd8..f492461 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -124,3 +124,4 @@
- 319 acl auto quick
- 320 auto rw
- 321 auto quick metadata log
-+322 auto quick metadata log
++++ b/tests/btrfs/022.out
+@@ -0,0 +1,2 @@
++QA output created by 022
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 410f8ed..ac92d31 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -24,3 +24,4 @@
+ 019 auto quick
+ 020 auto quick
+ 021 auto quick
++022 auto
 -- 
 1.8.3.1
 

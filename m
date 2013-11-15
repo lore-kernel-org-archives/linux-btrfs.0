@@ -1,82 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41832 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755084Ab3KOEZw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 23:25:52 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rAF4PpKj025163
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 04:25:52 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rAF4PoOF013905
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 04:25:51 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rAF4PowI023368
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 04:25:50 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:54856 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752702Ab3KORSp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 12:18:45 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VhN2X-0001ml-Cr
+	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 18:18:41 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 18:18:41 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 18:18:41 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: for mixed group check opt before default raid profile is enforced
-Date: Fri, 15 Nov 2013 12:34:39 +0800
-Message-Id: <1384490079-19872-1-git-send-email-anand.jain@oracle.com>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: [PATCH] Btrfs-progs: allow --init-extent-tree to work when extent
+ tree is borked
+Date: Fri, 15 Nov 2013 17:18:30 +0000
+Message-ID: <l65l0s$lpm$1@ger.gmane.org>
+References: <1382724100-5276-1-git-send-email-jbacik@fusionio.com> <l4ed62$8r3$1@ger.gmane.org> <20131025183134.GA4543@localhost.localdomain> <l4hifj$ni1$1@ger.gmane.org> <20131028151148.GB4543@localhost.localdomain> <l5eq5s$m8l$1@ger.gmane.org> <l5rn2s$m3p$1@ger.gmane.org> <l5vq48$2dh$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <l5vq48$2dh$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes the regression introduced with the patch
+Another two days and a backtrace shows the hope of progress:
 
-    btrfs-progs: avoid write to the disk before sure to create fs
+#0  0x000000000041de2f in btrfs_node_key ()
+#1  0x000000000041ee79 in btrfs_check_node ()
+#2  0x0000000000420211 in check_block ()
+#3  0x0000000000420813 in btrfs_search_slot ()
+#4  0x0000000000427bb4 in btrfs_read_block_groups ()
+#5  0x0000000000423e40 in btrfs_setup_all_roots ()
+#6  0x000000000042406d in __open_ctree_fd ()
+#7  0x0000000000424126 in open_ctree_fs_info ()
+#8  0x000000000041812e in cmd_check ()
+#9  0x0000000000404904 in main ()
 
-what happened with this patch is it missed the check to see if the
-user has the option set before pushing the defaults.
+No other output, 100% CPU, using only a single core, and no apparent
+disk activity.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- mkfs.c |   21 +++++++++++----------
- 1 files changed, 11 insertions(+), 10 deletions(-)
+There looks to be a repeating pattern of calls. Is this working though
+the same test repeated per btrfs block? Are there any variables that can
+be checked with gdb to see how far it has gone so as to guess how long
+it might need to run?
 
-diff --git a/mkfs.c b/mkfs.c
-index ec717be..2156150 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1359,17 +1359,13 @@ int main(int ac, char **av)
- 	if (is_vol_small(file)) {
- 		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
- 		mixed = 1;
--		if (metadata_profile != data_profile) {
--			if (metadata_profile_opt || data_profile_opt) {
--				fprintf(stderr,
--	"With mixed block groups data and metadata profiles must be the same\n");
--				exit(1);
--			}
--		}
- 	}
-+
- 	/*
- 	* Set default profiles according to number of added devices.
--	* For mixed groups defaults are single/single.
-+	* For mixed groups defaults are single/single
-+	* however if metadata_profile_opt || data_profile_opt is set
-+	* metadata_profile and data_profile must be same
- 	*/
- 	if (!mixed) {
- 		if (!metadata_profile_opt) {
-@@ -1387,8 +1383,13 @@ int main(int ac, char **av)
- 				BTRFS_BLOCK_GROUP_RAID0 : 0; /* raid0 or single */
- 		}
- 	} else {
--		metadata_profile = 0;
--		data_profile = 0;
-+		if (metadata_profile_opt || data_profile_opt) {
-+			if (metadata_profile != data_profile) {
-+				fprintf(stderr,
-+	"With mixed block groups data and metadata profiles must be the same\n");
-+				exit(1);
-+			}
-+		}
- 	}
- 
- 	ret = test_num_disk_vs_raid(metadata_profile, data_profile,
--- 
-1.7.1
+
+Phew?
+
+Hope of interest,
+
+Regards,
+Martin
+
+
+
+
+On 13/11/13 12:08, Martin wrote:
+> On 11/11/13 22:52, Martin wrote:
+>> On 07/11/13 01:25, Martin wrote:
+> 
+>> OK so Chris Mason and the Gentoo sys-fs/btrfs-progs-9999 came to the
+>> rescue to give:
+>>
+>>
+>> # btrfs version
+>> Btrfs v0.20-rc1-591-gc652e4e
+> 
+>> From that, I've tried running again:
+>>
+>> # btrfsck --repair /dev/sdc
+>>
+>> giving thus far:
+>>
+>> parent transid verify failed on 911904604160 wanted 17448 found 17450
+>> parent transid verify failed on 911904604160 wanted 17448 found 17450
+>> parent transid verify failed on 911904604160 wanted 17448 found 17450
+>> parent transid verify failed on 911904604160 wanted 17448 found 17450
+>> Ignoring transid failure
+>>
+>>
+>> ... And it is still running a couple of days later.
+>>
+>> GDB shows:
+>>
+>> (gdb) bt
+>> #0  0x000000000042d576 in read_extent_buffer ()
+>> #1  0x000000000041ee79 in btrfs_check_node ()
+>> #2  0x0000000000420211 in check_block ()
+>> #3  0x0000000000420813 in btrfs_search_slot ()
+>> #4  0x0000000000427bb4 in btrfs_read_block_groups ()
+>> #5  0x0000000000423e40 in btrfs_setup_all_roots ()
+>> #6  0x000000000042406d in __open_ctree_fd ()
+>> #7  0x0000000000424126 in open_ctree_fs_info ()
+>> #8  0x000000000041812e in cmd_check ()
+>> #9  0x0000000000404904 in main ()
+> 
+> 
+> Another two days and:
+> 
+> (gdb) bt
+> #0  0x000000000042373a in read_tree_block ()
+> #1  0x0000000000421538 in btrfs_search_slot ()
+> #2  0x0000000000427bb4 in btrfs_read_block_groups ()
+> #3  0x0000000000423e40 in btrfs_setup_all_roots ()
+> #4  0x000000000042406d in __open_ctree_fd ()
+> #5  0x0000000000424126 in open_ctree_fs_info ()
+> #6  0x000000000041812e in cmd_check ()
+> #7  0x0000000000404904 in main ()
+> 
+> 
+>> So... Has it looped or is it busy? There is no activity on /dev/sdc.
+> 
+> Same "btrfs_read_block_groups" but different stack above that: So
+> perhaps something useful is being done?...
+> 
+> No disk activity noticed.
+> 
+> 
+>> Which comes to a request:
+>>
+>> Can the options "-v" (for verbose) and "-s" (to continuously show
+>> status) be added to btrfsck to give some indication of progress and what
+>> is happening? The "-s" should report progress by whatever appropriate
+>> real-time counts as done by such as "badblocks -s".
+
+
 

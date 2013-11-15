@@ -1,252 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57260 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57257 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751996Ab3KOUgQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1752169Ab3KOUgQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 15 Nov 2013 15:36:16 -0500
-Message-Id: <20131115203545.233675539@suse.com>
-Date: Fri, 15 Nov 2013 15:33:55 -0500
+Message-Id: <20131115203545.581538012@suse.com>
+Date: Fri, 15 Nov 2013 15:33:57 -0500
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fusionio.com>
-Subject: [PATCH 01/13] btrfs: add ioctls to query/change feature bits online
+Subject: [PATCH 03/13] btrfs: publish supported featured in sysfs
 References: <20131115203354.082181444@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are some feature bits that require no offline setup and can
-be enabled online. I've only reviewed extended irefs, but there will
-probably be more.
+This patch adds the ability to publish supported features to sysfs under
+/sys/fs/btrfs/features.
 
-We introduce three new ioctls:
-- BTRFS_IOC_GET_SUPPORTED_FEATURES: query the kernel for supported features.
-- BTRFS_IOC_GET_FEATURES: query the kernel for enabled features on a per-fs
-  basis, as well as querying for which features are changeable with mounted.
-- BTRFS_IOC_SET_FEATURES: change features on a per-fs basis.
+The files are module-wide and export which features the kernel supports.
 
-We introduce two new masks per feature set (_SAFE_SET and _SAFE_CLEAR) that
-allow us to define which features are safe to change at runtime.
-
-The failure modes for BTRFS_IOC_SET_FEATURES are as follows:
-- Enabling a completely unsupported feature: warns and returns -ENOTSUPP
-- Enabling a feature that can only be done offline: warns and returns -EPERM
+The content, for now, is just "0\n".
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h           |    9 ++
- fs/btrfs/ioctl.c           |  143 +++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |   12 +++
- 3 files changed, 164 insertions(+)
+ fs/btrfs/sysfs.c |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.h |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+)
 
---- a/fs/btrfs/ctree.h	2013-11-03 16:50:38.800686715 -0500
-+++ b/fs/btrfs/ctree.h	2013-11-03 16:51:24.715977991 -0500
-@@ -517,7 +517,12 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- 
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
-+#define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-+#define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-+#define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
-+#define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:09:52.760201346 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:09:59.816046422 -0400
+@@ -26,20 +26,64 @@
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
++#include "sysfs.h"
 +
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
-@@ -528,6 +533,10 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
- 
-+#define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
-+	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-+#define BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR		0ULL
-+
- /*
-  * A leaf is full of items. offset and size tell us where to find
-  * the item in the leaf (relative to the start of the data area)
---- a/fs/btrfs/ioctl.c	2013-11-03 16:50:43.464615049 -0500
-+++ b/fs/btrfs/ioctl.c	2013-11-03 16:51:56.811492378 -0500
-@@ -4492,6 +4492,142 @@ out_unlock:
- 	return ret;
- }
- 
-+#define INIT_FEATURE_FLAGS(suffix) \
-+	{ .compat_flags = BTRFS_FEATURE_COMPAT_##suffix, \
-+	  .compat_ro_flags = BTRFS_FEATURE_COMPAT_RO_##suffix, \
-+	  .incompat_flags = BTRFS_FEATURE_INCOMPAT_##suffix }
-+
-+static int btrfs_ioctl_get_supported_features(struct file *file,
-+					      void __user *arg)
++static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
++				       struct kobj_attribute *a, char *buf)
 +{
-+	static struct btrfs_ioctl_feature_flags features[3] = {
-+		INIT_FEATURE_FLAGS(SUPP),
-+		INIT_FEATURE_FLAGS(SAFE_SET),
-+		INIT_FEATURE_FLAGS(SAFE_CLEAR)
-+	};
-+
-+	if (copy_to_user(arg, &features, sizeof(features)))
-+		return -EFAULT;
-+
-+	return 0;
++	return snprintf(buf, PAGE_SIZE, "0\n");
 +}
 +
-+static int btrfs_ioctl_get_features(struct file *file, void __user *arg)
-+{
-+	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-+	struct btrfs_super_block *super_block = root->fs_info->super_copy;
-+	struct btrfs_ioctl_feature_flags features;
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
++BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
++BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzo, COMPRESS_LZO);
++BTRFS_FEAT_ATTR_INCOMPAT(compress_lzov2, COMPRESS_LZOv2);
++BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
++BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
++BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
++BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
 +
-+	features.compat_flags = btrfs_super_compat_flags(super_block);
-+	features.compat_ro_flags = btrfs_super_compat_ro_flags(super_block);
-+	features.incompat_flags = btrfs_super_incompat_flags(super_block);
-+
-+	if (copy_to_user(arg, &features, sizeof(features)))
-+		return -EFAULT;
-+
-+	return 0;
-+}
-+
-+static int check_feature_bits(struct btrfs_root *root, const char *type,
-+			      u64 change_mask, u64 flags, u64 supported_flags,
-+			      u64 safe_set, u64 safe_clear)
-+{
-+	u64 disallowed, unsupported;
-+	u64 set_mask = flags & change_mask;
-+	u64 clear_mask = ~flags & change_mask;
-+
-+	unsupported = set_mask & ~supported_flags;
-+	if (unsupported) {
-+		btrfs_warn(root->fs_info,
-+			   "this kernel does not support %s bits 0x%llx",
-+			   type, unsupported);
-+		return -EOPNOTSUPP;
-+	}
-+
-+	disallowed = set_mask & ~safe_set;
-+	if (disallowed) {
-+		btrfs_warn(root->fs_info,
-+			   "can't set %s bits 0x%llx while mounted",
-+			   type, disallowed);
-+		return -EPERM;
-+	}
-+
-+	disallowed = clear_mask & ~safe_clear;
-+	if (disallowed) {
-+		btrfs_warn(root->fs_info,
-+			   "can't clear %s bits 0x%llx while mounted",
-+			   type, disallowed);
-+		return -EPERM;
-+	}
-+
-+	return 0;
-+}
-+
-+#define check_feature(root, change_mask, flags, mask_base)	\
-+check_feature_bits(root, # mask_base, change_mask, flags,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SUPP,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SAFE_SET,	\
-+		   BTRFS_FEATURE_ ## mask_base ## _SAFE_CLEAR)
-+
-+static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
-+{
-+	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-+	struct btrfs_super_block *super_block = root->fs_info->super_copy;
-+	struct btrfs_ioctl_feature_flags flags[2];
-+	struct btrfs_trans_handle *trans;
-+	u64 newflags;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (copy_from_user(flags, arg, sizeof(flags)))
-+		return -EFAULT;
-+
-+	/* Nothing to do */
-+	if (!flags[0].compat_flags && !flags[0].compat_ro_flags &&
-+	    !flags[0].incompat_flags)
-+		return 0;
-+
-+	ret = check_feature(root, flags[0].compat_flags,
-+			    flags[1].compat_flags, COMPAT);
-+	if (ret)
-+		return ret;
-+
-+	ret = check_feature(root, flags[0].compat_ro_flags,
-+			    flags[1].compat_ro_flags, COMPAT_RO);
-+	if (ret)
-+		return ret;
-+
-+	ret = check_feature(root, flags[0].incompat_flags,
-+			    flags[1].incompat_flags, INCOMPAT);
-+	if (ret)
-+		return ret;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	spin_lock(&root->fs_info->super_lock);
-+	newflags = btrfs_super_compat_flags(super_block);
-+	newflags |= flags[0].compat_flags & flags[1].compat_flags;
-+	newflags &= ~(flags[0].compat_flags & ~flags[1].compat_flags);
-+	btrfs_set_super_compat_flags(super_block, newflags);
-+
-+	newflags = btrfs_super_compat_ro_flags(super_block);
-+	newflags |= flags[0].compat_ro_flags & flags[1].compat_ro_flags;
-+	newflags &= ~(flags[0].compat_ro_flags & ~flags[1].compat_ro_flags);
-+	btrfs_set_super_compat_ro_flags(super_block, newflags);
-+
-+	newflags = btrfs_super_incompat_flags(super_block);
-+	newflags |= flags[0].incompat_flags & flags[1].incompat_flags;
-+	newflags &= ~(flags[0].incompat_flags & ~flags[1].incompat_flags);
-+	btrfs_set_super_incompat_flags(super_block, newflags);
-+	spin_unlock(&root->fs_info->super_lock);
-+
-+	return btrfs_end_transaction(trans, root);
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -4604,6 +4741,12 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_set_fslabel(file, argp);
- 	case BTRFS_IOC_FILE_EXTENT_SAME:
- 		return btrfs_ioctl_file_extent_same(file, argp);
-+	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
-+		return btrfs_ioctl_get_supported_features(file, argp);
-+	case BTRFS_IOC_GET_FEATURES:
-+		return btrfs_ioctl_get_features(file, argp);
-+	case BTRFS_IOC_SET_FEATURES:
-+		return btrfs_ioctl_set_features(file, argp);
- 	}
- 
- 	return -ENOTTY;
---- a/include/uapi/linux/btrfs.h	2013-11-03 16:50:38.800686715 -0500
-+++ b/include/uapi/linux/btrfs.h	2013-11-03 16:51:23.563995855 -0500
-@@ -184,6 +184,12 @@ struct btrfs_ioctl_fs_info_args {
- 	__u64 reserved[124];			/* pad to 1k */
- };
- 
-+struct btrfs_ioctl_feature_flags {
-+	__u64 compat_flags;
-+	__u64 compat_ro_flags;
-+	__u64 incompat_flags;
++static struct attribute *btrfs_supported_feature_attrs[] = {
++	BTRFS_FEAT_ATTR_PTR(mixed_backref),
++	BTRFS_FEAT_ATTR_PTR(default_subvol),
++	BTRFS_FEAT_ATTR_PTR(mixed_groups),
++	BTRFS_FEAT_ATTR_PTR(compress_lzo),
++	BTRFS_FEAT_ATTR_PTR(compress_lzov2),
++	BTRFS_FEAT_ATTR_PTR(big_metadata),
++	BTRFS_FEAT_ATTR_PTR(extended_iref),
++	BTRFS_FEAT_ATTR_PTR(raid56),
++	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
++	NULL
 +};
 +
- /* balance control ioctl modes */
- #define BTRFS_BALANCE_CTL_PAUSE		1
- #define BTRFS_BALANCE_CTL_CANCEL	2
-@@ -606,5 +612,11 @@ static inline char *btrfs_err_str(enum b
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags)
-+#define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags[2])
-+#define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-+				   struct btrfs_ioctl_feature_flags[3])
++static const struct attribute_group btrfs_feature_attr_group = {
++	.name = "features",
++	.attrs = btrfs_supported_feature_attrs,
++};
  
- #endif /* _UAPI_LINUX_BTRFS_H */
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
+ 
+ int btrfs_init_sysfs(void)
+ {
++	int ret;
+ 	btrfs_kset = kset_create_and_add("btrfs", NULL, fs_kobj);
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
++
++	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
++	if (ret) {
++		kset_unregister(btrfs_kset);
++		return ret;
++	}
++
+ 	return 0;
+ }
+ 
+ void btrfs_exit_sysfs(void)
+ {
++	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ 	kset_unregister(btrfs_kset);
+ }
+ 
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ b/fs/btrfs/sysfs.h	2013-10-21 16:09:59.816046422 -0400
+@@ -0,0 +1,43 @@
++#ifndef _BTRFS_SYSFS_H_
++#define _BTRFS_SYSFS_H_
++
++enum btrfs_feature_set {
++	FEAT_COMPAT,
++	FEAT_COMPAT_RO,
++	FEAT_INCOMPAT,
++	FEAT_MAX
++};
++
++#define __INIT_KOBJ_ATTR(_name, _mode, _show, _store)			\
++{									\
++	.attr	= { .name = __stringify(_name), .mode = _mode },	\
++	.show	= _show,						\
++	.store	= _store,						\
++}
++
++struct btrfs_feature_attr {
++	struct kobj_attribute kobj_attr;
++	enum btrfs_feature_set feature_set;
++	u64 feature_bit;
++};
++
++#define BTRFS_FEAT_ATTR(_name, _feature_set, _prefix, _feature_bit)	     \
++static struct btrfs_feature_attr btrfs_attr_##_name = {			     \
++	.kobj_attr = __INIT_KOBJ_ATTR(_name, S_IRUGO,			     \
++				      btrfs_feature_attr_show, NULL),	     \
++	.feature_set	= _feature_set,					     \
++	.feature_bit	= _prefix ##_## _feature_bit,			     \
++}
++#define BTRFS_FEAT_ATTR_PTR(_name)    (&btrfs_attr_##_name.kobj_attr.attr)
++
++#define BTRFS_FEAT_ATTR_COMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_COMPAT_RO(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_COMPAT_RO, BTRFS_FEATURE_COMPAT, feature)
++#define BTRFS_FEAT_ATTR_INCOMPAT(name, feature) \
++	BTRFS_FEAT_ATTR(name, FEAT_INCOMPAT, BTRFS_FEATURE_INCOMPAT, feature)
++
++/* convert from attribute */
++#define to_btrfs_feature_attr(a) \
++			container_of(a, struct btrfs_feature_attr, kobj_attr)
++#endif /* _BTRFS_SYSFS_H_ */
+
 
 

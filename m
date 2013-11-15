@@ -1,108 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39783 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752401Ab3KOP1F (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 10:27:05 -0500
-Date: Fri, 15 Nov 2013 15:27:01 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Alin Dobre <alin.dobre@elastichosts.com>
-Cc: linux-btrfs@vger.kernel.org, cwillu@cwillu.com
+Received: from plane.gmane.org ([80.91.229.3]:52072 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751085Ab3KOQHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 11:07:48 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VhLvt-0004Ul-3y
+	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 17:07:45 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 17:07:45 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 17:07:45 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Subvolume creation returns file exists
-Message-ID: <20131115152701.GR4315@carfax.org.uk>
+Date: Fri, 15 Nov 2013 16:07:22 +0000 (UTC)
+Message-ID: <pan$8331$e81056a3$92e0314$93218fd5@cox.net>
 References: <528630D6.5090103@elastichosts.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="xiprIVX1FSGBv8kC"
-In-Reply-To: <528630D6.5090103@elastichosts.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Alin Dobre posted on Fri, 15 Nov 2013 14:33:58 +0000 as excerpted:
 
---xiprIVX1FSGBv8kC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Nov 15, 2013 at 02:33:58PM +0000, Alin Dobre wrote:
-> We are using btrfs filesystems in our infrastructure and, at some
-> point of time, they start refusing to create new subvolumes.
+> We are using btrfs filesystems in our infrastructure and, at some point
+> of time, they start refusing to create new subvolumes.
 > 
 > Each file system is being quota initialized immediately after its
-> creation (with "btrfs quota enable") and then all subfolders under
-> the root directory are created as subvolumes (btrfs subvolume
-> create). Over time, these subvolumes may also be deleted. What's
-> under subvolumes are just various files and directories, should not
-> be related to this problem.
-> 
-> After a while of using this setup, without any obvious steps to
-> reproduce it, the filesystem goes into a state where the following
-> happens:
->     # btrfs subvolume create btrfs_mount/test_subvolume
->     Create subvolume 'btrfs_mount/test_subvolume'
->     ERROR: cannot create subvolume - File exists
+> creation
 
-   We've had someone else with this kind of symptom (snapshot/subvol
-creation fails unexpectedly) on IRC recently. I don't think they've
-got to the bottom of it yet, but the investigation is ongoing. I've
-cc'd Carey in on this, because he was the one trying to debug it.
+I'd suggest staying away from quotas on btrfs at this point.  There's 
+something going on there that just doesn't work correctly, and a lot of 
+folks have been reporting quota-related bugs.  So if your use-case needs 
+quotes, try a different filesystem.  If it doesn't, consider disabling 
+them for the time being (and reboot, since apparently some bits don't 
+fully disable until after a reboot).
 
-   Hugo.
+You can read the list for more detail.  AFAIK there's some very recent 
+patches that address at least part of the problem, but they're recent 
+enough I don't believe they're in 3.12, and the 3.13 commit-window pull 
+was just requested in the last 24 hours or so, so they're likely not even 
+in 3.13 yet.  Even then, however, I'd test for awhile before relying on 
+btrfs quotas, because I'm not sure if the new patches fix all the bugs or 
+simply fix enough for the next batch to make their appearance.
 
-> In regards to data, the filesystem is pretty empty, it only has a
-> single empty directory. I don't know about the metadata, at this
-> point.
-> 
-> The problem goes away if we disable and re-enable the quota. It all
-> seems to be some dead metadata lying around.
-> 
-> Next are some facts about this. Since we found that it's the ioctl
-> call which returns EEXIST, the place to further track the problem
-> down was into the kernel module, which assumes that the userspace
-> tools are not generating the problem. Here is a high level traceback
-> of the problem:
->     ioctl.c:create_subvol() returns -EEXIST
->     cgroup.c:btrfs_qgroup_inherit() returns -EEXIST
->     qgroup.c:add_qgroup_item() returns -EEXIST
->     ctree.c:btrfs_insert_empty_item() returns -EEXIST
->     ctree.c:btrfs_search_slot() returns 0
->     ctree.c:key_search() returns 0
-> 
-> The problem appeared before our current kernel, which is a 3.8
-> version (along with Btrfs progs v0.19), however mounting an already
-> broken filesystem in a 3.12 kernel (with Btrfs progs
-> v0.20-rc1-358-g194aa4a) doesn't do any better.
-> 
-> Any thoughts on this? We can provide you with more information, if
-> needed, even the broken filesystem itself.
+Meanwhile, it's worth noting what both the btrfs kernel option and the 
+wiki[1] say about btrfs state: btrfs is still an experimental 
+filesystem.  Don't use it with data you can't afford to lose (either make 
+and test your backups to the point that you're comfortable with the 
+possibility of full btrfs loss should the worst occur, or use only 
+scratch data you don't care about losing in the first place), and DO keep 
+updated, as btrfs development is quite rapid and every kernel includes 
+fixes for known problems, some of which don't get ported back to stable-
+series kernels.  If you're running 3.8, that means you're missing the 
+fixes in 3.9-3.12, four full release kernel series!
 
-   
+There are reasons one may wish to run an older kernel, but in general 
+they're not compatible with the reasons one might have for running an 
+experimental filesystem such as btrfs.  Therefore, if you're going to 
+test btrfs, please try to run a current release kernel, now 3.12, if not 
+the development kernel, now 3.13. (FWIW, while I personally do run 
+development kernels, I prefer not to switch to them until rc2 or so, at 
+which point hopefully the worst data-risk bugs will be addressed.)  If 
+you prefer to be more conservative and run older, more tested kernels, 
+it's quite likely that the still experimental btrfs doesn't fit your use-
+case very well either, and you should probably be using something 
+considered more stable.
+
+The same applies, tho to a bit lessor degree, to btrfs-progs. 0.19 is 
+OLD.  Even 0.20-rc1, the latest rc, is about a year old!  Btrfs-progs 
+development happens in branches that are only integrated to master once 
+they're considered stable enough for release.  As a result and due to 
+continued development, a build from a recent btrfs-progs git-master pull 
+is always going to be the most stable and ideal testing version you can 
+run.
+
+FWIW, here's the version string from my btrfs-progs, updated a couple 
+days ago (tho there's one known bug in it, related to doing a mkfs.btrfs 
+on a sub-GiB filesystem, patch posted to list but as I've not updated in 
+a couple days I don't know whether it's in master yet).
+
+Btrfs v0.20-rc1-591-gc652e4e
+
+[1] https://btrfs.wiki.kernel.org
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- "What are we going to do tonight?" "The same thing we do ---     
-            every night, Pinky.  Try to take over the world!"            
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---xiprIVX1FSGBv8kC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQIVAwUBUoY9RVheFHXiqx3kAQIrQQ/9HfGR8aRWsmCdRe59uYAjvaA0yctUOK7G
-Uwc8aX/sT8rYGFU69yBhe0kXetR7ppPCOzp0FZRgWdJLUG952ODJ6/Y9K9T6AAco
-teeedkp8fGR38RY8p1aCECEpJhNlLjVETlnkZhgO4YFN+EA/yIYbGs+U0Zg5HkYM
-K21QqOeSnCcmWRYrduhnJGizhMAeGSOYMBkf8NKCmqDb12FnzmSw1Mx4lBqos7Uh
-52nGXjymQ+anW4ahSPvh3RVsh+QVhbEkBEsAzGAZmgU8EvS2Fy+yN57qGWBmEXFP
-XQ4qVM3sIp6qKJQiJDHmP2Is6iacM/a3Y4HY5vPvm6oBWhDNY3ph3PF6g4YLz9Hb
-5GIx4AHUc4QIBj2ytyEe+rmLkRml6SwCYL9bHLQppZhxS/SAZo9PW1/K52UV6013
-xmLBVexnHxTKqO7ZdVCrzV4J3G5Z60dmlwVDX4tk9ntuZ/gzhCYPRsAHJg5O8Pu7
-WH9ZgrmGqh4c0iYrhK3shytcsWUdi20o+I3192wtkbG1LnXVbQ9vS/bTOV2s3LkG
-dHkFex0WGmk8mjx26ocIWyq8CZ8Xp0mry+11CtdatukmRp1hozkFmWzK5lTfyid6
-62lyK2+tALTY8JTsc/AdBge8dhSANKRXLlalxZ/c32UmH59CRv6q1aLEejSuETAU
-F4uBIX1/tlU=
-=5N/I
------END PGP SIGNATURE-----
-
---xiprIVX1FSGBv8kC--

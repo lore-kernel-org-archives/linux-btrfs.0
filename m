@@ -1,39 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:41118 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751190Ab3KOPUF convert rfc822-to-8bit (ORCPT
+Received: from mail-pb0-f45.google.com ([209.85.160.45]:55261 "EHLO
+	mail-pb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751473Ab3KOQL1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 10:20:05 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id C08087C06F7
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 08:20:04 -0700 (MST)
-Content-Type: text/plain; charset="utf-8"
+	Fri, 15 Nov 2013 11:11:27 -0500
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, lkml <linux-kernel@vger.kernel.org>,
+In-Reply-To: <20131115151958.3802.1019@localhost.localdomain>
+References: <20131115151958.3802.1019@localhost.localdomain>
+Date: Fri, 15 Nov 2013 17:11:26 +0100
+Message-ID: <CAMuHMdXousEc1jFsZOxq5chbbWb-E+mBX5hWfh3f_wmnTHaMJg@mail.gmail.com>
+Subject: Re: [GIT PULL] Btrfs
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        lkml <linux-kernel@vger.kernel.org>,
         Heiko Carstens <heiko.carstens@de.ibm.com>
-Message-ID: <20131115151958.3802.1019@localhost.localdomain>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: [GIT PULL] Btrfs
-Date: Fri, 15 Nov 2013 10:19:58 -0500
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Fri, Nov 15, 2013 at 4:19 PM, Chris Mason <chris.mason@fusionio.com> wrote:
+> Chris Mason (1) commits (+7/-2):
+>     btrfs: fix empty_zero_page misusage
 
-This pull fixes the empty_zero_page bug that Heiko reported, and
-includes one more cleanup from Al Viro.   Please grab my for-linus:
+https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/?h=for-linus&id=46e0f66a0cf9e1fe25bfdcf4a60c08aface85998
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+FYI, you may want to loop over longs instead of bytes.
 
-Chris Mason (1) commits (+7/-2):
-    btrfs: fix empty_zero_page misusage
+Gr{oetje,eeting}s,
 
-Al Viro (1) commits (+4/-9):
-    btrfs: get rid of fdentry()
+                        Geert
 
-Total: (2) commits (+11/-11)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- fs/btrfs/ctree.h |  5 -----
- fs/btrfs/ioctl.c | 17 +++++++++++------
- 2 files changed, 11 insertions(+), 11 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds

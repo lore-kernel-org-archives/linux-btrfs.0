@@ -1,106 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57258 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57261 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751268Ab3KOUgQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751456Ab3KOUgQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 15 Nov 2013 15:36:16 -0500
-Message-Id: <20131115203354.082181444@suse.com>
-Date: Fri, 15 Nov 2013 15:33:54 -0500
+Message-Id: <20131115203545.756658051@suse.com>
+Date: Fri, 15 Nov 2013 15:33:58 -0500
 From: Jeff Mahoney <jeffm@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fusionio.com>
-Subject: [PATCH 00/13] sysfs publishing patchset (v3)
+Subject: [PATCH 04/13] btrfs: publish per-super attributes in sysfs
+References: <20131115203354.082181444@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchset implements the stubbed-out sysfs interface for btrfs. Or
-at least begins to do so.
+This patch adds per-super attributes to sysfs.
 
-We publish:
-- Features supported by the file system implementation
-- Features enabled on the file system, including features unknown to
-  the implemenation. These attributes can also be used to enable or
-  disable features at runtime, subjecting to a safety mask.
-- Uses the attribute names to print feature names when declining to
-  mount a file system.
-- The allocation data: global metadata reservation size and reserved,
-  space_infos, and sums of the block groups total and used bytes.
-- Device membership via links to the block devices.
-- FS label, which is writeable.
+It doesn't publish any attributes yet, but does the proper lifetime
+handling as well as the basic infrastructure to add new attributes.
 
-- I've also added matching ioctls for some of the functionality here so
-  that btrfsprogs can use the information without jumping through hoops
-  to read/parse the sysfs files. There are ioctls to query the supported
-  features and to query/set features on a particular file system. There's
-  also one to export the size of the global metadata reservation. I have
-  a patch for btrfs-progs that uses this to print useful info in 'btrfs
-  fi df' output.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/ctree.h   |    2 ++
+ fs/btrfs/disk-io.c |    9 +++++++++
+ fs/btrfs/sysfs.c   |   36 ++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.h   |   10 ++++++++++
+ 4 files changed, 57 insertions(+)
 
-Ultimately, the tree structure looks like the following, under /sys/fs/btrfs.
-This is from a test file system, using two devices in raid1. You'll notice
-the 'single' and 'raid1' directories under the {data,metadata,system} dirs.
-The raid profiles are created and removed as the first/last block group
-of a certain profile is added and removed.
+--- a/fs/btrfs/ctree.h	2013-10-21 16:30:27.122204722 -0400
++++ b/fs/btrfs/ctree.h	2013-10-21 16:30:39.390053476 -0400
+@@ -3771,6 +3771,8 @@ int btrfs_defrag_leaves(struct btrfs_tra
+ /* sysfs.c */
+ int btrfs_init_sysfs(void);
+ void btrfs_exit_sysfs(void);
++int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info);
++void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info);
+ 
+ /* xattr.c */
+ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+--- a/fs/btrfs/disk-io.c	2013-10-21 16:30:27.126204673 -0400
++++ b/fs/btrfs/disk-io.c	2013-10-21 16:30:39.394053427 -0400
+@@ -49,6 +49,7 @@
+ #include "rcu-string.h"
+ #include "dev-replace.h"
+ #include "raid56.h"
++#include "sysfs.h"
+ 
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -2751,6 +2752,12 @@ retry_root_backup:
+ 
+ 	btrfs_close_extra_devices(fs_info, fs_devices, 1);
+ 
++	ret = btrfs_sysfs_add_one(fs_info);
++	if (ret) {
++		pr_err("btrfs: failed to init sysfs interface: %d\n", ret);
++		goto fail_block_groups;
++	}
++
+ 	ret = btrfs_init_space_info(fs_info);
+ 	if (ret) {
+ 		printk(KERN_ERR "Failed to initial space info: %d\n", ret);
+@@ -3618,6 +3625,8 @@ int close_ctree(struct btrfs_root *root)
+ 
+ 	btrfs_stop_all_workers(fs_info);
+ 
++	btrfs_sysfs_remove_one(fs_info);
++
+ 	del_fs_roots(fs_info);
+ 
+ 	free_root_pointers(fs_info, 1);
+--- a/fs/btrfs/sysfs.c	2013-10-21 16:30:27.126204673 -0400
++++ b/fs/btrfs/sysfs.c	2013-10-21 16:30:39.394053427 -0400
+@@ -28,6 +28,25 @@
+ #include "transaction.h"
+ #include "sysfs.h"
+ 
++static void btrfs_release_super_kobj(struct kobject *kobj);
++static struct kobj_type btrfs_ktype = {
++	.sysfs_ops	= &kobj_sysfs_ops,
++	.release	= btrfs_release_super_kobj,
++};
++
++static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
++{
++	if (kobj->ktype != &btrfs_ktype)
++		return NULL;
++	return container_of(kobj, struct btrfs_fs_info, super_kobj);
++}
++
++static void btrfs_release_super_kobj(struct kobject *kobj)
++{
++	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
++	complete(&fs_info->kobj_unregister);
++}
++
+ static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
+ 				       struct kobj_attribute *a, char *buf)
+ {
+@@ -65,6 +84,23 @@ static const struct attribute_group btrf
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
+ 
++void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
++{
++	kobject_del(&fs_info->super_kobj);
++	kobject_put(&fs_info->super_kobj);
++	wait_for_completion(&fs_info->kobj_unregister);
++}
++
++int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
++{
++	int error;
++
++	init_completion(&fs_info->kobj_unregister);
++	error = kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
++				     "%pU", fs_info->fsid);
++	return error;
++}
++
+ int btrfs_init_sysfs(void)
+ {
+ 	int ret;
+--- a/fs/btrfs/sysfs.h	2013-10-21 16:30:27.126204673 -0400
++++ b/fs/btrfs/sysfs.h	2013-10-21 16:30:39.394053427 -0400
+@@ -15,6 +15,13 @@ enum btrfs_feature_set {
+ 	.store	= _store,						\
+ }
+ 
++#define BTRFS_ATTR_RW(_name, _mode, _show, _store)			\
++static struct kobj_attribute btrfs_attr_##_name =			\
++			__INIT_KOBJ_ATTR(_name, _mode, _show, _store)
++#define BTRFS_ATTR(_name, _mode, _show)					\
++	BTRFS_ATTR_RW(_name, _mode, _show, NULL)
++#define BTRFS_ATTR_PTR(_name)    (&btrfs_attr_##_name.attr)
++
+ struct btrfs_feature_attr {
+ 	struct kobj_attribute kobj_attr;
+ 	enum btrfs_feature_set feature_set;
+@@ -40,4 +47,7 @@ static struct btrfs_feature_attr btrfs_a
+ /* convert from attribute */
+ #define to_btrfs_feature_attr(a) \
+ 			container_of(a, struct btrfs_feature_attr, kobj_attr)
++#define attr_to_btrfs_attr(a) container_of(a, struct kobj_attribute, attr)
++#define attr_to_btrfs_feature_attr(a) \
++			to_btrfs_feature_attr(attr_to_btrfs_attr(a))
+ #endif /* _BTRFS_SYSFS_H_ */
 
-v2: An earlier version had a chunk intended for fs/btrfs/extent-tree.c
-added as part of patch 13 instead of patch 10, causing build failures.
-
-v3: use static initialization for the GET_SUPPORTED_FEATURES ioctl.
-
-<fsid>/devices/sdc1
-<fsid>/devices/sdd1
-<fsid>/label
-<fsid>/allocation/data/flags
-<fsid>/allocation/data/raid1/used_bytes
-<fsid>/allocation/data/raid1/total_bytes
-<fsid>/allocation/data/bytes_pinned
-<fsid>/allocation/data/bytes_may_use
-<fsid>/allocation/data/total_bytes_pinned
-<fsid>/allocation/data/bytes_reserved
-<fsid>/allocation/data/bytes_used
-<fsid>/allocation/data/single/used_bytes
-<fsid>/allocation/data/single/total_bytes
-<fsid>/allocation/data/total_bytes
-<fsid>/allocation/data/disk_total
-<fsid>/allocation/data/disk_used
-<fsid>/allocation/metadata/flags
-<fsid>/allocation/metadata/raid1/used_bytes
-<fsid>/allocation/metadata/raid1/total_bytes
-<fsid>/allocation/metadata/bytes_pinned
-<fsid>/allocation/metadata/bytes_may_use
-<fsid>/allocation/metadata/total_bytes_pinned
-<fsid>/allocation/metadata/bytes_reserved
-<fsid>/allocation/metadata/bytes_used
-<fsid>/allocation/metadata/single/used_bytes
-<fsid>/allocation/metadata/single/total_bytes
-<fsid>/allocation/metadata/total_bytes
-<fsid>/allocation/metadata/disk_total
-<fsid>/allocation/metadata/disk_used
-<fsid>/allocation/global_rsv_size
-<fsid>/allocation/global_rsv_reserved
-<fsid>/allocation/system/flags
-<fsid>/allocation/system/raid1/used_bytes
-<fsid>/allocation/system/raid1/total_bytes
-<fsid>/allocation/system/bytes_pinned
-<fsid>/allocation/system/bytes_may_use
-<fsid>/allocation/system/total_bytes_pinned
-<fsid>/allocation/system/bytes_reserved
-<fsid>/allocation/system/bytes_used
-<fsid>/allocation/system/single/used_bytes
-<fsid>/allocation/system/single/total_bytes
-<fsid>/allocation/system/total_bytes
-<fsid>/allocation/system/disk_total
-<fsid>/allocation/system/disk_used
-<fsid>/features/mixed_backref
-<fsid>/features/extended_iref
-features/compress_lzo
-features/big_metadata
-features/compress_lzov2
-features/default_subvol
-features/mixed_backref
-features/raid56
-features/mixed_groups
-features/skinny_metadata
-features/extended_iref
-
--Jeff
 

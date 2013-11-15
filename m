@@ -1,100 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44257 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757759Ab3KOEfu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Nov 2013 23:35:50 -0500
-Message-ID: <5285A6AF.8090607@oracle.com>
-Date: Fri, 15 Nov 2013 12:44:31 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: kreijack@inwind.it, Lutz Vieweg <lvml@5t9.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Mixed and raid [was Re: BUG: btrfsRe: Does btrfs "raid1" actually
- provide any resilience?]
-References: <l62akc$ujc$1@ger.gmane.org> <528514CA.8080903@libero.it> <528536F7.6030503@libero.it> <52853ED2.8040606@libero.it>
-In-Reply-To: <52853ED2.8040606@libero.it>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:58300 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751711Ab3KOHNO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 02:13:14 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VhDab-0004w6-1B
+	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 08:13:13 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 08:13:13 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 08:13:13 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Mixed and raid [was Re: BUG: btrfsRe: Does btrfs "raid1"
+ actually provide any resilience?]
+Date: Fri, 15 Nov 2013 07:12:50 +0000 (UTC)
+Message-ID: <pan$afa55$861f820e$b8e2b567$4f5d324c@cox.net>
+References: <l62akc$ujc$1@ger.gmane.org> <528514CA.8080903@libero.it>
+	<528536F7.6030503@libero.it> <52853ED2.8040606@libero.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Goffredo Baroncelli posted on Thu, 14 Nov 2013 22:21:22 +0100 as
+excerpted:
 
-Hi G.Baroncelli, Lutz,
-
-  Thanks for the test case and heads-up on this. The code missed
-  the check if the user has provided the option before default
-  profile for the mixed group (due to small vol) is enforced.
-
-  I have sent out the following patch to fix it.
-
-[PATCH] btrfs-progs: for mixed group check opt before default raid 
-profile is enforced
-
-  Kindly let us know how it performed if you could.
-
-  Thanks,
-Anand
-
-
-On 11/15/2013 05:21 AM, Goffredo Baroncelli wrote:
-> Hi Anand,
->
 > after some tests and looking at the code I discovered that the current
 > mkfs.btrfs doesn't allow any raid profile other than SINGLE for data and
-> meta-data when the mixed metadata/data group is enabled. It seems this
-> behaviour was introduce by a your commit [1].
->
->
-> mkfs.c line 1384 onwards
->
-> 	/*
-> 	* Set default profiles according to number of added devices.
-> 	* For mixed groups defaults are single/single.
-> 	*/
-> 	if (!mixed) {
-> [....]
-> 	} else {
-> 		u32 best_leafsize = max_t(u32, sysconf(_SC_PAGESIZE),
-> 				sectorsize);
-> 		metadata_profile = 0;
-> 		data_profile = 0;
->
->
-> But in another your commit [2] it seems that you check that in case of
-> mixed, the metadata and data profile have to be equal (implicitly
-> allowing that they could be different than single ?).
->
-> mkfs.c line 1373 onward
->
-> 	if (is_vol_small(file)) {
-> 		printf("SMALL VOLUME: forcing mixed metadata/data
-> 				groups\n");
-> 		mixed = 1;
-> 		if (metadata_profile != data_profile) {
-> 			if (metadata_profile_opt || data_profile_opt) {
-> 				fprintf(stderr, "With mixed block
-> 	 groups data and metadata profiles must be the same\n");
-> 				exit(1);
-> 			}
-> 		}
-> 	}
->
->
-> So I am a bit confusing: it is allowed a raid profile different than
-> single when the mixed is enabled ? Of course mixed and raid together
-> doesn't make sense (or almost make very little sense) but the code of
-> mkfs is a bit confused, and a warning should be raised when the raid
-> profile are forced to a default different from the one selected by the user.
->
->
-> Thanks for the attention.
-> BR
-> G.Baroncelli
->
->
-> [1] btrfs-progs: avoid write to the disk before sure to create fs
-> 71d6bd3c8d70fb682c7fd50796f587ce1f1cf6f8
-> .
-> [2] btrfs-progs: mkfs should check for small vol well before
-> cdbc10729266c03aeb2eb812c17a3ef6c1ceae26
->
+> meta-data when the mixed metadata/data group is enabled.
+
+That'd be a big problem for me, here, as I run a separate sub-GiB (640 
+MiB) btrfs filesystem /var/log, in data+metadata raid1 mode.  (The 
+mountpoint is actually /lg, with /var/log a symlink pointing at it.)
+
+btrfs f sh /lg
+
+Label: lg0238gcnx+35l0  uuid: c77a9eb8-9841-4c2b-925e-75d0a925dcc3
+        Total devices 2 FS bytes used 51.93MiB
+        devid    1 size 640.00MiB used 288.00MiB path /dev/sdc4
+        devid    2 size 640.00MiB used 288.00MiB path /dev/sda4
+
+btrfs f df /lg
+
+System, RAID1: total=32.00MiB, used=4.00KiB
+Data+Metadata, RAID1: total=256.00MiB, used=51.92MiB
+
+I've had a couple bad shutdowns, but btrfs scrub has reliably cleaned up 
+the resulting mess on /lg due to open logfiles, and I'd be rather unhappy 
+if that weren't possible.
+
+Meanwhile, I also have two separate sub-GiB (256 MiB) /boot filesystems, 
+one on each (of two) SSDs, with the grub2 on each pointing at its own 
+/boot so a broken grub2 update won't break my ability to boot.
+
+Those are both data+metadata dup mode:
+
+btrfs f df /bt
+
+System, DUP: total=8.00MiB, used=4.00KiB
+System, single: total=4.00MiB, used=0.00
+Data+Metadata, DUP: total=114.00MiB, used=41.38MiB
+Data+Metadata, single: total=8.00MiB, used=0.00
+
+You're saying data+metadata DUP wouldn't be possible here either, which 
+would make me pretty unhappy too.
+
+Fortunately I did those mkfs.btrfs on an earlier btrfs-tools so wasn't 
+affected by this bug, but bug I would indeed call it, for sure!
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

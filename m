@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53894 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:47699 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754438Ab3KOKgI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 05:36:08 -0500
+	id S1752940Ab3KOKkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Nov 2013 05:40:05 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VhGkw-00077E-Ue
-	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 11:36:06 +0100
+	id 1VhGol-0001oJ-T7
+	for linux-btrfs@vger.kernel.org; Fri, 15 Nov 2013 11:40:03 +0100
 Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 11:36:06 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 11:40:03 +0100
 Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 11:36:06 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 11:40:03 +0100
 To: linux-btrfs@vger.kernel.org
 From: Lutz Vieweg <lvml@5t9.de>
 Subject: Re: Mixed and raid [was Re: BUG: btrfsRe: Does btrfs "raid1" actually
  provide any resilience?]
-Date: Fri, 15 Nov 2013 11:35:54 +0100
-Message-ID: <5285F90A.90605@5t9.de>
+Date: Fri, 15 Nov 2013 11:36:51 +0100
+Message-ID: <5285F943.2020903@5t9.de>
 References: <l62akc$ujc$1@ger.gmane.org> <528514CA.8080903@libero.it> <528536F7.6030503@libero.it> <52853ED2.8040606@libero.it> <5285A6AF.8090607@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed

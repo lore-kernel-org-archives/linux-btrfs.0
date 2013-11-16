@@ -1,118 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:54865 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751222Ab3KPRJP (ORCPT
+Received: from mail-wg0-f51.google.com ([74.125.82.51]:49369 "EHLO
+	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751348Ab3KPRJP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Sat, 16 Nov 2013 12:09:15 -0500
-Received: by mail-wi0-f177.google.com with SMTP id hq4so2236641wib.16
+Received: by mail-wg0-f51.google.com with SMTP id m15so4620511wgh.6
         for <linux-btrfs@vger.kernel.org>; Sat, 16 Nov 2013 09:09:14 -0800 (PST)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/7] recursive btrfs sub snapshot/delete: create pathjoin() function
-Date: Sat, 16 Nov 2013 18:09:02 +0100
-Message-Id: <1384621747-25441-3-git-send-email-kreijack@inwind.it>
+Subject: [PATCH 3/7] recursive btrfs snapshot/delete: create traverse_list_subvol_rec()
+Date: Sat, 16 Nov 2013 18:09:03 +0100
+Message-Id: <1384621747-25441-4-git-send-email-kreijack@inwind.it>
 In-Reply-To: <1384621747-25441-1-git-send-email-kreijack@inwind.it>
 References: <1384621747-25441-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The pathjoin() function creates a path from a list of strings.
+Create the traverse_list_subvol_rec() function. Its aim is to permit
+to process recursively the filesystems subvolumes.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- utils.c | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h |  1 +
- 2 files changed, 64 insertions(+)
+ btrfs-list.c | 121 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ btrfs-list.h |   3 ++
+ 2 files changed, 124 insertions(+)
 
-diff --git a/utils.c b/utils.c
-index f499023..5f4d0ef 100644
---- a/utils.c
-+++ b/utils.c
-@@ -38,6 +38,7 @@
- #include <linux/kdev_t.h>
- #include <limits.h>
- #include <blkid/blkid.h>
-+#include <stdarg.h>
- #include "kerncompat.h"
- #include "radix-tree.h"
- #include "ctree.h"
-@@ -2108,3 +2109,65 @@ int lookup_ino_rootid(int fd, u64 *rootid)
- 
- 	return 0;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 66f3127..b45c4d9 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -2012,3 +2012,124 @@ void free_root_info(struct root_info *ri)
+ 	free(ri->name);
+ 	free(ri->full_path);
  }
 +
++
 +/*
-+ * Joints a list of string. The list has to be NULL terminated
++ * List and sort all subvolumes
 + */
-+char *pathjoin( char *s, ...)
++static int btrfs_list_all_subvols(int fd, struct root_lookup *root_sort,
++	struct root_lookup *root_lookup, int ascending)
 +{
-+	va_list		ap;
-+	int 		size;
-+	char		*dst;
++	int ret = 0;
++	u64 top_id = 0;
++	struct btrfs_list_filter_set *filter_set;
++	struct btrfs_list_comparer_set *comp_set;
 +
-+	if (!s || !strlen(s))
-+		return NULL;
++	filter_set = btrfs_list_alloc_filter_set();
++	comp_set = btrfs_list_alloc_comparer_set();
 +
-+	size = strlen(s)+1;
-+	va_start(ap, s);
++	btrfs_list_setup_filter(&filter_set,
++				BTRFS_LIST_FILTER_FULL_PATH,
++				top_id);
++	btrfs_list_setup_comparer(&comp_set, BTRFS_LIST_COMP_PATH, ascending);
 +
-+	do {
-+		char *p;
++	ret = btrfs_list_subvols(fd, root_lookup);
++	if (ret)
++		goto exit;
++	__filter_and_sort_subvol(root_lookup, root_sort, filter_set,
++				 comp_set, top_id);
 +
-+		p = va_arg(ap, char *);
-+		if (!p)
-+			break;
++	ret = 0;
++exit:
++	if (filter_set)
++		btrfs_list_free_filter_set(filter_set);
++	if (comp_set)
++		btrfs_list_free_comparer_set(comp_set);
 +
-+		size += strlen(p)+1;
-+	} while(1);
++	return ret;
++}
 +
-+	va_end(ap);
-+	size++;
++/*
++ * traverse the subvolumes list, calling func() for each subvolume path
++ * data is passed to func(). If all == true, func is called on all
++ * filesystem subvolumes. ascending set the order criteria
++ */
++int traverse_list_subvol_rec(char *path, int all, int ascending,
++	int (*func)(char *real_root, char *relative_root, char *path, void *data), 
++	void *data)
++{
++	struct root_lookup root_lookup = {{0}}, root_to_free = {{0}};
++	int ret, l=0, fd=-1;
++	DIR *fddir;
++	struct rb_node *n;
++	struct root_info ri = {{0}};
++	char	*rootpath = NULL;
 +
-+	dst = malloc(size);
-+	if (!dst)
-+		return NULL;
++	ret = 1; /* failure */
 +
-+	strcpy(dst, s);
-+	va_start(ap, s);
++	if (!all) {
++		/* search the full_path of path */
++		ret = get_root_info(path, &ri);
++		if (ret) {
++			fprintf(stderr, "ERROR: cannot get info on '%s'\n", path);
++			goto out;
++		}
++	}
 +
-+	do {
-+		char *p;
-+		int l, l2;
-+		p = va_arg(ap, char *);
-+		if (!p)
-+			break;
-+		if (*p == '/')
-+			p++;
++	fd = open_file_or_dir(path, &fddir);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
++		goto out;
++	}
++	ret = btrfs_list_all_subvols(fd, &root_lookup, &root_to_free, ascending);
++	/* doesn't leak fd & fddir */
++	close_file_or_dir(fd, fddir);
 +
-+		l2 = strlen(p);
-+		if (!l2)
++	if (ret) {
++		fprintf(stderr, "ERROR: cannot list the subvols\n");
++		goto out;
++	}
++
++	if (!all) {
++		n = rb_first(&root_lookup.root);
++		while (n) {
++			struct root_info *entry;
++
++			entry = rb_entry(n, struct root_info, sort_node);
++			if (entry->root_id == ri.root_id) {
++				rootpath = entry->full_path;
++				break;
++			}
++			n = rb_next(n);
++		}
++		BUG_ON(!rootpath);
++
++	} else {
++		rootpath = "<FS_TREE>";
++	}
++	l = strlen(rootpath);
++
++	for (n = rb_first(&root_lookup.root) ; n ; n = rb_next(n)) {
++		struct root_info *entry;
++
++		entry = rb_entry(n, struct root_info, sort_node);
++		if (!all && strncmp(rootpath, entry->full_path,l)) {
 +			continue;
-+		if (p[l2-1] == '/')
-+			p[l2-1] = 0;
++		}
 +
-+		l = strlen(dst);
-+		if (dst[l-1] != '/')
-+			strcat(dst, "/");
-+		strcat(dst, p);
++		ret = func(rootpath, path, entry->full_path+l, data);
++		if (ret)
++			goto out;
 +
-+	} while(1);
-+	va_end(ap);
++	}
++	ret = 0;
 +
-+	return dst;
++out:
++
++	__free_all_subvolumn(&root_to_free);
++	if (!all)
++		free_root_info(&ri);
++
++	return ret;
 +
 +}
-\ No newline at end of file
-diff --git a/utils.h b/utils.h
-index 6f4b10c..d6c52a6 100644
---- a/utils.h
-+++ b/utils.h
-@@ -94,5 +94,6 @@ int ask_user(char *question);
- int lookup_ino_rootid(int fd, u64 *rootid);
- int btrfs_scan_lblkid(int update_kernel);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
-+char *pathjoin(char *, ...);
+diff --git a/btrfs-list.h b/btrfs-list.h
+index db32805..5c246e1 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -168,5 +168,8 @@ int btrfs_list_get_path_rootid(int fd, u64 *treeid);
+ int btrfs_get_subvol(int fd, struct root_info *the_ri);
+ int get_root_info(char *path, struct root_info *get_ri);
+ void free_root_info(struct root_info *ri);
++int traverse_list_subvol_rec(char *path, int all, int ascending,
++	int (*func)(char *real_root, char *relative_root, char *path, void *data), 
++	void *data);
  
  #endif
 -- 

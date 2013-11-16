@@ -1,233 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37661 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752681Ab3KPUeM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 Nov 2013 15:34:12 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VhmZH-0002HS-AN
-	for linux-btrfs@vger.kernel.org; Sat, 16 Nov 2013 21:34:11 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Nov 2013 21:34:11 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Nov 2013 21:34:11 +0100
+Received: from mail-ea0-f172.google.com ([209.85.215.172]:40093 "EHLO
+	mail-ea0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752681Ab3KPUhI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 16 Nov 2013 15:37:08 -0500
+Received: by mail-ea0-f172.google.com with SMTP id h11so1639676eaj.31
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Nov 2013 12:37:06 -0800 (PST)
+Received: from [192.168.2.102] (cpe-62-84-228-88.dynamic.amis.net. [62.84.228.88])
+        by mx.google.com with ESMTPSA id z2sm20080404eee.7.2013.11.16.12.37.05
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 16 Nov 2013 12:37:05 -0800 (PST)
+Message-ID: <5287D775.1090105@gmail.com>
+Date: Sat, 16 Nov 2013 21:37:09 +0100
+From: =?UTF-8?B?RGVqYW4gUmliacSN?= <dejan.ribic@gmail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs fi show
-Date: Sat, 16 Nov 2013 20:33:47 +0000 (UTC)
-Message-ID: <pan$daf92$6b3b3c71$c97cb6b7$f9d238aa@cox.net>
-References: <528787FB.4040100@czarc.net>
-	<8A471BDA-8355-4267-BA6F-44046F6422BD@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: btrfs resize partition problem
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Sat, 16 Nov 2013 09:04:31 -0700 as excerpted:
+Hello,
 
-> On Nov 16, 2013, at 7:58 AM, Gene Czarcinski <gene@czarc.net> wrote:
-> 
->> I am on Fedora 20-Beta and we just updated to btrfs-progs
->> 0.20.rc1-20131114git9f0c53f
->> 
->> Previously, when you did a btrfs fi show, you got a list with one
->> output for each btrfs storage volume whether it was a single device or
->> multi-device volume.
->> 
->> Now, I get multiple outputs for each storage volume.  For example, I
->> have a system with two SSDs as one btrfs storage volume and two USB
->> round-and-brown disks as a second btrfs storage volume.  Each has three
->> subvols defined and mounted.
->> 
->> Previously, I got two outputs; one for each volume.
->> 
->> Now I get three outputs for the SSD storage volume and SIX outputs for
->> the out volume.
->> 
->> Is this a bug or a feature?  If it is a feature, what is it telling me?
-> 
-> I filed a bug on it.
-> 
-> https://bugzilla.redhat.com/show_bug.cgi?id=1031299
+Originaly I had two seperate ext4 partitions for rootand home, thenI 
+recently converted my root ext4 partition to btrfs primarily because of 
+snapshots, I also created a subvolume for /var/cache/pacman/pkg because 
+I didn't want the packages in snapshots and that worked out great, I 
+have been running this setup without problems for two weeks now, but it 
+got me thinking why do I even have a seperate partition for home, so I 
+created a backup of my /home/stayerc directory and deleted the ext4 
+partition, but when I tried to resize btrfs partition using latest 
+gparted live cd, an error happened(details are on the bottom of email). 
+I would really apreciated any help.
 
-As I understand things based on the on-list patch-flow and discussion as 
-well as reading the git commit log and current manpages, previously the 
-output was potentially outdated; if a mkfs.btrfs had just been run, a 
-btrfs device add had been issued, or a btrfs device delete had just 
-completed, and a btrfs device scan had not been run since, the output 
-(sometime?) didn't reflect the most current state, sometimes surprising 
-users.
+Cheers,
 
-Here's the relevant git commit from the git whatchanged log:
+Dejan
 
-commit dde4b9214162d994f0190e42f53d2e1d6fdcc893
-Author: Anand Jain <anand.jain@oracle.com>
-Date:   Tue Oct 8 11:41:40 2013 +0800
+PS: Please Cc to me I am not subscribed
 
-    btrfs-progs: use BTRFS_SCAN_LBLKID as default scan in filesystem show
-
-    btrfs progs has to scan for the btrfs disks for two main reasons,
-     one to register them with the btrfs kernel (under btrfs dev scan)
-     2nd to report btrfs disks to the user (under btrfs fi show)
-     (there few more minor reasons like check_mounted etc..).
-
-     To facilitate the scan, in total we have the following methods
-     to scan for the btrfs
-
-     BTRFS_SCAN_PROC
-      which uses the /proc/partitions to look for the disks, when
-      scanning it does it twice first would look for non dm- paths
-      and in the 2nd scan it would pick only dm- paths.
-
-     BTRFS_SCAN_DEV
-      which scans all the block dev under /dev as they appear during
-      scanning.
-
-     BTRFS_SCAN_LBLKID
-      this uses the library functions provided  by the lblkid to get
-      only disks which contains the btrfs SB.
-
-     The better method to use would be BTRFS_SCAN_LBLKID for the obvious
-     reasons we don't have to reinvent that feature with in btrfs-progs.
-
-     For the btrfs fi show - This patch will..
-       - make BTRFS_SCAN_LBLKID as the default scan option
-
-       (BTRFS_SCAN_DEV is accessible under the option --all-devices and
-       BTRFS_SCAN_PROC won't be used by btrfs fi show any more)
-    
-    Signed-off-by: Anand Jain <anand.jain@oracle.com>
-    Signed-off-by: David Sterba <dsterba@suse.cz>
-    Signed-off-by: Chris Mason <chris.mason@fusionio.com>
-
- cmds-filesystem.c | 14 +-------------
- 1 file changed, 1 insertion(+), 13 deletions(-)
-
-And the following commit:
-
-commit b4c3cd0bbc68ca61b69cd58b1faadc995e2bf77c
-Author: Anand Jain <anand.jain@oracle.com>
-Date:   Fri Oct 11 19:52:53 2013 +0800
-
-    btrfs-progs: device scan use BTRFS_SCAN_LBLKID by default
-
-    with this patch, BTRFS_SCAN_LBLKID (which leverages lblkid
-    to look for btrfs disks) would be the default scan method
-    to look for the btrfs disks. And thus the output as seen
-    in the latest btrfs fi show and btrfs fi show -m for the
-    mounted disks will have the consistent disks path.
-    (it was inconsistent (across disks) because btrfs dev scan
-    provided a different path from the mount command eg. below)
-
-        devid    1 size 1.98GiB used 435.00MiB path /dev/mapper/mpatha
-        devid    2 size 2.00GiB used 415.00MiB path /dev/dm-1
-     
-    Signed-off-by: Anand Jain <anand.jain@oracle.com>
-    Signed-off-by: David Sterba <dsterba@suse.cz>
-    Signed-off-by: Chris Mason <chris.mason@fusionio.com>
-
- cmds-device.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-
-
->From that you can look back on the patches on-list and their discussion, 
-if desired.
-
-Meanwhile, behavior from previous /has/ changed, making things a bit 
-confusing for people already using this after all still officially 
-experimental and thus prone to changing UI product, but that's something 
-people testing still officially unstable product get used to after 
-awhile.  At some point the interface and behavior should settle down and 
-be subject to rather less change.
-
-So here's the relevant btrfs manpage snippet (reformatted for posting):
-
-filesystem show [--mounted|--all-devices|<uuid>]
-
-Show the btrfs filesystem with some additional info. If no option or UUID 
-is passed, btrfs shows information of all the btrfs filesystem both 
-mounted and unmounted. If --mounted is passed, it would probe btrfs 
-kernel to list mounted btrfs filesystem(s); If --all-devices is passed, 
-all the devices under /dev are scanned; otherwise the devices list is 
-extracted from the /proc/partitions file.
-
-
-And the filesystem show --help output:
-
-usage: btrfs filesystem show [options|<path>|<uuid>]
-
-Show the structure of a filesystem
-
--d|--all-devices   show only disks under /dev containing btrfs filesystem
--m|--mounted       show only mounted btrfs
-If no argument is given, structure of all present filesystems is shown.
-
-
-Meanwhile, in plain English based on my observation here, the new 
-behavior works like this:
-
-1) If you run a generic btrfs filesystem show (without options or path), 
-you *WILL* likely get the same base filesystem listed multiple times, as 
-the default lookup appears to get the info from at least two different 
-places, one appearing right away that only appears to include currently 
-mounted filesystems, then a pause, then a more complete listing that 
-includes currently unmounted btrfs volumes as well.
-
-2) If you use -m (mounted only), you'll still get dups as the information 
-apparently still comes from two different kernel lists, but the list 
-won't include unmounted filesystems and the pause will be gone as the 
-lookup won't have to scan for the unmounted ones.
-
-3) If you use -d, you'll get a different list, based on devices in /dev 
-so it includes unmounted filesystems (and thus the pause), but at least 
-here, this list is BOTH comprehensive AND avoids dups!
-
-However, I don't have device-mapper turned on in my kernel (thus no lvm2 
-or similar volumes), so I'm unsure the practical effect on systems that 
-use it.
-
-4) If you're only looking for information on a specific filesystem, use 
-the optional path/uuid parameter.  This can be either the mountpoint (if 
-the filesystem is mounted) or a component device-path.  If you use 
-component device, however, you /might/ get multiple listings for 
-subvolumes too -- I don't know as I prefer the not having all my data 
-eggs in the same filesystem basket and thus use independent partitions, 
-not subvolumes, here.
-
-But ($>> indicating my prompt, being preceded by <LF> so there's a blank 
-line between commands, other lines being output):
-
-$>>btrfs filesystem show /
-Label: rt0238gcnx+35l0  uuid: 886dcca6-29b4-4e6e-8cdc-8a8ea435d510
-        Total devices 2 FS bytes used 1.91GiB
-        devid    1 size 8.00GiB used 3.53GiB path /dev/sdc5
-        devid    2 size 8.00GiB used 3.53GiB path /dev/sda5
-
-Btrfs v0.20-rc1-596-ge9ac73b
-
->>s btrfs filesystem show /dev/sda5
-Label: rt0238gcnx+35l0  uuid: 886dcca6-29b4-4e6e-8cdc-8a8ea435d510
-        Total devices 2 FS bytes used 1.91GiB
-        devid    1 size 8.00GiB used 3.53GiB path /dev/sdc5
-        devid    2 size 8.00GiB used 3.53GiB path /dev/sda5
-
-Btrfs v0.20-rc1-596-ge9ac73b
-
-$>>
-
-
-Bottom line, try either btrfs filesystem show -d, or btrfs filesystem 
-show <path>.  Both avoid dups here (tho using component device path may 
-produce dups if you use subvolumes, but using mountpoint shouldn't), 
-while -d is comprehensive and path limits display to just the filesystem 
-of interest.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+save-details from gparted:
+---------------------------------------------
+GParted 0.16.1 --enable-libparted-dmraid
+Libparted 2.3
+Move /dev/sda8 to the left and grow it from 20.95 GiB to 41.90 GiB 
+  00:01:19    ( ERROR )
+calibrate /dev/sda8  00:00:00    ( SUCCESS )
+path: /dev/sda8
+start: 1190326272
+end: 1234257919
+size: 43931648 (20.95 GiB)
+check file system on /dev/sda8 for errors and (if possible) fix them 
+  00:01:19    ( ERROR )
+btrfsck /dev/sda8
+Checking filesystem on /dev/sda8
+UUID: 5f32176b-fa13-4af2-a5d9-ffbc558bdb13
+free space inode generation (0) did not match free space cache 
+generation (1122)
+free space inode generation (0) did not match free space cache 
+generation (1122)
+free space inode generation (0) did not match free space cache 
+generation (1122)
+free space inode generation (0) did not match free space cache 
+generation (1122)
+free space inode generation (0) did not match free space cache 
+generation (1109)
+found 3430820721 bytes used err is 19
+total csum bytes: 7677820
+total tree bytes: 569364480
+total fs tree bytes: 529350656
+total extent tree bytes: 29700096
+btree space waste bytes: 161755833
+file data blocks allocated: 38304477184
+referenced 16981073920
+Btrfs v0.20-rc1
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+There are no extents for csum range 0-69632
+Csum exists for 0-69632 but there is no extent record
+There are no extents for csum range 1121083392-1121087488
+Csum exists for 1121083392-1121087488 but there is no extent record
+There are no extents for csum range 1121099776-1121103872
+Csum exists for 1121099776-1127346176 but there is no extent record
+There are no extents for csum range 1127489536-1127493632
+Csum exists for 1127489536-1127538688 but there is no extent record
+There are no extents for csum range 1127550976-1127555072
+Csum exists for 1127550976-1404313600 but there is no extent record
+There are no extents for csum range 1404358656-1404362752
+Csum exists for 1404358656-1404362752 but there is no extent record
+There are no extents for csum range 1404375040-1404379136
+Csum exists for 1404375040-1592889344 but there is no extent record
+There are no extents for csum range 1954291712-1954295808
+Csum exists for 1954291712-1970950144 but there is no extent record
+There are no extents for csum range 1971093504-1971097600
+Csum exists for 1971093504-2020798464 but there is no extent record
+There are no extents for csum range 2021244928-2021249024
+Csum exists for 2021244928-2021253120 but there is no extent record
+There are no extents for csum range 2021699584-2021703680
+Csum exists for 2021699584-2022080512 but there is no extent record
+There are no extents for csum range 2022526976-2022531072
+Csum exists for 2022526976-2277900288 but there is no extent record
+There are no extents for csum range 2277912576-2277916672
+Csum exists for 2277912576-2277916672 but there is no extent record
+There are no extents for csum range 2277928960-2277933056
+Csum exists for 2277928960-2277933056 but there is no extent record
+There are no extents for csum range 2277945344-2277949440
+Csum exists for 2277945344-2277949440 but there is no extent record
+There are no extents for csum range 2277961728-2277965824
+Csum exists for 2277961728-2277969920 but there is no extent record
+There are no extents for csum range 2277982208-2277986304
+Csum exists for 2277982208-2277986304 but there is no extent record
+There are no extents for csum range 2277998592-2278002688
+Csum exists for 2277998592-2278014976 but there is no extent record
+There are no extents for csum range 2278027264-2278031360
+Csum exists for 2278027264-2392010752 but there is no extent record
+========================================
 

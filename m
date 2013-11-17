@@ -1,48 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:53433 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753482Ab3KQOny (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:55071 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751168Ab3KQPQW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Nov 2013 09:43:54 -0500
-Received: from bluebottle.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id A0D69219C2
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2013 01:43:52 +1100 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: linux-btrfs@vger.kernel.org
+	Sun, 17 Nov 2013 10:16:22 -0500
+Date: Sun, 17 Nov 2013 07:16:18 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Russell Coker <russell@coker.com.au>, 1i5t5.duncan@cox.net
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: NMI from btrfs cron jobs in 3.11.6
-Date: Mon, 18 Nov 2013 01:43:51 +1100
-References: <201311140145.29255.russell@coker.com.au> <pan$4655$5629e47b$7d83e5a0$59910e71@cox.net>
-In-Reply-To: <pan$4655$5629e47b$7d83e5a0$59910e71@cox.net>
+Message-ID: <20131117151618.GG9725@merlins.org>
+References: <201311140145.29255.russell@coker.com.au>
+ <pan$4655$5629e47b$7d83e5a0$59910e71@cox.net>
+ <201311180143.51552.russell@coker.com.au>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201311180143.51552.russell@coker.com.au>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201311180143.51552.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 14 Nov 2013, Duncan <1i5t5.duncan@cox.net> wrote:
-> > It appears that running two scripts that create snapshots at the same
-> > time as a script that removes maybe 97 snapshots causes an NMI.
-> 
-> This is a known bug in 3.11 (and presumably earlier).  Snapshot 
-> manipulation concurrency evidently wasn't originally well considered, and 
-> either a recent regression triggered the problem or possibly it always 
-> existed and only recently was reported (I don't know either way, tho the 
-> btrfs devs might).
-> 
-> Either way, there's a patch both to address the problem and adding a 
-> regression test to the xfstests filesystem testing suite to catch future 
+On Mon, Nov 18, 2013 at 01:43:51AM +1100, Russell Coker wrote:
+> On Thu, 14 Nov 2013, Duncan <1i5t5.duncan@cox.net> wrote:
+> > > It appears that running two scripts that create snapshots at the same
+> > > time as a script that removes maybe 97 snapshots causes an NMI.
+> > 
+> > This is a known bug in 3.11 (and presumably earlier).  Snapshot 
+> > manipulation concurrency evidently wasn't originally well considered, and 
 
-Thanks for the information.
+Not super important, but the bug does go farther back in time, I
+reported it here too some time back (although didn't hear anything back
+at the time).
 
-As an aside, I had it happen on a workstation that I was using to watch a 
-movie over NFS.  Strangely the BTRFS hang caused video playback to pause.  I 
-didn't expect a BTRFS issue like that to stop access to an NFS mount from 
-another system.
+But for me I had
+/var/local/scr/btrfs_snaps: line 23: 26017 Segmentation fault      (core dumped) /sbin/btrfs subvolume
+delete "$sub"
+with details on the BT pasted in the mail:
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/28770
 
-Would it be locking up inside the VFS?
-
+Marc
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

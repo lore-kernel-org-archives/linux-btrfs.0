@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim1.fusionio.com ([66.114.96.53]:43940 "EHLO
-	dkim1.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751144Ab3KOT1V (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:20402 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751076Ab3KRIRi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 14:27:21 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim1.fusionio.com (Postfix) with ESMTP id D5F307C0688
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Nov 2013 12:27:20 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
-Subject: [PATCH] xfstests: add basic qgroup testing
-Date: Fri, 15 Nov 2013 14:27:18 -0500
-Message-ID: <1384543638-19686-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Mon, 18 Nov 2013 03:17:38 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+Subject: [PATCH] xfstests: btrfs/023: test if raids are actually created
+Date: Mon, 18 Nov 2013 16:26:17 +0800
+Message-Id: <1384763177-3402-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have no tests for testing qgroups, so we have no way of knowing if our
-changes are breaking qgroups at all.  Get the ball rolling with some basic
-functionality tests, these just make sure we can enable quotas and do rescan and
-get sane values back, as well as make sure the limiting stuff works properly.
-Thanks,
+A test case to verify if the given raid option for the
+metadata and data are actually created.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- tests/btrfs/022     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/022.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 132 insertions(+)
- create mode 100644 tests/btrfs/022
- create mode 100644 tests/btrfs/022.out
+ tests/btrfs/023     |   91 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/023.out |    2 +
+ tests/btrfs/group   |    1 +
+ 3 files changed, 94 insertions(+), 0 deletions(-)
+ create mode 100755 tests/btrfs/023
+ create mode 100644 tests/btrfs/023.out
 
-diff --git a/tests/btrfs/022 b/tests/btrfs/022
-new file mode 100644
-index 0000000..5b18643
+diff --git a/tests/btrfs/023 b/tests/btrfs/023
+new file mode 100755
+index 0000000..77934fd
 --- /dev/null
-+++ b/tests/btrfs/022
-@@ -0,0 +1,129 @@
++++ b/tests/btrfs/023
+@@ -0,0 +1,91 @@
 +#! /bin/bash
 +# FS QA Test No. 022
 +#
-+# Test the basic functionality of qgroups
++# Test to verify if the group profile is created
++#
++# The test aims to create the raid and verify that its created
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO.  All Rights Reserved.
++# Copyright (c) 2013 Oracle.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -80,110 +74,70 @@ index 0000000..5b18643
 +. ./common/rc
 +. ./common/filter
 +
++# real QA test starts here
 +_supported_fs btrfs
 +_supported_os Linux
-+_require_scratch
-+
++_require_scratch_dev_pool 4
 +rm -f $seqres.full
 +
-+# Test to make sure we can actually turn it on and it makes sense
-+_basic_test()
++create_group_profile()
 +{
-+	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
-+	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
-+	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
-+	$BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid >> \
-+		$seqres.full 2>&1
-+	[ $? -eq 0 ] || _fail "couldn't find our subvols quota group"
-+	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
-+		$FSSTRESS_AVOID
-+	run_check $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT/a \
-+		$SCRATCH_MNT/b
++	local mkfs_options="-d$1 -m$1"
 +
-+	# the shared values of both the original subvol and snapshot should
-+	# match
-+	a_shared=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
-+	a_shared=$(echo $a_shared | awk '{ print $2 }')
-+	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT b)
-+	b_shared=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
-+	b_shared=$(echo $b_shared | awk '{ print $2 }')
-+	[ $b_shared -eq $a_shared ] || _fail "shared values don't match"
++	# _scratch_mkfs adds the 1st device again (which is $SCRATCH_DEV)
++	_scratch_pool_mkfs $mkfs_options >> $seqres.full 2>&1 || _fail "mkfs failed"
 +}
 +
-+#enable quotas, do some work, check our values and then rescan and make sure we
-+#come up with the same answer
-+_rescan_test()
++check_group_profile()
 +{
-+	# first with a blank subvol
-+	run_check $BTRFS_UTIL_PROG subvol create $SCRATCH_MNT/a
-+	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
-+	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
-+	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
-+		$FSSTRESS_AVOID
-+	sync
-+	output=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
-+	echo $output >> $seqres.full
-+	refer=$(echo $output | awk '{ print $2 }')
-+	excl=$(echo $output | awk '{ print $3 }')
-+	run_check $BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT
-+	output=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
-+	echo $output >> $seqres.full
-+	[ $refer -eq $(echo $output | awk '{ print $2 }') ] || \
-+		_fail "reference values don't match after rescan"
-+	[ $excl -eq $(echo $output | awk '{ print $3 }') ] || \
-+		_fail "exclusive values don't match after rescan"
++	local test_raid="$1"
++
++	_scratch_mount
++	$BTRFS_UTIL_PROG filesystem df $SCRATCH_MNT > $tmp.tmp 2>&1
++	_scratch_unmount
++	cat $tmp.tmp >> $seqres.full
++	grep Data $tmp.tmp | grep -q $test_raid
++	[ $? -eq 0 ] || _fail "$test_raid not found for Data"
++	grep Metadata $tmp.tmp | grep -q $test_raid
++	[ $? -eq 0 ] || _fail "$test_raid not found for Metadata"
 +}
 +
-+#basic limit testing
-+_limit_test()
-+{
-+	run_check $BTRFS_UTIL_PROG subvol create $SCRATCH_MNT/a
-+	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
-+	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
-+	run_check $BTRFS_UTIL_PROG qgroup limit 5M 0/$subvolid $SCRATCH_MNT
-+	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=10M count=1 >> \
-+		$seqres.full 2>&1
-+	[ $? -ne 0 ] || _fail "quota should have limited us"
-+	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=4M count=1 >> \
-+		$seqres.full 2>&1
-+	[ $? -eq 0 ] || _fail "should have been allowed to write"
-+}
++create_group_profile "raid0"
++check_group_profile "RAID0"
 +
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+_basic_test
-+_scratch_unmount
++create_group_profile "raid1"
++check_group_profile "RAID1"
 +
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+_rescan_test
-+_scratch_unmount
++create_group_profile "raid10"
++check_group_profile "RAID10"
 +
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+_limit_test
++create_group_profile "raid5"
++check_group_profile "RAID5"
++
++create_group_profile "raid6"
++check_group_profile "RAID6"
 +
 +# success, all done
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/022.out b/tests/btrfs/022.out
+diff --git a/tests/btrfs/023.out b/tests/btrfs/023.out
 new file mode 100644
-index 0000000..394c6a7
+index 0000000..5c4197b
 --- /dev/null
-+++ b/tests/btrfs/022.out
++++ b/tests/btrfs/023.out
 @@ -0,0 +1,2 @@
-+QA output created by 022
++QA output created by 023
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 410f8ed..ac92d31 100644
+index 410f8ed..35db67b 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
 @@ -24,3 +24,4 @@
  019 auto quick
  020 auto quick
  021 auto quick
-+022 auto
++023 auto
 -- 
-1.8.3.1
+1.7.1
 

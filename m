@@ -1,47 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f45.google.com ([209.85.160.45]:38843 "EHLO
-	mail-pb0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751350Ab3KRNNa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Nov 2013 08:13:30 -0500
-From: Akinobu Mita <akinobu.mita@gmail.com>
-To: linux-kernel@vger.kernel.org, akpm@linux-foundation.org
-Cc: Akinobu Mita <akinobu.mita@gmail.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix bio_size_ok() for max_sectors > 0xffff
-Date: Mon, 18 Nov 2013 22:13:18 +0900
-Message-Id: <1384780398-25071-1-git-send-email-akinobu.mita@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56018 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752423Ab3KRNYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Nov 2013 08:24:23 -0500
+Received: from relay1.suse.de (unknown [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 80E74A7B44
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2013 14:24:22 +0100 (CET)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: reserve no transaction units in btrfs_feature_attr_store
+Date: Mon, 18 Nov 2013 14:24:20 +0100
+Message-Id: <1384781060-12353-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The data type of max_sectors in queue settings is unsigned int.  But
-this value is stored to the local variable whose type is unsigned short
-in bio_size_ok().  This can cause unexpected result when max_sectors >
-0xffff.
+Added in patch "btrfs: add ability to change features via sysfs",
+modifications to superblock don't need to reserve metadata blocks when
+starting a transaction.
 
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-
-This patch is only compile tested.
-
- fs/btrfs/volumes.c | 2 +-
+ fs/btrfs/sysfs.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0db6370..92303f4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5394,7 +5394,7 @@ static int bio_size_ok(struct block_device *bdev, struct bio *bio,
- {
- 	struct bio_vec *prev;
- 	struct request_queue *q = bdev_get_queue(bdev);
--	unsigned short max_sectors = queue_max_sectors(q);
-+	unsigned int max_sectors = queue_max_sectors(q);
- 	struct bvec_merge_data bvm = {
- 		.bi_bdev = bdev,
- 		.bi_sector = sector,
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 669fdf777b6c..8fdc0520e298 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -150,7 +150,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	btrfs_info(fs_info, "%s %s feature flag",
+ 		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
+ 
+-	trans = btrfs_start_transaction(fs_info->fs_root, 1);
++	trans = btrfs_start_transaction(fs_info->fs_root, 0);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+ 
 -- 
-1.8.3.2
+1.8.4.2
 

@@ -1,211 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58390 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750854Ab3KTGve (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 01:51:34 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vj1dM-0004Dc-R4
-	for linux-btrfs@vger.kernel.org; Wed, 20 Nov 2013 07:51:32 +0100
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:51:32 +0100
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:51:32 +0100
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: btrfsck --repair /dev/sdc (Was: [PATCH] Btrfs-progs: allow --init-extent-tree
- to work when extent tree is borked)
-Date: Wed, 20 Nov 2013 06:51:20 +0000
-Message-ID: <l6hm4u$s02$1@ger.gmane.org>
-References: <1382724100-5276-1-git-send-email-jbacik@fusionio.com> <l4ed62$8r3$1@ger.gmane.org> <20131025183134.GA4543@localhost.localdomain> <l4hifj$ni1$1@ger.gmane.org> <20131028151148.GB4543@localhost.localdomain> <l5eq5s$m8l$1@ger.gmane.org> <l5rn2s$m3p$1@ger.gmane.org> <l5vq48$2dh$1@ger.gmane.org> <l65l0s$lpm$1@ger.gmane.org> <l6f0pb$m6h$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <l6f0pb$m6h$1@ger.gmane.org>
+Received: from dkim2.fusionio.com ([66.114.96.54]:44898 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751939Ab3KRTeG convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Nov 2013 14:34:06 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 81A639A06AE
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2013 12:34:03 -0700 (MST)
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Eric Sandeen <sandeen@redhat.com>, Zach Brown <zab@redhat.com>
+Message-ID: <20131118193348.5312.89618@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [PATCH] btrfs filesystem show: skip duplicate fsids
+Date: Mon, 18 Nov 2013 14:33:48 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's now gone back to a pattern from a full week ago:
+If a given filesystem is mounted more than once, btrfs fi show will
+print dups.  This adds a quick and dirty hash table of fsids it
+has already printed and makes sure we don't print any fsid more than
+once.
 
-(gdb) bt
-#0  0x000000000042d576 in read_extent_buffer ()
-#1  0x000000000041ee79 in btrfs_check_node ()
-#2  0x0000000000420211 in check_block ()
-#3  0x0000000000420813 in btrfs_search_slot ()
-#4  0x0000000000427bb4 in btrfs_read_block_groups ()
-#5  0x0000000000423e40 in btrfs_setup_all_roots ()
-#6  0x000000000042406d in __open_ctree_fd ()
-#7  0x0000000000424126 in open_ctree_fs_info ()
-#8  0x000000000041812e in cmd_check ()
-#9  0x0000000000404904 in main ()
+Anand has other patches that solve this by pulling information in from
+new kernel interfaces.  For now, we'll do the duplicate searching.
 
+Signed-off-by: Chris Mason <chris.mason@fusionio.com>
+---
+ cmds-filesystem.c | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
 
-I don't know if that has gone through that pattern during the week but
-at a-week-a-time, this is not going to finish in reasonable time.
-
-How come so very slow?
-
-Any hints/tips/fixes or abandon the test?
-
-
-Regards,
-Martin
-
-
-
-
-On 19/11/13 06:34, Martin wrote:
-> Continuing:
-> 
-> gdb bt now gives:
-> 
-> #0  0x000000000042075a in btrfs_search_slot ()
-> #1  0x0000000000427bb4 in btrfs_read_block_groups ()
-> #2  0x0000000000423e40 in btrfs_setup_all_roots ()
-> #3  0x000000000042406d in __open_ctree_fd ()
-> #4  0x0000000000424126 in open_ctree_fs_info ()
-> #5  0x000000000041812e in cmd_check ()
-> #6  0x0000000000404904 in main ()
-> 
-> #0  0x00000000004208bc in btrfs_search_slot ()
-> #1  0x0000000000427bb4 in btrfs_read_block_groups ()
-> #2  0x0000000000423e40 in btrfs_setup_all_roots ()
-> #3  0x000000000042406d in __open_ctree_fd ()
-> #4  0x0000000000424126 in open_ctree_fs_info ()
-> #5  0x000000000041812e in cmd_check ()
-> #6  0x0000000000404904 in main ()
-> 
-> #0  0x00000000004208d0 in btrfs_search_slot ()
-> #1  0x0000000000427bb4 in btrfs_read_block_groups ()
-> #2  0x0000000000423e40 in btrfs_setup_all_roots ()
-> #3  0x000000000042406d in __open_ctree_fd ()
-> #4  0x0000000000424126 in open_ctree_fs_info ()
-> #5  0x000000000041812e in cmd_check ()
-> #6  0x0000000000404904 in main ()
-> 
-> 
-> Still no further output. btrfsck running at 100% on a single core and
-> with no apparent disk activity. All for a 2TB hdd.
-> 
-> 
-> Should it take this long?...
-> 
-> Regards,
-> Martin
-> 
-> 
-> 
-> 
-> On 15/11/13 17:18, Martin wrote:
->> Another two days and a backtrace shows the hope of progress:
->>
->> #0  0x000000000041de2f in btrfs_node_key ()
->> #1  0x000000000041ee79 in btrfs_check_node ()
->> #2  0x0000000000420211 in check_block ()
->> #3  0x0000000000420813 in btrfs_search_slot ()
->> #4  0x0000000000427bb4 in btrfs_read_block_groups ()
->> #5  0x0000000000423e40 in btrfs_setup_all_roots ()
->> #6  0x000000000042406d in __open_ctree_fd ()
->> #7  0x0000000000424126 in open_ctree_fs_info ()
->> #8  0x000000000041812e in cmd_check ()
->> #9  0x0000000000404904 in main ()
->>
->> No other output, 100% CPU, using only a single core, and no apparent
->> disk activity.
->>
->> There looks to be a repeating pattern of calls. Is this working though
->> the same test repeated per btrfs block? Are there any variables that can
->> be checked with gdb to see how far it has gone so as to guess how long
->> it might need to run?
->>
->>
->> Phew?
->>
->> Hope of interest,
->>
->> Regards,
->> Martin
->>
->>
->>
->>
->> On 13/11/13 12:08, Martin wrote:
->>> On 11/11/13 22:52, Martin wrote:
->>>> On 07/11/13 01:25, Martin wrote:
->>>
->>>> OK so Chris Mason and the Gentoo sys-fs/btrfs-progs-9999 came to the
->>>> rescue to give:
->>>>
->>>>
->>>> # btrfs version
->>>> Btrfs v0.20-rc1-591-gc652e4e
->>>
->>>> From that, I've tried running again:
->>>>
->>>> # btrfsck --repair /dev/sdc
->>>>
->>>> giving thus far:
->>>>
->>>> parent transid verify failed on 911904604160 wanted 17448 found 17450
->>>> parent transid verify failed on 911904604160 wanted 17448 found 17450
->>>> parent transid verify failed on 911904604160 wanted 17448 found 17450
->>>> parent transid verify failed on 911904604160 wanted 17448 found 17450
->>>> Ignoring transid failure
->>>>
->>>>
->>>> ... And it is still running a couple of days later.
->>>>
->>>> GDB shows:
->>>>
->>>> (gdb) bt
->>>> #0  0x000000000042d576 in read_extent_buffer ()
->>>> #1  0x000000000041ee79 in btrfs_check_node ()
->>>> #2  0x0000000000420211 in check_block ()
->>>> #3  0x0000000000420813 in btrfs_search_slot ()
->>>> #4  0x0000000000427bb4 in btrfs_read_block_groups ()
->>>> #5  0x0000000000423e40 in btrfs_setup_all_roots ()
->>>> #6  0x000000000042406d in __open_ctree_fd ()
->>>> #7  0x0000000000424126 in open_ctree_fs_info ()
->>>> #8  0x000000000041812e in cmd_check ()
->>>> #9  0x0000000000404904 in main ()
->>>
->>>
->>> Another two days and:
->>>
->>> (gdb) bt
->>> #0  0x000000000042373a in read_tree_block ()
->>> #1  0x0000000000421538 in btrfs_search_slot ()
->>> #2  0x0000000000427bb4 in btrfs_read_block_groups ()
->>> #3  0x0000000000423e40 in btrfs_setup_all_roots ()
->>> #4  0x000000000042406d in __open_ctree_fd ()
->>> #5  0x0000000000424126 in open_ctree_fs_info ()
->>> #6  0x000000000041812e in cmd_check ()
->>> #7  0x0000000000404904 in main ()
->>>
->>>
->>>> So... Has it looped or is it busy? There is no activity on /dev/sdc.
->>>
->>> Same "btrfs_read_block_groups" but different stack above that: So
->>> perhaps something useful is being done?...
->>>
->>> No disk activity noticed.
->>>
->>>
->>>> Which comes to a request:
->>>>
->>>> Can the options "-v" (for verbose) and "-s" (to continuously show
->>>> status) be added to btrfsck to give some indication of progress and what
->>>> is happening? The "-s" should report progress by whatever appropriate
->>>> real-time counts as done by such as "badblocks -s".
-> 
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index aa361d6..1c1926b 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -38,6 +38,74 @@
+ #include "commands.h"
+ #include "list_sort.h"
+ 
++
++/*
++ * for btrfs fi show, we maintain a hash of fsids we've already printed.
++ * This way we don't print dups if a given FS is mounted more than once.
++ */
++#define SEEN_FSID_HASH_SIZE 256
++
++struct seen_fsid {
++	u8 fsid[BTRFS_FSID_SIZE];
++	struct seen_fsid *next;
++};
++
++static struct seen_fsid *seen_fsid_hash[SEEN_FSID_HASH_SIZE] = {NULL,};
++
++static int add_seen_fsid(u8 *fsid)
++{
++	u8 hash = fsid[0];
++	int slot = hash % SEEN_FSID_HASH_SIZE;
++	struct seen_fsid *seen = seen_fsid_hash[slot];
++	struct seen_fsid *alloc;
++
++	if (!seen)
++		goto insert;
++
++	while (1) {
++		if (memcmp(seen->fsid, fsid, BTRFS_FSID_SIZE) == 0)
++			return -EEXIST;
++
++		if (!seen->next)
++			break;
++
++		seen = seen->next;
++	}
++
++insert:
++
++	alloc = malloc(sizeof(*alloc));
++	if (!alloc)
++		return -ENOMEM;
++
++	alloc->next = NULL;
++	memcpy(alloc->fsid, fsid, BTRFS_FSID_SIZE);
++
++	if (seen)
++		seen->next = alloc;
++	else
++		seen_fsid_hash[slot] = alloc;
++
++	return 0;
++}
++
++static void free_seen_fsid(void)
++{
++	int slot;
++	struct seen_fsid *seen;
++	struct seen_fsid *next;
++
++	for (slot = 0; slot < SEEN_FSID_HASH_SIZE; slot++) {
++		seen = seen_fsid_hash[slot];
++		while (seen) {
++			next = seen->next;
++			free(seen);
++			seen = next;
++		}
++		seen_fsid_hash[slot] = NULL;
++	}
++}
++
+ static const char * const filesystem_cmd_group_usage[] = {
+ 	"btrfs filesystem [<group>] <command> [<args>]",
+ 	NULL
+@@ -224,6 +292,9 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+ 	u64 devs_found = 0;
+ 	u64 total;
+ 
++	if (add_seen_fsid(fs_devices->fsid))
++		return;
++
+ 	uuid_unparse(fs_devices->fsid, uuidbuf);
+ 	device = list_entry(fs_devices->devices.next, struct btrfs_device,
+ 			    dev_list);
+@@ -274,6 +345,13 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 	int i;
+ 	char uuidbuf[37];
+ 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
++	int ret;
++
++	ret = add_seen_fsid(fs_info->fsid);
++	if (ret == -EEXIST)
++		return 0;
++	else if (ret)
++		return ret;
+ 
+ 	uuid_unparse(fs_info->fsid, uuidbuf);
+ 	printf("Label: %s  uuid: %s\n",
+@@ -478,6 +556,7 @@ devs_only:
+ 
+ out:
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
++	free_seen_fsid();
+ 	return 0;
+ }
+ 
+-- 
+1.8.2
 

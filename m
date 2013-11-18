@@ -1,183 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34222 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753945Ab3KGJyS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 04:54:18 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH 1/3] btrfs-progs: mechanism to fetch fsinfo from btrfs-control v3
-Date: Thu,  7 Nov 2013 18:01:41 +0800
-Message-Id: <1383818503-29607-1-git-send-email-anand.jain@oracle.com>
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:49666 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751374Ab3KRWJA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Nov 2013 17:09:00 -0500
+MIME-Version: 1.0
+Date: Mon, 18 Nov 2013 23:08:59 +0100
+Message-ID: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
+Subject: Triple parity and beyond
+From: Andrea Mazzoleni <amadvance@gmail.com>
+To: linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: hpa@zytor.com, david.brown@hesbynett.no, creamyfish@gmail.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-need fsinfo from btrfs-control that is when mount path is
-not known.
-current method of going through each mount points isn't
-efficient, and multiple subvol of a fsid could be mounted
-means extra logic to handle that. Further this will help
-to revamp check_mounted() (planned)
+Hi,
 
-check_mounted is heavily used in the btrfs-progs, it
-does full scan of all the disks in the system to confirm
-if a multi-disk btrfs is mounted it doesn't scalable well
-with few hundreds luns, check_mounted for sure needs a
-revamp. using this it can be done easily. which is planned.
+I want to report that I recently implemented a support for
+arbitrary number of parities that could be useful also for Linux
+RAID and Btrfs, both currently limited to double parity.
 
-v3: accepts Josef suggested and fix git screwup
-v2: commit reword
+In short, to generate the parity I use a Cauchy matrix specifically
+built to be compatible with the existing Linux parity computation,
+and extensible to an arbitrary number of parities. This without
+limitations on the number of data disks.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- ioctl.h |   19 +++++++++++++++
- utils.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h |    1 +
- 3 files changed, 96 insertions(+), 0 deletions(-)
+The Cauchy matrix for six parities is:
 
-diff --git a/ioctl.h b/ioctl.h
-index d21413f..29575d8 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -506,6 +506,23 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 	}
- }
- 
-+/* fs flags */
-+#define BTRFS_FS_MOUNTED	(1LLU << 0)
-+
-+struct btrfs_ioctl_fslist {
-+	__u64 self_sz;			/* in/out */
-+	__u8 fsid[BTRFS_FSID_SIZE];	/* out */
-+	__u64 num_devices;
-+	__u64 missing_devices;
-+	__u64 total_devices;
-+	__u64 flags;
-+};
-+
-+struct btrfs_ioctl_fslist_args {
-+	__u64 self_sz;		/* in/out */
-+	__u64 count;		/* out */
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -604,6 +621,8 @@ struct btrfs_ioctl_clone_range_args {
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
- 				  struct btrfs_ioctl_dedup_args)
-+#define BTRFS_IOC_GET_FSLIST _IOWR(BTRFS_IOCTL_MAGIC, 56, \
-+					struct btrfs_ioctl_fslist_args)
- #ifdef __cplusplus
- }
- #endif
-diff --git a/utils.c b/utils.c
-index 60d2c3a..4b90026 100644
---- a/utils.c
-+++ b/utils.c
-@@ -47,6 +47,7 @@
- #include "utils.h"
- #include "volumes.h"
- #include "ioctl.h"
-+#include "btrfs-list.h"
- 
- #ifndef BLKDISCARD
- #define BLKDISCARD	_IO(0x12,119)
-@@ -2087,3 +2088,78 @@ int lookup_ino_rootid(int fd, u64 *rootid)
- 
- 	return 0;
- }
-+
-+/* scans for fsid(s) in the kernel using the btrfs-control
-+ * interface.
-+ */
-+int get_fslist(struct btrfs_ioctl_fslist **out_fslist, u64 *out_count)
-+{
-+	int ret, fd, e;
-+	struct btrfs_ioctl_fslist_args *fsargs;
-+	struct btrfs_ioctl_fslist_args *fsargs_saved = NULL;
-+	struct btrfs_ioctl_fslist *fslist;
-+	u64 sz;
-+	int count;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	e = errno;
-+	if (fd < 0) {
-+		perror("failed to open /dev/btrfs-control");
-+		return -e;
-+	}
-+
-+	/* space to hold 512 fsids, doesn't matter if small
-+	 * it would fail and return count so then we try again
-+	 */
-+	count = 512;
-+again:
-+	sz = sizeof(*fsargs) + sizeof(*fslist) * count;
-+
-+	fsargs = malloc(sz);
-+	if (!fsargs) {
-+		close(fd);
-+		return -ENOMEM;
-+	}
-+
-+	memset(fsargs, 0, sz);
-+	fsargs->count = count;
-+
-+	ret = ioctl(fd, BTRFS_IOC_GET_FSLIST, fsargs);
-+	e = errno;
-+	if (ret == 1) {
-+		/* out of size so reallocate */
-+		count = fsargs->count;
-+		free(fsargs);
-+		goto again;
-+	} else if (ret < 0) {
-+		printf("ERROR: scan_fsid ioctl failed - %s\n",
-+			strerror(e));
-+		ret = -e;
-+		goto out;
-+	}
-+
-+	/* ioctl returns fsid count in count parameter*/
-+
-+	*out_count = fsargs->count;
-+	if (*out_count == 0) {
-+		*out_fslist = NULL;
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	fsargs_saved = fsargs;
-+	fslist = (struct btrfs_ioctl_fslist *) (++fsargs);
-+
-+	sz = sizeof(*fslist) * *out_count;
-+	*out_fslist = malloc(sz);
-+	if (*out_fslist == NULL) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	memcpy(*out_fslist, fslist, sz);
-+	ret = 0;
-+out:
-+	free(fsargs_saved);
-+	close(fd);
-+	return 0;
-+}
-diff --git a/utils.h b/utils.h
-index 6f4b10c..a14a887 100644
---- a/utils.h
-+++ b/utils.h
-@@ -94,5 +94,6 @@ int ask_user(char *question);
- int lookup_ino_rootid(int fd, u64 *rootid);
- int btrfs_scan_lblkid(int update_kernel);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
-+int get_fslist(struct btrfs_ioctl_fslist **out_fslist, u64 *out_count);
- 
- #endif
--- 
-1.7.1
+01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
+01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
+01 f5 d2 c4 9a 71 f1 7f fc 87 c1 c6 19 2f 40 55 3d ba 53 04 9c 61...
+01 bb a6 d7 c7 07 ce 82 4a 2f a5 9b b6 60 f1 ad e7 f4 06 d2 df 2e...
+01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9...
+01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b...
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+You can easily recognize the first row as RAID5 based on a simple
+XOR, and the second row as RAID6 based on multiplications by powers
+of 2. The other rows are for additional parity levels and they
+require multiplications by arbitrary values that can be implemented
+using the PSHUFB instruction.
+
+The performance of triple parity with PSHUFB is comparable at an
+alternate triple parity implementation with the third row of
+coefficients set as powers of 2^-1. This alternate implementation is
+likely the fastest possible for CPUs without PSHUFB or similar
+instruction, but it has the limitation of not supporting beyond triple
+parity.
+
+The Cauchy matrix is instead working for any number of parities and
+at the same time it's compatible with the existing first two parity
+levels. As far as I know, this is a kind of new result, never
+appeared in this list or somewhere else.
+
+You can see more details, performance results and fast
+implementations for up to six parity levels at:
+https://sourceforge.net/p/snapraid/code/ci/master/tree/raid.c
+
+This was developed as part of my hobby project SnapRAID,
+downloadable with full source at:
+http://snapraid.sourceforge.net/
+
+Please let me know if you are interested in a potential Linux
+integration. I can surely help on whatever is needed.
+
+For reference, past discussions about triple parity in the
+linux-raid list can be found at:
+
+http://thread.gmane.org/gmane.linux.raid/34195
+http://thread.gmane.org/gmane.linux.raid/37904
+
+Ciao,
+Andrea

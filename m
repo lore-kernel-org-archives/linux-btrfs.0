@@ -1,66 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:44791 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752914Ab3KSRo2 (ORCPT
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:61870 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751723Ab3KSTYC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Nov 2013 12:44:28 -0500
-Message-ID: <528BA37B.6050609@inwind.it>
-Date: Tue, 19 Nov 2013 18:44:27 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+	Tue, 19 Nov 2013 14:24:02 -0500
+Received: by mail-ie0-f177.google.com with SMTP id tp5so4501010ieb.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Nov 2013 11:24:02 -0800 (PST)
 MIME-Version: 1.0
-To: fdmanana@gmail.com
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2] Btrfs: add support for inode properties
-References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com> <1384305698-22710-1-git-send-email-fdmanana@gmail.com> <5283CC06.4050703@libero.it> <CAL3q7H6x5_Bh=5yuH0msg3tdomBKQ0RmWmjHcPdSS0yRJChr5Q@mail.gmail.com>
-In-Reply-To: <CAL3q7H6x5_Bh=5yuH0msg3tdomBKQ0RmWmjHcPdSS0yRJChr5Q@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20131119090602.GV4315@carfax.org.uk>
+References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
+	<20131119090602.GV4315@carfax.org.uk>
+Date: Tue, 19 Nov 2013 13:24:01 -0600
+Message-ID: <CAEWPe=rMXVehpFNko-wZ1i4dKP21J8wJKj1R2jDSK2HsEYmduQ@mail.gmail.com>
+Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10
+ </dev/sdX> ...
+From: deadhorseconsulting <deadhorseconsulting@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        deadhorseconsulting <deadhorseconsulting@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Filipe
-On 2013-11-19 17:06, Filipe David Manana wrote:
-> On Wed, Nov 13, 2013 at 6:59 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
->> Hi Filipe,
+Interesting, this confirms what I was observing.
+Given the wording in man pages for "-m" and "-d" which states "Specify
+how the metadata or data must be spanned across the devices
+specified."
+I took "devices specified" to literally mean the devices specified
+after the according switch.
+
+- DHC
+
+
+On Tue, Nov 19, 2013 at 3:06 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Mon, Nov 18, 2013 at 11:12:03PM -0600, deadhorseconsulting wrote:
+>> In theory (going by the man page and available documentation, not 100%
+>> clear) does the following command indeed actually work as advertised
+>> and specify how metadata should be placed and kept only on the
+>> "devices" specified after the "-m" flag?
 >>
->> my comments below
->> On 2013-11-13 02:21, Filipe David Borba Manana wrote:
->>> This change adds infrastructure to allow for generic properties for
->>> inodes. Properties are name/value pairs that can be associated with
->>> inodes for different purposes. They're stored as xattrs with the
->>> prefix "btrfs."
-[...]
-> 
+>> Thus given the following example:
+>> mkfs.btrfs -L foo -m raid10 <ssd> <ssd> <ssd> <ssd> -d raid10 <rust>
+>> <rust> <rust> <rust>
 >>
->> Moreover I have a doubt about the opportunity to store the information
->> like the compression both in inode and in the xattr: what happens if the
->> user does an "chattr -c" ? The xattr will be not updated.
-> 
-> Right, there was no interaction the compression attr/flag.
-> The next patch version adds such interaction.
-> 
->> I suggest to update/create a real xattr only if there is no space for
->> the new information in the inode. In the other case the xattr should be
->> a fake xattr to get/set the property stored in the inode (or whichever
->> is involved).
->>
->> Of course also the function btrfs_listxattr() should be updated to show
->> the "fake" xattr which doesn't have a real xattr stored on the disk. The
->> same is true for the getxattr() function...
-> 
-> Adding such fake on the fly stuff seems too complex imho. Just
-> adding/removing the xattr compression properties on chattr +c/-c seems
-> simpler and more intuitive.
-
-
-Looking at btrfs_listxattr() it seems that the xattr listing is done in
-a very simple way: the function *listxattr() returns a buffer filled
-with all the xattr as a zero terminated strings sequences. Because the
-"fake" attribute are know in advance, listing these became a memcpy() of
-a bytes of buffer statically allocated.
-
-GB
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>> Would btrfs stripe/mirror and only keep metadata on the 4 specified SSD devices?
+>> Likewise then stripe/mirror and only keep data on the specified 4 spinning rust?
+>
+>    No. The devices are general purpose. The -d and -m options only
+> specify the type of redundancy, not the devices to use. There's a
+> project[1] to look at this kind of more intelligent chunk allocator,
+> but it's not been updated in a while.
+>
+> [1] https://btrfs.wiki.kernel.org/index.php/Project_ideas#Device_IO_Priorities
+>
+>> In trying and creating this type of setup it appears that data is also
+>> being stored on the devices specified as "metadata devices". This is
+>> observed through via a "btrfs filesystem show". after committing a
+>> large amount of data to the filesystem The data devices have balanced
+>> data as expected with plenty of free space but the SSD device are
+>> reported as either nearly used or completely used.
+>
+>    This will happen with RAID-10. The allocator will write stripes as
+> wide as it can: in this case, the first stripes will run across all 8
+> devices, until the SSDs are full, and then will write across the
+> remaining 4 devices.
+>
+>    Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>                 --- If it ain't broke,  hit it again. ---

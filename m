@@ -1,88 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54739 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751424Ab3KSJGG (ORCPT
+Received: from hera.mpi-sb.mpg.de ([139.19.1.49]:53128 "EHLO
+	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751806Ab3KSKyS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Nov 2013 04:06:06 -0500
-Date: Tue, 19 Nov 2013 09:06:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: deadhorseconsulting <deadhorseconsulting@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10
- </dev/sdX> ...
-Message-ID: <20131119090602.GV4315@carfax.org.uk>
-References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
+	Tue, 19 Nov 2013 05:54:18 -0500
+Message-ID: <528B44BD.9050502@mpi-sws.org>
+Date: Tue, 19 Nov 2013 12:00:13 +0100
+From: Pedro Fonseca <pfonseca@mpi-sws.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="fxBYc4U7HLIDBZ2G"
-In-Reply-To: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
+To: undisclosed-recipients:;
+Subject: Warning in record_one_backref()
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---fxBYc4U7HLIDBZ2G
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+In another test, I've encountered a few situations that triggered a warning message in "record_one_backref()". I'm not sure if it's serious but it is probably related to 
+the concurrent defragment operations executed during the test.
 
-On Mon, Nov 18, 2013 at 11:12:03PM -0600, deadhorseconsulting wrote:
-> In theory (going by the man page and available documentation, not 100%
-> clear) does the following command indeed actually work as advertised
-> and specify how metadata should be placed and kept only on the
-> "devices" specified after the "-m" flag?
-> 
-> Thus given the following example:
-> mkfs.btrfs -L foo -m raid10 <ssd> <ssd> <ssd> <ssd> -d raid10 <rust>
-> <rust> <rust> <rust>
-> 
-> Would btrfs stripe/mirror and only keep metadata on the 4 specified SSD devices?
-> Likewise then stripe/mirror and only keep data on the specified 4 spinning rust?
+Warning dump:
+> [  147.558178] ------------[ cut here ]------------
+> [  147.579146] WARNING: CPU: 1 PID: 2795 at [...]/linux-3.11.1-fs-static/fs/btrfs/inode.c:2206 record_one_backref+0x3cb/0x3e4()
+> [  147.582925] Modules linked in: loop rtc_cmos pcspkr tpm_tis freq_table mperf i2c_piix4
+> [  147.589360] CPU: 1 PID: 2795 Comm: btrfs-endio-wri Not tainted 3.11.1 #2
+> [  147.589731] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  147.590523]  0000089e c4059d1c c176917a c1a07b61 c4059d34 c102d1c0 c12b8c4b 00000007
+> [  147.591240]  df3c8f18 c5e14800 c4059d44 c102d1e6 00000009 00000000 c4059db4 c12b8c4b
+> [  147.595457]  df45f580 00000286 c5e14800 c10a70fe de4c6c00 c4059d97 00000000 00000106
+> [  147.596156] Call Trace:
+> [  147.597365]  [<c176917a>] dump_stack+0x41/0x57
+> [  147.597684]  [<c102d1c0>] warn_slowpath_common+0x5e/0x75
+> [  147.597984]  [<c12b8c4b>] ? record_one_backref+0x3cb/0x3e4
+> [  147.598275]  [<c102d1e6>] warn_slowpath_null+0xf/0x13
+> [  147.602112]  [<c12b8c4b>] record_one_backref+0x3cb/0x3e4
+> [  147.602392]  [<c10a70fe>] ? __cache_free+0xa2/0xaa
+> [  147.602667]  [<c12fe908>] iterate_extent_inodes+0x132/0x1b2
+> [  147.602964]  [<c12feba9>] iterate_inodes_from_logical+0x88/0x97
+> [  147.603256]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  147.603547]  [<c12b8845>] record_extent_backrefs+0x50/0x8b
+> [  147.603822]  [<c12b8880>] ? record_extent_backrefs+0x8b/0x8b
+> [  147.604107]  [<c12c1f8e>] btrfs_finish_ordered_io+0x77e/0x876
+> [  147.604409]  [<c12c2091>] finish_ordered_fn+0xb/0xd
+> [  147.604665]  [<c12db161>] worker_loop+0x111/0x3ec
+> [  147.604929]  [<c104a2c4>] ? default_wake_function+0xb/0xd
+> [  147.608784]  [<c1040c43>] kthread+0x90/0x95
+> [  147.609021]  [<c12db050>] ? btrfs_queue_worker+0x1c8/0x1c8
+> [  147.609311]  [<c176c277>] ret_from_kernel_thread+0x1b/0x28
+> [  147.609589]  [<c1040bb3>] ? kthread_freezable_should_stop+0x4f/0x4f
+> [  147.610452] ---[ end trace 626899e11111abbe ]---
 
-   No. The devices are general purpose. The -d and -m options only
-specify the type of redundancy, not the devices to use. There's a
-project[1] to look at this kind of more intelligent chunk allocator,
-but it's not been updated in a while.
 
-[1] https://btrfs.wiki.kernel.org/index.php/Project_ideas#Device_IO_Priorities
+The warning occurred at the end of the execution of the following file system operations:
+>    CPU: 1 Op: mknod
+>    CPU: 1 Op: readlink
+> CPU: 0 Op: mknod
+> CPU: 0 Op: readlink
+> CPU: 0 Op: creat
+> CPU: 0 Op: symlink
+> CPU: 0 Op: dwrite
+> CPU: 0 Op: creat
+> CPU: 0 Op: write
+> CPU: 0 Op: dwrite
+>    CPU: 1 Op: creat
+>    CPU: 1 Op: symlink
+>    CPU: 1 Op: dwrite
+>    CPU: 1 Op: creat
+>    CPU: 1 Op: write
+>    CPU: 1 Op: dwrite
+> CPU: 0 Op: write
+> CPU: 0 Op: btrfs_ioctl_filesystem_defragment
+>    CPU: 1 Op: write
+>    CPU: 1 Op: btrfs_ioctl_filesystem_defragment
 
-> In trying and creating this type of setup it appears that data is also
-> being stored on the devices specified as "metadata devices". This is
-> observed through via a "btrfs filesystem show". after committing a
-> large amount of data to the filesystem The data devices have balanced
-> data as expected with plenty of free space but the SSD device are
-> reported as either nearly used or completely used.
+Pedro
 
-   This will happen with RAID-10. The allocator will write stripes as
-wide as it can: in this case, the first stripes will run across all 8
-devices, until the SSDs are full, and then will write across the
-remaining 4 devices.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                --- If it ain't broke,  hit it again. ---                
-
---fxBYc4U7HLIDBZ2G
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQIVAwUBUosp+VheFHXiqx3kAQLXDw/9GymmBqYy/7pIf/17XgW6iaDkM7RRkK4S
-VavZUN1apWpgo9BguyNJ9tQENfcZcJb1T4ENj3DikYjF6vSfXaNwHVlarZ+3coXa
-0CXI53JOc0TIyzlvTkcYOirtq13Jp5rBswpeNaqM9FO/9c3RamL4bL338337UntJ
-Pu42NcRUXIXxeId2nHCFLXLPEQMnS4CA1tAhOW8591doANFUkXySMxh8nl6n/IoC
-9CAf8YWwnyMqIKpE31GJChJ+XDaRT34x9+7v3dZ8nUYnoBWa2M0MrO3cneiMQoAh
-WtE2AleKGEuvuwDJKBHXhV5qBZdFEsfbbVhBUibXMzXWadZJEeEDML0/y9DFVUMD
-wbjv5DOd/+8OoiRmhjjc1FOiy2OzcrjLmmPbN7AVn9jb1+pAIiLhnzgtDPJjT9S6
-upCksmroH2S7FXJib7jwVekU8f9K+Okt3Oi8yCZArmadVUlDpstGCMuMojwzaP6m
-8qMool2ikpx7dhTf+6i4d+uoBV+ObiWZtikKe3MR62zqCFvmONzWShJ8lz0rII6i
-J0bes1HedC6e/Jw4e7tEo0SeV59tAEBR36vf32mFhyBQUxUFFH6CZUsCeBI45QYI
-80q31HJ5tghar1HLo6ospOb13Il0JCEhxvRWDNAqH8kCFnqHqqCa6DgtgIHYW6Y/
-Eie9a7c0Erw=
-=Dr4Q
------END PGP SIGNATURE-----
-
---fxBYc4U7HLIDBZ2G--

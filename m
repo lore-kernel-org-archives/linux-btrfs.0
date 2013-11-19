@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:59884 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754057Ab3KMBVu (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:51099 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753263Ab3KSQGz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 20:21:50 -0500
-Received: by mail-we0-f171.google.com with SMTP id t61so3436293wes.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 17:21:49 -0800 (PST)
+	Tue, 19 Nov 2013 11:06:55 -0500
+Received: by mail-wi0-f176.google.com with SMTP id f4so5676258wiw.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Nov 2013 08:06:54 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH V2] Btrfs: add support for inode properties
-Date: Wed, 13 Nov 2013 01:21:38 +0000
-Message-Id: <1384305698-22710-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: add support for inode properties
+Date: Tue, 19 Nov 2013 16:00:06 +0000
+Message-Id: <1384876806-31935-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
 References: <1384263757-25627-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -42,14 +42,19 @@ V2: Simplified the interface to user space. Got rid of the ioctls and
     this properties can be set via regular getxattr and setxattr
     system calls.
 
+V3: Some simplifications, made the compression property play well
+    with chattr +c/-c and replaced some leftover hardcoded values
+    with the corresponding constants (xattr prefix string and its
+    length).
  fs/btrfs/Makefile          |    2 +-
  fs/btrfs/btrfs_inode.h     |    1 +
  fs/btrfs/inode.c           |   27 +++-
- fs/btrfs/props.c           |  350 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c           |   17 +++
+ fs/btrfs/props.c           |  339 ++++++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/props.h           |   36 +++++
  fs/btrfs/xattr.c           |   12 +-
  include/uapi/linux/xattr.h |    3 +
- 7 files changed, 425 insertions(+), 6 deletions(-)
+ 8 files changed, 431 insertions(+), 6 deletions(-)
  create mode 100644 fs/btrfs/props.c
  create mode 100644 fs/btrfs/props.h
 
@@ -79,7 +84,7 @@ index ac0b39d..7dc2f78 100644
  /* in memory btrfs inode */
  struct btrfs_inode {
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f167ced..7a40aa6 100644
+index 5a5de36..fcade04 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -58,6 +58,7 @@
@@ -90,7 +95,7 @@ index f167ced..7a40aa6 100644
  
  struct btrfs_iget_args {
  	u64 ino;
-@@ -3247,7 +3248,8 @@ out:
+@@ -3248,7 +3249,8 @@ out:
   * slot is the slot the inode is in, objectid is the objectid of the inode
   */
  static noinline int acls_after_inode_item(struct extent_buffer *leaf,
@@ -100,7 +105,7 @@ index f167ced..7a40aa6 100644
  {
  	u32 nritems = btrfs_header_nritems(leaf);
  	struct btrfs_key found_key;
-@@ -3272,6 +3274,7 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
+@@ -3273,6 +3275,7 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
  
  		/* we found an xattr, assume we've got an acl */
  		if (found_key.type == BTRFS_XATTR_ITEM_KEY) {
@@ -108,7 +113,7 @@ index f167ced..7a40aa6 100644
  			if (found_key.offset == xattr_access ||
  			    found_key.offset == xattr_default)
  				return 1;
-@@ -3300,13 +3303,15 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
+@@ -3301,13 +3304,15 @@ static noinline int acls_after_inode_item(struct extent_buffer *leaf,
  	 * something larger than an xattr.  We have to assume the inode
  	 * has acls
  	 */
@@ -125,7 +130,7 @@ index f167ced..7a40aa6 100644
  {
  	struct btrfs_path *path;
  	struct extent_buffer *leaf;
-@@ -3386,7 +3391,7 @@ cache_acl:
+@@ -3387,7 +3392,7 @@ cache_acl:
  	 * any xattrs or acls
  	 */
  	maybe_acls = acls_after_inode_item(leaf, path->slots[0],
@@ -134,7 +139,7 @@ index f167ced..7a40aa6 100644
  	if (!maybe_acls)
  		cache_no_acl(inode);
  
-@@ -4871,6 +4876,8 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+@@ -4872,6 +4877,8 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
  			 struct btrfs_root *root, int *new)
  {
  	struct inode *inode;
@@ -143,7 +148,7 @@ index f167ced..7a40aa6 100644
  
  	inode = btrfs_iget_locked(s, location->objectid, root);
  	if (!inode)
-@@ -4879,10 +4886,17 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+@@ -4880,10 +4887,17 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
  	if (inode->i_state & I_NEW) {
  		BTRFS_I(inode)->root = root;
  		memcpy(&BTRFS_I(inode)->location, location, sizeof(*location));
@@ -162,7 +167,7 @@ index f167ced..7a40aa6 100644
  			if (new)
  				*new = 1;
  		} else {
-@@ -5486,6 +5500,11 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+@@ -5481,6 +5495,11 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
  
  	btrfs_update_root_times(trans, root);
  
@@ -174,12 +179,50 @@ index f167ced..7a40aa6 100644
  	return inode;
  fail:
  	if (dir)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d237af8..d164b49 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -56,6 +56,7 @@
+ #include "rcu-string.h"
+ #include "send.h"
+ #include "dev-replace.h"
++#include "props.h"
+ #include "sysfs.h"
+ 
+ static int btrfs_clone(struct inode *src, struct inode *inode,
+@@ -281,9 +282,25 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	if (flags & FS_NOCOMP_FL) {
+ 		ip->flags &= ~BTRFS_INODE_COMPRESS;
+ 		ip->flags |= BTRFS_INODE_NOCOMPRESS;
++
++		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
++		if (ret && ret != -ENODATA)
++			goto out_drop;
+ 	} else if (flags & FS_COMPR_FL) {
++		const char *comp;
++
+ 		ip->flags |= BTRFS_INODE_COMPRESS;
+ 		ip->flags &= ~BTRFS_INODE_NOCOMPRESS;
++
++		if (root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
++			comp = "lzo";
++		else
++			comp = "zlib";
++		ret = btrfs_set_prop(inode, "btrfs.compression",
++				     comp, strlen(comp), 0);
++		if (ret)
++			goto out_drop;
++
+ 	} else {
+ 		ip->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
+ 	}
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
 new file mode 100644
-index 0000000..26e19bc
+index 0000000..8709058
 --- /dev/null
 +++ b/fs/btrfs/props.c
-@@ -0,0 +1,350 @@
+@@ -0,0 +1,339 @@
 +/*
 + * Copyright (C) 2013 Filipe David Borba Manana <fdmanana@gmail.com>
 + *
@@ -205,12 +248,9 @@ index 0000000..26e19bc
 +
 +struct prop_handler {
 +	const char *xattr_name;
-+	int (*validate)(const char *value, size_t len);
 +	int (*apply)(struct inode *inode, const char *value, size_t len);
 +	int inheritable;
 +};
-+
-+static int prop_compression_validate(const char *value, size_t len);
 +
 +static int prop_compression_apply(struct inode *inode,
 +				  const char *value,
@@ -219,13 +259,11 @@ index 0000000..26e19bc
 +static const struct prop_handler prop_handlers[] = {
 +	{
 +		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-+		.validate = prop_compression_validate,
 +		.apply = prop_compression_apply,
 +		.inheritable = 1
 +	},
 +	{
 +		.xattr_name = NULL,
-+		.validate = NULL,
 +		.apply = NULL
 +	}
 +};
@@ -251,6 +289,9 @@ index 0000000..26e19bc
 +	const struct prop_handler *handler;
 +	int ret;
 +
++	if (strlen(name) <= XATTR_BTRFS_PREFIX_LEN)
++		return -EINVAL;
++
 +	handler = find_prop_handler(name);
 +	if (!handler)
 +		return -EINVAL;
@@ -267,20 +308,19 @@ index 0000000..26e19bc
 +		return ret;
 +	}
 +
-+	ret = handler->validate(value, value_len);
++	ret = handler->apply(inode, value, value_len);
 +	if (ret)
 +		return ret;
-+
 +	ret = __btrfs_setxattr(trans, inode, handler->xattr_name,
 +			       value, value_len, flags);
-+	if (ret)
++	if (ret) {
++		handler->apply(inode, NULL, 0);
 +		return ret;
++	}
 +
-+	ret = handler->apply(inode, value, value_len);
-+	if (!ret)
-+		set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
++	set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
 +
-+	return ret;
++	return 0;
 +}
 +
 +int btrfs_set_prop(struct inode *inode,
@@ -352,8 +392,10 @@ index 0000000..26e19bc
 +			name_ptr = (unsigned long)(di + 1);
 +			data_ptr = name_ptr + name_len;
 +
-+			if (name_len <= 6 ||
-+			    memcmp_extent_buffer(leaf, "btrfs.", name_ptr, 6))
++			if (name_len <= XATTR_BTRFS_PREFIX_LEN ||
++			    memcmp_extent_buffer(leaf, XATTR_BTRFS_PREFIX,
++						 name_ptr,
++						 XATTR_BTRFS_PREFIX_LEN))
 +				goto next;
 +
 +			if (name_len >= name_buf_len) {
@@ -491,16 +533,6 @@ index 0000000..26e19bc
 +	}
 +
 +	return ret;
-+}
-+
-+static int prop_compression_validate(const char *value, size_t len)
-+{
-+	if (!strncmp("lzo", value, len))
-+		return 0;
-+	else if (!strncmp("zlib", value, len))
-+		return 0;
-+
-+	return -EINVAL;
 +}
 +
 +static int prop_compression_apply(struct inode *inode,

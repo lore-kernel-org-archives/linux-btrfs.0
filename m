@@ -1,41 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from terminus.zytor.com ([198.137.202.10]:39385 "EHLO mail.zytor.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754083Ab3KTSn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 13:43:26 -0500
-In-Reply-To: <CAGKKSfV+TyONu0EgSy9r5k7SiP5ZM3n7pGajY62DBSBw6YvR+w@mail.gmail.com>
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <528A90B7.5010905@zytor.com> <CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com> <528AA1EB.3010909@zytor.com> <528B3A6F.2010304@hesbynett.no> <CAGKKSfX6xx2SoDeMy7QOcGgLx5ApfbOF1pvhwixwnvEktWAWUw@mail.gmail.com> <528C8F8E.9030908@hesbynett.no> <CAGKKSfV+TyONu0EgSy9r5k7SiP5ZM3n7pGajY62DBSBw6YvR+w@mail.gmail.com>
+Received: from mail-we0-f177.google.com ([74.125.82.177]:59396 "EHLO
+	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754083Ab3KTSoD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Nov 2013 13:44:03 -0500
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
+In-Reply-To: <CAJBj3vcCgaNsS7JTZM9SEvjus09ZmaXT_iEwEvDOpjxt1BVZsg@mail.gmail.com>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
+	<528A90B7.5010905@zytor.com>
+	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
+	<528AA1EB.3010909@zytor.com>
+	<528B3A6F.2010304@hesbynett.no>
+	<CAGKKSfX6xx2SoDeMy7QOcGgLx5ApfbOF1pvhwixwnvEktWAWUw@mail.gmail.com>
+	<528C8F8E.9030908@hesbynett.no>
+	<CAJBj3vcCgaNsS7JTZM9SEvjus09ZmaXT_iEwEvDOpjxt1BVZsg@mail.gmail.com>
+Date: Wed, 20 Nov 2013 19:44:01 +0100
+Message-ID: <CAGKKSfUemNRq-X6meNKiyQBERzXRmLvOXkcwn8TGFf_Tq=_Atw@mail.gmail.com>
 Subject: Re: Triple parity and beyond
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Wed, 20 Nov 2013 10:43:09 -0800
-To: Andrea Mazzoleni <amadvance@gmail.com>,
-        David Brown <david.brown@hesbynett.no>
-CC: linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
+From: Andrea Mazzoleni <amadvance@gmail.com>
+To: John Williams <jwilliams4200@gmail.com>
+Cc: David Brown <david.brown@hesbynett.no>, "H. Peter Anvin" <hpa@zytor.com>,
+        Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         David Smith <creamyfish@gmail.com>
-Message-ID: <1fe6f763-a5a4-4cc7-b23d-7928b0925f09@email.android.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is also possible to quickly multiply by 2^-1 which makes for an interesting R parity.
+Hi John,
 
-Andrea Mazzoleni <amadvance@gmail.com> wrote:
->Hi David,
->
->>> The choice of ZFS to use powers of 4 was likely not optimal,
->>> because to multiply by 4, it has to do two multiplications by 2.
->> I can agree with that.  I didn't copy ZFS's choice here
->David, it was not my intention to suggest that you copied from ZFS.
->Sorry to have expressed myself badly. I just mentioned ZFS because it's
->an implementation that I know uses powers of 4 to generate triple
->parity, and I saw in the code that it's implemented with two
->multiplication
->by 2.
->
->Ciao,
->Andrea
+Yes. There are still AMD CPUs sold without SSSE3. Most notably Athlon.
+Instead, Intel is providing SSSE3 from the Core 2 Duo.
 
--- 
-Sent from my mobile phone.  Please pardon brevity and lack of formatting.
+A detailed list is available at: http://en.wikipedia.org/wiki/SSSE3
+
+Ciao,
+Andrea
+
+On Wed, Nov 20, 2013 at 7:09 PM, John Williams <jwilliams4200@gmail.com> wrote:
+> On Wed, Nov 20, 2013 at 2:31 AM, David Brown <david.brown@hesbynett.no> wrote:
+>> That's certainly a reasonable way to look at it.  We should not limit
+>> the possibilities for high-end systems because of the limitations of
+>> low-end systems that are unlikely to use 3+ parity anyway.  I've also
+>> looked up a list of the processors that support SSE3 and PSHUFB - a lot
+>> of modern "low-end" x86 cpus support it.  And of course it is possible
+>> to implement general G(2^8) multiplication without PSHUFB, using a
+>> lookup table - it is important that this can all work with any CPU, even
+>> if it is slow.
+>
+> Unfortunately, it is SSSE3 that is required for PSHUFB. The SSE3 set
+> with only two-esses does not suffice. I made that same mistake when I
+> first heard about Andrea's 6-parity work. SSSE3 vs. SSE3, confusing
+> notation!
+>
+> SSSE3 is significantly less widely supported than SSE3. Particularly
+> on AMD, only the very latest CPUs seem to support SSSE3. Intel support
+> for SSSE3 goes back much further than AMD support.
+>
+> Maybe it is not such a big problem, since it may be possible to
+> support two "roads". Both roads would include the current md RAID-5
+> and RAID-6. But one road, which those lacking CPUs supporting SSSE3
+> might choose, would continue on to the non-SSSE3 triple-parity 2^-1
+> technique, and then dead-end. The other road would continue with the
+> Cauchy matrix technique through 3-parity all the way to 6-parity.
+>
+> It might even be feasible to allow someone stuck at the end of the
+> non-SSSE3 road to convert to the Cauchy road. You would have to go
+> through all the 2^-1 triple-parity and convert it to Cauchy
+> triple-parity. But then you would be safely on the Cauchy road.

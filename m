@@ -1,52 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38300 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:37206 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750834Ab3KTGfS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 01:35:18 -0500
+	id S1750827Ab3KTGlb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Nov 2013 01:41:31 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vj1Nc-0005nn-4W
-	for linux-btrfs@vger.kernel.org; Wed, 20 Nov 2013 07:35:16 +0100
+	id 1Vj1Te-0008TM-15
+	for linux-btrfs@vger.kernel.org; Wed, 20 Nov 2013 07:41:30 +0100
 Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:35:16 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:41:30 +0100
 Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:35:16 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 07:41:30 +0100
 To: linux-btrfs@vger.kernel.org
 From: Martin <m_btrfs@ml1.co.uk>
 Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10
  </dev/sdX> ...
-Date: Wed, 20 Nov 2013 06:35:01 +0000
-Message-ID: <l6hl6b$i5h$1@ger.gmane.org>
-References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com> <20131119090602.GV4315@carfax.org.uk> <pan$cd41e$ced598aa$e5d2ed3a$3c71af6f@cox.net>
+Date: Wed, 20 Nov 2013 06:41:18 +0000
+Message-ID: <l6hli4$mae$1@ger.gmane.org>
+References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com> <20131119090602.GV4315@carfax.org.uk> <CAEWPe=rMXVehpFNko-wZ1i4dKP21J8wJKj1R2jDSK2HsEYmduQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <pan$cd41e$ced598aa$e5d2ed3a$3c71af6f@cox.net>
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <CAEWPe=rMXVehpFNko-wZ1i4dKP21J8wJKj1R2jDSK2HsEYmduQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19/11/13 23:16, Duncan wrote:
+On 19/11/13 19:24, deadhorseconsulting wrote:
+> Interesting, this confirms what I was observing.
+> Given the wording in man pages for "-m" and "-d" which states "Specify
+> how the metadata or data must be spanned across the devices
+> specified."
+> I took "devices specified" to literally mean the devices specified
+> after the according switch.
 
-> So we have:
-> 
-> 1) raid1 is exactly two copies of data, paired devices.
-> 
-> 2) raid0 is a stripe exactly two devices wide (reinforced by to read a 
-> stripe takes only two devices), so again paired devices.
+That sounds like a hang-over from too many years use of the mdadm
+command and more recently such as the sgdisk command...
 
-Which is fine for some occasions and a very good start point.
+;-)
 
-However, I'm sure there is a strong wish to be able to specify n-copies
-of data/metadata spread across m devices. Or even to specify 'hot spares'.
 
-This would be a great to overcome the problem of a set of drives
-becoming "read-only" when one btrfs drive fails or is removed.
+Myself, I like the btrfs way to specify the list of parameters and then
+they all then get applied as a whole.
 
-(Or should we always mount with the "degraded" option?)
+The one bugbear at the moment is that for using multiple disks: Any
+actions seem to be applied to the list of devices in sequence
+one-by-one. There's no apparent intelligence to consider "present pool"
+-> "new pool" of devices as a whole.
 
+
+More development!
 
 Regards,
 Martin
+
 

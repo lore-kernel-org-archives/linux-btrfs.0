@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f52.google.com ([209.85.219.52]:46315 "EHLO
-	mail-oa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753896Ab3KTSJs (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:45750 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754477Ab3KTSey (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 13:09:48 -0500
+	Wed, 20 Nov 2013 13:34:54 -0500
 MIME-Version: 1.0
 In-Reply-To: <528C8F8E.9030908@hesbynett.no>
 References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
@@ -13,46 +13,27 @@ References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
 	<528B3A6F.2010304@hesbynett.no>
 	<CAGKKSfX6xx2SoDeMy7QOcGgLx5ApfbOF1pvhwixwnvEktWAWUw@mail.gmail.com>
 	<528C8F8E.9030908@hesbynett.no>
-Date: Wed, 20 Nov 2013 10:09:47 -0800
-Message-ID: <CAJBj3vcCgaNsS7JTZM9SEvjus09ZmaXT_iEwEvDOpjxt1BVZsg@mail.gmail.com>
+Date: Wed, 20 Nov 2013 19:34:53 +0100
+Message-ID: <CAGKKSfV+TyONu0EgSy9r5k7SiP5ZM3n7pGajY62DBSBw6YvR+w@mail.gmail.com>
 Subject: Re: Triple parity and beyond
-From: John Williams <jwilliams4200@gmail.com>
+From: Andrea Mazzoleni <amadvance@gmail.com>
 To: David Brown <david.brown@hesbynett.no>
-Cc: Andrea Mazzoleni <amadvance@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>,
-        Linux RAID Mailing List <linux-raid@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Smith <creamyfish@gmail.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>, linux-raid@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, David Smith <creamyfish@gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 20, 2013 at 2:31 AM, David Brown <david.brown@hesbynett.no> wrote:
-> That's certainly a reasonable way to look at it.  We should not limit
-> the possibilities for high-end systems because of the limitations of
-> low-end systems that are unlikely to use 3+ parity anyway.  I've also
-> looked up a list of the processors that support SSE3 and PSHUFB - a lot
-> of modern "low-end" x86 cpus support it.  And of course it is possible
-> to implement general G(2^8) multiplication without PSHUFB, using a
-> lookup table - it is important that this can all work with any CPU, even
-> if it is slow.
+Hi David,
 
-Unfortunately, it is SSSE3 that is required for PSHUFB. The SSE3 set
-with only two-esses does not suffice. I made that same mistake when I
-first heard about Andrea's 6-parity work. SSSE3 vs. SSE3, confusing
-notation!
+>> The choice of ZFS to use powers of 4 was likely not optimal,
+>> because to multiply by 4, it has to do two multiplications by 2.
+> I can agree with that.  I didn't copy ZFS's choice here
+David, it was not my intention to suggest that you copied from ZFS.
+Sorry to have expressed myself badly. I just mentioned ZFS because it's
+an implementation that I know uses powers of 4 to generate triple
+parity, and I saw in the code that it's implemented with two multiplication
+by 2.
 
-SSSE3 is significantly less widely supported than SSE3. Particularly
-on AMD, only the very latest CPUs seem to support SSSE3. Intel support
-for SSSE3 goes back much further than AMD support.
-
-Maybe it is not such a big problem, since it may be possible to
-support two "roads". Both roads would include the current md RAID-5
-and RAID-6. But one road, which those lacking CPUs supporting SSSE3
-might choose, would continue on to the non-SSSE3 triple-parity 2^-1
-technique, and then dead-end. The other road would continue with the
-Cauchy matrix technique through 3-parity all the way to 6-parity.
-
-It might even be feasible to allow someone stuck at the end of the
-non-SSSE3 road to convert to the Cauchy road. You would have to go
-through all the 2^-1 triple-parity and convert it to Cauchy
-triple-parity. But then you would be safely on the Cauchy road.
+Ciao,
+Andrea

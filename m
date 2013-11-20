@@ -1,90 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from infao0809.mpi-klsb.mpg.de ([139.19.1.49]:48268 "EHLO
-	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751569Ab3KTPWX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 10:22:23 -0500
-Message-ID: <528CD3AA.9040205@mpi-sws.org>
-Date: Wed, 20 Nov 2013 16:22:18 +0100
-From: Pedro Fonseca <pfonseca@mpi-sws.org>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:58949 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754085Ab3KTQoS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Nov 2013 11:44:18 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VjAsz-0003ZT-FU
+	for linux-btrfs@vger.kernel.org; Wed, 20 Nov 2013 17:44:17 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 17:44:17 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 17:44:17 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: Btrfsck complains about "fs tree 264 refs 1 not found"
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10
+ </dev/sdX> ...
+Date: Wed, 20 Nov 2013 16:43:57 +0000 (UTC)
+Message-ID: <pan$448fc$ee29c6cf$df5ffdae$4f88c4b5@cox.net>
+References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
+	<20131119090602.GV4315@carfax.org.uk>
+	<pan$cd41e$ced598aa$e5d2ed3a$3c71af6f@cox.net>
+	<20131120080958.GA28883@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hugo Mills posted on Wed, 20 Nov 2013 08:09:58 +0000 as excerpted:
 
-I've been getting the error message "fs tree 264 refs 1 not found" when 
-running btrfsck (v0.19) after a test case. The test case creates and 
-then deletes a subvolume while concurrently creating a snapshot of the 
-parent directory. This situation occurred with kernel version 3.11.1.
+> RAID-0:  min 2 devices
+> RAID-10: min 4 devices
+> RAID-5:  min 2 devices (I think)
+> RAID-6:  min 3 devices (I think)
 
-Here's one of the interleavings that triggers the "not found" message:
-> CPU: 0 Op: write
->    CPU: 1 Op: btrfs_subvol_delete ("d16", fail)
->    CPU: 1 Op: write
->    CPU: 1 Op: btrfs_subvol_create ("d16/d13b", success)
-> CPU: 0 Op: btrfs_subvol_snapshot ("d16" to 
-> "d16/d21/d6d/d74/d101/d13d", success)
->    CPU: 1 Op: link
->    CPU: 1 Op: creat
->    CPU: 1 Op: btrfs_subvol_delete ("d16/d13b", success)
->    CPU: 1 Op: read
-> CPU: 0 Op: dread
-> CPU: 0 Op: creat
+RAID-5 should be 3-device minimum (each stripe consisting of two data 
+segments and one parity segment, each on a different device).
 
-Another example that also triggered the message:
-> CPU: 0 Op: dread
-> CPU: 0 Op: write
-> CPU: 0 Op: btrfs_subvol_snapshot ("d16" to 
-> "d16/d21/d6d/d74/d101/d13d", success)
->    CPU: 1 Op: btrfs_subvol_delete ("d16", fail)
->    CPU: 1 Op: write
->    CPU: 1 Op: btrfs_subvol_create ("d16/d13b", success)
-> CPU: 0 Op: dread
-> CPU: 0 Op: creat
->    CPU: 1 Op: link
->    CPU: 1 Op: creat
->    CPU: 1 Op: btrfs_subvol_delete ("d16/d13b", success)
->    CPU: 1 Op: read
-In this case, "btrfs_subvol_snapshot" overlapped with the 
-"btrfs_subvol_create" operation but it did not overlap with the second 
-"btrfs_subvol_delete".
+And RAID-6 similarly four devices (two data and two parity).
 
+Perhaps it's time I get that wiki account and edit some of this stuff 
+myself...
 
-Btrfsck output (after unmounting the FS):
-> fs tree 257 refs 5
->         unresolved ref root 258 dir 256 index 10 namelen 3 name d21 
-> error 600
->         unresolved ref root 262 dir 256 index 10 namelen 3 name d21 
-> error 600
->         unresolved ref root 263 dir 256 index 10 namelen 3 name d21 
-> error 600
->         unresolved ref root 265 dir 256 index 10 namelen 3 name d21 
-> error 600
-> fs tree 262 refs 3
->         unresolved ref root 263 dir 256 index 39 namelen 3 name da6 
-> error 600
->         unresolved ref root 265 dir 256 index 39 namelen 3 name da6 
-> error 600
-> fs tree 263 refs 2
->         unresolved ref root 265 dir 256 index 43 namelen 3 name dce 
-> error 600
-> fs tree 264 refs 1 not found
->         unresolved ref root 265 dir 256 index 56 namelen 4 name d13b 
-> error 600
-> found 9924608 bytes used err is 1
-> total csum bytes: 9208
-> total tree bytes: 495616
-> total fs tree bytes: 417792
-> btree space waste bytes: 153475
-> file data blocks allocated: 12365824
->  referenced 11440128
-> btrfsck: Btrfs Btrfs v0.19
-
-Let me know if you need more information.
-
-Pedro
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

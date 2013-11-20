@@ -1,139 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33757 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752909Ab3KGJxS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Nov 2013 04:53:18 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fusionio.com, zab@redhat.com, dsterba@suse.cz
-Subject: [PATCH 3/3] btrfs-progs: lblkid wouldn't find non mapper path input v3
-Date: Thu,  7 Nov 2013 18:01:43 +0800
-Message-Id: <1383818503-29607-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1383818503-29607-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56260 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750858Ab3KTOS6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Nov 2013 09:18:58 -0500
+Date: Wed, 20 Nov 2013 15:18:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jbacik@fusionio.com
+Subject: Re: [PATCH v4 2/3] btrfs-progs: fs show should handle if subvol(s)
+ mounted
+Message-ID: <20131120141856.GH5007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1384514735-24761-1-git-send-email-anand.jain@oracle.com>
+ <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1383818503-29607-1-git-send-email-anand.jain@oracle.com>
 
-A new test case when disk is unmounted and if the non mapper
-disk path is given as the argument to the btrfs filesystem show <arg>
-we still need this to work but lblkid will pull only mapper disks,
-it won't match. So this will normalize the input to find btrfs
-by fsid and pass it to the search.
+On Fri, Nov 15, 2013 at 07:25:34PM +0800, Anand Jain wrote:
+>  static int btrfs_scan_kernel(void *search)
+>  {
+> -	int ret = 0, fd;
+> -	FILE *f;
+> -	struct mntent *mnt;
+> -	struct btrfs_ioctl_fs_info_args fs_info_arg;
+> -	struct btrfs_ioctl_dev_info_args *dev_info_arg = NULL;
+> -	struct btrfs_ioctl_space_args *space_info_arg;
+> +	int ret = 0;
+>  	char label[BTRFS_LABEL_SIZE];
+> -
+> -	f = setmntent("/proc/self/mounts", "r");
+> -	if (f == NULL)
+> -		return 1;
+> -
+> -	memset(label, 0, sizeof(label));
+> -	while ((mnt = getmntent(f)) != NULL) {
+> -		if (strcmp(mnt->mnt_type, "btrfs"))
+> +	char mnt[BTRFS_PATH_NAME_MAX + 1];
+> +	struct btrfs_ioctl_fslist *fslist;
+> +	struct btrfs_ioctl_fslist *fslist_saved;
 
-v2: accepts Josef suggested
-v2: accepts Josef suggested
+    [CC]     cmds-send.o
+cmds-filesystem.c: In function ‘btrfs_scan_kernel’:
+cmds-filesystem.c:461:29: warning: variable ‘fslist_saved’ set but not used [-Wunused-but-set-variable]
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-filesystem.c |   59 +++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 55 insertions(+), 4 deletions(-)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index d237989..72ffe46 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -37,6 +37,7 @@
- #include "version.h"
- #include "commands.h"
- #include "list_sort.h"
-+#include "disk-io.h"
- 
- static const char * const filesystem_cmd_group_usage[] = {
- 	"btrfs filesystem [<group>] <command> [<args>]",
-@@ -414,6 +415,39 @@ static int btrfs_scan_kernel(void *search)
- 	return 0;
- }
- 
-+static int dev_to_fsid(char *dev, __u8 *fsid)
-+{
-+	struct btrfs_super_block *disk_super;
-+	char *buf;
-+	int ret;
-+	int fd;
-+
-+	buf = malloc(4096);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	fd = open(dev, O_RDONLY);
-+	if (fd < 0) {
-+		ret = -errno;
-+		free(buf);
-+		return ret;
-+	}
-+
-+	disk_super = (struct btrfs_super_block *)buf;
-+	ret = btrfs_read_dev_super(fd, disk_super,
-+			BTRFS_SUPER_INFO_OFFSET);
-+	if (ret)
-+		goto out;
-+
-+	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
-+	ret = 0;
-+
-+out:
-+	close(fd);
-+	free(buf);
-+	return ret;
-+}
-+
- static const char * const cmd_show_usage[] = {
- 	"btrfs filesystem show [options] [<path>|<uuid>|<device>|label]",
- 	"Show the structure of a filesystem",
-@@ -434,6 +468,8 @@ static int cmd_show(int argc, char **argv)
- 	int type = 0;
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
- 	char path[PATH_MAX];
-+	__u8 fsid[BTRFS_FSID_SIZE];
-+	char uuid_buf[37];
- 
- 	while (1) {
- 		int long_index;
-@@ -466,6 +502,10 @@ static int cmd_show(int argc, char **argv)
- 		if (strlen(search) == 0)
- 			usage(cmd_show_usage);
- 		type = check_arg_type(search);
-+		/* needs spl handling if input arg is block dev
-+		 * And if input arg is mount-point just print it
-+		 * right away
-+		 */
- 		if (type == BTRFS_ARG_BLKDEV) {
- 			if (where == BTRFS_SCAN_DEV) {
- 				/* we need to do this because
-@@ -477,14 +517,25 @@ static int cmd_show(int argc, char **argv)
- 			} else {
- 				ret = get_btrfs_mount(search,
- 						mp, sizeof(mp));
--				if (!ret)
-+				if (!ret) {
- 					/* given block dev is mounted*/
- 					search = mp;
--				else
-+					type = BTRFS_ARG_MNTPOINT;
-+				} else {
-+					ret = dev_to_fsid(search, fsid);
-+					if (ret) {
-+						fprintf(stderr,
-+							"ERROR: No btrfs on %s\n",
-+							search);
-+						return 1;
-+					}
-+					uuid_unparse(fsid, uuid_buf);
-+					search = uuid_buf;
-+					type = BTRFS_ARG_UUID;
- 					goto devs_only;
-+				}
- 			}
--		}
--		if (type == BTRFS_ARG_MNTPOINT) {
-+		} else if (type == BTRFS_ARG_MNTPOINT) {
- 			char label[BTRFS_LABEL_SIZE];
- 			if (get_label_mounted(search, label))
- 				return 1;
--- 
-1.7.1
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+> +	u64 cnt_fs;
+> +	int cnt_mnt;
+> +	__u8 *fsid;
+> +	__u64 flags;
+> +
+> +	ret = get_fslist(&fslist, &cnt_fs);
+> +	if (ret)
+> +		return ret;
+> +	fslist_saved = fslist;
+> +	while (cnt_fs--) {
+> +		fsid = fslist->fsid;
+> +		flags = fslist->flags;
+> +		fslist++;
+> +		if (!(flags & BTRFS_FS_MOUNTED))
+>  			continue;
+> -		ret = get_fs_info(mnt->mnt_dir, &fs_info_arg,
+> -				&dev_info_arg);
+> +		memset(mnt, 0, BTRFS_PATH_NAME_MAX + 1);
+> +		memset(label, 0, sizeof(label));
+> +		ret = fsid_to_mntpt(fsid, mnt, &cnt_mnt);
+>  		if (ret)
+>  			return ret;
+> -
+> -		if (get_label_mounted(mnt->mnt_dir, label)) {
+> -			kfree(dev_info_arg);
+> +		if (get_label_mounted(mnt, label))
+>  			return 1;
+> -		}
+> -		if (search && !match_search_item_kernel(fs_info_arg.fsid,
+> -					mnt->mnt_dir, label, search)) {
+> -			kfree(dev_info_arg);
+> +
+> +		if (search && !match_search_item_kernel(fsid,
+> +					mnt, label, search))
+>  			continue;
+> -		}
+>  
+> -		fd = open(mnt->mnt_dir, O_RDONLY);
+> -		if ((fd != -1) && !get_df(fd, &space_info_arg)) {
+> -			print_one_fs(&fs_info_arg, dev_info_arg,
+> -					space_info_arg, label, mnt->mnt_dir);
+> -			kfree(space_info_arg);
+> -			memset(label, 0, sizeof(label));
+> -		}
+> -		if (fd != -1)
+> -			close(fd);
+> -		kfree(dev_info_arg);
+> +		handle_print(mnt, label);
+>  		if (search)
+>  			return 0;
+>  	}

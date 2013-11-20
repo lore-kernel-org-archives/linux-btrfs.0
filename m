@@ -1,45 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55750 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752020Ab3KTKWV (ORCPT
+Received: from infao0809.mpi-klsb.mpg.de ([139.19.1.49]:48268 "EHLO
+	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751569Ab3KTPWX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 05:22:21 -0500
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: Chris Murphy <lists@colorremedies.com>
-Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10 </dev/sdX> ...
-Date: Wed, 20 Nov 2013 21:22:18 +1100
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com> <l6hl6b$i5h$1@ger.gmane.org> <29AD6F50-2D7B-416C-AA69-0EC8D46E8BB8@colorremedies.com>
-In-Reply-To: <29AD6F50-2D7B-416C-AA69-0EC8D46E8BB8@colorremedies.com>
+	Wed, 20 Nov 2013 10:22:23 -0500
+Message-ID: <528CD3AA.9040205@mpi-sws.org>
+Date: Wed, 20 Nov 2013 16:22:18 +0100
+From: Pedro Fonseca <pfonseca@mpi-sws.org>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201311202122.18712.russell@coker.com.au>
+To: linux-btrfs@vger.kernel.org
+Subject: Btrfsck complains about "fs tree 264 refs 1 not found"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 20 Nov 2013, Chris Murphy <lists@colorremedies.com> wrote:
-> Hot spares are worse than useless. Especially for raid10. The drive takes
-> up space doing nothing but suck power, rather than adding space or
-> performance. Somehow this idea comes from cheap companies who seem to
-> think their data is so valuable they need hot spares, yet they don't have
-> 24/7 staff on hand to do a hot swap. (As if the only problem that can
-> occur is a dead drive.) So I think those companies can develop this
-> otherwise unneeded feature.
-> 
-> n-copies raid1 is a good idea and I think it's being worked on.
+Hi,
 
-N copies RAID-1 is definitely more useful than RAID-1 with a hot-spare.
+I've been getting the error message "fs tree 264 refs 1 not found" when 
+running btrfsck (v0.19) after a test case. The test case creates and 
+then deletes a subvolume while concurrently creating a snapshot of the 
+parent directory. This situation occurred with kernel version 3.11.1.
 
-But for RAID-5/RAID-6 a hot spare can provide real value.  Not having to pay 
-someone to make a special rushed visit to replace a disk is a definite 
-benefit.
+Here's one of the interleavings that triggers the "not found" message:
+> CPU: 0 Op: write
+>    CPU: 1 Op: btrfs_subvol_delete ("d16", fail)
+>    CPU: 1 Op: write
+>    CPU: 1 Op: btrfs_subvol_create ("d16/d13b", success)
+> CPU: 0 Op: btrfs_subvol_snapshot ("d16" to 
+> "d16/d21/d6d/d74/d101/d13d", success)
+>    CPU: 1 Op: link
+>    CPU: 1 Op: creat
+>    CPU: 1 Op: btrfs_subvol_delete ("d16/d13b", success)
+>    CPU: 1 Op: read
+> CPU: 0 Op: dread
+> CPU: 0 Op: creat
 
-Also when a disk isn't being used it doesn't draw much power.  Last time I 
-tested such things I found an IDE disk to use about 7W while spinning and no 
-measurable difference to overall system power use when spun-down.
+Another example that also triggered the message:
+> CPU: 0 Op: dread
+> CPU: 0 Op: write
+> CPU: 0 Op: btrfs_subvol_snapshot ("d16" to 
+> "d16/d21/d6d/d74/d101/d13d", success)
+>    CPU: 1 Op: btrfs_subvol_delete ("d16", fail)
+>    CPU: 1 Op: write
+>    CPU: 1 Op: btrfs_subvol_create ("d16/d13b", success)
+> CPU: 0 Op: dread
+> CPU: 0 Op: creat
+>    CPU: 1 Op: link
+>    CPU: 1 Op: creat
+>    CPU: 1 Op: btrfs_subvol_delete ("d16/d13b", success)
+>    CPU: 1 Op: read
+In this case, "btrfs_subvol_snapshot" overlapped with the 
+"btrfs_subvol_create" operation but it did not overlap with the second 
+"btrfs_subvol_delete".
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+
+Btrfsck output (after unmounting the FS):
+> fs tree 257 refs 5
+>         unresolved ref root 258 dir 256 index 10 namelen 3 name d21 
+> error 600
+>         unresolved ref root 262 dir 256 index 10 namelen 3 name d21 
+> error 600
+>         unresolved ref root 263 dir 256 index 10 namelen 3 name d21 
+> error 600
+>         unresolved ref root 265 dir 256 index 10 namelen 3 name d21 
+> error 600
+> fs tree 262 refs 3
+>         unresolved ref root 263 dir 256 index 39 namelen 3 name da6 
+> error 600
+>         unresolved ref root 265 dir 256 index 39 namelen 3 name da6 
+> error 600
+> fs tree 263 refs 2
+>         unresolved ref root 265 dir 256 index 43 namelen 3 name dce 
+> error 600
+> fs tree 264 refs 1 not found
+>         unresolved ref root 265 dir 256 index 56 namelen 4 name d13b 
+> error 600
+> found 9924608 bytes used err is 1
+> total csum bytes: 9208
+> total tree bytes: 495616
+> total fs tree bytes: 417792
+> btree space waste bytes: 153475
+> file data blocks allocated: 12365824
+>  referenced 11440128
+> btrfsck: Btrfs Btrfs v0.19
+
+Let me know if you need more information.
+
+Pedro
+

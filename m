@@ -1,235 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:60509 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751788Ab3KSWby (ORCPT
+Received: from mail-bk0-f48.google.com ([209.85.214.48]:59589 "EHLO
+	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751985Ab3KTDqL convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Nov 2013 17:31:54 -0500
-Received: by mail-wg0-f42.google.com with SMTP id k14so6424229wgh.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Nov 2013 14:31:53 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+	Tue, 19 Nov 2013 22:46:11 -0500
+Received: by mail-bk0-f48.google.com with SMTP id v10so2736745bkz.21
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Nov 2013 19:46:09 -0800 (PST)
+Received: from linux-suse.localnet (5401C5A6.dsl.pool.telekom.hu. [84.1.197.166])
+        by mx.google.com with ESMTPSA id l5sm22805792bko.7.2013.11.19.19.46.08
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 19 Nov 2013 19:46:08 -0800 (PST)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix very slow inode eviction and fs unmount
-Date: Tue, 19 Nov 2013 22:29:35 +0000
-Message-Id: <1384900175-30031-1-git-send-email-fdmanana@gmail.com>
+Subject: btrfs warning on file system defrag
+Date: Wed, 20 Nov 2013 04:45:46 +0100
+Message-ID: <3545636.faj611BQxI@linux-suse>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The inode eviction can be very slow, because during eviction we
-tell the VFS to truncate all of the inode's pages. This results
-in calls to btrfs_invalidatepage() which in turn does calls to
-lock_extent_bits() and clear_extent_bit(). These calls result in
-too many merges and splits of extent_state structures, which
-consume a lot of time and cpu when the inode has many pages. In
-some scenarios I have experienced umount times higher than 15
-minutes, even when there's no pending IO (after a btrfs fs sync).
+Dear list members,
 
-A quick way to reproduce this issue:
+While I was defragging my file system, the following warning showed up in the 
+dmesg:
 
-$ mkfs.btrfs -f /dev/sdb3
-$ mount /dev/sdb3 /mnt/btrfs
-$ cd /mnt/btrfs
-$ sysbench --test=fileio --file-num=128 --file-total-size=16G \
-    --file-test-mode=seqwr --num-threads=128 \
-    --file-block-size=16384 --max-time=60 --max-requests=0 run
-$ time btrfs fi sync .
-FSSync '.'
+[ 6323.296521] ------------[ cut here ]------------
+[ 6323.296551] WARNING: CPU: 5 PID: 13598 at 
+/home/abuild/rpmbuild/BUILD/kernel-
+desktop-3.12.0/linux-3.12/fs/btrfs/backref.c:934 find_parent_nodes+0xe64/0xe70 
+[btrfs]()
+[ 6323.296552] Modules linked in: bnep bluetooth rfkill nvidia(PO) drm 
+xt_tcpudp xt_pkttype xt_LOG xt_limit af_packet ip6t_REJECT nf_conntrack_ipv6 
+nf_defrag_ipv6 ip6table_raw ipt_REJECT iptable_raw xt_CT ipt
+able_filter ip6table_mangle nf_conntrack_netbios_ns nf_conntrack_broadcast 
+nf_conntrack_ipv4 nf_defrag_ipv4 xt_conntrack ip6table_filter ip6_tables fuse 
+snd_hda_codec_hdmi coretemp gpio_ich mxm_wmi iTCO_wdt i
+TCO_vendor_support kvm_intel usb_storage kvm snd_hda_codec_realtek sr_mod 
+pcspkr snd_hda_intel serio_raw snd_hda_codec cdrom r8169 mii acpi_cpufreq wmi 
+snd_seq snd_hwdep snd_seq_device snd_pcm button snd_time
+r lpc_ich i7core_edac mfd_core i2c_i801 snd edac_core soundcore snd_page_alloc 
+shpchp sg nf_conntrack ip_tables x_tables dm_mod autofs4 btrfs raid6_pq xor 
+libcrc32c crc32c_intel hid_logitech_dj
+[ 6323.296580]  processor thermal_sys scsi_dh_rdac scsi_dh_hp_sw scsi_dh_emc 
+scsi_dh_alua scsi_dh ata_generic ata_piix [last unloaded: drm]
+[ 6323.296588] CPU: 5 PID: 13598 Comm: btrfs-endio-wri Tainted: P           O 
+3.12.0-6.ge7c00d8-desktop #1
+[ 6323.296589] Hardware name: MSI MS-7522/MSI X58 Pro-E (MS-7522), BIOS V8.15 
+03/19/2011
+[ 6323.296591]  0000000000000009 ffffffff815bd494 0000000000000000 ffffffff810521d2
+[ 6323.296594]  ffff880109231ba8 ffff88014d51d6e0 0000000000000000 ffff880000000000
+[ 6323.296596]  ffff88016d5a1640 ffffffffa01100b4 ffffffff00000001 ffff880100000050
+[ 6323.296598] Call Trace:
+[ 6323.296610]  [<ffffffff81004a28>] dump_trace+0x88/0x310
+[ 6323.296613]  [<ffffffff81004d80>] show_stack_log_lvl+0xd0/0x1d0
+[ 6323.296616]  [<ffffffff810061cc>] show_stack+0x1c/0x50
+[ 6323.296621]  [<ffffffff815bd494>] dump_stack+0x50/0x89
+[ 6323.296628]  [<ffffffff810521d2>] warn_slowpath_common+0x72/0x90
+[ 6323.296643]  [<ffffffffa01100b4>] find_parent_nodes+0xe64/0xe70 [btrfs]
+[ 6323.296749]  [<ffffffffa0110a96>] iterate_extent_inodes+0xf6/0x320 [btrfs]
+[ 6323.296820]  [<ffffffffa0110d44>] iterate_inodes_from_logical+0x84/0xa0 [btrfs]
+[ 6323.296887]  [<ffffffffa00b820b>] record_extent_backrefs+0x6b/0xe0 [btrfs]
+[ 6323.296920]  [<ffffffffa00c25b0>] btrfs_finish_ordered_io+0x1d0/0xad0 [btrfs]
+[ 6323.297008]  [<ffffffffa00e43d9>] worker_loop+0x149/0x550 [btrfs]
+[ 6323.297065]  [<ffffffff8107355f>] kthread+0xaf/0xc0
+[ 6323.297071]  [<ffffffff815caf8c>] ret_from_fork+0x7c/0xb0
+[ 6323.297074] ---[ end trace f4f4fc91916d37a0 ]---
 
-real	0m25.457s
-user	0m0.000s
-sys	0m0.092s
-$ cd ..
-$ time umount /mnt/btrfs
+Versions:
+- OS: openSUSE 13.1
+- Kernel: Linux linux-suse 3.12.0-6.ge7c00d8-desktop #1 SMP PREEMPT Tue Nov 12 
+13:09:24 UTC 2013 (e7c00d8) x86_64 x86_64 x86_64 GNU/Linux
+- btrfs: Btrfs v0.20-rc1
+- Ran command: ./btrfs fi defrag -clzo -r -v /usr/
 
-real	1m38.234s
-user	0m0.000s
-sys	1m25.760s
-
-The same test on ext4 runs much faster:
-
-$ mkfs.ext4 /dev/sdb3
-$ mount /dev/sdb3 /mnt/ext4
-$ cd /mnt/ext4
-$ sysbench --test=fileio --file-num=128 --file-total-size=16G \
-    --file-test-mode=seqwr --num-threads=128 \
-    --file-block-size=16384 --max-time=60 --max-requests=0 run
-$ sync
-$ cd ..
-$ time umount /mnt/ext4
-
-real	0m3.626s
-user	0m0.004s
-sys	0m3.012s
-
-After this patch, the unmount (inode evictions) is much faster:
-
-$ mkfs.btrfs -f /dev/sdb3
-$ mount /dev/sdb3 /mnt/btrfs
-$ cd /mnt/btrfs
-$ sysbench --test=fileio --file-num=128 --file-total-size=16G \
-    --file-test-mode=seqwr --num-threads=128 \
-    --file-block-size=16384 --max-time=60 --max-requests=0 run
-$ time btrfs fi sync .
-FSSync '.'
-
-real	0m26.774s
-user	0m0.000s
-sys	0m0.084s
-$ cd ..
-$ time umount /mnt/btrfs
-
-real	0m1.811s
-user	0m0.000s
-sys	0m1.564s
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/inode.c |   98 ++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 84 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5a5de36..e889779 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4488,6 +4488,62 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
- 	return err;
- }
- 
-+/*
-+ * While truncating the inode pages during eviction, we get the VFS calling
-+ * btrfs_invalidatepage() against each page of the inode. This is slow because
-+ * the calls to btrfs_invalidatepage() result in a huge amount of calls to
-+ * lock_extent_bits() and clear_extent_bit(), which keep merging and splitting
-+ * extent_state structures over and over, wasting lots of time.
-+ *
-+ * Therefore if the inode is being evicted, let btrfs_invalidatepage() skip all
-+ * those expensive operations on a per page basis and do only the ordered io
-+ * finishing, while we release here the extent_map and extent_state structures,
-+ * without the excessive merging and splitting.
-+ */
-+static void evict_inode_truncate_pages(struct inode *inode)
-+{
-+	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-+	struct extent_map_tree *map_tree = &BTRFS_I(inode)->extent_tree;
-+	struct rb_node *node;
-+
-+	ASSERT(inode->i_state & I_FREEING);
-+	truncate_inode_pages(&inode->i_data, 0);
-+
-+	write_lock(&map_tree->lock);
-+	while (!RB_EMPTY_ROOT(&map_tree->map)) {
-+		struct extent_map *em;
-+
-+		node = rb_first(&map_tree->map);
-+		em = rb_entry(node, struct extent_map, rb_node);
-+		remove_extent_mapping(map_tree, em);
-+		free_extent_map(em);
-+	}
-+	write_unlock(&map_tree->lock);
-+
-+	spin_lock(&io_tree->lock);
-+	while (!RB_EMPTY_ROOT(&io_tree->state)) {
-+		struct extent_state *state;
-+		struct extent_state *cached_state = NULL;
-+
-+		node = rb_first(&io_tree->state);
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		atomic_inc(&state->refs);
-+		spin_unlock(&io_tree->lock);
-+
-+		lock_extent_bits(io_tree, state->start, state->end,
-+				 0, &cached_state);
-+		clear_extent_bit(io_tree, state->start, state->end,
-+				 EXTENT_LOCKED | EXTENT_DIRTY |
-+				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+				 EXTENT_DEFRAG, 1, 1,
-+				 &cached_state, GFP_NOFS);
-+		free_extent_state(state);
-+
-+		spin_lock(&io_tree->lock);
-+	}
-+	spin_unlock(&io_tree->lock);
-+}
-+
- void btrfs_evict_inode(struct inode *inode)
- {
- 	struct btrfs_trans_handle *trans;
-@@ -4498,7 +4554,8 @@ void btrfs_evict_inode(struct inode *inode)
- 
- 	trace_btrfs_inode_evict(inode);
- 
--	truncate_inode_pages(&inode->i_data, 0);
-+	evict_inode_truncate_pages(inode);
-+
- 	if (inode->i_nlink &&
- 	    ((btrfs_root_refs(&root->root_item) != 0 &&
- 	      root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
-@@ -7379,6 +7436,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 	struct extent_state *cached_state = NULL;
- 	u64 page_start = page_offset(page);
- 	u64 page_end = page_start + PAGE_CACHE_SIZE - 1;
-+	int inode_evicting = inode->i_state & I_FREEING;
- 
- 	/*
- 	 * we have the page locked, so new writeback can't start,
-@@ -7394,17 +7452,21 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 		btrfs_releasepage(page, GFP_NOFS);
- 		return;
- 	}
--	lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
--	ordered = btrfs_lookup_ordered_extent(inode, page_offset(page));
-+
-+	if (!inode_evicting)
-+		lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
-+	ordered = btrfs_lookup_ordered_extent(inode, page_start);
- 	if (ordered) {
- 		/*
- 		 * IO on this page will never be started, so we need
- 		 * to account for any ordered extents now
- 		 */
--		clear_extent_bit(tree, page_start, page_end,
--				 EXTENT_DIRTY | EXTENT_DELALLOC |
--				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
--				 EXTENT_DEFRAG, 1, 0, &cached_state, GFP_NOFS);
-+		if (!inode_evicting)
-+			clear_extent_bit(tree, page_start, page_end,
-+					 EXTENT_DIRTY | EXTENT_DELALLOC |
-+					 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
-+					 EXTENT_DEFRAG, 1, 0, &cached_state,
-+					 GFP_NOFS);
- 		/*
- 		 * whoever cleared the private bit is responsible
- 		 * for the finish_ordered_io
-@@ -7428,14 +7490,22 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 				btrfs_finish_ordered_io(ordered);
- 		}
- 		btrfs_put_ordered_extent(ordered);
--		cached_state = NULL;
--		lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
-+		if (!inode_evicting) {
-+			cached_state = NULL;
-+			lock_extent_bits(tree, page_start, page_end, 0,
-+					 &cached_state);
-+		}
-+	}
-+
-+	if (!inode_evicting) {
-+		clear_extent_bit(tree, page_start, page_end,
-+				 EXTENT_LOCKED | EXTENT_DIRTY |
-+				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+				 EXTENT_DEFRAG, 1, 1,
-+				 &cached_state, GFP_NOFS);
-+
-+		__btrfs_releasepage(page, GFP_NOFS);
- 	}
--	clear_extent_bit(tree, page_start, page_end,
--		 EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
--		 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 1, 1,
--		 &cached_state, GFP_NOFS);
--	__btrfs_releasepage(page, GFP_NOFS);
- 
- 	ClearPageChecked(page);
- 	if (PagePrivate(page)) {
--- 
-1.7.9.5
-
+Ákos

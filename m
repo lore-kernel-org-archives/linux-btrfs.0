@@ -1,91 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f43.google.com ([209.85.219.43]:46856 "EHLO
-	mail-oa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754206Ab3KTSh5 (ORCPT
+Received: from mail-bk0-f43.google.com ([209.85.214.43]:37052 "EHLO
+	mail-bk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755225Ab3KTUvd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 13:37:57 -0500
-Received: by mail-oa0-f43.google.com with SMTP id i7so318863oag.30
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 10:37:56 -0800 (PST)
+	Wed, 20 Nov 2013 15:51:33 -0500
+Received: by mail-bk0-f43.google.com with SMTP id mz12so15078bkb.16
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 12:51:32 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <528CF9D6.1000903@suse.com>
-References: <528c09f9.S0ecVwNN2c+fnUkv%fengguang.wu@intel.com>
-	<CAGXu5jLoG00u2svBW6W5h9QsfYw1zZwYhZ1k4HG2UsvcWPHxuQ@mail.gmail.com>
-	<20131120040551.GB4201@localhost>
-	<20131120173044.5312.44850@localhost.localdomain>
-	<528CF9D6.1000903@suse.com>
-Date: Wed, 20 Nov 2013 10:37:56 -0800
-Message-ID: <CAGXu5jJoo-XBpuu4DS_9zRH5p9tx3BgtrzrXu2J3nLSLY8EQfw@mail.gmail.com>
-Subject: Re: fs/btrfs/extent-tree.c:8430:9: error: format not a string literal
- and no format arguments
-From: Kees Cook <keescook@chromium.org>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <528CF92D.6070400@suse.com>
+References: <1384877267-32046-1-git-send-email-fdmanana@gmail.com>
+	<528CF92D.6070400@suse.com>
+Date: Wed, 20 Nov 2013 20:51:32 +0000
+Message-ID: <CAL3q7H4SABx6j-6Yv9Y7-cwZNZdPq01ebPEFRcMC-HK=aytCHA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: add missing sysfs group remove / fix leak
+From: Filipe David Manana <fdmanana@gmail.com>
 To: Jeff Mahoney <jeffm@suse.com>
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        Fengguang Wu <fengguang.wu@intel.com>,
-        Josef Bacik <JBacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 20, 2013 at 10:05 AM, Jeff Mahoney <jeffm@suse.com> wrote:
-> On 11/20/13, 12:30 PM, Chris Mason wrote:
->> Quoting Fengguang Wu (2013-11-19 23:05:51)
->>> On Tue, Nov 19, 2013 at 07:56:35PM -0800, Kees Cook wrote:
->>>> Hi!
->>>>
->>>> Which tree is 'devel-snb'? I don't see that on the kernel.org trees.
->>>
->>> It's my local merge branch, based on the latest upstream release.
->>>
->>> Let's CC the btrfs developers for this warning. :)
->>>
->>> Thanks,
->>> Fengguang
->>>
->>>> On Tue, Nov 19, 2013 at 5:01 PM, kbuild test robot
->>>> <fengguang.wu@intel.com> wrote:
->>>>> tree:    devel-snb-x86_64-201311200240
->>>>> head:   1a985a0807ea34f37a4c5287089abd1cd2f65049
->>>>> commit: a9b93a3684dd6ebfb7cfa173f78a79c09de81207 Merge 'kees/format-security' into devel-snb-x86_64-201311200240
->>>>> date:   6 hours ago
->>>>> config: make ARCH=x86_64 allmodconfig
->>>>>
->>>>> All error/warnings:
->>>>>
->>>>>    fs/btrfs/extent-tree.c:6201:12: sparse: symbol 'get_raid_name' was not declared. Should it be static?
->>>>>    fs/btrfs/extent-tree.c:2469:28: sparse: context imbalance in 'run_clustered_refs' - unexpected unlock
->>>>>    fs/btrfs/extent-tree.c:8304:9: sparse: context imbalance in 'btrfs_put_block_group_cache' - wrong count at exit
->>>>>    fs/btrfs/extent-tree.c: In function '__link_block_group':
->>>>>>> fs/btrfs/extent-tree.c:8430:9: error: format not a string literal and no format arguments [-Werror=format-security]
->>>>>             get_raid_name(index));
+On Wed, Nov 20, 2013 at 6:02 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> On 11/19/13, 11:07 AM, Filipe David Borba Manana wrote:
+>> From kmemleak:
 >>
->> This comes from the btrfs-next tree, with Jeff's sysfs patches, so I've
->> added Jeff.
+>>   hex dump (first 32 bytes):
+>>     03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+>>     00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+>>   backtrace:
+>>     [<ffffffff8175f5f6>] kmemleak_alloc+0x26/0x50
+>>     [<ffffffff8118f284>] kmem_cache_alloc+0x114/0x200
+>>     [<ffffffff81219281>] sysfs_new_dirent+0x51/0x130
+>>     [<ffffffff812196d2>] create_dir+0x42/0xd0
+>>     [<ffffffff812199ff>] sysfs_create_subdir+0x1f/0x30
+>>     [<ffffffff8121b50e>] internal_create_group+0x5e/0x270
+>>     [<ffffffff8121b753>] sysfs_create_group+0x13/0x20
+>>     [<ffffffffa069c99e>] btrfs_sysfs_add_one+0x7e/0x280 [btrfs]
+>>     [<ffffffffa0682792>] open_ctree+0x17d2/0x21f0 [btrfs]
+>>     [<ffffffffa065883a>] btrfs_mount+0x53a/0x7d0 [btrfs]
+>>     [<ffffffff811a3ad3>] mount_fs+0x43/0x1b0
+>>     [<ffffffff811bfa56>] vfs_kern_mount+0x76/0x120
+>>     [<ffffffff811c1d77>] do_mount+0x237/0xa70
+>>     [<ffffffff811c2640>] SyS_mount+0x90/0xe0
+>>     [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
+>>     [<ffffffffffffffff>] 0xffffffffffffffff
+>> unreferenced object 0xffff8804e37d45b8 (size 160):
+>>
+>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+>> ---
+>>  fs/btrfs/sysfs.c |    2 ++
+>>  1 file changed, 2 insertions(+)
+>>
+>> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+>> index 669fdf7..9576771 100644
+>> --- a/fs/btrfs/sysfs.c
+>> +++ b/fs/btrfs/sysfs.c
+>> @@ -424,6 +424,8 @@ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
+>>       kobject_put(fs_info->device_dir_kobj);
+>>       kobject_del(fs_info->space_info_kobj);
+>>       kobject_put(fs_info->space_info_kobj);
+>> +     sysfs_remove_group(&fs_info->super_kobj,
+>> +                        &btrfs_feature_attr_group);
+>>       kobject_del(&fs_info->super_kobj);
+>>       kobject_put(&fs_info->super_kobj);
+>>       wait_for_completion(&fs_info->kobj_unregister);
+>>
+>
+> Oops, this isn't actually enough. It'll still leak the unknown feature
+> attributes, which wouldn't have shown up in your testing. There are a
+> few other failure cases that need to be handled as well. I'll work up a fix.
 
-Ah, found it:
-http://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/tree/fs/btrfs/extent-tree.c
+Ok, that was the only trace I got when running xfstests.
+Thanks Jeff.
 
 >
-> Thanks for the heads up. I have a few other fixes that need to go into
-> that patch set WRT cleanup too.
+> -Jeff
+>
+> --
+> Jeff Mahoney
+> SUSE Labs
+>
 
-It looks like gcc is being stupid (const strings again). If you don't
-want to change the call from
 
-kobject_init_and_add(..., get_raid_name(index));
-
-to
-
-kobject_init_and_add(..., "%s", get_raid_name(index));
-
-that's fine -- I can whitelist it since it's a string constant. But
-since it's not critical path, it would be nice to gain the "%s" just
-to be defensive if get_raid_name ever changes, etc.
-
-Thanks for taking a look!
-
--Kees
 
 -- 
-Kees Cook
-Chrome OS Security
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

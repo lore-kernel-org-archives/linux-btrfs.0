@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:25507 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753815Ab3KOLQw (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:32814 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750827Ab3KUDTv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 06:16:52 -0500
+	Wed, 20 Nov 2013 22:19:51 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jbacik@fusionio.com
-Subject: [PATCH v4 2/3] btrfs-progs: fs show should handle if subvol(s) mounted
-Date: Fri, 15 Nov 2013 19:25:34 +0800
-Message-Id: <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1384514735-24761-1-git-send-email-anand.jain@oracle.com>
-References: <1384514735-24761-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v5 2/3] btrfs-progs: fs show should handle if subvol(s) mounted
+Date: Thu, 21 Nov 2013 11:28:41 +0800
+Message-Id: <1385004521-28886-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
+References: <1384514735-24761-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -23,17 +23,18 @@ fsid. so this patch will handle that nicely.
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
 
+v5: fixup missed mem free, thanks David
 v4: rebase on integration-20131114
 v3: accepts Josef suggested
 v2: accepts Zach suggested
 
- cmds-filesystem.c |   90 +++++++++++++++++++++++++++++++++--------------------
- utils.c           |   60 +++++++++++++++++++++++++++++++++++
+ cmds-filesystem.c |  104 +++++++++++++++++++++++++++++++++-------------------
+ utils.c           |   60 ++++++++++++++++++++++++++++++
  utils.h           |    1 +
- 3 files changed, 117 insertions(+), 34 deletions(-)
+ 3 files changed, 127 insertions(+), 38 deletions(-)
 
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index c747193..b23d337 100644
+index c747193..bb827e1 100644
 --- a/cmds-filesystem.c
 +++ b/cmds-filesystem.c
 @@ -318,6 +318,29 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
@@ -66,7 +67,7 @@ index c747193..b23d337 100644
  /* This function checks if the given input parameter is
   * an uuid or a path
   * return -1: some error in the given input
-@@ -352,47 +375,39 @@ static int check_arg_type(char *input)
+@@ -352,53 +375,52 @@ static int check_arg_type(char *input)
  
  static int btrfs_scan_kernel(void *search)
  {
@@ -93,6 +94,7 @@ index c747193..b23d337 100644
 +	int cnt_mnt;
 +	__u8 *fsid;
 +	__u64 flags;
++	int found = 0;
 +
 +	ret = get_fslist(&fslist, &cnt_fs);
 +	if (ret)
@@ -110,13 +112,16 @@ index c747193..b23d337 100644
 +		memset(label, 0, sizeof(label));
 +		ret = fsid_to_mntpt(fsid, mnt, &cnt_mnt);
  		if (ret)
- 			return ret;
+-			return ret;
 -
 -		if (get_label_mounted(mnt->mnt_dir, label)) {
 -			kfree(dev_info_arg);
-+		if (get_label_mounted(mnt, label))
- 			return 1;
--		}
+-			return 1;
++			break;
++		if (get_label_mounted(mnt, label)) {
++			ret = 1;
++			break;
+ 		}
 -		if (search && !match_search_item_kernel(fs_info_arg.fsid,
 -					mnt->mnt_dir, label, search)) {
 -			kfree(dev_info_arg);
@@ -132,15 +137,28 @@ index c747193..b23d337 100644
 -					space_info_arg, label, mnt->mnt_dir);
 -			kfree(space_info_arg);
 -			memset(label, 0, sizeof(label));
--		}
++		handle_print(mnt, label);
++		if (search) {
++			found = 1;
++			break;
+ 		}
 -		if (fd != -1)
 -			close(fd);
 -		kfree(dev_info_arg);
-+		handle_print(mnt, label);
- 		if (search)
- 			return 0;
+-		if (search)
+-			return 0;
  	}
-@@ -470,7 +485,14 @@ static int cmd_show(int argc, char **argv)
+-	if (search)
++	if (fslist_saved)
++		kfree(fslist_saved);
++	if (search && !found)
+ 		return 1;
+-	return 0;
++	return ret;
+ }
+ 
+ static const char * const cmd_show_usage[] = {
+@@ -470,6 +492,12 @@ static int cmd_show(int argc, char **argv)
  				else
  					goto devs_only;
  			}
@@ -151,10 +169,8 @@ index c747193..b23d337 100644
 +			handle_print(search, label);
 +			return 0;
  		}
-+
  	}
  
- 	if (where == BTRFS_SCAN_DEV)
 diff --git a/utils.c b/utils.c
 index 1ed7cde..ddbd623 100644
 --- a/utils.c

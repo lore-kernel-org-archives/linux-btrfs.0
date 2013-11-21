@@ -1,235 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f52.google.com ([209.85.214.52]:33293 "EHLO
-	mail-bk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754866Ab3KUS0O (ORCPT
+Received: from dkim2.fusionio.com ([66.114.96.54]:51141 "EHLO
+	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751663Ab3KUSfZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Nov 2013 13:26:14 -0500
-Received: by mail-bk0-f52.google.com with SMTP id u14so446803bkz.39
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Nov 2013 10:26:13 -0800 (PST)
+	Thu, 21 Nov 2013 13:35:25 -0500
+Received: from mx2.fusionio.com (unknown [10.101.1.160])
+	by dkim2.fusionio.com (Postfix) with ESMTP id 080EE9A06B0
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Nov 2013 11:35:25 -0700 (MST)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <528E28AC.9000306@suse.com>
-References: <528E28AC.9000306@suse.com>
-Date: Thu, 21 Nov 2013 18:26:12 +0000
-Message-ID: <CAL3q7H4zMqGQ2UCsdxuUSmBTQQ8y6DjKaOtdUqW0tDkLY6ayXg@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: fix leaks during sysfs teardown
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Content-Type: text/plain; charset=UTF-8
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        lkml <linux-kernel@vger.kernel.org>
+Message-ID: <20131121183508.5312.64818@localhost.localdomain>
+From: Chris Mason <chris.mason@fusionio.com>
+Subject: [GIT PULL] Btrfs
+Date: Thu, 21 Nov 2013 13:35:08 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 21, 2013 at 3:37 PM, Jeff Mahoney <jeffm@suse.com> wrote:
-> Filipe noticed that we were leaking the features attribute group
-> after umount. His fix of just calling sysfs_remove_group() wasn't enough
-> since that removes just the supported features and not the unsupported
-> features.
->
-> This patch changes the unknown feature handling to add them individually
-> so we can skip the kmalloc and uses the same iteration to tear them down
-> later.
->
-> We also fix the error handling during mount so that we catch the
-> failing creation of the per-super kobject, and handle proper teardown
-> of a half-setup sysfs context.
->
-> Tested properly with kmemleak enabled this time.
->
-> Reported-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Hi Linus,
 
-Tested-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Please pull my for-linus branch:
 
-Thanks Jeff.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-> ---
->  fs/btrfs/sysfs.c |  133 ++++++++++++++++++++++++++++++-------------------------
->  1 file changed, 73 insertions(+), 60 deletions(-)
->
-> --- a/fs/btrfs/sysfs.c  2013-11-21 09:31:53.764350456 -0500
-> +++ b/fs/btrfs/sysfs.c  2013-11-21 10:29:48.199104683 -0500
-> @@ -417,28 +417,84 @@ static inline struct btrfs_fs_info *to_f
->         return container_of(kobj, struct btrfs_fs_info, super_kobj);
->  }
->
-> -void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
-> +#define NUM_FEATURE_BITS 64
-> +static char btrfs_unknown_feature_names[3][NUM_FEATURE_BITS][13];
-> +static struct btrfs_feature_attr btrfs_feature_attrs[3][NUM_FEATURE_BITS];
-> +
-> +static u64 supported_feature_masks[3] = {
-> +       [FEAT_COMPAT]    = BTRFS_FEATURE_COMPAT_SUPP,
-> +       [FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SUPP,
-> +       [FEAT_INCOMPAT]  = BTRFS_FEATURE_INCOMPAT_SUPP,
-> +};
-> +
-> +static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
-> +{
-> +       int set;
-> +
-> +       for (set = 0; set < FEAT_MAX; set++) {
-> +               int i;
-> +               struct attribute *attrs[2];
-> +               struct attribute_group agroup = {
-> +                       .name = "features",
-> +                       .attrs = attrs,
-> +               };
-> +               u64 features = get_features(fs_info, set);
-> +               features &= ~supported_feature_masks[set];
-> +
-> +               if (!features)
-> +                       continue;
-> +
-> +               attrs[1] = NULL;
-> +               for (i = 0; i < NUM_FEATURE_BITS; i++) {
-> +                       struct btrfs_feature_attr *fa;
-> +
-> +                       if (!(features & (1ULL << i)))
-> +                               continue;
-> +
-> +                       fa = &btrfs_feature_attrs[set][i];
-> +                       attrs[0] = &fa->kobj_attr.attr;
-> +                       if (add) {
-> +                               int ret;
-> +                               ret = sysfs_merge_group(&fs_info->super_kobj,
-> +                                                       &agroup);
-> +                               if (ret)
-> +                                       return ret;
-> +                       } else
-> +                               sysfs_unmerge_group(&fs_info->super_kobj,
-> +                                                   &agroup);
-> +               }
-> +
-> +       }
-> +       return 0;
-> +}
-> +
-> +static void __btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
->  {
-> -       sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
-> -       kobject_del(fs_info->device_dir_kobj);
-> -       kobject_put(fs_info->device_dir_kobj);
-> -       kobject_del(fs_info->space_info_kobj);
-> -       kobject_put(fs_info->space_info_kobj);
->         kobject_del(&fs_info->super_kobj);
->         kobject_put(&fs_info->super_kobj);
->         wait_for_completion(&fs_info->kobj_unregister);
->  }
->
-> +void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
-> +{
-> +       if (fs_info->space_info_kobj) {
-> +               sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
-> +               kobject_del(fs_info->space_info_kobj);
-> +               kobject_put(fs_info->space_info_kobj);
-> +       }
-> +       kobject_del(fs_info->device_dir_kobj);
-> +       kobject_put(fs_info->device_dir_kobj);
-> +       addrm_unknown_feature_attrs(fs_info, false);
-> +       sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
-> +       __btrfs_sysfs_remove_one(fs_info);
-> +}
-> +
->  const char * const btrfs_feature_set_names[3] = {
->         [FEAT_COMPAT]    = "compat",
->         [FEAT_COMPAT_RO] = "compat_ro",
->         [FEAT_INCOMPAT]  = "incompat",
->  };
->
-> -#define NUM_FEATURE_BITS 64
-> -static char btrfs_unknown_feature_names[3][NUM_FEATURE_BITS][13];
-> -static struct btrfs_feature_attr btrfs_feature_attrs[3][NUM_FEATURE_BITS];
-> -
->  char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags)
->  {
->         size_t bufsize = 4096; /* safe max, 64 names * 64 bytes */
-> @@ -508,53 +564,6 @@ static void init_feature_attrs(void)
->         }
->  }
->
-> -static u64 supported_feature_masks[3] = {
-> -       [FEAT_COMPAT]    = BTRFS_FEATURE_COMPAT_SUPP,
-> -       [FEAT_COMPAT_RO] = BTRFS_FEATURE_COMPAT_RO_SUPP,
-> -       [FEAT_INCOMPAT]  = BTRFS_FEATURE_INCOMPAT_SUPP,
-> -};
-> -
-> -static int add_unknown_feature_attrs(struct btrfs_fs_info *fs_info)
-> -{
-> -       int set;
-> -
-> -       for (set = 0; set < FEAT_MAX; set++) {
-> -               int i, count, ret, index = 0;
-> -               struct attribute **attrs;
-> -               struct attribute_group agroup = {
-> -                       .name = "features",
-> -               };
-> -               u64 features = get_features(fs_info, set);
-> -               features &= ~supported_feature_masks[set];
-> -
-> -               count = hweight64(features);
-> -
-> -               if (!count)
-> -                       continue;
-> -
-> -               attrs = kcalloc(count + 1, sizeof(void *), GFP_KERNEL);
-> -
-> -               for (i = 0; i < NUM_FEATURE_BITS; i++) {
-> -                       struct btrfs_feature_attr *fa;
-> -
-> -                       if (!(features & (1ULL << i)))
-> -                               continue;
-> -
-> -                       fa = &btrfs_feature_attrs[set][i];
-> -                       attrs[index++] = &fa->kobj_attr.attr;
-> -               }
-> -
-> -               attrs[index] = NULL;
-> -               agroup.attrs = attrs;
-> -
-> -               ret = sysfs_merge_group(&fs_info->super_kobj, &agroup);
-> -               kfree(attrs);
-> -               if (ret)
-> -                       return ret;
-> -       }
-> -       return 0;
-> -}
-> -
->  static int add_device_membership(struct btrfs_fs_info *fs_info)
->  {
->         int error = 0;
-> @@ -590,13 +599,17 @@ int btrfs_sysfs_add_one(struct btrfs_fs_
->         fs_info->super_kobj.kset = btrfs_kset;
->         error = kobject_init_and_add(&fs_info->super_kobj, &btrfs_ktype, NULL,
->                                      "%pU", fs_info->fsid);
-> +       if (error)
-> +               return error;
->
->         error = sysfs_create_group(&fs_info->super_kobj,
->                                    &btrfs_feature_attr_group);
-> -       if (error)
-> -               goto failure;
-> +       if (error) {
-> +               __btrfs_sysfs_remove_one(fs_info);
-> +               return error;
-> +       }
->
-> -       error = add_unknown_feature_attrs(fs_info);
-> +       error = addrm_unknown_feature_attrs(fs_info, true);
->         if (error)
->                 goto failure;
->
->
-> --
-> Jeff Mahoney
-> SUSE Labs
+You'll notice the last two commits were recently rebased, these were
+just fixing a typo in the new documentation.
 
+Almost all of these are bug fixes.  Dave Sterba's documentation update
+is the big exception because he removed our promises to set any machine
+running Btrfs on fire.
 
+Ilya Dryomov (3) commits (+13/-5):
+    Btrfs: do not inc uncorrectable_errors counter on ro scrubs (+4/-2)
+    Btrfs: disable online raid-repair on ro mounts (+8/-3)
+    Btrfs: fix __btrfs_start_workers retval (+1/-0)
 
--- 
-Filipe David Manana,
+Josef Bacik (3) commits (+5/-3):
+    Btrfs: only drop modified extents if we logged the whole inode (+1/-1)
+    Btrfs: don't BUG_ON() if we get an error walking backrefs (+2/-1)
+    Btrfs: make sure to copy everything if we rename (+2/-1)
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+David Sterba (3) commits (+27/-22):
+    Documentation: filesystems: add new btrfs mount options (+11/-1)
+    Documentation: filesystems: update btrfs tools section (+6/-16)
+    btrfs: update kconfig help text (+10/-5)
+
+Liu Bo (2) commits (+3/-22):
+    Btrfs: avoid heavy operations in btrfs_commit_super (+1/-20)
+    Btrfs: fix lockdep error in async commit (+2/-2)
+
+Stefan Behrens (1) commits (+17/-8):
+    Btrfs: print bytenr instead of page pointer in check-int
+
+Anand Jain (1) commits (+1/-1):
+    btrfs: fix typo in the log message
+
+Filipe David Borba Manana (1) commits (+1/-1):
+    Btrfs: don't wait for ordered data outside desired range
+
+Wang Shilong (1) commits (+0/-6):
+    Btrfs: remove dead codes from ctree.h
+
+Akinobu Mita (1) commits (+1/-1):
+    btrfs: fix bio_size_ok() for max_sectors > 0xffff
+
+Miao Xie (1) commits (+1/-0):
+    Btrfs: fix list delete warning when removing ordered root from the list
+
+Steven Rostedt (1) commits (+4/-3):
+    btrfs: Use trace condition for get_extent tracepoint
+
+Total: (18) commits (+73/-72)
+
+ Documentation/filesystems/btrfs.txt | 34 +++++++++++++++++-----------------
+ fs/btrfs/Kconfig                    | 15 ++++++++++-----
+ fs/btrfs/async-thread.c             |  1 +
+ fs/btrfs/check-integrity.c          | 25 +++++++++++++++++--------
+ fs/btrfs/ctree.h                    |  6 ------
+ fs/btrfs/dev-replace.c              |  2 +-
+ fs/btrfs/disk-io.c                  | 21 +--------------------
+ fs/btrfs/extent_io.c                | 11 ++++++++---
+ fs/btrfs/inode.c                    |  6 +++---
+ fs/btrfs/ordered-data.c             |  3 ++-
+ fs/btrfs/scrub.c                    |  6 ++++--
+ fs/btrfs/transaction.c              |  4 ++--
+ fs/btrfs/tree-log.c                 |  5 +++--
+ fs/btrfs/volumes.c                  |  2 +-
+ include/trace/events/btrfs.h        |  4 +++-
+ 15 files changed, 73 insertions(+), 72 deletions(-)

@@ -1,39 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f176.google.com ([209.85.214.176]:39260 "EHLO
-	mail-ob0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754779Ab3KTWQN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Nov 2013 17:16:13 -0500
-Received: by mail-ob0-f176.google.com with SMTP id va2so1198393obc.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2013 14:16:12 -0800 (PST)
+Received: from mga14.intel.com ([143.182.124.37]:40524 "EHLO mga14.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753481Ab3KUBDR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Nov 2013 20:03:17 -0500
+Date: Thu, 21 Nov 2013 09:03:12 +0800
+From: Fengguang Wu <fengguang.wu@intel.com>
+To: Kees Cook <keescook@chromium.org>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: fs/btrfs/extent-tree.c:8430:9: error: format not a string
+ literal and no format arguments
+Message-ID: <20131121010312.GA8841@localhost>
+References: <528c09f9.S0ecVwNN2c+fnUkv%fengguang.wu@intel.com>
+ <CAGXu5jLoG00u2svBW6W5h9QsfYw1zZwYhZ1k4HG2UsvcWPHxuQ@mail.gmail.com>
+ <20131120040551.GB4201@localhost>
+ <CAGXu5jLXf=aOQa7XnvJ21n4VaVcNOUxhLGcFFdWOPXDam6sZ8g@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <528D2E9F.6070101@suse.com>
-References: <528D2E9F.6070101@suse.com>
-Date: Wed, 20 Nov 2013 14:16:12 -0800
-Message-ID: <CAGXu5jJDYQ9ZZ77=Y-ipLb8ogOdtKhDCEP+FhbvQ=PxMD3HHDg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix static checker warnings
-From: Kees Cook <keescook@chromium.org>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>,
-        Fengguang Wu <fengguang.wu@intel.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGXu5jLXf=aOQa7XnvJ21n4VaVcNOUxhLGcFFdWOPXDam6sZ8g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 20, 2013 at 1:50 PM, Jeff Mahoney <jeffm@suse.com> wrote:
-> This patch fixes the following warnings:
-> fs/btrfs/extent-tree.c:6201:12: sparse: symbol 'get_raid_name' was not declared. Should it be static?
-> fs/btrfs/extent-tree.c:8430:9: error: format not a string literal and no format arguments [-Werror=format-security] get_raid_name(index));
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+On Wed, Nov 20, 2013 at 08:04:58AM -0800, Kees Cook wrote:
+> On Tue, Nov 19, 2013 at 8:05 PM, Fengguang Wu <fengguang.wu@intel.com> wrote:
+> > On Tue, Nov 19, 2013 at 07:56:35PM -0800, Kees Cook wrote:
+> >> Hi!
+> >>
+> >> Which tree is 'devel-snb'? I don't see that on the kernel.org trees.
+> >
+> > It's my local merge branch, based on the latest upstream release.
+> 
+> Hm, which release? I don't see it in 3.12, Linus's tree, nor linux-next.
 
-Reviewed-by: Kees Cook <keescook@chromium.org>
+'devel-snb' is one of my private branch, starting from v3.12, merging
+several public git branches (eg. btrfs-next, kees/format-security, ...)
+and finally do compile tests on top of it. This effectively tests
+all of the merged public branches in one go. :)
 
-Thanks!
-
--Kees
-
--- 
-Kees Cook
-Chrome OS Security
+Thanks,
+Fengguang

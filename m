@@ -1,53 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-in-06.arcor-online.net ([151.189.21.46]:51335 "EHLO
-	mail-in-06.arcor-online.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752953Ab3KUT4S (ORCPT
+Received: from mail-in-10.arcor-online.net ([151.189.21.50]:50112 "EHLO
+	mail-in-10.arcor-online.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751923Ab3KUUFy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Nov 2013 14:56:18 -0500
-Date: Thu, 21 Nov 2013 20:56:03 +0100
+	Thu, 21 Nov 2013 15:05:54 -0500
+Date: Thu, 21 Nov 2013 21:05:45 +0100
 From: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>
-To: Stan Hoeppner <stan@hardwarefreak.com>
-Cc: James Plank <plank@cs.utk.edu>, Ric Wheeler <rwheeler@redhat.com>,
-        Andrea Mazzoleni <amadvance@gmail.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, David Brown <david.brown@hesbynett.no>,
-        David Smith <creamyfish@gmail.com>
+To: David Brown <david.brown@hesbynett.no>
+Cc: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>,
+        Andrea Mazzoleni <amadvance@gmail.com>, linux-raid@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, hpa@zytor.com, creamyfish@gmail.com
 Subject: Re: Triple parity and beyond
-Message-ID: <20131121195603.GA1916@lazy.lzy>
+Message-ID: <20131121200545.GB1916@lazy.lzy>
 References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
- <528A90B7.5010905@zytor.com>
- <CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
- <528AA1EB.3010909@zytor.com>
- <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com>
- <528BCA2D.5010500@redhat.com>
- <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>
- <528D61C5.70902@hardwarefreak.com>
+ <20131119181237.GA3666@lazy.lzy>
+ <528C9297.9030801@hesbynett.no>
+ <20131120215939.GA2622@lazy.lzy>
+ <528DDCC9.7050701@hesbynett.no>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <528D61C5.70902@hardwarefreak.com>
+In-Reply-To: <528DDCC9.7050701@hesbynett.no>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 20, 2013 at 07:28:37PM -0600, Stan Hoeppner wrote:
+On Thu, Nov 21, 2013 at 11:13:29AM +0100, David Brown wrote:
 [...]
-> It's always perilous to follow a Ph.D., so I guess I'm feeling suicidal
-> today. ;)
+> Ah, you are trying to find which disk has incorrect data so that you can
+> change just that one disk?  There are dangers with that...
+
+Hi David,
+
+> <http://neil.brown.name/blog/20100211050355>
+
+I think we already did the exercise, here :-)
+
+> If you disagree with this blog post (and I urge you to read it in full
+
+We discussed the topic (with Neil) and, if I
+recall correctly, he is agaist having an
+_automatic_ error detectio and correction _in_
+kernel.
+I fully agree with that: user space is better
+and it should not be automatic, but it should
+do things under user control.
+
+The current "check" operetion is pretty poor.
+It just reports how many mismatches, it does
+not even report where in the array.
+The first step, independent from how many
+parities one has, would be to tell the user
+where the mismatches occurred, so it would
+be possible to check the FS at that position.
+Having a multi parity RAID allows to check
+even which disk.
+This would provide the user with a more
+comprehensive (I forgot the spelling)
+information.
+
+Of course, since we are there, we can
+also give the option to fix it.
+This would be much likely a "fsck".
+
+> first), then this is how I would do a "smart" stripe recovery:
 > 
-> I'm not attempting to marginalize Andrea's work here, but I can't help
-> but ponder what the real value of triple parity RAID is, or quad, or
-> beyond.  Some time ago parity RAID's primary mission ceased to be
+> First calculate the parities from the data blocks, and compare these
+> with the existing parity blocks.
+> 
+> If they all match, the stripe is consistent.
+> 
+> Normal (detectable) disk errors and unrecoverable read errors get
+> flagged by the disk and the IO system, and you /know/ there is a problem
+> with that block.  Whether it is a data block or a parity block, you
+> re-generate the correct data and store it - that's what your raid is for.
 
-Hi Stan,
+That's not always the case, otherwise
+having the mismatch count would be useless.
+The issue is that errors appear, whatever
+the reason, without being reported by the
+underlying hardware.
+ 
+> If you have no detected read errors, and there is one parity
+> inconsistency, then /probably/ that block has had an undetected read
+> error, or it simply has not been written completely before a crash.
+> Either way, just re-write the correct parity.
 
-my opinio is that you have to think
-in terms of storage devices which are
-not always available.
-Those are not simply directly connected
-HDDs, it could be more exotic.
-The example I consider is a p2p network
-storage, where the nodes are very little
-reliable.
-I guess that could be more.
+Why re-write the parity if I can get
+the correct data there?
+If can be sure that one data block is
+incorrect and I can re-create properly,
+that's the thing to do.
+ 
+> Remember, this is not a general error detection and correction scheme -
+
+It is not, but it could be. For free.
 
 bye,
 

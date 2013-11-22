@@ -1,82 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43226 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755680Ab3KWBVl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 20:21:41 -0500
-Date: Sat, 23 Nov 2013 02:21:38 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:62693 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756183Ab3KVWMe convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Nov 2013 17:12:34 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: [virt-devel] btrfs NOCOW for VM disk images
-Message-ID: <20131123012138.GL5007@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20131122142051.GA32192@stefanha-thinkpad.redhat.com>
- <1616992290.20969836.1385137054390.JavaMail.root@redhat.com>
- <pan$25aa5$1906a260$3a199c05$d941ebdc@cox.net>
- <20131123040028.71a8ba4e@natsu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20131123040028.71a8ba4e@natsu>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1616992290.20969836.1385137054390.JavaMail.root@redhat.com>
+Date: Fri, 22 Nov 2013 15:12:35 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <B7A7E800-4281-493C-B889-33F5B6EC4F72@colorremedies.com>
+References: <20131122142051.GA32192@stefanha-thinkpad.redhat.com> <1616992290.20969836.1385137054390.JavaMail.root@redhat.com>
+To: John Dulaney <jdulaney@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 23, 2013 at 04:00:28AM +0600, Roman Mamedov wrote:
-> On Fri, 22 Nov 2013 21:26:16 +0000 (UTC)
-> Duncan <1i5t5.duncan@cox.net> wrote:
+
+On Nov 22, 2013, at 9:17 AM, John Dulaney <jdulaney@redhat.com> wrote:
 > 
-> > > During testing I found that the NOCOW flag prevents file cloning from
-> > > working.  cp --reflink fails with EINVAL when the source file has the
-> > > NOCOW flag set.
-> > 
-> > That would be expected, since disabling COW means the file will be 
-> > updated in-place, and if reflink-copying was allowed, changing the one 
-> > view in-place would by definition change the other view of the same file, 
-> > since it /is/ the same file data.
-> 
-> However snapshotting a subvolume which has NOCOW files *is* allowed.
-> I'm told data is then COW'ed only once, and only the areas that are changed
-> after the snapshot has been made (or something along those lines).
+> In upstream QEMU we're discussing patches that set the NOCOW flag on
+> disk image files.  We're told that this increases btrfs performance
+> greatly since the file system will modify data in-place like ext4/xfs.
 
-This is correct.
+The best performing qemu/kvm results I have, using installing Fedora 20 as the benchmark method and anaconda's time stamping of the start and completion of the installation, is Btrfs on the host with preallocated Raw file with xattr +C, and Btrfs used in the guest. The test matrix is 3x3: ext4, XFS, Btrfs. So each fs was used on the host, and in the guest.
 
-> So since snapshotting+NOCOW can be combined and everything works
-> automagically as expected, maybe reflink could be made to work as
-> well?
+By "best performing" we're talking about maybe 20-30 seconds better over a 7-8 minute install time on spinning rust. So with respect to installing an OS (the live image uses rsync), it seems Btrfs on Btrfs is at least no worse off than other file systems.
 
-This works (to my own surprise). The clone ioctl checks if the files
-have the same status regarding checksums, so reflink from nocow -> nocow
-should work.
+A 20GB preallocated Raw on Btrfs with +C set has 33 extents, which doesn't ever change.
 
-What does not work if one does
+When I do this with a qcow2 file with preallocated metadata, it starts out with only 5 extents upon creation, but with each successive installation using the same qcow2 file, also with +C xattr, the extent count grows quite a bit. Although it's very unclear from the testing if this negatively impacts performance, or if the extent increase eventually flattens out.
 
-  $ cp --reflink=always nocow-file somefile
-  cp: failed to clone ‘soefile’ from ‘nocow’: Invalid argument
+after installation1> fedoratest.img: 1255 extents found
+after installation2> fedoratest.img: 1773 extents found
+after installation3> fedoratest.img: 2148 extents found
+after installation4> fedoratest.img: 2245 extents found
 
-because cp creates somefile without nocow status. But precreating
-somefile with chattr +C and the calling the command above, cp does not
-complain.
+This is a whole lot less, however, than non-preallocated Raw, without +C xattr where it rapidly ends up with tens of thousands of extents with no end in sight.
 
-Rewriting one file does not modify the other though output of filefrag
-after the modification does not seem to reflect that the files do not in
-fact share the same blocks:
+> This leaves us with the choice between performance (NOCOW) and snapshots
+> (default).  Both are important for VM disk images!
 
-File size of somefile is 2097152 (512 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..     511:   54865266..  54865777:    512:             eof
-somefile: 1 extent found
+Some testing needs to be done with qcow2 on Btrfs with +C long term to see if there's a meaningful performance hit as the qcow2 ages.
 
-File size of nocow is 2097152 (512 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..     511:   54865266..  54865777:    512:             eof
-nocow: 1 extent found
+It may also be possible to defragment the qcow2 file once extent allocation tapers off.
 
-files were dd'ed with zeros and differ in the first 4k:
+And another possibility would be for qcow2 to support full preallocation, so that its initial extent count is no worse than Raw.
 
-  dd if=/dev/urandom of=somefile bs=4k count=1 conv=notrunc
-
-So there's a bug somewhere, probably in reporting extents through fiemap of
-the modified nocow file. This hides the actual position of the new block and
-fragmentation.
+If you don't need host based snapshotting, another possibility is using Btrfs in the guest, and snapshotting within the guest. It depends on the use case if this is preferred or not, but I think there could be some advantages to snapshotting within the guest. In this case, using Btrfs in the guest regardless of the backing method used, gives the guest the ability to at least flag for fs/data corruption, if not repair it (if a raid 1+ data profile is employed).
 
 
-david
+Chris Murphy

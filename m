@@ -1,65 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-phx2.redhat.com ([209.132.183.24]:42755 "EHLO
-	mx3-phx2.redhat.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755495Ab3KVQRe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 11:17:34 -0500
-Received: from zmail21.collab.prod.int.phx2.redhat.com (zmail21.collab.prod.int.phx2.redhat.com [10.5.83.24])
-	by mx3-phx2.redhat.com (8.13.8/8.13.8) with ESMTP id rAMGHYAI014177
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 11:17:34 -0500
-Date: Fri, 22 Nov 2013 11:17:34 -0500 (EST)
-From: John Dulaney <jdulaney@redhat.com>
+Received: from plane.gmane.org ([80.91.229.3]:53171 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753339Ab3KVRxB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Nov 2013 12:53:01 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VjuuV-0008Hu-M6
+	for linux-btrfs@vger.kernel.org; Fri, 22 Nov 2013 18:52:55 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 18:52:55 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 18:52:55 +0100
 To: linux-btrfs@vger.kernel.org
-Message-ID: <1616992290.20969836.1385137054390.JavaMail.root@redhat.com>
-In-Reply-To: <20131122142051.GA32192@stefanha-thinkpad.redhat.com>
-References: <20131122142051.GA32192@stefanha-thinkpad.redhat.com>
-Subject: Fwd: [virt-devel] btrfs NOCOW for VM disk images
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Nagios probe for btrfs RAID status?
+Date: Fri, 22 Nov 2013 17:52:35 +0000 (UTC)
+Message-ID: <pan$aedd2$55675d23$87b751ab$aaf09e6d@cox.net>
+References: <528F6085.4020603@pocock.com.au>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Daniel Pocock posted on Fri, 22 Nov 2013 14:47:49 +0100 as excerpted:
 
+> I just did a search and couldn't find any probe for btrfs RAID status
+> 
+> The "check_raid" plugin seems to recognise mdadm and various other types
+> of RAID but not btrfs
+> 
+> Has anybody seen a plugin for Nagios or could anybody comment on how it
+> should work if somebody wants to make one?
+> 
+> For example, would the command
+> 
+>     btrfs filesystem show --all-devices
+> 
+> give a non-zero error status or some other clue if any of the devices
+> are at risk?
 
------ Forwarded Message -----
-From: "Stefan Hajnoczi" <stefanha@redhat.com>
-To: "Eric Sandeen" <sandeen@redhat.com>
-Cc: virt-devel@redhat.com, "Kevin Wolf" <kwolf@redhat.com>
-Sent: Friday, November 22, 2013 9:20:51 AM
-Subject: [virt-devel] btrfs NOCOW for VM disk images
+[btrfs personal user/sysadmin, not a dev, not anything large enough to 
+have personal nagios experience...]
 
-Hi,
-In upstream QEMU we're discussing patches that set the NOCOW flag on
-disk image files.  We're told that this increases btrfs performance
-greatly since the file system will modify data in-place like ext4/xfs.
+AFAIK, btrfs raid modes currently switch the filesystem to read-only on 
+any device-drop error.  That has been deemed the simplest/safest policy 
+during development, tho at some point as stable approaches the behavior 
+could theoretically be made optional.
 
-During testing I found that the NOCOW flag prevents file cloning from
-working.  cp --reflink fails with EINVAL when the source file has the
-NOCOW flag set.
-
-It is not possible to toggle NOCOW back and forth later on since it can
-only be set when no data has been allocated for the file yet.
-
-This leaves us with the choice between performance (NOCOW) and snapshots
-(default).  Both are important for VM disk images!
-
-Questions:
-
- * Would it be possible to extend btrfs so that cp --reflink works on
-   NOCOW files?  (Clueless idea: quiesce I/O to the NOCOW file and clone
-   it, then resume I/O and COW only writes to shared blocks.)
-
- * Does NOCOW prevent any other functionality besides file-level cloning?
-
- * Does NOCOW increase risk of data loss/corruption?  (I guess yes since
-   overwriting in place puts data at risk of power failure or drive
-   failure.)
-
-Thanks,
-Stefan
-
+So detection could watch for read-only and act accordingly, either 
+switching back to read-write or rebooting or simply logging the event, as 
+deemed appropriate.
 
 -- 
-John Dulaney, RHCE
-IRC: handsome_pirate
-jdulaney.wordpress.com
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,125 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-65-41-216-221.sta.embarqhsd.net ([65.41.216.221]:13125 "EHLO
-	greer.hardwarefreak.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753499Ab3KVAan (ORCPT
+Received: from asav4.altibox.net ([81.167.36.153]:36458 "EHLO
+	asav4.altibox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753118Ab3KVAcN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Nov 2013 19:30:43 -0500
-Message-ID: <528EA5B9.3000801@hardwarefreak.com>
-Date: Thu, 21 Nov 2013 18:30:49 -0600
-From: Stan Hoeppner <stan@hardwarefreak.com>
-Reply-To: stan@hardwarefreak.com
+	Thu, 21 Nov 2013 19:32:13 -0500
+Message-ID: <528EA609.9060702@hesbynett.no>
+Date: Fri, 22 Nov 2013 01:32:09 +0100
+From: David Brown <david.brown@hesbynett.no>
 MIME-Version: 1.0
-To: joystick <joystick@shiftmail.org>
-CC: James Plank <plank@cs.utk.edu>, Ric Wheeler <rwheeler@redhat.com>,
-        Andrea Mazzoleni <amadvance@gmail.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, David Brown <david.brown@hesbynett.no>,
-        David Smith <creamyfish@gmail.com>
+To: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>
+CC: Andrea Mazzoleni <amadvance@gmail.com>, linux-raid@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, hpa@zytor.com, creamyfish@gmail.com
 Subject: Re: Triple parity and beyond
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>	<528A90B7.5010905@zytor.com>	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>	<528AA1EB.3010909@zytor.com> <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com> <528BCA2D.5010500@redhat.com> <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu> <528D61C5.70902@hardwarefreak.com> <528DBF85.6010303@shiftmail.org>
-In-Reply-To: <528DBF85.6010303@shiftmail.org>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <20131119181237.GA3666@lazy.lzy> <528C9297.9030801@hesbynett.no> <20131120215939.GA2622@lazy.lzy> <528DDCC9.7050701@hesbynett.no> <20131121200545.GB1916@lazy.lzy> <528E6DB2.6050005@hesbynett.no> <20131121205229.GA2458@lazy.lzy>
+In-Reply-To: <20131121205229.GA2458@lazy.lzy>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/21/2013 2:08 AM, joystick wrote:
-> On 21/11/2013 02:28, Stan Hoeppner wrote:
-...
->> WRT rebuild times, once drives hit 20TB we're looking at 18 hours just
->> to mirror a drive at full streaming bandwidth, assuming 300MB/s
->> average--and that is probably being kind to the drive makers.  With 6 or
->> 8 of these drives, I'd guess a typical md/RAID6 rebuild will take at
->> minimum 72 hours or more, probably over 100, and probably more yet for
->> 3P.  And with larger drive count arrays the rebuild times approach a
->> week.  Whose users can go a week with degraded performance?  This is
->> simply unreasonable, at best.  I say it's completely unacceptable.
->>
->> With these gargantuan drives coming soon, the probability of multiple
->> UREs during rebuild are pretty high.
+On 21/11/13 21:52, Piergiorgio Sartor wrote:
+> Hi David,
 > 
-> No because if you are correct about the very high CPU overhead during
-
-I made no such claim.
-
-> rebuild (which I don't see so dramatic as Andrea claims 500MB/sec for
-> triple-parity, probably parallelizable on multiple cores), the speed of
-> rebuild decreases proportionally 
-
-The rebuild time of a parity array normally has little to do with CPU
-overhead.  The bulk of the elapsed time is due to:
-
-1.  The serial nature of the rebuild algorithm
-2.  The random IO pattern of the reads
-3.  The rotational latency of the drives
-
-#3 is typically the largest portion of the elapsed time.
-
-> and hence the stress and heating on the
-> drives proportionally reduces, approximating that of normal operation.
-> And how often have you seen a drive failure in a week during normal
-> operation?
-
-This depends greatly on one's normal operation.  In general, for most
-users of parity arrays, any full array operation such as a rebuild or
-reshape is far more taxing on the drives, in both power draw and heat
-dissipation, than 'normal' operation.
-
-> But in reality, consider that a non-naive implementation of
-> multiple-parity would probably use just the single parity during
-> reconstruction if just one disk fails, using the multiple parities only
-> to read the stripes which are unreadable at single parity. So the speed
-> and time of reconstruction and performance penalty would be that of
-> raid5 except in exceptional situations of multiple failures.
-
-That may very well be, but it doesn't change #2,3 above.
-
->> What I envision is an array type, something similar to RAID 51, i.e.
->> striped parity over mirror pairs. ....
+> On Thu, Nov 21, 2013 at 09:31:46PM +0100, David Brown wrote:
+> [...]
+>> If this can all be done to give the user an informed choice, then it
+>> sounds good.
 > 
-> I don't like your approach of raid 51: it has the write overhead of
-> raid5, with the waste of space of raid1.
-> So it cannot be used as neither a performance array nor a capacity array.
+> that would be my target.
+> To _offer_ more options to the (advanced) user.
+> It _must_ always be under user control.
+> 
+>> One issue here is whether the check should be done with the filesystem
+>> mounted and in use, or only off-line.  If it is off-line then it will
+>> mean a long down-time while the array is checked - but if it is online,
+>> then there is the risk of confusing the filesystem and caches by
+>> changing the data.
+> 
+> Currently, "raid6check" can work with FS mounted.
+> I got the suggestion from Neil (of course).
+> It is possible to lock one stripe and check it.
+> This should be, at any given time, consistent
+> (that is, the parity should always match the data).
+> If an error is found, it is reported.
+> Again, the user can decide to fix it or not,
+> considering all the FS consequences and so on.
+> 
 
-I don't like it either.  It's a compromise.  But as RAID1/10 will soon
-be unusable due to URE probability during rebuild, I think it's a
-relatively good compromise for some users, some workloads.
+If you can lock stripes, and make sure any old data from that stripe is
+flushed from the caches (if you change it while locked), then that
+sounds ideal.
 
-> In the scope of this discussion (we are talking about very large
-> arrays), 
+>> Most disk errors /are/ detectable, and are reported by the underlying
+>> hardware - small surface errors are corrected by the disk's own error
+>> checking and correcting mechanisms, and larger errors are usually
+>> detected.  It is (or should be!) very rare that a read error goes
+>> undetected without there being a major problem with the disk controller.
+>>  And if the error is detected, then the normal raid processing kicks in
+>> as there is no doubt about which block has problems.
+> 
+> That's clear. That case is an "erasure" (I think)
+> and it is perfectly in line with the usual operation.
+> I'm not trying to replace this mechanism.
+>  
+>> If you can be /sure/ about which data block is incorrect, then I agree -
+>> but you can't be /entirely/ sure.  But I agree that you can make a good
+>> enough guess to recommend a fix to the user - as long as it is not
+>> automatic.
+> 
+> One typical case is when many errors are
+> found, belonging to the same disk.
+> This case clearly shows the disk is to be
+> replaced or the interface checked...
+> But, again, the user is the master, not the
+> machine... :-)
 
-Capacity yes, drive count, no.  Drive capacities are increasing at a
-much faster rate than our need for storage space.  As we move forward
-the trend will be building larger capacity arrays with fewer disks.
+I don't know what sort of interface you have for the user, but I guess
+that means you'll have to collect a number of failures before showing
+them so that the user can see the correlation on disk number.
 
-> the waste of space of your solution, higher than 50%, will make
-> your solution costing double the price.
+>  
+>> For most ECC schemes, you know that all your blocks are set
+>> synchronously - so any block that does not fit in, is an error.  With
+>> raid, it could also be that a stripe is only partly written - you can
+> 
+> Could it be?
+> I would consider this an error.
 
-This is the classic mirror vs parity argument.  Using 1 more disk to add
-parity to striped mirrors doesn't change it.  "Waste" is in the eye of
-the beholder.  Anyone currently using RAID10 will have no problem
-dedicating one more disk for uptime, protection.
+It could occur as the result of a failure of some sort (kernel crash,
+power failure, temporary disk problem, etc.).  More generally, md raid
+doesn't have to be on local physical disks - maybe one of the "disks" is
+an iSCSI drive or something else over a network that could have failures
+or delays.  I haven't thought through all cases here - I am just
+throwing them out as possibilities that might cause trouble.
 
-> A competitor for the multiple-parity scheme might be raid65 or 66, but
-> this is a so much dirtier approach than multiple parity if you think at
-> the kind of rmw and overhead that will occur during normal operation.
+> The stripe must always be consistent, there
+> should be a transactional mechanism to make
+> sure that, if read back, the data is always
+> matching the parity.
+> When I write "read back" I mean from whatever
+> the data is: physical disk or cache.
+> Otherwise, the check must run exclusively on
+> the array (no mounted FS, no other things
+> running on it).
+> 
+>> have two different valid sets of data mixed to give an inconsistent
+>> stripe, without any good way of telling what consistent data is the best
+>> choice.
+>>  
+>> Perhaps a checking tool can take advantage of a write-intent bitmap (if
+>> there is one) so that it knows if an inconsistent stripe is partly
+>> updated or the result of a disk error.
+> 
+> Of course, this is an option, which should be
+> taken into consideration.
+> 
+> Any improvement idea is welcome!!!
+> 
+> bye,
+> 
 
-Neither of those has any advantage over multi-parity.  I suggested this
-approach because it retains all of the advantages of RAID10 but one.  We
-sacrifice fast random write performance for protection against UREs, the
-same reason behind 3P.  That's what the single parity is for, and that
-alone.
-
-I suggest that anyone in the future needing fast random write IOPS is
-going to move those workloads to SSD, which is steadily increasing in
-capacity.  And I suggest anyone building arrays with 10-20TB drives
-isn't in need of fast random write IOPS.  Whether this approach is
-valuable to anyone depends on whether the remaining attributes of
-RAID10, with the added URE protection, are worth the drive count.
-Obviously proponents of traditional parity arrays will not think so.
-Users of RAID10 may.  Even if md never supports such a scheme, I bet
-we'll see something similar to this in enterprise gear, where rebuilds
-need to be 'fast' and performance degradation due to a downed drive is
-not acceptable.
-
--- 
-Stan

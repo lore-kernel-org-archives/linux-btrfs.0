@@ -1,55 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:33802 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755834Ab3KVRsV (ORCPT
+Received: from mail-we0-f178.google.com ([74.125.82.178]:36702 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754477Ab3KVSzG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 12:48:21 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 153679A0372
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 10:48:21 -0700 (MST)
-Date: Fri, 22 Nov 2013 12:48:19 -0500
-From: Josef Bacik <jbacik@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 5/5] Btrfs: reclaim the reserved metadata space at
- background
-Message-ID: <20131122174819.GA26620@localhost.localdomain>
-References: <1385041398-8521-1-git-send-email-miaox@cn.fujitsu.com>
- <1385041398-8521-5-git-send-email-miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1385041398-8521-5-git-send-email-miaox@cn.fujitsu.com>
+	Fri, 22 Nov 2013 13:55:06 -0500
+Received: by mail-we0-f178.google.com with SMTP id u56so1525595wes.37
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 10:55:05 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: avoid unnecessary ordered extent cache resets
+Date: Fri, 22 Nov 2013 18:54:58 +0000
+Message-Id: <1385146498-6549-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1385139163-7539-1-git-send-email-fdmanana@gmail.com>
+References: <1385139163-7539-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 21, 2013 at 09:43:18PM +0800, Miao Xie wrote:
-> Before applying this patch, the task had to reclaim the metadata space
-> by itself if the metadata space was not enough. And When the task started
-> the space reclamation, all the other tasks which wanted to reserve the
-> metadata space were blocked. At some cases, they would be blocked for
-> a long time, it made the performance fluctuate wildly.
-> 
+After an ordered extent completes, don't blindly reset the
+inode's ordered tree last accessed ordered extent pointer.
 
-So the reason the flushing is done this way is because of this level of hell
-called "early enospc."  Basically we'd get people flushing randomly and other
-users would come in and use the reclaimed space, so whoever was flushing would
-often ENOSPC because they thought they did everything they could to flush and
-still couldn't make allocations.  This approach is a nice balance keeping the
-old "one at a time" flushers and adding a background flusher, but I still worry
-about people competing with the background flushing.
+While running the xfstests I noticed that about 29% of the
+time the ordered extent to which tree->last pointed was not
+the same as our just completed ordered extent. After that I
+ran the following sysbench test (after a prepare phase) and
+noticed that about 68% of the time tree->last pointed to
+a different ordered extent too.
 
-Consider the case where the background flusher has started and taken all of the
-ordered extents on the system to flush (and lets assume that we only have
-reservations tied up in ordered extents, which is very possible).  Then a task
-comes in to make a reservation but it can't because it doesn't have space, so it
-tries to flush.  But the inline flushing stuff doesn't find any ordered extents
-to flush because they've been spliced off the list by the background flusher.
-So we bail out and do -ENOSPC even though there is plenty of space.
+sysbench --test=fileio --file-num=32 --file-total-size=4G \
+    --file-test-mode=rndwr --num-threads=512 \
+    --file-block-size=32768 --max-time=60 --max-requests=0 run
 
-What I would like to see is some way for a flusher who has to flush inline be
-able to see that there is a background flusher and wait for it to finish its
-work before doing its own flushing.  If I have to start tracking down early
-ENOSPC problems again I may very well quit doing file system work forever.
-Thanks,
+Therefore reset tree->last on ordered extent removal only if
+it pointed to the ordered extent we're removing from the tree.
 
-Josef
+Results from 4 runs of the following test before and after
+applying this patch:
+
+$ sysbench --test=fileio --file-num=32 --file-total-size=4G \
+  --file-test-mode=seqwr --num-threads=512 \
+  --file-block-size=32768 --max-time=60 --file-io-mode=sync prepare
+$ sysbench --test=fileio --file-num=32 --file-total-size=4G \
+  --file-test-mode=seqwr --num-threads=512 \
+  --file-block-size=32768 --max-time=60 --file-io-mode=sync run
+
+Before this path:
+
+run 1 - 64.049Mb/sec
+run 2 - 63.455Mb/sec
+run 3 - 64.656Mb/sec
+run 4 - 63.833Mb/sec
+
+After this patch:
+
+run 1 - 66.149Mb/sec
+run 2 - 68.459Mb/sec
+run 3 - 66.338Mb/sec
+run 4 - 66.176Mb/sec
+
+With random writes (--file-test-mode=rndwr) I had huge fluctuations
+on the results (+- 35% easily).
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+
+V2: Updated commit message with benchmark results.
+
+ fs/btrfs/ordered-data.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 69582d5..b8c2ded 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -520,7 +520,8 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+ 	spin_lock_irq(&tree->lock);
+ 	node = &entry->rb_node;
+ 	rb_erase(node, &tree->tree);
+-	tree->last = NULL;
++	if (tree->last == node)
++		tree->last = NULL;
+ 	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
+ 	spin_unlock_irq(&tree->lock);
+ 
+-- 
+1.7.9.5
+

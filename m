@@ -1,80 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from asav4.altibox.net ([81.167.36.153]:34752 "EHLO
-	asav4.altibox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752069Ab3KVNYJ (ORCPT
+Received: from mail-oa0-f50.google.com ([209.85.219.50]:52000 "EHLO
+	mail-oa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755831Ab3KVPBP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 08:24:09 -0500
-Message-ID: <528F5AF4.60803@hesbynett.no>
-Date: Fri, 22 Nov 2013 14:24:04 +0100
-From: David Brown <david.brown@hesbynett.no>
+	Fri, 22 Nov 2013 10:01:15 -0500
 MIME-Version: 1.0
-To: stan@hardwarefreak.com, James Plank <plank@cs.utk.edu>,
-        Ric Wheeler <rwheeler@redhat.com>
-CC: Andrea Mazzoleni <amadvance@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>,
-        linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        David Smith <creamyfish@gmail.com>
+In-Reply-To: <528F2575.80605@hardwarefreak.com>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
+	<528A90B7.5010905@zytor.com>
+	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
+	<528AA1EB.3010909@zytor.com>
+	<CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com>
+	<528BCA2D.5010500@redhat.com>
+	<73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>
+	<528D61C5.70902@hardwarefreak.com>
+	<CAJBj3vf7Ot2oUkk6LtkWRouFqrSCKecz0yD4Ds5UGT1BL1ds5A@mail.gmail.com>
+	<528DADB1.8010604@hardwarefreak.com>
+	<CAJBj3vcE07FYi-+xMxwd+u6dVfFU0ryU=j+ekmG8p=cgMhU74g@mail.gmail.com>
+	<528E8FEC.2070204@hardwarefreak.com>
+	<CAJBj3veHCTbGstLoUec67sMWuyHQMmZNY4A6bwcb+HQOgjJ_Ew@mail.gmail.com>
+	<528F2575.80605@hardwarefreak.com>
+Date: Fri, 22 Nov 2013 07:01:14 -0800
+Message-ID: <CAJBj3vft=Bnz1Hb-P96JZmfJNSE_m-S4SJ7nY3nev33SvCOmgQ@mail.gmail.com>
 Subject: Re: Triple parity and beyond
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>	<528A90B7.5010905@zytor.com>	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>	<528AA1EB.3010909@zytor.com> <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com> <528BCA2D.5010500@redhat.com> <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu> <528D61C5.70902@hardwarefreak.com> <528DCD36.1060808@hesbynett.no> <528F17FB.60909@hardwarefreak.com>
-In-Reply-To: <528F17FB.60909@hardwarefreak.com>
+From: John Williams <jwilliams4200@gmail.com>
+To: stan@hardwarefreak.com
+Cc: James Plank <plank@cs.utk.edu>, Ric Wheeler <rwheeler@redhat.com>,
+        Andrea Mazzoleni <amadvance@gmail.com>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Brown <david.brown@hesbynett.no>,
+        David Smith <creamyfish@gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22/11/13 09:38, Stan Hoeppner wrote:
-> On 11/21/2013 3:07 AM, David Brown wrote:
-> 
->> For example, with 20 disks at 1 TB each, you can have:
-> 
-> All correct, and these are maximum redundancies.
-> 
-> Maximum:
-> 
->> raid5 = 19TB, 1 disk redundancy
->> raid6 = 18TB, 2 disk redundancy
->> raid6.3 = 17TB, 3 disk redundancy
->> raid6.4 = 16TB, 4 disk redundancy
->> raid6.5 = 15TB, 5 disk redundancy
-> 
-> 
-> These are not fully correct, because only the minimums are stated.  With
-> any mirror based array one can lose half the disks as long as no two are
-> in one mirror.  The probability of a pair failing together is very low,
-> and this probability decreases even further as the number of drives in
-> the array increases.  This is one of the many reasons RAID 10 has been
-> so popular for so many years.
-> 
-> Minimum:
-> 
->> raid10 = 10TB, 1 disk redundancy
->> raid15 = 8TB, 3 disk redundancy
->> raid16 = 6TB, 5 disk redundancy
-> 
-> Maximum:
-> 
-> RAID 10 = 10 disk redundancy
-> RAID 15 = 11 disk redundancy
+On Fri, Nov 22, 2013 at 1:35 AM, Stan Hoeppner <stan@hardwarefreak.com> wrote:
 
-12 disks maximum (you have 8 with data, the rest are mirrors, parity, or
-mirrors of parity).
+> Only one graph goes to 2019, the rest are 2010 or less.  That being the
+> case, his 2019 graph deals with projected reliability of single, double,
+> and triple parity.
 
-> RAID 16 = 12 disk redundancy
+The whole article goes to 2019 (or longer). He shows current trends
+and discusses where they are going in the future. The whole point of
+the article is looking ahead into the future.
 
-14 disks maximum (you have 6 with data, the rest are mirrors, parity, or
-mirrors of parity).
+> Following this path, parity will eventually eat more disks of capacity
+> than RAID10 does today for average array counts, and the only reason for
+> it being survival of ever increasing rebuild duration.
 
+No, that is not what the article finds. In the near future (about 10
+years), triple-parity will suffice. Beyond that, perhaps quad-parity
+will be required, but predicting that far ahead is usually worthless
+in the computer industry.
 
-> 
-> Range:
-> 
-> RAID 10 = 1-10 disk redundancy
-> RAID 15 = 3-11 disk redundancy
-> RAID 16 = 5-12 disk redundancy
-> 
-> 
+> When parity hits 5P then RAID 15
+> becomes very competitive for smaller arrays.  And since drives at that
+> point will be 40-50TB each, even small arrays will need lots of
+> protection against UREs and additional failures during massive rebuild
+> times.  Here I'd say RAID 15 will beat 5P hands down.
 
-Yes, I know these are the minimum redundancies.  But that's a vital
-figure for reliability (even if the range is important for statistical
-averages).  When one disk in a raid10 array fails, your main concern is
-about failures or URE's in the other half of the pair - it doesn't help
-to know that another nine disks can "safely" fail too.
-
+I'll take triple- or 4-parity every time over the disk-wasting and
+less reliable RAID 15. There is no need for 5-parity in the near
+future.  I see no advantage of RAID 15, and several disadvantages.

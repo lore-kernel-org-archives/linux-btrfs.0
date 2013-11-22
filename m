@@ -1,94 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60473 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752124Ab3KURPs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Nov 2013 12:15:48 -0500
-Message-ID: <528E3F65.4020806@suse.com>
-Date: Thu, 21 Nov 2013 12:14:13 -0500
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from ocz85.ocztechnology.com ([64.79.114.85]:26277 "EHLO
+	webmail.ocztechnology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750808Ab3KVJrq convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Nov 2013 04:47:46 -0500
+From: Joshua Varghese <jvarghese@ocztechnology.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Fri, 22 Nov 2013 01:47:43 -0800
+Subject: Re: Receive fails (Could not find parent subvolume)
+Message-ID: <528F283F.5060903@ocztechnology.com>
+References: <528E467B.40002@ocztechnology.com>
+In-Reply-To: <528E467B.40002@ocztechnology.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-To: deadhorseconsulting <deadhorseconsulting@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Actual effect of mkfs.btrfs -m raid10 </dev/sdX> ... -d raid10
- </dev/sdX> ...
-References: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
-In-Reply-To: <CAEWPe=pwpxdYUDk7BzfjR8h-Jq9wtQE+gxxQChjOZzsXJO4vHQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="wS1BXnc50KfIjQmcwn8xvTKhGI1E0nSKO"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---wS1BXnc50KfIjQmcwn8xvTKhGI1E0nSKO
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-On 11/19/13, 12:12 AM, deadhorseconsulting wrote:
-> In theory (going by the man page and available documentation, not 100%
-> clear) does the following command indeed actually work as advertised
-> and specify how metadata should be placed and kept only on the
-> "devices" specified after the "-m" flag?
->=20
-> Thus given the following example:
-> mkfs.btrfs -L foo -m raid10 <ssd> <ssd> <ssd> <ssd> -d raid10 <rust>
-> <rust> <rust> <rust>
->=20
-> Would btrfs stripe/mirror and only keep metadata on the 4 specified SSD=
- devices?
-> Likewise then stripe/mirror and only keep data on the specified 4 spinn=
-ing rust?
->=20
-> In trying and creating this type of setup it appears that data is also
-> being stored on the devices specified as "metadata devices". This is
-> observed through via a "btrfs filesystem show". after committing a
-> large amount of data to the filesystem The data devices have balanced
-> data as expected with plenty of free space but the SSD device are
-> reported as either nearly used or completely used.
+I'm trying to implement a mechanism for incremental backup using btrfs.
+I have two hardisks and each has a btrfs partition on it. I am able to
+take a snapshot of the source partition and send it to the backup disk
+using the send-recieve mechanism. When I try to send an incremental
+backup of a new snapshot with the previous snapshot as the parent btrfs
+command complains (ERROR: could not find parent subvolume). The kernel
+logs also record a error (kernel: could not find root 9). I've listed
+the actual commands and their outputs below. Please let me know if you
+need any more information.
 
-Others have noted that's not how it works, but I wanted to add a comment.=
+# btrfs sub create check_backup
+/Create subvolume './check_backup/
+# touch check_backup/before_first_snap
+# btrfs sub snapshot -r check_backup/ first_snap
+/Create a readonly snapshot of 'check_backup/' in './first_snap'/
+# btrfs sub snapshot -r check_backup/ second_snap
+/Create a readonly snapshot of 'check_backup/' in './second_snap'/
 
+<second volume mounted at /mnt/gentoo/>
+# btrfs send  first_snap | btrfs receive /mnt/gentoo/backup/test/
+/At subvol first_snap//
+//At subvol first_snap//
+/# btrfs send  -p first_snap second_snap/ | btrfs receive
+/mnt/gentoo/backup/test/
+/At subvol second_snap///
+//At snapshot second_snap//
+//ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 40e9283cdf98a796, UUID_KEY,
+0fc9a258f8cd8da7) ret=-1, //error: No such file or directory//
+//ERROR: could not find parent subvolume//
+/
+/(kernel log): kernel: could not find root 9/
 
-I had a feature request from a customer recently that was pretty much
-exactly this. I think it'd be pretty easy to implement by allocating all
-(except for overhead) of the devices to chunks immediately at mkfs time,
-bypassing the kernel's dynamic chunk allocation. Since you don't *want*
-to mix allocation profiles, the usual reason for doing it dynamically
-doesn't apply. Extending an existing file system created in a such a
-manner so that the added devices are set up with the right kinds of
-chunks would require other extensions, though.
+As I understand the send command would take a difference between the two
+snapshots and the send it to the receive. I used the file mechanism
+instead of the pipe and realized that the receive is the one that complains.
+I'd also read in the documentation
+(http://docs.oracle.com/cd/E37670_01/E37355/html/ol_sendrecv_btrfs.hml)
+about clone source. I don't understand its implication in incremental
+backup.
 
-I have a few things on my plate right now, but I'll probably dig into
-this in the next month or so.
+Regards,
+Josh
 
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---wS1BXnc50KfIjQmcwn8xvTKhGI1E0nSKO
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJSjj9pAAoJEB57S2MheeWypEEP/0b9tZYt1p5RZilxt4hl6OJR
-8MI+eSM+U/xZALcRCH4tB/ybshD9u2iyv2LTz2qA4MUgu9gJ5PyLFV18GbMZWt9p
-qnv0b0VTCh26Z3lPbJfq/mflQKHmu63RnucE4GKrujVxumoWw+BhMziue/ysc/PY
-kL0ChzmpaBCebw685F83neIHZ47aFpaaDVF+be/aWGIQIwz423hZTiW4yEqer9z8
-b+HuEQq5VoQCA7Ew8vYVjuc6hUj1tAoXDIZhDX8YNoStBqxQBeK9HoM3wVLRX9rR
-3VUjPuWN7SIVGHkxYRV+Y+kVJAkTUVLw/pljM1ScQCniZdmJ52MSE8kvgRpPhU/9
-RY2dk2sYCIRyB5sDRyYYvL4ve/LyG71adk3prKyYlzHgnTr4elN/XC+CS2o1AmX1
-8TO8i5XjWf7PRUTjFiM0nibtchbA5cRdS0hmkBffLiqI2L4zOEXlxo/Wm2R6b8/T
-M+vnY8oelBYLDQxfivRIpzT6bdMGwJ8SMNnGYfCBG32xPF+e7lb0n94PeGUfRXM6
-p8rGaqhI6EtrMpf70WnUd4pbhB+VyGcUEsm1HMUepa3qwq79KC13ShsQiyl3PmyK
-IKQghkB8ttyTbCBJ8qur9q98WerRrWhE7bU2XjJ9KWtnDiFH2wQbOxyh3NyCSJWw
-iPRTrUV1SO83GyziDm/Y
-=0BNn
------END PGP SIGNATURE-----
-
---wS1BXnc50KfIjQmcwn8xvTKhGI1E0nSKO--
+CONFIDENTIAL COMMUNICATION:  This communication including any attached file(s) is CONFIDENTIAL, intended only for the named recipient (s) above and contains trade secrets or other information that is exempt from disclosure under applicable law.  Any use, dissemination, distribution or copying of this communication and any file attachments by anyone other than the named recipient (s) is strictly prohibited. If you have received this communication in error, please immediately notify us by reply electronic mail and permanently delete the original transmission and any attachments from your computer system and any copies of this message and file attachments. Thank you.

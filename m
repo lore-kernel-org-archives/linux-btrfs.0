@@ -1,33 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from asav21.altibox.net ([109.247.116.8]:39448 "EHLO
-	asav21.altibox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753245Ab3KVApH (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:56173 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752565Ab3KVIMq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Nov 2013 19:45:07 -0500
-Message-ID: <528EA90E.2010703@hesbynett.no>
-Date: Fri, 22 Nov 2013 01:45:02 +0100
-From: David Brown <david.brown@hesbynett.no>
-MIME-Version: 1.0
-To: stan@hardwarefreak.com, joystick <joystick@shiftmail.org>
-CC: James Plank <plank@cs.utk.edu>, Ric Wheeler <rwheeler@redhat.com>,
-        Andrea Mazzoleni <amadvance@gmail.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, David Smith <creamyfish@gmail.com>
+	Fri, 22 Nov 2013 03:12:46 -0500
+From: Russell Coker <russell@coker.com.au>
+To: linux-btrfs@vger.kernel.org
+Reply-To: russell@coker.com.au
+Cc: linux-raid@vger.kernel.org
 Subject: Re: Triple parity and beyond
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>	<528A90B7.5010905@zytor.com>	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>	<528AA1EB.3010909@zytor.com> <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com> <528BCA2D.5010500@redhat.com> <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu> <528D61C5.70902@hardwarefreak.com> <528DBF85.6010303@shiftmail.org> <528EA5B9.3000801@hardwarefreak.com>
-In-Reply-To: <528EA5B9.3000801@hardwarefreak.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Fri, 22 Nov 2013 19:12:39 +1100
+Message-ID: <4544086.2UTvYHxkvM@russell.coker.com.au>
+In-Reply-To: <528DD86E.8040608@websitemanagers.com.au>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <528DCD36.1060808@hesbynett.no> <528DD86E.8040608@websitemanagers.com.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22/11/13 01:30, Stan Hoeppner wrote:
+On Thu, 21 Nov 2013 20:54:54 Adam Goryachev wrote:
+> On a pure storage server, the CPU would normally have nothing to do,
+> except a little interrupt handling, it is just shuffling bytes around.
+> Of course, if you need RAID7.5 then you probably have a dedicated
+> storage server, so I don't see the problem with using the CPU to do all
+> the calculations.
 
-> I don't like it either.  It's a compromise.  But as RAID1/10 will soon
-> be unusable due to URE probability during rebuild, I think it's a
-> relatively good compromise for some users, some workloads.
+How would the pure storage server in question send data out to client systems?  
+SMB?  NFS?  IMAP?  All options will take some CPU power.
 
-An alternative is to move to 3-way raid1 mirrors rather than 2-way
-mirrors.  Obviously you take another hit in disk space efficiency, but
-reads will be faster than you have extra redundancy.
+There's a common myth that people should use hardware RAID to save CPU time, 
+that's obviously wrong in the case of RAID-1 (just writing the data twice) and 
+RAID-5 (XOR for parity).  But as we get into the more complex forms of parity 
+CPU performance could become an issue.
 
+Of course in terms of overall system performance the cost of doing a RAID 
+rebuild in terms of disk seeks will probably exceed the CPU use.  As an aside, 
+are there plans to limit the RAID rebuild speed for BTRFS?
+
+On Thu, 21 Nov 2013 18:30:49 Stan Hoeppner wrote:
+> I suggest that anyone in the future needing fast random write IOPS is
+> going to move those workloads to SSD, which is steadily increasing in
+> capacity.  And I suggest anyone building arrays with 10-20TB drives
+> isn't in need of fast random write IOPS.
+
+Traditionally SCSI/SAS disks have tended to be a lot smaller than IDE/SATA 
+disks.  Now Dell has just started offering 2TB SAS disks while the largest SATA 
+disks that they sell (In Australia on PowerEdge T110 servers at least) are 
+also 2TB.  Presumably RAID recovery time was one factor that made 
+manufacturers not bother with making larger SCSI/SAS disks in the past.
+
+When 20TB disks become available a user could choose to just use the first 10TB 
+of the disk.  Even in the days when 40G disks were big some people would use 
+less than the full capacity of the disk for performance.
+
+Will people really be storing data that is so important that triple parity is 
+needed on 20TB disks but be unable to afford enough disks to use only the first 
+10TB of each disk?  Is this a use-case that is worth coding for?
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

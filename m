@@ -1,80 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-in-05.arcor-online.net ([151.189.21.45]:41724 "EHLO
-	mail-in-05.arcor-online.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756123Ab3KVUc0 (ORCPT
+Received: from mo-65-41-216-221.sta.embarqhsd.net ([65.41.216.221]:26157 "EHLO
+	greer.hardwarefreak.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755278Ab3KVW2M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 15:32:26 -0500
-Date: Fri, 22 Nov 2013 21:32:17 +0100
-From: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>
-To: David Brown <david.brown@hesbynett.no>
-Cc: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>,
-        Andrea Mazzoleni <amadvance@gmail.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, hpa@zytor.com, creamyfish@gmail.com
-Subject: Re: Triple parity and beyond
-Message-ID: <20131122203217.GA3739@lazy.lzy>
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
- <20131119181237.GA3666@lazy.lzy>
- <528C9297.9030801@hesbynett.no>
- <20131120215939.GA2622@lazy.lzy>
- <528DDCC9.7050701@hesbynett.no>
- <20131121200545.GB1916@lazy.lzy>
- <528E6DB2.6050005@hesbynett.no>
- <20131121205229.GA2458@lazy.lzy>
- <528EA609.9060702@hesbynett.no>
+	Fri, 22 Nov 2013 17:28:12 -0500
+Message-ID: <528FDA80.1030508@hardwarefreak.com>
+Date: Fri, 22 Nov 2013 16:28:16 -0600
+From: Stan Hoeppner <stan@hardwarefreak.com>
+Reply-To: stan@hardwarefreak.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <528EA609.9060702@hesbynett.no>
+To: John Williams <jwilliams4200@gmail.com>
+CC: James Plank <plank@cs.utk.edu>, Ric Wheeler <rwheeler@redhat.com>,
+        Andrea Mazzoleni <amadvance@gmail.com>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Brown <david.brown@hesbynett.no>,
+        David Smith <creamyfish@gmail.com>
+Subject: Re: Triple parity and beyond
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>	<528A90B7.5010905@zytor.com>	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>	<528AA1EB.3010909@zytor.com>	<CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com>	<528BCA2D.5010500@redhat.com>	<73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>	<528D61C5.70902@hardwarefreak.com>	<CAJBj3vf7Ot2oUkk6LtkWRouFqrSCKecz0yD4Ds5UGT1BL1ds5A@mail.gmail.com>	<528DADB1.8010604@hardwarefreak.com>	<CAJBj3vcE07FYi-+xMxwd+u6dVfFU0ryU=j+ekmG8p=cgMhU74g@mail.gmail.com>	<528E8FEC.2070204@hardwarefreak.com>	<CAJBj3veHCTbGstLoUec67sMWuyHQMmZNY4A6bwcb+HQOgjJ_Ew@mail.gmail.com>	<528F2575.80605@hardwarefreak.com> <CAJBj3vft=Bnz1Hb-P96JZmfJNSE_m-S4SJ7nY3nev33SvCOmgQ@mail.gmail.com>
+In-Reply-To: <CAJBj3vft=Bnz1Hb-P96JZmfJNSE_m-S4SJ7nY3nev33SvCOmgQ@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+On 11/22/2013 9:01 AM, John Williams wrote:
+<snip>
 
-On Fri, Nov 22, 2013 at 01:32:09AM +0100, David Brown wrote:
-> > One typical case is when many errors are
-> > found, belonging to the same disk.
-> > This case clearly shows the disk is to be
-> > replaced or the interface checked...
-> > But, again, the user is the master, not the
-> > machine... :-)
-> 
-> I don't know what sort of interface you have for the user, but I guess
-> that means you'll have to collect a number of failures before showing
-> them so that the user can see the correlation on disk number.
+> I see no advantage of RAID 15, and several disadvantages.
 
-as usual in Unix, one software will collect
-data to a file, an other one will analyze
-that file.
-Originally, one idea was even to check at
-stripe level how many errors (and where)
-are present. From that some statistics will
-be presented to the user.
-This would be integrated in the check tool,
-of course.
+Of course not, just as I sated previously.
 
-> >> For most ECC schemes, you know that all your blocks are set
-> >> synchronously - so any block that does not fit in, is an error.  With
-> >> raid, it could also be that a stripe is only partly written - you can
-> > 
-> > Could it be?
-> > I would consider this an error.
-> 
-> It could occur as the result of a failure of some sort (kernel crash,
-> power failure, temporary disk problem, etc.).  More generally, md raid
-> doesn't have to be on local physical disks - maybe one of the "disks" is
-> an iSCSI drive or something else over a network that could have failures
-> or delays.  I haven't thought through all cases here - I am just
-> throwing them out as possibilities that might cause trouble.
+On 11/22/2013 2:13 AM, Stan Hoeppner wrote:
 
-OK, I misunderstood you, I was thinking during
-normal operation...
-Again, the check can find that issue, it will
-tell that it cannot find where the problem is.
-But it will tell where.
-Possibly, an other tool can check the FS at
-that position.
+> Parity users who currently shun RAID 10 for this reason will also
+> shun this "RAID 15".
 
-bye, 
+With that I'll thank you for your input from the pure parity
+perspective, and end our discussion.  Any further exchange would be
+pointless.
 
 -- 
-
-piergiorgio
+Stan

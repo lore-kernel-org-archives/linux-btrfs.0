@@ -1,19 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38546 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38875 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755486Ab3KVXAK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 18:00:10 -0500
-Date: Sat, 23 Nov 2013 09:59:53 +1100
+	id S1755840Ab3KVXIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Nov 2013 18:08:07 -0500
+Date: Sat, 23 Nov 2013 10:07:53 +1100
 From: NeilBrown <neilb@suse.de>
 To: stan@hardwarefreak.com
-Cc: David Brown <david.brown@hesbynett.no>, James Plank <plank@cs.utk.edu>,
+Cc: John Williams <jwilliams4200@gmail.com>, James Plank <plank@cs.utk.edu>,
         Ric Wheeler <rwheeler@redhat.com>,
         Andrea Mazzoleni <amadvance@gmail.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, David Smith <creamyfish@gmail.com>
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Brown <david.brown@hesbynett.no>,
+        David Smith <creamyfish@gmail.com>
 Subject: Re: Triple parity and beyond
-Message-ID: <20131123095953.18858e89@notabene.brown>
-In-Reply-To: <528F812D.8020105@hardwarefreak.com>
+Message-ID: <20131123100753.1820ab7c@notabene.brown>
+In-Reply-To: <528E8FEC.2070204@hardwarefreak.com>
 References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
 	<528A90B7.5010905@zytor.com>
 	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
@@ -22,93 +25,81 @@ References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
 	<528BCA2D.5010500@redhat.com>
 	<73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>
 	<528D61C5.70902@hardwarefreak.com>
-	<528DCD36.1060808@hesbynett.no>
-	<528F122C.2040202@hardwarefreak.com>
-	<528F812D.8020105@hardwarefreak.com>
+	<CAJBj3vf7Ot2oUkk6LtkWRouFqrSCKecz0yD4Ds5UGT1BL1ds5A@mail.gmail.com>
+	<528DADB1.8010604@hardwarefreak.com>
+	<CAJBj3vcE07FYi-+xMxwd+u6dVfFU0ryU=j+ekmG8p=cgMhU74g@mail.gmail.com>
+	<528E8FEC.2070204@hardwarefreak.com>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/FW_2xjW9xSFtnZIdV5aJW2z"; protocol="application/pgp-signature"
+ boundary="Sig_//YK9iPeR0onJXBircwTYPaU"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/FW_2xjW9xSFtnZIdV5aJW2z
+--Sig_//YK9iPeR0onJXBircwTYPaU
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 22 Nov 2013 10:07:09 -0600 Stan Hoeppner <stan@hardwarefreak.com>
+On Thu, 21 Nov 2013 16:57:48 -0600 Stan Hoeppner <stan@hardwarefreak.com>
 wrote:
 
-> On 11/22/2013 2:13 AM, Stan Hoeppner wrote:
-> > Hi David,
+> On 11/21/2013 1:05 AM, John Williams wrote:
+> > On Wed, Nov 20, 2013 at 10:52 PM, Stan Hoeppner <stan@hardwarefreak.com=
+> wrote:
+> >> On 11/20/2013 8:46 PM, John Williams wrote:
+> >>> For myself or any machines I managed for work that do not need high
+> >>> IOPS, I would definitely choose triple- or quad-parity over RAID 51 or
+> >>> similar schemes with arrays of 16 - 32 drives.
+> >>
+> >> You must see a week long rebuild as acceptable...
 > >=20
-> > On 11/21/2013 3:07 AM, David Brown wrote:
-> ...
-> >> I don't see that there needs to be any changes to the existing md code
-> >> to make raid15 work - it is merely a raid 5 made from a set of raid1
-> >> pairs. =20
+> > It would not be a problem if it did take that long, since I would have
+> > extra parity units as backup in case of a failure during a rebuild.
 > >=20
-> > The sole purpose of the parity layer of the proposed RAID 15 is to
-> > replace sectors lost due to UREs during rebuild.  AFAIK the current RAID
-> > 5 and RAID 1 drivers have no code to support each other in this manner.
+> > But of course it would not take that long. Take, for example, a 24 x
+> > 3TB triple-parity array (21+3) that has had two drive failures
+> > (perhaps the rebuild started with one failure, but there was soon
+> > another failure). I would expect the rebuild to take about a day.
 >=20
-> Minor self correction here-- obviously this isn't the 'sole' purpose of
-> the parity layer.  It also allows us to recover from losing an entire
-> mirror, which is a big upshot of the proposed RAID 15.  Thinking this
-> through a little further, more code modification would be needed for
-> this scenario.
->=20
-> In the event of a double drive failure in one mirror, the RAID 1 code
-> will need to be modified in such a way as to allow the RAID 5 code to
-> rebuild the first replacement disk, because the RAID 1 device is still
-> in a failed state.  Once this rebuild is complete, the RAID 1 code will
-> need to switch the state to degraded, and then do its standard rebuild
-> routine for the 2nd replacement drive.
->=20
-> Or, with some (likely major) hacking it should be possible to rebuild
-> both drives simultaneously for no loss of throughput or additional
-> elapsed time on the RAID 5 rebuild.=20
+> You're looking at today.  We're discussing tomorrow's needs.  Today's
+> 6TB 3.5" drives have sustained average throughput of ~175MB/s.
+> Tomorrow's 20TB drives will be lucky to do 300MB/s.  As I said
+> previously, at that rate a straight disk-disk copy of a 20TB drive takes
+> 18.6 hours.  This is what you get with RAID1/10/51.  In the real world,
+> rebuilding a failed drive in a 3P array of say 8 of these disks will
+> likely take at least 3 times as long, 2 days 6 hours minimum, probably
+> more.  This may be perfectly acceptable to some, but probably not to all.
 
-Nah, that would be minor hacking.  Just recreate the RAID1 in a state that =
-is
-not-insync, but with automatic-resync disabled.
-Then as continuous writes arrive, move the "recovery_cp" variable forward
-towards the end of the array.  When it reaches the end we can safely mark t=
-he
-whole array as 'in-sync' and forget about diabling auto-resync.
+Could you explain your logic here?  Why do you think rebuilding parity
+will take 3 times as long as rebuilding a copy?  Can you measure that sort =
+of
+difference today?
+
+Presumably when we have 20TB drives we will also have more cores and quite
+possibly dedicated co-processors which will make the CPU load less
+significant.
 
 NeilBrown
 
-
-
- In the 20TB drive case, this would
-> shave 18 hours off the total rebuild operation elapsed time.  With
-> current 4TB drives it would still save 6.5 hours.  Losing both drives in
-> one mirror set of a striped array is rare, but given the rebuild time
-> saved it may be worth investigating during any development of this RAID
-> 15 idea.
->=20
-
-
---Sig_/FW_2xjW9xSFtnZIdV5aJW2z
+--Sig_//YK9iPeR0onJXBircwTYPaU
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQIVAwUBUo/h6Tnsnt1WYoG5AQIRURAAvq7iQ8cfSkOgWftsXhliaxsxQhWJPVU9
-61Qr9kHdw0/VivZCnG/ExtpdM3JIoq1/7y/J3ckA1wPJM6a0OSGwd7SBWP9DIeeu
-rwV5yvcScxRPtec1B9cPK6mTptvx9iunAwV+eXMJi78opTGmfougrNReBRxuf/Su
-SZEJdI/zjsYCp3w7oczWtww5rGllIRNrEgJayhrlEwQjgyh3Hriw9I/xCFWDmRAO
-DRcldfBDadymcVeTGW4bQUDR6IoV76otAviJKtc5/mulabPrFjwGozYWwlGx+RyD
-gQAPaMkNiVDi3ClLITMtOjz7jib1GMIGYmN2o8uS30Sepo7LM6xKXKrpFEmgXfq+
-Z/uNFvRDLOFZJ+nDqsAavIdzBHYyPVQ/8o2E3sc3cQovtnAKWF/vugV6t4NqwPwT
-LKS9aqTW+G/iF0nkRcZV7/rxM8Did8HfxxfUep/TyAjhUWr6AYRW6Kyno7f3GBz9
-xnO+XNn+F+GfEPIWHVYbgGdXK68KlI09eYLRyilQslI7+eOgnTRX8iJ6/3t4Ag/k
-4maXjrUgDD7TDVt4K8dceR8Ng7/QcNkIoL0omIwZEoZhQ2NhoygHxPolu6ALvS1V
-fPbYPxWCW4Zn7x5M3M0NFGYxkq9YKqoU/4Gp/6BRFVgfkoLaL5tgKi0A2XdK/olU
-HnqtETRN+c8=
-=E6sm
+iQIVAwUBUo/jyTnsnt1WYoG5AQJxihAAxBt/GCVeavsK4FwhEpzIALog/CchgPRA
+zSEcQVYf1DJXH7cWejcOWDtEB2euzSp+6U4B8KWTAaQOlp9di0IDVvrSPgpSwU2k
+EuO6epcMxhRqXmu8ZVP9MLeQeb0Fs/UjGepD/bkNyx+HPVW0Y1zNjf6wYBTsqeGv
+gwPghzJ+/9fd4CU97M6J+P/1n5hXjMqKpkI4qWgOIeEqqzYwfXEiVgJH52hnP6+0
+9we/y4KkUkruUqWRfRfZXaaBux5uu6HvxsNT5MRC+GYXhQnUGrQa1K8tnIaJNyXi
+xTAnS1/WKXFLKLaG7U9nmg8WRhJjJLXK7O0sGFk4Mdo28qqRr6jS80xsTroyeGN/
+pr1JW2OQdFX/dPcY39z/vM8BG2dDX6dPCfsKdQ6A04+mLN5YCopUIeuZdov+ZFkV
+XpIQNDPjdbQcFcfP+o0pYOY/z6hBmneZo5eXEk2BTUF69GMSUJ71SBs2zxX5b7hz
+vVZMC1R9F6U4cS+ghAsI0AqRxcqAkoPFdRgKEPuJZJO7QMUdgF43iwdEntjZOW6y
+k7LxGT+ftrM44RtI07rGpjwbw5KdqZbvuLywiBNhbYsiGJMUq3ePoRbRxdADbNXC
+FtneXGYnpoWJmr/u8+FC6xUMEpkUsoq/RENX1AT6+egWqvVBIBEeyZ+zUQLmifGj
+GNFlxqCX7Nc=
+=pLuD
 -----END PGP SIGNATURE-----
 
---Sig_/FW_2xjW9xSFtnZIdV5aJW2z--
+--Sig_//YK9iPeR0onJXBircwTYPaU--

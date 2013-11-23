@@ -1,88 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59692 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:34511 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756179Ab3KVWF7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Nov 2013 17:05:59 -0500
+	id S1755517Ab3KWADD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Nov 2013 19:03:03 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VjyrL-0005Dc-NF
-	for linux-btrfs@vger.kernel.org; Fri, 22 Nov 2013 23:05:55 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+	id 1Vk0gc-00009H-Ph
+	for linux-btrfs@vger.kernel.org; Sat, 23 Nov 2013 01:02:58 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 23:05:55 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Nov 2013 01:02:58 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Nov 2013 23:05:55 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Nov 2013 01:02:58 +0100
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+From: Martin <m_btrfs@ml1.co.uk>
 Subject: Re: progs integration branch moved to master (new default leafsize)
-Date: Fri, 22 Nov 2013 22:05:32 +0000 (UTC)
-Message-ID: <pan$15edd$cb857513$c87e20b5$67c5229@cox.net>
-References: <20131108220135.3802.39092@localhost.localdomain>
-	<l5jtgo$6q1$1@ger.gmane.org>
-	<20131121233751.5312.13383@localhost.localdomain>
-	<l6n6l2$ln6$1@ger.gmane.org>
-	<20131122134038.5312.42200@localhost.localdomain>
+Date: Sat, 23 Nov 2013 00:02:46 +0000
+Message-ID: <l6oras$9ra$1@ger.gmane.org>
+References: <20131108220135.3802.39092@localhost.localdomain> <l5jtgo$6q1$1@ger.gmane.org> <20131121233751.5312.13383@localhost.localdomain> <l6n6l2$ln6$1@ger.gmane.org> <20131122134038.5312.42200@localhost.localdomain> <l6oche$7sa$1@ger.gmane.org> <20131122195729.5312.20671@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20131122195729.5312.20671@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason posted on Fri, 22 Nov 2013 08:40:38 -0500 as excerpted:
-
-> Does gentoo modify the optimizations from the Makefile?  We actually
-> have many strict-aliasing warnings, but I didn't think they came up
-> until -O2.
+On 22/11/13 19:57, Chris Mason wrote:
+> Quoting Martin (2013-11-22 14:50:17)
+>> On 22/11/13 13:40, Chris Mason wrote:
+>>> Quoting Martin (2013-11-22 04:03:41)
+>>
+>>>>  * QA Notice: Package triggers severe warnings which indicate that it
+>>>>  *            may exhibit random runtime failures.
+>>>>  * disk-io.c:91:5: warning: dereferencing type-punned pointer will break
+>>>> strict-aliasing rules [-Wstrict-aliasing]
+>>>>  * volumes.c:1930:5: warning: dereferencing type-punned pointer will
+>>>> break strict-aliasing rules [-Wstrict-aliasing]
+>>>>  * volumes.c:1931:6: warning: dereferencing type-punned pointer will
+>>>> break strict-aliasing rules [-Wstrict-aliasing]
+>>>
+>>> Does gentoo modify the optimizations from the Makefile?  We actually
+>>> have many strict-aliasing warnings, but I didn't think they came up
+>>> until -O2.
+>>
+>> For that system, I have -Os set in the Gentoo "make.conf".
+>>
+>>
+>>> At any rate, I'm adding -fno-strict-aliasing just to be sure.
+>>
+>> Good to catch to avoid unexpectedness,
 > 
-> At any rate, I'm adding -fno-strict-aliasing just to be sure.
+> Ok, please try with the current master to make sure the options are
+> being picked up properly.  If you're overriding the
+> -fno-strict-aliasing, please don't ;)
 
-FWIW, Gentoo lets users set their own CFLAGS/CXXFLAGS/LDFLAGS, etc. 
+No changes my side for that system and...
 
-Gentoo recommends -O2 at the global system level and I believe sets that 
-as the default before user modification, as well.  -Os is considered a 
-viable option, but users setting -O3 or -Ofast or whatever are often 
-considered ricers and can be told to try to reproduce bugs with -O2 set.  
-And -O1 or lower is not recommended either, simply because it's not 
-widely tested.
+btrfs-progs now compiles with no warnings given. That looks like a "fixed".
 
-Individual package builds can and routinely do, however, override or 
-filter specific flags where they've been demonstrated to be problematic, 
-and in some cases, may add flags such as -fno-strict-aliasing where 
-upstream code requires it.
 
-But of course a (normally masked unless a user specifically unmasks it) 
--9999 version is gentoo's way of noting a live-from-upstream-vcs version, 
-and that's the case here as well.  btrfs-progs-9999 fetches and builds 
-the live-git btrfs-progs direct from upstream git, and as such, it's 
-subject to far less QA than ~arch (~x86, ~amd64, etc) aka testing 
-packages, which in turn are less stable-tested than stable arch (x86, 
-amd64, etc) packages.  Basically, gentooers unmasking -9999 packages are 
-expected to be able to deal with any breakage a live-vcs build may have 
-and/or trigger.
+# emerge -vD btrfs-progs
 
-And it's likely that -fno-strict-aliasing simply hasn't made it to the 
-live build yet.  But by the same token, I don't believe it'll override an 
-upstream makefile's use of the flag, so now that you've added it...
+These are the packages that would be merged, in order:
 
-... And indeed, after just rebuilding it here, with the commit (8116550) 
-adding -fno-strict-aliasing as HEAD, I see no further type-punned pointer 
-warnings. =:^)
+Calculating dependencies... done!
+[ebuild   R   *] sys-fs/btrfs-progs-9999  0 kB
 
-I do however still see this:
+Total: 1 package (1 reinstall), Size of downloads: 0 kB
 
-cmds-restore.c: In function 'next_leaf':
-cmds-restore.c:174:20: warning: array subscript is above array bounds [-
-Warray-bounds]
-  slot = path->slots[level] + 1;
-                    ^
 
-(I am running a newer gcc than Martin, however:
-gcc (Gentoo 4.8.1-r1 p1.2, pie-0.5.7) 4.8.1
-)
+>>> Verifying ebuild manifests
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+>>> Emerging (1 of 1) sys-fs/btrfs-progs-9999
+>>> Unpacking source...
+GIT update -->
+   repository:
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+   at the commit:            8116550e16628794b76051b6b8ea503055c08d6f
+   branch:                   master
+   storage directory:
+"/usr/portage/distfiles/egit-src/btrfs-progs.git"
+   checkout type:            bare repository
+Cloning into
+'/var/tmp/portage/sys-fs/btrfs-progs-9999/work/btrfs-progs-9999'...
+done.
+Checking connectivity... done
+Branch branch-master set up to track remote branch master from origin.
+Switched to a new branch 'branch-master'
+
+... And then a clean compile. No warnings.
+
+
+Thanks,
+Martin
+
+
 

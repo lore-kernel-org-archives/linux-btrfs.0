@@ -1,117 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58174 "EHLO plane.gmane.org"
+Received: from mout.gmx.net ([212.227.17.20]:58027 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755517Ab3KWQdU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Nov 2013 11:33:20 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VkG91-0005vs-La
-	for linux-btrfs@vger.kernel.org; Sat, 23 Nov 2013 17:33:19 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Nov 2013 17:33:19 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Nov 2013 17:33:19 +0100
+	id S1752371Ab3KXSi2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Nov 2013 13:38:28 -0500
+Received: from [192.168.10.114] ([85.181.13.11]) by mail.gmx.com (mrgmx001)
+ with ESMTPSA (Nemesis) id 0MHoWj-1VoEPf1xfx-003hGo for
+ <linux-btrfs@vger.kernel.org>; Sun, 24 Nov 2013 19:38:26 +0100
+Message-ID: <529247A2.4090905@gmx.de>
+Date: Sun, 24 Nov 2013 19:38:26 +0100
+From: Thomas Pasch <thomas.pasch@gmx.de>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Nagios probe for btrfs RAID status?
-Date: Sat, 23 Nov 2013 16:32:57 +0000 (UTC)
-Message-ID: <pan$98b65$bf0f3e19$35b6bfa7$de9e854@cox.net>
-References: <528F6085.4020603@pocock.com.au> <52902808.8020706@oracle.com>
-	<5290695E.80506@pocock.com.au>
-	<pan$13621$9e5c77ca$1502a49b$4b791baa@cox.net>
-	<52909519.7080508@pocock.com.au>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: corrupt btrfs
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Daniel Pocock posted on Sat, 23 Nov 2013 12:44:25 +0100 as excerpted:
+Hello,
 
->> [btrfs manpage quote]
->> btrfs device stats [-z] {<path>|<device>}
->> 
->> Read and print the device IO stats for all devices of the filesystem
->> identified by <path> or for a single <device>.
+yes, I've got it. I know that btrfs is experimental, and I've got a
+backup (well, it is a little bit older, but anyway...). I read
+[https://btrfs.wiki.kernel.org/index.php/Problem_FAQ] and
+[https://btrfs.wiki.kernel.org/index.php/Restore] and have done what it
+is suggested there (including the problematic btrfs-zero-log !). In
+addition, I run Ubuntu 13.10, that does rule me out from being a
+sensible person.
 
->> -z   Reset stats to zero after reading them.
+Beside that, I tried btrfs-find-root. It shows something like:
 
->> Here's the output for my (dual device btrfs raid1) rootfs, here:
->> 
->> btrfs dev stat /
->> [/dev/sdc5].write_io_errs   0
->> [/dev/sdc5].read_io_errs    0
->> [/dev/sdc5].flush_io_errs   0
->> [/dev/sdc5].corruption_errs 0
->> [/dev/sdc5].generation_errs 0
->> [/dev/sda5].write_io_errs   0
->> [/dev/sda5].read_io_errs    0
->> [/dev/sda5].flush_io_errs   0
->> [/dev/sda5].corruption_errs 0
->> [/dev/sda5].generation_errs 0
->> 
->> As you can see, for multi-device filesystems it gives the stats per
->> component device.  Any errors accumulate until a reset using -z, so you
->> can easily see if the numbers are increasing over time and by how much.
+Well block 144572416 seems great, but generation doesn't match,
+have=250241, want=250412 level 0
+Well block 252919808 seems great, but generation doesn't match,
+have=250404, want=250412 level 0
+Well block 282722304 seems great, but generation doesn't match,
+have=250093, want=250412 level 0
+Well block 291414016 seems great, but generation doesn't match,
+have=250094, want=250412 level 0
+Well block 302501888 seems great, but generation doesn't match,
+have=250095, want=250412 level 0
+Well block 310611968 seems great, but generation doesn't match,
+have=249927, want=250412 level 0
+Well block 319311872 seems great, but generation doesn't match,
+have=250097, want=250412 level 0
+[...]
 
-> That looks interesting - are these explained anywhere?
+What I'm missing here is some line starting with 'Generation: ...'.
+Well, it is not there...
 
-I'd guess in the sources...  There's nothing more in the manpage about 
-them, and nothing on the wiki.  Some weeks ago I scanned some of the 
-whitepapers listed on the wiki, and found most of them frustratingly "big 
-picture" vague on such details as well. =:^(  There was one that had a 
-bit of detail, but only about half of what I was looking for at the time 
-(the difference between leafsize, sectorsize and nodesize, three option 
-knobs available on the mkfs.btrfs commandline, and what they actually 
-tuned, and while I was at it, how they related to btrfs chunks) was there 
-either, and even then not really explained very clearly).  So it seems a 
-lot of the documentation is sources-only at this point. =:^(
+Certainly, the 'btrfs restore -t n /dev/sda7 /mnt/restore' trick does
+not find anything useful.
 
-> Should a Nagios plugin just look for any non-zero value or just focus on
-> some of those?
+Is there anything left I could try before giving up on this?
 
-I could guess at what some of them are and their significance based on 
-what I've seen here, but I'm afraid my guesses wouldn't rate well in SNR 
-terms, so I'll abstain...
+Kind regards,
 
-> Are they runtime stats (since system boot) or are they maintained in the
-> filesystem on disk?
-
-The records are maintained across mounts/boots so must be stored on-
-disk.  Only the -z switch zeroes.
-
-> My own version of the btrfs utility doesn't have that command though, I
-> am using a Debian stable system.  I tried a newer version and it gives
-> 
-> ERROR: ioctl(BTRFS_IOC_GET_DEV_STATS)
-> 
-> so I probably need to update my kernel too.
-
-You've likely read it before, but btrfs remains a filesystem under heavy 
-development, with every kernel bringing fixes for known bugs and 
-userspace tools developed in tandem, and every btrfs user at this point 
-is by definition a development filesystem tester.  While there are 
-reasons one may wish to be conservative and stick with a known stable 
-system, they really tend to be antithetical with the reasons one would 
-have for testing something as development edge as btrfs at this point.  
-Thus, upgrading to a current kernel (3.12.x at this point, if not 3.13 
-development kernel as rc1 just came out) and btrfs-progs (at least, you 
-can keep the rest of the system stable Debian if you like) is very 
-strongly recommended if you're testing btrfs, in any case.
-
-(For btrfs-progs, development happens in git branches, with merges to the 
-master branch only when changes are considered release-ready.  So current 
-git-master btrfs-progs is always the reference.  FWIW, here's what btrfs 
---version outputs here, btrfs-progs from git updated as of yesterday as 
-it happens, tho I usually keep within a week or two: Btrfs v0.20-rc1-598-
-g8116550.)
-
-See the btrfs wiki for more:  https://btrfs.wiki.kernel.org.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thomas
 

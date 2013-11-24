@@ -1,76 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:39981 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751572Ab3KXFTL (ORCPT
+Received: from mail-we0-f177.google.com ([74.125.82.177]:64272 "EHLO
+	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756210Ab3KXJjy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Nov 2013 00:19:11 -0500
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: stan@hardwarefreak.com
-Subject: Re: Triple parity and beyond
-Date: Sun, 24 Nov 2013 16:19:08 +1100
-Cc: Linux RAID Mailing List <linux-raid@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <20131123181208.5103bee4@notabene.brown> <52917AA8.1040300@hardwarefreak.com>
-In-Reply-To: <52917AA8.1040300@hardwarefreak.com>
+	Sun, 24 Nov 2013 04:39:54 -0500
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201311241619.08668.russell@coker.com.au>
+In-Reply-To: <20131123221024.GA10555@lazy.lzy>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
+	<20131120222903.GA3654@lazy.lzy>
+	<CAGKKSfUejP=pb6HHF-48ciu5GSSd_ZCZMXHyL6iHLcQHvDs8yQ@mail.gmail.com>
+	<20131123221024.GA10555@lazy.lzy>
+Date: Sun, 24 Nov 2013 10:39:52 +0100
+Message-ID: <CAGKKSfXCz_sF4jiM_c2zOvzaCUN6yyR9wL7e84_HqKH-EACKmw@mail.gmail.com>
+Subject: Re: Triple parity and beyond
+From: Andrea Mazzoleni <amadvance@gmail.com>
+To: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>
+Cc: Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        David Brown <david.brown@hesbynett.no>,
+        David Smith <creamyfish@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 24 Nov 2013, Stan Hoeppner <stan@hardwarefreak.com> wrote:
-> I have always surmised that the culprit is rotational latency, because
-> we're not able to get a real sector-by-sector streaming read from each
-> drive.  If even only one disk in the array has to wait for the platter
-> to come round again, the entire stripe read is slowed down by an
-> additional few milliseconds.  For example, in an 8 drive array let's say
-> each stripe read is slowed 5ms by only one of the 7 drives due to
-> rotational latency, maybe acoustical management, or some other firmware
-> hiccup in the drive.  This slows down the entire stripe read because we
-> can't do parity reconstruction until all chunks are in.  An 8x 2TB array
-> with 512KB chunk has 4 million stripes of 4MB each.  Reading 4M stripes,
-> that extra 5ms per stripe read costs us
-> 
-> (4,000,000 * 0.005)/3600 = 5.56 hours
+Hi Piergiorgio,
 
-If that is the problem then the solution would be to just enable read-ahead.  
-Don't we already have that in both the OS and the disk hardware?  The hard-
-drive read-ahead buffer should at least cover the case where a seek completes 
-but the desired sector isn't under the heads.
+Checking better I found that for PAR3 it was also evaluated a Cauchy
+matrix, but they preferred to use a RS with FFT in GF(2^16 +1).
 
-RAM size is steadily increasing, it seems that the smallest that you can get 
-nowadays is 1G in a phone and for a server the smallest is probably 4G.
+http://sourceforge.net/mailarchive/forum.php?forum_name=parchive-devel&max_rows=25&style=nested&viewmonth=201006
 
-On the smallest system that might have an 8 disk array you should be able to 
-use 512M for buffers which allows a read-ahead of 128 chunks.
+Note that using a Cauchy matrix for a MDS is something well known.
+What I did is just to adapt a Cauchy matrix to be compatible with the
+present Linux kernel implementation. I think it has a value only for
+Linux or compatible implementations.
 
-> Now consider that arrays typically have a few years on them before the
-> first drive failure.  During our rebuild it's likely that some drives
-> will take a few rotations to return a sector that's marginal.
+Ciao,
+Andrea
 
-Are you suggesting that it would be a common case that people just write data 
-to an array and never read it or do an array scrub?  I hope that it will 
-become standard practice to have a cron job scrubbing all filesystems.
-
-> So  this
-> might slow down a stripe read by dozens of milliseconds, maybe a full
-> second.  If this happens to multiple drives many times throughout the
-> rebuild it will add even more elapsed time, possibly additional hours.
-
-Have you observed such 1 second reads in practice?
-
-One thing I've considered doing is placing a cheap disk on a speaker cone to 
-test vibration induced performance problems.  Then I can use a PC to control 
-the level of vibration in a reasonably repeatable manner.  I'd like to see 
-what the limits are for retries.
-
-Some years ago a company I worked for had some vibration problems which 
-dropped the contiguous read speed from about 100MB/s to about 40MB/s on some 
-parts of the disk (other parts gave full performance).  That was a serious and 
-unusual problem and it only abouty halved the overall speed.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+On Sat, Nov 23, 2013 at 11:10 PM, Piergiorgio Sartor
+<piergiorgio.sartor@nexgo.de> wrote:
+> Hi Andrea,
+>
+> On Sat, Nov 23, 2013 at 08:55:08AM +0100, Andrea Mazzoleni wrote:
+>> Hi Piergiorgio,
+>>
+>> > How about par2? How does this work?
+>> I checked the matrix they use, and sometimes it contains some singular
+>> square submatrix.
+>> It seems that in GF(2^16) these cases are just less common. Maybe they
+>> were just unnoticed.
+>>
+>> Anyway, this seems to be an already known problem for PAR2, with an
+>> hypothetical PAR3 fixing it:
+>>
+>> http://sourceforge.net/p/parchive/discussion/96282/thread/d3c6597b/
+>
+> you did a pretty damn good research work!
+>
+> Maybe you should consider to contact them too.
+> I'm not sure if your approach can be extended
+> to GF(2^16), I guess yes, in that case they
+> might be interested too.
+>
+> bye,
+>
+> --
+>
+> piergiorgio

@@ -1,66 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-65-41-216-221.sta.embarqhsd.net ([65.41.216.221]:18712 "EHLO
-	greer.hardwarefreak.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752560Ab3KYCEh (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:45654 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753072Ab3KYCOK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Nov 2013 21:04:37 -0500
-Message-ID: <5292B030.5030305@hardwarefreak.com>
-Date: Sun, 24 Nov 2013 20:04:32 -0600
-From: Stan Hoeppner <stan@hardwarefreak.com>
-Reply-To: stan@hardwarefreak.com
-MIME-Version: 1.0
-To: Alex Elsayed <eternaleye@gmail.com>, linux-raid@vger.kernel.org
-CC: linux-btrfs@vger.kernel.org
+	Sun, 24 Nov 2013 21:14:10 -0500
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
+To: stan@hardwarefreak.com
 Subject: Re: Triple parity and beyond
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com> <528AA1EB.3010909@zytor.com> <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com> <528BCA2D.5010500@redhat.com> <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu> <528D61C5.70902@hardwarefreak.com> <CAJBj3vf7Ot2oUkk6LtkWRouFqrSCKecz0yD4Ds5UGT1BL1ds5A@mail.gmail.com> <528DADB1.8010604@hardwarefreak.com> <CAJBj3vcE07FYi-+xMxwd+u6dVfFU0ryU=j+ekmG8p=cgMhU74g@mail.gmail.com> <528E8FEC.2070204@hardwarefreak.com> <20131123100753.1820ab7c@notabene.brown> <5290252A.8020508@hardwarefreak.com> <20131123160428.6f1c5898@notabene.brown> <CAJBj3vfsbPoke2spzomBQRGqmSG9RCjwfMG1R4mfmJ8SOBZjvw@mail.gmail.com> <20131123181208.5103bee4@notabene.brown> <52917AA8.1040300@hardwarefreak.com> <CAJBj3vdKsmQ=ovG5LnoDz_DqLFp5+o_j0JUWtWTRP+jzbbZkhg@mail.gmail.com> <52926BE3.1000301@hardwarefreak.com> <l6u3h9$l72$2@ger.gmane.org>
-In-Reply-To: <l6u3h9$l72$2@ger.gmane.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Mon, 25 Nov 2013 13:14:06 +1100
+Cc: Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <201311241619.08668.russell@coker.com.au> <52927343.9000203@hardwarefreak.com>
+In-Reply-To: <52927343.9000203@hardwarefreak.com>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201311251314.06277.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/24/2013 5:53 PM, Alex Elsayed wrote:
-> Stan Hoeppner wrote:
+On Mon, 25 Nov 2013, Stan Hoeppner <stan@hardwarefreak.com> wrote:
+> > If that is the problem then the solution would be to just enable
+> > read-ahead. Don't we already have that in both the OS and the disk
+> > hardware?  The hard- drive read-ahead buffer should at least cover the
+> > case where a seek completes but the desired sector isn't under the
+> > heads.
 > 
->> On 11/23/2013 11:14 PM, John Williams wrote:
->>> On Sat, Nov 23, 2013 at 8:03 PM, Stan Hoeppner <stan@hardwarefreak.com>
->>> wrote:
-> <snip>
->>
->>> But I, and a number of other people I have talked to or corresponded
->>> with, have had mdadm RAID 5 or RAID 6 rebuilds of one drive run at
->>> approximately the optimal sequential write speed of the replacement
->>> drive. It is not unusual on a reasonably configured system.
->>
->> I freely admit I may have drawn an incorrect conclusion about md parity
->> rebuild performance based on incomplete data.  I simply don't recall
->> anyone stating here in ~3 years that their parity rebuilds were speedy,
->> but quite the opposite.  I guess it's possible that each one of those
->> cases was due to another factor, such as user load, slow CPU, bus
->> bottleneck, wonky disk firmware, backplane issues, etc.
->>
+> I'm not sure if read-ahead would solve such a problem, if indeed this is
+> a possible problem.  AFAIK the RAID5/6 drivers process stripes serially,
+> not asynchronously, so I'd think the rebuild may still stall for ms at a
+> time in such a situation.
+
+For a RAID block device (such as Linux software RAID) read-ahead should work 
+well.  For a RAID type configuration managed by the filesystem where you might 
+have different RAID levels in the same filesystem it might not be possible.
+
+It would be a nice feature to have RAID-0 for unimportant files and RAID-1 or 
+RAID-6 for important files on the same filesystem.  But that type of thing 
+would really complicate RAID rebuild.
+
+> >> So  this
+> >> might slow down a stripe read by dozens of milliseconds, maybe a full
+> >> second.  If this happens to multiple drives many times throughout the
+> >> rebuild it will add even more elapsed time, possibly additional hours.
+> > 
+> > Have you observed such 1 second reads in practice?
 > 
-> Well, there's also the issue of selection bias - people come to the list and
+> We seem to have regular reports from DIY hardware users intentionally
+> using mismatched consumer drives, as many believe this gives them
+> additional protection against a firmware bug in a given drive model.
+> But then they often see multiple second timeouts causing drives to be
+> kicked, or performance to be slow, because of the mismatched drives.
 
-"Selection bias" would infer I'm doing some kind of formal analysis,
-which is obviously not the case, though I do understand the point you're
-making.
+I've had that happen in my own RAID-1 and had reports of the same from other 
+people.  My problem was that one of the disks was a WD "Green" drive that 
+aggressively parked the heads.  When I replaced the array the disk in question 
+had parked it's heads about a million times more than it was supposed to but 
+it still worked.
 
-> complain when their RAID is taking forever to resync. People generally don't 
-> come to the list and complain when their RAID resyncs quickly and without 
-> issues.
-
-When folks report problems on linux-raid it is commonplace for others to
-reply that the same feature works fine for them, that the problem may be
-configuration specific, etc.  When people have reported slow RAID5/6
-rebuilds in the past, and these were not always reported in direct help
-requests but as "me too" posts, I don't recall others saying their
-parity rebuilds are speedy.  I'm not saying nobody ever has, simply that
-I don't recall such.  Which is why I've been under the impression that
-parity rebuilds are generally slow for everyone.
-
-I wish I had hardware available to perform relevant testing.  It would
-be nice to have some real data on this showing apples to apples rebuild
-times for the various RAID levels on the same hardware.
+I think that if you want to buy two different disks from your local discount 
+store then you are likely to end up with one that's not well suited to server 
+use because they often don't have more than two types of disks on offer.
 
 -- 
-Stan
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

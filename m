@@ -1,64 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29949 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750867Ab3KYKu4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 05:50:56 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rAPAotnX003318
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 10:50:56 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rAPAosuZ015309
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 10:50:55 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rAPAosqs027876
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 10:50:54 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: scrub maintenance event should be recorded in the messages
-Date: Mon, 25 Nov 2013 19:00:05 +0800
-Message-Id: <1385377205-9461-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1385374689-3745-1-git-send-email-anand.jain@oracle.com>
-References: <1385374689-3745-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34787 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754182Ab3KYQvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Nov 2013 11:51:18 -0500
+Date: Mon, 25 Nov 2013 17:51:16 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
+        stable@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: relocate csums properly with prealloc extents
+Message-ID: <20131125165116.GR5007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1380289020-2515-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-so to help problem understanding and solving
+On Fri, Sep 27, 2013 at 09:37:00AM -0400, Josef Bacik wrote:
+> A user reported a problem where they were getting csum errors when running a
+> balance and running systemd's journal.  This is because systemd is awesome and
+> fallocate()'s its log space and writes into it.  Unfortunately we assume that
+> when we read in all the csums for an extent that they are sequential starting at
+> the bytenr we care about.  This obviously isn't the case for prealloc extents,
+> where we could have written to the middle of the prealloc extent only, which
+> means the csum would be for the bytenr in the middle of our range and not the
+> front of our range.  Fix this by offsetting the new bytenr we are logging to
+> based on the original bytenr the csum was for.  With this patch I no longer see
+> the csum errors I was seeing.  Thanks,
+> 
+> Cc: stable@vger.kernel.org
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- v2: log shoud be starting instead of started
+The patch had the right CC but I don't see it in the mail's CC list (now
+added by me). I'm afraid that this never reached stable and explains why
+the patch did not end up in 3.12.1.
 
- fs/btrfs/ioctl.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+Stable team, please add this patch to 3.12.x, the commit id is
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d237af8..84801b9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3593,10 +3593,20 @@ static long btrfs_ioctl_scrub(struct file *file, void __user *arg)
- 			goto out;
- 	}
- 
-+	printk(KERN_INFO "btrfs: Scrub starting on %pU devid %llu\n",
-+		root->fs_info->fsid, sa->devid);
-+
- 	ret = btrfs_scrub_dev(root->fs_info, sa->devid, sa->start, sa->end,
- 			      &sa->progress, sa->flags & BTRFS_SCRUB_READONLY,
- 			      0);
- 
-+	if (ret)
-+		printk(KERN_INFO "btrfs: Scrub failed on %pU devid %llu\n",
-+			root->fs_info->fsid, sa->devid);
-+	else
-+		printk(KERN_INFO "btrfs: Scrub finished on %pU devid %llu\n",
-+			root->fs_info->fsid, sa->devid);
-+
- 	if (copy_to_user(arg, sa, sizeof(*sa)))
- 		ret = -EFAULT;
- 
--- 
-1.7.1
+ 4577b014d1bc3db386da3246f625888fc48083a9
 
+thanks,
+david

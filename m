@@ -1,150 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24796 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750796Ab3KSG5f (ORCPT
+Received: from bombadil.infradead.org ([198.137.202.9]:36304 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753453Ab3KYQMS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Nov 2013 01:57:35 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Cc: sandeen@sandeen.net
-Subject: [PATCH] xfstests: btrfs/023: test if raids are actually created
-Date: Tue, 19 Nov 2013 15:06:25 +0800
-Message-Id: <1384844785-24799-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1384763177-3402-1-git-send-email-anand.jain@oracle.com>
-References: <1384763177-3402-1-git-send-email-anand.jain@oracle.com>
+	Mon, 25 Nov 2013 11:12:18 -0500
+Date: Mon, 25 Nov 2013 08:12:16 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] xfstests: add generic/321 to test fsync() on
+ directories V2
+Message-ID: <20131125161216.GA5085@infradead.org>
+References: <1384538464-7384-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1384538464-7384-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A test case to verify if the given raid option for the
-metadata and data are actually created.
+On Fri, Nov 15, 2013 at 01:01:03PM -0500, Josef Bacik wrote:
+> Btrfs had some issues with fsync()'ing directories and fsync()'ing after
+> renames.  These three new tests cover the 3 different issues we were seeing.
+> This breaks out the dmflakey stuff into a common helper to be shared between
+> generic/311 and generic/321. Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
----
- v3: need to differentiate between RAID10 and RAID1 in the output,
-     fixed the grep
- v2: a copied comment removed as Eric pointed out
-
- tests/btrfs/023     |   90 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/023.out |    2 +
- tests/btrfs/group   |    1 +
- 3 files changed, 93 insertions(+), 0 deletions(-)
- create mode 100755 tests/btrfs/023
- create mode 100644 tests/btrfs/023.out
-
-diff --git a/tests/btrfs/023 b/tests/btrfs/023
-new file mode 100755
-index 0000000..da1f818
---- /dev/null
-+++ b/tests/btrfs/023
-@@ -0,0 +1,90 @@
-+#! /bin/bash
-+# FS QA Test No. 023
-+#
-+# Test to verify if the group profile is created
-+#
-+# The test aims to create the raid and verify that its created
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Oracle.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch_dev_pool 4
-+rm -f $seqres.full
-+
-+create_group_profile()
-+{
-+	local mkfs_options="-d$1 -m$1"
-+
-+	_scratch_pool_mkfs $mkfs_options >> $seqres.full 2>&1 || _fail "mkfs failed"
-+}
-+
-+check_group_profile()
-+{
-+	local test_raid="$1"
-+
-+	_scratch_mount
-+	$BTRFS_UTIL_PROG filesystem df $SCRATCH_MNT > $tmp.tmp 2>&1
-+	_scratch_unmount
-+	cat $tmp.tmp >> $seqres.full
-+	grep Data $tmp.tmp | grep -q "${test_raid}:"
-+	[ $? -eq 0 ] || _fail "$test_raid not found for Data"
-+	grep Metadata $tmp.tmp | grep -q "${test_raid}:"
-+	[ $? -eq 0 ] || _fail "$test_raid not found for Metadata"
-+}
-+
-+create_group_profile "raid0"
-+check_group_profile "RAID0"
-+
-+create_group_profile "raid1"
-+check_group_profile "RAID1"
-+
-+create_group_profile "raid10"
-+check_group_profile "RAID10"
-+
-+create_group_profile "raid5"
-+check_group_profile "RAID5"
-+
-+create_group_profile "raid6"
-+check_group_profile "RAID6"
-+
-+# success, all done
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/023.out b/tests/btrfs/023.out
-new file mode 100644
-index 0000000..5c4197b
---- /dev/null
-+++ b/tests/btrfs/023.out
-@@ -0,0 +1,2 @@
-+QA output created by 023
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 410f8ed..35db67b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -24,3 +24,4 @@
- 019 auto quick
- 020 auto quick
- 021 auto quick
-+023 auto
--- 
-1.7.1
+This doesn't seem to actually create the common/dmflakey file.
 

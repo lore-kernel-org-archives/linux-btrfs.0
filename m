@@ -1,40 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:56534 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751811Ab3KYVph convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 16:45:37 -0500
-Received: from mx2.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id 2A8549A0017
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 14:45:37 -0700 (MST)
-Received: from CAS1.int.fusionio.com (cas1.int.fusionio.com [10.101.1.40]) by mx2.fusionio.com with ESMTP id c1QmIxL4rYCKR2Km (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 14:45:36 -0700 (MST)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>
-Message-ID: <20131125214534.8160.40797@ret.masoncoding.com>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: btrfs-progs tagged as v3.12
-Date: Mon, 25 Nov 2013 16:45:34 -0500
+Received: from plane.gmane.org ([80.91.229.3]:52082 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751119Ab3KYWrI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Nov 2013 17:47:08 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vl4vq-0005Uz-Hk
+	for linux-btrfs@vger.kernel.org; Mon, 25 Nov 2013 23:47:06 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 23:47:06 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 23:47:06 +0100
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs-progs tagged as v3.12
+Date: Mon, 25 Nov 2013 22:46:56 +0000
+Message-ID: <l70k0l$pf$1@ger.gmane.org>
+References: <20131125214534.8160.40797@ret.masoncoding.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20131125214534.8160.40797@ret.masoncoding.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+I'm humbly totally unqualified to comment but that sounds like an
+excellent idea. Thanks.
 
-I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
-instead of making the poor distros pull from git, I'll be creating
-tagged releases at roughly the same pace as Linus cuts kernels.
+I can't say for others but I was put off by the 0.19 forever eternal
+version which pushed me to investigate GIT... I'm sure that has been
+putting off many people including distro assemblers.
 
-Given the volume of btrfs-progs patches, we should have enough new code
-and fixes to justify releases at least as often as the kernel.  Of
-course, if there are issues that need immediate attention, I'll tag a .y
-release (v3.12.1 for example).
 
-If the progs changes slow down, we might skip a version.  But tracking
-kernel version numbers makes it easier for me to line up bug reports,
-mostly because I already devote a fair number of brain cells to
-remembering how old each kernel is.
+Just for some positive comment: Good progress, thanks.
 
-Just let me know if there are any questions.
+Regards,
+Martin
 
--chris
+(OK, that's the last of the positives for the Christmas present. Back to
+bugging! ;-) )
+
+
+
+On 25/11/13 21:45, Chris Mason wrote:
+> Hi everyone,
+> 
+> I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
+> instead of making the poor distros pull from git, I'll be creating
+> tagged releases at roughly the same pace as Linus cuts kernels.
+> 
+> Given the volume of btrfs-progs patches, we should have enough new code
+> and fixes to justify releases at least as often as the kernel.  Of
+> course, if there are issues that need immediate attention, I'll tag a .y
+> release (v3.12.1 for example).
+> 
+> If the progs changes slow down, we might skip a version.  But tracking
+> kernel version numbers makes it easier for me to line up bug reports,
+> mostly because I already devote a fair number of brain cells to
+> remembering how old each kernel is.
+> 
+> Just let me know if there are any questions.
+> 
+> -chris
+
+
 

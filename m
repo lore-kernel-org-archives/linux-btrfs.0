@@ -1,40 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:34732 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757070Ab3KZOXz convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:33017 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756518Ab3KZPBn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 09:23:55 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id EBA369A0017
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 07:23:54 -0700 (MST)
-Received: from CAS2.int.fusionio.com (cas2.int.fusionio.com [10.101.1.41]) by mx1.fusionio.com with ESMTP id jznmvlJdnQHZtejn (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 07:23:54 -0700 (MST)
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-To: <linux-btrfs@vger.kernel.org>
-Message-ID: <20131126142350.8160.46231@ret.masoncoding.com>
-From: Chris Mason <chris.mason@fusionio.com>
-Subject: Leaving Fusion-io
-Date: Tue, 26 Nov 2013 09:23:50 -0500
+	Tue, 26 Nov 2013 10:01:43 -0500
+Received: by mail-wi0-f173.google.com with SMTP id hm4so5300961wib.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 07:01:42 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: add missing extent state caching calls
+Date: Tue, 26 Nov 2013 15:01:34 +0000
+Message-Id: <1385478094-11984-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+When we didn't find a matching extent state, we inserted a new one
+but didn't cache it in the **cached_state parameter, which makes a
+subsequent call do a tree lookup to get it.
 
-Fusion-io has been a great place to work, but I've decided it is time to
-move on.  I'm leaving for Facebook, where I'll continue to focus on
-Linux kernel development.  Facebook is also very interested in helping
-to improve Btrfs.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/extent_io.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-I'd like to thank Fusion-io for supporting me and especially for their
-strong support of Btrfs development.
-
->From a Btrfs point of view, very little will change.  All of my Btrfs
-contributions will remain open and I'll continue to do all of my
-development upstream.
-
-At the end of November, my Fusion-io email addresses will stop working.
-At the start of December, clm@fb.com should go live, but I'll send an
-update here if that changes.
-
--chris
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index cb9ce69..b8e7e41 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -817,6 +817,7 @@ again:
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 
++		cache_state(prealloc, cached_state);
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+@@ -1040,9 +1041,10 @@ again:
+ 			goto out;
+ 		}
+ 		err = insert_state(tree, prealloc, start, end, &bits);
+-		prealloc = NULL;
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
++		cache_state(prealloc, cached_state);
++		prealloc = NULL;
+ 		goto out;
+ 	}
+ 	state = rb_entry(node, struct extent_state, rb_node);
+-- 
+1.7.9.5
 

@@ -1,69 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52082 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751119Ab3KYWrI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 17:47:08 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vl4vq-0005Uz-Hk
-	for linux-btrfs@vger.kernel.org; Mon, 25 Nov 2013 23:47:06 +0100
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 23:47:06 +0100
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 23:47:06 +0100
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: btrfs-progs tagged as v3.12
-Date: Mon, 25 Nov 2013 22:46:56 +0000
-Message-ID: <l70k0l$pf$1@ger.gmane.org>
-References: <20131125214534.8160.40797@ret.masoncoding.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <20131125214534.8160.40797@ret.masoncoding.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:17894 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752692Ab3KZGku convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 01:40:50 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:49297 helo=[192.168.1.120])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VlCKI-002j9W-C0
+	for linux-btrfs@vger.kernel.org; Mon, 25 Nov 2013 23:40:50 -0700
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: missing /sbin/fsck.btrfs
+Message-Id: <13F547BC-D81C-45FB-9DC8-9C076B8605EF@colorremedies.com>
+Date: Mon, 25 Nov 2013 23:40:49 -0700
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm humbly totally unqualified to comment but that sounds like an
-excellent idea. Thanks.
+Hi,
 
-I can't say for others but I was put off by the 0.19 forever eternal
-version which pushed me to investigate GIT... I'm sure that has been
-putting off many people including distro assemblers.
+Is there supposed to be an /sbin/fsck.btrfs? I'm seeing a handful of threads indicating some idea of having it just do a no-op like fsck.xfs does, but then also the idea that /etc/fstab should correctly set fs_passno to 0 instead of such trickery.
 
+I ask due to systemd-fstab-generator seemingly getting the idea from Fedora 20's default /etc/fstab that btrfs should have its file system checked, and during offline  updates, systemd tries to do this, doesn't find /sbin/fsck.btrfs, and then has several dozen fits.
 
-Just for some positive comment: Good progress, thanks.
+https://bugzilla.redhat.com/show_bug.cgi?id=1034563
+https://bugzilla.redhat.com/show_bug.cgi?id=862871
 
-Regards,
-Martin
+So the question, is there supposed to be (one day) a faux /sbin/fsck.btrfs? Or should things always check /etc/fstab fs_passno and honor the fact there is really no such thing?
 
-(OK, that's the last of the positives for the Christmas present. Back to
-bugging! ;-) )
+Thanks,
 
-
-
-On 25/11/13 21:45, Chris Mason wrote:
-> Hi everyone,
-> 
-> I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
-> instead of making the poor distros pull from git, I'll be creating
-> tagged releases at roughly the same pace as Linus cuts kernels.
-> 
-> Given the volume of btrfs-progs patches, we should have enough new code
-> and fixes to justify releases at least as often as the kernel.  Of
-> course, if there are issues that need immediate attention, I'll tag a .y
-> release (v3.12.1 for example).
-> 
-> If the progs changes slow down, we might skip a version.  But tracking
-> kernel version numbers makes it easier for me to line up bug reports,
-> mostly because I already devote a fair number of brain cells to
-> remembering how old each kernel is.
-> 
-> Just let me know if there are any questions.
-> 
-> -chris
-
-
-
+Chris Murphy

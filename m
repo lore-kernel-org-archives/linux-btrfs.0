@@ -1,41 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from emh03.mail.saunalahti.fi ([62.142.5.109]:37179 "EHLO
-	emh03.mail.saunalahti.fi" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753758Ab3KYSbk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 13:31:40 -0500
-Date: Mon, 25 Nov 2013 20:23:57 +0200
-From: Pasi =?iso-8859-1?Q?K=E4rkk=E4inen?= <pasik@iki.fi>
-To: Russell Coker <russell@coker.com.au>
-Cc: linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org
-Subject: Re: Triple parity and beyond
-Message-ID: <20131125182357.GE2924@reaktio.net>
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
- <528DCD36.1060808@hesbynett.no>
- <528DD86E.8040608@websitemanagers.com.au>
- <4544086.2UTvYHxkvM@russell.coker.com.au>
+Received: from srv2.trombetti.net ([65.254.53.252]:4180 "EHLO server"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1754200Ab3KZSKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 13:10:45 -0500
+Message-ID: <5294E42A.4000300@shiftmail.org>
+Date: Tue, 26 Nov 2013 19:10:50 +0100
+From: joystick <joystick@shiftmail.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4544086.2UTvYHxkvM@russell.coker.com.au>
+To: David Brown <david.brown@hesbynett.no>
+CC: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>,
+        Andrea Mazzoleni <amadvance@gmail.com>, linux-raid@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, hpa@zytor.com, creamyfish@gmail.com
+Subject: Re: Triple parity and beyond
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <20131119181237.GA3666@lazy.lzy> <528C9297.9030801@hesbynett.no> <20131120215939.GA2622@lazy.lzy> <528DDCC9.7050701@hesbynett.no> <20131121200545.GB1916@lazy.lzy> <528E6DB2.6050005@hesbynett.no>
+In-Reply-To: <528E6DB2.6050005@hesbynett.no>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 22, 2013 at 07:12:39PM +1100, Russell Coker wrote:
-> 
-> On Thu, 21 Nov 2013 18:30:49 Stan Hoeppner wrote:
-> > I suggest that anyone in the future needing fast random write IOPS is
-> > going to move those workloads to SSD, which is steadily increasing in
-> > capacity.  And I suggest anyone building arrays with 10-20TB drives
-> > isn't in need of fast random write IOPS.
-> 
-> Traditionally SCSI/SAS disks have tended to be a lot smaller than IDE/SATA 
-> disks.  Now Dell has just started offering 2TB SAS disks while the largest SATA 
-> disks that they sell (In Australia on PowerEdge T110 servers at least) are 
-> also 2TB.  Presumably RAID recovery time was one factor that made 
-> manufacturers not bother with making larger SCSI/SAS disks in the past.
+On 21/11/2013 21:31, David Brown wrote:
+> On 21/11/13 21:05, Piergiorgio Sartor wrote:
+>> Having a multi parity RAID allows to check
+>> even which disk.
+>> This would provide the user with a more
+>> comprehensive (I forgot the spelling)
+>> information.
+>>
+>> Of course, since we are there, we can
+>> also give the option to fix it.
+>> This would be much likely a "fsck".
+> If this can all be done to give the user an informed choice, then it
+> sounds good.
+>
+> One issue here is whether the check should be done with the filesystem
+> mounted and in use, or only off-line.  If it is off-line then it will
+> mean a long down-time while the array is checked - but if it is online,
+> then there is the risk of confusing the filesystem and caches by
+> changing the data.
 >
 
-Dell has been selling 4TB SAS disks for a long time already.. one year, or something like that.
+Non-existent issue imho, because if that stripe is changing, any error 
+will be corrected (overwritten), at least on the data disks (parity can 
+still be wrong if a shortcut-rmw method is used).
+So you perform fsck for filesystem and data comes out good because any 
+error has been overwritten already, and fsck also returns noerror. Not 
+useful.
 
--- Pasi
+You have to consider only the case where the array check is performed 
+online, and the stripe does not change in the meanwhile, that means it 
+does not change for a long time, enough for you to complete all the checks.
+
+debugfs techniques can tell you what filesystem element corresponds to a 
+certain block number, and this can be done online, with the filesystem 
+mounted.
+
+I don't understand the thing you say about the caches. Caches are not an 
+obstacle for current "check" operation, so they also won't be a problem 
+for the new improved check operation which you are discussing.
+
+
+
 

@@ -1,79 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:38667 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752082Ab3KYVXb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 16:23:31 -0500
-Received: from [192.168.1.27] (151.25.181.179) by outrelay08.libero.it (8.6.033) (authenticated as kreijack@libero.it)
-        id 52817A1202E3329B for linux-btrfs@vger.kernel.org; Mon, 25 Nov 2013 22:23:30 +0100
-Message-ID: <5293BFD1.6000502@libero.it>
-Date: Mon, 25 Nov 2013 22:23:29 +0100
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:35808 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751691Ab3KZAu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Nov 2013 19:50:28 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vl6rC-0005Ux-Ua
+	for linux-btrfs@vger.kernel.org; Tue, 26 Nov 2013 01:50:26 +0100
+Received: from p5b00795b.dip0.t-ipconnect.de ([91.0.121.91])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 01:50:26 +0100
+Received: from holger.hoffstaette by p5b00795b.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 01:50:26 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] BTRFS-PROG: recursively subvolume snapshot and delete
-References: <1384621747-25441-1-git-send-email-kreijack@inwind.it>
-In-Reply-To: <1384621747-25441-1-git-send-email-kreijack@inwind.it>
-Content-Type: text/plain; charset=ISO-8859-1
+From: "Holger Hoffstaette" <holger.hoffstaette@googlemail.com>
+Subject: Re: btrfs scrub ioprio
+Date: Tue, 26 Nov 2013 01:50:15 +0100
+Message-ID: <pan.2013.11.26.00.50.14.749597@googlemail.com>
+References: <5292C7F7.8010200@jrs-s.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Sun, 24 Nov 2013 22:45:59 -0500, Jim Salter wrote:
 
-nobody is interested in these new features ?
+> TL;DR scrub's ioprio argument isn't really helpful - a scrub murders
+> system performance til it's done.
+> 
+> My system:
+> 
+> 3.11 kernel (from Ubuntu Saucy)
 
-On 2013-11-16 18:09, Goffredo Baroncelli wrote:
-> Hi All,
-> 
-> the following patches implement the recursively snapshotting and
-> deleting of a subvolume. 
-> 
-> To snapshot recursively you must pass the -R switch:
-> 
-> # btrfs subvolume create sub1
-> Create subvolume './sub1'
-> # btrfs subvolume create sub1/sub2
-> Create subvolume 'sub1/sub2'
-> 
-> # btrfs subvolume snapshot -R sub1 sub1-snap
-> Create a snapshot of 'sub1' in './sub1-snap'
-> Create a snapshot of 'sub1/sub2' in './sub1-snap/sub2'
-> 
-> To recursively delete subvolumes, you must pass the switch '-R':
-> 
-> # btrfs subvolume create sub1
-> Create subvolume './sub1'
-> # btrfs subvolume create sub1/sub2
-> Create subvolume 'sub1/sub2'
-> 
-> # btrfs subvolume delete -R sub1
-> Delete subvolume '/root/sub1/sub2'
-> Delete subvolume '/root/sub1'
-> 
-> 
-> Some caveats:
-> 1) the recursively behaviour need the root capability
-> This because how the subvolume are discovered
-> 
-> 2) it is not possible to recursively snapshot a subvolume
-> in read-only mode
-> This because when a subvolume is snapshotted, its 
-> nested subvolumes appear as directory in the snapshot.
-> These directories are removed before snapshotting the 
-> nested subvolumes. This is incompatible with a read
-> only subvolume.
-> 
-> BR
-> G.Baroncelli
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I don't run Ubuntu, but *maybe* they use the deadline IO scheduler by
+default, which does not handle IO priorities (by design). So maybe make
+sure your devices don't say "deadline" in /sys/block/sdX/queue/scheduler,
+and if they do, set them to cfq.
+
+-h
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

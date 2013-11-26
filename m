@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dkim2.fusionio.com ([66.114.96.54]:56437 "EHLO
-	dkim2.fusionio.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752037Ab3KYVk3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Nov 2013 16:40:29 -0500
-Received: from mx1.fusionio.com (unknown [10.101.1.160])
-	by dkim2.fusionio.com (Postfix) with ESMTP id DA0529A06B2
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2013 14:40:28 -0700 (MST)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>, <hch@infradead.org>
-Subject: [PATCH 2/2] xfstests: add a rename fsync test
-Date: Mon, 25 Nov 2013 16:40:22 -0500
-Message-ID: <1385415622-9303-2-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1385415622-9303-1-git-send-email-jbacik@fusionio.com>
-References: <1385415622-9303-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cn.fujitsu.com ([222.73.24.84]:19157 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751356Ab3KZGNs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 01:13:48 -0500
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: [PATCH v2] xfstests,btrfs: add wrong compress type regression test
+Date: Tue, 26 Nov 2013 14:01:17 +0800
+Message-Id: <1385445677-27762-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <20131125210055.GG8803@dastard>
+References: <20131125210055.GG8803@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs was screwing up rename+fsync, add some regression tests for the various
-scenarios it was screwing up.  Thanks,
+Btrfs would crash when the users wrote some data into a file with compress
+flag but the compression of the fs was disabled. This test case is to check
+this bug still happen or not.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- tests/generic/322     | 111 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/322.out |   7 ++++
- tests/generic/group   |   1 +
- 3 files changed, 119 insertions(+)
- create mode 100644 tests/generic/322
- create mode 100644 tests/generic/322.out
+Changlog v1 -> v2:
+- address the commit from Dave Chinner.
+---
+ tests/btrfs/022     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/022.out |  5 ++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 89 insertions(+)
+ create mode 100755 tests/btrfs/022
+ create mode 100644 tests/btrfs/022.out
 
-diff --git a/tests/generic/322 b/tests/generic/322
-new file mode 100644
-index 0000000..1cea133
+diff --git a/tests/btrfs/022 b/tests/btrfs/022
+new file mode 100755
+index 0000000..2f32bf1
 --- /dev/null
-+++ b/tests/generic/322
-@@ -0,0 +1,111 @@
++++ b/tests/btrfs/022
+@@ -0,0 +1,83 @@
 +#! /bin/bash
-+# FS QA Test No. 322
++# FS QA Test No. btrfs/008
 +#
-+# Runs various rename fsync tests to cover some rename fsync corner cases.
++# btrfs wrong compression type regression test. This test is used to check
++# the oops will happen when the users write some data into the files whose
++# compress flag is set but the compression of the fs is disabled.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2013 Fusion IO. All Rights Reserved.
++# Copyright (c) 2013 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -57,6 +58,7 @@ index 0000000..1cea133
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
 +#-----------------------------------------------------------------------
 +#
 +
@@ -65,111 +67,78 @@ index 0000000..1cea133
 +echo "QA output created by $seq"
 +
 +here=`pwd`
++tmp=/tmp/$$
++
 +status=1	# failure is the default!
 +
 +_cleanup()
 +{
-+	_cleanup_flakey
++	rm -f $tmp.*
 +}
-+trap "_cleanup; exit \$status" 0 1 2 3 15
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
 +
 +# real QA test starts here
-+_supported_fs generic
++_supported_fs btrfs
 +_supported_os Linux
-+_need_to_be_root
 +_require_scratch
-+_require_dm_flakey
 +
-+rm -f $seqres.full
-+
-+_clean_working_dir()
++__workout()
 +{
-+	_mount_flakey
-+	rm -rf $SCRATCH_MNT/*
-+	_unmount_flakey
++	work_file="$SCRATCH_MNT/tmpfile"
++
++	touch $work_file
++	chattr =c $work_file
++	$XFS_IO_PROG -f -c "pwrite 0 1M" -c sync $work_file | _filter_xfs_io
 +}
 +
-+# Btrfs wasn't making sure the new file after rename survived the fsync
-+_rename_test()
-+{
-+	echo "fsync rename test"
-+	_mount_flakey
-+	$XFS_IO_PROG -f -c "pwrite 0 1M" -c "fsync" $SCRATCH_MNT/foo \
-+		> $seqres.full 2>&1 || _fail "xfs_io failed"
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $FLAKEY_DROP_WRITES
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
++echo "*** test nodatacow"
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount "-o nodatacow"
++__workout
++_scratch_unmount
++_check_scratch_fs
 +
-+	_load_flakey_table $FLAKEY_ALLOW_WRITES
-+	_mount_flakey
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
++echo "*** test compress=no"
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount "-o compress=no"
++__workout
++_scratch_unmount
++_check_scratch_fs
 +
-+# Btrfs was dropping some of the modified extents in between fsyncs if we
-+# renamed.
-+_write_after_fsync_rename_test()
-+{
-+	echo "fsync rename test"
-+	_mount_flakey
-+	$XFS_IO_PROG -f -c "pwrite 0 1M" -c "fsync" -c "pwrite 2M 1M" \
-+		-c "sync_range -b" $SCRATCH_MNT/foo > $seqres.full 2>&1 || _fail "xfs_io failed"
-+	mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-+	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
-+	_load_flakey_table $FLAKEY_DROP_WRITES
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
++echo "*** test compress-force=no"
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount "-o compress-force=no"
++__workout
++_scratch_unmount
++_check_scratch_fs
 +
-+	_load_flakey_table $FLAKEY_ALLOW_WRITES
-+	_mount_flakey
-+	md5sum $SCRATCH_MNT/bar
-+	_unmount_flakey
-+	_check_scratch_fs $FLAKEY_DEV
-+	[ $? -ne 0 ] && _fatal "fsck failed"
-+}
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+
-+# Create a basic flakey device that will never error out
-+_init_flakey
-+
-+_rename_test
-+_clean_working_dir
-+_write_after_fsync_rename_test
-+
-+status=0
-+exit
-diff --git a/tests/generic/322.out b/tests/generic/322.out
++echo "*** done"
++status=0 ; exit
+diff --git a/tests/btrfs/022.out b/tests/btrfs/022.out
 new file mode 100644
-index 0000000..0d9f274
+index 0000000..611fd67
 --- /dev/null
-+++ b/tests/generic/322.out
-@@ -0,0 +1,7 @@
-+QA output created by 322
-+fsync rename test
-+ca539970d4b1fa1f34213ba675007381  /mnt/scratch/bar
-+ca539970d4b1fa1f34213ba675007381  /mnt/scratch/bar
-+fsync rename test
-+d34ff04c17ef7068d78d0c4be49cfe57  /mnt/scratch/bar
-+d34ff04c17ef7068d78d0c4be49cfe57  /mnt/scratch/bar
-diff --git a/tests/generic/group b/tests/generic/group
-index 25dddd8..f492461 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -124,3 +124,4 @@
- 319 acl auto quick
- 320 auto rw
- 321 auto quick metadata log
-+322 auto quick metadata log
++++ b/tests/btrfs/022.out
+@@ -0,0 +1,5 @@
++QA output created by 022
++*** test nodatacow
++*** test compress=no
++*** test compress-force=no
++*** done
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 410f8ed..c2adb2f 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -24,3 +24,4 @@
+ 019 auto quick
+ 020 auto quick
+ 021 auto quick
++022 auto quick
 -- 
 1.8.3.1
 

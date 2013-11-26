@@ -1,53 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:33017 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756518Ab3KZPBn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 10:01:43 -0500
-Received: by mail-wi0-f173.google.com with SMTP id hm4so5300961wib.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 07:01:42 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: add missing extent state caching calls
-Date: Tue, 26 Nov 2013 15:01:34 +0000
-Message-Id: <1385478094-11984-1-git-send-email-fdmanana@gmail.com>
+Received: from mx1.redhat.com ([209.132.183.28]:8129 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756852Ab3KZPF1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 10:05:27 -0500
+Message-ID: <5294B8B4.5030407@redhat.com>
+Date: Tue, 26 Nov 2013 09:05:24 -0600
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-progs tagged as v3.12
+References: <20131125214534.8160.40797@ret.masoncoding.com>
+In-Reply-To: <20131125214534.8160.40797@ret.masoncoding.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we didn't find a matching extent state, we inserted a new one
-but didn't cache it in the **cached_state parameter, which makes a
-subsequent call do a tree lookup to get it.
+On 11/25/13, 3:45 PM, Chris Mason wrote:
+> Hi everyone,
+> 
+> I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
+> instead of making the poor distros pull from git, I'll be creating
+> tagged releases at roughly the same pace as Linus cuts kernels.
+> 
+> Given the volume of btrfs-progs patches, we should have enough new code
+> and fixes to justify releases at least as often as the kernel.  Of
+> course, if there are issues that need immediate attention, I'll tag a .y
+> release (v3.12.1 for example).
+> 
+> If the progs changes slow down, we might skip a version.  But tracking
+> kernel version numbers makes it easier for me to line up bug reports,
+> mostly because I already devote a fair number of brain cells to
+> remembering how old each kernel is.
+> 
+> Just let me know if there are any questions.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/extent_io.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+Cool!  I've built it for Fedora 19, 20, and rawhide, updates should
+trickle out soon.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index cb9ce69..b8e7e41 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -817,6 +817,7 @@ again:
- 		if (err)
- 			extent_io_tree_panic(tree, err);
- 
-+		cache_state(prealloc, cached_state);
- 		prealloc = NULL;
- 		goto out;
- 	}
-@@ -1040,9 +1041,10 @@ again:
- 			goto out;
- 		}
- 		err = insert_state(tree, prealloc, start, end, &bits);
--		prealloc = NULL;
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-+		cache_state(prealloc, cached_state);
-+		prealloc = NULL;
- 		goto out;
- 	}
- 	state = rb_entry(node, struct extent_state, rb_node);
--- 
-1.7.9.5
+-Eric
 

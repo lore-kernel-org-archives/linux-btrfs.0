@@ -1,76 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56030 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757399Ab3KZWhM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 17:37:12 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VlRFn-00019k-JJ
-	for linux-btrfs@vger.kernel.org; Tue, 26 Nov 2013 23:37:11 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 23:37:11 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 23:37:11 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:6299 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757217Ab3K0Ava (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 19:51:30 -0500
+Date: Wed, 27 Nov 2013 11:51:26 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: missing /sbin/fsck.btrfs
-Date: Tue, 26 Nov 2013 22:36:50 +0000 (UTC)
-Message-ID: <pan$bbb5d$b7661b1a$f706f6ee$1a74681f@cox.net>
+Message-ID: <20131127005126.GC10988@dastard>
 References: <13F547BC-D81C-45FB-9DC8-9C076B8605EF@colorremedies.com>
-	<pan$8f316$eba9671d$d7cae9b2$d1c7e678@cox.net>
-	<A1C7FA8D-A87E-40CD-A887-84C147CA5C08@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <13F547BC-D81C-45FB-9DC8-9C076B8605EF@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Tue, 26 Nov 2013 11:43:02 -0700 as excerpted:
-
-> On Nov 26, 2013, at 12:18 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->>> 
->> 
->> Just symlink/copy fsck.btrfs to (/bin/)true.
+On Mon, Nov 25, 2013 at 11:40:49PM -0700, Chris Murphy wrote:
+> Hi,
 > 
-> I'm not doing this every time I install an OS, most users won't
-> either, and nor will most distributions. So in effect, this
-> suggestion places the burden of implementation on the btrfs-progs
-> package to create it at install time.
+> Is there supposed to be an /sbin/fsck.btrfs? I'm seeing a handful
+> of threads indicating some idea of having it just do a no-op like
+> fsck.xfs does, but then also the idea that /etc/fstab should
+> correctly set fs_passno to 0 instead of such trickery.
 
-I think the "proper" solution is the one below.  This one is just a
-workaround, to be done by the sysadmin if the distro or sysadmin
-doesn't manage fstab properly.
+You're missing a key thing that fsck.xfs does that fstab expects to
+work - it fails with an error if the device is missing. If the
+device is present, then fsck.xfs returns success.
 
->> https://btrfs.wiki.kernel.org/index.php/FAQ#What.27s_the_difference_between_btrfsck_and_fsck.btrfs
->> 
->> Or just do the /etc/fstab fs_passno = 0 thing, which is what I did
->> with reiserfs, so no change in that regard here when I switched to
->> btrfs for most partitions.
-> 
-> And that's fine, it places the burden on the distribution installer
-> to create a correct /etc/fstab.
+We did this because people were having problems when devices took a
+long time to instantiate (e.g. SAN, iscsi and other remote devices)
+and the 'device exists' check prevents /etc/fstab trying to mount
+the filesystems before they are present and then throwing a hissy
+fit....
 
-Distro installers should be creating a proper fstab anyway, and sysadmins
-should catch it if they change things or if the installer doesn't get it,
-because that's ultimately what sysadmins /do/, admin the system, including
-setting up an appropriate fstab for their layout, and of course dealing
-with distro bugs is a part of adminning a system as well.
+Cheers,
 
-And IMO, if an installer, human or automated distro install it doesn't
-matter, sets up btrfs, setting anything but a zero/disabled fsck pass
-number in fstab is almost certainly a mistake/bug, unless it's deliberately
-set elsewise to cover some special case, in which case another step of
-the same deliberate process should be symlinking fsck.btrfs to either
-true or btrfsck as appropriate.  Because setting anything other that
-a pass number of zero for btrfs by default should be exactly that,
-a deliberate special-case, ideally documented as such in an fstab
-comment and if automated as by an installer script, in that script
-as well.
-
+Dave.
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Dave Chinner
+david@fromorbit.com

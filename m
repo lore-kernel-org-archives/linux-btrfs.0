@@ -1,42 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:43112 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754387Ab3K0QGY (ORCPT
+Received: from mail-pb0-f41.google.com ([209.85.160.41]:48246 "EHLO
+	mail-pb0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757358Ab3K0QYo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Nov 2013 11:06:24 -0500
-Received: by mail-wg0-f48.google.com with SMTP id z12so6866408wgg.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 08:06:23 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix max dir item size calculation
-Date: Wed, 27 Nov 2013 16:06:16 +0000
-Message-Id: <1385568376-21059-1-git-send-email-fdmanana@gmail.com>
+	Wed, 27 Nov 2013 11:24:44 -0500
+Received: by mail-pb0-f41.google.com with SMTP id jt11so10770035pbb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 08:24:44 -0800 (PST)
+MIME-Version: 1.0
+Date: Wed, 27 Nov 2013 18:24:44 +0200
+Message-ID: <CAHFzjDB3E0AxAL757GZYoLwie=cqwLNZURPTcvZtcGAtVyEg5g@mail.gmail.com>
+Subject: BTRFS incompatible with different page sizes
+From: Ronen Shitrit <rshitrit@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: clinew@linux.vnet.ibm.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were accounting for sizeof(struct btrfs_item) twice, once
-in the data_size variable and another time in the if statement
-below.
+Hi
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/dir-item.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+BTRFS filesystem is incompatible with architectures such as PowerPC
+and MIPS which have a page size larger than 4k, Meaning that using a
+formatted FS on machine with 64K page size will not be mounted on a
+machine with 4K page.
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index c031ea3..9a89ceb 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -261,7 +261,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
- 	 * see if there is room in the item to insert this
- 	 * name
- 	 */
--	data_size = sizeof(*di) + name_len + sizeof(struct btrfs_item);
-+	data_size = sizeof(*di) + name_len;
- 	leaf = path->nodes[0];
- 	slot = path->slots[0];
- 	if (data_size + btrfs_item_size_nr(leaf, slot) +
--- 
-1.7.9.5
+I have noticed this remark in the wiki:
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Different_sector_sizes
+and the WIP patch there.
 
+Can someone please update what is the status on this? Is someone working on it?
+
+I can suggest to try and pick this up, if people are interested in
+this solution.
+
+Regards
+Ronen Shitrit

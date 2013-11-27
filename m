@@ -1,72 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20093 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753494Ab3KOLC1 (ORCPT
+Received: from mail-pb0-f52.google.com ([209.85.160.52]:44330 "EHLO
+	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751810Ab3K0OoE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Nov 2013 06:02:27 -0500
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 27 Nov 2013 09:44:04 -0500
+Received: by mail-pb0-f52.google.com with SMTP id uo5so10528902pbc.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 06:44:03 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, chris.mason@fusionio.com
-Subject: [PATCH v2] btrfs-progs: for mixed group check opt before default raid profile is enforced
-Date: Fri, 15 Nov 2013 19:11:09 +0800
-Message-Id: <1384513869-24525-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1384490079-19872-1-git-send-email-anand.jain@oracle.com>
-References: <1384490079-19872-1-git-send-email-anand.jain@oracle.com>
+Cc: guihc.fnst@cn.fujitsu.com
+Subject: [PATCH] Btrfs-progs: chunk-recover: use right size when allocating chunk root node
+Date: Wed, 27 Nov 2013 22:43:56 +0800
+Message-Id: <1385563436-2598-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes the regression introduced with the patch
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-    btrfs-progs: avoid write to the disk before sure to create fs
+When allocating chunk root node, we should use nodesize rather than sectorsize,
+this will casue regression when making other nodesize choice.(for example 16k size now)
 
-what happened with this patch is it missed the check to see if the
-user has the option set before pushing the defaults.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- v2: accepts G.Baroncelli sugested
-     rebased on integration-20131114
+ chunk-recover.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- mkfs.c |   18 +++++++++---------
- 1 files changed, 9 insertions(+), 9 deletions(-)
-
-diff --git a/mkfs.c b/mkfs.c
-index 4e99c16..de1beed 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1375,14 +1375,8 @@ int main(int ac, char **av)
- 	if (is_vol_small(file)) {
- 		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
- 		mixed = 1;
--		if (metadata_profile != data_profile) {
--			if (metadata_profile_opt || data_profile_opt) {
--				fprintf(stderr,
--	"With mixed block groups data and metadata profiles must be the same\n");
--				exit(1);
--			}
--		}
- 	}
-+
- 	/*
- 	* Set default profiles according to number of added devices.
- 	* For mixed groups defaults are single/single.
-@@ -1404,8 +1398,14 @@ int main(int ac, char **av)
- 		}
- 	} else {
- 		u32 best_leafsize = max_t(u32, sysconf(_SC_PAGESIZE), sectorsize);
--		metadata_profile = 0;
--		data_profile = 0;
-+
-+		if (metadata_profile_opt || data_profile_opt) {
-+			if (metadata_profile != data_profile) {
-+				fprintf(stderr,
-+	"ERROR: With mixed block groups data and metadata profiles must be the same\n");
-+				exit(1);
-+			}
-+		}
+diff --git a/chunk-recover.c b/chunk-recover.c
+index bcde39e..ef96921 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -1034,7 +1034,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
+ 	disk_key.type = BTRFS_DEV_ITEM_KEY;
+ 	disk_key.offset = min_devid;
  
- 		if (!leaf_forced) {
- 			leafsize = best_leafsize;
+-	cow = btrfs_alloc_free_block(trans, root, root->sectorsize,
++	cow = btrfs_alloc_free_block(trans, root, root->nodesize,
+ 				     BTRFS_CHUNK_TREE_OBJECTID,
+ 				     &disk_key, 0, 0, 0);
+ 	btrfs_set_header_bytenr(cow, cow->start);
 -- 
-1.7.1
+1.8.4
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

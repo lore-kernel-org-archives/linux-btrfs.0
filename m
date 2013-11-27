@@ -1,63 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from srv2.trombetti.net ([65.254.53.252]:4180 "EHLO server"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1754200Ab3KZSKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 13:10:45 -0500
-Message-ID: <5294E42A.4000300@shiftmail.org>
-Date: Tue, 26 Nov 2013 19:10:50 +0100
-From: joystick <joystick@shiftmail.org>
+Received: from mail-pb0-f53.google.com ([209.85.160.53]:44692 "EHLO
+	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754105Ab3K0CuJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Nov 2013 21:50:09 -0500
 MIME-Version: 1.0
-To: David Brown <david.brown@hesbynett.no>
-CC: Piergiorgio Sartor <piergiorgio.sartor@nexgo.de>,
-        Andrea Mazzoleni <amadvance@gmail.com>, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, hpa@zytor.com, creamyfish@gmail.com
+In-Reply-To: <CAGKKSfV_OQKy3_5HmiMUxV=HFE9OpAVsnyzV_WTh14smMdm7Wg@mail.gmail.com>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
+	<528A90B7.5010905@zytor.com>
+	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
+	<528AA1EB.3010909@zytor.com>
+	<CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com>
+	<528BCA2D.5010500@redhat.com>
+	<73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>
+	<CAGKKSfUGLzeLfab0uJTGV=UELxEH+mB3K4VbDouHxzmc+xuZ2A@mail.gmail.com>
+	<528D0913.1070604@zytor.com>
+	<BD8F4758-37F1-44FC-8FB6-0F798FE626DF@cs.utk.edu>
+	<CAGKKSfV_OQKy3_5HmiMUxV=HFE9OpAVsnyzV_WTh14smMdm7Wg@mail.gmail.com>
+Date: Tue, 26 Nov 2013 18:50:08 -0800
+Message-ID: <CAN05THSY7v2=S=vdAj8Mw_uXX=XKU2Fsi-YSMjBrjb-U0=_CLw@mail.gmail.com>
 Subject: Re: Triple parity and beyond
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com> <20131119181237.GA3666@lazy.lzy> <528C9297.9030801@hesbynett.no> <20131120215939.GA2622@lazy.lzy> <528DDCC9.7050701@hesbynett.no> <20131121200545.GB1916@lazy.lzy> <528E6DB2.6050005@hesbynett.no>
-In-Reply-To: <528E6DB2.6050005@hesbynett.no>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: ronnie sahlberg <ronniesahlberg@gmail.com>
+To: Andrea Mazzoleni <amadvance@gmail.com>
+Cc: Linux RAID Mailing List <linux-raid@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21/11/2013 21:31, David Brown wrote:
-> On 21/11/13 21:05, Piergiorgio Sartor wrote:
->> Having a multi parity RAID allows to check
->> even which disk.
->> This would provide the user with a more
->> comprehensive (I forgot the spelling)
->> information.
+This is great stuff.
+Now, how can we get this into btrfs and md?
+
+
+On Wed, Nov 20, 2013 at 1:23 PM, Andrea Mazzoleni <amadvance@gmail.com> wrote:
+> Hi,
+>
+>> First, create a 3 by 6 cauchy matrix, using x_i = 2^-i, and y_i = 0 for i=0, and y_i = 2^i for other i.
+>> In this case:   x = { 1, 142, 71, 173, 216, 108 }  y = { 0, 2, 4).  The cauchy matrix is:
 >>
->> Of course, since we are there, we can
->> also give the option to fix it.
->> This would be much likely a "fsck".
-> If this can all be done to give the user an informed choice, then it
-> sounds good.
+>>   1   2   4   8  16  32
+>> 244  83  78 183 118  47
+>> 167  39 213  59 153  82
+>>
+>> Divide row 2 by 244 and row 3 by 167.  Then extend it with a row of ones on top and it's still MDS,
+>> and  that's the code for m=4, with RAID-6 as a subset.  Very nice!
 >
-> One issue here is whether the check should be done with the filesystem
-> mounted and in use, or only off-line.  If it is off-line then it will
-> mean a long down-time while the array is checked - but if it is online,
-> then there is the risk of confusing the filesystem and caches by
-> changing the data.
+> You got it Jim!
 >
-
-Non-existent issue imho, because if that stripe is changing, any error 
-will be corrected (overwritten), at least on the data disks (parity can 
-still be wrong if a shortcut-rmw method is used).
-So you perform fsck for filesystem and data comes out good because any 
-error has been overwritten already, and fsck also returns noerror. Not 
-useful.
-
-You have to consider only the case where the array check is performed 
-online, and the stripe does not change in the meanwhile, that means it 
-does not change for a long time, enough for you to complete all the checks.
-
-debugfs techniques can tell you what filesystem element corresponds to a 
-certain block number, and this can be done online, with the filesystem 
-mounted.
-
-I don't understand the thing you say about the caches. Caches are not an 
-obstacle for current "check" operation, so they also won't be a problem 
-for the new improved check operation which you are discussing.
-
-
-
-
+> Thanks,
+> Andrea
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

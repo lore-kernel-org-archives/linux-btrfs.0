@@ -1,33 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f48.google.com ([209.85.214.48]:56444 "EHLO
-	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752099Ab3K0L27 (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:43112 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754387Ab3K0QGY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Nov 2013 06:28:59 -0500
-Received: by mail-bk0-f48.google.com with SMTP id v10so3093108bkz.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 03:28:58 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20131125214534.8160.40797@ret.masoncoding.com>
-References: <20131125214534.8160.40797@ret.masoncoding.com>
-From: Tom Gundersen <teg@jklm.no>
-Date: Wed, 27 Nov 2013 12:28:35 +0100
-Message-ID: <CAG-2HqVx3_CX+YhBAETm_JL_mh9tu4wVSS4jM0Vnvwq5Tfv48A@mail.gmail.com>
-Subject: Re: btrfs-progs tagged as v3.12
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Wed, 27 Nov 2013 11:06:24 -0500
+Received: by mail-wg0-f48.google.com with SMTP id z12so6866408wgg.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Nov 2013 08:06:23 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix max dir item size calculation
+Date: Wed, 27 Nov 2013 16:06:16 +0000
+Message-Id: <1385568376-21059-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 25, 2013 at 10:45 PM, Chris Mason <chris.mason@fusionio.com> wrote:
-> Hi everyone,
->
-> I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
-> instead of making the poor distros pull from git, I'll be creating
-> tagged releases at roughly the same pace as Linus cuts kernels.
+We were accounting for sizeof(struct btrfs_item) twice, once
+in the data_size variable and another time in the if statement
+below.
 
-Great stuff Chris! The new version is now in Arch's [testing] repository.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/dir-item.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Cheers,
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index c031ea3..9a89ceb 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -261,7 +261,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 	 * see if there is room in the item to insert this
+ 	 * name
+ 	 */
+-	data_size = sizeof(*di) + name_len + sizeof(struct btrfs_item);
++	data_size = sizeof(*di) + name_len;
+ 	leaf = path->nodes[0];
+ 	slot = path->slots[0];
+ 	if (data_size + btrfs_item_size_nr(leaf, slot) +
+-- 
+1.7.9.5
 
-Tom

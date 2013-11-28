@@ -1,55 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f53.google.com ([209.85.160.53]:44692 "EHLO
-	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754105Ab3K0CuJ (ORCPT
+Received: from mo-65-41-216-221.sta.embarqhsd.net ([65.41.216.221]:20073 "EHLO
+	greer.hardwarefreak.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751121Ab3K1HQS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 21:50:09 -0500
+	Thu, 28 Nov 2013 02:16:18 -0500
+Message-ID: <5296EDBD.8030905@hardwarefreak.com>
+Date: Thu, 28 Nov 2013 01:16:13 -0600
+From: Stan Hoeppner <stan@hardwarefreak.com>
+Reply-To: stan@hardwarefreak.com
 MIME-Version: 1.0
-In-Reply-To: <CAGKKSfV_OQKy3_5HmiMUxV=HFE9OpAVsnyzV_WTh14smMdm7Wg@mail.gmail.com>
-References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>
-	<528A90B7.5010905@zytor.com>
-	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>
-	<528AA1EB.3010909@zytor.com>
-	<CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com>
-	<528BCA2D.5010500@redhat.com>
-	<73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu>
-	<CAGKKSfUGLzeLfab0uJTGV=UELxEH+mB3K4VbDouHxzmc+xuZ2A@mail.gmail.com>
-	<528D0913.1070604@zytor.com>
-	<BD8F4758-37F1-44FC-8FB6-0F798FE626DF@cs.utk.edu>
-	<CAGKKSfV_OQKy3_5HmiMUxV=HFE9OpAVsnyzV_WTh14smMdm7Wg@mail.gmail.com>
-Date: Tue, 26 Nov 2013 18:50:08 -0800
-Message-ID: <CAN05THSY7v2=S=vdAj8Mw_uXX=XKU2Fsi-YSMjBrjb-U0=_CLw@mail.gmail.com>
+To: David Brown <david.brown@hesbynett.no>, James Plank <plank@cs.utk.edu>,
+        Ric Wheeler <rwheeler@redhat.com>
+CC: Andrea Mazzoleni <amadvance@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>,
+        linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        David Smith <creamyfish@gmail.com>
 Subject: Re: Triple parity and beyond
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Andrea Mazzoleni <amadvance@gmail.com>
-Cc: Linux RAID Mailing List <linux-raid@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAGKKSfWO4qTZsbd-=10cKc7=O7hTCVceMVQvCTJcUh1Z_gW04Q@mail.gmail.com>	<528A90B7.5010905@zytor.com>	<CAGKKSfWXv4vzVDz-wOm=wC=oU3uM3t7hnp39CoXFkOjyjN_knA@mail.gmail.com>	<528AA1EB.3010909@zytor.com> <CAGKKSfVEMuRYf-L5Nfy0Q4SHKcks0VhPJkj73vy+krsNhSkruA@mail.gmail.com> <528BCA2D.5010500@redhat.com> <73BEB41F-0FAC-4108-BEA9-DB6D921F6F55@cs.utk.edu> <528D61C5.70902@hardwarefreak.com> <528DCD36.1060808@hesbynett.no> <528F17FB.60909@hardwarefreak.com> <528F5AF4.60803@hesbynett.no>
+In-Reply-To: <528F5AF4.60803@hesbynett.no>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is great stuff.
-Now, how can we get this into btrfs and md?
+Late reply.  This one got lost in the flurry of activity...
 
+On 11/22/2013 7:24 AM, David Brown wrote:
+> On 22/11/13 09:38, Stan Hoeppner wrote:
+>> On 11/21/2013 3:07 AM, David Brown wrote:
+>>
+>>> For example, with 20 disks at 1 TB each, you can have:
+>>
+...
+>> Maximum:
+>>
+>> RAID 10 = 10 disk redundancy
+>> RAID 15 = 11 disk redundancy
+> 
+> 12 disks maximum (you have 8 with data, the rest are mirrors, parity, or
+> mirrors of parity).
+> 
+>> RAID 16 = 12 disk redundancy
+> 
+> 14 disks maximum (you have 6 with data, the rest are mirrors, parity, or
+> mirrors of parity).
 
-On Wed, Nov 20, 2013 at 1:23 PM, Andrea Mazzoleni <amadvance@gmail.com> wrote:
-> Hi,
->
->> First, create a 3 by 6 cauchy matrix, using x_i = 2^-i, and y_i = 0 for i=0, and y_i = 2^i for other i.
->> In this case:   x = { 1, 142, 71, 173, 216, 108 }  y = { 0, 2, 4).  The cauchy matrix is:
+We must follow different definitions of "redundancy".  I view redundancy
+as the number of drives that can fail without taking down the array.  In
+the case of the above 20 drive RAID15 that maximum is clearly 11
+drives-- one of every mirror and both of one mirror can fail.  The 12th
+drive failure kills the array.
+
+>> Range:
 >>
->>   1   2   4   8  16  32
->> 244  83  78 183 118  47
->> 167  39 213  59 153  82
->>
->> Divide row 2 by 244 and row 3 by 167.  Then extend it with a row of ones on top and it's still MDS,
->> and  that's the code for m=4, with RAID-6 as a subset.  Very nice!
+>> RAID 10 = 1-10 disk redundancy
+>> RAID 15 = 3-11 disk redundancy
+>> RAID 16 = 5-12 disk redundancy
 >
-> You got it Jim!
->
-> Thanks,
-> Andrea
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Yes, I know these are the minimum redundancies.  But that's a vital
+> figure for reliability (even if the range is important for statistical
+> averages).  When one disk in a raid10 array fails, your main concern is
+> about failures or URE's in the other half of the pair - it doesn't help
+> to know that another nine disks can "safely" fail too.
+
+Knowing this is often critical from an architectural standpoint David.
+It is quite common to create the mirrors of a RAID10 across two HBAs and
+two JBOD chassis.  Some call this "duplexing".  With RAID10 you know you
+can lose one HBA, one cable, one JBOD (PSU, expander, etc) and not skip
+a beat.  "RAID15" would work the same in this scenario.
+
+This architecture is impossible with RAID5/6.  Any of the mentioned
+failures will kill the array.
+
+-- 
+Stan

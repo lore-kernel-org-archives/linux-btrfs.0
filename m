@@ -1,34 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ares07.inai.de ([5.9.24.206]:52779 "EHLO ares07.inai.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60261 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756488Ab3KZLBT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Nov 2013 06:01:19 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by ares07.inai.de (Postfix) with ESMTP id A80F52000CD8C
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Nov 2013 12:01:15 +0100 (CET)
-Date: Tue, 26 Nov 2013 12:01:14 +0100 (CET)
-From: Jan Engelhardt <jengelh@inai.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Bogus f_avail/f_bavail in df
-Message-ID: <alpine.LSU.2.11.1311261155590.2892@nerf07.vanv.qr>
+	id S1751045Ab3K1RK3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Nov 2013 12:10:29 -0500
+Date: Thu, 28 Nov 2013 18:10:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Russell Coker <russell@coker.com.au>, 1i5t5.duncan@cox.net,
+        linux-btrfs@vger.kernel.org
+Subject: Re: NMI from btrfs cron jobs in 3.11.6
+Message-ID: <20131128171025.GJ25312@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201311140145.29255.russell@coker.com.au>
+ <pan$4655$5629e47b$7d83e5a0$59910e71@cox.net>
+ <201311180143.51552.russell@coker.com.au>
+ <20131117151618.GG9725@merlins.org>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20131117151618.GG9725@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Nov 17, 2013 at 07:16:18AM -0800, Marc MERLIN wrote:
+> On Mon, Nov 18, 2013 at 01:43:51AM +1100, Russell Coker wrote:
+> > On Thu, 14 Nov 2013, Duncan <1i5t5.duncan@cox.net> wrote:
+> > > > It appears that running two scripts that create snapshots at the same
+> > > > time as a script that removes maybe 97 snapshots causes an NMI.
+> > > 
+> > > This is a known bug in 3.11 (and presumably earlier).  Snapshot 
+> > > manipulation concurrency evidently wasn't originally well considered, and 
+> 
+> Not super important, but the bug does go farther back in time, I
+> reported it here too some time back (although didn't hear anything back
+> at the time).
+> 
+> But for me I had
+> /var/local/scr/btrfs_snaps: line 23: 26017 Segmentation fault      (core dumped) /sbin/btrfs subvolume
+> delete "$sub"
+> with details on the BT pasted in the mail:
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/28770
 
-While btrfs does its resizing, df stats are messed up.
-Seen in linux-3.9.9. Don't know if it still occurs.
+Kernel 3.2.5
 
-11:55 ares07:/home/snap # btrfs fi resize 250G /home/snap/red &
-[1] 2861
-Resize '/home/snap/red' of '250G'
-11:55 ares07:/home/snap # 
-11:55 ares07:/home/snap # df -h
-Filesystem         Size  Used Avail Use% Mounted on
-/dev/loop0         600G  239G   16E   1% /home/snap/red
-                                ^^^
-/dev/loop0  629145600   250249968 18014398497657468   1% /home/snap/red
+IIRC there was a fix or two regarding concurrency during snapshot
+creation and deletion, roughly matching the kernel 3.2 times.
 
-(So it's not exactly a magic number (2^n)-1 or something.)
-btrfs-progs-v0.20-rc1-358-g194aa4a.tar.bz2
+david

@@ -1,75 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:61607 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750801Ab3KIJWC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Nov 2013 04:22:02 -0500
-Received: by mail-ie0-f170.google.com with SMTP id at1so5030980iec.29
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Nov 2013 01:22:01 -0800 (PST)
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:55995 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754603Ab3K1Rjw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Nov 2013 12:39:52 -0500
+Received: by mail-wi0-f177.google.com with SMTP id cc10so1141216wib.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Nov 2013 09:39:50 -0800 (PST)
 MIME-Version: 1.0
-Date: Sat, 9 Nov 2013 11:22:01 +0200
-Message-ID: <CAELSAVbQXyNbSpTkKjSUMzh-BYqPA-g0-AieFaG_rmpMe5vRng@mail.gmail.com>
-Subject: Btrfs-progs static compile failure due to multiple uuid-tree.o in
- linking paratemeters
-From: Emil Karlson <jekarlson@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <52562019.4090508@cn.fujitsu.com>
+References: <1380300329-9123-1-git-send-email-anand.jain@oracle.com>
+	<1380468336-5170-1-git-send-email-anand.jain@oracle.com>
+	<20131001133919.GE18291@twin.jikos.cz>
+	<C56AFBE2-55D0-4E05-9903-5DD61E3C3D1A@gmail.com>
+	<525220DC.2030403@oracle.com>
+	<20131008164951.GC12986@twin.jikos.cz>
+	<237D022A-BBC2-412C-9E41-45EB4B299660@gmail.com>
+	<5256206C.3080306@oracle.com>
+	<52562019.4090508@cn.fujitsu.com>
+Date: Thu, 28 Nov 2013 19:39:50 +0200
+Message-ID: <CAOcd+r2OJAf1MfHeB46K7bbhPTwWiM6SKCpRVojFbY18SBWEKg@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs-progs: calculate disk space that a subvol could free
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: Wang Shilong <wangshilong1991@gmail.com>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        "dsterba@suse.cz Sterba" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org FILE SYSTEM list:BTRFS"
+	<linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings
+Hello Anand,
+I have sent a similar comment to your email thread in
+http://www.spinics.net/lists/linux-btrfs/msg27547.html
 
-Btrfs-progs static compile fails due to multiple uuid-tree.o in
-linking paratemeters:
+I believe this approach of calculating freeable space is incorrect.
+Try this:
+- create a fresh btrfs
+- create a regular file
+- write some data into it in such a way, that it was, say 4000
+EXTENT_DATA items, so that file tree and extent tree get deep enough
+- run btrfs-debug-tree and verify that all EXTENT_ITEMs of this file
+(in the extent tree) have refcnt=1
+- create a snapshot of the subvolume
+- run btrfs-debug-tree again
 
-build error:
-gcc -g -O1 -ffunction-sections -fdata-sections -o btrfs.static
-btrfs.static.o help.static.o  cmds-subvolume.static.o
-cmds-filesystem.static.o  cmds-device.static.o  cmds-scrub.static.o
-cmds-inspect.static.o  cmds-balance.static.o  cmds-send.static.o
-cmds-receive.static.o  cmds-quota.static.o  cmds-qgroup.static.o
-cmds-replace.static.o  cmds-check.static.o  cmds-restore.static.o
-cmds-rescue.static.o  chunk-recover.static.o  super-recover.static.o \
-ctree.static.o  disk-io.static.o  radix-tree.static.o
-extent-tree.static.o  print-tree.static.o  root-tree.static.o
-dir-item.static.o  file-item.static.o  inode-item.static.o
-inode-map.static.o  extent-cache.static.o  extent_io.static.o
-volumes.static.o  utils.static.o  repair.static.o  qgroup.static.o
-raid6.static.o  free-space-cache.static.o  uuid-tree.static.o
-list_sort.static.o  send-stream.static.o  send-utils.static.o
-rbtree.static.o  btrfs-list.static.o  crc32c.static.o
-uuid-tree.static.o -static -Wl,--gc-sections -luuid -lblkid -lm -lz
--llzo2 -L. -lpthread
-uuid-tree.static.o: In function `btrfs_lookup_uuid_subvol_item':
-/home/jkarlson/.local/repo/btrfs-progs/uuid-tree.c:94: multiple
-definition of `btrfs_lookup_uuid_subvol_item'
-uuid-tree.static.o:/home/jkarlson/.local/repo/btrfs-progs/uuid-tree.c:94:
-first defined here
-uuid-tree.static.o: In function `btrfs_lookup_uuid_received_subvol_item':
-/home/jkarlson/.local/repo/btrfs-progs/uuid-tree.c:101: multiple
-definition of `btrfs_lookup_uuid_received_subvol_item'
-uuid-tree.static.o:/home/jkarlson/.local/repo/btrfs-progs/uuid-tree.c:101:
-first defined here
-collect2: error: ld returned 1 exit status
-make: *** [btrfs.static] Error 1
+You will see that most (in my case - all) of EXTENT_ITEMs still have
+refcnt=1. Reason for this is as I mentioned in
+http://www.spinics.net/lists/linux-btrfs/msg27547.html
+
+But if you delete the subvolume, no space will be freed, because all
+these extents are also shared by the snapshot. Although it seems that
+your tool will report that all subvolume's space is freeable (based on
+refcnt=1).
+
+Can you pls try that experiment and comment on it? Perhaps I am
+missing something here?
+
+Thanks!
+Alex.
 
 
-I have no idea what I am doing but removing uuid-tree.o from objects
-seems to help to compile btrfs-progs both as statically and
-dynamically linked binaries:
 
-diff --git a/Makefile b/Makefile
-index 4e33648..4604b1f 100644
---- a/Makefile
-+++ b/Makefile
-@@ -9,7 +9,7 @@ CFLAGS = -g -O1
- objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
-          root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
-          extent-cache.o extent_io.o volumes.o utils.o repair.o \
--         qgroup.o raid6.o free-space-cache.o uuid-tree.o list_sort.o
-+         qgroup.o raid6.o free-space-cache.o list_sort.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
-               cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
-               cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-
-Best Regards
--Emil
+On Thu, Oct 10, 2013 at 6:33 AM, Wang Shilong
+<wangsl.fnst@cn.fujitsu.com> wrote:
+> On 10/10/2013 11:35 AM, Anand Jain wrote:
+>>
+>>
+>>  If 'btrfs_file_extent_item' can contain the ref count it would
+>>  solve the current problem quite easily.  (problem is that, its
+>>  of n * n searches to know data extents with its ref for a given
+>>  subvol).
+>
+> Just considering btrfs_file_extent_item is not enough, because
+> we should consider metadata(as i have said before).
+>
+>>
+>>  But what'r the challenge(s) to have ref count in the
+>>  btrfs_file_extent_item ? any thoughts ?
+>
+> Haven't thought a better idea yet.
+>
+>
+>>
+>> Thanks, Anand
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

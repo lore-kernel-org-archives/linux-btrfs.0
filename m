@@ -1,88 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37677 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750995Ab3K1KWy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Nov 2013 05:22:54 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VlykG-00081V-CD
-	for linux-btrfs@vger.kernel.org; Thu, 28 Nov 2013 11:22:52 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Nov 2013 11:22:52 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Nov 2013 11:22:52 +0100
+Received: from mail-qe0-f48.google.com ([209.85.128.48]:64227 "EHLO
+	mail-qe0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750949Ab3K1KkM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Nov 2013 05:40:12 -0500
+Received: by mail-qe0-f48.google.com with SMTP id gc15so8793530qeb.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Nov 2013 02:40:09 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAC6NtXzhkfpKf+n1kaCj+xRaPnVr-rvz5Sahi1qUXxUbJV9VVQ@mail.gmail.com>
+References: <CAC6NtXzhkfpKf+n1kaCj+xRaPnVr-rvz5Sahi1qUXxUbJV9VVQ@mail.gmail.com>
+Date: Thu, 28 Nov 2013 18:40:09 +0800
+Message-ID: <CAC6NtXw15KM_hx9tazA=NMA6ikN4fCb028=03uWREjCFKj+iUw@mail.gmail.com>
+Subject: Fwd: Linux 3.8.0-33-generic - btrfs: open_ctree failed causes mount failure
+From: Juan Poh <juanpoh@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs send size
-Date: Thu, 28 Nov 2013 10:22:31 +0000 (UTC)
-Message-ID: <pan$49c4c$8412de9a$240c4a4a$2eb69510@cox.net>
-References: <5296516E.8000201@jrs-s.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jim Salter posted on Wed, 27 Nov 2013 15:09:18 -0500 as excerpted:
+Hi
 
-> I can't find a manpage for the btrfs command that lists ANY information
-> about btrfs send, and I haven't found anything online about doing a size
-> check on send operations without actually sending the data.  Anybody got
-> any help for this?  This is officially a Big Deal for those of us who
-> customarily do asynchronous replication, so it would be really, really
-> awesome if this could get addressed. =)
+I have a btrfs corruption on a external hard disk which cause mount to fail:
+[179649.291047] btrfs: bdev /dev/loop0 errs: wr 2, rd 0, flush 0,
+corrupt 0, gen 0
+[179649.291473] parent transid verify failed on 59394068480 wanted
+84587 found 84589
+[179649.291763] parent transid verify failed on 59394068480 wanted
+84587 found 84589
+[179649.291776] Failed to read block groups: -5
+[179649.312476] btrfs: open_ctree failed
 
-You're not using a current btrfs-progs version (3.12 being current as of 
-just a couple days ago, when Chris tagged it and announced versions 
-synced to kernel versions, now), then.
+On Ubuntu 13.04, btrfsck would assert with the following error:
+btrfsck: disk-io.c:441: find_and_setup_root: Assertion `!(ret)' failed.
 
-btrfs --version
-Btrfs v3.12
+I have backup the disk partition using ddrescue. Using Ubuntu 13.10,
+btrfsck on the disk image would display:
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+Ignoring transid failure
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+Ignoring transid failure
+Couldn't setup extent tree
+Checking filesystem on sdc2.img
+UUID: cb1f0291-623e-40c3-826b-c4e2e0fc000a
+Critical roots corrupted, unable to fsck the FS
 
->From the btrfs (8) manpage:
+btrfs-image would failed too with similar message except the last few lines:
+Couldn't setup extent tree
+extent buffer leak: start 59394023424 len 4096
+Open ctree failed
+create failed (Success)
 
->>>>
+I have tried btrfs-find-root which generate a long list of the "Well
+block xxx" message and eventually stop:
+Well block 204095827968 seems great, but generation doesn't match,
+have=72672, want=84589 level 0
+Super think's the tree root is at 59394023424, chunk root 20971520
+No more metdata to scan, exiting
 
-send [-v] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol>
 
-Send the subvolume to stdout.  Sends the subvolume specified by <subvol> 
-to stdout.  By default, this will send the whole subvolume. To do an  
-incremental send, use '-p <parent>'.  If you want to allow btrfs to clone 
-from any additional local snapshots, use '-c <clone-src>' (multiple times 
-where applicable).  You must not specify clone sources unless you 
-guarantee that these snapshots are exactly in the same state on both 
-sides, the sender and the receiver.  It is allowed to omit the which case 
-'btrfs send' will determine a suitable parent among the clone sources 
-itself.
+# btrfs restore -t 59394023424 sdc2.img ./home
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+parent transid verify failed on 59394023424 wanted 84589 found 84587
+Ignoring transid failure
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+Ignoring transid failure
+Couldn't setup extent tree
+parent transid verify failed on 59394068480 wanted 84587 found 84589
+Ignoring transid failure
+Couldn't read fs root: -2
+extent buffer leak: start 59394023424 len 4096
 
-Options
+I am very keen to try patching the disk structure, for instance swap
+84589 and 84587 at 59394023424 and 59394068480. Any guru can provide
+any guidance or better idea on how to fix this?
 
--v   Enable verbose debug output. Each occurrence of this option 	
-increases the verbose level more.
-       
--p <parent>
-Send an incremental stream from <parent> to <subvol>.
-       
--c <clone-src>
-Use this snapshot as a clone source for an incremental send (multiple 
-allowed).
-       
--f <outfile>
-Output is normally written to stdout. To write to a file, use this option.
-An alternative would be to use pipes.
-       
-<<<<
-
-Seems that last sentence before the options had something chopped out, 
-but that's what the manpage says.
-
-FWIW I don't use btrfs send here so I can't vouch for the accuracy of the 
-above, but that's what's in the latest manpage, anyway.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks and regards,
+Juan Poh

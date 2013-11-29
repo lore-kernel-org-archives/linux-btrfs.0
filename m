@@ -1,42 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f180.google.com ([209.85.192.180]:53478 "EHLO
-	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751140Ab3K2Nvx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Nov 2013 08:51:53 -0500
-Received: by mail-pd0-f180.google.com with SMTP id q10so13771063pdj.25
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Nov 2013 05:51:53 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:57938 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752088Ab3K2SHq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Nov 2013 13:07:46 -0500
+Date: Fri, 29 Nov 2013 19:07:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: kreijack@inwind.it
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] BTRFS-PROG: recursively subvolume snapshot and delete
+Message-ID: <20131129180745.GQ25312@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1384621747-25441-1-git-send-email-kreijack@inwind.it>
+ <20131128183122.GL25312@twin.jikos.cz>
+ <52979821.60401@gmail.com>
 MIME-Version: 1.0
-Date: Fri, 29 Nov 2013 08:51:53 -0500
-Message-ID: <CAMfhy93_SCzGKwkPFpOb-ShhAoCXoehwTRLvxD+=ZgOXuce_Gg@mail.gmail.com>
-Subject: BTRFS scrub hung
-From: Mace Moneta <moneta.mace@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52979821.60401@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-https://bugzilla.kernel.org/show_bug.cgi?id=66151
+On Thu, Nov 28, 2013 at 08:23:13PM +0100, Goffredo Baroncelli wrote:
+> Definetely you are right. In fact this is true also for other tools like
+> tar: they complaint if you remove/move/rename a file during the copy. We
+> can work to increase the robustness of the process, to avoid strange
+> behaviour when a subvolume is removed/moved/renamed.
+> 
+> Anyway I am more afraid that we can't mix recursive and readonly snapshot.
 
-# btrfs scrub status /
-scrub status for 02184910-5849-489f-b970-3ea35912a7af
-        scrub started at Tue Nov 26 21:30:01 2013, running for 15 seconds
-        total bytes scrubbed: 5.38GiB with 0 errors
+Agreed, this would eg. need to toggle RO/RW status when needed, but this
+does not sound very clean.
 
-# btrfs scrub cancel /
-ERROR: scrub cancel failed on /: not running
+> Implementing the atomic recursive snapshot in the kernel, is out of my
+> possibility; anyway basically this means that the filesystem is frozen
+> until all the snapshot are done, which requires a finite time. In case
+> of a high number of subvolumes this could be a problem.
 
-# btrfs scrub resume /
-ERROR: scrub is already running.
-To cancel use 'btrfs scrub cancel /'.
-To see the status use 'btrfs scrub status [-d] /'.
+High number of subvolumes to snapshot atomically will always be
+problematic and a lazy userspace-based recursive snapshot might be
+actually better regarding the impact on the rest of the system, but
+without guaranteed atomicity.
 
-# btrfs scrub status /
-scrub status for 02184910-5849-489f-b970-3ea35912a7af
-        scrub started at Tue Nov 26 21:30:01 2013, running for 15 seconds
-        total bytes scrubbed: 5.38GiB with 0 errors
+But, I don't want to kill the whole idea just because there's some
+scenario that's possible but hard to handle.
 
-Notes:
-1. Using btrfs-progs-3.12-1.fc20.x86_64, kernel-3.12.1-2.fc21.x86_64
-on Fedora 20.
-2. The BTRFS filesystem is on two drives, data RAID0 and metadata RAID1
+david

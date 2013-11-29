@@ -1,70 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f41.google.com ([209.85.214.41]:54902 "EHLO
-	mail-bk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752250Ab3K2Tzj (ORCPT
+Received: from mail-bk0-f50.google.com ([209.85.214.50]:53278 "EHLO
+	mail-bk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754031Ab3K2UAn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Nov 2013 14:55:39 -0500
-Received: by mail-bk0-f41.google.com with SMTP id v15so4451507bkz.14
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Nov 2013 11:55:38 -0800 (PST)
+	Fri, 29 Nov 2013 15:00:43 -0500
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <20131129154525.GN25312@twin.jikos.cz>
-References: <20131129154525.GN25312@twin.jikos.cz>
-Date: Fri, 29 Nov 2013 19:55:37 +0000
-Message-ID: <CAL3q7H7CmaKsnQQacpZck3zGV35ikhTwqX=Xg9eAiM97kb5TwA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: optimize btrfs_lookup_extent_info() - extent
- refcount mismatches?
+In-Reply-To: <1385744475-9614-1-git-send-email-mpn@google.com>
+References: <1385744475-9614-1-git-send-email-mpn@google.com>
+Date: Fri, 29 Nov 2013 20:00:42 +0000
+Message-ID: <CAL3q7H7-g9YVr9cCmH3qeLTn+U5hv_Dz5EhkJXGh7rp-RScn6g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: remove dead code
 From: Filipe David Manana <fdmanana@gmail.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>,
-        Filipe David Borba Manana <fdmanana@gmail.com>,
+To: Michal Nazarewicz <mpn@google.com>
+Cc: Chris Mason <chris.mason@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        clm@fb.com, jbacik@fb.com
+        linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 29, 2013 at 3:45 PM, David Sterba <dsterba@suse.cz> wrote:
-> Hi,
+On Fri, Nov 29, 2013 at 5:01 PM, Michal Nazarewicz <mpn@google.com> wrote:
+> From: Michal Nazarewicz <mina86@mina86.com>
 >
-> On Fri, Jul 05, 2013 at 09:32:05PM +0100, Filipe David Borba Manana wrote:
->> If we're looking for a metadata item in the tree and the
->> search fails with return value of 1, and the slot doesn't
->> point to the first item in the leaf, check if the previous
->> item in the leaf corresponds to an extent item for the same
->> object id - if it does, then don't do another tree search
->> to get it.
+> [commit 8185554d: fix incorrect inode acl reset] introduced a dead
+> code by adding a condition which can never be true to an else
+> branch.  The condition can never be true because it is already
+> checked by a previous if statement which causes function to return.
 >
-> I'm suspecting this patch to cause some trouble, see
-> https://bugzilla.kernel.org/show_bug.cgi?id=64961
+> Signed-off-by: Michal Nazarewicz <mina86@mina86.com>
 
-Hi David,
+Reviewed-By: Filipe David Borba Manana <fdmanana@gmail.com>
 
-What makes you believe the problem is exactly in this function?
-
-I read it again, and I can't see how it can miss an extent item that
-it couldn't before, specially without skinny metadata enabled.  Did
-the fs had skinny metadata enabled?
-
-thanks
-
-
+> ---
+>  fs/btrfs/acl.c | 7 +------
+>  1 file changed, 1 insertion(+), 6 deletions(-)
 >
-> but there were more reports similar to this one:
-> http://www.spinics.net/lists/linux-btrfs/msg29243.html
-> http://www.spinics.net/lists/linux-btrfs/msg29478.html
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index 0890c83..460f36b 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -225,13 +225,8 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+>                 ret = posix_acl_create(&acl, GFP_NOFS, &inode->i_mode);
+>                 if (ret < 0)
+>                         return ret;
+> -
+> -               if (ret > 0) {
+> -                       /* we need an acl */
+> +               if (ret > 0) /* we need an acl */
+>                         ret = btrfs_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
+> -               } else if (ret < 0) {
+> -                       cache_no_acl(inode);
+> -               }
+>         } else {
+>                 cache_no_acl(inode);
+>         }
+> --
+> 1.8.4.1
 >
-> I did a quick analysis in comment 3, the warning pops when there are 0
-> references, there's no other evidence that the extent should have none.
-> This happens during balance, so far the working hypothesis is that the
-> refcount changes during relocation (eg. subvolume deletion) but is not
-> fixed up in the late reloc phase.
->
-> fsck finds lots of wrong refcounts, off by one. The kernel warning fires
-> only if the refcount is 0 though there are > 0 expected. So this could
-> mean that the refcount is silently wrong all the time.
->
->
-> david
 
 
 

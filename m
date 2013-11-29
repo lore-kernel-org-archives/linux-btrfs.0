@@ -1,214 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:38903 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750859Ab3K1Ffk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Nov 2013 00:35:40 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rAS5ZNXm008146
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Nov 2013 13:35:36 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Received: from mail-pd0-f171.google.com ([209.85.192.171]:54809 "EHLO
+	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751636Ab3K2OXc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 29 Nov 2013 09:23:32 -0500
+Received: by mail-pd0-f171.google.com with SMTP id z10so13841120pdj.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Nov 2013 06:23:31 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs-progs: scan devices in parallel for chunk-recover
-Date: Thu, 28 Nov 2013 13:32:52 +0800
-Message-Id: <1385616772-13222-4-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1385616772-13222-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1385616772-13222-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: avoid using btrfs internal subvolume path to send
+Date: Fri, 29 Nov 2013 22:23:09 +0800
+Message-Id: <1385734989-8839-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Originally, multi devices are scanned one by one;
-Now, one thread is used per device to scan.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Steps to reproduce:
+	# mkfs.btrfs -f /dev/sda
+	# mount /dev/sda /mnt
+	# btrfs subvolume create /mnt/foo
+	# umount /mnt
+	# mount -o subvol=foo /dev/sda /mnt
+	# btrfs sub snapshot -r /mnt /mnt/snap
+	# btrfs send /mnt/snap > /dev/null
+
+We will fail to send '/mnt/snap',this is because btrfs send try to
+open '/mnt/snap' by btrfs internal subvolume path 'foo/snap' rather
+than relative path based on mounted point, this will return us 'no
+such file or directory',this is not right, fix it.
+
+Reported-by: Thomas Scheiblauer <tom@sharkbay.at>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- chunk-recover.c | 89 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 82 insertions(+), 7 deletions(-)
+ cmds-send.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index ac2a437..d103e17 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -26,6 +26,7 @@
- #include <fcntl.h>
- #include <unistd.h>
- #include <uuid/uuid.h>
-+#include <pthread.h>
+diff --git a/cmds-send.c b/cmds-send.c
+index 53e9a53..b3dde83 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -283,7 +283,7 @@ out:
+ }
  
- #include "kerncompat.h"
- #include "list.h"
-@@ -64,6 +65,7 @@ struct recover_control {
- 	struct list_head good_chunks;
- 	struct list_head bad_chunks;
- 	struct list_head unrepaired_chunks;
-+	pthread_mutex_t rc_lock;
- };
- 
- struct extent_record {
-@@ -75,6 +77,12 @@ struct extent_record {
- 	int nmirrors;
- };
- 
-+struct device_scan {
-+	struct recover_control *rc;
-+	struct btrfs_device *dev;
-+	int fd;
-+};
-+
- static struct extent_record *btrfs_new_extent_record(struct extent_buffer *eb)
+ static int do_send(struct btrfs_send *send, u64 root_id, u64 parent_root_id,
+-		   int is_first_subvol, int is_last_subvol)
++		   int is_first_subvol, int is_last_subvol, char *subvol)
  {
- 	struct extent_record *rec;
-@@ -202,6 +210,7 @@ static void init_recover_control(struct recover_control *rc, int verbose,
+ 	int ret;
+ 	pthread_t t_read;
+@@ -303,10 +303,10 @@ static int do_send(struct btrfs_send *send, u64 root_id, u64 parent_root_id,
+ 		goto out;
+ 	}
  
- 	rc->verbose = verbose;
- 	rc->yes = yes;
-+	pthread_mutex_init(&rc->rc_lock, NULL);
- }
- 
- static void free_recover_control(struct recover_control *rc)
-@@ -210,6 +219,7 @@ static void free_recover_control(struct recover_control *rc)
- 	free_chunk_cache_tree(&rc->chunk);
- 	free_device_extent_tree(&rc->devext);
- 	free_extent_record_tree(&rc->eb_cache);
-+	pthread_mutex_destroy(&rc->rc_lock);
- }
- 
- static int process_block_group_item(struct block_group_tree *bg_cache,
-@@ -694,14 +704,20 @@ static int extract_metadata_record(struct recover_control *rc,
- 		btrfs_item_key_to_cpu(leaf, &key, i);
- 		switch (key.type) {
- 		case BTRFS_BLOCK_GROUP_ITEM_KEY:
-+			pthread_mutex_lock(&rc->rc_lock);
- 			ret = process_block_group_item(&rc->bg, leaf, &key, i);
-+			pthread_mutex_unlock(&rc->rc_lock);
- 			break;
- 		case BTRFS_CHUNK_ITEM_KEY:
-+			pthread_mutex_lock(&rc->rc_lock);
- 			ret = process_chunk_item(&rc->chunk, leaf, &key, i);
-+			pthread_mutex_unlock(&rc->rc_lock);
- 			break;
- 		case BTRFS_DEV_EXTENT_KEY:
-+			pthread_mutex_lock(&rc->rc_lock);
- 			ret = process_device_extent_item(&rc->devext, leaf,
- 							 &key, i);
-+			pthread_mutex_unlock(&rc->rc_lock);
- 			break;
+-	subvol_fd = openat(send->mnt_fd, si->path, O_RDONLY | O_NOATIME);
++	subvol_fd = openat(send->mnt_fd, subvol, O_RDONLY | O_NOATIME);
+ 	if (subvol_fd < 0) {
+ 		ret = -errno;
+-		fprintf(stderr, "ERROR: open %s failed. %s\n", si->path,
++		fprintf(stderr, "ERROR: open %s failed. %s\n", subvol,
+ 				strerror(-ret));
+ 		goto out;
+ 	}
+@@ -701,7 +701,7 @@ int cmd_send(int argc, char **argv)
+ 			is_last_subvol = 1;
  		}
- 		if (ret)
-@@ -721,12 +737,19 @@ static inline int is_super_block_address(u64 offset)
- 	return 0;
- }
- 
--static int scan_one_device(struct recover_control *rc, int fd,
--			   struct btrfs_device *device)
-+static int scan_one_device(void *dev_scan_struct)
- {
- 	struct extent_buffer *buf;
- 	u64 bytenr;
- 	int ret = 0;
-+	struct device_scan *dev_scan = (struct device_scan *)dev_scan_struct;
-+	struct recover_control *rc = dev_scan->rc;
-+	struct btrfs_device *device = dev_scan->dev;
-+	int fd = dev_scan->fd;
-+
-+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-+	if (ret)
-+		return 1;
- 
- 	buf = malloc(sizeof(*buf) + rc->leafsize);
- 	if (!buf)
-@@ -754,7 +777,9 @@ static int scan_one_device(struct recover_control *rc, int fd,
- 			continue;
- 		}
- 
-+		pthread_mutex_lock(&rc->rc_lock);
- 		ret = process_extent_buffer(&rc->eb_cache, buf, device, bytenr);
-+		pthread_mutex_unlock(&rc->rc_lock);
- 		if (ret)
+ 		ret = do_send(&send, root_id, parent_root_id,
+-			      is_first_subvol, is_last_subvol);
++			      is_first_subvol, is_last_subvol, subvol);
+ 		if (ret < 0)
  			goto out;
  
-@@ -784,6 +809,7 @@ next_node:
- 		bytenr += rc->leafsize;
- 	}
- out:
-+	close(fd);
- 	free(buf);
- 	return ret;
- }
-@@ -793,6 +819,27 @@ static int scan_devices(struct recover_control *rc)
- 	int ret = 0;
- 	int fd;
- 	struct btrfs_device *dev;
-+	struct device_scan *dev_scans;
-+	pthread_t *t_scans;
-+	int *t_rets;
-+	int devnr = 0;
-+	int devidx = 0;
-+	int cancel_from = 0;
-+	int cancel_to = 0;
-+	int i;
-+
-+	list_for_each_entry(dev, &rc->fs_devices->devices, dev_list)
-+		devnr++;
-+	dev_scans = (struct device_scan *)malloc(sizeof(struct device_scan)
-+						 * devnr);
-+	if (!dev_scans)
-+		return -ENOMEM;
-+	t_scans = (pthread_t *)malloc(sizeof(pthread_t) * devnr);
-+	if (!t_scans)
-+		return -ENOMEM;
-+	t_rets = (int *)malloc(sizeof(int) * devnr);
-+	if (!t_rets)
-+		return -ENOMEM;
- 
- 	list_for_each_entry(dev, &rc->fs_devices->devices, dev_list) {
- 		fd = open(dev->name, O_RDONLY);
-@@ -801,12 +848,40 @@ static int scan_devices(struct recover_control *rc)
- 				dev->name);
- 			return -1;
- 		}
--		ret = scan_one_device(rc, fd, dev);
--		close(fd);
--		if (ret)
--			return ret;
-+		dev_scans[devidx].rc = rc;
-+		dev_scans[devidx].dev = dev;
-+		dev_scans[devidx].fd = fd;
-+		ret = pthread_create(&t_scans[devidx], NULL,
-+				     (void *)scan_one_device,
-+				     (void *)&dev_scans[devidx]);
-+		if (ret) {
-+			cancel_from = 0;
-+			cancel_to = devidx - 1;
-+			goto out;
-+		}
-+		devidx++;
- 	}
--	return ret;
-+
-+	i = 0;
-+	while (i < devidx) {
-+		ret = pthread_join(t_scans[i], (void **)&t_rets[i]);
-+		if (ret || t_rets[i]) {
-+			ret = 1;
-+			cancel_from = i + 1;
-+			cancel_to = devnr - 1;
-+			break;
-+		}
-+		i++;
-+	}
-+out:
-+	while (cancel_from <= cancel_to) {
-+		pthread_cancel(t_scans[cancel_from]);
-+		cancel_from++;
-+	}
-+	free(dev_scans);
-+	free(t_scans);
-+	free(t_rets);
-+	return !!ret;
- }
- 
- static int build_device_map_by_chunk_record(struct btrfs_root *root,
 -- 
-1.8.0.1
+1.8.4
 

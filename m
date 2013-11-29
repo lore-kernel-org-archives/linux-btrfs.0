@@ -1,110 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f43.google.com ([74.125.82.43]:38024 "EHLO
-	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753516Ab3KLNmD (ORCPT
+Received: from mo-p00-ob.rzone.de ([81.169.146.160]:25738 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753168Ab3K2PTZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Nov 2013 08:42:03 -0500
-Received: by mail-wg0-f43.google.com with SMTP id n12so3041782wgh.34
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Nov 2013 05:42:01 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 0/5] Add support for object properties
-Date: Tue, 12 Nov 2013 13:41:41 +0000
-Message-Id: <1384263706-25549-1-git-send-email-fdmanana@gmail.com>
+	Fri, 29 Nov 2013 10:19:25 -0500
+Message-ID: <5298B079.2020907@giantdisaster.de>
+Date: Fri, 29 Nov 2013 16:19:21 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs-progs: avoid using btrfs internal subvolume path
+ to send
+References: <1385734989-8839-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1385734989-8839-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a revised version of the original proposal/work from Alexander Block
-to introduce a generic framework to set properties on btrfs filesystem objects
-(inodes, subvolumes, filesystems, devices).
+On Fri, 29 Nov 2013 22:23:09 +0800, Wang Shilong wrote:
+> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> 
+> Steps to reproduce:
+> 	# mkfs.btrfs -f /dev/sda
+> 	# mount /dev/sda /mnt
+> 	# btrfs subvolume create /mnt/foo
+> 	# umount /mnt
+> 	# mount -o subvol=foo /dev/sda /mnt
+> 	# btrfs sub snapshot -r /mnt /mnt/snap
+> 	# btrfs send /mnt/snap > /dev/null
+> 
+> We will fail to send '/mnt/snap',this is because btrfs send try to
+> open '/mnt/snap' by btrfs internal subvolume path 'foo/snap' rather
+> than relative path based on mounted point, this will return us 'no
+> such file or directory',this is not right, fix it.
+> 
+> Reported-by: Thomas Scheiblauer <tom@sharkbay.at>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+>  cmds-send.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/cmds-send.c b/cmds-send.c
+> index 53e9a53..b3dde83 100644
+> --- a/cmds-send.c
+> +++ b/cmds-send.c
+> @@ -283,7 +283,7 @@ out:
+>  }
+>  
+>  static int do_send(struct btrfs_send *send, u64 root_id, u64 parent_root_id,
+> -		   int is_first_subvol, int is_last_subvol)
+> +		   int is_first_subvol, int is_last_subvol, char *subvol)
+>  {
+>  	int ret;
+>  	pthread_t t_read;
+> @@ -303,10 +303,10 @@ static int do_send(struct btrfs_send *send, u64 root_id, u64 parent_root_id,
+>  		goto out;
+>  	}
+>  
+> -	subvol_fd = openat(send->mnt_fd, si->path, O_RDONLY | O_NOATIME);
+> +	subvol_fd = openat(send->mnt_fd, subvol, O_RDONLY | O_NOATIME);
+>  	if (subvol_fd < 0) {
+>  		ret = -errno;
+> -		fprintf(stderr, "ERROR: open %s failed. %s\n", si->path,
+> +		fprintf(stderr, "ERROR: open %s failed. %s\n", subvol,
+>  				strerror(-ret));
+>  		goto out;
+>  	}
+> @@ -701,7 +701,7 @@ int cmd_send(int argc, char **argv)
+>  			is_last_subvol = 1;
+>  		}
+>  		ret = do_send(&send, root_id, parent_root_id,
+> -			      is_first_subvol, is_last_subvol);
+> +			      is_first_subvol, is_last_subvol, subvol);
+>  		if (ret < 0)
+>  			goto out;
+>  
+> 
 
-I preserved most of Alexander's work, rebasing only his main patch against
-latest integration branch, adding some missing static qualifiers, malloc failure
-checks and fixing some checkpatch.pl warnings. On top of his work, I added a few
-fixes and enhancements and added support for 1 inode property, named compression,
-which requires the corresponding kernel patch.
+You've removed that the subvol_info si is used in do_send().
+Then you can remove all the subvol_info si code:
 
-Once there's agreement on this feature and patchset, I'll send my xfstests patch
-that tests this feature.
-
-Alexander's original cover letter:
-
-"
-        This patchset introduces the btrfs property subgroup. It is the
-        result of a discussion we had on IRC. I tried to make the properties
-        interface as generic and extensible as possible. Comments are welcome.
-
-        Currently the command group looks like this:
-        btrfs prop set [-t <type>] /path/to/object <name> <value>
-        btrfs prop get [-t <type>] /path/to/object [<name>] (omitting name dumps all)
-        btrfs prop list [-t <type>] /path/to/object (lists properties with description)
-
-        The type is used to explicitly specify what type of object you mean. This is 
-        necessary in case the object+property combination is ambiguous.  For example
-        '/path/to/fs/root' could mean the root subvolume, the directory inode or the 
-        filesystem itself. Normally, btrfs-progs will try to detect the type 
-        automatically.
-
-        David suggested that it should also be possible to specify objects by
-        their id/uuid/fsid. I like that idea, but would be happy if someone else
-        could take over that part :)
-
-        For now, I've implemented two properties:
-
-        1. read-only. Usable on subvolumes to toggle the read-only flags.
-        2. label. I looked through btrfs to find good examples of things that
-           could be moved to the new properties interface and the filesystem
-           label looked like a good one. There are for sure more, but that is
-           something for later (and maybe for someone else). I would suggest 
-           to move everthing that makes sense over to the props interface and 
-           mark the old interfaces as deprecated. Comments on this are welcome.
-
-        Patch version history:
-        v1
-          Initial version.
-        v2
-          - Removed the filesystem prefix and implemented it as new command group
-          - Switched from the <name>[=<value>] form to the set/get <name> [<value>] 
-            form.
-          - Removed patches "Btrfs-progs: make filesystem_cmd_group non const"
-            and "Btrfs-progs: move skip_prefix and prefixcmp to utils.c". They
-            are not needed anymore due to the 'btrfs prop list' command.
-          - Udjusted the subvol flags patch to be compatible to the "Btrfs: use 
-            _IOR for BTRFS_IOC_SUBVOL_GETFLAGS" patch.
-          - Using -t <type> instead of <type>: prefix now.
-          - Changes are based on feedback from Ilya and David.
-
-        Alex.
-"
-
-Thanks.
-
-
-Alexander Block (1):
-  Btrfs-progs: introduce btrfs property subgroup
-
-Filipe David Borba Manana (4):
-  Btrfs-progs: let get_label return the label instead of printing it
-  Btrfs-progs: fix detection of root objects in cmds-property.c
-  Btrfs-progs: add type root to label property
-  Btrfs-progs: add support for the compression property
-
- Makefile          |    4 +-
- btrfs.c           |    1 +
- cmds-filesystem.c |   14 +-
- cmds-property.c   |  467 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- commands.h        |    2 +
- ioctl.h           |   12 ++
- props.c           |  184 +++++++++++++++++++++
- props.h           |   43 +++++
- utils.c           |   15 +-
- utils.h           |    2 +-
- 10 files changed, 729 insertions(+), 15 deletions(-)
- create mode 100644 cmds-property.c
- create mode 100644 props.c
- create mode 100644 props.h
-
--- 
-1.7.9.5
+        struct subvol_info *si;
+...
+        si = subvol_uuid_search(&send->sus, root_id, NULL, 0, NULL,
+                        subvol_search_by_root_id);
+        if (!si) {
+                ret = -ENOENT;
+                fprintf(stderr, "ERROR: could not find subvol info for
+%llu",
+                                root_id);
+                goto out;
+        }
+...
+        if (si) {
+                free(si->path);
+                free(si);
+        }
 

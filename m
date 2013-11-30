@@ -1,69 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f50.google.com ([209.85.214.50]:53278 "EHLO
-	mail-bk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754031Ab3K2UAn (ORCPT
+Received: from outrelay08.libero.it ([212.52.84.112]:56992 "EHLO
+	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750955Ab3K3HjU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Nov 2013 15:00:43 -0500
+	Sat, 30 Nov 2013 02:39:20 -0500
+Message-ID: <52999623.2090804@libero.it>
+Date: Sat, 30 Nov 2013 08:39:15 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1385744475-9614-1-git-send-email-mpn@google.com>
-References: <1385744475-9614-1-git-send-email-mpn@google.com>
-Date: Fri, 29 Nov 2013 20:00:42 +0000
-Message-ID: <CAL3q7H7-g9YVr9cCmH3qeLTn+U5hv_Dz5EhkJXGh7rp-RScn6g@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: remove dead code
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Michal Nazarewicz <mpn@google.com>
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Greg KH <gregkh@linuxfoundation.org>
+CC: dsterba@suse.cz, Josef Bacik <jbacik@fusionio.com>,
+        linux-btrfs@vger.kernel.org, chris.mason@fusionio.com,
+        stable@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: relocate csums properly with prealloc extents
+References: <1380289020-2515-1-git-send-email-jbacik@fusionio.com> <20131125165116.GR5007@twin.jikos.cz> <20131125210104.GA24160@kroah.com>
+In-Reply-To: <20131125210104.GA24160@kroah.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 29, 2013 at 5:01 PM, Michal Nazarewicz <mpn@google.com> wrote:
-> From: Michal Nazarewicz <mina86@mina86.com>
->
-> [commit 8185554d: fix incorrect inode acl reset] introduced a dead
-> code by adding a condition which can never be true to an else
-> branch.  The condition can never be true because it is already
-> checked by a previous if statement which causes function to return.
->
-> Signed-off-by: Michal Nazarewicz <mina86@mina86.com>
-
-Reviewed-By: Filipe David Borba Manana <fdmanana@gmail.com>
-
-> ---
->  fs/btrfs/acl.c | 7 +------
->  1 file changed, 1 insertion(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index 0890c83..460f36b 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -225,13 +225,8 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
->                 ret = posix_acl_create(&acl, GFP_NOFS, &inode->i_mode);
->                 if (ret < 0)
->                         return ret;
-> -
-> -               if (ret > 0) {
-> -                       /* we need an acl */
-> +               if (ret > 0) /* we need an acl */
->                         ret = btrfs_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
-> -               } else if (ret < 0) {
-> -                       cache_no_acl(inode);
-> -               }
->         } else {
->                 cache_no_acl(inode);
->         }
-> --
-> 1.8.4.1
->
-
-
+On 2013-11-25 22:01, Greg KH wrote:
+> On Mon, Nov 25, 2013 at 05:51:16PM +0100, David Sterba wrote:
+>> On Fri, Sep 27, 2013 at 09:37:00AM -0400, Josef Bacik wrote:
+>>> A user reported a problem where they were getting csum errors when running a
+>>> balance and running systemd's journal.  This is because systemd is awesome and
+>>> fallocate()'s its log space and writes into it.  Unfortunately we assume that
+>>> when we read in all the csums for an extent that they are sequential starting at
+>>> the bytenr we care about.  This obviously isn't the case for prealloc extents,
+>>> where we could have written to the middle of the prealloc extent only, which
+>>> means the csum would be for the bytenr in the middle of our range and not the
+>>> front of our range.  Fix this by offsetting the new bytenr we are logging to
+>>> based on the original bytenr the csum was for.  With this patch I no longer see
+>>> the csum errors I was seeing.  Thanks,
+>>>
+>>> Cc: stable@vger.kernel.org
+>>
+>> The patch had the right CC but I don't see it in the mail's CC list (now
+>> added by me). I'm afraid that this never reached stable and explains why
+>> the patch did not end up in 3.12.1.
+> 
+> No, it made it to my list, I was waiting for 3.13-rc1 to come out with
+> this patch in it before I could queue it up.  Don't worry, it's not
+> lost.
+> 
+The patch landed in 3.12.2
 
 -- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

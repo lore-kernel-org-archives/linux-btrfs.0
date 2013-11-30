@@ -1,33 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:53181 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750994Ab3K3KJy (ORCPT
+Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:58054 "EHLO
+	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751177Ab3K3Lh3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Nov 2013 05:09:54 -0500
-Received: by mail-wi0-f181.google.com with SMTP id hq4so2921025wib.14
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Nov 2013 02:09:53 -0800 (PST)
+	Sat, 30 Nov 2013 06:37:29 -0500
+Message-ID: <5299CC95.6010704@informatik.uni-bonn.de>
+Date: Sat, 30 Nov 2013 12:31:33 +0100
+From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
 MIME-Version: 1.0
-In-Reply-To: <ce5ama-6he.ln1@hurikhan77.spdns.de>
-References: <CAK-xaQbp8Yfgpu-Tx5CV2yhACxku6_8Zv0cXFCudyFKqoq0D=w@mail.gmail.com>
- <ce5ama-6he.ln1@hurikhan77.spdns.de>
-From: Andrea Gelmini <andrea.gelmini@gmail.com>
-Date: Sat, 30 Nov 2013 11:09:33 +0100
-Message-ID: <CAK-xaQa0fqRh39oTRuL4y4sEgQBOsvUPia6ZGDk6r7UnbQy=mg@mail.gmail.com>
-Subject: Re: Clean crash...
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: 1i5t5.duncan@cox.net
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: 2 errors when scrubbing - but I don't know what they mean
+References: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>
+In-Reply-To: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2013/11/24 Kai Krakow <hurikhan77+btrfs@gmail.com>:
-> Did you try to mount in recovery mode? This may, however, mount an older
-> version of your superblock which does not refer to your latest additions of
-> files on the disk but it may be newer than what you got in your backup.
+Hello,
 
-Hi Kai,
-   and thanks a lot for your deep reply.
-   Actually with "-o recovery" I can access to a lot of files.
+thank you for your input. I didn't know that btrfs keeps the error 
+counters over mounts/reboots, but that's nice.
 
-Thanks again,
-Andrea
+I'm still trying to figure out how such a generation error may occur in 
+the first place. One thing I noticed looking at the btrfs code is that 
+the generation error counter will only get incremented in the actual 
+scrubbing code (either in "scrub_checksum_super" or in 
+"scrub_handle_errored_block", both in scrub.c - please correct me if I'm 
+wrong, I'm not a btrfs dev). Also, the dmesg errors I saw were not there 
+at boot time, but about 10 minutes after boot which was about the time 
+when I started the scrub so I'm pretty sure that it was the scrub that 
+detected the errors.
+
+The question remains what can cause superblock/gen errors. Sure it could 
+be "some" read error, but I'd really like to make sure that it's not a 
+systematic error. I wasn't able to reproduce it yet though.
+
+Best
+Sebastian

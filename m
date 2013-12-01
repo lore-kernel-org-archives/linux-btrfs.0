@@ -1,150 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f177.google.com ([209.85.192.177]:62357 "EHLO
-	mail-pd0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751551Ab3KAHAf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Nov 2013 03:00:35 -0400
-Received: by mail-pd0-f177.google.com with SMTP id p10so3468832pdj.22
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Nov 2013 00:00:34 -0700 (PDT)
-Date: Fri, 1 Nov 2013 00:00:32 -0700
-From: Kelley Nielsen <kelleynnn@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: opw-kernel@googlegroups.com
-Subject: [PATCH 3/3] btrfs_find_item expanded to include find_orphan_item
- functionality
-Message-ID: <b004d650091cd74e2482057dd70d3dfa1eed1583.1383289182.git.kelleynnn@gmail.com>
-References: <cover.1383289182.git.kelleynnn@gmail.com>
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:51465 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751328Ab3LABQ3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 Nov 2013 20:16:29 -0500
+Received: by mail-wg0-f45.google.com with SMTP id y10so8755329wgg.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Nov 2013 17:16:28 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1383289182.git.kelleynnn@gmail.com>
+In-Reply-To: <CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com>
+References: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>
+	<5299CC95.6010704@informatik.uni-bonn.de>
+	<CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com>
+Date: Sun, 1 Dec 2013 09:16:28 +0800
+Message-ID: <CAP9B-Qkh0EVTGQPRHM2OX+tH74W-sYEoD52goS7Mae=3quMjmw@mail.gmail.com>
+Subject: Fwd: 2 errors when scrubbing - but I don't know what they mean
+From: Shilong Wang <wangshilong1991@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the third step in bootstrapping the btrfs_find_item interface.
-The function find_orphan_item, in orphan.c, is similar to the two
-functions already replaced by the new interface. It uses two parameters,
-which are already present in the interface, and is nearly identical to
-the function brought in in the previous patch.
+cc: linux-btrfs
 
-The two calls to find_orphan_item have been replaced by calls to
-btrfs_find_item, with the defined object id and type that was used
-internally by find_orphan_item, a null path, and a null key. A test for
-a null path has been added to btrfs_find_item, and if it passes, a path
-is allocated and freed. Finally, find_orphan_item has been removed.
+---------- Forwarded message ----------
+From: Shilong Wang <wangshilong1991@gmail.com>
+Date: 2013/12/1
+Subject: Re: 2 errors when scrubbing - but I don't know what they mean
+To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
 
-Signed-off-by: Kelley Nielsen <kelleynnn@gmail.com>
-Suggested-by: Zach Brown <zab@redhat.com>
----
- fs/btrfs/ctree.c    | 18 +++++++++++++++---
- fs/btrfs/disk-io.c  |  3 ++-
- fs/btrfs/orphan.c   | 20 --------------------
- fs/btrfs/tree-log.c |  3 ++-
- 4 files changed, 19 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 498b19d..83a5418 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2465,7 +2465,8 @@ static int key_search(struct extent_buffer *b, struct btrfs_key *key,
- /* Proposed generic search function, meant to take the place of the
- * various small search helper functions throughout the code and standardize
- * the search interface. Right now, it only replaces the former __inode_info
--* in backref.c, and the former btrfs_find_root_ref in root-tree.c.
-+* in backref.c, the former btrfs_find_root_ref in root-tree.c, and the
-+* former btrfs_find_orphan_item in orphan.c.
- *
- * If a null key is passed, it returns immediately after running
- * btrfs_search_slot, leaving the path filled as it is and passing its
-@@ -2473,21 +2474,32 @@ static int key_search(struct extent_buffer *b, struct btrfs_key *key,
- * path to point to the first item in the tree after its specified
- * objectid, type, and offset for which objectid and type match the input.
- */
--int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *path,
-+int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
- 		u64 inum, u64 ioff, u8 key_type,
- 		struct btrfs_key *found_key)
- {
- 	int ret;
- 	struct btrfs_key key;
- 	struct extent_buffer *eb;
-+	struct btrfs_path *path;
- 
- 	key.type = key_type;
- 	key.objectid = inum;
- 	key.offset = ioff;
- 
-+	if (found_path == NULL) {
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+	} else
-+		path = found_path;
-+
- 	ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
--	if ((ret < 0) || (found_key == NULL))
-+	if ((ret < 0) || (found_key == NULL)) {
-+		if (path != found_path)
-+			btrfs_free_path(path);
- 		return ret;
-+	}
- 
- 	eb = path->nodes[0];
- 	if (ret && path->slots[0] >= btrfs_header_nritems(eb)) {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4c4ed0b..bce90c9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1616,7 +1616,8 @@ again:
- 	if (ret)
- 		goto fail;
- 
--	ret = btrfs_find_orphan_item(fs_info->tree_root, location->objectid);
-+	ret = btrfs_find_item(fs_info->tree_root, NULL, BTRFS_ORPHAN_OBJECTID,
-+			location->objectid, BTRFS_ORPHAN_ITEM_KEY, NULL);
- 	if (ret < 0)
- 		goto fail;
- 	if (ret == 0)
-diff --git a/fs/btrfs/orphan.c b/fs/btrfs/orphan.c
-index 24cad16..65793ed 100644
---- a/fs/btrfs/orphan.c
-+++ b/fs/btrfs/orphan.c
-@@ -69,23 +69,3 @@ out:
- 	btrfs_free_path(path);
- 	return ret;
- }
--
--int btrfs_find_orphan_item(struct btrfs_root *root, u64 offset)
--{
--	struct btrfs_path *path;
--	struct btrfs_key key;
--	int ret;
--
--	key.objectid = BTRFS_ORPHAN_OBJECTID;
--	key.type = BTRFS_ORPHAN_ITEM_KEY;
--	key.offset = offset;
--
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
--
--	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--
--	btrfs_free_path(path);
--	return ret;
--}
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a2c7b04..9972e2a 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1238,7 +1238,8 @@ static int insert_orphan_item(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root, u64 offset)
- {
- 	int ret;
--	ret = btrfs_find_orphan_item(root, offset);
-+	ret = btrfs_find_item(root, NULL, BTRFS_ORPHAN_OBJECTID,
-+			offset, BTRFS_ORPHAN_ITEM_KEY, NULL);
- 	if (ret > 0)
- 		ret = btrfs_insert_orphan_item(trans, root, offset);
- 	return ret;
--- 
-1.8.1.2
+Hello Sebastian,
 
+2013/11/30 Sebastian Ochmann <ochmann@informatik.uni-bonn.de>:
+> Hello,
+>
+> thank you for your input. I didn't know that btrfs keeps the error counters
+> over mounts/reboots, but that's nice.
+>
+> I'm still trying to figure out how such a generation error may occur in the
+> first place. One thing I noticed looking at the btrfs code is that the
+> generation error counter will only get incremented in the actual scrubbing
+> code (either in "scrub_checksum_super" or in "scrub_handle_errored_block",
+> both in scrub.c - please correct me if I'm wrong, I'm not a btrfs dev).
+
+Right, Scrub will read superblock with bio rather than using pagecaches.
+This mean we will reread superblock from disks, if a checksum mismatch happens,
+This can be the following reasons:
+
+1.some read errors happen while scrubing, while superblocks are actually good
+2.during last transaction, when we are trying to write superblocks to
+disk, some silent corruption
+   happens.
+3.some unexpected operation write data to superblocks directly, for
+example..'dd if=/dev/zero'
+of=/dev/ seek=65536   count=4k' something like this.
+
+Actually, during boot time, superblock should be fine, because will do
+checksum check
+when trying to using superblock. if checksum mismatch, we will refuse
+to mount, After mounting,
+these superblocks should be cached in memory until you umouting filesystem.
+
+So ideal thing is your disk is fine, and during next transaction,
+superblocks will be rewritten.
+and during next umounting, you can mounting filesystem successfully!
+
+However, if you find such superblocks checksum mismatch very often
+during scrub, it maybe
+there are something wrong with disk!
+
+> Also, the dmesg errors I saw were not there at boot time, but about 10
+> minutes after boot which was about the time when I started the scrub so I'm
+> pretty sure that it was the scrub that detected the errors.
+>
+> The question remains what can cause superblock/gen errors. Sure it could be
+> "some" read error, but I'd really like to make sure that it's not a
+> systematic error. I wasn't able to reproduce it yet though.
+
+You can reproduce this by doing 'dd if=/dev/zero of=/dev/sd*
+seek=65536 count=4k' before
+btrfs scrubing.
+
+Thanks,
+Wang
+>
+> Best
+> Sebastian
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

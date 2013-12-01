@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:59169 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:59184 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751383Ab3LAMG4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Dec 2013 07:06:56 -0500
-Message-Id: <20131201120654.453220050@bombadil.infradead.org>
-Date: Sun, 01 Dec 2013 03:59:08 -0800
+	with ESMTP id S1751538Ab3LAMG5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Dec 2013 07:06:57 -0500
+Message-Id: <20131201120655.852590677@bombadil.infradead.org>
+Date: Sun, 01 Dec 2013 03:59:15 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: viro@zeniv.linux.org.uk
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -13,322 +13,533 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
         xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
         cluster-devel@redhat.com, linux-nfs@vger.kernel.org
-Subject: [PATCH 05/18] fs: make posix_acl_chmod more useful
+Subject: [PATCH 12/18] ocfs2: use generic posix ACL infrastructure
 References: <20131201115903.910559036@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rename the current posix_acl_chmod to __posix_acl_chmod and add
-a fully featured ACL chmod helper that uses the ->set_acl inode
-operation.
+This contains some major refactoring for the create path so that
+inodes are created with the right mode to start with instead of
+fixing it up later.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/9p/acl.c               |    2 +-
- fs/btrfs/acl.c            |    2 +-
- fs/ext2/acl.c             |    2 +-
- fs/ext3/acl.c             |    2 +-
- fs/ext4/acl.c             |    2 +-
- fs/f2fs/acl.c             |    2 +-
- fs/generic_acl.c          |    2 +-
- fs/gfs2/acl.c             |    2 +-
- fs/hfsplus/posix_acl.c    |    2 +-
- fs/jffs2/acl.c            |    2 +-
- fs/jfs/acl.c              |    2 +-
- fs/ocfs2/acl.c            |    2 +-
- fs/posix_acl.c            |   30 +++++++++++++++++++++++++++---
- fs/reiserfs/xattr_acl.c   |    2 +-
- fs/xfs/xfs_acl.c          |    2 +-
- include/linux/posix_acl.h |   17 +++++++++++++----
- 16 files changed, 54 insertions(+), 21 deletions(-)
+ fs/ocfs2/acl.c          |  234 ++---------------------------------------------
+ fs/ocfs2/acl.h          |   13 ++-
+ fs/ocfs2/file.c         |    4 +-
+ fs/ocfs2/namei.c        |   25 ++++-
+ fs/ocfs2/refcounttree.c |   19 +++-
+ fs/ocfs2/xattr.c        |   21 +++--
+ fs/ocfs2/xattr.h        |    6 +-
+ 7 files changed, 72 insertions(+), 250 deletions(-)
 
-diff --git a/fs/9p/acl.c b/fs/9p/acl.c
-index 7af425f..f5ce5c5 100644
---- a/fs/9p/acl.c
-+++ b/fs/9p/acl.c
-@@ -156,7 +156,7 @@ int v9fs_acl_chmod(struct inode *inode, struct p9_fid *fid)
- 		return -EOPNOTSUPP;
- 	acl = v9fs_get_cached_acl(inode, ACL_TYPE_ACCESS);
- 	if (acl) {
--		retval = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+		retval = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 		if (retval)
- 			return retval;
- 		set_cached_acl(inode, ACL_TYPE_ACCESS, acl);
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 0890c83..1af04ff 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -256,7 +256,7 @@ int btrfs_acl_chmod(struct inode *inode)
- 	if (IS_ERR_OR_NULL(acl))
- 		return PTR_ERR(acl);
- 
--	ret = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	ret = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (ret)
- 		return ret;
- 	ret = btrfs_set_acl(NULL, inode, acl, ACL_TYPE_ACCESS);
-diff --git a/fs/ext2/acl.c b/fs/ext2/acl.c
-index 110b6b3..7006ced 100644
---- a/fs/ext2/acl.c
-+++ b/fs/ext2/acl.c
-@@ -308,7 +308,7 @@ ext2_acl_chmod(struct inode *inode)
- 	acl = ext2_get_acl(inode, ACL_TYPE_ACCESS);
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
--	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (error)
- 		return error;
- 	error = ext2_set_acl(inode, ACL_TYPE_ACCESS, acl);
-diff --git a/fs/ext3/acl.c b/fs/ext3/acl.c
-index dbb5ad5..6691a6c 100644
---- a/fs/ext3/acl.c
-+++ b/fs/ext3/acl.c
-@@ -314,7 +314,7 @@ ext3_acl_chmod(struct inode *inode)
- 	acl = ext3_get_acl(inode, ACL_TYPE_ACCESS);
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
--	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (error)
- 		return error;
- retry:
-diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
-index 39a54a0..2eebe02 100644
---- a/fs/ext4/acl.c
-+++ b/fs/ext4/acl.c
-@@ -320,7 +320,7 @@ ext4_acl_chmod(struct inode *inode)
- 	acl = ext4_get_acl(inode, ACL_TYPE_ACCESS);
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
--	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (error)
- 		return error;
- retry:
-diff --git a/fs/f2fs/acl.c b/fs/f2fs/acl.c
-index d0fc287..14c4df0 100644
---- a/fs/f2fs/acl.c
-+++ b/fs/f2fs/acl.c
-@@ -311,7 +311,7 @@ int f2fs_acl_chmod(struct inode *inode)
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
- 
--	error = posix_acl_chmod(&acl, GFP_KERNEL, mode);
-+	error = __posix_acl_chmod(&acl, GFP_KERNEL, mode);
- 	if (error)
- 		return error;
- 
-diff --git a/fs/generic_acl.c b/fs/generic_acl.c
-index b3f3676..46a5076 100644
---- a/fs/generic_acl.c
-+++ b/fs/generic_acl.c
-@@ -158,7 +158,7 @@ generic_acl_chmod(struct inode *inode)
- 		return -EOPNOTSUPP;
- 	acl = get_cached_acl(inode, ACL_TYPE_ACCESS);
- 	if (acl) {
--		error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+		error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 		if (error)
- 			return error;
- 		set_cached_acl(inode, ACL_TYPE_ACCESS, acl);
-diff --git a/fs/gfs2/acl.c b/fs/gfs2/acl.c
-index f69ac0a..3e200c7 100644
---- a/fs/gfs2/acl.c
-+++ b/fs/gfs2/acl.c
-@@ -162,7 +162,7 @@ int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr)
- 	if (!acl)
- 		return gfs2_setattr_simple(inode, attr);
- 
--	error = posix_acl_chmod(&acl, GFP_NOFS, attr->ia_mode);
-+	error = __posix_acl_chmod(&acl, GFP_NOFS, attr->ia_mode);
- 	if (error)
- 		return error;
- 
-diff --git a/fs/hfsplus/posix_acl.c b/fs/hfsplus/posix_acl.c
-index b609cc1..cab5fd6 100644
---- a/fs/hfsplus/posix_acl.c
-+++ b/fs/hfsplus/posix_acl.c
-@@ -167,7 +167,7 @@ int hfsplus_posix_acl_chmod(struct inode *inode)
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
- 
--	err = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	err = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (unlikely(err))
- 		return err;
- 
-diff --git a/fs/jffs2/acl.c b/fs/jffs2/acl.c
-index 223283c..5853969 100644
---- a/fs/jffs2/acl.c
-+++ b/fs/jffs2/acl.c
-@@ -335,7 +335,7 @@ int jffs2_acl_chmod(struct inode *inode)
- 	acl = jffs2_get_acl(inode, ACL_TYPE_ACCESS);
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
--	rc = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	rc = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (rc)
- 		return rc;
- 	rc = jffs2_set_acl(inode, ACL_TYPE_ACCESS, acl);
-diff --git a/fs/jfs/acl.c b/fs/jfs/acl.c
-index d254d6d..9c0fca8 100644
---- a/fs/jfs/acl.c
-+++ b/fs/jfs/acl.c
-@@ -161,7 +161,7 @@ int jfs_acl_chmod(struct inode *inode)
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
- 
--	rc = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	rc = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (rc)
- 		return rc;
- 
 diff --git a/fs/ocfs2/acl.c b/fs/ocfs2/acl.c
-index b4f788e..73ccf0e 100644
+index c0f9d2f..555f4cd 100644
 --- a/fs/ocfs2/acl.c
 +++ b/fs/ocfs2/acl.c
-@@ -350,7 +350,7 @@ int ocfs2_acl_chmod(struct inode *inode)
- 	acl = ocfs2_get_acl(inode, ACL_TYPE_ACCESS);
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
--	ret = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	ret = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (ret)
- 		return ret;
- 	ret = ocfs2_set_acl(NULL, inode, NULL, ACL_TYPE_ACCESS,
-diff --git a/fs/posix_acl.c b/fs/posix_acl.c
-index 9dd03e0..9f76aaa 100644
---- a/fs/posix_acl.c
-+++ b/fs/posix_acl.c
-@@ -338,7 +338,7 @@ static int posix_acl_create_masq(struct posix_acl *acl, umode_t *mode_p)
+@@ -160,36 +160,6 @@ static struct posix_acl *ocfs2_get_acl_nolock(struct inode *inode,
+ 	return acl;
+ }
+ 
+-
+-/*
+- * Get posix acl.
+- */
+-static struct posix_acl *ocfs2_get_acl(struct inode *inode, int type)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
+-	struct buffer_head *di_bh = NULL;
+-	struct posix_acl *acl;
+-	int ret;
+-
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return NULL;
+-
+-	ret = ocfs2_inode_lock(inode, &di_bh, 0);
+-	if (ret < 0) {
+-		mlog_errno(ret);
+-		acl = ERR_PTR(ret);
+-		return acl;
+-	}
+-
+-	acl = ocfs2_get_acl_nolock(inode, type, di_bh);
+-
+-	ocfs2_inode_unlock(inode, 0);
+-
+-	brelse(di_bh);
+-
+-	return acl;
+-}
+-
  /*
-  * Modify the ACL for the chmod syscall.
+  * Helper function to set i_mode in memory and disk. Some call paths
+  * will not have di_bh or a journal handle to pass, in which case it
+@@ -250,7 +220,7 @@ out:
+ /*
+  * Set the access or default ACL of an inode.
   */
--static int posix_acl_chmod_masq(struct posix_acl *acl, umode_t mode)
-+static int __posix_acl_chmod_masq(struct posix_acl *acl, umode_t mode)
- {
- 	struct posix_acl_entry *group_obj = NULL, *mask_obj = NULL;
- 	struct posix_acl_entry *pa, *pe;
-@@ -402,12 +402,12 @@ posix_acl_create(struct posix_acl **acl, gfp_t gfp, umode_t *mode_p)
- EXPORT_SYMBOL(posix_acl_create);
- 
- int
--posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
-+__posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
- {
- 	struct posix_acl *clone = posix_acl_clone(*acl, gfp);
- 	int err = -ENOMEM;
- 	if (clone) {
--		err = posix_acl_chmod_masq(clone, mode);
-+		err = __posix_acl_chmod_masq(clone, mode);
- 		if (err) {
- 			posix_acl_release(clone);
- 			clone = NULL;
-@@ -417,6 +417,30 @@ posix_acl_chmod(struct posix_acl **acl, gfp_t gfp, umode_t mode)
- 	*acl = clone;
- 	return err;
+-static int ocfs2_set_acl(handle_t *handle,
++int ocfs2_set_acl(handle_t *handle,
+ 			 struct inode *inode,
+ 			 struct buffer_head *di_bh,
+ 			 int type,
+@@ -313,6 +283,11 @@ static int ocfs2_set_acl(handle_t *handle,
+ 	return ret;
  }
-+EXPORT_SYMBOL(__posix_acl_chmod);
-+
-+int
-+posix_acl_chmod(struct inode *inode)
+ 
++int ocfs2_iop_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 +{
-+	struct posix_acl *acl;
++	return ocfs2_set_acl(NULL, inode, NULL, type, acl, NULL, NULL);
++}
++
+ struct posix_acl *ocfs2_iop_get_acl(struct inode *inode, int type)
+ {
+ 	struct ocfs2_super *osb;
+@@ -334,200 +309,3 @@ struct posix_acl *ocfs2_iop_get_acl(struct inode *inode, int type)
+ 
+ 	return acl;
+ }
+-
+-int ocfs2_acl_chmod(struct inode *inode)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
+-	struct posix_acl *acl;
+-	int ret;
+-
+-	if (S_ISLNK(inode->i_mode))
+-		return -EOPNOTSUPP;
+-
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return 0;
+-
+-	acl = ocfs2_get_acl(inode, ACL_TYPE_ACCESS);
+-	if (IS_ERR(acl) || !acl)
+-		return PTR_ERR(acl);
+-	ret = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
+-	if (ret)
+-		return ret;
+-	ret = ocfs2_set_acl(NULL, inode, NULL, ACL_TYPE_ACCESS,
+-			    acl, NULL, NULL);
+-	posix_acl_release(acl);
+-	return ret;
+-}
+-
+-/*
+- * Initialize the ACLs of a new inode. If parent directory has default ACL,
+- * then clone to new inode. Called from ocfs2_mknod.
+- */
+-int ocfs2_init_acl(handle_t *handle,
+-		   struct inode *inode,
+-		   struct inode *dir,
+-		   struct buffer_head *di_bh,
+-		   struct buffer_head *dir_bh,
+-		   struct ocfs2_alloc_context *meta_ac,
+-		   struct ocfs2_alloc_context *data_ac)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
+-	struct posix_acl *acl = NULL;
+-	int ret = 0, ret2;
+-	umode_t mode;
+-
+-	if (!S_ISLNK(inode->i_mode)) {
+-		if (osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL) {
+-			acl = ocfs2_get_acl_nolock(dir, ACL_TYPE_DEFAULT,
+-						   dir_bh);
+-			if (IS_ERR(acl))
+-				return PTR_ERR(acl);
+-		}
+-		if (!acl) {
+-			mode = inode->i_mode & ~current_umask();
+-			ret = ocfs2_acl_set_mode(inode, di_bh, handle, mode);
+-			if (ret) {
+-				mlog_errno(ret);
+-				goto cleanup;
+-			}
+-		}
+-	}
+-	if ((osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL) && acl) {
+-		if (S_ISDIR(inode->i_mode)) {
+-			ret = ocfs2_set_acl(handle, inode, di_bh,
+-					    ACL_TYPE_DEFAULT, acl,
+-					    meta_ac, data_ac);
+-			if (ret)
+-				goto cleanup;
+-		}
+-		mode = inode->i_mode;
+-		ret = __posix_acl_create(&acl, GFP_NOFS, &mode);
+-		if (ret < 0)
+-			return ret;
+-
+-		ret2 = ocfs2_acl_set_mode(inode, di_bh, handle, mode);
+-		if (ret2) {
+-			mlog_errno(ret2);
+-			ret = ret2;
+-			goto cleanup;
+-		}
+-		if (ret > 0) {
+-			ret = ocfs2_set_acl(handle, inode,
+-					    di_bh, ACL_TYPE_ACCESS,
+-					    acl, meta_ac, data_ac);
+-		}
+-	}
+-cleanup:
+-	posix_acl_release(acl);
+-	return ret;
+-}
+-
+-static size_t ocfs2_xattr_list_acl_access(struct dentry *dentry,
+-					  char *list,
+-					  size_t list_len,
+-					  const char *name,
+-					  size_t name_len,
+-					  int type)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(dentry->d_sb);
+-	const size_t size = sizeof(POSIX_ACL_XATTR_ACCESS);
+-
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return 0;
+-
+-	if (list && size <= list_len)
+-		memcpy(list, POSIX_ACL_XATTR_ACCESS, size);
+-	return size;
+-}
+-
+-static size_t ocfs2_xattr_list_acl_default(struct dentry *dentry,
+-					   char *list,
+-					   size_t list_len,
+-					   const char *name,
+-					   size_t name_len,
+-					   int type)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(dentry->d_sb);
+-	const size_t size = sizeof(POSIX_ACL_XATTR_DEFAULT);
+-
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return 0;
+-
+-	if (list && size <= list_len)
+-		memcpy(list, POSIX_ACL_XATTR_DEFAULT, size);
+-	return size;
+-}
+-
+-static int ocfs2_xattr_get_acl(struct dentry *dentry, const char *name,
+-		void *buffer, size_t size, int type)
+-{
+-	struct ocfs2_super *osb = OCFS2_SB(dentry->d_sb);
+-	struct posix_acl *acl;
+-	int ret;
+-
+-	if (strcmp(name, "") != 0)
+-		return -EINVAL;
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return -EOPNOTSUPP;
+-
+-	acl = ocfs2_get_acl(dentry->d_inode, type);
+-	if (IS_ERR(acl))
+-		return PTR_ERR(acl);
+-	if (acl == NULL)
+-		return -ENODATA;
+-	ret = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+-	posix_acl_release(acl);
+-
+-	return ret;
+-}
+-
+-static int ocfs2_xattr_set_acl(struct dentry *dentry, const char *name,
+-		const void *value, size_t size, int flags, int type)
+-{
+-	struct inode *inode = dentry->d_inode;
+-	struct ocfs2_super *osb = OCFS2_SB(inode->i_sb);
+-	struct posix_acl *acl;
+-	int ret = 0;
+-
+-	if (strcmp(name, "") != 0)
+-		return -EINVAL;
+-	if (!(osb->s_mount_opt & OCFS2_MOUNT_POSIX_ACL))
+-		return -EOPNOTSUPP;
+-
+-	if (!inode_owner_or_capable(inode))
+-		return -EPERM;
+-
+-	if (value) {
+-		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+-		if (IS_ERR(acl))
+-			return PTR_ERR(acl);
+-		else if (acl) {
+-			ret = posix_acl_valid(acl);
+-			if (ret)
+-				goto cleanup;
+-		}
+-	} else
+-		acl = NULL;
+-
+-	ret = ocfs2_set_acl(NULL, inode, NULL, type, acl, NULL, NULL);
+-
+-cleanup:
+-	posix_acl_release(acl);
+-	return ret;
+-}
+-
+-const struct xattr_handler ocfs2_xattr_acl_access_handler = {
+-	.prefix	= POSIX_ACL_XATTR_ACCESS,
+-	.flags	= ACL_TYPE_ACCESS,
+-	.list	= ocfs2_xattr_list_acl_access,
+-	.get	= ocfs2_xattr_get_acl,
+-	.set	= ocfs2_xattr_set_acl,
+-};
+-
+-const struct xattr_handler ocfs2_xattr_acl_default_handler = {
+-	.prefix	= POSIX_ACL_XATTR_DEFAULT,
+-	.flags	= ACL_TYPE_DEFAULT,
+-	.list	= ocfs2_xattr_list_acl_default,
+-	.get	= ocfs2_xattr_get_acl,
+-	.set	= ocfs2_xattr_set_acl,
+-};
+diff --git a/fs/ocfs2/acl.h b/fs/ocfs2/acl.h
+index 071fbd38..3fce68d 100644
+--- a/fs/ocfs2/acl.h
++++ b/fs/ocfs2/acl.h
+@@ -27,10 +27,13 @@ struct ocfs2_acl_entry {
+ };
+ 
+ struct posix_acl *ocfs2_iop_get_acl(struct inode *inode, int type);
+-extern int ocfs2_acl_chmod(struct inode *);
+-extern int ocfs2_init_acl(handle_t *, struct inode *, struct inode *,
+-			  struct buffer_head *, struct buffer_head *,
+-			  struct ocfs2_alloc_context *,
+-			  struct ocfs2_alloc_context *);
++int ocfs2_iop_set_acl(struct inode *inode, struct posix_acl *acl, int type);
++int ocfs2_set_acl(handle_t *handle,
++			 struct inode *inode,
++			 struct buffer_head *di_bh,
++			 int type,
++			 struct posix_acl *acl,
++			 struct ocfs2_alloc_context *meta_ac,
++			 struct ocfs2_alloc_context *data_ac);
+ 
+ #endif /* OCFS2_ACL_H */
+diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
+index 6fff128..ac371ad 100644
+--- a/fs/ocfs2/file.c
++++ b/fs/ocfs2/file.c
+@@ -1236,7 +1236,7 @@ bail:
+ 		dqput(transfer_to[qtype]);
+ 
+ 	if (!status && attr->ia_valid & ATTR_MODE) {
+-		status = ocfs2_acl_chmod(inode);
++		status = posix_acl_chmod(inode);
+ 		if (status < 0)
+ 			mlog_errno(status);
+ 	}
+@@ -2661,6 +2661,7 @@ const struct inode_operations ocfs2_file_iops = {
+ 	.removexattr	= generic_removexattr,
+ 	.fiemap		= ocfs2_fiemap,
+ 	.get_acl	= ocfs2_iop_get_acl,
++	.set_acl	= ocfs2_iop_set_acl,
+ };
+ 
+ const struct inode_operations ocfs2_special_file_iops = {
+@@ -2668,6 +2669,7 @@ const struct inode_operations ocfs2_special_file_iops = {
+ 	.getattr	= ocfs2_getattr,
+ 	.permission	= ocfs2_permission,
+ 	.get_acl	= ocfs2_iop_get_acl,
++	.set_acl	= ocfs2_iop_set_acl,
+ };
+ 
+ /*
+diff --git a/fs/ocfs2/namei.c b/fs/ocfs2/namei.c
+index 4f791f6..c975eed 100644
+--- a/fs/ocfs2/namei.c
++++ b/fs/ocfs2/namei.c
+@@ -230,6 +230,7 @@ static int ocfs2_mknod(struct inode *dir,
+ 	struct ocfs2_dir_lookup_result lookup = { NULL, };
+ 	sigset_t oldset;
+ 	int did_block_signals = 0;
++	struct posix_acl *default_acl = NULL, *acl = NULL;
+ 
+ 	trace_ocfs2_mknod(dir, dentry, dentry->d_name.len, dentry->d_name.name,
+ 			  (unsigned long long)OCFS2_I(dir)->ip_blkno,
+@@ -331,6 +332,12 @@ static int ocfs2_mknod(struct inode *dir,
+ 		goto leave;
+ 	}
+ 
++	status = posix_acl_create(dir, &mode, &default_acl, &acl);
++	if (status) {
++		mlog_errno(status);
++		goto leave;
++	}
++
+ 	handle = ocfs2_start_trans(osb, ocfs2_mknod_credits(osb->sb,
+ 							    S_ISDIR(mode),
+ 							    xattr_credits));
+@@ -379,8 +386,17 @@ static int ocfs2_mknod(struct inode *dir,
+ 		inc_nlink(dir);
+ 	}
+ 
+-	status = ocfs2_init_acl(handle, inode, dir, new_fe_bh, parent_fe_bh,
+-				meta_ac, data_ac);
++	if (default_acl) {
++		status = ocfs2_set_acl(handle, inode, new_fe_bh,
++				       ACL_TYPE_DEFAULT, default_acl,
++				       meta_ac, data_ac);
++	}
++	if (!status && acl) {
++		status = ocfs2_set_acl(handle, inode, new_fe_bh,
++				       ACL_TYPE_ACCESS, acl,
++				       meta_ac, data_ac);
++	}
++
+ 	if (status < 0) {
+ 		mlog_errno(status);
+ 		goto leave;
+@@ -419,6 +435,10 @@ static int ocfs2_mknod(struct inode *dir,
+ 	d_instantiate(dentry, inode);
+ 	status = 0;
+ leave:
++	if (default_acl)
++		posix_acl_release(default_acl);
++	if (acl)
++		posix_acl_release(acl);
+ 	if (status < 0 && did_quota_inode)
+ 		dquot_free_inode(inode);
+ 	if (handle)
+@@ -2504,4 +2524,5 @@ const struct inode_operations ocfs2_dir_iops = {
+ 	.removexattr	= generic_removexattr,
+ 	.fiemap         = ocfs2_fiemap,
+ 	.get_acl	= ocfs2_iop_get_acl,
++	.set_acl	= ocfs2_iop_set_acl,
+ };
+diff --git a/fs/ocfs2/refcounttree.c b/fs/ocfs2/refcounttree.c
+index 55767e1..6ba4bcb 100644
+--- a/fs/ocfs2/refcounttree.c
++++ b/fs/ocfs2/refcounttree.c
+@@ -46,6 +46,7 @@
+ #include <linux/quotaops.h>
+ #include <linux/namei.h>
+ #include <linux/mount.h>
++#include <linux/posix_acl.h>
+ 
+ struct ocfs2_cow_context {
+ 	struct inode *inode;
+@@ -4268,11 +4269,20 @@ static int ocfs2_reflink(struct dentry *old_dentry, struct inode *dir,
+ 	struct inode *inode = old_dentry->d_inode;
+ 	struct buffer_head *old_bh = NULL;
+ 	struct inode *new_orphan_inode = NULL;
++	struct posix_acl *default_acl, *acl;
++	umode_t mode;
+ 
+ 	if (!ocfs2_refcount_tree(OCFS2_SB(inode->i_sb)))
+ 		return -EOPNOTSUPP;
+ 
+-	error = ocfs2_create_inode_in_orphan(dir, inode->i_mode,
++	mode = inode->i_mode;
++	error = posix_acl_create(dir, &mode, &default_acl, &acl);
++	if (error) {
++		mlog_errno(error);
++		goto out;
++	}
++
++	error = ocfs2_create_inode_in_orphan(dir, mode,
+ 					     &new_orphan_inode);
+ 	if (error) {
+ 		mlog_errno(error);
+@@ -4303,11 +4313,16 @@ static int ocfs2_reflink(struct dentry *old_dentry, struct inode *dir,
+ 	/* If the security isn't preserved, we need to re-initialize them. */
+ 	if (!preserve) {
+ 		error = ocfs2_init_security_and_acl(dir, new_orphan_inode,
+-						    &new_dentry->d_name);
++						    &new_dentry->d_name,
++						    default_acl, acl);
+ 		if (error)
+ 			mlog_errno(error);
+ 	}
+ out:
++	if (default_acl)
++		posix_acl_release(default_acl);
++	if (acl)
++		posix_acl_release(acl);
+ 	if (!error) {
+ 		error = ocfs2_mv_orphaned_inode_to_new(dir, new_orphan_inode,
+ 						       new_dentry);
+diff --git a/fs/ocfs2/xattr.c b/fs/ocfs2/xattr.c
+index f0a1326..185fa3b7 100644
+--- a/fs/ocfs2/xattr.c
++++ b/fs/ocfs2/xattr.c
+@@ -99,8 +99,8 @@ static struct ocfs2_xattr_def_value_root def_xv = {
+ 
+ const struct xattr_handler *ocfs2_xattr_handlers[] = {
+ 	&ocfs2_xattr_user_handler,
+-	&ocfs2_xattr_acl_access_handler,
+-	&ocfs2_xattr_acl_default_handler,
++	&posix_acl_access_xattr_handler,
++	&posix_acl_default_xattr_handler,
+ 	&ocfs2_xattr_trusted_handler,
+ 	&ocfs2_xattr_security_handler,
+ 	NULL
+@@ -109,9 +109,9 @@ const struct xattr_handler *ocfs2_xattr_handlers[] = {
+ static const struct xattr_handler *ocfs2_xattr_handler_map[OCFS2_XATTR_MAX] = {
+ 	[OCFS2_XATTR_INDEX_USER]	= &ocfs2_xattr_user_handler,
+ 	[OCFS2_XATTR_INDEX_POSIX_ACL_ACCESS]
+-					= &ocfs2_xattr_acl_access_handler,
++					= &posix_acl_access_xattr_handler,
+ 	[OCFS2_XATTR_INDEX_POSIX_ACL_DEFAULT]
+-					= &ocfs2_xattr_acl_default_handler,
++					= &posix_acl_default_xattr_handler,
+ 	[OCFS2_XATTR_INDEX_TRUSTED]	= &ocfs2_xattr_trusted_handler,
+ 	[OCFS2_XATTR_INDEX_SECURITY]	= &ocfs2_xattr_security_handler,
+ };
+@@ -7190,10 +7190,12 @@ out:
+  */
+ int ocfs2_init_security_and_acl(struct inode *dir,
+ 				struct inode *inode,
+-				const struct qstr *qstr)
++				const struct qstr *qstr,
++				struct posix_acl *default_acl,
++				struct posix_acl *acl)
+ {
+-	int ret = 0;
+ 	struct buffer_head *dir_bh = NULL;
 +	int ret = 0;
-+
-+	if (S_ISLNK(inode->i_mode))
-+		return -EOPNOTSUPP;
-+	if (!IS_POSIXACL(inode))
-+		return 0;
-+
-+	acl = get_acl(inode, ACL_TYPE_ACCESS);
-+	if (IS_ERR_OR_NULL(acl))
-+		return PTR_ERR(acl);
-+
-+	ret = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	if (ret)
-+		return ret;
-+	ret = inode->i_op->set_acl(inode, acl, ACL_TYPE_ACCESS);
-+	posix_acl_release(acl);
-+	return ret;
-+}
- EXPORT_SYMBOL(posix_acl_chmod);
  
- struct posix_acl *get_acl(struct inode *inode, int type)
-diff --git a/fs/reiserfs/xattr_acl.c b/fs/reiserfs/xattr_acl.c
-index 6f721ea..ea4e443 100644
---- a/fs/reiserfs/xattr_acl.c
-+++ b/fs/reiserfs/xattr_acl.c
-@@ -463,7 +463,7 @@ int reiserfs_acl_chmod(struct inode *inode)
- 		return 0;
- 	if (IS_ERR(acl))
- 		return PTR_ERR(acl);
--	error = posix_acl_chmod(&acl, GFP_NOFS, inode->i_mode);
-+	error = __posix_acl_chmod(&acl, GFP_NOFS, inode->i_mode);
- 	if (error)
- 		return error;
+ 	ret = ocfs2_init_security_get(inode, dir, qstr, NULL);
+ 	if (ret) {
+@@ -7207,9 +7209,10 @@ int ocfs2_init_security_and_acl(struct inode *dir,
+ 		goto leave;
+ 	}
  
-diff --git a/fs/xfs/xfs_acl.c b/fs/xfs/xfs_acl.c
-index 370eb3e..4eac105 100644
---- a/fs/xfs/xfs_acl.c
-+++ b/fs/xfs/xfs_acl.c
-@@ -334,7 +334,7 @@ xfs_acl_chmod(struct inode *inode)
- 	if (IS_ERR(acl) || !acl)
- 		return PTR_ERR(acl);
+-	ret = ocfs2_init_acl(NULL, inode, dir, NULL, dir_bh, NULL, NULL);
+-	if (ret)
+-		mlog_errno(ret);
++	if (!ret && default_acl)
++		ret = ocfs2_iop_set_acl(inode, default_acl, ACL_TYPE_DEFAULT);
++	if (!ret && acl)
++		ret = ocfs2_iop_set_acl(inode, acl, ACL_TYPE_ACCESS);
  
--	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
-+	error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
- 	if (error)
- 		return error;
+ 	ocfs2_inode_unlock(dir, 0);
+ 	brelse(dir_bh);
+diff --git a/fs/ocfs2/xattr.h b/fs/ocfs2/xattr.h
+index 19f134e..f10d5b9 100644
+--- a/fs/ocfs2/xattr.h
++++ b/fs/ocfs2/xattr.h
+@@ -40,8 +40,6 @@ struct ocfs2_security_xattr_info {
+ extern const struct xattr_handler ocfs2_xattr_user_handler;
+ extern const struct xattr_handler ocfs2_xattr_trusted_handler;
+ extern const struct xattr_handler ocfs2_xattr_security_handler;
+-extern const struct xattr_handler ocfs2_xattr_acl_access_handler;
+-extern const struct xattr_handler ocfs2_xattr_acl_default_handler;
+ extern const struct xattr_handler *ocfs2_xattr_handlers[];
  
-diff --git a/include/linux/posix_acl.h b/include/linux/posix_acl.h
-index a8d9918..8b64e78 100644
---- a/include/linux/posix_acl.h
-+++ b/include/linux/posix_acl.h
-@@ -89,12 +89,14 @@ extern int posix_acl_permission(struct inode *, const struct posix_acl *, int);
- extern struct posix_acl *posix_acl_from_mode(umode_t, gfp_t);
- extern int posix_acl_equiv_mode(const struct posix_acl *, umode_t *);
- extern int posix_acl_create(struct posix_acl **, gfp_t, umode_t *);
--extern int posix_acl_chmod(struct posix_acl **, gfp_t, umode_t);
-+extern int __posix_acl_chmod(struct posix_acl **, gfp_t, umode_t);
- 
- extern struct posix_acl *get_posix_acl(struct inode *, int);
- extern int set_posix_acl(struct inode *, int, struct posix_acl *);
- 
- #ifdef CONFIG_FS_POSIX_ACL
-+extern int posix_acl_chmod(struct inode *);
-+
- static inline struct posix_acl **acl_by_type(struct inode *inode, int type)
- {
- 	switch (type) {
-@@ -165,15 +167,22 @@ static inline void forget_all_cached_acls(struct inode *inode)
- 	if (old_default != ACL_NOT_CACHED)
- 		posix_acl_release(old_default);
- }
--#endif
- 
- static inline void cache_no_acl(struct inode *inode)
- {
--#ifdef CONFIG_FS_POSIX_ACL
- 	inode->i_acl = NULL;
- 	inode->i_default_acl = NULL;
--#endif
- }
-+#else
-+static inline int posix_acl_chmod(struct inode *inode)
-+{
-+	return 0;
-+}
-+
-+static inline void cache_no_acl(struct inode *inode)
-+{
-+}
-+#endif /* CONFIG_FS_POSIX_ACL */
- 
- struct posix_acl *get_acl(struct inode *inode, int type);
- 
+ ssize_t ocfs2_listxattr(struct dentry *, char *, size_t);
+@@ -96,5 +94,7 @@ int ocfs2_reflink_xattrs(struct inode *old_inode,
+ 			 bool preserve_security);
+ int ocfs2_init_security_and_acl(struct inode *dir,
+ 				struct inode *inode,
+-				const struct qstr *qstr);
++				const struct qstr *qstr,
++				struct posix_acl *default_acl,
++				struct posix_acl *acl);
+ #endif /* OCFS2_XATTR_H */
 -- 
 1.7.10.4
 

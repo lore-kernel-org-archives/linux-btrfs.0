@@ -1,93 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f45.google.com ([74.125.82.45]:51465 "EHLO
-	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751328Ab3LABQ3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Nov 2013 20:16:29 -0500
-Received: by mail-wg0-f45.google.com with SMTP id y10so8755329wgg.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Nov 2013 17:16:28 -0800 (PST)
+Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:52612 "EHLO
+	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751457Ab3LAUqC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Dec 2013 15:46:02 -0500
+Message-ID: <529BA004.2000202@informatik.uni-bonn.de>
+Date: Sun, 01 Dec 2013 21:45:56 +0100
+From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
 MIME-Version: 1.0
+To: Shilong Wang <wangshilong1991@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: 2 errors when scrubbing - but I don't know what they mean
+References: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>	<5299CC95.6010704@informatik.uni-bonn.de> <CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com>
 In-Reply-To: <CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com>
-References: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>
-	<5299CC95.6010704@informatik.uni-bonn.de>
-	<CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com>
-Date: Sun, 1 Dec 2013 09:16:28 +0800
-Message-ID: <CAP9B-Qkh0EVTGQPRHM2OX+tH74W-sYEoD52goS7Mae=3quMjmw@mail.gmail.com>
-Subject: Fwd: 2 errors when scrubbing - but I don't know what they mean
-From: Shilong Wang <wangshilong1991@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cc: linux-btrfs
+Hello,
 
----------- Forwarded message ----------
-From: Shilong Wang <wangshilong1991@gmail.com>
-Date: 2013/12/1
-Subject: Re: 2 errors when scrubbing - but I don't know what they mean
-To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+ > However, if you find such superblocks checksum mismatch very often
+ > during scrub, it maybe
+ > there are something wrong with disk!
 
+I'm sorry, but I don't think there's a problem with my disks because I 
+was able to trigger the errors that increment the "gen" error counter 
+during scrub on a completely different machine and drive today. I 
+basically performed some I/O operations on a drive and scrubbed at the 
+same time over and over again until I actually saw "super" errors during 
+scrub. But the error is reeally hard to trigger. It seems to me like a 
+race condition somewhere.
 
-Hello Sebastian,
+So I went a step further and tried to create a repro for this. It seems 
+like I can trigger the errors now once every few minutes with the method 
+described below, but sometimes it really takes a long time until the 
+error pops up, so be patient when trying this...
 
-2013/11/30 Sebastian Ochmann <ochmann@informatik.uni-bonn.de>:
-> Hello,
->
-> thank you for your input. I didn't know that btrfs keeps the error counters
-> over mounts/reboots, but that's nice.
->
-> I'm still trying to figure out how such a generation error may occur in the
-> first place. One thing I noticed looking at the btrfs code is that the
-> generation error counter will only get incremented in the actual scrubbing
-> code (either in "scrub_checksum_super" or in "scrub_handle_errored_block",
-> both in scrub.c - please correct me if I'm wrong, I'm not a btrfs dev).
+For the repro:
 
-Right, Scrub will read superblock with bio rather than using pagecaches.
-This mean we will reread superblock from disks, if a checksum mismatch happens,
-This can be the following reasons:
+I'm using a btrfs image in RAM for this for two reasons: I can scrub 
+quickly over and over again and I can rule our hard drive errors. My 
+machine has 32 GB of RAM, so that comes in handy here - if you try this 
+on a physical drive, make sure to adjust some parameters, if necessary.
 
-1.some read errors happen while scrubing, while superblocks are actually good
-2.during last transaction, when we are trying to write superblocks to
-disk, some silent corruption
-   happens.
-3.some unexpected operation write data to superblocks directly, for
-example..'dd if=/dev/zero'
-of=/dev/ seek=65536   count=4k' something like this.
+Create a tmpfs and a testing image, format as btrfs:
 
-Actually, during boot time, superblock should be fine, because will do
-checksum check
-when trying to using superblock. if checksum mismatch, we will refuse
-to mount, After mounting,
-these superblocks should be cached in memory until you umouting filesystem.
+$ mkdir btrfstest
+$ cd btrfstest/
+$ mkdir tmp
+$ mount -t tmpfs -o size=20G none tmp
+$ dd if=/dev/zero of=tmp/vol bs=1G count=19
+$ mkfs.btrfs tmp/vol
+$ mkdir mnt
+$ mount -o commit=1 tmp/vol mnt
 
-So ideal thing is your disk is fine, and during next transaction,
-superblocks will be rewritten.
-and during next umounting, you can mounting filesystem successfully!
+Note the "commit=1" mount option. It's not strictly necessary, but I 
+have the feeling it helps with triggering the problem...
 
-However, if you find such superblocks checksum mismatch very often
-during scrub, it maybe
-there are something wrong with disk!
+So now we have a 19 GB btrfs filesystem in RAM, mounted in "mnt". What I 
+did for performing some artificial I/O operations is to rm and cp a 
+linux source tree over and over again. Suppose you have an unpacked 
+linux source tree available in the "/somewhere/linux" directory (and 
+you're using bash). We'll spawn some loops that keep the filesystem busy:
 
-> Also, the dmesg errors I saw were not there at boot time, but about 10
-> minutes after boot which was about the time when I started the scrub so I'm
-> pretty sure that it was the scrub that detected the errors.
->
-> The question remains what can cause superblock/gen errors. Sure it could be
-> "some" read error, but I'd really like to make sure that it's not a
-> systematic error. I wasn't able to reproduce it yet though.
+$ while true; do rm -fr mnt/a; sleep 1.0; cp -R /somewhere/linux mnt/a; 
+sleep 1.0; done
+$ while true; do rm -fr mnt/b; sleep 1.1; cp -R /somewhere/linux mnt/b; 
+sleep 1.1; done
+$ while true; do rm -fr mnt/c; sleep 1.2; cp -R /somewhere/linux mnt/c; 
+sleep 1.2; done
 
-You can reproduce this by doing 'dd if=/dev/zero of=/dev/sd*
-seek=65536 count=4k' before
-btrfs scrubing.
+Now that the filesystem is busy, we'll also scrub it repeatedly (without 
+backgrounding, -B):
 
-Thanks,
-Wang
->
-> Best
-> Sebastian
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+$ while true; do btrfs scrub start -B mnt; sleep 0.5; done
+
+On my machine and in RAM, each scrub takes 0-1 second and the "total 
+bytes scrubbed" should fluctuate (seems to be especially true with 
+commit=1, but not sure). Get a beverage of your choice and wait.
+
+(about 10 minutes later)
+
+When I was writing this repro it took about 10 minutes until scrub said:
+
+   total bytes scrubbed: 1.20GB with 2 errors
+   error details: super=2
+   corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
+
+and in dmesg:
+
+   [15282.155170] btrfs: bdev /dev/loop0 errs: wr 0, rd 0, flush 0, 
+corrupt 0, gen 1
+   [15282.155176] btrfs: bdev /dev/loop0 errs: wr 0, rd 0, flush 0, 
+corrupt 0, gen 2
+
+After that, scrub is happy again and will continue normally until the 
+same errors happen again after a few hundred scrubs or so.
+
+So all in all, the error can be triggered using normal I/O operations 
+and scrubbing at the right moments, it seems. Even with a btrfs image in 
+RAM, so no hard drive error is possible.
+
+Hope anyone can reproduce this and maybe debug it.
+
+Best regards
+Sebastian

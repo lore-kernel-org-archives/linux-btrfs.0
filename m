@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:59188 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:59178 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751712Ab3LAMG5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Dec 2013 07:06:57 -0500
-Message-Id: <20131201120656.194735588@bombadil.infradead.org>
-Date: Sun, 01 Dec 2013 03:59:17 -0800
+	with ESMTP id S1750919Ab3LAMG4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Dec 2013 07:06:56 -0500
+Message-Id: <20131201120655.675669876@bombadil.infradead.org>
+Date: Sun, 01 Dec 2013 03:59:14 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: viro@zeniv.linux.org.uk
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -13,362 +13,292 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
         xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
         cluster-devel@redhat.com, linux-nfs@vger.kernel.org
-Subject: [PATCH 14/18] xfs: use generic posix ACL infrastructure
+Subject: [PATCH 11/18] jffs2: use generic posix ACL infrastructure
 References: <20131201115903.910559036@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also create inodes with the proper mode instead of fixing it up later.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/xfs/xfs_acl.c   |  138 +++-------------------------------------------------
- fs/xfs/xfs_acl.h   |    9 +---
- fs/xfs/xfs_iops.c  |   39 ++++++++-------
- fs/xfs/xfs_iops.h  |    2 +-
- fs/xfs/xfs_xattr.c |    4 +-
- 5 files changed, 33 insertions(+), 159 deletions(-)
+ fs/jffs2/acl.c     |  134 +++++-----------------------------------------------
+ fs/jffs2/acl.h     |    7 +--
+ fs/jffs2/dir.c     |    1 +
+ fs/jffs2/file.c    |    1 +
+ fs/jffs2/fs.c      |    2 +-
+ fs/jffs2/symlink.c |    1 +
+ fs/jffs2/xattr.c   |    9 ++--
+ 7 files changed, 22 insertions(+), 133 deletions(-)
 
-diff --git a/fs/xfs/xfs_acl.c b/fs/xfs/xfs_acl.c
-index 057ae2d..28d897f 100644
---- a/fs/xfs/xfs_acl.c
-+++ b/fs/xfs/xfs_acl.c
-@@ -183,7 +183,7 @@ out:
+diff --git a/fs/jffs2/acl.c b/fs/jffs2/acl.c
+index 4d6e31b..f5f66b1 100644
+--- a/fs/jffs2/acl.c
++++ b/fs/jffs2/acl.c
+@@ -232,7 +232,7 @@ static int __jffs2_set_acl(struct inode *inode, int xprefix, struct posix_acl *a
+ 	return rc;
  }
  
- STATIC int
--xfs_set_acl(struct inode *inode, int type, struct posix_acl *acl)
-+__xfs_set_acl(struct inode *inode, int type, struct posix_acl *acl)
+-static int jffs2_set_acl(struct inode *inode, int type, struct posix_acl *acl)
++int jffs2_set_acl(struct inode *inode, struct posix_acl *acl, int type)
  {
- 	struct xfs_inode *ip = XFS_I(inode);
- 	unsigned char *ea_name;
-@@ -282,131 +282,23 @@ posix_acl_default_exists(struct inode *inode)
- 	return xfs_acl_exists(inode, SGI_ACL_DEFAULT);
- }
+ 	int rc, xprefix;
  
--/*
-- * No need for i_mutex because the inode is not yet exposed to the VFS.
-- */
--int
--xfs_inherit_acl(struct inode *inode, struct posix_acl *acl)
--{
--	umode_t mode = inode->i_mode;
--	int error = 0, inherit = 0;
--
--	if (S_ISDIR(inode->i_mode)) {
--		error = xfs_set_acl(inode, ACL_TYPE_DEFAULT, acl);
--		if (error)
--			goto out;
--	}
--
--	error = __posix_acl_create(&acl, GFP_KERNEL, &mode);
--	if (error < 0)
--		return error;
--
--	/*
--	 * If __posix_acl_create returns a positive value we need to
--	 * inherit a permission that can't be represented using the Unix
--	 * mode bits and we actually need to set an ACL.
--	 */
--	if (error > 0)
--		inherit = 1;
--
--	error = xfs_set_mode(inode, mode);
--	if (error)
--		goto out;
--
--	if (inherit)
--		error = xfs_set_acl(inode, ACL_TYPE_ACCESS, acl);
--
--out:
--	posix_acl_release(acl);
--	return error;
--}
--
- int
--xfs_acl_chmod(struct inode *inode)
-+xfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+@@ -277,30 +277,21 @@ static int jffs2_set_acl(struct inode *inode, int type, struct posix_acl *acl)
+ 
+ int jffs2_init_acl_pre(struct inode *dir_i, struct inode *inode, umode_t *i_mode)
  {
 -	struct posix_acl *acl;
--	int error;
++	struct posix_acl *default_acl, *acl;
+ 	int rc;
+ 
+ 	cache_no_acl(inode);
+ 
+-	if (S_ISLNK(*i_mode))
+-		return 0;	/* Symlink always has no-ACL */
+-
+-	acl = jffs2_get_acl(dir_i, ACL_TYPE_DEFAULT);
+-	if (IS_ERR(acl))
+-		return PTR_ERR(acl);
+-
+-	if (!acl) {
+-		*i_mode &= ~current_umask();
+-	} else {
+-		if (S_ISDIR(*i_mode))
+-			set_cached_acl(inode, ACL_TYPE_DEFAULT, acl);
+-
+-		rc = __posix_acl_create(&acl, GFP_KERNEL, i_mode);
+-		if (rc < 0)
+-			return rc;
+-		if (rc > 0)
+-			set_cached_acl(inode, ACL_TYPE_ACCESS, acl);
++	rc = posix_acl_create(dir_i, i_mode, &default_acl, &acl);
++	if (rc)
++		return rc;
+ 
++	if (default_acl) {
++		set_cached_acl(inode, ACL_TYPE_DEFAULT, default_acl);
++		posix_acl_release(default_acl);
++	}
++	if (acl) {
++		set_cached_acl(inode, ACL_TYPE_ACCESS, acl);
+ 		posix_acl_release(acl);
+ 	}
+ 	return 0;
+@@ -324,106 +315,3 @@ int jffs2_init_acl_post(struct inode *inode)
+ 
+ 	return 0;
+ }
+-
+-int jffs2_acl_chmod(struct inode *inode)
+-{
+-	struct posix_acl *acl;
+-	int rc;
 -
 -	if (S_ISLNK(inode->i_mode))
 -		return -EOPNOTSUPP;
--
--	acl = xfs_get_acl(inode, ACL_TYPE_ACCESS);
+-	acl = jffs2_get_acl(inode, ACL_TYPE_ACCESS);
 -	if (IS_ERR(acl) || !acl)
 -		return PTR_ERR(acl);
--
--	error = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
--	if (error)
--		return error;
--
--	error = xfs_set_acl(inode, ACL_TYPE_ACCESS, acl);
+-	rc = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
+-	if (rc)
+-		return rc;
+-	rc = jffs2_set_acl(inode, ACL_TYPE_ACCESS, acl);
 -	posix_acl_release(acl);
--	return error;
+-	return rc;
 -}
 -
--static int
--xfs_xattr_acl_get(struct dentry *dentry, const char *name,
--		void *value, size_t size, int type)
+-static size_t jffs2_acl_access_listxattr(struct dentry *dentry, char *list,
+-		size_t list_size, const char *name, size_t name_len, int type)
+-{
+-	const int retlen = sizeof(POSIX_ACL_XATTR_ACCESS);
+-
+-	if (list && retlen <= list_size)
+-		strcpy(list, POSIX_ACL_XATTR_ACCESS);
+-	return retlen;
+-}
+-
+-static size_t jffs2_acl_default_listxattr(struct dentry *dentry, char *list,
+-		size_t list_size, const char *name, size_t name_len, int type)
+-{
+-	const int retlen = sizeof(POSIX_ACL_XATTR_DEFAULT);
+-
+-	if (list && retlen <= list_size)
+-		strcpy(list, POSIX_ACL_XATTR_DEFAULT);
+-	return retlen;
+-}
+-
+-static int jffs2_acl_getxattr(struct dentry *dentry, const char *name,
+-		void *buffer, size_t size, int type)
 -{
 -	struct posix_acl *acl;
--	int error;
+-	int rc;
 -
--	acl = xfs_get_acl(dentry->d_inode, type);
+-	if (name[0] != '\0')
+-		return -EINVAL;
+-
+-	acl = jffs2_get_acl(dentry->d_inode, type);
 -	if (IS_ERR(acl))
 -		return PTR_ERR(acl);
--	if (acl == NULL)
+-	if (!acl)
 -		return -ENODATA;
--
--	error = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+-	rc = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
 -	posix_acl_release(acl);
 -
--	return error;
+-	return rc;
 -}
 -
--static int
--xfs_xattr_acl_set(struct dentry *dentry, const char *name,
+-static int jffs2_acl_setxattr(struct dentry *dentry, const char *name,
 -		const void *value, size_t size, int flags, int type)
 -{
--	struct inode *inode = dentry->d_inode;
--	struct posix_acl *acl = NULL;
- 	int error = 0;
- 
--	if (flags & XATTR_CREATE)
+-	struct posix_acl *acl;
+-	int rc;
+-
+-	if (name[0] != '\0')
 -		return -EINVAL;
--	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
--		return value ? -EACCES : 0;
--	if (!inode_owner_or_capable(inode))
+-	if (!inode_owner_or_capable(dentry->d_inode))
 -		return -EPERM;
 -
--	if (!value)
-+	if (!acl)
- 		goto set_acl;
- 
--	acl = posix_acl_from_xattr(&init_user_ns, value, size);
--	if (!acl) {
--		/*
--		 * acl_set_file(3) may request that we set default ACLs with
--		 * zero length -- defend (gracefully) against that here.
--		 */
--		goto out;
+-	if (value) {
+-		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+-		if (IS_ERR(acl))
+-			return PTR_ERR(acl);
+-		if (acl) {
+-			rc = posix_acl_valid(acl);
+-			if (rc)
+-				goto out;
+-		}
+-	} else {
+-		acl = NULL;
 -	}
--	if (IS_ERR(acl)) {
--		error = PTR_ERR(acl);
--		goto out;
--	}
--
--	error = posix_acl_valid(acl);
--	if (error)
--		goto out_release;
--
- 	error = -EINVAL;
- 	if (acl->a_count > XFS_ACL_MAX_ENTRIES(XFS_M(inode->i_sb)))
--		goto out_release;
-+		return error;
- 
- 	if (type == ACL_TYPE_ACCESS) {
- 		umode_t mode = inode->i_mode;
- 		error = posix_acl_equiv_mode(acl, &mode);
- 
- 		if (error <= 0) {
--			posix_acl_release(acl);
- 			acl = NULL;
- 
- 			if (error < 0)
-@@ -415,27 +307,9 @@ xfs_xattr_acl_set(struct dentry *dentry, const char *name,
- 
- 		error = xfs_set_mode(inode, mode);
- 		if (error)
--			goto out_release;
-+			return error;
- 	}
- 
-  set_acl:
--	error = xfs_set_acl(inode, type, acl);
-- out_release:
--	posix_acl_release(acl);
+-	rc = jffs2_set_acl(dentry->d_inode, type, acl);
 - out:
--	return error;
-+	return __xfs_set_acl(inode, type, acl);
- }
+-	posix_acl_release(acl);
+-	return rc;
+-}
 -
--const struct xattr_handler xfs_xattr_acl_access_handler = {
+-const struct xattr_handler jffs2_acl_access_xattr_handler = {
 -	.prefix	= POSIX_ACL_XATTR_ACCESS,
--	.flags	= ACL_TYPE_ACCESS,
--	.get	= xfs_xattr_acl_get,
--	.set	= xfs_xattr_acl_set,
+-	.flags	= ACL_TYPE_DEFAULT,
+-	.list	= jffs2_acl_access_listxattr,
+-	.get	= jffs2_acl_getxattr,
+-	.set	= jffs2_acl_setxattr,
 -};
 -
--const struct xattr_handler xfs_xattr_acl_default_handler = {
+-const struct xattr_handler jffs2_acl_default_xattr_handler = {
 -	.prefix	= POSIX_ACL_XATTR_DEFAULT,
 -	.flags	= ACL_TYPE_DEFAULT,
--	.get	= xfs_xattr_acl_get,
--	.set	= xfs_xattr_acl_set,
+-	.list	= jffs2_acl_default_listxattr,
+-	.get	= jffs2_acl_getxattr,
+-	.set	= jffs2_acl_setxattr,
 -};
-diff --git a/fs/xfs/xfs_acl.h b/fs/xfs/xfs_acl.h
-index 4016a56..5dc1637 100644
---- a/fs/xfs/xfs_acl.h
-+++ b/fs/xfs/xfs_acl.h
-@@ -60,20 +60,15 @@ struct xfs_acl {
+diff --git a/fs/jffs2/acl.h b/fs/jffs2/acl.h
+index 9b47724..2e2b574 100644
+--- a/fs/jffs2/acl.h
++++ b/fs/jffs2/acl.h
+@@ -27,17 +27,14 @@ struct jffs2_acl_header {
+ #ifdef CONFIG_JFFS2_FS_POSIX_ACL
  
- #ifdef CONFIG_XFS_POSIX_ACL
- extern struct posix_acl *xfs_get_acl(struct inode *inode, int type);
--extern int xfs_inherit_acl(struct inode *inode, struct posix_acl *default_acl);
--extern int xfs_acl_chmod(struct inode *inode);
-+extern int xfs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
- extern int posix_acl_access_exists(struct inode *inode);
- extern int posix_acl_default_exists(struct inode *inode);
+ struct posix_acl *jffs2_get_acl(struct inode *inode, int type);
+-extern int jffs2_acl_chmod(struct inode *);
++int jffs2_set_acl(struct inode *inode, struct posix_acl *acl, int type);
+ extern int jffs2_init_acl_pre(struct inode *, struct inode *, umode_t *);
+ extern int jffs2_init_acl_post(struct inode *);
+ 
+-extern const struct xattr_handler jffs2_acl_access_xattr_handler;
+-extern const struct xattr_handler jffs2_acl_default_xattr_handler;
 -
--extern const struct xattr_handler xfs_xattr_acl_access_handler;
--extern const struct xattr_handler xfs_xattr_acl_default_handler;
  #else
- static inline struct posix_acl *xfs_get_acl(struct inode *inode, int type)
+ 
+ #define jffs2_get_acl				(NULL)
+-#define jffs2_acl_chmod(inode)			(0)
++#define jffs2_set_acl				(NULL)
+ #define jffs2_init_acl_pre(dir_i,inode,mode)	(0)
+ #define jffs2_init_acl_post(inode)		(0)
+ 
+diff --git a/fs/jffs2/dir.c b/fs/jffs2/dir.c
+index e3aac22..9385560 100644
+--- a/fs/jffs2/dir.c
++++ b/fs/jffs2/dir.c
+@@ -59,6 +59,7 @@ const struct inode_operations jffs2_dir_inode_operations =
+ 	.mknod =	jffs2_mknod,
+ 	.rename =	jffs2_rename,
+ 	.get_acl =	jffs2_get_acl,
++	.set_acl =	jffs2_set_acl,
+ 	.setattr =	jffs2_setattr,
+ 	.setxattr =	jffs2_setxattr,
+ 	.getxattr =	jffs2_getxattr,
+diff --git a/fs/jffs2/file.c b/fs/jffs2/file.c
+index 1506673..256cd19 100644
+--- a/fs/jffs2/file.c
++++ b/fs/jffs2/file.c
+@@ -66,6 +66,7 @@ const struct file_operations jffs2_file_operations =
+ const struct inode_operations jffs2_file_inode_operations =
  {
- 	return NULL;
+ 	.get_acl =	jffs2_get_acl,
++	.set_acl =	jffs2_set_acl,
+ 	.setattr =	jffs2_setattr,
+ 	.setxattr =	jffs2_setxattr,
+ 	.getxattr =	jffs2_getxattr,
+diff --git a/fs/jffs2/fs.c b/fs/jffs2/fs.c
+index 09b3ed4..586db76 100644
+--- a/fs/jffs2/fs.c
++++ b/fs/jffs2/fs.c
+@@ -198,7 +198,7 @@ int jffs2_setattr(struct dentry *dentry, struct iattr *iattr)
+ 
+ 	rc = jffs2_do_setattr(dentry->d_inode, iattr);
+ 	if (!rc && (iattr->ia_valid & ATTR_MODE))
+-		rc = jffs2_acl_chmod(dentry->d_inode);
++		rc = posix_acl_chmod(dentry->d_inode);
+ 
+ 	return rc;
  }
--# define xfs_inherit_acl(inode, default_acl)		0
--# define xfs_acl_chmod(inode)				0
-+# define xfs_set_acl					NULL
- # define posix_acl_access_exists(inode)			0
- # define posix_acl_default_exists(inode)		0
- #endif /* CONFIG_XFS_POSIX_ACL */
-diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
-index 27e0e54..a8c7c78 100644
---- a/fs/xfs/xfs_iops.c
-+++ b/fs/xfs/xfs_iops.c
-@@ -123,7 +123,7 @@ xfs_vn_mknod(
- {
- 	struct inode	*inode;
- 	struct xfs_inode *ip = NULL;
--	struct posix_acl *default_acl = NULL;
-+	struct posix_acl *default_acl, *acl;
- 	struct xfs_name	name;
- 	int		error;
- 
-@@ -139,14 +139,9 @@ xfs_vn_mknod(
- 		rdev = 0;
- 	}
- 
--	if (IS_POSIXACL(dir)) {
--		default_acl = xfs_get_acl(dir, ACL_TYPE_DEFAULT);
--		if (IS_ERR(default_acl))
--			return PTR_ERR(default_acl);
--
--		if (!default_acl)
--			mode &= ~current_umask();
--	}
-+	error = posix_acl_create(dir, &mode, &default_acl, &acl);
-+	if (error)
-+		return error;
- 
- 	xfs_dentry_to_name(&name, dentry, mode);
- 	error = xfs_create(XFS_I(dir), &name, mode, rdev, &ip);
-@@ -160,21 +155,27 @@ xfs_vn_mknod(
- 		goto out_cleanup_inode;
- 
- 	if (default_acl) {
--		error = -xfs_inherit_acl(inode, default_acl);
--		default_acl = NULL;
--		if (unlikely(error))
-+		error = xfs_set_acl(inode, default_acl, ACL_TYPE_DEFAULT);
-+		if (error)
-+			goto out_cleanup_inode;
-+	}
-+	if (acl) {
-+		error = xfs_set_acl(inode, acl, ACL_TYPE_ACCESS);
-+		if (error)
- 			goto out_cleanup_inode;
- 	}
--
- 
- 	d_instantiate(dentry, inode);
-+ out_free_acl:
-+ 	if (default_acl)
-+		posix_acl_release(default_acl);
-+	if (acl)
-+		posix_acl_release(acl);
- 	return -error;
- 
-  out_cleanup_inode:
- 	xfs_cleanup_inode(dir, inode, dentry);
-- out_free_acl:
--	posix_acl_release(default_acl);
--	return -error;
-+	goto out_free_acl;
- }
- 
- STATIC int
-@@ -683,7 +684,7 @@ xfs_setattr_nonsize(
- 	 * 	     Posix ACL code seems to care about this issue either.
- 	 */
- 	if ((mask & ATTR_MODE) && !(flags & XFS_ATTR_NOACL)) {
--		error = -xfs_acl_chmod(inode);
-+		error = -posix_acl_chmod(inode);
- 		if (error)
- 			return XFS_ERROR(error);
- 	}
-@@ -1052,6 +1053,7 @@ xfs_vn_fiemap(
- 
- static const struct inode_operations xfs_inode_operations = {
- 	.get_acl		= xfs_get_acl,
-+	.set_acl		= xfs_set_acl,
- 	.getattr		= xfs_vn_getattr,
- 	.setattr		= xfs_vn_setattr,
- 	.setxattr		= generic_setxattr,
-@@ -1079,6 +1081,7 @@ static const struct inode_operations xfs_dir_inode_operations = {
- 	.mknod			= xfs_vn_mknod,
- 	.rename			= xfs_vn_rename,
- 	.get_acl		= xfs_get_acl,
-+	.set_acl		= xfs_set_acl,
- 	.getattr		= xfs_vn_getattr,
- 	.setattr		= xfs_vn_setattr,
- 	.setxattr		= generic_setxattr,
-@@ -1105,6 +1108,7 @@ static const struct inode_operations xfs_dir_ci_inode_operations = {
- 	.mknod			= xfs_vn_mknod,
- 	.rename			= xfs_vn_rename,
- 	.get_acl		= xfs_get_acl,
-+	.set_acl		= xfs_set_acl,
- 	.getattr		= xfs_vn_getattr,
- 	.setattr		= xfs_vn_setattr,
- 	.setxattr		= generic_setxattr,
-@@ -1119,6 +1123,7 @@ static const struct inode_operations xfs_symlink_inode_operations = {
- 	.follow_link		= xfs_vn_follow_link,
- 	.put_link		= xfs_vn_put_link,
- 	.get_acl		= xfs_get_acl,
-+	.set_acl		= xfs_set_acl,
- 	.getattr		= xfs_vn_getattr,
- 	.setattr		= xfs_vn_setattr,
- 	.setxattr		= generic_setxattr,
-diff --git a/fs/xfs/xfs_iops.h b/fs/xfs/xfs_iops.h
-index d2c5057..1c34e43 100644
---- a/fs/xfs/xfs_iops.h
-+++ b/fs/xfs/xfs_iops.h
-@@ -30,7 +30,7 @@ extern void xfs_setup_inode(struct xfs_inode *);
- /*
-  * Internal setattr interfaces.
-  */
--#define XFS_ATTR_NOACL		0x01	/* Don't call xfs_acl_chmod */
-+#define XFS_ATTR_NOACL		0x01	/* Don't call posix_acl_chmod */
- 
- extern int xfs_setattr_nonsize(struct xfs_inode *ip, struct iattr *vap,
- 			       int flags);
-diff --git a/fs/xfs/xfs_xattr.c b/fs/xfs/xfs_xattr.c
-index 9d47907..78ed92a 100644
---- a/fs/xfs/xfs_xattr.c
-+++ b/fs/xfs/xfs_xattr.c
-@@ -102,8 +102,8 @@ const struct xattr_handler *xfs_xattr_handlers[] = {
- 	&xfs_xattr_trusted_handler,
- 	&xfs_xattr_security_handler,
- #ifdef CONFIG_XFS_POSIX_ACL
--	&xfs_xattr_acl_access_handler,
--	&xfs_xattr_acl_default_handler,
+diff --git a/fs/jffs2/symlink.c b/fs/jffs2/symlink.c
+index 6e56333..c42df08 100644
+--- a/fs/jffs2/symlink.c
++++ b/fs/jffs2/symlink.c
+@@ -23,6 +23,7 @@ const struct inode_operations jffs2_symlink_inode_operations =
+ 	.readlink =	generic_readlink,
+ 	.follow_link =	jffs2_follow_link,
+ 	.get_acl =	jffs2_get_acl,
++	.set_acl =	jffs2_set_acl,
+ 	.setattr =	jffs2_setattr,
+ 	.setxattr =	jffs2_setxattr,
+ 	.getxattr =	jffs2_getxattr,
+diff --git a/fs/jffs2/xattr.c b/fs/jffs2/xattr.c
+index 3034e97..ad0f2e2 100644
+--- a/fs/jffs2/xattr.c
++++ b/fs/jffs2/xattr.c
+@@ -22,6 +22,7 @@
+ #include <linux/crc32.h>
+ #include <linux/jffs2.h>
+ #include <linux/xattr.h>
++#include <linux/posix_acl_xattr.h>
+ #include <linux/mtd/mtd.h>
+ #include "nodelist.h"
+ /* -------- xdatum related functions ----------------
+@@ -921,8 +922,8 @@ const struct xattr_handler *jffs2_xattr_handlers[] = {
+ 	&jffs2_security_xattr_handler,
+ #endif
+ #ifdef CONFIG_JFFS2_FS_POSIX_ACL
+-	&jffs2_acl_access_xattr_handler,
+-	&jffs2_acl_default_xattr_handler,
 +	&posix_acl_access_xattr_handler,
 +	&posix_acl_default_xattr_handler,
  #endif
+ 	&jffs2_trusted_xattr_handler,
  	NULL
- };
+@@ -942,10 +943,10 @@ static const struct xattr_handler *xprefix_to_handler(int xprefix) {
+ #endif
+ #ifdef CONFIG_JFFS2_FS_POSIX_ACL
+ 	case JFFS2_XPREFIX_ACL_ACCESS:
+-		ret = &jffs2_acl_access_xattr_handler;
++		ret = &posix_acl_access_xattr_handler;
+ 		break;
+ 	case JFFS2_XPREFIX_ACL_DEFAULT:
+-		ret = &jffs2_acl_default_xattr_handler;
++		ret = &posix_acl_default_xattr_handler;
+ 		break;
+ #endif
+ 	case JFFS2_XPREFIX_TRUSTED:
 -- 
 1.7.10.4
 

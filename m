@@ -1,138 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58782 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752250Ab3LBByJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 1 Dec 2013 20:54:09 -0500
-Message-ID: <529BE82D.3070406@cn.fujitsu.com>
-Date: Mon, 02 Dec 2013 09:53:49 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from gst.name ([78.46.150.186]:36598 "EHLO gst.name"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752199Ab3LBIXg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Dec 2013 03:23:36 -0500
+Date: Mon, 2 Dec 2013 09:15:43 +0100
+From: Guenther Starnberger <linux-btrfs@gst.priv.at>
+To: linux-btrfs@vger.kernel.org
+Subject: "No space left on device" although there's space left
+Message-ID: <20131202081543.GA1104@gst.name>
 MIME-Version: 1.0
-To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-CC: Shilong Wang <wangshilong1991@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: 2 errors when scrubbing - but I don't know what they mean
-References: <pan$e58f7$107ceb0e$e753a400$c76bf1d5@cox.net>	<5299CC95.6010704@informatik.uni-bonn.de> <CAP9B-Q=Y+uY2kErYb1ZKMsvFrbYidmGpPnUbHm8iApj7v6wK+w@mail.gmail.com> <529BA004.2000202@informatik.uni-bonn.de> <529BE2AD.30504@cn.fujitsu.com>
-In-Reply-To: <529BE2AD.30504@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/02/2013 09:30 AM, Wang Shilong wrote:
-> On 12/02/2013 04:45 AM, Sebastian Ochmann wrote:
->> Hello,
->>
->> > However, if you find such superblocks checksum mismatch very often
->> > during scrub, it maybe
->> > there are something wrong with disk!
->>
->> I'm sorry, but I don't think there's a problem with my disks because 
->> I was able to trigger the errors that increment the "gen" error 
->> counter during scrub on a completely different machine and drive 
->> today. I basically performed some I/O operations on a drive and 
->> scrubbed at the same time over and over again until I actually saw 
->> "super" errors during scrub. But the error is reeally hard to 
->> trigger. It seems to me like a race condition somewhere.
->>
->> So I went a step further and tried to create a repro for this. It 
->> seems like I can trigger the errors now once every few minutes with 
->> the method described below, but sometimes it really takes a long time 
->> until the error pops up, so be patient when trying this...
->>
->> For the repro:
->>
->> I'm using a btrfs image in RAM for this for two reasons: I can scrub 
->> quickly over and over again and I can rule our hard drive errors. My 
->> machine has 32 GB of RAM, so that comes in handy here - if you try 
->> this on a physical drive, make sure to adjust some parameters, if 
->> necessary.
->>
->> Create a tmpfs and a testing image, format as btrfs:
->>
->> $ mkdir btrfstest
->> $ cd btrfstest/
->> $ mkdir tmp
->> $ mount -t tmpfs -o size=20G none tmp
->> $ dd if=/dev/zero of=tmp/vol bs=1G count=19
->> $ mkfs.btrfs tmp/vol
->> $ mkdir mnt
->> $ mount -o commit=1 tmp/vol mnt
->>
->> Note the "commit=1" mount option. It's not strictly necessary, but I 
->> have the feeling it helps with triggering the problem...
->>
->> So now we have a 19 GB btrfs filesystem in RAM, mounted in "mnt". 
->> What I did for performing some artificial I/O operations is to rm and 
->> cp a linux source tree over and over again. Suppose you have an 
->> unpacked linux source tree available in the "/somewhere/linux" 
->> directory (and you're using bash). We'll spawn some loops that keep 
->> the filesystem busy:
->>
->> $ while true; do rm -fr mnt/a; sleep 1.0; cp -R /somewhere/linux 
->> mnt/a; sleep 1.0; done
->> $ while true; do rm -fr mnt/b; sleep 1.1; cp -R /somewhere/linux 
->> mnt/b; sleep 1.1; done
->> $ while true; do rm -fr mnt/c; sleep 1.2; cp -R /somewhere/linux 
->> mnt/c; sleep 1.2; done
->>
->> Now that the filesystem is busy, we'll also scrub it repeatedly 
->> (without backgrounding, -B):
->>
->> $ while true; do btrfs scrub start -B mnt; sleep 0.5; done
->>
->> On my machine and in RAM, each scrub takes 0-1 second and the "total 
->> bytes scrubbed" should fluctuate (seems to be especially true with 
->> commit=1, but not sure). Get a beverage of your choice and wait.
->>
->> (about 10 minutes later)
->>
->> When I was writing this repro it took about 10 minutes until scrub said:
->>
->>   total bytes scrubbed: 1.20GB with 2 errors
->>   error details: super=2
->>   corrected errors: 0, uncorrectable errors: 0, unverified errors: 0
->>
->> and in dmesg:
->>
->>   [15282.155170] btrfs: bdev /dev/loop0 errs: wr 0, rd 0, flush 0, 
->> corrupt 0, gen 1
->>   [15282.155176] btrfs: bdev /dev/loop0 errs: wr 0, rd 0, flush 0, 
->> corrupt 0, gen 2
->>
->> After that, scrub is happy again and will continue normally until the 
->> same errors happen again after a few hundred scrubs or so.
->>
->> So all in all, the error can be triggered using normal I/O operations 
->> and scrubbing at the right moments, it seems. Even with a btrfs image 
->> in RAM, so no hard drive error is possible.
->>
->> Hope anyone can reproduce this and maybe debug it.
-It seems this is a generation mismatch not a checksum mismatch.
+I have a problem with a btrfs filesystem where i regularly get "no space left
+on device" errors, although there should be plenty of free space left.
 
-The story is `tree log sync` now only flush first superblock, this will 
-casue superblock
-generation mismatch while we are scrubbing other two superblocks.
+I already tried all of the things mentioned in the FAQ such as balancing the
+filesystem, mounting with the clear_cache option, mounting with different
+metadata_ratio options (i tried 4 and 12).
 
-I will give a patch to fix this issue, thanks for reporting!
+Here's the output of "btrfs fi df":
+Data, single: total=1.30TiB, used=1.25TiB
+System, DUP: total=32.00MiB, used=156.00KiB
+Metadata, DUP: total=16.00GiB, used=15.12GiB
 
+(The total partition size is 2.8T. For some reason "btrfs di df" doesn't
+display this correctly, but "btrfs fi show" does.)
 
-Thanks,
-Wang
-> Let me have a look at this.
->
-> Thanks,
-> Wang
->>
->> Best regards
->> Sebastian
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
->>
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+One way to reproduce this problem is to run "bedup". After deduplicating a few
+files it will fail with "[Errno 28] No space left on device" within an ioctl
+clone call. I'm running a very recent stable kernel version (3.12.1).
 
+Anything else that I could try to resolve this problem (apart from running
+balance, using clear_cache as mount option, changing the metadata_ratio)?
+
+Here are two different dmesg messages showing the out-of-space error during a
+clone operation:
+
+[52123.891381] ------------[ cut here ]------------
+[52123.891398] WARNING: CPU: 0 PID: 11091 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
+[52123.891400] btrfs: Transaction aborted (error -28)
+[52123.891401] Modules linked in: tun btrfs raid6_pq libcrc32c xor joydev hdaps(O) uvcvideo videobuf2_vmalloc videobuf2_memops btusb videobuf2_core qcserial bluetooth videodev usb_wwan media usbserial arc4 iwldvm intel_powerclamp coretemp kvm_intel snd_hda_codec_hdmi mac80211 kvm iTCO_wdt i915 thinkpad_acpi snd_hda_codec_conexant iTCO_vendor_support drm_kms_helper iwlwifi nvram drm psmouse cfg80211 evdev snd_hda_intel snd_hda_codec serio_raw rfkill mei_me mei shpchp snd_hwdep snd_pcm snd_page_alloc snd_timer snd soundcore e1000e microcode i2c_algo_bit intel_agp intel_gtt wmi intel_ips ptp i2c_i801 i2c_core pps_core thermal lpc_ich battery ac video button acpi_cpufreq processor tp_smapi(O) thinkpad_ec(O) nfs lockd sunrpc fscache ext4 crc16 mbcache jbd2 usb_storage dm_crypt dm_mod crct10dif_pclmul crct10dif_common
+[52123.891450]  crc32_pclmul crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd ehci_pci ehci_hcd usbcore usb_common ata_piix sd_mod ahci libahci ata_generic libata scsi_mod
+[52123.891462] CPU: 0 PID: 11091 Comm: bedup Tainted: G        W  O 3.12.1-3-ARCH #1
+[52123.891463] Hardware name: LENOVO 3680U4M/3680U4M, BIOS 6QET68WW (1.38 ) 12/01/2011
+[52123.891465]  0000000000000009 ffff88009aa15b40 ffffffff814ed7ab ffff88009aa15b88
+[52123.891467]  ffff88009aa15b78 ffffffff81062bbd 00000000ffffffe4 ffff8800b614d800
+[52123.891469]  ffff88021e58b320 ffffffffa0d14120 0000000000000c1c ffff88009aa15bd8
+[52123.891471] Call Trace:
+[52123.891479]  [<ffffffff814ed7ab>] dump_stack+0x54/0x8d
+[52123.891484]  [<ffffffff81062bbd>] warn_slowpath_common+0x7d/0xa0
+[52123.891530]  [<ffffffff81062c2c>] warn_slowpath_fmt+0x4c/0x50
+[52123.891538]  [<ffffffffa0c76b7d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
+[52123.891545]  [<ffffffffa0d0d168>] btrfs_clone+0x7f7/0x864 [btrfs]
+[52123.891554]  [<ffffffffa0ccfba9>] btrfs_ioctl_clone+0x429/0x450 [btrfs]
+[52123.891568]  [<ffffffffa0cd415d>] btrfs_ioctl+0xe1d/0x2820 [btrfs]
+[52123.891582]  [<ffffffffa0cc21d2>] ? extent_fiemap+0x3c2/0x4e0 [btrfs]
+[52123.891594]  [<ffffffffa0ca6180>] ? btrfs_get_extent+0x9b0/0x9b0 [btrfs]
+[52123.891599]  [<ffffffff811b6a15>] do_vfs_ioctl+0x2e5/0x4d0
+[52123.891602]  [<ffffffff811b6c81>] SyS_ioctl+0x81/0xa0
+[52123.891607]  [<ffffffff811a4b09>] ? SyS_read+0x49/0xa0
+[52123.891611]  [<ffffffff814fc32d>] system_call_fastpath+0x1a/0x1f
+[52123.891613] ---[ end trace 283ad43d7f5f7914 ]---
+[52123.891616] BTRFS error (device dm-1) in btrfs_clone:3100: errno=-28 No space left
+[52123.891620] BTRFS info (device dm-1): forced readonly
+
+[75774.193909] ------------[ cut here ]------------
+[75774.193927] WARNING: CPU: 2 PID: 13815 at fs/btrfs/super.c:255 __btrfs_abort_transaction+0x11d/0x130 [btrfs]()
+[75774.193928] btrfs: Transaction aborted (error -28)
+[75774.193929] Modules linked in: fuse tun btrfs raid6_pq libcrc32c xor joydev hdaps(O) uvcvideo videobuf2_vmalloc videobuf2_memops btusb videobuf2_core qcserial bluetooth videodev usb_wwan media usbserial arc4 iwldvm intel_powerclamp coretemp kvm_intel snd_hda_codec_hdmi mac80211 kvm iTCO_wdt i915 thinkpad_acpi snd_hda_codec_conexant iTCO_vendor_support drm_kms_helper iwlwifi nvram drm psmouse cfg80211 evdev snd_hda_intel snd_hda_codec serio_raw rfkill mei_me mei shpchp snd_hwdep snd_pcm snd_page_alloc snd_timer snd soundcore e1000e microcode i2c_algo_bit intel_agp intel_gtt wmi intel_ips ptp i2c_i801 i2c_core pps_core thermal lpc_ich battery ac video button acpi_cpufreq processor tp_smapi(O) thinkpad_ec(O) nfs lockd sunrpc fscache ext4 crc16 mbcache jbd2 usb_storage dm_crypt dm_mod crct10dif_pclmul
+[75774.193976]  crct10dif_common crc32_pclmul crc32c_intel ghash_clmulni_intel aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd ehci_pci ehci_hcd usbcore usb_common ata_piix sd_mod ahci libahci ata_generic libata scsi_mod
+[75774.193988] CPU: 2 PID: 13815 Comm: bedup Tainted: G        W  O 3.12.1-3-ARCH #1
+[75774.193990] Hardware name: LENOVO 3680U4M/3680U4M, BIOS 6QET68WW (1.38 ) 12/01/2011
+[75774.193991]  0000000000000009 ffff88021662db40 ffffffff814ed7ab ffff88021662db88
+[75774.193993]  ffff88021662db78 ffffffff81062bbd 00000000ffffffe4 ffff88013c66d800
+[75774.193995]  ffff88021e58ba00 ffffffffa0d14120 0000000000000c1c ffff88021662dbd8
+[75774.193997] Call Trace:
+[75774.194005]  [<ffffffff814ed7ab>] dump_stack+0x54/0x8d
+[75774.194010]  [<ffffffff81062bbd>] warn_slowpath_common+0x7d/0xa0
+[75774.194012]  [<ffffffff81062c2c>] warn_slowpath_fmt+0x4c/0x50
+[75774.194016]  [<ffffffffa0c76b7d>] __btrfs_abort_transaction+0x11d/0x130 [btrfs]
+[75774.194022]  [<ffffffffa0d0d168>] btrfs_clone+0x7f7/0x864 [btrfs]
+[75774.194029]  [<ffffffffa0ccfba9>] btrfs_ioctl_clone+0x429/0x450 [btrfs]
+[75774.194036]  [<ffffffffa0cd415d>] btrfs_ioctl+0xe1d/0x2820 [btrfs]
+[75774.194041]  [<ffffffff8113d4a7>] ? __free_pages+0x47/0x50
+[75774.194043]  [<ffffffff8113d620>] ? free_pages.part.59+0x40/0x50
+[75774.194045]  [<ffffffff8113d643>] ? free_pages+0x13/0x20
+[75774.194048]  [<ffffffff8115c4f5>] ? tlb_finish_mmu+0x35/0x60
+[75774.194051]  [<ffffffff81164903>] ? unmap_region+0xd3/0x110
+[75774.194054]  [<ffffffff811b6a15>] do_vfs_ioctl+0x2e5/0x4d0
+[75774.194056]  [<ffffffff81166ab8>] ? do_munmap+0x298/0x380
+[75774.194057]  [<ffffffff811b6c81>] SyS_ioctl+0x81/0xa0
+[75774.194060]  [<ffffffff814fc32d>] system_call_fastpath+0x1a/0x1f
+[75774.194061] ---[ end trace 283ad43d7f5f7915 ]---
+[75774.194064] BTRFS error (device dm-1) in btrfs_clone:3100: errno=-28 No space left
+[75774.194066] BTRFS info (device dm-1): forced readonly
+
+- Guenther

@@ -1,185 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38525 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751001Ab3LQLIg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 06:08:36 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBHB8Z5N011156
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 11:08:35 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBHB8Y2Q015965
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 11:08:35 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBHB8YUa013869
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 11:08:34 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:40122 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753052Ab3LBGmo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Dec 2013 01:42:44 -0500
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/3] btrfs-progs: handle error in the btrfs_prepare_device
-Date: Tue, 17 Dec 2013 19:16:47 +0800
-Message-Id: <1387279007-10388-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1387279007-10388-1-git-send-email-anand.jain@oracle.com>
+Cc: sbehrens@giantdisaster.de
+Subject: [PATCH] Btrfs-progs: add option to skip whether a scrub has started/resumed in userspace
+Date: Mon, 2 Dec 2013 14:42:25 +0800
+Message-Id: <1385966545-5018-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1387279007-10388-1-git-send-email-anand.jain@oracle.com>
 
-this patch will handle the strerror reporting of the error instead of
-printing errno,  and also replaced the BUG_ON with the error handling
+I hit a problem that i can not start scrub when i am trying to track
+superblock generation mismatch problems.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+The fact is that we are trying to check whether we have started a scrub operation
+in userspace, this will make us can't start scrub if that record file is damaged
+itself. By adding a option to skip that check, everything will be fine.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- v3: fix per Stefan review, update error message
- v2: commit update
+ cmds-scrub.c   | 12 +++++++++---
+ man/btrfs.8.in |  5 ++++-
+ 2 files changed, 13 insertions(+), 4 deletions(-)
 
- cmds-device.c  |    7 +++----
- cmds-replace.c |    9 ++++-----
- mkfs.c         |    9 ++++++++-
- utils.c        |   30 +++++++++++++++++++-----------
- 4 files changed, 34 insertions(+), 21 deletions(-)
-
-diff --git a/cmds-device.c b/cmds-device.c
-index bc4a8dc..ada0bcd 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -111,13 +111,11 @@ static int cmd_add_dev(int argc, char **argv)
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 605af45..9f614bc 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -1096,9 +1096,10 @@ static int scrub_start(int argc, char **argv, int resume)
+ 	void *terr;
+ 	u64 devid;
+ 	DIR *dirstream = NULL;
++	int force = 0;
  
- 		res = btrfs_prepare_device(devfd, argv[i], 1, &dev_block_count,
- 					   0, &mixed, discard);
-+		close(devfd);
- 		if (res) {
--			fprintf(stderr, "ERROR: Unable to init '%s'\n", argv[i]);
--			close(devfd);
- 			ret++;
--			continue;
-+			goto error_out;
- 		}
--		close(devfd);
- 
- 		strncpy_null(ioctl_args.name, argv[i]);
- 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
-@@ -130,6 +128,7 @@ static int cmd_add_dev(int argc, char **argv)
- 
- 	}
- 
-+error_out:
- 	close_file_or_dir(fdmnt, dirstream);
- 	return !!ret;
- }
-diff --git a/cmds-replace.c b/cmds-replace.c
-index d9b0940..c683d6c 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -276,12 +276,11 @@ static int cmd_start_replace(int argc, char **argv)
- 	}
- 	strncpy((char *)start_args.start.tgtdev_name, dstdev,
- 		BTRFS_DEVICE_PATH_NAME_MAX);
--	if (btrfs_prepare_device(fddstdev, dstdev, 1, &dstdev_block_count, 0,
--				 &mixed, 0)) {
--		fprintf(stderr, "Error: Failed to prepare device '%s'\n",
--			dstdev);
-+	ret = btrfs_prepare_device(fddstdev, dstdev, 1, &dstdev_block_count, 0,
-+				 &mixed, 0);
-+	if (ret)
- 		goto leave_with_error;
--	}
-+
- 	close(fddstdev);
- 	fddstdev = -1;
- 
-diff --git a/mkfs.c b/mkfs.c
-index 33369f9..18df087 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1446,6 +1446,10 @@ int main(int ac, char **av)
- 		first_file = file;
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
- 					   block_count, &mixed, discard);
-+		if (ret) {
-+			close(fd);
-+			exit(1);
-+		}
- 		if (block_count && block_count > dev_block_count) {
- 			fprintf(stderr, "%s is smaller than requested size\n", file);
- 			exit(1);
-@@ -1553,8 +1557,11 @@ int main(int ac, char **av)
- 		}
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
- 					   block_count, &mixed, discard);
-+		if (ret) {
-+			close(fd);
-+			exit(1);
-+		}
- 		mixed = old_mixed;
--		BUG_ON(ret);
- 
- 		ret = btrfs_add_to_fsid(trans, root, fd, file, dev_block_count,
- 					sectorsize, sectorsize, sectorsize);
-diff --git a/utils.c b/utils.c
-index f499023..03947bd 100644
---- a/utils.c
-+++ b/utils.c
-@@ -581,13 +581,13 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 	ret = fstat(fd, &st);
- 	if (ret < 0) {
- 		fprintf(stderr, "unable to stat %s\n", file);
--		exit(1);
-+		return 1;
- 	}
- 
- 	block_count = btrfs_device_size(fd, &st);
- 	if (block_count == 0) {
- 		fprintf(stderr, "unable to find %s size\n", file);
--		exit(1);
-+		return 1;
- 	}
- 	if (max_block_count)
- 		block_count = min(block_count, max_block_count);
-@@ -612,26 +612,34 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 	}
- 
- 	ret = zero_dev_start(fd);
--	if (ret) {
--		fprintf(stderr, "failed to zero device start %d\n", ret);
--		exit(1);
--	}
-+	if (ret)
-+		goto zero_dev_error;
- 
- 	for (i = 0 ; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
- 		if (bytenr >= block_count)
+ 	optind = 1;
+-	while ((c = getopt(argc, argv, "BdqrRc:n:")) != -1) {
++	while ((c = getopt(argc, argv, "BdqrRc:n:f")) != -1) {
+ 		switch (c) {
+ 		case 'B':
+ 			do_background = 0;
+@@ -1123,6 +1124,9 @@ static int scrub_start(int argc, char **argv, int resume)
+ 		case 'n':
+ 			ioprio_classdata = (int)strtol(optarg, NULL, 10);
  			break;
--		zero_blocks(fd, bytenr, BTRFS_SUPER_INFO_SIZE);
-+		ret = zero_blocks(fd, bytenr, BTRFS_SUPER_INFO_SIZE);
-+		if (ret)
-+			goto zero_dev_error;
- 	}
- 
- 	if (zero_end) {
- 		ret = zero_dev_end(fd, block_count);
--		if (ret) {
--			fprintf(stderr, "failed to zero device end %d\n", ret);
--			exit(1);
--		}
-+		if (ret)
-+			goto zero_dev_error;
- 	}
- 	*block_count_ret = block_count;
-+
-+zero_dev_error:
-+	if (ret) {
-+		ret < 0 ?
-+		fprintf(stderr, "ERROR: failed to zero device '%s' - %s\n",
-+			file, strerror(-ret)) :
-+		fprintf(stderr, "ERROR: failed to zero device '%s' - %d\n",
-+			file, ret);
-+		return 1;
-+	}
- 	return 0;
++		case 'f':
++			force = 1;
++			break;
+ 		case '?':
+ 		default:
+ 			usage(resume ? cmd_scrub_resume_usage :
+@@ -1195,7 +1199,7 @@ static int scrub_start(int argc, char **argv, int resume)
+ 	 * is a normal mode of operation to start scrub on multiple
+ 	 * single devices, there is no reason to prevent this.
+ 	 */
+-	if (is_scrub_running_on_fs(&fi_args, di_args, past_scrubs)) {
++	if (!force && is_scrub_running_on_fs(&fi_args, di_args, past_scrubs)) {
+ 		ERR(!do_quiet,
+ 		    "ERROR: scrub is already running.\n"
+ 		    "To cancel use 'btrfs scrub cancel %s'.\n"
+@@ -1507,7 +1511,7 @@ out:
  }
+ 
+ static const char * const cmd_scrub_start_usage[] = {
+-	"btrfs scrub start [-BdqrR] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
++	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
+ 	"Start a new scrub",
+ 	"",
+ 	"-B     do not background",
+@@ -1517,6 +1521,8 @@ static const char * const cmd_scrub_start_usage[] = {
+ 	"-R     raw print mode, print full data instead of summary"
+ 	"-c     set ioprio class (see ionice(1) manpage)",
+ 	"-n     set ioprio classdata (see ionice(1) manpage)",
++	"-f     force to skip checking whether scrub has started/resumed in userspace ",
++	"       this is useful when scrub stats record file is damaged",
+ 	NULL
+ };
+ 
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index de356b0..68aa42e 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -58,7 +58,7 @@ btrfs \- control a btrfs filesystem
+ \fBbtrfs\fP \fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
+ .PP
+ .PP
+-\fBbtrfs\fP \fBscrub start\fP [-BdqrR] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
++\fBbtrfs\fP \fBscrub start\fP [-BdqrRf] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
+ .PP
+ \fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+ .PP
+@@ -457,6 +457,9 @@ manpage).
+ Set IO priority classdata (see
+ .BR ionice (1)
+ manpage).
++.IP "\fB-f\fP" 5
++force to check whether scrub has started or resumed in userspace.
++this is useful when scrub stat record file is damaged.
+ .RE
+ .TP
  
 -- 
-1.7.1
+1.8.3.1
 

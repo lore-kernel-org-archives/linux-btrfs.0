@@ -1,72 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26413 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751261Ab3L0Fr4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Dec 2013 00:47:56 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBR5ltdj019334
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2013 05:47:56 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBR5ls45022795
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2013 05:47:55 GMT
-Received: from ubhmt115.oracle.com (ubhmt115.oracle.com [156.151.24.20])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBR5lsDH022792
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2013 05:47:54 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: test_skip_this_disk() isn't needed anymore
-Date: Fri, 27 Dec 2013 13:56:29 +0800
-Message-Id: <1388123789-20522-1-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:23175 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753122Ab3LBJDP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Dec 2013 04:03:15 -0500
+Message-ID: <529C4CB9.8020403@cn.fujitsu.com>
+Date: Mon, 02 Dec 2013 17:02:49 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: dsterba@suse.cz, Roman Mamedov <rm@romanrm.net>,
+        linux-btrfs@vger.kernel.org,
+        Alex Lyakas <alex.btrfs@zadarastorage.com>
+Subject: Re: [PATCH] btrfs-progs: add options to sync filesystem after subvol
+ delete
+References: <1385657947-26145-1-git-send-email-dsterba@suse.cz> <20131129013638.01ede78a@natsu> <5297F633.8090100@cn.fujitsu.com> <20131129173744.GP25312@suse.cz>
+In-Reply-To: <20131129173744.GP25312@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-add_seen_fsid() which was introduced lately will eliminate
-the mounted disks, so we don't need test_skip_this_disk()
-anymore
+Hi Dave,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- utils.c |   17 -----------------
- 1 files changed, 0 insertions(+), 17 deletions(-)
+On 11/30/2013 01:37 AM, David Sterba wrote:
+> On Fri, Nov 29, 2013 at 10:04:35AM +0800, Wang Shilong wrote:
+>>>> Subvolume deletion does not do a full transaction commit. This can lead
+>>>> to an unexpected result when the system crashes between deletion and
+>>>> commit, the subvolume directory will appear again. Add options to request
+>>>> filesystem sync after each deleted subvolume or after the last one.
+>>>>
+>>>> If the command with sync option finishes succesfully, the subvolume(s)
+>>>> deletion status is safely stored on the media.
+>>> A feature that people pretty often request, is a way to delete a subvolume,
+>>> and have some way to "sync", i.e. pause execution of their script until all
+>>> the space freed up by the deletion has been recovered and made available (e.g.
+>>> for the next round of their backup to run).
+>>>
+>>> Does this patch now make this possible?
+>> My understanding here is:
+>>
+>> No, deleting subvolume is 'async'. this patch only gurantee that
+>> subvolume deletion status is on-disk, but subvolume deletion work
+>> still have not finished, it will run in the backgroud, if a crash happens,
+>> the work will continue after rebooting.
+> That's right, but also shows that there are different notions what the
+> sync could mean and both make sense and should be implemented.
+>
+> Waiting for the subvolume until it's completely deleted can be now
+> implemented by polling the dead root key. The subvolume deletion ioctl
+> takes only the path but no flags so it cannot be extended that way.
+>
+>>> Also, did you consider enhancing "btrfs fi sync" to sync the snapshot deletion
+>>> (it currently doesn't), rather than adding the "sync" options to deletion
+>>> itself? E.g. comparing to traditional tools, people would logically do:
+>>>
+>>>    $ rm /some/dir/some/file
+>>>    $ sync
+>>>
+>>> rather than something akin to
+>>>
+>>>    $ rm --sync /some/dir/some/file
+>>>
+>> subvolume deletion is a little different from command 'rm'.
+>> To delete a subvolume, we have to run:
+>> btrfs sub delete  <subv>
+>>
+>> If you run 'btrfs file sync' after 'btrfs sub delete' it will have same
+>> effect as david's 'btrfs sub delete --sync'  i think.
+> Yeah, it's different but extending 'fi sync' to wait for subvolume
+> cleaning is a valid usecase.
+>
+> So an enahced interface could look like this:
+>
+> subvol delete:
+> --commit-each - run the ioc sync/wait ioctl after each delete ioctl
+> --commit-after - dtto but sync/wait after all are deleted
+> --wait-for-cleanup - wait until all given subvols are cleaned
+>
+> 'filesystem sync' exteded to wait for subvol cleanup has following
+> cases:
+> - wait for a specific subvolume to be cleaned
+> - wait for all currently deleted, do not care if more subvols are
+>    deleted in the meantime
+> - wait until there are no subvolumes left to clean
+I think it is unnecessary to add such options for 'filesystem sync'.
+we may wait a long time until all subvolume deletion are finished as
+async subvolume deletion is implemented in cleaner thread.:-)
 
-diff --git a/utils.c b/utils.c
-index d505184..de513b6 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1968,21 +1968,6 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
- 	return 0;
- }
- 
--static int test_skip_this_disk(char *path)
--{
--	int fd;
--
--	/*
--	 * this will eliminate disks which are mounted (btrfs)
--	 * and non-dm disk path when dm is enabled
--	 */
--	fd = open(path, O_RDWR|O_EXCL);
--	if (fd < 0)
--		return 1;
--	close(fd);
--	return 0;
--}
--
- int btrfs_scan_lblkid(int update_kernel)
- {
- 	int fd = -1;
-@@ -2007,8 +1992,6 @@ int btrfs_scan_lblkid(int update_kernel)
- 			continue;
- 		/* if we are here its definitely a btrfs disk*/
- 		strncpy(path, blkid_dev_devname(dev), PATH_MAX);
--		if (test_skip_this_disk(path))
--			continue;
- 
- 		fd = open(path, O_RDONLY);
- 		if (fd < 0) {
--- 
-1.7.1
+Miao also pointed out that only if we are running out of space, waiting
+subvolume deletion finished will make sense, our opinion is not to disturb
+'filesystem sync' .
+
+What do you think ? :-)
+
+Thanks,
+Wang
+>
+> Are there more usecases to cover?
+>
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

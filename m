@@ -1,106 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:40122 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753052Ab3LBGmo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Dec 2013 01:42:44 -0500
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:49064 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751039Ab3LBHWi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2013 02:22:38 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rB27MbNt024959
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 07:22:37 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rB27MZqf003159
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 07:22:37 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rB27MZ2n003145
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 07:22:35 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: sbehrens@giantdisaster.de
-Subject: [PATCH] Btrfs-progs: add option to skip whether a scrub has started/resumed in userspace
-Date: Mon, 2 Dec 2013 14:42:25 +0800
-Message-Id: <1385966545-5018-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: fix bus error on sparc
+Date: Mon,  2 Dec 2013 15:22:27 +0800
+Message-Id: <1385968947-8630-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I hit a problem that i can not start scrub when i am trying to track
-superblock generation mismatch problems.
+A type punning from (void *) to (u64 *) plus reading its value will cause
+bus error on the Linux OS installed on sparc arch, because sparc core will
+do a misaligned access and we don't have an option like -misalign or -xmemalign
+in gcc.
 
-The fact is that we are trying to check whether we have started a scrub operation
-in userspace, this will make us can't start scrub if that record file is damaged
-itself. By adding a option to skip that check, everything will be fine.
+Instead we introduce a struct to avoid the memory misalignment.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- cmds-scrub.c   | 12 +++++++++---
- man/btrfs.8.in |  5 ++++-
- 2 files changed, 13 insertions(+), 4 deletions(-)
+ disk-io.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 605af45..9f614bc 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1096,9 +1096,10 @@ static int scrub_start(int argc, char **argv, int resume)
- 	void *terr;
- 	u64 devid;
- 	DIR *dirstream = NULL;
-+	int force = 0;
- 
- 	optind = 1;
--	while ((c = getopt(argc, argv, "BdqrRc:n:")) != -1) {
-+	while ((c = getopt(argc, argv, "BdqrRc:n:f")) != -1) {
- 		switch (c) {
- 		case 'B':
- 			do_background = 0;
-@@ -1123,6 +1124,9 @@ static int scrub_start(int argc, char **argv, int resume)
- 		case 'n':
- 			ioprio_classdata = (int)strtol(optarg, NULL, 10);
- 			break;
-+		case 'f':
-+			force = 1;
-+			break;
- 		case '?':
- 		default:
- 			usage(resume ? cmd_scrub_resume_usage :
-@@ -1195,7 +1199,7 @@ static int scrub_start(int argc, char **argv, int resume)
- 	 * is a normal mode of operation to start scrub on multiple
- 	 * single devices, there is no reason to prevent this.
- 	 */
--	if (is_scrub_running_on_fs(&fi_args, di_args, past_scrubs)) {
-+	if (!force && is_scrub_running_on_fs(&fi_args, di_args, past_scrubs)) {
- 		ERR(!do_quiet,
- 		    "ERROR: scrub is already running.\n"
- 		    "To cancel use 'btrfs scrub cancel %s'.\n"
-@@ -1507,7 +1511,7 @@ out:
+diff --git a/disk-io.c b/disk-io.c
+index 0af3898..eed7d7e 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -650,10 +650,14 @@ insert:
+ 	return root;
  }
  
- static const char * const cmd_scrub_start_usage[] = {
--	"btrfs scrub start [-BdqrR] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
-+	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
- 	"Start a new scrub",
- 	"",
- 	"-B     do not background",
-@@ -1517,6 +1521,8 @@ static const char * const cmd_scrub_start_usage[] = {
- 	"-R     raw print mode, print full data instead of summary"
- 	"-c     set ioprio class (see ionice(1) manpage)",
- 	"-n     set ioprio classdata (see ionice(1) manpage)",
-+	"-f     force to skip checking whether scrub has started/resumed in userspace ",
-+	"       this is useful when scrub stats record file is damaged",
- 	NULL
- };
++struct root_obj {
++	u64 objectid;
++};
++
+ static int btrfs_fs_roots_compare_objectids(struct rb_node *node,
+ 					    void *data)
+ {
+-	u64 objectid = *((u64 *)data);
++	u64 objectid = ((struct root_obj *)data)->objectid;
+ 	struct btrfs_root *root;
  
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index de356b0..68aa42e 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -58,7 +58,7 @@ btrfs \- control a btrfs filesystem
- \fBbtrfs\fP \fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
- .PP
- .PP
--\fBbtrfs\fP \fBscrub start\fP [-BdqrR] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
-+\fBbtrfs\fP \fBscrub start\fP [-BdqrRf] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
- .PP
- \fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
- .PP
-@@ -457,6 +457,9 @@ manpage).
- Set IO priority classdata (see
- .BR ionice (1)
- manpage).
-+.IP "\fB-f\fP" 5
-+force to check whether scrub has started or resumed in userspace.
-+this is useful when scrub stat record file is damaged.
- .RE
- .TP
+ 	root = rb_entry(node, struct btrfs_root, rb_node);
+@@ -669,9 +673,11 @@ static int btrfs_fs_roots_compare_roots(struct rb_node *node1,
+ 					struct rb_node *node2)
+ {
+ 	struct btrfs_root *root;
++	struct root_obj obj;
  
+ 	root = rb_entry(node2, struct btrfs_root, rb_node);
+-	return btrfs_fs_roots_compare_objectids(node1, (void *)&root->objectid);
++	obj.objectid = root->objectid;
++	return btrfs_fs_roots_compare_objectids(node1, (void *)&obj);
+ }
+ 
+ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
+@@ -680,6 +686,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_root *root;
+ 	struct rb_node *node;
+ 	int ret;
++	struct root_obj obj;
+ 
+ 	if (location->objectid == BTRFS_ROOT_TREE_OBJECTID)
+ 		return fs_info->tree_root;
+@@ -695,7 +702,8 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
+ 	BUG_ON(location->objectid == BTRFS_TREE_RELOC_OBJECTID ||
+ 	       location->offset != (u64)-1);
+ 
+-	node = rb_search(&fs_info->fs_root_tree, (void *)&location->objectid,
++	obj.objectid = location->objectid;
++	node = rb_search(&fs_info->fs_root_tree, (void *)&obj,
+ 			 btrfs_fs_roots_compare_objectids, NULL);
+ 	if (node)
+ 		return container_of(node, struct btrfs_root, rb_node);
 -- 
-1.8.3.1
+1.8.1.4
 

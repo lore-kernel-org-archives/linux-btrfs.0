@@ -1,144 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:53357 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752556Ab3LBGxI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2013 01:53:08 -0500
-Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 2 Dec 2013 12:23:05 +0530
-Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id A4EE3394004E
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Dec 2013 12:23:03 +0530 (IST)
-Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
-	by d28relay02.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id rB26r1AQ52297946
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 12:23:01 +0530
-Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
-	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id rB26r22n008589
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 12:23:02 +0530
-Received: from localhost.localdomain ([9.124.35.31])
-	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with ESMTP id rB26r2vf008580
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Dec 2013 12:23:02 +0530
-From: chandan <chandan@linux.vnet.ibm.com>
+Received: from mail-pb0-f43.google.com ([209.85.160.43]:64624 "EHLO
+	mail-pb0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751432Ab3LBQRL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2013 11:17:11 -0500
+Received: by mail-pb0-f43.google.com with SMTP id rq2so19182698pbb.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Dec 2013 08:17:10 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH] Btrfs: Add linear chunk allocation support.
-Date: Mon, 02 Dec 2013 12:23:02 +0630
-Message-ID: <1674620.BNzKaL6CNE@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Cc: ochmann@informatik.uni-bonn.de, wangshilong1991@gmail.com,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix generation mismatch when scrubbing supers
+Date: Tue,  3 Dec 2013 00:16:54 +0800
+Message-Id: <1386001014-8226-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch implements the *core* of the idea suggested at
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Linear_chunk_allocation_mode.
-Other required changes (e.g. balance/restripe) will be made based on
-the reviews obtained for this patch.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-On a multi-disk filesystem instance using single mode storage, we could
-minimize the data loss (due to a hard drive failure) by filling up a disk
-completely before starting to use another disk.
+We came a race condition when scrubbing superblocks, the story is:
 
-Chunk allocation is performed based on the increasing order of devid i.e.
-the device with the lowest devid will be used for allocating the new chunk.
+In commiting transaction, we will update last_trans_commited after
+writting superblocks. if a scrub start after writting superblocks
+and before last_trans_commited, generation mismatch happens!
 
-Signed-off-by: chandan <chandan@linux.vnet.ibm.com>
+We fix it by protecting writting superblock and updating last_trans_commited
+with tree_log_mutex.
+
+Reported-by: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   |  4 +++-
- fs/btrfs/volumes.c | 36 ++++++++++++++++++++++++++++++------
- 2 files changed, 33 insertions(+), 7 deletions(-)
+ fs/btrfs/scrub.c       | 11 +++++++----
+ fs/btrfs/transaction.c | 13 ++++++++++---
+ 2 files changed, 17 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 82e2b74..fb13d85 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -522,6 +522,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
-+#define BTRFS_FEATURE_INCOMPAT_LINEAR_CHUNK_ALLOC (1ULL << 10)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 561e2f1..afa2f01 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2932,12 +2932,15 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	atomic_inc(&fs_info->scrubs_running);
+ 	mutex_unlock(&fs_info->scrub_lock);
  
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
-@@ -539,7 +540,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
--	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
-+	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
-+	 BTRFS_FEATURE_INCOMPAT_LINEAR_CHUNK_ALLOC)
++	/*
++	 * by holding tree_log_mutex while scrubbing supers
++	 * we can avoid generation mismatch. See comments in commiting
++	 * transaction when updating last_trans_commited.
++	 */
+ 	if (!is_dev_replace) {
+-		/*
+-		 * by holding device list mutex, we can
+-		 * kick off writing super in log tree sync.
+-		 */
++		mutex_lock(&fs_info->tree_log_mutex);
+ 		ret = scrub_supers(sctx, dev);
++		mutex_unlock(&fs_info->tree_log_mutex);
+ 	}
+ 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
  
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0db6370..8288fb5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3884,7 +3884,7 @@ static int btrfs_add_system_chunk(struct btrfs_root *root,
- /*
-  * sort the devices in descending order by max_avail, total_avail
-  */
--static int btrfs_cmp_device_info(const void *a, const void *b)
-+static int btrfs_cmp_device_info_space(const void *a, const void *b)
- {
- 	const struct btrfs_device_info *di_a = a;
- 	const struct btrfs_device_info *di_b = b;
-@@ -3900,6 +3900,18 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- 	return 0;
- }
- 
-+static int btrfs_cmp_device_info_devid(const void *a, const void *b)
-+{
-+	const struct btrfs_device_info *di_a = a;
-+	const struct btrfs_device_info *di_b = b;
-+
-+	if (di_a->dev->devid > di_b->dev->devid)
-+		return 1;
-+	if (di_a->dev->devid < di_b->dev->devid)
-+		return -1;
-+	return 0;
-+}
-+
- static struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 	[BTRFS_RAID_RAID10] = {
- 		.sub_stripes	= 2,
-@@ -3985,6 +3997,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	struct extent_map *em;
- 	struct btrfs_device_info *devices_info = NULL;
- 	u64 total_avail;
-+	u64 incompat_flags;
- 	int num_stripes;	/* total number of stripes to allocate */
- 	int data_stripes;	/* number of stripes that count for
- 				   block group size */
-@@ -4106,11 +4119,22 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		++ndevs;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index c6a872a..052eb22 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1898,15 +1898,22 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto cleanup_transaction;
  	}
  
--	/*
--	 * now sort the devices by hole size / available space
--	 */
--	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
--	     btrfs_cmp_device_info, NULL);
-+	incompat_flags = btrfs_super_incompat_flags(info->super_copy);
++	btrfs_finish_extent_commit(trans, root);
 +
-+	if ((chunk_to_extended(type) & BTRFS_AVAIL_ALLOC_BIT_SINGLE)
-+		&& (incompat_flags & BTRFS_FEATURE_INCOMPAT_LINEAR_CHUNK_ALLOC)) {
-+		/*
-+		 * Sort the devices obtained based on devid.
-+		 */
-+		sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+			btrfs_cmp_device_info_devid, NULL);
-+	} else {
-+		/*
-+		 * now sort the devices by hole size / available space
-+		 */
-+		sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+			btrfs_cmp_device_info_space, NULL);
-+	}
++	/*
++	 * we must gurantee last_trans_commited update is protected by
++	 * tree_log_mutex with write_ctree_super together, otherwise,
++	 * scubbing super will come in before updating last_trans_commited
++	 * and we will get generation mismatch when scrubbing superblocks.
++	 */
++	root->fs_info->last_trans_committed = cur_trans->transid;
++
+ 	/*
+ 	 * the super is written, we can safely allow the tree-loggers
+ 	 * to go about their business
+ 	 */
+ 	mutex_unlock(&root->fs_info->tree_log_mutex);
  
- 	/* round down to number of usable stripes */
- 	ndevs -= ndevs % devs_increment;
+-	btrfs_finish_extent_commit(trans, root);
+-
+-	root->fs_info->last_trans_committed = cur_trans->transid;
+ 	/*
+ 	 * We needn't acquire the lock here because there is no other task
+ 	 * which can change it.
 -- 
-1.8.3.1
-
+1.8.4
 

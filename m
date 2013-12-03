@@ -1,43 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:38957 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752372Ab3LCKtA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Dec 2013 05:49:00 -0500
-Date: Tue, 3 Dec 2013 02:48:54 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Jan Kara <jack@suse.cz>
-Cc: Christoph Hellwig <hch@infradead.org>, viro@zeniv.linux.org.uk,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-mtd@lists.infradead.org, Mark Fasheh <mfasheh@suse.com>,
-        Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
-        xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
-        cluster-devel@redhat.com, linux-nfs@vger.kernel.org
-Subject: Re: [PATCH 12/18] ocfs2: use generic posix ACL infrastructure
-Message-ID: <20131203104854.GA3223@infradead.org>
-References: <20131201115903.910559036@bombadil.infradead.org>
- <20131201120655.852590677@bombadil.infradead.org>
- <20131202230007.GK12253@quack.suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131202230007.GK12253@quack.suse.cz>
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:55376 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754905Ab3LCP4X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Dec 2013 10:56:23 -0500
+Received: by mail-wi0-f181.google.com with SMTP id hq4so6725004wib.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Dec 2013 07:56:22 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix pass of transid with wrong endianness in send.c
+Date: Tue,  3 Dec 2013 15:55:48 +0000
+Message-Id: <1386086148-27812-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 03, 2013 at 12:00:07AM +0100, Jan Kara wrote:
->   Hum, this changes the cluster locking. Previously ocfs2_acl_get() used
-> from ocfs2_acl_chmod() grabbed cluster wide inode lock. Now getting of ACL
-> isn't protected by the inode lock. That being said the cluster locking
-> around setattr looks fishy anyway - if two processes on different
-> nodes are changing attributes of the same file, changing ACLs post fact
-> after dropping inode lock could cause interesting effects. Also I'm
-> wondering how inode_change_ok() can ever be safe without holding inode
-> lock... Until we grab that other node is free to change e.g. owner of the
-> inode thus leading even to security implications. But maybe I'm missing
-> something. Mark, Joel?
+>From sparse:
 
-Hmm, indeed.  How does ocfs2_iop_get_acl get away without that lock?
+fs/btrfs/send.c:2190:9: warning: incorrect type in argument 3 (different base types)
+fs/btrfs/send.c:2190:9:    expected unsigned long long [unsigned] [usertype] value
+fs/btrfs/send.c:2190:9:    got restricted __le64 [usertype] ctransid
+fs/btrfs/send.c:2195:17: warning: incorrect type in argument 3 (different base types)
+fs/btrfs/send.c:2195:17:    expected unsigned long long [unsigned] [usertype] value
+fs/btrfs/send.c:2195:17:    got restricted __le64 [usertype] ctransid
+fs/btrfs/send.c:3716:9: warning: incorrect type in argument 3 (different base types)
+fs/btrfs/send.c:3716:9:    expected unsigned long long [unsigned] [usertype] value
+fs/btrfs/send.c:3716:9:    got restricted __le64 [usertype] ctransid
 
-Btw, ocfs2 changes will need careful testing as I couldn't find any easy
-way to run xfstests on ocfs2 out of the box.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 9a58d3f..e5f8b0c 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2188,12 +2188,12 @@ static int send_subvol_begin(struct send_ctx *sctx)
+ 	TLV_PUT_UUID(sctx, BTRFS_SEND_A_UUID,
+ 			sctx->send_root->root_item.uuid);
+ 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CTRANSID,
+-			sctx->send_root->root_item.ctransid);
++		    le64_to_cpu(sctx->send_root->root_item.ctransid));
+ 	if (parent_root) {
+ 		TLV_PUT_UUID(sctx, BTRFS_SEND_A_CLONE_UUID,
+ 				sctx->parent_root->root_item.uuid);
+ 		TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_CTRANSID,
+-				sctx->parent_root->root_item.ctransid);
++			    le64_to_cpu(sctx->parent_root->root_item.ctransid));
+ 	}
+ 
+ 	ret = send_cmd(sctx);
+@@ -3714,7 +3714,7 @@ verbose_printk("btrfs: send_clone offset=%llu, len=%d, clone_root=%llu, "
+ 	TLV_PUT_UUID(sctx, BTRFS_SEND_A_CLONE_UUID,
+ 			clone_root->root->root_item.uuid);
+ 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_CTRANSID,
+-			clone_root->root->root_item.ctransid);
++		    le64_to_cpu(clone_root->root->root_item.ctransid));
+ 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_CLONE_PATH, p);
+ 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_OFFSET,
+ 			clone_root->offset);
+-- 
+1.7.9.5
 

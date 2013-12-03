@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:55376 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754905Ab3LCP4X (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Dec 2013 10:56:23 -0500
-Received: by mail-wi0-f181.google.com with SMTP id hq4so6725004wib.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Dec 2013 07:56:22 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix pass of transid with wrong endianness in send.c
-Date: Tue,  3 Dec 2013 15:55:48 +0000
-Message-Id: <1386086148-27812-1-git-send-email-fdmanana@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:41381 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754395Ab3LCQnr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Dec 2013 11:43:47 -0500
+Date: Tue, 3 Dec 2013 17:43:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        clm@fb.com, jbacik@fb.com
+Subject: Re: [PATCH] Btrfs: optimize btrfs_lookup_extent_info() - extent
+ refcount mismatches?
+Message-ID: <20131203164344.GW25312@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20131129154525.GN25312@twin.jikos.cz>
+ <CAL3q7H7CmaKsnQQacpZck3zGV35ikhTwqX=Xg9eAiM97kb5TwA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H7CmaKsnQQacpZck3zGV35ikhTwqX=Xg9eAiM97kb5TwA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->From sparse:
+On Fri, Nov 29, 2013 at 07:55:37PM +0000, Filipe David Manana wrote:
+> On Fri, Nov 29, 2013 at 3:45 PM, David Sterba <dsterba@suse.cz> wrote:
+> > Hi,
+> >
+> > On Fri, Jul 05, 2013 at 09:32:05PM +0100, Filipe David Borba Manana wrote:
+> >> If we're looking for a metadata item in the tree and the
+> >> search fails with return value of 1, and the slot doesn't
+> >> point to the first item in the leaf, check if the previous
+> >> item in the leaf corresponds to an extent item for the same
+> >> object id - if it does, then don't do another tree search
+> >> to get it.
+> >
+> > I'm suspecting this patch to cause some trouble, see
+> > https://bugzilla.kernel.org/show_bug.cgi?id=64961
+> 
+> What makes you believe the problem is exactly in this function?
 
-fs/btrfs/send.c:2190:9: warning: incorrect type in argument 3 (different base types)
-fs/btrfs/send.c:2190:9:    expected unsigned long long [unsigned] [usertype] value
-fs/btrfs/send.c:2190:9:    got restricted __le64 [usertype] ctransid
-fs/btrfs/send.c:2195:17: warning: incorrect type in argument 3 (different base types)
-fs/btrfs/send.c:2195:17:    expected unsigned long long [unsigned] [usertype] value
-fs/btrfs/send.c:2195:17:    got restricted __le64 [usertype] ctransid
-fs/btrfs/send.c:3716:9: warning: incorrect type in argument 3 (different base types)
-fs/btrfs/send.c:3716:9:    expected unsigned long long [unsigned] [usertype] value
-fs/btrfs/send.c:3716:9:    got restricted __le64 [usertype] ctransid
+It was a first guess based on the stacktraces and last patch that
+touched the code. I've replied to mailinlist because it has higher
+visibility, number of bugreports in balance/relocation has been
+increasing lately (not blaming you).
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/send.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+> I read it again, and I can't see how it can miss an extent item that
+> it couldn't before, specially without skinny metadata enabled.  Did
+> the fs had skinny metadata enabled?
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 9a58d3f..e5f8b0c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2188,12 +2188,12 @@ static int send_subvol_begin(struct send_ctx *sctx)
- 	TLV_PUT_UUID(sctx, BTRFS_SEND_A_UUID,
- 			sctx->send_root->root_item.uuid);
- 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CTRANSID,
--			sctx->send_root->root_item.ctransid);
-+		    le64_to_cpu(sctx->send_root->root_item.ctransid));
- 	if (parent_root) {
- 		TLV_PUT_UUID(sctx, BTRFS_SEND_A_CLONE_UUID,
- 				sctx->parent_root->root_item.uuid);
- 		TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_CTRANSID,
--				sctx->parent_root->root_item.ctransid);
-+			    le64_to_cpu(sctx->parent_root->root_item.ctransid));
- 	}
- 
- 	ret = send_cmd(sctx);
-@@ -3714,7 +3714,7 @@ verbose_printk("btrfs: send_clone offset=%llu, len=%d, clone_root=%llu, "
- 	TLV_PUT_UUID(sctx, BTRFS_SEND_A_CLONE_UUID,
- 			clone_root->root->root_item.uuid);
- 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_CTRANSID,
--			clone_root->root->root_item.ctransid);
-+		    le64_to_cpu(clone_root->root->root_item.ctransid));
- 	TLV_PUT_PATH(sctx, BTRFS_SEND_A_CLONE_PATH, p);
- 	TLV_PUT_U64(sctx, BTRFS_SEND_A_CLONE_OFFSET,
- 			clone_root->offset);
--- 
-1.7.9.5
+According to the updated bugzilla yes, and that's another possible
+cause although we haven't seen bugs with skinny metadata yet. There's
+another bugreport that has them enabled,
+https://bugzilla.kernel.org/show_bug.cgi?id=66411
 
+
+david

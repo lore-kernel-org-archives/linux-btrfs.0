@@ -1,33 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f172.google.com ([209.85.215.172]:62258 "EHLO
-	mail-ea0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932128Ab3LDMmG convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Dec 2013 07:42:06 -0500
-Received: by mail-ea0-f172.google.com with SMTP id q10so10703837ead.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Dec 2013 04:42:04 -0800 (PST)
-From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
-Date: Wed, 04 Dec 2013 13:41:42 +0100
-Message-ID: <2467502.UPcdayreHd@linux-suse.hu>
-In-Reply-To: <20131204021507.GH18095@localhost.localdomain>
-References: <1531404.tFNCiHaLVH@linux-suse.hu> <20131204021507.GH18095@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from plane.gmane.org ([80.91.229.3]:42071 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932404Ab3LDPaF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Dec 2013 10:30:05 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VoEOp-0001mq-Ro
+	for linux-btrfs@vger.kernel.org; Wed, 04 Dec 2013 16:30:04 +0100
+Received: from hosted-by.leaseweb.com ([127.0.0.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Dec 2013 16:30:03 +0100
+Received: from adam.gradzki by hosted-by.leaseweb.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Dec 2013 16:30:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Adam Gradzki <adam.gradzki@gmail.com>
+Subject: Re: btrfs-cleaner leaves CPU pinned to 100%
+Date: Wed, 4 Dec 2013 15:27:58 +0000 (UTC)
+Message-ID: <loom.20131204T162331-814@post.gmane.org>
+References: <CALnfhZDKEs7LeTrHAk3oecJ2oOqo=VJzQqoeEy3qNB92s2CC7A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for your answer.
+Adam G <adam.gradzki <at> gmail.com> writes:
 
-Here are the "blocked states" logs. Since I had a plenty of time, I made 
-multiple of them. The last two are the longest of them.
+> 
+> Hello,
+> 
+> After a recent kernel upgrade I noticed the fans blowing at full
+> throttle on my laptop.
+> 
+> There is currently very low load on the machine and nothing out of the
+> ordinary has occurred to lead me to believe this is normal behavior.
+> 
+> Here is a link to the perf output I managed to capture
+> 
+> http://pastebin.com/a5cAy7Dw
+> 
+> Please let me know if I may be of any further assistance.
+> 
+> Regards,
+> 
+> Adam Gradzki
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo <at> vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
-- http://paste.opensuse.org/view/raw/51654551
-- http://paste.opensuse.org/view/raw/39005796
-- http://paste.opensuse.org/view/raw/38028651
-- http://paste.opensuse.org/view/raw/21592065
-- http://paste.opensuse.org/view/raw/46655344
-- http://paste.opensuse.org/view/raw/26821272
+I would like to add an updated perf report I took shortly after the first 
+one yesterday (600 seconds this time).
 
-Ákos
+http://www.pastebin.ca/2492119
+
+Removing autodefrag from /etc/fstab has ameliorated my troubles for the time 
+being.
+

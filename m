@@ -1,34 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f177.google.com ([209.85.128.177]:57813 "EHLO
-	mail-ve0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754111Ab3LCR2Q (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Dec 2013 12:28:16 -0500
-Received: by mail-ve0-f177.google.com with SMTP id db12so10417291veb.22
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Dec 2013 09:28:16 -0800 (PST)
+Received: from userp1040.oracle.com ([156.151.31.81]:40823 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753084Ab3LDCPQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Dec 2013 21:15:16 -0500
+Date: Wed, 4 Dec 2013 10:15:08 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
+Message-ID: <20131204021507.GH18095@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1531404.tFNCiHaLVH@linux-suse.hu>
 MIME-Version: 1.0
-Date: Tue, 3 Dec 2013 12:28:16 -0500
-Message-ID: <CALnfhZDKEs7LeTrHAk3oecJ2oOqo=VJzQqoeEy3qNB92s2CC7A@mail.gmail.com>
-Subject: btrfs-cleaner leaves CPU pinned to 100%
-From: Adam G <adam.gradzki@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1531404.tFNCiHaLVH@linux-suse.hu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, Dec 03, 2013 at 12:28:26PM +0100, Szőts Ákos wrote:
+> Dear list members,
+> 
+> I'm not sure if this a bug or an intended behaviour, since I've yet to find a 
+> reliable source with Google search.
+> 
+> My problem is the following: with the 3.12 kernel on every single boot (even 
+> when the computer was shut down clear) the process [btrfs-ino-cache] is 
+> preventing the successful startup of X because it's running for 6 minutes.
+> 
+> I can see this in "iotop" and while that program runs the whole system is 
+> being blocked. After 6 minutes I restart X and everyting goes normal from that 
+> point on.
 
-After a recent kernel upgrade I noticed the fans blowing at full
-throttle on my laptop.
+6min is way too much, something may go wrongly,
+could you please run "echo w > /proc/sysrq-trigger" when that happens?
 
-There is currently very low load on the machine and nothing out of the
-ordinary has occurred to lead me to believe this is normal behavior.
+-liubo
 
-Here is a link to the perf output I managed to capture
-
-http://pastebin.com/a5cAy7Dw
-
-Please let me know if I may be of any further assistance.
-
-Regards,
-
-Adam Gradzki
+> 
+> My question is: is that necessary to regenerate the inode cache on every boot 
+> or is this a bug? Of course if I remove the "inode_cache" option from fstab, 
+> this phenomenon disappears.
+> 
+> Versions:
+> - OS: openSUSE 13.1
+> - Kernel: 3.12.0-6.ge7c00d8-desktop #1 SMP PREEMPT Tue Nov 12 13:09:24 UTC 
+> 2013 (e7c00d8)
+> - Mount options: compress=lzo,space_cache,inode_cache,noatime
+> 
+> Best regards,
+> 
+> Ákos
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

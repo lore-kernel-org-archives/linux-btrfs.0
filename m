@@ -1,129 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:27492 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755287Ab3LDMOI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Dec 2013 07:14:08 -0500
-Subject: Re: [Cluster-devel] [PATCH 16/18] gfs2: use generic posix ACL
- infrastructure
-From: Steven Whitehouse <swhiteho@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: viro@zeniv.linux.org.uk, xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mtd@lists.infradead.org, jfs-discussion@lists.sourceforge.net,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-In-Reply-To: <20131201120656.539995924@bombadil.infradead.org>
-References: <20131201115903.910559036@bombadil.infradead.org>
-	 <20131201120656.539995924@bombadil.infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Date: Wed, 04 Dec 2013 12:12:37 +0000
-Message-ID: <1386159157.2711.11.camel@menhir>
-Mime-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:50315 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S932305Ab3LDNPm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Dec 2013 08:15:42 -0500
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ochmann@informatik.uni-bonn.de
+Subject: [PATCH v4 1/2] Btrfs: fix wrong super generation mismatch when scrubbing supers
+Date: Wed, 4 Dec 2013 21:15:19 +0800
+Message-Id: <1386162919-1801-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+We came a race condition when scrubbing superblocks, the story is:
 
-On Sun, 2013-12-01 at 03:59 -0800, Christoph Hellwig wrote:
-> plain text document attachment
-> (0016-gfs2-use-generic-posix-ACL-infrastructure.patch)
-> This contains some major refactoring for the create path so that
-> inodes are created with the right mode to start with instead of
-> fixing it up later.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  fs/gfs2/acl.c   |  229 +++++++------------------------------------------------
->  fs/gfs2/acl.h   |    4 +-
->  fs/gfs2/inode.c |   33 ++++++--
->  fs/gfs2/xattr.c |    4 +-
->  4 files changed, 61 insertions(+), 209 deletions(-)
-> 
-Looks very good. I'd really like to be able to do something similar with
-the security xattrs, in terms of the refactoring that at inode creation
-to give the xattrs ahead of the inode allocation itself. That way it
-should be possible to allocate the xattr blocks at the same time as the
-inode, rather than as an after thought.
+In commiting transaction, we will update @last_trans_commited after
+writting superblocks, if scrubber start after writting superblocks
+and before updating @last_trans_commited, generation mismatch happens!
 
-Some more comments below....
+We fix this by checking @scrub_pause_req, and we won't start a srubber
+until commiting transaction is finished.(after btrfs_scrub_continue()
+finished.)
 
-> diff --git a/fs/gfs2/acl.c b/fs/gfs2/acl.c
-> index e82e4ac..e6c7a2c 100644
-> --- a/fs/gfs2/acl.c
-> +++ b/fs/gfs2/acl.c
-[snip]
-> -
-> -static int gfs2_xattr_system_set(struct dentry *dentry, const char *name,
-> -				 const void *value, size_t size, int flags,
-> -				 int xtype)
-> -{
-> -	struct inode *inode = dentry->d_inode;
-> -	struct gfs2_sbd *sdp = GFS2_SB(inode);
-> -	struct posix_acl *acl = NULL;
-> -	int error = 0, type;
-> -
-> -	if (!sdp->sd_args.ar_posix_acl)
-> -		return -EOPNOTSUPP;
-> -
-> -	type = gfs2_acl_type(name);
-> -	if (type < 0)
-> -		return type;
-> -	if (flags & XATTR_CREATE)
-> -		return -EINVAL;
-> -	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
-> -		return value ? -EACCES : 0;
-> -	if (!uid_eq(current_fsuid(), inode->i_uid) && !capable(CAP_FOWNER))
-> -		return -EPERM;
-> -	if (S_ISLNK(inode->i_mode))
-> -		return -EOPNOTSUPP;
-> -
-> -	if (!value)
-> -		goto set_acl;
->  
-> -	acl = posix_acl_from_xattr(&init_user_ns, value, size);
-> -	if (!acl) {
-> -		/*
-> -		 * acl_set_file(3) may request that we set default ACLs with
-> -		 * zero length -- defend (gracefully) against that here.
-> -		 */
-> -		goto out;
-> -	}
-> -	if (IS_ERR(acl)) {
-> -		error = PTR_ERR(acl);
-> -		goto out;
-> -	}
-> -
-> -	error = posix_acl_valid(acl);
-> -	if (error)
-> -		goto out_release;
-> -
-> -	error = -EINVAL;
->  	if (acl->a_count > GFS2_ACL_MAX_ENTRIES)
-> -		goto out_release;
-> +		return -EINVAL;
->  
->  	if (type == ACL_TYPE_ACCESS) {
->  		umode_t mode = inode->i_mode;
-> +
->  		error = posix_acl_equiv_mode(acl, &mode);
-> +		if (error < 0)
->  
-Andy Price has pointed out a missing "return error;" here
+Reported-by: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+v3->v4:
+	by checking @scrub_pause_req, block a scrubber
+	if we are committing transaction(thanks to Miao and Liu)
+---
+ fs/btrfs/scrub.c | 45 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 26 insertions(+), 19 deletions(-)
 
-> -		if (error <= 0) {
-> -			posix_acl_release(acl);
-> +		if (error == 0)
->  			acl = NULL;
->  
-> -			if (error < 0)
-> -				return error;
-> -		}
-> -
-
-Also, there seems to be a white space error in the xfs patch around line
-170 in fs/xfs/xfs_iops.c where there is an added "if (default_acl)" with
-a space before the tab,
-
-Steve.
-
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2544805..d27f95e 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -257,6 +257,7 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 			    int mirror_num, u64 physical_for_dev_replace);
+ static void copy_nocow_pages_worker(struct btrfs_work *work);
++static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info);
+ 
+ 
+ static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
+@@ -270,6 +271,16 @@ static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
+ 	wake_up(&sctx->list_wait);
+ }
+ 
++static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
++{
++	while (atomic_read(&fs_info->scrub_pause_req)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		wait_event(fs_info->scrub_pause_wait,
++		   atomic_read(&fs_info->scrub_pause_req) == 0);
++		mutex_lock(&fs_info->scrub_lock);
++	}
++}
++
+ /*
+  * used for workers that require transaction commits (i.e., for the
+  * NOCOW case)
+@@ -2330,14 +2341,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 		btrfs_reada_wait(reada2);
+ 
+ 	mutex_lock(&fs_info->scrub_lock);
+-	while (atomic_read(&fs_info->scrub_pause_req)) {
+-		mutex_unlock(&fs_info->scrub_lock);
+-		wait_event(fs_info->scrub_pause_wait,
+-		   atomic_read(&fs_info->scrub_pause_req) == 0);
+-		mutex_lock(&fs_info->scrub_lock);
+-	}
++	scrub_blocked_if_needed(fs_info);
+ 	atomic_dec(&fs_info->scrubs_paused);
+ 	mutex_unlock(&fs_info->scrub_lock);
++
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	/*
+@@ -2377,15 +2384,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			atomic_set(&sctx->wr_ctx.flush_all_writes, 0);
+ 			atomic_inc(&fs_info->scrubs_paused);
+ 			wake_up(&fs_info->scrub_pause_wait);
++
+ 			mutex_lock(&fs_info->scrub_lock);
+-			while (atomic_read(&fs_info->scrub_pause_req)) {
+-				mutex_unlock(&fs_info->scrub_lock);
+-				wait_event(fs_info->scrub_pause_wait,
+-				   atomic_read(&fs_info->scrub_pause_req) == 0);
+-				mutex_lock(&fs_info->scrub_lock);
+-			}
++			scrub_blocked_if_needed(fs_info);
+ 			atomic_dec(&fs_info->scrubs_paused);
+ 			mutex_unlock(&fs_info->scrub_lock);
++
+ 			wake_up(&fs_info->scrub_pause_wait);
+ 		}
+ 
+@@ -2707,14 +2711,10 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 			   atomic_read(&sctx->workers_pending) == 0);
+ 
+ 		mutex_lock(&fs_info->scrub_lock);
+-		while (atomic_read(&fs_info->scrub_pause_req)) {
+-			mutex_unlock(&fs_info->scrub_lock);
+-			wait_event(fs_info->scrub_pause_wait,
+-			   atomic_read(&fs_info->scrub_pause_req) == 0);
+-			mutex_lock(&fs_info->scrub_lock);
+-		}
++		scrub_blocked_if_needed(fs_info);
+ 		atomic_dec(&fs_info->scrubs_paused);
+ 		mutex_unlock(&fs_info->scrub_lock);
++
+ 		wake_up(&fs_info->scrub_pause_wait);
+ 
+ 		btrfs_put_block_group(cache);
+@@ -2926,7 +2926,13 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	}
+ 	sctx->readonly = readonly;
+ 	dev->scrub_device = sctx;
++	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
++	/*
++	 * checking @scrub_pause_req here, we can avoid
++	 * race between committing transaction and scrubbing.
++	 */
++	scrub_blocked_if_needed(fs_info);
+ 	atomic_inc(&fs_info->scrubs_running);
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 
+@@ -2935,9 +2941,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 		 * by holding device list mutex, we can
+ 		 * kick off writing super in log tree sync.
+ 		 */
++		mutex_lock(&fs_info->fs_devices->device_list_mutex);
+ 		ret = scrub_supers(sctx, dev);
++		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 	}
+-	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
+ 	if (!ret)
+ 		ret = scrub_enumerate_chunks(sctx, dev, start, end,
+-- 
+1.8.3.1
 

@@ -1,159 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:36473 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754518Ab3LDWFN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Dec 2013 17:05:13 -0500
-Message-ID: <529FA713.5060003@informatik.uni-bonn.de>
-Date: Wed, 04 Dec 2013 23:05:07 +0100
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/2] Btrfs: fix wrong super generation mismatch when
- scrubbing supers
-References: <1386162919-1801-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1386162919-1801-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:55217 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753613Ab3LDWRy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Dec 2013 17:17:54 -0500
+Received: by mail-wi0-f171.google.com with SMTP id ca18so9006021wib.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Dec 2013 14:17:53 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: more efficient push_leaf_right
+Date: Wed,  4 Dec 2013 22:17:39 +0000
+Message-Id: <1386195459-15523-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Currently when finding the leaf to insert a key into a btree, if the
+leaf doesn't have enough space to store the item we attempt to move
+off some items from our leaf to its right neighbor leaf, and if this
+fails to create enough free space in our leaf, we try to move off more
+items to the left neighbor leaf as well.
 
-seems to be working for me (only tested using both parts of the patch); 
-wasn't able to trigger the errors after almost an hour of stress-testing.
+When trying to move off items to the right neighbor leaf, if it has
+enough room to store the new key but not not enough room to move off
+at least one item from our target leaf, __push_leaf_right returns 1 and
+we have to attempt to move items to the left neighbor (push_leaf_left
+function) without touching the right neighbor leaf.
+For the case where the right leaf has enough room to store at least 1
+item from our leaf, we end up modifying (and dirtying) both our leaf
+and the right leaf. This is non-optimal for the case where the new key
+is greater than any key in our target leaf because it can be inserted at
+slot 0 of the right neighbor leaf and we don't need to touch our leaf
+at all nor to attempt to move off items to the left neighbor leaf.
 
-Best regards,
-Sebastian
+Therefore this change just selects the right neighbor leaf as our new
+target leaf if it has enough room for the new key without modifying our
+initial target leaf - we do this only if the new key is higher than any
+key in the initial target leaf.
 
-On 04.12.2013 14:15, Wang Shilong wrote:
-> We came a race condition when scrubbing superblocks, the story is:
->
-> In commiting transaction, we will update @last_trans_commited after
-> writting superblocks, if scrubber start after writting superblocks
-> and before updating @last_trans_commited, generation mismatch happens!
->
-> We fix this by checking @scrub_pause_req, and we won't start a srubber
-> until commiting transaction is finished.(after btrfs_scrub_continue()
-> finished.)
->
-> Reported-by: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
-> v3->v4:
-> 	by checking @scrub_pause_req, block a scrubber
-> 	if we are committing transaction(thanks to Miao and Liu)
-> ---
->   fs/btrfs/scrub.c | 45 ++++++++++++++++++++++++++-------------------
->   1 file changed, 26 insertions(+), 19 deletions(-)
->
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 2544805..d27f95e 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -257,6 +257,7 @@ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
->   static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
->   			    int mirror_num, u64 physical_for_dev_replace);
->   static void copy_nocow_pages_worker(struct btrfs_work *work);
-> +static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info);
->
->
->   static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
-> @@ -270,6 +271,16 @@ static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
->   	wake_up(&sctx->list_wait);
->   }
->
-> +static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-> +{
-> +	while (atomic_read(&fs_info->scrub_pause_req)) {
-> +		mutex_unlock(&fs_info->scrub_lock);
-> +		wait_event(fs_info->scrub_pause_wait,
-> +		   atomic_read(&fs_info->scrub_pause_req) == 0);
-> +		mutex_lock(&fs_info->scrub_lock);
-> +	}
-> +}
-> +
->   /*
->    * used for workers that require transaction commits (i.e., for the
->    * NOCOW case)
-> @@ -2330,14 +2341,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
->   		btrfs_reada_wait(reada2);
->
->   	mutex_lock(&fs_info->scrub_lock);
-> -	while (atomic_read(&fs_info->scrub_pause_req)) {
-> -		mutex_unlock(&fs_info->scrub_lock);
-> -		wait_event(fs_info->scrub_pause_wait,
-> -		   atomic_read(&fs_info->scrub_pause_req) == 0);
-> -		mutex_lock(&fs_info->scrub_lock);
-> -	}
-> +	scrub_blocked_if_needed(fs_info);
->   	atomic_dec(&fs_info->scrubs_paused);
->   	mutex_unlock(&fs_info->scrub_lock);
-> +
->   	wake_up(&fs_info->scrub_pause_wait);
->
->   	/*
-> @@ -2377,15 +2384,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
->   			atomic_set(&sctx->wr_ctx.flush_all_writes, 0);
->   			atomic_inc(&fs_info->scrubs_paused);
->   			wake_up(&fs_info->scrub_pause_wait);
-> +
->   			mutex_lock(&fs_info->scrub_lock);
-> -			while (atomic_read(&fs_info->scrub_pause_req)) {
-> -				mutex_unlock(&fs_info->scrub_lock);
-> -				wait_event(fs_info->scrub_pause_wait,
-> -				   atomic_read(&fs_info->scrub_pause_req) == 0);
-> -				mutex_lock(&fs_info->scrub_lock);
-> -			}
-> +			scrub_blocked_if_needed(fs_info);
->   			atomic_dec(&fs_info->scrubs_paused);
->   			mutex_unlock(&fs_info->scrub_lock);
-> +
->   			wake_up(&fs_info->scrub_pause_wait);
->   		}
->
-> @@ -2707,14 +2711,10 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->   			   atomic_read(&sctx->workers_pending) == 0);
->
->   		mutex_lock(&fs_info->scrub_lock);
-> -		while (atomic_read(&fs_info->scrub_pause_req)) {
-> -			mutex_unlock(&fs_info->scrub_lock);
-> -			wait_event(fs_info->scrub_pause_wait,
-> -			   atomic_read(&fs_info->scrub_pause_req) == 0);
-> -			mutex_lock(&fs_info->scrub_lock);
-> -		}
-> +		scrub_blocked_if_needed(fs_info);
->   		atomic_dec(&fs_info->scrubs_paused);
->   		mutex_unlock(&fs_info->scrub_lock);
-> +
->   		wake_up(&fs_info->scrub_pause_wait);
->
->   		btrfs_put_block_group(cache);
-> @@ -2926,7 +2926,13 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->   	}
->   	sctx->readonly = readonly;
->   	dev->scrub_device = sctx;
-> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->
-> +	/*
-> +	 * checking @scrub_pause_req here, we can avoid
-> +	 * race between committing transaction and scrubbing.
-> +	 */
-> +	scrub_blocked_if_needed(fs_info);
->   	atomic_inc(&fs_info->scrubs_running);
->   	mutex_unlock(&fs_info->scrub_lock);
->
-> @@ -2935,9 +2941,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->   		 * by holding device list mutex, we can
->   		 * kick off writing super in log tree sync.
->   		 */
-> +		mutex_lock(&fs_info->fs_devices->device_list_mutex);
->   		ret = scrub_supers(sctx, dev);
-> +		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->   	}
-> -	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->
->   	if (!ret)
->   		ret = scrub_enumerate_chunks(sctx, dev, start, end,
->
+While running the following test, push_leaf_right was called by split_leaf
+4802 times. Out of those 4802 calls, for 2571 calls (53.5%) we hit this
+special case (right leaf has enough room and new key is higher than any key
+in the initial target leaf).
+
+Test:
+
+  sysbench --test=fileio --file-num=512 --file-total-size=5G \
+    --file-test-mode=[seqwr|rndwr] --num-threads=512 --file-block-size=8192 \
+    --max-requests=100000 --file-io-mode=sync [prepare|run]
+
+Results:
+
+sequential writes
+
+Throughput before this change: 65.71Mb/sec (average of 10 runs)
+Throughput after this change:  66.58Mb/sec (average of 10 runs)
+
+random writes
+
+Throughput before this change: 10.75Mb/sec (average of 10 runs)
+Throughput after this change:  11.56Mb/sec (average of 10 runs)
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.c |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 11f9a18..a57507a 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -3613,6 +3613,19 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	if (left_nritems == 0)
+ 		goto out_unlock;
+ 
++	if (path->slots[0] == left_nritems && !empty) {
++		/* Key greater than all keys in the leaf, right neighbor has
++		 * enough room for it and we're not emptying our leaf to delete
++		 * it, therefore use right neighbor to insert the new item and
++		 * no need to touch/dirty our left leaft. */
++		btrfs_tree_unlock(left);
++		free_extent_buffer(left);
++		path->nodes[0] = right;
++		path->slots[0] = 0;
++		path->slots[1]++;
++		return 0;
++	}
++
+ 	return __push_leaf_right(trans, root, path, min_data_size, empty,
+ 				right, free_space, left_nritems, min_slot);
+ out_unlock:
+-- 
+1.7.9.5
 

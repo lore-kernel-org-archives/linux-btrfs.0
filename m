@@ -1,63 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from glockenspiel.complete.org ([78.47.53.23]:39298 "EHLO
-	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757767Ab3LERwL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2013 12:52:11 -0500
-Received: from [63.245.179.205] (helo=hephaestus.lan.complete.org)
-	by glockenspiel.complete.org with esmtps
-	(with TLS1.0:DHE_RSA_AES_128_CBC_SHA1:16)
-	(TLS peer CN christoph.complete.org, certificate verified)
-	(Exim 4.72)
-	id 1Vod5s-0007Lc-Bh
-	for linux-btrfs@vger.kernel.org; Thu, 05 Dec 2013 11:52:09 -0600
-Received: from [::1]
-	by hephaestus.lan.complete.org with esmtp (Exim 4.80)
-	(envelope-from <jgoerzen@complete.org>)
-	id 1Vod5o-0001z6-BA
-	for linux-btrfs@vger.kernel.org; Thu, 05 Dec 2013 11:52:04 -0600
-Message-ID: <52A0BD44.9030509@complete.org>
-Date: Thu, 05 Dec 2013 11:52:04 -0600
-From: John Goerzen <jgoerzen@complete.org>
-MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Extremely slow metadata performance
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:42425 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750723Ab3LETjy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Dec 2013 14:39:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Voem8-0005pL-SB
+	for linux-btrfs@vger.kernel.org; Thu, 05 Dec 2013 20:39:52 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2013 20:39:52 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2013 20:39:52 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Extremely slow metadata performance
+Date: Thu, 5 Dec 2013 19:39:30 +0000 (UTC)
+Message-ID: <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
+References: <52A0BD44.9030509@complete.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+John Goerzen posted on Thu, 05 Dec 2013 11:52:04 -0600 as excerpted:
 
-I have observed extremely slow metadata performance with btrfs. This may 
-be a bit of a nightmare scenario; it involves untarring a backup of
-1.6TB of backuppc data, which contains millions of hardlinks and much
-data, onto USB 2.0 disks.
+> Hello,
+> 
+> I have observed extremely slow metadata performance with btrfs. This may
+> be a bit of a nightmare scenario; it involves untarring a backup of
+> 1.6TB of backuppc data, which contains millions of hardlinks and much
+> data, onto USB 2.0 disks.
 
-I have run disk monitoring tools such as dstat while performing these
-operations to see what's going on.
+> Is this behavior known and expected?
 
-The behavior I notice is this:
+Yes.  Btrfs doesn't do well with lots of hardlinks and indeed until 
+relatively recently had a hard-limit on the number of hardlinks possible 
+within a directory, that hardlink-heavy use-cases would regularly hit.  
+That was worked around, but there's an additional level of indirection 
+once the first level link-pool is filled, and you're not the first to 
+have observed that btrfs performance isn't the best in that sort of 
+scenario.  That's known.
 
-   * When unpacking large files, the USB drives sustain activity in the
-     20-40 MB/s range, as expected.
-   * When creating vast numbers of hardlinks instead, the activity is
-     roughly this:
-       o Bursts of output from tar due to -v, sometimes corresponding to
-         reads in the 300KB/s range (I suspect this has
-         to do with caching)
-       o Tar blocked for minutes while writes to the disk occur, in the
-         300-600KB/s range.
+Other filesystems will probably do quite a bit better for hardlink style 
+backups and other hardlink-heavy use-cases.  Either that, or consider 
+using btrfs, but with some other form of backup, possibly btrfs 
+snapshots, or COW reflinks.
 
-This occurs even when nobarrier,noatime are specified as mount options. 
-  I know the disk is capable of far more, because btrfs gets
-far more from it when writing large files.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-There are two USB drives in this btrfs filesystem: a 1TB and a 2TB
-drive.  I have tried the raid1, raid0, and single metadata profiles.
-Anecdotal evidence suggests that raid1 performs the worst, raid0 the
-best, and single somewhere in between.  The data is in single mode.
-
-Is this behavior known and expected?
-
-Thanks,
-
-John

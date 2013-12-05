@@ -1,60 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21849 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161214Ab3LFNao (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 08:30:44 -0500
-Date: Fri, 6 Dec 2013 21:30:34 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
-Message-ID: <20131206133033.GC20595@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1531404.tFNCiHaLVH@linux-suse.hu>
- <2467502.UPcdayreHd@linux-suse.hu>
- <20131206060419.GA20595@localhost.localdomain>
- <14005207.4jWyJLzXAX@linux-suse.hu>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:35898 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751271Ab3LEXlD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2013 18:41:03 -0500
+From: Russell Coker <russell@coker.com.au>
+To: John Goerzen <jgoerzen@complete.org>
+Reply-To: russell@coker.com.au
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Extremely slow metadata performance
+Date: Fri, 06 Dec 2013 10:41 +1100
+Message-ID: <2489440.lJHvyhQY1H@xev>
+In-Reply-To: <52A0BD44.9030509@complete.org>
+References: <52A0BD44.9030509@complete.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <14005207.4jWyJLzXAX@linux-suse.hu>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 06, 2013 at 01:46:10PM +0100, Szőts Ákos wrote:
-> A következőt írtad ekkor: 2013. december 6. 14:04:19
-> > Could you please try the following and show me the output of dmesg?
-> > 
-> > thanks,
-> > -liubo
-> 
-> The following happened:
-> - I upgraded to 3.13.0-rc2-6.ge7c00d8 (since the original 3.12 kernel with 
-> SUSE patches is not available anymore)
-> - Patched it and booted from that, compiled the NVIDIA driver
-> - and suddenly everything started to work fine. Now I don't have to wait 6 
-> minutes for the [btrfs-ino-cache] process.
-> 
-> One thing I noticed: before any logging would start, kernel prints out some 
-> (initramfs?) messages, like:
-> "Waiting for device /dev/disk/... to appear
-> [...]
-> fsck succeeded Mounting root read-write
-> Mounting root /dev/disk/...
-> mount -o rw,compress=lzo,space_cache,noatime,inode_cache /dev/... /root"
-> 
-> And logging starts from this point.
-> 
-> The interesting point is the initramfs mounting options: with the stock 3.12 
-> kernel I had only the following: rw,compress=lzo,space_cache. But now it's 
-> rw,compress=lzo,space_cache,noatime,inode_cache. In /etc/fstab the options are 
-> intact for a month now. Maybe I should have regenerated the initrd when I 
-> added the fstab mount options noatime and inode_cache?
-> 
-> I searched for your extra kernel messages in dmesg, but I didn't find them, 
-> although here is the dmesg output: http://paste.opensuse.org/30797527
+On Thu, 5 Dec 2013 11:52:04 John Goerzen wrote:
+> I have observed extremely slow metadata performance with btrfs. This may
+> be a bit of a nightmare scenario; it involves untarring a backup of
+> 1.6TB of backuppc data, which contains millions of hardlinks and much
+> data, onto USB 2.0 disks.
 
-It seems that we should owe credit to the updated 3.13 kernel, could you
-please try again 3.13 kernel without the patch?
+How does this compare to using Ext4 on the same hardware and same data?
 
-thanks,
--liubo
+> I have run disk monitoring tools such as dstat while performing these
+> operations to see what's going on.
+> 
+> The behavior I notice is this:
+> 
+>    * When unpacking large files, the USB drives sustain activity in the
+>      20-40 MB/s range, as expected.
+>    * When creating vast numbers of hardlinks instead, the activity is
+>      roughly this:
+>        o Bursts of output from tar due to -v, sometimes corresponding to
+>          reads in the 300KB/s range (I suspect this has
+>          to do with caching)
+>        o Tar blocked for minutes while writes to the disk occur, in the
+>          300-600KB/s range.
+
+Is iostat indicating that the disk is at 100% capacity?
+
+> This occurs even when nobarrier,noatime are specified as mount options.
+>   I know the disk is capable of far more, because btrfs gets
+> far more from it when writing large files.
+
+Write speeds as low as 600KB/s isn't uncommon when there's lots of seeks.  
+I've seen similar performance from RAID arrays.  Is BTRFS doing much worse 
+than Ext4 in terms of the number of seeks needed for writing that data?
+
+> There are two USB drives in this btrfs filesystem: a 1TB and a 2TB
+> drive.  I have tried the raid1, raid0, and single metadata profiles.
+> Anecdotal evidence suggests that raid1 performs the worst, raid0 the
+> best, and single somewhere in between.  The data is in single mode.
+> 
+> Is this behavior known and expected?
+
+Last time I did Postal tests I didn't find a lot of difference between BTRFS 
+and Ext4 when using 60K average file size (from memory) on a single partition.  
+BTRFS did worse when it was using internal RAID-1 and Ext4 was on a Linux 
+software RAID-1.  But 60K file size may be larger than the average file you 
+use if you use lots of links.
+
+For backups BTRFS seems to perform a lot better (for both creation and 
+removing snapshots) if you use snapshots instead of "cp -rl" or equivalent.  
+However I have had ongoing problems of BTRFS hanging on snapshot removal which 
+aren't fixed in the latest Debian packaged kernels.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+
+

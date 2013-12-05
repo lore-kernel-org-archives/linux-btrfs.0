@@ -1,48 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.jrs-s.net ([173.230.137.22]:36118 "EHLO mail.jrs-s.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751725Ab3LEGQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Dec 2013 01:16:12 -0500
-Received: from [192.168.100.50] (cpe-024-088-095-145.sc.res.rr.com [24.88.95.145])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: jim@jrs-s.net)
-	by mail.jrs-s.net (Postfix) with ESMTPSA id 446C4D2A4
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Dec 2013 01:16:10 -0500 (EST)
-Message-ID: <52A01A29.3020005@jrs-s.net>
-Date: Thu, 05 Dec 2013 01:16:09 -0500
-From: Jim Salter <jim@jrs-s.net>
-MIME-Version: 1.0
+Received: from mail-ee0-f42.google.com ([74.125.83.42]:59777 "EHLO
+	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751053Ab3LEJPP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2013 04:15:15 -0500
+Received: by mail-ee0-f42.google.com with SMTP id e53so2068384eek.29
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2013 01:15:14 -0800 (PST)
+Received: from linux-suse.hu (BC06518D.dsl.pool.telekom.hu. [188.6.81.141])
+        by mx.google.com with ESMTPSA id b41sm80247201eef.16.2013.12.05.01.15.12
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 05 Dec 2013 01:15:13 -0800 (PST)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: ERROR: send ioctl failed with -12: Cannot allocate memory
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
+Date: Thu, 05 Dec 2013 10:14:50 +0100
+Message-ID: <8479729.PFPMuy5jvX@linux-suse.hu>
+In-Reply-To: <20131204021507.GH18095@localhost.localdomain>
+References: <1531404.tFNCiHaLVH@linux-suse.hu> <20131204021507.GH18095@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sending a 585G snapshot from box1 to box2:
+Dear Duncan,
 
-     # ionice -c3 btrfs send daily*2013-12-01* | pv -L40m -s585G | ssh 
--c arcfour 10.0.0.40 btrfs receive /data/.snapshots/data/images
-     At subvol daily_[1385956801]_2013-12-01_23:00:01
-     At subvol daily_[1385956801]_2013-12-01_23:00:01
-     ERROR: send ioctl failed with -12: Cannot allocate 
-memory=======================================> ]     59% ETA 2:04:01
-      347GB 3:00:12 [32.8MB/s]
-[=====================================================================> ]
-     59%
-     ERROR: unexpected EOF in stream.
+Thank you for your advices!
 
-Send failed a little over halfway through with "Cannot allocate memory" 
-error.  Which is surprising, given that this is a relatively lightly 
-loaded 32G server.  Output of free -m, taken immediately after seeing 
-the error above:
+Unfortunately I haven't found a good documentation on when I should use a 
+cache_, that's why I thought "it's all the same, won't hurt" :).
+Now, if this bug is fixed, I'll turn off the inode_cache, if it's unnecessary.
 
-     root@gwa-virt1:/data/.snapshots/data/images# free -m
-                  total       used       free     shared buffers     cached
-     Mem:         32158      31798        360          0 0      22092
-     -/+ buffers/cache:       9705      22453
-     Swap:            0          0          0
+About autodefrag: yes, I'm considering running a total defragmentation on my 
+whole drive ("/"), but unfortunately there is a bug which prevented me from 
+doing it: it's a defrag panic which was fixed in 3.13.
 
-Anybody got any suggestions?
+So either I wait until that kernel is out or I start a rebalance. The latter 
+seems better now :).
 
+Thank you.
 
+Ákos
+Ps.: sorry for not replying to your letter in the thread but that didn't 
+arrive in my mailbox.

@@ -1,47 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f179.google.com ([209.85.220.179]:50312 "EHLO
-	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752978Ab3LEATQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Dec 2013 19:19:16 -0500
-Received: by mail-vc0-f179.google.com with SMTP id ie18so12433423vcb.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Dec 2013 16:19:15 -0800 (PST)
+Received: from mail.jrs-s.net ([173.230.137.22]:36118 "EHLO mail.jrs-s.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751725Ab3LEGQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Dec 2013 01:16:12 -0500
+Received: from [192.168.100.50] (cpe-024-088-095-145.sc.res.rr.com [24.88.95.145])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: jim@jrs-s.net)
+	by mail.jrs-s.net (Postfix) with ESMTPSA id 446C4D2A4
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Dec 2013 01:16:10 -0500 (EST)
+Message-ID: <52A01A29.3020005@jrs-s.net>
+Date: Thu, 05 Dec 2013 01:16:09 -0500
+From: Jim Salter <jim@jrs-s.net>
 MIME-Version: 1.0
-In-Reply-To: <CALnfhZAEg1EgtDmZ6Qka=Ka-oaUmg++3mN3M=qOf5BHtEXXPpA@mail.gmail.com>
-References: <CALnfhZDKEs7LeTrHAk3oecJ2oOqo=VJzQqoeEy3qNB92s2CC7A@mail.gmail.com>
-	<loom.20131204T162331-814@post.gmane.org>
-	<20131204174909.GA6675@fb.com>
-	<CALnfhZAEg1EgtDmZ6Qka=Ka-oaUmg++3mN3M=qOf5BHtEXXPpA@mail.gmail.com>
-Date: Wed, 4 Dec 2013 19:19:15 -0500
-Message-ID: <CALnfhZDW4w4kuLPf1pYEMkW-d_aV+o7tHawbrNi+3JX7jeqzFA@mail.gmail.com>
-Subject: Re: btrfs-cleaner leaves CPU pinned to 100%
-From: Adam G <adam.gradzki@gmail.com>
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: ERROR: send ioctl failed with -12: Cannot allocate memory
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Good news:
+Sending a 585G snapshot from box1 to box2:
 
-I recreated the problem by booting with autodefrag enabled and loading
-a large VirtualBox image of Windows 8.1. The CPU is pinned to 100%
-even after closing the VirtualBox software.
+     # ionice -c3 btrfs send daily*2013-12-01* | pv -L40m -s585G | ssh 
+-c arcfour 10.0.0.40 btrfs receive /data/.snapshots/data/images
+     At subvol daily_[1385956801]_2013-12-01_23:00:01
+     At subvol daily_[1385956801]_2013-12-01_23:00:01
+     ERROR: send ioctl failed with -12: Cannot allocate 
+memory=======================================> ]     59% ETA 2:04:01
+      347GB 3:00:12 [32.8MB/s]
+[=====================================================================> ]
+     59%
+     ERROR: unexpected EOF in stream.
 
-Here is the perf with your suggested configuration:
+Send failed a little over halfway through with "Cannot allocate memory" 
+error.  Which is surprising, given that this is a relatively lightly 
+loaded 32G server.  Output of free -m, taken immediately after seeing 
+the error above:
 
-http://pastebin.ca/2492270
+     root@gwa-virt1:/data/.snapshots/data/images# free -m
+                  total       used       free     shared buffers     cached
+     Mem:         32158      31798        360          0 0      22092
+     -/+ buffers/cache:       9705      22453
+     Swap:            0          0          0
 
-~ Adam Gradzki
+Anybody got any suggestions?
 
-On Wed, Dec 4, 2013 at 6:58 PM, Adam G <adam.gradzki@gmail.com> wrote:
-> Hi Josef,
->
-> I do not have any snapshots at the moment. This is a new filesystem
-> created with the 3.12 kernel last week. The filesystem is on a laptop
-> that sees very little load on the file system and there is plenty of
-> free space available on my two btrfs partitions.
->
-> I will reboot with autodefrag enabled in fstab right now to see if I
-> can capture the stacktraces for you.
->
-> Regards,
-> Adam Gradzki
+

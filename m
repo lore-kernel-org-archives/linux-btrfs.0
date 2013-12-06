@@ -1,18 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from glockenspiel.complete.org ([78.47.53.23]:40189 "EHLO
+Received: from glockenspiel.complete.org ([78.47.53.23]:41090 "EHLO
 	glockenspiel.complete.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751601Ab3LFEsY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2013 23:48:24 -0500
-Message-ID: <52A15710.6010800@complete.org>
-Date: Thu, 05 Dec 2013 22:48:16 -0600
+	with ESMTP id S1756274Ab3LFOfj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 09:35:39 -0500
+Date: Fri, 6 Dec 2013 08:35:31 -0600
 From: John Goerzen <jgoerzen@complete.org>
-MIME-Version: 1.0
 To: russell@coker.com.au
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Extremely slow metadata performance
-References: <52A0BD44.9030509@complete.org> <5930575.71jgM0vnzg@xev>
+Message-ID: <20131206143531.GA18361@hephaestus.lan.complete.org>
+References: <52A0BD44.9030509@complete.org>
+ <5930575.71jgM0vnzg@xev>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
 In-Reply-To: <5930575.71jgM0vnzg@xev>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 

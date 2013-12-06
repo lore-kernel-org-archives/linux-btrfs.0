@@ -1,48 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55167 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751130Ab3LFQvf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Dec 2013 11:51:35 -0500
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, stable@vger.kernel.org
-Subject: [PATCH] btrfs: call mnt_drop_write after interrupted subvol deletion
-Date: Fri,  6 Dec 2013 17:51:32 +0100
-Message-Id: <1386348692-26122-1-git-send-email-dsterba@suse.cz>
+Received: from bombadil.infradead.org ([198.137.202.9]:54028 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753248Ab3LFTqm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 14:46:42 -0500
+Date: Fri, 6 Dec 2013 11:46:37 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
+Cc: Christoph Hellwig <hch@infradead.org>, viro@zeniv.linux.org.uk,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-mtd@lists.infradead.org, Mark Fasheh <mfasheh@suse.com>,
+        Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
+        xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
+        cluster-devel@redhat.com, linux-nfs@vger.kernel.org
+Subject: Re: [PATCH 00/18] Consolidate Posix ACL implementation
+Message-ID: <20131206194637.GA32122@infradead.org>
+References: <20131201115903.910559036@bombadil.infradead.org>
+ <279325185.39210.1386266234086.JavaMail.zimbra@linbit.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <279325185.39210.1386266234086.JavaMail.zimbra@linbit.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If btrfs_ioctl_snap_destroy blocks on the mutex and the process is
-killed, mnt_write count is unbalanced and leads to unmountable
-filesystem.
+On Thu, Dec 05, 2013 at 06:57:14PM +0100, Andreas Gruenbacher wrote:
+> I see that get_acl and set_acl are being defined in some but not all symlink inode operations (for example, btrfs them while ext4 does not), and that posix_acl_xattr_set() doesn't check if set_acl is defined.  Symlinks cannot have ACLs, so set_acl should either never be defined for symlinks (and a NULL check is then needed in posix_acl_xattr_set()), or it is defined in all inode operations, and S_ISNLNK() check is needed in posix_acl_xattr_set().  That latter check should probably be added in any case to be on the safe side.
 
-CC: stable@vger.kernel.org
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ioctl.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+Yes, we should add the check.  We also in general should not have
+set_acl/get_acl on links and I'll look over it.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d237af8..c10aabf 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2117,7 +2117,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 
- 	err = mutex_lock_killable_nested(&dir->i_mutex, I_MUTEX_PARENT);
- 	if (err == -EINTR)
--		goto out;
-+		goto out_drop_write;
- 	dentry = lookup_one_len(vol_args->name, parent, namelen);
- 	if (IS_ERR(dentry)) {
- 		err = PTR_ERR(dentry);
-@@ -2280,6 +2280,7 @@ out_dput:
- 	dput(dentry);
- out_unlock_dir:
- 	mutex_unlock(&dir->i_mutex);
-+out_drop_write:
- 	mnt_drop_write_file(file);
- out:
- 	kfree(vol_args);
--- 
-1.7.9
+> Patch 6 also declares posix_acl_prepare() but this function is never introduced; this must be a leftover from a previous version.
+
+Indeed.
+
+Thanks for the review!
 

@@ -1,83 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17566 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750752Ab3LFGEb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 01:04:31 -0500
-Date: Fri, 6 Dec 2013 14:04:19 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+Received: from mail-bk0-f47.google.com ([209.85.214.47]:37549 "EHLO
+	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754386Ab3LFMqg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 07:46:36 -0500
+Received: by mail-bk0-f47.google.com with SMTP id mx12so275976bkb.20
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Dec 2013 04:46:35 -0800 (PST)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+To: bo.li.liu@oracle.com
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
-Message-ID: <20131206060419.GA20595@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1531404.tFNCiHaLVH@linux-suse.hu>
- <20131204021507.GH18095@localhost.localdomain>
- <2467502.UPcdayreHd@linux-suse.hu>
+Date: Fri, 06 Dec 2013 13:46:10 +0100
+Message-ID: <14005207.4jWyJLzXAX@linux-suse.hu>
+In-Reply-To: <20131206060419.GA20595@localhost.localdomain>
+References: <1531404.tFNCiHaLVH@linux-suse.hu> <2467502.UPcdayreHd@linux-suse.hu> <20131206060419.GA20595@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <2467502.UPcdayreHd@linux-suse.hu>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 04, 2013 at 01:41:42PM +0100, Szőts Ákos wrote:
-> Thank you for your answer.
+A következőt írtad ekkor: 2013. december 6. 14:04:19
+> Could you please try the following and show me the output of dmesg?
 > 
-> Here are the "blocked states" logs. Since I had a plenty of time, I made 
-> multiple of them. The last two are the longest of them.
-> 
-> - http://paste.opensuse.org/view/raw/51654551
-> - http://paste.opensuse.org/view/raw/39005796
-> - http://paste.opensuse.org/view/raw/38028651
-> - http://paste.opensuse.org/view/raw/21592065
-> - http://paste.opensuse.org/view/raw/46655344
-> - http://paste.opensuse.org/view/raw/26821272
-> 
-> Ákos
+> thanks,
+> -liubo
 
-Could you please try the following and show me the output of dmesg?
+The following happened:
+- I upgraded to 3.13.0-rc2-6.ge7c00d8 (since the original 3.12 kernel with 
+SUSE patches is not available anymore)
+- Patched it and booted from that, compiled the NVIDIA driver
+- and suddenly everything started to work fine. Now I don't have to wait 6 
+minutes for the [btrfs-ino-cache] process.
 
-thanks,
--liubo
+One thing I noticed: before any logging would start, kernel prints out some 
+(initramfs?) messages, like:
+"Waiting for device /dev/disk/... to appear
+[...]
+fsck succeeded Mounting root read-write
+Mounting root /dev/disk/...
+mount -o rw,compress=lzo,space_cache,noatime,inode_cache /dev/... /root"
 
+And logging starts from this point.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 057be95..8f7711e 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2950,11 +2950,16 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
- 		return 0;
- 
- 	inode = lookup_free_ino_inode(root, path);
--	if (IS_ERR(inode))
-+	if (IS_ERR(inode)) {
-+		printk("%s: ino cache ino is NOT found\n", __func__);
- 		goto out;
-+	}
- 
--	if (root_gen != BTRFS_I(inode)->generation)
-+	if (root_gen != BTRFS_I(inode)->generation) {
-+		printk("%s: gen mismatch: root_gen_mem=%llu, root_gen=%llu, ino's gen=%llu\n",
-+			__func__, btrfs_root_generation(&root->root_item), root_gen, BTRFS_I(inode)->generation);
- 		goto out_put;
-+	}
- 
- 	ret = __load_free_space_cache(root, inode, ctl, path, 0);
- 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index ab485e5..6535139 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -473,7 +473,12 @@ again:
- 	}
- 
- 	spin_lock(&root->cache_lock);
--	if (root->cached != BTRFS_CACHE_FINISHED) {
-+
-+	/* ino cache has 3 state:
-+	 * BTRFS_CACHE_NO, BTRFS_CACHE_START, BTRFS_CACHE_FINISHED
-+	 */
-+	if (root->cached != BTRFS_CACHE_NO && root->cached != BTRFS_CACHE_FINISHED) {
-+		printk("%s: bail out because it's not FINISHED, cached=%d\n", __func__, root->cached);
- 		ret = -1;
- 		spin_unlock(&root->cache_lock);
- 		goto out_put;
+The interesting point is the initramfs mounting options: with the stock 3.12 
+kernel I had only the following: rw,compress=lzo,space_cache. But now it's 
+rw,compress=lzo,space_cache,noatime,inode_cache. In /etc/fstab the options are 
+intact for a month now. Maybe I should have regenerated the initrd when I 
+added the fstab mount options noatime and inode_cache?
+
+I searched for your extra kernel messages in dmesg, but I didn't find them, 
+although here is the dmesg output: http://paste.opensuse.org/30797527
+
+Thank you,
+
+Ákos

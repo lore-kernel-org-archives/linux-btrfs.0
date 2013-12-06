@@ -1,98 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34661 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755394Ab3LFN7U (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 08:59:20 -0500
-Date: Fri, 6 Dec 2013 21:58:37 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Pedro Fonseca <pfonseca@mpi-sws.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Null pointer oops when deleting item in btrfs_find_all_root()
-Message-ID: <20131206135836.GD20595@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <52A1CAA5.8090302@mpi-sws.org>
+Received: from infao0809.mpi-klsb.mpg.de ([139.19.1.49]:45205 "EHLO
+	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161499Ab3LFNBa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 08:01:30 -0500
+Message-ID: <52A1CAA5.8090302@mpi-sws.org>
+Date: Fri, 06 Dec 2013 14:01:25 +0100
+From: Pedro Fonseca <pfonseca@mpi-sws.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52A1CAA5.8090302@mpi-sws.org>
+To: linux-btrfs@vger.kernel.org
+CC: Liu Bo <bo.li.liu@oracle.com>
+Subject: Null pointer oops when deleting item in btrfs_find_all_root()
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 06, 2013 at 02:01:25PM +0100, Pedro Fonseca wrote:
-> Hi,
-> 
-> I've encountered another null pointer bug in btrfs_find_all_root().
-> 
-> It may be releated to a bug I previously reported to the mailing
-> list ("Null pointer dereference bug in btrfs_find_all_root"). But
-> this test ran on kernel version 3.12.2 and the oops was triggered
-> when deleting an item from the list. The actual workload (i.e. FS
-> operations) is similar though.
+Hi,
 
-Not sure if the following commit[1] has been merged in this 3.12.2,
-any chance to check it?
+I've encountered another null pointer bug in btrfs_find_all_root().
 
--liubo
+It may be releated to a bug I previously reported to the mailing list 
+("Null pointer dereference bug in btrfs_find_all_root"). But this test 
+ran on kernel version 3.12.2 and the oops was triggered when deleting an 
+item from the list. The actual workload (i.e. FS operations) is similar 
+though.
 
+Pedro
 
-[1]:
-commit 48ec47364b6d493f0a9cdc116977bf3f34e5c3ec
-Author: Liu Bo <bo.li.liu@oracle.com>
-Date:   Wed Oct 30 13:25:24 2013 +0800
+> [  833.475696] btrfs: new size for /dev/loop0 is 305135616
+> [  833.475696] btrfs: relocating block group 20971520 flags 1
+> [  862.226474] BUG: unable to handle kernel NULL pointer dereference 
+> at   (null)
+> [  862.226474] IP: [<c1208b41>] __list_del_entry+0x4/0x71
+> [  862.226474] *pde = 00000000
+> [  862.226474] Oops: 0000 [#1] SMP
+> [  862.226474] Modules linked in: btrfs zlib_deflate zlib_inflate loop 
+> rtc_cmos freq_table tpm_tis pcspkr i2c_piix4
+> [  862.226474] CPU: 3 PID: 2729 Comm: btrfs-endio-wri Not tainted 
+> 3.12.2 #2
+> [  862.226474] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  862.226474] task: df556370 ti: c4da4000 task.ti: c4da4000
+> [  862.226474] EIP: 0060:[<c1208b41>] EFLAGS: 00000207 CPU: 3
+> [  862.226474] EIP is at __list_del_entry+0x4/0x71
+> [  862.226474] EAX: 00000000 EBX: 00000000 ECX: c4da5d18 EDX: d9ccc5e8
+> [  862.226474] ESI: c4da5d10 EDI: 00000000 EBP: c4da5ca4 ESP: c4da5ca0
+> [  862.226474]  DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+> [  862.226474] CR0: 8005003b CR2: 00000000 CR3: 00014000 CR4: 00000690
+> [  862.226474] DR0: 00000000 DR1: 00000000 DR2: 00000000 DR3: 00000000
+> [  862.226474] DR6: 00000000 DR7: 00000000
+> [  862.226474] Stack:
+> [  862.226474]  00000000 c4da5cb0 c1208bb9 00000000 c4da5d60 e1871573 
+> dec488c0 00000286
+> [  862.226474]  d9ccc5e8 c4da5cd8 00000286 d9ccc5e8 00000000 00bc5000 
+> 000000b0 def33000
+> [  862.226474]  d9d434c8 00000000 d9c9c2a8 dee94a00 00000490 d9ccc5e8 
+> c4da5d18 00000000
+> [  862.226474] Call Trace:
+> [  862.226474]  [<c1208bb9>] list_del+0xb/0x1b
+> [  862.226474]  [<e1871573>] find_parent_nodes+0xeff/0xf57 [btrfs]
+> [  862.226474]  [<e1871645>] btrfs_find_all_roots+0x67/0xba [btrfs]
+> [  862.226474]  [<e1871d21>] iterate_extent_inodes+0xfa/0x1b9 [btrfs]
+> [  862.226474]  [<e1871e5d>] iterate_inodes_from_logical+0x7d/0x93 [btrfs]
+> [  862.226474]  [<e182e7f2>] ? btrfs_clear_bit_hook+0x1f9/0x1f9 [btrfs]
+> [  862.226474]  [<e182d355>] record_extent_backrefs+0x50/0x8a [btrfs]
+> [  862.226474]  [<e182e7f2>] ? btrfs_clear_bit_hook+0x1f9/0x1f9 [btrfs]
+> [  862.226474]  [<e1835778>] btrfs_finish_ordered_io+0x7af/0x8ad [btrfs]
+> [  862.226474]  [<e1835881>] finish_ordered_fn+0xb/0xd [btrfs]
+> [  862.226474]  [<e184fcf0>] worker_loop+0xf5/0x3d1 [btrfs]
+> [  862.226474]  [<e184fbfb>] ? btrfs_queue_worker+0x1e4/0x1e4 [btrfs]
+> [  862.226474]  [<c103e612>] kthread+0x6e/0x73
+> [  862.226474]  [<c15d01d7>] ret_from_kernel_thread+0x1b/0x28
+> [  862.226474]  [<c103e5a4>] ? __kthread_parkme+0x54/0x54
+> [  862.226474] Code: 56 68 09 ed 82 c1 6a 5e 68 bd ec 82 c1 e8 c6 2b 
+> e2 ff 83 c4 18 89 37 89 5f 04 89 3b 89 7e 04 8d 65 f4 5b 5e 5f 5d c3 
+> 55 89 e5 53 <8b> 08 8b 50 04 81 f9 00 01 10 00 75 41 68 00 01 10 00 50 
+> 68 5a
+> [  862.226474] EIP: [<c1208b41>] __list_del_entry+0x4/0x71 SS:ESP 
+> 0068:c4da5ca0
+> [  862.226474] CR2: 0000000000000000
+> [  862.226474] ---[ end trace e9a87cf6306682c8 ]---
 
-    Btrfs: fix a crash when running balance and defrag concurrently
-    
-    Running balance and defrag concurrently can end up with a crash:
-    
-    kernel BUG at fs/btrfs/relocation.c:4528!
-    RIP: 0010:[<ffffffffa01ac33b>]  [<ffffffffa01ac33b>] btrfs_reloc_cow_block+ 0x1eb/0x230 [btrfs]
-    Call Trace:
-      [<ffffffffa01398c1>] ? update_ref_for_cow+0x241/0x380 [btrfs]
-      [<ffffffffa0180bad>] ? copy_extent_buffer+0xad/0x110 [btrfs]
-      [<ffffffffa0139da1>] __btrfs_cow_block+0x3a1/0x520 [btrfs]
-      [<ffffffffa013a0b6>] btrfs_cow_block+0x116/0x1b0 [btrfs]
-      [<ffffffffa013ddad>] btrfs_search_slot+0x43d/0x970 [btrfs]
-      [<ffffffffa0153c57>] btrfs_lookup_file_extent+0x37/0x40 [btrfs]
-      [<ffffffffa0172a5e>] __btrfs_drop_extents+0x11e/0xae0 [btrfs]
-      [<ffffffffa013b3fd>] ? generic_bin_search.constprop.39+0x8d/0x1a0 [btrfs]
-      [<ffffffff8117d14a>] ? kmem_cache_alloc+0x1da/0x200
-      [<ffffffffa0138e7a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
-      [<ffffffffa0173ef0>] btrfs_drop_extents+0x60/0x90 [btrfs]
-      [<ffffffffa016b24d>] relink_extent_backref+0x2ed/0x780 [btrfs]
-      [<ffffffffa0162fe0>] ? btrfs_submit_bio_hook+0x1e0/0x1e0 [btrfs]
-      [<ffffffffa01b8ed7>] ? iterate_inodes_from_logical+0x87/0xa0 [btrfs]
-      [<ffffffffa016b909>] btrfs_finish_ordered_io+0x229/0xac0 [btrfs]
-      [<ffffffffa016c3b5>] finish_ordered_fn+0x15/0x20 [btrfs]
-      [<ffffffffa018cbe5>] worker_loop+0x125/0x4e0 [btrfs]
-      [<ffffffffa018cac0>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
-      [<ffffffff81075ea0>] kthread+0xc0/0xd0
-      [<ffffffff81075de0>] ? insert_kthread_work+0x40/0x40
-      [<ffffffff8164796c>] ret_from_fork+0x7c/0xb0
-      [<ffffffff81075de0>] ? insert_kthread_work+0x40/0x40
-    ----------------------------------------------------------------------
-    
-    It turns out to be that balance operation will bump root's @last_snapshot,
-    which enables snapshot-aware defrag path, and backref walking stuff will
-    find data reloc tree as refs' parent, and hit the BUG_ON() during COW.
-    
-    As data reloc tree's data is just for relocation purpose, and will be deleted right
-    after relocation is done, it's unnecessary to walk those refs belonged to data reloc
-    tree, it'd be better to skip them.
-    
-    Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-    Signed-off-by: Josef Bacik <jbacik@fusionio.com>
-    Signed-off-by: Chris Mason <chris.mason@fusionio.com>
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 721936a..30d24cf 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -185,6 +185,9 @@ static int __add_prelim_ref(struct list_head *head, u64 root_id,
- {
- 	struct __prelim_ref *ref;
- 
-+	if (root_id == BTRFS_DATA_RELOC_TREE_OBJECTID)
-+		return 0;
-+
- 	ref = kmem_cache_alloc(btrfs_prelim_ref_cache, gfp_mask);
- 	if (!ref)
- 		return -ENOMEM;

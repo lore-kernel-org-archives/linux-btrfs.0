@@ -1,56 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42425 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750723Ab3LETjy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Dec 2013 14:39:54 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Voem8-0005pL-SB
-	for linux-btrfs@vger.kernel.org; Thu, 05 Dec 2013 20:39:52 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2013 20:39:52 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2013 20:39:52 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Extremely slow metadata performance
-Date: Thu, 5 Dec 2013 19:39:30 +0000 (UTC)
-Message-ID: <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
-References: <52A0BD44.9030509@complete.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:17566 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750752Ab3LFGEb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 01:04:31 -0500
+Date: Fri, 6 Dec 2013 14:04:19 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
+Message-ID: <20131206060419.GA20595@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1531404.tFNCiHaLVH@linux-suse.hu>
+ <20131204021507.GH18095@localhost.localdomain>
+ <2467502.UPcdayreHd@linux-suse.hu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <2467502.UPcdayreHd@linux-suse.hu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-John Goerzen posted on Thu, 05 Dec 2013 11:52:04 -0600 as excerpted:
-
-> Hello,
+On Wed, Dec 04, 2013 at 01:41:42PM +0100, Szőts Ákos wrote:
+> Thank you for your answer.
 > 
-> I have observed extremely slow metadata performance with btrfs. This may
-> be a bit of a nightmare scenario; it involves untarring a backup of
-> 1.6TB of backuppc data, which contains millions of hardlinks and much
-> data, onto USB 2.0 disks.
+> Here are the "blocked states" logs. Since I had a plenty of time, I made 
+> multiple of them. The last two are the longest of them.
+> 
+> - http://paste.opensuse.org/view/raw/51654551
+> - http://paste.opensuse.org/view/raw/39005796
+> - http://paste.opensuse.org/view/raw/38028651
+> - http://paste.opensuse.org/view/raw/21592065
+> - http://paste.opensuse.org/view/raw/46655344
+> - http://paste.opensuse.org/view/raw/26821272
+> 
+> Ákos
 
-> Is this behavior known and expected?
+Could you please try the following and show me the output of dmesg?
 
-Yes.  Btrfs doesn't do well with lots of hardlinks and indeed until 
-relatively recently had a hard-limit on the number of hardlinks possible 
-within a directory, that hardlink-heavy use-cases would regularly hit.  
-That was worked around, but there's an additional level of indirection 
-once the first level link-pool is filled, and you're not the first to 
-have observed that btrfs performance isn't the best in that sort of 
-scenario.  That's known.
+thanks,
+-liubo
 
-Other filesystems will probably do quite a bit better for hardlink style 
-backups and other hardlink-heavy use-cases.  Either that, or consider 
-using btrfs, but with some other form of backup, possibly btrfs 
-snapshots, or COW reflinks.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 057be95..8f7711e 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2950,11 +2950,16 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 		return 0;
+ 
+ 	inode = lookup_free_ino_inode(root, path);
+-	if (IS_ERR(inode))
++	if (IS_ERR(inode)) {
++		printk("%s: ino cache ino is NOT found\n", __func__);
+ 		goto out;
++	}
+ 
+-	if (root_gen != BTRFS_I(inode)->generation)
++	if (root_gen != BTRFS_I(inode)->generation) {
++		printk("%s: gen mismatch: root_gen_mem=%llu, root_gen=%llu, ino's gen=%llu\n",
++			__func__, btrfs_root_generation(&root->root_item), root_gen, BTRFS_I(inode)->generation);
+ 		goto out_put;
++	}
+ 
+ 	ret = __load_free_space_cache(root, inode, ctl, path, 0);
+ 
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index ab485e5..6535139 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -473,7 +473,12 @@ again:
+ 	}
+ 
+ 	spin_lock(&root->cache_lock);
+-	if (root->cached != BTRFS_CACHE_FINISHED) {
++
++	/* ino cache has 3 state:
++	 * BTRFS_CACHE_NO, BTRFS_CACHE_START, BTRFS_CACHE_FINISHED
++	 */
++	if (root->cached != BTRFS_CACHE_NO && root->cached != BTRFS_CACHE_FINISHED) {
++		printk("%s: bail out because it's not FINISHED, cached=%d\n", __func__, root->cached);
+ 		ret = -1;
+ 		spin_unlock(&root->cache_lock);
+ 		goto out_put;

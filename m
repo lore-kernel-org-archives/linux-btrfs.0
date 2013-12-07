@@ -1,47 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:54038 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758023Ab3LFTrW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Dec 2013 14:47:22 -0500
-Date: Fri, 6 Dec 2013 11:47:20 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Steven Whitehouse <swhiteho@redhat.com>
-Cc: Christoph Hellwig <hch@infradead.org>, viro@zeniv.linux.org.uk,
-        xfs@oss.sgi.com, reiserfs-devel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mtd@lists.infradead.org, jfs-discussion@lists.sourceforge.net,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [Cluster-devel] [PATCH 16/18] gfs2: use generic posix ACL
- infrastructure
-Message-ID: <20131206194720.GB32122@infradead.org>
-References: <20131201115903.910559036@bombadil.infradead.org>
- <20131201120656.539995924@bombadil.infradead.org>
- <1386159157.2711.11.camel@menhir>
-MIME-Version: 1.0
+Received: from euve10025.vserver.de ([62.75.240.21]:59268 "EHLO ensieve.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754375Ab3LGV4f convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 16:56:35 -0500
+Received: from frnk-5f744b17.pool.mediaways.net ([95.116.75.23]:63118 helo=[192.168.0.110])
+	by ensieve.org with esmtpsa (TLS1.0:RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.80)
+	(envelope-from <pascal@ensieve.org>)
+	id 1VpPTN-0006vA-Gv
+	for linux-btrfs@vger.kernel.org; Sat, 07 Dec 2013 21:31:37 +0000
+From: Pascal Germroth <pascal@ensieve.org>
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1386159157.2711.11.camel@menhir>
+Subject: clone syscall fails for bedup-deduplicated files
+Message-Id: <1A5C61DD-175B-4220-BAB5-E5714810501B@ensieve.org>
+Date: Sat, 7 Dec 2013 22:31:30 +0100
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 7.0 \(1822\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 04, 2013 at 12:12:37PM +0000, Steven Whitehouse wrote:
-> >  		error = posix_acl_equiv_mode(acl, &mode);
-> > +		if (error < 0)
-> >  
-> Andy Price has pointed out a missing "return error;" here
-> 
-> > -		if (error <= 0) {
-> > -			posix_acl_release(acl);
-> > +		if (error == 0)
-> >  			acl = NULL;
-> >  
-> > -			if (error < 0)
-> > -				return error;
-> > -		}
-> > -
-> 
-> Also, there seems to be a white space error in the xfs patch around line
-> 170 in fs/xfs/xfs_iops.c where there is an added "if (default_acl)" with
-> a space before the tab,
+Hi,
 
-I'll take care of these for the next version.
+Running a 3.8 kernel I've been using bedup to deduplicate some files, for example two identical 500MB files A & B now share data chunks.
+Running a 3.11 kernel, I wanted to clone some more files, but those previously deduplicated by bedup don't work, for example: `cp --reflink A C`:
+
+open("A", O_WRONLY|O_TRUNC) = 4
+fstat(4, {st_mode=S_IFREG|0775, st_size=0, ...}) = 0
+ioctl(4, BTRFS_IOC_CLONE, 0x3) = -1 EINVAL (Invalid argument)
+
+But I can clone a duplicate of the file just fine: `cp A D; cp --reflink D E` copies A to D and then clones D to E.
+So I guess the way bedup deduplicated A broke the btrfs structure in a way that forbids further cloning, but a newly generated file like D can still be cloned.
+
+How could bedup break this, did it manipulate the structures directly in 3.8 without the syscall and corrupt something? How can I repair this? Defragmenting A had no effect.
+
+(If you answer, please CC me directly, I'm not currently subscribed to the list)
+
+Cheers,
+
+-- 
+Pascal Germroth

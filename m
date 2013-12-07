@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qe0-f50.google.com ([209.85.128.50]:48623 "EHLO
-	mail-qe0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754796Ab3LGPBo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 10:01:44 -0500
-Received: by mail-qe0-f50.google.com with SMTP id 1so1469881qec.37
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 07:01:44 -0800 (PST)
+Received: from mail-qe0-f41.google.com ([209.85.128.41]:42416 "EHLO
+	mail-qe0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754902Ab3LGPfd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 10:35:33 -0500
+Received: by mail-qe0-f41.google.com with SMTP id gh4so1555910qeb.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 07:35:30 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <pan$eae06$5585191a$304325c1$fe3db1e1@cox.net>
 References: <CADdntNuHYRAK_kcDJf1bnJeuTmc=CRx7TeyJPv4hsW9NPyd6mg@mail.gmail.com>
 	<pan$4b17c$7a4e1e36$4569b4d4$d3dc2dcf@cox.net>
 	<CADdntNt_5yvz0KC3StkJ0sOEw55oHWq4fV0qfOLaXymrYWOLUA@mail.gmail.com>
 	<pan$eae06$5585191a$304325c1$fe3db1e1@cox.net>
-Date: Sat, 7 Dec 2013 16:01:43 +0100
-Message-ID: <CADdntNuJtN=G3FyzKjFn7Sd=qQ-YWLEKzHkM6ta61PePn1kzDA@mail.gmail.com>
+Date: Sat, 7 Dec 2013 16:35:30 +0100
+Message-ID: <CADdntNvokc0sUdfaMjUMhe7+pYoPYv6qwSZGZ691SHZc9tPihQ@mail.gmail.com>
 Subject: Re: Can't remove empty directory after kernel panic, no errors in dmesg
 From: Niklas Schnelle <niklas.schnelle@gmail.com>
 To: Duncan <1i5t5.duncan@cox.net>
@@ -21,17 +21,22 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Well this system is a laptop with an mSATA disk I don't want to waste too
-much space on. However I do use btrfs send, to the laptops hard drive as well
-as to another system, as well as normal backups for everything that is not
-in git anyway.
-I'm currently working on a university course paper, so I had one of those
-"Thank the great Turing that I am doing that with LaTeX and have everything
-is in git on another system" moments. At least that also makes sure
-that those files are not corrupted.
+Ok here is yet another update, I compiled the current git version
+of btrfs progs on the Ubuntu Live System and ran that on my filesystem
+first as btrfs check then with repair.
+Here is the output after repair:
+http://niklas.sceneproject.org/btrfs_out.txt
 
-Anyway yes I used an Ubuntu 13.10 Live system, I will have to see whether
-it actually got "btrfs check".
+Somehow I still don't see btrfs errors when actually running with that
+fillesystem,
+even though that looks like a lot of errors to me. I hope
+this information is useful. I guess I'll just try my luck until
+my course paper is due and then it might be best to just get my
+btrfs sent backups even though they are a few weeks old,
+thankfully I'm pretty sure everything changed since then is
+either updates, in git or in Dropbox.
+
+Thanks for the information and help anyway.
 
 On Sat, Dec 7, 2013 at 2:59 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 > Niklas Schnelle posted on Sat, 07 Dec 2013 12:37:05 +0000 as excerpted:

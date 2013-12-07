@@ -1,69 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49517 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753073Ab3LGRJj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 7 Dec 2013 12:09:39 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VpLNq-0006iE-5x
-	for linux-btrfs@vger.kernel.org; Sat, 07 Dec 2013 18:09:38 +0100
-Received: from dyndsl-080-228-187-169.ewe-ip-backbone.de ([80.228.187.169])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 18:09:38 +0100
-Received: from hurikhan77+btrfs by dyndsl-080-228-187-169.ewe-ip-backbone.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 18:09:38 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Extremely slow metadata performance
-Date: Sat, 07 Dec 2013 18:10:09 +0100
-Message-ID: <hc1cna-pru.ln1@hurikhan77.spdns.de>
-References: <52A0BD44.9030509@complete.org> <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net> <20131207092216.GL22683@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56098 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753637Ab3LGWaz convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 7 Dec 2013 17:30:55 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Can't remove empty directory after kernel panic, no errors in dmesg
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CADdntNuHYRAK_kcDJf1bnJeuTmc=CRx7TeyJPv4hsW9NPyd6mg@mail.gmail.com>
+Date: Sat, 7 Dec 2013 15:30:46 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <A46650B8-A3A8-467E-B1D2-CACB06833B1C@colorremedies.com>
+References: <CADdntNuHYRAK_kcDJf1bnJeuTmc=CRx7TeyJPv4hsW9NPyd6mg@mail.gmail.com>
+To: Niklas Schnelle <niklas.schnelle@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN <marc@merlins.org> schrieb:
 
-> I'm one of those people who uses cp -al and rsync to do backups. Indeed
-> I should likely rework the flow to use subvolumes and snapshots.
-> You also mentioned reflinks, and it sounds like I can use
-> cp -a --reflink instead of cp -al.
+On Dec 7, 2013, at 3:36 AM, Niklas Schnelle <niklas.schnelle@gmail.com> wrote:
+
+> Hi List,
 > 
-> Also, would the dedupe code in btrfs effectively allow for the same
-> thing after the fact if you use cp without --reflink? Is it stable
-> enough nowadays?
+> so first the basics. I'm running Arch Linux with 3.13-rc2, btrfs-progs
+> 0.20rc1.3-2 from the repo and I'm using a SSD.
 
-You may want to try my backup script as a starting point:
+I don't see a dmesg, which should contain some information if there are correct or uncorrected problems at mount time.
 
-https://gist.github.com/kakra/5520370
+The first thing to try is the mount time recovery option. It's interesting considering how to do this for rootfs on btrfs, but I think simplest is to just add it to fstab and reboot. Then remove it. Again, check dmesg to see how the recovery went, and then check to see if you have the same problems.
 
-It uses a scratch area to create a mirror of your system, then - if it was 
-successful - take a snapshot of it. Next time the backup runs, the scratch 
-area is updated with rsync using its features for in-file delta updates, so 
-you get optimal small deltas between each snapshot. Normally, rsync would 
-create a new copy of each file in local mode, so using these features is 
-important.
+Another way to do it is to change the kernel parameters editing the e.g. GRUB menu entry at boot time. Change the ro to rw, and add recovery to rootflags=. So if the current one is rootflags=subvol=root, then change to rootflags=recovery,subvol=root. This acts as a one time thing.
 
-My script is meant to be run from systemd with auto-mount backup disk. But 
-it should be easy to adapt to cron if you need to. All the work is done 
-within the bash script.
+Ideally I'd like to see the kernel spit out something systemd could use that would cause it to generate a service to remount using recovery (and if multiple devices, possibly degraded, and if either of those fail, to then generate a remount service for ro,recovery and fallback to emergency.target). That way more of this can be done automagically.
 
-You may wonder about the scratch area. I took this route to ensure that 
-snapshots always contain clean and consistent backups. If there was a 
-problem during rsync, there will be no snapshot. It's that easy. Usually I 
-see other solutions taking a snapshot first, then modify this snapshot. So 
-you never know if snapshots are clean and consistent. With my approach you 
-get clean snapshots and even if the last backup broke and you are thus 
-missing a snapshot, you still have data in the scratch area to recover from.
+So try the recovery mount option first. Before you try btrfs check (or btrfsck), you should upgrade your btrfs-progs to something more recent. v3.12 is current and is what distros should build as of kernel 3.12.
 
-In my scenario my backup script is able to hold several weeks of daily 
-backups in the backlog. The destination is mounted with compress-force=zlib 
-so I get good compression, too. However, I still had no time for 
-implementing automatic cleanup of old snapshots. Feel free to add it.
 
-HTH
-Kai
+Chris Murphy
 

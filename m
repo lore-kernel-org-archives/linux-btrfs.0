@@ -1,96 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41509 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754902Ab3LGN7g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 7 Dec 2013 08:59:36 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VpIPt-0002Vz-Fn
-	for linux-btrfs@vger.kernel.org; Sat, 07 Dec 2013 14:59:33 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 14:59:33 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 14:59:33 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Can't remove empty directory after kernel panic, no errors in
- dmesg
-Date: Sat, 7 Dec 2013 13:59:12 +0000 (UTC)
-Message-ID: <pan$eae06$5585191a$304325c1$fe3db1e1@cox.net>
-References: <CADdntNuHYRAK_kcDJf1bnJeuTmc=CRx7TeyJPv4hsW9NPyd6mg@mail.gmail.com>
-	<pan$4b17c$7a4e1e36$4569b4d4$d3dc2dcf@cox.net>
-	<CADdntNt_5yvz0KC3StkJ0sOEw55oHWq4fV0qfOLaXymrYWOLUA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from magic.merlins.org ([209.81.13.136]:35123 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754834Ab3LGOV5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 09:21:57 -0500
+Date: Sat, 7 Dec 2013 01:22:16 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Extremely slow metadata performance
+Message-ID: <20131207092216.GL22683@merlins.org>
+References: <52A0BD44.9030509@complete.org>
+ <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Niklas Schnelle posted on Sat, 07 Dec 2013 12:37:05 +0000 as excerpted:
+On Thu, Dec 05, 2013 at 07:39:30PM +0000, Duncan wrote:
+> John Goerzen posted on Thu, 05 Dec 2013 11:52:04 -0600 as excerpted:
+> 
+> > Hello,
+> > 
+> > I have observed extremely slow metadata performance with btrfs. This may
+> > be a bit of a nightmare scenario; it involves untarring a backup of
+> > 1.6TB of backuppc data, which contains millions of hardlinks and much
+> > data, onto USB 2.0 disks.
+> 
+> > Is this behavior known and expected?
+> 
+> Yes.  Btrfs doesn't do well with lots of hardlinks and indeed until 
+> relatively recently had a hard-limit on the number of hardlinks possible 
+> within a directory, that hardlink-heavy use-cases would regularly hit.  
+> That was worked around, but there's an additional level of indirection 
+> once the first level link-pool is filled, and you're not the first to 
+> have observed that btrfs performance isn't the best in that sort of 
+> scenario.  That's known.
+> 
+> Other filesystems will probably do quite a bit better for hardlink style 
+> backups and other hardlink-heavy use-cases.  Either that, or consider 
+> using btrfs, but with some other form of backup, possibly btrfs 
+> snapshots, or COW reflinks.
 
-> root 470 inode 60984 errors 200
-> root 470 inode 62463 errors 200
+Thanks for explaining this.
 
-Three quick things to note:
+I'm one of those people who uses cp -al and rsync to do backups. Indeed
+I should likely rework the flow to use subvolumes and snapshots.
+You also mentioned reflinks, and it sounds like I can use
+cp -a --reflink instead of cp -al.
 
-1) As another thread pointed out recently, that's not 200 errors, but an 
-error type bitmask, with the 0x200 bit set.  Based on that other thread 
-(I'm not a dev and haven't actually looked myself), there's comments/
-varnames in the code (unfortunately only, no non-dev admin-level 
-documentation anywhere that I know of) saying what each bitflag 
-represents.
+Also, would the dedupe code in btrfs effectively allow for the same
+thing after the fact if you use cp without --reflink? Is it stable
+enough nowadays?
 
-2) I had meant to mention earlier but forgot:  As announced on this list 
-IIRC shortly after the kernel 3.12 release, btrfs-progs is now versioned 
-similar to the kernel and will follow a similar release schedule as long 
-as the level of new code warrants (possibly skipping kernel versions here 
-and there as the code ultimately stabilizes and churn slows down), with 
-the first release following that version scheme being 3.12.
-
-Your reported version number is v0.20-rc1, no git commit snapshot 
-indication, and IIRC that was released late last year, so it's about a 
-year old now.  You may wish to try something a bit newer, to match your 
-3.13-release-candidate kernel version.  There have been a number of fixes 
-since v0.20-rc1 (including btrfsck being made part of the main btrfs 
-command now, as btrfs check) and it's just possible a current version may 
-fix your issues.
-
-3) You asked in what might have been a private mail as I didn't see it 
-hit the list, what liveCD, etc, to use, since it's a rootfs btrfs that 
-you're working with.  The list mail I'm replying to says you tried a live 
-stick (doesn't say the version), so you've worked around that to some 
-extent, but as a more general followup based on the multiple independent 
-btrfs partitions scheme I use that I mentioned earlier in the thread...
-
-One of the best setups I've come up with over a decade's worth of 
-experience here is, as I said, multiple independent partitions, with the 
-first level backup actually on an identically sized partition on the same 
-physical device.
-
-So I have a working rootfs and a rootbak, identically sized independent 
-partitions, with snapshot copy of the working root taken at a point I'm 
-comfortable that it's stable.  There's further copies on other (also 
-bootable) media, on reiserfs in case the after all still under heavy 
-development btrfs blows up both my working root and primary backup.
-
-That very nicely solves the whole rescue disk issue, since I effectively 
-have my entire installed and configured system, *NOT* just a few rescue 
-tools, as a snapshot taken when I did the backup, as ready to go now as 
-it was when I did the backup, even if it's slightly out of date now and 
-would need an update to bring it current.  That means all documentation, 
-a fully configured X and kde install, media players so I can listen to 
-music while I'm fixing the system, it's all there and ready to go, just 
-as it was at the time I did the backup.
-
-(I actually keep multiple fstab layouts around too, maintained with a 
-script so I can update one and run the script to update the others, with 
-fstab itself actually being a symlink to the active one, making selecting 
-an fstab layout as easy as updating a symlink from single-user-mode.)
-
+Thanks,
+Marc
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

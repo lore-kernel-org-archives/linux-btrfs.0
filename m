@@ -1,62 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:35123 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754834Ab3LGOV5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 09:21:57 -0500
-Date: Sat, 7 Dec 2013 01:22:16 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-bk0-f45.google.com ([209.85.214.45]:43467 "EHLO
+	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754786Ab3LGOst convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 09:48:49 -0500
+Received: by mail-bk0-f45.google.com with SMTP id mx13so731921bkb.18
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 06:48:48 -0800 (PST)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+To: bo.li.liu@oracle.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Extremely slow metadata performance
-Message-ID: <20131207092216.GL22683@merlins.org>
-References: <52A0BD44.9030509@complete.org>
- <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
+Subject: Re: btrfs-ino-cache runs on every boot for 6 minutes
+Date: Sat, 07 Dec 2013 15:48:23 +0100
+Message-ID: <2569324.x9XeZ2FMSO@linux-suse.hu>
+In-Reply-To: <20131206133033.GC20595@localhost.localdomain>
+References: <1531404.tFNCiHaLVH@linux-suse.hu> <14005207.4jWyJLzXAX@linux-suse.hu> <20131206133033.GC20595@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$950f8$ef940490$829198f6$4f5f85c7@cox.net>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 05, 2013 at 07:39:30PM +0000, Duncan wrote:
-> John Goerzen posted on Thu, 05 Dec 2013 11:52:04 -0600 as excerpted:
+Liu Bo a következőt írta ekkor: 2013. december 6. 21:30:34
+> It seems that we should owe credit to the updated 3.13 kernel, could you
+> please try again 3.13 kernel without the patch?
 > 
-> > Hello,
-> > 
-> > I have observed extremely slow metadata performance with btrfs. This may
-> > be a bit of a nightmare scenario; it involves untarring a backup of
-> > 1.6TB of backuppc data, which contains millions of hardlinks and much
-> > data, onto USB 2.0 disks.
-> 
-> > Is this behavior known and expected?
-> 
-> Yes.  Btrfs doesn't do well with lots of hardlinks and indeed until 
-> relatively recently had a hard-limit on the number of hardlinks possible 
-> within a directory, that hardlink-heavy use-cases would regularly hit.  
-> That was worked around, but there's an additional level of indirection 
-> once the first level link-pool is filled, and you're not the first to 
-> have observed that btrfs performance isn't the best in that sort of 
-> scenario.  That's known.
-> 
-> Other filesystems will probably do quite a bit better for hardlink style 
-> backups and other hardlink-heavy use-cases.  Either that, or consider 
-> using btrfs, but with some other form of backup, possibly btrfs 
-> snapshots, or COW reflinks.
+> thanks,
+> -liubo
 
-Thanks for explaining this.
+I forcibly reinstalled the 3.13 kernel from the repository, booted from it 
+twice and yes, it really seems that this bug is fixed now.
 
-I'm one of those people who uses cp -al and rsync to do backups. Indeed
-I should likely rework the flow to use subvolumes and snapshots.
-You also mentioned reflinks, and it sounds like I can use
-cp -a --reflink instead of cp -al.
+Thank you for your time.
 
-Also, would the dedupe code in btrfs effectively allow for the same
-thing after the fact if you use cp without --reflink? Is it stable
-enough nowadays?
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Ákos

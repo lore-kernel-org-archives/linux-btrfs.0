@@ -1,119 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f44.google.com ([74.125.82.44]:37840 "EHLO
-	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754195Ab3LHA05 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 19:26:57 -0500
-Received: by mail-wg0-f44.google.com with SMTP id a1so2039364wgh.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 16:26:56 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: don't miss skinny extent items on delayed ref head contention
-Date: Sun,  8 Dec 2013 00:26:29 +0000
-Message-Id: <1386462389-25218-1-git-send-email-fdmanana@gmail.com>
+Received: from mail-bk0-f52.google.com ([209.85.214.52]:54053 "EHLO
+	mail-bk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752811Ab3LHAcK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 19:32:10 -0500
+Received: by mail-bk0-f52.google.com with SMTP id u14so841370bkz.39
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 16:32:09 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CAEzrpqfGNbFQ8wG7SWVJOp3pM3BwfAdO79VrOK-t9JiUFNCkUQ@mail.gmail.com>
+References: <20131129154525.GN25312@twin.jikos.cz>
+	<CAL3q7H7CmaKsnQQacpZck3zGV35ikhTwqX=Xg9eAiM97kb5TwA@mail.gmail.com>
+	<20131203164344.GW25312@twin.jikos.cz>
+	<CAEzrpqfGNbFQ8wG7SWVJOp3pM3BwfAdO79VrOK-t9JiUFNCkUQ@mail.gmail.com>
+Date: Sun, 8 Dec 2013 00:32:08 +0000
+Message-ID: <CAL3q7H4RGpAc1_Gedq6GeqK3HDZ3=asLHUk8Vn=_JYd56K6ufw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: optimize btrfs_lookup_extent_info() - extent
+ refcount mismatches?
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        clm@fb.com, jbacik@fb.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently extent-tree.c:btrfs_lookup_extent_info() can miss the lookup
-of skinny extent items. This can happen when the execution flow is the
-following:
+On Tue, Dec 3, 2013 at 6:28 PM, Josef Bacik <josef@toxicpanda.com> wrote:
+> On Tue, Dec 3, 2013 at 8:43 AM, David Sterba <dsterba@suse.cz> wrote:
+>> On Fri, Nov 29, 2013 at 07:55:37PM +0000, Filipe David Manana wrote:
+>>> On Fri, Nov 29, 2013 at 3:45 PM, David Sterba <dsterba@suse.cz> wrote:
+>>> > Hi,
+>>> >
+>>> > On Fri, Jul 05, 2013 at 09:32:05PM +0100, Filipe David Borba Manana wrote:
+>>> >> If we're looking for a metadata item in the tree and the
+>>> >> search fails with return value of 1, and the slot doesn't
+>>> >> point to the first item in the leaf, check if the previous
+>>> >> item in the leaf corresponds to an extent item for the same
+>>> >> object id - if it does, then don't do another tree search
+>>> >> to get it.
+>>> >
+>>> > I'm suspecting this patch to cause some trouble, see
+>>> > https://bugzilla.kernel.org/show_bug.cgi?id=64961
+>>>
+>>> What makes you believe the problem is exactly in this function?
+>>
+>> It was a first guess based on the stacktraces and last patch that
+>> touched the code. I've replied to mailinlist because it has higher
+>> visibility, number of bugreports in balance/relocation has been
+>> increasing lately (not blaming you).
+>>
+>>> I read it again, and I can't see how it can miss an extent item that
+>>> it couldn't before, specially without skinny metadata enabled.  Did
+>>> the fs had skinny metadata enabled?
+>>
+>> According to the updated bugzilla yes, and that's another possible
+>> cause although we haven't seen bugs with skinny metadata yet. There's
+>> another bugreport that has them enabled,
+>> https://bugzilla.kernel.org/show_bug.cgi?id=66411
 
-* We do an extent tree lookup and fail to find a skinny extent item;
+I found an issue in btrfs_lookup_extent_info() when skinny metadata is
+enabled. It can actually miss existing skinny extent items.
+The following patch fixes it and explains in detail the issue:
 
-* As a result, we attempt to see if a non-skinny extent item exists,
-  either by looking at previous item in the leaf or by doing another
-  full extent tree search;
+https://patchwork.kernel.org/patch/3305521/
 
-* We have a transaction and then we check for a matching delayed ref
-  head in the transaction's delayed refs rbtree;
+thanks
 
-* We find such delayed ref head and then we try to lock it with a
-  call to mutex_trylock();
+>>
+>
+> I've been seeing similar issues while testing my qgroups patches that
+> I don't think is related to my qgroup work.  I'm going to try and
+> track it down this week but I may not get to it until next week.
+> Thanks,
+>
+> Josef
 
-* The lock was contended so we jump to the label "again", which repeats
-  the extent tree search but for a non-skinny extent item, because we set
-  previously metadata variable to 0 and the search key to look for a
-  non-skinny extent-item;
 
-* After the jump (and after releasing the transaction's delayed refs
-  lock), a skinny extent item might have been added to the extent tree
-  but we will miss it because metadata is set to 0 and the search key
-  is set for a non-skinny extent-item.
 
-The fix here is to not reset metadata to 0 and to jump to the initial search
-key setup if the delayed ref head is contended, instead of jumping directly
-to the extent tree search label ("again").
-
-This issue was found while investigating the issue reported at Bugzilla 64961.
-
-David Sterba suspected this function was missing extent items, and that
-this could be caused by the last change to this function, which was made
-in the following patch:
-
-    [PATCH] Btrfs: optimize btrfs_lookup_extent_info()
-    (commit 74be9510876a66ad9826613ac8a526d26f9e7f01)
-
-But in fact this issue already existed before, because after failing to find
-a skinny extent item, the code set the search key for a non-skinny extent
-item, and on contention of a matching delayed ref head it would not search
-the extent tree for a skinny extent item anymore.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/extent-tree.c |   22 ++++++++++------------
- 1 file changed, 10 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 62d433f..c9f020e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -769,20 +769,19 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	if (metadata) {
--		key.objectid = bytenr;
--		key.type = BTRFS_METADATA_ITEM_KEY;
--		key.offset = offset;
--	} else {
--		key.objectid = bytenr;
--		key.type = BTRFS_EXTENT_ITEM_KEY;
--		key.offset = offset;
--	}
--
- 	if (!trans) {
- 		path->skip_locking = 1;
- 		path->search_commit_root = 1;
- 	}
-+
-+search_again:
-+	key.objectid = bytenr;
-+	key.offset = offset;
-+	if (metadata)
-+		key.type = BTRFS_METADATA_ITEM_KEY;
-+	else
-+		key.type = BTRFS_EXTENT_ITEM_KEY;
-+
- again:
- 	ret = btrfs_search_slot(trans, root->fs_info->extent_root,
- 				&key, path, 0, 0);
-@@ -790,7 +789,6 @@ again:
- 		goto out_free;
- 
- 	if (ret > 0 && metadata && key.type == BTRFS_METADATA_ITEM_KEY) {
--		metadata = 0;
- 		if (path->slots[0]) {
- 			path->slots[0]--;
- 			btrfs_item_key_to_cpu(path->nodes[0], &key,
-@@ -857,7 +855,7 @@ again:
- 			mutex_lock(&head->mutex);
- 			mutex_unlock(&head->mutex);
- 			btrfs_put_delayed_ref(&head->node);
--			goto again;
-+			goto search_again;
- 		}
- 		if (head->extent_op && head->extent_op->update_flags)
- 			extent_flags |= head->extent_op->flags_to_set;
 -- 
-1.7.9.5
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

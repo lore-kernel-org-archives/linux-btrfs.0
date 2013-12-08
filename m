@@ -1,41 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from euve10025.vserver.de ([62.75.240.21]:59268 "EHLO ensieve.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754375Ab3LGV4f convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 16:56:35 -0500
-Received: from frnk-5f744b17.pool.mediaways.net ([95.116.75.23]:63118 helo=[192.168.0.110])
-	by ensieve.org with esmtpsa (TLS1.0:RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.80)
-	(envelope-from <pascal@ensieve.org>)
-	id 1VpPTN-0006vA-Gv
-	for linux-btrfs@vger.kernel.org; Sat, 07 Dec 2013 21:31:37 +0000
-From: Pascal Germroth <pascal@ensieve.org>
-Content-Type: text/plain; charset=us-ascii
-Subject: clone syscall fails for bedup-deduplicated files
-Message-Id: <1A5C61DD-175B-4220-BAB5-E5714810501B@ensieve.org>
-Date: Sat, 7 Dec 2013 22:31:30 +0100
+Received: from mail-wg0-f44.google.com ([74.125.82.44]:37840 "EHLO
+	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754195Ab3LHA05 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Dec 2013 19:26:57 -0500
+Received: by mail-wg0-f44.google.com with SMTP id a1so2039364wgh.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Dec 2013 16:26:56 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0 (Mac OS X Mail 7.0 \(1822\))
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: don't miss skinny extent items on delayed ref head contention
+Date: Sun,  8 Dec 2013 00:26:29 +0000
+Message-Id: <1386462389-25218-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Currently extent-tree.c:btrfs_lookup_extent_info() can miss the lookup
+of skinny extent items. This can happen when the execution flow is the
+following:
 
-Running a 3.8 kernel I've been using bedup to deduplicate some files, for example two identical 500MB files A & B now share data chunks.
-Running a 3.11 kernel, I wanted to clone some more files, but those previously deduplicated by bedup don't work, for example: `cp --reflink A C`:
+* We do an extent tree lookup and fail to find a skinny extent item;
 
-open("A", O_WRONLY|O_TRUNC) = 4
-fstat(4, {st_mode=S_IFREG|0775, st_size=0, ...}) = 0
-ioctl(4, BTRFS_IOC_CLONE, 0x3) = -1 EINVAL (Invalid argument)
+* As a result, we attempt to see if a non-skinny extent item exists,
+  either by looking at previous item in the leaf or by doing another
+  full extent tree search;
 
-But I can clone a duplicate of the file just fine: `cp A D; cp --reflink D E` copies A to D and then clones D to E.
-So I guess the way bedup deduplicated A broke the btrfs structure in a way that forbids further cloning, but a newly generated file like D can still be cloned.
+* We have a transaction and then we check for a matching delayed ref
+  head in the transaction's delayed refs rbtree;
 
-How could bedup break this, did it manipulate the structures directly in 3.8 without the syscall and corrupt something? How can I repair this? Defragmenting A had no effect.
+* We find such delayed ref head and then we try to lock it with a
+  call to mutex_trylock();
 
-(If you answer, please CC me directly, I'm not currently subscribed to the list)
+* The lock was contended so we jump to the label "again", which repeats
+  the extent tree search but for a non-skinny extent item, because we set
+  previously metadata variable to 0 and the search key to look for a
+  non-skinny extent-item;
 
-Cheers,
+* After the jump (and after releasing the transaction's delayed refs
+  lock), a skinny extent item might have been added to the extent tree
+  but we will miss it because metadata is set to 0 and the search key
+  is set for a non-skinny extent-item.
 
+The fix here is to not reset metadata to 0 and to jump to the initial search
+key setup if the delayed ref head is contended, instead of jumping directly
+to the extent tree search label ("again").
+
+This issue was found while investigating the issue reported at Bugzilla 64961.
+
+David Sterba suspected this function was missing extent items, and that
+this could be caused by the last change to this function, which was made
+in the following patch:
+
+    [PATCH] Btrfs: optimize btrfs_lookup_extent_info()
+    (commit 74be9510876a66ad9826613ac8a526d26f9e7f01)
+
+But in fact this issue already existed before, because after failing to find
+a skinny extent item, the code set the search key for a non-skinny extent
+item, and on contention of a matching delayed ref head it would not search
+the extent tree for a skinny extent item anymore.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/extent-tree.c |   22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 62d433f..c9f020e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -769,20 +769,19 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	if (metadata) {
+-		key.objectid = bytenr;
+-		key.type = BTRFS_METADATA_ITEM_KEY;
+-		key.offset = offset;
+-	} else {
+-		key.objectid = bytenr;
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = offset;
+-	}
+-
+ 	if (!trans) {
+ 		path->skip_locking = 1;
+ 		path->search_commit_root = 1;
+ 	}
++
++search_again:
++	key.objectid = bytenr;
++	key.offset = offset;
++	if (metadata)
++		key.type = BTRFS_METADATA_ITEM_KEY;
++	else
++		key.type = BTRFS_EXTENT_ITEM_KEY;
++
+ again:
+ 	ret = btrfs_search_slot(trans, root->fs_info->extent_root,
+ 				&key, path, 0, 0);
+@@ -790,7 +789,6 @@ again:
+ 		goto out_free;
+ 
+ 	if (ret > 0 && metadata && key.type == BTRFS_METADATA_ITEM_KEY) {
+-		metadata = 0;
+ 		if (path->slots[0]) {
+ 			path->slots[0]--;
+ 			btrfs_item_key_to_cpu(path->nodes[0], &key,
+@@ -857,7 +855,7 @@ again:
+ 			mutex_lock(&head->mutex);
+ 			mutex_unlock(&head->mutex);
+ 			btrfs_put_delayed_ref(&head->node);
+-			goto again;
++			goto search_again;
+ 		}
+ 		if (head->extent_op && head->extent_op->update_flags)
+ 			extent_flags |= head->extent_op->flags_to_set;
 -- 
-Pascal Germroth
+1.7.9.5
+

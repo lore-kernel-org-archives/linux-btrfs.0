@@ -1,135 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28536 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755566Ab3LICkE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Dec 2013 21:40:04 -0500
-Date: Mon, 9 Dec 2013 10:39:55 +0800
+Received: from userp1040.oracle.com ([156.151.31.81]:39738 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754581Ab3LIJeo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Dec 2013 04:34:44 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rB99Yg0k025946
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Dec 2013 09:34:43 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rB99YfH0020194
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Dec 2013 09:34:42 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rB99YfWZ019788
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Dec 2013 09:34:41 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: don't miss skinny extent items on delayed ref
- head contention
-Message-ID: <20131209023955.GB32246@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1386462389-25218-1-git-send-email-fdmanana@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1386462389-25218-1-git-send-email-fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: avoid building inode cache repeatly
+Date: Mon,  9 Dec 2013 17:34:31 +0800
+Message-Id: <1386581671-4639-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 08, 2013 at 12:26:29AM +0000, Filipe David Borba Manana wrote:
-> Currently extent-tree.c:btrfs_lookup_extent_info() can miss the lookup
-> of skinny extent items. This can happen when the execution flow is the
-> following:
-> 
-> * We do an extent tree lookup and fail to find a skinny extent item;
-> 
-> * As a result, we attempt to see if a non-skinny extent item exists,
->   either by looking at previous item in the leaf or by doing another
->   full extent tree search;
-> 
-> * We have a transaction and then we check for a matching delayed ref
->   head in the transaction's delayed refs rbtree;
-> 
-> * We find such delayed ref head and then we try to lock it with a
->   call to mutex_trylock();
-> 
-> * The lock was contended so we jump to the label "again", which repeats
->   the extent tree search but for a non-skinny extent item, because we set
->   previously metadata variable to 0 and the search key to look for a
->   non-skinny extent-item;
-> 
-> * After the jump (and after releasing the transaction's delayed refs
->   lock), a skinny extent item might have been added to the extent tree
->   but we will miss it because metadata is set to 0 and the search key
->   is set for a non-skinny extent-item.
-> 
-> The fix here is to not reset metadata to 0 and to jump to the initial search
-> key setup if the delayed ref head is contended, instead of jumping directly
-> to the extent tree search label ("again").
-> 
-> This issue was found while investigating the issue reported at Bugzilla 64961.
-> 
-> David Sterba suspected this function was missing extent items, and that
-> this could be caused by the last change to this function, which was made
-> in the following patch:
-> 
->     [PATCH] Btrfs: optimize btrfs_lookup_extent_info()
->     (commit 74be9510876a66ad9826613ac8a526d26f9e7f01)
-> 
-> But in fact this issue already existed before, because after failing to find
-> a skinny extent item, the code set the search key for a non-skinny extent
-> item, and on contention of a matching delayed ref head it would not search
-> the extent tree for a skinny extent item anymore.
+Inode cache is similar to free space cache and in fact shares the same
+code, however, we don't load inode cache unless we're about to allocate
+inode id, then there is a case where we only commit the transaction during
+other operations, such as snapshot creation, we now update fs roots' generation
+to the new transaction id, after that when we want to load the inode cache,
+we'll find that it's not valid thanks to the mismatch of generation, and we
+have to push btrfs-ino-cache thread to build inode cache from disk, and
+this operation is sometimes time-costing.
 
-Make sense.
+So to fix the above, we load inode cache into memory during reading fs root.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c   | 9 +++++----
+ fs/btrfs/inode-map.c | 2 ++
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
--liubo
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9c9667d..93b4473 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1525,14 +1525,15 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+ 		goto fail;
+ 	}
+ 
+-	btrfs_init_free_ino_ctl(root);
++	ret = get_anon_bdev(&root->anon_dev);
++	if (ret)
++		goto fail;
++
+ 	mutex_init(&root->fs_commit_mutex);
+ 	spin_lock_init(&root->cache_lock);
+ 	init_waitqueue_head(&root->cache_wait);
++	btrfs_init_free_ino_ctl(root);
+ 
+-	ret = get_anon_bdev(&root->anon_dev);
+-	if (ret)
+-		goto fail;
+ 	return 0;
+ fail:
+ 	kfree(root->free_ino_ctl);
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index ab485e5..6c8d7bb 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -388,6 +388,8 @@ void btrfs_init_free_ino_ctl(struct btrfs_root *root)
+ 	pinned->private = NULL;
+ 	pinned->extents_thresh = 0;
+ 	pinned->op = &pinned_free_ino_op;
++
++	start_caching(root);
+ }
+ 
+ int btrfs_save_ino_cache(struct btrfs_root *root,
+-- 
+1.8.2.1
 
-> 
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> ---
->  fs/btrfs/extent-tree.c |   22 ++++++++++------------
->  1 file changed, 10 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 62d433f..c9f020e 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -769,20 +769,19 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
->  	if (!path)
->  		return -ENOMEM;
->  
-> -	if (metadata) {
-> -		key.objectid = bytenr;
-> -		key.type = BTRFS_METADATA_ITEM_KEY;
-> -		key.offset = offset;
-> -	} else {
-> -		key.objectid = bytenr;
-> -		key.type = BTRFS_EXTENT_ITEM_KEY;
-> -		key.offset = offset;
-> -	}
-> -
->  	if (!trans) {
->  		path->skip_locking = 1;
->  		path->search_commit_root = 1;
->  	}
-> +
-> +search_again:
-> +	key.objectid = bytenr;
-> +	key.offset = offset;
-> +	if (metadata)
-> +		key.type = BTRFS_METADATA_ITEM_KEY;
-> +	else
-> +		key.type = BTRFS_EXTENT_ITEM_KEY;
-> +
->  again:
->  	ret = btrfs_search_slot(trans, root->fs_info->extent_root,
->  				&key, path, 0, 0);
-> @@ -790,7 +789,6 @@ again:
->  		goto out_free;
->  
->  	if (ret > 0 && metadata && key.type == BTRFS_METADATA_ITEM_KEY) {
-> -		metadata = 0;
->  		if (path->slots[0]) {
->  			path->slots[0]--;
->  			btrfs_item_key_to_cpu(path->nodes[0], &key,
-> @@ -857,7 +855,7 @@ again:
->  			mutex_lock(&head->mutex);
->  			mutex_unlock(&head->mutex);
->  			btrfs_put_delayed_ref(&head->node);
-> -			goto again;
-> +			goto search_again;
->  		}
->  		if (head->extent_op && head->extent_op->update_flags)
->  			extent_flags |= head->extent_op->flags_to_set;
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

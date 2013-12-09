@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:61135 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:34351 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932262Ab3LILPb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Dec 2013 06:15:31 -0500
-Message-ID: <52A5A268.3030302@cn.fujitsu.com>
-Date: Mon, 09 Dec 2013 18:58:48 +0800
+	id S1755829Ab3LILaZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Dec 2013 06:30:25 -0500
+Message-ID: <52A59EF7.8050007@cn.fujitsu.com>
+Date: Mon, 09 Dec 2013 18:44:07 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: vikigoyal@gmail.com
-CC: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
+CC: vikigoyal@gmail.com
 Subject: Re: scub neither running nor canceling nor can be restarted.
 References: <20131209095133.GA6579@mail2.smcindiaonline.com>
 In-Reply-To: <20131209095133.GA6579@mail2.smcindiaonline.com>
@@ -53,7 +53,6 @@ On 12/09/2013 05:51 PM, Vikram Goyal wrote:
 > ERROR: scrub is already running.
 > To cancel use 'btrfs scrub cancel /'.
 > To see the status use 'btrfs scrub status [-d] /'.
-
 I came the same issue before and i sent a patch for this:
 https://patchwork.kernel.org/patch/3264051/
 

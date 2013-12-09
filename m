@@ -1,35 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:16752 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755764Ab3LIOcM convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Dec 2013 09:32:12 -0500
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-From: Chris Mason <clm@fb.com>
-To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-References: <1386581671-4639-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1386581671-4639-1-git-send-email-bo.li.liu@oracle.com>
-Message-ID: <20131209142005.20371.31891@ret.masoncoding.com>
-Subject: Re: [PATCH] Btrfs: avoid building inode cache repeatly
-Date: Mon, 9 Dec 2013 09:20:05 -0500
+Received: from mail-pb0-f47.google.com ([209.85.160.47]:37665 "EHLO
+	mail-pb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933967Ab3LIQOk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Dec 2013 11:14:40 -0500
+Received: by mail-pb0-f47.google.com with SMTP id um1so5692345pbc.34
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Dec 2013 08:14:39 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: wangsl.fnst@cn.fujitsu.com
+Subject: [PATCH 2/2] Btrfs: skip building backref tree for uuid and quota tree when doing balance relocation
+Date: Tue, 10 Dec 2013 00:14:34 +0800
+Message-Id: <1386605674-3320-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1386605674-3320-1-git-send-email-wangshilong1991@gmail.com>
+References: <1386605674-3320-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Liu Bo (2013-12-09 04:34:31)
-> Inode cache is similar to free space cache and in fact shares the same
-> code, however, we don't load inode cache unless we're about to allocate
-> inode id, then there is a case where we only commit the transaction during
-> other operations, such as snapshot creation, we now update fs roots' generation
-> to the new transaction id, after that when we want to load the inode cache,
-> we'll find that it's not valid thanks to the mismatch of generation, and we
-> have to push btrfs-ino-cache thread to build inode cache from disk, and
-> this operation is sometimes time-costing.
-> 
-> So to fix the above, we load inode cache into memory during reading fs root.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-Thanks Liu.  Have you tested this with orphan replay?  I'd like to make
-sure the new ordering of starting caching isn't causing problems with
-finding and processing the orphan items.
+Quota tree and UUID Tree is only cowed, they can not be snapshoted.
 
--chris
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/relocation.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 4dc7f26..df6e18e 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -571,7 +571,9 @@ static int is_cowonly_root(u64 root_objectid)
+ 	    root_objectid == BTRFS_CHUNK_TREE_OBJECTID ||
+ 	    root_objectid == BTRFS_DEV_TREE_OBJECTID ||
+ 	    root_objectid == BTRFS_TREE_LOG_OBJECTID ||
+-	    root_objectid == BTRFS_CSUM_TREE_OBJECTID)
++	    root_objectid == BTRFS_CSUM_TREE_OBJECTID ||
++	    root_objectid == BTRFS_UUID_TREE_OBJECTID ||
++	    root_objectid == BTRFS_QUOTA_TREE_OBJECTID)
+ 		return 1;
+ 	return 0;
+ }
+-- 
+1.8.4
+

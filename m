@@ -1,62 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51510 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751617Ab3LLSHb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 13:07:31 -0500
-Date: Thu, 12 Dec 2013 19:07:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: dsterba@suse.cz, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>
-Subject: Re: [PATCH] btrfs-progs: add options to sync filesystem after subvol
- delete
-Message-ID: <20131212180730.GS6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1385657947-26145-1-git-send-email-dsterba@suse.cz>
- <20131129013638.01ede78a@natsu>
- <5297F633.8090100@cn.fujitsu.com>
- <20131129173744.GP25312@suse.cz>
- <529C4CB9.8020403@cn.fujitsu.com>
- <20131209233245.GF10658@twin.jikos.cz>
- <20131210131707.16869.32138@ret>
- <20131210173628.GH10658@suse.cz>
- <20131210182412.23415.32744@ret>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:23506 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755671Ab3LJSZo convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Dec 2013 13:25:44 -0500
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131210182412.23415.32744@ret>
+To: <dsterba@suse.cz>, David Sterba <dsterba@suse.cz>
+From: Chris Mason <clm@fb.com>
+In-Reply-To: <20131210173628.GH10658@suse.cz>
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Roman Mamedov <rm@romanrm.net>,
+        <linux-btrfs@vger.kernel.org>,
+        Alex Lyakas <alex.btrfs@zadarastorage.com>
+References: <1385657947-26145-1-git-send-email-dsterba@suse.cz>
+ <20131129013638.01ede78a@natsu> <5297F633.8090100@cn.fujitsu.com>
+ <20131129173744.GP25312@suse.cz> <529C4CB9.8020403@cn.fujitsu.com>
+ <20131209233245.GF10658@twin.jikos.cz> <20131210131707.16869.32138@ret>
+ <20131210173628.GH10658@suse.cz>
+Message-ID: <20131210182412.23415.32744@ret>
+Subject: Re: [PATCH] btrfs-progs: add options to sync filesystem after subvol delete
+Date: Tue, 10 Dec 2013 13:24:13 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 10, 2013 at 01:24:13PM -0500, Chris Mason wrote:
-> > It is there, 'btrfs subvol list -d /path', but I'd rather not let
-> > everybody parse output the output for a simple check.
-> 
-> Aha ;) Yeah, that's what I was thinking.  It's possible to find but hard
-> enough that nobody would be happy using it.
-
-Sorry I dont' udnerstand, you mean that the -d option is hard to find?
-
-> > Yeah it's natural and I guess it'll be the most frequent type of use.
-> > I've tried to think of the possible uses so we don't miss anything
-> > during design phase.
+Quoting David Sterba (2013-12-10 12:36:28)
+> On Tue, Dec 10, 2013 at 08:17:07AM -0500, Chris Mason wrote:
+> > Quoting David Sterba (2013-12-09 18:32:45)
+> > > On Mon, Dec 02, 2013 at 05:02:49PM +0800, Wang Shilong wrote:
+> > > > >So an enahced interface could look like this:
+> > > > >
+> > > > >subvol delete:
+> > > > >--commit-each - run the ioc sync/wait ioctl after each delete ioctl
+> > > > >--commit-after - dtto but sync/wait after all are deleted
+> > > > >--wait-for-cleanup - wait until all given subvols are cleaned
+> > > > >
+> > > > >'filesystem sync' exteded to wait for subvol cleanup has following
+> > > > >cases:
+> > > > >- wait for a specific subvolume to be cleaned
 > > 
-> > Knowing the ID is necessary, the subvolume path is lost at deletion
-> > time, but let's say that the ID is available somehow, eg from
-> > application logs.
-> > 
-> > I have a prototype for that, there's a separate subcommand to do just
-> > the waiting for a given subvolume list id to be cleaned up (but could
-> > be merged to fi sync if desired). It's built around the SEARCH ioctl and
-> > does not need kernel support.
+> > It may be hard to wait for a specific subvolume from btrfs fi sync.
+> > You'd have to know the id, or have an interface that shows a list of ids
+> > currently under deletion (not a bad idea ;)
 > 
-> So the part where I think we agree is I don't think the kernel subvol
-> deletion ioctl should do the waiting.
+> It is there, 'btrfs subvol list -d /path', but I'd rather not let
+> everybody parse output the output for a simple check.
 
-Yes, I've abandoned the kernel approach, for several reasons.
+Aha ;) Yeah, that's what I was thinking.  It's possible to find but hard
+enough that nobody would be happy using it.
 
-> Exactly how the progs wait is a different question.
+> 
+> > > > >- wait for all currently deleted, do not care if more subvols are
+> > > > >   deleted in the meantime
+> > > > >- wait until there are no subvolumes left to clean
+> > > > I think it is unnecessary to add such options for 'filesystem sync'.
+> > > > we may wait a long time until all subvolume deletion are finished as
+> > > > async subvolume deletion is implemented in cleaner thread.:-)
+> > > 
+> > > I mean that 'filesystem sync' will stay as it is now, but will be
+> > > enhanced with a few options to further specify what else should be
+> > > synced.
+> > 
+> > It's more natural to have the waiting in the subvol delete command, but
+> > I'm not against adding a few ways to wait in btrfs fi sync too, as long
+> > as they share the same core implementation.
+> 
+> Yeah it's natural and I guess it'll be the most frequent type of use.
+> I've tried to think of the possible uses so we don't miss anything
+> during design phase.
+> 
+> Knowing the ID is necessary, the subvolume path is lost at deletion
+> time, but let's say that the ID is available somehow, eg from
+> application logs.
+> 
+> I have a prototype for that, there's a separate subcommand to do just
+> the waiting for a given subvolume list id to be cleaned up (but could
+> be merged to fi sync if desired). It's built around the SEARCH ioctl and
+> does not need kernel support.
 
-BTRFS_IOC_START_SYNC + BTRFS_IOC_WAIT_SYNC
+So the part where I think we agree is I don't think the kernel subvol
+deletion ioctl should do the waiting.  Exactly how the progs wait is a
+different question.
 
-I'll send out v2.
+-chris
+

@@ -1,48 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f53.google.com ([209.85.212.53]:36466 "EHLO
-	mail-vb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751370Ab3LJUbK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Dec 2013 15:31:10 -0500
-Received: by mail-vb0-f53.google.com with SMTP id o19so941491vbm.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Dec 2013 12:31:09 -0800 (PST)
-MIME-Version: 1.0
-Date: Tue, 10 Dec 2013 22:31:09 +0200
-Message-ID: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
-Subject: Feature Req: "mkfs.btrfs -d dup" option on single device
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39116 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750707Ab3LJWla convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Dec 2013 17:41:30 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Feature Req: "mkfs.btrfs -d dup" option on single device
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
+Date: Tue, 10 Dec 2013 15:41:25 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com>
+References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
+To: Imran Geriskovan <imran.geriskovan@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, if you want to protect your data against bit-rot on
-a single device you must have 2 btrfs partitions and mount
-them as Raid1. The requested option will save the user from
-partitioning and will provide flexibility.
 
-Yes, I know: This will not provide any safety againts hardware
-failure. But it is not the purpose anyway.
+On Dec 10, 2013, at 1:31 PM, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
 
-The main purpose is to "Ensure Data Integrity" on:
-a- Computers (ie. laptops) where hardware raid is not practical.
-b- Backup sets (ie. usb drives) where hardware raid is an overkill.
+> Currently, if you want to protect your data against bit-rot on
+> a single device you must have 2 btrfs partitions and mount
+> them as Raid1.
 
-Even if you have regular backups, without having
-"Guaranteed Data Integrity" on all data sets, you will
-lose some data on some day, somewhere.
+No this also works:
 
-See discussion at:
-http://hardware.slashdot.org/story/13/12/10/178234/ask-slashdot-practical-bitrot-detection-for-backups
+mkfs.btrfs -d dup -m dup -M <device>
 
 
-Now, the futuristic and OPTIONAL part for the sufficiently paranoid:
-The number of duplicates may be parametric:
+Chris Murphy
 
-mkfs.btrfs -m dup 4 -d dup 3 ... (4 duplicates for metadata, 3
-duplicates for data)
-
-I kindly request your comments. (At least for "-d dup")
-
-Regards,
-Imran Geriskovan

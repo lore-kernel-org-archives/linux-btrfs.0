@@ -1,118 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hera.mpi-klsb.mpg.de ([139.19.1.49]:32947 "EHLO
-	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753336Ab3LIVPv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Dec 2013 16:15:51 -0500
-Message-ID: <52A63302.4020301@mpi-sws.org>
-Date: Mon, 09 Dec 2013 22:15:46 +0100
-From: Pedro Fonseca <pfonseca@mpi-sws.org>
-MIME-Version: 1.0
+Received: from csamuel.org ([74.50.50.137]:44147 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750844Ab3LJAih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Dec 2013 19:38:37 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id EF3BB41333
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Dec 2013 11:38:36 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 13005-01 for <linux-btrfs@vger.kernel.org>;
+ Tue, 10 Dec 2013 11:38:36 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 8996C4131E
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Dec 2013 11:38:36 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Warning in inode_tree_add() -- !(entry->vfs_inode.i_state & (I_WILL_FREE
- | I_FREEING)
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Re: Btrfs questions
+Date: Tue, 10 Dec 2013 11:38:30 +1100
+Message-ID: <14604861.LzGILYkffa@quad>
+In-Reply-To: <1386623231.94746.YahooMailNeo@web180901.mail.ne1.yahoo.com>
+References: <1386615086.1044.YahooMailNeo@web180901.mail.ne1.yahoo.com> <1386623127.31132.YahooMailNeo@web180903.mail.ne1.yahoo.com> <1386623231.94746.YahooMailNeo@web180901.mail.ne1.yahoo.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart3341953.RnEIdrYMGb"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-I've got multiple instances of warnings caused by the statement 
-"WARN_ON(!(entry->vfs_inode.i_state & (I_WILL_FREE | I_FREEING)));" in 
-inode_tree_add(). The tests were executed on the official 3.12.2 kernel. 
-Do you think it's something serious?
+--nextPart3341953.RnEIdrYMGb
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-Pedro
+On Mon, 9 Dec 2013 01:07:11 PM Cirillo Costantino wrote:
 
+> with the release of Haswell from Intel, persistent memory will be possible
+> and cheap..
 
+Haswell has transactional memory support:
 
-Warning message (for test 1):
-> [  257.691419] btrfs: new size for /dev/loop0 is 308281344
-> [  271.929976] ------------[ cut here ]------------
-> [  271.945240] WARNING: CPU: 0 PID: 2726 at 
-> /local/pfonseca/piking/kernel-build/linux-3.12.2-fs-static2/fs/btrfs/inode.c:4709 
-> inode_tree_add+0x89/0xd9()
-> [  271.949424] Modules linked in: loop rtc_cmos tpm_tis freq_table 
-> pcspkr i2c_piix4
-> [  271.951685] CPU: 0 PID: 2726 Comm: btrfs-endio-wri Not tainted 
-> 3.12.2 #2
-> [  271.952213] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
-> [  271.952879]  00000000 00000000 c53d5d58 c16415c4 00000000 c53d5d70 
-> c102b699 c11edd24
-> [  271.953485]  d952e8d4 c4e6ac00 d9548458 c53d5d80 c102b6bf 00000009 
-> 00000000 c53d5da4
-> [  271.953995]  c11edd24 00000000 00000109 c4e6af9c d95483e4 d9548458 
-> 00000109 00000000
-> [  271.954594] Call Trace:
-> [  271.955905]  [<c16415c4>] dump_stack+0x41/0x52
-> [  271.956200]  [<c102b699>] warn_slowpath_common+0x5c/0x73
-> [  271.956474]  [<c11edd24>] ? inode_tree_add+0x89/0xd9
-> [  271.956716]  [<c102b6bf>] warn_slowpath_null+0xf/0x13
-> [  271.956959]  [<c11edd24>] inode_tree_add+0x89/0xd9
-> [  271.957196]  [<c11f4c5f>] btrfs_iget+0x39c/0x3d6
-> [  271.957433]  [<c11f4d9f>] relink_extent_backref+0x106/0x67c
-> [  271.957698]  [<c12321a9>] ? iterate_inodes_from_logical+0x7d/0x93
-> [  271.957975]  [<c11eeb00>] ? btrfs_clear_bit_hook+0x1bb/0x1f9
-> [  271.958251]  [<c11f5b02>] btrfs_finish_ordered_io+0x7ed/0x8ad
-> [  271.958525]  [<c102e851>] ? irq_exit+0x42/0x44
-> [  271.959161]  [<c11f5bcd>] finish_ordered_fn+0xb/0xd
-> [  271.959404]  [<c121003c>] worker_loop+0xf5/0x3d1
-> [  271.959643]  [<c120ff47>] ? btrfs_queue_worker+0x1e4/0x1e4
-> [  271.959898]  [<c103e612>] kthread+0x6e/0x73
-> [  271.960122]  [<c1648797>] ret_from_kernel_thread+0x1b/0x28
-> [  271.960378]  [<c103e5a4>] ? __kthread_parkme+0x54/0x54
-> [  271.961028] ---[ end trace 00b972e1196e8ac0 ]---
+http://en.wikipedia.org/wiki/Transactional_Synchronization_Extensions
 
-* Test 1:
->     CPU: 1 Op: dread
->     CPU: 1 Op: chown
->     CPU: 1 Op: dwrite
-> CPU: 0 Op: chown
-> CPU: 0 Op: rmdir
-> CPU: 0 Op: chown
-> CPU: 0 Op: chown
-> CPU: 0 Op: chown
-> CPU: 0 Op: btrfs_subvol_list
-> CPU: 0 Op: btrfs_ioctl_filesystem_resize
->     CPU: 1 Op: write
->     CPU: 1 Op: read
->     CPU: 1 Op: dwrite
->     CPU: 1 Op: dread
->     CPU: 1 Op: btrfs_ioctl_filesystem_defragment
+is that what you're thinking of?
 
-* Test 2:
->     CPU: 1 Op: dread
->     CPU: 1 Op: chown
->     CPU: 1 Op: dwrite
->     CPU: 1 Op: write
->     CPU: 1 Op: read
->     CPU: 1 Op: dwrite
-> CPU: 0 Op: dread
-> CPU: 0 Op: chown
-> CPU: 0 Op: dwrite
->     CPU: 1 Op: dread
->     CPU: 1 Op: btrfs_ioctl_filesystem_defragment
-> CPU: 0 Op: write
-> CPU: 0 Op: read
-> CPU: 0 Op: dwrite
-> CPU: 0 Op: dread
-> CPU: 0 Op: btrfs_ioctl_filesystem_defragment
+cheers,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-* Test 3:
->     CPU: 1 Op: dread
->     CPU: 1 Op: stat
->     CPU: 1 Op: btrfs_ioctl_filesystem_resize
->     CPU: 1 Op: write
->     CPU: 1 Op: mkdir
->     CPU: 1 Op: creat
->     CPU: 1 Op: chown
->     CPU: 1 Op: rename
-> CPU: 0 Op: dread
-> CPU: 0 Op: chown
-> CPU: 0 Op: dwrite
-> CPU: 0 Op: write
-> CPU: 0 Op: read
-> CPU: 0 Op: dwrite
-> CPU: 0 Op: dread
-> CPU: 0 Op: btrfs_ioctl_filesystem_defragment
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
 
+--nextPart3341953.RnEIdrYMGb
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUqZiho1yjaOTJg85AQLg9AgAm11SBKfqf9EZA/c+8hUjzJptVphT9a/a
+bQ/5ntfgnmNA+lR9GIwu5ufv8+XIK7+jkOA75S6SVfcqeaogRN1VzSadb+RN0pD1
+1fh675iOYeP4I+FjQFNGNEy7lSNgba/m01kC5HzZR12zxiMtRY3COTYyKT15FE0h
+0bmgyy9DsSX+iPETJKksAbGdNdlo9MAydNMVXsu9CdXCN6aBlgHDN8OyZmghtTcP
+szOW2FdaQpqcBCJVXMX/TVqe8USrNYMID5zCT6lwaAQXKWs47Mb2lQyXftuhxG3i
+qgigxZ/IV1PSpPnQYBauE0f4XwBs8drmebEKSMKFc0ZsVkzrzEESPA==
+=bMeY
+-----END PGP SIGNATURE-----
+
+--nextPart3341953.RnEIdrYMGb--
 

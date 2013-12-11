@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:43327 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:43326 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751215Ab3LKKp3 (ORCPT
+	with ESMTP id S1751186Ab3LKKp3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 11 Dec 2013 05:45:29 -0500
-Message-Id: <20131211104528.172529459@bombadil.infradead.org>
-Date: Wed, 11 Dec 2013 02:42:53 -0800
+Message-Id: <20131211104527.626509181@bombadil.infradead.org>
+Date: Wed, 11 Dec 2013 02:42:50 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: viro@zeniv.linux.org.uk
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -14,326 +14,327 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
         xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
         cluster-devel@redhat.com, linux-nfs@vger.kernel.org,
-        Andreas Gruenbacher <andreas.gruenbacher@linbit.com>,
-        Vyacheslav Dubeyko <slava@dubeyko.com>
-Subject: [PATCH 10/18] hfsplus: use generic posix ACL infrastructure
+        Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
+Subject: [PATCH 07/18] btrfs: use generic posix ACL infrastructure
 References: <20131211104243.148113893@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Vyacheslav Dubeyko <slava@dubeyko.com>
----
- fs/hfsplus/acl.h       |    9 +--
- fs/hfsplus/dir.c       |    1 +
- fs/hfsplus/inode.c     |    3 +-
- fs/hfsplus/posix_acl.c |  168 +++++-------------------------------------------
- fs/hfsplus/xattr.c     |    5 +-
- fs/hfsplus/xattr.h     |    2 -
- 6 files changed, 26 insertions(+), 162 deletions(-)
+Also don't bother to set up a .get_acl method for symlinks as we do not
+support access control (ACLs or even mode bits) for symlinks in Linux.
 
-diff --git a/fs/hfsplus/acl.h b/fs/hfsplus/acl.h
-index 07c0d49..95c8ed9 100644
---- a/fs/hfsplus/acl.h
-+++ b/fs/hfsplus/acl.h
-@@ -12,16 +12,13 @@
- 
- /* posix_acl.c */
- struct posix_acl *hfsplus_get_posix_acl(struct inode *inode, int type);
--extern int hfsplus_posix_acl_chmod(struct inode *);
-+int hfsplus_set_posix_acl(struct inode *inode, struct posix_acl *acl,
-+		int type);
- extern int hfsplus_init_posix_acl(struct inode *, struct inode *);
- 
- #else  /* CONFIG_HFSPLUS_FS_POSIX_ACL */
- #define hfsplus_get_posix_acl NULL
--
--static inline int hfsplus_posix_acl_chmod(struct inode *inode)
--{
--	return 0;
--}
-+#define hfsplus_set_posix_acl NULL
- 
- static inline int hfsplus_init_posix_acl(struct inode *inode, struct inode *dir)
- {
-diff --git a/fs/hfsplus/dir.c b/fs/hfsplus/dir.c
-index 4a4fea0..9ee6298 100644
---- a/fs/hfsplus/dir.c
-+++ b/fs/hfsplus/dir.c
-@@ -532,6 +532,7 @@ const struct inode_operations hfsplus_dir_inode_operations = {
- 	.removexattr		= hfsplus_removexattr,
- #ifdef CONFIG_HFSPLUS_FS_POSIX_ACL
- 	.get_acl		= hfsplus_get_posix_acl,
-+	.set_acl		= hfsplus_set_posix_acl,
- #endif
- };
- 
-diff --git a/fs/hfsplus/inode.c b/fs/hfsplus/inode.c
-index 37213d0..2e10993 100644
---- a/fs/hfsplus/inode.c
-+++ b/fs/hfsplus/inode.c
-@@ -319,7 +319,7 @@ static int hfsplus_setattr(struct dentry *dentry, struct iattr *attr)
- 	mark_inode_dirty(inode);
- 
- 	if (attr->ia_valid & ATTR_MODE) {
--		error = hfsplus_posix_acl_chmod(inode);
-+		error = posix_acl_chmod(inode, inode->i_mode);
- 		if (unlikely(error))
- 			return error;
- 	}
-@@ -393,6 +393,7 @@ static const struct inode_operations hfsplus_file_inode_operations = {
- 	.removexattr	= hfsplus_removexattr,
- #ifdef CONFIG_HFSPLUS_FS_POSIX_ACL
- 	.get_acl	= hfsplus_get_posix_acl,
-+	.set_acl	= hfsplus_set_posix_acl,
- #endif
- };
- 
-diff --git a/fs/hfsplus/posix_acl.c b/fs/hfsplus/posix_acl.c
-index 277942f..df0c9af 100644
---- a/fs/hfsplus/posix_acl.c
-+++ b/fs/hfsplus/posix_acl.c
-@@ -17,9 +17,7 @@ struct posix_acl *hfsplus_get_posix_acl(struct inode *inode, int type)
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/acl.c   |  142 +++++++-----------------------------------------------
+ fs/btrfs/ctree.h |    7 +--
+ fs/btrfs/inode.c |    7 ++-
+ fs/btrfs/xattr.c |    5 +-
+ fs/btrfs/xattr.h |    2 -
+ 5 files changed, 28 insertions(+), 135 deletions(-)
+
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index b56519d..ff9b399 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -35,13 +35,6 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
  	char *value = NULL;
- 	ssize_t size;
+ 	struct posix_acl *acl;
  
+-	if (!IS_POSIXACL(inode))
+-		return NULL;
+-
 -	acl = get_cached_acl(inode, type);
 -	if (acl != ACL_NOT_CACHED)
 -		return acl;
-+	hfs_dbg(ACL_MOD, "[%s]: ino %lu\n", __func__, inode->i_ino);
- 
+-
  	switch (type) {
  	case ACL_TYPE_ACCESS:
-@@ -56,17 +54,15 @@ struct posix_acl *hfsplus_get_posix_acl(struct inode *inode, int type)
+ 		name = POSIX_ACL_XATTR_ACCESS;
+@@ -76,31 +69,10 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
  	return acl;
  }
  
--static int hfsplus_set_posix_acl(struct inode *inode,
--					int type,
--					struct posix_acl *acl)
-+int hfsplus_set_posix_acl(struct inode *inode, struct posix_acl *acl,
-+		int type)
- {
- 	int err;
- 	char *xattr_name;
- 	size_t size = 0;
- 	char *value = NULL;
- 
--	if (S_ISLNK(inode->i_mode))
--		return -EOPNOTSUPP;
-+	hfs_dbg(ACL_MOD, "[%s]: ino %lu\n", __func__, inode->i_ino);
- 
- 	switch (type) {
- 	case ACL_TYPE_ACCESS:
-@@ -115,7 +111,7 @@ end_set_acl:
- int hfsplus_init_posix_acl(struct inode *inode, struct inode *dir)
- {
- 	int err = 0;
--	struct posix_acl *acl = NULL;
-+	struct posix_acl *default_acl, *acl;
- 
- 	hfs_dbg(ACL_MOD,
- 		"[%s]: ino %lu, dir->ino %lu\n",
-@@ -124,151 +120,21 @@ int hfsplus_init_posix_acl(struct inode *inode, struct inode *dir)
- 	if (S_ISLNK(inode->i_mode))
- 		return 0;
- 
--	acl = hfsplus_get_posix_acl(dir, ACL_TYPE_DEFAULT);
--	if (IS_ERR(acl))
--		return PTR_ERR(acl);
--
--	if (acl) {
--		if (S_ISDIR(inode->i_mode)) {
--			err = hfsplus_set_posix_acl(inode,
--							ACL_TYPE_DEFAULT,
--							acl);
--			if (unlikely(err))
--				goto init_acl_cleanup;
--		}
--
--		err = __posix_acl_create(&acl, GFP_NOFS, &inode->i_mode);
--		if (unlikely(err < 0))
--			return err;
--
--		if (err > 0)
--			err = hfsplus_set_posix_acl(inode,
--							ACL_TYPE_ACCESS,
--							acl);
--	} else
--		inode->i_mode &= ~current_umask();
--
--init_acl_cleanup:
--	posix_acl_release(acl);
--	return err;
--}
--
--int hfsplus_posix_acl_chmod(struct inode *inode)
+-static int btrfs_xattr_acl_get(struct dentry *dentry, const char *name,
+-		void *value, size_t size, int type)
 -{
--	int err;
 -	struct posix_acl *acl;
+-	int ret = 0;
 -
--	hfs_dbg(ACL_MOD, "[%s]: ino %lu\n", __func__, inode->i_ino);
--
--	if (S_ISLNK(inode->i_mode))
+-	if (!IS_POSIXACL(dentry->d_inode))
 -		return -EOPNOTSUPP;
 -
--	acl = hfsplus_get_posix_acl(inode, ACL_TYPE_ACCESS);
--	if (IS_ERR(acl) || !acl)
--		return PTR_ERR(acl);
+-	acl = btrfs_get_acl(dentry->d_inode, type);
 -
--	err = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
--	if (unlikely(err))
-+	err = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
-+	if (err)
- 		return err;
- 
--	err = hfsplus_set_posix_acl(inode, ACL_TYPE_ACCESS, acl);
--	posix_acl_release(acl);
--	return err;
--}
--
--static int hfsplus_xattr_get_posix_acl(struct dentry *dentry,
--					const char *name,
--					void *buffer,
--					size_t size,
--					int type)
--{
--	int err = 0;
--	struct posix_acl *acl;
--
--	hfs_dbg(ACL_MOD,
--		"[%s]: ino %lu, buffer %p, size %zu, type %#x\n",
--		__func__, dentry->d_inode->i_ino, buffer, size, type);
--
--	if (strcmp(name, "") != 0)
--		return -EINVAL;
--
--	acl = hfsplus_get_posix_acl(dentry->d_inode, type);
 -	if (IS_ERR(acl))
 -		return PTR_ERR(acl);
 -	if (acl == NULL)
 -		return -ENODATA;
--
--	err = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+-	ret = posix_acl_to_xattr(&init_user_ns, acl, value, size);
 -	posix_acl_release(acl);
 -
--	return err;
+-	return ret;
 -}
 -
--static int hfsplus_xattr_set_posix_acl(struct dentry *dentry,
--					const char *name,
--					const void *value,
--					size_t size,
--					int flags,
--					int type)
--{
--	int err = 0;
--	struct inode *inode = dentry->d_inode;
+ /*
+  * Needs to be called with fs_mutex held
+  */
+-static int btrfs_set_acl(struct btrfs_trans_handle *trans,
++static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+ 			 struct inode *inode, struct posix_acl *acl, int type)
+ {
+ 	int ret, size = 0;
+@@ -158,35 +130,9 @@ out:
+ 	return ret;
+ }
+ 
+-static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
+-		const void *value, size_t size, int flags, int type)
++int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ {
+-	int ret;
 -	struct posix_acl *acl = NULL;
 -
--	hfs_dbg(ACL_MOD,
--		"[%s]: ino %lu, value %p, size %zu, flags %#x, type %#x\n",
--		__func__, inode->i_ino, value, size, flags, type);
--
--	if (strcmp(name, "") != 0)
--		return -EINVAL;
--
--	if (!inode_owner_or_capable(inode))
+-	if (!inode_owner_or_capable(dentry->d_inode))
 -		return -EPERM;
+-
+-	if (!IS_POSIXACL(dentry->d_inode))
+-		return -EOPNOTSUPP;
 -
 -	if (value) {
 -		acl = posix_acl_from_xattr(&init_user_ns, value, size);
 -		if (IS_ERR(acl))
 -			return PTR_ERR(acl);
--		else if (acl) {
--			err = posix_acl_valid(acl);
--			if (err)
--				goto end_xattr_set_acl;
+-
+-		if (acl) {
+-			ret = posix_acl_valid(acl);
+-			if (ret)
+-				goto out;
 -		}
+-	}
+-
+-	ret = btrfs_set_acl(NULL, dentry->d_inode, acl, type);
+-out:
+-	posix_acl_release(acl);
+-
+-	return ret;
++	return __btrfs_set_acl(NULL, inode, acl, type);
+ }
+ 
+ /*
+@@ -197,83 +143,31 @@ out:
+ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 		   struct inode *inode, struct inode *dir)
+ {
+-	struct posix_acl *acl = NULL;
++	struct posix_acl *default_acl, *acl;
+ 	int ret = 0;
+ 
+ 	/* this happens with subvols */
+ 	if (!dir)
+ 		return 0;
+ 
+-	if (!S_ISLNK(inode->i_mode)) {
+-		if (IS_POSIXACL(dir)) {
+-			acl = btrfs_get_acl(dir, ACL_TYPE_DEFAULT);
+-			if (IS_ERR(acl))
+-				return PTR_ERR(acl);
+-		}
++	ret = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
++	if (ret)
++		return ret;
+ 
+-		if (!acl)
+-			inode->i_mode &= ~current_umask();
 +	if (default_acl) {
-+		err = hfsplus_set_posix_acl(inode, default_acl,
-+					    ACL_TYPE_DEFAULT);
++		ret = __btrfs_set_acl(trans, inode, default_acl,
++				      ACL_TYPE_DEFAULT);
 +		posix_acl_release(default_acl);
  	}
  
--	err = hfsplus_set_posix_acl(inode, type, acl);
+-	if (IS_POSIXACL(dir) && acl) {
+-		if (S_ISDIR(inode->i_mode)) {
+-			ret = btrfs_set_acl(trans, inode, acl,
+-					    ACL_TYPE_DEFAULT);
+-			if (ret)
+-				goto failed;
+-		}
+-		ret = __posix_acl_create(&acl, GFP_NOFS, &inode->i_mode);
+-		if (ret < 0)
+-			return ret;
 -
--end_xattr_set_acl:
--	posix_acl_release(acl);
+-		if (ret > 0) {
+-			/* we need an acl */
+-			ret = btrfs_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
+-		} else if (ret < 0) {
+-			cache_no_acl(inode);
+-		}
+-	} else {
+-		cache_no_acl(inode);
 +	if (acl) {
-+		if (!err)
-+			err = hfsplus_set_posix_acl(inode, acl,
-+						    ACL_TYPE_ACCESS);
++		if (!ret)
++			ret = __btrfs_set_acl(trans, inode, acl,
++					      ACL_TYPE_ACCESS);
 +		posix_acl_release(acl);
-+	}
- 	return err;
+ 	}
+-failed:
+-	posix_acl_release(acl);
+-
+-	return ret;
+-}
+ 
+-int btrfs_acl_chmod(struct inode *inode)
+-{
+-	struct posix_acl *acl;
+-	int ret = 0;
+-
+-	if (S_ISLNK(inode->i_mode))
+-		return -EOPNOTSUPP;
+-
+-	if (!IS_POSIXACL(inode))
+-		return 0;
+-
+-	acl = btrfs_get_acl(inode, ACL_TYPE_ACCESS);
+-	if (IS_ERR_OR_NULL(acl))
+-		return PTR_ERR(acl);
+-
+-	ret = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
+-	if (ret)
+-		return ret;
+-	ret = btrfs_set_acl(NULL, inode, acl, ACL_TYPE_ACCESS);
+-	posix_acl_release(acl);
++	if (!default_acl && !acl)
++		cache_no_acl(inode);
+ 	return ret;
  }
 -
--static size_t hfsplus_xattr_list_posix_acl(struct dentry *dentry,
--						char *list,
--						size_t list_size,
--						const char *name,
--						size_t name_len,
--						int type)
--{
--	/*
--	 * This method is not used.
--	 * It is used hfsplus_listxattr() instead of generic_listxattr().
--	 */
--	return -EOPNOTSUPP;
--}
--
--const struct xattr_handler hfsplus_xattr_acl_access_handler = {
--	.prefix	= POSIX_ACL_XATTR_ACCESS,
--	.flags	= ACL_TYPE_ACCESS,
--	.list	= hfsplus_xattr_list_posix_acl,
--	.get	= hfsplus_xattr_get_posix_acl,
--	.set	= hfsplus_xattr_set_posix_acl,
--};
--
--const struct xattr_handler hfsplus_xattr_acl_default_handler = {
--	.prefix	= POSIX_ACL_XATTR_DEFAULT,
+-const struct xattr_handler btrfs_xattr_acl_default_handler = {
+-	.prefix = POSIX_ACL_XATTR_DEFAULT,
 -	.flags	= ACL_TYPE_DEFAULT,
--	.list	= hfsplus_xattr_list_posix_acl,
--	.get	= hfsplus_xattr_get_posix_acl,
--	.set	= hfsplus_xattr_set_posix_acl,
+-	.get	= btrfs_xattr_acl_get,
+-	.set	= btrfs_xattr_acl_set,
 -};
-diff --git a/fs/hfsplus/xattr.c b/fs/hfsplus/xattr.c
-index 3c6136f..bf88baa 100644
---- a/fs/hfsplus/xattr.c
-+++ b/fs/hfsplus/xattr.c
-@@ -7,6 +7,7 @@
-  */
+-
+-const struct xattr_handler btrfs_xattr_acl_access_handler = {
+-	.prefix = POSIX_ACL_XATTR_ACCESS,
+-	.flags	= ACL_TYPE_ACCESS,
+-	.get	= btrfs_xattr_acl_get,
+-	.set	= btrfs_xattr_acl_set,
+-};
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 54ab861..7506825 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3899,20 +3899,17 @@ do {									\
+ /* acl.c */
+ #ifdef CONFIG_BTRFS_FS_POSIX_ACL
+ struct posix_acl *btrfs_get_acl(struct inode *inode, int type);
++int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
+ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 		   struct inode *inode, struct inode *dir);
+-int btrfs_acl_chmod(struct inode *inode);
+ #else
+ #define btrfs_get_acl NULL
++#define btrfs_set_acl NULL
+ static inline int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 				 struct inode *inode, struct inode *dir)
+ {
+ 	return 0;
+ }
+-static inline int btrfs_acl_chmod(struct inode *inode)
+-{
+-	return 0;
+-}
+ #endif
  
- #include "hfsplus_fs.h"
+ /* relocation.c */
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f1a7744..b131430 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4464,7 +4464,7 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 		err = btrfs_dirty_inode(inode);
+ 
+ 		if (!err && attr->ia_valid & ATTR_MODE)
+-			err = btrfs_acl_chmod(inode);
++			err = posix_acl_chmod(inode, inode->i_mode);
+ 	}
+ 
+ 	return err;
+@@ -8649,12 +8649,14 @@ static const struct inode_operations btrfs_dir_inode_operations = {
+ 	.removexattr	= btrfs_removexattr,
+ 	.permission	= btrfs_permission,
+ 	.get_acl	= btrfs_get_acl,
++	.set_acl	= btrfs_set_acl,
+ 	.update_time	= btrfs_update_time,
+ };
+ static const struct inode_operations btrfs_dir_ro_inode_operations = {
+ 	.lookup		= btrfs_lookup,
+ 	.permission	= btrfs_permission,
+ 	.get_acl	= btrfs_get_acl,
++	.set_acl	= btrfs_set_acl,
+ 	.update_time	= btrfs_update_time,
+ };
+ 
+@@ -8724,6 +8726,7 @@ static const struct inode_operations btrfs_file_inode_operations = {
+ 	.permission	= btrfs_permission,
+ 	.fiemap		= btrfs_fiemap,
+ 	.get_acl	= btrfs_get_acl,
++	.set_acl	= btrfs_set_acl,
+ 	.update_time	= btrfs_update_time,
+ };
+ static const struct inode_operations btrfs_special_inode_operations = {
+@@ -8735,6 +8738,7 @@ static const struct inode_operations btrfs_special_inode_operations = {
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.get_acl	= btrfs_get_acl,
++	.set_acl	= btrfs_set_acl,
+ 	.update_time	= btrfs_update_time,
+ };
+ static const struct inode_operations btrfs_symlink_inode_operations = {
+@@ -8748,7 +8752,6 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 	.getxattr	= btrfs_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+-	.get_acl	= btrfs_get_acl,
+ 	.update_time	= btrfs_update_time,
+ };
+ 
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 05740b9..3d1c301 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -22,6 +22,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/xattr.h>
+ #include <linux/security.h>
 +#include <linux/posix_acl_xattr.h>
- #include "xattr.h"
- #include "acl.h"
- 
-@@ -15,8 +16,8 @@ const struct xattr_handler *hfsplus_xattr_handlers[] = {
- 	&hfsplus_xattr_user_handler,
- 	&hfsplus_xattr_trusted_handler,
- #ifdef CONFIG_HFSPLUS_FS_POSIX_ACL
--	&hfsplus_xattr_acl_access_handler,
--	&hfsplus_xattr_acl_default_handler,
+ #include "ctree.h"
+ #include "btrfs_inode.h"
+ #include "transaction.h"
+@@ -313,8 +314,8 @@ err:
+  */
+ const struct xattr_handler *btrfs_xattr_handlers[] = {
+ #ifdef CONFIG_BTRFS_FS_POSIX_ACL
+-	&btrfs_xattr_acl_access_handler,
+-	&btrfs_xattr_acl_default_handler,
 +	&posix_acl_access_xattr_handler,
 +	&posix_acl_default_xattr_handler,
  #endif
- 	&hfsplus_xattr_security_handler,
- 	NULL
-diff --git a/fs/hfsplus/xattr.h b/fs/hfsplus/xattr.h
-index 841b569..9e21449 100644
---- a/fs/hfsplus/xattr.h
-+++ b/fs/hfsplus/xattr.h
-@@ -14,8 +14,6 @@
- extern const struct xattr_handler hfsplus_xattr_osx_handler;
- extern const struct xattr_handler hfsplus_xattr_user_handler;
- extern const struct xattr_handler hfsplus_xattr_trusted_handler;
--extern const struct xattr_handler hfsplus_xattr_acl_access_handler;
--extern const struct xattr_handler hfsplus_xattr_acl_default_handler;
- extern const struct xattr_handler hfsplus_xattr_security_handler;
+ 	NULL,
+ };
+diff --git a/fs/btrfs/xattr.h b/fs/btrfs/xattr.h
+index b3cc803..5049608 100644
+--- a/fs/btrfs/xattr.h
++++ b/fs/btrfs/xattr.h
+@@ -21,8 +21,6 @@
  
- extern const struct xattr_handler *hfsplus_xattr_handlers[];
+ #include <linux/xattr.h>
+ 
+-extern const struct xattr_handler btrfs_xattr_acl_access_handler;
+-extern const struct xattr_handler btrfs_xattr_acl_default_handler;
+ extern const struct xattr_handler *btrfs_xattr_handlers[];
+ 
+ extern ssize_t __btrfs_getxattr(struct inode *inode, const char *name,
 -- 
 1.7.10.4
 

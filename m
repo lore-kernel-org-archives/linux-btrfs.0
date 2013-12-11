@@ -1,33 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f178.google.com ([209.85.220.178]:48255 "EHLO
-	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751374Ab3LKR3z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 12:29:55 -0500
-Received: by mail-vc0-f178.google.com with SMTP id lh4so5865919vcb.37
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 09:29:55 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20131211163704.GI10658@twin.jikos.cz>
-References: <CALOYprXUt5DqRHWX0jvF8t3mLssiHVW46bXF7gW930hfyMuDUw@mail.gmail.com>
-	<20131211163704.GI10658@twin.jikos.cz>
-Date: Wed, 11 Dec 2013 17:29:54 +0000
-Message-ID: <CALOYprXLotFEB8a8CEkmd2UL1zRPqsUBj+01J3upmzKbY47==w@mail.gmail.com>
-Subject: Re: btrfs-progs integration branch versioning
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: dsterba@suse.cz, WorMzy Tykashi <wormzy.tykashi@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:43721 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751956Ab3LKRvT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 12:51:19 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VqnwK-0004Qo-GX
+	for linux-btrfs@vger.kernel.org; Wed, 11 Dec 2013 18:51:16 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 18:51:16 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 18:51:16 +0100
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: BTRFS extended attributes mounted on a non-extended-attributes compiled
+ kernel
+Date: Wed, 11 Dec 2013 17:51:06 +0000
+Message-ID: <l8a8lv$mk7$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 December 2013 16:37, David Sterba <dsterba@suse.cz> wrote:
->
-> Sorry, I haven't pushed the tags, fixed now. The repos are mostly
-> identical to increase availability.
->
-> david
+What happens if...
 
-Cheers for that.
+I have a btrfs that has utilised posix ACLs / extended attributes and I
+then subsequently mount that onto a system that does not have the kernel
+modules compiled for those features?
 
 
-WorMzy
+Crash and burn?
+
+Or are the extra filesystem features benignly ignored until remounted on
+the original system with all the kernel modules?
+
+
+Thanks,
+Martin
+

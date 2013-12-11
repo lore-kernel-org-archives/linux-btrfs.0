@@ -1,67 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e37.co.us.ibm.com ([32.97.110.158]:59701 "EHLO
-	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751743Ab3LKXkw (ORCPT
+Received: from e38.co.us.ibm.com ([32.97.110.159]:37187 "EHLO
+	e38.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751806Ab3LKXk4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 18:40:52 -0500
+	Wed, 11 Dec 2013 18:40:56 -0500
 Received: from /spool/local
-	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e38.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <sekharan@us.ibm.com>;
-	Wed, 11 Dec 2013 16:40:52 -0700
+	Wed, 11 Dec 2013 16:40:55 -0700
 Received: from b03cxnp07028.gho.boulder.ibm.com (b03cxnp07028.gho.boulder.ibm.com [9.17.130.15])
-	by d03dlp02.boulder.ibm.com (Postfix) with ESMTP id 1739C3E40044
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 16:40:51 -0700 (MST)
+	by d03dlp03.boulder.ibm.com (Postfix) with ESMTP id 6234719D803E
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 16:40:47 -0700 (MST)
 Received: from d03av02.boulder.ibm.com (d03av02.boulder.ibm.com [9.17.195.168])
-	by b03cxnp07028.gho.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id rBBLcgjp5964062
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 22:38:42 +0100
+	by b03cxnp07028.gho.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id rBBLcj7Y5571046
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 22:38:45 +0100
 Received: from d03av02.boulder.ibm.com (localhost [127.0.0.1])
-	by d03av02.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id rBBNeoSO031175
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 16:40:50 -0700
+	by d03av02.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id rBBNerre031452
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 16:40:53 -0700
 From: Chandra Seetharaman <sekharan@us.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandra Seetharaman <sekharan@us.ibm.com>
-Subject: [PATCH 3/7] btrfs: subpagesize-blocksize: Handle small extent maps properly
-Date: Wed, 11 Dec 2013 17:38:38 -0600
-Message-Id: <1386805122-23972-4-git-send-email-sekharan@us.ibm.com>
+Subject: [PATCH 4/7] btrfs: subpagesize-blocksize: Handle iosize properly in submit_extent_page()
+Date: Wed, 11 Dec 2013 17:38:39 -0600
+Message-Id: <1386805122-23972-5-git-send-email-sekharan@us.ibm.com>
 In-Reply-To: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
 References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch makes sure that the size extent maps handles are at
-least PAGE_CACHE_SIZE for the subpagesize-blocksize case.
+For the subpagesize-blocksize case make sure that the IO submitted through
+submit_extent_page() is at least of PAGE_CACHE_SIZE
 
 Signed-off-by: Chandra Seetharaman <sekharan@us.ibm.com>
 ---
- fs/btrfs/inode.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c79c9cd..c0c18ca 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6036,7 +6036,11 @@ next:
- 	if (found_type == BTRFS_FILE_EXTENT_REG ||
- 	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
- 		em->start = extent_start;
--		em->len = extent_end - extent_start;
-+		if (inode->i_sb->s_blocksize < PAGE_CACHE_SIZE &&
-+				em->len < PAGE_CACHE_SIZE)
-+			em->len = PAGE_CACHE_SIZE;
-+		else
-+			em->len = extent_end - extent_start;
- 		em->orig_start = extent_start -
- 				 btrfs_file_extent_offset(leaf, item);
- 		em->orig_block_len = btrfs_file_extent_disk_num_bytes(leaf,
-@@ -6077,6 +6081,8 @@ next:
- 		extent_offset = page_offset(page) + pg_offset - extent_start;
- 		copy_size = min_t(u64, PAGE_CACHE_SIZE - pg_offset,
- 				size - extent_offset);
-+		if (inode->i_sb->s_blocksize < PAGE_CACHE_SIZE)
-+			copy_size = max_t(u64, copy_size, PAGE_CACHE_SIZE);
- 		em->start = extent_start + extent_offset;
- 		em->len = ALIGN(copy_size, btrfs_align_size(inode));
- 		em->orig_block_len = em->len;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e1992ed..2cf2a3b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2647,6 +2647,9 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 	int old_compressed = prev_bio_flags & EXTENT_BIO_COMPRESSED;
+ 	size_t page_size = min_t(size_t, size, PAGE_CACHE_SIZE);
+ 
++	if (page->mapping->host->i_sb->s_blocksize < PAGE_CACHE_SIZE)
++		page_size = PAGE_CACHE_SIZE;
++
+ 	if (bio_ret && *bio_ret) {
+ 		bio = *bio_ret;
+ 		if (old_compressed)
 -- 
 1.7.12.4
 

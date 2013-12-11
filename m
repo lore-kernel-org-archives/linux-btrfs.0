@@ -1,53 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:27203 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751442Ab3LKEH1 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Dec 2013 23:07:27 -0500
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:40115 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750759Ab3LKHkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 02:40:13 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VqeOx-00024J-Qe
+	for linux-btrfs@vger.kernel.org; Wed, 11 Dec 2013 08:40:11 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 08:40:11 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 08:40:11 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Feature Req: "mkfs.btrfs -d dup" option on single device
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAK5rZE6G0WDf6rxjS7o9Cggq-CehASG1ge4bLnJm=SmHA40new@mail.gmail.com>
-Date: Tue, 10 Dec 2013 21:07:21 -0700
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <6FD125A9-7975-4C34-88C7-95B11A39D054@colorremedies.com>
-References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com> <01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com> <CAK5rZE7bdfhD0FOe04+YoDRBfFWOy0rNfeamgDtP-=hv=SLFrw@mail.gmail.com> <F3B190DB-922A-412F-853D-71260549EF7F@colorremedies.com> <CAK5rZE6DVC5kYAU68oCjjzGPS4B=nRhOzATGM-5=m1_bW4GG6g@mail.gmail.com> <B4C47427-3A7F-4ED8-85AA-FA8E17C39EF9@colorremedies.com> <CAK5rZE6G0WDf6rxjS7o9Cggq-CehASG1ge4bLnJm=SmHA40new@mail.gmail.com>
-To: Imran Geriskovan <imran.geriskovan@gmail.com>
+Date: Wed, 11 Dec 2013 07:39:48 +0000 (UTC)
+Message-ID: <pan$ad9b0$fed0d7f$4713fad4$6845a26d@cox.net>
+References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
+	<01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com>
+	<CAK5rZE7bdfhD0FOe04+YoDRBfFWOy0rNfeamgDtP-=hv=SLFrw@mail.gmail.com>
+	<F3B190DB-922A-412F-853D-71260549EF7F@colorremedies.com>
+	<CAK5rZE6DVC5kYAU68oCjjzGPS4B=nRhOzATGM-5=m1_bW4GG6g@mail.gmail.com>
+	<B4C47427-3A7F-4ED8-85AA-FA8E17C39EF9@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Tue, 10 Dec 2013 17:33:59 -0700 as excerpted:
 
-On Dec 10, 2013, at 8:19 PM, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
+> On Dec 10, 2013, at 5:14 PM, Imran Geriskovan
+> <imran.geriskovan@gmail.com> wrote:
 > 
-> Now the question is, is it a good practice to use "-M" for large filesystems?
-> Pros, Cons? What is the performance impact? Or any other possible impact?
+>> As being the lead developer, is it possible for you to
+>> provide some insights for the reliability of this option?
+> 
+> I'm not a developer, I'm just an ape who wears pants. Chris Mason is the
+> lead developer.
 
-Uncertain. man mkfs.btrfs says "Mix data and metadata chunks together for more efficient space utilization.  This feature incurs a performance penalty in larger filesystems.  It is recommended for use with filesystems of 1 GiB or smaller."
+Lest anyone stumbling across this in a google or the like think 
+otherwise, it's probably worthwhile to pull this bit out in its own post.
 
-I haven't benchmarked to quantify the penalty.
+Chris Mason: btrfs lead dev.
 
-> I guess you are talking about SSD's. Even if you write duplicates
-> on distinct erase blocks, they may end up in same block after
-> firmware's relocation, defragmentation, migration, remapping,
-> god knows what ...ation operations. So practically, block
-> address does not point any fixed physical location on SSDs.
+Chris Murphy: not a dev, just a btrfs tester/user and btrfs list regular.
 
-Yes SSDs, although it seems that any flash media could behave this way as it's up to the manufacturer's firmware how it ends up behaving.
+It's worth noting that this isn't a problem unique to this list or the 
+Chris name.  There are I think three "Linus" on LKML now, with at least 
+Linus W noting in good humor at one point that his posts do tend to get 
+noticed a bit more due to his first name, even if he's not /the/ Linus, 
+Torvalds, that is.
 
-> Luckly we have hard drives with still sensible block addressing.
-> Even with bad block relocation.
+I've name-collided with other "John Duncan"s too.  Which is one reason 
+I've been a mononym "Duncan" for over a decade now.  Strangely enough, 
+I've had far fewer issues with Duncan as a mononym, than I did with "John 
+Duncan".  I guess at least the "Duncan" mononym is rarer than the "John 
+Duncan" name.
 
-Seagate has said they've already shipped 1 million shingled magnetic recording (SMR) hard drives. I don't know what sort of "FTL-like" behavior they implement, but it stands to reason that since the file system doesn't know what LBAs translate into physical sectors that are part of a layered band, and what LBA's are suited for random IO, that the drive might be capable of figuring this out. Random IO LBA's go to physical sectors suited for this, and sequential writes go to bands.
+@ C. Murphy:  Given the situation, you might consider a "not a dev, just 
+a user" disclaimer in your sig...  Or perhaps you'll find a Murphy mononym 
+as useful as I have the Duncan mononym, altho I guess that has the 
+Murphy's Law connotation, but that might have the effect of keeping the 
+namespace even clearer (or not, I don't know), as well as making the 
+mononym rather more memorable!
 
-> i.e. The new Advanced format drives may employ 4K blocks
-> but present 512B logical blocks which may be another reencarnation
-> of the SSD problem above. However, I guess linux kernel does not
-> access such drives using logical addressing.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-It does, absolutely. All drives are access by LBA these days. And Linux does fine with both varieties of AF disks: 512e, and 4Kn.
-
-Off hand I think the only issue is that pretty much no BIOS firmware will boot from a drive with 4K logical/physical sectors, so called 4Kn drives that do not present 512byte sectors. And since UEFI bugs are all over the place, I'd kinda expect booting to work with some firmware and not others. I haven't tested it, but I'm pretty sure I've read GRUB2 and the kernel are able to boot from 4Kn drives so long as the firmware can handle it.
-
-
-Chris Murphy

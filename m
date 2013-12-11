@@ -1,74 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40115 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750759Ab3LKHkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 02:40:13 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VqeOx-00024J-Qe
-	for linux-btrfs@vger.kernel.org; Wed, 11 Dec 2013 08:40:11 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 08:40:11 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 08:40:11 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from frost.carfax.org.uk ([85.119.82.111]:38150 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750719Ab3LKIJI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 03:09:08 -0500
+Date: Wed, 11 Dec 2013 08:09:02 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Imran Geriskovan <imran.geriskovan@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Feature Req: "mkfs.btrfs -d dup" option on single device
-Date: Wed, 11 Dec 2013 07:39:48 +0000 (UTC)
-Message-ID: <pan$ad9b0$fed0d7f$4713fad4$6845a26d@cox.net>
+Message-ID: <20131211080902.GI9738@carfax.org.uk>
 References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
-	<01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com>
-	<CAK5rZE7bdfhD0FOe04+YoDRBfFWOy0rNfeamgDtP-=hv=SLFrw@mail.gmail.com>
-	<F3B190DB-922A-412F-853D-71260549EF7F@colorremedies.com>
-	<CAK5rZE6DVC5kYAU68oCjjzGPS4B=nRhOzATGM-5=m1_bW4GG6g@mail.gmail.com>
-	<B4C47427-3A7F-4ED8-85AA-FA8E17C39EF9@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com>
+ <CAK5rZE7bdfhD0FOe04+YoDRBfFWOy0rNfeamgDtP-=hv=SLFrw@mail.gmail.com>
+ <F3B190DB-922A-412F-853D-71260549EF7F@colorremedies.com>
+ <CAK5rZE6DVC5kYAU68oCjjzGPS4B=nRhOzATGM-5=m1_bW4GG6g@mail.gmail.com>
+ <B4C47427-3A7F-4ED8-85AA-FA8E17C39EF9@colorremedies.com>
+ <CAK5rZE6G0WDf6rxjS7o9Cggq-CehASG1ge4bLnJm=SmHA40new@mail.gmail.com>
+ <6FD125A9-7975-4C34-88C7-95B11A39D054@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="YZVh52eu0Ophig4D"
+In-Reply-To: <6FD125A9-7975-4C34-88C7-95B11A39D054@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Tue, 10 Dec 2013 17:33:59 -0700 as excerpted:
 
-> On Dec 10, 2013, at 5:14 PM, Imran Geriskovan
-> <imran.geriskovan@gmail.com> wrote:
+--YZVh52eu0Ophig4D
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Tue, Dec 10, 2013 at 09:07:21PM -0700, Chris Murphy wrote:
 > 
->> As being the lead developer, is it possible for you to
->> provide some insights for the reliability of this option?
+> On Dec 10, 2013, at 8:19 PM, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
+> > 
+> > Now the question is, is it a good practice to use "-M" for large filesystems?
+> > Pros, Cons? What is the performance impact? Or any other possible impact?
 > 
-> I'm not a developer, I'm just an ape who wears pants. Chris Mason is the
-> lead developer.
+> Uncertain. man mkfs.btrfs says "Mix data and metadata chunks together for more efficient space utilization.  This feature incurs a performance penalty in larger filesystems.  It is recommended for use with filesystems of 1 GiB or smaller."
 
-Lest anyone stumbling across this in a google or the like think 
-otherwise, it's probably worthwhile to pull this bit out in its own post.
+   That documentation needs tweaking. You need --mixed/-M for larger
+filesystems than that. It's hard to say exactly where the optimal
+boundary is, but somewhere around 16 GiB seems to be the dividing
+point (8 GiB is in the "mostly going to cause you problems without it"
+area). 16 GiB is what we have on the wiki, I think.
 
-Chris Mason: btrfs lead dev.
+> I haven't benchmarked to quantify the penalty.
 
-Chris Murphy: not a dev, just a btrfs tester/user and btrfs list regular.
+   Nor have I.
 
-It's worth noting that this isn't a problem unique to this list or the 
-Chris name.  There are I think three "Linus" on LKML now, with at least 
-Linus W noting in good humor at one point that his posts do tend to get 
-noticed a bit more due to his first name, even if he's not /the/ Linus, 
-Torvalds, that is.
-
-I've name-collided with other "John Duncan"s too.  Which is one reason 
-I've been a mononym "Duncan" for over a decade now.  Strangely enough, 
-I've had far fewer issues with Duncan as a mononym, than I did with "John 
-Duncan".  I guess at least the "Duncan" mononym is rarer than the "John 
-Duncan" name.
-
-@ C. Murphy:  Given the situation, you might consider a "not a dev, just 
-a user" disclaimer in your sig...  Or perhaps you'll find a Murphy mononym 
-as useful as I have the Duncan mononym, altho I guess that has the 
-Murphy's Law connotation, but that might have the effect of keeping the 
-namespace even clearer (or not, I don't know), as well as making the 
-mononym rather more memorable!
+   Hugo.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                      --- vi: The core of evil. ---                      
 
+--YZVh52eu0Ophig4D
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUqgdnlheFHXiqx3kAQIlyQ/7B/T4whPSNzBi+vNTlWS8s1BgFQffYs9u
+acYooeojeHBSvgBtTXcURLWPt3NBpvakKaaPZBqw/xE2RVTUEgFoSDNU40tQXJm3
+1bnIx8DLgXOj1g/qBmZIDHFnc1ytJ2JmIsH0MxyyhTIReDl56PE/u9P2yjpk+glj
+BjqIZu58qSttqqi1r9jHTBhgZ1mdA9NnNNmIOqy676WunHquJfZwX73cokg2YGpU
+z3XfJltJnYHjoLx1gpII+E9s9ZlDb96PhBZGKTWkauguVCvKvvuXrLw62eruk7Dq
+ym9VDV9WeC6wU/oMVxXyp777NUEBau7fxuBvadpk3Vteyp2awIzG7HI2ISDvhdJX
+wj7HD8tS6XOeWp1UeQtsgKm/4zWP2g+BIhHT5iDolwlofmqzsKHis+ATSqBagDWx
+XVcJAXfd1Vk6WnIoN0lyiqWO/Mvvn0QsoA5SRNyK6NdaIcDlCcAUvIOCkZ6jTi6d
+y5R3Nq6TsjLhdASHmBWsH2G0n9HoTCjrnba+KQMOX9AZUQMjH6W/7R33mjXip78Z
+9+xYuUk0T1cVD+b2vSVn/3zRsUo7ou1Vai/XsN4sAv3qu9t4re54qdQDP3+utD+V
+UbzfrroLCgCSl5jxqX9NlXChUR3pJVJz/0x+WfVx1q9FKTNoytbtnU4FDg4P2tRr
+4x3I0fsmOxA=
+=hC7G
+-----END PGP SIGNATURE-----
+
+--YZVh52eu0Ophig4D--

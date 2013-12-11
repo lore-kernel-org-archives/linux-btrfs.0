@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35218 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751084Ab3LKTE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 14:04:57 -0500
-Date: Wed, 11 Dec 2013 20:04:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Pascal Germroth <pascal@ensieve.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: clone syscall fails for bedup-deduplicated files
-Message-ID: <20131211190454.GC6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1A5C61DD-175B-4220-BAB5-E5714810501B@ensieve.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53575 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751703Ab3LKTPb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 14:15:31 -0500
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id rBBJ1Ebu021239
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 11:15:31 -0800
+Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
+	by mx0b-00082601.pphosted.com with ESMTP id 1gpwg7g3tt-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 11:15:31 -0800
+Message-ID: <52A8B9BF.9030707@fb.com>
+Date: Wed, 11 Dec 2013 14:15:11 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1A5C61DD-175B-4220-BAB5-E5714810501B@ensieve.org>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Updated btrfs-next
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 07, 2013 at 10:31:30PM +0100, Pascal Germroth wrote:
-> Running a 3.8 kernel I've been using bedup to deduplicate some files,
-> for example two identical 500MB files A & B now share data chunks.
-> Running a 3.11 kernel, I wanted to clone some more files, but those
-> previously deduplicated by bedup don't work, for example: `cp
-> --reflink A C`:
-> 
-> open("A", O_WRONLY|O_TRUNC) = 4
-> fstat(4, {st_mode=S_IFREG|0775, st_size=0, ...}) = 0
-> ioctl(4, BTRFS_IOC_CLONE, 0x3) = -1 EINVAL (Invalid argument)
+Hello,
 
-This can fail eg when the files have different status wrt checksums,
-when one of the files is nocow or created under nodatasum mount (there's
-no way to create nodatasum file otherwise, unlike nodatacow).
+I just updated and pushed btrfs-next, if it is missing something let me 
+know.  I had to kick out the printk formatting patch because it didn't 
+compile and I didn't take Miao's background enospc flushing stuff since 
+some of it didn't apply and 5/5 hasn't been updated to force waiting on 
+background flushers.  Let me know if I missed anything else.  Thanks,
 
-Look at lsattr output if the files have the C attribute.
-
-david
+Josef

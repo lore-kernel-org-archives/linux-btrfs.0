@@ -1,102 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hera.mpi-klsb.mpg.de ([139.19.1.49]:59977 "EHLO
-	hera.mpi-klsb.mpg.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751805Ab3LJPqW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Dec 2013 10:46:22 -0500
-Message-ID: <52A738E4.5070706@mpi-sws.org>
-Date: Tue, 10 Dec 2013 16:53:08 +0100
-From: Pedro Fonseca <pfonseca@mpi-sws.org>
+Received: from nm15-vm7.access.bullet.mail.gq1.yahoo.com ([216.39.63.193]:21343
+	"HELO nm15-vm7.access.bullet.mail.gq1.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1750740Ab3LKEwd convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Dec 2013 23:52:33 -0500
+From: <linoc@pacbell.net>
+To: "'Hugo Mills'" <hugo@carfax.org.uk>
+Cc: <linux-btrfs@vger.kernel.org>
+References: <1386615086.1044.YahooMailNeo@web180901.mail.ne1.yahoo.com> <1386619322.61331.YahooMailNeo@web180902.mail.ne1.yahoo.com> <20131209200856.GF9738@carfax.org.uk> <1386623127.31132.YahooMailNeo@web180903.mail.ne1.yahoo.com> <1386623231.94746.YahooMailNeo@web180901.mail.ne1.yahoo.com> <20131210121904.GG9738@carfax.org.uk>
+In-Reply-To: <20131210121904.GG9738@carfax.org.uk>
+Subject: RE: Btrfs questions
+Date: Tue, 10 Dec 2013 20:52:15 -0800
+Message-ID: <00dd01cef62c$c42b0270$4c810750$@pacbell.net>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Warning in inode_tree_add() -- !(entry->vfs_inode.i_state & (I_WILL_FREE
- | I_FREEING)
-References: <52A63302.4020301@mpi-sws.org> <20131210132529.16869.59608@ret>
-In-Reply-To: <20131210132529.16869.59608@ret>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain;
+	charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+thanks
 
+-----Original Message-----
+From: Hugo Mills [mailto:hugo@carfax.org.uk] 
+Sent: Tuesday, December 10, 2013 4:19 AM
+To: Cirillo Costantino
+Cc: "linux-btrfs@vger.kernel.org"
+Subject: Re: Btrfs questions
 
-On 12/10/13 14:25 , Chris Mason wrote:
-> Quoting Pedro Fonseca (2013-12-09 16:15:46)
->> Hi,
->>
->> I've got multiple instances of warnings caused by the statement
->> "WARN_ON(!(entry->vfs_inode.i_state & (I_WILL_FREE | I_FREEING)));" in
->> inode_tree_add(). The tests were executed on the official 3.12.2 kernel.
->> Do you think it's something serious?
->
-> Definitely.  You're in the autodefrag code here and an iget is replacing
-> an existing inode that wasn't ready to be replaced.  What test are you
-> running?
->
-> -chris
->
+On Mon, Dec 09, 2013 at 01:07:11PM -0800, Cirillo Costantino wrote:
+> resending in plain text
+> 
+> 
+> ________________________________
+> From: Cirillo Costantino <linoc@pacbell.net>
+> To: Hugo Mills <hugo@carfax.org.uk>
+> Cc: ""linux-btrfs@vger.kernel.org"" <linux-btrfs@vger.kernel.org>
+> Sent: Monday, December 9, 2013 1:05 PM
+> Subject: Re: Btrfs questions
+> 
+> 
+> 
+> thanks Hugo,
+> 
+> the link you sent indicates that has been "submitted" but it is not in 
+> a kernel release... does it mean it could be in a 3.14 or 15 release?
 
-I'm running a custom test based on fsstress and on a QEMU based VMM. Btrfs was statically compiled and the btrfs filesystem was mounted on one or two loop devices.
+   Unlikely. There were patches a couple of years ago, but they weren't
+accepted back then and would probably need some additional effort to make
+them work now -- even if the general approach was accepted (which I'm not
+sure it was, from memory).
 
-Bellow I've tried to annotate the last file system operations with their parameters (e.g., "filename", "[start, len]",...). Note that the log only specifies the starting 
-order of the operations and note that operations on different CPUs may overlap (i.e. execute concurrently).
+> with the release of Haswell from Intel, persistent memory will be 
+> possible and cheap... portions of this memory could be made visible as 
+> block devices and mirrored for protection to a neighboring system for 
+> later replay in the event of a crash or power outage; how are such 
+> feature request be included in btrfs?
 
-Let me know if you need additional information.
+   I think you're confusing two things (or possibly I am) -- transactional
+memory and persistent memory.
 
-Pedro
+   Transactional memory allows for [potentially] more efficient algorithms
+to be used in concurrent systems, reducing the necessity for explicit
+locking -- that's unlikely to have much direct effect on btrfs, as I suspect
+it will largely be implemented in the kernel's lock primitives, and
+"ordinary" kernel code won't see much difference.
 
+   Persistent memory simply retains its state over a power-off, so in that
+sense it looks something like a directly-attached/addressable block device,
+which have been around for ages in the embedded space (although the
+approaches used there, like XIP, may need modification to scale up
+appropriately).
 
-* Test 1:
-      CPU: 1 Op: dread (d16/f22 [233472,90112])
-      CPU: 1 Op: chown  (d16/da6/c111)
-      CPU: 1 Op: dwrite (d16/d21/d38/fad [299008,65536])
-  CPU: 0 Op: chown (d16/da6/fe2)
-  CPU: 0 Op: rmdir (d16/d21/d6d/d74 39)
-  CPU: 0 Op: chown (fb)
-  CPU: 0 Op: chown (d16/d21/f96)
-  CPU: 0 Op: chown (d16/d21/d38/f66)
-  CPU: 0 Op: btrfs_subvol_list (d16)
-  CPU: 0 Op: btrfs_ioctl_filesystem_resize (+8m /mnt/dir)
-      CPU: 1 Op: write (d16/d21/d6d/feb [1581147,53815])
-      CPU: 1 Op: read (d16/d21/fc2 [159384,10768])
-      CPU: 1 Op: dwrite (f12 [1990656,90112])
-      CPU: 1 Op: dread (d16/d21/d6d/fa4 zero size)
-      CPU: 1 Op: btrfs_ioctl_filesystem_defragment (d16/f22)
+   Both are useful things to have, but I don't think you're going to see any
+gigantic changes coming out of either, other than access times for
+persistent storage coming down as a result of persistent memory.
 
+   Hugo.
 
-* Test 2:
-      CPU: 1 Op: dread (d16/f22 [233472,90112])
-      CPU: 1 Op: chown (d16/da6/c111)
-      CPU: 1 Op: dwrite (d16/d21/d38/fad [299008,65536])
-      CPU: 1 Op: write (d16/d21/d6d/feb [1581147,53815])
-      CPU: 1 Op: read (d16/d21/fc2 [159384,10768])
-      CPU: 1 Op: dwrite (f12 [1990656,90112])
-  CPU: 0 Op: dread (d16/f22 [233472,90112])
-  CPU: 0 Op: chown (d16/da6/c111)
-  CPU: 0 Op: dwrite (d16/d21/d38/fad [299008,65536])
-      CPU: 1 Op: dread (d16/d21/d6d/fa4 zero size)
-      CPU: 1 Op: btrfs_ioctl_filesystem_defragment (d16/f22)
-  CPU: 0 Op: write (d16/d21/d6d/feb [2193555,53815])
-  CPU: 0 Op: read (d16/d21/fc2 [159384,10768])
-  CPU: 0 Op: dwrite (f12 [688128,90112])
-  CPU: 0 Op: dread (d16/d21/d6d/fa4 zero size)
-  CPU: 0 Op: btrfs_ioctl_filesystem_defragment (d16/f22)
+> lino
+> 
+> 
+> ________________________________
+> From: Hugo Mills <hugo@carfax.org.uk>
+> To: Cirillo Costantino <linoc@pacbell.net>
+> Cc: ""linux-btrfs@vger.kernel.org"" <linux-btrfs@vger.kernel.org>
+> Sent: Monday, December 9, 2013 12:08 PM
+> Subject: Re: Btrfs questions
+> 
+> 
+> On Mon, Dec 09, 2013 at 12:02:02PM -0800, Cirillo Costantino wrote:
+> > 
+> > 
+> > i am looking at using btrfs for a new project and i have a few
+questions:
+> > 
+> >     * i have heard that as it currently stands Btrfs has some issues 
+> > to be used as a Lustre file system; is he aware of the issues and 
+> > any plans to address these and integrate Btrfs in to Lustre
+> 
+>    I don't recall seeing any Lustre-specific issues being reported 
+> here. Do you have any links to bug reports with this configuration?
+> 
+> >     * any plans to support native clustering on Btrfs
+> 
+>    No: 
+> https://btrfs.wiki.kernel.org/index.php/FAQ#Will_Btrfs_become_a_cluste
+> red_file_system
+> 
+> >     * on ZFS the ZIL is a separate device, any plans to implement a
+> the B-Tree log on a separate device?
+> 
+>    Not that I'm aware of, but it may come out of the work below.
+> 
+> >     * any plans to allow to have a file system metadata be placed on 
+> > a separate device
+> 
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Device_IO_Priori
+> ties
+> 
+>    ... but it's not being worked on right now.
+> 
+>    Hugo.
+> 
 
-
-* Test 3:
-      CPU: 1 Op: dread (d16/dce/fe1 zero size)
-      CPU: 1 Op: stat (stat d16/da6/f117)
-      CPU: 1 Op: btrfs_ioctl_filesystem_resize (-5m /mnt/dir)
-      CPU: 1 Op: write (ff [956340,50300])
-      CPU: 1 Op: mkdir (d16/d13b)
-      CPU: 1 Op: creat (d16/d21/d6d/d74/f13c x:0 0 0)
-      CPU: 1 Op: chown (d16/f116)
-      CPU: 1 Op: rename ( d16/d21/d38/l7c to d16/d21/d38/l13d)
-  CPU: 0 Op: dread (d16/f22 [233472,90112])
-  CPU: 0 Op: chown (d16/da6/c111)
-  CPU: 0 Op: dwrite (d16/d21/d38/fad [299008,65536])
-  CPU: 0 Op: write (d16/d21/d6d/feb [1581147,53815])
-  CPU: 0 Op: read (d16/d21/fc2 [159384,10768])
-  CPU: 0 Op: dwrite (f12 [1990656,90112])
-  CPU: 0 Op: dread (d16/d21/d6d/fa4 zero size)
-  CPU: 0 Op: btrfs_ioctl_filesystem_defragment (d16/f22)
+--
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+       --- There's many a slip 'twixt wicket-keeper and gully. ---       
 

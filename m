@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga03-in.huawei.com ([119.145.14.66]:47235 "EHLO
-	szxga03-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750736Ab3LKF5Q (ORCPT
+Received: from szxga01-in.huawei.com ([119.145.14.64]:39630 "EHLO
+	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750782Ab3LKGEW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 00:57:16 -0500
-Message-ID: <52A7FEA4.80208@huawei.com>
-Date: Wed, 11 Dec 2013 13:56:52 +0800
+	Wed, 11 Dec 2013 01:04:22 -0500
+Message-ID: <52A8004F.4090705@huawei.com>
+Date: Wed, 11 Dec 2013 14:03:59 +0800
 From: Libo Chen <clbchenlibo.chen@huawei.com>
 MIME-Version: 1.0
 To: <clm@fb.com>, <jbacik@fb.com>, <chris.mason@fusionio.com>,
@@ -13,16 +13,20 @@ To: <clm@fb.com>, <jbacik@fb.com>, <chris.mason@fusionio.com>,
 CC: <linux-btrfs@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>,
         <mfasheh@suse.de>, <hch@lst.de>, <viro@zeniv.linux.org.uk>,
         <miaox@cn.fujitsu.com>, Li Zefan <lizefan@huawei.com>
-Subject: [PATCH] fs: btrfs: new helper: file_inode(file)
+Subject: [PATCH RESEND] fs: btrfs: new helper: file_inode(file)
+References: <52A7FEA4.80208@huawei.com>
+In-Reply-To: <52A7FEA4.80208@huawei.com>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Signed-off-by: Libo Chen <clbchenlibo.chen@huawei.com
+Signed-off-by: Libo Chen <clbchenlibo.chen@huawei.com>
 ---
  fs/btrfs/ioctl.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
+
+ - just change style
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
 index a111622..fdfc0d7 100644
@@ -48,4 +52,6 @@ index a111622..fdfc0d7 100644
 
 -- 
 1.8.2.2
+
+
 

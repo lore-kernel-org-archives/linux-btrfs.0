@@ -1,451 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37968 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750800Ab3LKKyN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 05:54:13 -0500
-Subject: Re: [Cluster-devel] [PATCH 16/18] gfs2: use generic posix ACL
- infrastructure
-From: Steven Whitehouse <swhiteho@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: viro@zeniv.linux.org.uk,
-        Andreas Gruenbacher <andreas.gruenbacher@linbit.com>, xfs@oss.sgi.com,
-        reiserfs-devel@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        cluster-devel@redhat.com, linux-mtd@lists.infradead.org,
-        jfs-discussion@lists.sourceforge.net, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-In-Reply-To: <20131211104529.142731540@bombadil.infradead.org>
-References: <20131211104243.148113893@bombadil.infradead.org>
-	 <20131211104529.142731540@bombadil.infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Date: Wed, 11 Dec 2013 10:52:41 +0000
-Message-ID: <1386759161.2706.7.camel@menhir>
-Mime-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:3318 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751436Ab3LKK6a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 05:58:30 -0500
+Message-ID: <52A84599.50208@cn.fujitsu.com>
+Date: Wed, 11 Dec 2013 18:59:37 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs/024 is unhappy on current HEAD
+References: <20131211103938.GA22293@infradead.org>
+In-Reply-To: <20131211103938.GA22293@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This bug has been fixed by
 
-On Wed, 2013-12-11 at 02:42 -0800, Christoph Hellwig wrote:
-> plain text document attachment
-> (0016-gfs2-use-generic-posix-ACL-infrastructure.patch)
-> This contains some major refactoring for the create path so that
-> inodes are created with the right mode to start with instead of
-> fixing it up later.
+https://patchwork.kernel.org/patch/3222061/
+
+Thanks
+Miao
+
+On 	wed, 11 Dec 2013 02:39:38 -0800, Christoph Hellwig wrote:
+> btrfs/024	[  159.416857] btrfs: device fsid
+> c8802dbf-ca95-45c5-af67-18f13ef243ea devid 1 transid 4 /dev/vdc
+> [  159.430449] btrfs: setting nodatacow, compression disabled
+> [  159.431668] btrfs: disk space caching is enabled
+> [  159.439418] btrfs: creating UUID tree
+> [  159.466146] ------------[ cut here ]------------
+> [  159.467547] WARNING: CPU: 3 PID: 8127 at /work/hch/linux/kernel/locking/lockdep.c:3160 __lock_acquire+0x1f18/0x1fa0()
+> [  159.468075] btrfs: device fsid c8802dbf-ca95-45c5-af67-18f13ef243ea devid 1 transid 5 /dev/vdc
+> [  159.469411] DEBUG_LOCKS_WARN_ON(id >= MAX_LOCKDEP_KEYS)
+> [  159.469411] Modules linked in:
+> [  159.469411] CPU: 3 PID: 8127 Comm: btrfs-delalloc- Not tainted 3.13.0-rc3+ #72
+> [  159.469411] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  159.469411]  0000000000000009 ffff880070787948 ffffffff81c6aeb2 ffff88006fecc050
+> [  159.469411]  ffff880070787998 ffff880070787988 ffffffff81092e97 0000000000000ef2
+> [  159.469411]  ffff88006fecc700 0000000000000002 ffffffff82f65940 0000000000000000
+> [  159.469411] Call Trace:
+> [  159.469411]  [<ffffffff81c6aeb2>] dump_stack+0x46/0x58
+> [  159.469411]  [<ffffffff81092e97>] warn_slowpath_common+0x87/0xb0
+> [  159.469411]  [<ffffffff81092f61>] warn_slowpath_fmt+0x41/0x50
+> [  159.469411]  [<ffffffff810da0b8>] __lock_acquire+0x1f18/0x1fa0
+> [  159.469411]  [<ffffffff810da708>] lock_acquire+0x98/0x120
+> [  159.469411]  [<ffffffff8165b44d>] ? find_workspace+0x9d/0x1c0
+> [  159.469411]  [<ffffffff81c73a6c>] _raw_spin_lock+0x2c/0x40
+> [  159.469411]  [<ffffffff8165b44d>] ? find_workspace+0x9d/0x1c0
+> [  159.469411]  [<ffffffff8165b44d>] find_workspace+0x9d/0x1c0
+> [  159.469411]  [<ffffffff8114b54d>] ? clear_page_dirty_for_io+0xed/0x110
+> [  159.469411]  [<ffffffff8165c624>] btrfs_compress_pages+0x34/0xc0
+> [  159.469411]  [<ffffffff810db28d>] ? trace_hardirqs_on+0xd/0x10
+> [  159.469411]  [<ffffffff8161f82f>] compress_file_range+0x1df/0x650
+> [  159.469411]  [<ffffffff8161fcd0>] async_cow_start+0x30/0x50
+> [  159.469411]  [<ffffffff81645097>] worker_loop+0x157/0x590
+> [  159.469411]  [<ffffffff810db28d>] ? trace_hardirqs_on+0xd/0x10
+> [  159.469411]  [<ffffffff81644f40>] ? btrfs_queue_worker+0x310/0x310
+> [  159.469411]  [<ffffffff810b6b0f>] kthread+0xdf/0x100
+> [  159.469411]  [<ffffffff81c741eb>] ? _raw_spin_unlock_irq+0x2b/0x40
+> [  159.469411]  [<ffffffff810b6a30>] ? __init_kthread_worker+0x70/0x70
+> [  159.469411]  [<ffffffff81c7c5cc>] ret_from_fork+0x7c/0xb0
+> [  159.469411]  [<ffffffff810b6a30>] ? __init_kthread_worker+0x70/0x70
+> [  159.469411] ---[ end trace ce7bfbef1159b87c ]---
+> [  159.537771] BUG: unable to handle kernel NULL pointer dereference at 0000000000000003
+> [  159.540789] IP: [<ffffffff8165b4c0>] find_workspace+0x110/0x1c0
+> [  159.541065] PGD 6ec6d067 PUD 7b53d067 PMD 0 
+> [  159.541065] Oops: 0000 [#1] SMP 
+> [  159.541065] Modules linked in:
+> [  159.541065] CPU: 3 PID: 8127 Comm: btrfs-delalloc- Tainted: G
+> W    3.13.0-rc3+ #72
+> [  159.541065] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2007
+> [  159.541065] task: ffff88006fecc050 ti: ffff880070786000 task.ti: ffff880070786000
+> [  159.541065] RIP: 0010:[<ffffffff8165b4c0>]  [<ffffffff8165b4c0>] find_workspace+0x110/0x1c0
+> [  159.541065] RSP: 0018:ffff880070787b98  EFLAGS: 00010296
+> [  159.541065] RAX: 0000000000000003 RBX: ffffffff82f65928 RCX: 0000000000000100
+> [  159.541065] RDX: 0000000000000000 RSI: ffffffff820a0070 RDI: ffffffff82f65928
+> [  159.541065] RBP: ffff880070787c18 R08: 0000000000000002 R09: 0000000000000000
+> [  159.541065] R10: ffffffff81dfae80 R11: 0000000000000322 R12: ffffffff82f65930
+> [  159.541065] R13: ffffffff82f659cc R14: 0000000000000004 R15: ffff880070787bd8
+> [  159.541065] FS:  0000000000000000(0000) GS:ffff88007fd80000(0000) knlGS:0000000000000000
+> [  159.541065] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [  159.541065] CR2: 0000000000000003 CR3: 000000006fed8000 CR4: 00000000000006e0
+> [  159.541065] Stack:
+> [  159.541065]  ffff880070787c18 ffff88006fecc050 ffffffffffffffff ffffffff82f65998
+> [  159.541065]  ffff880000000000 0000000000000046 0000000000000082 0000000000000246
+> [  159.541065]  00000000707a86f0 ffff88006fecc050 ffffffff8114b54d 0000000000000000
+> [  159.541065] Call Trace:
+> [  159.541065]  [<ffffffff8114b54d>] ? clear_page_dirty_for_io+0xed/0x110
+> [  159.541065]  [<ffffffff8165c624>] btrfs_compress_pages+0x34/0xc0
+> [  159.541065]  [<ffffffff810db28d>] ? trace_hardirqs_on+0xd/0x10
+> [  159.541065]  [<ffffffff8161f82f>] compress_file_range+0x1df/0x650
+> [  159.541065]  [<ffffffff8161fcd0>] async_cow_start+0x30/0x50
+> [  159.541065]  [<ffffffff81645097>] worker_loop+0x157/0x590
+> [  159.541065]  [<ffffffff810db28d>] ? trace_hardirqs_on+0xd/0x10
+> [  159.541065]  [<ffffffff81644f40>] ? btrfs_queue_worker+0x310/0x310
+> [  159.541065]  [<ffffffff810b6b0f>] kthread+0xdf/0x100
+> [  159.541065]  [<ffffffff81c741eb>] ? _raw_spin_unlock_irq+0x2b/0x40
+> [  159.541065]  [<ffffffff810b6a30>] ? __init_kthread_worker+0x70/0x70
+> [  159.541065]  [<ffffffff81c7c5cc>] ret_from_fork+0x7c/0xb0
+> [  159.541065]  [<ffffffff810b6a30>] ? __init_kthread_worker+0x70/0x70
+> [  159.541065] Code: 8d 75 a8 e8 b3 4e a7 ff 41 8b 45 00 41 39 c6 7d 92 48 8b 55 90 8b 04 95 70 5a f6 82 85 c0 75 83 e8 06 45 61 00 e9 79 ff ff ff 90 <48> 8b 08 48 89 df 48 8b 50 08 48 89 51 08 48 89 0a 48 ba 00 01 
+> [  159.541065] RIP  [<ffffffff8165b4c0>] find_workspace+0x110/0x1c0
+> [  159.541065]  RSP <ffff880070787b98>
+> [  159.541065] CR2: 0000000000000003
+> [  159.541065] ---[ end trace ce7bfbef1159b87d ]---
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Steven Whitehouse <swhiteho@redhat.com>
-
-A really nice clean up - this is a very useful step forward in
-simplifying the create path. Thanks for sorting this out,
-
-Steve.
-
-> ---
->  fs/gfs2/acl.c   |  234 +++++++------------------------------------------------
->  fs/gfs2/acl.h   |    4 +-
->  fs/gfs2/inode.c |   33 ++++++--
->  fs/gfs2/xattr.c |    4 +-
->  4 files changed, 62 insertions(+), 213 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> diff --git a/fs/gfs2/acl.c b/fs/gfs2/acl.c
-> index e82e4ac..ba94566 100644
-> --- a/fs/gfs2/acl.c
-> +++ b/fs/gfs2/acl.c
-> @@ -49,10 +49,6 @@ struct posix_acl *gfs2_get_acl(struct inode *inode, int type)
->  	if (!ip->i_eattr)
->  		return NULL;
->  
-> -	acl = get_cached_acl(&ip->i_inode, type);
-> -	if (acl != ACL_NOT_CACHED)
-> -		return acl;
-> -
->  	name = gfs2_acl_name(type);
->  	if (name == NULL)
->  		return ERR_PTR(-EINVAL);
-> @@ -80,7 +76,7 @@ static int gfs2_set_mode(struct inode *inode, umode_t mode)
->  	return error;
->  }
->  
-> -static int gfs2_acl_set(struct inode *inode, int type, struct posix_acl *acl)
-> +int gfs2_set_acl(struct inode *inode, struct posix_acl *acl, int type)
->  {
->  	int error;
->  	int len;
-> @@ -88,219 +84,49 @@ static int gfs2_acl_set(struct inode *inode, int type, struct posix_acl *acl)
->  	const char *name = gfs2_acl_name(type);
->  
->  	BUG_ON(name == NULL);
-> -	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
-> -	if (len == 0)
-> -		return 0;
-> -	data = kmalloc(len, GFP_NOFS);
-> -	if (data == NULL)
-> -		return -ENOMEM;
-> -	error = posix_acl_to_xattr(&init_user_ns, acl, data, len);
-> -	if (error < 0)
-> -		goto out;
-> -	error = __gfs2_xattr_set(inode, name, data, len, 0, GFS2_EATYPE_SYS);
-> -	if (!error)
-> -		set_cached_acl(inode, type, acl);
-> -out:
-> -	kfree(data);
-> -	return error;
-> -}
-> -
-> -int gfs2_acl_create(struct gfs2_inode *dip, struct inode *inode)
-> -{
-> -	struct gfs2_sbd *sdp = GFS2_SB(&dip->i_inode);
-> -	struct posix_acl *acl;
-> -	umode_t mode = inode->i_mode;
-> -	int error = 0;
-> -
-> -	if (!sdp->sd_args.ar_posix_acl)
-> -		return 0;
-> -	if (S_ISLNK(inode->i_mode))
-> -		return 0;
-> -
-> -	acl = gfs2_get_acl(&dip->i_inode, ACL_TYPE_DEFAULT);
-> -	if (IS_ERR(acl))
-> -		return PTR_ERR(acl);
-> -	if (!acl) {
-> -		mode &= ~current_umask();
-> -		return gfs2_set_mode(inode, mode);
-> -	}
-> -
-> -	if (S_ISDIR(inode->i_mode)) {
-> -		error = gfs2_acl_set(inode, ACL_TYPE_DEFAULT, acl);
-> -		if (error)
-> -			goto out;
-> -	}
-> -
-> -	error = __posix_acl_create(&acl, GFP_NOFS, &mode);
-> -	if (error < 0)
-> -		return error;
->  
-> -	if (error == 0)
-> -		goto munge;
-> -
-> -	error = gfs2_acl_set(inode, ACL_TYPE_ACCESS, acl);
-> -	if (error)
-> -		goto out;
-> -munge:
-> -	error = gfs2_set_mode(inode, mode);
-> -out:
-> -	posix_acl_release(acl);
-> -	return error;
-> -}
-> -
-> -int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr)
-> -{
-> -	struct inode *inode = &ip->i_inode;
-> -	struct posix_acl *acl;
-> -	char *data;
-> -	unsigned int len;
-> -	int error;
-> -
-> -	acl = gfs2_get_acl(&ip->i_inode, ACL_TYPE_ACCESS);
-> -	if (IS_ERR(acl))
-> -		return PTR_ERR(acl);
-> -	if (!acl)
-> -		return gfs2_setattr_simple(inode, attr);
-> -
-> -	error = __posix_acl_chmod(&acl, GFP_NOFS, attr->ia_mode);
-> -	if (error)
-> -		return error;
-> -
-> -	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
-> -	data = kmalloc(len, GFP_NOFS);
-> -	error = -ENOMEM;
-> -	if (data == NULL)
-> -		goto out;
-> -	posix_acl_to_xattr(&init_user_ns, acl, data, len);
-> -	error = gfs2_xattr_acl_chmod(ip, attr, data);
-> -	kfree(data);
-> -	set_cached_acl(&ip->i_inode, ACL_TYPE_ACCESS, acl);
-> -
-> -out:
-> -	posix_acl_release(acl);
-> -	return error;
-> -}
-> -
-> -static int gfs2_acl_type(const char *name)
-> -{
-> -	if (strcmp(name, GFS2_POSIX_ACL_ACCESS) == 0)
-> -		return ACL_TYPE_ACCESS;
-> -	if (strcmp(name, GFS2_POSIX_ACL_DEFAULT) == 0)
-> -		return ACL_TYPE_DEFAULT;
-> -	return -EINVAL;
-> -}
-> -
-> -static int gfs2_xattr_system_get(struct dentry *dentry, const char *name,
-> -				 void *buffer, size_t size, int xtype)
-> -{
-> -	struct inode *inode = dentry->d_inode;
-> -	struct gfs2_sbd *sdp = GFS2_SB(inode);
-> -	struct posix_acl *acl;
-> -	int type;
-> -	int error;
-> -
-> -	if (!sdp->sd_args.ar_posix_acl)
-> -		return -EOPNOTSUPP;
-> -
-> -	type = gfs2_acl_type(name);
-> -	if (type < 0)
-> -		return type;
-> -
-> -	acl = gfs2_get_acl(inode, type);
-> -	if (IS_ERR(acl))
-> -		return PTR_ERR(acl);
-> -	if (acl == NULL)
-> -		return -ENODATA;
-> -
-> -	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
-> -	posix_acl_release(acl);
-> -
-> -	return error;
-> -}
-> -
-> -static int gfs2_xattr_system_set(struct dentry *dentry, const char *name,
-> -				 const void *value, size_t size, int flags,
-> -				 int xtype)
-> -{
-> -	struct inode *inode = dentry->d_inode;
-> -	struct gfs2_sbd *sdp = GFS2_SB(inode);
-> -	struct posix_acl *acl = NULL;
-> -	int error = 0, type;
-> -
-> -	if (!sdp->sd_args.ar_posix_acl)
-> -		return -EOPNOTSUPP;
-> -
-> -	type = gfs2_acl_type(name);
-> -	if (type < 0)
-> -		return type;
-> -	if (flags & XATTR_CREATE)
-> -		return -EINVAL;
-> -	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
-> -		return value ? -EACCES : 0;
-> -	if (!uid_eq(current_fsuid(), inode->i_uid) && !capable(CAP_FOWNER))
-> -		return -EPERM;
-> -	if (S_ISLNK(inode->i_mode))
-> -		return -EOPNOTSUPP;
-> -
-> -	if (!value)
-> -		goto set_acl;
-> -
-> -	acl = posix_acl_from_xattr(&init_user_ns, value, size);
-> -	if (!acl) {
-> -		/*
-> -		 * acl_set_file(3) may request that we set default ACLs with
-> -		 * zero length -- defend (gracefully) against that here.
-> -		 */
-> -		goto out;
-> -	}
-> -	if (IS_ERR(acl)) {
-> -		error = PTR_ERR(acl);
-> -		goto out;
-> -	}
-> -
-> -	error = posix_acl_valid(acl);
-> -	if (error)
-> -		goto out_release;
-> -
-> -	error = -EINVAL;
->  	if (acl->a_count > GFS2_ACL_MAX_ENTRIES)
-> -		goto out_release;
-> +		return -EINVAL;
->  
->  	if (type == ACL_TYPE_ACCESS) {
->  		umode_t mode = inode->i_mode;
-> +
->  		error = posix_acl_equiv_mode(acl, &mode);
-> +		if (error < 0)
-> +			return error;
->  
-> -		if (error <= 0) {
-> -			posix_acl_release(acl);
-> +		if (error == 0)
->  			acl = NULL;
->  
-> -			if (error < 0)
-> -				return error;
-> -		}
-> -
->  		error = gfs2_set_mode(inode, mode);
->  		if (error)
-> -			goto out_release;
-> +			return error;
->  	}
->  
-> -set_acl:
-> -	error = __gfs2_xattr_set(inode, name, value, size, 0, GFS2_EATYPE_SYS);
-> -	if (!error) {
-> -		if (acl)
-> -			set_cached_acl(inode, type, acl);
-> -		else
-> -			forget_cached_acl(inode, type);
-> +	if (acl) {
-> +		len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
-> +		if (len == 0)
-> +			return 0;
-> +		data = kmalloc(len, GFP_NOFS);
-> +		if (data == NULL)
-> +			return -ENOMEM;
-> +		error = posix_acl_to_xattr(&init_user_ns, acl, data, len);
-> +		if (error < 0)
-> +			goto out;
-> +	} else {
-> +		data = NULL;
-> +		len = 0;
->  	}
-> -out_release:
-> -	posix_acl_release(acl);
-> +
-> +	error = __gfs2_xattr_set(inode, name, data, len, 0, GFS2_EATYPE_SYS);
-> +	if (error)
-> +		goto out;
-> +
-> +	if (acl)
-> +		set_cached_acl(inode, type, acl);
-> +	else
-> +		forget_cached_acl(inode, type);
->  out:
-> +	kfree(data);
->  	return error;
->  }
-> -
-> -const struct xattr_handler gfs2_xattr_system_handler = {
-> -	.prefix = XATTR_SYSTEM_PREFIX,
-> -	.flags  = GFS2_EATYPE_SYS,
-> -	.get    = gfs2_xattr_system_get,
-> -	.set    = gfs2_xattr_system_set,
-> -};
-> -
-> diff --git a/fs/gfs2/acl.h b/fs/gfs2/acl.h
-> index 0da38dc..301260c 100644
-> --- a/fs/gfs2/acl.h
-> +++ b/fs/gfs2/acl.h
-> @@ -17,8 +17,6 @@
->  #define GFS2_ACL_MAX_ENTRIES		25
->  
->  extern struct posix_acl *gfs2_get_acl(struct inode *inode, int type);
-> -extern int gfs2_acl_create(struct gfs2_inode *dip, struct inode *inode);
-> -extern int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr);
-> -extern const struct xattr_handler gfs2_xattr_system_handler;
-> +extern int gfs2_set_acl(struct inode *inode, struct posix_acl *acl, int type);
->  
->  #endif /* __ACL_DOT_H__ */
-> diff --git a/fs/gfs2/inode.c b/fs/gfs2/inode.c
-> index 7119504..92b8959 100644
-> --- a/fs/gfs2/inode.c
-> +++ b/fs/gfs2/inode.c
-> @@ -552,6 +552,7 @@ static int gfs2_create_inode(struct inode *dir, struct dentry *dentry,
->  			     unsigned int size, int excl, int *opened)
->  {
->  	const struct qstr *name = &dentry->d_name;
-> +	struct posix_acl *default_acl, *acl;
->  	struct gfs2_holder ghs[2];
->  	struct inode *inode = NULL;
->  	struct gfs2_inode *dip = GFS2_I(dir), *ip;
-> @@ -611,10 +612,14 @@ static int gfs2_create_inode(struct inode *dir, struct dentry *dentry,
->  	if (!inode)
->  		goto fail_gunlock;
->  
-> +	error = posix_acl_create(dir, &mode, &default_acl, &acl);
-> +	if (error)
-> +		goto fail_free_vfs_inode;
-> +
->  	ip = GFS2_I(inode);
->  	error = gfs2_rs_alloc(ip);
->  	if (error)
-> -		goto fail_free_inode;
-> +		goto fail_free_acls;
->  
->  	inode->i_mode = mode;
->  	set_nlink(inode, S_ISDIR(mode) ? 2 : 1);
-> @@ -682,7 +687,16 @@ static int gfs2_create_inode(struct inode *dir, struct dentry *dentry,
->  	gfs2_set_iop(inode);
->  	insert_inode_hash(inode);
->  
-> -	error = gfs2_acl_create(dip, inode);
-> +	if (default_acl) {
-> +		error = gfs2_set_acl(inode, default_acl, ACL_TYPE_DEFAULT);
-> +		posix_acl_release(default_acl);
-> +	}
-> +	if (acl) {
-> +		if (!error)
-> +			error = gfs2_set_acl(inode, acl, ACL_TYPE_ACCESS);
-> +		posix_acl_release(acl);
-> +	}
-> +
->  	if (error)
->  		goto fail_gunlock3;
->  
-> @@ -716,6 +730,12 @@ fail_free_inode:
->  	if (ip->i_gl)
->  		gfs2_glock_put(ip->i_gl);
->  	gfs2_rs_delete(ip, NULL);
-> +fail_free_acls:
-> +	if (default_acl)
-> +		posix_acl_release(default_acl);
-> +	if (acl)
-> +		posix_acl_release(acl);
-> +fail_free_vfs_inode:
->  	free_inode_nonrcu(inode);
->  	inode = NULL;
->  fail_gunlock:
-> @@ -1678,10 +1698,11 @@ static int gfs2_setattr(struct dentry *dentry, struct iattr *attr)
->  		error = gfs2_setattr_size(inode, attr->ia_size);
->  	else if (attr->ia_valid & (ATTR_UID | ATTR_GID))
->  		error = setattr_chown(inode, attr);
-> -	else if ((attr->ia_valid & ATTR_MODE) && IS_POSIXACL(inode))
-> -		error = gfs2_acl_chmod(ip, attr);
-> -	else
-> +	else {
->  		error = gfs2_setattr_simple(inode, attr);
-> +		if (!error && attr->ia_valid & ATTR_MODE)
-> +			error = posix_acl_chmod(inode, inode->i_mode);
-> +	}
->  
->  out:
->  	if (!error)
-> @@ -1841,6 +1862,7 @@ const struct inode_operations gfs2_file_iops = {
->  	.removexattr = gfs2_removexattr,
->  	.fiemap = gfs2_fiemap,
->  	.get_acl = gfs2_get_acl,
-> +	.set_acl = gfs2_set_acl,
->  };
->  
->  const struct inode_operations gfs2_dir_iops = {
-> @@ -1862,6 +1884,7 @@ const struct inode_operations gfs2_dir_iops = {
->  	.removexattr = gfs2_removexattr,
->  	.fiemap = gfs2_fiemap,
->  	.get_acl = gfs2_get_acl,
-> +	.set_acl = gfs2_set_acl,
->  	.atomic_open = gfs2_atomic_open,
->  };
->  
-> diff --git a/fs/gfs2/xattr.c b/fs/gfs2/xattr.c
-> index 8c6a6f6..0b81f78 100644
-> --- a/fs/gfs2/xattr.c
-> +++ b/fs/gfs2/xattr.c
-> @@ -13,6 +13,7 @@
->  #include <linux/buffer_head.h>
->  #include <linux/xattr.h>
->  #include <linux/gfs2_ondisk.h>
-> +#include <linux/posix_acl_xattr.h>
->  #include <asm/uaccess.h>
->  
->  #include "gfs2.h"
-> @@ -1500,7 +1501,8 @@ static const struct xattr_handler gfs2_xattr_security_handler = {
->  const struct xattr_handler *gfs2_xattr_handlers[] = {
->  	&gfs2_xattr_user_handler,
->  	&gfs2_xattr_security_handler,
-> -	&gfs2_xattr_system_handler,
-> +	&posix_acl_access_xattr_handler,
-> +	&posix_acl_default_xattr_handler,
->  	NULL,
->  };
->  
-
 

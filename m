@@ -1,52 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36451 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750968Ab3LKTnz convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 14:43:55 -0500
-Content-Type: text/plain; charset="utf-8"
+Received: from mga09.intel.com ([134.134.136.24]:53525 "EHLO mga09.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751267Ab3LKXUE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 18:20:04 -0500
+Date: Wed, 11 Dec 2013 15:20:05 -0800
+From: Sarah Sharp <sarah.a.sharp@linux.intel.com>
+To: Alan Stern <stern@rowland.harvard.edu>
+Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
+        linux-usb@vger.kernel.org, Hans de Goede <hdegoede@redhat.com>,
+        linux-scsi@vger.kernel.org
+Subject: Re: BTRFS doesn't handle USB device disconnect
+Message-ID: <20131211232005.GA2620@xanatos>
+References: <20131211011755.GA3574@xanatos>
+ <Pine.LNX.4.44L0.1312111058340.1531-100000@iolanthe.rowland.org>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Martin <m_btrfs@ml1.co.uk>
-From: Chris Mason <clm@fb.com>
-In-Reply-To: <20131211190104.GM9738@carfax.org.uk>
-CC: <linux-btrfs@vger.kernel.org>
-References: <l8a8lv$mk7$1@ger.gmane.org> <20131211190104.GM9738@carfax.org.uk>
-Message-ID: <20131211194327.12817.49789@ret>
-Subject: Re: BTRFS extended attributes mounted on a non-extended-attributes compiled
- kernel
-Date: Wed, 11 Dec 2013 14:43:36 -0500
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <Pine.LNX.4.44L0.1312111058340.1531-100000@iolanthe.rowland.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting Hugo Mills (2013-12-11 14:01:04)
-> On Wed, Dec 11, 2013 at 05:51:06PM +0000, Martin wrote:
-> > What happens if...
-> > 
-> > I have a btrfs that has utilised posix ACLs / extended attributes and I
-> > then subsequently mount that onto a system that does not have the kernel
-> > modules compiled for those features?
-> > 
-> > 
-> > Crash and burn?
-> > 
-> > Or are the extra filesystem features benignly ignored until remounted on
-> > the original system with all the kernel modules?
+On Wed, Dec 11, 2013 at 11:03:09AM -0500, Alan Stern wrote:
+> On Tue, 10 Dec 2013, Sarah Sharp wrote:
+> > On 3.13-rc1, the btrfs partion from the disconnected USB device
+> > continues to be listed as mounted.  Yanking the cable produces some
+> > additional oops messages.  It also produced a couple hard-hangs.
+> > Unfortunately, I didn't capture the dmesg during the hard-hangs, so I
+> > can't tell for sure which driver is to blame (uas, btrfs, or xhci).
 > 
->    Thinking about it, it's probably going to be OK. btrfs itself
-> doesn't have any way of turning off EA support, so you'll always have
-> the EAs managed correctly. The ACL support (which is implemented
-> through EAs, if I remember correctly) can be turned off, so the
-> meaning of the ACL EAs will be ignored, but the EA content should
-> still be there for when you move to an ACL-enabled system again. Note
-> that this gives you a "convenient" way of bypassing POSIX ACLs, by
-> switching to a kernel that doesn't enforce them.
+> Does this happen with usb-storage instead of uas?
 > 
->    I've not actually tried this, so I'm willing to be proved wrong,
-> but I'll be surprised if that's the case. :)
+> What about with ehci-hcd instead of xhci-hcd?
+> 
+> And just to be exotic, what about with dummy-hcd and the uas or
+> g_mass_storage gadget driver?
 
-I do expect it to silently work.  If you have directories that inherit
-acls etc, you might not get fully consistent results if you try to
-change anything on the non-xattr/acl kernel.
+I can't reproduce the hard-hangs (with xhci and uas), but I did manage
+to reproduce a bug in uas where the disconnect function hangs, and hangs
+the khubd thread as well.  This happens even with the btrfs partition
+wiped from the drive, so it's not a btrfs issue.  I'll send a separate
+bug report to Hans.
 
--chris
-
+Sarah Sharp

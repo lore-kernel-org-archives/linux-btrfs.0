@@ -1,48 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:45138 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751697Ab3LKLab (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Dec 2013 06:30:31 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBBBUL68008777
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2013 19:30:21 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: make sure we cleanup all reloc roots if error happens
-Date: Wed, 11 Dec 2013 19:29:52 +0800
-Message-Id: <1386761392-5002-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1386761392-5002-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1386761392-5002-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:16595 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751370Ab3LKPfV convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Dec 2013 10:35:21 -0500
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+To: Christoph Hellwig <hch@infradead.org>, Miao Xie <miaox@cn.fujitsu.com>
+From: Chris Mason <clm@fb.com>
+In-Reply-To: <20131211110007.GA10699@infradead.org>
+CC: Christoph Hellwig <hch@infradead.org>, <linux-btrfs@vger.kernel.org>
+References: <20131211103938.GA22293@infradead.org> <52A84599.50208@cn.fujitsu.com>
+ <20131211110007.GA10699@infradead.org>
+Message-ID: <20131211153421.7422.45762@ret>
+Subject: Re: btrfs/024 is unhappy on current HEAD
+Date: Wed, 11 Dec 2013 10:34:51 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I hit an oops when merging reloc roots fails, the reason is that
-new reloc roots may be added and we should make sure we cleanup
-all reloc roots.
+Quoting Christoph Hellwig (2013-12-11 06:00:07)
+> On Wed, Dec 11, 2013 at 06:59:37PM +0800, Miao Xie wrote:
+> > This bug has been fixed by
+> > 
+> > https://patchwork.kernel.org/patch/3222061/
+> 
+> Would be good to get it out to Linus ASAP..
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/relocation.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+My new devel boxes are up and running now, so I'm starting tests for a
+pull.  It should go out tomorrow.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 55bffcf..93d01b7 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2409,6 +2409,13 @@ out:
- 		btrfs_std_error(root->fs_info, ret);
- 		if (!list_empty(&reloc_roots))
- 			free_reloc_roots(&reloc_roots);
-+
-+		/* new reloc root may be added */
-+		mutex_lock(&root->fs_info->reloc_mutex);
-+		list_splice_init(&rc->reloc_roots, &reloc_roots);
-+		mutex_unlock(&root->fs_info->reloc_mutex);
-+		if (!list_empty(&reloc_roots))
-+			free_reloc_roots(&reloc_roots);
- 	}
- 
- 	BUG_ON(!RB_EMPTY_ROOT(&rc->reloc_root_tree.rb_root));
--- 
-1.8.3.1
+-chris
 

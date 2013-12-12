@@ -1,29 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51772 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751519Ab3LLSRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 13:17:51 -0500
-Date: Thu, 12 Dec 2013 19:17:50 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org, harald@redhat.com
-Subject: Re: Updated btrfs-next
-Message-ID: <20131212181750.GT6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <52A8B9BF.9030707@fb.com>
+Received: from zimbra13.linbit.com ([212.69.166.240]:55710 "EHLO
+	zimbra13.linbit.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751902Ab3LLTGN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Dec 2013 14:06:13 -0500
+Date: Thu, 12 Dec 2013 20:06:09 +0100 (CET)
+From: Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
+        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
+        reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
+        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nfs@vger.kernel.org, Jan Kara <jack@suse.cz>
+Message-ID: <1724169901.69108.1386875169382.JavaMail.zimbra@linbit.com>
+In-Reply-To: <20131211104526.648135334@bombadil.infradead.org>
+References: <20131211104243.148113893@bombadil.infradead.org> <20131211104526.648135334@bombadil.infradead.org>
+Subject: Re: [PATCH 02/18] fs: add get_acl helper
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52A8B9BF.9030707@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 11, 2013 at 02:15:11PM -0500, Josef Bacik wrote:
-> I just updated and pushed btrfs-next, if it is missing something let me
-> know.  I had to kick out the printk formatting patch because it didn't
-> compile and I didn't take Miao's background enospc flushing stuff since some
-> of it didn't apply and 5/5 hasn't been updated to force waiting on
-> background flushers.  Let me know if I missed anything else.  Thanks,
+Christoph,
 
-Make Harald happy:
+> +struct posix_acl *get_acl(struct inode *inode, int type)
+> +{
+> +	struct posix_acl *acl;
+> +
+> +	acl = get_cached_acl(inode, type);
+> +	if (acl != ACL_NOT_CACHED)
+> +		return acl;
+> +
+> +	if (!IS_POSIXACL(inode))
+> +		return NULL;
+> +
+> +	/*
+> +	 * A filesystem can force a ACL callback by just never filling the
+> +	 * ACL cache. But normally you'd fill the cache either at inode
+> +	 * instantiation time, or on the first ->get_acl call.
+> +	 *
+> +	 * If the filesystem doesn't have a get_acl() function at all, we'll
+> +	 * just create the negative cache entry.
+> +	 */
+> +	if (!inode->i_op->get_acl) {
+> +		set_cached_acl(inode, type, NULL);
+> +		return ERR_PTR(-EAGAIN);
 
-http://www.spinics.net/lists/linux-btrfs/msg25502.html
+The function should return NULL here.
+
+Andreas

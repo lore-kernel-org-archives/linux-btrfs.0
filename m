@@ -1,133 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:45718 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751492Ab3LLWW0 (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:46622 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751715Ab3LLXZL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 17:22:26 -0500
-Received: by mail-pd0-f178.google.com with SMTP id y10so1274509pdj.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 14:22:26 -0800 (PST)
-Content-Type: multipart/signed; boundary="Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC"; protocol="application/pgp-signature"; micalg=pgp-sha1
-Mime-Version: 1.0 (Mac OS X Mail 7.0 \(1822\))
-Subject: Re: [PATCH 0/4 v3] fiemap: introduce EXTENT_DATA_COMPRESSED flag
-From: Andreas Dilger <adilger@dilger.ca>
-In-Reply-To: <cover.1386778302.git.dsterba@suse.cz>
-Date: Thu, 12 Dec 2013 15:22:20 -0700
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Christoph Hellwig <hch@infradead.org>, Mark Fasheh <mfasheh@suse.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>, xfs@oss.sgi.com,
-        linux-nilfs@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
-Message-Id: <6CAFB777-F514-4DD9-BD8B-95E7525FD534@dilger.ca>
-References: <cover.1386778302.git.dsterba@suse.cz>
+	Thu, 12 Dec 2013 18:25:11 -0500
+Date: Fri, 13 Dec 2013 10:24:43 +1100
+From: Dave Chinner <david@fromorbit.com>
 To: David Sterba <dsterba@suse.cz>
+Cc: linux-fsdevel@vger.kernel.org, adilger@dilger.ca,
+        linux-nilfs@vger.kernel.org, mfasheh@suse.com, xfs@oss.sgi.com,
+        hch@infradead.org, linux-btrfs@vger.kernel.org,
+        viro@zeniv.linux.org.uk, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 2/4 v3] fiemap: add EXTENT_DATA_COMPRESSED flag
+Message-ID: <20131212232443.GL31386@dastard>
+References: <cover.1386778302.git.dsterba@suse.cz>
+ <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Dec 12, 2013 at 04:25:59PM +0100, David Sterba wrote:
+> This flag was not accepted when fiemap was proposed [2] due to lack of
+> in-kernel users. Btrfs has compression for a long time and we'd like to
+> see that an extent is compressed in the output of 'filefrag' utility
+> once it's taught about it.
+> 
+> For that purpose, a reserved field from fiemap_extent is used to let the
+> filesystem store along the physcial extent length when the flag is set.
+> This keeps compatibility with applications that use FIEMAP.
 
---Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain;
-	charset=us-ascii
+I'd prefer to just see the new physical length field always filled
+out, regardless of whether it is a compressed extent or not. In
+terms of backwards compatibility to userspace, it makes no
+difference because the value of reserved/unused fields is undefined
+by the API. Yes, the implementation zeros them, but there's nothing
+in the documentation that says "reserved fields must be zero".
+Hence I think we should just set it for every extent.
 
-On Dec 12, 2013, at 8:25 AM, David Sterba <dsterba@suse.cz> wrote:
-> The original FIEMAP patch did not define this bit, btrfs will make use =
-of
-> it.  The defined constant maintains the same value as originally =
-proposed.
->=20
-> Currently, the 'filefrag' utility has no way to recognize and denote a
-> compressed extent. As implemented in btrfs right now, the compression =
-step
-> splits a big extent into smaller chunks and this is reported as a =
-heavily
-> fragmented file. Adding the flag to filefrag will at least give some
-> explanation why, this has been confusing users for some time already.
+>From the point of view of the kernel API (fiemap_fill_next_extent),
+passing the physical extent size in the "len" parameter for normal
+extents, then passing 0 for the "physical length" makes absolutely
+no sense.
 
-The whole series looks good to me (one minor nit if it needs to be =
-resubmitted
-for some reason).  You can add my:
+IOWs, what you have created is a distinction between the extent's
+"logical length" and it's "physical length". For uncompressed
+extents, they are both equal and they should both be passed to
+fiemap_fill_next_extent as the same value. Extents where they are
+different (i.e.  encoded extents) is when they can be different.
+Perhaps fiemap_fill_next_extent() should check and warn about
+mismatches when they differ and the relevant flags are not set...
 
-Reviewed-by: Andreas Dilger <adilger@dilger.ca>
+> diff --git a/include/uapi/linux/fiemap.h b/include/uapi/linux/fiemap.h
+> index 93abfcd..0e32cae 100644
+> --- a/include/uapi/linux/fiemap.h
+> +++ b/include/uapi/linux/fiemap.h
+> @@ -19,7 +19,9 @@ struct fiemap_extent {
+>  	__u64 fe_physical; /* physical offset in bytes for the start
+>  			    * of the extent from the beginning of the disk */
+>  	__u64 fe_length;   /* length in bytes for this extent */
+> -	__u64 fe_reserved64[2];
+> +	__u64 fe_phys_length; /* physical length in bytes, undefined if
+> +			       * DATA_COMPRESSED not set */
+> +	__u64 fe_reserved64;
+>  	__u32 fe_flags;    /* FIEMAP_EXTENT_* flags for this extent */
+>  	__u32 fe_reserved[3];
+>  };
 
-> V3:
-> Based on feedback from Andreas, implement #1 from V2, current users of
-> fiemap_fill_next_extent (fs/, ext4, gfs2, ocfs2, nilfs2, xfs) updated
-> accordingly, no functional change.
->=20
-> V2:
-> Based on feedback from Andreas, the fiemap_extent is now able to hold =
-the
-> physical extent length, to be filled by the filesystem callback.
->=20
-> The filesystems do not have access to the structure that is passed =
-back to
-> userspace and are supposed to call fiemap_fill_next_extent, there's no =
-direct
-> way to fill fe_phys_length. There are two ways to pass it:
->=20
-> 1) extend fiemap_fill_next_extent to take phys_length and update all
->   users (ext4, gfs2, ocfs2, nilfs2, xfs)
->=20
-> 2) add new function that takes arguments for all the fiemap_extent =
-items,
->   newly added phys_length compared to fiemap_fill_next_extent
->=20
-> David Sterba (4):
->  fiemap: fix comment at EXTENT_DATA_ENCRYPTED
->  fiemap: add EXTENT_DATA_COMPRESSED flag
->  btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
->  Documentation/fiemap: Document the DATA_COMPRESSED flag
->=20
-> Documentation/filesystems/fiemap.txt |   17 +++++++++++++----
-> fs/btrfs/extent_io.c                 |    9 +++++++--
-> fs/ext4/extents.c                    |    3 ++-
-> fs/ext4/inline.c                     |    2 +-
-> fs/gfs2/inode.c                      |    2 +-
-> fs/ioctl.c                           |   18 ++++++++++++------
-> fs/nilfs2/inode.c                    |    8 +++++---
-> fs/ocfs2/extent_map.c                |    4 ++--
-> fs/xfs/xfs_iops.c                    |    2 +-
-> include/linux/fs.h                   |    2 +-
-> include/uapi/linux/fiemap.h          |    8 ++++++--
-> 11 files changed, 51 insertions(+), 24 deletions(-)
->=20
-> --=20
-> 1.7.9
->=20
+The comment for fe_length needs to change, too, because it needs to
+indicate that it is the logical extent length and that it may be
+different to the fe_phys_length depending on the flags that are set
+on the extent.
 
+And, FWIW, I wouldn't mention specific flags in the comment here,
+but do it at the definition of the flags that indicate there is
+a difference between physical and logical extent lengths....
 
-Cheers, Andreas
+> @@ -50,6 +52,8 @@ struct fiemap {
+>  						    * Sets EXTENT_UNKNOWN. */
+>  #define FIEMAP_EXTENT_ENCODED		0x00000008 /* Data can not be read
+>  						    * while fs is unmounted */
+> +#define FIEMAP_EXTENT_DATA_COMPRESSED	0x00000040 /* Data is compressed by fs.
+> +						    * Sets EXTENT_ENCODED */
 
+i.e. here.
 
+Cheers,
 
-
-
-
---Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename=signature.asc
-Content-Type: application/pgp-signature;
-	name=signature.asc
-Content-Description: Message signed with OpenPGP using GPGMail
-
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - http://gpgtools.org
-
-iQIVAwUBUqo3HHKl2rkXzB/gAQKWWRAAkzM1fzS2F2wXEcHndEmzBZJf9PVrBgsH
-T47p/DxSVlMzFAu6hVxvJcbl4iDIfzJOXd7e60ptbIKce/IBRQU6Lg0XHISfN/8x
-EpdiDd8xySqcLuG8JZ66L+/7PSyO2aQYVNJnsNZjxEG7sJylC3NWPhnKZAi775lN
-gnInYAHsgl2Dvc8NDUylvIcvQHOVkZ/o3cr/m8WPuxNTYGqwpw1HvMwEfqD5pfod
-8QQyyqA0AGleubSpE0cB8KvzInBeE0ujw2gt/88mtV4Qd2xjrh3XEKbTI1QLbO1M
-9NAXYkjXhHtU7xQNbSaMpVZ77Sv97v3NueDAVnZnvDGob4sjDFwIPokoqUbskLuw
-CYQKuToqbRWpS/cdX159luWr8cCH5wFTfmkfQJRlsFFKrYU67OFwBO4AZSL+4l9+
-NUXlQuMY3Gb+BVV0qq4faw+gWHbhinOYA0TzNxb5uX/nhr8EkbxwBaY1o9Ml+bYO
-26g+IERx8WO1+/rvKM5cguPaWHOyppr8ggkkpCSmcGVro9HfagMeqZ+FHpZY7MsW
-OXmcG7/h85862m0JrJRuZuvwH40PMEkk8Mo74Elr3nBJypcsX/OTZA8yb1d30XTR
-EbdFbXZTnoqrbOz8hoEcpYzHa7xF2OBti7SNKU01T5D/vJja0jV4ZZCbWbfiaZGX
-PDICGt1rRxQ=
-=eiV9
------END PGP SIGNATURE-----
-
---Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC--
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

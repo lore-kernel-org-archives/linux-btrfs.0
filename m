@@ -1,64 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:48624 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751092Ab3LLWU3 (ORCPT
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:45718 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751492Ab3LLWW0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 17:20:29 -0500
-Received: by mail-pd0-f169.google.com with SMTP id v10so1266183pde.28
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 14:20:28 -0800 (PST)
-Content-Type: multipart/signed; boundary="Apple-Mail=_2497A949-F032-4168-AB30-39568BBCED2B"; protocol="application/pgp-signature"; micalg=pgp-sha1
+	Thu, 12 Dec 2013 17:22:26 -0500
+Received: by mail-pd0-f178.google.com with SMTP id y10so1274509pdj.23
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 14:22:26 -0800 (PST)
+Content-Type: multipart/signed; boundary="Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC"; protocol="application/pgp-signature"; micalg=pgp-sha1
 Mime-Version: 1.0 (Mac OS X Mail 7.0 \(1822\))
-Subject: Re: [PATCH 3/4 v3] btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
+Subject: Re: [PATCH 0/4 v3] fiemap: introduce EXTENT_DATA_COMPRESSED flag
 From: Andreas Dilger <adilger@dilger.ca>
-In-Reply-To: <297798211d549d0c0c32994fd0de0ab24c765e77.1386778303.git.dsterba@suse.cz>
-Date: Thu, 12 Dec 2013 15:20:15 -0700
+In-Reply-To: <cover.1386778302.git.dsterba@suse.cz>
+Date: Thu, 12 Dec 2013 15:22:20 -0700
 Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
         Christoph Hellwig <hch@infradead.org>, Mark Fasheh <mfasheh@suse.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Alexander Viro <viro@zeniv.linux.org.uk>, xfs@oss.sgi.com,
+        linux-nilfs@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
         "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
-Message-Id: <3ED3160D-5290-4A40-88D2-4EA5C31F7A91@dilger.ca>
-References: <cover.1386778302.git.dsterba@suse.cz> <297798211d549d0c0c32994fd0de0ab24c765e77.1386778303.git.dsterba@suse.cz>
+Message-Id: <6CAFB777-F514-4DD9-BD8B-95E7525FD534@dilger.ca>
+References: <cover.1386778302.git.dsterba@suse.cz>
 To: David Sterba <dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Apple-Mail=_2497A949-F032-4168-AB30-39568BBCED2B
+--Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC
 Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain;
 	charset=us-ascii
 
-On Dec 12, 2013, at 8:26 AM, David Sterba <dsterba@suse.cz> wrote:
-> Set the EXTENT_DATA_COMPRESSED flag together with EXTENT_ENCODED as
-> defined by fiemap spec.
+On Dec 12, 2013, at 8:25 AM, David Sterba <dsterba@suse.cz> wrote:
+> The original FIEMAP patch did not define this bit, btrfs will make use =
+of
+> it.  The defined constant maintains the same value as originally =
+proposed.
 >=20
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
-> fs/btrfs/extent_io.c |    9 +++++++--
-> 1 files changed, 7 insertions(+), 2 deletions(-)
->=20
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 5ea0ef5..8a28f15 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
->=20
-> @@ -4220,9 +4222,12 @@ int extent_fiemap(struct inode *inode, struct =
-fiemap_extent_info *fieinfo,
->=20
-> 			if (ref_cnt > 1)
-> 				flags |=3D FIEMAP_EXTENT_SHARED;
-> +			em_phys_len =3D em->block_len;
-> 		}
-> -		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags))
-> +		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
-> 			flags |=3D FIEMAP_EXTENT_ENCODED;
-> +			flags |=3D FIEMAP_EXTENT_DATA_COMPRESSED;
+> Currently, the 'filefrag' utility has no way to recognize and denote a
+> compressed extent. As implemented in btrfs right now, the compression =
+step
+> splits a big extent into smaller chunks and this is reported as a =
+heavily
+> fragmented file. Adding the flag to filefrag will at least give some
+> explanation why, this has been confusing users for some time already.
 
-(minor nit) Could combine these (not sure it makes a difference to the =
-compiler):
+The whole series looks good to me (one minor nit if it needs to be =
+resubmitted
+for some reason).  You can add my:
 
-			flags |=3D (FIEMAP_EXTENT_ENCODED |
-				  FIEMAP_EXTENT_DATA_COMPRESSED);
+Reviewed-by: Andreas Dilger <adilger@dilger.ca>
+
+> V3:
+> Based on feedback from Andreas, implement #1 from V2, current users of
+> fiemap_fill_next_extent (fs/, ext4, gfs2, ocfs2, nilfs2, xfs) updated
+> accordingly, no functional change.
+>=20
+> V2:
+> Based on feedback from Andreas, the fiemap_extent is now able to hold =
+the
+> physical extent length, to be filled by the filesystem callback.
+>=20
+> The filesystems do not have access to the structure that is passed =
+back to
+> userspace and are supposed to call fiemap_fill_next_extent, there's no =
+direct
+> way to fill fe_phys_length. There are two ways to pass it:
+>=20
+> 1) extend fiemap_fill_next_extent to take phys_length and update all
+>   users (ext4, gfs2, ocfs2, nilfs2, xfs)
+>=20
+> 2) add new function that takes arguments for all the fiemap_extent =
+items,
+>   newly added phys_length compared to fiemap_fill_next_extent
+>=20
+> David Sterba (4):
+>  fiemap: fix comment at EXTENT_DATA_ENCRYPTED
+>  fiemap: add EXTENT_DATA_COMPRESSED flag
+>  btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
+>  Documentation/fiemap: Document the DATA_COMPRESSED flag
+>=20
+> Documentation/filesystems/fiemap.txt |   17 +++++++++++++----
+> fs/btrfs/extent_io.c                 |    9 +++++++--
+> fs/ext4/extents.c                    |    3 ++-
+> fs/ext4/inline.c                     |    2 +-
+> fs/gfs2/inode.c                      |    2 +-
+> fs/ioctl.c                           |   18 ++++++++++++------
+> fs/nilfs2/inode.c                    |    8 +++++---
+> fs/ocfs2/extent_map.c                |    4 ++--
+> fs/xfs/xfs_iops.c                    |    2 +-
+> include/linux/fs.h                   |    2 +-
+> include/uapi/linux/fiemap.h          |    8 ++++++--
+> 11 files changed, 51 insertions(+), 24 deletions(-)
+>=20
+> --=20
+> 1.7.9
+>=20
+
 
 Cheers, Andreas
 
@@ -67,7 +104,7 @@ Cheers, Andreas
 
 
 
---Apple-Mail=_2497A949-F032-4168-AB30-39568BBCED2B
+--Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
 	filename=signature.asc
@@ -78,19 +115,19 @@ Content-Description: Message signed with OpenPGP using GPGMail
 -----BEGIN PGP SIGNATURE-----
 Comment: GPGTools - http://gpgtools.org
 
-iQIVAwUBUqo2n3Kl2rkXzB/gAQIVgA/+I26/5L3HYKnvsV1htF1oY3eR7HWICQq9
-VwPz7dvmb2lcPmL7vy4id/E/mT5A5zUJGh835HqpdR9i7o0AV6B38PCC9qXcEWpY
-UOoC5E09cEPGUXhdXP9boOEanEfuPE3SJNDyiP0X4aXg/Kf7s2icHCW3Kgys7Mae
-XVL1Cw/Y+1vNQhR6J94cjBgOeY9YbcnXI0KTYs+ap45OIvnO4qiUOhvasEjTeMaD
-yiKCygxG4Mg7FYS7djHchB8bENtOpL4RSN9RqY+/g3AF+NIZjKwnzg7KqjZSaYXB
-RJD3wGEPv/8dHD82Gz69BmNC+TS07bvloOzjBUyTBbwNQ1zERTk0J3Az3aAunzc5
-kdxYhfHnSgj/OF19A5A5IHNU+8X4MdjtUZqDO421CEbN66jn73GvIwqKY0ZPw9Um
-C9u6yhPpLCvFKjRtMqNV/i4jNf1+UY5fytZjQVnExefNkaRK88fGzV+nIbXsNNtB
-R1tnDvPft8zv9BaqCFgWbRoDL+GOwRyl6JToBurhuQ89GMY599rIYjKL1ScJcPrU
-ubB6hqZjPnpfsPf1l51a3isFAmFUms+nSgRYIKcvmjupFfo37Rj5CWdjFXDh/1AI
-hL6EaFepeTJvHi9gGk003R2t3jKic1uP0jnMwzyWTzrziI8pEuRHokXlyVgzN9XV
-560F03ZRIzE=
-=fN5q
+iQIVAwUBUqo3HHKl2rkXzB/gAQKWWRAAkzM1fzS2F2wXEcHndEmzBZJf9PVrBgsH
+T47p/DxSVlMzFAu6hVxvJcbl4iDIfzJOXd7e60ptbIKce/IBRQU6Lg0XHISfN/8x
+EpdiDd8xySqcLuG8JZ66L+/7PSyO2aQYVNJnsNZjxEG7sJylC3NWPhnKZAi775lN
+gnInYAHsgl2Dvc8NDUylvIcvQHOVkZ/o3cr/m8WPuxNTYGqwpw1HvMwEfqD5pfod
+8QQyyqA0AGleubSpE0cB8KvzInBeE0ujw2gt/88mtV4Qd2xjrh3XEKbTI1QLbO1M
+9NAXYkjXhHtU7xQNbSaMpVZ77Sv97v3NueDAVnZnvDGob4sjDFwIPokoqUbskLuw
+CYQKuToqbRWpS/cdX159luWr8cCH5wFTfmkfQJRlsFFKrYU67OFwBO4AZSL+4l9+
+NUXlQuMY3Gb+BVV0qq4faw+gWHbhinOYA0TzNxb5uX/nhr8EkbxwBaY1o9Ml+bYO
+26g+IERx8WO1+/rvKM5cguPaWHOyppr8ggkkpCSmcGVro9HfagMeqZ+FHpZY7MsW
+OXmcG7/h85862m0JrJRuZuvwH40PMEkk8Mo74Elr3nBJypcsX/OTZA8yb1d30XTR
+EbdFbXZTnoqrbOz8hoEcpYzHa7xF2OBti7SNKU01T5D/vJja0jV4ZZCbWbfiaZGX
+PDICGt1rRxQ=
+=eiV9
 -----END PGP SIGNATURE-----
 
---Apple-Mail=_2497A949-F032-4168-AB30-39568BBCED2B--
+--Apple-Mail=_37EDDF86-D75C-4C7B-BD07-C6E3524E7CCC--

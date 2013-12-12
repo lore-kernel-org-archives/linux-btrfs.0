@@ -1,32 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zimbra13.linbit.com ([212.69.166.240]:55819 "EHLO
-	zimbra13.linbit.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752030Ab3LLTIk (ORCPT
+Received: from mail-we0-f182.google.com ([74.125.82.182]:43670 "EHLO
+	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751469Ab3LLTUp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 14:08:40 -0500
-Date: Thu, 12 Dec 2013 20:08:38 +0100 (CET)
-From: Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
-        Mark Fasheh <mfasheh@suse.com>, Joel Becker <jlbec@evilplan.org>,
-        reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
-        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nfs@vger.kernel.org
-Message-ID: <966512490.69128.1386875318581.JavaMail.zimbra@linbit.com>
-In-Reply-To: <20131211104529.142731540@bombadil.infradead.org>
-References: <20131211104243.148113893@bombadil.infradead.org> <20131211104529.142731540@bombadil.infradead.org>
-Subject: Re: [PATCH 16/18] gfs2: use generic posix ACL infrastructure
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+	Thu, 12 Dec 2013 14:20:45 -0500
+Received: by mail-we0-f182.google.com with SMTP id q59so936922wes.27
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 11:20:44 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: return immediately if tree log mod is not necessary
+Date: Thu, 12 Dec 2013 19:19:52 +0000
+Message-Id: <1386875993-427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph,
+In ctree.c:tree_mod_log_set_node_key() we were calling
+__tree_mod_log_insert_key() even when the modification doesn't need
+to be logged. This would allocate a tree_mod_elem structure, fill it
+and pass it to  __tree_mod_log_insert(), which would just acquire
+the tree mod log write lock and then free the tree_mod_elem structure
+and return (that is, a no-op).
 
-gfs2 has a left-over get_acl callback in gfs2_symlink_iops in
-fs/gfs2/inode.c, from a long time ago, which should be removed
-as well.
+Therefore call tree_mod_log_insert() instead of __tree_mod_log_insert()
+which just returns immediately if the modification doesn't need to be
+logged (without allocating the structure, fill it, acquire write lock,
+free structure).
 
-Andreas
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c811b9b..3b88d84 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -771,7 +771,7 @@ tree_mod_log_set_node_key(struct btrfs_fs_info *fs_info,
+ {
+ 	int ret;
+ 
+-	ret = __tree_mod_log_insert_key(fs_info, eb, slot,
++	ret = tree_mod_log_insert_key(fs_info, eb, slot,
+ 					MOD_LOG_KEY_REPLACE,
+ 					atomic ? GFP_ATOMIC : GFP_NOFS);
+ 	BUG_ON(ret < 0);
+-- 
+1.7.9.5
+

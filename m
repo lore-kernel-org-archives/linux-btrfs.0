@@ -1,54 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:33110 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756072Ab3LIUVJ convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Dec 2013 15:21:09 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Can't remove empty directory after kernel panic, no errors in dmesg
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CADdntNuhrD8Dr3qSDXN3JbdJK8SFwmj_r5o0_k30EsfjUOzkGg@mail.gmail.com>
-Date: Mon, 9 Dec 2013 13:21:06 -0700
-Cc: Niklas Schnelle <niklas.schnelle@gmail.com>
-Message-Id: <5736588E-4E60-4D2A-9C7B-2B70840A3441@colorremedies.com>
-References: <CADdntNuHYRAK_kcDJf1bnJeuTmc=CRx7TeyJPv4hsW9NPyd6mg@mail.gmail.com> <A46650B8-A3A8-467E-B1D2-CACB06833B1C@colorremedies.com> <CADdntNuhrD8Dr3qSDXN3JbdJK8SFwmj_r5o0_k30EsfjUOzkGg@mail.gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:46905 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751466Ab3LLNjR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Dec 2013 08:39:17 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vr6Tx-0004Dx-Jy
+	for linux-btrfs@vger.kernel.org; Thu, 12 Dec 2013 14:39:13 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 14:39:13 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Dec 2013 14:39:13 +0100
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: btrfs raid multiple devices IO utilisation
+Date: Thu, 12 Dec 2013 13:39:00 +0000
+Message-ID: <l8ce99$31i$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Dec 9, 2013, at 11:54 AM, Niklas Schnelle <niklas.schnelle@gmail.com> wrote:
-
-> On Sat, Dec 7, 2013 at 11:30 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> 
->> On Dec 7, 2013, at 3:36 AM, Niklas Schnelle <niklas.schnelle@gmail.com> wrote:
->> 
->>> Hi List,
->>> 
->>> so first the basics. I'm running Arch Linux with 3.13-rc2, btrfs-progs
->>> 0.20rc1.3-2 from the repo and I'm using a SSD.
->> 
->> I don't see a dmesg, which should contain some information if there are correct or uncorrected problems at mount time.
->> 
->> The first thing to try is the mount time recovery option. It's interesting considering how to do this for rootfs on btrfs, but I think simplest is to just add it to fstab and reboot. Then remove it. Again, check dmesg to see how the recovery went, and then check to see if you have the same problems.
->> 
->> Another way to do it is to change the kernel parameters editing the e.g. GRUB menu entry at boot time. Change the ro to rw, and add recovery to rootflags=. So if the current one is rootflags=subvol=root, then change to rootflags=recovery,subvol=root. This acts as a one time thing.
->> 
->> Ideally I'd like to see the kernel spit out something systemd could use that would cause it to generate a service to remount using recovery (and if multiple devices, possibly degraded, and if either of those fail, to then generate a remount service for ro,recovery and fallback to emergency.target). That way more of this can be done automagically.
->> 
->> So try the recovery mount option first. Before you try btrfs check (or btrfsck), you should upgrade your btrfs-progs to something more recent. v3.12 is current and is what distros should build as of kernel 3.12.
-
-> As it says in the threads subject there were no errors in dmesg. I
-> tried the recovery mount option now but also
-> got no notable output in dmesg. Any idea how to procede? By the since
-> I was able to delete the undeleteable directory
-> after running btrfs check --repair (freshly compiled git version) my
-> filesystem has shown no odd behavior, though
-> obviously I'm not really trusting it as there were errors in btrfs
-> check when running it again after the repair.
-
-Since you've made some changes, I think we need an update on what errors you're still receiving. I'm a bit baffled that mounting rw,recovery shows nothing in dmesg, yet you get errors with btrfs check. Maybe someone else has some ideas how to get more info. Maybe add kernel parameters 'debug ignore_loglevel' ?
+Some time back, I noticed that with a two HDD btrfs raid1, some tasks
+suffered ALL the IO getting choked onto just one HDD!
 
 
-Chris Murphy
+That turned out to be a feature of the btrfs code whereby a device is
+chosen depending on the process ID. For some cases such as in a bash
+loop, the PID increments by two for each iteration and so only one HDD
+ever gets hit...
+
+So... Running with a 3-disk btrfs raid1 and... I still see the same
+problem for such as compile tasks where only one of the three disks is
+maxed out for periods with the other two disks left nearly idle.
+
+
+Perhaps?...
+
+Is there an easy fix in the code to allocate IO according to the
+following search order:
+
+Last used disk with an IO queue < 2 items;
+
+Any disk with an IO queue < 2 items;
+
+Whichever disk with least queued items.
+
+
+The intention there is to repeat sequential IO to the current disk, but
+allow a second disk to interleave data requests for a same one file if
+data is requested faster than what the one disk can support.
+
+Other aspects are that the IO queue length checks hopefully will
+proportionately balance the requests across disks that offer different
+speeds. Hence a faster disk will get used to advantage if paired with a
+slower device.
+
+
+There looks to be two points in the code where a device gets selected.
+Not having delved into filesystems before... Is there easy/safe reading
+available for the IO queues for a device?
+
+Or rather: All easily done?
+
+(Or is the btrfs code at too high a level to be able to see/access the
+device IO queues?)
+
+
+Regards,
+Martin
+

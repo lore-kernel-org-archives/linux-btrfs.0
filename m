@@ -1,35 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:52027 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751797Ab3LLVFd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 16:05:33 -0500
-Date: Thu, 12 Dec 2013 13:05:31 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
-Cc: Christoph Hellwig <hch@infradead.org>, viro@zeniv.linux.org.uk,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-mtd@lists.infradead.org, Mark Fasheh <mfasheh@suse.com>,
-        Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
-        xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
-        cluster-devel@redhat.com, linux-nfs@vger.kernel.org
-Subject: Re: [PATCH 16/18] gfs2: use generic posix ACL infrastructure
-Message-ID: <20131212210531.GC27686@infradead.org>
-References: <20131211104243.148113893@bombadil.infradead.org>
- <20131211104529.142731540@bombadil.infradead.org>
- <966512490.69128.1386875318581.JavaMail.zimbra@linbit.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4144 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750773Ab3LLV5H convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Dec 2013 16:57:07 -0500
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <966512490.69128.1386875318581.JavaMail.zimbra@linbit.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Message-ID: <20131212215704.23771.16640@ret.masoncoding.com>
+From: Chris Mason <clm@fb.com>
+Subject: [GIT PULL] Btrfs
+Date: Thu, 12 Dec 2013 16:57:04 -0500
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 12, 2013 at 08:08:38PM +0100, Andreas Gruenbacher wrote:
-> Christoph,
-> 
-> gfs2 has a left-over get_acl callback in gfs2_symlink_iops in
-> fs/gfs2/inode.c, from a long time ago, which should be removed
-> as well.
+Hi Linus,
 
-Ok, will fix.
+Please pull my for-linus branch (or for-linus signed tag):
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+
+This is a small collection of fixes.  It was rebased this morning, but I
+was just fixing signed-off-by tags with the wrong email.
+
+Wang Shilong (3) commits (+57/-24):
+    Btrfs: skip building backref tree for uuid and quota tree when doing balance relocation (+3/-1)
+    Btrfs: make sure we cleanup all reloc roots if error happens (+7/-0)
+    Btrfs: fix an oops when doing balance relocation (+47/-23)
+
+Filipe David Borba Manana (1) commits (+10/-12):
+    Btrfs: don't miss skinny extent items on delayed ref head contention
+
+Dan Carpenter (1) commits (+2/-2):
+    Btrfs: fix access_ok() check in btrfs_ioctl_send()
+
+Miao Xie (1) commits (+2/-3):
+    Btrfs: don't clear the default compression type
+
+David Sterba (1) commits (+2/-1):
+    btrfs: call mnt_drop_write after interrupted subvol deletion
+
+Total: (7) commits (+73/-42)
+
+ fs/btrfs/extent-tree.c | 22 +++++++-------
+ fs/btrfs/ioctl.c       |  3 +-
+ fs/btrfs/relocation.c  | 81 +++++++++++++++++++++++++++++++++++---------------
+ fs/btrfs/send.c        |  4 +--
+ fs/btrfs/super.c       |  5 ++--
+ 5 files changed, 73 insertions(+), 42 deletions(-)

@@ -1,48 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:54536 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752269Ab3LMLGL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 06:06:11 -0500
-Date: Fri, 13 Dec 2013 03:06:08 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Dave Chinner <david@fromorbit.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-fsdevel@vger.kernel.org,
-        adilger@dilger.ca, linux-nilfs@vger.kernel.org, mfasheh@suse.com,
-        xfs@oss.sgi.com, hch@infradead.org, linux-btrfs@vger.kernel.org,
-        viro@zeniv.linux.org.uk, linux-ext4@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 2/4 v3] fiemap: add EXTENT_DATA_COMPRESSED flag
-Message-ID: <20131213110608.GC14884@infradead.org>
-References: <cover.1386778302.git.dsterba@suse.cz>
- <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz>
- <20131212232443.GL31386@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131212232443.GL31386@dastard>
+Received: from plane.gmane.org ([80.91.229.3]:37635 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752286Ab3LMLJI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 06:09:08 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VrQcF-0001qo-54
+	for linux-btrfs@vger.kernel.org; Fri, 13 Dec 2013 12:09:07 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 12:09:07 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 12:09:07 +0100
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs raid multiple devices IO utilisation
+Date: Fri, 13 Dec 2013 11:08:56 +0000
+Message-ID: <l8eprt$u46$1@ger.gmane.org>
+References: <l8ce99$31i$1@ger.gmane.org> <pan$46d7a$8ee1d67e$83395712$322d43d@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$46d7a$8ee1d67e$83395712$322d43d@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 10:24:43AM +1100, Dave Chinner wrote:
-> I'd prefer to just see the new physical length field always filled
-> out, regardless of whether it is a compressed extent or not. In
-> terms of backwards compatibility to userspace, it makes no
-> difference because the value of reserved/unused fields is undefined
-> by the API. Yes, the implementation zeros them, but there's nothing
-> in the documentation that says "reserved fields must be zero".
-> Hence I think we should just set it for every extent.
+On 13/12/13 09:13, Duncan wrote:
+> Martin posted on Thu, 12 Dec 2013 13:39:00 +0000 as excerpted:
 > 
-> >From the point of view of the kernel API (fiemap_fill_next_extent),
-> passing the physical extent size in the "len" parameter for normal
-> extents, then passing 0 for the "physical length" makes absolutely
-> no sense.
+>> Some time back, I noticed that with a two HDD btrfs raid1, some tasks
+>> suffered ALL the IO getting choked onto just one HDD!
+>>
+>> That turned out to be a feature of the btrfs code whereby a device is
+>> chosen depending on the process ID. For some cases such as in a bash
+>> loop, the PID increments by two for each iteration and so only one HDD
+>> ever gets hit...
+> 
+> Unfortunately, yes...
 
-I tend to agree, but the additional complication here is that this is
-a change to an existing API.  We'd need another HAVE_PHYS_LEN flag for
-non-compressed extents so that userspace can rely on it.  Given that
-it's only useful for that case I think the userspace API introduced
-is the best we can get.
 
-I think however that we should always pass the phys_len argument in the
-kernel API just to make it less confusing.
+> ... Of course that's if the queue 
+> length is reasonably accessible to btrfs, as you already asked in the bit 
+> I snipped as out of my knowledgeable reply range.
+
+And that's the bit that is outside of my knowledge... Hence the question.
+
+Here's hoping someone can give a pointer before I need to delve into
+other code such as for 'atop' to see how it is done there if I'm to take
+a stab at it.
+
+Or if someone is already coding something up, please let us know?
+
+
+Or:
+
+>From within btrfs code, is there an easy/fast/any way to check the IO
+queue length for whatever btrfs target device?
+
+Regards,
+Martin
+
+
 

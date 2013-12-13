@@ -1,52 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48575 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751466Ab3L3HvX (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:60332 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751600Ab3LMAvx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 02:51:23 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBU7pM1D012895
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 07:51:23 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBU7pMFZ012720
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 07:51:22 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBU7pMxQ021580
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 07:51:22 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+	Thu, 12 Dec 2013 19:51:53 -0500
+Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 57E093EE166
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:51:52 +0900 (JST)
+Received: from smail (m4 [127.0.0.1])
+	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 4B04545DE4E
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:51:52 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
+	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 34F9745DD76
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:51:52 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 29A9FE38003
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:51:52 +0900 (JST)
+Received: from m1001.s.css.fujitsu.com (m1001.s.css.fujitsu.com [10.240.81.139])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id D44D91DB8032
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:51:51 +0900 (JST)
+Message-Id: <201312130051.AA00031@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Fri, 13 Dec 2013 09:51:42 +0900
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: use WARN_ON_ONCE instead for btrfs_invalidate_inodes
-Date: Mon, 30 Dec 2013 15:51:14 +0800
-Message-Id: <1388389874-29141-1-git-send-email-bo.li.liu@oracle.com>
+Cc: mfasheh@suse.de
+Subject: [PATCH] Btrfs: fix error check of btrfs_lookup_dentry()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So after transaction is aborted, we need to cleanup inode resources by
-calling btrfs_invalidate_inodes(), and btrfs_invalidate_inodes() hopes
-roots' refs to be zero in old times and sets a WARN_ON(), however, this
-is not always true within cleaning up transaction, so WARN_ON_ONCE() is
-better, and we won't get another syslog message bomb.
+Clean up btrfs_lookup_dentry() to never return NULL, but PTR_ERR(-ENOENT)
+instead. This keeps the return value convention consistent.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Callers who use btrfs_lookup_dentry() require a trivial update.
+
+create_snapshot() in particular looks like it can also lose a BUG_ON(!inode)
+which is not really needed - there seems less harm in returning ENOENT to
+userspace at that point in the stack than there is to crash the machine.
+
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/inode.c | 15 +++++++++++----
+ fs/btrfs/ioctl.c | 13 ++++++++++---
+ 2 files changed, 21 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f1a7744..ef7f6af 100644
+index 3b4ffaf..f9b45a7 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4761,7 +4761,7 @@ void btrfs_invalidate_inodes(struct btrfs_root *root)
- 	struct inode *inode;
- 	u64 objectid = 0;
+@@ -4910,7 +4910,7 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 		return ERR_PTR(ret);
  
--	WARN_ON(btrfs_root_refs(&root->root_item) != 0);
-+	WARN_ON_ONCE(btrfs_root_refs(&root->root_item) != 0);
+ 	if (location.objectid == 0)
+-		return NULL;
++		return ERR_PTR(-ENOENT);
  
- 	spin_lock(&root->inode_lock);
- again:
--- 
-1.8.2.1
+ 	if (location.type == BTRFS_INODE_ITEM_KEY) {
+ 		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
+@@ -4974,10 +4974,17 @@ static void btrfs_dentry_release(struct dentry *dentry)
+ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+ 				   unsigned int flags)
+ {
+-	struct dentry *ret;
++	struct inode *inode;
+ 
+-	ret = d_splice_alias(btrfs_lookup_dentry(dir, dentry), dentry);
+-	return ret;
++	inode = btrfs_lookup_dentry(dir, dentry);
++	if (IS_ERR(inode)) {
++		if (PTR_ERR(inode) == -ENOENT)
++			inode = NULL;
++		else
++			return ERR_CAST(inode);
++	}
++
++	return d_splice_alias(inode, dentry);
+ }
+ 
+ unsigned char btrfs_filetype_table[] = {
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9d46f60..716779c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -389,6 +389,7 @@ static noinline int create_subvol(struct inode *dir,
+ 	struct btrfs_root *new_root;
+ 	struct btrfs_block_rsv block_rsv;
+ 	struct timespec cur_time = CURRENT_TIME;
++	struct inode *inode;
+ 	int ret;
+ 	int err;
+ 	u64 objectid;
+@@ -550,8 +551,14 @@ fail:
+ 	if (err && !ret)
+ 		ret = err;
+ 
+-	if (!ret)
+-		d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
++	if (!ret) {
++		inode = btrfs_lookup_dentry(dir, dentry);
++		if (IS_ERR(inode)) {
++			ret = PTR_ERR(inode);
++			goto out;
++		}
++		d_instantiate(dentry, inode);
++	}
+ out:
+ 	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
+ 	return ret;
+@@ -639,7 +646,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 		ret = PTR_ERR(inode);
+ 		goto fail;
+ 	}
+-	BUG_ON(!inode);
++
+ 	d_instantiate(dentry, inode);
+ 	ret = 0;
+ fail:
 

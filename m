@@ -1,82 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:10630 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751209Ab3LMPoB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 10:44:01 -0500
-Received: from pps.filterd (m0044012 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id rBDFfCOH014068
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:43:57 -0800
-Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
-	by mx0a-00082601.pphosted.com with ESMTP id 1gqkgg2n88-2
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:43:57 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: use a bit to track if we're in the radix tree
-Date: Fri, 13 Dec 2013 10:43:54 -0500
-Message-ID: <1386949434-4488-1-git-send-email-jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:42844 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751584Ab3LMP6w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 10:58:52 -0500
+Date: Fri, 13 Dec 2013 16:58:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandra Seetharaman <sekharan@us.ibm.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
+Message-ID: <20131213155850.GZ6498@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
+ <20131213011720.GW6498@twin.jikos.cz>
+ <1386947820.4241.22.camel@chandra-dt.ibm.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1386947820.4241.22.camel@chandra-dt.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For creating a dummy in-memory btree I need to be able to use the radix tree to
-keep track of the buffers like normal extent buffers.  With dummy buffers we
-skip the radix tree step, and we still want to do that for the tree mod log
-dummy buffers but for my test buffers we need to be able to remove them from the
-radix tree like normal.  This will give me a way to do that.  Thanks,
+On Fri, Dec 13, 2013 at 09:17:00AM -0600, Chandra Seetharaman wrote:
+> > For a full compatibility with any blocksize on arch with any pagesize
+> > you'd need to implement the case when sectorsize is larger than
+> > pagesize. Your patchset does the "4k sector/64k page", but I haven't
+> > noticed the "64k sector/4k page" counterpart.
+> 
+> My object was to make btrfs filesystems from other arches to be directly
+> usable in PPC64.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent_io.c | 7 ++++---
- fs/btrfs/extent_io.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+Ok then.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2779255..dc392d9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4627,6 +4627,7 @@ again:
- 	}
- 	/* add one reference for the tree */
- 	check_buffer_tree_ref(eb);
-+	set_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags);
- 
- 	/*
- 	 * there is a race where release page may have
-@@ -4670,9 +4671,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
- {
- 	WARN_ON(atomic_read(&eb->refs) == 0);
- 	if (atomic_dec_and_test(&eb->refs)) {
--		if (test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags)) {
--			spin_unlock(&eb->refs_lock);
--		} else {
-+		if (test_and_clear_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags)) {
- 			struct extent_io_tree *tree = eb->tree;
- 
- 			spin_unlock(&eb->refs_lock);
-@@ -4681,6 +4680,8 @@ static int release_extent_buffer(struct extent_buffer *eb)
- 			radix_tree_delete(&tree->buffer,
- 					  eb->start >> PAGE_CACHE_SHIFT);
- 			spin_unlock(&tree->buffer_lock);
-+		} else {
-+			spin_unlock(&eb->refs_lock);
- 		}
- 
- 		/* Should be safe to release our pages at this point */
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 19620c5..92e4347 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -43,6 +43,7 @@
- #define EXTENT_BUFFER_WRITEBACK 7
- #define EXTENT_BUFFER_IOERR 8
- #define EXTENT_BUFFER_DUMMY 9
-+#define EXTENT_BUFFER_IN_TREE 10
- 
- /* these are flags for extent_clear_unlock_delalloc */
- #define PAGE_UNLOCK		(1 << 0)
--- 
-1.8.3.1
+> Nevertheless, IIUC, btrfs currently support such a case. Each extent
+> buffers currently can have up to INLINE_EXTENT_BUFFER_PAGES(16). 
+> 
+> -------
+> #define INLINE_EXTENT_BUFFER_PAGES 16
+> 
+> struct extent_buffer {
+>         :
+>         :
+>         struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+>         :
+> };
+> --------
+> 
+> No ?
 
+Just for metadata blocks.
+
+> There are some issues with relocation too. Is there similar assumption
+> in that code path too ?
+
+I don't know. If yes, then it's different from the compression issues,
+because there are some hardwired assumptions about the binary format of
+the compressed data, while relocation uses the common code.

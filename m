@@ -1,38 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37151 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753773Ab3LPPJU (ORCPT
+Received: from mail-ve0-f181.google.com ([209.85.128.181]:58232 "EHLO
+	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752835Ab3LMQcw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 10:09:20 -0500
-From: Chris Mason <clm@fb.com>
-To: "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 1/3] Btrfs: avoid building inode cache repeatly
-Date: Mon, 16 Dec 2013 15:09:15 +0000
-Message-ID: <1387206565.18897.4.camel@ret.masoncoding.com>
-References: <1387178735-30832-1-git-send-email-bo.li.liu@oracle.com>
-	 <1387178735-30832-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1387178735-30832-2-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="utf-8"
+	Fri, 13 Dec 2013 11:32:52 -0500
+Received: by mail-ve0-f181.google.com with SMTP id oy12so1529396veb.40
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 08:32:51 -0800 (PST)
+Received: from [192.168.18.6] (cpe-174-106-200-117.ec.res.rr.com. [174.106.200.117])
+        by mx.google.com with ESMTPSA id jw6sm3586625veb.3.2013.12.13.08.32.50
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Fri, 13 Dec 2013 08:32:50 -0800 (PST)
+Message-ID: <52AB3673.1030607@czarc.net>
+Date: Fri, 13 Dec 2013 11:31:47 -0500
+From: Gene Czarcinski <gczarcinski@gmail.com>
 MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: moving a subvol
+References: <52AB30D4.7050408@czarc.net>
+In-Reply-To: <52AB30D4.7050408@czarc.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2013-12-16 at 15:25 +0800, Liu Bo wrote:
-> Inode cache is similar to free space cache and in fact shares the same
-> code, however, we don't load inode cache unless we're about to allocate
-> inode id, then there is a case where we only commit the transaction during
-> other operations, such as snapshot creation, we now update fs roots' generation
-> to the new transaction id, after that when we want to load the inode cache,
-> we'll find that it's not valid thanks to the mismatch of generation, and we
-> have to push btrfs-ino-cache thread to build inode cache from disk, and
-> this operation is sometimes time-costing.
-> 
-> So to fix the above, we load inode cache into memory during reading fs root.
+On 12/13/2013 11:07 AM, Gene Czarcinski wrote:
+> I have hunted high and low for the information but, if it is out there,
+> it is well hidden.
+>
+> What I want to do:  I want to relocate (move) a subvolume from one BTRFS
+> volume to a different BTRFS volume.
+>
+> I have seen the writeup for incremental backup which takes a snapshot,
+> and then using btrfs-send and btrfs-receive to create a copy on a
+> different volume.  That works fine except the btrfs-receive set the new
+> copy to be readonly.
+>
+> What I want to do is to use that new subvolume read/write.  The only way
+> I have figured out to do this is to create another snapshot on the new
+> volume which is NOT readonly.  I believe that means I need to keep both
+> of these subvolumes around.
 
-Please reorder these so the patch that causes problems comes after the
-patches that fix the problems ;)  IOW, please make it bisect friendly.
+As soon as I sent this I believe I found the answer.
 
--chris
+I was sort of right about creating the new read-write (NOT readonly) 
+snapshot.  After it is created simply delete the one which was created 
+by btrfs-receive.
 
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+I also found out that if you want to rename a subvolume, siple do it 
+with "mv" like you would for a directory or a file.
+
+OK folks, do I have it correct?
+
+Gene
+

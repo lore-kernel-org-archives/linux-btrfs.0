@@ -1,160 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23931 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753166Ab3LMUt4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 15:49:56 -0500
-Message-ID: <52AB72EE.9010806@fb.com>
-Date: Fri, 13 Dec 2013 15:49:50 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: <fdmanana@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix tree mod logging
-References: <1386963698-17766-1-git-send-email-fdmanana@gmail.com>	<52AB68DD.6070508@fb.com> <CAL3q7H4+XQisLou=o5f_U8-5mFwZLi26vHRaZJxX69Z5O9f-vQ@mail.gmail.com>
-In-Reply-To: <CAL3q7H4+XQisLou=o5f_U8-5mFwZLi26vHRaZJxX69Z5O9f-vQ@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55577 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751554Ab3LMVaf convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 16:30:35 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs-send-receive vs rsync for (incremental/full) backups
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20131213203554.GP9738@carfax.org.uk>
+Date: Fri, 13 Dec 2013 14:30:26 -0700
+Cc: Martin <m_btrfs@ml1.co.uk>, linux-btrfs@vger.kernel.org
+Message-Id: <3D785BE5-E19C-4C32-8CF9-D10F106727D6@colorremedies.com>
+References: <l8fo25$a4h$1@ger.gmane.org> <20131213203554.GP9738@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 12/13/2013 03:10 PM, Filipe David Manana wrote:
-> On Fri, Dec 13, 2013 at 8:06 PM, Josef Bacik <jbacik@fb.com> wrote:
->> On 12/13/2013 02:41 PM, Filipe David Borba Manana wrote:
->>> While running the test btrfs/004 from xfstests in a loop, it failed
->>> about 1 time out of 20 runs in my desktop. The failure happend in
->>> the backref walking part of the test, and the test's error message was
->>> like this:
->>>
->>>     btrfs/004 93s ... [failed, exit status 1] - output mismatch (see
->>> /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad)
->>>         --- tests/btrfs/004.out  2013-11-26 18:25:29.263333714 +0000
->>>         +++ /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad
->>> 2013-12-10 15:25:10.327518516 +0000
->>>         @@ -1,3 +1,8 @@
->>>          QA output created by 004
->>>          *** test backref walking
->>>         -*** done
->>>         +unexpected output from
->>>         +        /home/fdmanana/git/hub/btrfs-progs/btrfs inspect-internal
->>> logical-resolve -P 141512704 /home/fdmanana/btrfs-tests/scratch_1
->>>         +expected inum: 405, expected address: 454656, file:
->>> /home/fdmanana/btrfs-tests/scratch_1/snap1/p0/d6/d3d/d156/fce, got:
->>>         +
->>>          ...
->>>          (Run 'diff -u tests/btrfs/004.out
->>> /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad' to see the
->>> entire diff)
->>>     Ran: btrfs/004
->>>     Failures: btrfs/004
->>>     Failed 1 of 1 tests
->>>
->>> But immediately after the test finished, the btrfs inspect-internal
->>> command
->>> returned the expected output:
->>>
->>>     $ btrfs inspect-internal logical-resolve -P 141512704
->>> /home/fdmanana/btrfs-tests/scratch_1
->>>     inode 405 offset 454656 root 258
->>>     inode 405 offset 454656 root 5
->>>
->>> It turned out this was because the btrfs_search_old_slot() calls performed
->>> during backref walking (backref.c:__resolve_indirect_ref) were not finding
->>> anything. The reason for this turned out to be that the tree mod logging
->>> code was not logging some node multi-step operations atomically, therefore
->>> btrfs_search_old_slot() callers iterated often over an incomplete tree
->>> that
->>> wasn't fully consistent with any tree state from the past. Besides missing
->>> items, this often (but not always) resulted in -EIO errors during old slot
->>> searches, reported in dmesg like this:
->>>
->>> [ 4299.933936] ------------[ cut here ]------------
->>> [ 4299.933949] WARNING: CPU: 0 PID: 23190 at fs/btrfs/ctree.c:1343
->>> btrfs_search_old_slot+0x57b/0xab0 [btrfs]()
->>> [ 4299.933950] Modules linked in: btrfs raid6_pq xor pci_stub vboxpci(O)
->>> vboxnetadp(O) vboxnetflt(O) vboxdrv(O) bnep rfcomm bluetooth parport_pc
->>> ppdev binfmt_misc joydev snd_hda_codec_h
->>> [ 4299.933977] CPU: 0 PID: 23190 Comm: btrfs Tainted: G        W  O
->>> 3.12.0-fdm-btrfs-next-16+ #70
->>> [ 4299.933978] Hardware name: To Be Filled By O.E.M. To Be Filled By
->>> O.E.M./Z77 Pro4, BIOS P1.50 09/04/2012
->>> [ 4299.933979]  000000000000053f ffff8806f3fd98f8 ffffffff8176d284
->>> 0000000000000007
->>> [ 4299.933982]  0000000000000000 ffff8806f3fd9938 ffffffff8104a81c
->>> ffff880659c64b70
->>> [ 4299.933984]  ffff880659c643d0 ffff8806599233d8 ffff880701e2e938
->>> 0000160000000000
->>> [ 4299.933987] Call Trace:
->>> [ 4299.933991]  [<ffffffff8176d284>] dump_stack+0x55/0x76
->>> [ 4299.933994]  [<ffffffff8104a81c>] warn_slowpath_common+0x8c/0xc0
->>> [ 4299.933997]  [<ffffffff8104a86a>] warn_slowpath_null+0x1a/0x20
->>> [ 4299.934003]  [<ffffffffa065d3bb>] btrfs_search_old_slot+0x57b/0xab0
->>> [btrfs]
->>> [ 4299.934005]  [<ffffffff81775f3b>] ? _raw_read_unlock+0x2b/0x50
->>> [ 4299.934010]  [<ffffffffa0655001>] ? __tree_mod_log_search+0x81/0xc0
->>> [btrfs]
->>> [ 4299.934019]  [<ffffffffa06dd9b0>] __resolve_indirect_refs+0x130/0x5f0
->>> [btrfs]
->>> [ 4299.934027]  [<ffffffffa06a21f1>] ? free_extent_buffer+0x61/0xc0
->>> [btrfs]
->>> [ 4299.934034]  [<ffffffffa06de39c>] find_parent_nodes+0x1fc/0xe40 [btrfs]
->>> [ 4299.934042]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->>> [btrfs]
->>> [ 4299.934048]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->>> [btrfs]
->>> [ 4299.934056]  [<ffffffffa06df980>] iterate_extent_inodes+0xe0/0x250
->>> [btrfs]
->>> [ 4299.934058]  [<ffffffff817762db>] ? _raw_spin_unlock+0x2b/0x50
->>> [ 4299.934065]  [<ffffffffa06dfb82>] iterate_inodes_from_logical+0x92/0xb0
->>> [btrfs]
->>> [ 4299.934071]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->>> [btrfs]
->>> [ 4299.934078]  [<ffffffffa06b7015>] btrfs_ioctl+0xf65/0x1f60 [btrfs]
->>> [ 4299.934080]  [<ffffffff811658b8>] ? handle_mm_fault+0x278/0xb00
->>> [ 4299.934083]  [<ffffffff81075563>] ? up_read+0x23/0x40
->>> [ 4299.934085]  [<ffffffff8177a41c>] ? __do_page_fault+0x20c/0x5a0
->>> [ 4299.934088]  [<ffffffff811b2946>] do_vfs_ioctl+0x96/0x570
->>> [ 4299.934090]  [<ffffffff81776e23>] ? error_sti+0x5/0x6
->>> [ 4299.934093]  [<ffffffff810b71e8>] ? trace_hardirqs_off_caller+0x28/0xd0
->>> [ 4299.934096]  [<ffffffff81776a09>] ? retint_swapgs+0xe/0x13
->>> [ 4299.934098]  [<ffffffff811b2eb1>] SyS_ioctl+0x91/0xb0
->>> [ 4299.934100]  [<ffffffff813eecde>] ? trace_hardirqs_on_thunk+0x3a/0x3f
->>> [ 4299.934102]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
->>> [ 4299.934102]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
->>> [ 4299.934104] ---[ end trace 48f0cfc902491414 ]---
->>> [ 4299.934378] btrfs bad fsid on block 0
->>>
->>> These tree mod log operations that must be performed atomically,
->>> tree_mod_log_free_eb,
->>> tree_mod_log_eb_copy, tree_mod_log_insert_root and
->>> tree_mod_log_insert_move, used to
->>> be performed atomically before the following commit:
->>>
->>>     c8cc6341653721b54760480b0d0d9b5f09b46741
->>>     (Btrfs: stop using GFP_ATOMIC for the tree mod log allocations)
->>>
->>> That change removed the atomicity of such operations. This patch restores
->>> the
->>> atomicity while still not doing the GFP_ATOMIC allocations of
->>> tree_mod_elem
->>> structures, so it has to do the allocations using GFP_NOFS before
->>> acquiring
->>> the mod log lock.
->>>
->>> This issue has been experienced by several users recently, such as for
->>> example:
->>>
->>>     http://www.spinics.net/lists/linux-btrfs/msg28574.html
->>>
->>> After running the btrfs/004 test for 679 consecutive iterations with this
->>> patch applied, I didn't ran into the issue anymore.
->>
->> Thanks for tracking this down, just some return error problems below.
-> Right, I left the BUG_ON's because they were already being used for
-> all existing tree mod failures.
-> If you don't mind, I'll do that change as a separate patch.
-New patches should follow the appropriate behaviour, you can leave the 
-BUG_ON()'s that are already there, but I don't want any new ones added.  
-Thanks,
+On Dec 13, 2013, at 1:35 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 
-Josef
+> On Fri, Dec 13, 2013 at 07:44:16PM +0000, Martin wrote:
+>> OK... So for backing up across a local network to a second physical host...
+>> 
+>> Is btrfs-send-receive stable enough now to be used?
+> 
+>   It seems to be OK for me at the moment -- I'm not running it across
+> a network (yet), but I am using it between different filesystems on
+> the same host, using pipes.
+
+Question. Are the source file system's checksums (and metadata) preserved in the send file? Or does the send file just contain data, and checksums are recomputed on receive? I'm curious if the send file can be stored on a non-checksumming file system, and yet have a means to verify the integrity of the files once received. Either the checksums in the send file being check during receive, or subsequent to receive completion by using scrub?
+
+And yes I can confirm that send outputting to a file on a 2nd drive, and receiving it to yet another drive does work, and the source and destination subvolumes are the same in seemingly every way. I didn't separately rsync checksum compare the two subvolumes, however. That seems like possibly a good test. I also haven't tried doing it over a network.
+
+
+Chris Murphy

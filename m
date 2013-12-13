@@ -1,109 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:5197 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751209Ab3LMPGZ (ORCPT
+Received: from e32.co.us.ibm.com ([32.97.110.150]:38897 "EHLO
+	e32.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752018Ab3LMPRG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 10:06:25 -0500
-Received: from pps.filterd (m0044012 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id rBDF5qBt014473
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:06:23 -0800
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1gqkgg2jnd-14
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:06:23 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: deal with io_tree->mapping being NULL
-Date: Fri, 13 Dec 2013 10:03:54 -0500
-Message-ID: <1386947034-9987-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 13 Dec 2013 10:17:06 -0500
+Received: from /spool/local
+	by e32.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <sekharan@us.ibm.com>;
+	Fri, 13 Dec 2013 08:17:06 -0700
+Received: from b03cxnp08027.gho.boulder.ibm.com (b03cxnp08027.gho.boulder.ibm.com [9.17.130.19])
+	by d03dlp01.boulder.ibm.com (Postfix) with ESMTP id CCC9B1FF001A
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 08:16:39 -0700 (MST)
+Received: from d03av03.boulder.ibm.com (d03av03.boulder.ibm.com [9.17.195.169])
+	by b03cxnp08027.gho.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id rBDFH2oQ33816594
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 16:17:03 +0100
+Received: from d03av03.boulder.ibm.com (localhost [127.0.0.1])
+	by d03av03.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id rBDFH29O012665
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 08:17:02 -0700
+Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
+From: Chandra Seetharaman <sekharan@us.ibm.com>
+Reply-To: sekharan@us.ibm.com
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <20131213011720.GW6498@twin.jikos.cz>
+References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
+	 <20131213011720.GW6498@twin.jikos.cz>
+Content-Type: text/plain; charset="UTF-8"
+Date: Fri, 13 Dec 2013 09:17:00 -0600
+Message-ID: <1386947820.4241.22.camel@chandra-dt.ibm.com>
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I need to add infrastructure to allocate dummy extent buffers for running sanity
-tests, and to do this I need to not have to worry about having an
-address_mapping for an io_tree, so just fix up the places where we assume that
-all io_tree's have a non-NULL ->mapping.  Thanks,
+On Fri, 2013-12-13 at 02:17 +0100, David Sterba wrote:
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent_io.c | 24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
+Hi David,
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3c3f448..2779255 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -77,13 +77,19 @@ void btrfs_leak_debug_check(void)
- 	}
- }
- 
--#define btrfs_debug_check_extent_io_range(inode, start, end)		\
--	__btrfs_debug_check_extent_io_range(__func__, (inode), (start), (end))
-+#define btrfs_debug_check_extent_io_range(tree, start, end)		\
-+	__btrfs_debug_check_extent_io_range(__func__, (tree), (start), (end))
- static inline void __btrfs_debug_check_extent_io_range(const char *caller,
--		struct inode *inode, u64 start, u64 end)
-+		struct extent_io_tree *tree, u64 start, u64 end)
- {
--	u64 isize = i_size_read(inode);
-+	struct inode *inode;
-+	u64 isize;
- 
-+	if (!tree->mapping)
-+		return;
-+
-+	inode = tree->mapping->host;
-+	isize = i_size_read(inode);
- 	if (end >= PAGE_SIZE && (end % 2) == 0 && end != isize - 1) {
- 		printk_ratelimited(KERN_DEBUG
- 		    "btrfs: %s: ino %llu isize %llu odd range [%llu,%llu]\n",
-@@ -124,6 +130,8 @@ static noinline void flush_write_bio(void *data);
- static inline struct btrfs_fs_info *
- tree_fs_info(struct extent_io_tree *tree)
- {
-+	if (!tree->mapping)
-+		return NULL;
- 	return btrfs_sb(tree->mapping->host->i_sb);
- }
- 
-@@ -570,7 +578,7 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int err;
- 	int clear = 0;
- 
--	btrfs_debug_check_extent_io_range(tree->mapping->host, start, end);
-+	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- 	if (bits & EXTENT_DELALLOC)
- 		bits |= EXTENT_NORESERVE;
-@@ -730,7 +738,7 @@ static void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	struct extent_state *state;
- 	struct rb_node *node;
- 
--	btrfs_debug_check_extent_io_range(tree->mapping->host, start, end);
-+	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- 	spin_lock(&tree->lock);
- again:
-@@ -817,7 +825,7 @@ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	u64 last_start;
- 	u64 last_end;
- 
--	btrfs_debug_check_extent_io_range(tree->mapping->host, start, end);
-+	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- 	bits |= EXTENT_FIRST_DELALLOC;
- again:
-@@ -1043,7 +1051,7 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	u64 last_start;
- 	u64 last_end;
- 
--	btrfs_debug_check_extent_io_range(tree->mapping->host, start, end);
-+	btrfs_debug_check_extent_io_range(tree, start, end);
- 
- again:
- 	if (!prealloc && (mask & __GFP_WAIT)) {
--- 
-1.8.3.1
+> On Wed, Dec 11, 2013 at 05:38:35PM -0600, Chandra Seetharaman wrote:
+> > In other words, one cannot create a filesystem in some other architecture
+> > and use that filesystem in PPC64 or ARM64, and vice versa.,
+> 
+> For a full compatibility with any blocksize on arch with any pagesize
+> you'd need to implement the case when sectorsize is larger than
+> pagesize. Your patchset does the "4k sector/64k page", but I haven't
+> noticed the "64k sector/4k page" counterpart.
+
+My object was to make btrfs filesystems from other arches to be directly
+usable in PPC64.
+
+Nevertheless, IIUC, btrfs currently support such a case. Each extent
+buffers currently can have up to INLINE_EXTENT_BUFFER_PAGES(16). 
+
+-------
+#define INLINE_EXTENT_BUFFER_PAGES 16
+
+struct extent_buffer {
+        :
+        :
+        struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+        :
+};
+--------
+
+No ?
+
+> 
+> > Sometime last year, Wade Cline posted a patch(http://lwn.net/Articles/529682/).
+> > I started testing it, and found many locking/race issues. So, I changed the
+> > logic and created an extent_buffer_head that holds an array of extent buffers that
+> > belong to a page.
+> > 
+> > There are few wrinkles in this patchset, like some xfstests are failing, which
+> > could be due to me doing something incorrectly w.r.t how the blocksize and
+> > PAGE_SIZE are used in these patched.
+> 
+> How does it handle compression? The current code relies on
+> 
+>   compression block == page size
+> 
+> but should rather use the sectorsize. That might be one of the reasons
+> why xfstests fail.
+
+Thanks for this information. I will look at the code more closely with
+this in mind.
+
+There are some issues with relocation too. Is there similar assumption
+in that code path too ?
+
+> 
+
 

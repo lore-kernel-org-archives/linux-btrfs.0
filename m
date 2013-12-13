@@ -1,72 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:51916 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:60617 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751495Ab3LMJpl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 04:45:41 -0500
-Message-ID: <52AAD78F.206@cn.fujitsu.com>
-Date: Fri, 13 Dec 2013 17:46:55 +0800
+	id S1752318Ab3LMKIa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 05:08:30 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBDA8S6E008938
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 18:08:28 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs: fix EEXIST error when creating new file in
- subvolume/snapshot
-References: <1386926183-18325-1-git-send-email-bo.li.liu@oracle.com> <1386926183-18325-4-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1386926183-18325-4-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/6] Btrfs: remove residual code in delayed inode async helper
+Date: Fri, 13 Dec 2013 18:09:36 +0800
+Message-Id: <1386929381-3483-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	fri, 13 Dec 2013 17:16:23 +0800, Liu Bo wrote:
-> While creating a subvolume/snapshot, we don't use inode cache to allocate
-> an inode id for the root dir "..", so inode cache doesn't mark that id as
+Before applying the patch
+  commit de3cb945db4d8eb3b046dc7a5ea89a893372750c
+  title: Btrfs: improve the delayed inode throttling
 
-FIRST_FREE_OBJECTID should be the root dir ".", not "..".
-The other is OK for me.
+We need requeue the async work after the current work was done, it
+introduced a deadlock problem. So we wrote the code that this patch
+removes to avoid the above problem. But after applying the above
+patch, the deadlock problem didn't exist. So we should remove that
+fix code.
 
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/delayed-inode.c | 27 ---------------------------
+ 1 file changed, 27 deletions(-)
 
-> used, and when we create a new file, it'll find that fact and throw out
-> -EEXIST.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/inode-map.c | 15 ++++++++++++---
->  1 file changed, 12 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-> index 493694f..bcff910 100644
-> --- a/fs/btrfs/inode-map.c
-> +++ b/fs/btrfs/inode-map.c
-> @@ -528,6 +528,16 @@ static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
->  	struct btrfs_key search_key;
->  	struct btrfs_key found_key;
->  	int slot;
-> +	u64 min_objectid;
-> +
-> +	/*
-> +	 * For fs/file tree, FIRST_FREE_OBJECTID is reserved for
-> +	 * root dir ".."
-> +	 */
-> +	if (is_fstree(root->root_key.objectid))
-> +		min_objectid = BTRFS_FIRST_FREE_OBJECTID;
-> +	else
-> +		min_objectid = BTRFS_FIRST_FREE_OBJECTID - 1;
->  
->  	path = btrfs_alloc_path();
->  	if (!path)
-> @@ -544,10 +554,9 @@ static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
->  		slot = path->slots[0] - 1;
->  		l = path->nodes[0];
->  		btrfs_item_key_to_cpu(l, &found_key, slot);
-> -		*objectid = max_t(u64, found_key.objectid,
-> -				  BTRFS_FIRST_FREE_OBJECTID - 1);
-> +		*objectid = max_t(u64, found_key.objectid, min_objectid);
->  	} else {
-> -		*objectid = BTRFS_FIRST_FREE_OBJECTID - 1;
-> +		*objectid = min_objectid;
->  	}
->  	ret = 0;
->  error:
-> 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 8d292fb..e832621 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1300,33 +1300,6 @@ again:
+ 	trans->block_rsv = &root->fs_info->delayed_block_rsv;
+ 
+ 	__btrfs_commit_inode_delayed_items(trans, path, delayed_node);
+-	/*
+-	 * Maybe new delayed items have been inserted, so we need requeue
+-	 * the work. Besides that, we must dequeue the empty delayed nodes
+-	 * to avoid the race between delayed items balance and the worker.
+-	 * The race like this:
+-	 * 	Task1				Worker thread
+-	 * 					count == 0, needn't requeue
+-	 * 					  also needn't insert the
+-	 * 					  delayed node into prepare
+-	 * 					  list again.
+-	 * 	add lots of delayed items
+-	 * 	queue the delayed node
+-	 * 	  already in the list,
+-	 * 	  and not in the prepare
+-	 * 	  list, it means the delayed
+-	 * 	  node is being dealt with
+-	 * 	  by the worker.
+-	 * 	do delayed items balance
+-	 * 	  the delayed node is being
+-	 * 	  dealt with by the worker
+-	 * 	  now, just wait.
+-	 * 	  				the worker goto idle.
+-	 * Task1 will sleep until the transaction is commited.
+-	 */
+-	mutex_lock(&delayed_node->mutex);
+-	btrfs_dequeue_delayed_node(root->fs_info->delayed_root, delayed_node);
+-	mutex_unlock(&delayed_node->mutex);
+ 
+ 	trans->block_rsv = block_rsv;
+ 	btrfs_end_transaction_dmeta(trans, root);
+-- 
+1.8.3.1
 

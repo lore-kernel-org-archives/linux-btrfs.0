@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58268 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751502Ab3LMBRV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 20:17:21 -0500
-Date: Fri, 13 Dec 2013 02:17:20 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandra Seetharaman <sekharan@us.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, chandra_pdx@yahoo.com
-Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
-Message-ID: <20131213011720.GW6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:42944 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750830Ab3LMJQh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 04:16:37 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBD9Gamw026149
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:37 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBD9GaiU026959
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:36 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBD9GZuF016480
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:35 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] Btrfs: inode cache fixes
+Date: Fri, 13 Dec 2013 17:16:20 +0800
+Message-Id: <1386926183-18325-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 11, 2013 at 05:38:35PM -0600, Chandra Seetharaman wrote:
-> In other words, one cannot create a filesystem in some other architecture
-> and use that filesystem in PPC64 or ARM64, and vice versa.,
+The first patch aims to fix the bug of repeatly building inode cache.
+The next two patches fix problems with the first one applied.
 
-For a full compatibility with any blocksize on arch with any pagesize
-you'd need to implement the case when sectorsize is larger than
-pagesize. Your patchset does the "4k sector/64k page", but I haven't
-noticed the "64k sector/4k page" counterpart.
+For better review, I decided to have three patches instead of folding them into
+one.
 
-> Sometime last year, Wade Cline posted a patch(http://lwn.net/Articles/529682/).
-> I started testing it, and found many locking/race issues. So, I changed the
-> logic and created an extent_buffer_head that holds an array of extent buffers that
-> belong to a page.
-> 
-> There are few wrinkles in this patchset, like some xfstests are failing, which
-> could be due to me doing something incorrectly w.r.t how the blocksize and
-> PAGE_SIZE are used in these patched.
+Liu Bo (3):
+  Btrfs: avoid building inode cache repeatly
+  Btrfs: don't build inode cache for orphan root
+  Btrfs: fix EEXIST error when creating new file in subvolume/snapshot
 
-How does it handle compression? The current code relies on
+ fs/btrfs/disk-io.c   |  9 +++++----
+ fs/btrfs/inode-map.c | 21 +++++++++++++++++----
+ 2 files changed, 22 insertions(+), 8 deletions(-)
 
-  compression block == page size
+-- 
+1.8.2.1
 
-but should rather use the sectorsize. That might be one of the reasons
-why xfstests fail.

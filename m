@@ -1,582 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f53.google.com ([209.85.214.53]:57661 "EHLO
-	mail-bk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752696Ab3LMUKb (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:32795 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752452Ab3LMUf5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 15:10:31 -0500
-Received: by mail-bk0-f53.google.com with SMTP id na10so1551991bkb.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 12:10:29 -0800 (PST)
+	Fri, 13 Dec 2013 15:35:57 -0500
+Date: Fri, 13 Dec 2013 20:35:54 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Martin <m_btrfs@ml1.co.uk>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-send-receive vs rsync for (incremental/full) backups
+Message-ID: <20131213203554.GP9738@carfax.org.uk>
+References: <l8fo25$a4h$1@ger.gmane.org>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <52AB68DD.6070508@fb.com>
-References: <1386963698-17766-1-git-send-email-fdmanana@gmail.com>
-	<52AB68DD.6070508@fb.com>
-Date: Fri, 13 Dec 2013 20:10:29 +0000
-Message-ID: <CAL3q7H4+XQisLou=o5f_U8-5mFwZLi26vHRaZJxX69Z5O9f-vQ@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix tree mod logging
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="8HhMLSHvAouSipEr"
+In-Reply-To: <l8fo25$a4h$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 8:06 PM, Josef Bacik <jbacik@fb.com> wrote:
->
-> On 12/13/2013 02:41 PM, Filipe David Borba Manana wrote:
->>
->> While running the test btrfs/004 from xfstests in a loop, it failed
->> about 1 time out of 20 runs in my desktop. The failure happend in
->> the backref walking part of the test, and the test's error message was
->> like this:
->>
->>    btrfs/004 93s ... [failed, exit status 1] - output mismatch (see
->> /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad)
->>        --- tests/btrfs/004.out  2013-11-26 18:25:29.263333714 +0000
->>        +++ /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad
->> 2013-12-10 15:25:10.327518516 +0000
->>        @@ -1,3 +1,8 @@
->>         QA output created by 004
->>         *** test backref walking
->>        -*** done
->>        +unexpected output from
->>        +        /home/fdmanana/git/hub/btrfs-progs/btrfs inspect-internal
->> logical-resolve -P 141512704 /home/fdmanana/btrfs-tests/scratch_1
->>        +expected inum: 405, expected address: 454656, file:
->> /home/fdmanana/btrfs-tests/scratch_1/snap1/p0/d6/d3d/d156/fce, got:
->>        +
->>         ...
->>         (Run 'diff -u tests/btrfs/004.out
->> /home/fdmanana/git/hub/xfstests_2/results//btrfs/004.out.bad' to see the
->> entire diff)
->>    Ran: btrfs/004
->>    Failures: btrfs/004
->>    Failed 1 of 1 tests
->>
->> But immediately after the test finished, the btrfs inspect-internal
->> command
->> returned the expected output:
->>
->>    $ btrfs inspect-internal logical-resolve -P 141512704
->> /home/fdmanana/btrfs-tests/scratch_1
->>    inode 405 offset 454656 root 258
->>    inode 405 offset 454656 root 5
->>
->> It turned out this was because the btrfs_search_old_slot() calls performed
->> during backref walking (backref.c:__resolve_indirect_ref) were not finding
->> anything. The reason for this turned out to be that the tree mod logging
->> code was not logging some node multi-step operations atomically, therefore
->> btrfs_search_old_slot() callers iterated often over an incomplete tree
->> that
->> wasn't fully consistent with any tree state from the past. Besides missing
->> items, this often (but not always) resulted in -EIO errors during old slot
->> searches, reported in dmesg like this:
->>
->> [ 4299.933936] ------------[ cut here ]------------
->> [ 4299.933949] WARNING: CPU: 0 PID: 23190 at fs/btrfs/ctree.c:1343
->> btrfs_search_old_slot+0x57b/0xab0 [btrfs]()
->> [ 4299.933950] Modules linked in: btrfs raid6_pq xor pci_stub vboxpci(O)
->> vboxnetadp(O) vboxnetflt(O) vboxdrv(O) bnep rfcomm bluetooth parport_pc
->> ppdev binfmt_misc joydev snd_hda_codec_h
->> [ 4299.933977] CPU: 0 PID: 23190 Comm: btrfs Tainted: G        W  O
->> 3.12.0-fdm-btrfs-next-16+ #70
->> [ 4299.933978] Hardware name: To Be Filled By O.E.M. To Be Filled By
->> O.E.M./Z77 Pro4, BIOS P1.50 09/04/2012
->> [ 4299.933979]  000000000000053f ffff8806f3fd98f8 ffffffff8176d284
->> 0000000000000007
->> [ 4299.933982]  0000000000000000 ffff8806f3fd9938 ffffffff8104a81c
->> ffff880659c64b70
->> [ 4299.933984]  ffff880659c643d0 ffff8806599233d8 ffff880701e2e938
->> 0000160000000000
->> [ 4299.933987] Call Trace:
->> [ 4299.933991]  [<ffffffff8176d284>] dump_stack+0x55/0x76
->> [ 4299.933994]  [<ffffffff8104a81c>] warn_slowpath_common+0x8c/0xc0
->> [ 4299.933997]  [<ffffffff8104a86a>] warn_slowpath_null+0x1a/0x20
->> [ 4299.934003]  [<ffffffffa065d3bb>] btrfs_search_old_slot+0x57b/0xab0
->> [btrfs]
->> [ 4299.934005]  [<ffffffff81775f3b>] ? _raw_read_unlock+0x2b/0x50
->> [ 4299.934010]  [<ffffffffa0655001>] ? __tree_mod_log_search+0x81/0xc0
->> [btrfs]
->> [ 4299.934019]  [<ffffffffa06dd9b0>] __resolve_indirect_refs+0x130/0x5f0
->> [btrfs]
->> [ 4299.934027]  [<ffffffffa06a21f1>] ? free_extent_buffer+0x61/0xc0
->> [btrfs]
->> [ 4299.934034]  [<ffffffffa06de39c>] find_parent_nodes+0x1fc/0xe40 [btrfs]
->> [ 4299.934042]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->> [btrfs]
->> [ 4299.934048]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->> [btrfs]
->> [ 4299.934056]  [<ffffffffa06df980>] iterate_extent_inodes+0xe0/0x250
->> [btrfs]
->> [ 4299.934058]  [<ffffffff817762db>] ? _raw_spin_unlock+0x2b/0x50
->> [ 4299.934065]  [<ffffffffa06dfb82>] iterate_inodes_from_logical+0x92/0xb0
->> [btrfs]
->> [ 4299.934071]  [<ffffffffa06b13e0>] ? defrag_lookup_extent+0xe0/0xe0
->> [btrfs]
->> [ 4299.934078]  [<ffffffffa06b7015>] btrfs_ioctl+0xf65/0x1f60 [btrfs]
->> [ 4299.934080]  [<ffffffff811658b8>] ? handle_mm_fault+0x278/0xb00
->> [ 4299.934083]  [<ffffffff81075563>] ? up_read+0x23/0x40
->> [ 4299.934085]  [<ffffffff8177a41c>] ? __do_page_fault+0x20c/0x5a0
->> [ 4299.934088]  [<ffffffff811b2946>] do_vfs_ioctl+0x96/0x570
->> [ 4299.934090]  [<ffffffff81776e23>] ? error_sti+0x5/0x6
->> [ 4299.934093]  [<ffffffff810b71e8>] ? trace_hardirqs_off_caller+0x28/0xd0
->> [ 4299.934096]  [<ffffffff81776a09>] ? retint_swapgs+0xe/0x13
->> [ 4299.934098]  [<ffffffff811b2eb1>] SyS_ioctl+0x91/0xb0
->> [ 4299.934100]  [<ffffffff813eecde>] ? trace_hardirqs_on_thunk+0x3a/0x3f
->> [ 4299.934102]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
->> [ 4299.934102]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
->> [ 4299.934104] ---[ end trace 48f0cfc902491414 ]---
->> [ 4299.934378] btrfs bad fsid on block 0
->>
->> These tree mod log operations that must be performed atomically,
->> tree_mod_log_free_eb,
->> tree_mod_log_eb_copy, tree_mod_log_insert_root and
->> tree_mod_log_insert_move, used to
->> be performed atomically before the following commit:
->>
->>    c8cc6341653721b54760480b0d0d9b5f09b46741
->>    (Btrfs: stop using GFP_ATOMIC for the tree mod log allocations)
->>
->> That change removed the atomicity of such operations. This patch restores
->> the
->> atomicity while still not doing the GFP_ATOMIC allocations of
->> tree_mod_elem
->> structures, so it has to do the allocations using GFP_NOFS before
->> acquiring
->> the mod log lock.
->>
->> This issue has been experienced by several users recently, such as for
->> example:
->>
->>    http://www.spinics.net/lists/linux-btrfs/msg28574.html
->>
->> After running the btrfs/004 test for 679 consecutive iterations with this
->> patch applied, I didn't ran into the issue anymore.
->
->
-> Thanks for tracking this down, just some return error problems below.
 
-Right, I left the BUG_ON's because they were already being used for
-all existing tree mod failures.
-If you don't mind, I'll do that change as a separate patch.
+--8HhMLSHvAouSipEr
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-thanks Josef
+On Fri, Dec 13, 2013 at 07:44:16PM +0000, Martin wrote:
+> OK... So for backing up across a local network to a second physical host...
+> 
+> Is btrfs-send-receive stable enough now to be used?
 
->
->
->>
->> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
->> ---
->>   fs/btrfs/ctree.c |  266
->> +++++++++++++++++++++++++++++++++++++++++-------------
->>   1 file changed, 204 insertions(+), 62 deletions(-)
->>
->> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
->> index 59664f6..e99e5f6 100644
->> --- a/fs/btrfs/ctree.c
->> +++ b/fs/btrfs/ctree.c
->> @@ -474,6 +474,8 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info
->> *fs_info,
->>    * the index is the shifted logical of the *new* root node for root
->> replace
->>    * operations, or the shifted logical of the affected block for all
->> other
->>    * operations.
->> + *
->> + * Note: must be called with write lock (tree_mod_log_write_lock).
->>    */
->>   static noinline int
->>   __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct
->> tree_mod_elem *tm)
->> @@ -486,20 +488,6 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info,
->> struct tree_mod_elem *tm)
->>         BUG_ON(!tm);
->>   -     tree_mod_log_write_lock(fs_info);
->> -       if (list_empty(&fs_info->tree_mod_seq_list)) {
->> -               tree_mod_log_write_unlock(fs_info);
->> -               /*
->> -                * Ok we no longer care about logging modifications, free
->> up tm
->> -                * and return 0.  Any callers shouldn't be using tm after
->> -                * calling tree_mod_log_insert, but if they do we can just
->> -                * change this to return a special error code to let the
->> callers
->> -                * do their own thing.
->> -                */
->> -               kfree(tm);
->> -               return 0;
->> -       }
->> -
->>         spin_lock(&fs_info->tree_mod_seq_lock);
->>         tm->seq = btrfs_inc_tree_mod_seq_minor(fs_info);
->>         spin_unlock(&fs_info->tree_mod_seq_lock);
->> @@ -527,7 +515,6 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info,
->> struct tree_mod_elem *tm)
->>         rb_link_node(&tm->node, parent, new);
->>         rb_insert_color(&tm->node, tm_root);
->>   out:
->> -       tree_mod_log_write_unlock(fs_info);
->>         return ret;
->>   }
->>   @@ -544,19 +531,38 @@ static inline int tree_mod_dont_log(struct
->> btrfs_fs_info *fs_info,
->>                 return 1;
->>         if (eb && btrfs_header_level(eb) == 0)
->>                 return 1;
->> +
->> +       tree_mod_log_write_lock(fs_info);
->> +       if (list_empty(&(fs_info)->tree_mod_seq_list)) {
->> +               tree_mod_log_write_unlock(fs_info);
->> +               return 1;
->> +       }
->> +
->>         return 0;
->>   }
->>   -static inline int
->> -__tree_mod_log_insert_key(struct btrfs_fs_info *fs_info,
->> -                         struct extent_buffer *eb, int slot,
->> -                         enum mod_log_op op, gfp_t flags)
->> +/* Similar to tree_mod_dont_log, but doesn't acquire any locks. */
->> +static inline int tree_mod_need_log(const struct btrfs_fs_info *fs_info,
->> +                                   struct extent_buffer *eb)
->> +{
->> +       smp_mb();
->> +       if (list_empty(&(fs_info)->tree_mod_seq_list))
->> +               return 0;
->> +       if (eb && btrfs_header_level(eb) == 0)
->> +               return 0;
->> +
->> +       return 1;
->> +}
->> +
->> +static struct tree_mod_elem *
->> +alloc_tree_mod_elem(struct extent_buffer *eb, int slot,
->> +                   enum mod_log_op op, gfp_t flags)
->>   {
->>         struct tree_mod_elem *tm;
->>         tm = kzalloc(sizeof(*tm), flags);
->>         if (!tm)
->> -               return -ENOMEM;
->> +               return NULL;
->>         tm->index = eb->start >> PAGE_CACHE_SHIFT;
->>         if (op != MOD_LOG_KEY_ADD) {
->> @@ -567,7 +573,7 @@ __tree_mod_log_insert_key(struct btrfs_fs_info
->> *fs_info,
->>         tm->slot = slot;
->>         tm->generation = btrfs_node_ptr_generation(eb, slot);
->>   -     return __tree_mod_log_insert(fs_info, tm);
->> +       return tm;
->>   }
->>     static noinline int
->> @@ -575,10 +581,25 @@ tree_mod_log_insert_key(struct btrfs_fs_info
->> *fs_info,
->>                         struct extent_buffer *eb, int slot,
->>                         enum mod_log_op op, gfp_t flags)
->>   {
->> -       if (tree_mod_dont_log(fs_info, eb))
->> +       struct tree_mod_elem *tm;
->> +       int ret;
->> +
->> +       if (!tree_mod_need_log(fs_info, eb))
->>                 return 0;
->>   -     return __tree_mod_log_insert_key(fs_info, eb, slot, op, flags);
->> +       tm = alloc_tree_mod_elem(eb, slot, op, flags);
->> +       if (!tm)
->> +               return -ENOMEM;
->> +
->> +       if (tree_mod_dont_log(fs_info, eb)) {
->> +               kfree(tm);
->> +               return 0;
->> +       }
->> +
->> +       ret = __tree_mod_log_insert(fs_info, tm);
->> +       tree_mod_log_write_unlock(fs_info);
->> +
->> +       return ret;
->>   }
->>     static noinline int
->> @@ -586,51 +607,76 @@ tree_mod_log_insert_move(struct btrfs_fs_info
->> *fs_info,
->>                          struct extent_buffer *eb, int dst_slot, int
->> src_slot,
->>                          int nr_items, gfp_t flags)
->>   {
->> -       struct tree_mod_elem *tm;
->> -       int ret;
->> +       struct tree_mod_elem *tm = NULL;
->> +       struct tree_mod_elem **tm_list = NULL;
->> +       int ret = 0;
->>         int i;
->>   -     if (tree_mod_dont_log(fs_info, eb))
->> +       if (!tree_mod_need_log(fs_info, eb))
->>                 return 0;
->>   +     tm = kzalloc(sizeof(*tm), flags);
->> +       if (!tm)
->> +               return -ENOMEM;
->> +
->> +       tm->index = eb->start >> PAGE_CACHE_SHIFT;
->> +       tm->slot = src_slot;
->> +       tm->move.dst_slot = dst_slot;
->> +       tm->move.nr_items = nr_items;
->> +       tm->op = MOD_LOG_MOVE_KEYS;
->> +
->> +       tm_list = kzalloc(nr_items * sizeof(struct tree_mod_elem *),
->> flags);
->> +       if (!tm_list) {
->> +               ret = -ENOMEM;
->> +               goto free_tms;
->> +       }
->> +
->> +       for (i = 0; i + dst_slot < src_slot && i < nr_items; i++) {
->> +               tm_list[i] = alloc_tree_mod_elem(eb, i + dst_slot,
->> +                   MOD_LOG_KEY_REMOVE_WHILE_MOVING, flags);
->> +               if (!tm_list[i]) {
->> +                       ret = -ENOMEM;
->> +                       goto free_tms;
->> +               }
->> +       }
->> +
->> +       if (tree_mod_dont_log(fs_info, eb))
->> +               goto free_tms;
->> +
->>         /*
->>          * When we override something during the move, we log these
->> removals.
->>          * This can only happen when we move towards the beginning of the
->>          * buffer, i.e. dst_slot < src_slot.
->>          */
->>         for (i = 0; i + dst_slot < src_slot && i < nr_items; i++) {
->> -               ret = __tree_mod_log_insert_key(fs_info, eb, i + dst_slot,
->> -                               MOD_LOG_KEY_REMOVE_WHILE_MOVING,
->> GFP_NOFS);
->> +               ret = __tree_mod_log_insert(fs_info, tm_list[i]);
->>                 BUG_ON(ret < 0);
->>         }
->>   -     tm = kzalloc(sizeof(*tm), flags);
->> -       if (!tm)
->> -               return -ENOMEM;
->> +       ret = __tree_mod_log_insert(fs_info, tm);
->> +       tree_mod_log_write_unlock(fs_info);
->> +       kfree(tm_list);
->>   -     tm->index = eb->start >> PAGE_CACHE_SHIFT;
->> -       tm->slot = src_slot;
->> -       tm->move.dst_slot = dst_slot;
->> -       tm->move.nr_items = nr_items;
->> -       tm->op = MOD_LOG_MOVE_KEYS;
->> +       return ret;
->> +free_tms:
->> +       for (i = 0; i < nr_items; i++)
->> +               kfree(tm_list[i]);
->> +       kfree(tm_list);
->> +       kfree(tm);
->>   -     return __tree_mod_log_insert(fs_info, tm);
->> +       return ret;
->>   }
->>     static inline void
->> -__tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct
->> extent_buffer *eb)
->> +__tree_mod_log_free_eb(struct btrfs_fs_info *fs_info,
->> +                      struct tree_mod_elem **tm_list,
->> +                      int nritems)
->>   {
->>         int i;
->> -       u32 nritems;
->>         int ret;
->>   -     if (btrfs_header_level(eb) == 0)
->> -               return;
->> -
->> -       nritems = btrfs_header_nritems(eb);
->>         for (i = nritems - 1; i >= 0; i--) {
->> -               ret = __tree_mod_log_insert_key(fs_info, eb, i,
->> -                               MOD_LOG_KEY_REMOVE_WHILE_FREEING,
->> GFP_NOFS);
->> +               ret = __tree_mod_log_insert(fs_info, tm_list[i]);
->>                 BUG_ON(ret < 0);
->>         }
->>   }
->> @@ -641,17 +687,38 @@ tree_mod_log_insert_root(struct btrfs_fs_info
->> *fs_info,
->>                          struct extent_buffer *new_root, gfp_t flags,
->>                          int log_removal)
->>   {
->> -       struct tree_mod_elem *tm;
->> +       struct tree_mod_elem *tm = NULL;
->> +       struct tree_mod_elem **tm_list = NULL;
->> +       int nritems = 0;
->> +       int ret = 0;
->> +       int i;
->>   -     if (tree_mod_dont_log(fs_info, NULL))
->> +       if (!tree_mod_need_log(fs_info, NULL))
->>                 return 0;
->>   -     if (log_removal)
->> -               __tree_mod_log_free_eb(fs_info, old_root);
->> +       if (log_removal && btrfs_header_level(old_root) > 0) {
->> +               nritems = btrfs_header_nritems(old_root);
->> +               tm_list = kzalloc(nritems * sizeof(struct tree_mod_elem
->> *),
->> +                                 flags);
->> +               if (!tm_list) {
->> +                       ret = -ENOMEM;
->> +                       goto free_tms;
->> +               }
->> +               for (i = 0; i < nritems; i++) {
->> +                       tm_list[i] = alloc_tree_mod_elem(old_root, i,
->> +                           MOD_LOG_KEY_REMOVE_WHILE_FREEING, flags);
->> +                       if (!tm_list[i]) {
->> +                               ret = -ENOMEM;
->> +                               goto free_tms;
->> +                       }
->> +               }
->> +       }
->>         tm = kzalloc(sizeof(*tm), flags);
->> -       if (!tm)
->> -               return -ENOMEM;
->> +       if (!tm) {
->> +               ret = -ENOMEM;
->> +               goto free_tms;
->> +       }
->>         tm->index = new_root->start >> PAGE_CACHE_SHIFT;
->>         tm->old_root.logical = old_root->start;
->> @@ -659,7 +726,27 @@ tree_mod_log_insert_root(struct btrfs_fs_info
->> *fs_info,
->>         tm->generation = btrfs_header_generation(old_root);
->>         tm->op = MOD_LOG_ROOT_REPLACE;
->>   -     return __tree_mod_log_insert(fs_info, tm);
->> +       if (tree_mod_dont_log(fs_info, NULL))
->> +               goto free_tms;
->> +
->> +       if (tm_list)
->> +               __tree_mod_log_free_eb(fs_info, tm_list, nritems);
->> +
->> +       ret = __tree_mod_log_insert(fs_info, tm);
->> +       tree_mod_log_write_unlock(fs_info);
->> +       kfree(tm_list);
->> +
->> +       return ret;
->> +
->> +free_tms:
->> +       if (tm_list) {
->> +               for (i = 0; i < nritems; i++)
->> +                       kfree(tm_list[i]);
->> +               kfree(tm_list);
->> +       }
->> +       kfree(tm);
->> +
->> +       return ret;
->>   }
->>     static struct tree_mod_elem *
->> @@ -733,26 +820,51 @@ tree_mod_log_eb_copy(struct btrfs_fs_info *fs_info,
->> struct extent_buffer *dst,
->>                      struct extent_buffer *src, unsigned long dst_offset,
->>                      unsigned long src_offset, int nr_items)
->>   {
->> +       struct tree_mod_elem **tm_list = NULL;
->> +       struct tree_mod_elem **tm_list_add, **tm_list_rem;
->>         int ret;
->>         int i;
->>   -     if (tree_mod_dont_log(fs_info, NULL))
->> +       if (!tree_mod_need_log(fs_info, NULL))
->>                 return;
->>         if (btrfs_header_level(dst) == 0 && btrfs_header_level(src) == 0)
->>                 return;
->>   +     tm_list = kzalloc(nr_items * 2 * sizeof(struct tree_mod_elem *),
->> +                         GFP_NOFS);
->> +       BUG_ON(!tm_list);
->
->
-> This isn't ok, we need to return -ENOMEM here.
->
->> +
->> +       tm_list_add = tm_list;
->> +       tm_list_rem = tm_list + nr_items;
->>         for (i = 0; i < nr_items; i++) {
->> -               ret = __tree_mod_log_insert_key(fs_info, src,
->> -                                               i + src_offset,
->> -                                               MOD_LOG_KEY_REMOVE,
->> GFP_NOFS);
->> +               tm_list_rem[i] = alloc_tree_mod_elem(src, i + src_offset,
->> +                   MOD_LOG_KEY_REMOVE, GFP_NOFS);
->> +               BUG_ON(!tm_list_rem[i]);
->
->
-> And here.
->
->> +
->> +               tm_list_add[i] = alloc_tree_mod_elem(dst, i + dst_offset,
->> +                   MOD_LOG_KEY_ADD, GFP_NOFS);
->> +               BUG_ON(!tm_list_add[i]);
->
->
-> And here.
->
->> +       }
->> +
->> +       if (tree_mod_dont_log(fs_info, NULL))
->> +               goto free_tms;
->> +
->> +       for (i = 0; i < nr_items; i++) {
->> +               ret = __tree_mod_log_insert(fs_info, tm_list_rem[i]);
->>                 BUG_ON(ret < 0);
->> -               ret = __tree_mod_log_insert_key(fs_info, dst,
->> -                                                    i + dst_offset,
->> -                                                    MOD_LOG_KEY_ADD,
->> -                                                    GFP_NOFS);
->> +               ret = __tree_mod_log_insert(fs_info, tm_list_add[i]);
->>                 BUG_ON(ret < 0);
->>         }
->> +
->> +       tree_mod_log_write_unlock(fs_info);
->> +       kfree(tm_list);
->> +       return;
->> +
->> +free_tms:
->> +       for (i = 0; i < nr_items * 2; i++)
->> +               kfree(tm_list[i]);
->> +       kfree(tm_list);
->>   }
->>     static inline void
->> @@ -780,9 +892,39 @@ tree_mod_log_set_node_key(struct btrfs_fs_info
->> *fs_info,
->>   static noinline void
->>   tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer
->> *eb)
->>   {
->> -       if (tree_mod_dont_log(fs_info, eb))
->> +       struct tree_mod_elem **tm_list = NULL;
->> +       int nritems = 0;
->> +       int i;
->> +
->> +       if (btrfs_header_level(eb) == 0)
->>                 return;
->> -       __tree_mod_log_free_eb(fs_info, eb);
->> +
->> +       if (!tree_mod_need_log(fs_info, NULL))
->> +               return;
->> +
->> +       nritems = btrfs_header_nritems(eb);
->> +       tm_list = kzalloc(nritems * sizeof(struct tree_mod_elem *),
->> +                         GFP_NOFS);
->> +       BUG_ON(!tm_list);
->
->
-> And here.
->
->> +
->> +       for (i = 0; i < nritems; i++) {
->> +               tm_list[i] = alloc_tree_mod_elem(eb, i,
->> +                   MOD_LOG_KEY_REMOVE_WHILE_FREEING, GFP_NOFS);
->> +               BUG_ON(!tm_list[i]);
->
->
-> And here.  Thanks,
->
-> Josef
+   It seems to be OK for me at the moment -- I'm not running it across
+a network (yet), but I am using it between different filesystems on
+the same host, using pipes.
 
+> How does send-receive compare to using rsync for backups?
 
+   It's more fiddly to get right, and needs a bit more thought about
+how to set it up sanely. I have a python library that I use to write
+my backup scripts. I'll have to write it up one of these days...
+
+> Any comments please from those using such things?
+
+   Works for me, so far, as far as I know. Although we've got recent
+reports of *something* still going wrong with systemd journal files.
+No investigation of that yet, though.
+
+   Hugo.
 
 -- 
-Filipe David Manana,
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- In one respect at least, the Martians are a happy people: ---    
+                          they have no lawyers.                          
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+--8HhMLSHvAouSipEr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQIVAwUBUqtvqlheFHXiqx3kAQL8aA//Sns0Y5jQkBtFckwxTi8a95S52iqcXfO3
+ysxWpTQbkkeeoFE1sD9hJH2Z4Gf/ng8cbeEuBS8GEKR55ckTVabzkgl7F3LWTJil
+s1WtPIYB7+9GinMhv+WQCAUOK2HYFehX1zid04R368Xv8P1fWc47M0hC/d3Ta6rD
+655ivjMnMFRJghFT/J+WT9yrzYnWW98sYXBrYuDv+NHv4mypZ9gGA+Lbq4WwiMcs
+FcK2ol0C6Bz6BllbKcPYMyfBs2fiK7lB/Acgqtl7I+PCXbSGDSs41GWDoYZ/jXBO
+tYYuoMyNBaXkFFgPAX7B+qPO2fdh1lDmHmz7axWiFfh9iux8dwH9eZui3DKE3RJd
+iUCtLuvNWtn/JMgY5QUSxr8NCQPo62W8aPVBrpvxKTRk521SZMal6KOinnFh/4Js
+alBn2p4y9YGUFlB3xdWWc1WL129R1xWVOBv1jB9QSO+e0g4ldOlvZn/JO7bHH52K
+ZqduDR9RU+mzzeX9X47OQtfXLb7fCHpjmM//POphpw/XF8w1nCAFcjh61fTijHQF
+E7e0COKNNvN+FfsPMWo/A720/Da3RhLdUVuqUECp4b4BIs7vmSaVH1F69/9riNBL
+83/9iPomPVYE2KcfxfDo+wtjeBvFrGfxYuKTYBKuJvHQTxGgY7iD3vRT6+wf2L7a
+Lamra+wdHEk=
+=XYvT
+-----END PGP SIGNATURE-----
+
+--8HhMLSHvAouSipEr--

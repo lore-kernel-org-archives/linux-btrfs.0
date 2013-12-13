@@ -1,157 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:62064 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:10630 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751872Ab3LMPVa (ORCPT
+	by vger.kernel.org with ESMTP id S1751209Ab3LMPoB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 10:21:30 -0500
-Message-ID: <52AB257B.5070700@fb.com>
-Date: Fri, 13 Dec 2013 10:19:23 -0500
+	Fri, 13 Dec 2013 10:44:01 -0500
+Received: from pps.filterd (m0044012 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id rBDFfCOH014068
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:43:57 -0800
+Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
+	by mx0a-00082601.pphosted.com with ESMTP id 1gqkgg2n88-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 07:43:57 -0800
 From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: use a bit to track if we're in the radix tree
+Date: Fri, 13 Dec 2013 10:43:54 -0500
+Message-ID: <1386949434-4488-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 6/6] Btrfs: introduce the delayed inode ref deletion for
- the single link inode
-References: <1386929381-3483-1-git-send-email-miaox@cn.fujitsu.com> <1386929381-3483-6-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1386929381-3483-6-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+For creating a dummy in-memory btree I need to be able to use the radix tree to
+keep track of the buffers like normal extent buffers.  With dummy buffers we
+skip the radix tree step, and we still want to do that for the tree mod log
+dummy buffers but for my test buffers we need to be able to remove them from the
+radix tree like normal.  This will give me a way to do that.  Thanks,
 
-On 12/13/2013 05:09 AM, Miao Xie wrote:
-> The inode reference item is close to inode item, so we insert it simultaneously
-> with the inode item insertion when we create a file/directory.. In fact, we also
-> can handle the inode reference deletion by the same way. So we made this patch to
-> introduce the delayed inode reference deletion for the single link inode(At most
-> case, the file doesn't has hard link, so we don't take the hard link into account).
->
-> This function is based on the delayed inode mechanism. After applying this patch,
-> we can reduce the time of the file/directory deletion by ~10%.
->
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->   fs/btrfs/btrfs_inode.h   |   3 ++
->   fs/btrfs/delayed-inode.c | 103 +++++++++++++++++++++++++++++++++++++++++++++--
->   fs/btrfs/delayed-inode.h |   2 +
->   fs/btrfs/inode.c         |  55 ++++++++++++++++++++++++-
->   4 files changed, 157 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index ac0b39d..661b0ac 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -135,6 +135,9 @@ struct btrfs_inode {
->   	 */
->   	u64 index_cnt;
->   
-> +	/* Cache the directory index number to speed the dir/file remove */
-> +	u64 dir_index;
-> +
->   	/* the fsync log has some corner cases that mean we have to check
->   	 * directories to see if any unlinks have been done before
->   	 * the directory was logged.  See tree-log.c for all the
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 979db56..8671d980 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -1015,6 +1015,18 @@ static void btrfs_release_delayed_inode(struct btrfs_delayed_node *delayed_node)
->   	}
->   }
->   
-> +static void btrfs_release_delayed_iref(struct btrfs_delayed_node *delayed_node)
-> +{
-> +	struct btrfs_delayed_root *delayed_root;
-> +
-> +	BUG_ON(!delayed_node->root);
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/extent_io.c | 7 ++++---
+ fs/btrfs/extent_io.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-Use assert(), not BUG_ON().
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2779255..dc392d9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4627,6 +4627,7 @@ again:
+ 	}
+ 	/* add one reference for the tree */
+ 	check_buffer_tree_ref(eb);
++	set_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags);
+ 
+ 	/*
+ 	 * there is a race where release page may have
+@@ -4670,9 +4671,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
+ {
+ 	WARN_ON(atomic_read(&eb->refs) == 0);
+ 	if (atomic_dec_and_test(&eb->refs)) {
+-		if (test_bit(EXTENT_BUFFER_DUMMY, &eb->bflags)) {
+-			spin_unlock(&eb->refs_lock);
+-		} else {
++		if (test_and_clear_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags)) {
+ 			struct extent_io_tree *tree = eb->tree;
+ 
+ 			spin_unlock(&eb->refs_lock);
+@@ -4681,6 +4680,8 @@ static int release_extent_buffer(struct extent_buffer *eb)
+ 			radix_tree_delete(&tree->buffer,
+ 					  eb->start >> PAGE_CACHE_SHIFT);
+ 			spin_unlock(&tree->buffer_lock);
++		} else {
++			spin_unlock(&eb->refs_lock);
+ 		}
+ 
+ 		/* Should be safe to release our pages at this point */
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 19620c5..92e4347 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -43,6 +43,7 @@
+ #define EXTENT_BUFFER_WRITEBACK 7
+ #define EXTENT_BUFFER_IOERR 8
+ #define EXTENT_BUFFER_DUMMY 9
++#define EXTENT_BUFFER_IN_TREE 10
+ 
+ /* these are flags for extent_clear_unlock_delalloc */
+ #define PAGE_UNLOCK		(1 << 0)
+-- 
+1.8.3.1
 
-> +	clear_bit(BTRFS_DELAYED_NODE_DEL_IREF, &delayed_node->flags);
-> +	delayed_node->count--;
-> +
-> +	delayed_root = delayed_node->root->fs_info->delayed_root;
-> +	finish_one_item(delayed_root);
-> +}
-> +
->   static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
->   					struct btrfs_root *root,
->   					struct btrfs_path *path,
-> @@ -1023,13 +1035,19 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
->   	struct btrfs_key key;
->   	struct btrfs_inode_item *inode_item;
->   	struct extent_buffer *leaf;
-> +	int mod;
->   	int ret;
->   
->   	key.objectid = node->inode_id;
->   	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
->   	key.offset = 0;
->   
-> -	ret = btrfs_lookup_inode(trans, root, path, &key, 1);
-> +	if (test_bit(BTRFS_DELAYED_NODE_DEL_IREF, &node->flags))
-> +		mod = -1;
-> +	else
-> +		mod = 1;
-> +
-> +	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
->   	if (ret > 0) {
->   		btrfs_release_path(path);
->   		return -ENOENT;
-> @@ -1037,19 +1055,58 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
->   		return ret;
->   	}
->   
-> -	btrfs_unlock_up_safe(path, 1);
->   	leaf = path->nodes[0];
->   	inode_item = btrfs_item_ptr(leaf, path->slots[0],
->   				    struct btrfs_inode_item);
->   	write_extent_buffer(leaf, &node->inode_item, (unsigned long)inode_item,
->   			    sizeof(struct btrfs_inode_item));
->   	btrfs_mark_buffer_dirty(leaf);
-> -	btrfs_release_path(path);
->   
-> +	if (!test_bit(BTRFS_DELAYED_NODE_DEL_IREF, &node->flags))
-> +		goto no_iref;
-> +
-> +	path->slots[0]++;
-> +	if (path->slots[0] >= btrfs_header_nritems(leaf))
-> +		goto search;
-> +again:
-> +	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-> +	if (key.objectid != node->inode_id)
-> +		goto out;
-> +
-> +	if (key.type != BTRFS_INODE_REF_KEY &&
-> +	    key.type != BTRFS_INODE_EXTREF_KEY)
-> +		goto out;
-> +
-> +	/*
-> +	 * Delayed iref deletion is for the inode who has only one link,
-> +	 * so there is only one iref. The case that several irefs are
-> +	 * in the same item doesn't exist.
-> +	 */
-> +	btrfs_del_item(trans, root, path);
-> +out:
-> +	btrfs_release_delayed_iref(node);
-> +no_iref:
-> +	btrfs_release_path(path);
-> +err_out:
->   	btrfs_delayed_inode_release_metadata(root, node);
->   	btrfs_release_delayed_inode(node);
->   
-> -	return 0;
-> +	return ret;
-> +
-> +search:
-> +	btrfs_release_path(path);
-> +
-> +	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
-> +	key.offset = -1;
-> +	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-> +	if (ret < 0)
-> +		goto err_out;
-> +	BUG_ON(!ret);
-
-Same here.  Thanks,
-
-Josef

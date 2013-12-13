@@ -1,50 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57241 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752358Ab3LQOfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 09:35:47 -0500
-Date: Tue, 17 Dec 2013 15:35:45 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: fix btrfstune silence on failure
-Message-ID: <20131217143545.GO6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1386928786-4976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1386928786-4976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:20376 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751654Ab3LMKCa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 05:02:30 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBDA2SWx008642
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 18:02:28 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: fix btrfstune silence on failure
+Date: Fri, 13 Dec 2013 17:59:46 +0800
+Message-Id: <1386928786-4976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 05:59:46PM +0800, Gui Hecheng wrote:
-> Originally, btrfstune will fail without any options and just exit
-> with no failure prompt.
+Originally, btrfstune will fail without any options and just exit
+with no failure prompt.
+Now, the number of arguments are checked before parse options
+and error msg will show up upon failure.
 
-Works for me:
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ btrfstune.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-$ ./btrfstune
-usage: btrfstune [options] device
-	-S value        enable/disable seeding
-	-r              enable extended inode refs
-	-x enable skinny metadata extent refs
-
-> Now, the number of arguments are checked before parse options
-> and error msg will show up upon failure.
-
-No, the arguments should be parsed first. The btrfstune utility does not
-use the same parser helpers like check_argc_exact and actually the bug
-you see could be caused by missing optind = 1 before the while () loop.
-
-Can you please test if this helps?
-
+diff --git a/btrfstune.c b/btrfstune.c
+index 50724ba..ecaf13d 100644
 --- a/btrfstune.c
 +++ b/btrfstune.c
-@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
-        int skinny_flag = 0;
-        int ret;
+@@ -115,6 +115,11 @@ int main(int argc, char *argv[])
+ 	int skinny_flag = 0;
+ 	int ret;
+ 
++	if (argc < 3) {
++		print_usage();
++		return 1;
++	}
++
+ 	while(1) {
+ 		int c = getopt(argc, argv, "S:rx");
+ 		if (c < 0)
+@@ -176,6 +181,7 @@ int main(int argc, char *argv[])
+ 	} else {
+ 		root->fs_info->readonly = 1;
+ 		ret = 1;
++		fprintf(stderr, "btrfstune failed\n");
+ 	}
+ 	close_ctree(root);
+ 
+-- 
+1.8.0.1
 
-+       optind = 1;
-        while(1) {
-                int c = getopt(argc, argv, "S:rx");
-                if (c < 0)

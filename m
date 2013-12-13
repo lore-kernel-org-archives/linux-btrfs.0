@@ -1,56 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42844 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751584Ab3LMP6w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 10:58:52 -0500
-Date: Fri, 13 Dec 2013 16:58:50 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandra Seetharaman <sekharan@us.ibm.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
-Message-ID: <20131213155850.GZ6498@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
- <20131213011720.GW6498@twin.jikos.cz>
- <1386947820.4241.22.camel@chandra-dt.ibm.com>
+Received: from mail-yh0-f41.google.com ([209.85.213.41]:48312 "EHLO
+	mail-yh0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752171Ab3LMQIx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 11:08:53 -0500
+Received: by mail-yh0-f41.google.com with SMTP id f11so1656131yha.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 08:08:53 -0800 (PST)
+Received: from [192.168.18.6] (cpe-174-106-200-117.ec.res.rr.com. [174.106.200.117])
+        by mx.google.com with ESMTPSA id x9sm3671139yhd.13.2013.12.13.08.08.50
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Fri, 13 Dec 2013 08:08:51 -0800 (PST)
+Message-ID: <52AB30D4.7050408@czarc.net>
+Date: Fri, 13 Dec 2013 11:07:48 -0500
+From: Gene Czarcinski <gczarcinski@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1386947820.4241.22.camel@chandra-dt.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Subject: moving a subvol
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 09:17:00AM -0600, Chandra Seetharaman wrote:
-> > For a full compatibility with any blocksize on arch with any pagesize
-> > you'd need to implement the case when sectorsize is larger than
-> > pagesize. Your patchset does the "4k sector/64k page", but I haven't
-> > noticed the "64k sector/4k page" counterpart.
-> 
-> My object was to make btrfs filesystems from other arches to be directly
-> usable in PPC64.
+I have hunted high and low for the information but, if it is out there, 
+it is well hidden.
 
-Ok then.
+What I want to do:  I want to relocate (move) a subvolume from one BTRFS 
+volume to a different BTRFS volume.
 
-> Nevertheless, IIUC, btrfs currently support such a case. Each extent
-> buffers currently can have up to INLINE_EXTENT_BUFFER_PAGES(16). 
-> 
-> -------
-> #define INLINE_EXTENT_BUFFER_PAGES 16
-> 
-> struct extent_buffer {
->         :
->         :
->         struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
->         :
-> };
-> --------
-> 
-> No ?
+I have seen the writeup for incremental backup which takes a snapshot, 
+and then using btrfs-send and btrfs-receive to create a copy on a 
+different volume.  That works fine except the btrfs-receive set the new 
+copy to be readonly.
 
-Just for metadata blocks.
+What I want to do is to use that new subvolume read/write.  The only way 
+I have figured out to do this is to create another snapshot on the new 
+volume which is NOT readonly.  I believe that means I need to keep both 
+of these subvolumes around.
 
-> There are some issues with relocation too. Is there similar assumption
-> in that code path too ?
-
-I don't know. If yes, then it's different from the compression issues,
-because there are some hardwired assumptions about the binary format of
-the compressed data, while relocation uses the common code.
+Gene

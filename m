@@ -1,52 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4144 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750773Ab3LLV5H convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Dec 2013 16:57:07 -0500
-Content-Type: text/plain; charset="utf-8"
+Received: from cantor2.suse.de ([195.135.220.15]:58216 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751502Ab3LMBHx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Dec 2013 20:07:53 -0500
+Date: Fri, 13 Dec 2013 02:07:51 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandra Seetharaman <sekharan@us.ibm.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/7] btrfs: subpagesize-blocksize: Allow mounting
+ filesystems where sectorsize != PAGE_SIZE
+Message-ID: <20131213010751.GV6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
+ <1386805122-23972-8-git-send-email-sekharan@us.ibm.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Message-ID: <20131212215704.23771.16640@ret.masoncoding.com>
-From: Chris Mason <clm@fb.com>
-Subject: [GIT PULL] Btrfs
-Date: Thu, 12 Dec 2013 16:57:04 -0500
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1386805122-23972-8-git-send-email-sekharan@us.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Wed, Dec 11, 2013 at 05:38:42PM -0600, Chandra Seetharaman wrote:
+> This is the final patch of the series that allows filesystems with
+> blocksize smaller than the PAGE_SIZE.
 
-Please pull my for-linus branch (or for-linus signed tag):
+> -	if (sectorsize != PAGE_SIZE) {
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+You've implemented the sectorsize < PAGE_SIZE part (multiple extent
+buffers per page), so the check should stay as:
 
-This is a small collection of fixes.  It was rebased this morning, but I
-was just fixing signed-off-by tags with the wrong email.
+	if (sectorsize > PAGE_SIZE) {
 
-Wang Shilong (3) commits (+57/-24):
-    Btrfs: skip building backref tree for uuid and quota tree when doing balance relocation (+3/-1)
-    Btrfs: make sure we cleanup all reloc roots if error happens (+7/-0)
-    Btrfs: fix an oops when doing balance relocation (+47/-23)
-
-Filipe David Borba Manana (1) commits (+10/-12):
-    Btrfs: don't miss skinny extent items on delayed ref head contention
-
-Dan Carpenter (1) commits (+2/-2):
-    Btrfs: fix access_ok() check in btrfs_ioctl_send()
-
-Miao Xie (1) commits (+2/-3):
-    Btrfs: don't clear the default compression type
-
-David Sterba (1) commits (+2/-1):
-    btrfs: call mnt_drop_write after interrupted subvol deletion
-
-Total: (7) commits (+73/-42)
-
- fs/btrfs/extent-tree.c | 22 +++++++-------
- fs/btrfs/ioctl.c       |  3 +-
- fs/btrfs/relocation.c  | 81 +++++++++++++++++++++++++++++++++++---------------
- fs/btrfs/send.c        |  4 +--
- fs/btrfs/super.c       |  5 ++--
- 5 files changed, 73 insertions(+), 42 deletions(-)
+> -		printk(KERN_WARNING "btrfs: Incompatible sector size(%lu) "
+> -		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
+> -		goto fail_sb_buffer;
+> -	}
+> -
+>  	mutex_lock(&fs_info->chunk_mutex);
+>  	ret = btrfs_read_sys_array(tree_root);
+>  	mutex_unlock(&fs_info->chunk_mutex);

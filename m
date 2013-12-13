@@ -1,74 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42987 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752217Ab3LMJQn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 04:16:43 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBD9GgIk026210
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:43 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBD9Gf0h016990
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:41 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBD9GfO0016982
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 09:16:41 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] Btrfs: fix EEXIST error when creating new file in subvolume/snapshot
-Date: Fri, 13 Dec 2013 17:16:23 +0800
-Message-Id: <1386926183-18325-4-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1386926183-18325-1-git-send-email-bo.li.liu@oracle.com>
-References: <1386926183-18325-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:46687 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751663Ab3LMJhQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Dec 2013 04:37:16 -0500
+Message-ID: <52AAD595.8040903@cn.fujitsu.com>
+Date: Fri, 13 Dec 2013 17:38:29 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] Btrfs: avoid building inode cache repeatly
+References: <1386926183-18325-1-git-send-email-bo.li.liu@oracle.com> <1386926183-18325-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1386926183-18325-2-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While creating a subvolume/snapshot, we don't use inode cache to allocate
-an inode id for the root dir "..", so inode cache doesn't mark that id as
-used, and when we create a new file, it'll find that fact and throw out
--EEXIST.
+On fri, 13 Dec 2013 17:16:21 +0800, Liu Bo wrote:
+> Inode cache is similar to free space cache and in fact shares the same
+> code, however, we don't load inode cache unless we're about to allocate
+> inode id, then there is a case where we only commit the transaction during
+> other operations, such as snapshot creation, we now update fs roots' generation
+> to the new transaction id, after that when we want to load the inode cache,
+> we'll find that it's not valid thanks to the mismatch of generation, and we
+> have to push btrfs-ino-cache thread to build inode cache from disk, and
+> this operation is sometimes time-costing.
+> 
+> So to fix the above, we load inode cache into memory during reading fs root.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/inode-map.c | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+This patch will introduce a problem that if some tasks load the same fs root
+at the same time, they will building inode cache for it respectively. So I will
+NACK this patch. Why not build the inode cache after the fs root is inserted
+into the radix tree successfully.
 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 493694f..bcff910 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -528,6 +528,16 @@ static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
- 	struct btrfs_key search_key;
- 	struct btrfs_key found_key;
- 	int slot;
-+	u64 min_objectid;
-+
-+	/*
-+	 * For fs/file tree, FIRST_FREE_OBJECTID is reserved for
-+	 * root dir ".."
-+	 */
-+	if (is_fstree(root->root_key.objectid))
-+		min_objectid = BTRFS_FIRST_FREE_OBJECTID;
-+	else
-+		min_objectid = BTRFS_FIRST_FREE_OBJECTID - 1;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -544,10 +554,9 @@ static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
- 		slot = path->slots[0] - 1;
- 		l = path->nodes[0];
- 		btrfs_item_key_to_cpu(l, &found_key, slot);
--		*objectid = max_t(u64, found_key.objectid,
--				  BTRFS_FIRST_FREE_OBJECTID - 1);
-+		*objectid = max_t(u64, found_key.objectid, min_objectid);
- 	} else {
--		*objectid = BTRFS_FIRST_FREE_OBJECTID - 1;
-+		*objectid = min_objectid;
- 	}
- 	ret = 0;
- error:
--- 
-1.8.2.1
+Thanks
+Miao
+
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/disk-io.c   | 9 +++++----
+>  fs/btrfs/inode-map.c | 2 ++
+>  2 files changed, 7 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 8072cfa..cb0b12b 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1524,14 +1524,15 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+>  		goto fail;
+>  	}
+>  
+> -	btrfs_init_free_ino_ctl(root);
+> +	ret = get_anon_bdev(&root->anon_dev);
+> +	if (ret)
+> +		goto fail;
+> +
+>  	mutex_init(&root->fs_commit_mutex);
+>  	spin_lock_init(&root->cache_lock);
+>  	init_waitqueue_head(&root->cache_wait);
+> +	btrfs_init_free_ino_ctl(root);
+>  
+> -	ret = get_anon_bdev(&root->anon_dev);
+> -	if (ret)
+> -		goto fail;
+>  	return 0;
+>  fail:
+>  	kfree(root->free_ino_ctl);
+> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+> index ab485e5..6c8d7bb 100644
+> --- a/fs/btrfs/inode-map.c
+> +++ b/fs/btrfs/inode-map.c
+> @@ -388,6 +388,8 @@ void btrfs_init_free_ino_ctl(struct btrfs_root *root)
+>  	pinned->private = NULL;
+>  	pinned->extents_thresh = 0;
+>  	pinned->op = &pinned_free_ino_op;
+> +
+> +	start_caching(root);
+>  }
+>  
+>  int btrfs_save_ino_cache(struct btrfs_root *root,
+> 
 

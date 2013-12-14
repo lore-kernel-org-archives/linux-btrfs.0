@@ -1,66 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:58979 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751459Ab3LNHHw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Dec 2013 02:07:52 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 1B3C9CC1B3
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 18:07:52 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 21831-01 for <linux-btrfs@vger.kernel.org>;
- Sat, 14 Dec 2013 18:07:51 +1100 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id B370DCC1A7
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 18:07:51 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: moving a subvol
-Date: Sat, 14 Dec 2013 18:07:49 +1100
-Message-ID: <1663965.RJ0nqNbRyM@quad>
-In-Reply-To: <52AB5F2E.8020209@czarc.net>
-References: <52AB30D4.7050408@czarc.net> <6EDC30B8-CF2C-42FA-9E30-D9F4B0804152@colorremedies.com> <52AB5F2E.8020209@czarc.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart3375344.3T3Yhj6fzv"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Received: from cn.fujitsu.com ([222.73.24.84]:38074 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751795Ab3LNH2I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Dec 2013 02:28:08 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBE7S3jv021972
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 15:28:03 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix a warning when iput a file
+Date: Sat, 14 Dec 2013 15:27:31 +0800
+Message-Id: <1387006051-17067-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+See the warning below:
 
---nextPart3375344.3T3Yhj6fzv
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+[ 1209.102076]  [<ffffffffa04721b9>] remove_extent_mapping+0x69/0x70 [btrfs]
+[ 1209.102084]  [<ffffffffa0466b06>] btrfs_evict_inode+0x96/0x4d0 [btrfs]
+[ 1209.102089]  [<ffffffff81073010>] ? wake_atomic_t_function+0x40/0x40
+[ 1209.102092]  [<ffffffff8118ab2e>] evict+0x9e/0x190
+[ 1209.102094]  [<ffffffff8118b313>] iput+0xf3/0x180
+[ 1209.102101]  [<ffffffffa0461fd1>] btrfs_run_delayed_iputs+0xb1/0xd0 [btrfs]
+[ 1209.102107]  [<ffffffffa045d358>] __btrfs_end_transaction+0x268/0x350 [btrfs]
 
-On Fri, 13 Dec 2013 02:25:34 PM Gene Czarcinski wrote:
+clear extent bit here to avoid triggering WARN_ON() in remove_extent_mapping()
 
-> Next it is to delete the old BTRFS volume, use fdisk to increase the=20=
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-> size of the partition and then attempt to increate the size of this n=
-ew=20
-> volume.  I hope I don't get bit in the rear end with this.
-
-Just make sure you have good (tested) backups..
-
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
---nextPart3375344.3T3Yhj6fzv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQEVAwUAUqwDxY1yjaOTJg85AQIeQgf/UtSP/QEHH92SqrJ0uwwRig++/aHDyKcy
-/pWMX3Qp7PxSvAr8iEzrSaFazEQhAaI2qiJf5i+Hn7/tHsoPgN9Y873TACLLQYiS
-CtCgU3M95hILTwl7HGiJuWIVRr8AesFdRVwApK4na2vN1DLYlJhVbpUEjwEJB7/q
-HG+gAE4CHvaJ4D106WFxWx10FR5odnAmLd4idKbE5+XmZ1hs2Xq6kz49lgVqHV2V
-OzncikOtr/nKPGUZoPJkZ+TQaA7dNVEevkDxs7ddnztGL8EQCCnGBHc9mTid7QM5
-iAu8tqY0aHoFgAudje7rYg/wo342uS0E1KJGhtMdSHgsaWzGw0MEqw==
-=UNSj
------END PGP SIGNATURE-----
-
---nextPart3375344.3T3Yhj6fzv--
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e889779..c0f0f9d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4515,6 +4515,8 @@ static void evict_inode_truncate_pages(struct inode *inode)
+ 
+ 		node = rb_first(&map_tree->map);
+ 		em = rb_entry(node, struct extent_map, rb_node);
++		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
++		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
+ 		remove_extent_mapping(map_tree, em);
+ 		free_extent_map(em);
+ 	}
+-- 
+1.8.3.1
 

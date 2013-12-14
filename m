@@ -1,124 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e38.co.us.ibm.com ([32.97.110.159]:45648 "EHLO
-	e38.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750958Ab3LMWJ3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 17:09:29 -0500
-Received: from /spool/local
-	by e38.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <sekharan@us.ibm.com>;
-	Fri, 13 Dec 2013 15:09:29 -0700
-Received: from b03cxnp07028.gho.boulder.ibm.com (b03cxnp07028.gho.boulder.ibm.com [9.17.130.15])
-	by d03dlp02.boulder.ibm.com (Postfix) with ESMTP id DFB083E40040
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 15:09:27 -0700 (MST)
-Received: from d03av03.boulder.ibm.com (d03av03.boulder.ibm.com [9.17.195.169])
-	by b03cxnp07028.gho.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id rBDM9RsV8126950
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 23:09:27 +0100
-Received: from d03av03.boulder.ibm.com (localhost [127.0.0.1])
-	by d03av03.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id rBDM9Rhb010988
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 15:09:27 -0700
-Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
-From: Chandra Seetharaman <sekharan@us.ibm.com>
-Reply-To: sekharan@us.ibm.com
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-In-Reply-To: <52AB5470.3090108@fb.com>
-References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
-	 <52AB5470.3090108@fb.com>
-Content-Type: text/plain; charset="UTF-8"
-Date: Fri, 13 Dec 2013 16:09:26 -0600
-Message-ID: <1386972566.4241.203.camel@chandra-dt.ibm.com>
-Mime-Version: 1.0
+Received: from csamuel.org ([74.50.50.137]:58979 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751459Ab3LNHHw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Dec 2013 02:07:52 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 1B3C9CC1B3
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 18:07:52 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 21831-01 for <linux-btrfs@vger.kernel.org>;
+ Sat, 14 Dec 2013 18:07:51 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id B370DCC1A7
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 18:07:51 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: moving a subvol
+Date: Sat, 14 Dec 2013 18:07:49 +1100
+Message-ID: <1663965.RJ0nqNbRyM@quad>
+In-Reply-To: <52AB5F2E.8020209@czarc.net>
+References: <52AB30D4.7050408@czarc.net> <6EDC30B8-CF2C-42FA-9E30-D9F4B0804152@colorremedies.com> <52AB5F2E.8020209@czarc.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart3375344.3T3Yhj6fzv"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2013-12-13 at 13:39 -0500, Josef Bacik wrote:
-> On 12/11/2013 06:38 PM, Chandra Seetharaman wrote:
-> > In btrfs, blocksize, the basic IO size of the filesystem, has been
-> > more than PAGE_SIZE.
-> >
-> > But, some 64 bit architures, like PPC64 and ARM64 have the default
-> > PAGE_SIZE as 64K, which means the filesystems handled in these
-> > architectures are with a blocksize of 64K.
-> >
-> > This works fine as long as you create and use the filesystems within
-> > these systems.
-> >
-> > In other words, one cannot create a filesystem in some other architecture
-> > and use that filesystem in PPC64 or ARM64, and vice versa.,
-> >
-> > Another restriction is that we cannot use ext? filesystems in these
-> > architectures as btrfs filesystems, since ext? filesystems have a blocksize
-> > of 4K.
-> >
-> > Sometime last year, Wade Cline posted a patch(http://lwn.net/Articles/529682/).
-> > I started testing it, and found many locking/race issues. So, I changed the
-> > logic and created an extent_buffer_head that holds an array of extent buffers that
-> > belong to a page.
-> >
-> > There are few wrinkles in this patchset, like some xfstests are failing, which
-> > could be due to me doing something incorrectly w.r.t how the blocksize and
-> > PAGE_SIZE are used in these patched.
-> >
-> > Would like to get some feedback, review comments.
-> >
-> 
-> Ok so the more we talked about it on IRC and talking with Chris I think 
-> we have a way forward here.
-> 
-> 1) Add an extent_buffer_head that embeds an extent_buffer, and in the 
-> extent_buffer_head track the state of the whole page.  So this is where 
-> we have a linked list of all the extent_buffers on the page, we can keep 
-> track of the number of extent_buffers that are dirty/not so we can be 
-> sure to set the page state and everything right.
 
-Let me see if I understand you correctly:
+--nextPart3375344.3T3Yhj6fzv
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-In my patch I have,
------------
-extent_buffer {
-        // buffer specific data
-}; 
+On Fri, 13 Dec 2013 02:25:34 PM Gene Czarcinski wrote:
 
-extent_buffer_head {
-        // page wide data
-        extent_buffer *extent_buf[];
-};
---------------
-You are suggesting to make it
-------------
-extent_buffer {
-        // buffer specific data
-	extent_buffer *ebuf_next; 
-}; 
+> Next it is to delete the old BTRFS volume, use fdisk to increase the=20=
 
-extent_buffer_head {
-        // page wide data
-        extent_buffer ebuf_first;
-        extent_buffer *ebuf_next;
-};
------------
-correct ? If yes, then, IMO, the code might look more convoluted as we
-have to take care of two different situations ? isn't it ? 
+> size of the partition and then attempt to increate the size of this n=
+ew=20
+> volume.  I hope I don't get bit in the rear end with this.
 
-> 
-> 2) Set page->private to the first extent_buffer like we currently do.  
-> Then we just have checks in the endio stuff to see if the eb we found is 
-> the one for our currently range (ie bv_offset == 0) and if not do a 
-> linear search through the extent_buffers on the extent_buffer_head part 
-> to get the right one.
-> 
-> We have to do this because we need to be able to track IO for each of 
-> the extent_buffer's independently of each other in case a page spans a 
-> block_group.
-> 
-> Hopefully that makes sense, this way you don't have to futz with any of 
-> my crazier long term goals of no longer using pagecache or any of that 
-> mess.  Thanks,
+Just make sure you have good (tested) backups..
 
-Yeah, that would be good :)
-> 
-> Josef
-> 
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+--nextPart3375344.3T3Yhj6fzv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUqwDxY1yjaOTJg85AQIeQgf/UtSP/QEHH92SqrJ0uwwRig++/aHDyKcy
+/pWMX3Qp7PxSvAr8iEzrSaFazEQhAaI2qiJf5i+Hn7/tHsoPgN9Y873TACLLQYiS
+CtCgU3M95hILTwl7HGiJuWIVRr8AesFdRVwApK4na2vN1DLYlJhVbpUEjwEJB7/q
+HG+gAE4CHvaJ4D106WFxWx10FR5odnAmLd4idKbE5+XmZ1hs2Xq6kz49lgVqHV2V
+OzncikOtr/nKPGUZoPJkZ+TQaA7dNVEevkDxs7ddnztGL8EQCCnGBHc9mTid7QM5
+iAu8tqY0aHoFgAudje7rYg/wo342uS0E1KJGhtMdSHgsaWzGw0MEqw==
+=UNSj
+-----END PGP SIGNATURE-----
+
+--nextPart3375344.3T3Yhj6fzv--
 

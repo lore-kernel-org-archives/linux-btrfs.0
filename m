@@ -1,49 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:38074 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751795Ab3LNH2I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Dec 2013 02:28:08 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBE7S3jv021972
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 15:28:03 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix a warning when iput a file
-Date: Sat, 14 Dec 2013 15:27:31 +0800
-Message-Id: <1387006051-17067-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from mail-qc0-f179.google.com ([209.85.216.179]:36501 "EHLO
+	mail-qc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752258Ab3LNJ6l (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Dec 2013 04:58:41 -0500
+Received: by mail-qc0-f179.google.com with SMTP id i8so2339181qcq.10
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 01:58:41 -0800 (PST)
+Received: from [192.168.18.6] (cpe-174-106-200-117.ec.res.rr.com. [174.106.200.117])
+        by mx.google.com with ESMTPSA id lc1sm16053388qeb.5.2013.12.14.01.58.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 14 Dec 2013 01:58:39 -0800 (PST)
+Message-ID: <52AC2B90.909@czarc.net>
+Date: Sat, 14 Dec 2013 04:57:36 -0500
+From: Gene Czarcinski <gczarcinski@gmail.com>
+MIME-Version: 1.0
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: moving a subvol
+References: <52AB30D4.7050408@czarc.net> <6EDC30B8-CF2C-42FA-9E30-D9F4B0804152@colorremedies.com> <52AB5F2E.8020209@czarc.net> <1663965.RJ0nqNbRyM@quad>
+In-Reply-To: <1663965.RJ0nqNbRyM@quad>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-See the warning below:
+On 12/14/2013 02:07 AM, Chris Samuel wrote:
+> On Fri, 13 Dec 2013 02:25:34 PM Gene Czarcinski wrote:
+>
+>> Next it is to delete the old BTRFS volume, use fdisk to increase the
+>> size of the partition and then attempt to increate the size of this new
+>> volume.  I hope I don't get bit in the rear end with this.
+>
+> Just make sure you have good (tested) backups..
+>
+Data subvolumes such as for /home have separate backups but the rootfs 
+subvolumes do not.  If somethings gets screwed up, it is a matter of 
+reinstalling.  Since I run Fedora with anaconda I use kickstart installs 
+and can easily repeat an install since it included almost everything I 
+want installed.  And then I have a post-install script I run to pickup 
+additional stuff.
 
-[ 1209.102076]  [<ffffffffa04721b9>] remove_extent_mapping+0x69/0x70 [btrfs]
-[ 1209.102084]  [<ffffffffa0466b06>] btrfs_evict_inode+0x96/0x4d0 [btrfs]
-[ 1209.102089]  [<ffffffff81073010>] ? wake_atomic_t_function+0x40/0x40
-[ 1209.102092]  [<ffffffff8118ab2e>] evict+0x9e/0x190
-[ 1209.102094]  [<ffffffff8118b313>] iput+0xf3/0x180
-[ 1209.102101]  [<ffffffffa0461fd1>] btrfs_run_delayed_iputs+0xb1/0xd0 [btrfs]
-[ 1209.102107]  [<ffffffffa045d358>] __btrfs_end_transaction+0x268/0x350 [btrfs]
+After successfully resizing, I then repeated with a two-device BTRFS 
+volume.  Here the resize needs to be done for each device.
 
-clear extent bit here to avoid triggering WARN_ON() in remove_extent_mapping()
+Question:  What is did involved two BTRFS volumes on /dev/sdb1 and 
+/dev/sdb2.  I deleted /dev/sdb2 and then expanded/resized /dev/sdb1. 
+This worked but I assume that doing the opposite would not work.  That 
+is, deleteing the "lower" /dev/sdb1 and then expanding the "upper" 
+/dev/sdb2 because after rebooting the filesystem would not be at the 
+beginning of the partition.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e889779..c0f0f9d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4515,6 +4515,8 @@ static void evict_inode_truncate_pages(struct inode *inode)
- 
- 		node = rb_first(&map_tree->map);
- 		em = rb_entry(node, struct extent_map, rb_node);
-+		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
-+		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 		remove_extent_mapping(map_tree, em);
- 		free_extent_map(em);
- 	}
--- 
-1.8.3.1
-
+Gene

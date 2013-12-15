@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qe0-f50.google.com ([209.85.128.50]:36396 "EHLO
-	mail-qe0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754119Ab3LODmU (ORCPT
+Received: from mail-qa0-f51.google.com ([209.85.216.51]:62203 "EHLO
+	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754119Ab3LODma (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Dec 2013 22:42:20 -0500
-Received: by mail-qe0-f50.google.com with SMTP id 1so2919434qec.37
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 19:42:20 -0800 (PST)
+	Sat, 14 Dec 2013 22:42:30 -0500
+Received: by mail-qa0-f51.google.com with SMTP id o15so666397qap.17
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Dec 2013 19:42:29 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <1387053647-25680-1-git-send-email-fdmanana@gmail.com>
 References: <1387053647-25680-1-git-send-email-fdmanana@gmail.com>
-Date: Sun, 15 Dec 2013 11:42:20 +0800
-Message-ID: <CAP9B-Qmy55a_C+CCAsXuyqhnq8fRce00ZiOzxc+XWYaA2ufg-w@mail.gmail.com>
+Date: Sun, 15 Dec 2013 11:42:29 +0800
+Message-ID: <CAP9B-Qmth4FxtiROXhtcFsRvOG1zbj_7AGP2dXprhvpm_QRUnQ@mail.gmail.com>
 Subject: Re: [PATCH] Btrfs: fix deadlock when iterating inode refs and running
  delayed inodes
 From: Shilong Wang <wangshilong1991@gmail.com>
@@ -22,12 +22,12 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello Filipe,
 
-I mean no hurt, but your changelog is really too long.
+I mean no harm, but this patch's changelog is too long..
 I think pasting some of dmesg is ok...
-
 
 Thanks,
 Wang
+
 2013/12/15 Filipe David Borba Manana <fdmanana@gmail.com>:
 > While running btrfs/004 from xfstests, after 503 iterations, dmesg reported
 > a deadlock between tasks iterating inode refs and tasks running delayed inodes

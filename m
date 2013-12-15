@@ -1,60 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f54.google.com ([209.85.215.54]:33616 "EHLO
-	mail-la0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751829Ab3LOU2H (ORCPT
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:38951 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752016Ab3LOWZO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Dec 2013 15:28:07 -0500
-Received: by mail-la0-f54.google.com with SMTP id b8so2403632lan.27
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 12:28:05 -0800 (PST)
+	Sun, 15 Dec 2013 17:25:14 -0500
+Received: by mail-qc0-f174.google.com with SMTP id n7so3190419qcx.33
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 14:25:14 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20131215202456.GA11281@carfax.org.uk>
-References: <CAAeznTpG6A7ygKg1AUx_pAMs_SNwG4a4C5gHPeT+HcKRsD+TWA@mail.gmail.com>
-	<20131215202456.GA11281@carfax.org.uk>
-Date: Sun, 15 Dec 2013 20:28:05 +0000
-Message-ID: <CAAeznTryb7kyuvEyBFniv-UtGCQwdNtZMhpxm=-2MtKZSOj9Tw@mail.gmail.com>
-Subject: Re: btrfs balance on single device
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Leonidas Spyropoulos <artafinde@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Sun, 15 Dec 2013 14:25:13 -0800
+Message-ID: <CA+DO5u0L8xyrB2vOzopOgpSQQyA+g-6VZTB7asm7RpsKpXYR0Q@mail.gmail.com>
+Subject: Is a VM an adequate environment for simulating scenarios and limits
+ of BTRFS?
+From: DRA <s2cuts@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 15, 2013 at 8:24 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Sun, Dec 15, 2013 at 08:20:19PM +0000, Leonidas Spyropoulos wrote:
->> Hey all,
-[..]
->> Anyone can explain me the Data row of the above output ? It used to be
->> 19.19GB and now it's 10.00GB. It's like the partition shrunk!? The
->> balance operation finished without issues.
->
->    It freed up some of the unused data chunks, returning them to the
-> unallocated space on the device.
->
-Oh, so the df report from btrfs doesn't show the total as 'free'! But
-it means how much space the filesystem allocated so far.
->> Here's some other information:
->>
->> inglor@tiamat ~$ sudo btrfs filesystem show
->> Label: 'home'  uuid: 458c70e2-7037-4c4d-bba2-3d5288f04510
->>     Total devices 1 FS bytes used 9.56GB
->>     devid    1 size 21.00GB used 10.81GB path /dev/sda3
->
->    You can see that the filesystem is still the same size as before --
-> it's just that less of it is allocated.
->
->    There's nothing to worry about here -- it's all working as expected.
->
->    Hugo.
->
+Greetings all and pardon my intrusion,
 
-Thanks Hugo for the explanation
+I'm just a basic home user running a file server for mostly large
+media files (write once, read many).  Some dynamic working files, but
+a much smaller portion.  The OS will not run on BTRFS, nor will it do
+much in the way of running services other than what's required for a
+basic file server.  My server hardware is mostly salvaged, 2 GB of
+memory, and an ever growing number of consumer grade large capacity
+drives.
 
-Leonidas
+Before I commit and cut over to BTRFS, I wanted to do some customized
+testing based on my usage profile and the features of BTRFS that I'm
+interested in.  My question has to do with if a Virtualbox VM with
+virtual disks would be a realistic testing environment to assault
+BTRFS on.  I can not practically test on real disks, so would going
+the VM route give me a false picture of BTRFS in any way?  I'm not
+sure to what degree the virtual disk writes are buffered by the VM
+host.  Are there any VM configurations that would give me more
+realistic virtual disk behaviour?
 
--- 
-Caution: breathing may be hazardous to your health.
+Thanks guys for any advice, and for working on what looks to be the
+future de facto FS for GNU/Linux.
 
-#include <stdio.h>
-int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}
+d

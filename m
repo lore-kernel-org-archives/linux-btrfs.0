@@ -1,50 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59944 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754334Ab3LPPTT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 10:19:19 -0500
-Date: Mon, 16 Dec 2013 16:19:17 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gene Czarcinski <gczarcinski@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:46168 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750821Ab3LOUmI convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Dec 2013 15:42:08 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: moving a subvol
-Message-ID: <20131216151917.GH6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <52AB30D4.7050408@czarc.net>
- <52AB3673.1030607@czarc.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52AB3673.1030607@czarc.net>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52ADE972.4000303@gmail.com>
+Date: Sun, 15 Dec 2013 13:42:03 -0700
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <7213A6E1-3601-48A1-96F9-E02A03FF42D2@colorremedies.com>
+References: <52AB30D4.7050408@czarc.net> <6EDC30B8-CF2C-42FA-9E30-D9F4B0804152@colorremedies.com> <52AB5F2E.8020209@czarc.net> <1663965.RJ0nqNbRyM@quad> <52AC2B90.909@czarc.net> <772D6056-AD90-4B98-AAC8-E0C866E6F714@colorremedies.com> <52ADE972.4000303@gmail.com>
+To: Gene Czarcinski <gczarcinski@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 11:31:47AM -0500, Gene Czarcinski wrote:
-> On 12/13/2013 11:07 AM, Gene Czarcinski wrote:
-> >I have hunted high and low for the information but, if it is out there,
-> >it is well hidden.
-> >
-> >What I want to do:  I want to relocate (move) a subvolume from one BTRFS
-> >volume to a different BTRFS volume.
-> >
-> >I have seen the writeup for incremental backup which takes a snapshot,
-> >and then using btrfs-send and btrfs-receive to create a copy on a
-> >different volume.  That works fine except the btrfs-receive set the new
-> >copy to be readonly.
-> >
-> >What I want to do is to use that new subvolume read/write.  The only way
-> >I have figured out to do this is to create another snapshot on the new
-> >volume which is NOT readonly.  I believe that means I need to keep both
-> >of these subvolumes around.
-> 
-> As soon as I sent this I believe I found the answer.
-> 
-> I was sort of right about creating the new read-write (NOT readonly)
-> snapshot.  After it is created simply delete the one which was created by
-> btrfs-receive.
 
-ATM, this is the way to do it. There's an ioctl to toggle the RO/RW
-status of a subvolume, so it could save you one snapshot, but there's
-not tool support to do that. I hope this will be possible with the
-upcomming 'per-object properties' feature.
+On Dec 15, 2013, at 10:40 AM, Gene Czarcinski <gczarcinski@gmail.com> wrote:
 
-david
+> On 12/14/2013 01:43 PM, Chris Murphy wrote:
+>> On Dec 14, 2013, at 2:57 AM, Gene Czarcinski <gczarcinski@gmail.com> wrote:
+>>>  Since I run Fedora with anaconda I use kickstart installs and can easily repeat an install since it included almost everything I want installed.  And then I have a post-install script I run to pickup additional stuff.
+>> This is a bit of a hijack question, but does kickstart offer a way to mount Btrfs with compression option?
+>> 
+>> 
+>> Chris Murphy
+> Interesting; it does not "currently" but that sounds like it should be (RFE time) an added option so that it would be in fstab from the start.  It may not be that simple since if you specify compression for a subvolume, that means that everything anaconda installs on the subvolume should be subjected to compression and not just stuff written post-install.
+
+It needs to be mounted with the option prior to installation, and also needs to be added to the fstab.
+> 
+> I do not currently use compression but I should give it a try.
+> 
+> Chris, since I know kickstart and you do not, I will BZ the RFE. BTW, is this an option on the regular GUI install?
+
+No, and I'm not finding it in any of the code for kickstart or anaconda GUI. My recollection is that if it was brought into the GUI it wasn't going to offer any choice of compression algorithm, it would use the Btrfs default. Currently that's zlib, which I think maybe isn't the best default choice because while it offers higher compression ratio over lzo, it's slower to compress and decompress. HDD space is cheap, the benefit of compression isn't so much saving space as it is to make r/w faster. In all of my tests LZO does this better. I *think* Snappy is better still than LZO, but that's not yet an option.
+
+Chris Murphy

@@ -1,246 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f49.google.com ([209.85.214.49]:64022 "EHLO
-	mail-bk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753943Ab3LOMl7 (ORCPT
+Received: from mail-we0-f179.google.com ([74.125.82.179]:52930 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753982Ab3LOMoS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Dec 2013 07:41:59 -0500
-Received: by mail-bk0-f49.google.com with SMTP id my13so1955326bkb.36
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 04:41:57 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAP9B-Q=AstN3sdjv7KRVHnfYr7bPtAm_b52isz8frVG92woJ-Q@mail.gmail.com>
-References: <1387032218-29998-1-git-send-email-fdmanana@gmail.com>
-	<CAP9B-Q=o7j8bdopw4TRyYZAXmuezVYAoxp8fmk+4=iZ+H_LQDg@mail.gmail.com>
-	<CAL3q7H6gErp-GYX4T8UzNUG=LGd_90zJqc5-epnvtkuNxh71tA@mail.gmail.com>
-	<CAP9B-Q=XW2x67Te8fAYWJbOBCpnUxJQH2m7Va8tSpTcXE_xJ8Q@mail.gmail.com>
-	<CAL3q7H4z7-coQK-HQm-GOOi_bX+9_yyQrUQG1ed5SS46vjctTg@mail.gmail.com>
-	<CAL3q7H5Z3t1hjhXQSWDJuCeRdjexu8CyQA=K3=3cECRwZz_kRQ@mail.gmail.com>
-	<CAP9B-Q=AstN3sdjv7KRVHnfYr7bPtAm_b52isz8frVG92woJ-Q@mail.gmail.com>
-Date: Sun, 15 Dec 2013 12:41:57 +0000
-Message-ID: <CAL3q7H4nVZACNmO9gby1s4VxxckbZVyBBgmpZtiXEOq48w12SA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: wait for ordered extents before removing extent maps
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Shilong Wang <wangshilong1991@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Sun, 15 Dec 2013 07:44:18 -0500
+Received: by mail-we0-f179.google.com with SMTP id q59so3637482wes.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 04:44:17 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: fix deadlock when iterating inode refs and running delayed inodes
+Date: Sun, 15 Dec 2013 12:43:58 +0000
+Message-Id: <1387111438-15023-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1387053647-25680-1-git-send-email-fdmanana@gmail.com>
+References: <1387053647-25680-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 15, 2013 at 3:34 AM, Shilong Wang <wangshilong1991@gmail.com> wrote:
-> 2013/12/14 Filipe David Manana <fdmanana@gmail.com>:
->> On Sat, Dec 14, 2013 at 3:13 PM, Filipe David Manana <fdmanana@gmail.com> wrote:
->>> On Sat, Dec 14, 2013 at 3:08 PM, Shilong Wang <wangshilong1991@gmail.com> wrote:
->>>> 2013/12/14 Filipe David Manana <fdmanana@gmail.com>:
->>>>> On Sat, Dec 14, 2013 at 2:56 PM, Shilong Wang <wangshilong1991@gmail.com> wrote:
->>>>>> Hello Filipe,
->>>>>>
->>>>>> 2013/12/14 Filipe David Borba Manana <fdmanana@gmail.com>:
->>>>>>> Wang Shilong got into a case where during inode eviction we were
->>>>>>> removing an extent map while it was pinned. This triggered a warning
->>>>>>> in remove_extent_mapping() because the extent map had the pinned
->>>>>>> flag set:
->>>>>>>
->>>>>>> [ 1209.102076]  [<ffffffffa04721b9>] remove_extent_mapping+0x69/0x70 [btrfs]
->>>>>>> [ 1209.102084]  [<ffffffffa0466b06>] btrfs_evict_inode+0x96/0x4d0 [btrfs]
->>>>>>> [ 1209.102089]  [<ffffffff81073010>] ? wake_atomic_t_function+0x40/0x40
->>>>>>> [ 1209.102092]  [<ffffffff8118ab2e>] evict+0x9e/0x190
->>>>>>> [ 1209.102094]  [<ffffffff8118b313>] iput+0xf3/0x180
->>>>>>> [ 1209.102101]  [<ffffffffa0461fd1>] btrfs_run_delayed_iputs+0xb1/0xd0 [btrfs]
->>>>>>> [ 1209.102107]  [<ffffffffa045d358>] __btrfs_end_transaction+0x268/0x350 [btrfs]
->>>>>>>
->>>>>>> Therefore wait for any pending ordered extents, if any, which will
->>>>>>> trigger calls to unpin_extent_cache(), before removing the extent maps.
->>>>>>>
->>>>>>> Wang's solution of simply clearing the pinned bit wasn't enough, as after
->>>>>>> unpin_extent_cache() will be called and trigger another WARN_ON() because
->>>>>>> the lookup for the extent map returned NULL.
->>>>>>
->>>>>> Why not in evict_inode_truncate_pages() move remove_extent_mapping() after
->>>>>> clear_extent_bit()?
->>>>>
->>>>> So, if the pinned bit is set, it means some task will clear it later,
->>>>> via unpin_extent_cache(). And if you look at that function, it has
->>>>> this:
->>>>>
->>>>> write_lock(&tree->lock);
->>>>> em = lookup_extent_mapping(tree, start, len);
->>>>>
->>>>> WARN_ON(!em || em->start != start);
->>>>>
->>>>> And remove_extent_mapping() will remove the em from the rbtree,
->>>>> regardless of its reference count value, therefore triggering that
->>>>> warning above.
->>>>
->>>> Here i mean,  in evict_inode_truncate_pages()
->>>> We change it to:
->>>>
->>>> Step1:  unpin_extent_cache()
->>>> Step2:  remove it from extent_mapping
->>>>
->>>> Dose this cause any problems? i am a little confused, correct me if i
->>>> am wrong some places^_^.
->>>
->>> It can still lead to the same WARN_ON I think. So when calling
->>> unpin_extent_cache(), it can merge the em with its left neighbor,
->>> therefore changing its ->start value. So later, if other task (the one
->>> which set the pinned flag) calls remove_extent_mapping(), it will get
->>> an em with a different ->start (because of the merge), therefore
->>> triggering that WARN_ON().
->>
->> Or because it is not found the second time.
->>
->> On the other hand, you didn't get such WARN_ON triggered, right?
->
-> During my test, i did not hit another WARN_ON in fact.
->
->>
->> So maybe just clearing the pinned bit is ok. So btrfs_invalidatepage,
->> if it finds an ordered extent, it sets the BTRFS_ORDERED_TRUNCATED
->> flag on it, and then it might call btrfs_finish_ordered_io() against
->> it, which not always unpins the extent when it has the truncated flag
->> set. So this might well be what you ran into.
->
-> Let's dig more.
->
-> I take a deep look in btrfs_finish_ordered_io(), it won't unset PINNED flag
-> For an NOCOW extent.
->
-> 2579         if (test_bit(BTRFS_ORDERED_NOCOW,
-> &ordered_extent->flags)) {
-> 2580                 BUG_ON(!list_empty(&ordered_extent->list)); /*
-> Logic error */
-> 2581                 btrfs_ordered_update_i_size(inode, 0, ordered_extent);
-> 2582                 if (nolock)
-> 2583                         trans = btrfs_join_transaction_nolock(root);
-> 2584                 else
-> 2585                         trans = btrfs_join_transaction(root);
-> 2586                 if (IS_ERR(trans)) {
-> 2587                         ret = PTR_ERR(trans);
-> 2588                         trans = NULL;
-> 2589                         goto out;
-> 2590                 }
-> 2591                 trans->block_rsv = &root->fs_info->delalloc_block_rsv;
-> 2592                 ret = btrfs_update_inode_fallback(trans, root, inode);
-> 2593                 if (ret) /* -ENOMEM or corruption */
-> 2594                         btrfs_abort_transaction(trans, root, ret);
-> 2595                 goto out;
-> ------------------------->here we goto out directly,
-> unpin_extent_cache() won't be called.
-> 2596         }
-> I don't know why we do something like this...
->
->
-> Previously, i unset PINNED flag directly is a lazy approach, that is
-> because i think it
-> dosen't hurt to do so, because we are going to evict that inode, and after
-> btrfs_invalidatepages() is called, nobody should can still access those pages.
->
->
-> Besides, i think we don't need call btrfs_wait_ordered_extents() in
-> evicting inode here..
-> (Expecially after your patch that we remove extent map cache)....
->
->
-> What do you think ^_^
+While running btrfs/004 from xfstests, after 503 iterations, dmesg reported
+a deadlock between tasks iterating inode refs and tasks running delayed inodes
+(during a transaction commit).
 
-I think it might be ok.
+It turns out that iterating inode refs implies doing one tree search and
+release all nodes in the path except the leaf node, and then passing that
+leaf node to btrfs_ref_to_path(), which in turn does another tree search
+without releasing the lock on the leaf node it received as parameter.
 
-Thanks
+This is a problem when other task wants to write to the btree as well and
+ends up updating the leaf that is read locked - the writer task locks the
+parent of the leaf and then blocks waiting for the leaf's lock to be
+released - at the same time, the task executing btrfs_ref_to_path()
+does a second tree search, without releasing the lock on the first leaf,
+and wants to access a leaf (the same or another one) that is a child of
+the same parent, resulting in a deadlock.
 
->
->
->>
->> I'm ok with your approach too.
->>
->> thanks
->>
->>
->>>
->>> What do you think?
->>>
->>> thanks
->>>
->>>>
->>>>
->>>>>
->>>>> Does it makes sense?
->>>>>
->>>>> thanks
->>>>>
->>>>>>
->>>>>> Thanks,
->>>>>> Wang
->>>>>>>
->>>>>>> Thanks Wang for finding out this.
->>>>>>>
->>>>>>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
->>>>>>> ---
->>>>>>>  fs/btrfs/inode.c |    5 +++--
->>>>>>>  1 file changed, 3 insertions(+), 2 deletions(-)
->>>>>>>
->>>>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>>>>>> index e889779..c2933fb 100644
->>>>>>> --- a/fs/btrfs/inode.c
->>>>>>> +++ b/fs/btrfs/inode.c
->>>>>>> @@ -4509,6 +4509,9 @@ static void evict_inode_truncate_pages(struct inode *inode)
->>>>>>>         ASSERT(inode->i_state & I_FREEING);
->>>>>>>         truncate_inode_pages(&inode->i_data, 0);
->>>>>>>
->>>>>>> +       /* do we really want it for ->i_nlink > 0 and zero btrfs_root_refs? */
->>>>>>> +       btrfs_wait_ordered_range(inode, 0, (u64)-1);
->>>>>>> +
->>>>>>>         write_lock(&map_tree->lock);
->>>>>>>         while (!RB_EMPTY_ROOT(&map_tree->map)) {
->>>>>>>                 struct extent_map *em;
->>>>>>> @@ -4566,8 +4569,6 @@ void btrfs_evict_inode(struct inode *inode)
->>>>>>>                 btrfs_orphan_del(NULL, inode);
->>>>>>>                 goto no_delete;
->>>>>>>         }
->>>>>>> -       /* do we really want it for ->i_nlink > 0 and zero btrfs_root_refs? */
->>>>>>> -       btrfs_wait_ordered_range(inode, 0, (u64)-1);
->>>>>>>
->>>>>>>         if (root->fs_info->log_root_recovering) {
->>>>>>>                 BUG_ON(test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
->>>>>>> --
->>>>>>> 1.7.9.5
->>>>>>>
->>>>>>> --
->>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>>
->>>>>
->>>>> --
->>>>> Filipe David Manana,
->>>>>
->>>>> "Reasonable men adapt themselves to the world.
->>>>>  Unreasonable men adapt the world to themselves.
->>>>>  That's why all progress depends on unreasonable men."
->>>
->>>
->>>
->>> --
->>> Filipe David Manana,
->>>
->>> "Reasonable men adapt themselves to the world.
->>>  Unreasonable men adapt the world to themselves.
->>>  That's why all progress depends on unreasonable men."
->>
->>
->>
->> --
->> Filipe David Manana,
->>
->> "Reasonable men adapt themselves to the world.
->>  Unreasonable men adapt the world to themselves.
->>  That's why all progress depends on unreasonable men."
+The trace reported by lockdep follows.
 
+[84314.936373] INFO: task fsstress:11930 blocked for more than 120 seconds.
+[84314.936381]       Tainted: G        W  O 3.12.0-fdm-btrfs-next-16+ #70
+[84314.936383] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[84314.936386] fsstress        D ffff8806e1bf8000     0 11930  11926 0x00000000
+[84314.936393]  ffff8804d6d89b78 0000000000000046 ffff8804d6d89b18 ffffffff810bd8bd
+[84314.936399]  ffff8806e1bf8000 ffff8804d6d89fd8 ffff8804d6d89fd8 ffff8804d6d89fd8
+[84314.936405]  ffff880806308000 ffff8806e1bf8000 ffff8804d6d89c08 ffff8804deb8f190
+[84314.936410] Call Trace:
+[84314.936421]  [<ffffffff810bd8bd>] ? trace_hardirqs_on+0xd/0x10
+[84314.936428]  [<ffffffff81774269>] schedule+0x29/0x70
+[84314.936451]  [<ffffffffa0715bf5>] btrfs_tree_lock+0x75/0x270 [btrfs]
+[84314.936457]  [<ffffffff810715c0>] ? __init_waitqueue_head+0x60/0x60
+[84314.936470]  [<ffffffffa06ba231>] btrfs_search_slot+0x7f1/0x930 [btrfs]
+[84314.936489]  [<ffffffffa0731c2a>] ? __btrfs_run_delayed_items+0x13a/0x1e0 [btrfs]
+[84314.936504]  [<ffffffffa06d2e1f>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
+[84314.936510]  [<ffffffff810bd6ef>] ? trace_hardirqs_on_caller+0x1f/0x1e0
+[84314.936528]  [<ffffffffa073173c>] __btrfs_update_delayed_inode+0x4c/0x1d0 [btrfs]
+[84314.936543]  [<ffffffffa0731c2a>] ? __btrfs_run_delayed_items+0x13a/0x1e0 [btrfs]
+[84314.936558]  [<ffffffffa0731c2a>] ? __btrfs_run_delayed_items+0x13a/0x1e0 [btrfs]
+[84314.936573]  [<ffffffffa0731c82>] __btrfs_run_delayed_items+0x192/0x1e0 [btrfs]
+[84314.936589]  [<ffffffffa0731d03>] btrfs_run_delayed_items+0x13/0x20 [btrfs]
+[84314.936604]  [<ffffffffa06dbcd4>] btrfs_flush_all_pending_stuffs+0x24/0x80 [btrfs]
+[84314.936620]  [<ffffffffa06ddc13>] btrfs_commit_transaction+0x223/0xa20 [btrfs]
+[84314.936630]  [<ffffffffa06ae5ae>] btrfs_sync_fs+0x6e/0x110 [btrfs]
+[84314.936635]  [<ffffffff811d0b50>] ? __sync_filesystem+0x60/0x60
+[84314.936639]  [<ffffffff811d0b50>] ? __sync_filesystem+0x60/0x60
+[84314.936643]  [<ffffffff811d0b70>] sync_fs_one_sb+0x20/0x30
+[84314.936648]  [<ffffffff811a3541>] iterate_supers+0xf1/0x100
+[84314.936652]  [<ffffffff811d0c45>] sys_sync+0x55/0x90
+[84314.936658]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
+[84314.936660] INFO: lockdep is turned off.
+[84314.936663] INFO: task btrfs:11955 blocked for more than 120 seconds.
+[84314.936666]       Tainted: G        W  O 3.12.0-fdm-btrfs-next-16+ #70
+[84314.936668] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[84314.936670] btrfs           D ffff880541729a88     0 11955  11608 0x00000000
+[84314.936674]  ffff880541729a38 0000000000000046 ffff8805417299d8 ffffffff810bd8bd
+[84314.936680]  ffff88075430c8a0 ffff880541729fd8 ffff880541729fd8 ffff880541729fd8
+[84314.936685]  ffffffff81c104e0 ffff88075430c8a0 ffff8804de8b00b8 ffff8804de8b0000
+[84314.936690] Call Trace:
+[84314.936695]  [<ffffffff810bd8bd>] ? trace_hardirqs_on+0xd/0x10
+[84314.936700]  [<ffffffff81774269>] schedule+0x29/0x70
+[84314.936717]  [<ffffffffa0715815>] btrfs_tree_read_lock+0xd5/0x140 [btrfs]
+[84314.936721]  [<ffffffff810715c0>] ? __init_waitqueue_head+0x60/0x60
+[84314.936733]  [<ffffffffa06ba201>] btrfs_search_slot+0x7c1/0x930 [btrfs]
+[84314.936746]  [<ffffffffa06bd505>] btrfs_find_item+0x55/0x160 [btrfs]
+[84314.936763]  [<ffffffffa06ff689>] ? free_extent_buffer+0x49/0xc0 [btrfs]
+[84314.936780]  [<ffffffffa073c9ca>] btrfs_ref_to_path+0xba/0x1e0 [btrfs]
+[84314.936797]  [<ffffffffa06f9719>] ? release_extent_buffer+0xb9/0xe0 [btrfs]
+[84314.936813]  [<ffffffffa06ff689>] ? free_extent_buffer+0x49/0xc0 [btrfs]
+[84314.936830]  [<ffffffffa073cb50>] inode_to_path+0x60/0xd0 [btrfs]
+[84314.936846]  [<ffffffffa073d365>] paths_from_inode+0x115/0x3c0 [btrfs]
+[84314.936851]  [<ffffffff8118dd44>] ? kmem_cache_alloc_trace+0x114/0x200
+[84314.936868]  [<ffffffffa0714494>] btrfs_ioctl+0xf14/0x2030 [btrfs]
+[84314.936873]  [<ffffffff817762db>] ? _raw_spin_unlock+0x2b/0x50
+[84314.936877]  [<ffffffff8116598f>] ? handle_mm_fault+0x34f/0xb00
+[84314.936882]  [<ffffffff81075563>] ? up_read+0x23/0x40
+[84314.936886]  [<ffffffff8177a41c>] ? __do_page_fault+0x20c/0x5a0
+[84314.936892]  [<ffffffff811b2946>] do_vfs_ioctl+0x96/0x570
+[84314.936896]  [<ffffffff81776e23>] ? error_sti+0x5/0x6
+[84314.936901]  [<ffffffff810b71e8>] ? trace_hardirqs_off_caller+0x28/0xd0
+[84314.936906]  [<ffffffff81776a09>] ? retint_swapgs+0xe/0x13
+[84314.936910]  [<ffffffff811b2eb1>] SyS_ioctl+0x91/0xb0
+[84314.936915]  [<ffffffff813eecde>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+[84314.936920]  [<ffffffff8177ef12>] system_call_fastpath+0x16/0x1b
+[84314.936922] INFO: lockdep is turned off.
+[84434.866873] INFO: task btrfs-transacti:11921 blocked for more than 120 seconds.
+[84434.866881]       Tainted: G        W  O 3.12.0-fdm-btrfs-next-16+ #70
+[84434.866883] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[84434.866886] btrfs-transacti D ffff880755b6a478     0 11921      2 0x00000000
+[84434.866893]  ffff8800735b9ce8 0000000000000046 ffff8800735b9c88 ffffffff810bd8bd
+[84434.866899]  ffff8805a1b848a0 ffff8800735b9fd8 ffff8800735b9fd8 ffff8800735b9fd8
+[84434.866904]  ffffffff81c104e0 ffff8805a1b848a0 ffff880755b6a478 ffff8804cece78f0
+[84434.866910] Call Trace:
+[84434.866920]  [<ffffffff810bd8bd>] ? trace_hardirqs_on+0xd/0x10
+[84434.866927]  [<ffffffff81774269>] schedule+0x29/0x70
+[84434.866948]  [<ffffffffa06dd2ef>] wait_current_trans.isra.33+0xbf/0x120 [btrfs]
+[84434.866954]  [<ffffffff810715c0>] ? __init_waitqueue_head+0x60/0x60
+[84434.866970]  [<ffffffffa06dec18>] start_transaction+0x388/0x5a0 [btrfs]
+[84434.866985]  [<ffffffffa06db9b5>] ? transaction_kthread+0xb5/0x280 [btrfs]
+[84434.866999]  [<ffffffffa06dee97>] btrfs_attach_transaction+0x17/0x20 [btrfs]
+[84434.867012]  [<ffffffffa06dba9e>] transaction_kthread+0x19e/0x280 [btrfs]
+[84434.867026]  [<ffffffffa06db900>] ? open_ctree+0x2260/0x2260 [btrfs]
+[84434.867030]  [<ffffffff81070dad>] kthread+0xed/0x100
+[84434.867035]  [<ffffffff81070cc0>] ? flush_kthread_worker+0x190/0x190
+[84434.867040]  [<ffffffff8177ee6c>] ret_from_fork+0x7c/0xb0
+[84434.867044]  [<ffffffff81070cc0>] ? flush_kthread_worker+0x190/0x190
 
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
+V2: Shorter commit message.
+
+ fs/btrfs/backref.c |   19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 6a3f7f5..835b6c9 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1569,7 +1569,6 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+ 	struct btrfs_key found_key;
+ 
+ 	while (!ret) {
+-		path->leave_spinning = 1;
+ 		ret = inode_ref_info(inum, parent ? parent+1 : 0, fs_root, path,
+ 				     &found_key);
+ 		if (ret < 0)
+@@ -1582,9 +1581,12 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+ 
+ 		parent = found_key.offset;
+ 		slot = path->slots[0];
+-		eb = path->nodes[0];
+-		/* make sure we can use eb after releasing the path */
+-		atomic_inc(&eb->refs);
++		eb = btrfs_clone_extent_buffer(path->nodes[0]);
++		if (!eb) {
++			ret = -ENOMEM;
++			break;
++		}
++		extent_buffer_get(eb);
+ 		btrfs_tree_read_lock(eb);
+ 		btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 		btrfs_release_path(path);
+@@ -1642,9 +1644,12 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
+ 		++found;
+ 
+ 		slot = path->slots[0];
+-		eb = path->nodes[0];
+-		/* make sure we can use eb after releasing the path */
+-		atomic_inc(&eb->refs);
++		eb = btrfs_clone_extent_buffer(path->nodes[0]);
++		if (!eb) {
++			ret = -ENOMEM;
++			break;
++		}
++		extent_buffer_get(eb);
+ 
+ 		btrfs_tree_read_lock(eb);
+ 		btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
 -- 
-Filipe David Manana,
+1.7.9.5
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

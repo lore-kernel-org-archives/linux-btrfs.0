@@ -1,25 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f53.google.com ([209.85.212.53]:51854 "EHLO
-	mail-vb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750831Ab3LPAGh (ORCPT
+Received: from mail-vc0-f170.google.com ([209.85.220.170]:57279 "EHLO
+	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751901Ab3LPAQJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Dec 2013 19:06:37 -0500
-Received: by mail-vb0-f53.google.com with SMTP id o19so2723171vbm.12
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 16:06:36 -0800 (PST)
+	Sun, 15 Dec 2013 19:16:09 -0500
+Received: by mail-vc0-f170.google.com with SMTP id la4so2771913vcb.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 16:16:09 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$9369c$4a56c817$cc0b6bdf$1b4a6541@cox.net>
+In-Reply-To: <20131215233959.GA7260@pyropus.ca>
 References: <CAD_cGvFdrhwC2erqYTMjPRG7Y=69tsT2O+S-GHYK7+wpBwFSFQ@mail.gmail.com>
 	<46A0D70E-99DF-46FE-A4E8-71E9AC45129F@colorremedies.com>
 	<CAD_cGvHkpkuveYFKm4kjgc0SkJ=mQ4mpChes0F25fdjc5r3PmQ@mail.gmail.com>
 	<337E6C9D-298E-4F77-91D7-648A7C65D360@colorremedies.com>
-	<CAD_cGvGLHgHagW-G5Qz1yXY4w14BBiZsJj3K0-FmjEGzoo-_rw@mail.gmail.com>
-	<840381F8-BDCA-43BF-A170-6E10C2908B8A@colorremedies.com>
-	<CAD_cGvF8-pxXXvwpB+yNYnKRW09S4c0VuKUGiWa7=8C2uFkvqA@mail.gmail.com>
-	<pan$e9ec8$f8abd102$9f0d15ad$59d83b5d@cox.net>
-	<CAD_cGvHU0yaXj-CzVgNYbeqzu7ZH0mUOiwjT-GmU7F5JTqx=jw@mail.gmail.com>
-	<pan$9369c$4a56c817$cc0b6bdf$1b4a6541@cox.net>
-Date: Mon, 16 Dec 2013 01:06:36 +0100
-Message-ID: <CAD_cGvHQkO23gXtXmCF48Fh+Cxb6Z3b0yiD6pzPyQunGhgD5MA@mail.gmail.com>
+	<20131215233959.GA7260@pyropus.ca>
+Date: Mon, 16 Dec 2013 01:16:08 +0100
+Message-ID: <CAD_cGvEoQ8NXsqb3GDK5w6V64rmLWRVq9vT_g0iwN4a0wbTYqg@mail.gmail.com>
 Subject: Re: Blocket for more than 120 seconds
 From: Hans-Kristian Bakke <hkbakke@gmail.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
@@ -27,118 +22,81 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-torrents are really only one thing my storage server get hammered
-with. It also does a lot more IO intensive stuff. I actually run
-enterprise storage drives in a Supermicro-server for a reason, even if
-it is my home setup, consumer stuff just don't cut it with my storage
-abuse :)
-It runs KVM virtualisation (not on btrfs though) with several VMs,
-including windows machines, do lots of manipulation of large files,
-offsite backups at 100 mbit/s for days on end, reencoding large
-amounts of audio files, runs lots of web sites, constantly streams
-blu-rays to at least one computer, and chews through enormous amounts
-of internet bandwith constantly. Last week it consumed ~10TB of
-internet bandwith alone. I was at about 140 mbit/s average throughput
-on a  100/100 link over a full 7 day week, peaking at 177 mbit/s
-average over 24 hours, and that is not counting the local gigabit
-traffic for all the video remuxing and stuff.
-In other words, all 19 storage drives in that server is driven really
-hard, and it is no wonder that this triggers some subtleties that
-normal users just don't hit.
+There are actually more. Like this one:
 
-But since torrenting are clearly the worst offender when it comes to
-fragmentation I can comment on that.
-Using btrfs with partitioning stops me from using the btrfs multidisk
-handling that I ideally need, so that is really not an option. I also
-think that if I were to use partitions (no multidisk), no COW and
-hence no checksumming, I might as well use ext4 which is more
-optimized for that usage scenario. Ideally I could use just a subvol
-with nodatacow and quota for this purpose, but per subvolume nodatacow
-is not available yet as far as I have understood (correct me if I'm
-wrong).
+http://iohq.net/index.php?title=Btrfs:RAID_5_Rsync_Freeze
 
-What I will do now, as a way of removing the worst offender from
-messing up the general storage pool, is to shrink the btrfs array from
-8x4TB drives in btrfs RAID10 to a 7 disk array, and dedicate a drive
-for rtorrent, running ext4 with preallocation.
-I have, until btrfs, normally just made one large array of all storage
-drives matching in performance characteristics, thinking that all the
-data can benefit from the extra IO-performance of the array. This has
-been a good compromise for a limited budget home setup where ideal
-storage teering with SSD hybrid SANs and such is not an option. But as
-I am now experiencing with btrfs, COW kind of changes the rules in a
-profound noticable all-the-time way. With COWs inherent
-random-write-to-large-file fragmentation penalty I think there is no
-other way than to separate the different workloads into separate
-storage pools going to different hardware. In my case it would
-probably mean having one storage pool for general storage, one for VMs
-and one for torrenting, as all of those react in their own way to COW
-and will get heavily affected by the other workloads in the worst case
-if run from the same drives with COW.
+It seems to be the exact same issue as I have, as I too can't do high
+speed rsyncs writing to the btrfs array without blocking (reading is
+fine).
+Mvh
 
-Your system of a "cache" is actually already implemented logically in
-my setup, in the form of a post-processing script that rtorrent runs
-on completion. It moves completed files in dedicated per-tracker
-seeding folders, and then makes a copy (using cp --reflink=auto on
-btrfs) of the file, processes it if needed (tag clean up, reencoding,
-decompresssing or what not), and then moves it to another "finished"
-folder. This makes it easy to know what the new stuff is, and I can
-manipulate, rename and clean up all the data without messing up the
-seeds.
-
-I think that the "finished" folder could still be located on the
-RAID10 btrfs volume with COW, as I can use an internal move into the
-organized archive when I am actually sitting at the computer instead
-of a drive to drive copy via the network.
-
-Regards,
-H-K
+Hans-Kristian Bakke
 
 
-On 16 December 2013 00:08, Duncan <1i5t5.duncan@cox.net> wrote:
-> Hans-Kristian Bakke posted on Sun, 15 Dec 2013 15:51:37 +0100 as
-> excerpted:
+On 16 December 2013 00:39, Charles Cazabon
+<charlesc-lists-btrfs@pyropus.ca> wrote:
+> Chris Murphy <lists@colorremedies.com> wrote:
+>> On Dec 14, 2013, at 4:19 PM, Hans-Kristian Bakke <hkbakke@gmail.com> wrote:
+>>
+>> > # btrfs fi df /storage/storage-vol0/
+>> > Data, RAID10: total=13.89TB, used=12.99TB
+>> > System, RAID10: total=64.00MB, used=1.19MB
+>> > System: total=4.00MB, used=0.00
+>> > Metadata, RAID10: total=21.00GB, used=17.59GB
+>>
 >
->> # Regarding torrents and preallocation I have actually turned
->> preallocation on specifically in rtorrent thinking that it did btrfs a
->> favour like with ext4 (system.file_allocate.set = yes). It is easy to
->> turn it off.
->> Is the "ideal" solution for btrfs and torrenting (or any other random
->> writes to large files) to use preallocation and NOCOW, or use no
->> preallocation and NOCOW? I am thinking the first, although I still do
->> not understand quite why preallocation is worse than no preallocation
->> for btrfs with COW enabled (or is both just as bad?)
+>> By my count this is ~ 95.6% full. My past experience with other file
+>> systems, including btree file systems, is they get unpredictably fussy when
+>> they're this full. I start migration planning once 80% full is reached, and
+>> make it a policy to avoid going over 90% full.
 >
-> I'm not a dev only an admin who follows this list as I run btrfs too, and
-> thus don't claim to be an expert on the above -- it's mostly echoing what
-> I've seen here previously.
+> For what it's worth, I see exactly the same behaviour on a system where the
+> filesystem is only ~60% full, with more than 5TB of free space.  All I have to
+> do is copy a single file of several gigabytes to the filesystem (over the
+> network, so it's only coming in at ~30MB/s) and I get similar task-blocked
+> messages:
 >
-> That said, preallocation with nocow is the choice I'd make here.
+> INFO: task btrfs-transacti:4118 blocked for more than 120 seconds.
+> Not tainted 3.12.5-custom+ #10
+> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> btrfs-transacti D ffff88082fd14140     0  4118      2 0x00000000
+> ffff880805a06040 0000000000000002 ffff8807f7665d40 ffff8808078f2040
+> 0000000000014140 ffff8807f7665fd8 ffff8807f7665fd8 ffff880805a06040
+> 0000000000000001 ffff88082fd14140 ffff880805a06040 ffff8807f7665c70
+> Call Trace:
+> [<ffffffff810d1a19>] ? __lock_page+0x66/0x66
+> [<ffffffff813b26dd>] ? io_schedule+0x56/0x6c
+> [<ffffffff810d1a20>] ? sleep_on_page+0x7/0xc
+> [<ffffffff813b0ad6>] ? __wait_on_bit+0x40/0x79
+> [<ffffffff810d1df1>] ? find_get_pages_tag+0x66/0x121
+> [<ffffffff810d1ad8>] ? wait_on_page_bit+0x72/0x77
+> [<ffffffff8105f540>] ? wake_atomic_t_function+0x21/0x21
+> [<ffffffff810d218f>] ? filemap_fdatawait_range+0x66/0xfe
+> [<ffffffffa0545bb5>] ? clear_extent_bit+0x25d/0x29d [btrfs]
+> [<ffffffffa052ff9a>] ? btrfs_wait_marked_extents+0x79/0xca [btrfs]
+> [<ffffffffa0530059>] ? btrfs_write_and_wait_transaction+0x6e/0x7e [btrfs]
+> [<ffffffffa05307ad>] ? btrfs_commit_transaction+0x651/0x843 [btrfs]
+> [<ffffffffa05297e8>] ? transaction_kthread+0xf4/0x191 [btrfs]
+> [<ffffffffa05296f4>] ? try_to_freeze_unsafe+0x30/0x30 [btrfs]
+> [<ffffffffa05296f4>] ? try_to_freeze_unsafe+0x30/0x30 [btrfs]
+> [<ffffffff8105eb45>] ? kthread+0x81/0x89
+> [<ffffffff81013291>] ? paravirt_sched_clock+0x5/0x8
+> [<ffffffff8105eac4>] ? __kthread_parkme+0x5d/0x5d
+> [<ffffffff813b880c>] ? ret_from_fork+0x7c/0xb0
+> [<ffffffff8105eac4>] ? __kthread_parkme+0x5d/0x5d
 >
-> Meanwhile, a subpoint I didn't make explicit previously, tho it's a
-> logical conclusion from the explanation, is that once the writing is
-> finished and the file becomes like most media files effectively read-
-> only, no further writes, NOCOW is no longer important.  That is, you can
-> (sequentially) copy the file somewhere else and not have to worry about
-> it.  In fact, that's a reasonably good idea, since NOCOW turns off btrfs
-> checksumming too, and presumably you're still interested in maintaining
-> file integrity on the thing.
 >
-> So what I'd do is setup a torrent download dir (or as I mentioned, a
-> dedicated partition, since I like that sort of thing because it enforces
-> size discipline on the stuff I've downloaded but not fully sorted thru...
-> that's what I do with binary newsgroup downloading, which I've been doing
-> on and off since well before bittorrent was around), set/mount it NOCOW/
-> nowdatacow, and use it as a temporary download "cache".  Then after a
-> file is fully downloaded to "cache", I'd copy it off to a final
-> destination in my normal media partition, ultimately removing my NOCOW
-> copy.
+> So it's not, at least in my case, due to the filesystem approaching full.
 >
+> I've seen this behaviour over many kernel versions; the above is with 3.12.5.
+>
+> Charles
 > --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
+> -----------------------------------------------------------------------
+> Charles Cazabon
+> GPL'ed software available at:               http://pyropus.ca/software/
+> -----------------------------------------------------------------------
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

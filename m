@@ -1,341 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f54.google.com ([209.85.214.54]:50669 "EHLO
-	mail-bk0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753045Ab3LPMQ3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 07:16:29 -0500
-Received: by mail-bk0-f54.google.com with SMTP id v16so2308588bkz.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 04:16:28 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20131216115711.GE30413@localhost.localdomain>
-References: <1384900175-30031-1-git-send-email-fdmanana@gmail.com>
-	<20131216092707.GB30413@localhost.localdomain>
-	<CAL3q7H7w76wxgRmp_SkX974r+OAg37jJQyr26zm-hC7hA3R7QA@mail.gmail.com>
-	<20131216114525.GD30413@localhost.localdomain>
-	<CAL3q7H76FgxQM_h7Y4xiRuJC=YSfUqhYd=F4peWe+EodCOdh_A@mail.gmail.com>
-	<20131216115711.GE30413@localhost.localdomain>
-Date: Mon, 16 Dec 2013 12:16:28 +0000
-Message-ID: <CAL3q7H6JepyQrYnMVaeo3asSrAsyvLGeg86O-SngFt5Y780umg@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix very slow inode eviction and fs unmount
-From: Filipe David Manana <fdmanana@gmail.com>
-To: bo.li.liu@oracle.com
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:38521 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754124Ab3LPPA2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 10:00:28 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VsZei-0002ih-KO
+	for linux-btrfs@vger.kernel.org; Mon, 16 Dec 2013 16:00:24 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 16:00:24 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 16:00:24 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Blocket for more than 120 seconds
+Date: Mon, 16 Dec 2013 15:00:01 +0000 (UTC)
+Message-ID: <pan$9e1d3$23c81b61$a4c9fcce$2641dfd9@cox.net>
+References: <CAD_cGvFdrhwC2erqYTMjPRG7Y=69tsT2O+S-GHYK7+wpBwFSFQ@mail.gmail.com>
+	<46A0D70E-99DF-46FE-A4E8-71E9AC45129F@colorremedies.com>
+	<CAD_cGvHkpkuveYFKm4kjgc0SkJ=mQ4mpChes0F25fdjc5r3PmQ@mail.gmail.com>
+	<337E6C9D-298E-4F77-91D7-648A7C65D360@colorremedies.com>
+	<CAD_cGvGLHgHagW-G5Qz1yXY4w14BBiZsJj3K0-FmjEGzoo-_rw@mail.gmail.com>
+	<840381F8-BDCA-43BF-A170-6E10C2908B8A@colorremedies.com>
+	<CAD_cGvF8-pxXXvwpB+yNYnKRW09S4c0VuKUGiWa7=8C2uFkvqA@mail.gmail.com>
+	<pan$e9ec8$f8abd102$9f0d15ad$59d83b5d@cox.net>
+	<CAD_cGvHU0yaXj-CzVgNYbeqzu7ZH0mUOiwjT-GmU7F5JTqx=jw@mail.gmail.com>
+	<pan$9369c$4a56c817$cc0b6bdf$1b4a6541@cox.net>
+	<CAD_cGvHQkO23gXtXmCF48Fh+Cxb6Z3b0yiD6pzPyQunGhgD5MA@mail.gmail.com>
+	<pan$39434$1fcf3006$dfc308a2$84507249@cox.net>
+	<CAD_cGvHAnS4r6MNxd32x6NMAgBRHxR53vVdjnc3EhZdxzipD_A@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 16, 2013 at 11:57 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Mon, Dec 16, 2013 at 11:48:08AM +0000, Filipe David Manana wrote:
->> On Mon, Dec 16, 2013 at 11:45 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> > On Mon, Dec 16, 2013 at 11:05:31AM +0000, Filipe David Manana wrote:
->> >> On Mon, Dec 16, 2013 at 9:27 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> >> > On Tue, Nov 19, 2013 at 10:29:35PM +0000, Filipe David Borba Manana wrote:
->> >> >> The inode eviction can be very slow, because during eviction we
->> >> >> tell the VFS to truncate all of the inode's pages. This results
->> >> >> in calls to btrfs_invalidatepage() which in turn does calls to
->> >> >> lock_extent_bits() and clear_extent_bit(). These calls result in
->> >> >> too many merges and splits of extent_state structures, which
->> >> >> consume a lot of time and cpu when the inode has many pages. In
->> >> >> some scenarios I have experienced umount times higher than 15
->> >> >> minutes, even when there's no pending IO (after a btrfs fs sync).
->> >> >>
->> >> >> A quick way to reproduce this issue:
->> >> >>
->> >> >> $ mkfs.btrfs -f /dev/sdb3
->> >> >> $ mount /dev/sdb3 /mnt/btrfs
->> >> >> $ cd /mnt/btrfs
->> >> >> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
->> >> >>     --file-test-mode=seqwr --num-threads=128 \
->> >> >>     --file-block-size=16384 --max-time=60 --max-requests=0 run
->> >> >> $ time btrfs fi sync .
->> >> >> FSSync '.'
->> >> >>
->> >> >> real  0m25.457s
->> >> >> user  0m0.000s
->> >> >> sys   0m0.092s
->> >> >> $ cd ..
->> >> >> $ time umount /mnt/btrfs
->> >> >>
->> >> >> real  1m38.234s
->> >> >> user  0m0.000s
->> >> >> sys   1m25.760s
->> >> >>
->> >> >
->> >> > What about the time of umount after 'sync'?
->> >>
->> >> Same huge difference.
->> >> Thanks.
->> >
->> > Not seeing that huge one with the latest btrfs, maybe because your memory is
->> > rather larger.
->>
->> Not sure if I understand you.
->> Latest btrfs-next has this change integrated. Was the test below with
->> it integrated? You would have to compare it with a build without this
->> change.
->
-> I'm testing the script with Chris's upstream repo, not btrfs-next, and umount
-> is normal.
->
-> It's possible that some patches merged in btrfs-next make umount's latency longer
-> than expected.
+Hans-Kristian Bakke posted on Mon, 16 Dec 2013 11:55:40 +0100 as
+excerpted:
 
-The umount example was just a simple way to show inode eviction was
-taking a long time not waiting for or doing IO.
-And yes, my test was performed on a machine with a large amount of ram
-(32Gb) compared to that tests total file size.
+> Stupid me, I completely forgot that you can run multidisk arrays with
+> just block level partitions, just like with md raid! It will introduce a
+> rather significant management overhead in my case though, as managing
+> several individual partitions per drive is quite annoying with so many
+> drives.
 
-thanks
+What I did here, both with mdraid and now with btrfs raid1, is use a 
+parallel partition setup on all target drives.  In a couple special cases 
+it results in some wasted space[1], but for most cases it's possible to 
+simply plan partition sizes so the end result after raid combination is 
+the desired size.
 
->
-> thanks,
-> -liubo
->
->>
->> Thanks.
->>
->> >
->> > time sync
->> > FSSync '/mnt/btrfs'
->> >
->> > real    0m17.006s
->> > user    0m0.004s
->> > sys     0m0.056s
->> >
->> > time umount /mnt/btrfs
->> >
->> > real    0m0.910s
->> > user    0m0.003s
->> > sys     0m0.715s
->> >
->> > -liubo
->> >
->> >>
->> >> >
->> >> > The following ext4 uses sync while btrfs uses 'btrfs filesystem sync'.
->> >> >
->> >> > I don't think they are the same thing.
->> >> >
->> >> > -liubo
->> >> >
->> >> >> The same test on ext4 runs much faster:
->> >> >>
->> >> >> $ mkfs.ext4 /dev/sdb3
->> >> >> $ mount /dev/sdb3 /mnt/ext4
->> >> >> $ cd /mnt/ext4
->> >> >> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
->> >> >>     --file-test-mode=seqwr --num-threads=128 \
->> >> >>     --file-block-size=16384 --max-time=60 --max-requests=0 run
->> >> >> $ sync
->> >> >> $ cd ..
->> >> >> $ time umount /mnt/ext4
->> >> >>
->> >> >> real  0m3.626s
->> >> >> user  0m0.004s
->> >> >> sys   0m3.012s
->> >> >>
->> >> >> After this patch, the unmount (inode evictions) is much faster:
->> >> >>
->> >> >> $ mkfs.btrfs -f /dev/sdb3
->> >> >> $ mount /dev/sdb3 /mnt/btrfs
->> >> >> $ cd /mnt/btrfs
->> >> >> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
->> >> >>     --file-test-mode=seqwr --num-threads=128 \
->> >> >>     --file-block-size=16384 --max-time=60 --max-requests=0 run
->> >> >> $ time btrfs fi sync .
->> >> >> FSSync '.'
->> >> >>
->> >> >> real  0m26.774s
->> >> >> user  0m0.000s
->> >> >> sys   0m0.084s
->> >> >> $ cd ..
->> >> >> $ time umount /mnt/btrfs
->> >> >>
->> >> >> real  0m1.811s
->> >> >> user  0m0.000s
->> >> >> sys   0m1.564s
->> >> >
->> >> >>
->> >> >> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
->> >> >> ---
->> >> >>  fs/btrfs/inode.c |   98 ++++++++++++++++++++++++++++++++++++++++++++++--------
->> >> >>  1 file changed, 84 insertions(+), 14 deletions(-)
->> >> >>
->> >> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> >> >> index 5a5de36..e889779 100644
->> >> >> --- a/fs/btrfs/inode.c
->> >> >> +++ b/fs/btrfs/inode.c
->> >> >> @@ -4488,6 +4488,62 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
->> >> >>       return err;
->> >> >>  }
->> >> >>
->> >> >> +/*
->> >> >> + * While truncating the inode pages during eviction, we get the VFS calling
->> >> >> + * btrfs_invalidatepage() against each page of the inode. This is slow because
->> >> >> + * the calls to btrfs_invalidatepage() result in a huge amount of calls to
->> >> >> + * lock_extent_bits() and clear_extent_bit(), which keep merging and splitting
->> >> >> + * extent_state structures over and over, wasting lots of time.
->> >> >> + *
->> >> >> + * Therefore if the inode is being evicted, let btrfs_invalidatepage() skip all
->> >> >> + * those expensive operations on a per page basis and do only the ordered io
->> >> >> + * finishing, while we release here the extent_map and extent_state structures,
->> >> >> + * without the excessive merging and splitting.
->> >> >> + */
->> >> >> +static void evict_inode_truncate_pages(struct inode *inode)
->> >> >> +{
->> >> >> +     struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
->> >> >> +     struct extent_map_tree *map_tree = &BTRFS_I(inode)->extent_tree;
->> >> >> +     struct rb_node *node;
->> >> >> +
->> >> >> +     ASSERT(inode->i_state & I_FREEING);
->> >> >> +     truncate_inode_pages(&inode->i_data, 0);
->> >> >> +
->> >> >> +     write_lock(&map_tree->lock);
->> >> >> +     while (!RB_EMPTY_ROOT(&map_tree->map)) {
->> >> >> +             struct extent_map *em;
->> >> >> +
->> >> >> +             node = rb_first(&map_tree->map);
->> >> >> +             em = rb_entry(node, struct extent_map, rb_node);
->> >> >> +             remove_extent_mapping(map_tree, em);
->> >> >> +             free_extent_map(em);
->> >> >> +     }
->> >> >> +     write_unlock(&map_tree->lock);
->> >> >> +
->> >> >> +     spin_lock(&io_tree->lock);
->> >> >> +     while (!RB_EMPTY_ROOT(&io_tree->state)) {
->> >> >> +             struct extent_state *state;
->> >> >> +             struct extent_state *cached_state = NULL;
->> >> >> +
->> >> >> +             node = rb_first(&io_tree->state);
->> >> >> +             state = rb_entry(node, struct extent_state, rb_node);
->> >> >> +             atomic_inc(&state->refs);
->> >> >> +             spin_unlock(&io_tree->lock);
->> >> >> +
->> >> >> +             lock_extent_bits(io_tree, state->start, state->end,
->> >> >> +                              0, &cached_state);
->> >> >> +             clear_extent_bit(io_tree, state->start, state->end,
->> >> >> +                              EXTENT_LOCKED | EXTENT_DIRTY |
->> >> >> +                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
->> >> >> +                              EXTENT_DEFRAG, 1, 1,
->> >> >> +                              &cached_state, GFP_NOFS);
->> >> >> +             free_extent_state(state);
->> >> >> +
->> >> >> +             spin_lock(&io_tree->lock);
->> >> >> +     }
->> >> >> +     spin_unlock(&io_tree->lock);
->> >> >> +}
->> >> >> +
->> >> >>  void btrfs_evict_inode(struct inode *inode)
->> >> >>  {
->> >> >>       struct btrfs_trans_handle *trans;
->> >> >> @@ -4498,7 +4554,8 @@ void btrfs_evict_inode(struct inode *inode)
->> >> >>
->> >> >>       trace_btrfs_inode_evict(inode);
->> >> >>
->> >> >> -     truncate_inode_pages(&inode->i_data, 0);
->> >> >> +     evict_inode_truncate_pages(inode);
->> >> >> +
->> >> >>       if (inode->i_nlink &&
->> >> >>           ((btrfs_root_refs(&root->root_item) != 0 &&
->> >> >>             root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
->> >> >> @@ -7379,6 +7436,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
->> >> >>       struct extent_state *cached_state = NULL;
->> >> >>       u64 page_start = page_offset(page);
->> >> >>       u64 page_end = page_start + PAGE_CACHE_SIZE - 1;
->> >> >> +     int inode_evicting = inode->i_state & I_FREEING;
->> >> >>
->> >> >>       /*
->> >> >>        * we have the page locked, so new writeback can't start,
->> >> >> @@ -7394,17 +7452,21 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
->> >> >>               btrfs_releasepage(page, GFP_NOFS);
->> >> >>               return;
->> >> >>       }
->> >> >> -     lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
->> >> >> -     ordered = btrfs_lookup_ordered_extent(inode, page_offset(page));
->> >> >> +
->> >> >> +     if (!inode_evicting)
->> >> >> +             lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
->> >> >> +     ordered = btrfs_lookup_ordered_extent(inode, page_start);
->> >> >>       if (ordered) {
->> >> >>               /*
->> >> >>                * IO on this page will never be started, so we need
->> >> >>                * to account for any ordered extents now
->> >> >>                */
->> >> >> -             clear_extent_bit(tree, page_start, page_end,
->> >> >> -                              EXTENT_DIRTY | EXTENT_DELALLOC |
->> >> >> -                              EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
->> >> >> -                              EXTENT_DEFRAG, 1, 0, &cached_state, GFP_NOFS);
->> >> >> +             if (!inode_evicting)
->> >> >> +                     clear_extent_bit(tree, page_start, page_end,
->> >> >> +                                      EXTENT_DIRTY | EXTENT_DELALLOC |
->> >> >> +                                      EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
->> >> >> +                                      EXTENT_DEFRAG, 1, 0, &cached_state,
->> >> >> +                                      GFP_NOFS);
->> >> >>               /*
->> >> >>                * whoever cleared the private bit is responsible
->> >> >>                * for the finish_ordered_io
->> >> >> @@ -7428,14 +7490,22 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
->> >> >>                               btrfs_finish_ordered_io(ordered);
->> >> >>               }
->> >> >>               btrfs_put_ordered_extent(ordered);
->> >> >> -             cached_state = NULL;
->> >> >> -             lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
->> >> >> +             if (!inode_evicting) {
->> >> >> +                     cached_state = NULL;
->> >> >> +                     lock_extent_bits(tree, page_start, page_end, 0,
->> >> >> +                                      &cached_state);
->> >> >> +             }
->> >> >> +     }
->> >> >> +
->> >> >> +     if (!inode_evicting) {
->> >> >> +             clear_extent_bit(tree, page_start, page_end,
->> >> >> +                              EXTENT_LOCKED | EXTENT_DIRTY |
->> >> >> +                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
->> >> >> +                              EXTENT_DEFRAG, 1, 1,
->> >> >> +                              &cached_state, GFP_NOFS);
->> >> >> +
->> >> >> +             __btrfs_releasepage(page, GFP_NOFS);
->> >> >>       }
->> >> >> -     clear_extent_bit(tree, page_start, page_end,
->> >> >> -              EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
->> >> >> -              EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 1, 1,
->> >> >> -              &cached_state, GFP_NOFS);
->> >> >> -     __btrfs_releasepage(page, GFP_NOFS);
->> >> >>
->> >> >>       ClearPageChecked(page);
->> >> >>       if (PagePrivate(page)) {
->> >> >> --
->> >> >> 1.7.9.5
->> >> >>
->> >> >> --
->> >> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> >> >> the body of a message to majordomo@vger.kernel.org
->> >> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> >>
->> >>
->> >>
->> >> --
->> >> Filipe David Manana,
->> >>
->> >> "Reasonable men adapt themselves to the world.
->> >>  Unreasonable men adapt the world to themselves.
->> >>  That's why all progress depends on unreasonable men."
->>
->>
->>
->> --
->> Filipe David Manana,
->>
->> "Reasonable men adapt themselves to the world.
->>  Unreasonable men adapt the world to themselves.
->>  That's why all progress depends on unreasonable men."
+And some years ago I switched to GPT partitions, for checksummed/
+redundant partition table reliability, partition naming (similar to 
+filesystem labels but in the GPT partition table itself), and to not have 
+to mess with primary/secondary/logical partitions.  That lets me set 
+partition names, which given the scheme I use for both partition names 
+and filesystem labeling, means I have unique name/label IDs for 
+everything, across multiple machines and with thumb-drives too!
+
+The scheme is 15 chars long, reiserfs' max label length since I was using 
+it at the time I designed the scheme.  Here's the content of text file I 
+keep, documenting it:
+
+>>>>>
+
+* 15 characters long
+123456789012345
+ff     bbB ymd
+  ssssS   t   n
 
 
+Example: rt0005gmd3+9bc0
+
+
+Function:
+ff:     2-char function abbreviation (bt/rt/lg, etc)
+
+Device ID (size, brand, 0-based number/letter)
+ssssS:  4-digit size, 1-char multiplier (m=meg, g=gig, etc)
+        This is the size of the underlying media, NOT the partition!
+bbB     2-char media brand ID, 1-digit sequence number.
+        pa=patriot, io=iomega, md=md/raid, etc.
+        Note that /dev/md10=mda...
+
+Target/separator
+t:      1-char target ID and separator.
+        .=aa1, +=workstation, %=both (bt/swap on portable disk)
+
+Date code
+ymd:    1-char-each year/month/day prepared
+        y=last digit of year
+        m=month (1-9abc)
+        d=day (1-9a-v)
+
+Number (working, backup-n)
+        n=copy number (zero-based)
+
+So together, we have 2 chars of function, 8 of size/mfr/n as device-id,
+1 of target/separator,  3 of date prepared, 1 of copy number.
+
+So our example: rt0005gmd3+9bc0
+
+rt=root
+0005gmd3=5-gig /dev/md3
++=targeted at the workstation
+9bc0=2009.1112 (Nov. 12), first/main version.
+
+<<<<<
+
+For a multi-device btrfs, I set the "hardware" sequence number 
+appropriately for the partitions, with the filesystem label identical, 
+except its "hardware" sequence number is "x", indicating it's across 
+multiple hardware devices.
+
+The "filesystem" sequence number, meanwhile, is 0 for the working copy, 1 
+for the primary backup, etc.
+
+With that scheme, I have both the partitions and the filesystems on top 
+of them uniquely labeled with function, hardware/media ID (brand, size, 
+sequence number), target machine, and partition/filesystem ID (date of 
+layout, working/backup sequence number).  If it ever got /too/ complex I 
+could keep a list of them somewhere, but so far, it hasn't gotten beyond 
+the context-manageable scope level, so between seeing the name/label and 
+knowing the context of what I'm accessing, I've been able to track it 
+without resorting to a written tracking list.
+
+But that's not to say you gotta do what I do.  If you still find the 
+administrative overhead of all those partitions too high, well so be it.
+This is just the solution that I've come up with after a couple decades 
+of incremental modification, to where it works pretty well for me now.  
+If some of the stuff I've come up with the hard way makes useful hints 
+for someone else, great.  Otherwise, just ignore it and do what works for 
+you.  It's your system and you're the one dealing with it, after all, not 
+mine/me. =:^)
+
+> What happens If I do cp --reflink=auto from a NOCOW file in a NOCOW
+> folder to a folder with COW set on the same btrfs volume? Do I still get
+> "free" copying, and is the resulting file COW or NOCOW?
+
+I don't actually know as that doesn't fit my USE case so well, tho a 
+comment I read awhile back hinted it may spit out an error.
+
+FWIW, I tend to either use symlinks one direction or the other or I'm 
+trying to keep deliberately redundant backups where I don't want 
+potential damage to kill the common-due-to-COW parts of both files, so I 
+don't actually tend to find reflinks particularly useful here, even if I 
+appreciate the flexibility that option allows.
+
+---
+[1] For instance, swap with a hibernate image back before I switched to 
+SSD (hibernate was broken on my new machine, last I checked about a year 
+ago, and I've enough memory on this machine I usually don't fill it even 
+with cache, so I wasn't hibernate or swap anyway, when I switched to 
+SSD).  The hibernate image must ordinarily be on a single device and 
+should be half the size of RAM or so to avoid dumping cache to fit, but 
+making all the parallel swap partitions that size made for a 
+prohibitively large swap, that even if I WERE to need it, would take well 
+longer to transfer all those gigs
+to/from spinning rust than I'd want to take, so one way or another, I'd 
+never actually use it all.
 
 -- 
-Filipe David Manana,
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

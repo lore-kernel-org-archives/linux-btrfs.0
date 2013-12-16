@@ -1,58 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50535 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753133Ab3LPKet (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 05:34:49 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VsVVe-000893-PG
-	for linux-btrfs@vger.kernel.org; Mon, 16 Dec 2013 11:34:46 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 11:34:46 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 11:34:46 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs send in 3.12 : can't find snapshot?
-Date: Mon, 16 Dec 2013 10:34:25 +0000 (UTC)
-Message-ID: <pan$85bb8$3e67585f$45c93b97$25e14599@cox.net>
-References: <87y53lqx88.fsf@maru2.md5i.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([222.73.24.84]:28930 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753139Ab3LPKwo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 05:52:44 -0500
+Message-ID: <52AEDBCA.2090904@cn.fujitsu.com>
+Date: Mon, 16 Dec 2013 18:54:02 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/3] Btrfs: avoid building inode cache repeatly
+References: <1387178735-30832-1-git-send-email-bo.li.liu@oracle.com> <1387178735-30832-2-git-send-email-bo.li.liu@oracle.com> <52AEC221.70708@cn.fujitsu.com> <20131216102601.GC30413@localhost.localdomain>
+In-Reply-To: <20131216102601.GC30413@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Welsh Duggan posted on Sun, 15 Dec 2013 22:40:55 -0500 as
-excerpted:
-
-> I built the new btrfs-progs 3.12 recently.  I note that the version
-> information doesn't seem to match this:
+On Mon, 16 Dec 2013 18:26:02 +0800, Liu Bo wrote:
+> On Mon, Dec 16, 2013 at 05:04:33PM +0800, Miao Xie wrote:
+>> On 	mon, 16 Dec 2013 15:25:33 +0800, Liu Bo wrote:
+>>> Inode cache is similar to free space cache and in fact shares the same
+>>> code, however, we don't load inode cache unless we're about to allocate
+>>> inode id, then there is a case where we only commit the transaction during
+>>> other operations, such as snapshot creation, we now update fs roots' generation
+>>> to the new transaction id, after that when we want to load the inode cache,
+>>> we'll find that it's not valid thanks to the mismatch of generation, and we
+>>> have to push btrfs-ino-cache thread to build inode cache from disk, and
+>>> this operation is sometimes time-costing.
+>>>
+>>> So to fix the above, we load inode cache into memory during reading fs root.
+>>>
+>>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>>> ---
+>>> v2: fix race issue pointed by Miao.
+>>>
+>>>  fs/btrfs/disk-io.c   | 3 +++
+>>>  fs/btrfs/inode-map.c | 6 ++++++
+>>>  fs/btrfs/inode-map.h | 1 +
+>>>  fs/btrfs/root-tree.c | 3 +++
+>>>  4 files changed, 13 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>> index 8072cfa..59af2aa 100644
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -1630,6 +1630,9 @@ again:
+>>>  		}
+>>>  		goto fail;
+>>>  	}
+>>> +
+>>> +	btrfs_start_ino_caching(root);
+>>> +
+>>>  	return root;
+>>>  fail:
+>>>  	free_fs_root(root);
+>>> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+>>> index ab485e5..f23b0df 100644
+>>> --- a/fs/btrfs/inode-map.c
+>>> +++ b/fs/btrfs/inode-map.c
+>>> @@ -179,6 +179,12 @@ static void start_caching(struct btrfs_root *root)
+>>>  	BUG_ON(IS_ERR(tsk)); /* -ENOMEM */
+>>>  }
+>>>  
+>>> +void btrfs_start_ino_caching(struct btrfs_root *root)
+>>> +{
+>>> +	if (root)
+>>> +		start_caching(root);
+>>> +}
+>>
+>> We are sure root is not NULL, so this check is unnecessary.
+>>
+>> I dipped into the problem, I don't think loading inode cache during reading
+>> fs root is a good way to fix this problem, because in some cases, we read
+>> the fs/file root, but we don't want to allocate/free the inode id.
+>>
+>> I think we can add a flag, which is used to mark if the fs/file root has inode
+>> id cache. We can set the flag when we reading the fs/file root. If the flag is
+>> set but we don't allocate/free the inode id from/to the inode id cache, we set
+>> the generation in the space cache header to 0, which can avoid loading a invalid
+>> inode cache, and then clear the flag. How about this idea?
 > 
->     # ./btrfs --version Btrfs v0.20-rc1-358-g194aa4a
+> That's same with the current code.
 
-I see Wang Shilong dealt with the snapshot issue; I'll tackle the version 
-thing.
+One important point I forgot is that use the generation in the space cache header to
+check the cache inode generation, don't use the root generation,
 
-There was a bit of a hiccup in the versioning with the 3.12 tarball, 
-since the version policy had just changed with it, and (I gather) the 
-tarball prep script hadn't been updated appropriately.  I believe a patch 
-has already been applied to fix the problem (the patch was certainly 
-posted on this list, but I haven't tracked whether it was actually 
-applied yet) so the same problem won't happen the next time.
+> If we don't allocate/free inode ids, @root->cached remains BTRFS_CACHE_NO, and
+> btrfs_save_ino_cache will set inode cache's generation to 0.
+> 
+> So the problem of rebuilding inode cache repeatly is not loading an invalid
+> ino-cache.
+> 
+> btrfs_save_ino_cache() cleanup a valid inode cache during transaction commit
+> because of options INODE_MAP, and find that inode cache is not even loaded
+> during that committed transaction, and it just skip writing out inode cache.
+> Next time when we're allocating inode ids, we load the inode cache and find it
+> is there but already outdated so that we have to rebuild another one same with
+> the previous cache.
+> 
+> To fit what you concerned, btrfs_save_ino_cache() reminds us that only fs tree
+> and subvol/snap need ino cache, so I think adding a check like that is enough
+> to filter out those fs/file roots where we don't want to allocate/free inode
+> ids, eg. data reloc root.
 
-Meanwhile, btrfs properly reports v3.12 here, but I pull and build from 
-live-git, and the v3.12 tagged commit simply happened to still be current 
-HEAD last I updated.  That does explain why the problem with the tarball 
-version wasn't discovered earlier, however, since people (including the 
-devs) building from live-git saw the expected v3.12; it was apparently 
-only the process of preparing and releasing the tarball that was affected 
-by the version bug.
+use a flag to indicate if the ino cache is dirty, just like free space cache.
+If not dirty, skip the save process.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks
+Miao

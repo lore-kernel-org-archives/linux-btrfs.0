@@ -1,198 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34114 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754728Ab3LPQeU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 11:34:20 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2A1BAABE7
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 16:34:19 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/3] btrfs: Check read-only status of roots during send
-Date: Mon, 16 Dec 2013 17:34:17 +0100
-Message-Id: <c80eb84e6c8ab788de0f73e332755e27d518f7fd.1387211246.git.dsterba@suse.cz>
-In-Reply-To: <cover.1387211245.git.dsterba@suse.cz>
-References: <cover.1387211245.git.dsterba@suse.cz>
+Received: from mail-bk0-f44.google.com ([209.85.214.44]:59108 "EHLO
+	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754680Ab3LPRD0 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 12:03:26 -0500
+Received: by mail-bk0-f44.google.com with SMTP id d7so2417953bkh.31
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Dec 2013 09:03:25 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20131216143440.GE6498@twin.jikos.cz>
+References: <1386963574-14467-1-git-send-email-fdmanana@gmail.com>
+	<20131216143440.GE6498@twin.jikos.cz>
+Date: Mon, 16 Dec 2013 17:03:25 +0000
+Message-ID: <CAL3q7H5Eu8UQ-6zvsTB8omTMh-iMKAONYV7QEvRKbcMnyJ1U-g@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix use of uninitialized err variable
+From: Filipe David Manana <fdmanana@gmail.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>,
+        Filipe David Borba Manana <fdmanana@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All the subvolues that are involved in send must be read-only during the
-whole operation. The ioctl SUBVOL_SETFLAGS could be used to change the
-status to read-write and the result of send stream is undefined if the
-data change unexpectedly.
+On Mon, Dec 16, 2013 at 2:34 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Fri, Dec 13, 2013 at 07:39:34PM +0000, Filipe David Borba Manana wrote:
+>> >From the compiler:
+>>
+>> fs/btrfs/file.c: In function ‘prepare_pages.isra.18’:
+>> fs/btrfs/file.c:1265:6: warning: ‘err’ may be used uninitialized in this function [-Wuninitialized]
+>
+> My gcc 4.8.1 does not see this warning, nor do I while inspecting the
+> souces in current next-master.
 
-Fix that by adding a refcount for all involved roots and verify that
-there's no send in progress during SUBVOL_SETFLAGS ioctl call that does
-read-only -> read-write transition.
+Here it's gcc 4.6.3.
 
-We need refcounts because there are no restrictions on number of send
-parallel operations currently run on a single subvolume, be it source,
-parent or one of the multiple clone sources.
 
-Kernel is silent when the RO checks fail and returns EPERM. The same set
-of checks is done already in userspace before send starts.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ctree.h |    6 ++++++
- fs/btrfs/ioctl.c |   22 +++++++++++++++++++---
- fs/btrfs/send.c  |   54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 79 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 54ab86127f7a..302753cd51cf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1795,6 +1795,12 @@ struct btrfs_root {
- 	struct list_head ordered_extents;
- 	struct list_head ordered_root;
- 	u64 nr_ordered_extents;
-+
-+	/*
-+	 * Number of currently running SEND ioctls to prevent
-+	 * manipulation with the read-only status via SUBVOL_SETFLAGS
-+	 */
-+	int send_in_progress;
- };
- 
- struct btrfs_ioctl_defrag_range_args {
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a111622598b0..158680a0f94e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1698,12 +1698,28 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
- 		goto out_drop_sem;
- 
- 	root_flags = btrfs_root_flags(&root->root_item);
--	if (flags & BTRFS_SUBVOL_RDONLY)
-+	if (flags & BTRFS_SUBVOL_RDONLY) {
- 		btrfs_set_root_flags(&root->root_item,
- 				     root_flags | BTRFS_ROOT_SUBVOL_RDONLY);
--	else
--		btrfs_set_root_flags(&root->root_item,
-+	} else {
-+		/*
-+		 * Block RO -> RW transition if this subvolume is involved in
-+		 * send
-+		 */
-+		spin_lock(&root->root_item_lock);
-+		if (root->send_in_progress == 0) {
-+			btrfs_set_root_flags(&root->root_item,
- 				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
-+			spin_unlock(&root->root_item_lock);
-+		} else {
-+			spin_unlock(&root->root_item_lock);
-+			btrfs_warn(root->fs_info,
-+			"Attempt to set subvolume %llu read-write during send",
-+					root->root_key.objectid);
-+			ret = -EPERM;
-+			goto out_drop_sem;
-+		}
-+	}
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	if (IS_ERR(trans)) {
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 95f0fae4ce59..468eba26ad8c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4629,6 +4629,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	struct send_ctx *sctx = NULL;
- 	u32 i;
- 	u64 *clone_sources_tmp = NULL;
-+	int clone_sources_to_rollback = 0;
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -4637,6 +4638,14 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	fs_info = send_root->fs_info;
- 
- 	/*
-+	 * The subvolume must remain read-only during send, protect against
-+	 * making it RW.
-+	 */
-+	spin_lock(&send_root->root_item_lock);
-+	send_root->send_in_progress++;
-+	spin_unlock(&send_root->root_item_lock);
-+
-+	/*
- 	 * This is done when we lookup the root, it should already be complete
- 	 * by the time we get here.
- 	 */
-@@ -4671,6 +4680,15 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 		up_read(&send_root->fs_info->extent_commit_sem);
- 	}
- 
-+	/*
-+	 * Userspace tools do the checks and warn the user if it's
-+	 * not RO.
-+	 */
-+	if (!btrfs_root_readonly(send_root)) {
-+		ret = -EPERM;
-+		goto out;
-+	}
-+
- 	arg = memdup_user(arg_, sizeof(*arg));
- 	if (IS_ERR(arg)) {
- 		ret = PTR_ERR(arg);
-@@ -4757,6 +4775,15 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 				ret = PTR_ERR(clone_root);
- 				goto out;
- 			}
-+			clone_sources_to_rollback = i + 1;
-+			spin_lock(&clone_root->root_item_lock);
-+			clone_root->send_in_progress++;
-+			if (!btrfs_root_readonly(clone_root)) {
-+				spin_unlock(&clone_root->root_item_lock);
-+				ret = -EPERM;
-+				goto out;
-+			}
-+			spin_unlock(&clone_root->root_item_lock);
- 			sctx->clone_roots[i].root = clone_root;
- 		}
- 		vfree(clone_sources_tmp);
-@@ -4772,6 +4799,14 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 			ret = PTR_ERR(sctx->parent_root);
- 			goto out;
- 		}
-+		spin_lock(&sctx->parent_root->root_item_lock);
-+		sctx->parent_root->send_in_progress++;
-+		if (!btrfs_root_readonly(sctx->parent_root)) {
-+			spin_unlock(&sctx->parent_root->root_item_lock);
-+			ret = -EPERM;
-+			goto out;
-+		}
-+		spin_unlock(&sctx->parent_root->root_item_lock);
- 	}
- 
- 	/*
-@@ -4800,6 +4835,25 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	}
- 
- out:
-+	for (i = 0; i < clone_sources_to_rollback; i++) {
-+		struct btrfs_root *r = sctx->clone_roots[i].root;
-+
-+		spin_lock(&r->root_item_lock);
-+		r->send_in_progress--;
-+		spin_unlock(&r->root_item_lock);
-+	}
-+	if (!IS_ERR(sctx->parent_root)) {
-+		struct btrfs_root *r = sctx->parent_root;
-+
-+		spin_lock(&r->root_item_lock);
-+		r->send_in_progress--;
-+		spin_unlock(&r->root_item_lock);
-+	}
-+
-+	spin_lock(&send_root->root_item_lock);
-+	send_root->send_in_progress--;
-+	spin_unlock(&send_root->root_item_lock);
-+
- 	kfree(arg);
- 	vfree(clone_sources_tmp);
- 
 -- 
-1.7.9
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

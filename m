@@ -1,102 +1,252 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f170.google.com ([209.85.220.170]:57279 "EHLO
-	mail-vc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751901Ab3LPAQJ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27333 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751129Ab3LPJ1Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Dec 2013 19:16:09 -0500
-Received: by mail-vc0-f170.google.com with SMTP id la4so2771913vcb.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Dec 2013 16:16:09 -0800 (PST)
+	Mon, 16 Dec 2013 04:27:16 -0500
+Date: Mon, 16 Dec 2013 17:27:08 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix very slow inode eviction and fs unmount
+Message-ID: <20131216092707.GB30413@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1384900175-30031-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20131215233959.GA7260@pyropus.ca>
-References: <CAD_cGvFdrhwC2erqYTMjPRG7Y=69tsT2O+S-GHYK7+wpBwFSFQ@mail.gmail.com>
-	<46A0D70E-99DF-46FE-A4E8-71E9AC45129F@colorremedies.com>
-	<CAD_cGvHkpkuveYFKm4kjgc0SkJ=mQ4mpChes0F25fdjc5r3PmQ@mail.gmail.com>
-	<337E6C9D-298E-4F77-91D7-648A7C65D360@colorremedies.com>
-	<20131215233959.GA7260@pyropus.ca>
-Date: Mon, 16 Dec 2013 01:16:08 +0100
-Message-ID: <CAD_cGvEoQ8NXsqb3GDK5w6V64rmLWRVq9vT_g0iwN4a0wbTYqg@mail.gmail.com>
-Subject: Re: Blocket for more than 120 seconds
-From: Hans-Kristian Bakke <hkbakke@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1384900175-30031-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are actually more. Like this one:
+On Tue, Nov 19, 2013 at 10:29:35PM +0000, Filipe David Borba Manana wrote:
+> The inode eviction can be very slow, because during eviction we
+> tell the VFS to truncate all of the inode's pages. This results
+> in calls to btrfs_invalidatepage() which in turn does calls to
+> lock_extent_bits() and clear_extent_bit(). These calls result in
+> too many merges and splits of extent_state structures, which
+> consume a lot of time and cpu when the inode has many pages. In
+> some scenarios I have experienced umount times higher than 15
+> minutes, even when there's no pending IO (after a btrfs fs sync).
+> 
+> A quick way to reproduce this issue:
+> 
+> $ mkfs.btrfs -f /dev/sdb3
+> $ mount /dev/sdb3 /mnt/btrfs
+> $ cd /mnt/btrfs
+> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
+>     --file-test-mode=seqwr --num-threads=128 \
+>     --file-block-size=16384 --max-time=60 --max-requests=0 run
+> $ time btrfs fi sync .
+> FSSync '.'
+> 
+> real	0m25.457s
+> user	0m0.000s
+> sys	0m0.092s
+> $ cd ..
+> $ time umount /mnt/btrfs
+> 
+> real	1m38.234s
+> user	0m0.000s
+> sys	1m25.760s
+> 
 
-http://iohq.net/index.php?title=Btrfs:RAID_5_Rsync_Freeze
+What about the time of umount after 'sync'?
 
-It seems to be the exact same issue as I have, as I too can't do high
-speed rsyncs writing to the btrfs array without blocking (reading is
-fine).
-Mvh
+The following ext4 uses sync while btrfs uses 'btrfs filesystem sync'.
 
-Hans-Kristian Bakke
+I don't think they are the same thing.
 
+-liubo
 
-On 16 December 2013 00:39, Charles Cazabon
-<charlesc-lists-btrfs@pyropus.ca> wrote:
-> Chris Murphy <lists@colorremedies.com> wrote:
->> On Dec 14, 2013, at 4:19 PM, Hans-Kristian Bakke <hkbakke@gmail.com> wrote:
->>
->> > # btrfs fi df /storage/storage-vol0/
->> > Data, RAID10: total=13.89TB, used=12.99TB
->> > System, RAID10: total=64.00MB, used=1.19MB
->> > System: total=4.00MB, used=0.00
->> > Metadata, RAID10: total=21.00GB, used=17.59GB
->>
->
->> By my count this is ~ 95.6% full. My past experience with other file
->> systems, including btree file systems, is they get unpredictably fussy when
->> they're this full. I start migration planning once 80% full is reached, and
->> make it a policy to avoid going over 90% full.
->
-> For what it's worth, I see exactly the same behaviour on a system where the
-> filesystem is only ~60% full, with more than 5TB of free space.  All I have to
-> do is copy a single file of several gigabytes to the filesystem (over the
-> network, so it's only coming in at ~30MB/s) and I get similar task-blocked
-> messages:
->
-> INFO: task btrfs-transacti:4118 blocked for more than 120 seconds.
-> Not tainted 3.12.5-custom+ #10
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> btrfs-transacti D ffff88082fd14140     0  4118      2 0x00000000
-> ffff880805a06040 0000000000000002 ffff8807f7665d40 ffff8808078f2040
-> 0000000000014140 ffff8807f7665fd8 ffff8807f7665fd8 ffff880805a06040
-> 0000000000000001 ffff88082fd14140 ffff880805a06040 ffff8807f7665c70
-> Call Trace:
-> [<ffffffff810d1a19>] ? __lock_page+0x66/0x66
-> [<ffffffff813b26dd>] ? io_schedule+0x56/0x6c
-> [<ffffffff810d1a20>] ? sleep_on_page+0x7/0xc
-> [<ffffffff813b0ad6>] ? __wait_on_bit+0x40/0x79
-> [<ffffffff810d1df1>] ? find_get_pages_tag+0x66/0x121
-> [<ffffffff810d1ad8>] ? wait_on_page_bit+0x72/0x77
-> [<ffffffff8105f540>] ? wake_atomic_t_function+0x21/0x21
-> [<ffffffff810d218f>] ? filemap_fdatawait_range+0x66/0xfe
-> [<ffffffffa0545bb5>] ? clear_extent_bit+0x25d/0x29d [btrfs]
-> [<ffffffffa052ff9a>] ? btrfs_wait_marked_extents+0x79/0xca [btrfs]
-> [<ffffffffa0530059>] ? btrfs_write_and_wait_transaction+0x6e/0x7e [btrfs]
-> [<ffffffffa05307ad>] ? btrfs_commit_transaction+0x651/0x843 [btrfs]
-> [<ffffffffa05297e8>] ? transaction_kthread+0xf4/0x191 [btrfs]
-> [<ffffffffa05296f4>] ? try_to_freeze_unsafe+0x30/0x30 [btrfs]
-> [<ffffffffa05296f4>] ? try_to_freeze_unsafe+0x30/0x30 [btrfs]
-> [<ffffffff8105eb45>] ? kthread+0x81/0x89
-> [<ffffffff81013291>] ? paravirt_sched_clock+0x5/0x8
-> [<ffffffff8105eac4>] ? __kthread_parkme+0x5d/0x5d
-> [<ffffffff813b880c>] ? ret_from_fork+0x7c/0xb0
-> [<ffffffff8105eac4>] ? __kthread_parkme+0x5d/0x5d
->
->
-> So it's not, at least in my case, due to the filesystem approaching full.
->
-> I've seen this behaviour over many kernel versions; the above is with 3.12.5.
->
-> Charles
-> --
-> -----------------------------------------------------------------------
-> Charles Cazabon
-> GPL'ed software available at:               http://pyropus.ca/software/
-> -----------------------------------------------------------------------
+> The same test on ext4 runs much faster:
+> 
+> $ mkfs.ext4 /dev/sdb3
+> $ mount /dev/sdb3 /mnt/ext4
+> $ cd /mnt/ext4
+> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
+>     --file-test-mode=seqwr --num-threads=128 \
+>     --file-block-size=16384 --max-time=60 --max-requests=0 run
+> $ sync
+> $ cd ..
+> $ time umount /mnt/ext4
+> 
+> real	0m3.626s
+> user	0m0.004s
+> sys	0m3.012s
+> 
+> After this patch, the unmount (inode evictions) is much faster:
+> 
+> $ mkfs.btrfs -f /dev/sdb3
+> $ mount /dev/sdb3 /mnt/btrfs
+> $ cd /mnt/btrfs
+> $ sysbench --test=fileio --file-num=128 --file-total-size=16G \
+>     --file-test-mode=seqwr --num-threads=128 \
+>     --file-block-size=16384 --max-time=60 --max-requests=0 run
+> $ time btrfs fi sync .
+> FSSync '.'
+> 
+> real	0m26.774s
+> user	0m0.000s
+> sys	0m0.084s
+> $ cd ..
+> $ time umount /mnt/btrfs
+> 
+> real	0m1.811s
+> user	0m0.000s
+> sys	0m1.564s
+
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>  fs/btrfs/inode.c |   98 ++++++++++++++++++++++++++++++++++++++++++++++--------
+>  1 file changed, 84 insertions(+), 14 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 5a5de36..e889779 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4488,6 +4488,62 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+>  	return err;
+>  }
+>  
+> +/*
+> + * While truncating the inode pages during eviction, we get the VFS calling
+> + * btrfs_invalidatepage() against each page of the inode. This is slow because
+> + * the calls to btrfs_invalidatepage() result in a huge amount of calls to
+> + * lock_extent_bits() and clear_extent_bit(), which keep merging and splitting
+> + * extent_state structures over and over, wasting lots of time.
+> + *
+> + * Therefore if the inode is being evicted, let btrfs_invalidatepage() skip all
+> + * those expensive operations on a per page basis and do only the ordered io
+> + * finishing, while we release here the extent_map and extent_state structures,
+> + * without the excessive merging and splitting.
+> + */
+> +static void evict_inode_truncate_pages(struct inode *inode)
+> +{
+> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+> +	struct extent_map_tree *map_tree = &BTRFS_I(inode)->extent_tree;
+> +	struct rb_node *node;
+> +
+> +	ASSERT(inode->i_state & I_FREEING);
+> +	truncate_inode_pages(&inode->i_data, 0);
+> +
+> +	write_lock(&map_tree->lock);
+> +	while (!RB_EMPTY_ROOT(&map_tree->map)) {
+> +		struct extent_map *em;
+> +
+> +		node = rb_first(&map_tree->map);
+> +		em = rb_entry(node, struct extent_map, rb_node);
+> +		remove_extent_mapping(map_tree, em);
+> +		free_extent_map(em);
+> +	}
+> +	write_unlock(&map_tree->lock);
+> +
+> +	spin_lock(&io_tree->lock);
+> +	while (!RB_EMPTY_ROOT(&io_tree->state)) {
+> +		struct extent_state *state;
+> +		struct extent_state *cached_state = NULL;
+> +
+> +		node = rb_first(&io_tree->state);
+> +		state = rb_entry(node, struct extent_state, rb_node);
+> +		atomic_inc(&state->refs);
+> +		spin_unlock(&io_tree->lock);
+> +
+> +		lock_extent_bits(io_tree, state->start, state->end,
+> +				 0, &cached_state);
+> +		clear_extent_bit(io_tree, state->start, state->end,
+> +				 EXTENT_LOCKED | EXTENT_DIRTY |
+> +				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
+> +				 EXTENT_DEFRAG, 1, 1,
+> +				 &cached_state, GFP_NOFS);
+> +		free_extent_state(state);
+> +
+> +		spin_lock(&io_tree->lock);
+> +	}
+> +	spin_unlock(&io_tree->lock);
+> +}
+> +
+>  void btrfs_evict_inode(struct inode *inode)
+>  {
+>  	struct btrfs_trans_handle *trans;
+> @@ -4498,7 +4554,8 @@ void btrfs_evict_inode(struct inode *inode)
+>  
+>  	trace_btrfs_inode_evict(inode);
+>  
+> -	truncate_inode_pages(&inode->i_data, 0);
+> +	evict_inode_truncate_pages(inode);
+> +
+>  	if (inode->i_nlink &&
+>  	    ((btrfs_root_refs(&root->root_item) != 0 &&
+>  	      root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
+> @@ -7379,6 +7436,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  	struct extent_state *cached_state = NULL;
+>  	u64 page_start = page_offset(page);
+>  	u64 page_end = page_start + PAGE_CACHE_SIZE - 1;
+> +	int inode_evicting = inode->i_state & I_FREEING;
+>  
+>  	/*
+>  	 * we have the page locked, so new writeback can't start,
+> @@ -7394,17 +7452,21 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  		btrfs_releasepage(page, GFP_NOFS);
+>  		return;
+>  	}
+> -	lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
+> -	ordered = btrfs_lookup_ordered_extent(inode, page_offset(page));
+> +
+> +	if (!inode_evicting)
+> +		lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
+> +	ordered = btrfs_lookup_ordered_extent(inode, page_start);
+>  	if (ordered) {
+>  		/*
+>  		 * IO on this page will never be started, so we need
+>  		 * to account for any ordered extents now
+>  		 */
+> -		clear_extent_bit(tree, page_start, page_end,
+> -				 EXTENT_DIRTY | EXTENT_DELALLOC |
+> -				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+> -				 EXTENT_DEFRAG, 1, 0, &cached_state, GFP_NOFS);
+> +		if (!inode_evicting)
+> +			clear_extent_bit(tree, page_start, page_end,
+> +					 EXTENT_DIRTY | EXTENT_DELALLOC |
+> +					 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+> +					 EXTENT_DEFRAG, 1, 0, &cached_state,
+> +					 GFP_NOFS);
+>  		/*
+>  		 * whoever cleared the private bit is responsible
+>  		 * for the finish_ordered_io
+> @@ -7428,14 +7490,22 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  				btrfs_finish_ordered_io(ordered);
+>  		}
+>  		btrfs_put_ordered_extent(ordered);
+> -		cached_state = NULL;
+> -		lock_extent_bits(tree, page_start, page_end, 0, &cached_state);
+> +		if (!inode_evicting) {
+> +			cached_state = NULL;
+> +			lock_extent_bits(tree, page_start, page_end, 0,
+> +					 &cached_state);
+> +		}
+> +	}
+> +
+> +	if (!inode_evicting) {
+> +		clear_extent_bit(tree, page_start, page_end,
+> +				 EXTENT_LOCKED | EXTENT_DIRTY |
+> +				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
+> +				 EXTENT_DEFRAG, 1, 1,
+> +				 &cached_state, GFP_NOFS);
+> +
+> +		__btrfs_releasepage(page, GFP_NOFS);
+>  	}
+> -	clear_extent_bit(tree, page_start, page_end,
+> -		 EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
+> -		 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 1, 1,
+> -		 &cached_state, GFP_NOFS);
+> -	__btrfs_releasepage(page, GFP_NOFS);
+>  
+>  	ClearPageChecked(page);
+>  	if (PagePrivate(page)) {
+> -- 
+> 1.7.9.5
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

@@ -1,58 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:36799 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755097Ab3LQRsR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 12:48:17 -0500
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20131217172002.GE11281@carfax.org.uk>
-References: <20131217172002.GE11281@carfax.org.uk> <14884.1387299196@warthog.procyon.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: dhowells@redhat.com, Simon Wilkinson <simonxwilkinson@gmail.com>,
+Received: from smtp03.srv.cs.cmu.edu ([128.2.217.202]:58447 "EHLO
+	smtp03.srv.cs.cmu.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751910Ab3LQTEe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 14:04:34 -0500
+Message-ID: <1387305925.25257.37.camel@destiny.pc.cs.cmu.edu>
+Subject: Re: [OpenAFS-devel] Re: What is needed to build an AFS fileserver
+ on top of BTRFS?
+From: Jeffrey Hutzelman <jhutz@cmu.edu>
+To: David Howells <dhowells@redhat.com>
+Cc: jhutz@cmu.edu, Hugo Mills <hugo@carfax.org.uk>,
+        Simon Wilkinson <simonxwilkinson@gmail.com>,
         jaltman@your-file-system.com,
         "openafs-devel@openafs.org" <openafs-devel@openafs.org>,
         linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: What is needed to build an AFS fileserver on top of BTRFS?
-Date: Tue, 17 Dec 2013 17:47:58 +0000
-Message-ID: <17945.1387302478@warthog.procyon.org.uk>
+Date: Tue, 17 Dec 2013 13:45:25 -0500
+In-Reply-To: <17945.1387302478@warthog.procyon.org.uk>
+References: <20131217172002.GE11281@carfax.org.uk>
+	 <14884.1387299196@warthog.procyon.org.uk>
+	 <17945.1387302478@warthog.procyon.org.uk>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills <hugo@carfax.org.uk> wrote:
-
-> >  (1) 64-bit data version numbers that increase monotonically with
-> > each write. Yes, this is likely to cause some performance
-> > degredation as it introduces an ordering over data writes and
-> > metadata writes to a file. Maybe writes can be batched to improve
-> > performance?
+On Tue, 2013-12-17 at 17:47 +0000, David Howells wrote:
+> Hugo Mills <hugo@carfax.org.uk> wrote:
 > 
->    Do these have to be per-file? If not, then you might be able to get
-> away with using the transid, which is a filesystem-global
-> monotonically-increasing number.
-
-Yes.  If you send a write RPC op to the server, you get back the new version
-number.  If the new version number is not the old version number + 1 you know
-there was a collision with a write from another client and you have to flush
-your cache for that file and request a new "callback" (ie. a promise to notify
-you if someone else changes the file).
-
-> >  (3) The ability to snapshot a filesystem to make backups and for
-> >      pushing to read-only volume servers.
+> > >  (1) 64-bit data version numbers that increase monotonically with
+> > > each write. Yes, this is likely to cause some performance
+> > > degredation as it introduces an ordering over data writes and
+> > > metadata writes to a file. Maybe writes can be batched to improve
+> > > performance?
+> > 
+> >    Do these have to be per-file? If not, then you might be able to get
+> > away with using the transid, which is a filesystem-global
+> > monotonically-increasing number.
 > 
->    We have snapshots of subvolumes, but not the filesystem as a whole.
+> Yes.  If you send a write RPC op to the server, you get back the new version
+> number.  If the new version number is not the old version number + 1 you know
+> there was a collision with a write from another client and you have to flush
+> your cache for that file and request a new "callback" (ie. a promise to notify
+> you if someone else changes the file).
 
-By "filesystem" I meant the current state of an AFS volume.  Very likely this
-would be represented by a BTRFS subvolume, if I understand it correctly.  You
-might have several AFS volumes represented within a BTRFS filesystem.  They
-would be manipulated independently.
+Right.  So, the DV must increment by exactly one for each successful
+StoreData (and not for other changes).  This is important because
+clients cache data and metadata independently, and cached data is
+labeled with the file's DV.  This means that even if metadata for a file
+has to be refetched for some reason (for example, an expired callback),
+the _data_ doesn't have to be refetched unless it has actually changed,
+or been evicted from the client's cache due to cache pressure.
 
-> >  (5) The ability to set the vnode number, vnode uniquifier and data
-> >      version number to specific values. Necessary to clone volumes
-> >      and restore volume dumps.
-> 
->    What's a vnode meant to represent? I'm not familiar with the
-> terminology.
+-- Jeff
 
-AFS's equivalent of an inode with a 32-bit number representing it.  See my
-reply to Chris's question about the same thing.
-
-David

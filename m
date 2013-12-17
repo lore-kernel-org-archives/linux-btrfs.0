@@ -1,97 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [222.73.24.84] ([222.73.24.84]:16273 "EHLO song.cn.fujitsu.com"
+Received: from [222.73.24.84] ([222.73.24.84]:51415 "EHLO song.cn.fujitsu.com"
 	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752895Ab3LQJPf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 04:15:35 -0500
-Message-ID: <52B0164A.90309@cn.fujitsu.com>
-Date: Tue, 17 Dec 2013 17:15:54 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
+	id S1751184Ab3LQJbq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 04:31:46 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBH9V6EG027097
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 17:31:09 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-CC: jeffm@suse.com
-Subject: Re: [PATCH] Btrfs: fix double initialization of the raid kobject
-References: <1387252872-20521-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1387252872-20521-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: quwenruo@cn.fujitsu.com
+Subject: [PATCH v4 00/18] Replace btrfs_workers with kernel workqueue based btrfs_workqueue
+Date: Tue, 17 Dec 2013 17:31:41 +0800
+Message-Id: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tue, 17 Dec 2013 12:01:12 +0800, Miao Xie wrote:
-> We met the following oops when doing space balance:
->  kobject (ffff88081b590278): tried to init an initialized object, something is seriously wrong.
->  ...
->  Call Trace:
->   [<ffffffff81937262>] dump_stack+0x49/0x5f
->   [<ffffffff8137d259>] kobject_init+0x89/0xa0
->   [<ffffffff8137d36a>] kobject_init_and_add+0x2a/0x70
->   [<ffffffffa009bd79>] ? clear_extent_bit+0x199/0x470 [btrfs]
->   [<ffffffffa005e82c>] __link_block_group+0xfc/0x120 [btrfs]
->   [<ffffffffa006b9db>] btrfs_make_block_group+0x24b/0x370 [btrfs]
->   [<ffffffffa00a899b>] __btrfs_alloc_chunk+0x54b/0x7e0 [btrfs]
->   [<ffffffffa00a8c6f>] btrfs_alloc_chunk+0x3f/0x50 [btrfs]
->   [<ffffffffa0060123>] do_chunk_alloc+0x363/0x440 [btrfs]
->   [<ffffffffa00633d4>] btrfs_check_data_free_space+0x104/0x310 [btrfs]
->   [<ffffffffa0069f4d>] btrfs_write_dirty_block_groups+0x48d/0x600 [btrfs]
->   [<ffffffffa007aad4>] commit_cowonly_roots+0x184/0x250 [btrfs]
->   ...
-> 
-> Steps to reproduce:
->  # mkfs.btrfs -f <dev>
->  # mount -o nospace_cache <dev> <mnt>
->  # btrfs balance start <mnt>
->  # dd if=/dev/zero of=<mnt>/tmpfile bs=1M count=1
-> 
-> The reason of this problem is that we initialized the raid kobject when we added
-> a block group into a empty raid list. As we know, when we mounted a btrfs filesystem,
-> the raid list was empty, we would initialize the raid kobject when we added the first
-> block group. But if there was not data stored in the block group, the block group
-> would be freed when doing balance, and the raid list would be empty. And then if we
-> allocated a new block group and added it into the raid list, we would initialize
-> the raid kobject again, the oops happened.
-> 
-> Fix this problem by initializing the raid kobject just when mounting the fs.
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Add a new btrfs_workqueue_struct which use kernel workqueue to implement
+most of the original btrfs_workers, to replace btrfs_workers.
 
-This bug was reported by Wang Shilong, so add
+With this patchset, redundant workqueue codes are replaced with kernel
+workqueue infrastructure, which not only reduces the code size but also the
+effort to maintain it.
 
-Reported-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+The result from sysbench shows minor improvement on the following server:
+CPU: two-way Xeon X5660
+RAM: 4G 
+HDD: SAS HDD, 150G total, 100G partition for btrfs test
 
-Thanks
-Miao
+Test result on default mount option:
+https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdENjajJTWFg5d1BWbExnYWFpMTJxeUE&usp=sharing
 
-> ---
->  fs/btrfs/extent-tree.c | 9 +++++----
->  1 file changed, 5 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index cd4d9ca..d667aad 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3464,8 +3464,10 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
->  		return ret;
->  	}
->  
-> -	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
-> +	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
->  		INIT_LIST_HEAD(&found->block_groups[i]);
-> +		kobject_init(&found->block_group_kobjs[i], &btrfs_raid_ktype);
-> +	}
->  	init_rwsem(&found->groups_sem);
->  	spin_lock_init(&found->lock);
->  	found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
-> @@ -8423,9 +8425,8 @@ static void __link_block_group(struct btrfs_space_info *space_info,
->  		int ret;
->  
->  		kobject_get(&space_info->kobj); /* put in release */
-> -		ret = kobject_init_and_add(kobj, &btrfs_raid_ktype,
-> -					   &space_info->kobj, "%s",
-> -					   get_raid_name(index));
-> +		ret = kobject_add(kobj, &space_info->kobj, "%s",
-> +				  get_raid_name(index));
->  		if (ret) {
->  			pr_warn("btrfs: failed to add kobject for block cache. ignoring.\n");
->  			kobject_put(&space_info->kobj);
-> 
+Test result on "-o compress" mount option:
+https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdHdTTEJ6OW96SXJFaDR5enB1SzMzc0E&usp=sharing
+
+Changelog:
+v1->v2:
+  - Fix some workqueue flags.
+v2->v3:
+  - Add the thresholding mechanism to simulate the old behavior
+  - Convert all the btrfs_workers to btrfs_workrqueue_struct.
+  - Fix some potential deadlock when executed in IRQ handler.
+v3->v4:
+  - Change the ordered workqueue implement to fix the performance drop in 32K
+    multi thread random write.
+  - Change the high priority workqueue implement to get an independent high
+    workqueue without starving problem.
+  - Simplify the btrfs_alloc_workqueue parameters.
+  - Coding style cleanup.
+  - Remove the redundant "_struct" suffix.
+
+Qu Wenruo (18):
+  btrfs: Cleanup the unused struct async_sched.
+  btrfs: Added btrfs_workqueue_struct implemented ordered execution
+    based on kernel workqueue
+  btrfs: Add high priority workqueue support for btrfs_workqueue_struct
+  btrfs: Add threshold workqueue based on kernel workqueue
+  btrfs: Replace fs_info->workers with btrfs_workqueue.
+  btrfs: Replace fs_info->delalloc_workers with btrfs_workqueue
+  btrfs: Replace fs_info->submit_workers with btrfs_workqueue.
+  btrfs: Replace fs_info->flush_workers with btrfs_workqueue.
+  btrfs: Replace fs_info->endio_* workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->rmw_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->cache_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->readahead_workers workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->fixup_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->delayed_workers workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->qgroup_rescan_worker workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->scrub_* workqueue with btrfs_workqueue.
+  btrfs: Cleanup the old btrfs_worker.
+  btrfs: Cleanup the "_struct" suffix in btrfs_workequeue
+
+ fs/btrfs/async-thread.c  | 821 ++++++++++++-----------------------------------
+ fs/btrfs/async-thread.h  | 117 ++-----
+ fs/btrfs/ctree.h         |  39 ++-
+ fs/btrfs/delayed-inode.c |   6 +-
+ fs/btrfs/disk-io.c       | 212 +++++-------
+ fs/btrfs/extent-tree.c   |   4 +-
+ fs/btrfs/inode.c         |  38 +--
+ fs/btrfs/ordered-data.c  |  11 +-
+ fs/btrfs/qgroup.c        |  15 +-
+ fs/btrfs/raid56.c        |  21 +-
+ fs/btrfs/reada.c         |   4 +-
+ fs/btrfs/scrub.c         |  70 ++--
+ fs/btrfs/super.c         |  36 +--
+ fs/btrfs/volumes.c       |  16 +-
+ 14 files changed, 430 insertions(+), 980 deletions(-)
+
+-- 
+1.8.5.1
 

@@ -1,124 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:44486 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752132Ab3LQCRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 21:17:02 -0500
-Message-ID: <52AFB3F6.1030501@cn.fujitsu.com>
-Date: Tue, 17 Dec 2013 10:16:22 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org, Michael Welsh Duggan <mwd@md5i.com>
-Subject: Re: btrfs send in 3.12 : can't find snapshot?
-References: <87y53lqx88.fsf@maru2.md5i.com> <4231AC1F-47B3-441B-B56D-53462F4FEF38@gmail.com> <87ppowqn9g.fsf@maru2.md5i.com>
-In-Reply-To: <87ppowqn9g.fsf@maru2.md5i.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from [222.73.24.84] ([222.73.24.84]:4493 "EHLO song.cn.fujitsu.com"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751169Ab3LQEA7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 23:00:59 -0500
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jeffm@suse.com
+Subject: [PATCH] Btrfs: fix double initialization of the raid kobject
+Date: Tue, 17 Dec 2013 12:01:12 +0800
+Message-Id: <1387252872-20521-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/17/2013 09:28 AM, Michael Welsh Duggan wrote:
-> Wang Shilong <wangshilong1991@gmail.com> writes:
->
->> Hello Michael,
->>
->>> I built the new btrfs-progs 3.12 recently.  I note that the version
->>> information doesn't seem to match this:
->>>
->>>     # ./btrfs --version
->>>     Btrfs v0.20-rc1-358-g194aa4a
->>>
->>> Regardless, I was trying to use btrfs send (which worked in the older
->>> btrfs), and failed.  Here's an example:
->>>
->>>     # ./btrfs send -vvv -p /snapshots/bo /snapshots/bp  > /dev/null
->>>     At subvol /snapshots/bp
->>>     ERROR: open @/snapshots/bp failed. No such file or directory
->>>
->>> Any idea what might be going on here?
->>>
->>> Here's the volume information:
->>>
->>>     # ./btrfs sub show /
->>>     /
->>>             Name:                   @
->>>             uuid:                   e5e505d6-1309-8447-b51e-73f08c9401d1
->>>             Parent uuid:            156f93b9-1175-dc42-a1ee-65c00c5dcc2a
->>>             Creation time:          2013-07-17 20:44:46
->>>             Object ID:              259
->>>             Generation (Gen):       296321
->>>             Gen at creation:        20
->>>             Parent:                 5
->>>             Top Level:              5
->>>             Flags:                  -
->>>             Snapshot(s):
->>>                                     snapshots/bo
->>>                                     snapshots/bp
->>>
->>> Kernel information:
->> Here it seemed that you changed your default sub-volume.(259 not 5)
->> I sent a patch before to fix this problem, it has not been pushed into
->> chris's master branch, patch url is:
->>
->> https://patchwork.kernel.org/patch/3258971/
->>
->> But is has been pushed into david's latest integration branch , you
->> can pull from:
->>
->> git pull http://github.com/kdave/btrfs-progs.git integration-20131211
-> After compiling this version the above tests works.  Now, however, the
-> receive fails:
-I will take a look at this issue.
+We met the following oops when doing space balance:
+ kobject (ffff88081b590278): tried to init an initialized object, something is seriously wrong.
+ ...
+ Call Trace:
+  [<ffffffff81937262>] dump_stack+0x49/0x5f
+  [<ffffffff8137d259>] kobject_init+0x89/0xa0
+  [<ffffffff8137d36a>] kobject_init_and_add+0x2a/0x70
+  [<ffffffffa009bd79>] ? clear_extent_bit+0x199/0x470 [btrfs]
+  [<ffffffffa005e82c>] __link_block_group+0xfc/0x120 [btrfs]
+  [<ffffffffa006b9db>] btrfs_make_block_group+0x24b/0x370 [btrfs]
+  [<ffffffffa00a899b>] __btrfs_alloc_chunk+0x54b/0x7e0 [btrfs]
+  [<ffffffffa00a8c6f>] btrfs_alloc_chunk+0x3f/0x50 [btrfs]
+  [<ffffffffa0060123>] do_chunk_alloc+0x363/0x440 [btrfs]
+  [<ffffffffa00633d4>] btrfs_check_data_free_space+0x104/0x310 [btrfs]
+  [<ffffffffa0069f4d>] btrfs_write_dirty_block_groups+0x48d/0x600 [btrfs]
+  [<ffffffffa007aad4>] commit_cowonly_roots+0x184/0x250 [btrfs]
+  ...
 
-Thanks,
-wang
->
->      # ./btrfs send -p /snapshots/bo /snapshots/bp | ./btrfs receive /backup/snapshots/root/
->      At subvol /snapshots/bp
->      At snapshot bp
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ERROR: could not find parent subvolume
->
-> More volume information:
->
-> # ./btrfs sub show /backup/snapshots/root/bo
-> /backup/snapshots/root/bo
->          Name:                   bo
->          uuid:                   5e15ef24-f2d0-194f-886d-3f7afc7413a4
->          Parent uuid:            9a226af3-8497-744b-90f7-d7e54d58946d
->          Creation time:          2013-12-13 17:51:57
->          Object ID:              1030
->          Generation (Gen):       1046
->          Gen at creation:        1042
->          Parent:                 5
->          Top Level:              5
->          Flags:                  readonly
->          Snapshot(s):
-> # ./btrfs sub show /snapshots/bo
-> /snapshots/bo
->          Name:                   bo
->          uuid:                   f132fd83-aeeb-f048-abea-af00829d1390
->          Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
->          Creation time:          2013-12-13 17:50:15
->          Object ID:              404
->          Generation (Gen):       296977
->          Gen at creation:        291623
->          Parent:                 259
->          Top Level:              259
->          Flags:                  readonly
->          Snapshot(s):
-> # ./btrfs sub show /snapshots/bp
-> /snapshots/bp
->          Name:                   bp
->          uuid:                   6f73d3f2-5f9b-4944-b2d2-3003331b2d10
->          Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
->          Creation time:          2013-12-15 22:24:57
->          Object ID:              405
->          Generation (Gen):       296977
->          Gen at creation:        296301
->          Parent:                 259
->          Top Level:              259
->          Flags:                  readonly
->          Snapshot(s):
->
->
+Steps to reproduce:
+ # mkfs.btrfs -f <dev>
+ # mount -o nospace_cache <dev> <mnt>
+ # btrfs balance start <mnt>
+ # dd if=/dev/zero of=<mnt>/tmpfile bs=1M count=1
+
+The reason of this problem is that we initialized the raid kobject when we added
+a block group into a empty raid list. As we know, when we mounted a btrfs filesystem,
+the raid list was empty, we would initialize the raid kobject when we added the first
+block group. But if there was not data stored in the block group, the block group
+would be freed when doing balance, and the raid list would be empty. And then if we
+allocated a new block group and added it into the raid list, we would initialize
+the raid kobject again, the oops happened.
+
+Fix this problem by initializing the raid kobject just when mounting the fs.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index cd4d9ca..d667aad 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3464,8 +3464,10 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 		return ret;
+ 	}
+ 
+-	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
++	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
+ 		INIT_LIST_HEAD(&found->block_groups[i]);
++		kobject_init(&found->block_group_kobjs[i], &btrfs_raid_ktype);
++	}
+ 	init_rwsem(&found->groups_sem);
+ 	spin_lock_init(&found->lock);
+ 	found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
+@@ -8423,9 +8425,8 @@ static void __link_block_group(struct btrfs_space_info *space_info,
+ 		int ret;
+ 
+ 		kobject_get(&space_info->kobj); /* put in release */
+-		ret = kobject_init_and_add(kobj, &btrfs_raid_ktype,
+-					   &space_info->kobj, "%s",
+-					   get_raid_name(index));
++		ret = kobject_add(kobj, &space_info->kobj, "%s",
++				  get_raid_name(index));
+ 		if (ret) {
+ 			pr_warn("btrfs: failed to add kobject for block cache. ignoring.\n");
+ 			kobject_put(&space_info->kobj);
+-- 
+1.8.3.1
 

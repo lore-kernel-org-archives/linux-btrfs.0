@@ -1,949 +1,804 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [222.73.24.84] ([222.73.24.84]:44210 "EHLO song.cn.fujitsu.com"
+Received: from [222.73.24.84] ([222.73.24.84]:25232 "EHLO song.cn.fujitsu.com"
 	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750949Ab3LQJcr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 04:32:47 -0500
+	id S1751149Ab3LQJcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 04:32:50 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBH9V6EU027097
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBH9V6EV027097
 	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 17:31:20 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH v4 17/18] btrfs: Cleanup the old btrfs_worker.
-Date: Tue, 17 Dec 2013 17:31:58 +0800
-Message-Id: <1387272719-11889-18-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 18/18] btrfs: Cleanup the "_struct" suffix in btrfs_workequeue
+Date: Tue, 17 Dec 2013 17:31:59 +0800
+Message-Id: <1387272719-11889-19-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since all the btrfs_worker is replaced with the newly created
-btrfs_workqueue, the old codes can be easily remove.
+Since the "_struct" suffix is mainly used for distinguish the differnt
+btrfs_work between the original and the newly created one,
+there is no need using the suffix since all btrfs_workers are changed
+into btrfs_workqueue.
 
-Signed-off-by: Quwenruo <quwenruo@cn.fujitsu.com>
+Also this patch fixed some codes whose code style is changed due to the
+too long "_struct" suffix.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 Changelog:
-v1->v2:
-  None
-v2->v3:
-  - Reuse the old async-thred.[ch] files.
 v3->v4:
-  - Reuse the old WORK_* bits.
+  - Remove the "_struct" suffix.
 ---
- fs/btrfs/async-thread.c | 706 +-----------------------------------------------
- fs/btrfs/async-thread.h | 100 -------
- fs/btrfs/ctree.h        |   1 -
- fs/btrfs/disk-io.c      |  12 -
- fs/btrfs/super.c        |   8 -
- 5 files changed, 3 insertions(+), 824 deletions(-)
+ fs/btrfs/async-thread.c  | 64 ++++++++++++++++++++++++------------------------
+ fs/btrfs/async-thread.h  | 34 ++++++++++++-------------
+ fs/btrfs/ctree.h         | 44 ++++++++++++++++-----------------
+ fs/btrfs/delayed-inode.c |  4 +--
+ fs/btrfs/disk-io.c       | 14 +++++------
+ fs/btrfs/extent-tree.c   |  2 +-
+ fs/btrfs/inode.c         | 18 +++++++-------
+ fs/btrfs/ordered-data.c  |  2 +-
+ fs/btrfs/ordered-data.h  |  4 +--
+ fs/btrfs/qgroup.c        |  2 +-
+ fs/btrfs/raid56.c        | 14 +++++------
+ fs/btrfs/reada.c         |  5 ++--
+ fs/btrfs/scrub.c         | 23 ++++++++---------
+ fs/btrfs/volumes.c       |  2 +-
+ fs/btrfs/volumes.h       |  2 +-
+ 15 files changed, 115 insertions(+), 119 deletions(-)
 
 diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index a986be7..16a5eec 100644
+index 16a5eec..f896426 100644
 --- a/fs/btrfs/async-thread.c
 +++ b/fs/btrfs/async-thread.c
-@@ -25,713 +25,13 @@
- #include <linux/workqueue.h>
- #include "async-thread.h"
- 
--#define WORK_QUEUED_BIT 0
--#define WORK_DONE_BIT 1
--#define WORK_ORDER_DONE_BIT 2
--#define WORK_HIGH_PRIO_BIT 3
-+#define WORK_DONE_BIT 0
-+#define WORK_ORDER_DONE_BIT 1
-+#define WORK_HIGH_PRIO_BIT 2
- 
+@@ -32,7 +32,7 @@
  #define NO_THRESHOLD (-1)
  #define DFT_THRESHOLD (32)
  
--/*
-- * container for the kthread task pointer and the list of pending work
-- * One of these is allocated per thread.
-- */
--struct btrfs_worker_thread {
--	/* pool we belong to */
--	struct btrfs_workers *workers;
--
--	/* list of struct btrfs_work that are waiting for service */
--	struct list_head pending;
--	struct list_head prio_pending;
--
--	/* list of worker threads from struct btrfs_workers */
--	struct list_head worker_list;
--
--	/* kthread */
--	struct task_struct *task;
--
--	/* number of things on the pending list */
--	atomic_t num_pending;
--
--	/* reference counter for this struct */
--	atomic_t refs;
--
--	unsigned long sequence;
--
--	/* protects the pending list. */
--	spinlock_t lock;
--
--	/* set to non-zero when this thread is already awake and kicking */
--	int working;
--
--	/* are we currently idle */
--	int idle;
--};
--
--static int __btrfs_start_workers(struct btrfs_workers *workers);
--
--/*
-- * btrfs_start_workers uses kthread_run, which can block waiting for memory
-- * for a very long time.  It will actually throttle on page writeback,
-- * and so it may not make progress until after our btrfs worker threads
-- * process all of the pending work structs in their queue
-- *
-- * This means we can't use btrfs_start_workers from inside a btrfs worker
-- * thread that is used as part of cleaning dirty memory, which pretty much
-- * involves all of the worker threads.
-- *
-- * Instead we have a helper queue who never has more than one thread
-- * where we scheduler thread start operations.  This worker_start struct
-- * is used to contain the work and hold a pointer to the queue that needs
-- * another worker.
-- */
--struct worker_start {
--	struct btrfs_work work;
--	struct btrfs_workers *queue;
--};
--
--static void start_new_worker_func(struct btrfs_work *work)
--{
--	struct worker_start *start;
--	start = container_of(work, struct worker_start, work);
--	__btrfs_start_workers(start->queue);
--	kfree(start);
--}
--
--/*
-- * helper function to move a thread onto the idle list after it
-- * has finished some requests.
-- */
--static void check_idle_worker(struct btrfs_worker_thread *worker)
--{
--	if (!worker->idle && atomic_read(&worker->num_pending) <
--	    worker->workers->idle_thresh / 2) {
--		unsigned long flags;
--		spin_lock_irqsave(&worker->workers->lock, flags);
--		worker->idle = 1;
--
--		/* the list may be empty if the worker is just starting */
--		if (!list_empty(&worker->worker_list) &&
--		    !worker->workers->stopping) {
--			list_move(&worker->worker_list,
--				 &worker->workers->idle_list);
--		}
--		spin_unlock_irqrestore(&worker->workers->lock, flags);
--	}
--}
--
--/*
-- * helper function to move a thread off the idle list after new
-- * pending work is added.
-- */
--static void check_busy_worker(struct btrfs_worker_thread *worker)
--{
--	if (worker->idle && atomic_read(&worker->num_pending) >=
--	    worker->workers->idle_thresh) {
--		unsigned long flags;
--		spin_lock_irqsave(&worker->workers->lock, flags);
--		worker->idle = 0;
--
--		if (!list_empty(&worker->worker_list) &&
--		    !worker->workers->stopping) {
--			list_move_tail(&worker->worker_list,
--				      &worker->workers->worker_list);
--		}
--		spin_unlock_irqrestore(&worker->workers->lock, flags);
--	}
--}
--
--static void check_pending_worker_creates(struct btrfs_worker_thread *worker)
--{
--	struct btrfs_workers *workers = worker->workers;
--	struct worker_start *start;
--	unsigned long flags;
--
--	rmb();
--	if (!workers->atomic_start_pending)
--		return;
--
--	start = kzalloc(sizeof(*start), GFP_NOFS);
--	if (!start)
--		return;
--
--	start->work.func = start_new_worker_func;
--	start->queue = workers;
--
--	spin_lock_irqsave(&workers->lock, flags);
--	if (!workers->atomic_start_pending)
--		goto out;
--
--	workers->atomic_start_pending = 0;
--	if (workers->num_workers + workers->num_workers_starting >=
--	    workers->max_workers)
--		goto out;
--
--	workers->num_workers_starting += 1;
--	spin_unlock_irqrestore(&workers->lock, flags);
--	btrfs_queue_worker(workers->atomic_worker_start, &start->work);
--	return;
--
--out:
--	kfree(start);
--	spin_unlock_irqrestore(&workers->lock, flags);
--}
--
--static noinline void run_ordered_completions(struct btrfs_workers *workers,
--					    struct btrfs_work *work)
--{
--	if (!workers->ordered)
--		return;
--
--	set_bit(WORK_DONE_BIT, &work->flags);
--
--	spin_lock(&workers->order_lock);
--
--	while (1) {
--		if (!list_empty(&workers->prio_order_list)) {
--			work = list_entry(workers->prio_order_list.next,
--					  struct btrfs_work, order_list);
--		} else if (!list_empty(&workers->order_list)) {
--			work = list_entry(workers->order_list.next,
--					  struct btrfs_work, order_list);
--		} else {
--			break;
--		}
--		if (!test_bit(WORK_DONE_BIT, &work->flags))
--			break;
--
--		/* we are going to call the ordered done function, but
--		 * we leave the work item on the list as a barrier so
--		 * that later work items that are done don't have their
--		 * functions called before this one returns
--		 */
--		if (test_and_set_bit(WORK_ORDER_DONE_BIT, &work->flags))
--			break;
--
--		spin_unlock(&workers->order_lock);
--
--		work->ordered_func(work);
--
--		/* now take the lock again and drop our item from the list */
--		spin_lock(&workers->order_lock);
--		list_del(&work->order_list);
--		spin_unlock(&workers->order_lock);
--
--		/*
--		 * we don't want to call the ordered free functions
--		 * with the lock held though
--		 */
--		work->ordered_free(work);
--		spin_lock(&workers->order_lock);
--	}
--
--	spin_unlock(&workers->order_lock);
--}
--
--static void put_worker(struct btrfs_worker_thread *worker)
--{
--	if (atomic_dec_and_test(&worker->refs))
--		kfree(worker);
--}
--
--static int try_worker_shutdown(struct btrfs_worker_thread *worker)
--{
--	int freeit = 0;
--
--	spin_lock_irq(&worker->lock);
--	spin_lock(&worker->workers->lock);
--	if (worker->workers->num_workers > 1 &&
--	    worker->idle &&
--	    !worker->working &&
--	    !list_empty(&worker->worker_list) &&
--	    list_empty(&worker->prio_pending) &&
--	    list_empty(&worker->pending) &&
--	    atomic_read(&worker->num_pending) == 0) {
--		freeit = 1;
--		list_del_init(&worker->worker_list);
--		worker->workers->num_workers--;
--	}
--	spin_unlock(&worker->workers->lock);
--	spin_unlock_irq(&worker->lock);
--
--	if (freeit)
--		put_worker(worker);
--	return freeit;
--}
--
--static struct btrfs_work *get_next_work(struct btrfs_worker_thread *worker,
--					struct list_head *prio_head,
--					struct list_head *head)
--{
--	struct btrfs_work *work = NULL;
--	struct list_head *cur = NULL;
--
--	if (!list_empty(prio_head))
--		cur = prio_head->next;
--
--	smp_mb();
--	if (!list_empty(&worker->prio_pending))
--		goto refill;
--
--	if (!list_empty(head))
--		cur = head->next;
--
--	if (cur)
--		goto out;
--
--refill:
--	spin_lock_irq(&worker->lock);
--	list_splice_tail_init(&worker->prio_pending, prio_head);
--	list_splice_tail_init(&worker->pending, head);
--
--	if (!list_empty(prio_head))
--		cur = prio_head->next;
--	else if (!list_empty(head))
--		cur = head->next;
--	spin_unlock_irq(&worker->lock);
--
--	if (!cur)
--		goto out_fail;
--
--out:
--	work = list_entry(cur, struct btrfs_work, list);
--
--out_fail:
--	return work;
--}
--
--/*
-- * main loop for servicing work items
-- */
--static int worker_loop(void *arg)
--{
--	struct btrfs_worker_thread *worker = arg;
--	struct list_head head;
--	struct list_head prio_head;
--	struct btrfs_work *work;
--
--	INIT_LIST_HEAD(&head);
--	INIT_LIST_HEAD(&prio_head);
--
--	do {
--again:
--		while (1) {
--
--
--			work = get_next_work(worker, &prio_head, &head);
--			if (!work)
--				break;
--
--			list_del(&work->list);
--			clear_bit(WORK_QUEUED_BIT, &work->flags);
--
--			work->worker = worker;
--
--			work->func(work);
--
--			atomic_dec(&worker->num_pending);
--			/*
--			 * unless this is an ordered work queue,
--			 * 'work' was probably freed by func above.
--			 */
--			run_ordered_completions(worker->workers, work);
--
--			check_pending_worker_creates(worker);
--			cond_resched();
--		}
--
--		spin_lock_irq(&worker->lock);
--		check_idle_worker(worker);
--
--		if (freezing(current)) {
--			worker->working = 0;
--			spin_unlock_irq(&worker->lock);
--			try_to_freeze();
--		} else {
--			spin_unlock_irq(&worker->lock);
--			if (!kthread_should_stop()) {
--				cpu_relax();
--				/*
--				 * we've dropped the lock, did someone else
--				 * jump_in?
--				 */
--				smp_mb();
--				if (!list_empty(&worker->pending) ||
--				    !list_empty(&worker->prio_pending))
--					continue;
--
--				/*
--				 * this short schedule allows more work to
--				 * come in without the queue functions
--				 * needing to go through wake_up_process()
--				 *
--				 * worker->working is still 1, so nobody
--				 * is going to try and wake us up
--				 */
--				schedule_timeout(1);
--				smp_mb();
--				if (!list_empty(&worker->pending) ||
--				    !list_empty(&worker->prio_pending))
--					continue;
--
--				if (kthread_should_stop())
--					break;
--
--				/* still no more work?, sleep for real */
--				spin_lock_irq(&worker->lock);
--				set_current_state(TASK_INTERRUPTIBLE);
--				if (!list_empty(&worker->pending) ||
--				    !list_empty(&worker->prio_pending)) {
--					spin_unlock_irq(&worker->lock);
--					set_current_state(TASK_RUNNING);
--					goto again;
--				}
--
--				/*
--				 * this makes sure we get a wakeup when someone
--				 * adds something new to the queue
--				 */
--				worker->working = 0;
--				spin_unlock_irq(&worker->lock);
--
--				if (!kthread_should_stop()) {
--					schedule_timeout(HZ * 120);
--					if (!worker->working &&
--					    try_worker_shutdown(worker)) {
--						return 0;
--					}
--				}
--			}
--			__set_current_state(TASK_RUNNING);
--		}
--	} while (!kthread_should_stop());
--	return 0;
--}
--
--/*
-- * this will wait for all the worker threads to shutdown
-- */
--void btrfs_stop_workers(struct btrfs_workers *workers)
--{
--	struct list_head *cur;
--	struct btrfs_worker_thread *worker;
--	int can_stop;
--
--	spin_lock_irq(&workers->lock);
--	workers->stopping = 1;
--	list_splice_init(&workers->idle_list, &workers->worker_list);
--	while (!list_empty(&workers->worker_list)) {
--		cur = workers->worker_list.next;
--		worker = list_entry(cur, struct btrfs_worker_thread,
--				    worker_list);
--
--		atomic_inc(&worker->refs);
--		workers->num_workers -= 1;
--		if (!list_empty(&worker->worker_list)) {
--			list_del_init(&worker->worker_list);
--			put_worker(worker);
--			can_stop = 1;
--		} else
--			can_stop = 0;
--		spin_unlock_irq(&workers->lock);
--		if (can_stop)
--			kthread_stop(worker->task);
--		spin_lock_irq(&workers->lock);
--		put_worker(worker);
--	}
--	spin_unlock_irq(&workers->lock);
--}
--
--/*
-- * simple init on struct btrfs_workers
-- */
--void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
--			struct btrfs_workers *async_helper)
--{
--	workers->num_workers = 0;
--	workers->num_workers_starting = 0;
--	INIT_LIST_HEAD(&workers->worker_list);
--	INIT_LIST_HEAD(&workers->idle_list);
--	INIT_LIST_HEAD(&workers->order_list);
--	INIT_LIST_HEAD(&workers->prio_order_list);
--	spin_lock_init(&workers->lock);
--	spin_lock_init(&workers->order_lock);
--	workers->max_workers = max;
--	workers->idle_thresh = 32;
--	workers->name = name;
--	workers->ordered = 0;
--	workers->atomic_start_pending = 0;
--	workers->atomic_worker_start = async_helper;
--	workers->stopping = 0;
--}
--
--/*
-- * starts new worker threads.  This does not enforce the max worker
-- * count in case you need to temporarily go past it.
-- */
--static int __btrfs_start_workers(struct btrfs_workers *workers)
--{
--	struct btrfs_worker_thread *worker;
--	int ret = 0;
--
--	worker = kzalloc(sizeof(*worker), GFP_NOFS);
--	if (!worker) {
--		ret = -ENOMEM;
--		goto fail;
--	}
--
--	INIT_LIST_HEAD(&worker->pending);
--	INIT_LIST_HEAD(&worker->prio_pending);
--	INIT_LIST_HEAD(&worker->worker_list);
--	spin_lock_init(&worker->lock);
--
--	atomic_set(&worker->num_pending, 0);
--	atomic_set(&worker->refs, 1);
--	worker->workers = workers;
--	worker->task = kthread_create(worker_loop, worker,
--				      "btrfs-%s-%d", workers->name,
--				      workers->num_workers + 1);
--	if (IS_ERR(worker->task)) {
--		ret = PTR_ERR(worker->task);
--		goto fail;
--	}
--
--	spin_lock_irq(&workers->lock);
--	if (workers->stopping) {
--		spin_unlock_irq(&workers->lock);
--		ret = -EINVAL;
--		goto fail_kthread;
--	}
--	list_add_tail(&worker->worker_list, &workers->idle_list);
--	worker->idle = 1;
--	workers->num_workers++;
--	workers->num_workers_starting--;
--	WARN_ON(workers->num_workers_starting < 0);
--	spin_unlock_irq(&workers->lock);
--
--	wake_up_process(worker->task);
--	return 0;
--
--fail_kthread:
--	kthread_stop(worker->task);
--fail:
--	kfree(worker);
--	spin_lock_irq(&workers->lock);
--	workers->num_workers_starting--;
--	spin_unlock_irq(&workers->lock);
--	return ret;
--}
--
--int btrfs_start_workers(struct btrfs_workers *workers)
--{
--	spin_lock_irq(&workers->lock);
--	workers->num_workers_starting++;
--	spin_unlock_irq(&workers->lock);
--	return __btrfs_start_workers(workers);
--}
--
--/*
-- * run through the list and find a worker thread that doesn't have a lot
-- * to do right now.  This can return null if we aren't yet at the thread
-- * count limit and all of the threads are busy.
-- */
--static struct btrfs_worker_thread *next_worker(struct btrfs_workers *workers)
--{
--	struct btrfs_worker_thread *worker;
--	struct list_head *next;
--	int enforce_min;
--
--	enforce_min = (workers->num_workers + workers->num_workers_starting) <
--		workers->max_workers;
--
--	/*
--	 * if we find an idle thread, don't move it to the end of the
--	 * idle list.  This improves the chance that the next submission
--	 * will reuse the same thread, and maybe catch it while it is still
--	 * working
--	 */
--	if (!list_empty(&workers->idle_list)) {
--		next = workers->idle_list.next;
--		worker = list_entry(next, struct btrfs_worker_thread,
--				    worker_list);
--		return worker;
--	}
--	if (enforce_min || list_empty(&workers->worker_list))
--		return NULL;
--
--	/*
--	 * if we pick a busy task, move the task to the end of the list.
--	 * hopefully this will keep things somewhat evenly balanced.
--	 * Do the move in batches based on the sequence number.  This groups
--	 * requests submitted at roughly the same time onto the same worker.
--	 */
--	next = workers->worker_list.next;
--	worker = list_entry(next, struct btrfs_worker_thread, worker_list);
--	worker->sequence++;
--
--	if (worker->sequence % workers->idle_thresh == 0)
--		list_move_tail(next, &workers->worker_list);
--	return worker;
--}
--
--/*
-- * selects a worker thread to take the next job.  This will either find
-- * an idle worker, start a new worker up to the max count, or just return
-- * one of the existing busy workers.
-- */
--static struct btrfs_worker_thread *find_worker(struct btrfs_workers *workers)
--{
--	struct btrfs_worker_thread *worker;
--	unsigned long flags;
--	struct list_head *fallback;
--	int ret;
--
--	spin_lock_irqsave(&workers->lock, flags);
--again:
--	worker = next_worker(workers);
--
--	if (!worker) {
--		if (workers->num_workers + workers->num_workers_starting >=
--		    workers->max_workers) {
--			goto fallback;
--		} else if (workers->atomic_worker_start) {
--			workers->atomic_start_pending = 1;
--			goto fallback;
--		} else {
--			workers->num_workers_starting++;
--			spin_unlock_irqrestore(&workers->lock, flags);
--			/* we're below the limit, start another worker */
--			ret = __btrfs_start_workers(workers);
--			spin_lock_irqsave(&workers->lock, flags);
--			if (ret)
--				goto fallback;
--			goto again;
--		}
--	}
--	goto found;
--
--fallback:
--	fallback = NULL;
--	/*
--	 * we have failed to find any workers, just
--	 * return the first one we can find.
--	 */
--	if (!list_empty(&workers->worker_list))
--		fallback = workers->worker_list.next;
--	if (!list_empty(&workers->idle_list))
--		fallback = workers->idle_list.next;
--	BUG_ON(!fallback);
--	worker = list_entry(fallback,
--		  struct btrfs_worker_thread, worker_list);
--found:
--	/*
--	 * this makes sure the worker doesn't exit before it is placed
--	 * onto a busy/idle list
--	 */
--	atomic_inc(&worker->num_pending);
--	spin_unlock_irqrestore(&workers->lock, flags);
--	return worker;
--}
--
--/*
-- * btrfs_requeue_work just puts the work item back on the tail of the list
-- * it was taken from.  It is intended for use with long running work functions
-- * that make some progress and want to give the cpu up for others.
-- */
--void btrfs_requeue_work(struct btrfs_work *work)
--{
--	struct btrfs_worker_thread *worker = work->worker;
--	unsigned long flags;
--	int wake = 0;
--
--	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
--		return;
--
--	spin_lock_irqsave(&worker->lock, flags);
--	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
--		list_add_tail(&work->list, &worker->prio_pending);
--	else
--		list_add_tail(&work->list, &worker->pending);
--	atomic_inc(&worker->num_pending);
--
--	/* by definition we're busy, take ourselves off the idle
--	 * list
--	 */
--	if (worker->idle) {
--		spin_lock(&worker->workers->lock);
--		worker->idle = 0;
--		list_move_tail(&worker->worker_list,
--			      &worker->workers->worker_list);
--		spin_unlock(&worker->workers->lock);
--	}
--	if (!worker->working) {
--		wake = 1;
--		worker->working = 1;
--	}
--
--	if (wake)
--		wake_up_process(worker->task);
--	spin_unlock_irqrestore(&worker->lock, flags);
--}
--
--void btrfs_set_work_high_prio(struct btrfs_work *work)
--{
--	set_bit(WORK_HIGH_PRIO_BIT, &work->flags);
--}
--
--/*
-- * places a struct btrfs_work into the pending queue of one of the kthreads
-- */
--void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
--{
--	struct btrfs_worker_thread *worker;
--	unsigned long flags;
--	int wake = 0;
--
--	/* don't requeue something already on a list */
--	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
--		return;
--
--	worker = find_worker(workers);
--	if (workers->ordered) {
--		/*
--		 * you're not allowed to do ordered queues from an
--		 * interrupt handler
--		 */
--		spin_lock(&workers->order_lock);
--		if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags)) {
--			list_add_tail(&work->order_list,
--				      &workers->prio_order_list);
--		} else {
--			list_add_tail(&work->order_list, &workers->order_list);
--		}
--		spin_unlock(&workers->order_lock);
--	} else {
--		INIT_LIST_HEAD(&work->order_list);
--	}
--
--	spin_lock_irqsave(&worker->lock, flags);
--
--	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
--		list_add_tail(&work->list, &worker->prio_pending);
--	else
--		list_add_tail(&work->list, &worker->pending);
--	check_busy_worker(worker);
--
--	/*
--	 * avoid calling into wake_up_process if this thread has already
--	 * been kicked
--	 */
--	if (!worker->working)
--		wake = 1;
--	worker->working = 1;
--
--	if (wake)
--		wake_up_process(worker->task);
--	spin_unlock_irqrestore(&worker->lock, flags);
--}
--
- struct __btrfs_workqueue_struct {
+-struct __btrfs_workqueue_struct {
++struct __btrfs_workqueue {
  	struct workqueue_struct *normal_wq;
  	/* List head pointing to ordered work list */
+ 	struct list_head ordered_list;
+@@ -49,15 +49,15 @@ struct __btrfs_workqueue_struct {
+ 	spinlock_t thres_lock;
+ };
+ 
+-struct btrfs_workqueue_struct {
+-	struct __btrfs_workqueue_struct *normal;
+-	struct __btrfs_workqueue_struct *high;
++struct btrfs_workqueue {
++	struct __btrfs_workqueue *normal;
++	struct __btrfs_workqueue *high;
+ };
+ 
+-static inline struct __btrfs_workqueue_struct
++static inline struct __btrfs_workqueue
+ *__btrfs_alloc_workqueue(char *name, int flags, int max_active, int thresh)
+ {
+-	struct __btrfs_workqueue_struct *ret = kzalloc(sizeof(*ret), GFP_NOFS);
++	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+ 
+ 	if (unlikely(!ret))
+ 		return NULL;
+@@ -95,14 +95,14 @@ static inline struct __btrfs_workqueue_struct
+ }
+ 
+ static inline void
+-__btrfs_destroy_workqueue(struct __btrfs_workqueue_struct *wq);
++__btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
+ 
+-struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+-						     int flags,
+-						     int max_active,
+-						     int thresh)
++struct btrfs_workqueue *btrfs_alloc_workqueue(char *name,
++					      int flags,
++					      int max_active,
++					      int thresh)
+ {
+-	struct btrfs_workqueue_struct *ret = kzalloc(sizeof(*ret), GFP_NOFS);
++	struct btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+ 
+ 	if (unlikely(!ret))
+ 		return NULL;
+@@ -131,7 +131,7 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+  * This hook WILL be called in IRQ handler context,
+  * so workqueue_set_max_active MUST NOT be called in this hook
+  */
+-static inline void thresh_queue_hook(struct __btrfs_workqueue_struct *wq)
++static inline void thresh_queue_hook(struct __btrfs_workqueue *wq)
+ {
+ 	if (wq->thresh == NO_THRESHOLD)
+ 		return;
+@@ -143,7 +143,7 @@ static inline void thresh_queue_hook(struct __btrfs_workqueue_struct *wq)
+  * This hook is called in kthread content.
+  * So workqueue_set_max_active is called here.
+  */
+-static inline void thresh_exec_hook(struct __btrfs_workqueue_struct *wq)
++static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
+ {
+ 	int new_max_active;
+ 	long pending;
+@@ -186,10 +186,10 @@ out:
+ 	}
+ }
+ 
+-static void run_ordered_work(struct __btrfs_workqueue_struct *wq)
++static void run_ordered_work(struct __btrfs_workqueue *wq)
+ {
+ 	struct list_head *list = &wq->ordered_list;
+-	struct btrfs_work_struct *work;
++	struct btrfs_work *work;
+ 	spinlock_t *lock = &wq->list_lock;
+ 	unsigned long flags;
+ 
+@@ -197,7 +197,7 @@ static void run_ordered_work(struct __btrfs_workqueue_struct *wq)
+ 		spin_lock_irqsave(lock, flags);
+ 		if (list_empty(list))
+ 			break;
+-		work = list_entry(list->next, struct btrfs_work_struct,
++		work = list_entry(list->next, struct btrfs_work,
+ 				  ordered_list);
+ 		if (!test_bit(WORK_DONE_BIT, &work->flags))
+ 			break;
+@@ -229,10 +229,10 @@ static void run_ordered_work(struct __btrfs_workqueue_struct *wq)
+ 
+ static void normal_work_helper(struct work_struct *arg)
+ {
+-	struct btrfs_work_struct *work;
++	struct btrfs_work *work;
+ 	int need_order = 0;
+ 
+-	work = container_of(arg, struct btrfs_work_struct, normal_work);
++	work = container_of(arg, struct btrfs_work, normal_work);
+ 	/*
+ 	 * Some work may free the whole struct, we should check before
+ 	 * executing the func.
+@@ -247,10 +247,10 @@ static void normal_work_helper(struct work_struct *arg)
+ 	}
+ }
+ 
+-void btrfs_init_work(struct btrfs_work_struct *work,
+-		     void (*func)(struct btrfs_work_struct *),
+-		     void (*ordered_func)(struct btrfs_work_struct *),
+-		     void (*ordered_free)(struct btrfs_work_struct *))
++void btrfs_init_work(struct btrfs_work *work,
++		     void (*func)(struct btrfs_work *),
++		     void (*ordered_func)(struct btrfs_work *),
++		     void (*ordered_free)(struct btrfs_work *))
+ {
+ 	work->func = func;
+ 	work->ordered_func = ordered_func;
+@@ -260,8 +260,8 @@ void btrfs_init_work(struct btrfs_work_struct *work,
+ 	work->flags = 0;
+ }
+ 
+-static inline void __btrfs_queue_work(struct __btrfs_workqueue_struct *wq,
+-				      struct btrfs_work_struct *work)
++static inline void __btrfs_queue_work(struct __btrfs_workqueue *wq,
++				      struct btrfs_work *work)
+ {
+ 	unsigned long flags;
+ 
+@@ -275,10 +275,10 @@ static inline void __btrfs_queue_work(struct __btrfs_workqueue_struct *wq,
+ 	queue_work(wq->normal_wq, &work->normal_work);
+ }
+ 
+-void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+-		      struct btrfs_work_struct *work)
++void btrfs_queue_work(struct btrfs_workqueue *wq,
++		      struct btrfs_work *work)
+ {
+-	struct __btrfs_workqueue_struct *dest_wq;
++	struct __btrfs_workqueue *dest_wq;
+ 
+ 	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags) && wq->high)
+ 		dest_wq = wq->high;
+@@ -288,13 +288,13 @@ void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+ }
+ 
+ static inline void
+-__btrfs_destroy_workqueue(struct __btrfs_workqueue_struct *wq)
++__btrfs_destroy_workqueue(struct __btrfs_workqueue *wq)
+ {
+ 	destroy_workqueue(wq->normal_wq);
+ 	kfree(wq);
+ }
+ 
+-void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
++void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
+ {
+ 	if (!wq)
+ 		return;
+@@ -303,14 +303,14 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
+ 	__btrfs_destroy_workqueue(wq->normal);
+ }
+ 
+-void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max)
++void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
+ {
+ 	wq->normal->max_active = max;
+ 	if (wq->high)
+ 		wq->high->max_active = max;
+ }
+ 
+-void btrfs_set_work_high_priority(struct btrfs_work_struct *work)
++void btrfs_set_work_high_priority(struct btrfs_work *work)
+ {
+ 	set_bit(WORK_HIGH_PRIO_BIT, &work->flags);
+ }
 diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-index eec4a0f..67bdde2 100644
+index 67bdde2..a5226f8 100644
 --- a/fs/btrfs/async-thread.h
 +++ b/fs/btrfs/async-thread.h
-@@ -20,106 +20,6 @@
+@@ -20,33 +20,33 @@
  #ifndef __BTRFS_ASYNC_THREAD_
  #define __BTRFS_ASYNC_THREAD_
  
--struct btrfs_worker_thread;
--
--/*
-- * This is similar to a workqueue, but it is meant to spread the operations
-- * across all available cpus instead of just the CPU that was used to
-- * queue the work.  There is also some batching introduced to try and
-- * cut down on context switches.
-- *
-- * By default threads are added on demand up to 2 * the number of cpus.
-- * Changing struct btrfs_workers->max_workers is one way to prevent
-- * demand creation of kthreads.
-- *
-- * the basic model of these worker threads is to embed a btrfs_work
-- * structure in your own data struct, and use container_of in a
-- * work function to get back to your data struct.
-- */
--struct btrfs_work {
--	/*
--	 * func should be set to the function you want called
--	 * your work struct is passed as the only arg
--	 *
--	 * ordered_func must be set for work sent to an ordered work queue,
--	 * and it is called to complete a given work item in the same
--	 * order they were sent to the queue.
--	 */
--	void (*func)(struct btrfs_work *work);
--	void (*ordered_func)(struct btrfs_work *work);
--	void (*ordered_free)(struct btrfs_work *work);
--
--	/*
--	 * flags should be set to zero.  It is used to make sure the
--	 * struct is only inserted once into the list.
--	 */
--	unsigned long flags;
--
--	/* don't touch these */
--	struct btrfs_worker_thread *worker;
--	struct list_head list;
--	struct list_head order_list;
--};
--
--struct btrfs_workers {
--	/* current number of running workers */
--	int num_workers;
--
--	int num_workers_starting;
--
--	/* max number of workers allowed.  changed by btrfs_start_workers */
--	int max_workers;
--
--	/* once a worker has this many requests or fewer, it is idle */
--	int idle_thresh;
--
--	/* force completions in the order they were queued */
--	int ordered;
--
--	/* more workers required, but in an interrupt handler */
--	int atomic_start_pending;
--
--	/*
--	 * are we allowed to sleep while starting workers or are we required
--	 * to start them at a later time?  If we can't sleep, this indicates
--	 * which queue we need to use to schedule thread creation.
--	 */
--	struct btrfs_workers *atomic_worker_start;
--
--	/* list with all the work threads.  The workers on the idle thread
--	 * may be actively servicing jobs, but they haven't yet hit the
--	 * idle thresh limit above.
--	 */
--	struct list_head worker_list;
--	struct list_head idle_list;
--
--	/*
--	 * when operating in ordered mode, this maintains the list
--	 * of work items waiting for completion
--	 */
--	struct list_head order_list;
--	struct list_head prio_order_list;
--
--	/* lock for finding the next worker thread to queue on */
--	spinlock_t lock;
--
--	/* lock for the ordered lists */
--	spinlock_t order_lock;
--
--	/* extra name for this worker, used for current->name */
--	char *name;
--
--	int stopping;
--};
--
--void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
--int btrfs_start_workers(struct btrfs_workers *workers);
--void btrfs_stop_workers(struct btrfs_workers *workers);
--void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
--			struct btrfs_workers *async_starter);
--void btrfs_requeue_work(struct btrfs_work *work);
--void btrfs_set_work_high_prio(struct btrfs_work *work);
--
- struct btrfs_workqueue_struct;
+-struct btrfs_workqueue_struct;
++struct btrfs_workqueue;
  /* Internal use only */
- struct __btrfs_workqueue_struct;
+-struct __btrfs_workqueue_struct;
++struct __btrfs_workqueue;
+ 
+-struct btrfs_work_struct {
+-	void (*func)(struct btrfs_work_struct *arg);
+-	void (*ordered_func)(struct btrfs_work_struct *arg);
+-	void (*ordered_free)(struct btrfs_work_struct *arg);
++struct btrfs_work {
++	void (*func)(struct btrfs_work *arg);
++	void (*ordered_func)(struct btrfs_work *arg);
++	void (*ordered_free)(struct btrfs_work *arg);
+ 
+ 	/* Don't touch things below */
+ 	struct work_struct normal_work;
+ 	struct list_head ordered_list;
+-	struct __btrfs_workqueue_struct *wq;
++	struct __btrfs_workqueue *wq;
+ 	unsigned long flags;
+ };
+ 
+-struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
++struct btrfs_workqueue *btrfs_alloc_workqueue(char *name,
+ 						     int flags,
+ 						     int max_active,
+ 						     int thresh);
+-void btrfs_init_work(struct btrfs_work_struct *work,
+-		     void (*func)(struct btrfs_work_struct *),
+-		     void (*ordered_func)(struct btrfs_work_struct *),
+-		     void (*ordered_free)(struct btrfs_work_struct *));
+-void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+-		      struct btrfs_work_struct *work);
+-void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq);
+-void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max);
+-void btrfs_set_work_high_priority(struct btrfs_work_struct *work);
++void btrfs_init_work(struct btrfs_work *work,
++		     void (*func)(struct btrfs_work *),
++		     void (*ordered_func)(struct btrfs_work *),
++		     void (*ordered_free)(struct btrfs_work *));
++void btrfs_queue_work(struct btrfs_workqueue *wq,
++		      struct btrfs_work *work);
++void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
++void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
++void btrfs_set_work_high_priority(struct btrfs_work *work);
+ #endif
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5d71258..f5f3de0 100644
+index f5f3de0..1d7f759 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1488,7 +1488,6 @@ struct btrfs_fs_info {
+@@ -1205,7 +1205,7 @@ struct btrfs_caching_control {
+ 	struct list_head list;
+ 	struct mutex mutex;
+ 	wait_queue_head_t wait;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 progress;
+ 	atomic_t count;
+@@ -1488,27 +1488,27 @@ struct btrfs_fs_info {
  	 * A third pool does submit_bio to avoid deadlocking with the other
  	 * two
  	 */
--	struct btrfs_workers generic_worker;
- 	struct btrfs_workqueue_struct *workers;
- 	struct btrfs_workqueue_struct *delalloc_workers;
- 	struct btrfs_workqueue_struct *flush_workers;
+-	struct btrfs_workqueue_struct *workers;
+-	struct btrfs_workqueue_struct *delalloc_workers;
+-	struct btrfs_workqueue_struct *flush_workers;
+-	struct btrfs_workqueue_struct *endio_workers;
+-	struct btrfs_workqueue_struct *endio_meta_workers;
+-	struct btrfs_workqueue_struct *endio_raid56_workers;
+-	struct btrfs_workqueue_struct *rmw_workers;
+-	struct btrfs_workqueue_struct *endio_meta_write_workers;
+-	struct btrfs_workqueue_struct *endio_write_workers;
+-	struct btrfs_workqueue_struct *endio_freespace_worker;
+-	struct btrfs_workqueue_struct *submit_workers;
+-	struct btrfs_workqueue_struct *caching_workers;
+-	struct btrfs_workqueue_struct *readahead_workers;
++	struct btrfs_workqueue *workers;
++	struct btrfs_workqueue *delalloc_workers;
++	struct btrfs_workqueue *flush_workers;
++	struct btrfs_workqueue *endio_workers;
++	struct btrfs_workqueue *endio_meta_workers;
++	struct btrfs_workqueue *endio_raid56_workers;
++	struct btrfs_workqueue *rmw_workers;
++	struct btrfs_workqueue *endio_meta_write_workers;
++	struct btrfs_workqueue *endio_write_workers;
++	struct btrfs_workqueue *endio_freespace_worker;
++	struct btrfs_workqueue *submit_workers;
++	struct btrfs_workqueue *caching_workers;
++	struct btrfs_workqueue *readahead_workers;
+ 
+ 	/*
+ 	 * fixup workers take dirty pages that didn't properly go through
+ 	 * the cow mechanism and make them safe to write.  It happens
+ 	 * for the sys_munmap function call path
+ 	 */
+-	struct btrfs_workqueue_struct *fixup_workers;
+-	struct btrfs_workqueue_struct *delayed_workers;
++	struct btrfs_workqueue *fixup_workers;
++	struct btrfs_workqueue *delayed_workers;
+ 	struct task_struct *transaction_kthread;
+ 	struct task_struct *cleaner_kthread;
+ 	int thread_pool_size;
+@@ -1586,9 +1586,9 @@ struct btrfs_fs_info {
+ 	atomic_t scrub_cancel_req;
+ 	wait_queue_head_t scrub_pause_wait;
+ 	int scrub_workers_refcnt;
+-	struct btrfs_workqueue_struct *scrub_workers;
+-	struct btrfs_workqueue_struct *scrub_wr_completion_workers;
+-	struct btrfs_workqueue_struct *scrub_nocow_workers;
++	struct btrfs_workqueue *scrub_workers;
++	struct btrfs_workqueue *scrub_wr_completion_workers;
++	struct btrfs_workqueue *scrub_nocow_workers;
+ 
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	u32 check_integrity_print_mask;
+@@ -1629,9 +1629,9 @@ struct btrfs_fs_info {
+ 	/* qgroup rescan items */
+ 	struct mutex qgroup_rescan_lock; /* protects the progress item */
+ 	struct btrfs_key qgroup_rescan_progress;
+-	struct btrfs_workqueue_struct *qgroup_rescan_workers;
++	struct btrfs_workqueue *qgroup_rescan_workers;
+ 	struct completion qgroup_rescan_completion;
+-	struct btrfs_work_struct qgroup_rescan_work;
++	struct btrfs_work qgroup_rescan_work;
+ 
+ 	/* filesystem state */
+ 	unsigned long fs_state;
+@@ -3621,7 +3621,7 @@ struct btrfs_delalloc_work {
+ 	int delay_iput;
+ 	struct completion completion;
+ 	struct list_head list;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
+ 
+ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index e4ad5ea..433ea9d 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1260,10 +1260,10 @@ void btrfs_remove_delayed_node(struct inode *inode)
+ struct btrfs_async_delayed_work {
+ 	struct btrfs_delayed_root *delayed_root;
+ 	int nr;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
+ 
+-static void btrfs_async_run_delayed_root(struct btrfs_work_struct *work)
++static void btrfs_async_run_delayed_root(struct btrfs_work *work)
+ {
+ 	struct btrfs_async_delayed_work *async_work;
+ 	struct btrfs_delayed_root *delayed_root;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fb94e94..539378d 100644
+index 539378d..9a299e0 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2005,7 +2005,6 @@ static noinline int next_root_backup(struct btrfs_fs_info *info,
- /* helper to cleanup workers */
- static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- {
--	btrfs_stop_workers(&fs_info->generic_worker);
- 	btrfs_destroy_workqueue(fs_info->fixup_workers);
- 	btrfs_destroy_workqueue(fs_info->delalloc_workers);
- 	btrfs_destroy_workqueue(fs_info->workers);
-@@ -2468,8 +2467,6 @@ int open_ctree(struct super_block *sb,
- 	}
+@@ -54,7 +54,7 @@
+ #endif
  
- 	max_active = fs_info->thread_pool_size;
--	btrfs_init_workers(&fs_info->generic_worker,
--			   "genwork", 1, NULL);
+ static struct extent_io_ops btree_extent_io_ops;
+-static void end_workqueue_fn(struct btrfs_work_struct *work);
++static void end_workqueue_fn(struct btrfs_work *work);
+ static void free_fs_root(struct btrfs_root *root);
+ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 				    int read_only);
+@@ -85,7 +85,7 @@ struct end_io_wq {
+ 	int error;
+ 	int metadata;
+ 	struct list_head list;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
  
- 	fs_info->workers =
- 		btrfs_alloc_workqueue("worker", flags | WQ_HIGHPRI,
-@@ -2522,15 +2519,6 @@ int open_ctree(struct super_block *sb,
- 	fs_info->qgroup_rescan_workers =
- 		btrfs_alloc_workqueue("qgroup-rescan", flags, 1, 0);
+ /*
+@@ -107,7 +107,7 @@ struct async_submit_bio {
+ 	 * can't tell us where in the file the bio should go
+ 	 */
+ 	u64 bio_offset;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ 	int error;
+ };
  
--	/*
--	 * btrfs_start_workers can really only fail because of ENOMEM so just
--	 * return -ENOMEM if any of these fail.
--	 */
--	ret = btrfs_start_workers(&fs_info->generic_worker);
--	if (ret) {
--		err = -ENOMEM;
--		goto fail_sb_buffer;
--	}
- 	if (!(fs_info->workers && fs_info->delalloc_workers &&
- 	      fs_info->submit_workers && fs_info->flush_workers &&
- 	      fs_info->endio_workers && fs_info->endio_meta_workers &&
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 2859cc3..aa3efe2 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1226,13 +1226,6 @@ error_fs_info:
- 	return ERR_PTR(error);
+@@ -745,7 +745,7 @@ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info)
+ 	return 256 * limit;
  }
  
--static void btrfs_set_max_workers(struct btrfs_workers *workers, int new_limit)
--{
--	spin_lock_irq(&workers->lock);
--	workers->max_workers = new_limit;
--	spin_unlock_irq(&workers->lock);
--}
--
- static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 				     int new_pool_size, int old_pool_size)
+-static void run_one_async_start(struct btrfs_work_struct *work)
++static void run_one_async_start(struct btrfs_work *work)
  {
-@@ -1244,7 +1237,6 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 	printk(KERN_INFO "btrfs: resize thread pool %d -> %d\n",
- 	       old_pool_size, new_pool_size);
+ 	struct async_submit_bio *async;
+ 	int ret;
+@@ -758,7 +758,7 @@ static void run_one_async_start(struct btrfs_work_struct *work)
+ 		async->error = ret;
+ }
  
--	btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->delalloc_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->submit_workers, new_pool_size);
+-static void run_one_async_done(struct btrfs_work_struct *work)
++static void run_one_async_done(struct btrfs_work *work)
+ {
+ 	struct btrfs_fs_info *fs_info;
+ 	struct async_submit_bio *async;
+@@ -785,7 +785,7 @@ static void run_one_async_done(struct btrfs_work_struct *work)
+ 			       async->bio_offset);
+ }
+ 
+-static void run_one_async_free(struct btrfs_work_struct *work)
++static void run_one_async_free(struct btrfs_work *work)
+ {
+ 	struct async_submit_bio *async;
+ 
+@@ -1677,7 +1677,7 @@ static int setup_bdi(struct btrfs_fs_info *info, struct backing_dev_info *bdi)
+  * called by the kthread helper functions to finally call the bio end_io
+  * functions.  This is where read checksum verification actually happens
+  */
+-static void end_workqueue_fn(struct btrfs_work_struct *work)
++static void end_workqueue_fn(struct btrfs_work *work)
+ {
+ 	struct bio *bio;
+ 	struct end_io_wq *end_io_wq;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 80ecc14..bae2a52 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -377,7 +377,7 @@ static u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 	return total_added;
+ }
+ 
+-static noinline void caching_thread(struct btrfs_work_struct *work)
++static noinline void caching_thread(struct btrfs_work *work)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+ 	struct btrfs_fs_info *fs_info;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 62e4fc2..3b8cfb1 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -305,7 +305,7 @@ struct async_cow {
+ 	u64 start;
+ 	u64 end;
+ 	struct list_head extents;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
+ 
+ static noinline int add_async_extent(struct async_cow *cow,
+@@ -980,7 +980,7 @@ out_unlock:
+ /*
+  * work queue call back to started compression on a file and pages
+  */
+-static noinline void async_cow_start(struct btrfs_work_struct *work)
++static noinline void async_cow_start(struct btrfs_work *work)
+ {
+ 	struct async_cow *async_cow;
+ 	int num_added = 0;
+@@ -998,7 +998,7 @@ static noinline void async_cow_start(struct btrfs_work_struct *work)
+ /*
+  * work queue call back to submit previously compressed pages
+  */
+-static noinline void async_cow_submit(struct btrfs_work_struct *work)
++static noinline void async_cow_submit(struct btrfs_work *work)
+ {
+ 	struct async_cow *async_cow;
+ 	struct btrfs_root *root;
+@@ -1019,7 +1019,7 @@ static noinline void async_cow_submit(struct btrfs_work_struct *work)
+ 		submit_compressed_extents(async_cow->inode, async_cow);
+ }
+ 
+-static noinline void async_cow_free(struct btrfs_work_struct *work)
++static noinline void async_cow_free(struct btrfs_work *work)
+ {
+ 	struct async_cow *async_cow;
+ 	async_cow = container_of(work, struct async_cow, work);
+@@ -1727,10 +1727,10 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+ /* see btrfs_writepage_start_hook for details on why this is required */
+ struct btrfs_writepage_fixup {
+ 	struct page *page;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
+ 
+-static void btrfs_writepage_fixup_worker(struct btrfs_work_struct *work)
++static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+ {
+ 	struct btrfs_writepage_fixup *fixup;
+ 	struct btrfs_ordered_extent *ordered;
+@@ -2725,7 +2725,7 @@ out:
+ 	return ret;
+ }
+ 
+-static void finish_ordered_fn(struct btrfs_work_struct *work)
++static void finish_ordered_fn(struct btrfs_work *work)
+ {
+ 	struct btrfs_ordered_extent *ordered_extent;
+ 	ordered_extent = container_of(work, struct btrfs_ordered_extent, work);
+@@ -2738,7 +2738,7 @@ static int btrfs_writepage_end_io_hook(struct page *page, u64 start, u64 end,
+ 	struct inode *inode = page->mapping->host;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_ordered_extent *ordered_extent = NULL;
+-	struct btrfs_workqueue_struct *workers;
++	struct btrfs_workqueue *workers;
+ 
+ 	trace_btrfs_writepage_end_io_hook(page, start, end, uptodate);
+ 
+@@ -8161,7 +8161,7 @@ out_notrans:
+ 	return ret;
+ }
+ 
+-static void btrfs_run_delalloc_work(struct btrfs_work_struct *work)
++static void btrfs_run_delalloc_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_delalloc_work *delalloc_work;
+ 	struct inode *inode;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e0c3cf0..2ec40b3 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -552,7 +552,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+ 	wake_up(&entry->wait);
+ }
+ 
+-static void btrfs_run_ordered_extent_work(struct btrfs_work_struct *work)
++static void btrfs_run_ordered_extent_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_ordered_extent *ordered;
+ 
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 9d88f37..9b0450f 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -130,10 +130,10 @@ struct btrfs_ordered_extent {
+ 	/* a per root list of all the pending ordered extents */
+ 	struct list_head root_extent_list;
+ 
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ 
+ 	struct completion completion;
+-	struct btrfs_work_struct flush_work;
++	struct btrfs_work flush_work;
+ 	struct list_head work_list;
+ };
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 521144e..f653ffd 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1981,7 +1981,7 @@ out:
+ 	return ret;
+ }
+ 
+-static void btrfs_qgroup_rescan_worker(struct btrfs_work_struct *work)
++static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ {
+ 	struct btrfs_fs_info *fs_info = container_of(work, struct btrfs_fs_info,
+ 						     qgroup_rescan_work);
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 5afa564..1269fc3 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -87,7 +87,7 @@ struct btrfs_raid_bio {
+ 	/*
+ 	 * for scheduling work in the helper threads
+ 	 */
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ 
+ 	/*
+ 	 * bio list and bio_list_lock are used
+@@ -166,8 +166,8 @@ struct btrfs_raid_bio {
+ 
+ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio);
+ static noinline void finish_rmw(struct btrfs_raid_bio *rbio);
+-static void rmw_work(struct btrfs_work_struct *work);
+-static void read_rebuild_work(struct btrfs_work_struct *work);
++static void rmw_work(struct btrfs_work *work);
++static void read_rebuild_work(struct btrfs_work *work);
+ static void async_rmw_stripe(struct btrfs_raid_bio *rbio);
+ static void async_read_rebuild(struct btrfs_raid_bio *rbio);
+ static int fail_bio_stripe(struct btrfs_raid_bio *rbio, struct bio *bio);
+@@ -1588,7 +1588,7 @@ struct btrfs_plug_cb {
+ 	struct blk_plug_cb cb;
+ 	struct btrfs_fs_info *info;
+ 	struct list_head rbio_list;
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ };
+ 
+ /*
+@@ -1652,7 +1652,7 @@ static void run_plug(struct btrfs_plug_cb *plug)
+  * if the unplug comes from schedule, we have to push the
+  * work off to a helper thread
+  */
+-static void unplug_work(struct btrfs_work_struct *work)
++static void unplug_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_plug_cb *plug;
+ 	plug = container_of(work, struct btrfs_plug_cb, work);
+@@ -2079,7 +2079,7 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
+ 
+ }
+ 
+-static void rmw_work(struct btrfs_work_struct *work)
++static void rmw_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_raid_bio *rbio;
+ 
+@@ -2087,7 +2087,7 @@ static void rmw_work(struct btrfs_work_struct *work)
+ 	raid56_rmw_stripe(rbio);
+ }
+ 
+-static void read_rebuild_work(struct btrfs_work_struct *work)
++static void read_rebuild_work(struct btrfs_work *work)
+ {
+ 	struct btrfs_raid_bio *rbio;
+ 
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 854b69a..84e10dd 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -91,8 +91,7 @@ struct reada_zone {
+ };
+ 
+ struct reada_machine_work {
+-	struct btrfs_work_struct
+-				work;
++	struct btrfs_work	work;
+ 	struct btrfs_fs_info	*fs_info;
+ };
+ 
+@@ -733,7 +732,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 
+ }
+ 
+-static void reada_start_machine_worker(struct btrfs_work_struct *work)
++static void reada_start_machine_worker(struct btrfs_work *work)
+ {
+ 	struct reada_machine_work *rmw;
+ 	struct btrfs_fs_info *fs_info;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 1618d6d..a224575 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -96,8 +96,7 @@ struct scrub_bio {
+ #endif
+ 	int			page_count;
+ 	int			next_free;
+-	struct btrfs_work_struct
+-				work;
++	struct btrfs_work	work;
+ };
+ 
+ struct scrub_block {
+@@ -155,8 +154,7 @@ struct scrub_fixup_nodatasum {
+ 	struct btrfs_device	*dev;
+ 	u64			logical;
+ 	struct btrfs_root	*root;
+-	struct btrfs_work_struct
+-				work;
++	struct btrfs_work	work;
+ 	int			mirror_num;
+ };
+ 
+@@ -174,8 +172,7 @@ struct scrub_copy_nocow_ctx {
+ 	int			mirror_num;
+ 	u64			physical_for_dev_replace;
+ 	struct list_head	inodes;
+-	struct btrfs_work_struct
+-				work;
++	struct btrfs_work	work;
+ };
+ 
+ struct scrub_warning {
+@@ -235,7 +232,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 		       u64 gen, int mirror_num, u8 *csum, int force,
+ 		       u64 physical_for_dev_replace);
+ static void scrub_bio_end_io(struct bio *bio, int err);
+-static void scrub_bio_end_io_worker(struct btrfs_work_struct *work);
++static void scrub_bio_end_io_worker(struct btrfs_work *work);
+ static void scrub_block_complete(struct scrub_block *sblock);
+ static void scrub_remap_extent(struct btrfs_fs_info *fs_info,
+ 			       u64 extent_logical, u64 extent_len,
+@@ -252,14 +249,14 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+ 				    struct scrub_page *spage);
+ static void scrub_wr_submit(struct scrub_ctx *sctx);
+ static void scrub_wr_bio_end_io(struct bio *bio, int err);
+-static void scrub_wr_bio_end_io_worker(struct btrfs_work_struct *work);
++static void scrub_wr_bio_end_io_worker(struct btrfs_work *work);
+ static int write_page_nocow(struct scrub_ctx *sctx,
+ 			    u64 physical_for_dev_replace, struct page *page);
+ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ 				      struct scrub_copy_nocow_ctx *ctx);
+ static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 			    int mirror_num, u64 physical_for_dev_replace);
+-static void copy_nocow_pages_worker(struct btrfs_work_struct *work);
++static void copy_nocow_pages_worker(struct btrfs_work *work);
+ 
+ 
+ static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
+@@ -703,7 +700,7 @@ out:
+ 	return -EIO;
+ }
+ 
+-static void scrub_fixup_nodatasum(struct btrfs_work_struct *work)
++static void scrub_fixup_nodatasum(struct btrfs_work *work)
+ {
+ 	int ret;
+ 	struct scrub_fixup_nodatasum *fixup;
+@@ -1608,7 +1605,7 @@ static void scrub_wr_bio_end_io(struct bio *bio, int err)
+ 	btrfs_queue_work(fs_info->scrub_wr_completion_workers, &sbio->work);
+ }
+ 
+-static void scrub_wr_bio_end_io_worker(struct btrfs_work_struct *work)
++static void scrub_wr_bio_end_io_worker(struct btrfs_work *work)
+ {
+ 	struct scrub_bio *sbio = container_of(work, struct scrub_bio, work);
+ 	struct scrub_ctx *sctx = sbio->sctx;
+@@ -2076,7 +2073,7 @@ static void scrub_bio_end_io(struct bio *bio, int err)
+ 	btrfs_queue_work(fs_info->scrub_workers, &sbio->work);
+ }
+ 
+-static void scrub_bio_end_io_worker(struct btrfs_work_struct *work)
++static void scrub_bio_end_io_worker(struct btrfs_work *work)
+ {
+ 	struct scrub_bio *sbio = container_of(work, struct scrub_bio, work);
+ 	struct scrub_ctx *sctx = sbio->sctx;
+@@ -3157,7 +3154,7 @@ static int record_inode_for_nocow(u64 inum, u64 offset, u64 root, void *ctx)
+ 
+ #define COPY_COMPLETE 1
+ 
+-static void copy_nocow_pages_worker(struct btrfs_work_struct *work)
++static void copy_nocow_pages_worker(struct btrfs_work *work)
+ {
+ 	struct scrub_copy_nocow_ctx *nocow_ctx =
+ 		container_of(work, struct scrub_copy_nocow_ctx, work);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e07bd64..9ac6d28 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -440,7 +440,7 @@ done:
+ 	blk_finish_plug(&plug);
+ }
+ 
+-static void pending_bios_fn(struct btrfs_work_struct *work)
++static void pending_bios_fn(struct btrfs_work *work)
+ {
+ 	struct btrfs_device *device;
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 60802e2..8b3cd14 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -95,7 +95,7 @@ struct btrfs_device {
+ 	/* per-device scrub information */
+ 	struct scrub_ctx *scrub_device;
+ 
+-	struct btrfs_work_struct work;
++	struct btrfs_work work;
+ 	struct rcu_head rcu;
+ 	struct work_struct rcu_work;
+ 
 -- 
 1.8.5.1
 

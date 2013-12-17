@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [222.73.24.84] ([222.73.24.84]:51415 "EHLO song.cn.fujitsu.com"
+Received: from [222.73.24.84] ([222.73.24.84]:25232 "EHLO song.cn.fujitsu.com"
 	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753129Ab3LQJcc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753181Ab3LQJcc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 17 Dec 2013 04:32:32 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBH9V6ES027097
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBH9V6ET027097
 	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 17:31:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: quwenruo@cn.fujitsu.com
-Subject: [PATCH v4 15/18] btrfs: Replace fs_info->qgroup_rescan_worker workqueue with btrfs_workqueue.
-Date: Tue, 17 Dec 2013 17:31:56 +0800
-Message-Id: <1387272719-11889-16-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 16/18] btrfs: Replace fs_info->scrub_* workqueue with btrfs_workqueue.
+Date: Tue, 17 Dec 2013 17:31:57 +0800
+Message-Id: <1387272719-11889-17-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the fs_info->qgroup_rescan_worker with the newly created
+Replace the fs_info->scrub_* with the newly created
 btrfs_workqueue.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
@@ -26,126 +26,260 @@ Changelog:
 v1->v2:
   None
 v2->v3:
-  - Use the btrfs_workqueue_struct to replace qgroup_rescan_workers.
+  - Use the btrfs_workqueue_struct to replace scrub_*.
 v3->v4:
   - Use the simplified btrfs_alloc_workqueue API.
 ---
- fs/btrfs/ctree.h   |  4 ++--
- fs/btrfs/disk-io.c | 10 +++++-----
- fs/btrfs/qgroup.c  | 17 +++++++++--------
- 3 files changed, 16 insertions(+), 15 deletions(-)
+ fs/btrfs/ctree.h |  6 ++--
+ fs/btrfs/scrub.c | 93 ++++++++++++++++++++++++++++++--------------------------
+ fs/btrfs/super.c |  4 +--
+ 3 files changed, 55 insertions(+), 48 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 698cebc..df51fa3 100644
+index df51fa3..5d71258 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1630,9 +1630,9 @@ struct btrfs_fs_info {
- 	/* qgroup rescan items */
- 	struct mutex qgroup_rescan_lock; /* protects the progress item */
- 	struct btrfs_key qgroup_rescan_progress;
--	struct btrfs_workers qgroup_rescan_workers;
-+	struct btrfs_workqueue_struct *qgroup_rescan_workers;
- 	struct completion qgroup_rescan_completion;
--	struct btrfs_work qgroup_rescan_work;
-+	struct btrfs_work_struct qgroup_rescan_work;
+@@ -1587,9 +1587,9 @@ struct btrfs_fs_info {
+ 	atomic_t scrub_cancel_req;
+ 	wait_queue_head_t scrub_pause_wait;
+ 	int scrub_workers_refcnt;
+-	struct btrfs_workers scrub_workers;
+-	struct btrfs_workers scrub_wr_completion_workers;
+-	struct btrfs_workers scrub_nocow_workers;
++	struct btrfs_workqueue_struct *scrub_workers;
++	struct btrfs_workqueue_struct *scrub_wr_completion_workers;
++	struct btrfs_workqueue_struct *scrub_nocow_workers;
  
- 	/* filesystem state */
- 	unsigned long fs_state;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9053df8..fb94e94 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2021,7 +2021,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	btrfs_destroy_workqueue(fs_info->caching_workers);
- 	btrfs_destroy_workqueue(fs_info->readahead_workers);
- 	btrfs_destroy_workqueue(fs_info->flush_workers);
--	btrfs_stop_workers(&fs_info->qgroup_rescan_workers);
-+	btrfs_destroy_workqueue(fs_info->qgroup_rescan_workers);
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	u32 check_integrity_print_mask;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 561e2f1..1618d6d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -96,7 +96,8 @@ struct scrub_bio {
+ #endif
+ 	int			page_count;
+ 	int			next_free;
+-	struct btrfs_work	work;
++	struct btrfs_work_struct
++				work;
+ };
+ 
+ struct scrub_block {
+@@ -154,7 +155,8 @@ struct scrub_fixup_nodatasum {
+ 	struct btrfs_device	*dev;
+ 	u64			logical;
+ 	struct btrfs_root	*root;
+-	struct btrfs_work	work;
++	struct btrfs_work_struct
++				work;
+ 	int			mirror_num;
+ };
+ 
+@@ -172,7 +174,8 @@ struct scrub_copy_nocow_ctx {
+ 	int			mirror_num;
+ 	u64			physical_for_dev_replace;
+ 	struct list_head	inodes;
+-	struct btrfs_work	work;
++	struct btrfs_work_struct
++				work;
+ };
+ 
+ struct scrub_warning {
+@@ -232,7 +235,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 		       u64 gen, int mirror_num, u8 *csum, int force,
+ 		       u64 physical_for_dev_replace);
+ static void scrub_bio_end_io(struct bio *bio, int err);
+-static void scrub_bio_end_io_worker(struct btrfs_work *work);
++static void scrub_bio_end_io_worker(struct btrfs_work_struct *work);
+ static void scrub_block_complete(struct scrub_block *sblock);
+ static void scrub_remap_extent(struct btrfs_fs_info *fs_info,
+ 			       u64 extent_logical, u64 extent_len,
+@@ -249,14 +252,14 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+ 				    struct scrub_page *spage);
+ static void scrub_wr_submit(struct scrub_ctx *sctx);
+ static void scrub_wr_bio_end_io(struct bio *bio, int err);
+-static void scrub_wr_bio_end_io_worker(struct btrfs_work *work);
++static void scrub_wr_bio_end_io_worker(struct btrfs_work_struct *work);
+ static int write_page_nocow(struct scrub_ctx *sctx,
+ 			    u64 physical_for_dev_replace, struct page *page);
+ static int copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root,
+ 				      struct scrub_copy_nocow_ctx *ctx);
+ static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 			    int mirror_num, u64 physical_for_dev_replace);
+-static void copy_nocow_pages_worker(struct btrfs_work *work);
++static void copy_nocow_pages_worker(struct btrfs_work_struct *work);
+ 
+ 
+ static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
+@@ -394,7 +397,8 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
+ 		sbio->index = i;
+ 		sbio->sctx = sctx;
+ 		sbio->page_count = 0;
+-		sbio->work.func = scrub_bio_end_io_worker;
++		btrfs_init_work(&sbio->work, scrub_bio_end_io_worker,
++				NULL, NULL);
+ 
+ 		if (i != SCRUB_BIOS_PER_SCTX - 1)
+ 			sctx->bios[i]->next_free = i + 1;
+@@ -699,7 +703,7 @@ out:
+ 	return -EIO;
  }
  
- static void free_root_extent_buffers(struct btrfs_root *root)
-@@ -2519,15 +2519,14 @@ int open_ctree(struct super_block *sb,
- 		btrfs_alloc_workqueue("delayed-meta", flags, max_active, 0);
- 	fs_info->readahead_workers =
- 		btrfs_alloc_workqueue("readahead", flags, max_active, 2);
--	btrfs_init_workers(&fs_info->qgroup_rescan_workers, "qgroup-rescan", 1,
--			   &fs_info->generic_worker);
-+	fs_info->qgroup_rescan_workers =
-+		btrfs_alloc_workqueue("qgroup-rescan", flags, 1, 0);
- 
- 	/*
- 	 * btrfs_start_workers can really only fail because of ENOMEM so just
- 	 * return -ENOMEM if any of these fail.
- 	 */
- 	ret = btrfs_start_workers(&fs_info->generic_worker);
--	ret |= btrfs_start_workers(&fs_info->qgroup_rescan_workers);
- 	if (ret) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
-@@ -2539,7 +2538,8 @@ int open_ctree(struct super_block *sb,
- 	      fs_info->endio_write_workers && fs_info->endio_raid56_workers &&
- 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
- 	      fs_info->caching_workers && fs_info->readahead_workers &&
--	      fs_info->fixup_workers && fs_info->delayed_workers)) {
-+	      fs_info->fixup_workers && fs_info->delayed_workers &&
-+	      fs_info->qgroup_rescan_workers)) {
- 		err = -ENOMEM;
- 		goto fail_sb_buffer;
- 	}
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4e6ef49..521144e 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1516,8 +1516,8 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
- 		ret = qgroup_rescan_init(fs_info, 0, 1);
- 		if (!ret) {
- 			qgroup_rescan_zero_tracking(fs_info);
--			btrfs_queue_worker(&fs_info->qgroup_rescan_workers,
--					   &fs_info->qgroup_rescan_work);
-+			btrfs_queue_work(fs_info->qgroup_rescan_workers,
-+					 &fs_info->qgroup_rescan_work);
- 		}
- 		ret = 0;
- 	}
-@@ -1981,7 +1981,7 @@ out:
- 	return ret;
- }
- 
--static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
-+static void btrfs_qgroup_rescan_worker(struct btrfs_work_struct *work)
+-static void scrub_fixup_nodatasum(struct btrfs_work *work)
++static void scrub_fixup_nodatasum(struct btrfs_work_struct *work)
  {
- 	struct btrfs_fs_info *fs_info = container_of(work, struct btrfs_fs_info,
- 						     qgroup_rescan_work);
-@@ -2092,7 +2092,8 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+ 	int ret;
+ 	struct scrub_fixup_nodatasum *fixup;
+@@ -965,9 +969,10 @@ nodatasum_case:
+ 		fixup_nodatasum->root = fs_info->extent_root;
+ 		fixup_nodatasum->mirror_num = failed_mirror_index + 1;
+ 		scrub_pending_trans_workers_inc(sctx);
+-		fixup_nodatasum->work.func = scrub_fixup_nodatasum;
+-		btrfs_queue_worker(&fs_info->scrub_workers,
+-				   &fixup_nodatasum->work);
++		btrfs_init_work(&fixup_nodatasum->work, scrub_fixup_nodatasum,
++				NULL, NULL);
++		btrfs_queue_work(fs_info->scrub_workers,
++				 &fixup_nodatasum->work);
+ 		goto out;
+ 	}
  
- 	memset(&fs_info->qgroup_rescan_work, 0,
- 	       sizeof(fs_info->qgroup_rescan_work));
--	fs_info->qgroup_rescan_work.func = btrfs_qgroup_rescan_worker;
-+	btrfs_init_work(&fs_info->qgroup_rescan_work,
-+			btrfs_qgroup_rescan_worker, NULL, NULL);
+@@ -1599,11 +1604,11 @@ static void scrub_wr_bio_end_io(struct bio *bio, int err)
+ 	sbio->err = err;
+ 	sbio->bio = bio;
  
- 	if (ret) {
- err:
-@@ -2155,8 +2156,8 @@ btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info)
+-	sbio->work.func = scrub_wr_bio_end_io_worker;
+-	btrfs_queue_worker(&fs_info->scrub_wr_completion_workers, &sbio->work);
++	btrfs_init_work(&sbio->work, scrub_wr_bio_end_io_worker, NULL, NULL);
++	btrfs_queue_work(fs_info->scrub_wr_completion_workers, &sbio->work);
+ }
  
- 	qgroup_rescan_zero_tracking(fs_info);
+-static void scrub_wr_bio_end_io_worker(struct btrfs_work *work)
++static void scrub_wr_bio_end_io_worker(struct btrfs_work_struct *work)
+ {
+ 	struct scrub_bio *sbio = container_of(work, struct scrub_bio, work);
+ 	struct scrub_ctx *sctx = sbio->sctx;
+@@ -2068,10 +2073,10 @@ static void scrub_bio_end_io(struct bio *bio, int err)
+ 	sbio->err = err;
+ 	sbio->bio = bio;
  
--	btrfs_queue_worker(&fs_info->qgroup_rescan_workers,
--			   &fs_info->qgroup_rescan_work);
-+	btrfs_queue_work(fs_info->qgroup_rescan_workers,
-+			 &fs_info->qgroup_rescan_work);
+-	btrfs_queue_worker(&fs_info->scrub_workers, &sbio->work);
++	btrfs_queue_work(fs_info->scrub_workers, &sbio->work);
+ }
+ 
+-static void scrub_bio_end_io_worker(struct btrfs_work *work)
++static void scrub_bio_end_io_worker(struct btrfs_work_struct *work)
+ {
+ 	struct scrub_bio *sbio = container_of(work, struct scrub_bio, work);
+ 	struct scrub_ctx *sctx = sbio->sctx;
+@@ -2785,33 +2790,35 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+ 						int is_dev_replace)
+ {
+ 	int ret = 0;
++	int flags = WQ_FREEZABLE | WQ_UNBOUND;
++	int max_active = fs_info->thread_pool_size;
+ 
+ 	if (fs_info->scrub_workers_refcnt == 0) {
+ 		if (is_dev_replace)
+-			btrfs_init_workers(&fs_info->scrub_workers, "scrub", 1,
+-					&fs_info->generic_worker);
++			fs_info->scrub_workers =
++				btrfs_alloc_workqueue("btrfs-scrub", flags,
++						      1, 4);
+ 		else
+-			btrfs_init_workers(&fs_info->scrub_workers, "scrub",
+-					fs_info->thread_pool_size,
+-					&fs_info->generic_worker);
+-		fs_info->scrub_workers.idle_thresh = 4;
+-		ret = btrfs_start_workers(&fs_info->scrub_workers);
+-		if (ret)
++			fs_info->scrub_workers =
++				btrfs_alloc_workqueue("btrfs-scrub", flags,
++						      max_active, 4);
++		if (!fs_info->scrub_workers) {
++			ret = -ENOMEM;
+ 			goto out;
+-		btrfs_init_workers(&fs_info->scrub_wr_completion_workers,
+-				   "scrubwrc",
+-				   fs_info->thread_pool_size,
+-				   &fs_info->generic_worker);
+-		fs_info->scrub_wr_completion_workers.idle_thresh = 2;
+-		ret = btrfs_start_workers(
+-				&fs_info->scrub_wr_completion_workers);
+-		if (ret)
++		}
++		fs_info->scrub_wr_completion_workers =
++			btrfs_alloc_workqueue("btrfs-scrubwrc", flags,
++					      max_active, 2);
++		if (!fs_info->scrub_wr_completion_workers) {
++			ret = -ENOMEM;
+ 			goto out;
+-		btrfs_init_workers(&fs_info->scrub_nocow_workers, "scrubnc", 1,
+-				   &fs_info->generic_worker);
+-		ret = btrfs_start_workers(&fs_info->scrub_nocow_workers);
+-		if (ret)
++		}
++		fs_info->scrub_nocow_workers =
++			btrfs_alloc_workqueue("btrfs-scrubnc", flags, 1, 0);
++		if (!fs_info->scrub_nocow_workers) {
++			ret = -ENOMEM;
+ 			goto out;
++		}
+ 	}
+ 	++fs_info->scrub_workers_refcnt;
+ out:
+@@ -2821,9 +2828,9 @@ out:
+ static noinline_for_stack void scrub_workers_put(struct btrfs_fs_info *fs_info)
+ {
+ 	if (--fs_info->scrub_workers_refcnt == 0) {
+-		btrfs_stop_workers(&fs_info->scrub_workers);
+-		btrfs_stop_workers(&fs_info->scrub_wr_completion_workers);
+-		btrfs_stop_workers(&fs_info->scrub_nocow_workers);
++		btrfs_destroy_workqueue(fs_info->scrub_workers);
++		btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers);
++		btrfs_destroy_workqueue(fs_info->scrub_nocow_workers);
+ 	}
+ 	WARN_ON(fs_info->scrub_workers_refcnt < 0);
+ }
+@@ -3125,10 +3132,10 @@ static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 	nocow_ctx->len = len;
+ 	nocow_ctx->mirror_num = mirror_num;
+ 	nocow_ctx->physical_for_dev_replace = physical_for_dev_replace;
+-	nocow_ctx->work.func = copy_nocow_pages_worker;
++	btrfs_init_work(&nocow_ctx->work, copy_nocow_pages_worker, NULL, NULL);
+ 	INIT_LIST_HEAD(&nocow_ctx->inodes);
+-	btrfs_queue_worker(&fs_info->scrub_nocow_workers,
+-			   &nocow_ctx->work);
++	btrfs_queue_work(fs_info->scrub_nocow_workers,
++			 &nocow_ctx->work);
  
  	return 0;
  }
-@@ -2187,6 +2188,6 @@ void
- btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+@@ -3150,7 +3157,7 @@ static int record_inode_for_nocow(u64 inum, u64 offset, u64 root, void *ctx)
+ 
+ #define COPY_COMPLETE 1
+ 
+-static void copy_nocow_pages_worker(struct btrfs_work *work)
++static void copy_nocow_pages_worker(struct btrfs_work_struct *work)
  {
- 	if (fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_RESCAN)
--		btrfs_queue_worker(&fs_info->qgroup_rescan_workers,
--				   &fs_info->qgroup_rescan_work);
-+		btrfs_queue_work(fs_info->qgroup_rescan_workers,
-+				 &fs_info->qgroup_rescan_work);
+ 	struct scrub_copy_nocow_ctx *nocow_ctx =
+ 		container_of(work, struct scrub_copy_nocow_ctx, work);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 83d3477..2859cc3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1257,8 +1257,8 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 	btrfs_workqueue_set_max(fs_info->endio_freespace_worker, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->delayed_workers, new_pool_size);
+ 	btrfs_workqueue_set_max(fs_info->readahead_workers, new_pool_size);
+-	btrfs_set_max_workers(&fs_info->scrub_wr_completion_workers,
+-			      new_pool_size);
++	btrfs_workqueue_set_max(fs_info->scrub_wr_completion_workers,
++				new_pool_size);
  }
+ 
+ static inline void btrfs_remount_prepare(struct btrfs_fs_info *fs_info)
 -- 
 1.8.5.1
 

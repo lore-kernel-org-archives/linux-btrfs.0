@@ -1,50 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:50970 "EHLO mail.virtall.com"
+Received: from cantor2.suse.de ([195.135.220.15]:57241 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752612Ab3LUDJI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Dec 2013 22:09:08 -0500
-Date: Sat, 21 Dec 2013 12:08:56 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Shilong Wang <wangshilong1991@gmail.com>
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/relocation.c:1062
-Message-ID: <20131221120856.417ab384@virtall.com>
-In-Reply-To: <CAP9B-Q=rmMssHkNsypKmqcFdVgnT=hPsZSgdvq57v+P_XaCH9A@mail.gmail.com>
-References: <20131219210941.1065d1b5@virtall.com>
-	<52B2E319.4010706@cn.fujitsu.com>
-	<20131219213019.1f1038f2@virtall.com>
-	<52B2EB40.5090904@cn.fujitsu.com>
-	<20131219220737.7b173f9a@virtall.com>
-	<20131221000623.30148a5d@virtall.com>
-	<CAP9B-Qm+he3V-Oh2AgH+gUXgcSUbE-Az0YaW0gBgW03mmDN9EA@mail.gmail.com>
-	<20131221005902.0d795572@virtall.com>
-	<CAP9B-Q=SyEbQP1fLto2buR7jRqQHcD37ACuAguSxT4Td07KV9Q@mail.gmail.com>
-	<20131221014110.606c2ca8@virtall.com>
-	<CAP9B-Q=rmMssHkNsypKmqcFdVgnT=hPsZSgdvq57v+P_XaCH9A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	id S1752358Ab3LQOfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 09:35:47 -0500
+Date: Tue, 17 Dec 2013 15:35:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fix btrfstune silence on failure
+Message-ID: <20131217143545.GO6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1386928786-4976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1386928786-4976-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 21 Dec 2013 01:11:00 +0800
-Shilong Wang <wangshilong1991@gmail.com> wrote:
+On Fri, Dec 13, 2013 at 05:59:46PM +0800, Gui Hecheng wrote:
+> Originally, btrfstune will fail without any options and just exit
+> with no failure prompt.
 
-> ok, It seems that your filesystem is not in consistency anymore.
-> To confirm your filesystem status, you can try to run btrfsck to
-> check if there is something wrong.
-> 
-> To get a stable fs now, you can try to mount btrfs with option
-> skip_balance and recovery, recovery options try to get a previous
-> good tree root which might help you
-> get a stable fs.
+Works for me:
 
-Unfortunately even after using these mount options it breaks as before,
-as soon as I remove snapshots, or even copy some data in with rsync.
+$ ./btrfstune
+usage: btrfstune [options] device
+	-S value        enable/disable seeding
+	-r              enable extended inode refs
+	-x enable skinny metadata extent refs
 
-Oh well, at least I have read only access...
+> Now, the number of arguments are checked before parse options
+> and error msg will show up upon failure.
 
+No, the arguments should be parsed first. The btrfstune utility does not
+use the same parser helpers like check_argc_exact and actually the bug
+you see could be caused by missing optind = 1 before the while () loop.
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Can you please test if this helps?
+
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
+        int skinny_flag = 0;
+        int ret;
+
++       optind = 1;
+        while(1) {
+                int c = getopt(argc, argv, "S:rx");
+                if (c < 0)

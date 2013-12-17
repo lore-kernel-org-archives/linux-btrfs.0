@@ -1,128 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26969 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:32880 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752273Ab3LQLwV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 06:52:21 -0500
-Message-ID: <52B03ACD.1080000@cn.fujitsu.com>
-Date: Tue, 17 Dec 2013 19:51:41 +0800
+	id S1751001Ab3LQL6D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 06:58:03 -0500
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Michael Welsh Duggan <mwd@md5i.com>
-CC: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send in 3.12 : can't find snapshot?
-References: <87y53lqx88.fsf@maru2.md5i.com> <4231AC1F-47B3-441B-B56D-53462F4FEF38@gmail.com> <87ppowqn9g.fsf@maru2.md5i.com>
-In-Reply-To: <87ppowqn9g.fsf@maru2.md5i.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] Btrfs: remove transaction from btrfs send
+Date: Tue, 17 Dec 2013 19:57:21 +0800
+Message-Id: <1387281441-16386-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Michael,
+Since daivd did the work that force us to use readonly snapshot,
+we can safely remove transaction protection from btrfs send.
 
-I sent a patch to fix the issue(cc you already), can you have a try
-and see if it fix your problem.
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/send.c | 33 ---------------------------------
+ 1 file changed, 33 deletions(-)
 
-Thanks,
-Wang
-On 12/17/2013 09:28 AM, Michael Welsh Duggan wrote:
-> Wang Shilong <wangshilong1991@gmail.com> writes:
->
->> Hello Michael,
->>
->>> I built the new btrfs-progs 3.12 recently.  I note that the version
->>> information doesn't seem to match this:
->>>
->>>     # ./btrfs --version
->>>     Btrfs v0.20-rc1-358-g194aa4a
->>>
->>> Regardless, I was trying to use btrfs send (which worked in the older
->>> btrfs), and failed.  Here's an example:
->>>
->>>     # ./btrfs send -vvv -p /snapshots/bo /snapshots/bp  > /dev/null
->>>     At subvol /snapshots/bp
->>>     ERROR: open @/snapshots/bp failed. No such file or directory
->>>
->>> Any idea what might be going on here?
->>>
->>> Here's the volume information:
->>>
->>>     # ./btrfs sub show /
->>>     /
->>>             Name:                   @
->>>             uuid:                   e5e505d6-1309-8447-b51e-73f08c9401d1
->>>             Parent uuid:            156f93b9-1175-dc42-a1ee-65c00c5dcc2a
->>>             Creation time:          2013-07-17 20:44:46
->>>             Object ID:              259
->>>             Generation (Gen):       296321
->>>             Gen at creation:        20
->>>             Parent:                 5
->>>             Top Level:              5
->>>             Flags:                  -
->>>             Snapshot(s):
->>>                                     snapshots/bo
->>>                                     snapshots/bp
->>>
->>> Kernel information:
->> Here it seemed that you changed your default sub-volume.(259 not 5)
->> I sent a patch before to fix this problem, it has not been pushed into
->> chris's master branch, patch url is:
->>
->> https://patchwork.kernel.org/patch/3258971/
->>
->> But is has been pushed into david's latest integration branch , you
->> can pull from:
->>
->> git pull http://github.com/kdave/btrfs-progs.git integration-20131211
-> After compiling this version the above tests works.  Now, however, the
-> receive fails:
->
->      # ./btrfs send -p /snapshots/bo /snapshots/bp | ./btrfs receive /backup/snapshots/root/
->      At subvol /snapshots/bp
->      At snapshot bp
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ERROR: could not find parent subvolume
->
-> More volume information:
->
-> # ./btrfs sub show /backup/snapshots/root/bo
-> /backup/snapshots/root/bo
->          Name:                   bo
->          uuid:                   5e15ef24-f2d0-194f-886d-3f7afc7413a4
->          Parent uuid:            9a226af3-8497-744b-90f7-d7e54d58946d
->          Creation time:          2013-12-13 17:51:57
->          Object ID:              1030
->          Generation (Gen):       1046
->          Gen at creation:        1042
->          Parent:                 5
->          Top Level:              5
->          Flags:                  readonly
->          Snapshot(s):
-> # ./btrfs sub show /snapshots/bo
-> /snapshots/bo
->          Name:                   bo
->          uuid:                   f132fd83-aeeb-f048-abea-af00829d1390
->          Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
->          Creation time:          2013-12-13 17:50:15
->          Object ID:              404
->          Generation (Gen):       296977
->          Gen at creation:        291623
->          Parent:                 259
->          Top Level:              259
->          Flags:                  readonly
->          Snapshot(s):
-> # ./btrfs sub show /snapshots/bp
-> /snapshots/bp
->          Name:                   bp
->          uuid:                   6f73d3f2-5f9b-4944-b2d2-3003331b2d10
->          Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
->          Creation time:          2013-12-15 22:24:57
->          Object ID:              405
->          Generation (Gen):       296977
->          Gen at creation:        296301
->          Parent:                 259
->          Top Level:              259
->          Flags:                  readonly
->          Snapshot(s):
->
->
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 945d1db..9e832f2 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4522,7 +4522,6 @@ out:
+ static int full_send_tree(struct send_ctx *sctx)
+ {
+ 	int ret;
+-	struct btrfs_trans_handle *trans = NULL;
+ 	struct btrfs_root *send_root = sctx->send_root;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+@@ -4544,19 +4543,6 @@ static int full_send_tree(struct send_ctx *sctx)
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
+-join_trans:
+-	/*
+-	 * We need to make sure the transaction does not get committed
+-	 * while we do anything on commit roots. Join a transaction to prevent
+-	 * this.
+-	 */
+-	trans = btrfs_join_transaction(send_root);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		trans = NULL;
+-		goto out;
+-	}
+-
+ 	/*
+ 	 * Make sure the tree has not changed after re-joining. We detect this
+ 	 * by comparing start_ctransid and ctransid. They should always match.
+@@ -4580,19 +4566,6 @@ join_trans:
+ 		goto out_finish;
+ 
+ 	while (1) {
+-		/*
+-		 * When someone want to commit while we iterate, end the
+-		 * joined transaction and rejoin.
+-		 */
+-		if (btrfs_should_end_transaction(trans, send_root)) {
+-			ret = btrfs_end_transaction(trans, send_root);
+-			trans = NULL;
+-			if (ret < 0)
+-				goto out;
+-			btrfs_release_path(path);
+-			goto join_trans;
+-		}
+-
+ 		eb = path->nodes[0];
+ 		slot = path->slots[0];
+ 		btrfs_item_key_to_cpu(eb, &found_key, slot);
+@@ -4620,12 +4593,6 @@ out_finish:
+ 
+ out:
+ 	btrfs_free_path(path);
+-	if (trans) {
+-		if (!ret)
+-			ret = btrfs_end_transaction(trans, send_root);
+-		else
+-			btrfs_end_transaction(trans, send_root);
+-	}
+ 	return ret;
+ }
+ 
+-- 
+1.8.3.1
 

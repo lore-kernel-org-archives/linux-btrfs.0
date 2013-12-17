@@ -1,24 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38975 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750830Ab3LMJd7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 04:33:59 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VrP88-0007gc-QV
-	for linux-btrfs@vger.kernel.org; Fri, 13 Dec 2013 10:33:56 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 10:33:56 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2013 10:33:56 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Feature Req: "mkfs.btrfs -d dup" option on single device
-Date: Fri, 13 Dec 2013 09:33:35 +0000 (UTC)
-Message-ID: <pan$7c9f2$f2f178cc$d355f3bc$802bbad3@cox.net>
+Received: from mail-ve0-f175.google.com ([209.85.128.175]:45886 "EHLO
+	mail-ve0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756385Ab3LQSh1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 13:37:27 -0500
+Received: by mail-ve0-f175.google.com with SMTP id jx11so4606544veb.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 10:37:26 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20131212155720.11479.7400@ret>
 References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
 	<01BDC0F3-CD4E-4BF1-898C-92AD50B66B41@colorremedies.com>
 	<CAK5rZE7bdfhD0FOe04+YoDRBfFWOy0rNfeamgDtP-=hv=SLFrw@mail.gmail.com>
@@ -28,23 +17,72 @@ References: <CAK5rZE5KokaDhqCCzpAPipqYbf--qr5s2DLQgULtQVr3wMcOrQ@mail.gmail.com>
 	<pan$cd4bd$8058fd9d$d320fdd8$6cb46f0f@cox.net>
 	<CAK5rZE5oxr381MhwxdgwJs7HHJC2-_Du+N+FzZUAT2vVynuGcw@mail.gmail.com>
 	<pan$dd37b$1a442a8d$594e1d2e$ae5b97e3@cox.net>
-	<20131212155720.11479.7400@ret> <20131212175815.GR6498@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	<20131212155720.11479.7400@ret>
+Date: Tue, 17 Dec 2013 20:37:26 +0200
+Message-ID: <CAK5rZE4qXFd_k6Mck7cQuDD2FjvAX6YsAgCaOvCt6AuBPMNRXA@mail.gmail.com>
+Subject: Re: Feature Req: "mkfs.btrfs -d dup" option on single device
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba posted on Thu, 12 Dec 2013 18:58:16 +0100 as excerpted:
+On 12/12/13, Chris Mason <clm@fb.com> wrote:
+> For me anyway, data=dup in mixed mode is definitely an accident ;)
+> I personally think data dup is a false sense of security, but drives
+> have gotten so huge that it may actually make sense in a few
+> configurations.
 
-> I've been testing --mixed mode with various other raid profiles types as
-> far as I remember. Some bugs popped up, reported and Josef fixed them.
+Sure, it's not about any security regarding the device.
 
-FWIW, I'm running a mixed-mode btrfs-raid1 mode here on my log partition 
-and haven't seen any issues, altho that's sub-GiB (640 MiB), so anything 
-that would only be seen at larger sizes will not have triggered, here.
+It's about the capability of recovering from any
+bit-rot which can creep into your backups and can be
+detected when you need the file after 20-30 generations
+of backups which is too late. (Who keeps that much
+incremental archive and reads backup logs of millions of
+files, regularly?)
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> Someone asks for it roughly once a year, so it probably isn't a horrible
+> idea.
+> -chris
 
+Today, I've brought up an old 2 GB Seagate from the basement.
+Literaly, it has been "Rusted". So it deserves the title of
+"Spinning Rust" for real. I had no hope whether it would work,
+but out of curiosity I plugged it into a USB-IDE box.
+
+It spinned up and wow!; it showed up among the devices.
+It had two swap and an ext2 partition. I remembered that it was
+one of the disk used for linux installations more than
+10 years ago. I mounted it . Most of the files dates back to 2001-07.
+
+They are more than 12 years old and they seem to be intact
+with just one inode size missmatch. (See fsck output below).
+
+If there were BTRFS (and -d dup :) ) at the time, now I would
+perform a scrub and report the outcome here. Hence,
+'Digital Archeology' can surely benefit from Btrfs. :)
+
+PS: And regarding the "SSD data retension debate" this can be an
+interesting benchmark for a device whick was kept in an unfavorable
+environment.
+
+Regards,
+Imran
+
+
+FSCK output:
+
+fsck from util-linux 2.20.1
+e2fsck 1.42.8 (20-Jun-2013)
+/dev/sdb3 has gone 4209 days without being checked, check forced.
+Pass 1: Checking inodes, blocks, and sizes
+Special (device/socket/fifo) inode 82669 has non-zero size.  Fix<y>? yes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+
+/dev/sdb3: ***** FILE SYSTEM WAS MODIFIED *****
+/dev/sdb3: 41930/226688 files (1.0% non-contiguous), 200558/453096 blocks

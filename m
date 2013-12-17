@@ -1,23 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57019 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753231Ab3LPN7E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 08:59:04 -0500
-Date: Mon, 16 Dec 2013 14:59:02 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs_progs: use stripe_len define here
-Message-ID: <20131216135902.GD6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1387197239-29893-1-git-send-email-anand.jain@oracle.com>
- <1387197239-29893-2-git-send-email-anand.jain@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:47881 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752009Ab3LQCb7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 21:31:59 -0500
+Message-ID: <52AFB990.8030707@oracle.com>
+Date: Tue, 17 Dec 2013 10:40:16 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1387197239-29893-2-git-send-email-anand.jain@oracle.com>
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs_progs: handle error in the btrfs_prepare_device
+References: <1387197239-29893-1-git-send-email-anand.jain@oracle.com> <1387197239-29893-3-git-send-email-anand.jain@oracle.com> <93924585-F0F1-4BA8-880D-E9D27EF2C2CD@gmail.com>
+In-Reply-To: <93924585-F0F1-4BA8-880D-E9D27EF2C2CD@gmail.com>
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks, good cleanup, FYI I'll fold in the remaining cases from volumes.c
 
-david
+ Thanks Wang.
+
+> s/btrfs_progs/btrfs-progs?
+
+ yeah. updated my script.
+
+>> +
+>> +zero_dev_error:
+>> +	if (ret) {
+>> +		ret < 0 ?
+>> +		fprintf(stderr, "ERROR: failed to zero device start '%s' - %s\n",
+>> +			file, strerror(-ret)) :
+>> +		fprintf(stderr, "ERROR: failed to zero device start '%s' - %d\n",
+>> +			file, ret);
+> 
+> Why we output message twice here¡­.
+
+ Not really. there is "ret < 0 ?"
+
+-Anand

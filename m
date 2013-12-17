@@ -1,63 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58452 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754216Ab3LQPfq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 10:35:46 -0500
-Date: Tue, 17 Dec 2013 16:35:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandra Seetharaman <sekharan@us.ibm.com>
-Cc: saeed bishara <saeed.bishara@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/7] btrfs: subpagesize-blocksize: Define
- extent_buffer_head
-Message-ID: <20131217153544.GS6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
- <1386805122-23972-2-git-send-email-sekharan@us.ibm.com>
- <CAMAG_ecWBoFJ_vap2iFBvvW99iHVVTuMdVvaNycaFLzqt5fNUg@mail.gmail.com>
- <1387210638.4241.213.camel@chandra-dt.ibm.com>
+Received: from mail-bk0-f44.google.com ([209.85.214.44]:45109 "EHLO
+	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754201Ab3LQPg6 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 10:36:58 -0500
+Received: by mail-bk0-f44.google.com with SMTP id d7so2872861bkh.17
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 07:36:56 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1387210638.4241.213.camel@chandra-dt.ibm.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20131217152731.GR6498@twin.jikos.cz>
+References: <1386963574-14467-1-git-send-email-fdmanana@gmail.com>
+	<20131216143440.GE6498@twin.jikos.cz>
+	<CAL3q7H5Eu8UQ-6zvsTB8omTMh-iMKAONYV7QEvRKbcMnyJ1U-g@mail.gmail.com>
+	<20131217152731.GR6498@twin.jikos.cz>
+Date: Tue, 17 Dec 2013 15:36:56 +0000
+Message-ID: <CAL3q7H7DS9gee5kZhgeivVrcsU4p63EJdLa8q19jT8RfqbsWEQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix use of uninitialized err variable
+From: Filipe David Manana <fdmanana@gmail.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>,
+        Filipe David Manana <fdmanana@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 16, 2013 at 10:17:18AM -0600, Chandra Seetharaman wrote:
-> On Mon, 2013-12-16 at 14:32 +0200, saeed bishara wrote:
-> > On Thu, Dec 12, 2013 at 1:38 AM, Chandra Seetharaman
-> > <sekharan@us.ibm.com> wrote:
-> > > In order to handle multiple extent buffers per page, first we
-> > > need to create a way to handle all the extent buffers that
-> > > are attached to a page.
-> > >
-> > > This patch creates a new data structure eb_head, and moves
-> > > fields that are common to all extent buffers in a page from
-> > > extent buffer to eb_head.
-> > >
-> > > This also adds changes that are needed to handle multiple
-> > > extent buffers per page case.
-> > >
-> > > Signed-off-by: Chandra Seetharaman <sekharan@us.ibm.com>
-> > > ---
-> 
-> <snip>
-> 
-> > > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > > index 54ab861..02de448 100644
-> > > --- a/fs/btrfs/ctree.h
-> > > +++ b/fs/btrfs/ctree.h
-> > > @@ -2106,14 +2106,16 @@ static inline void btrfs_set_token_##name(struct extent_buffer *eb,     \
-> > >  #define BTRFS_SETGET_HEADER_FUNCS(name, type, member, bits)            \
-> > >  static inline u##bits btrfs_##name(struct extent_buffer *eb)           \
-> > >  {                                                                      \
-> > > -       type *p = page_address(eb->pages[0]);                           \
-> > > +       type *p = page_address(eb_head(eb)->pages[0]) +                 \
-> > > +                               (eb->start & (PAGE_CACHE_SIZE -1));     \
-> > you can use PAGE_CACHE_MASK instead of PAGE_CACHE_SIZE - 1
-> 
-> PAGE_CACHE_MASK get the page part of the value, not the offset in the
-> page, i.e it is defined as
-> 
-> #define PAGE_MASK (~(PAGE_SIZE-1))
+On Tue, Dec 17, 2013 at 3:27 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Mon, Dec 16, 2013 at 05:03:25PM +0000, Filipe David Manana wrote:
+>> On Mon, Dec 16, 2013 at 2:34 PM, David Sterba <dsterba@suse.cz> wrote:
+>> > On Fri, Dec 13, 2013 at 07:39:34PM +0000, Filipe David Borba Manana wrote:
+>> >> >From the compiler:
+>> >>
+>> >> fs/btrfs/file.c: In function ‘prepare_pages.isra.18’:
+>> >> fs/btrfs/file.c:1265:6: warning: ‘err’ may be used uninitialized in this function [-Wuninitialized]
+>> >
+>> > My gcc 4.8.1 does not see this warning, nor do I while inspecting the
+>> > souces in current next-master.
+>>
+>> Here it's gcc 4.6.3.
+>
+> I've seen that some versions of gcc produce bogus warnings of that sort
+> and manual review is needed, but I haven't found a code path that would
+> lead to uninitialized use of err.
+>
+> The warning points to
+>
+> 1259                 if (i == 0)
+> 1260                         err = prepare_uptodate_page(pages[i], pos,
+> 1261                                                     force_uptodate);
+> 1262                 if (i == num_pages - 1)
+> 1263                         err = prepare_uptodate_page(pages[i],
+> 1264                                                     pos + write_bytes, false);
+> 1265                 if (err) {
+> ^^^^
+>
+> 1266                         page_cache_release(pages[i]);
+> 1267                         faili = i - 1;
+> 1268                         goto fail;
+> 1269                 }
+>
+> But the loop starts from i = 0 and the variable is initialized before
+> the check. So ti's gcc that does not see that, not a real error.
 
-Use ~PAGE_CACHE_MASK to get the offset. It's common, though not obvious
-at first.
+Right, my intention was to silence a compiler warning. Should have
+made it more explicit in the commit message title.
+
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

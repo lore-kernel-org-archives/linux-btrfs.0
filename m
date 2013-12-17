@@ -1,48 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55167 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56233 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751410Ab3LQNJ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 08:09:56 -0500
-Date: Tue, 17 Dec 2013 14:09:55 +0100
+	id S1753869Ab3LQN4s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 08:56:48 -0500
+Date: Tue, 17 Dec 2013 14:56:47 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: Check read-only status of roots during send
-Message-ID: <20131217130955.GL6498@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: move the extent buffer radix tree into the fs_info
+Message-ID: <20131217135647.GM6498@suse.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1387211245.git.dsterba@suse.cz>
- <c80eb84e6c8ab788de0f73e332755e27d518f7fd.1387211246.git.dsterba@suse.cz>
- <52B03C60.6060007@cn.fujitsu.com>
+References: <1387218386-5339-1-git-send-email-jbacik@fb.com>
+ <20131217010627.GK6498@twin.jikos.cz>
+ <1387243189.15080.2.camel@ret.masoncoding.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52B03C60.6060007@cn.fujitsu.com>
+In-Reply-To: <1387243189.15080.2.camel@ret.masoncoding.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 17, 2013 at 07:58:24PM +0800, Wang Shilong wrote:
-> Nice work, Before this patch for btrfs send.
-> we have to join a transaction to avoid commit root changed.
-
-That sounds like a good improvement.
-
-> I send a plus patch that remove transaction protection from btrfs send.
-> and  a little comment below.
+On Tue, Dec 17, 2013 at 01:19:39AM +0000, Chris Mason wrote:
+> On Tue, 2013-12-17 at 02:06 +0100, David Sterba wrote:
+> > On Mon, Dec 16, 2013 at 01:26:26PM -0500, Josef Bacik wrote:
+> > > I need to create a fake tree to test qgroups and I don't want to have to setup a
+> > > fake btree_inode.  The fact is we only use the radix tree for the fs_info, so
+> > > everybody else who allocates an extent_io_tree is just wasting the space anyway.
+> > > This patch moves the radix tree and its lock into btrfs_fs_info so there is less
+> > > stuff I have to fake to do qgroup sanity tests.  Thanks,
+> > 
+> > This would make the fs_info::buffer_lock a global hotspot if
+> > alloc_extent_buffer and release_extent_buffer are called frequently.
+> > 
 > 
-> [...]
-> On 12/17/2013 12:34 AM, David Sterba wrote:
-> >All the subvolues that are involved in send must be read-only during the
-> >  s via SUBVOL_SETFLAGS
-> >+	 */
-> >+	int send_in_progress;
-> 
-> Why not use u32 here?
+> But since the only place that was really using it was the metadata
+> btree, the lock shouldn't be hotter than before right?
 
-The int type should be enough to hold refs for all running sends, if
-this is your concern.
-
-I thought it's a refcount, it should not go below 0 but if it does, then
-it should be caught. I'll update the patch to check if send_in_progress
-is not negative after the decrements.
-
-thanks,
-david
+Right. What confused me first is that the number of trees that are
+initialized by extent_io_tree_init is higher, but the only user is
+metadata btree.

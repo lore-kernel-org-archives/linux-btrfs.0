@@ -1,39 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27408 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752053Ab3LQBTq convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 20:19:46 -0500
-From: Chris Mason <clm@fb.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>
-CC: Josef Bacik <jbacik@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: move the extent buffer radix tree into the
- fs_info
-Date: Tue, 17 Dec 2013 01:19:39 +0000
-Message-ID: <1387243189.15080.2.camel@ret.masoncoding.com>
-References: <1387218386-5339-1-git-send-email-jbacik@fb.com>
-	 <20131217010627.GK6498@twin.jikos.cz>
-In-Reply-To: <20131217010627.GK6498@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-7"
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:49020 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751088Ab3LQB2j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Dec 2013 20:28:39 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VsjSe-0004mb-Gx
+	for linux-btrfs@vger.kernel.org; Tue, 17 Dec 2013 02:28:36 +0100
+Received: from md5i.com ([75.151.244.229])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 02:28:36 +0100
+Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 02:28:36 +0100
+To: linux-btrfs@vger.kernel.org
+From: Michael Welsh Duggan <mwd@md5i.com>
+Subject: Re: btrfs send in 3.12 : can't find snapshot?
+Date: Mon, 16 Dec 2013 20:28:27 -0500
+Message-ID: <87ppowqn9g.fsf@maru2.md5i.com>
+References: <87y53lqx88.fsf@maru2.md5i.com>
+	<4231AC1F-47B3-441B-B56D-53462F4FEF38@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2013-12-17 at 02:06 +-0100, David Sterba wrote:
-+AD4- On Mon, Dec 16, 2013 at 01:26:26PM -0500, Josef Bacik wrote:
-+AD4- +AD4- I need to create a fake tree to test qgroups and I don't want to have to setup a
-+AD4- +AD4- fake btree+AF8-inode.  The fact is we only use the radix tree for the fs+AF8-info, so
-+AD4- +AD4- everybody else who allocates an extent+AF8-io+AF8-tree is just wasting the space anyway.
-+AD4- +AD4- This patch moves the radix tree and its lock into btrfs+AF8-fs+AF8-info so there is less
-+AD4- +AD4- stuff I have to fake to do qgroup sanity tests.  Thanks,
-+AD4- 
-+AD4- This would make the fs+AF8-info::buffer+AF8-lock a global hotspot if
-+AD4- alloc+AF8-extent+AF8-buffer and release+AF8-extent+AF8-buffer are called frequently.
-+AD4- 
+Wang Shilong <wangshilong1991@gmail.com> writes:
 
-But since the only place that was really using it was the metadata
-btree, the lock shouldn't be hotter than before right?
+> Hello Michael,
+>
+>> I built the new btrfs-progs 3.12 recently.  I note that the version
+>> information doesn't seem to match this:
+>> 
+>>    # ./btrfs --version
+>>    Btrfs v0.20-rc1-358-g194aa4a
+>> 
+>> Regardless, I was trying to use btrfs send (which worked in the older
+>> btrfs), and failed.  Here's an example:
+>> 
+>>    # ./btrfs send -vvv -p /snapshots/bo /snapshots/bp  > /dev/null
+>>    At subvol /snapshots/bp
+>>    ERROR: open @/snapshots/bp failed. No such file or directory
+>> 
+>> Any idea what might be going on here?
+>> 
+>> Here's the volume information:
+>> 
+>>    # ./btrfs sub show /
+>>    /
+>>            Name:                   @
+>>            uuid:                   e5e505d6-1309-8447-b51e-73f08c9401d1
+>>            Parent uuid:            156f93b9-1175-dc42-a1ee-65c00c5dcc2a
+>>            Creation time:          2013-07-17 20:44:46
+>>            Object ID:              259
+>>            Generation (Gen):       296321
+>>            Gen at creation:        20
+>>            Parent:                 5
+>>            Top Level:              5
+>>            Flags:                  -
+>>            Snapshot(s):
+>>                                    snapshots/bo
+>>                                    snapshots/bp
+>> 
+>> Kernel information:
+>
+> Here it seemed that you changed your default sub-volume.(259 not 5)
+> I sent a patch before to fix this problem, it has not been pushed into
+> chris's master branch, patch url is:
+>
+> https://patchwork.kernel.org/patch/3258971/
+>
+> But is has been pushed into david's latest integration branch , you
+> can pull from:
+>
+> git pull http://github.com/kdave/btrfs-progs.git integration-20131211
 
--chris
+After compiling this version the above tests works.  Now, however, the
+receive fails:
+
+    # ./btrfs send -p /snapshots/bo /snapshots/bp | ./btrfs receive /backup/snapshots/root/
+    At subvol /snapshots/bp
+    At snapshot bp
+    ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
+    ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
+    ERROR: could not find parent subvolume
+
+More volume information:
+
+# ./btrfs sub show /backup/snapshots/root/bo
+/backup/snapshots/root/bo
+        Name:                   bo
+        uuid:                   5e15ef24-f2d0-194f-886d-3f7afc7413a4
+        Parent uuid:            9a226af3-8497-744b-90f7-d7e54d58946d
+        Creation time:          2013-12-13 17:51:57
+        Object ID:              1030
+        Generation (Gen):       1046
+        Gen at creation:        1042
+        Parent:                 5
+        Top Level:              5
+        Flags:                  readonly
+        Snapshot(s):
+# ./btrfs sub show /snapshots/bo
+/snapshots/bo
+        Name:                   bo
+        uuid:                   f132fd83-aeeb-f048-abea-af00829d1390
+        Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
+        Creation time:          2013-12-13 17:50:15
+        Object ID:              404
+        Generation (Gen):       296977
+        Gen at creation:        291623
+        Parent:                 259
+        Top Level:              259
+        Flags:                  readonly
+        Snapshot(s):
+# ./btrfs sub show /snapshots/bp
+/snapshots/bp
+        Name:                   bp
+        uuid:                   6f73d3f2-5f9b-4944-b2d2-3003331b2d10
+        Parent uuid:            e5e505d6-1309-8447-b51e-73f08c9401d1
+        Creation time:          2013-12-15 22:24:57
+        Object ID:              405
+        Generation (Gen):       296977
+        Gen at creation:        296301
+        Parent:                 259
+        Top Level:              259
+        Flags:                  readonly
+        Snapshot(s):
+
+
+-- 
+Michael Welsh Duggan
+(md5i@md5i.com)
 

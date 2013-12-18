@@ -1,122 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41048 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750855Ab3LRI3H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Dec 2013 03:29:07 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VtCV7-0003GZ-9p
-	for linux-btrfs@vger.kernel.org; Wed, 18 Dec 2013 09:29:05 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 09:29:05 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 09:29:05 +0100
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:41157 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750817Ab3LRKor (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Dec 2013 05:44:47 -0500
+Received: by mail-wi0-f169.google.com with SMTP id hn6so4862366wib.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 02:44:46 -0800 (PST)
+Received: from pdb1.th.formicary.net (vl488-formicary-host150.jump.net.uk. [212.13.207.150])
+        by mx.google.com with ESMTPSA id mt2sm2860842wic.7.2013.12.18.02.44.45
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=RC4-SHA bits=128/128);
+        Wed, 18 Dec 2013 02:44:45 -0800 (PST)
+Date: Wed, 18 Dec 2013 10:44:43 +0000
+From: Leonidas Spyropoulos <artafinde@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs RAID1 File System Grew Something Extra
-Date: Wed, 18 Dec 2013 08:28:41 +0000 (UTC)
-Message-ID: <pan$2df35$e3cf512f$a0410338$348e2cbb@cox.net>
-References: <1617587.38j2eTuIdt@vfr> <52B10C85.90405@oracle.com>
-	<17576852.FmZ5tQlVm8@vfr>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: btrfs balance on single device
+Message-ID: <20131218104442.GA28559@pdb1.th.formicary.net>
+References: <CAAeznTpG6A7ygKg1AUx_pAMs_SNwG4a4C5gHPeT+HcKRsD+TWA@mail.gmail.com>
+ <20131215202456.GA11281@carfax.org.uk>
+ <CAAeznTryb7kyuvEyBFniv-UtGCQwdNtZMhpxm=-2MtKZSOj9Tw@mail.gmail.com>
+ <pan$138cb$448d68e$2d9dcb10$fc6a898a@cox.net>
+ <CAAeznTpZ6p1_ZR6xy-YGynAJu88jZ_52AQURuxT4qTeEYLOjdg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAAeznTpZ6p1_ZR6xy-YGynAJu88jZ_52AQURuxT4qTeEYLOjdg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Garry T. Williams posted on Tue, 17 Dec 2013 23:12:25 -0500 as excerpted:
+I'm using the same subject as it might be relevant, feel free to change it.#
 
-> On 12-18-13 10:46:29 Anand Jain wrote:
->> On 12/18/2013 10:03 AM, Garry T. Williams wrote:
->> > I have been using btrfs for my /home partition on my home machine for
->> > a few years now.  I created the file system RAID1 using two disk
->> > partitions.  Recently I noticed btrfs fi df shows extra Data, System,
->> > and Metadata allocations.
->>
->>   this is a known bug in mkfs.btrfs, the workaround for now is to run
->>   balance on FS having some data. so that unused group-
->>   profile will go away.
-> 
-> Thanks.
-> 
->     garry@vfr$ sudo btrfs balance start /home
->     Done, had to relocate 50 out of 50 chunks
->     garry@vfr$ sudo btrfs filesystem df /home
->     Data, RAID1: total=22.00GiB, used=21.02GiB
->     System, RAID1: total=32.00MiB, used=12.00KiB
->     System, single: total=4.00MiB, used=0.00
->     Metadata, RAID1: total=1.00GiB, used=419.60MiB
-> 
-> Hmmm.
-> 
-> Well, it's better, but the extra allocation for System is baffling.  I
-> believe that this happened sometime after creating the file system.
+I'm trying to do some maintenance to the system running over a btrfs file system on root (/). I started a balance on the '/' partition and it failed with the below information:
+$ sudo btrfs balance start /
+[sudo] password for inglor:
+ERROR: error during balancing '/' - No space left on device
+There may be more info in syslog - try dmesg | tail
+$ dmesg | tail
+[93827.115887] btrfs: found 29461 extents
+[93827.481849] btrfs: relocating block group 29855055872 flags 1
+[93841.646011] btrfs: found 33171 extents
+[93851.421207] btrfs: found 33171 extents
+[93851.782054] btrfs: relocating block group 28781314048 flags 1
+[93866.815342] btrfs: found 52535 extents
+[93877.159354] btrfs: found 52534 extents
+[93877.356805] btrfs: relocating block group 28747759616 flags 34
+[93880.287185] btrfs: found 1 extents
+[93880.608798] btrfs: 1 enospc errors during balance
 
-Keep in mind that btrfs remains under development, still improving old 
-features and growing new ones as well as bugfixing (and of course 
-unfortunately still adding new bugs with the new code occasionally, it 
-comes with the development filesystem territory).
+$ df |grep sda2
+/dev/sda2       20971520  13980396   5797124  71% /
 
-Having seen the same thing happen here, I think the extra allocations 
-were there all the time, but simply weren't originally reported.  After 
-some improvements in btrfs fi df, it more accurately reported the empty 
-chunk-stub relics of mkfs.btrfs where it didn't before, so they appeared 
-to be new even if they'd been there all the time.  But a balance normally 
-does remove them.
 
-Tho that doesn't explain why the balance didn't remove that 4 MiB single-
-mode system stub.  It did on all my btrfs here.  But I run gentoo and 
-build/install gentoo's live-git btrfs-progs, and build/run the mainline 
-development kernel from live-git as well, so I'm well into the 3.13-rcs 
-by now, while you haven't even upgraded to 3.12 yet and are still on 3.11-
-stable series, which might account for that.  Or perhaps another balance 
-would kill the system-stub as well?  I don't know.
+$ sudo btrfs fi show
+[sudo] password for inglor:
+Label: none  uuid: 699d671b-7064-441d-95ec-c616049fe287
+        Total devices 1 FS bytes used 12.75GB
+        devid    1 size 20.00GB used 15.31GB path /dev/sda2
 
-> Also balance on a RAID1 file system with exactly two drives doesn't make
-> much sense to me.  Why would any "chunks" have to be relocated? I'm
-> clearly missing something here.
+Btrfs v0.20-rc1-358-g194aa4a-dirty
 
-You haven't read up on how btrfs balance works at the wiki, have you?  
-Which means you're probably missing other information that might be 
-helpful in administering your btrfs as well.  It'll likely be worth your 
-while to spend some time reading the user documentation there (and to 
-bookmark it for further reference, too =:^) :
+$ sudo btrfs fi df /
+[sudo] password for inglor:
+Data: total=13.00GB, used=12.16GB
+System, DUP: total=32.00MB, used=4.00KB
+Metadata, DUP: total=1.12GB, used=601.54MB
 
-https://btrfs.wiki.kernel.org/
+Does it really needs more than 5.7GB to do a balance? I though it suppose to move chunks one by one and considering the chunks for Data is 1GB and for MetaData 512MB (256 x2 for dublication) it should be more than enough.
+Also I had less space before and the dmesg reported 7 enospc errors. With cleaning a bit of packages installed now it reports only 1 enospc. Is that anywhere relevant?
 
-For balance in particular, see:
-
-https://btrfs.wiki.kernel.org/index.php/FAQ#What_does_.22balance.22_do.3F
-
-Also of interest:
-
-https://btrfs.wiki.kernel.org/index.php/Balance_Filters
-
-Of course, the btrfs manpage is also useful.
-
-Basically, unless you limit it with the -d/-m/-s switches and/or filters, 
-balance blindly rewrites/relocates every chunk on the filesystem, 
-cleaning up and if applicable converting between redundancy types as it 
-does so.  So all chunks are relocated/rewritten.
-
-But the above documentation should also suggest trying this to see if it 
-addresses that remaining single-mode system chunk stub:
-
-btrfs balance start -fsconvert=raid1 /home
-
-Especially if you're on spinning rust (not SSD), that should take quite a 
-bit less time than a full balance as well, because you're only rebalancing 
-the few MiB of system chunks, not the GiBs of data and metadata.
-
-Hopefully that'll kill the single-mode system stub-chunk.  If not, you've 
-probably hit a bug and should report it as such, tho you might wish to 
-try it with the latest 3.12 stable or 3.13-rc first, in case the bug has 
-already been fixed.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks,
+Leonidas

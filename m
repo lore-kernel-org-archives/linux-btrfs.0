@@ -1,70 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33879 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752472Ab3LRDNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 22:13:42 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: Cleanup the unused btrfs_check_super_valid.
-Date: Wed, 18 Dec 2013 11:14:28 +0800
-Message-Id: <1387336468-28785-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:56744 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754703Ab3LRPOF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Dec 2013 10:14:05 -0500
+Date: Wed, 18 Dec 2013 16:14:02 +0100
+From: David Sterba <dsterba@suse.cz>
+To: stable@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        Liu Bo <bo.li.liu@oracle.com>,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: Btrfs stable updates for 3.12
+Message-ID: <20131218151402.GZ6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since in David's commit 1104a8855, there is nothing really check the
-super block now, the btrfs_check_super_valid function can be removed if
-no one else needs the function.
+Hi,
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/disk-io.c | 18 ------------------
- 1 file changed, 18 deletions(-)
+please queue the following patches to 3.12 stable. They fix a few
+crashes or lockups that were reported by users.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8072cfa..3bda365 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -56,8 +56,6 @@
- static struct extent_io_ops btree_extent_io_ops;
- static void end_workqueue_fn(struct btrfs_work *work);
- static void free_fs_root(struct btrfs_root *root);
--static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
--				    int read_only);
- static void btrfs_destroy_ordered_operations(struct btrfs_transaction *t,
- 					     struct btrfs_root *root);
- static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
-@@ -2354,13 +2352,6 @@ int open_ctree(struct super_block *sb,
- 
- 	memcpy(fs_info->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
- 
--	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
--	if (ret) {
--		printk(KERN_ERR "btrfs: superblock contains fatal errors\n");
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--
- 	disk_super = fs_info->super_copy;
- 	if (!btrfs_super_root(disk_super))
- 		goto fail_alloc;
-@@ -3705,15 +3696,6 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
- 	return btree_read_extent_buffer_pages(root, buf, 0, parent_transid);
- }
- 
--static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
--			      int read_only)
--{
--	/*
--	 * Placeholder for checks
--	 */
--	return 0;
--}
--
- static void btrfs_error_commit_super(struct btrfs_root *root)
- {
- 	mutex_lock(&root->fs_info->cleaner_mutex);
--- 
-1.8.5.1
+The patch "stop using vfs_read in send" may seem big for stable, but without it
+the send/receive ioctl hits the global open file limit sooner or later,
+depending on the ram size.
 
+Subjects:
+        Btrfs: do a full search everytime in btrfs_search_old_slot
+        Btrfs: reset intwrite on transaction abort
+        Btrfs: fix memory leak of chunks' extent map
+        Btrfs: fix hole check in log_one_extent [bug 66661]
+        Btrfs: fix incorrect inode acl reset
+        Btrfs: stop using vfs_read in send
+        Btrfs: take ordered root lock when removing ordered operations inode
+        Btrfs: do not run snapshot-aware defragment on error
+        Btrfs: fix a crash when running balance and defrag concurrently
+        Btrfs: fix lockdep error in async commit
+Commits:
+        d4b4087c43cc00a196c5be57fac41f41309f1d56
+        e0228285a8cad70e4b7b4833cc650e36ecd8de89
+        7d3d1744f8a7d62e4875bd69cc2192a939813880
+        ed9e8af88e2551aaa6bf51d8063a2493e2d71597
+        8185554d3eb09d23a805456b6fa98dcbb34aa518
+        ed2590953bd06b892f0411fc94e19175d32f197a
+        93858769172c4e3678917810e9d5de360eb991cc
+        6f519564d7d978c00351d9ab6abac3deeac31621
+        48ec47364b6d493f0a9cdc116977bf3f34e5c3ec
+        b1a06a4b574996692b72b742bf6e6aa0c711a948
+
+all apply cleanly on top of 3.12.5.
+
+Thanks,
+david

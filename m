@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37124 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751097Ab3LRINe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Dec 2013 03:13:34 -0500
-Date: Wed, 18 Dec 2013 08:13:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "Garry T. Williams" <gtwilliams@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:41048 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750855Ab3LRI3H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Dec 2013 03:29:07 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VtCV7-0003GZ-9p
+	for linux-btrfs@vger.kernel.org; Wed, 18 Dec 2013 09:29:05 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 09:29:05 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 09:29:05 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Btrfs RAID1 File System Grew Something Extra
-Message-ID: <20131218081333.GJ11281@carfax.org.uk>
-References: <1617587.38j2eTuIdt@vfr>
- <52B10C85.90405@oracle.com>
- <17576852.FmZ5tQlVm8@vfr>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="YPJ8CVbwFUtL7OFW"
-In-Reply-To: <17576852.FmZ5tQlVm8@vfr>
+Date: Wed, 18 Dec 2013 08:28:41 +0000 (UTC)
+Message-ID: <pan$2df35$e3cf512f$a0410338$348e2cbb@cox.net>
+References: <1617587.38j2eTuIdt@vfr> <52B10C85.90405@oracle.com>
+	<17576852.FmZ5tQlVm8@vfr>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Garry T. Williams posted on Tue, 17 Dec 2013 23:12:25 -0500 as excerpted:
 
---YPJ8CVbwFUtL7OFW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Dec 17, 2013 at 11:12:25PM -0500, Garry T. Williams wrote:
 > On 12-18-13 10:46:29 Anand Jain wrote:
-> > On 12/18/2013 10:03 AM, Garry T. Williams wrote:
-> > > I have been using btrfs for my /home partition on my home machine for
-> > > a few years now.  I created the file system RAID1 using two disk
-> > > partitions.  Recently I noticed btrfs fi df shows extra Data, System,
-> > > and Metadata allocations.  And btrfs fi show indicates extra
-> > > allocations on one of my disk drives accounting for the 20 MiB
-> > > allocation in the df display.
-> >
-> >   this is a known bug in mkfs.btrfs, the workaround for now is
-> >   to run balance on FS having some data. so that unused group-
-> >   profile will go away.
+>> On 12/18/2013 10:03 AM, Garry T. Williams wrote:
+>> > I have been using btrfs for my /home partition on my home machine for
+>> > a few years now.  I created the file system RAID1 using two disk
+>> > partitions.  Recently I noticed btrfs fi df shows extra Data, System,
+>> > and Metadata allocations.
+>>
+>>   this is a known bug in mkfs.btrfs, the workaround for now is to run
+>>   balance on FS having some data. so that unused group-
+>>   profile will go away.
 > 
 > Thanks.
 > 
@@ -54,48 +54,69 @@ On Tue, Dec 17, 2013 at 11:12:25PM -0500, Garry T. Williams wrote:
 > Well, it's better, but the extra allocation for System is baffling.  I
 > believe that this happened sometime after creating the file system.
 
-   It won't be spontaneously created -- it'll have been there since
-the beginning. The first system chunk is "special" and is skipped
-during balances, so it won't get cleaned up like this.
+Keep in mind that btrfs remains under development, still improving old 
+features and growing new ones as well as bugfixing (and of course 
+unfortunately still adding new bugs with the new code occasionally, it 
+comes with the development filesystem territory).
 
-> Also balance on a RAID1 file system with exactly two drives doesn't
-> make much sense to me.  Why would any "chunks" have to be relocated?
-> I'm clearly missing something here.
+Having seen the same thing happen here, I think the extra allocations 
+were there all the time, but simply weren't originally reported.  After 
+some improvements in btrfs fi df, it more accurately reported the empty 
+chunk-stub relics of mkfs.btrfs where it didn't before, so they appeared 
+to be new even if they'd been there all the time.  But a balance normally 
+does remove them.
 
-   That's what balance does -- it rewrites every single piece of data
-on the filesystem. In this case, you could have used a filter to
-balance (and hence remove) only the single chunks:
+Tho that doesn't explain why the balance didn't remove that 4 MiB single-
+mode system stub.  It did on all my btrfs here.  But I run gentoo and 
+build/install gentoo's live-git btrfs-progs, and build/run the mainline 
+development kernel from live-git as well, so I'm well into the 3.13-rcs 
+by now, while you haven't even upgraded to 3.12 yet and are still on 3.11-
+stable series, which might account for that.  Or perhaps another balance 
+would kill the system-stub as well?  I don't know.
 
-btrfs balance start -mprofiles=single -dprofiles=single -sprofiles=single /mountpoint
+> Also balance on a RAID1 file system with exactly two drives doesn't make
+> much sense to me.  Why would any "chunks" have to be relocated? I'm
+> clearly missing something here.
 
-   Hugo.
+You haven't read up on how btrfs balance works at the wiki, have you?  
+Which means you're probably missing other information that might be 
+helpful in administering your btrfs as well.  It'll likely be worth your 
+while to spend some time reading the user documentation there (and to 
+bookmark it for further reference, too =:^) :
+
+https://btrfs.wiki.kernel.org/
+
+For balance in particular, see:
+
+https://btrfs.wiki.kernel.org/index.php/FAQ#What_does_.22balance.22_do.3F
+
+Also of interest:
+
+https://btrfs.wiki.kernel.org/index.php/Balance_Filters
+
+Of course, the btrfs manpage is also useful.
+
+Basically, unless you limit it with the -d/-m/-s switches and/or filters, 
+balance blindly rewrites/relocates every chunk on the filesystem, 
+cleaning up and if applicable converting between redundancy types as it 
+does so.  So all chunks are relocated/rewritten.
+
+But the above documentation should also suggest trying this to see if it 
+addresses that remaining single-mode system chunk stub:
+
+btrfs balance start -fsconvert=raid1 /home
+
+Especially if you're on spinning rust (not SSD), that should take quite a 
+bit less time than a full balance as well, because you're only rebalancing 
+the few MiB of system chunks, not the GiBs of data and metadata.
+
+Hopefully that'll kill the single-mode system stub-chunk.  If not, you've 
+probably hit a bug and should report it as such, tho you might wish to 
+try it with the latest 3.12 stable or 3.13-rc first, in case the bug has 
+already been fixed.
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- One of these days, I'll catch that man without a quotation, ---   
-                        and he'll look undressed.                        
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---YPJ8CVbwFUtL7OFW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQIVAwUBUrFZLFheFHXiqx3kAQIyDA/+LngnKRXOIMm6WOUVCkQvt6xv0voj2x0p
-ZKWPdbnW5GWXJ7e3MaGASSreiZafs1ZNbDwWp5S8Mi2NWAvvTJFwtupVtROB8VYc
-mTFwowrnK1Cty0DWDEB1nnjP6zXsSUh6OSUsaWVtyYIknP8DTAsRzwcMRChBBBwA
-oixMr7e5hoKQRV+09rpDv3eqYi/lc7tANgP98MHflxS8pcOou676wrICnEADGNwR
-QLmg+Rq4Q2+drhBAHLEMXGUS6og7SMu+81aryMjIM50uYznYkQU+tM1BAmbw97qX
-5ZnZL/lOvmKqb318aeRTxXc39wAKQKX4hL681ljaB9fZesyUI8xnPZbQlEHIE2zi
-RaNp3qUfMDxWJxhXM6m+Y/4Gneg46nABsxqEluQJKoYkHcNgNQGfmH5+K//sdtgx
-iJcD0Sbcrhd+HoZ5cdh2G9+5DzE3EHDYD2ky9YFDvwVPDlvb7VH4nBInTxvJ7osW
-zMgp3l6teotNo+Zz1HCZgYsHb4FiBtt2yLHBzB2POykbBkBC4qnTWwYSu7jNrFRN
-RtNvBHAbtw+eqFrvcVZdBJn9QEDMd8ovS8TG7UrO9X4vNjaeXq6ti2eMPlsDWHqP
-LwdKJxvcpp0Gq3GkriL8H7140OidcylY7kQ3dA4M3jIcMYjz2dibSD8IXS8Y5Ifv
-LbiumZeE4lc=
-=sF5c
------END PGP SIGNATURE-----
-
---YPJ8CVbwFUtL7OFW--

@@ -1,87 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23775 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751945Ab3LRDyw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Dec 2013 22:54:52 -0500
-Message-ID: <52B11C67.2010900@cn.fujitsu.com>
-Date: Wed, 18 Dec 2013 11:54:15 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from md5i.com ([75.151.244.229]:56769 "EHLO maru2.md5i.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751267Ab3LREuZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Dec 2013 23:50:25 -0500
+From: Michael Welsh Duggan <mwd@md5i.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, mwd@md5i.com
+Subject: Re: [PATCH] Btrfs-progs: receive: fix the case that we can not find subvolume
+References: <1387271629-11315-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	<20131217150919.GP6498@twin.jikos.cz>
+	<tntbo0fcwp2.fsf@watermonitor.yellow.cert.org>
+	<52B10EBE.4030508@cn.fujitsu.com> <8761qmsup8.fsf@maru2.md5i.com>
+	<52B11C67.2010900@cn.fujitsu.com>
+Date: Tue, 17 Dec 2013 23:06:17 -0500
+In-Reply-To: <52B11C67.2010900@cn.fujitsu.com> (Wang Shilong's message of
+	"Wed, 18 Dec 2013 11:54:15 +0800")
+Message-ID: <871u1asszq.fsf@maru2.md5i.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org, mwd@md5i.com
-Subject: Re: [PATCH] Btrfs-progs: receive: fix the case that we can not find
- subvolume
-References: <1387271629-11315-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20131217150919.GP6498@twin.jikos.cz> <tntbo0fcwp2.fsf@watermonitor.yellow.cert.org> <52B10EBE.4030508@cn.fujitsu.com> <8761qmsup8.fsf@maru2.md5i.com>
-In-Reply-To: <8761qmsup8.fsf@maru2.md5i.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Michael,
+Wang Shilong <wangsl.fnst@cn.fujitsu.com> writes:
 
-On 12/18/2013 11:29 AM, Michael Welsh Duggan wrote:
-> Miao Xie <miaox@cn.fujitsu.com> writes:
+> It seems that you use older kernel version but use the latest
+> btrfs-progs, new btrfs-progs use uuid tree to search but
+> this tree did not exist yet.
 >
->> On Tue, 17 Dec 2013 10:40:41 -0500, Michael Welsh Duggan wrote:
->>> David Sterba <dsterba@suse.cz> writes:
->>>
->>>> On Tue, Dec 17, 2013 at 05:13:49PM +0800, Wang Shilong wrote:
->>>>> If we change our default subvolume, btrfs receive will fail to find
->>>>> subvolume. To fix this problem, i have two ideas.
->>>>>
->>>>> 1.make btrfs snapshot ioctl support passing source subvolume's
->>>>> objectid
->>>>> 2.when we want to using interval subvolume path, we mount it other
->>>>> place
->>>>> that use subvolume 5 as its default subvolume.
->>>> 3. Tell the user to mount the toplevel subvol by himself and run
->>>> receive
->>>>     again
->>> Ugh.  I hope that would be considered a short-term hack waiting for a
->>> better solution, perhaps requiring a kernel upgrade.  From a user's
->>> perspective there is no reason this should be necessary, and requiring
->>> this would be extraordinarily surprising.  "Why is btrfs unable to find
->>> my snapshot?  It's right there!"  Moreover, this used to work just fine
->>> in previous versions of btrfs-progs.
->> Though the snapshot is still in the fs, it is inaccessible because you
->> mount
->> some subvolume as the root, and you can not find the path to the snapshot.
->>
->> For example:
->> There are two subvolumes in the fs, and they are in the root directory
->> of the
->> fs, just like
->> 	real root directory
->> 	 |->subv0
->> 	 |->subv1
->>
->> Then if you mount the subv1 as the root directory, the real root
->> directory of
->> the fs and subv0 will be shielded,
->> 	+-------------------+
->> 	|real root directory|
->> 	| |->subv0          |
->> 	+-------------------+
->> 	  |->subv1
->> you can only access the files, directories, subvolumes... in the subv1. So the tool
->> will report "can not find ...."
->>
->> BTW, it is impossible that the previous version of btrfs-progs can work well in
->> this case.
-> In that case I either misunderstand completely, or my problem is almost
-> decidedly different.  To recap, this is the command that failed:
->
->      # ./btrfs send -p /snapshots/bo /snapshots/bp | ./btrfs receive /backup/snapshots/root/
->      At subvol /snapshots/bp
->      At snapshot bp
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ioctl(BTRFS_IOC_TREE_SEARCH, uuid, key 48f0ebae83fd32f1, UUID_KEY, 90139d8200afeaab) ret=-1, error: No such file or directory
->      ERROR: could not find parent subvolume
->
-It seems that you use older kernel version but use the latest 
-btrfs-progs, new btrfs-progs use uuid tree to search but
-this tree did not exist yet.
+> Can you try to upgrade your kernel?
 
-Can you try to upgrade your kernel?
+What version is necessary?  (I am currently on 3.11.10.)
 
-Thanks,
-Wang
+-- 
+Michael Welsh Duggan
+(md5i@md5i.com)

@@ -1,126 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f169.google.com ([209.85.217.169]:48244 "EHLO
-	mail-lb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750964Ab3LSIOf (ORCPT
+Received: from mail-pa0-f53.google.com ([209.85.220.53]:56844 "EHLO
+	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751063Ab3LSJ1B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Dec 2013 03:14:35 -0500
-Received: by mail-lb0-f169.google.com with SMTP id u14so308064lbd.28
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 00:14:34 -0800 (PST)
+	Thu, 19 Dec 2013 04:27:01 -0500
+Received: by mail-pa0-f53.google.com with SMTP id hz1so916995pad.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 01:27:00 -0800 (PST)
+Received: from [10.20.30.13] (c-67-160-236-141.hsd1.ca.comcast.net. [67.160.236.141])
+        by mx.google.com with ESMTPSA id jn12sm5702774pbd.37.2013.12.19.01.26.58
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Thu, 19 Dec 2013 01:26:58 -0800 (PST)
+Message-ID: <52B2BBE1.8090306@gmail.com>
+Date: Thu, 19 Dec 2013 01:26:57 -0800
+From: Chris Kastorff <encryptio@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20131218112935.GA9705@pdb1.th.formicary.net>
-References: <CAAeznTpG6A7ygKg1AUx_pAMs_SNwG4a4C5gHPeT+HcKRsD+TWA@mail.gmail.com>
-	<20131215202456.GA11281@carfax.org.uk>
-	<CAAeznTryb7kyuvEyBFniv-UtGCQwdNtZMhpxm=-2MtKZSOj9Tw@mail.gmail.com>
-	<pan$138cb$448d68e$2d9dcb10$fc6a898a@cox.net>
-	<CAAeznTpZ6p1_ZR6xy-YGynAJu88jZ_52AQURuxT4qTeEYLOjdg@mail.gmail.com>
-	<20131218104442.GA28559@pdb1.th.formicary.net>
-	<20131218110528.GK11281@carfax.org.uk>
-	<20131218112935.GA9705@pdb1.th.formicary.net>
-Date: Thu, 19 Dec 2013 08:14:33 +0000
-Message-ID: <CAAeznTrqHP6Wmqun_-3OeNy+gcgXSPZCVmR5AX0zcifG-ju6+A@mail.gmail.com>
-Subject: Re: btrfs balance on single device
-From: Leonidas Spyropoulos <artafinde@gmail.com>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: Hugo Mills <hugo@carfax.org.uk>
+Subject: Unmountable Array After Drive Failure During Device Deletion
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 18, 2013 at 11:29 AM, Leonidas Spyropoulos
-<artafinde@gmail.com> wrote:
-> On Wed, Dec 18, 2013 at 11:05:29AM +0000, Hugo Mills wrote:
->> On Wed, Dec 18, 2013 at 10:44:43AM +0000, Leonidas Spyropoulos wrote:
->> > I'm using the same subject as it might be relevant, feel free to change it.#
->> >
->> > I'm trying to do some maintenance to the system running over a btrfs file system on root (/). I started a balance on the '/' partition and it failed with the below information:
->> > $ sudo btrfs balance start /
->> > [sudo] password for inglor:
->> > ERROR: error during balancing '/' - No space left on device
->> > There may be more info in syslog - try dmesg | tail
->> > $ dmesg | tail
->> > [93827.115887] btrfs: found 29461 extents
->> > [93827.481849] btrfs: relocating block group 29855055872 flags 1
->> > [93841.646011] btrfs: found 33171 extents
->> > [93851.421207] btrfs: found 33171 extents
->> > [93851.782054] btrfs: relocating block group 28781314048 flags 1
->> > [93866.815342] btrfs: found 52535 extents
->> > [93877.159354] btrfs: found 52534 extents
->> > [93877.356805] btrfs: relocating block group 28747759616 flags 34
->> > [93880.287185] btrfs: found 1 extents
->> > [93880.608798] btrfs: 1 enospc errors during balance
->>
->>    You don't specify your kernel version, but if it's older than 3.11
->> or so, you should probably upgrade -- 3.10 and earlier had occasional
->> bugs where the block reserve system never kept enough blocks free to
->> add a new metadata chunk when it was needed, which led to exactly this
->> kind of symptom.
->
-> You are right, apologies. It is an up to date Archlinux box with a kernel:
-> $ uname -a
-> Linux tiamat 3.12.5-1-ARCH #1 SMP PREEMPT Thu Dec 12 12:57:31 CET 2013 x86_64 GNU/Linux
->
->>
->>    Alternatively, and this is a bit of a long shot given that the
->> error seems to have been while relocating your system chunk (which
->> argues against this particular diagnosis), but:
->>
->>    Do you have a large file on that filesystem (larger than 1 GiB)?
->
-> Unlikely since the btrfs file system in question is '/' exluding /opt and /media directories (these are other partitions)
-> $ sudo find / -type f -size +1048576k -and -not -path "/media*" -print
-> /proc/kcore
-> find: `/proc/27221/task/27221/fd/5': No such file or directory
-> find: `/proc/27221/task/27221/fdinfo/5': No such file or directory
-> find: `/proc/27221/fd/5': No such file or directory
-> find: `/proc/27221/fdinfo/5': No such file or directory
-> find: `/run/user/1000/gvfs': Permission denied
-> inglor@tiamat ~$
->
->>
->>    If so, I would recommend switching to a 3.12 kernel, and running a
->> defrag on the file. There's a known and now-fixed bug where you can
->> get ENOSPC while balancing, if a file has an extent larger than 1 GiB
->> in size. (The bug being that there's an extent over 1 GiB in size in
->> the first place).
->
-> I might try the defrag option anyway and restart the balance operation, see if this will help anyway.
+I'm using btrfs in data and metadata RAID10 on drives (not on md or any
+other fanciness.)
 
-Some progress on this. I managed to do a balance on data only. The
-problem seems to be happening when doing a metadata balance
+I was removing a drive (btrfs dev del) and during that operation, a
+different drive in the array failed. Having not had this happen before,
+I shut down the machine immediately due to the extremely loud piezo
+buzzer on the drive controller card. I attempted to do so cleanly, but
+the buzzer cut through my patience and after 4 minutes I cut the power.
 
-$ sudo btrfs balance start -m /
-[sudo] password for inglor:
-ERROR: error during balancing '/' - No space left on device
-There may be more info in syslog - try dmesg | tail
-$ dmesg | tail
-[171492.384314] systemd-journald[183]: Deleted empty journal
-/var/log/journal/64cfb6f6c9d1625e7fa463c200000475/user-120@8b61bc353813451babcaa25dfc82c64e-0000000000000000-0000000000000000.journal
-(2924544 bytes).
-[171492.384375] systemd-journald[183]: Vacuuming done, freed 2924544 bytes
-[172242.011051] btrfs: relocating block group 109781712896 flags 36
-[172242.075298] btrfs: relocating block group 109748158464 flags 34
-[172242.286016] btrfs: found 1 extents
-[172242.419286] btrfs: 1 enospc errors during balance
+Afterwards, I located and removed the failed drive from the system, and
+then got back to linux. The array no longer mounts ("failed to read the
+system array on sdc"), with nearly identical messages when attempted
+with -o recovery and -o recovery,ro.
 
-Is there a way to recreate the metadata? (I'm guessing the answer is balance..)
+btrfsck asserts and coredumps, as usual.
 
->
-> Thanks,
-> Leonidas
->
->>
->>    Hugo.
->>
->> --
->> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->>          --- I'd make a joke about UDP,  but I don't know if ---
->>                      anyone's actually listening...
+The drive that was being removed is devid 9 in the array, and is
+/dev/sdm1 in the btrfs fi show seen below.
 
+Kernel 3.12.4-1-ARCH, btrfs-progs v0.20-rc1-358-g194aa4a-dirty
+(archlinux build.)
 
+Can I recover the array?
 
--- 
-Caution: breathing may be hazardous to your health.
+== dmesg during failure ==
 
-#include <stdio.h>
-int main(){printf("%s","\x4c\x65\x6f\x6e\x69\x64\x61\x73");}
+...
+sd 0:2:3:0: [sdd] Unhandled error code
+sd 0:2:3:0: [sdd]
+Result: hostbyte=0x04 driverbyte=0x00
+sd 0:2:3:0: [sdd] CDB:
+cdb[0]=0x2a: 2a 00 26 89 5b 00 00 00 80 00
+end_request: I/O error, dev sdd, sector 646535936
+btrfs_dev_stat_print_on_error: 7791 callbacks suppressed
+btrfs: bdev /dev/sdd errs: wr 315858, rd 230194, flush 0, corrupt 0, gen 0
+sd 0:2:3:0: [sdd] Unhandled error code
+sd 0:2:3:0: [sdd]
+Result: hostbyte=0x04 driverbyte=0x00
+sd 0:2:3:0: [sdd] CDB:
+cdb[0]=0x2a: 2a 00 26 89 5b 80 00 00 80 00
+end_request: I/O error, dev sdd, sector 646536064
+...
+
+== dmesg after new boot, mounting attempt ==
+
+btrfs: device label lake devid 11 transid 4893967 /dev/sda
+btrfs: disk space caching is enabled
+btrfs: failed to read the system array on sdc
+btrfs: open_ctree failed
+
+== dmesg after new boot, mounting attempt with -o recovery,ro ==
+
+btrfs: device label lake devid 11 transid 4893967 /dev/sda
+btrfs: enabling auto recovery
+btrfs: disk space caching is enabled
+btrfs: failed to read the system array on sdc
+btrfs: open_ctree failed
+
+== btrfsck ==
+
+deep# btrfsck /dev/sda
+warning, device 14 is missing
+warning devid 14 not found already
+parent transid verify failed on 87601116364800 wanted 4893969 found 4893913
+parent transid verify failed on 87601116364800 wanted 4893969 found 4893913
+parent transid verify failed on 87601116381184 wanted 4893969 found 4893913
+parent transid verify failed on 87601116381184 wanted 4893969 found 4893913
+parent transid verify failed on 87601115320320 wanted 4893969 found 4893913
+parent transid verify failed on 87601115320320 wanted 4893969 found 4893913
+parent transid verify failed on 87601117097984 wanted 4893969 found 4892460
+parent transid verify failed on 87601117097984 wanted 4893969 found 4892460
+Ignoring transid failure
+Checking filesystem on /dev/sda
+UUID: d5e17c49-d980-4bde-bd96-3c8bc95ea077
+checking extents
+parent transid verify failed on 87601117159424 wanted 4893969 found 4893913
+parent transid verify failed on 87601117159424 wanted 4893969 found 4893913
+parent transid verify failed on 87601116368896 wanted 4893969 found 4893913
+parent transid verify failed on 87601116368896 wanted 4893969 found 4893913
+parent transid verify failed on 87601117163520 wanted 4893969 found 4893913
+parent transid verify failed on 87601117163520 wanted 4893969 found 4893913
+parent transid verify failed on 87601117638656 wanted 4893969 found 4893913
+parent transid verify failed on 87601117638656 wanted 4893969 found 4893913
+Ignoring transid failure
+parent transid verify failed on 87601117171712 wanted 4893969 found 4893913
+parent transid verify failed on 87601117171712 wanted 4893969 found 4893913
+parent transid verify failed on 87601117175808 wanted 4893969 found 4893913
+parent transid verify failed on 87601117175808 wanted 4893969 found 4893913
+parent transid verify failed on 87601117188096 wanted 4893969 found 4893913
+parent transid verify failed on 87601117188096 wanted 4893969 found 4893913
+parent transid verify failed on 87601116807168 wanted 4893969 found 4893913
+parent transid verify failed on 87601116807168 wanted 4893969 found 4893913
+Ignoring transid failure
+parent transid verify failed on 87601117642752 wanted 4893969 found 4893913
+parent transid verify failed on 87601117642752 wanted 4893969 found 4893913
+Ignoring transid failure
+parent transid verify failed on 87601117650944 wanted 4893969 found 4893913
+parent transid verify failed on 87601117650944 wanted 4893969 found 4893913
+Ignoring transid failure
+Couldn't map the block 5764607523034234880
+btrfsck: volumes.c:1019: btrfs_num_copies: Assertion `!(!ce)' failed.
+zsh: abort (core dumped)  btrfsck /dev/sda
+
+== btrfs fi show ==
+
+Label: 'lake'  uuid: d5e17c49-d980-4bde-bd96-3c8bc95ea077
+        Total devices 10 FS bytes used 7.43TB
+        devid    9 size 1.82TB used 1.61TB path /dev/sdm1
+        devid   12 size 1.82TB used 1.47TB path /dev/sdb
+        devid   16 size 1.82TB used 1.47TB path /dev/sde
+        devid   13 size 1.82TB used 1.47TB path /dev/sdc
+        devid   11 size 1.82TB used 1.47TB path /dev/sda
+        devid   19 size 1.82TB used 1.47TB path /dev/sdk
+        devid   17 size 1.82TB used 1.47TB path /dev/sdf
+        devid   18 size 1.82TB used 1.47TB path /dev/sdg
+        devid   15 size 1.82TB used 1.47TB path /dev/sdd
+        *** Some devices missing

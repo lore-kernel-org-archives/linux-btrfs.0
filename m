@@ -1,61 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42605 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751870Ab3LRVBb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Dec 2013 16:01:31 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VtOFG-0007XP-RT
-	for linux-btrfs@vger.kernel.org; Wed, 18 Dec 2013 22:01:30 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 22:01:30 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 22:01:30 +0100
+Received: from aserp1040.oracle.com ([141.146.126.69]:46587 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752390Ab3LSDMf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Dec 2013 22:12:35 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBJ3CYmv019172
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 03:12:35 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBJ3CXBP024909
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 03:12:34 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBJ3CXCI024897
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 03:12:33 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Backporting bugfixes
-Date: Wed, 18 Dec 2013 21:01:09 +0000 (UTC)
-Message-ID: <pan$d376f$c26d0392$a268b32d$b503d0c7@cox.net>
-References: <20131218140615.dbjsgs7zkssgckos-cebfxv@webmail.spamcop.net>
-	<1387394605.25093.4.camel@ret.masoncoding.com>
-	<20131218143153.4ffeb40a@IRBT4585>
-Mime-Version: 1.0
+Subject: [PATCH] btrfs: fix the warning in prepare_pages
+Date: Thu, 19 Dec 2013 11:20:52 +0800
+Message-Id: <1387423252-14637-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pavel Roskin posted on Wed, 18 Dec 2013 14:31:53 -0500 as excerpted:
+would fix the below compile warning
 
-> On Wed, 18 Dec 2013 19:23:08 +0000 Chris Mason <clm@fb.com> wrote:
-> 
->> We do tag some commits for stable, but Dave Sterba actually just sent a
->> request to the stable tree to pull in a few more.
-> 
-> That's great news!  Thank you for a quick reply!
+fs/btrfs/file.c: In function ‘prepare_pages’:
+fs/btrfs/file.c:1247: warning: ‘err’ may be used uninitialized in this function
 
-In fact, here's the stable-queue request.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/file.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-<http://permalink.gmane.org/gmane.linux.kernel.stable/73711
-
-(It was cross-posted to both the btrfs and stable lists. =:^)
-
-That said, while btrfs bugfixes are generally being submitted to stable 
-when appropriate, as with all stable-tree patches since they aren't 
-eligible for stable until they've hit the development kernel, the fastest 
-(non-btrfs-next or direct-off-the-list) way to get them is to run either 
-that development kernel.
-
-Which isn't entirely inappropriate in any case, given that while the 
-btrfs kconfig warnings were turned down some in 3.12, it's still under 
-heavy development such that users who choose to run it are choosing to 
-run a not yet fully stable filesystem, and if they're already risking 
-their data on that, they might as well run a full development kernel too.
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 740ae8c..35bf838 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1244,7 +1244,7 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 	int i;
+ 	unsigned long index = pos >> PAGE_CACHE_SHIFT;
+ 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+-	int err;
++	int err = 0;
+ 	int faili;
+ 
+ 	for (i = 0; i < num_pages; i++) {
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.1
 

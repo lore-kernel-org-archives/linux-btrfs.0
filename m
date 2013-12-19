@@ -1,185 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46244 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752502Ab3LQCZ1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Dec 2013 21:25:27 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBH2PPmw025464
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 02:25:26 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBH2PPeR026622
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 02:25:25 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBH2PODk026613
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2013 02:25:24 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs-progs: handle error in the btrfs_prepare_device
-Date: Tue, 17 Dec 2013 10:33:36 +0800
-Message-Id: <1387247616-1574-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1387247616-1574-1-git-send-email-anand.jain@oracle.com>
+Received: from mail.virtall.com ([178.63.195.102]:51724 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756593Ab3LSMJx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Dec 2013 07:09:53 -0500
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id E483B3A815F
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 13:09:49 +0100 (CET)
+Received: from localhost (em1-115-196-167.pool.e-mobile.ne.jp [1.115.196.167])
+	by mail.virtall.com (Postfix) with ESMTPSA id 2FBAF3A815E
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Dec 2013 13:09:48 +0100 (CET)
+Date: Thu, 19 Dec 2013 21:09:41 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: kernel BUG at fs/btrfs/relocation.c:1062
+Message-ID: <20131219210941.1065d1b5@virtall.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1387247616-1574-1-git-send-email-anand.jain@oracle.com>
 
-this patch will handle the strerror reporting of the error instead of
-printing errno,  and also replaced the BUG_ON with the error handling
+Got this while running balance. Some other operations were running in parallel (rsync etc.).
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- v2: commit update
----
- cmds-device.c  |  7 +++----
- cmds-replace.c | 10 ++++------
- mkfs.c         |  9 ++++++++-
- utils.c        | 30 +++++++++++++++++++-----------
- 4 files changed, 34 insertions(+), 22 deletions(-)
+[152727.584641] ------------[ cut here ]------------
+[152727.584723] kernel BUG at fs/btrfs/relocation.c:1062!
+[152727.584802] invalid opcode: 0000 [#1] SMP 
+[152727.584943] Modules linked in: veth ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand cpufreq_conservative cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor raid6_pq zlib_deflate loop video i2c_i801 i2c_core button acpi_cpufreq pcspkr ehci_pci ehci_hcd lpc_ich mfd_core ext4 crc16 jbd2 mbcache raid1 sg sd_mod r8169 mii ahci libahci libata scsi_mod
+[152727.586767] CPU: 3 PID: 1540 Comm: btrfs Tainted: G        W    3.13.0-rc4 #1
+[152727.586888] Hardware name: System manufacturer System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
+[152727.587011] task: ffff8805bedf9710 ti: ffff8805a9d9a000 task.ti: ffff8805a9d9a000
+[152727.587132] RIP: 0010:[<ffffffffa02ab31f>]  [<ffffffffa02ab31f>] build_backref_tree+0xb03/0xe7a [btrfs]
+[152727.587300] RSP: 0018:ffff8805a9d9b898  EFLAGS: 00010246
+[152727.587379] RAX: ffff8805a9d9b900 RBX: ffff8805a9d9b920 RCX: ffff88055a72fa10
+[152727.587499] RDX: ffff88055a72ff50 RSI: ffff88055a72ff80 RDI: ffff8807e8878600
+[152727.587619] RBP: ffff8805a9d9b998 R08: ffff8807e8878b80 R09: 0000000000001000
+[152727.587739] R10: 0000000000001000 R11: 0000160000000000 R12: 0000000000000000
+[152727.587859] R13: ffff88055a72ff90 R14: ffff8805a9d9b930 R15: ffff88028e648000
+[152727.587980] FS:  00007fca66eca840(0000) GS:ffff88081fac0000(0000) knlGS:0000000000000000
+[152727.588101] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[152727.588180] CR2: 00007fac0ba80000 CR3: 00000007006d9000 CR4: 00000000001407e0
+[152727.588300] Stack:
+[152727.588374]  ffff8800611992c0 0000000000000000 ffff8806c99dd500 ffff8807e8878600
+[152727.588623]  ffff88055a72fde0 ffff8806c99dd240 ffff88028e648124 ffff88028e648124
+[152727.588871]  ffff88028e648120 ffff88028e648020 ffff8807ece02c60 ffff8807ece02a20
+[152727.589120] Call Trace:
+[152727.589205]  [<ffffffffa02ac13a>] relocate_tree_blocks+0x1c0/0x544 [btrfs]
+[152727.589292]  [<ffffffffa024f2a9>] ? btrfs_release_path+0x6b/0x8a [btrfs]
+[152727.589382]  [<ffffffffa02ad399>] relocate_block_group+0x23f/0x4c7 [btrfs]
+[152727.589470]  [<ffffffffa02ad76f>] btrfs_relocate_block_group+0x14e/0x28d [btrfs]
+[152727.589598]  [<ffffffffa028c8d2>] btrfs_relocate_chunk.isra.65+0x58/0x60e [btrfs]
+[152727.589727]  [<ffffffffa029a1ff>] ? btrfs_set_lock_blocking_rw+0x89/0xb2 [btrfs]
+[152727.589853]  [<ffffffffa024f1b7>] ? btrfs_set_path_blocking+0x23/0x54 [btrfs]
+[152727.589979]  [<ffffffffa0253a1b>] ? btrfs_search_slot+0x72f/0x789 [btrfs]
+[152727.590068]  [<ffffffffa0288be1>] ? free_extent_buffer+0x6f/0x7c [btrfs]
+[152727.590157]  [<ffffffffa028f709>] btrfs_balance+0x9fe/0xbe0 [btrfs]
+[152727.590245]  [<ffffffffa02954c9>] btrfs_ioctl_balance+0x220/0x29f [btrfs]
+[152727.590334]  [<ffffffffa0298a66>] btrfs_ioctl+0xfce/0x2128 [btrfs]
+[152727.590417]  [<ffffffff810c98c1>] ? handle_mm_fault+0x24f/0x965
+[152727.590498]  [<ffffffff810ccc11>] ? __vm_enough_memory+0x26/0x13d
+[152727.590581]  [<ffffffff8110219e>] do_vfs_ioctl+0x3f7/0x441
+[152727.590661]  [<ffffffff8110223a>] SyS_ioctl+0x52/0x80
+[152727.590741]  [<ffffffff8138f222>] system_call_fastpath+0x16/0x1b
+[152727.590821] Code: 60 71 fd 49 89 40 50 49 89 40 58 49 8b 40 58 4d 89 68 58 49 83 c0 50 4d 89 45 00 49 89 45 08 4c 89 28 e9 aa 00 00 00 a8 10 75 02 <0f> 0b 83 e0 01 41 39 c4 74 02 0f 0b 45 85 e4 75 32 49 8b 70 18 
+[152727.593073] RIP  [<ffffffffa02ab31f>] build_backref_tree+0xb03/0xe7a [btrfs]
+[152727.593194]  RSP <ffff8805a9d9b898>
+[152727.593290] ---[ end trace b67170e8ece9f591 ]---
 
-diff --git a/cmds-device.c b/cmds-device.c
-index bc4a8dc..ada0bcd 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -111,13 +111,11 @@ static int cmd_add_dev(int argc, char **argv)
- 
- 		res = btrfs_prepare_device(devfd, argv[i], 1, &dev_block_count,
- 					   0, &mixed, discard);
-+		close(devfd);
- 		if (res) {
--			fprintf(stderr, "ERROR: Unable to init '%s'\n", argv[i]);
--			close(devfd);
- 			ret++;
--			continue;
-+			goto error_out;
- 		}
--		close(devfd);
- 
- 		strncpy_null(ioctl_args.name, argv[i]);
- 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
-@@ -130,6 +128,7 @@ static int cmd_add_dev(int argc, char **argv)
- 
- 	}
- 
-+error_out:
- 	close_file_or_dir(fdmnt, dirstream);
- 	return !!ret;
- }
-diff --git a/cmds-replace.c b/cmds-replace.c
-index d9b0940..8160107 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -276,13 +276,11 @@ static int cmd_start_replace(int argc, char **argv)
- 	}
- 	strncpy((char *)start_args.start.tgtdev_name, dstdev,
- 		BTRFS_DEVICE_PATH_NAME_MAX);
--	if (btrfs_prepare_device(fddstdev, dstdev, 1, &dstdev_block_count, 0,
--				 &mixed, 0)) {
--		fprintf(stderr, "Error: Failed to prepare device '%s'\n",
--			dstdev);
--		goto leave_with_error;
--	}
-+	ret = btrfs_prepare_device(fddstdev, dstdev, 1, &dstdev_block_count, 0,
-+				 &mixed, 0);
- 	close(fddstdev);
-+	if (ret)
-+		goto leave_with_error;
- 	fddstdev = -1;
- 
- 	dev_replace_handle_sigint(fdmnt);
-diff --git a/mkfs.c b/mkfs.c
-index 33369f9..18df087 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1446,6 +1446,10 @@ int main(int ac, char **av)
- 		first_file = file;
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
- 					   block_count, &mixed, discard);
-+		if (ret) {
-+			close(fd);
-+			exit(1);
-+		}
- 		if (block_count && block_count > dev_block_count) {
- 			fprintf(stderr, "%s is smaller than requested size\n", file);
- 			exit(1);
-@@ -1553,8 +1557,11 @@ int main(int ac, char **av)
- 		}
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count,
- 					   block_count, &mixed, discard);
-+		if (ret) {
-+			close(fd);
-+			exit(1);
-+		}
- 		mixed = old_mixed;
--		BUG_ON(ret);
- 
- 		ret = btrfs_add_to_fsid(trans, root, fd, file, dev_block_count,
- 					sectorsize, sectorsize, sectorsize);
-diff --git a/utils.c b/utils.c
-index f499023..85b967b 100644
---- a/utils.c
-+++ b/utils.c
-@@ -581,13 +581,13 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 	ret = fstat(fd, &st);
- 	if (ret < 0) {
- 		fprintf(stderr, "unable to stat %s\n", file);
--		exit(1);
-+		return 1;
- 	}
- 
- 	block_count = btrfs_device_size(fd, &st);
- 	if (block_count == 0) {
- 		fprintf(stderr, "unable to find %s size\n", file);
--		exit(1);
-+		return 1;
- 	}
- 	if (max_block_count)
- 		block_count = min(block_count, max_block_count);
-@@ -612,26 +612,34 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 	}
- 
- 	ret = zero_dev_start(fd);
--	if (ret) {
--		fprintf(stderr, "failed to zero device start %d\n", ret);
--		exit(1);
--	}
-+	if (ret)
-+		goto zero_dev_error;
- 
- 	for (i = 0 ; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
- 		if (bytenr >= block_count)
- 			break;
--		zero_blocks(fd, bytenr, BTRFS_SUPER_INFO_SIZE);
-+		ret = zero_blocks(fd, bytenr, BTRFS_SUPER_INFO_SIZE);
-+		if (ret)
-+			goto zero_dev_error;
- 	}
- 
- 	if (zero_end) {
- 		ret = zero_dev_end(fd, block_count);
--		if (ret) {
--			fprintf(stderr, "failed to zero device end %d\n", ret);
--			exit(1);
--		}
-+		if (ret)
-+			goto zero_dev_error;
- 	}
- 	*block_count_ret = block_count;
-+
-+zero_dev_error:
-+	if (ret) {
-+		ret < 0 ?
-+		fprintf(stderr, "ERROR: failed to zero device start '%s' - %s\n",
-+			file, strerror(-ret)) :
-+		fprintf(stderr, "ERROR: failed to zero device start '%s' - %d\n",
-+			file, ret);
-+		return 1;
-+	}
- 	return 0;
- }
- 
+
 -- 
-1.8.1.164.g2d0029e
-
+Tomasz Chmielewski
+http://wpkg.org

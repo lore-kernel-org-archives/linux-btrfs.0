@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42310 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:60645 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751405Ab3LRU5w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Dec 2013 15:57:52 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VtOBf-0003W4-45
-	for linux-btrfs@vger.kernel.org; Wed, 18 Dec 2013 21:57:47 +0100
-Received: from md5i.com ([75.151.244.229])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 21:57:47 +0100
-Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2013 21:57:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Michael Welsh Duggan <mwd@md5i.com>
-Subject: Re: [PATCH] Btrfs-progs: receive: fix the case that we can not find subvolume
-Date: Wed, 18 Dec 2013 15:57:36 -0500
-Message-ID: <87txe5ri67.fsf@maru2.md5i.com>
+	id S1755916Ab3LSQsl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Dec 2013 11:48:41 -0500
+Date: Thu, 19 Dec 2013 17:48:39 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Michael Welsh Duggan <mwd@cert.org>
+Cc: dsterba@suse.cz, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com
+Subject: Re: [PATCH] Btrfs-progs: receive: fix the case that we can not find
+ subvolume
+Message-ID: <20131219164839.GG6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1387271629-11315-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-	<20131217150919.GP6498@twin.jikos.cz>
-	<tntbo0fcwp2.fsf@watermonitor.yellow.cert.org>
-	<52B10EBE.4030508@cn.fujitsu.com> <8761qmsup8.fsf@maru2.md5i.com>
-	<52B11C67.2010900@cn.fujitsu.com> <871u1asszq.fsf@maru2.md5i.com>
-	<52B12C85.6090503@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain
+ <20131217150919.GP6498@twin.jikos.cz>
+ <tntbo0fcwp2.fsf@watermonitor.yellow.cert.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <tntbo0fcwp2.fsf@watermonitor.yellow.cert.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wang Shilong <wangsl.fnst@cn.fujitsu.com> writes:
+On Tue, Dec 17, 2013 at 10:40:41AM -0500, Michael Welsh Duggan wrote:
+> David Sterba <dsterba@suse.cz> writes:
+> 
+> > On Tue, Dec 17, 2013 at 05:13:49PM +0800, Wang Shilong wrote:
+> >> If we change our default subvolume, btrfs receive will fail to find
+> >> subvolume. To fix this problem, i have two ideas.
+> >> 
+> >> 1.make btrfs snapshot ioctl support passing source subvolume's objectid
+> >
+> >> 2.when we want to using interval subvolume path, we mount it other place
+> >> that use subvolume 5 as its default subvolume.
+> >
+> > 3. Tell the user to mount the toplevel subvol by himself and run receive
+> >    again
+> 
+> Ugh.  I hope that would be considered a short-term hack waiting for a
+> better solution, perhaps requiring a kernel upgrade.  From a user's
+> perspective there is no reason this should be necessary, and requiring
+> this would be extraordinarily surprising.  "Why is btrfs unable to find
+> my snapshot?  It's right there!"  Moreover, this used to work just fine
+> in previous versions of btrfs-progs.
 
-> On 12/18/2013 12:06 PM, Michael Welsh Duggan wrote:
->> Wang Shilong <wangsl.fnst@cn.fujitsu.com> writes:
->>
->>> It seems that you use older kernel version but use the latest
->>> btrfs-progs, new btrfs-progs use uuid tree to search but
->>> this tree did not exist yet.
->>>
->>> Can you try to upgrade your kernel?
->> What version is necessary?  (I am currently on 3.11.10.)
-> 3.12 is ok, btw, can you run for 3.11.10
->
-> #dmesg
->
-> Let's see if it output somthing like:
->
-> btrfs: can not found root: 9
+It is a short-term fix, one that we can apply immediatelly without
+breaking things. A long-term fix is #1, but this would need more work
+and testing.
 
-Indeed.
-
-    $ dmesg | grep "root 9"
-    [305770.945287] could not find root 9
-    [305770.945300] could not find root 9
-    [305770.945369] could not find root 9
-    [305770.945398] could not find root 9
-    [305915.405421] could not find root 9
-    [305915.405483] could not find root 9
-    [305962.927150] could not find root 9
-    [305962.927222] could not find root 9
-    [399096.924559] could not find root 9
-    [399096.924617] could not find root 9
-    [399195.585768] could not find root 9
-    [399195.585823] could not find root 9
-
-Looks like I'll be rebooting to a new kernel when I get home tonight.
-
--- 
-Michael Welsh Duggan
-(md5i@md5i.com)
-
+david

@@ -1,46 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38992 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755085Ab3LST7x convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Dec 2013 14:59:53 -0500
-From: Chris Mason <clm@fb.com>
-To: "eab@gmx.ch" <eab@gmx.ch>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs on bcache
-Date: Thu, 19 Dec 2013 19:59:47 +0000
-Message-ID: <1387483201.23881.2.camel@ret.masoncoding.com>
-References: <CAFvEZVF8J0jbYnTtV7X6uJWL1pBkwG6iFbH-KoNSPGq0Mc7bTw@mail.gmail.com>
-In-Reply-To: <CAFvEZVF8J0jbYnTtV7X6uJWL1pBkwG6iFbH-KoNSPGq0Mc7bTw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-7"
+Received: from cn.fujitsu.com ([222.73.24.84]:38896 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1756605Ab3LTAg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Dec 2013 19:36:27 -0500
+Message-ID: <52B3913E.1050707@cn.fujitsu.com>
+Date: Fri, 20 Dec 2013 08:37:18 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 00/18] Replace btrfs_workers with kernel workqueue
+ based btrfs_workqueue
+References: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com> <52B3105A.5000102@fb.com>
+In-Reply-To: <52B3105A.5000102@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2013-12-18 at 18:17 +-0100, eb wrote:
-+AD4- I've recently setup a system (Kernel 3.12.5-1-ARCH) which is layered as follows:
-+AD4- 
-+AD4- /dev/sdb3 - cache0 (80 GB Intel SSD)
-+AD4- /dev/sdc1 - backing device (2 TB WD HDD)
-+AD4- 
-+AD4- sdb3+-sdc1 +AD0APg- /dev/bcache0
-+AD4- 
-+AD4- On /dev/bcache0, there's a btrfs filesystem with 2 subvolumes, mounted
-+AD4- as / and /home. What's been bothering me are the following entries in
-+AD4- my kernel log:
-+AD4- 
-+AD4- +AFs-13811.845540+AF0- incomplete page write in btrfs with offset 1536 and length 2560
-+AD4- +AFs-13870.326639+AF0- incomplete page write in btrfs with offset 3072 and length 1024
-+AD4- 
-+AD4- The offset/length values are always either 1536/2560 or 3072/1024,
-+AD4- they sum up nicely to 4K. There are 607 of those in there as I am
-+AD4- writing this, the machine has been up 18 hours and been under no
-+AD4- particular I/O strain (it's a desktop).
+Thanks for reporting.
 
-Btrfs shouldn't be setting the offset on the bios.  Are you able to add
-a WARN+AF8-ON to the message that prints this so we can see the stack trace?
+That's interesting, I'll look into it to figure out what's happening.
 
-Could you please cc the bcache and btrfs list together?
+Qu
 
--chris
+
+On Thu, 19 Dec 2013 10:27:22 -0500, Josef Bacik wrote:
+> I got a panic with btrfs/012 in the worker stuff.  I'm bisecting it 
+> down to figure out which patch introduced it but I'm afraid it may 
+> just be one of the "replace blah with btrfs_workqueue" patches and not 
+> be super helpful.  You may want to run it in a loop or something and 
+> see if you can trigger it in the meantime and I'll respond whenever my 
+> bisect finishes.  Thanks,
+>
+> Josef
+>
+> On 12/17/2013 04:31 AM, Qu Wenruo wrote:
+>> Add a new btrfs_workqueue_struct which use kernel workqueue to implement
+>> most of the original btrfs_workers, to replace btrfs_workers.
+>>
+>> With this patchset, redundant workqueue codes are replaced with kernel
+>> workqueue infrastructure, which not only reduces the code size but 
+>> also the
+>> effort to maintain it.
+>>
+>> The result from sysbench shows minor improvement on the following 
+>> server:
+>> CPU: two-way Xeon X5660
+>> RAM: 4G
+>> HDD: SAS HDD, 150G total, 100G partition for btrfs test
+>>
+>> Test result on default mount option:
+>> https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdENjajJTWFg5d1BWbExnYWFpMTJxeUE&usp=sharing 
+>>
+>>
+>> Test result on "-o compress" mount option:
+>> https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdHdTTEJ6OW96SXJFaDR5enB1SzMzc0E&usp=sharing 
+>>
+>>
+>> Changelog:
+>> v1->v2:
+>>    - Fix some workqueue flags.
+>> v2->v3:
+>>    - Add the thresholding mechanism to simulate the old behavior
+>>    - Convert all the btrfs_workers to btrfs_workrqueue_struct.
+>>    - Fix some potential deadlock when executed in IRQ handler.
+>> v3->v4:
+>>    - Change the ordered workqueue implement to fix the performance 
+>> drop in 32K
+>>      multi thread random write.
+>>    - Change the high priority workqueue implement to get an 
+>> independent high
+>>      workqueue without starving problem.
+>>    - Simplify the btrfs_alloc_workqueue parameters.
+>>    - Coding style cleanup.
+>>    - Remove the redundant "_struct" suffix.
+>>
+>> Qu Wenruo (18):
+>>    btrfs: Cleanup the unused struct async_sched.
+>>    btrfs: Added btrfs_workqueue_struct implemented ordered execution
+>>      based on kernel workqueue
+>>    btrfs: Add high priority workqueue support for btrfs_workqueue_struct
+>>    btrfs: Add threshold workqueue based on kernel workqueue
+>>    btrfs: Replace fs_info->workers with btrfs_workqueue.
+>>    btrfs: Replace fs_info->delalloc_workers with btrfs_workqueue
+>>    btrfs: Replace fs_info->submit_workers with btrfs_workqueue.
+>>    btrfs: Replace fs_info->flush_workers with btrfs_workqueue.
+>>    btrfs: Replace fs_info->endio_* workqueue with btrfs_workqueue.
+>>    btrfs: Replace fs_info->rmw_workers workqueue with btrfs_workqueue.
+>>    btrfs: Replace fs_info->cache_workers workqueue with btrfs_workqueue.
+>>    btrfs: Replace fs_info->readahead_workers workqueue with
+>>      btrfs_workqueue.
+>>    btrfs: Replace fs_info->fixup_workers workqueue with btrfs_workqueue.
+>>    btrfs: Replace fs_info->delayed_workers workqueue with
+>>      btrfs_workqueue.
+>>    btrfs: Replace fs_info->qgroup_rescan_worker workqueue with
+>>      btrfs_workqueue.
+>>    btrfs: Replace fs_info->scrub_* workqueue with btrfs_workqueue.
+>>    btrfs: Cleanup the old btrfs_worker.
+>>    btrfs: Cleanup the "_struct" suffix in btrfs_workequeue
+>>
+>>   fs/btrfs/async-thread.c  | 821 
+>> ++++++++++++-----------------------------------
+>>   fs/btrfs/async-thread.h  | 117 ++-----
+>>   fs/btrfs/ctree.h         |  39 ++-
+>>   fs/btrfs/delayed-inode.c |   6 +-
+>>   fs/btrfs/disk-io.c       | 212 +++++-------
+>>   fs/btrfs/extent-tree.c   |   4 +-
+>>   fs/btrfs/inode.c         |  38 +--
+>>   fs/btrfs/ordered-data.c  |  11 +-
+>>   fs/btrfs/qgroup.c        |  15 +-
+>>   fs/btrfs/raid56.c        |  21 +-
+>>   fs/btrfs/reada.c         |   4 +-
+>>   fs/btrfs/scrub.c         |  70 ++--
+>>   fs/btrfs/super.c         |  36 +--
+>>   fs/btrfs/volumes.c       |  16 +-
+>>   14 files changed, 430 insertions(+), 980 deletions(-)
+>>
+>
+>
+
+
+-- 
+-----------------------------------------------------
+Qu Wenruo
+Development Dept.I
+Nanjing Fujitsu Nanda Software Tech. Co., Ltd.(FNST)
+No. 6 Wenzhu Road, Nanjing, 210012, China
+TEL: +86+25-86630566-8526
+COINS: 7998-8526
+FAX: +86+25-83317685
+MAIL: quwenruo@cn.fujitsu.com
+-----------------------------------------------------
 

@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:54498 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:54503 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932823Ab3LTNZY (ORCPT
+	with ESMTP id S932824Ab3LTNZY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 20 Dec 2013 08:25:24 -0500
-Message-Id: <20131220131635.650823732@bombadil.infradead.org>
-Date: Fri, 20 Dec 2013 05:16:35 -0800
+Message-Id: <20131220132521.682711410@bombadil.infradead.org>
+Date: Fri, 20 Dec 2013 05:16:39 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: viro@zeniv.linux.org.uk
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -14,55 +14,35 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Joel Becker <jlbec@evilplan.org>, reiserfs-devel@vger.kernel.org,
         xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
         cluster-devel@redhat.com, linux-nfs@vger.kernel.org,
-        Andreas Gruenbacher <andreas.gruenbacher@linbit.com>
-Subject: [PATCH 00/21] Consolidate Posix ACL implementation V3
+        Andreas Gruenbacher <andreas.gruenbacher@linbit.com>,
+        Jan Kara <jack@suse.cz>
+Subject: [PATCH 04/21] fs: add a set_acl inode operation
+References: <20131220131635.650823732@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series consolidates the various cut'n'pasted Posix ACL implementations
-into a single common one based on the ->get_acl method Linus added a while
-ago and a new ->set_acl counterpart.
+This will allow moving all the Posix ACL handling into the VFS and clean
+up tons of cruft in the filesystems.
 
-This remove ~1800 lines of code and provides a single place to implement
-various nasty little gems of the semantics.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Jan Kara <jack@suse.cz>
+---
+ include/linux/fs.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-Unfortunately the 9p code is still left out - it implements the ACLs
-in two very weird ways, one using the common code but on the client only,
-and one pasing things straight through to the server.  We could easily
-convert it to the new code on the write side if ->set_acl took a dentry,
-but there's no cance to do that on the ->get_acl side.  Ideas how to
-handle it welcome.
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 121f11f..09f553c 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1580,6 +1580,7 @@ struct inode_operations {
+ 			   struct file *, unsigned open_flag,
+ 			   umode_t create_mode, int *opened);
+ 	int (*tmpfile) (struct inode *, struct dentry *, umode_t);
++	int (*set_acl)(struct inode *, struct posix_acl *, int);
+ } ____cacheline_aligned;
+ 
+ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
+-- 
+1.7.10.4
 
-After that we'd be ready to never go into the fs for the ACL attributes
-and branch straight to the ACL code below the syscall, repairing the
-old API braindamage of overloading ACLs onto the xattrs.
 
-
-Changes from V2:
- - remove redundant S_ISLNK checks
- - fix the get_acl return value
- - remove spurious symlink get_acl instance in gfs2
- - fix default ACL inheritance on NFS
- - use get_acl and set_acl from the NFS server
- - remove some incorrectly copy&pasted code in hfsplus
-
-Changes from V1:
- - check for symlinks in the ACL code and remove checks in the lower
-   level functions.
- - remove get_acl instances for symlinks in a few filesystems
- - pass a umode_t mode argument to posix_acl_chmod to accomodate f2fs
- - various cosemtic bits from the reviews.
-
-Note that I still haven't heard from ocfs2 folks, so the patch is left
-unchanged.
-
-------------------------------------------------------------------------------
-Rapidly troubleshoot problems before they affect your business. Most IT 
-organizations don't have a clear picture of how application performance 
-affects their revenue. With AppDynamics, you get 100% visibility into your 
-Java,.NET, & PHP application. Start your 15-day FREE TRIAL of AppDynamics Pro!
-http://pubads.g.doubleclick.net/gampad/clk?id=84349831&iu=/4140/ostg.clktrk
-_______________________________________________
-Jfs-discussion mailing list
-Jfs-discussion@lists.sourceforge.net
-https://lists.sourceforge.net/lists/listinfo/jfs-discussion

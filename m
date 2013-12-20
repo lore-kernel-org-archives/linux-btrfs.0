@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:38896 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:45502 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756605Ab3LTAg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Dec 2013 19:36:27 -0500
-Message-ID: <52B3913E.1050707@cn.fujitsu.com>
-Date: Fri, 20 Dec 2013 08:37:18 +0800
+	id S1751031Ab3LTDH7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Dec 2013 22:07:59 -0500
+Message-ID: <52B3B4BC.70204@cn.fujitsu.com>
+Date: Fri, 20 Dec 2013 11:08:44 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
@@ -16,12 +16,15 @@ Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for reporting.
+I'm sorry but I failed to reproduce the problem.
+Btrfs/012 in xfstests has been run for serveral hours but nothing happened.
 
-That's interesting, I'll look into it to figure out what's happening.
+Would you please give me some more details about the environment or the 
+panic backtrace?
+
+Thanks.
 
 Qu
-
 
 On Thu, 19 Dec 2013 10:27:22 -0500, Josef Bacik wrote:
 > I got a panic with btrfs/012 in the worker stuff.  I'm bisecting it 

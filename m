@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:54555 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:54535 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932852Ab3LTNZZ (ORCPT
+	with ESMTP id S932840Ab3LTNZZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 20 Dec 2013 08:25:25 -0500
-Message-Id: <20131220132523.988238726@bombadil.infradead.org>
-Date: Fri, 20 Dec 2013 05:16:51 -0800
+Message-Id: <20131220132522.854727239@bombadil.infradead.org>
+Date: Fri, 20 Dec 2013 05:16:45 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: viro@zeniv.linux.org.uk
 Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -15,428 +15,382 @@ Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         xfs@oss.sgi.com, jfs-discussion@lists.sourceforge.net,
         cluster-devel@redhat.com, linux-nfs@vger.kernel.org,
         Andreas Gruenbacher <andreas.gruenbacher@linbit.com>,
-        Dave Kleikamp <dave.kleikamp@oracle.com>
-Subject: [PATCH 16/21] jfs: use generic posix ACL infrastructure
+        Jaegeuk Kim <jaegeuk.kim@samsung.com>
+Subject: [PATCH 10/21] f2fs: use generic posix ACL infrastructure
 References: <20131220131635.650823732@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Copy the scheme I introduced to btrfs many years ago to only use the
-xattr handler for ACLs, but pass plain attrs straight through.
+f2fs has some weird mode bit handling, so still using the old
+chmod code for now.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Dave Kleikamp <dave.kleikamp@oracle.com>
+Reviewed-by: Jaegeuk Kim <jaegeuk.kim@samsung.com>
 ---
- fs/jfs/acl.c       |  105 ++++++++++++++++++++------------------------------
- fs/jfs/file.c      |    4 +-
- fs/jfs/jfs_acl.h   |    7 +---
- fs/jfs/jfs_xattr.h |    2 +
- fs/jfs/namei.c     |    1 +
- fs/jfs/super.c     |    2 +
- fs/jfs/xattr.c     |  108 ++++++++++++++++++----------------------------------
- 7 files changed, 89 insertions(+), 140 deletions(-)
+ fs/f2fs/acl.c   |  174 ++++++-------------------------------------------------
+ fs/f2fs/acl.h   |    7 +--
+ fs/f2fs/f2fs.h  |    4 ++
+ fs/f2fs/file.c  |    3 +-
+ fs/f2fs/namei.c |    2 +
+ fs/f2fs/xattr.c |    9 +--
+ fs/f2fs/xattr.h |    2 -
+ 7 files changed, 31 insertions(+), 170 deletions(-)
 
-diff --git a/fs/jfs/acl.c b/fs/jfs/acl.c
-index 28d529a..e973b85 100644
---- a/fs/jfs/acl.c
-+++ b/fs/jfs/acl.c
-@@ -72,7 +72,7 @@ struct posix_acl *jfs_get_acl(struct inode *inode, int type)
+diff --git a/fs/f2fs/acl.c b/fs/f2fs/acl.c
+index 45e8430..fa8da4c 100644
+--- a/fs/f2fs/acl.c
++++ b/fs/f2fs/acl.c
+@@ -17,9 +17,6 @@
+ #include "xattr.h"
+ #include "acl.h"
+ 
+-#define get_inode_mode(i)	((is_inode_flag_set(F2FS_I(i), FI_ACL_MODE)) ? \
+-					(F2FS_I(i)->i_acl_mode) : ((i)->i_mode))
+-
+ static inline size_t f2fs_acl_size(int count)
+ {
+ 	if (count <= 4) {
+@@ -167,19 +164,11 @@ fail:
+ 
+ struct posix_acl *f2fs_get_acl(struct inode *inode, int type)
+ {
+-	struct f2fs_sb_info *sbi = F2FS_SB(inode->i_sb);
+ 	int name_index = F2FS_XATTR_INDEX_POSIX_ACL_DEFAULT;
+ 	void *value = NULL;
+ 	struct posix_acl *acl;
+ 	int retval;
+ 
+-	if (!test_opt(sbi, POSIX_ACL))
+-		return NULL;
+-
+-	acl = get_cached_acl(inode, type);
+-	if (acl != ACL_NOT_CACHED)
+-		return acl;
+-
+ 	if (type == ACL_TYPE_ACCESS)
+ 		name_index = F2FS_XATTR_INDEX_POSIX_ACL_ACCESS;
+ 
+@@ -205,21 +194,15 @@ struct posix_acl *f2fs_get_acl(struct inode *inode, int type)
  	return acl;
  }
  
--static int jfs_set_acl(tid_t tid, struct inode *inode, int type,
-+static int __jfs_set_acl(tid_t tid, struct inode *inode, int type,
- 		       struct posix_acl *acl)
+-static int f2fs_set_acl(struct inode *inode, int type,
++static int __f2fs_set_acl(struct inode *inode, int type,
+ 			struct posix_acl *acl, struct page *ipage)
  {
- 	char *ea_name;
-@@ -80,21 +80,22 @@ static int jfs_set_acl(tid_t tid, struct inode *inode, int type,
- 	int size = 0;
- 	char *value = NULL;
+-	struct f2fs_sb_info *sbi = F2FS_SB(inode->i_sb);
+ 	struct f2fs_inode_info *fi = F2FS_I(inode);
+ 	int name_index;
+ 	void *value = NULL;
+ 	size_t size = 0;
+ 	int error;
  
--	if (S_ISLNK(inode->i_mode))
--		return -EOPNOTSUPP;
--
--	switch(type) {
--		case ACL_TYPE_ACCESS:
--			ea_name = POSIX_ACL_XATTR_ACCESS;
--			break;
--		case ACL_TYPE_DEFAULT:
--			ea_name = POSIX_ACL_XATTR_DEFAULT;
--			if (!S_ISDIR(inode->i_mode))
--				return acl ? -EACCES : 0;
--			break;
--		default:
--			return -EINVAL;
-+	switch (type) {
-+	case ACL_TYPE_ACCESS:
-+		ea_name = POSIX_ACL_XATTR_ACCESS;
-+		rc = posix_acl_equiv_mode(acl, &inode->i_mode);
-+		if (rc < 0)
-+			return rc;
-+		if (rc == 0)
-+			acl = NULL;
-+		break;
-+	case ACL_TYPE_DEFAULT:
-+		ea_name = POSIX_ACL_XATTR_DEFAULT;
-+		break;
-+	default:
-+		return -EINVAL;
- 	}
-+
- 	if (acl) {
- 		size = posix_acl_xattr_size(acl->a_count);
- 		value = kmalloc(size, GFP_KERNEL);
-@@ -114,65 +115,43 @@ out:
- 	return rc;
- }
- 
-+int jfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
-+{
-+	int rc;
-+	tid_t tid;
-+
-+	tid = txBegin(inode->i_sb, 0);
-+	mutex_lock(&JFS_IP(inode)->commit_mutex);
-+	rc = __jfs_set_acl(tid, inode, type, acl);
-+	if (!rc)
-+		rc = txCommit(tid, 1, &inode, 0);
-+	txEnd(tid);
-+	mutex_unlock(&JFS_IP(inode)->commit_mutex);
-+	return rc;
-+}
-+
- int jfs_init_acl(tid_t tid, struct inode *inode, struct inode *dir)
- {
--	struct posix_acl *acl = NULL;
-+	struct posix_acl *default_acl, *acl;
- 	int rc = 0;
- 
--	if (S_ISLNK(inode->i_mode))
+-	if (!test_opt(sbi, POSIX_ACL))
 -		return 0;
-+	rc = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
-+	if (rc)
-+		return rc;
- 
--	acl = jfs_get_acl(dir, ACL_TYPE_DEFAULT);
--	if (IS_ERR(acl))
--		return PTR_ERR(acl);
-+	if (default_acl) {
-+		rc = __jfs_set_acl(tid, inode, ACL_TYPE_DEFAULT, default_acl);
-+		posix_acl_release(default_acl);
-+	}
- 
- 	if (acl) {
--		if (S_ISDIR(inode->i_mode)) {
--			rc = jfs_set_acl(tid, inode, ACL_TYPE_DEFAULT, acl);
--			if (rc)
--				goto cleanup;
--		}
--		rc = __posix_acl_create(&acl, GFP_KERNEL, &inode->i_mode);
--		if (rc < 0)
--			goto cleanup; /* posix_acl_release(NULL) is no-op */
--		if (rc > 0)
--			rc = jfs_set_acl(tid, inode, ACL_TYPE_ACCESS, acl);
--cleanup:
-+		if (!rc)
-+			rc = __jfs_set_acl(tid, inode, ACL_TYPE_ACCESS, acl);
- 		posix_acl_release(acl);
--	} else
--		inode->i_mode &= ~current_umask();
-+	}
- 
- 	JFS_IP(inode)->mode2 = (JFS_IP(inode)->mode2 & 0xffff0000) |
- 			       inode->i_mode;
- 
- 	return rc;
- }
--
--int jfs_acl_chmod(struct inode *inode)
--{
--	struct posix_acl *acl;
--	int rc;
--	tid_t tid;
--
 -	if (S_ISLNK(inode->i_mode))
 -		return -EOPNOTSUPP;
 -
--	acl = jfs_get_acl(inode, ACL_TYPE_ACCESS);
+ 	switch (type) {
+ 	case ACL_TYPE_ACCESS:
+ 		name_index = F2FS_XATTR_INDEX_POSIX_ACL_ACCESS;
+@@ -261,154 +244,31 @@ static int f2fs_set_acl(struct inode *inode, int type,
+ 	return error;
+ }
+ 
+-int f2fs_init_acl(struct inode *inode, struct inode *dir, struct page *ipage)
++int f2fs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ {
+-	struct f2fs_sb_info *sbi = F2FS_SB(dir->i_sb);
+-	struct posix_acl *acl = NULL;
+-	int error = 0;
+-
+-	if (!S_ISLNK(inode->i_mode)) {
+-		if (test_opt(sbi, POSIX_ACL)) {
+-			acl = f2fs_get_acl(dir, ACL_TYPE_DEFAULT);
+-			if (IS_ERR(acl))
+-				return PTR_ERR(acl);
+-		}
+-		if (!acl)
+-			inode->i_mode &= ~current_umask();
+-	}
+-
+-	if (!test_opt(sbi, POSIX_ACL) || !acl)
+-		goto cleanup;
+-
+-	if (S_ISDIR(inode->i_mode)) {
+-		error = f2fs_set_acl(inode, ACL_TYPE_DEFAULT, acl, ipage);
+-		if (error)
+-			goto cleanup;
+-	}
+-	error = __posix_acl_create(&acl, GFP_KERNEL, &inode->i_mode);
+-	if (error < 0)
+-		return error;
+-	if (error > 0)
+-		error = f2fs_set_acl(inode, ACL_TYPE_ACCESS, acl, ipage);
+-cleanup:
+-	posix_acl_release(acl);
+-	return error;
++	return __f2fs_set_acl(inode, type, acl, NULL);
+ }
+ 
+-int f2fs_acl_chmod(struct inode *inode)
++int f2fs_init_acl(struct inode *inode, struct inode *dir, struct page *ipage)
+ {
+-	struct f2fs_sb_info *sbi = F2FS_SB(inode->i_sb);
+-	struct posix_acl *acl;
+-	int error;
+-	umode_t mode = get_inode_mode(inode);
+-
+-	if (!test_opt(sbi, POSIX_ACL))
+-		return 0;
+-	if (S_ISLNK(mode))
+-		return -EOPNOTSUPP;
+-
+-	acl = f2fs_get_acl(inode, ACL_TYPE_ACCESS);
 -	if (IS_ERR(acl) || !acl)
 -		return PTR_ERR(acl);
--
--	rc = __posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
--	if (rc)
--		return rc;
--
--	tid = txBegin(inode->i_sb, 0);
--	mutex_lock(&JFS_IP(inode)->commit_mutex);
--	rc = jfs_set_acl(tid, inode, ACL_TYPE_ACCESS, acl);
--	if (!rc)
--		rc = txCommit(tid, 1, &inode, 0);
--	txEnd(tid);
--	mutex_unlock(&JFS_IP(inode)->commit_mutex);
--
++	struct posix_acl *default_acl, *acl;
++	int error = 0;
+ 
+-	error = __posix_acl_chmod(&acl, GFP_KERNEL, mode);
++	error = posix_acl_create(dir, &inode->i_mode, &default_acl, &acl);
+ 	if (error)
+ 		return error;
+ 
+-	error = f2fs_set_acl(inode, ACL_TYPE_ACCESS, acl, NULL);
 -	posix_acl_release(acl);
--	return rc;
+-	return error;
 -}
-diff --git a/fs/jfs/file.c b/fs/jfs/file.c
-index dd7442c..794da94 100644
---- a/fs/jfs/file.c
-+++ b/fs/jfs/file.c
-@@ -19,6 +19,7 @@
+-
+-static size_t f2fs_xattr_list_acl(struct dentry *dentry, char *list,
+-		size_t list_size, const char *name, size_t name_len, int type)
+-{
+-	struct f2fs_sb_info *sbi = F2FS_SB(dentry->d_sb);
+-	const char *xname = POSIX_ACL_XATTR_DEFAULT;
+-	size_t size;
+-
+-	if (!test_opt(sbi, POSIX_ACL))
+-		return 0;
+-
+-	if (type == ACL_TYPE_ACCESS)
+-		xname = POSIX_ACL_XATTR_ACCESS;
+-
+-	size = strlen(xname) + 1;
+-	if (list && size <= list_size)
+-		memcpy(list, xname, size);
+-	return size;
+-}
+-
+-static int f2fs_xattr_get_acl(struct dentry *dentry, const char *name,
+-		void *buffer, size_t size, int type)
+-{
+-	struct f2fs_sb_info *sbi = F2FS_SB(dentry->d_sb);
+-	struct posix_acl *acl;
+-	int error;
+-
+-	if (strcmp(name, "") != 0)
+-		return -EINVAL;
+-	if (!test_opt(sbi, POSIX_ACL))
+-		return -EOPNOTSUPP;
+-
+-	acl = f2fs_get_acl(dentry->d_inode, type);
+-	if (IS_ERR(acl))
+-		return PTR_ERR(acl);
+-	if (!acl)
+-		return -ENODATA;
+-	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+-	posix_acl_release(acl);
+-
+-	return error;
+-}
+-
+-static int f2fs_xattr_set_acl(struct dentry *dentry, const char *name,
+-		const void *value, size_t size, int flags, int type)
+-{
+-	struct f2fs_sb_info *sbi = F2FS_SB(dentry->d_sb);
+-	struct inode *inode = dentry->d_inode;
+-	struct posix_acl *acl = NULL;
+-	int error;
+-
+-	if (strcmp(name, "") != 0)
+-		return -EINVAL;
+-	if (!test_opt(sbi, POSIX_ACL))
+-		return -EOPNOTSUPP;
+-	if (!inode_owner_or_capable(inode))
+-		return -EPERM;
+-
+-	if (value) {
+-		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+-		if (IS_ERR(acl))
+-			return PTR_ERR(acl);
+-		if (acl) {
+-			error = posix_acl_valid(acl);
+-			if (error)
+-				goto release_and_out;
+-		}
+-	} else {
+-		acl = NULL;
++	if (default_acl) {
++		error = __f2fs_set_acl(inode, ACL_TYPE_DEFAULT, default_acl,
++				       ipage);
++		posix_acl_release(default_acl);
++	}
++	if (acl) {
++		if (error)
++			error = __f2fs_set_acl(inode, ACL_TYPE_ACCESS, acl,
++					       ipage);
++		posix_acl_release(acl);
+ 	}
  
- #include <linux/mm.h>
- #include <linux/fs.h>
-+#include <linux/posix_acl.h>
- #include <linux/quotaops.h>
- #include "jfs_incore.h"
- #include "jfs_inode.h"
-@@ -131,7 +132,7 @@ int jfs_setattr(struct dentry *dentry, struct iattr *iattr)
- 	mark_inode_dirty(inode);
- 
- 	if (iattr->ia_valid & ATTR_MODE)
--		rc = jfs_acl_chmod(inode);
-+		rc = posix_acl_chmod(inode, inode->i_mode);
- 	return rc;
+-	error = f2fs_set_acl(inode, type, acl, NULL);
+-
+-release_and_out:
+-	posix_acl_release(acl);
+ 	return error;
  }
+-
+-const struct xattr_handler f2fs_xattr_acl_default_handler = {
+-	.prefix = POSIX_ACL_XATTR_DEFAULT,
+-	.flags = ACL_TYPE_DEFAULT,
+-	.list = f2fs_xattr_list_acl,
+-	.get = f2fs_xattr_get_acl,
+-	.set = f2fs_xattr_set_acl,
+-};
+-
+-const struct xattr_handler f2fs_xattr_acl_access_handler = {
+-	.prefix = POSIX_ACL_XATTR_ACCESS,
+-	.flags = ACL_TYPE_ACCESS,
+-	.list = f2fs_xattr_list_acl,
+-	.get = f2fs_xattr_get_acl,
+-	.set = f2fs_xattr_set_acl,
+-};
+diff --git a/fs/f2fs/acl.h b/fs/f2fs/acl.h
+index 4963313..e086465 100644
+--- a/fs/f2fs/acl.h
++++ b/fs/f2fs/acl.h
+@@ -37,18 +37,13 @@ struct f2fs_acl_header {
+ #ifdef CONFIG_F2FS_FS_POSIX_ACL
  
-@@ -143,6 +144,7 @@ const struct inode_operations jfs_file_inode_operations = {
- 	.setattr	= jfs_setattr,
- #ifdef CONFIG_JFS_POSIX_ACL
- 	.get_acl	= jfs_get_acl,
-+	.set_acl	= jfs_set_acl,
- #endif
- };
- 
-diff --git a/fs/jfs/jfs_acl.h b/fs/jfs/jfs_acl.h
-index ad84fe5..489f993 100644
---- a/fs/jfs/jfs_acl.h
-+++ b/fs/jfs/jfs_acl.h
-@@ -21,8 +21,8 @@
- #ifdef CONFIG_JFS_POSIX_ACL
- 
- struct posix_acl *jfs_get_acl(struct inode *inode, int type);
-+int jfs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
- int jfs_init_acl(tid_t, struct inode *, struct inode *);
--int jfs_acl_chmod(struct inode *inode);
- 
+ extern struct posix_acl *f2fs_get_acl(struct inode *, int);
+-extern int f2fs_acl_chmod(struct inode *);
++extern int f2fs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
+ extern int f2fs_init_acl(struct inode *, struct inode *, struct page *);
  #else
+ #define f2fs_check_acl	NULL
+ #define f2fs_get_acl	NULL
+ #define f2fs_set_acl	NULL
  
-@@ -32,10 +32,5 @@ static inline int jfs_init_acl(tid_t tid, struct inode *inode,
- 	return 0;
- }
- 
--static inline int jfs_acl_chmod(struct inode *inode)
+-static inline int f2fs_acl_chmod(struct inode *inode)
 -{
 -	return 0;
 -}
 -
- #endif
- #endif		/* _H_JFS_ACL */
-diff --git a/fs/jfs/jfs_xattr.h b/fs/jfs/jfs_xattr.h
-index e9e100f..e8d717d 100644
---- a/fs/jfs/jfs_xattr.h
-+++ b/fs/jfs/jfs_xattr.h
-@@ -61,6 +61,8 @@ extern ssize_t jfs_getxattr(struct dentry *, const char *, void *, size_t);
- extern ssize_t jfs_listxattr(struct dentry *, char *, size_t);
- extern int jfs_removexattr(struct dentry *, const char *);
- 
-+extern const struct xattr_handler *jfs_xattr_handlers[];
-+
- #ifdef CONFIG_JFS_SECURITY
- extern int jfs_init_security(tid_t, struct inode *, struct inode *,
- 			     const struct qstr *);
-diff --git a/fs/jfs/namei.c b/fs/jfs/namei.c
-index aa8a337..d59c7de 100644
---- a/fs/jfs/namei.c
-+++ b/fs/jfs/namei.c
-@@ -1524,6 +1524,7 @@ const struct inode_operations jfs_dir_inode_operations = {
- 	.setattr	= jfs_setattr,
- #ifdef CONFIG_JFS_POSIX_ACL
- 	.get_acl	= jfs_get_acl,
-+	.set_acl	= jfs_set_acl,
- #endif
- };
- 
-diff --git a/fs/jfs/super.c b/fs/jfs/super.c
-index 6669aa2..e2b7483 100644
---- a/fs/jfs/super.c
-+++ b/fs/jfs/super.c
-@@ -44,6 +44,7 @@
- #include "jfs_imap.h"
- #include "jfs_acl.h"
- #include "jfs_debug.h"
-+#include "jfs_xattr.h"
- 
- MODULE_DESCRIPTION("The Journaled Filesystem (JFS)");
- MODULE_AUTHOR("Steve Best/Dave Kleikamp/Barry Arndt, IBM");
-@@ -522,6 +523,7 @@ static int jfs_fill_super(struct super_block *sb, void *data, int silent)
- 	 */
- 	sb->s_op = &jfs_super_operations;
- 	sb->s_export_op = &jfs_export_operations;
-+	sb->s_xattr = jfs_xattr_handlers;
- #ifdef CONFIG_QUOTA
- 	sb->dq_op = &dquot_operations;
- 	sb->s_qcop = &dquot_quotactl_ops;
-diff --git a/fs/jfs/xattr.c b/fs/jfs/xattr.c
-index d3472f4..5324e4e 100644
---- a/fs/jfs/xattr.c
-+++ b/fs/jfs/xattr.c
-@@ -666,81 +666,12 @@ static int ea_put(tid_t tid, struct inode *inode, struct ea_buffer *ea_buf,
+ static inline int f2fs_init_acl(struct inode *inode, struct inode *dir,
+ 							struct page *page)
+ {
+diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
+index 89dc750..934b59c 100644
+--- a/fs/f2fs/f2fs.h
++++ b/fs/f2fs/f2fs.h
+@@ -953,6 +953,10 @@ static inline int f2fs_readonly(struct super_block *sb)
+ 	return sb->s_flags & MS_RDONLY;
  }
  
++#define get_inode_mode(i) \
++	((is_inode_flag_set(F2FS_I(i), FI_ACL_MODE)) ? \
++	 (F2FS_I(i)->i_acl_mode) : ((i)->i_mode))
++
  /*
-- * can_set_system_xattr
-- *
-- * This code is specific to the system.* namespace.  It contains policy
-- * which doesn't belong in the main xattr codepath.
-- */
--static int can_set_system_xattr(struct inode *inode, const char *name,
--				const void *value, size_t value_len)
--{
--#ifdef CONFIG_JFS_POSIX_ACL
--	struct posix_acl *acl;
--	int rc;
--
--	if (!inode_owner_or_capable(inode))
--		return -EPERM;
--
--	/*
--	 * POSIX_ACL_XATTR_ACCESS is tied to i_mode
--	 */
--	if (strcmp(name, POSIX_ACL_XATTR_ACCESS) == 0) {
--		acl = posix_acl_from_xattr(&init_user_ns, value, value_len);
--		if (IS_ERR(acl)) {
--			rc = PTR_ERR(acl);
--			printk(KERN_ERR "posix_acl_from_xattr returned %d\n",
--			       rc);
--			return rc;
--		}
--		if (acl) {
--			rc = posix_acl_equiv_mode(acl, &inode->i_mode);
--			posix_acl_release(acl);
--			if (rc < 0) {
--				printk(KERN_ERR
--				       "posix_acl_equiv_mode returned %d\n",
--				       rc);
--				return rc;
--			}
--			mark_inode_dirty(inode);
--		}
--		/*
--		 * We're changing the ACL.  Get rid of the cached one
--		 */
--		forget_cached_acl(inode, ACL_TYPE_ACCESS);
--
--		return 0;
--	} else if (strcmp(name, POSIX_ACL_XATTR_DEFAULT) == 0) {
--		acl = posix_acl_from_xattr(&init_user_ns, value, value_len);
--		if (IS_ERR(acl)) {
--			rc = PTR_ERR(acl);
--			printk(KERN_ERR "posix_acl_from_xattr returned %d\n",
--			       rc);
--			return rc;
--		}
--		posix_acl_release(acl);
--
--		/*
--		 * We're changing the default ACL.  Get rid of the cached one
--		 */
--		forget_cached_acl(inode, ACL_TYPE_DEFAULT);
--
--		return 0;
--	}
--#endif			/* CONFIG_JFS_POSIX_ACL */
--	return -EOPNOTSUPP;
--}
--
--/*
-  * Most of the permission checking is done by xattr_permission in the vfs.
-- * The local file system is responsible for handling the system.* namespace.
-  * We also need to verify that this is a namespace that we recognize.
+  * file.c
   */
- static int can_set_xattr(struct inode *inode, const char *name,
- 			 const void *value, size_t value_len)
- {
--	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
--		return can_set_system_xattr(inode, name, value, value_len);
--
- 	if (!strncmp(name, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN)) {
- 		/*
- 		 * This makes sure that we aren't trying to set an
-@@ -748,7 +679,7 @@ static int can_set_xattr(struct inode *inode, const char *name,
- 		 * with "os2."
- 		 */
- 		if (is_known_namespace(name + XATTR_OS2_PREFIX_LEN))
--				return -EOPNOTSUPP;
-+			return -EOPNOTSUPP;
- 		return 0;
- 	}
+diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+index 7d714f4..cf835e0 100644
+--- a/fs/f2fs/file.c
++++ b/fs/f2fs/file.c
+@@ -390,7 +390,7 @@ int f2fs_setattr(struct dentry *dentry, struct iattr *attr)
+ 	__setattr_copy(inode, attr);
  
-@@ -913,6 +844,14 @@ int jfs_setxattr(struct dentry *dentry, const char *name, const void *value,
- 	if ((rc = can_set_xattr(inode, name, value, value_len)))
- 		return rc;
+ 	if (attr->ia_valid & ATTR_MODE) {
+-		err = f2fs_acl_chmod(inode);
++		err = posix_acl_chmod(inode, get_inode_mode(inode));
+ 		if (err || is_inode_flag_set(fi, FI_ACL_MODE)) {
+ 			inode->i_mode = fi->i_acl_mode;
+ 			clear_inode_flag(fi, FI_ACL_MODE);
+@@ -405,6 +405,7 @@ const struct inode_operations f2fs_file_inode_operations = {
+ 	.getattr	= f2fs_getattr,
+ 	.setattr	= f2fs_setattr,
+ 	.get_acl	= f2fs_get_acl,
++	.set_acl	= f2fs_set_acl,
+ #ifdef CONFIG_F2FS_FS_XATTR
+ 	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+diff --git a/fs/f2fs/namei.c b/fs/f2fs/namei.c
+index 575adac..5846eeb 100644
+--- a/fs/f2fs/namei.c
++++ b/fs/f2fs/namei.c
+@@ -496,6 +496,7 @@ const struct inode_operations f2fs_dir_inode_operations = {
+ 	.getattr	= f2fs_getattr,
+ 	.setattr	= f2fs_setattr,
+ 	.get_acl	= f2fs_get_acl,
++	.set_acl	= f2fs_set_acl,
+ #ifdef CONFIG_F2FS_FS_XATTR
+ 	.setxattr	= generic_setxattr,
+ 	.getxattr	= generic_getxattr,
+@@ -522,6 +523,7 @@ const struct inode_operations f2fs_special_inode_operations = {
+ 	.getattr	= f2fs_getattr,
+ 	.setattr        = f2fs_setattr,
+ 	.get_acl	= f2fs_get_acl,
++	.set_acl	= f2fs_set_acl,
+ #ifdef CONFIG_F2FS_FS_XATTR
+ 	.setxattr       = generic_setxattr,
+ 	.getxattr       = generic_getxattr,
+diff --git a/fs/f2fs/xattr.c b/fs/f2fs/xattr.c
+index aa7a3f1..e2b9299 100644
+--- a/fs/f2fs/xattr.c
++++ b/fs/f2fs/xattr.c
+@@ -21,6 +21,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/f2fs_fs.h>
+ #include <linux/security.h>
++#include <linux/posix_acl_xattr.h>
+ #include "f2fs.h"
+ #include "xattr.h"
  
-+	/*
-+	 * If this is a request for a synthetic attribute in the system.*
-+	 * namespace use the generic infrastructure to resolve a handler
-+	 * for it via sb->s_xattr.
-+	 */
-+	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
-+		return generic_setxattr(dentry, name, value, value_len, flags);
-+
- 	if (value == NULL) {	/* empty EA, do not remove */
- 		value = "";
- 		value_len = 0;
-@@ -986,6 +925,14 @@ ssize_t jfs_getxattr(struct dentry *dentry, const char *name, void *data,
- {
- 	int err;
- 
-+	/*
-+	 * If this is a request for a synthetic attribute in the system.*
-+	 * namespace use the generic infrastructure to resolve a handler
-+	 * for it via sb->s_xattr.
-+	 */
-+	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
-+		return generic_getxattr(dentry, name, data, buf_size);
-+
- 	if (strncmp(name, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN) == 0) {
- 		/*
- 		 * skip past "os2." prefix
-@@ -1077,6 +1024,14 @@ int jfs_removexattr(struct dentry *dentry, const char *name)
- 	if ((rc = can_set_xattr(inode, name, NULL, 0)))
- 		return rc;
- 
-+	/*
-+	 * If this is a request for a synthetic attribute in the system.*
-+	 * namespace use the generic infrastructure to resolve a handler
-+	 * for it via sb->s_xattr.
-+	 */
-+	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
-+		return generic_removexattr(dentry, name);
-+
- 	tid = txBegin(inode->i_sb, 0);
- 	mutex_lock(&ji->commit_mutex);
- 	rc = __jfs_setxattr(tid, dentry->d_inode, name, NULL, 0, XATTR_REPLACE);
-@@ -1088,6 +1043,19 @@ int jfs_removexattr(struct dentry *dentry, const char *name)
- 	return rc;
- }
- 
-+/*
-+ * List of handlers for synthetic system.* attributes.  All real ondisk
-+ * attributes are handled directly.
-+ */
-+const struct xattr_handler *jfs_xattr_handlers[] = {
-+#ifdef JFS_POSIX_ACL
+@@ -216,8 +217,8 @@ const struct xattr_handler f2fs_xattr_security_handler = {
+ static const struct xattr_handler *f2fs_xattr_handler_map[] = {
+ 	[F2FS_XATTR_INDEX_USER] = &f2fs_xattr_user_handler,
+ #ifdef CONFIG_F2FS_FS_POSIX_ACL
+-	[F2FS_XATTR_INDEX_POSIX_ACL_ACCESS] = &f2fs_xattr_acl_access_handler,
+-	[F2FS_XATTR_INDEX_POSIX_ACL_DEFAULT] = &f2fs_xattr_acl_default_handler,
++	[F2FS_XATTR_INDEX_POSIX_ACL_ACCESS] = &posix_acl_access_xattr_handler,
++	[F2FS_XATTR_INDEX_POSIX_ACL_DEFAULT] = &posix_acl_default_xattr_handler,
+ #endif
+ 	[F2FS_XATTR_INDEX_TRUSTED] = &f2fs_xattr_trusted_handler,
+ #ifdef CONFIG_F2FS_FS_SECURITY
+@@ -229,8 +230,8 @@ static const struct xattr_handler *f2fs_xattr_handler_map[] = {
+ const struct xattr_handler *f2fs_xattr_handlers[] = {
+ 	&f2fs_xattr_user_handler,
+ #ifdef CONFIG_F2FS_FS_POSIX_ACL
+-	&f2fs_xattr_acl_access_handler,
+-	&f2fs_xattr_acl_default_handler,
 +	&posix_acl_access_xattr_handler,
 +	&posix_acl_default_xattr_handler,
-+#endif
-+	NULL,
-+};
-+
-+
- #ifdef CONFIG_JFS_SECURITY
- static int jfs_initxattrs(struct inode *inode, const struct xattr *xattr_array,
- 			  void *fs_info)
+ #endif
+ 	&f2fs_xattr_trusted_handler,
+ #ifdef CONFIG_F2FS_FS_SECURITY
+diff --git a/fs/f2fs/xattr.h b/fs/f2fs/xattr.h
+index 02a08fb..b21d9eb 100644
+--- a/fs/f2fs/xattr.h
++++ b/fs/f2fs/xattr.h
+@@ -108,8 +108,6 @@ struct f2fs_xattr_entry {
+ #ifdef CONFIG_F2FS_FS_XATTR
+ extern const struct xattr_handler f2fs_xattr_user_handler;
+ extern const struct xattr_handler f2fs_xattr_trusted_handler;
+-extern const struct xattr_handler f2fs_xattr_acl_access_handler;
+-extern const struct xattr_handler f2fs_xattr_acl_default_handler;
+ extern const struct xattr_handler f2fs_xattr_advise_handler;
+ extern const struct xattr_handler f2fs_xattr_security_handler;
+ 
 -- 
 1.7.10.4
 

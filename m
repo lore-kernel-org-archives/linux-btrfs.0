@@ -1,112 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48200 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751232Ab3LVLgX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Dec 2013 06:36:23 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VuhKY-0001mh-6n
-	for linux-btrfs@vger.kernel.org; Sun, 22 Dec 2013 12:36:22 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Dec 2013 12:36:22 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Dec 2013 12:36:22 +0100
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:39743 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751639Ab3LVMjp convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Dec 2013 07:39:45 -0500
+Received: from merkaba.localnet (ppp-88-217-103-226.dynamic.mnet-online.de [88.217.103.226])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id DF2ED11E
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Dec 2013 13:32:47 +0100 (CET)
+From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unmountable Array After Drive Failure During Device Deletion
-Date: Sun, 22 Dec 2013 11:35:53 +0000 (UTC)
-Message-ID: <pan$ba575$c4e4093$f5b3203$522a159c@cox.net>
-References: <52B2BBE1.8090306@gmail.com>
-	<CAN05THTwCnmMGh=A0zpgEHqDvoKmokNStfN6wyfVNaFoLxNxBQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Abysmal performance when doing a rm -r and rsync backup at the same time
+Date: Sun, 22 Dec 2013 13:32:46 +0100
+Message-ID: <2051639.8xYU6F6UDf@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-ronnie sahlberg posted on Sat, 21 Dec 2013 17:15:33 -0800 as excerpted:
+Hi!
 
-> Similar things happened to me. (See my unanswered posts ~1Sep, this fs
-> is not really ready for production I think)
+Today I started my backup script which rsync´s my system to an external 3,5 
+inch 2 TB harddisk with the wrong destination dir which I notices more than 
+150 GiB of data has been copied twice instead of diffing with an existing 
+subvolume.
 
-No "I think" about that one.  Known fact.  Btrfs is not yet fully stable 
-and is still under heavy development, and there are public warnings about 
-having backups and being prepared to use them before testing it, too.
+Thus I rm -rf the misplaced backup and started the backup script at the same 
+time before taking a bath. After the bath both the backup script and the rm -
+rf were still running. Disk was 100% utilizized and it didn´t seem to go 
+anywhere. Source of the backup was /home on an Intel SSD 320 which easily 
+outperforms the harddisk.
 
-[snip]
+I tried to look how much rm -rf already has deleted with du -sch but that du 
+didn´t really like to complete as well. rm, rsync and du were often in D 
+process state.
 
-> Then  depending on how important your data is, you start making backups
-> regularely, or switch to a less fragile and unrepairable fs.
+Then I stopped the backup script and the rm and let the disk settle for a few 
+moments. After it has settled down I did the du -sch and about 150 GiB of data 
+were still undeleted. There could only have been less than 239 GiB of data in 
+there cause the home directory isn´t bigger than that and the rsync backup has 
+not yet been completed. So most of the rm work was not yet done.
 
-Of course, if the data's /that/ important, backups that are tested and 
-ready to use have been done already, even if it's on a stable filesystem; 
-certainly even more so if it's on a development filesystem.  Otherwise, 
-the data simply isn't that important, no matter what people might claim, 
-as their actions belie their words!
+Well I run the rm command again and it completed rather quickly, say 10 
+seconds or so.
 
-While the btrfs kernel config option no longer (as of 3.12 IIRC) directly 
-calls the filesystem unstable, it /does/ say the disk format is "no 
-longer expected to change", which doesn't exactly sound entirely stable, 
-either (you don't see that sort of qualifier on ext4, for instance, let 
-alone ext3, or reiserfs, the generation of filesystem that some of the 
-folks who /really/ value their data are either still on or have just 
-recently upgraded from).  Further, it points to 
-http://btrfs.wiki.kernel.org , which on the main page under stability 
-status has this to say:
+Then I started the backup script and it already completed /home. Also quite 
+quickly.
 
->>>> The Btrfs code base is under heavy development.
 
-... And under getting started, it says:
+Is such a performance of a rsync versus rm -r issue known?
 
->>>> Note also that btrfs is still considered experimental. While many
->>>> people use it reliably, there are still problems being found.
+I have no exact measurements, but it virtually took ages. Harddisk was fully 
+utilized, but I didn´t look closely at any throughput or IOPS numbers.
 
-... and (offset in red even)...
 
->>>> You should keep and test backups of your data, and be prepared to
->>>> use them.
+Kernel in use:
 
-So no doubt about it or secret there; people should have TESTED backups 
-they are PREPARED TO USE before they stick anything on btrfs in the first 
-place.
+martin@merkaba:~> cat /proc/version
+Linux version 3.13.0-rc4-tp520 (martin@merkaba) (gcc version 4.8.2 (Debian 
+4.8.2-10) ) #39 SMP PREEMPT Tue Dec 17 13:57:12 CET 2013
 
-Failure to do that simply demonstrates in action if not in word that the 
-data isn't considered valuable enough to bother reading and following the 
-warnings about keeping tested backups they're prepared to use, while 
-placing it on a filesystem known to be under heavy development and not 
-fully stable yet, that being the reason for such warnings in the first 
-place!
 
-And the "but I didn't know" excuse isn't valid either, for the same 
-reason.  If they care about their data, they have backups even on stable 
-filesystems, and if they care /enough/, they've made it their business to 
-know the stability of the entire system, including the filesystem, that 
-data is on, too.
+Characteristics of backup data:
 
-Anything else... simply demonstrates by their actions that they didn't 
-care about their data as much as they might have said they did after 
-all.  And when people play the odds on the safety of their data, instead 
-of having redundant backups to a level of safety matching the level of 
-value they claim to place on that data,  sometimes they lose.  It's as 
-simple as that.
+About 239 GiB, lzo compressed with lots of small mail files (easily a million), 
+but also larger music files.
 
-(Not that I'm always perfect about keeping current backups either, but if 
-I lost the working copy and didn't have a current backup, I'd know 
-exactly who to point the finger at... myself!  Meanwhile, while it's not 
-always current, for the data I value I do tend to have multiple layers of 
-backup, to the degree that if I lose them all, it'll mean something 
-drastic enough has happened that I'll have more important things to worry 
-about than recovering my data for awhile... like surviving whatever 
-disaster took all those levels of backup away at once!  Other than that, 
-if I lose the working copy and perhaps the first level of backup, yeah 
-I'll be mad at myself for not having kept up with the backups, but oh, 
-well, I'll pick up with the backups I have and life will go on.  I've 
-done it before and if it comes to it I'll do it again!)
+martin@merkaba:~> find -type d | wc -l
+36359
+martin@merkaba:~> find -type f | wc -l
+1090049
+martin@merkaba:~> find -type l | wc -l
+1337
 
+
+Mount info:
+
+martin@merkaba:~> egrep "(home |steigerwald).*btrfs" /proc/mounts 
+/dev/dm-1 /home btrfs rw,noatime,compress=lzo,ssd,space_cache 0 0
+/dev/sdc1 /mnt/steigerwald btrfs 
+rw,relatime,compress=lzo,space_cache,autodefrag 0 0
+
+
+Subvolume amount:
+
+General, most of them are snapshots:
+
+merkaba:/mnt/steigerwald> btrfs subvol list .  | wc -l
+32
+
+Of which are snapshots:
+
+merkaba:/mnt/steigerwald> btrfs subvol list . | grep -- -20 | wc -l 
+23
+
+Subvolume merkaba where the backup went into after fixing the path and its 
+snapshots:
+
+merkaba:/mnt/steigerwald> btrfs subvol list . | grep merkaba | wc -l 
+13
+
+
+This is the situation after the rm and most of the backup (just some small 
+remote server left) has been completed:
+
+# ./btrfs filesystem disk-usage -t /mnt/steigerwald
+          Data   Metadata Metadata System System              
+          Single Single   DUP      Single DUP      Unallocated
+                                                              
+/dev/sdc1 1.43TB   8.00MB  76.00GB 4.00MB  16.00MB    322.98GB
+          ====== ======== ======== ====== ======== ===========
+Total     1.43TB   8.00MB  38.00GB 4.00MB   8.00MB    322.98GB
+Used      1.25TB     0.00  12.45GB   0.00 168.00KB
+
+# ./btrfs device disk-usage /mnt/steigerwald
+/dev/sdc1           1.82TB
+   Data,Single:              1.43TB
+   Metadata,Single:          8.00MB
+   Metadata,DUP:            76.00GB
+   System,Single:            4.00MB
+   System,DUP:              16.00MB
+   Unallocated:            322.98GB
+
+
+# ./btrfs filesystem df /mnt/steigerwald
+Disk size:                 1.82TB
+Disk allocated:            1.50TB
+Disk unallocated:        322.98GB
+Used:                      1.26TB
+Free (Estimated):        521.48GB       (Max: 529.46GB, min: 367.96GB)
+Data to disk ratio:          98 %
+
+
+(yeah I still love the patches by Goffredo regarding disk-usage output :)
+
+
+# btrfs fi show
+Label: 'steigerwald'  uuid: …
+        Total devices 1 FS bytes used 1.26TB
+        devid    1 size 1.82TB used 1.50TB path /dev/sdc1
+
+
+Ciao,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

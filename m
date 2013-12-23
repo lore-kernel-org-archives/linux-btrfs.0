@@ -1,137 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:64814 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751223Ab3LXIoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Dec 2013 03:44:09 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBO8i69b014864
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2013 16:44:06 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-we0-f179.google.com ([74.125.82.179]:54493 "EHLO
+	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752032Ab3LWLxJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Dec 2013 06:53:09 -0500
+Received: by mail-we0-f179.google.com with SMTP id q59so4705574wes.24
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Dec 2013 03:53:08 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: Move some super block check to btrfs_check_super_valid
-Date: Tue, 24 Dec 2013 16:44:58 +0800
-Message-Id: <1387874698-29652-1-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: reduce btree node locking duration on item update
+Date: Mon, 23 Dec 2013 11:53:02 +0000
+Message-Id: <1387799582-8469-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move some early check to btrfs_check_super_valid:
-- sectorsize check
-- leafsize == nodesize check
-- leafsize > BTRFS_MAX_METADATA_BLOCKSIZE check
-- incompat_flags check
+If we do a btree search with the goal of updating an existing item
+without changing its size (ins_len == 0 and cow == 1), then we never
+need to hold locks on upper level nodes (even when slot == 0) after we
+COW their child nodes/leaves, as we won't have node splits or merges
+in this scenario (that is, no key additions, removals or shifts on any
+nodes or leaves).
 
-and remove the duplicant magic check of btrfs_super_block,
-since btrfs_read_dev_super already checked the magic number.
+Therefore release the locks immediately after COWing the child nodes/leaves
+while navigating the btree, even if their parent slot is 0, instead of
+returning a path to the caller with those nodes locked, which would get
+released only when the caller releases or frees the path (or if it calls
+btrfs_unlock_up_safe).
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+This is a common scenario, for example when updating inode items in fs
+trees and block group items in the extent tree.
+
+The following benchmarks were performed on a quad core machine with 32Gb
+of ram, using a leaf/node size of 4Kb (to generate deeper fs trees more
+quickly).
+
+  sysbench --test=fileio --file-num=131072 --file-total-size=8G \
+    --file-test-mode=seqwr --num-threads=512 --file-block-size=8192 \
+    --max-requests=100000 --file-io-mode=sync [prepare|run]
+
+Before this change:  49.85Mb/s (average of 5 runs)
+After this change:   50.38Mb/s (average of 5 runs)
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-Changelog:
-v2:
-  - Rebased to btrfs-next repo
-  - Use pr_err instead of printk
-  - Use one line string to make grep easier(also emit the checkpatch warning)
----
- fs/btrfs/disk-io.c | 72 +++++++++++++++++++++++-------------------------------
- 1 file changed, 30 insertions(+), 42 deletions(-)
+ fs/btrfs/ctree.c         |   23 ++++++++++++++---------
+ fs/btrfs/delayed-inode.c |    1 -
+ fs/btrfs/inode.c         |    1 -
+ 3 files changed, 14 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9417b73..defe2a4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2384,33 +2384,6 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 062438d..9e9de68 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2731,6 +2731,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	lowest_level = p->lowest_level;
+ 	WARN_ON(lowest_level && ins_len > 0);
+ 	WARN_ON(p->nodes[0] != NULL);
++	BUG_ON(!cow && ins_len);
+ 
+ 	if (ins_len < 0) {
+ 		lowest_unlock = 2;
+@@ -2839,8 +2840,6 @@ again:
+ 			}
+ 		}
+ cow_done:
+-		BUG_ON(!cow && ins_len);
+-
+ 		p->nodes[level] = b;
+ 		btrfs_clear_path_blocking(p, NULL, 0);
+ 
+@@ -2850,13 +2849,19 @@ cow_done:
+ 		 * It is safe to drop the lock on our parent before we
+ 		 * go through the expensive btree search on b.
+ 		 *
+-		 * If cow is true, then we might be changing slot zero,
+-		 * which may require changing the parent.  So, we can't
+-		 * drop the lock until after we know which slot we're
+-		 * operating on.
++		 * If we're inserting or deleting (ins_len != 0), then we might
++		 * be changing slot zero, which may require changing the parent.
++		 * So, we can't drop the lock until after we know which slot
++		 * we're operating on.
+ 		 */
+-		if (!cow)
+-			btrfs_unlock_up_safe(p, level + 1);
++		if (!ins_len && !p->keep_locks) {
++			int u = level + 1;
++
++			if (u < BTRFS_MAX_LEVEL && p->locks[u]) {
++				btrfs_tree_unlock_rw(p->nodes[u], p->locks[u]);
++				p->locks[u] = 0;
++			}
++		}
+ 
+ 		ret = key_search(b, key, level, &prev_cmp, &slot);
+ 
+@@ -2884,7 +2889,7 @@ cow_done:
+ 			 * which means we must have a write lock
+ 			 * on the parent
+ 			 */
+-			if (slot == 0 && cow &&
++			if (slot == 0 && ins_len &&
+ 			    write_lock_level < level + 1) {
+ 				write_lock_level = level + 1;
+ 				btrfs_release_path(p);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 222ca8c..6368bf5 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1037,7 +1037,6 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+ 		return ret;
  	}
  
--	features = btrfs_super_incompat_flags(disk_super) &
--		~BTRFS_FEATURE_INCOMPAT_SUPP;
--	if (features) {
--		printk(KERN_ERR "BTRFS: couldn't mount because of "
--		       "unsupported optional features (%Lx).\n",
--		       features);
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--
--	if (btrfs_super_leafsize(disk_super) !=
--	    btrfs_super_nodesize(disk_super)) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksizes don't match.  node %d leaf %d\n",
--		       btrfs_super_nodesize(disk_super),
--		       btrfs_super_leafsize(disk_super));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--	if (btrfs_super_leafsize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksize (%d) was too large\n",
--		       btrfs_super_leafsize(disk_super));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--
- 	features = btrfs_super_incompat_flags(disk_super);
- 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
- 	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
-@@ -2578,17 +2551,6 @@ int open_ctree(struct super_block *sb,
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
+-	btrfs_unlock_up_safe(path, 1);
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 06bcf5b..26a1d53 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3490,7 +3490,6 @@ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
+ 		goto failed;
+ 	}
  
--	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
--		printk(KERN_INFO "BTRFS: valid FS not found on %s\n", sb->s_id);
--		goto fail_sb_buffer;
--	}
--
--	if (sectorsize != PAGE_SIZE) {
--		printk(KERN_WARNING "BTRFS: Incompatible sector size(%lu) "
--		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
--		goto fail_sb_buffer;
--	}
--
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(tree_root);
- 	mutex_unlock(&fs_info->chunk_mutex);
-@@ -3712,11 +3674,37 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
- }
- 
- static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
--			      int read_only)
-+				   int read_only)
- {
--	/*
--	 * Placeholder for checks
--	 */
-+	struct btrfs_super_block *disk_super = fs_info->super_copy;
-+	u32 sectorsize = btrfs_super_sectorsize(disk_super);
-+	u64 features;
-+
-+	if (sectorsize != PAGE_SIZE) {
-+		pr_err("BTRFS: Incompatible sector size(%lu) found on %s\n",
-+		       (unsigned long)sectorsize, fs_info->sb->s_id);
-+		return -EINVAL;
-+	}
-+	if (btrfs_super_leafsize(disk_super) !=
-+	    btrfs_super_nodesize(disk_super)) {
-+		pr_err("BTRFS: couldn't mount because metadata blocksizes don't match.  node %d leaf %d\n",
-+		       btrfs_super_nodesize(disk_super),
-+		       btrfs_super_leafsize(disk_super));
-+		return -EINVAL;
-+	}
-+	if (btrfs_super_leafsize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		pr_err("BTRFS: couldn't mount because metadata blocksize (%d) was too large\n",
-+		       btrfs_super_leafsize(disk_super));
-+		return -EINVAL;
-+	}
-+
-+	features = btrfs_super_incompat_flags(disk_super) &
-+		~BTRFS_FEATURE_INCOMPAT_SUPP;
-+	if (features) {
-+		pr_err("BTRFS: couldn't mount because of unsupported optional features (%Lx).\n",
-+		       features);
-+		return -EINVAL;
-+	}
- 	return 0;
- }
- 
+-	btrfs_unlock_up_safe(path, 1);
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
 -- 
-1.8.5.2
+1.7.9.5
 

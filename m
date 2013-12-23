@@ -1,83 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34299 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752032Ab3LWJjy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Dec 2013 04:39:54 -0500
-Date: Mon, 23 Dec 2013 09:39:53 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Nacho Man <nacho2874@yahoo.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:54154 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752032Ab3LWKKv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Dec 2013 05:10:51 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vv2TJ-0004PP-Qp
+	for linux-btrfs@vger.kernel.org; Mon, 23 Dec 2013 11:10:49 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Dec 2013 11:10:49 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Dec 2013 11:10:49 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: unlinked orphans.
-Message-ID: <20131223093953.GH17179@carfax.org.uk>
+Date: Mon, 23 Dec 2013 10:10:25 +0000 (UTC)
+Message-ID: <pan$484a5$e3c30cf5$18e2aa4e$b79770e@cox.net>
 References: <1387780037.66690.YahooMailNeo@web162601.mail.bf1.yahoo.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Uu2n37VG4rOBDVuR"
-In-Reply-To: <1387780037.66690.YahooMailNeo@web162601.mail.bf1.yahoo.com>
+	<20131223093953.GH17179@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Mon, 23 Dec 2013 09:39:53 +0000 as excerpted:
 
---Uu2n37VG4rOBDVuR
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Sun, Dec 22, 2013 at 10:27:17PM -0800, Nacho Man wrote:
+>> I ran dmesg and saw a bunch of these:
+>> [564421.874063] BTRFS debug (device sda2): unlinked 32 orphans
+>> 
+>> Do I have to worry?
 
-On Sun, Dec 22, 2013 at 10:27:17PM -0800, Nacho Man wrote:
-> Hello,
-> I ran dmesg and saw a bunch of these:
-> [564421.874063] BTRFS debug (device sda2): unlinked 32 orphans
-> [568021.386733] BTRFS debug (device sda2): unlinked 32 orphans
-> [569943.269610] BTRFS debug (device sda2): unlinked 32 orphans
-> [570929.840278] BTRFS debug (device sda2): unlinked 32 orphans
-> [570942.035251] BTRFS debug (device sda2): unlinked 33 orphans
-> [571623.719086] BTRFS debug (device sda2): unlinked 32 orphans
-> [572075.684003] BTRFS debug (device sda2): unlinked 32 orphans
->=20
-> I just counted and there's a 175 of them.=A0 Do I have to worry?=A0 I've =
-been working on a toolchain and some other stuff for the PS3 so my hard dri=
-ve was being accessed a bit.=A0 Could it be related?=A0 Thanks.
+> No, this is harmless. Orphans are files that were deleted while
+> they were still held open by a process. POSIX semantics requires that
+> the file data is still readable by the process, but that the file's
+> hardlink(s) are no longer visible -- so there's no way of finding the
+> file again by "normal" methods. Once the process closes the file, it is
+> unlinked.
 
-   No, this is harmless. Orphans are files that were deleted while
-they were still held open by a process. POSIX semantics requires that
-the file data is still readable by the process, but that the file's
-hardlink(s) are no longer visible -- so there's no way of finding the
-file again by "normal" methods. Once the process closes the file, it
-is unlinked.
+Cool.  I knew delete worked that way on POSIX filesystems[1], and I'd 
+seen various posts on this list with unlinking X orphans logs, but I had 
+no idea /that/ was what orphans referred too!
 
-   With btrfs, making a snapshot of a subvolume with (still open)
-orphan files in it will close the orphans on the new copy, because
-they're new files. This leads to the messages above.
+New logical connection made.  Thanks. =:^)
 
-   Hugo.
+> With btrfs, making a snapshot of a subvolume with (still open)
+> orphan files in it will close the orphans on the new copy, because
+> they're new files. This leads to the messages above.
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- Ceci est un travail pour l'Australien. ---             =20
+... And that's entirely logical, once one actually knows what "orphans" 
+are! =:^)
 
---Uu2n37VG4rOBDVuR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+---
+[1] Someone posted a script to the gentoo-dev list at one point, that can 
+be run after an update to go thru /proc and list the processes that have 
+open but deleted files... because they've been replaced in the update.  
+That way, an admin can see what still-running apps still have outdated 
+and possibly vulnerable libraries loaded, and can choose to restart those 
+apps, or leave them running, or look a bit closer at what libs that 
+process depends on that were updated and why, before choosing to restart 
+that process, as appropriate based on the risk factor for that process vs 
+whether it's doing something important that can't be interrupted without 
+losing data.  Using that tool and seeing just what tends to need 
+restarted after an update as well as how frequently, is what really drove 
+home the principle here, but I didn't know what those deleted-but-still-
+open files were called, until your explanation just now. =:^)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-iQIVAwUBUrgE6FheFHXiqx3kAQJUxBAArHS21y3xRB2SzTC0xCzxmUeoIlv/49zD
-uwCmLqt9ba4YRmcnICONbqL9eeRqpr3JOoBAaI4VLr2XF/84NYY8mbsLF9dYfaVY
-XpjAF5Pl57vaLNTmztvBAcoMLCIZa56P9U8XF9Hd8xrU3zEQGYXvmqQP7vY7/MCA
-7ldSgifsZiO/MJ0UAtZVHdsBnRN4anNHI/sxc6Su27R4Y6NE1c8e9LzlGjVPVxuh
-4U18KwDLHqSMyV3Wq4vzgXXnr1qSnJx1MjbZfkr/jrQzSBdughcrHnr2fyx22vDi
-n4uKpMSDCR8urcfUIFTL1p+eKSUTY6fI2a9l7//ORcImurMPH8q12rpauQt2hmh0
-2TlV3HYh0ZOtDMHvAHDuR6vxGk7yn7O86UebV7hKLPqbSbU5ifdOfl+A5hV3R1Sv
-UZlG3S+o+gBYJG1B9WXi2c6xzYGydS7hb4PcHboTVRW2/4JcJA5TeySrome+zfmr
-Rp10UrVqJbScEoWBeR+o/dMIRL+4mCmZZo0y50Vh944NVlghOIonpSKC55XBI1p4
-WtcX8DdxjPah8J9M3Op7RWr2+p9+xxlg7ct++HiRIYvSF/djPBJD+McJ1iVo+bgU
-FydtQQKe7C0OyvzE/KRbUyr6QGmqRJByzFbaYRyXcrYv3uSo7UOzF4FYpu++UZex
-PsWU58oy6Ag=
-=DZBx
------END PGP SIGNATURE-----
-
---Uu2n37VG4rOBDVuR--

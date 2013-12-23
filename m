@@ -1,76 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54154 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752032Ab3LWKKv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Dec 2013 05:10:51 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vv2TJ-0004PP-Qp
-	for linux-btrfs@vger.kernel.org; Mon, 23 Dec 2013 11:10:49 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Dec 2013 11:10:49 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Dec 2013 11:10:49 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: unlinked orphans.
-Date: Mon, 23 Dec 2013 10:10:25 +0000 (UTC)
-Message-ID: <pan$484a5$e3c30cf5$18e2aa4e$b79770e@cox.net>
-References: <1387780037.66690.YahooMailNeo@web162601.mail.bf1.yahoo.com>
-	<20131223093953.GH17179@carfax.org.uk>
-Mime-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:20924 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1756670Ab3LWKRS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Dec 2013 05:17:18 -0500
+Message-ID: <52B80DFA.5060409@cn.fujitsu.com>
+Date: Mon, 23 Dec 2013 18:18:34 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Geert Jansen <geertj@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: list_del corruption
+References: <CADbA=FVN5juGTxFZKdj_gqmJ5aGSyzikXMW9HDUAciBX1mUWzg@mail.gmail.com>
+In-Reply-To: <CADbA=FVN5juGTxFZKdj_gqmJ5aGSyzikXMW9HDUAciBX1mUWzg@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Mon, 23 Dec 2013 09:39:53 +0000 as excerpted:
+On 	mon, 23 Dec 2013 09:49:16 +0100, Geert Jansen wrote:
+> Hi,
+> 
+> myself, and some other Fedora users, are experiencing a crash in
+> btrfs. I am using Fedora 20 with its stock kernel (3.12.5 based). The
+> call trace is here:
+> 
+>   https://retrace.fedoraproject.org/faf/reports/226666/
+> 
+> I have no way to reproduce unfortunately. The crash happens about once a week.
+> 
+> There is also a Red Hat bugzilla here:
+> 
+>   https://bugzilla.redhat.com/show_bug.cgi?id=1028750
+> 
+> The Red Hat bugzilla contains a patch for 3.13 that is claimed to fix
+> the issue. However the patch does not apply cleanly, and the comment
+> in the patch indicate that it fixes a different, more recently
+> introduced bug.
+> 
+> Any help is appreciated.
 
-> On Sun, Dec 22, 2013 at 10:27:17PM -0800, Nacho Man wrote:
->> I ran dmesg and saw a bunch of these:
->> [564421.874063] BTRFS debug (device sda2): unlinked 32 orphans
->> 
->> Do I have to worry?
+It should be fixed by:
 
-> No, this is harmless. Orphans are files that were deleted while
-> they were still held open by a process. POSIX semantics requires that
-> the file data is still readable by the process, but that the file's
-> hardlink(s) are no longer visible -- so there's no way of finding the
-> file again by "normal" methods. Once the process closes the file, it is
-> unlinked.
+commit 93858769172c4e3678917810e9d5de360eb991cc
+Author: Josef Bacik <jbacik@fusionio.com>
+Date:   Mon Oct 28 09:13:25 2013 -0400
 
-Cool.  I knew delete worked that way on POSIX filesystems[1], and I'd 
-seen various posts on this list with unlinking X orphans logs, but I had 
-no idea /that/ was what orphans referred too!
+    Btrfs: take ordered root lock when removing ordered operations inode
+    
+    A user reported a list corruption warning from btrfs_remove_ordered_extent, it
+    is because we aren't taking the ordered_root_lock when we remove the inode from
+    the ordered operations list.  Thanks,
+    
+    Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+    Signed-off-by: Chris Mason <chris.mason@fusionio.com>
 
-New logical connection made.  Thanks. =:^)
+Thanks
+Miao
 
-> With btrfs, making a snapshot of a subvolume with (still open)
-> orphan files in it will close the orphans on the new copy, because
-> they're new files. This leads to the messages above.
-
-... And that's entirely logical, once one actually knows what "orphans" 
-are! =:^)
-
----
-[1] Someone posted a script to the gentoo-dev list at one point, that can 
-be run after an update to go thru /proc and list the processes that have 
-open but deleted files... because they've been replaced in the update.  
-That way, an admin can see what still-running apps still have outdated 
-and possibly vulnerable libraries loaded, and can choose to restart those 
-apps, or leave them running, or look a bit closer at what libs that 
-process depends on that were updated and why, before choosing to restart 
-that process, as appropriate based on the risk factor for that process vs 
-whether it's doing something important that can't be interrupted without 
-losing data.  Using that tool and seeing just what tends to need 
-restarted after an update as well as how frequently, is what really drove 
-home the principle here, but I didn't know what those deleted-but-still-
-open files were called, until your explanation just now. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> 
+> Thanks,
+> Geert Jansen
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

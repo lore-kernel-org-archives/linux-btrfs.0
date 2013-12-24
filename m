@@ -1,47 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nm40-vm8.bullet.mail.bf1.yahoo.com ([72.30.239.216]:40439 "HELO
-	nm40-vm8.bullet.mail.bf1.yahoo.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1750816Ab3LXGWs convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Dec 2013 01:22:48 -0500
-References: <1387780037.66690.YahooMailNeo@web162601.mail.bf1.yahoo.com> <20131223093953.GH17179@carfax.org.uk>
-Message-ID: <1387865775.69186.YahooMailNeo@web162602.mail.bf1.yahoo.com>
-Date: Mon, 23 Dec 2013 22:16:15 -0800 (PST)
-From: Nacho Man <nacho2874@yahoo.com>
-Reply-To: Nacho Man <nacho2874@yahoo.com>
-Subject: Re: unlinked orphans.
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-In-Reply-To: <20131223093953.GH17179@carfax.org.uk>
+Received: from cn.fujitsu.com ([222.73.24.84]:63918 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750816Ab3LXGfi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Dec 2013 01:35:38 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBO6ZZ2c004975
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2013 14:35:35 +0800
+Message-ID: <52B92B6B.1030204@cn.fujitsu.com>
+Date: Tue, 24 Dec 2013 14:36:27 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: [BUG] generic/224 causes OOM and hangs 1G RAM system
+Content-Type: text/plain; charset=GB2312
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi everyone,
 
+When using testcase generic/224 in xfstests on a 1Gigabytes RAM test
+machine,
+OOM is triggered after about 5 sec and then hangs the system.
 
-On Monday, December 23, 2013 4:39 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+This bug can be triggered *all the time* but only on 1Gigabytes or less RAM
+machine.
+If tested on a 2Gigabytes or higher machine, the memory consumption is high,
+but OOM will not be triggered and after the testcase, memory consumption
+will
+return normal.
 
-On Sun, Dec 22, 2013 at 10:27:17PM -0800, Nacho Man wrote:
-> Hello,
-> I ran dmesg and saw a bunch of these:
-> [564421.874063] BTRFS debug (device sda2): unlinked 32 orphans
-> [568021.386733] BTRFS debug (device sda2): unlinked 32 orphans
-> [569943.269610] BTRFS debug (device sda2): unlinked 32 orphans
-> [570929.840278] BTRFS debug (device sda2): unlinked 32 orphans
-> [570942.035251] BTRFS debug (device sda2): unlinked 33 orphans
-> [571623.719086] BTRFS debug (device sda2): unlinked 32 orphans
-> [572075.684003] BTRFS debug (device sda2): unlinked 32 orphans
-> 
-> I just counted and there's a 175 of them.  Do I have to worry?  I've been working on a toolchain and some other stuff for the PS3 so my hard drive was being accessed a bit.  Could it be related?  Thanks.
+So this is not a memory leak but a ridiculous btrfs behavior.
 
-   No, this is harmless. Orphans are files that were deleted while
-they were still held open by a process. POSIX semantics requires that
-the file data is still readable by the process, but that the file's
-hardlink(s) are no longer visible -- so there's no way of finding the
-file again by "normal" methods. Once the process closes the file, it
-is unlinked.
+Since systems with 1Gigabytes are not quite old and even very common in
+VMs or
+embedded devices, it would be better to fix the ridiculous memory
+consuption.
 
-
-Thank you very much.  Is there a way to suppress these messages about orphaned files?  I'd still like to see messages if something goes wrong, just not so much the orphaned files...
-
+Thanks,
+Qu

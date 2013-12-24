@@ -1,56 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60876 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752324Ab3LWS6i convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Dec 2013 13:58:38 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: list_del corruption
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <52B80DFA.5060409@cn.fujitsu.com>
-Date: Mon, 23 Dec 2013 11:58:33 -0700
-Cc: Geert Jansen <geertj@gmail.com>
-Message-Id: <88D27FA4-B055-4336-ACE7-EBE548F082DC@colorremedies.com>
-References: <CADbA=FVN5juGTxFZKdj_gqmJ5aGSyzikXMW9HDUAciBX1mUWzg@mail.gmail.com> <52B80DFA.5060409@cn.fujitsu.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:9604 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1757926Ab3LXDtF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Dec 2013 22:49:05 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBO3n3MK026363
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2013 11:49:03 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: Move some super block check to btrfs_check_super_valid
+Date: Tue, 24 Dec 2013 11:49:56 +0800
+Message-Id: <1387856996-24504-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Move some early check to btrfs_check_super_valid:
+- sectorsize check
+- leafsize == nodesize check
+- leafsize > BTRFS_MAX_METADATA_BLOCKSIZE check
+- incompat_flags check
 
-On Dec 23, 2013, at 3:18 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+and remove the duplicant magic check of btrfs_super_block,
+since btrfs_read_dev_super already checked the magic number.
 
-> On 	mon, 23 Dec 2013 09:49:16 +0100, Geert Jansen wrote:
->> Hi,
->> 
->> myself, and some other Fedora users, are experiencing a crash in
->> btrfs. I am using Fedora 20 with its stock kernel (3.12.5 based). The
->> call trace is here:
->> 
->>  https://retrace.fedoraproject.org/faf/reports/226666/
->> 
->> I have no way to reproduce unfortunately. The crash happens about once a week.
->> 
->> There is also a Red Hat bugzilla here:
->> 
->>  https://bugzilla.redhat.com/show_bug.cgi?id=1028750
->> 
->> The Red Hat bugzilla contains a patch for 3.13 that is claimed to fix
->> the issue. However the patch does not apply cleanly, and the comment
->> in the patch indicate that it fixes a different, more recently
->> introduced bug.
->> 
->> Any help is appreciated.
-> 
-> It should be fixed by:
-> 
-> commit 93858769172c4e3678917810e9d5de360eb991cc
-> Author: Josef Bacik <jbacik@fusionio.com>
-> Date:   Mon Oct 28 09:13:25 2013 -0400
-> 
->    Btrfs: take ordered root lock when removing ordered operations inode
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/disk-io.c | 76 ++++++++++++++++++++++++------------------------------
+ 1 file changed, 34 insertions(+), 42 deletions(-)
 
-According to changelog this is in kernel 3.12.6. The Fedora 19 and 20 version of this kernel are building in koji today. The F20 one will be found at: http://koji.fedoraproject.org/koji/buildinfo?buildID=486644 And also via the updates-testing repo within a day or two.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8072cfa..04ad1d3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2388,33 +2388,6 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_alloc;
+ 	}
+ 
+-	features = btrfs_super_incompat_flags(disk_super) &
+-		~BTRFS_FEATURE_INCOMPAT_SUPP;
+-	if (features) {
+-		printk(KERN_ERR "BTRFS: couldn't mount because of "
+-		       "unsupported optional features (%Lx).\n",
+-		       features);
+-		err = -EINVAL;
+-		goto fail_alloc;
+-	}
+-
+-	if (btrfs_super_leafsize(disk_super) !=
+-	    btrfs_super_nodesize(disk_super)) {
+-		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
+-		       "blocksizes don't match.  node %d leaf %d\n",
+-		       btrfs_super_nodesize(disk_super),
+-		       btrfs_super_leafsize(disk_super));
+-		err = -EINVAL;
+-		goto fail_alloc;
+-	}
+-	if (btrfs_super_leafsize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
+-		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
+-		       "blocksize (%d) was too large\n",
+-		       btrfs_super_leafsize(disk_super));
+-		err = -EINVAL;
+-		goto fail_alloc;
+-	}
+-
+ 	features = btrfs_super_incompat_flags(disk_super);
+ 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
+ 	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
+@@ -2582,17 +2555,6 @@ int open_ctree(struct super_block *sb,
+ 	sb->s_blocksize = sectorsize;
+ 	sb->s_blocksize_bits = blksize_bits(sectorsize);
+ 
+-	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
+-		printk(KERN_INFO "btrfs: valid FS not found on %s\n", sb->s_id);
+-		goto fail_sb_buffer;
+-	}
+-
+-	if (sectorsize != PAGE_SIZE) {
+-		printk(KERN_WARNING "btrfs: Incompatible sector size(%lu) "
+-		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
+-		goto fail_sb_buffer;
+-	}
+-
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_sys_array(tree_root);
+ 	mutex_unlock(&fs_info->chunk_mutex);
+@@ -3706,11 +3668,41 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
+ }
+ 
+ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+-			      int read_only)
++				   int read_only)
+ {
+-	/*
+-	 * Placeholder for checks
+-	 */
++	struct btrfs_super_block *disk_super = fs_info->super_copy;
++	u32 sectorsize = btrfs_super_sectorsize(disk_super);
++	u64 features;
++
++	if (sectorsize != PAGE_SIZE) {
++		printk(KERN_WARNING "btrfs: Incompatible sector size(%lu) "
++		       "found on %s\n", (unsigned long)sectorsize,
++		       fs_info->sb->s_id);
++		return -EINVAL;
++	}
++	if (btrfs_super_leafsize(disk_super) !=
++	    btrfs_super_nodesize(disk_super)) {
++		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
++		       "blocksizes don't match.  node %d leaf %d\n",
++		       btrfs_super_nodesize(disk_super),
++		       btrfs_super_leafsize(disk_super));
++		return -EINVAL;
++	}
++	if (btrfs_super_leafsize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
++		       "blocksize (%d) was too large\n",
++		       btrfs_super_leafsize(disk_super));
++		return -EINVAL;
++	}
++
++	features = btrfs_super_incompat_flags(disk_super) &
++		~BTRFS_FEATURE_INCOMPAT_SUPP;
++	if (features) {
++		printk(KERN_ERR "BTRFS: couldn't mount because of "
++		       "unsupported optional features (%Lx).\n",
++		       features);
++		return -EINVAL;
++	}
+ 	return 0;
+ }
+ 
+-- 
+1.8.5.2
 
-
-Chris Murphy

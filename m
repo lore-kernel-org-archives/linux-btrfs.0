@@ -1,75 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6592 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:54138 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750708Ab3LZFFv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Dec 2013 00:05:51 -0500
+	id S1750708Ab3LZFFx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Dec 2013 00:05:53 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ55mCA004046
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ55nG9004049
 	for <linux-btrfs@vger.kernel.org>; Thu, 26 Dec 2013 13:05:49 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/6] Btrfs: remove residual code in delayed inode async helper
-Date: Thu, 26 Dec 2013 13:07:01 +0800
-Message-Id: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v2 3/6] Btrfs: cleanup code of btrfs_balance_delayed_items()
+Date: Thu, 26 Dec 2013 13:07:03 +0800
+Message-Id: <1388034426-4935-3-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before applying the patch
-  commit de3cb945db4d8eb3b046dc7a5ea89a893372750c
-  title: Btrfs: improve the delayed inode throttling
-
-We need requeue the async work after the current work was done, it
-introduced a deadlock problem. So we wrote the code that this patch
-removes to avoid the above problem. But after applying the above
-patch, the deadlock problem didn't exist. So we should remove that
-fix code.
+- move the condition check for wait into a function
+- use wait_event_interruptible instead of prepare-schedule-finish process
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1 -> v2:
 - None.
 ---
- fs/btrfs/delayed-inode.c | 27 ---------------------------
- 1 file changed, 27 deletions(-)
+ fs/btrfs/delayed-inode.c | 34 +++++++++++-----------------------
+ 1 file changed, 11 insertions(+), 23 deletions(-)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 8d292fb..e832621 100644
+index bb101b0..5229106 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -1300,33 +1300,6 @@ again:
- 	trans->block_rsv = &root->fs_info->delayed_block_rsv;
+@@ -1349,52 +1349,40 @@ void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
+ 	WARN_ON(btrfs_first_delayed_node(delayed_root));
+ }
  
- 	__btrfs_commit_inode_delayed_items(trans, path, delayed_node);
--	/*
--	 * Maybe new delayed items have been inserted, so we need requeue
--	 * the work. Besides that, we must dequeue the empty delayed nodes
--	 * to avoid the race between delayed items balance and the worker.
--	 * The race like this:
--	 * 	Task1				Worker thread
--	 * 					count == 0, needn't requeue
--	 * 					  also needn't insert the
--	 * 					  delayed node into prepare
--	 * 					  list again.
--	 * 	add lots of delayed items
--	 * 	queue the delayed node
--	 * 	  already in the list,
--	 * 	  and not in the prepare
--	 * 	  list, it means the delayed
--	 * 	  node is being dealt with
--	 * 	  by the worker.
--	 * 	do delayed items balance
--	 * 	  the delayed node is being
--	 * 	  dealt with by the worker
--	 * 	  now, just wait.
--	 * 	  				the worker goto idle.
--	 * Task1 will sleep until the transaction is commited.
--	 */
--	mutex_lock(&delayed_node->mutex);
--	btrfs_dequeue_delayed_node(root->fs_info->delayed_root, delayed_node);
--	mutex_unlock(&delayed_node->mutex);
+-static int refs_newer(struct btrfs_delayed_root *delayed_root,
+-		      int seq, int count)
++static int could_end_wait(struct btrfs_delayed_root *delayed_root, int seq)
+ {
+ 	int val = atomic_read(&delayed_root->items_seq);
  
- 	trans->block_rsv = block_rsv;
- 	btrfs_end_transaction_dmeta(trans, root);
+-	if (val < seq || val >= seq + count)
++	if (val < seq || val >= seq + BTRFS_DELAYED_BATCH)
+ 		return 1;
++
++	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
++		return 1;
++
+ 	return 0;
+ }
+ 
+ void btrfs_balance_delayed_items(struct btrfs_root *root)
+ {
+ 	struct btrfs_delayed_root *delayed_root;
+-	int seq;
+ 
+ 	delayed_root = btrfs_get_delayed_root(root);
+ 
+ 	if (atomic_read(&delayed_root->items) < BTRFS_DELAYED_BACKGROUND)
+ 		return;
+ 
+-	seq = atomic_read(&delayed_root->items_seq);
+-
+ 	if (atomic_read(&delayed_root->items) >= BTRFS_DELAYED_WRITEBACK) {
++		int seq;
+ 		int ret;
+-		DEFINE_WAIT(__wait);
++
++		seq = atomic_read(&delayed_root->items_seq);
+ 
+ 		ret = btrfs_wq_run_delayed_node(delayed_root, root, 0);
+ 		if (ret)
+ 			return;
+ 
+-		while (1) {
+-			prepare_to_wait(&delayed_root->wait, &__wait,
+-					TASK_INTERRUPTIBLE);
+-
+-			if (refs_newer(delayed_root, seq,
+-				       BTRFS_DELAYED_BATCH) ||
+-			    atomic_read(&delayed_root->items) <
+-			    BTRFS_DELAYED_BACKGROUND) {
+-				break;
+-			}
+-			if (!signal_pending(current))
+-				schedule();
+-			else
+-				break;
+-		}
+-		finish_wait(&delayed_root->wait, &__wait);
++		wait_event_interruptible(delayed_root->wait,
++					 could_end_wait(delayed_root, seq));
+ 		return;
+ 	}
+ 
 -- 
 1.8.3.1
 

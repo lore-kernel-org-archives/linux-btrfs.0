@@ -1,44 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45921 "EHLO plane.gmane.org"
+Received: from csamuel.org ([74.50.50.137]:42829 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750914Ab3LXGul (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Dec 2013 01:50:41 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VvLp9-0003qx-L4
-	for linux-btrfs@vger.kernel.org; Tue, 24 Dec 2013 07:50:39 +0100
-Received: from md5i.com ([75.151.244.229])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2013 07:50:39 +0100
-Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2013 07:50:39 +0100
+	id S1753519Ab3LZXSp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Dec 2013 18:18:45 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id E3685CC19B
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2013 10:18:44 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 18605-01 for <linux-btrfs@vger.kernel.org>;
+ Fri, 27 Dec 2013 10:18:44 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 86DE7CC199
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2013 10:18:44 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
-From: Michael Welsh Duggan <mwd@md5i.com>
-Subject: Use dedup to recover from messed up incremental send?
-Date: Tue, 24 Dec 2013 01:50:28 -0500
-Message-ID: <87mwjq3fpn.fsf@maru2.md5i.com>
-Mime-Version: 1.0
-Content-Type: text/plain
+Subject: Re: Unmountable Array After Drive Failure During Device Deletion
+Date: Fri, 27 Dec 2013 10:18:38 +1100
+Message-ID: <7762191.E7zsbxQLzq@quad>
+In-Reply-To: <pan$ba575$c4e4093$f5b3203$522a159c@cox.net>
+References: <52B2BBE1.8090306@gmail.com> <CAN05THTwCnmMGh=A0zpgEHqDvoKmokNStfN6wyfVNaFoLxNxBQ@mail.gmail.com> <pan$ba575$c4e4093$f5b3203$522a159c@cox.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2573246.ETHZEXBKxI"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been backing up my fs to another disk on a semi-regular basis.  I
-make a readonly snapshot of the fs, and always keep the last snapshot.
-I then do an incremental send to the backup fs, using "btrfs send -p".
-I then delete the older of the two snapshots on the backed-up fs.
 
-A couple of times I accidentally deleted the parent snapshot before
-sending.  (I know I should be using a script to do this.  Mea culpa.)
-My question is this:
+--nextPart2573246.ETHZEXBKxI
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-Is it possible to use dedup to have files from a fresh snapshot on the
-backup fs share blocks from previously saved snapshots?  My guess is
-that since these are readonly snapshots, I can't do this directly.
-But I thought I'd check.
+On Sun, 22 Dec 2013 11:35:53 AM Duncan wrote:
 
--- 
-Michael Welsh Duggan
-(md5i@md5i.com)
+> While the btrfs kernel config option no longer (as of 3.12 IIRC) dire=
+ctly=20
+> calls the filesystem unstable
+
+It'll be in 3.13, the commit was:
+
+$ git describe 4204617d142c0887e45fda2562cb5c58097b918e
+v3.12-116-g4204617
+
+The help text for btrfs now says:
+
+          Btrfs is a general purpose copy-on-write filesystem with exte=
+nts,
+          writable snapshotting, support for multiple devices and many =
+more
+          features focused on fault tolerance, repair and easy administ=
+ration.
+
+          The filesystem disk format is no longer unstable, and it's no=
+t
+          expected to change unless there are strong reasons to do so. =
+If there
+          is a format change, file systems with a unchanged format will=
+
+          continue to be mountable and usable by newer kernels.
+
+          For more information, please see the web pages at
+          http://btrfs.wiki.kernel.org.
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart2573246.ETHZEXBKxI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUry5To1yjaOTJg85AQLeOggAvbw0OdKyqrPKBAfpLUOGoW8hfbneFbuV
+7BpXGaZytHIAIdyuHO9SQoII50BHcBAERSjcEbk69ci6GTskxOBo00uhWgwcP1yC
+bJP1H8ubpQb4y59EE7IOkOd/1Zr4PV4FFWdM+ycaHcgXHwIrS6wbyN6WLEUQaIge
+GYCd4JZqZke8Xinit3EFY4Fz8JPohUXRyocjdvs9WZ+55qPS0EJnfb02WVER57a6
+mjCmMIbZJDQAd8vbFm0VMgIB8Zt8q36BktenEiJ4mBuTxW5LTcU5TyQz9LhlrN3K
+rZoXYPXtganbBf03xmD6jQ1Fut0pE/2FzSGgCgHdSTPSEMntrHPwmA==
+=ZahA
+-----END PGP SIGNATURE-----
+
+--nextPart2573246.ETHZEXBKxI--
 

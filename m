@@ -1,188 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:36740 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:6592 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750792Ab3LZFFy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Dec 2013 00:05:54 -0500
+	id S1750778Ab3LZFFx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Dec 2013 00:05:53 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ55nI8004048
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ55mCB004046
 	for <linux-btrfs@vger.kernel.org>; Thu, 26 Dec 2013 13:05:49 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/6] Btrfs: use flags instead of the bool variants in delayed node
-Date: Thu, 26 Dec 2013 13:07:05 +0800
-Message-Id: <1388034426-4935-5-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v2 4/6] Btrfs: remove btrfs_end_transaction_dmeta()
+Date: Thu, 26 Dec 2013 13:07:04 +0800
+Message-Id: <1388034426-4935-4-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Two reasons:
+- btrfs_end_transaction_dmeta() is the same as btrfs_end_transaction_throttle()
+  so it is unnecessary.
+- All the delayed items should be dealt in the current transaction, so the
+  workers should not commit the transaction, instead, deal with the delayed
+  items as many as possible.
+
+So we can remove btrfs_end_transaction_dmeta()
+
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1 -> v2:
-- None.
+- Add the detail changelog.
 ---
- fs/btrfs/delayed-inode.c | 33 +++++++++++++++++----------------
- fs/btrfs/delayed-inode.h |  6 ++++--
- 2 files changed, 21 insertions(+), 18 deletions(-)
+ fs/btrfs/delayed-inode.c | 2 +-
+ fs/btrfs/transaction.c   | 6 ------
+ fs/btrfs/transaction.h   | 2 --
+ 3 files changed, 1 insertion(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 7d55443..979db56 100644
+index 5229106..7d55443 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -55,8 +55,7 @@ static inline void btrfs_init_delayed_node(
- 	delayed_node->inode_id = inode_id;
- 	atomic_set(&delayed_node->refs, 0);
- 	delayed_node->count = 0;
--	delayed_node->in_list = 0;
--	delayed_node->inode_dirty = 0;
-+	delayed_node->flags = 0;
- 	delayed_node->ins_root = RB_ROOT;
- 	delayed_node->del_root = RB_ROOT;
- 	mutex_init(&delayed_node->mutex);
-@@ -172,7 +171,7 @@ static void btrfs_queue_delayed_node(struct btrfs_delayed_root *root,
- 				     int mod)
- {
- 	spin_lock(&root->lock);
--	if (node->in_list) {
-+	if (test_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags)) {
- 		if (!list_empty(&node->p_list))
- 			list_move_tail(&node->p_list, &root->prepare_list);
- 		else if (mod)
-@@ -182,7 +181,7 @@ static void btrfs_queue_delayed_node(struct btrfs_delayed_root *root,
- 		list_add_tail(&node->p_list, &root->prepare_list);
- 		atomic_inc(&node->refs);	/* inserted into list */
- 		root->nodes++;
--		node->in_list = 1;
-+		set_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags);
- 	}
- 	spin_unlock(&root->lock);
+@@ -1302,7 +1302,7 @@ again:
+ 	__btrfs_commit_inode_delayed_items(trans, path, delayed_node);
+ 
+ 	trans->block_rsv = block_rsv;
+-	btrfs_end_transaction_dmeta(trans, root);
++	btrfs_end_transaction(trans, root);
+ 	btrfs_btree_balance_dirty_nodelay(root);
+ 
+ release_path:
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index c6a872a..df919b4 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -788,12 +788,6 @@ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
+ 	return __btrfs_end_transaction(trans, root, 1);
  }
-@@ -192,13 +191,13 @@ static void btrfs_dequeue_delayed_node(struct btrfs_delayed_root *root,
- 				       struct btrfs_delayed_node *node)
- {
- 	spin_lock(&root->lock);
--	if (node->in_list) {
-+	if (test_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags)) {
- 		root->nodes--;
- 		atomic_dec(&node->refs);	/* not in the list */
- 		list_del_init(&node->n_list);
- 		if (!list_empty(&node->p_list))
- 			list_del_init(&node->p_list);
--		node->in_list = 0;
-+		clear_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags);
- 	}
- 	spin_unlock(&root->lock);
- }
-@@ -231,7 +230,8 @@ static struct btrfs_delayed_node *btrfs_next_delayed_node(
  
- 	delayed_root = node->root->fs_info->delayed_root;
- 	spin_lock(&delayed_root->lock);
--	if (!node->in_list) {	/* not in the list */
-+	if (!test_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags)) {
-+		/* not in the list */
- 		if (list_empty(&delayed_root->node_list))
- 			goto out;
- 		p = delayed_root->node_list.next;
-@@ -1004,9 +1004,10 @@ static void btrfs_release_delayed_inode(struct btrfs_delayed_node *delayed_node)
- {
- 	struct btrfs_delayed_root *delayed_root;
- 
--	if (delayed_node && delayed_node->inode_dirty) {
-+	if (delayed_node &&
-+	    test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
- 		BUG_ON(!delayed_node->root);
--		delayed_node->inode_dirty = 0;
-+		clear_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags);
- 		delayed_node->count--;
- 
- 		delayed_root = delayed_node->root->fs_info->delayed_root;
-@@ -1059,7 +1060,7 @@ static inline int btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- 	int ret;
- 
- 	mutex_lock(&node->mutex);
--	if (!node->inode_dirty) {
-+	if (!test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &node->flags)) {
- 		mutex_unlock(&node->mutex);
- 		return 0;
- 	}
-@@ -1203,7 +1204,7 @@ int btrfs_commit_inode_delayed_inode(struct inode *inode)
- 		return 0;
- 
- 	mutex_lock(&delayed_node->mutex);
--	if (!delayed_node->inode_dirty) {
-+	if (!test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
- 		mutex_unlock(&delayed_node->mutex);
- 		btrfs_release_delayed_node(delayed_node);
- 		return 0;
-@@ -1227,7 +1228,7 @@ int btrfs_commit_inode_delayed_inode(struct inode *inode)
- 	trans->block_rsv = &delayed_node->root->fs_info->delayed_block_rsv;
- 
- 	mutex_lock(&delayed_node->mutex);
--	if (delayed_node->inode_dirty)
-+	if (test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags))
- 		ret = __btrfs_update_delayed_inode(trans, delayed_node->root,
- 						   path, delayed_node);
- 	else
-@@ -1721,7 +1722,7 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- 		return -ENOENT;
- 
- 	mutex_lock(&delayed_node->mutex);
--	if (!delayed_node->inode_dirty) {
-+	if (!test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
- 		mutex_unlock(&delayed_node->mutex);
- 		btrfs_release_delayed_node(delayed_node);
- 		return -ENOENT;
-@@ -1772,7 +1773,7 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
- 		return PTR_ERR(delayed_node);
- 
- 	mutex_lock(&delayed_node->mutex);
--	if (delayed_node->inode_dirty) {
-+	if (test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
- 		fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
- 		goto release_node;
- 	}
-@@ -1783,7 +1784,7 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
- 		goto release_node;
- 
- 	fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
--	delayed_node->inode_dirty = 1;
-+	set_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags);
- 	delayed_node->count++;
- 	atomic_inc(&root->fs_info->delayed_root->items);
- release_node:
-@@ -1814,7 +1815,7 @@ static void __btrfs_kill_delayed_node(struct btrfs_delayed_node *delayed_node)
- 		btrfs_release_delayed_item(prev_item);
- 	}
- 
--	if (delayed_node->inode_dirty) {
-+	if (test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
- 		btrfs_delayed_inode_release_metadata(root, delayed_node);
- 		btrfs_release_delayed_inode(delayed_node);
- 	}
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index a4b38f9..a6a13f7 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -48,6 +48,9 @@ struct btrfs_delayed_root {
- 	wait_queue_head_t wait;
- };
- 
-+#define BTRFS_DELAYED_NODE_IN_LIST	0
-+#define BTRFS_DELAYED_NODE_INODE_DIRTY	1
-+
- struct btrfs_delayed_node {
- 	u64 inode_id;
- 	u64 bytes_reserved;
-@@ -65,8 +68,7 @@ struct btrfs_delayed_node {
- 	struct btrfs_inode_item inode_item;
- 	atomic_t refs;
- 	u64 index_cnt;
--	bool in_list;
--	bool inode_dirty;
-+	unsigned long flags;
- 	int count;
- };
- 
+-int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root)
+-{
+-	return __btrfs_end_transaction(trans, root, 1);
+-}
+-
+ /*
+  * when btree blocks are allocated, they have some corresponding bits set for
+  * them in one of two extent_io trees.  This is used to make sure all of
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 7657d11..d05b601 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -154,8 +154,6 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 				   int wait_for_unblock);
+ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root);
+-int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root);
+ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root);
+ void btrfs_throttle(struct btrfs_root *root);
 -- 
 1.8.3.1
 

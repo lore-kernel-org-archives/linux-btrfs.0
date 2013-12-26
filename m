@@ -1,83 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:6592 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31668 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750778Ab3LZFFx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Dec 2013 00:05:53 -0500
+	id S1750745Ab3LZFLj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Dec 2013 00:11:39 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ55mCB004046
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Dec 2013 13:05:49 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ5BZ6x004287
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Dec 2013 13:11:35 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/6] Btrfs: remove btrfs_end_transaction_dmeta()
-Date: Thu, 26 Dec 2013 13:07:04 +0800
-Message-Id: <1388034426-4935-4-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
-References: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 1/3] Btrfs: remove unused argument from select_reloc_root()
+Date: Thu, 26 Dec 2013 13:10:49 +0800
+Message-Id: <1388034651-2778-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Two reasons:
-- btrfs_end_transaction_dmeta() is the same as btrfs_end_transaction_throttle()
-  so it is unnecessary.
-- All the delayed items should be dealt in the current transaction, so the
-  workers should not commit the transaction, instead, deal with the delayed
-  items as many as possible.
+@nr is no longer used, remove it from select_reloc_root()
 
-So we can remove btrfs_end_transaction_dmeta()
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
-Changelog v1 -> v2:
-- Add the detail changelog.
----
- fs/btrfs/delayed-inode.c | 2 +-
- fs/btrfs/transaction.c   | 6 ------
- fs/btrfs/transaction.h   | 2 --
- 3 files changed, 1 insertion(+), 9 deletions(-)
+ fs/btrfs/relocation.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 5229106..7d55443 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1302,7 +1302,7 @@ again:
- 	__btrfs_commit_inode_delayed_items(trans, path, delayed_node);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 8cf99c4..277b8e3 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2454,7 +2454,7 @@ static noinline_for_stack
+ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 				     struct reloc_control *rc,
+ 				     struct backref_node *node,
+-				     struct backref_edge *edges[], int *nr)
++				     struct backref_edge *edges[])
+ {
+ 	struct backref_node *next;
+ 	struct btrfs_root *root;
+@@ -2496,7 +2496,6 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 	if (!root)
+ 		return NULL;
  
- 	trans->block_rsv = block_rsv;
--	btrfs_end_transaction_dmeta(trans, root);
-+	btrfs_end_transaction(trans, root);
- 	btrfs_btree_balance_dirty_nodelay(root);
+-	*nr = index;
+ 	next = node;
+ 	/* setup backref node path for btrfs_reloc_cow_block */
+ 	while (1) {
+@@ -2643,7 +2642,6 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 	u32 blocksize;
+ 	u64 bytenr;
+ 	u64 generation;
+-	int nr;
+ 	int slot;
+ 	int ret;
+ 	int err = 0;
+@@ -2656,7 +2654,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 		cond_resched();
  
- release_path:
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c6a872a..df919b4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -788,12 +788,6 @@ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
- 	return __btrfs_end_transaction(trans, root, 1);
- }
+ 		upper = edge->node[UPPER];
+-		root = select_reloc_root(trans, rc, upper, edges, &nr);
++		root = select_reloc_root(trans, rc, upper, edges);
+ 		BUG_ON(!root);
  
--int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root)
--{
--	return __btrfs_end_transaction(trans, root, 1);
--}
--
- /*
-  * when btree blocks are allocated, they have some corresponding bits set for
-  * them in one of two extent_io trees.  This is used to make sure all of
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 7657d11..d05b601 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -154,8 +154,6 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 				   int wait_for_unblock);
- int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root);
--int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root);
- int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root);
- void btrfs_throttle(struct btrfs_root *root);
+ 		if (upper->eb && !upper->locked) {
 -- 
 1.8.3.1
 

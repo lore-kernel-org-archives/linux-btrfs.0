@@ -1,56 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53876 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932092Ab3LTCdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Dec 2013 21:33:21 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vtpts-00032t-89
-	for linux-btrfs@vger.kernel.org; Fri, 20 Dec 2013 03:33:16 +0100
-Received: from md5i.com ([75.151.244.229])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Dec 2013 03:33:16 +0100
-Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Dec 2013 03:33:16 +0100
+Received: from cn.fujitsu.com ([222.73.24.84]:5883 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753113Ab3L0NKj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Dec 2013 08:10:39 -0500
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-From: Michael Welsh Duggan <mwd@md5i.com>
-Subject: Re: [PATCH] Btrfs-progs: receive: fix the case that we can not find subvolume
-Date: Thu, 19 Dec 2013 21:33:04 -0500
-Message-ID: <87d2ksp7z3.fsf@maru2.md5i.com>
-References: <1387271629-11315-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-	<20131217150919.GP6498@twin.jikos.cz>
-	<tntbo0fcwp2.fsf@watermonitor.yellow.cert.org>
-	<52B10EBE.4030508@cn.fujitsu.com> <8761qmsup8.fsf@maru2.md5i.com>
-	<52B11C67.2010900@cn.fujitsu.com> <871u1asszq.fsf@maru2.md5i.com>
-	<52B12C85.6090503@cn.fujitsu.com> <87txe5ri67.fsf@maru2.md5i.com>
-Mime-Version: 1.0
-Content-Type: text/plain
+Cc: t-itoh@jp.fujitsu.com
+Subject: [PATCH 1/2] Btrfs: fix the race between write back and nocow buffered write
+Date: Fri, 27 Dec 2013 21:11:49 +0800
+Message-Id: <1388149910-31499-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Welsh Duggan <mwd@md5i.com> writes:
+When we ran the 274th case of xfstests with nodatacow mount option,
+We met the following warning message:
+WARNING: CPU: 1 PID: 14185 at fs/btrfs/extent-tree.c:3734 btrfs_free_reserved_data_space+0xa6/0xd0
 
-> Wang Shilong <wangsl.fnst@cn.fujitsu.com> writes:
->
->> On 12/18/2013 12:06 PM, Michael Welsh Duggan wrote:
->>> Wang Shilong <wangsl.fnst@cn.fujitsu.com> writes:
->>>
->>>> It seems that you use older kernel version but use the latest
->>>> btrfs-progs, new btrfs-progs use uuid tree to search but
->>>> this tree did not exist yet.
->>>>
->>>> Can you try to upgrade your kernel?
->>> What version is necessary?  (I am currently on 3.11.10.)
->> 3.12 is ok, btw, can you run for 3.11.10
->>
-> Looks like I'll be rebooting to a new kernel when I get home tonight.
+It is caused by the race between the write back and nocow buffered
+write:
+  Task1				Task2
+  __btrfs_buffered_write()
+    skip data reservation
+    reserve the metadata space
+    copy the data
+    dirty the pages
+    unlock the pages
+				write back the pages
+				release the data space
+   				  becasue there is no
+				  noreserve flag
+   set the noreserve flag
 
-Running with a 3.12 kernel does solve this problem for me.  Thank you
-for your help.
+This patch fixes this problem by unlocking the pages after
+the noreserve flag is set.
 
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/file.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 82d0342..f6960c2 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1523,7 +1523,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		}
+ 
+ 		release_bytes = 0;
+-		btrfs_drop_pages(pages, num_pages);
+ 
+ 		if (only_release_metadata && copied > 0) {
+ 			u64 lockstart = round_down(pos, root->sectorsize);
+@@ -1536,6 +1535,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 			only_release_metadata = false;
+ 		}
+ 
++		btrfs_drop_pages(pages, num_pages);
++
+ 		cond_resched();
+ 
+ 		balance_dirty_pages_ratelimited(inode->i_mapping);
 -- 
-Michael Welsh Duggan
-(md5i@md5i.com)
+1.8.1.4
 

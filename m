@@ -1,50 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29188 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:29191 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752512Ab3L2NpC (ORCPT
+	with ESMTP id S1752515Ab3L2NpC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Sun, 29 Dec 2013 08:45:02 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBTDj0KE023253
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBTDj1uH023521
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj06R004339
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:02 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj1o2013167
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:00 GMT
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
 Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDixC0004333
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:44:59 GMT
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj1tW026277
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] Btrfs: return free space to global_rsv as much as possible
-Date: Sun, 29 Dec 2013 21:44:50 +0800
-Message-Id: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 2/2] Btrfs: release subvolume's block_rsv before transaction commit
+Date: Sun, 29 Dec 2013 21:44:51 +0800
+Message-Id: <1388324691-24507-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
+References: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-@full is not protected within global_rsv.lock, so we may think global_rsv
-is already full but in fact it's not, so we miss the opportunity to return
-free space to global_rsv directly when we release other block_rsvs.
+We don't have to keep subvolume's block_rsv during transaction commit,
+and within transaction commit, we may also need the free space reclaimed
+from this block_rsv to process delayed refs.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/ioctl.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9c01509..009980c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4637,7 +4637,7 @@ void btrfs_block_rsv_release(struct btrfs_root *root,
- 			     u64 num_bytes)
- {
- 	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
--	if (global_rsv->full || global_rsv == block_rsv ||
-+	if (global_rsv == block_rsv ||
- 	    block_rsv->space_info != global_rsv->space_info)
- 		global_rsv = NULL;
- 	block_rsv_release_bytes(root->fs_info, block_rsv, global_rsv,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 21da576..347bf61 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -417,7 +417,8 @@ static noinline int create_subvol(struct inode *dir,
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+-		goto out;
++		btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
++		return ret;
+ 	}
+ 	trans->block_rsv = &block_rsv;
+ 	trans->bytes_reserved = block_rsv.size;
+@@ -542,6 +543,8 @@ static noinline int create_subvol(struct inode *dir,
+ fail:
+ 	trans->block_rsv = NULL;
+ 	trans->bytes_reserved = 0;
++	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
++
+ 	if (async_transid) {
+ 		*async_transid = trans->transid;
+ 		err = btrfs_commit_transaction_async(trans, root, 1);
+@@ -555,8 +558,6 @@ fail:
+ 
+ 	if (!ret)
+ 		d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
+-out:
+-	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
+ 	return ret;
+ }
+ 
 -- 
 1.8.2.1
 

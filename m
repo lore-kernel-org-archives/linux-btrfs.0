@@ -1,56 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f52.google.com ([209.85.160.52]:58765 "EHLO
-	mail-pb0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753225Ab3L1Lwq (ORCPT
+Received: from mail-ea0-f173.google.com ([209.85.215.173]:56540 "EHLO
+	mail-ea0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751271Ab3L2JtT convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Dec 2013 06:52:46 -0500
-Received: by mail-pb0-f52.google.com with SMTP id uo5so10108973pbc.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Dec 2013 03:52:45 -0800 (PST)
-Received: from linux-b0ol.localdomain ([223.65.188.73])
-        by mx.google.com with ESMTPSA id dq3sm68495815pbc.35.2013.12.28.03.52.43
+	Sun, 29 Dec 2013 04:49:19 -0500
+Received: by mail-ea0-f173.google.com with SMTP id o10so4565396eaj.18
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 01:49:17 -0800 (PST)
+Received: from linux-suse.hu (dsl51B6A480.pool.t-online.hu. [81.182.164.128])
+        by mx.google.com with ESMTPSA id h3sm97935544eem.15.2013.12.29.01.49.16
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 28 Dec 2013 03:52:44 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
+        Sun, 29 Dec 2013 01:49:16 -0800 (PST)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix an oops when we fail to relocate tree blocks
-Date: Sat, 28 Dec 2013 19:52:39 +0800
-Message-Id: <1388231559-2463-1-git-send-email-wangshilong1991@gmail.com>
+Subject: Instant reboot while defragging on 3.13-rc5
+Date: Sun, 29 Dec 2013 10:48:25 +0100
+Message-ID: <73072351.X5HJy46hkl@linux-suse.hu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Dear list members,
 
-During balance test, we hit an oops:
-[ 2013.841551] kernel BUG at fs/btrfs/relocation.c:1174!
+I upgraded to 3.13-rc5 kernel and started to defrag my whole file system with 
+the following commands:
 
-The problem is that if we fail to relocate tree blocks, we should
-update backref cache, otherwise, some pending nodes are not updated
-while snapshot check @cache->last_trans is within one transaction
-and won't update it and then oops happen.
+cd /
+for i in */*; do if [[ "$i" != windows* ]]; then echo "------$i------"; btrfs 
+fi defrag -clzo -r "$i"; fi; done 2>&1 | tee /root/defrag
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/relocation.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+After 10 or 15 seconds my computer reboots itself without any warning. In 
+dmesg I see only the following:
+[  531.866566] btrfs: device fsid 2cc2b266-3f04-4f1c-8477-cf7efd6ac139 devid 1 
+transid 396679 /dev/sda7
+[  532.001919] watchdog watchdog0: watchdog did not stop!
+[  532.002719] watchdog watchdog0: watchdog did not stop!
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index b530ed9..4a3f0d9 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4075,6 +4075,12 @@ restart:
- 		if (!RB_EMPTY_ROOT(&blocks)) {
- 			ret = relocate_tree_blocks(trans, rc, &blocks);
- 			if (ret < 0) {
-+				/*
-+				 * if we fail to relocate tree blocks, force to update
-+				 * backref cache when committing transaction.
-+				 */
-+				rc->backref_cache.last_trans = trans->transid - 1;
-+
- 				if (ret != -EAGAIN) {
- 					err = ret;
- 					break;
--- 
-1.8.4
+Together with this I'm constantly getting sysfs WARNINGS into dmesg, but I 
+don't think this would be related:
 
+WARNING: CPU: 5 PID: 1644 at /home/abuild/rpmbuild/BUILD/kernel-
+desktop-3.13.rc5/linux-3.13-rc5/fs/sysfs/group.c:214 device_del+0x3b/0x1b0()
+sysfs group ffffffff81c7e040 not found for kobject 'hidraw2'
+
+Versions:
+OS: openSUSE 13.1
+Kernel: 3.13.0-rc5-1.g7127d5f-desktop
+btrfs: v3.12+20131125
+
+Ákos

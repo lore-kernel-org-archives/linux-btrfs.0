@@ -1,80 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30576 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750778Ab3LZGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Dec 2013 01:44:20 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id rBQ6iIgr009735
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Dec 2013 14:44:18 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:29188 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752512Ab3L2NpC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Dec 2013 08:45:02 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBTDj0KE023253
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj06R004339
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:00 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDixC0004333
+	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:44:59 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Add "barrier" option to support "-o remount,barrier"
-Date: Thu, 26 Dec 2013 14:45:10 +0800
-Message-Id: <1388040310-25092-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs: return free space to global_rsv as much as possible
+Date: Sun, 29 Dec 2013 21:44:50 +0800
+Message-Id: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs can be remounted without barrier, but there is no "barrier" option
-so nobody can remount btrfs back with barrier on. Only umount and
-mount again can re-enable barrier.(Quite awkward)
+@full is not protected within global_rsv.lock, so we may think global_rsv
+is already full but in fact it's not, so we miss the opportunity to return
+free space to global_rsv directly when we release other block_rsvs.
 
-Reported-by: Daniel Blueman <daniel@quora.org>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- Documentation/filesystems/btrfs.txt | 6 ++++++
- fs/btrfs/super.c                    | 8 +++++++-
- 2 files changed, 13 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 5dd282d..f6f71d6 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -51,6 +51,12 @@ Unless otherwise specified, all options default to off.
- 	defrag process.  Works best for small files; Not well suited for
- 	large database workloads.
- 
-+  barrier
-+	Enable the use of block layer write barriers.  Write barriers ensure
-+	that certain IOs make it through the device cache and are on persistent
-+	storage.
-+	Barriers are enabled by default.
-+	
-   check_int
-   check_int_data
-   check_int_print_mask=<value>
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e9c13fb..c8f4aca 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -323,7 +323,7 @@ enum {
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
--	Opt_commit_interval,
-+	Opt_commit_interval, Opt_barrier,
- 	Opt_err,
- };
- 
-@@ -335,6 +335,7 @@ static match_table_t tokens = {
- 	{Opt_nodatasum, "nodatasum"},
- 	{Opt_nodatacow, "nodatacow"},
- 	{Opt_nobarrier, "nobarrier"},
-+	{Opt_barrier, "barrier"},
- 	{Opt_max_inline, "max_inline=%s"},
- 	{Opt_alloc_start, "alloc_start=%s"},
- 	{Opt_thread_pool, "thread_pool=%d"},
-@@ -498,6 +499,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_info(root->fs_info, "turning off barriers");
- 			btrfs_set_opt(info->mount_opt, NOBARRIER);
- 			break;
-+		case Opt_barrier:
-+			if (btrfs_test_opt(root, NOBARRIER))
-+				btrfs_info(root->fs_info, "turning on barriers");
-+			btrfs_clear_opt(info->mount_opt, NOBARRIER);
-+			break;
- 		case Opt_thread_pool:
- 			ret = match_int(&args[0], &intarg);
- 			if (ret) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9c01509..009980c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4637,7 +4637,7 @@ void btrfs_block_rsv_release(struct btrfs_root *root,
+ 			     u64 num_bytes)
+ {
+ 	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
+-	if (global_rsv->full || global_rsv == block_rsv ||
++	if (global_rsv == block_rsv ||
+ 	    block_rsv->space_info != global_rsv->space_info)
+ 		global_rsv = NULL;
+ 	block_rsv_release_bytes(root->fs_info, block_rsv, global_rsv,
 -- 
-1.8.5.2
+1.8.2.1
 

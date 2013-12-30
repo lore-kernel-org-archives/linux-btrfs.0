@@ -1,318 +1,288 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18526 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:18597 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751822Ab3L3INU (ORCPT
+	with ESMTP id S1754486Ab3L3IN3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 03:13:20 -0500
+	Mon, 30 Dec 2013 03:13:29 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         Christian Robert <christian.robert@polymtl.ca>,
         "alanqk@gmail.com" <alanqk@gmail.com>
-Subject: [PATCH v8 05/14] Btrfs: introduce dedup tree and relatives
-Date: Mon, 30 Dec 2013 16:12:45 +0800
-Message-Id: <1388391175-29539-6-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v8 12/14] Btrfs: add ioctl of dedup control
+Date: Mon, 30 Dec 2013 16:12:52 +0800
+Message-Id: <1388391175-29539-13-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
 References: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a preparation step for online/inband dedup tree.
-It introduces dedup tree and its relatives, including hash driver and
-some structures.
+So far we have 4 commands to control dedup behaviour,
+- btrfs dedup enable
+Create the dedup tree, and it's the very first step when you're going to use
+the dedup feature.
+
+- btrfs dedup disable
+Delete the dedup tree, after this we're not able to use dedup any more unless
+you enable it again.
+
+- btrfs dedup on [-b]
+Switch on the dedup feature temporarily, and it's the second step of applying
+dedup with writes.  Option '-b' is used to set dedup blocksize.
+The default blocksize is 8192(no special reason, you may argue), and the current
+limit is [4096, 128 * 1024], because 4K is the generic page size and 128K is the
+upper limit of btrfs's compression.
+
+- btrfs dedup off
+Switch off the dedup feature temporarily, but the dedup tree remains.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h             | 73 ++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/disk-io.c           | 36 ++++++++++++++++++++++
- fs/btrfs/extent-tree.c       |  2 ++
- include/trace/events/btrfs.h |  3 +-
- 4 files changed, 113 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h           |   3 +
+ fs/btrfs/disk-io.c         |   1 +
+ fs/btrfs/ioctl.c           | 167 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  11 +++
+ 4 files changed, 182 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 54ab861..0e5718a 100644
+index 52b2843..1b89d6c 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -33,6 +33,7 @@
- #include <asm/kmap_types.h>
- #include <linux/pagemap.h>
- #include <linux/btrfs.h>
-+#include <crypto/hash.h>
- #include "extent_io.h"
- #include "extent_map.h"
- #include "async-thread.h"
-@@ -101,6 +102,9 @@ struct btrfs_ordered_sum;
- /* for storing items that use the BTRFS_UUID_KEY* types */
- #define BTRFS_UUID_TREE_OBJECTID 9ULL
+@@ -1715,6 +1715,9 @@ struct btrfs_fs_info {
+ 	u64 dedup_bs;
  
-+/* dedup tree(experimental) */
-+#define BTRFS_DEDUP_TREE_OBJECTID 10ULL
+ 	int dedup_type;
 +
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
- 
-@@ -521,6 +525,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF	(1ULL << 6)
- #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
-+#define BTRFS_FEATURE_INCOMPAT_DEDUP           (1ULL << 9)
- 
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-@@ -532,6 +537,7 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
- 	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
-+	 BTRFS_FEATURE_INCOMPAT_DEDUP |			\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
- 
- /*
-@@ -903,6 +909,51 @@ struct btrfs_csum_item {
- 	u8 csum;
- } __attribute__ ((__packed__));
- 
-+/* dedup */
-+enum btrfs_dedup_type {
-+	BTRFS_DEDUP_SHA256 = 0,
-+	BTRFS_DEDUP_LAST = 1,
-+};
-+
-+static int btrfs_dedup_lens[] = { 4, 0 };
-+static int btrfs_dedup_sizes[] = { 32, 0 };	/* 256bit, 32bytes */
-+
-+struct btrfs_dedup_item {
-+	/* disk length of dedup range */
-+	__le64 len;
-+
-+	u8 type;
-+	u8 compression;
-+	u8 encryption;
-+
-+	/* spare for later use */
-+	__le16 other_encoding;
-+
-+	/* hash/fingerprints go here */
-+} __attribute__ ((__packed__));
-+
-+struct btrfs_dedup_hash {
-+	u64 bytenr;
-+	u64 num_bytes;
-+
-+	/* hash algorithm */
-+	int type;
-+
-+	int compression;
-+
-+	/* last field is a variable length array of dedup hash */
-+	u64 hash[];
-+};
-+
-+static inline int btrfs_dedup_hash_size(int type)
-+{
-+	WARN_ON((btrfs_dedup_lens[type] * sizeof(u64)) !=
-+		 btrfs_dedup_sizes[type]);
-+
-+	return sizeof(struct btrfs_dedup_hash) + btrfs_dedup_sizes[type];
-+}
-+
-+
- struct btrfs_dev_stats_item {
- 	/*
- 	 * grow this item struct at the end for future enhancements and keep
-@@ -1304,6 +1355,7 @@ struct btrfs_fs_info {
- 	struct btrfs_root *dev_root;
- 	struct btrfs_root *fs_root;
- 	struct btrfs_root *csum_root;
-+	struct btrfs_root *dedup_root;
- 	struct btrfs_root *quota_root;
- 	struct btrfs_root *uuid_root;
- 
-@@ -1655,6 +1707,14 @@ struct btrfs_fs_info {
- 
- 	struct semaphore uuid_tree_rescan_sem;
- 	unsigned int update_uuid_tree_gen:1;
-+
-+	/* reference to deduplication algorithm driver via cryptoapi */
-+	struct crypto_shash *dedup_driver;
-+
-+	/* dedup blocksize */
-+	u64 dedup_bs;
-+
-+	int dedup_type;
++	/* protect user change for dedup operations */
++	struct mutex dedup_ioctl_mutex;
  };
  
  /*
-@@ -1968,6 +2028,8 @@ struct btrfs_ioctl_defrag_range_args {
-  */
- #define BTRFS_STRING_ITEM_KEY	253
- 
-+#define BTRFS_DEDUP_ITEM_KEY	254
-+
- /*
-  * Flags for mount options.
-  *
-@@ -2980,6 +3042,14 @@ static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
- 	return btrfs_item_size(eb, e) - offset;
- }
- 
-+/* btrfs_dedup_item */
-+BTRFS_SETGET_FUNCS(dedup_len, struct btrfs_dedup_item, len, 64);
-+BTRFS_SETGET_FUNCS(dedup_compression, struct btrfs_dedup_item, compression, 8);
-+BTRFS_SETGET_FUNCS(dedup_encryption, struct btrfs_dedup_item, encryption, 8);
-+BTRFS_SETGET_FUNCS(dedup_other_encoding, struct btrfs_dedup_item,
-+		   other_encoding, 16);
-+BTRFS_SETGET_FUNCS(dedup_type, struct btrfs_dedup_item, type, 8);
-+
- /* btrfs_dev_stats_item */
- static inline u64 btrfs_dev_stats_value(struct extent_buffer *eb,
- 					struct btrfs_dev_stats_item *ptr,
-@@ -3443,6 +3513,8 @@ static inline int btrfs_need_cleaner_sleep(struct btrfs_root *root)
- 
- static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- {
-+	if (fs_info->dedup_driver)
-+		crypto_free_shash(fs_info->dedup_driver);
- 	kfree(fs_info->balance_ctl);
- 	kfree(fs_info->delayed_root);
- 	kfree(fs_info->extent_root);
-@@ -3615,6 +3687,7 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
- 		       struct bio *bio, u64 file_start, int contig);
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit);
-+
- /* inode.c */
- struct btrfs_delalloc_work {
- 	struct inode *inode;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 435ef13..2c83de7 100644
+index 2c83de7..9c9667d 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -152,6 +152,7 @@ static struct btrfs_lockdep_keyset {
- 	{ .id = BTRFS_FS_TREE_OBJECTID,		.name_stem = "fs"	},
- 	{ .id = BTRFS_CSUM_TREE_OBJECTID,	.name_stem = "csum"	},
- 	{ .id = BTRFS_QUOTA_TREE_OBJECTID,	.name_stem = "quota"	},
-+	{ .id = BTRFS_DEDUP_TREE_OBJECTID,	.name_stem = "dedup"	},
- 	{ .id = BTRFS_TREE_LOG_OBJECTID,	.name_stem = "log"	},
- 	{ .id = BTRFS_TREE_RELOC_OBJECTID,	.name_stem = "treloc"	},
- 	{ .id = BTRFS_DATA_RELOC_TREE_OBJECTID,	.name_stem = "dreloc"	},
-@@ -1595,6 +1596,9 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
- 		return fs_info->uuid_root ? fs_info->uuid_root :
- 					    ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_DEDUP_TREE_OBJECTID)
-+		return fs_info->dedup_root ? fs_info->dedup_root :
-+					     ERR_PTR(-ENOENT);
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-@@ -2047,6 +2051,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
- 	free_root_extent_buffers(info->csum_root);
- 	free_root_extent_buffers(info->quota_root);
- 	free_root_extent_buffers(info->uuid_root);
-+	free_root_extent_buffers(info->dedup_root);
- 	if (chunk_root)
- 		free_root_extent_buffers(info->chunk_root);
- }
-@@ -2082,6 +2087,19 @@ static void del_fs_roots(struct btrfs_fs_info *fs_info)
- 	}
+@@ -2314,6 +2314,7 @@ int open_ctree(struct super_block *sb,
+ 	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
+ 	mutex_init(&fs_info->dev_replace.lock_management_lock);
+ 	mutex_init(&fs_info->dev_replace.lock);
++	mutex_init(&fs_info->dedup_ioctl_mutex);
+ 
+ 	spin_lock_init(&fs_info->qgroup_lock);
+ 	mutex_init(&fs_info->qgroup_ioctl_lock);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 347bf61..75fb3de 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4481,6 +4481,171 @@ out_unlock:
+ 	return ret;
  }
  
-+static struct crypto_shash *
-+btrfs_build_dedup_driver(struct btrfs_fs_info *info)
++static long btrfs_enable_dedup(struct btrfs_root *root)
 +{
-+	switch (info->dedup_type) {
-+	case BTRFS_DEDUP_SHA256:
-+		return crypto_alloc_shash("sha256", 0, 0);
-+	default:
-+		pr_err("btrfs: unrecognized dedup type\n");
-+		break;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_trans_handle *trans = NULL;
++	struct btrfs_root *dedup_root;
++	int ret = 0;
++
++	mutex_lock(&fs_info->dedup_ioctl_mutex);
++	if (fs_info->dedup_root) {
++		pr_info("btrfs: dedup has already been enabled\n");
++		mutex_unlock(&fs_info->dedup_ioctl_mutex);
++		return 0;
 +	}
-+	return ERR_PTR(-EINVAL);
++
++	trans = btrfs_start_transaction(root, 2);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		mutex_unlock(&fs_info->dedup_ioctl_mutex);
++		return ret;
++	}
++
++	dedup_root = btrfs_create_tree(trans, fs_info,
++				       BTRFS_DEDUP_TREE_OBJECTID);
++	if (IS_ERR(dedup_root))
++		ret = PTR_ERR(dedup_root);
++
++	if (ret)
++		btrfs_end_transaction(trans, root);
++	else
++		ret = btrfs_commit_transaction(trans, root);
++
++	if (!ret) {
++		pr_info("btrfs: dedup enabled\n");
++		fs_info->dedup_root = dedup_root;
++		fs_info->dedup_root->block_rsv = &fs_info->global_block_rsv;
++		btrfs_set_fs_incompat(fs_info, DEDUP);
++	}
++
++	mutex_unlock(&fs_info->dedup_ioctl_mutex);
++	return ret;
 +}
 +
- int open_ctree(struct super_block *sb,
- 	       struct btrfs_fs_devices *fs_devices,
- 	       char *options)
-@@ -2104,6 +2122,7 @@ int open_ctree(struct super_block *sb,
- 	struct btrfs_root *dev_root;
- 	struct btrfs_root *quota_root;
- 	struct btrfs_root *uuid_root;
++static long btrfs_disable_dedup(struct btrfs_root *root)
++{
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +	struct btrfs_root *dedup_root;
- 	struct btrfs_root *log_tree_root;
- 	int ret;
- 	int err = -EINVAL;
-@@ -2193,6 +2212,8 @@ int open_ctree(struct super_block *sb,
- 	atomic64_set(&fs_info->tree_mod_seq, 0);
- 	fs_info->sb = sb;
- 	fs_info->max_inline = 8192 * 1024;
-+	fs_info->dedup_bs = 0;
-+	fs_info->dedup_type = BTRFS_DEDUP_SHA256;
- 	fs_info->metadata_ratio = 0;
- 	fs_info->defrag_inodes = RB_ROOT;
- 	fs_info->free_chunk_space = 0;
-@@ -2468,6 +2489,14 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
- 
-+	fs_info->dedup_driver = btrfs_build_dedup_driver(fs_info);
-+	if (IS_ERR(fs_info->dedup_driver)) {
-+		pr_info("BTRFS: Cannot load sha256 driver\n");
-+		err = PTR_ERR(fs_info->dedup_driver);
-+		fs_info->dedup_driver = NULL;
-+		goto fail_alloc;
++	int ret;
++
++	mutex_lock(&fs_info->dedup_ioctl_mutex);
++	if (!fs_info->dedup_root) {
++		pr_info("btrfs: dedup has been disabled\n");
++		mutex_unlock(&fs_info->dedup_ioctl_mutex);
++		return 0;
 +	}
 +
- 	btrfs_init_workers(&fs_info->generic_worker,
- 			   "genwork", 1, NULL);
- 
-@@ -2719,6 +2748,13 @@ retry_root_backup:
- 		    generation != btrfs_super_uuid_tree_generation(disk_super);
- 	}
- 
-+	location.objectid = BTRFS_DEDUP_TREE_OBJECTID;
-+	dedup_root = btrfs_read_tree_root(tree_root, &location);
-+	if (!IS_ERR(dedup_root)) {
-+		dedup_root->track_dirty = 1;
-+		fs_info->dedup_root = dedup_root;
++	if (fs_info->dedup_bs != 0) {
++		pr_info("btrfs: cannot disable dedup until switching off dedup!\n");
++		mutex_unlock(&fs_info->dedup_ioctl_mutex);
++		return -EBUSY;
 +	}
 +
- 	fs_info->generation = generation;
- 	fs_info->last_trans_committed = generation;
++	dedup_root = fs_info->dedup_root;
++
++	ret = btrfs_drop_snapshot(dedup_root, NULL, 1, 0);
++
++	if (!ret) {
++		fs_info->dedup_root = NULL;
++		pr_info("btrfs: dedup disabled\n");
++	}
++
++	mutex_unlock(&fs_info->dedup_ioctl_mutex);
++	WARN_ON(ret < 0 && ret != -EAGAIN && ret != -EROFS);
++	return ret;
++}
++
++static long btrfs_set_dedup_bs(struct btrfs_root *root, u64 bs)
++{
++	struct btrfs_fs_info *info = root->fs_info;
++	int ret = 0;
++
++	mutex_lock(&info->dedup_ioctl_mutex);
++	if (!info->dedup_root) {
++		pr_info("btrfs: dedup is disabled, we cannot switch on/off dedup\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
++	bs = ALIGN(bs, root->sectorsize);
++	bs = min_t(u64, bs, (128 * 1024ULL));
++
++	if (bs == info->dedup_bs) {
++		if (info->dedup_bs == 0)
++			pr_info("btrfs: switch OFF dedup(it's already off)\n");
++		else
++			pr_info("btrfs: switch ON dedup(its bs is already %llu)\n",
++				bs);
++		goto out;
++	}
++
++	/*
++	 * The dedup works similar to compression, both use async workqueue to
++	 * reach better performance.  We drain the on-going async works here
++	 * so that new dedup writes will apply with the new dedup blocksize.
++	 */
++	atomic_inc(&info->async_submit_draining);
++	while (atomic_read(&info->nr_async_submits) ||
++	       atomic_read(&info->async_delalloc_pages)) {
++		wait_event(info->async_submit_wait,
++			   (atomic_read(&info->nr_async_submits) == 0 &&
++			    atomic_read(&info->async_delalloc_pages) == 0));
++	}
++
++	/*
++	 * dedup_bs = 0: dedup off;
++	 * dedup_bs > 0: dedup on;
++	 */
++	info->dedup_bs = bs;
++	if (info->dedup_bs == 0) {
++		pr_info("btrfs: switch OFF dedup\n");
++	} else {
++		info->dedup_bs = bs;
++		pr_info("btrfs: switch ON dedup(dedup blocksize %llu)\n",
++			info->dedup_bs);
++	}
++	atomic_dec(&info->async_submit_draining);
++
++out:
++	mutex_unlock(&info->dedup_ioctl_mutex);
++	return ret;
++}
++
++static long btrfs_ioctl_dedup_ctl(struct btrfs_root *root, void __user *args)
++{
++	struct btrfs_ioctl_dedup_args *dargs;
++	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	dargs = memdup_user(args, sizeof(*dargs));
++	if (IS_ERR(dargs)) {
++		ret = PTR_ERR(dargs);
++		goto out;
++	}
++
++	switch (dargs->cmd) {
++	case BTRFS_DEDUP_CTL_ENABLE:
++		ret = btrfs_enable_dedup(root);
++		break;
++	case BTRFS_DEDUP_CTL_DISABLE:
++		ret = btrfs_disable_dedup(root);
++		break;
++	case BTRFS_DEDUP_CTL_SET_BS:
++		/* dedup on/off */
++		ret = btrfs_set_dedup_bs(root, dargs->bs);
++		break;
++	default:
++		ret = -EINVAL;
++	}
++
++	kfree(dargs);
++out:
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -4599,6 +4764,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_set_fslabel(file, argp);
+ 	case BTRFS_IOC_FILE_EXTENT_SAME:
+ 		return btrfs_ioctl_file_extent_same(file, argp);
++	case BTRFS_IOC_DEDUP_CTL:
++		return btrfs_ioctl_dedup_ctl(root, argp);
+ 	}
  
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index dc8ea97..aa40a5e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4759,6 +4759,8 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	if (fs_info->quota_root)
- 		fs_info->quota_root->block_rsv = &fs_info->global_block_rsv;
- 	fs_info->chunk_root->block_rsv = &fs_info->chunk_block_rsv;
-+	if (fs_info->dedup_root)
-+		fs_info->dedup_root->block_rsv = &fs_info->global_block_rsv;
+ 	return -ENOTTY;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 45e6189..eda8b92 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -399,6 +399,15 @@ struct btrfs_ioctl_get_dev_stats {
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
+ };
  
- 	update_global_block_rsv(fs_info);
- }
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 4832d75..1656581 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -40,6 +40,7 @@ struct extent_buffer;
- 		{ BTRFS_ROOT_TREE_DIR_OBJECTID, "ROOT_TREE_DIR"	},	\
- 		{ BTRFS_CSUM_TREE_OBJECTID, 	"CSUM_TREE"	},	\
- 		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
-+		{ BTRFS_DEDUP_TREE_OBJECTID,	"DEDUP_TREE"	},	\
- 		{ BTRFS_QUOTA_TREE_OBJECTID,	"QUOTA_TREE"	},	\
- 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
- 		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_RELOC"	},	\
-@@ -48,7 +49,7 @@ struct extent_buffer;
- #define show_root_type(obj)						\
- 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
- 	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
--	       obj <= BTRFS_QUOTA_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
-+	       obj <= BTRFS_DEDUP_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
++/* deduplication control ioctl modes */
++#define BTRFS_DEDUP_CTL_ENABLE 1
++#define BTRFS_DEDUP_CTL_DISABLE 2
++#define BTRFS_DEDUP_CTL_SET_BS 3
++struct btrfs_ioctl_dedup_args {
++	__u64 cmd;
++	__u64 bs;
++};
++
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
+ #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
+@@ -606,5 +615,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
++				 struct btrfs_ioctl_dedup_args)
  
- #define BTRFS_GROUP_FLAGS	\
- 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
+ #endif /* _UAPI_LINUX_BTRFS_H */
 -- 
 1.8.2.1
 

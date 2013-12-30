@@ -1,45 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:58292 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751595Ab3L3JCG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 04:02:06 -0500
-Date: Mon, 30 Dec 2013 01:01:25 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Migrate to bcache: A few questions
-Message-ID: <20131230090125.GN19863@merlins.org>
-References: <kof6pa-akd.ln1@hurikhan77.spdns.de>
- <45EA1F82-A774-4729-9279-D58ACF819B05@colorremedies.com>
- <fgu6pa-f1b.ln1@hurikhan77.spdns.de>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36827 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755986Ab3L3QBb convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Dec 2013 11:01:31 -0500
+From: Chris Mason <clm@fb.com>
+To: "lists@colorremedies.com" <lists@colorremedies.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "1i5t5.duncan@cox.net" <1i5t5.duncan@cox.net>
+Subject: Re: systemd-journal, nodatacow, was: Is anyone using btrfs
+ send/receive for backups instead of rsync?
+Date: Mon, 30 Dec 2013 16:00:53 +0000
+Message-ID: <1388419281.11341.4.camel@ret.masoncoding.com>
+References: <20131228171943.GE19863@merlins.org>
+	 <20131228173730.GA7234@carfax.org.uk>
+	 <CAELSAVa=oVzrLnSSk+vnKQF46F7U5n6o8Nw9VGXkPQNCR2SVsA@mail.gmail.com>
+	 <CABR0jES_40xmVxi21+VUMzT_2ZuFWs9kUPfZAPZODq0rWrB0ug@mail.gmail.com>
+	 <CAELSAVY+J1GYuRDHwUZ882OVchqXk9ES9EJp89HQofC8m00uaQ@mail.gmail.com>
+	 <CABR0jERWpte3DAk+JCaybeGYRBtmUKEOoUzfAe=uC+k7KfdeQg@mail.gmail.com>
+	 <EF26DC97-2362-4C53-8B5F-4763A33375EC@colorremedies.com>
+	 <pan$ac557$b59f1c0a$eeb339c8$e2df444@cox.net>
+	 <9B8C24F7-2F6C-4879-9A21-6A6D940BE4C1@colorremedies.com>
+In-Reply-To: <9B8C24F7-2F6C-4879-9A21-6A6D940BE4C1@colorremedies.com>
+Content-Type: text/plain; charset="utf-7"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <fgu6pa-f1b.ln1@hurikhan77.spdns.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 30, 2013 at 02:22:55AM +0100, Kai Krakow wrote:
-> These thought are actually quite interesting. So you are saying that data 
-> may not be fully written to SSD although the kernel thinks so? This is 
+On Sun, 2013-12-29 at 17:38 -0700, Chris Murphy wrote:
++AD4- On Dec 29, 2013, at 5:39 AM, Duncan +ADw-1i5t5.duncan+AEA-cox.net+AD4- wrote:
++AD4- 
++AD4- +AD4- Yes, it does turn off checksumming as well as COW, but given the write-
++AD4- +AD4- into scenario, that's actually best anyway, because otherwise btrfs has 
++AD4- +AD4- to keep updating the checksums
++AD4- 
++AD4- On second thought, I'm less concerned with bitrot and checksumming being lost with nodatacow, than I am with significantly increasing the chance the journal is irreparably lost due to corruption during an unclean shutdown.
 
-That, and worse.
+So first, send/receive +- nowcow aren't a great combination.  NOCOW won't
+update the generation numbers send/receive needs to find changes.  The
+best send/receive can do in that case is send over the entire file.
 
-Incidently, I have just posted on my G+ about this:
-https://plus.google.com/106981743284611658289/posts/Us8yjK9SPs6
++AD4- 
++AD4- +AD4- But in all these cases, it's also quite common for the application doing 
++AD4- +AD4- the writing to have its own checksumming/error-detection and possible 
++AD4- +AD4- correction -- it pretty much comes with the territory -- in which case 
++AD4- +AD4- btrfs attempting to do the same is simply superfluous even if it weren't 
++AD4- +AD4- a race-condition trigger.
++AD4- 
++AD4- I don't know what kind of checksumming systemd performs on the journal, but whenever Btrfs has found corruption with the journal file(s), systemd-journald has also found corruption and starts a new log. So it makes sense to rely on its own mechanisms, than Btrfs's.
++AD4- 
 
-which is mostly links to
-http://lkcl.net/reports/ssd_analysis.html
-https://www.usenix.org/conference/fast13/understanding-robustness-ssds-under-power-fault
+The autodefrag mode was really made for the small databases like
+systemd.  I'd prefer that we use that for systemd instead of suggesting
+NOCOW.  I'm finally dusting off my work to improve db performance, so
+hopefully we can do much better in the near future.
 
-After you read those, you'll never think twice about SSDs and data loss
-anymore :-/
-(I kind of found that out myself over time too, but these have much more
-data than I got myself empirically on a couple of SSDs)
+-chris
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

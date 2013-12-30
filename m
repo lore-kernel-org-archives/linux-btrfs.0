@@ -1,79 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17606 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:17616 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754346Ab3L3INY (ORCPT
+	with ESMTP id S1754445Ab3L3INZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 03:13:24 -0500
+	Mon, 30 Dec 2013 03:13:25 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         Christian Robert <christian.robert@polymtl.ca>,
         "alanqk@gmail.com" <alanqk@gmail.com>
-Subject: [PATCH v8 07/14] Btrfs: introduce dedup state
-Date: Mon, 30 Dec 2013 16:12:47 +0800
-Message-Id: <1388391175-29539-8-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v8 10/14] Btrfs: skip dedup reference during backref walking
+Date: Mon, 30 Dec 2013 16:12:50 +0800
+Message-Id: <1388391175-29539-11-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
 References: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This introduces dedup state and relative operations to mark and unmark
-the dedup data range, it'll be used in later patches.
+The dedup ref is quite a special one, it is just used to store the hash value
+of the extent and cannot be used to find data, so we skip it during backref
+walking.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent_io.c | 14 ++++++++++++++
- fs/btrfs/extent_io.h |  5 +++++
- 2 files changed, 19 insertions(+)
+ fs/btrfs/backref.c    | 9 +++++++++
+ fs/btrfs/relocation.c | 3 +++
+ 2 files changed, 12 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8e457fc..54cef32 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1251,6 +1251,20 @@ int clear_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
- 				cached_state, mask);
- }
- 
-+int set_extent_dedup(struct extent_io_tree *tree, u64 start, u64 end,
-+		     struct extent_state **cached_state, gfp_t mask)
-+{
-+	return set_extent_bit(tree, start, end, EXTENT_DEDUP, 0,
-+			      cached_state, mask);
-+}
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 3775947..1ec0046 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -590,6 +590,9 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+ 			key.objectid = ref->objectid;
+ 			key.type = BTRFS_EXTENT_DATA_KEY;
+ 			key.offset = ref->offset;
++			if (ref->root == BTRFS_DEDUP_TREE_OBJECTID)
++				break;
 +
-+int clear_extent_dedup(struct extent_io_tree *tree, u64 start, u64 end,
-+			  struct extent_state **cached_state, gfp_t mask)
-+{
-+	return clear_extent_bit(tree, start, end, EXTENT_DEDUP, 0, 0,
-+				cached_state, mask);
-+}
+ 			ret = __add_prelim_ref(prefs, ref->root, &key, 0, 0,
+ 					       node->bytenr,
+ 					       node->ref_mod * sgn, GFP_ATOMIC);
+@@ -708,6 +711,9 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 			key.type = BTRFS_EXTENT_DATA_KEY;
+ 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+ 			root = btrfs_extent_data_ref_root(leaf, dref);
++			if (root == BTRFS_DEDUP_TREE_OBJECTID)
++				break;
 +
- /*
-  * either insert or lock state struct between start and end use mask to tell
-  * us if waiting is desired.
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 19620c5..5c6a78d 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -20,6 +20,7 @@
- #define EXTENT_NEED_WAIT (1 << 13)
- #define EXTENT_DAMAGED (1 << 14)
- #define EXTENT_NORESERVE (1 << 15)
-+#define EXTENT_DEDUP (1 << 16)
- #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
- #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+ 					       bytenr, count, GFP_NOFS);
+ 			break;
+@@ -791,6 +797,9 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 			key.type = BTRFS_EXTENT_DATA_KEY;
+ 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+ 			root = btrfs_extent_data_ref_root(leaf, dref);
++			if (root == BTRFS_DEDUP_TREE_OBJECTID)
++				break;
++
+ 			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
+ 					       bytenr, count, GFP_NOFS);
+ 			break;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 429c73c..a06e448 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3509,6 +3509,9 @@ static int find_data_references(struct reloc_control *rc,
+ 	ref_offset = btrfs_extent_data_ref_offset(leaf, ref);
+ 	ref_count = btrfs_extent_data_ref_count(leaf, ref);
  
-@@ -227,6 +228,10 @@ int set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
- 			struct extent_state **cached_state, gfp_t mask);
- int clear_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
- 			  struct extent_state **cached_state, gfp_t mask);
-+int set_extent_dedup(struct extent_io_tree *tree, u64 start, u64 end,
-+		     struct extent_state **cached_state, gfp_t mask);
-+int clear_extent_dedup(struct extent_io_tree *tree, u64 start, u64 end,
-+		       struct extent_state **cached_state, gfp_t mask);
- int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
- 		   gfp_t mask);
- int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
++	if (ref_root == BTRFS_DEDUP_TREE_OBJECTID)
++		return 0;
++
+ 	/*
+ 	 * This is an extent belonging to the free space cache, lets just delete
+ 	 * it and redo the search.
 -- 
 1.8.2.1
 

@@ -1,49 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43810 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:17549 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750756Ab3LMGEa (ORCPT
+	with ESMTP id S1751676Ab3L3INM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Dec 2013 01:04:30 -0500
-Date: Fri, 13 Dec 2013 14:04:21 +0800
+	Mon, 30 Dec 2013 03:13:12 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v7 04/13] Btrfs: disable qgroups accounting when
- quata_enable is 0
-Message-ID: <20131213060420.GB14429@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1381726796-27191-1-git-send-email-bo.li.liu@oracle.com>
- <1381726796-27191-5-git-send-email-bo.li.liu@oracle.com>
- <CAOcd+r17jar_CxrYhwQX4eeKLiFgjHDuLdptes04gG_LXtozrg@mail.gmail.com>
- <20131213054256.GA14429@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20131213054256.GA14429@localhost.localdomain>
+To: linux-btrfs@vger.kernel.org
+Cc: Marcel Ritter <ritter.marcel@gmail.com>,
+        Christian Robert <christian.robert@polymtl.ca>,
+        "alanqk@gmail.com" <alanqk@gmail.com>
+Subject: [RFC PATCH v8 00/14] Online(inband) data deduplication
+Date: Mon, 30 Dec 2013 16:12:40 +0800
+Message-Id: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 13, 2013 at 01:42:57PM +0800, Liu Bo wrote:
-> On Tue, Dec 03, 2013 at 07:13:48PM +0200, Alex Lyakas wrote:
-> > Hi Liu, Jan,
-> > 
-> > What happens to "struct qgroup_update"s sitting in
-> > trans->qgroup_ref_list in case the transaction aborts? It seems that
-> > they are not freed.
-> > 
-> > For example, if we are in btrfs_commit_transaction() and:
-> > - call create_pending_snapshots()
-> > - call btrfs_run_delayed_items() and this fails
-> > So we go to cleanup_transaction() without calling
-> > btrfs_delayed_refs_qgroup_accounting(), which would have been called
-> > by btrfs_run_delayed_refs().
-> > 
-> > I receive kmemleak warnings about these thingies not being freed,
-> > although on an older kernel. However, looking at Josef's tree, this
-> > still seems to be the case.
-> 
-> I think you're right, but I'm sure because I cannot reproduce that somehow,
+Hello,
 
-Sorry, s/'sure'/'not sure'/g
+Here is the New Year patch bomb :-)
 
--liubo
+Data deduplication is a specialized data compression technique for eliminating
+duplicate copies of repeating data.[1]
+
+This patch set is also related to "Content based storage" in project ideas[2],
+it introduces inband data deduplication for btrfs and dedup/dedupe is for short.
+
+PATCH 1 is a hang fix with deduplication on, but it's also useful without
+dedup in practice use.
+
+PATCH 2 and 3 are targetting delayed refs' scalability problems, which are
+uncovered by the dedup feature.
+
+PATCH 4 is a speed-up improvement, which is about dedup and quota.
+
+PATCH 5-8 is the preparation work for dedup implementation.
+
+PATCH 9 shows how we implement dedup feature.
+
+PATCH 10 fixes a backref walking bug with dedup.
+
+PATCH 11 fixes a free space bug of dedup extents on error handling.
+
+PATCH 12 adds the ioctl to control dedup feature.
+
+PATCH 13 fixes the metadata ENOSPC problem with dedup which has been there
+WAY TOO LONG.
+
+PATCH 14 fixes a race bug on dedup writes.
+
+And there is also a btrfs-progs patch(PATCH 15) which offers all details about
+how to control the dedup feature.
+
+I've tested this with xfstests by adding a inline dedup 'enable & on' in xfstests'
+mount and scratch_mount.
+
+TODO:
+* a bit-to-bit comparison callback.
+
+All comments are welcome!
+
+
+[1]: http://en.wikipedia.org/wiki/Data_deduplication
+[2]: https://btrfs.wiki.kernel.org/index.php/Project_ideas#Content_based_storage
+
+v8:
+- fix the race crash of dedup ref again.
+- fix the metadata ENOSPC problem with dedup.
+
+v7:
+- rebase onto the lastest btrfs
+- break a big patch into smaller ones to make reviewers happy.
+- kill mount options of dedup and use ioctl method instead.
+- fix two crash due to the special dedup ref
+
+For former patch sets:
+v6: http://thread.gmane.org/gmane.comp.file-systems.btrfs/27512
+v5: http://thread.gmane.org/gmane.comp.file-systems.btrfs/27257
+v4: http://thread.gmane.org/gmane.comp.file-systems.btrfs/25751
+v3: http://comments.gmane.org/gmane.comp.file-systems.btrfs/25433
+v2: http://comments.gmane.org/gmane.comp.file-systems.btrfs/24959
+
+Liu Bo (14):
+  Btrfs: skip merge part for delayed data refs
+  Btrfs: improve the delayed refs process in rm case
+  Btrfs: introduce a head ref rbtree
+  Btrfs: disable qgroups accounting when quata_enable is 0
+  Btrfs: introduce dedup tree and relatives
+  Btrfs: introduce dedup tree operations
+  Btrfs: introduce dedup state
+  Btrfs: make ordered extent aware of dedup
+  Btrfs: online(inband) data dedup
+  Btrfs: skip dedup reference during backref walking
+  Btrfs: don't return space for dedup extent
+  Btrfs: add ioctl of dedup control
+  Btrfs: fix dedupe 'ENOSPC' problem
+  Btrfs: fix a crash of dedup ref
+
+ fs/btrfs/backref.c           |   9 +
+ fs/btrfs/ctree.c             |   2 +-
+ fs/btrfs/ctree.h             |  86 ++++++
+ fs/btrfs/delayed-ref.c       | 161 +++++++----
+ fs/btrfs/delayed-ref.h       |   8 +
+ fs/btrfs/disk-io.c           |  40 +++
+ fs/btrfs/extent-tree.c       | 208 ++++++++++++--
+ fs/btrfs/extent_io.c         |  22 +-
+ fs/btrfs/extent_io.h         |  16 ++
+ fs/btrfs/file-item.c         | 244 +++++++++++++++++
+ fs/btrfs/inode.c             | 635 ++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c             | 167 ++++++++++++
+ fs/btrfs/ordered-data.c      |  38 ++-
+ fs/btrfs/ordered-data.h      |  13 +-
+ fs/btrfs/qgroup.c            |   3 +
+ fs/btrfs/relocation.c        |   3 +
+ fs/btrfs/transaction.c       |   4 +-
+ include/trace/events/btrfs.h |   3 +-
+ include/uapi/linux/btrfs.h   |  11 +
+ 19 files changed, 1501 insertions(+), 172 deletions(-)
+
+-- 
+1.8.2.1
+

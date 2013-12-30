@@ -1,47 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:47393 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56261 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752800Ab3L3Ai0 convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1752770Ab3L3BDQ convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Dec 2013 19:38:26 -0500
-Content-Type: text/plain; charset=us-ascii
+	Sun, 29 Dec 2013 20:03:16 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:49499 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VxRGC-0041M8-QW
+	for linux-btrfs@vger.kernel.org; Sun, 29 Dec 2013 18:03:12 -0700
+Content-Type: text/plain; charset=windows-1252
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: systemd-journal, nodatacow, was: Is anyone using btrfs send/receive for backups instead of rsync?
+Subject: Re: Migrate to bcache: A few questions
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$ac557$b59f1c0a$eeb339c8$e2df444@cox.net>
-Date: Sun, 29 Dec 2013 17:38:23 -0700
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <9B8C24F7-2F6C-4879-9A21-6A6D940BE4C1@colorremedies.com>
-References: <20131228171943.GE19863@merlins.org> <20131228173730.GA7234@carfax.org.uk> <CAELSAVa=oVzrLnSSk+vnKQF46F7U5n6o8Nw9VGXkPQNCR2SVsA@mail.gmail.com> <CABR0jES_40xmVxi21+VUMzT_2ZuFWs9kUPfZAPZODq0rWrB0ug@mail.gmail.com> <CAELSAVY+J1GYuRDHwUZ882OVchqXk9ES9EJp89HQofC8m00uaQ@mail.gmail.com> <CABR0jERWpte3DAk+JCaybeGYRBtmUKEOoUzfAe=uC+k7KfdeQg@mail.gmail.com> <EF26DC97-2362-4C53-8B5F-4763A33375EC@colorremedies.com> <pan$ac557$b59f1c0a$eeb339c8$e2df444@cox.net>
-To: Duncan <1i5t5.duncan@cox.net>
+In-Reply-To: <kof6pa-akd.ln1@hurikhan77.spdns.de>
+Date: Sun, 29 Dec 2013 18:03:11 -0700
+Message-Id: <45EA1F82-A774-4729-9279-D58ACF819B05@colorremedies.com>
+References: <kof6pa-akd.ln1@hurikhan77.spdns.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Dec 29, 2013, at 5:39 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+On Dec 29, 2013, at 2:11 PM, Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
 
-> Yes, it does turn off checksumming as well as COW, but given the write-
-> into scenario, that's actually best anyway, because otherwise btrfs has 
-> to keep updating the checksums
+> 
+> * How stable is it? I've read about some csum errors lately…
 
-On second thought, I'm less concerned with bitrot and checksumming being lost with nodatacow, than I am with significantly increasing the chance the journal is irreparably lost due to corruption during an unclean shutdown.
+Seems like bcache devs are still looking into the recent btrfs csum issues.
 
+> 
+> * I want to migrate my current storage to bcache without replaying a backup.
+>  Is it possible?
+> 
+> * Did others already use it? What is the perceived performance for desktop
+>  workloads in comparision to not using bcache?
+> 
+> * How well does bcache handle power outages? Btrfs does handle them very
+>  well since many months.
+> 
+> * How well does it play with dracut as initrd? Is it as simple as telling it
+>  the new device nodes or is there something complicate to configure?
+> 
+> * How does bcache handle a failing SSD when it starts to wear out in a few
+>  years?
 
-> But in all these cases, it's also quite common for the application doing 
-> the writing to have its own checksumming/error-detection and possible 
-> correction -- it pretty much comes with the territory -- in which case 
-> btrfs attempting to do the same is simply superfluous even if it weren't 
-> a race-condition trigger.
+I think most of these questions are better suited for the bcache list. I think there are still many uncertainties about the behavior of SSDs during power failures when they aren't explicitly designed with power failure protection in mind. At best I'd hope for a rollback involving data loss, but hopefully not a corrupt file system. I'd rather lose the last minute of data supposedly written to the drive, than have to do a fuil restore from backup.
 
-I don't know what kind of checksumming systemd performs on the journal, but whenever Btrfs has found corruption with the journal file(s), systemd-journald has also found corruption and starts a new log. So it makes sense to rely on its own mechanisms, than Btrfs's.
+> 
+> * Is it worth waiting for hot-relocation support in btrfs to natively use
+>  a SSD as cache?
 
-> And I'm predicting that since btrfs is the assumed successor to the ext* 
-> series as the Linux default filesystem, and systemd is targeting Linux 
-> default initsystem status as well, it's only logical that at some point 
-> systemd will detect what filesystem it's logging to, and will 
-> automatically set NOCOW on the journal file when that filesystem is 
-> btrfs. 
+I haven't read anything about it. Don't see it listed in project ideas.
 
-Is this something that should be brought up on the systemd-devel@ list? Or maybe file it as an RFE against systemd at freedesktop.org?
+> 
+> * Would you recommend going with a bigger/smaller SSD? I'm planning to use
+>  only 75% of it for bcache so wear-leveling can work better, maybe use
+>  another part of it for hibernation (suspend to disk).
+
+I think that depends greatly on workload. If you're writing or reading a lot of disparate files, or a lot of small file random writes (mail server), I'd go bigger. By default sequential IO isn't cached. So I think you can get a big boost in responsiveness with a relatively small bcache size.
+
 
 Chris Murphy

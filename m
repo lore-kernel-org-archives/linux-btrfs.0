@@ -1,71 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29191 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752515Ab3L2NpC (ORCPT
+Received: from mail-bk0-f47.google.com ([209.85.214.47]:63335 "EHLO
+	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756244Ab3L3RTP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Dec 2013 08:45:02 -0500
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id rBTDj1uH023521
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:02 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj1o2013167
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id rBTDj1tW026277
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Dec 2013 13:45:01 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: release subvolume's block_rsv before transaction commit
-Date: Sun, 29 Dec 2013 21:44:51 +0800
-Message-Id: <1388324691-24507-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
-References: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 30 Dec 2013 12:19:15 -0500
+Received: by mail-bk0-f47.google.com with SMTP id mx12so3762178bkb.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 09:19:14 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20131201230130.GS8803@dastard>
+References: <13F547BC-D81C-45FB-9DC8-9C076B8605EF@colorremedies.com>
+ <20131127005126.GC10988@dastard> <CBAC6E46-0E69-477C-A177-E720C3184073@colorremedies.com>
+ <20131201230130.GS8803@dastard>
+From: Tom Gundersen <teg@jklm.no>
+Date: Mon, 30 Dec 2013 18:18:53 +0100
+Message-ID: <CAG-2HqXvwHnEGp=O_pBj+Wv4Z3nBNqQCpidr7=--FPNjZAZ74g@mail.gmail.com>
+Subject: Re: missing /sbin/fsck.btrfs
+To: Dave Chinner <david@fromorbit.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Karel Zak <kzak@redhat.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't have to keep subvolume's block_rsv during transaction commit,
-and within transaction commit, we may also need the free space reclaimed
-from this block_rsv to process delayed refs.
+On Mon, Dec 2, 2013 at 12:01 AM, Dave Chinner <david@fromorbit.com> wrote:
+> I just explained that things can go wrong if
+> you don't detect certain types of errors in fsck.<foo> when it is
+> called from fstab processing.
+>
+> What I am implying here is that we cannot prevent users from setting
+> passno to 1 or 2 in /etc/fstab. We have no control over that and so
+> asserting that "we don't need a fsck.btrfs because we can set passno
+> to 0" is invalid. IOWs, fsck.btrfs needs to be present and it needs
+> to behave correctly in these cases....
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ioctl.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+I actually think what btrfs is doing here is the more sensible thing
+(i.e., to not ship an fsck.btrfs), as it is a bit confusing to have a
+fsck.* that does not in fact do any filesystem checking.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 21da576..347bf61 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -417,7 +417,8 @@ static noinline int create_subvol(struct inode *dir,
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
--		goto out;
-+		btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-+		return ret;
- 	}
- 	trans->block_rsv = &block_rsv;
- 	trans->bytes_reserved = block_rsv.size;
-@@ -542,6 +543,8 @@ static noinline int create_subvol(struct inode *dir,
- fail:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-+	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-+
- 	if (async_transid) {
- 		*async_transid = trans->transid;
- 		err = btrfs_commit_transaction_async(trans, root, 1);
-@@ -555,8 +558,6 @@ fail:
- 
- 	if (!ret)
- 		d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
--out:
--	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
- 	return ret;
- }
- 
--- 
-1.8.2.1
+The way this stuff works under systemd is:
 
+ * fsck is only ever called on a filesystem once the backing device
+has appeared (so under systemd, fsck.xfs is indeed a noop).
+ * fsck is skipped for filesystems where the relevant helper does not
+exist, so fs_passno=1 has the same effect for xfs and btrfs
+filesystems (either way, nothing happens).
+
+That still leaves non-systemd systems and calling "fsck -A" manually.
+Maybe a good solution would be to patch fsck to adopt systemd's
+behavior, which would avoid every filesystem having to ship these
+"fake" fsck helpers? What do you think Karel?
+
+Cheers,
+
+Tom

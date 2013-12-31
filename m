@@ -1,38 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48064 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750896Ab3LaDMt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 22:12:49 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vxpl7-00007Z-Hw
-	for linux-btrfs@vger.kernel.org; Tue, 31 Dec 2013 04:12:45 +0100
-Received: from md5i.com ([75.151.244.229])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Dec 2013 04:12:45 +0100
-Received: from mwd by md5i.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Dec 2013 04:12:45 +0100
-To: linux-btrfs@vger.kernel.org
-From: Michael Welsh Duggan <mwd@md5i.com>
-Subject: A question about btrfs_ioctl_file_extent_same
-Date: Mon, 30 Dec 2013 22:12:34 -0500
-Message-ID: <871u0togrh.fsf@maru2.md5i.com>
-Mime-Version: 1.0
-Content-Type: text/plain
+Received: from mail-ie0-f180.google.com ([209.85.223.180]:51109 "EHLO
+	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756215Ab3LaCbz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Dec 2013 21:31:55 -0500
+Received: by mail-ie0-f180.google.com with SMTP id tp5so12696452ieb.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 18:31:55 -0800 (PST)
+MIME-Version: 1.0
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Tue, 31 Dec 2013 03:24:24 +0100
+Message-ID: <CAEx9m44ZiJLqTO1_G_rVfn+csD7_pOguEdiAjsvr3uPzna+mFA@mail.gmail.com>
+Subject: question regarding caching
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A simple question about btrfs_ioctl_file_extent_same...
+Hello,
 
-Is there any check before btrfs_cmp_data is called that short-circuits
-things if the extents being compared are already the same extent?  I was
-looking and could not find such a check, but I don't really know the
-btrfs source code that well.  If there is no such check, would it not
-make sense to add one?
+I have some questions regarding caching in BTRFS. When a file system
+is unmounted and mounted again, would all the previously cached
+content be removed from the cache after flushing to disk? After
+remounting, would the initial requests always be fetched from the
+disk?
+
+Rather than a local disk, I have a remote device to which my IO
+requests are sent and from which the data is fetched. I need certain
+data to be fetched from the remote device after a remount. But somehow
+I do not see any request appearing at the device. I even tried to do
+drop_caches after remounting the file system, but that does not seem
+to help.
+
+I guess my problem is not related to BTRFS, but since I am working
+with BTRFS, I wanted to ask here for help. Could any one tell me how I
+can ensure that requests are fetched from the (remote) device,
+especially after file system remount, without having to use
+drop_caches?
+
+Please let me know if I described the problem too vaguely and should
+give some more details.
+
+Wishing everyone a happy new year.
+
+Thanks and regards,
+Aastha.
 
 -- 
-Michael Welsh Duggan
-(md5i@md5i.com)
-
+Aastha Mehta
+MPI-SWS, Germany
+E-mail: aasthakm@mpi-sws.org

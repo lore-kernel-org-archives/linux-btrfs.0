@@ -1,51 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f180.google.com ([209.85.223.180]:51109 "EHLO
-	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756215Ab3LaCbz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Dec 2013 21:31:55 -0500
-Received: by mail-ie0-f180.google.com with SMTP id tp5so12696452ieb.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2013 18:31:55 -0800 (PST)
+Received: from mail-ie0-f170.google.com ([209.85.223.170]:47478 "EHLO
+	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751189AbaAAGBR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jan 2014 01:01:17 -0500
+Received: by mail-ie0-f170.google.com with SMTP id qd12so13782154ieb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Dec 2013 22:01:16 -0800 (PST)
 MIME-Version: 1.0
-From: Aastha Mehta <aasthakm@gmail.com>
-Date: Tue, 31 Dec 2013 03:24:24 +0100
-Message-ID: <CAEx9m44ZiJLqTO1_G_rVfn+csD7_pOguEdiAjsvr3uPzna+mFA@mail.gmail.com>
-Subject: question regarding caching
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Wed, 1 Jan 2014 14:01:16 +0800
+Message-ID: <CAM6NUi5hmX3vwPsG1rOQbCH+KNS=P927Hxbhc8Vt8bu1qCv6pw@mail.gmail.com>
+Subject: btrfs corruption after resuming from suspend to disk
+From: Nicolas Boichat <nicolas@boichat.ch>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-I have some questions regarding caching in BTRFS. When a file system
-is unmounted and mounted again, would all the previously cached
-content be removed from the cache after flushing to disk? After
-remounting, would the initial requests always be fetched from the
-disk?
+I've been running btrfs for less than a month now, on my /home
+directory. Not sure if it is relevant, but I had a number of kernel
+panics over that month (unrelated to btrfs). Yesterday, upon resuming
+from suspend to disk, the partition was remounted as read-only, so I
+rebooted, hoping to fix the problem.
 
-Rather than a local disk, I have a remote device to which my IO
-requests are sent and from which the data is fetched. I need certain
-data to be fetched from the remote device after a remount. But somehow
-I do not see any request appearing at the device. I even tried to do
-drop_caches after remounting the file system, but that does not seem
-to help.
+Since then, I'm unable to mount the partition.
 
-I guess my problem is not related to BTRFS, but since I am working
-with BTRFS, I wanted to ask here for help. Could any one tell me how I
-can ensure that requests are fetched from the (remote) device,
-especially after file system remount, without having to use
-drop_caches?
+System log after resuming from suspend to disk:
+https://gist.github.com/anonymous/8193563
 
-Please let me know if I described the problem too vaguely and should
-give some more details.
+I tried a number of repair commands, see the output there:
+https://gist.github.com/drinkcat/8193276
 
-Wishing everyone a happy new year.
+I also tried git://repo.or.cz/btrfs-progs-unstable/devel.git, branch
+integration-20131219, without success (./btrfs rescue chunk-recover -v
+/dev/sdb3 does not throw any errors though, but that doesn't fix the
+filesystem).
 
-Thanks and regards,
-Aastha.
+I'm going to reformat the partition, but I kept a disk image just
+after the first reboot, so I can try out other commands/newer version
+of the tools (and I wouldn't mind recovering some files). I'm also
+hanging out on #btrfs (nick: drinkcat).
 
--- 
-Aastha Mehta
-MPI-SWS, Germany
-E-mail: aasthakm@mpi-sws.org
+Thank you!
+
+Nicolas

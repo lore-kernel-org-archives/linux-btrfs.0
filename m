@@ -1,65 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42451 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750796AbaABIuW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jan 2014 03:50:22 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vydyu-0001Yq-1C
-	for linux-btrfs@vger.kernel.org; Thu, 02 Jan 2014 09:50:20 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jan 2014 09:50:20 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jan 2014 09:50:20 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Migrate to bcache: A few questions
-Date: Thu, 2 Jan 2014 08:49:58 +0000 (UTC)
-Message-ID: <pan$ce6d2$f8c0c73e$1b8dc4d$cbbdd6eb@cox.net>
-References: <kof6pa-akd.ln1@hurikhan77.spdns.de>
-	<52C1990D.9060704@gmail.com> <52C476B8.2040601@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.automatix.de ([213.131.255.221]:39940 "EHLO
+	mail.automatix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750711AbaABI47 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jan 2014 03:56:59 -0500
+Message-ID: <52C5280F.8090208@automatix.de>
+Date: Thu, 02 Jan 2014 09:49:19 +0100
+From: Jojo <jojo@automatix.de>
+MIME-Version: 1.0
+To: Sulla <Sulla@gmx.at>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-transaction blocked for more than 120 seconds
+References: <52C2AE7C.5020601@gmx.at>
+In-Reply-To: <52C2AE7C.5020601@gmx.at>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn posted on Wed, 01 Jan 2014 15:12:40 -0500 as
-excerpted:
+Am 31.12.2013 12:46, schrieb Sulla:
+> Dear all!
+>
+> On my Ubuntu Server 13.10 I use a RAID5 blockdevice consisting of 3 WD20EARS
+> drives. On this I built a LVM and in this LVM I use quite normal partitions
+> /, /home, SWAP (/boot resides on a RAID1.) and also a custom /data
+> partition. Everything (except boot and swap) is on btrfs.
+>
+> sometimes my system hangs for quite some time (top is showing a high wait
+> percentage), then runs on normally. I get kernel messages into
+> /var/log/sylsog, see below. I am unable to make any sense of the kernel
+> messages, there is no reference to the filesystem or drive affected (at
+> least I can not find one).
+>
+> Question: What is happening here?
+> * Is a HDD failing (smart looks good, however)
+> * Is something wrong with my btrfs-filesystem? with which one?
+> * How can I find the cause?
+>
+Moin Wolfgang,
+first ot: Happy new Year,
 
-> On 12/30/2013 11:02 AM, Austin S Hemmelgarn wrote:
->> 
->> As an alternative to using bcache, you might try something simmilar to
->> the following:
->>     64G SSD with /boot, /, and /usr Other HDD with /var, /usr/portage,
->>     /usr/src, and /home tmpfs or ramdisk for /tmp and /var/tmp
->> This is essentially what I use now, and I have found that it
->> significantly improves system performance.
->> 
-> On this specific note, I would actually suggest against putting the
-> portage tree on btrfs, it makes syncing go ridiculously slow,
-> and it also seems to slow down emerge as well.
+over the last celebration days one of our servers (ubuntu 13.04) with 
+custom kernel 3.11.04 did quite simular things, also rais5/raid6.
+Our Problem was writing to backup showed quit the same kernelog.
+Also btrfs-transaction was hanging.
+Also Filesystem usage with 83% looked fine. But that was not true.
 
-Interesting observation.
+After some time eating investigation I found, that BTRFS may have in 
+3.11.x and other kernels(?) a problem with free block lists and 
+fragmentation.
 
-I had not see it here (with the gentoo tree and overlays on btrfs), but 
-that's very likely because all my btrfs are on SSD, as I upgraded to both 
-at the same time, because my previous default filesystem choice, 
-reiserfs, isn't well suited to SSD due to excessive writing due to the 
-journaling.
+Our Server was able to self recover after defragmentation and 
+compressing run.
 
-I do know slow syncs and portage dep-calculations were one of the reasons 
-I switched to SSD (and thus btrfs), however.  That was getting pretty 
-painful on spinning rust, at least with reiserfs.  And I imagine btrfs on 
-single-device spinning rust would if anything be worse at least for 
-syncs, due to the default dup metadata, meaning at least three writes 
-(and three seeks) for each file, once for the data, twice for the 
-metadata.
+We had problems with end-of-free blocks.
+After rebuilding the free block list and running defrag the server got 
+enough free blocks to operate well.
+
+To be able to do that, we were forced to use the btrfs-git kernel and 
+also the btrfs-progs from git. (3.13-rcX)
+
+I did on 26.12.13:
+# umount /ar
+# btrfsck --repair --init-extent-tree /dev/sda1
+# mount -o clear_cache,skip_balance,autodefrag /dev/sda1 /ar
+# btrfs fi defragment -rc /ar/backup
+
+But attention, I thougt 83% used space shoud be enough "free blocks", 
+but this was wrong. It seems that BTRFS free Block lists are somewhat 
+errous.
+Especially "balance" may crash if an file has got too many 
+extents/fragments, and allocating space may also hang if
+free blocks are running low.
+
+During the defragmentation run the response of the Server was getting 
+slow, but did not stop in Read Access.
+
+Our state today:
+root@bk:~# df -m /ar
+Dateisystem    1M-Blöcke Benutzt Verfügbar Verw% Eingehängt auf
+/dev/sda1       13232966 7213717   3181874   70% /ar
+
+root@bk:~# btrfs fi show /ar
+Label: Archiv+Backup  uuid: 72b710aa-49a0-4ff5-a470-231560bfee81
+         Total devices 5 FS bytes used 6.88TiB
+         devid    1 size 2.73TiB used 2.70TiB path /dev/sda1
+         devid    2 size 2.73TiB used 2.70TiB path /dev/sdb1
+         devid    3 size 2.73TiB used 2.70TiB path /dev/sdc1
+         devid    4 size 2.73TiB used 2.70TiB path /dev/sdd1
+         devid    5 size 1.70TiB used 4.25GiB path /dev/sde4
+
+Btrfs v3.12
+root@bk:~# btrfs fi df /ar
+Data, single: total=8.00MiB, used=0.00
+Data, RAID5: total=8.10TiB, used=6.87TiB
+System, single: total=4.00MiB, used=0.00
+System, RAID5: total=12.00MiB, used=600.00KiB
+Metadata, single: total=8.00MiB, used=0.00
+Metadata, RAID5: total=12.25GiB, used=10.41GiB
+
+Today the server completely recovered to full operation.
+
+Is there a plan ongoing to hangle such out of free blocks/space 
+situations more comfortable?
+
+TIA
+J. Sauer
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Jürgen Sauer - automatiX GmbH,
++49-4209-4699, juergen.sauer@automatix.de
+Geschäftsführer: Jürgen Sauer,
+Gerichtstand: Amtsgericht Walsrode • HRB 120986
+Ust-Id: DE191468481 • St.Nr.: 36/211/08000
+GPG Public Key zur Signaturprüfung:
+http://www.automatix.de/juergen_sauer_publickey.gpg

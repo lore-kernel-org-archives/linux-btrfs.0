@@ -1,27 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:40351 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753431AbaACWmL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jan 2014 17:42:11 -0500
-Received: by mail-ig0-f175.google.com with SMTP id j1so2241773iga.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 14:42:10 -0800 (PST)
+Received: from mail-ee0-f48.google.com ([74.125.83.48]:53584 "EHLO
+	mail-ee0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753541AbaACWnd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jan 2014 17:43:33 -0500
+Received: by mail-ee0-f48.google.com with SMTP id e49so6810035eek.21
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 14:43:32 -0800 (PST)
+Message-ID: <52C73D1A.8060805@gmail.com>
+Date: Fri, 03 Jan 2014 23:43:38 +0100
+From: =?ISO-8859-1?Q?Joshua_Sch=FCler?= <joshua.schueler@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <52C73987.7000106@jrs-s.net>
-References: <52C73987.7000106@jrs-s.net>
-Date: Sat, 4 Jan 2014 00:42:10 +0200
-Message-ID: <CAELSAVZHbYM9+SWWuhCTFiCr22MvOhU=C5Q0+btq6MG-qF-g3A@mail.gmail.com>
+To: jim@jrs-s.net
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
-From: Emil Karlson <jekarlson@gmail.com>
-To: Jim Salter <jim@jrs-s.net>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+References: <52C73987.7000106@jrs-s.net>
+In-Reply-To: <52C73987.7000106@jrs-s.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am 03.01.2014 23:28, schrieb Jim Salter:
+> I'm using Ubuntu 12.04.3 with an up-to-date 3.11 kernel, and the
+> btrfs-progs from Debian Sid (since the ones from Ubuntu are ancient).
+> 
+> I discovered to my horror during testing today that neither raid1 nor
+> raid10 arrays are fault tolerant of losing an actual disk.
+> 
+> mkfs.btrfs -d raid10 -m raid10 /dev/vdc /dev/vdd /dev/vdd /dev/vde
+> mkdir /test
+> mount /dev/vdb /test
+> echo "test" > /test/test
+> btrfs filesystem sync /test
+> shutdown -hP now
+> 
+> After shutting down the VM, I can remove ANY of the drives from the
+> btrfs raid10 array, and be unable to mount the array. In this case, I
+> removed the drive that was at /dev/vde, then restarted the VM.
+> 
+> btrfs fi show
+> Label: none  uuid: 94af1f5d-6ad2-4582-ab4a-5410c410c455
+>         Total devices 4 FS bytes used 156.00KB
+>          devid    3 size 1.00GB used 212.75MB path /dev/vdd
+>          devid    3 size 1.00GB used 212.75MB path /dev/vdc
+>          devid    3 size 1.00GB used 232.75MB path /dev/vdb
+>          *** Some devices missing
+> 
+> OK, we have three of four raid10 devices present. Should be fine. Let's
+> mount it:
+> 
 > mount -t btrfs /dev/vdb /test
 > mount: wrong fs type, bad option, bad superblock on /dev/vdb,
 >        missing codepage or helper program, or other error
 >        In some cases useful info is found in syslog - try
 >        dmesg | tail or so
+> 
+> What's the kernel log got to say about it?
+> 
+> dmesg | tail -n 4
+> [  536.694363] device fsid 94af1f5d-6ad2-4582-ab4a-5410c410c455 devid 1
+> transid 7 /dev/vdb
+> [  536.700515] btrfs: disk space caching is enabled
+> [  536.703491] btrfs: failed to read the system array on vdd
+> [  536.708337] btrfs: open_ctree failed
+> 
+> Same behavior persists whether I create a raid1 or raid10 array, and
+> whether I create it as that raid level using mkfs.btrfs or convert it
+> afterwards using btrfs balance start -dconvert=raidn -mconvert=raidn.
+> Also persists even if I both scrub AND sync the array before shutting
+> the machine down and removing one of the disks.
+> 
+> What's up with this? This is a MASSIVE bug, and I haven't seen anybody
+> else talking about it... has nobody tried actually failing out a disk
+> yet, or what?
 
-IIRC you need mount option degraded here.
+Hey Jim,
+
+keep calm and read the wiki ;)
+https://btrfs.wiki.kernel.org/
+
+You need to mount with -o degraded to tell btrfs a disk is missing.
+
+
+Joshua
+
+

@@ -1,83 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8148 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57630 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751374AbaACGJu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751377AbaACGJu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 3 Jan 2014 01:09:50 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0369f9Q003655
-	for <linux-btrfs@vger.kernel.org>; Fri, 3 Jan 2014 14:09:48 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0369l7m003671
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Jan 2014 14:09:47 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 09/11] btrfs: Add datacow mount option.
-Date: Fri, 3 Jan 2014 14:10:32 +0800
-Message-Id: <1388729434-19799-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 08/11] btrfs: Add acl mount option.
+Date: Fri, 3 Jan 2014 14:10:31 +0800
+Message-Id: <1388729434-19799-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1388729434-19799-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1388729434-19799-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add datacow mount option to enable copy-on-write with
-remount option.
+Add acl mount option to enable acl with remount option.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 changelog:
-v2: Add datacow mount option.
+v2: Add acl mount option.
 ---
- Documentation/filesystems/btrfs.txt | 5 +++--
- fs/btrfs/super.c                    | 8 +++++++-
- 2 files changed, 10 insertions(+), 3 deletions(-)
+ Documentation/filesystems/btrfs.txt | 3 ++-
+ fs/btrfs/super.c                    | 6 +++++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 6f2de1b..48c1833 100644
+index ffb40f3..6f2de1b 100644
 --- a/Documentation/filesystems/btrfs.txt
 +++ b/Documentation/filesystems/btrfs.txt
-@@ -159,9 +159,10 @@ Options with (*) are default options and will not show in the mount options.
- 	(non-battery-backed) write-back cache, this option will lead to
- 	filesystem corruption on a system crash or power loss.
+@@ -146,8 +146,9 @@ Options with (*) are default options and will not show in the mount options.
+ 	Specify that 1 metadata chunk should be allocated after every <value>
+ 	data chunks.  Off by default.
  
-+  datacow(*)
-   nodatacow
--	Disable data copy-on-write for newly created files.  Implies nodatasum,
--	and disables all compression.
-+	Enable/disable data copy-on-write for newly created files.
-+	Nodatacow implies nodatasum, and disables all compression.
++  acl(*)
+   noacl
+-	Disable support for Posix Access Control Lists (ACLs).  See the
++	Enable/disable support for Posix Access Control Lists (ACLs).  See the
+ 	acl(5) manual page for more information about ACLs.
  
-   nodatasum
- 	Disable data checksumming for newly created files.
+   barrier(*)
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index a5c25fd..cb4c90d 100644
+index 16da3d1..a5c25fd 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
 @@ -325,7 +325,7 @@ enum {
  	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
  	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nocheck_integrity,
  	Opt_nodiscard, Opt_noenospc_debug, Opt_noflushoncommit,
--	Opt_noinode_cache, Opt_acl,
-+	Opt_noinode_cache, Opt_acl, Opt_datacow,
+-	Opt_noinode_cache,
++	Opt_noinode_cache, Opt_acl,
  	Opt_err,
  };
  
-@@ -336,6 +336,7 @@ static match_table_t tokens = {
- 	{Opt_device, "device=%s"},
- 	{Opt_nodatasum, "nodatasum"},
- 	{Opt_nodatacow, "nodatacow"},
-+	{Opt_datacow, "datacow"},
- 	{Opt_nobarrier, "nobarrier"},
- 	{Opt_barrier, "barrier"},
- 	{Opt_max_inline, "max_inline=%s"},
-@@ -449,6 +450,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_set_opt(info->mount_opt, NODATACOW);
- 			btrfs_set_opt(info->mount_opt, NODATASUM);
+@@ -348,6 +348,7 @@ static match_table_t tokens = {
+ 	{Opt_ssd, "ssd"},
+ 	{Opt_ssd_spread, "ssd_spread"},
+ 	{Opt_nossd, "nossd"},
++	{Opt_acl, "acl"},
+ 	{Opt_noacl, "noacl"},
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_flushoncommit, "flushoncommit"},
+@@ -555,6 +556,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				goto out;
+ 			}
  			break;
-+		case Opt_datacow:
-+			if (btrfs_test_opt(root, NODATACOW))
-+				btrfs_info(root->fs_info, "setting datacow");
-+			btrfs_clear_opt(info->mount_opt, NODATACOW);
++		case Opt_acl:
++			root->fs_info->sb->s_flags |= MS_POSIXACL;
 +			break;
- 		case Opt_compress_force:
- 		case Opt_compress_force_type:
- 			compress_force = true;
+ 		case Opt_noacl:
+ 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+ 			break;
 -- 
 1.8.5.2
 

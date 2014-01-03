@@ -1,71 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:59805 "EHLO csamuel.org"
+Received: from mail.jrs-s.net ([173.230.137.22]:54880 "EHLO mail.jrs-s.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753888AbaAFKUM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 05:20:12 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id A9C51CC023
-	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2014 21:20:11 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 22759-01 for <linux-btrfs@vger.kernel.org>;
- Mon,  6 Jan 2014 21:20:11 +1100 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 4F0ACCC004
-	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2014 21:20:11 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
-Date: Mon, 06 Jan 2014 21:20:06 +1100
-Message-ID: <1416119.lWHlh5idGF@quad>
-In-Reply-To: <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
-References: <52C73987.7000106@jrs-s.net> <52C87A41.9030701@jrs-s.net> <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
+	id S1753166AbaACWZx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jan 2014 17:25:53 -0500
+Received: from [192.168.0.50] (mail.coastalscience.com [66.83.151.234])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: jim@jrs-s.net)
+	by mail.jrs-s.net (Postfix) with ESMTPSA id 6236CD2A4
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jan 2014 17:25:53 -0500 (EST)
+Message-ID: <52C73987.7000106@jrs-s.net>
+Date: Fri, 03 Jan 2014 17:28:23 -0500
+From: Jim Salter <jim@jrs-s.net>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart19316048.MzK0ZPlZkV"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm using Ubuntu 12.04.3 with an up-to-date 3.11 kernel, and the 
+btrfs-progs from Debian Sid (since the ones from Ubuntu are ancient).
 
---nextPart19316048.MzK0ZPlZkV
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+I discovered to my horror during testing today that neither raid1 nor 
+raid10 arrays are fault tolerant of losing an actual disk.
 
-On Sun, 5 Jan 2014 01:25:19 PM Chris Murphy wrote:
+mkfs.btrfs -d raid10 -m raid10 /dev/vdc /dev/vdd /dev/vdd /dev/vde
+mkdir /test
+mount /dev/vdb /test
+echo "test" > /test/test
+btrfs filesystem sync /test
+shutdown -hP now
 
-> Does the Ubuntu 12.03 LTS installer let you create sysroot on a Btrfs=
- raid1
-> volume?
+After shutting down the VM, I can remove ANY of the drives from the 
+btrfs raid10 array, and be unable to mount the array. In this case, I 
+removed the drive that was at /dev/vde, then restarted the VM.
 
-I doubt it, given the alpha for 14.04 doesn't seem to have the concept =
-yet.=20
-:-)
+btrfs fi show
+Label: none  uuid: 94af1f5d-6ad2-4582-ab4a-5410c410c455
+         Total devices 4 FS bytes used 156.00KB
+          devid    3 size 1.00GB used 212.75MB path /dev/vdd
+          devid    3 size 1.00GB used 212.75MB path /dev/vdc
+          devid    3 size 1.00GB used 232.75MB path /dev/vdb
+          *** Some devices missing
 
-https://bugs.launchpad.net/ubuntu/+source/grub-installer/+bug/1266200
+OK, we have three of four raid10 devices present. Should be fine. Let's 
+mount it:
 
-All the best,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+mount -t btrfs /dev/vdb /test
+mount: wrong fs type, bad option, bad superblock on /dev/vdb,
+        missing codepage or helper program, or other error
+        In some cases useful info is found in syslog - try
+        dmesg | tail or so
 
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
+What's the kernel log got to say about it?
 
---nextPart19316048.MzK0ZPlZkV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+dmesg | tail -n 4
+[  536.694363] device fsid 94af1f5d-6ad2-4582-ab4a-5410c410c455 devid 1 
+transid 7 /dev/vdb
+[  536.700515] btrfs: disk space caching is enabled
+[  536.703491] btrfs: failed to read the system array on vdd
+[  536.708337] btrfs: open_ctree failed
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
+Same behavior persists whether I create a raid1 or raid10 array, and 
+whether I create it as that raid level using mkfs.btrfs or convert it 
+afterwards using btrfs balance start -dconvert=raidn -mconvert=raidn. 
+Also persists even if I both scrub AND sync the array before shutting 
+the machine down and removing one of the disks.
 
-iQEVAwUAUsqDVo1yjaOTJg85AQIHbgf/XLxetiCuCYyUGevH6oZ6bfc6fkOF/3EJ
-8F0tlWrnTl8YU/lpjt6TNVD5E4oKyx3bElSJQMncBRkjPCgPGs6ipZ2PRHXMECsR
-IvqNzvah2KlyewSjSa3pvmp/qbc/z8x6wCimJij/FyR9fqrrN21rj9BetPIYU2K6
-JHVYrBVghv0IRENRAXslm2Bj3nQZbpvjCOI9PjDYKLKO4ryFKAa7NwdF+QwFj042
-YFwY1yeZyIkcWwdbuszQJe0Gwsa4CtaWHbVcgGk8aooiBDwbj/b/Lc542XSTD1sE
-bIG47YtAT0Wc/AlqVytCnUEvmoxGP3HByehDYziZ7dkk8LcY5Mp3Vg==
-=t/lB
------END PGP SIGNATURE-----
-
---nextPart19316048.MzK0ZPlZkV--
-
+What's up with this? This is a MASSIVE bug, and I haven't seen anybody 
+else talking about it... has nobody tried actually failing out a disk 
+yet, or what?

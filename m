@@ -1,68 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1792 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752520AbaACAnD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jan 2014 19:43:03 -0500
-Message-ID: <52C607CA.6000105@cn.fujitsu.com>
-Date: Fri, 03 Jan 2014 08:43:54 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Add "barrier" option to support "-o remount,barrier"
-References: <1388040310-25092-1-git-send-email-quwenruo@cn.fujitsu.com> <20140102154103.GL6498@twin.jikos.cz>
-In-Reply-To: <20140102154103.GL6498@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:45173 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751487AbaACAzm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Jan 2014 19:55:42 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Vyt36-0000Uw-TU
+	for linux-btrfs@vger.kernel.org; Fri, 03 Jan 2014 01:55:40 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 01:55:40 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 01:55:40 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Managing large volumes
+Date: Fri, 03 Jan 2014 01:48:36 +0100
+Message-ID: <40ehpa-sk6.ln1@hurikhan77.spdns.de>
+References: <CAAKzf7kB90qOG8yNuLUyfd2w61kVeeo+d+vs=ecURYqm=rjxgg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2 Jan 2014 16:41:03 +0100, David Sterba wrote:
-> On Thu, Dec 26, 2013 at 02:45:10PM +0800, Qu Wenruo wrote:
->> Btrfs can be remounted without barrier, but there is no "barrier" option
->> so nobody can remount btrfs back with barrier on. Only umount and
->> mount again can re-enable barrier.(Quite awkward)
-> Ok for adding the mount option.
->
->> Reported-by: Daniel Blueman <daniel@quora.org>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   Documentation/filesystems/btrfs.txt | 6 ++++++
->>   fs/btrfs/super.c                    | 8 +++++++-
->>   2 files changed, 13 insertions(+), 1 deletion(-)
->>
->> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
->> index 5dd282d..f6f71d6 100644
->> --- a/Documentation/filesystems/btrfs.txt
->> +++ b/Documentation/filesystems/btrfs.txt
->> @@ -51,6 +51,12 @@ Unless otherwise specified, all options default to off.
->>   	defrag process.  Works best for small files; Not well suited for
->>   	large database workloads.
->>   
->> +  barrier
->> +	Enable the use of block layer write barriers.  Write barriers ensure
->> +	that certain IOs make it through the device cache and are on persistent
->> +	storage.
->> +	Barriers are enabled by default.
-> There's the 'nobarrier' option already, I think it's better to keep the
-> pairing option documentation at one place and mark the default one with (*).
->
-> Related to that, there should imho be a pairing option for every mount
-> option where it makes sense, so all the combinations work through
-> remount.
->
-> The defaults do not need to be listed via btrfs_show_options, ie. keep
-> the output same as it is now.
->
->
-> david
->
-Thanks for pointing out these problem.
+Tim Cuthbertson <ratcheer@gmail.com> schrieb:
 
-This makes sense.Like space_cache and nospace_cache follows the way you 
-mentioned,
-but most other options just followed the alphabet order, and a lot of
-pairing is missing.
+> I am a bit confused and I have probably managed to outsmart myself.
+> For about 15 months, I have been running my system on a single, large
+> btrfs volume. It is RAID-0 on two SATA-III HDD's for a total of 1.9
+> TB. This is a home system running Siduction (Debian Sid) Linux. While
+> I have root, home, and a special data directory each as separate
+> subvolumes, I am beginning to wonder whether I should have made each
+> of these on separate partitions and separate btrfs filesystems.
+> 
+> Am am at a point where I would like to do a fresh install of my OS
+> without losing my home and data contents. And I do not think separate
+> btrfs subvolumes will help me on that. Is that correct? Is there a way
+> to prevent an OS installation from formatting the /home and /data
+> subvolumes while completely replacing the root subvolume? Or do I need
+> to completely repartition my drives so I don't get into this
+> situation, again?
 
-I'll try to add all the missingpairing and unify mount options in the 
-document.
+How about installing into a new root subvolume? I don't know if the Debian 
+installer allows you to do that. But this way you could easily roll back 
+later, or grab config files from there, or, or... And when you are done, 
+simply remove the old root subvolume or deduplicate it using dedup and keep 
+it around for archival purposes.
 
-Qu
+The one-partition layout is probably okay, tho many installers lack native 
+support for it. But, at least this is how I think about it, take subvolumes 
+as dynamically sized partitions from your storage pool.
+
+Just keep in mind you don't want the installer to format your btrfs. You 
+probably want to take a backup of your data first. It is probably possible 
+to bootstrap your Debian installation by first creating your new subvolume, 
+then mount it and use it as bootstrapped destination or chroot into it to 
+run the installation. You could bind-mount your data and home there so it is 
+visible to the installer for it to import your user id.
+
+HTH
+Kai
+

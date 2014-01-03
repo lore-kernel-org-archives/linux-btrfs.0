@@ -1,49 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58465 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751067AbaACAaR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jan 2014 19:30:17 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VyseT-00057a-Lo
-	for linux-btrfs@vger.kernel.org; Fri, 03 Jan 2014 01:30:13 +0100
-Received: from p5b006437.dip0.t-ipconnect.de ([91.0.100.55])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 01:30:13 +0100
-Received: from holger.hoffstaette by p5b006437.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 01:30:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Question about ext4 conversion and leaf size
-Date: Fri, 3 Jan 2014 00:29:51 +0000 (UTC)
-Message-ID: <pan.2014.01.03.00.30.03@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([222.73.24.84]:1792 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752520AbaACAnD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Jan 2014 19:43:03 -0500
+Message-ID: <52C607CA.6000105@cn.fujitsu.com>
+Date: Fri, 03 Jan 2014 08:43:54 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Add "barrier" option to support "-o remount,barrier"
+References: <1388040310-25092-1-git-send-email-quwenruo@cn.fujitsu.com> <20140102154103.GL6498@twin.jikos.cz>
+In-Reply-To: <20140102154103.GL6498@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, 2 Jan 2014 16:41:03 +0100, David Sterba wrote:
+> On Thu, Dec 26, 2013 at 02:45:10PM +0800, Qu Wenruo wrote:
+>> Btrfs can be remounted without barrier, but there is no "barrier" option
+>> so nobody can remount btrfs back with barrier on. Only umount and
+>> mount again can re-enable barrier.(Quite awkward)
+> Ok for adding the mount option.
+>
+>> Reported-by: Daniel Blueman <daniel@quora.org>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>>   Documentation/filesystems/btrfs.txt | 6 ++++++
+>>   fs/btrfs/super.c                    | 8 +++++++-
+>>   2 files changed, 13 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+>> index 5dd282d..f6f71d6 100644
+>> --- a/Documentation/filesystems/btrfs.txt
+>> +++ b/Documentation/filesystems/btrfs.txt
+>> @@ -51,6 +51,12 @@ Unless otherwise specified, all options default to off.
+>>   	defrag process.  Works best for small files; Not well suited for
+>>   	large database workloads.
+>>   
+>> +  barrier
+>> +	Enable the use of block layer write barriers.  Write barriers ensure
+>> +	that certain IOs make it through the device cache and are on persistent
+>> +	storage.
+>> +	Barriers are enabled by default.
+> There's the 'nobarrier' option already, I think it's better to keep the
+> pairing option documentation at one place and mark the default one with (*).
+>
+> Related to that, there should imho be a pairing option for every mount
+> option where it makes sense, so all the combinations work through
+> remount.
+>
+> The defaults do not need to be listed via btrfs_show_options, ie. keep
+> the output same as it is now.
+>
+>
+> david
+>
+Thanks for pointing out these problem.
 
-Conversion from ext4 works really well and is an important step for
-adoption. After recently converting a large-ish device I noticed
-dodgy performance, even after defragment & rebalance; noticeably
-different from the quite good performance of a newly-created btrfs
-with 16k leaf size, as is the default since recently.
+This makes sense.Like space_cache and nospace_cache follows the way you 
+mentioned,
+but most other options just followed the alphabet order, and a lot of
+pairing is missing.
 
-So I went spelunking and found that the btrfs-convert logic indeed
-uses the ext4 block size as leaf size (from #2220):
-https://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/tree/btrfs-convert.c#n2245
+I'll try to add all the missingpairing and unify mount options in the 
+document.
 
-This is typically 4096 bytes and explains the observed performance.
-
-So while I'm basically familiar with btrfs's design, I know nothing
-about the details of the conversion (I'm amazed that it works so well,
-including rollback!) but can/should this not be updated to the new default
-of 16k, or is there a strong necessary correlation between the ext4 block
-size and the newly created btrfs?
-
-thanks!
-Holger
-
+Qu

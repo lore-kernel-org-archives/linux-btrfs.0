@@ -1,71 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:49252 "EHLO csamuel.org"
+Received: from plane.gmane.org ([80.91.229.3]:45720 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751671AbaADL2H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 Jan 2014 06:28:07 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 58DFFCC310
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jan 2014 22:28:06 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 02298-10 for <linux-btrfs@vger.kernel.org>;
- Sat,  4 Jan 2014 22:28:06 +1100 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 01753CC300
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jan 2014 22:28:05 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+	id S1751943AbaADNDh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 4 Jan 2014 08:03:37 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1VzQt5-00059n-2X
+	for linux-btrfs@vger.kernel.org; Sat, 04 Jan 2014 14:03:35 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jan 2014 14:03:35 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jan 2014 14:03:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
-Date: Sat, 04 Jan 2014 22:28:03 +1100
-Message-ID: <1422900.iO9oO96QZb@quad>
-In-Reply-To: <CAAVQaYBZS87S7XNdDpUv5pBMvqF0+th34H8PjSLVLtZV9LOR=Q@mail.gmail.com>
-References: <52C73987.7000106@jrs-s.net> <52C77903.9060408@jrs-s.net> <CAAVQaYBZS87S7XNdDpUv5pBMvqF0+th34H8PjSLVLtZV9LOR=Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2770601.QDY0cKN6Ge"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Date: Sat, 4 Jan 2014 13:03:11 +0000 (UTC)
+Message-ID: <pan$2efb3$5b939250$4914dbcd$c2014fcc@cox.net>
+References: <52C73987.7000106@jrs-s.net>
+	<7B4E55D1-BA9B-4560-8442-429EDD01C92A@colorremedies.com>
+	<pan$4ef1f$8e2a9876$c1faa462$63914453@cox.net> <1511915.CullaLvumH@quad>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Samuel posted on Sat, 04 Jan 2014 22:20:20 +1100 as excerpted:
 
---nextPart2770601.QDY0cKN6Ge
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+> On Sat, 4 Jan 2014 06:10:14 AM Duncan wrote:
+> 
+>> Btrfs remains under development and there are clear warnings about
+>> using it without  backups one hasn't tested recovery from or are not
+>> otherwise prepared to  actually use.  It's stated in multiple locations
+>> on the wiki; it's stated on the kernel btrfs config option, and it's
+>> stated in mkfs.btrfs output when you create the filesystem.
+> 
+> Actually the scary warnings are gone from the Kconfig file for what will
+> be the 3.13 kernel.  Removed by this commit:
+> 
+> commit 4204617d142c0887e45fda2562cb5c58097b918e
 
-On Sat, 4 Jan 2014 12:57:02 AM Dave wrote:
+FWIW, I'd characterize that as toned down somewhat, not /gone/.  You 
+don't see ext4 or other "mature" filesystems saying "The filesystem disk 
+format is no longer unstable, and it's not expected to change 
+unless" ..., do you?
 
-> I find myself annoyed by the constant disclaimers I
-> read on this list, about the experimental status of Btrfs, but it's
-> apparent that this hasn't sunk in for everyone.
+"Not expected to change" and etc is definitely toned down from what it 
+was, no argument there, but it still isn't exactly what one would expect 
+in a description from a stable filesystem.  If there's still some chance 
+of the disk format changing, what does that say about the code /dealing/ 
+with that disk format?  That doesn't sound exactly like something I'd be 
+comfortable staking my reputation as a sysadmin on as judged fully 
+reliable and ready for my mission-critical data, for sure!
 
-Btrfs will no longer marked as experimental in the kernel as of 3.13.
+Tho agreed, one certainly has to read between the lines a bit more for 
+the kernel option now than they did.
 
-Unless someone submits a patch to fix it first. :-)
+But the real kicker for me was when I redid several of my btrfs 
+partitions to take advantage of newer features, 16 KiB nodes, etc, and 
+saw the warning it's giving, yes, in btrfs-progs 3.12 after all the 
+recent documentation changes, etc.  Not everybody builds their own 
+kernel, but it's kind of hard to get a btrfs filesystem without making 
+one!  (Yes, I know the installers make the filesystem for many people, 
+and may well hide the output, but if so and the distros don't provide a 
+similar warning when people choose btrfs, that's entirely on the distros 
+at that point.  Not much btrfs as upstream can do about that.)
 
-Can we also keep things polite here please.
-
-thanks,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart2770601.QDY0cKN6Ge
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQEVAwUAUsfwQ41yjaOTJg85AQL2pQf+NC1s6D+d2THlmcZb88H81xvHmsvDNRnb
-qTk+GwCVWxOefIhOI62G0ormOScOfA2mupBQcmKsPaRKTEzVzDBeL/tRoDK+1Ktg
-ibYcECBppq6MJfip3Er6rikA7HvvtQ8oM3DWy9zgxzqvZ7Ubs/unzqW2GnvJVAAI
-7Q7a5aaELuWJEb+EEzIsnImacVLQn1+PdF13pDd8PKeD+Q1moFq1I2r3uQu0zRVE
-kkhe7r/BclUNmJmS/YGMtACS7w5fmJANKpj/U5Mj4NRh/21e0nHR93BK8zinICG8
-quA8Szyj+WXTHpmxezZZp5d/XOL1Vncig6h9++Jg3jj4gVItO0rnjg==
-=E4Qf
------END PGP SIGNATURE-----
-
---nextPart2770601.QDY0cKN6Ge--
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

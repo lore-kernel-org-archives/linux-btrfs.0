@@ -1,66 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f178.google.com ([209.85.214.178]:44521 "EHLO
-	mail-ob0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751719AbaADF5D (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jan 2014 00:57:03 -0500
-Received: by mail-ob0-f178.google.com with SMTP id uz6so16299532obc.37
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 21:57:02 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <52C77903.9060408@jrs-s.net>
-References: <52C73987.7000106@jrs-s.net>
-	<52C73D1A.8060805@gmail.com>
-	<52C7402A.7050605@jrs-s.net>
-	<CAOjFWZ7zC3=4oH6=SBZA+PhZMrSK1KjxoRN6L2vqd=GTBKKTQA@mail.gmail.com>
-	<52C74B00.7080906@jrs-s.net>
-	<03E88FCB-C473-4978-B682-076B90039E0E@colorremedies.com>
-	<52C77903.9060408@jrs-s.net>
-Date: Sat, 4 Jan 2014 00:57:02 -0500
-Message-ID: <CAAVQaYBZS87S7XNdDpUv5pBMvqF0+th34H8PjSLVLtZV9LOR=Q@mail.gmail.com>
+Received: from csamuel.org ([74.50.50.137]:34776 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751274AbaADLU1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 4 Jan 2014 06:20:27 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 37A11CC310
+	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jan 2014 22:20:27 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 02298-09 for <linux-btrfs@vger.kernel.org>;
+ Sat,  4 Jan 2014 22:20:27 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id CE4E6CC300
+	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jan 2014 22:20:26 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
-From: Dave <dave@thekilempire.com>
-To: Jim Salter <jim@jrs-s.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Sat, 04 Jan 2014 22:20:20 +1100
+Message-ID: <1511915.CullaLvumH@quad>
+In-Reply-To: <pan$4ef1f$8e2a9876$c1faa462$63914453@cox.net>
+References: <52C73987.7000106@jrs-s.net> <7B4E55D1-BA9B-4560-8442-429EDD01C92A@colorremedies.com> <pan$4ef1f$8e2a9876$c1faa462$63914453@cox.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart6069692.kE93b8KCSR"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 3, 2014 at 9:59 PM, Jim Salter <jim@jrs-s.net> wrote:
-> You're suggesting the wrong alternatives here (mdraid, LVM, etc) - they
-> don't provide the features that I need or are accustomed to (true snapshots,
-> copy on write, self-correcting redundant arrays, and on down the line). If
-> you're going to shoo me off, the correct way to do it is to wave me in the
-> direction of ZFS, in which case I can tell you I've been a happy user of ZFS
-> for 5+ years now on hundreds of systems. ZFS and btrfs are literally the
-> *only* options available that do what I want to do, and have been doing for
-> years now. (At least aside from six-figure-and-up proprietary systems, which
-> I have neither the budget nor the inclination for.)
 
-Jim, there's nothing stopping you from creating a Btrfs filesystem on
-top of an mdraid array.  I'm currently running three WD Red 3TB drives
-in a raid5 configuration under a Btrfs filesystem.  This configuration
-works pretty well and fills the feature gap you're describing.
+--nextPart6069692.kE93b8KCSR
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-I will say, though, that the whole tone of your email chain leaves a
-bad taste in my mouth; kind of like a poorly adjusted relative who
-shows up once a year for Thanksgiving and makes everyone feel
-uncomfortable.  I find myself annoyed by the constant disclaimers I
-read on this list, about the experimental status of Btrfs, but it's
-apparent that this hasn't sunk in for everyone.  Your poor budget
-doesn't a production filesytem make.
+On Sat, 4 Jan 2014 06:10:14 AM Duncan wrote:
 
-I and many others on this list who have been using Btrfs, will tell
-you with no hesitation, that due to the maturity of the code, Btrfs
-should be making NO assumptions in the event of a failure, and
-everything should come to a screeching halt.  I've seen it all: the
-infamous 120 second process hangs, csum errors, multiple separate
-catastrophic failures (search me on this list).  Things are MOSTLY
-stable but you simply have to glance at a few weeks of history on this
-list to see the experimental status is fully justified.  I use Btrfs
-because of its intoxicating feature set.  As an IT director though,
-I'd never subject my company to these rigors.  If Btrfs on mdraid
-isn't an acceptable solution for you, then ZFS is the only responsible
-alternative.
--- 
--=[dave]=-
+> Btrfs remains under development and there are clear warnings
+> about using it without  backups one hasn't tested recovery from
+> or are not otherwise prepared to  actually use.  It's stated in
+> multiple locations on the wiki; it's stated on the kernel btrfs
+> config option, and it's stated in mkfs.btrfs output when you
+> create the filesystem.
 
-Entropy isn't what it used to be.
+Actually the scary warnings are gone from the Kconfig file for what wil=
+l be the=20
+3.13 kernel.  Removed by this commit:
+
+commit 4204617d142c0887e45fda2562cb5c58097b918e
+Author: David Sterba <dsterba@suse.cz>
+Date:   Wed Nov 20 14:32:34 2013 +0100
+
+    btrfs: update kconfig help text
+   =20
+    Reflect the current status. Portions of the text taken from the
+    wiki pages.
+   =20
+    Signed-off-by: David Sterba <dsterba@suse.cz>
+    Signed-off-by: Chris Mason <chris.mason@fusionio.com>
+
+
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart6069692.kE93b8KCSR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUsfudI1yjaOTJg85AQLjFwf7BVEnADws6pkb7PJGV+bb505Yaw4QnuFT
+mDT9c+/Bl4t/hRj0RhK/4rL5BoQkVWREye0zCu7RoCQ7VaKlCKMqcCckBaWvuzz5
+WSTPFDvj9AhJ/QFTve6qNzjQ3QS/47gtX70nTDF9bflYsUOAsT+fFz9jT6BhHO8j
+kcQuLgsyfrgMis4MM20/yJL2hBVwcRfpA6txAORhmMXhjl3yAI33GYvlnqaHqOaR
+wHX2BkCwJ7lbn4OgWNSO2Dl05WscFF4ERUEwpkRTQPKiWfXLJpZ7hIa1yAqejG39
++I+kMkf4gejEWqDG/Xqt+sjlNN9KEEipcYqbcSZ+eb/0gpVa8nGgvw==
+=NtpX
+-----END PGP SIGNATURE-----
+
+--nextPart6069692.kE93b8KCSR--
+

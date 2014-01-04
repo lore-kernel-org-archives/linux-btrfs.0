@@ -1,61 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f43.google.com ([209.85.212.43]:40178 "EHLO
-	mail-vb0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753892AbaADBEy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jan 2014 20:04:54 -0500
-Received: by mail-vb0-f43.google.com with SMTP id p6so8093268vbe.30
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 17:04:54 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAAVQaYAx8yxtvM1Mg759FJpEx6rjHQo3_2F84LNMA_f0kP81Sg@mail.gmail.com>
-References: <CAAVQaYAx8yxtvM1Mg759FJpEx6rjHQo3_2F84LNMA_f0kP81Sg@mail.gmail.com>
-Date: Sat, 4 Jan 2014 02:04:53 +0100
-Message-ID: <CAD_cGvFpaOB4mfo8nDeVFcu+ANuNZKha7xzJHPeLU_eSHt2gDA@mail.gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48745 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753892AbaADBLF convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jan 2014 20:11:05 -0500
+From: Chris Mason <clm@fb.com>
+To: "dave@thekilempire.com" <dave@thekilempire.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Status of raid5/6 in 2014?
-From: Hans-Kristian Bakke <hkbakke@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Sat, 4 Jan 2014 01:11:00 +0000
+Message-ID: <1388797899.23513.2.camel@ret.masoncoding.com>
+References: <CAAVQaYAx8yxtvM1Mg759FJpEx6rjHQo3_2F84LNMA_f0kP81Sg@mail.gmail.com>
+In-Reply-To: <CAAVQaYAx8yxtvM1Mg759FJpEx6rjHQo3_2F84LNMA_f0kP81Sg@mail.gmail.com>
+Content-Type: text/plain; charset="utf-7"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I personally consider proper RAID6 support with gracious non-intrusive
-handling of failing drives and a proper warning mechanism the most
-important missing feature of btrfs, and I know this view is shared by
-many others with software RAID based storage systems, currently
-limited by the existing choises on Linux.
-But having been a (naughty) user of btrfs the last few months I fully
-understand that there are important bugs, performance fixes and issues
-in the existing state of btrfs that need more immediate attention as
-they affect the currently installed base.
+On Fri, 2014-01-03 at 11:45 -0500, Dave wrote:
++AD4- Back in Feb 2013 there was quite a bit of press about the preliminary
++AD4- raid5/6 implementation in Btrfs.  At the time it wasn't useful for
++AD4- anything other then testing and it's my understanding that this is
++AD4- still the case.
++AD4- 
++AD4- I've seen a few git commits and some chatter on this list but it would
++AD4- appear the developers are largely silent.  Parity based raid would be
++AD4- a powerful addition the the Btrfs feature stack and it's the feature I
++AD4- most anxiously await.  Are there any milestones planned for 2014?
++AD4- 
++AD4- Keep up the good work...
 
-I will however stress that the faster the functionality gets
-implemented the sooner users like myself can begin using it and
-reporting issues, and hence btrfs gets ready for enterprise usage and
-general deployment sooner.
+Thanks+ACE-  The big thing missing from RAID5/6 has been logging of parity
+to make sure the parity is consistent after a power outage.  I'm back on
+this now, and making some progress.
 
-Regards,
-Hans-Kristian Bakke
-Mvh
+We also need to fix scrub support for raid5/6, which will happen after
+the parity work.
 
-Hans-Kristian Bakke
+-chris
 
-
-On 3 January 2014 17:45, Dave <dave@thekilempire.com> wrote:
-> Back in Feb 2013 there was quite a bit of press about the preliminary
-> raid5/6 implementation in Btrfs.  At the time it wasn't useful for
-> anything other then testing and it's my understanding that this is
-> still the case.
->
-> I've seen a few git commits and some chatter on this list but it would
-> appear the developers are largely silent.  Parity based raid would be
-> a powerful addition the the Btrfs feature stack and it's the feature I
-> most anxiously await.  Are there any milestones planned for 2014?
->
-> Keep up the good work...
-> --
-> -=[dave]=-
->
-> Entropy isn't what it used to be.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

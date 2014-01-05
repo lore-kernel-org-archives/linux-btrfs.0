@@ -1,71 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo103.cox.net ([68.230.241.215]:52863 "EHLO
-	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751805AbaAEVW7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 16:22:59 -0500
-Received: from eastrmimpo305 ([68.230.241.237]) by eastrmfepo103.cox.net
-          (InterMail vM.8.01.05.09 201-2260-151-124-20120717) with ESMTP
-          id <20140105204457.ELJH3894.eastrmfepo103.cox.net@eastrmimpo305>
-          for <linux-btrfs@vger.kernel.org>; Sun, 5 Jan 2014 15:44:57 -0500
-Date: Sun, 5 Jan 2014 13:44:25 -0700
-From: Duncan <1i5t5.duncan@cox.net>
-To: Jim Salter <jim@jrs-s.net>
-Cc: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-transaction blocked for more than 120 seconds
-Message-ID: <20140105134425.22063890@ws>
-In-Reply-To: <ADin1n00P0VAdqd01DioM9>
-References: <ADin1n00P0VAdqd01DioM9>
+Received: from fw7a.wadns.net ([196.220.39.49]:20318 "EHLO fw7a.wadns.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751335AbaAEWpM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 17:45:12 -0500
+Message-ID: <52C9DE66.8080706@swiftspirit.co.za>
+Date: Mon, 06 Jan 2014 00:36:22 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+To: Sulla <Sulla@gmx.at>, Chris Murphy <lists@colorremedies.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-transaction blocked for more than 120 seconds
+References: <52C2AE7C.5020601@gmx.at> <64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com> <52C9CBEF.2000309@gmx.at>
+In-Reply-To: <52C9CBEF.2000309@gmx.at>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 05 Jan 2014 08:42:46 -0500
-Jim Salter <jim@jrs-s.net> wrote:
+On 2014/01/05 11:17 PM, Sulla wrote:
+> Certainly: I have 3 HDDs, all of which WD20EARS.
+Maybe/maybe-not off-topic:
+Poor hardware performance, though not necessarily the root cause, can be 
+a major factor with these errors.
 
-> On Jan 5, 2014 1:39 AM, Marc MERLIN <marc@merlins.org> wrote:
-> >
-> > On Fri, Jan 03, 2014 at 09:34:10PM +0000, Duncan wrote: 
-> > Yes, I got that. That why I ran btrfs defrag on the files after that
-> 
-> Why are you trying to defrag an SSD? There's no seek penalty for
-> moving between fragmented blocks, so defrag isn't really desirable in
-> the first place.
+WD Greens (Reds too, for that matter) have poor non-sequential 
+performance. An educated guess I'd say there's a 15% chance this is a 
+major factor to the problem and, perhaps, a 60% chance it is merely a 
+"small contributor" to the problem. Greens are aimed at consumers 
+wanting high capacity and a low pricepoint. The result is poor 
+performance. See footnote * re my experience.
 
-[I normally try to reply directly to list but don't believe I've seen
-this there yet, but got it direct-mailed so will reply-all in response.]
+My general recommendation (use cases vary of course) is to install a 
+tiny SSD (60GB, for example) just for the OS. It is typically cheaper 
+than the larger drives and will be *much* faster. WD Greens and Reds 
+have good *sequential* throughput but comparatively abysmal random 
+throughput even in comparison to regular non-SSD consumer drives.
 
-There's no seek penalty so the overall problem is dramatically lessened
-as that's the significant part of it on spinning rust, correct, but...
-
-SSDs do remain IOPS-bound, and tens or hundreds of thousands of extents
-do exact an IOPS (as well as general extent bookkeeping) toll, too.
-
-That's why I ended up enabling autodefrag here when I was first setting
-up, even tho I'm on SSD.  (Only after asking the list basically the same
-question, what good it is autodefrag on SSD, tho.)
-
-Luckily I don't happen to deal with any of the
-internal-write-in-huge-files scenarios, however, and I enabled
-autodefrag to cover the internal-write-in-small-file scenarios BEFORE I
-started putting any data on the filesystems at all,  so I'm basically
-covered, here, without actually having to do chattr +C on anything.
-
-> That doesn't change the fact that the described lockup sounds like a
-> bug not a feature of course, but I think the answer to your personal
-> issue on that particular machine is "don't defrag a solid state
-> drive".
-
-I now believe the lockup must be due to processing the hundreds of
-thousands of extents on all those snapshots, too, in addition to doing
-it on the main volume.  I don't actually make very extensive use of
-snapshots here anyway, so I didn't think about that aspect originally,
-but that's gotta be what's throwing the real spanner in the works,
-turning a possibly long but workable normal defrag (O(1)) into a lockup
-scenario (O(n)) where virtually no progress is made as currently
-coded.
+*
+I had 8x 1.5TB WD1500EARS drives in an mdRAID5 array. With it I had a 
+single 250GB IDE disk for the OS. When the very old IDE disk inevitably 
+died, I decided to use a spare 1.5TB drive for the OS. Performance was 
+bad enough that I simply bought my first SSD the same week.
 
 -- 
-Duncan - No HTML messages please, as they are filtered as spam.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

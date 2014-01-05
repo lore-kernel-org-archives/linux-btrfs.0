@@ -1,121 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43529 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751304AbaAET6D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 14:58:03 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Vztph-0001Gj-ET
-	for linux-btrfs@vger.kernel.org; Sun, 05 Jan 2014 20:58:01 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 20:58:01 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 20:58:01 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-transaction blocked for more than 120 seconds
-Date: Sun, 5 Jan 2014 19:57:38 +0000 (UTC)
-Message-ID: <pan$95dc3$6f31a244$d85ae144$1545dedf@cox.net>
-References: <52C2AE7C.5020601@gmx.at>
-	<pan$63cef$9a8ef2ee$a00edd59$ef37592e@cox.net>
-	<20140103172506.GA10021@merlins.org>
-	<pan$6ce5a$53830c0$382c1e0e$7169217c@cox.net>
-	<20140105063957.GF11749@merlins.org>
-	<8EE40903-FE21-4516-B2D8-4EB8DCE79376@colorremedies.com>
-	<52C99C64.2010209@jrs-s.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39622 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751276AbaAEUZV convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 15:25:21 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:52233 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VzuG8-000RBT-UP
+	for linux-btrfs@vger.kernel.org; Sun, 05 Jan 2014 13:25:21 -0700
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52C87A41.9030701@jrs-s.net>
+Date: Sun, 5 Jan 2014 13:25:19 -0700
+Message-Id: <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
+References: <52C73987.7000106@jrs-s.net>	<52C73D1A.8060805@gmail.com>	<52C7402A.7050605@jrs-s.net> <CAOjFWZ7zC3=4oH6=SBZA+PhZMrSK1KjxoRN6L2vqd=GTBKKTQA@mail.gmail.com> <52C74B00.7080906@jrs-s.net> <03E88FCB-C473-4978-B682-076B90039E0E@colorremedies.com> <52C77903.9060408@jrs-s.net> <241D8699-CA7A-433E-B573-012F44026411@colorremedies.com> <52C87A41.9030701@jrs-s.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jim Salter posted on Sun, 05 Jan 2014 12:54:44 -0500 as excerpted:
 
+On Jan 4, 2014, at 2:16 PM, Jim Salter <jim@jrs-s.net> wrote:
 
-> On 01/05/2014 12:09 PM, Chris Murphy wrote:
->> I haven't read anything so far indicating defrag applies to the VM
->> container use case, rather nodatacow via xattr +C is the way to go. At
->> least for now.
-
-Well, NOCOW from the get-go would certainly be better, but given that the 
-file is already there and heavily fragmented, my idea was to get it 
-defragmented and then set the +C, to prevent it reoccurring.
-
-But I do very little snapshotting here, and as a result hadn't considered 
-the knockon effect of 100K-plus extents in perhaps 1000 snapshots.  I 
-guess that's what's killing the defrag, however it's initiated.  The only 
-way to get rid of the problem, then, would be to move the file away and 
-then back, but doing so does still leave all those snapshots with the 
-crazy fragmentation, and to kill that would require either killing all 
-those snapshots, or setting them writable and doing the same move out, 
-move back, on each one!  OUCH, but I guess that's why it just seems 
-impossible to deal with the fragmentation on these things, whether it's 
-autodefrag, or named file defrag, or doing the whole move out and back 
-thing, and then having to worry about all those snapshots.
-
-Still, I'd guess ultimately it'll need done, whether it's a wipe the 
-filesystem and restore from backup or whatever.
-
-> Can you elaborate on the rationale behind database or VM binaries being
-> set nodatacow? I experimented with this*, and found no significant (to
-> me,
-> anyway) performance enhancement with nodatacow on - maybe 10% at best,
-> and if I understand correctly, that implies losing the live per-block
-> checksumming of the data that's set nodatacow, meaning you won't get
-> automatic correction if you're on a redundant array.
 > 
-> All I've heard so far is "better performance" without any more detailed
-> explanation, and if the only benefit is an added MAYBE 10%ish
-> performance... I'd rather take the hit, personally.
+> On 01/04/2014 02:18 PM, Chris Murphy wrote:
+>> I'm not sure what else you're referring to?(working on boot environment of btrfs)
 > 
-> * "experimented with this" == set up a Win2008R2 test VM and ran
-> HDTunePro for several runs on binaries stored with and without nodatacow
-> set, 5G of random and sequential read and write access per run.
+> Just the string of caveats regarding mounting at boot time - needing to monkeypatch 00_header to avoid the bogus sparse file error
 
-Well, the problem isn't just performance, it's that in most such cases 
-the apps actually have their own date integrity checking and management, 
-and sometimes the app's integrity management and that of btrfs end up 
-fighting each other, destroying the data as a result.
-
-In normal operation, everything's fine.  But should the system crash at 
-the wrong moment, btrfs' atomic commit and data integrity mechanisms can 
-roll back to a slightly earlier version of the file.
-
-Which is normally fine.  But because hardware is known to often lie about 
-having committed writes that may actually still only be in buffer, if the 
-power outage/crash occurred at the wrong moment, ordinary write-barrier 
-ordering guarantees may be invalid (particularly on large files with 
-finite-seek-speed devices), the app's own integrity checksum may have 
-been updated before the data it was supposed to be a checksum on actually 
-got to disk.  If btrfs ends up rolling back to that condition, btrfs will 
-likely consider the file fine, but the app's own integrity management 
-will consider it corrupted, which it actually is.
-
-But if btrfs only stays out of the way, the application often can fix 
-whatever minor corruption it detects, doing its own roll-backs to an 
-earlier checkpoint, because it's /designed/ to be able to handle such 
-problems on filesystems that don't have integrity management.
-
-So having btrfs trying to manage integrity too on such data where the app 
-already handles it is self-defeating, because neither knows about nor 
-considers what the other one is doing, and the two end up undoing each 
-other's careful work.
-
-Again, this isn't something you'll see in normal operation, but several 
-people have reported exactly that sort of problem with the general large-
-internally-written-file, application-self-managed-file-integrity, 
-scenario.  In those cases, the best thing btrfs can do is simply get out 
-of the way and let the application handle its own integrity management, 
-and the way to tell btrfs to do that, as well as to do in-place rewrites 
-instead of COW-based rewrites, is with the NOCOW xattrib, chattr +C, and 
-that must be done before the file gets so fragmented (and multi-
-snapshotted in its fragmented state) in the first place.
+I don't know what "bogus sparse file error" refers to. What version of GRUB? I'm seeing Ubuntu 12.03 precise-updates listing GRUB 1.99 which is rather old.
 
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> (which, worse, tells you to press a key when pressing a key does nothing) followed by this, in my opinion completely unexpected, behavior when missing a disk in a fault-tolerant array, which also requires monkey-patching in fstab and now elsewhere in GRUB to avoid.
 
+and…
+
+> I'm aware it's not intended for production yet.
+
+On the one hand you say you're aware, yet on the other hand you say the missing disk behavior is completely unexpected.
+
+Some parts of Btrfs, in certain contexts, are production ready. But the developmental state of Btrfs places a burden on the user to know more details about that state than he might otherwise be expected to know with more stable/mature file systems.
+
+My opinion is that it's inappropriate for degraded mounts to be made automatic when there's no method of notifying user space of this state change. Gnome-shell via udisks will inform users of a degraded md array. Something equivalent to that is needed before Btrfs should enable a scenario where a user boots a computer in degraded state without being informed as if there's nothing wrong at all. That's demonstrably far worse than "scary" boot failure, during which one copy of data is still likely safe, unlike permitting uninformed degraded rw operation.
+
+
+
+> However, it's just on the cusp, with distributions not only including it in their installers but a couple teetering on the fence with declaring it their next default FS (Oracle Unbreakable, OpenSuse, hell even RedHat was flirting with the idea) that it seems to me some extra testing with an eye towards production isn't a bad thing.
+
+Does the Ubuntu 12.03 LTS installer let you create sysroot on a Btrfs raid1 volume?
+
+> That's why I'm here. Not to crap on anybody, but to get involved, hopefully helpfully.
+
+I think you're better off using something more developmental, it necessarily needs to exist in the first place there, before it can trickle down to an LTS release.
+
+> 
+>> fs_passno is 1 which doesn't apply to Btrfs.
+> Again, that's the distribution's default, so the argument should be with them, not me…
+
+Yes so you'd want to file a bug? That's how you get involved.
+
+> with that said, I'd respectfully argue that fs_passno 1 is correct for any root file system; if the file system itself declines to run an fsck that's up to the filesystem, but it's correct to specify fs_passno 1 if the filesystem is to be mounted as root in the first place.
+> 
+> I'm open to hearing why that's a bad idea, if you have a specific reason?
+
+It's a minor point, but it shows that fs_passno has become quaint, like grandma's iron cozy. It's not applicable for either XFS or Btrfs. It's arguably inapplicable for ext3/4 but its fsck program has an optimization to skip fully checking the file system if the journal replay succeeds. There is no unattended fsck for either XFS or Btrfs.
+
+On systemd systems, it reads fstab, and if fs_passno is non-zero it checks for the existence of /sbin/fsck.<fs> and if it doesn't exist, then it doesn't run fsck for that entry. This topic was recently brought up and is in the archives.
+
+
+>> Well actually LVM thinp does have fast snapshots without requiring preallocation, and uses COW.
+> 
+> LVM's snapshots aren't very useful for me - there's a performance penalty while you have them in place, so they're best used as a transient use-then-immediately-delete feature, for instance for rsync'ing off a database binary. Until recently, there also wasn't a good way to roll back an LV to a snapshot, and even now, that can be pretty problematic.
+
+This describes old LVM snapshots, not LVM thinp snapshots.
+
+> Finally, there's no way to get a partial copy of an LV snapshot out of the snapshot and back into production, so if eg you have virtual machines of significant size, you could be looking at *hours* of file copy operations to restore an individual VM out of a snapshot (if you even have the drive space available for it), as compared to btrfs' cp --reflink=always operation, which allows you to do the same thing instantaneously.
+
+LVM isn't a file system, so limitations compared to Btrfs are expected.
+
+> 
+>> I'm not sure what you mean by self-correcting, but if the drive reports a read error md, lvm, and Btrfs raid1+ all will get missing data from mirror/parity reconstruction, and write corrected data back to the bad sector.
+> 
+> You're assuming that the drive will actually *report* a read error, which is frequently not the case.
+
+This is discussed in significant detail in the linux-raid@ list archives. I'm not aware of data that explicitly concludes or proposes a ratio between ECC error detection with non-correction (resulting in a read error) vs silent data corruption. I've seen quite a few read errors from drives compared to what I think was SDC - but that's not a scientific sample. Polluting a lot of the data is a mismatch between default drive ERC timeouts compared to SCSI block layer timeouts, so when a drive ECC isn't able to produce a result within the SCSI block layer timeout time, we get a link reset. Now we don't know what the drive would have reported, a read error? Or bogus data?
+
+
+> I have a production ZFS array right now that I need to replace an Intel SSD on - the SSD has thrown > 10K checksum errors in six months. Zero read or write errors. Neither hardware RAID nor mdraid nor LVM would have helped me there.
+
+Of course, that's not their design goal. But I don't think the Btrfs devs are suggesting a design goal is to compensate for spectacular failure of the drive's ECC, because if all drives in your Btrfs volume behaved the way this one SSD you're reporting behaves, you'd inevitably still lose data. Btrfs checksumming isn't a substitute for drive ECC. What you're reporting is a significant ECC fail.
+
+
+> Since running filesystems that do block-level checksumming, I have become aware that bitrot happens without hardware errors getting thrown FAR more frequently than I would have thought before having the tools to spot it. ZFS, and now btrfs, are the only tools at hand that can actually prevent it.
+
+There are other tools than ZFS and Btrfs, they just aren't open source.
+
+10K checksum errors in six months without a single read error is not bitrot, it's a more significant failure. Bitrot is one kind of silent data corruption, not all SDC is due to bit rot, there are a lot of other sources for data corruption in the storage stack.
+
+Yes it's good we have ZFS and Btrfs for additional protection, but I don't see these file systems as getting manufacturers off the hook with respect to ECC. That needs to get better, they know it needs to get better and that's one of the major reasons why spinning drives have moved to 4K physical sectors. So moving to checksumming file systems isn't the only way to prevent these problems.
+
+
+Chris Murphy

@@ -1,39 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57555 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55444 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751112AbaAEQzO convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751186AbaAERJm convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 11:55:14 -0500
-Content-Type: text/plain; charset=US-ASCII
+	Sun, 5 Jan 2014 12:09:42 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:52068 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1VzrCl-003gnN-71
+	for linux-btrfs@vger.kernel.org; Sun, 05 Jan 2014 10:09:39 -0700
+Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfsck does not fix
+Subject: Re: btrfs-transaction blocked for more than 120 seconds
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <52C87B67.1040503@friedels.name>
-Date: Sun, 5 Jan 2014 09:55:10 -0700
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com>
-References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name>
-To: Hendrik Friedel <hendrik@friedels.name>
+In-Reply-To: <20140105063957.GF11749@merlins.org>
+Date: Sun, 5 Jan 2014 10:09:38 -0700
+Message-Id: <8EE40903-FE21-4516-B2D8-4EB8DCE79376@colorremedies.com>
+References: <52C2AE7C.5020601@gmx.at> <pan$63cef$9a8ef2ee$a00edd59$ef37592e@cox.net> <20140103172506.GA10021@merlins.org> <pan$6ce5a$53830c0$382c1e0e$7169217c@cox.net> <20140105063957.GF11749@merlins.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jan 4, 2014, at 2:21 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
+On Jan 4, 2014, at 11:39 PM, Marc MERLIN <marc@merlins.org> wrote:
 
-> Hi Chris,
 > 
+> Nope, I never posted anything until now. Hopefully you agree that it's
+> not ok for btrfs/kernel to just kill my system for over 2H until I power
+> it off before of defragging one file. I did hit a severe performance but
+> if it's not a never ending loop.
 > 
-> >> I ran btrfsck on my volume with the repair option. When I re-run it, >>I get the same errors as before.
->> 
->> Did you try mounting with -o recovery first?
->> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
+> gandalfthegreat:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi 
+> Win7.vdi: 156222 extents found
 > 
-> No, I did not.
-> In fact, I had visited the FAQ before, and my understanding was, that -o recovery was used/needed when mounting is impossible. This is not the case. In fact, the disk does work without obvious problems.
+> Considering how virtualbox works, that's hardly surprising.
 
-It mounts without errors? So why then btrfsck/btrfs repair? What precipitated the repair?
+I haven't read anything so far indicating defrag applies to the VM container use case, rather nodatacow via xattr +C is the way to go. At least for now.
 
-If mount option -o recovery is used, dmesg should report 'btrfs: enabling auto recovery' and I think you're right if it's mounting OK then probably recovery isn't applicable. Can you just do a btrfs check <dev> and report the results? Repair can sometimes make problems worse it seems.
+> 
+> But doesn't it make sense to see why the kernel is near deadlocking on a
+> single file defrag first?
+
+It's better than a panic or corrupt data. So far the best combination I've found, open to other suggestions though, is +C xattr on /var/lib/libvirt/images, creating non-preallocated qcow2 files, and snapshotting the qcow2 file with qemu-img. Granted when sysroot is snapshot, I'm making btrfs snapshots of these qcow2 files. Another option is to make /var/lib/libvirt/images a subvolume, and then when sysroot is snapshot, then /var/lib/libvirt/images is immune to being snapshot automatically with the parent subvolume. I'd have to explicitly snapshot it. This may be a better way to go to avoid accumulation of btrfs snapshots of qcow2 snapshot files.
+
+This may already be a known problem but it's worth sysrq+w, and then dmesg and posting those results if you haven't already.
 
 
 Chris Murphy

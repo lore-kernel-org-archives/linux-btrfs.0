@@ -1,65 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41763 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754992AbaAEANS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 4 Jan 2014 19:13:18 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VzbLB-0005gj-2W
-	for linux-btrfs@vger.kernel.org; Sun, 05 Jan 2014 01:13:17 +0100
-Received: from 91-115-176-221.adsl.highway.telekom.at ([91.115.176.221])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 01:13:17 +0100
-Received: from sulla by 91-115-176-221.adsl.highway.telekom.at with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 01:13:17 +0100
+Received: from mail-pd0-f180.google.com ([209.85.192.180]:44488 "EHLO
+	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750778AbaAEEe5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Jan 2014 23:34:57 -0500
+Received: by mail-pd0-f180.google.com with SMTP id q10so16778496pdj.25
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jan 2014 20:34:56 -0800 (PST)
+Received: from [10.27.206.105] ([1.23.65.92])
+        by mx.google.com with ESMTPSA id ju10sm119224238pbd.33.2014.01.04.20.34.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 04 Jan 2014 20:34:55 -0800 (PST)
+Message-ID: <52C8E0D1.2070904@gmail.com>
+Date: Sun, 05 Jan 2014 10:04:25 +0530
+From: "dhan.war" <wardhan.v.1.0@gmail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Sulla <sulla@gmx.at>
-Subject: Re: btrfs-transaction blocked for more than 120 seconds
-Date: Sun, 5 Jan 2014 00:12:55 +0000 (UTC)
-Message-ID: <loom.20140105T005514-795@post.gmane.org>
-References: <52C2AE7C.5020601@gmx.at> <pan$63cef$9a8ef2ee$a00edd59$ef37592e@cox.net> <loom.20140101T204832-543@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: how to properly mount an external usb hard drive & other questions
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh gosh, I don't know what went wrong with my btrfs root filesystem, and I
-probably will never know, too:
+hi all
 
-The "sudo balance start /" was running fine for about 4 or 5 hours, running
-at a system load of ~3 when "balance status /" told me the balancing was on
-its way and had completed 19 out of 23 extents.
+i am using up to date debian sid with xfce desktop environment. i am 
+using Linux 3.13-rc6-amd64 #1 SMP Debian 3.13~rc6-1~exp1 (2013-12-30) 
+x86_64 GNU/Linux from experimental.
+i have installed usbmount to auto mount all the devices connected 
+through USB.
 
-At this moment the system load started to increase and increase an increase
-and when it reached 147 (!!) (while top was showing me NOTHING was going on)
-I resetted the computer. TTY1 showed some kernel panics and btrfs-bug
-messages, but those files were lost because they've never made it to disk.
+[cmd# 1] i have created btrfs partition on my external USB hard drive 
+using the following command :
 
-Fortunately my RAID5 stayed in sync and everything was fine. System also
-booted, but with the same 120+ secs hangs as before. System was unusable, as
-e.g. all IMAP logins time-out-ed.
+# mkfs.btrfs -f -L btrfs -m single /dev/sdc
+Turning ON incompat feature 'extref': increased hardlink limit per file 
+to 65536
+fs created label btrfs on /dev/sdc
+	nodesize 16384 leafsize 16384 sectorsize 4096 size 931.51GiB
+Btrfs v3.12
 
-So
-* I booted into a live-CD
-* mounted a backup disk
-* cp-ed all files of the root fs to the backup disk (it could read them
-flawlessly)
-* formatted the root-partition to ext4 (yes, I feel sad about it)
-* cp-ed all root-files from the backupdisk to the ext4 root system
-* stroke the subvol=@ boot argument from /boot/grub/grub.cfg
-* and rebooted my server.
+[cmd# 2] my permissions of the device :
+# ls -l /dev/sdc
+brw-rw---- 1 root floppy 8, 32 Jan  5 09:47 /dev/sdc
 
-How I love linux! Wouldn't be possible with M$!!
+my questions :
+[a] does the partition created by me is appropriate ?
+[b] how do i specify lzo compression in fstab ? last time when i tried 
+to create entry fstab it is complaining about the auto mounting of the 
+device by automount.
+[c] what compression method is used by btrfs by default for the 
+partitions created using the command mentioned above. [ cmd# 1]
+[d] does the file permissions for my device are accurate ? [ cmd# 2]
+[e] what is the appropriate fstab entry for my device ? [ i don't want 
+to remove usbmount].
+[f] should i use single or dup for the device ?
 
-Now its running fine again, system is responsive as it should be. No clue
-'bout what went wrong, though.
+please provide suggestions for configuring my device appropriately. 
+thank you for reading the message patiently.
 
-I still have /home and the huge data partitions on btrfs and plan to leave
-it so. While it would not be difficult to put /home on ext4 it would be a
-major effort to cp the ~3TB data off and on the disks...
+please alway cc me.
 
-Thanx for your support,
-Sulla
-
+regards,
+wardhan.

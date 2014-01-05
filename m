@@ -1,64 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:59196 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750902AbaAEIfi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 03:35:38 -0500
-Date: Sat, 4 Jan 2014 22:13:53 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Hugo Mills <hugo@carfax.org.uk>,
-        Eric Sandeen <sandeen@sandeen.net>
-Subject: Re: coredump in btrfsck
-Message-ID: <20140105061353.GD11749@merlins.org>
-References: <52C4884F.6040000@gmail.com>
- <45E0985F-4F75-47D1-BD6E-2286D5844AE3@colorremedies.com>
- <52C4982C.1040606@gmail.com>
- <4656C292-30C5-4D72-AB46-654EC7C4FBD3@colorremedies.com>
- <20140103123311.GH10886@merlins.org>
- <DC2CCC7E-46BF-428E-BACE-5A7D5931BEC1@colorremedies.com>
+Received: from csamuel.org ([74.50.50.137]:46052 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750831AbaAEJUj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 04:20:39 -0500
+From: Chris Samuel <chris@csamuel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Chris Mason <clm@fb.com>
+Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
+Date: Sun, 05 Jan 2014 20:20:26 +1100
+Message-ID: <2354723.OENPHvUuC6@quad>
+In-Reply-To: <1388847436.23513.26.camel@ret.masoncoding.com>
+References: <52C73987.7000106@jrs-s.net> <1422900.iO9oO96QZb@quad> <1388847436.23513.26.camel@ret.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <DC2CCC7E-46BF-428E-BACE-5A7D5931BEC1@colorremedies.com>
+Content-Type: multipart/signed; boundary="nextPart3202624.fjaAQ2ofvO"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 03, 2014 at 05:14:56PM -0700, Chris Murphy wrote:
-> 
-> On Jan 3, 2014, at 5:33 AM, Marc MERLIN <marc@merlins.org> wrote:
-> > 
-> > Would it be possible for whoever maintains btrfs-tools to change both
-> > the man page and the help included in the tool to clearly state that
-> > running the fsck tool is unlikely to be the right course of action
-> > and talk about btrfs-zero-log as well as mount -o recovery?
-> 
-> The problem FAQ doesn't even mention btrfsck so I think people are just getting around that page or making assumptions.
-> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
 
-It's easy to find btrfsck without the wiki, whether it's with dpkg -l,
-rpm -ql, or command line completion.
-My point is that as you said, it's most often not the command to use, it
-can even do more damage than good, but neither its command line help,
-nor the man page warn of anything dangerous or bad in using it.
+--nextPart3202624.fjaAQ2ofvO
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-Telling people they should have read a wiki instead of the canonical man
-page isn't the right way to go longer term, nor how things are done on
-linux usually.
- 
-> Should btrfs check (btrfsck without --repair) work similar to xfs_repair when the file system is not cleanly unmounted? If an XFS volume is not cleanly unmounted, running xfs_repair will instruct the user to first mount the volume so that the journal is replayed, then umount the volume, then run xfs_repair.
+On Sat, 4 Jan 2014 02:56:39 PM Chris Mason wrote:
 
-I don't know about what the actual tool does when it works, I've never
-had it do anything useful for me, so I can't comment, except about the
-fact that it should warn users about "I'm not the fsck you're used to or
-are likely looking for"
+> Seconded +ADs-)  We're really focused on nailing down these problems =
+instead
+> of hiding behind the experimental flag.  I know we won't be perfect
+> overnight, but it's time to focus on production workloads.
 
-> A possible variant of this for btrfs check: inform the user the first step in repairing a problem Btrfs volume is to use -o recovery, for more information see Btrfs FAQ <url> for additional problem solving recommendations.
+Perhaps an option here is to remove the need to specify the degraded fl=
+ag but=20
+if the filesystem notice that it is mounting a RAID array and would oth=
+erwise=20
+fail it then sets the degraded flag itself and carries on?
 
-Yes, along with tweaking the man page to say the same.
+That way the fact it was degraded would be visible in /proc/mounts and =
+could=20
+be detected with health check scripts like NRPE for icinga/nagios.
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Looking at the code this would be in read_one_dev() in fs/btrfs/volumes=
+.c ?
+
+All the best,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart3202624.fjaAQ2ofvO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUskj2o1yjaOTJg85AQJ2zwf/fTdetOAlf2g2Q2R8ZkdV6sCgKn5YWfpz
+DiaA6zJtJwb+WB6xv2cyVV8xcfFMu4FH1+mEnANTc+1p2qOPFoJ8IuLIbVxN22UI
+Ry6mq/ygW2zDbkYRTL9oddF6Xwukh8Khr7aqNOKfGF06Ej4V7i96V+/rMUPIGmGG
+c8SZPwZKnWzSz6WaWGuApiWDz2h2D/1n0mtwt5IKQAgOE4/ai0A198Zb8XoSFL/4
+cE8Mwce/Qpp4wUA4RcsfLPLYDSSOTjzdtR1vv32V+3P9W1Yn1elrpheQlLVNY+Yi
+ObpdBNxlL2egPUHPtTeCUHw6yREqrzC8rRy4vElWo/TTfaQJW+9CsA==
+=TeHv
+-----END PGP SIGNATURE-----
+
+--nextPart3202624.fjaAQ2ofvO--
+

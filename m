@@ -1,55 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55444 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751108AbaAEN6D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 08:58:03 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1VzoDF-00083R-3T
-	for linux-btrfs@vger.kernel.org; Sun, 05 Jan 2014 14:57:57 +0100
-Received: from 89-66-236-172.dynamic.chello.pl ([89.66.236.172])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 14:57:57 +0100
-Received: from pp by 89-66-236-172.dynamic.chello.pl with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 14:57:57 +0100
-To: linux-btrfs@vger.kernel.org
-From: Piotr =?iso-8859-2?q?Paw=B3ow?= <pp@siedziba.pl>
-Subject: Help! - "btrfs device delete missing" running out of space
-Date: Sun, 5 Jan 2014 13:57:32 +0000 (UTC)
-Message-ID: <labocc$5ue$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57555 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751112AbaAEQzO convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 11:55:14 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfsck does not fix
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52C87B67.1040503@friedels.name>
+Date: Sun, 5 Jan 2014 09:55:10 -0700
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com>
+References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name>
+To: Hendrik Friedel <hendrik@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I replaced a failed 500G disk in btrfs raid1 with 2 smaller ones - 200 
-and 250GB. I started "btrfs device delete missing" command, which is 
-running since friday, and it still seems far from finished.
+On Jan 4, 2014, at 2:21 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
 
-It seems to be doing something very strange: used space on the largest 
-drive is going down, while smaller drives are filling up to the brim.
+> Hi Chris,
+> 
+> 
+> >> I ran btrfsck on my volume with the repair option. When I re-run it, >>I get the same errors as before.
+>> 
+>> Did you try mounting with -o recovery first?
+>> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
+> 
+> No, I did not.
+> In fact, I had visited the FAQ before, and my understanding was, that -o recovery was used/needed when mounting is impossible. This is not the case. In fact, the disk does work without obvious problems.
 
-I'm afraid it will soon run out of space and I don't know what to do.
+It mounts without errors? So why then btrfsck/btrfs repair? What precipitated the repair?
 
-The current situation is:
+If mount option -o recovery is used, dmesg should report 'btrfs: enabling auto recovery' and I think you're right if it's mounting OK then probably recovery isn't applicable. Can you just do a btrfs check <dev> and report the results? Repair can sometimes make problems worse it seems.
 
-Label: none  uuid: cff1e711-97fe-4c1c-b8a3-6184010b5027
-	Total devices 4 FS bytes used 376.66GB
-	devid    4 size 172.81GB used 167.00GB path /dev/dm-16
-	devid    3 size 232.88GB used 227.00GB path /dev/dm-4
-	devid    2 size 452.26GB used 327.01GB path /dev/dm-0
-	*** Some devices missing
 
-According to btrfs FAQ and http://carfax.org.uk/btrfs-usage, there should 
-be around 404GB of usable space in this configuration. Assuming even 
-distribution, used space on each device should be accordingly: 160, 216, 
-and 405. The current situation is FAR from that.
-
-I'd be grateful for tips what do to and how to get out of this situation.
-
-Regards
+Chris Murphy
 

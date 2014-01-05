@@ -1,36 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f179.google.com ([209.85.223.179]:37520 "EHLO
-	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751116AbaACMME (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jan 2014 07:12:04 -0500
-Received: by mail-ie0-f179.google.com with SMTP id x13so15284397ief.24
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jan 2014 04:12:02 -0800 (PST)
-Message-ID: <52C6A917.90502@gmail.com>
-Date: Fri, 03 Jan 2014 07:12:07 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:40848 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751448AbaAEXCw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 18:02:52 -0500
+Received: by mail-vc0-f174.google.com with SMTP id if17so8070226vcb.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 15:02:51 -0800 (PST)
 MIME-Version: 1.0
-To: sander@humilis.net
-CC: Aastha Mehta <aasthakm@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: question regarding caching
-References: <CAEx9m44ZiJLqTO1_G_rVfn+csD7_pOguEdiAjsvr3uPzna+mFA@mail.gmail.com> <52C30C8E.9020103@gmail.com> <20140103083950.GB29349@panda>
-In-Reply-To: <20140103083950.GB29349@panda>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Mon, 6 Jan 2014 00:02:51 +0100
+Message-ID: <CACeaM8_zLWB_R3-kWWqGGk45ySbXEpb9J1f58adggoQ7Ovi-Ng@mail.gmail.com>
+Subject: FILE_EXTENT_SAME changes mtime and ctime
+From: Gerhard Heift <gerhard@heift.name>
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=001a11c2c7da8943a004ef4124fe
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-01-03 03:39, Sander wrote:
-> Austin S Hemmelgarn wrote (ao):
->> The data is probably still cached in the block layer, so after 
->> unmounting, you could try 'echo 1 > /proc/sys/vm/drop_caches'
->> before mounting again, but make sure to run sync right before
->> doing that, otherwise you might lose data.
-> 
-> Lose data? Where you get this from?
-> 
-> Sander
-> 
-Sorry, misread the documentation, thought it said destructive where it
-really said non-destructive.
-It's still a good idea to run sync before trying to clear the caches
-though, cause dirty objects aren't freeable.
+--001a11c2c7da8943a004ef4124fe
+Content-Type: text/plain; charset=UTF-8
+
+Hello,
+
+I am currently playing with snapshots and manual deduplication of
+files. During these tests I noticed the change of ctime and mtime in
+the snapshot after the deduplication with FILE_EXTENT_SAME. Does this
+happens on purpose? Otherwise I would like to have ctime and mtime
+left unmodified, because on a read only snapshot I cannot change them
+back after the ioctl call.
+
+I attached a very basic patch, which illustrates my idea.
+
+Thanks,
+  Gerhard
+
+--001a11c2c7da8943a004ef4124fe
+Content-Type: text/x-patch; charset=US-ASCII; name="dedup_no_m_c_time.patch"
+Content-Disposition: attachment; filename="dedup_no_m_c_time.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hq2wktzr0
+
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMgYi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDlk
+NDZmNjAuLjk3NWQyMDcgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMKKysrIGIvZnMvYnRy
+ZnMvaW9jdGwuYwpAQCAtNTksNyArNTksNyBAQAogI2luY2x1ZGUgImRldi1yZXBsYWNlLmgiCiAK
+IHN0YXRpYyBpbnQgYnRyZnNfY2xvbmUoc3RydWN0IGlub2RlICpzcmMsIHN0cnVjdCBpbm9kZSAq
+aW5vZGUsCi0JCSAgICAgICB1NjQgb2ZmLCB1NjQgb2xlbiwgdTY0IG9sZW5fYWxpZ25lZCwgdTY0
+IGRlc3RvZmYpOworCQkgICAgICAgdTY0IG9mZiwgdTY0IG9sZW4sIHU2NCBvbGVuX2FsaWduZWQs
+IHU2NCBkZXN0b2ZmLCBpbnQgdXBkYXRlX3RpbWUpOwogCiAvKiBNYXNrIG91dCBmbGFncyB0aGF0
+IGFyZSBpbmFwcHJvcHJpYXRlIGZvciB0aGUgZ2l2ZW4gdHlwZSBvZiBpbm9kZS4gKi8KIHN0YXRp
+YyBpbmxpbmUgX191MzIgYnRyZnNfbWFza19mbGFncyh1bW9kZV90IG1vZGUsIF9fdTMyIGZsYWdz
+KQpAQCAtMjY4Myw3ICsyNjgzLDcgQEAgc3RhdGljIGludCBidHJmc19leHRlbnRfc2FtZShzdHJ1
+Y3QgaW5vZGUgKnNyYywgdTY0IGxvZmYsIHU2NCBsZW4sCiAKIAlyZXQgPSBidHJmc19jbXBfZGF0
+YShzcmMsIGxvZmYsIGRzdCwgZHN0X2xvZmYsIGxlbik7CiAJaWYgKHJldCA9PSAwKQotCQlyZXQg
+PSBidHJmc19jbG9uZShzcmMsIGRzdCwgbG9mZiwgbGVuLCBsZW4sIGRzdF9sb2ZmKTsKKwkJcmV0
+ID0gYnRyZnNfY2xvbmUoc3JjLCBkc3QsIGxvZmYsIGxlbiwgbGVuLCBkc3RfbG9mZiwgLyogdXBk
+YXRlIHRpbWUgKi8gMCk7CiAKIG91dF91bmxvY2s6CiAJYnRyZnNfZG91YmxlX3VubG9jayhzcmMs
+IGxvZmYsIGRzdCwgZHN0X2xvZmYsIGxlbik7CkBAIC0yODM2LDkgKzI4MzYsMTAgQEAgb3V0Ogog
+ICogQG9sZW5fYWxpZ25lZDogQmxvY2stYWxpZ25lZCB2YWx1ZSBvZiBvbGVuLCBleHRlbnRfc2Ft
+ZSB1c2VzCiAgKiAgICAgICAgICAgICAgIGlkZW50aWNhbCB2YWx1ZXMgaGVyZQogICogQGRlc3Rv
+ZmY6IE9mZnNldCB3aXRoaW4gQGlub2RlIHRvIHN0YXJ0IGNsb25lCisgKiBAdXBkYXRlX3RpbWU6
+IFNob3VsZCB3ZSB1cGRhdGUgY3RpbWUgYW5kIG10aW1lIG9mIEBpbm9kZT8KICAqLwogc3RhdGlj
+IGludCBidHJmc19jbG9uZShzdHJ1Y3QgaW5vZGUgKnNyYywgc3RydWN0IGlub2RlICppbm9kZSwK
+LQkJICAgICAgIHU2NCBvZmYsIHU2NCBvbGVuLCB1NjQgb2xlbl9hbGlnbmVkLCB1NjQgZGVzdG9m
+ZikKKwkJICAgICAgIHU2NCBvZmYsIHU2NCBvbGVuLCB1NjQgb2xlbl9hbGlnbmVkLCB1NjQgZGVz
+dG9mZiwgaW50IHVwZGF0ZV90aW1lKQogewogCXN0cnVjdCBidHJmc19yb290ICpyb290ID0gQlRS
+RlNfSShpbm9kZSktPnJvb3Q7CiAJc3RydWN0IGJ0cmZzX3BhdGggKnBhdGggPSBOVUxMOwpAQCAt
+MzA4MSw4ICszMDgyLDEwIEBAIHN0YXRpYyBpbnQgYnRyZnNfY2xvbmUoc3RydWN0IGlub2RlICpz
+cmMsIHN0cnVjdCBpbm9kZSAqaW5vZGUsCiAJCQlidHJmc19tYXJrX2J1ZmZlcl9kaXJ0eShsZWFm
+KTsKIAkJCWJ0cmZzX3JlbGVhc2VfcGF0aChwYXRoKTsKIAotCQkJaW5vZGVfaW5jX2l2ZXJzaW9u
+KGlub2RlKTsKLQkJCWlub2RlLT5pX210aW1lID0gaW5vZGUtPmlfY3RpbWUgPSBDVVJSRU5UX1RJ
+TUU7CisJCQlpZiAodXBkYXRlX3RpbWUpIHsKKwkJCQlpbm9kZV9pbmNfaXZlcnNpb24oaW5vZGUp
+OworCQkJCWlub2RlLT5pX210aW1lID0gaW5vZGUtPmlfY3RpbWUgPSBDVVJSRU5UX1RJTUU7CisJ
+CQl9CiAKIAkJCS8qCiAJCQkgKiB3ZSByb3VuZCB1cCB0byB0aGUgYmxvY2sgc2l6ZSBhdCBlb2Yg
+d2hlbgpAQCAtMzIyNyw3ICszMjMwLDcgQEAgc3RhdGljIG5vaW5saW5lIGxvbmcgYnRyZnNfaW9j
+dGxfY2xvbmUoc3RydWN0IGZpbGUgKmZpbGUsIHVuc2lnbmVkIGxvbmcgc3JjZmQsCiAKIAlsb2Nr
+X2V4dGVudF9yYW5nZShzcmMsIG9mZiwgbGVuKTsKIAotCXJldCA9IGJ0cmZzX2Nsb25lKHNyYywg
+aW5vZGUsIG9mZiwgb2xlbiwgbGVuLCBkZXN0b2ZmKTsKKwlyZXQgPSBidHJmc19jbG9uZShzcmMs
+IGlub2RlLCBvZmYsIG9sZW4sIGxlbiwgZGVzdG9mZiwgLyogdXBkYXRlIHRpbWUgKi8gMSk7CiAK
+IAl1bmxvY2tfZXh0ZW50KCZCVFJGU19JKHNyYyktPmlvX3RyZWUsIG9mZiwgb2ZmICsgbGVuIC0g
+MSk7CiBvdXRfdW5sb2NrOgo=
+--001a11c2c7da8943a004ef4124fe--

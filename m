@@ -1,113 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:59187 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:59196 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750816AbaAEIfb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 03:35:31 -0500
-Date: Sat, 4 Jan 2014 22:39:57 -0800
+	with ESMTP id S1750902AbaAEIfi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 03:35:38 -0500
+Date: Sat, 4 Jan 2014 22:13:53 -0800
 From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-transaction blocked for more than 120 seconds
-Message-ID: <20140105063957.GF11749@merlins.org>
-References: <52C2AE7C.5020601@gmx.at>
- <pan$63cef$9a8ef2ee$a00edd59$ef37592e@cox.net>
- <20140103172506.GA10021@merlins.org>
- <pan$6ce5a$53830c0$382c1e0e$7169217c@cox.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Hugo Mills <hugo@carfax.org.uk>,
+        Eric Sandeen <sandeen@sandeen.net>
+Subject: Re: coredump in btrfsck
+Message-ID: <20140105061353.GD11749@merlins.org>
+References: <52C4884F.6040000@gmail.com>
+ <45E0985F-4F75-47D1-BD6E-2286D5844AE3@colorremedies.com>
+ <52C4982C.1040606@gmail.com>
+ <4656C292-30C5-4D72-AB46-654EC7C4FBD3@colorremedies.com>
+ <20140103123311.GH10886@merlins.org>
+ <DC2CCC7E-46BF-428E-BACE-5A7D5931BEC1@colorremedies.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$6ce5a$53830c0$382c1e0e$7169217c@cox.net>
+In-Reply-To: <DC2CCC7E-46BF-428E-BACE-5A7D5931BEC1@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 03, 2014 at 09:34:10PM +0000, Duncan wrote:
-> > Thank you for that tip, I had been unaware of it 'till now.
-> > This will make my virtualbox image directory much happier :)
+On Fri, Jan 03, 2014 at 05:14:56PM -0700, Chris Murphy wrote:
 > 
-> I think I said it, but it bears repeating.  Once you set that attribute 
-> on the dir, you may want to move the files out of the dir (to another 
-> partition would make sure the data is actually moved) and back in, so 
-> they're effectively new files in the dir.  Or use something like cat 
-> oldfile > newfile, so you know it's actually creating the new file, not 
-> reflinking.  That'll ensure the NOCOW takes effect.
-
-Yes, I got that. That why I ran btrfs defrag on the files after that (I
-explained why, copy would waste lots of snapshot space by replacing all
-the block needlessly).
- 
-> > Unfortunately, on a 83GB vdi (virtualbox) file, with 3.12.5, it did a
-> > lot of writing and chewed up my 4 CPUs. Then, it started to be hard to
-> > move my mouse cursor and my procmeter graph was barely updating seconds.
-> > Next, nothing updated on my X server anymore, not even seconds in time
-> > widgets.
+> On Jan 3, 2014, at 5:33 AM, Marc MERLIN <marc@merlins.org> wrote:
 > > 
-> > But, I could still sometimes move my mouse cursor, and I could sometimes
-> > see the HD light fliker a bit before going dead again. In other words,
-> > the system wasn't fully deadlocked, but btrfs sure got into a state
-> > where it was unable to to finish the job, and took the kernel down with
-> > it (64bit, 8GB of RAM).
-> > 
-> > I waited 2H and it never came out of it, I had to power down the system
-> > in the end.  Note that this was on a top of the line 500MB/s write
-> > Samsung Evo 840 SSD, not a slow HD.
+> > Would it be possible for whoever maintains btrfs-tools to change both
+> > the man page and the help included in the tool to clearly state that
+> > running the fsck tool is unlikely to be the right course of action
+> > and talk about btrfs-zero-log as well as mount -o recovery?
 > 
-> That was defrag (the command) or autodefrag (the mount option)?  I'd 
-> guess defrag (the command).
+> The problem FAQ doesn't even mention btrfsck so I think people are just getting around that page or making assumptions.
+> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
 
-defrag, the btrfs subcommand.
+It's easy to find btrfsck without the wiki, whether it's with dpkg -l,
+rpm -ql, or command line completion.
+My point is that as you said, it's most often not the command to use, it
+can even do more damage than good, but neither its command line help,
+nor the man page warn of anything dangerous or bad in using it.
 
-> That's fragmentation for you!  What did/does filefrag have to say about 
-> that file?  Were you the one that posted the 6-digit extents?
-
-Nope, I never posted anything until now. Hopefully you agree that it's
-not ok for btrfs/kernel to just kill my system for over 2H until I power
-it off before of defragging one file. I did hit a severe performance but
-if it's not a never ending loop.
-
-gandalfthegreat:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi 
-Win7.vdi: 156222 extents found
-
-Considering how virtualbox works, that's hardly surprising.
-
-> For something that bad, it might be faster to copy/move it off-device 
-> (expect it to take awhile) then move it back.  That way you're only 
-> trying to read OR write on the device, not both, and the move elsewhere 
-> should defrag it quite a bit, effectively sequential write, then read and 
-> write on the move back.
-
-Yes, I know how I can work around the problem (although I'll likely have
-to delete all my historical snapshots to delete the old blocks, which I
-don't love to do).
-But doesn't it make sense to see why the kernel is near deadlocking on a
-single file defrag first?
-
-> But even that might be prohibitive.  At some point, you may need to 
-> either simply give up on it (if you're lazy), or get down and dirty with 
-> the tracing/profiling, working with a dev to figure out where it's 
-> spending its time and hopefully get btrfs recoded to work a bit faster 
-> for that sort of thing.
-
-I'm on my way to a linux conf where I'm speaking, so I have limited time
-and can't crash my laptop, but I'm happy to type some commands and give
-output.
-
-> As I suggested above, you might try the old school method of defrag, move 
-> the file to a different device, then move it back.  And if possible do it 
-> when nothing else is using the system.  But it may simply be practically 
-> inaccessible with a current kernel, in which case you'd either have to 
-> work with the devs to optimize, or give it up as a lost cause. =:(
+Telling people they should have read a wiki instead of the canonical man
+page isn't the right way to go longer term, nor how things are done on
+linux usually.
  
-I can fix my problem, actually virtualbox works fine with the fragmented
-file, without even feeling slow, so really I don't need to fix it
-urgently, I was just trying it out after your post.
- 
-> Then if the process completed successfully, you could cat the parts back 
-> together again... and the written parts would be basically sequential, so 
-> that should go MUCH faster! =:^)
+> Should btrfs check (btrfsck without --repair) work similar to xfs_repair when the file system is not cleanly unmounted? If an XFS volume is not cleanly unmounted, running xfs_repair will instruct the user to first mount the volume so that the journal is replayed, then umount the volume, then run xfs_repair.
 
-All that noted, but I'm not desperate, just trying commands I hadn't
-tried yet :)
+I don't know about what the actual tool does when it works, I've never
+had it do anything useful for me, so I can't comment, except about the
+fact that it should warn users about "I'm not the fsck you're used to or
+are likely looking for"
 
-Thanks for your replies,
+> A possible variant of this for btrfs check: inform the user the first step in repairing a problem Btrfs volume is to use -o recovery, for more information see Btrfs FAQ <url> for additional problem solving recommendations.
+
+Yes, along with tweaking the man page to say the same.
+
+Thanks,
 Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.

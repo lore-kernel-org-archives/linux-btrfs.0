@@ -1,152 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:57820 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751840AbaAEVSN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 16:18:13 -0500
-Received: from [192.168.0.2] ([91.115.176.179]) by mail.gmx.com (mrgmx002)
- with ESMTPSA (Nemesis) id 0MhiPD-1VmwMR1dVz-00MuKa for
- <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 22:17:40 +0100
-Message-ID: <52C9CBEF.2000309@gmx.at>
-Date: Sun, 05 Jan 2014 22:17:35 +0100
-From: Sulla <Sulla@gmx.at>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: linux-btrfs@vger.kernel.org
+Received: from eastrmfepo103.cox.net ([68.230.241.215]:52863 "EHLO
+	eastrmfepo103.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751805AbaAEVW7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 16:22:59 -0500
+Received: from eastrmimpo305 ([68.230.241.237]) by eastrmfepo103.cox.net
+          (InterMail vM.8.01.05.09 201-2260-151-124-20120717) with ESMTP
+          id <20140105204457.ELJH3894.eastrmfepo103.cox.net@eastrmimpo305>
+          for <linux-btrfs@vger.kernel.org>; Sun, 5 Jan 2014 15:44:57 -0500
+Date: Sun, 5 Jan 2014 13:44:25 -0700
+From: Duncan <1i5t5.duncan@cox.net>
+To: Jim Salter <jim@jrs-s.net>
+Cc: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
 Subject: Re: btrfs-transaction blocked for more than 120 seconds
-References: <52C2AE7C.5020601@gmx.at> <64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com>
-In-Reply-To: <64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20140105134425.22063890@ws>
+In-Reply-To: <ADin1n00P0VAdqd01DioM9>
+References: <ADin1n00P0VAdqd01DioM9>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Sun, 05 Jan 2014 08:42:46 -0500
+Jim Salter <jim@jrs-s.net> wrote:
 
-Dear Chris!
+> On Jan 5, 2014 1:39 AM, Marc MERLIN <marc@merlins.org> wrote:
+> >
+> > On Fri, Jan 03, 2014 at 09:34:10PM +0000, Duncan wrote: 
+> > Yes, I got that. That why I ran btrfs defrag on the files after that
+> 
+> Why are you trying to defrag an SSD? There's no seek penalty for
+> moving between fragmented blocks, so defrag isn't really desirable in
+> the first place.
 
-Certainly: I have 3 HDDs, all of which WD20EARS. Originally I wanted to
-let btrfs handle all 3 devices directly without making partitions, but
-this was impossible, as at least /boot needed to be ext4, at least back
-then when I set up the server. And back then btrfs also hadn't raid5-like
-functionality, so I decided to put good old partitions and md-Raids and
-LVM on them and use btrfs just as plain file-systems on the partitions
-provided by LVM.
+[I normally try to reply directly to list but don't believe I've seen
+this there yet, but got it direct-mailed so will reply-all in response.]
 
-On the WD disks I thus created 2 partitions each, the first sdX1 being
-~500MiB, the rest, 1.9995 TiB is one partition of, sdX2.
+There's no seek penalty so the overall problem is dramatically lessened
+as that's the significant part of it on spinning rust, correct, but...
 
-I built a Raid1 on the 3 small partitions sdX1 with ext4 for boot, each
-disk is bootable with grub installed into the MBR.
+SSDs do remain IOPS-bound, and tens or hundreds of thousands of extents
+do exact an IOPS (as well as general extent bookkeeping) toll, too.
 
-I combined the 3 large partitions to a Raid5 of size 3,64TB:
+That's why I ended up enabling autodefrag here when I was first setting
+up, even tho I'm on SSD.  (Only after asking the list basically the same
+question, what good it is autodefrag on SSD, tho.)
 
-/proc/mdstat reads:
-md0 : active raid1 sda1[5] sdb1[4] sdc1[3]
-      498676 blocks super 1.2 [3/3] [UUU]
-md1 : active raid5 sda2[5] sdb2[4] sdc2[3]
-      3904907520 blocks super 1.2 level 5, 8k chunk, algorithm 2 [3/3] [UUU]
+Luckily I don't happen to deal with any of the
+internal-write-in-huge-files scenarios, however, and I enabled
+autodefrag to cover the internal-write-in-small-file scenarios BEFORE I
+started putting any data on the filesystems at all,  so I'm basically
+covered, here, without actually having to do chattr +C on anything.
 
-the information you requested:
-# sudo mdadm -D /dev/md1
-/dev/md1:
-        Version : 1.2
-  Creation Time : Thu Jul 14 18:49:25 2011
-     Raid Level : raid5
-     Array Size : 3904907520 (3724.01 GiB 3998.63 GB)
-  Used Dev Size : 1952453760 (1862.01 GiB 1999.31 GB)
-   Raid Devices : 3
-  Total Devices : 3
-    Persistence : Superblock is persistent
-    Update Time : Sun Jan  5 22:07:22 2014
-          State : clean
- Active Devices : 3
-Working Devices : 3
- Failed Devices : 0
-  Spare Devices : 0
-         Layout : left-symmetric
-     Chunk Size : 8K
-           Name : freedom:1  (local to host freedom)
-           UUID : 44b72520:a78af6f7:dba13fb3:2203127d
-         Events : 576884
-    Number   Major   Minor   RaidDevice State
-       4       8       18        0      active sync   /dev/sdb2
-       5       8        2        1      active sync   /dev/sda2
-       3       8       34        2      active sync   /dev/sdc2
+> That doesn't change the fact that the described lockup sounds like a
+> bug not a feature of course, but I think the answer to your personal
+> issue on that particular machine is "don't defrag a solid state
+> drive".
 
+I now believe the lockup must be due to processing the hundreds of
+thousands of extents on all those snapshots, too, in addition to doing
+it on the main volume.  I don't actually make very extensive use of
+snapshots here anyway, so I didn't think about that aspect originally,
+but that's gotta be what's throwing the real spanner in the works,
+turning a possibly long but workable normal defrag (O(1)) into a lockup
+scenario (O(n)) where virtually no progress is made as currently
+coded.
 
-
-I use the Raid5 md1 as physical volume for LVM: pvdisplay gives:
-  --- Physical volume ---
-  PV Name               /dev/md1
-  VG Name               MAIN
-  PV Size               3.64 TiB / not usable 2.06 MiB
-  Allocatable           yes
-  PE Size               4.00 MiB
-  Total PE              953346
-  Free PE               6274
-  Allocated PE          947072
-  PV UUID               WcuEx8-ehJL-xHdf-ElwF-b9s3-dlmM-KZlDNG
-
-I keep a reserve of 6274 4MiB blocks (=24GiB) in case one of the logical
-volumes runs out of space...
-
-I created the following logical volumes, named after their intended
-mountpoints:
-  --- Logical volume ---
-  LV Path                /dev/MAIN/ROOT
-  LV Name                ROOT
-  VG Name                MAIN
-  LV UUID                kURJks-xHox-73B5-n02x-eZfS-agDD-n1dtAm
-  LV Write Access        read/write
-  LV Creation host, time ,
-  LV Status              available
-  # open                 1
-  LV Size                19.31 GiB
-  Current LE             4944
-  Segments               2
-  Allocation             inherit
-  Read ahead sectors     auto
-  - currently set to     256
-  Block device           252:0
-
-and similar:
-  --- Logical volume ---
-  LV Path                /dev/MAIN/SWAP: 1.8GB
-  LV Path                /dev/MAIN/HOME: 18.6GB
-  LV Path                /dev/MAIN/TMP: 9.3 GB
-  LV Path                /dev/MAIN/DATA1 2.6 TB
-  LV Path                /dev/MAIN/DATA2: 0.9 TB
-
-
-as filesystem I used btrfs during install form an ubuntu server, I don't
-recall which, might have been 11.10 or 12.04 (?) for all logical
-partitions except swap, of course,
-
-any other information I can supply?
-regards, Sulla
-
-- -- 
-Cogito cogito ergo cogito sum.
-   Ambrose Bierce
-
-
-
-
-
-
-
-
-
-
-
-
-
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.21 (MingW32)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iEYEARECAAYFAlLJy+8ACgkQR6b2EdogPFupxgCfeDRdeO+PYoQNIjtySAYEmSEr
-PNoAoLPNcSqDHsDzM8pAuHlbva7j18MS
-=XBOA
------END PGP SIGNATURE-----
+-- 
+Duncan - No HTML messages please, as they are filtered as spam.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

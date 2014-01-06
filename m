@@ -1,108 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23518 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1732 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751956AbaAFB5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 20:57:45 -0500
+	id S1751968AbaAFB5t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 20:57:49 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHN002425
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:43 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHQ002425
+	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:45 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/9] btrfs: Add "barrier" option to support "-o remount,barrier"
-Date: Mon, 6 Jan 2014 09:58:25 +0800
-Message-Id: <1388973513-11240-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 4/9] btrfs: Add noenospc_debug mount option.
+Date: Mon, 6 Jan 2014 09:58:28 +0800
+Message-Id: <1388973513-11240-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs can be remounted without barrier, but there is no "barrier" option
-so nobody can remount btrfs back with barrier on. Only umount and
-mount again can re-enable barrier.(Quite awkward)
+Add noenospc_debug mount option to disable ENOSPC debug with
+remount option.
 
-Also the mount options in the document is also changed slightly for the
-further pairing options changes.
-
-Reported-by: Daniel Blueman <daniel@quora.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Mike Fleetwood <mike.fleetwood@googlemail.com>
 Reviewed-by: David Sterba <dsterba@suse.cz>
 
 ---
 Changelog:
-v1: Add barrier option
-v2: Document style change
-v3: Small description change
+v2: Add noenospc_debug option
+v3: None
 ---
- Documentation/filesystems/btrfs.txt | 13 +++++++------
- fs/btrfs/super.c                    |  8 +++++++-
- 2 files changed, 14 insertions(+), 7 deletions(-)
+ Documentation/filesystems/btrfs.txt | 3 ++-
+ fs/btrfs/super.c                    | 5 +++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 5dd282d..ce487a2 100644
+index 7254cf5..13a7cac 100644
 --- a/Documentation/filesystems/btrfs.txt
 +++ b/Documentation/filesystems/btrfs.txt
-@@ -38,7 +38,7 @@ Mount Options
- =============
+@@ -108,8 +108,9 @@ Options with (*) are default options and will not show in the mount options.
+ 	performance impact.  (The fstrim command is also available to
+ 	initiate batch trims from userspace).
  
- When mounting a btrfs filesystem, the following option are accepted.
--Unless otherwise specified, all options default to off.
-+Options with (*) are default options and will not show in the mount options.
++  noenospc_debug(*)
+   enospc_debug
+-	Debugging option to be more verbose in some ENOSPC conditions.
++	Disable/enable debugging option to be more verbose in some ENOSPC conditions.
  
-   alloc_start=<bytes>
- 	Debugging option to force all block allocations above a certain
-@@ -138,12 +138,13 @@ Unless otherwise specified, all options default to off.
- 	Disable support for Posix Access Control Lists (ACLs).  See the
- 	acl(5) manual page for more information about ACLs.
- 
-+  barrier(*)
-   nobarrier
--        Disables the use of block layer write barriers.  Write barriers ensure
--	that certain IOs make it through the device cache and are on persistent
--	storage.  If used on a device with a volatile (non-battery-backed)
--	write-back cache, this option will lead to filesystem corruption on a
--	system crash or power loss.
-+        Enable/disable the use of block layer write barriers.  Write barriers
-+	ensure that certain IOs make it through the device cache and are on
-+	persistent storage. If disabled on a device with a volatile
-+	(non-battery-backed) write-back cache, nobarrier option will lead to
-+	filesystem corruption on a system crash or power loss.
- 
-   nodatacow
- 	Disable data copy-on-write for newly created files.  Implies nodatasum,
+   fatal_errors=<action>
+ 	Action to take when encountering a fatal error: 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e9c13fb..fe9d8a6 100644
+index 8731ee6..acf3e7d 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -323,7 +323,7 @@ enum {
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+@@ -324,6 +324,7 @@ enum {
  	Opt_check_integrity, Opt_check_integrity_including_extent_data,
  	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
--	Opt_commit_interval,
-+	Opt_commit_interval, Opt_barrier,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
++	Opt_noenospc_debug,
  	Opt_err,
  };
  
-@@ -335,6 +335,7 @@ static match_table_t tokens = {
- 	{Opt_nodatasum, "nodatasum"},
- 	{Opt_nodatacow, "nodatacow"},
- 	{Opt_nobarrier, "nobarrier"},
-+	{Opt_barrier, "barrier"},
- 	{Opt_max_inline, "max_inline=%s"},
- 	{Opt_alloc_start, "alloc_start=%s"},
- 	{Opt_thread_pool, "thread_pool=%d"},
-@@ -494,6 +495,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_clear_opt(info->mount_opt, SSD);
- 			btrfs_clear_opt(info->mount_opt, SSD_SPREAD);
+@@ -356,6 +357,7 @@ static match_table_t tokens = {
+ 	{Opt_clear_cache, "clear_cache"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
+ 	{Opt_enospc_debug, "enospc_debug"},
++	{Opt_noenospc_debug, "noenospc_debug"},
+ 	{Opt_subvolrootid, "subvolrootid=%d"},
+ 	{Opt_defrag, "autodefrag"},
+ 	{Opt_nodefrag, "noautodefrag"},
+@@ -603,6 +605,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_enospc_debug:
+ 			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
  			break;
-+		case Opt_barrier:
-+			if (btrfs_test_opt(root, NOBARRIER))
-+				btrfs_info(root->fs_info, "turning on barriers");
-+			btrfs_clear_opt(info->mount_opt, NOBARRIER);
++		case Opt_noenospc_debug:
++			btrfs_clear_opt(info->mount_opt, ENOSPC_DEBUG);
 +			break;
- 		case Opt_nobarrier:
- 			btrfs_info(root->fs_info, "turning off barriers");
- 			btrfs_set_opt(info->mount_opt, NOBARRIER);
+ 		case Opt_defrag:
+ 			btrfs_info(root->fs_info, "enabling auto defrag");
+ 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
 -- 
 1.8.5.2
 

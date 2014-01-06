@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42881 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755401AbaAFRTJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 12:19:09 -0500
-Date: Mon, 6 Jan 2014 18:19:08 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] Btrfs: fix protection between send and root deletion
-Message-ID: <20140106171908.GZ6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cn.fujitsu.com ([222.73.24.84]:3556 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753341AbaAFJ0j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 04:26:39 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s069QZ24030974
+	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 17:26:36 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 4/4] Btrfs: handle EAGAIN case properly in btrfs_drop_snapshot()
+Date: Mon, 6 Jan 2014 17:25:39 +0800
+Message-Id: <1389000339-15388-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 06, 2014 at 05:25:37PM +0800, Wang Shilong wrote:
-> We should gurantee that parent and clone root can not be destroyed
-> during send, for this we have two ideas.
-> 
-> 1.by holding @subvol_sem, this might be a nightmare, because it will
-> block all subvolumes deletion for a long time.
-> 
-> 2.Miao pointed out we can reuse @send_in_progress, that mean we will
-> skip snapshot deletion if root sending is in progress.
-> 
-> Here we adopt the second approach since it won't block other subvolumes
-> deletion for a long time.
+We may return early in btrfs_drop_snapshot(), we shouldn't
+call btrfs_std_err() for this case, fix it.
 
-Agreed, good idea protecting against the deletion during send.
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->  static inline int btrfs_need_cleaner_sleep(struct btrfs_root *root)
->  {
-> +	spin_lock(&root->root_item_lock);
-> +	if (root->send_in_progress) {
-> +		spin_unlock(&root->root_item_lock);
-> +		return 1;
-> +	}
-> +	spin_unlock(&root->root_item_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4fa1437..81650cf 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8272,7 +8272,7 @@ out:
+ 	 */
+ 	if (!for_reloc && root_dropped == false)
+ 		btrfs_add_dead_root(root);
+-	if (err)
++	if (err && err != -EAGAIN)
+ 		btrfs_std_error(root->fs_info, err);
+ 	return err;
+ }
+-- 
+1.8.3.1
 
-Whi is this needed? btrfs_need_cleaner_sleep needs only fs_info.
-
-* when called from cleaner_kthread it gets the tree_root
-* when called from btrfs_drop_snapshot it's a reloc_root
-
-neither of which is ever subject to send.
-
-
-david

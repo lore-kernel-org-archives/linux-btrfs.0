@@ -1,38 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:10353 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:23518 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752375AbaAFBPw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 20:15:52 -0500
-Message-ID: <52C9FE13.7040909@cn.fujitsu.com>
-Date: Mon, 06 Jan 2014 08:51:31 +0800
+	id S1751460AbaAFB5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 20:57:45 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHM002425
+	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:42 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, sbehrens@giantdisaster.de
-Subject: Re: [PATCH v2 03/11] btrfs: Add nocheck_int mount option.
-References: <1388729434-19799-1-git-send-email-quwenruo@cn.fujitsu.com> <1388729434-19799-4-git-send-email-quwenruo@cn.fujitsu.com> <20140103171308.GQ6498@twin.jikos.cz>
-In-Reply-To: <20140103171308.GQ6498@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/9] btrfs: Add missing pairing mount options.
+Date: Mon, 6 Jan 2014 09:58:24 +0800
+Message-Id: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 3 Jan 2014 18:13:08 +0100, David Sterba wrote:
-> On Fri, Jan 03, 2014 at 02:10:26PM +0800, Qu Wenruo wrote:
->> Add nocheck_int mount option to disable integrity check with
->> remount option.
->>
->> +	nocheck_int disables all the debug options above.
-> I think this option is not needed, the integrity checker is a
-> deveoplment functionality and used by people who know what they're
-> doing. Besides this would need to clean up all the data structures that
-> the checker uses (see eg. btrfsic_unmount that's called only if the
-> mount option is used). I see little benefit compared to the amount of
-> work to make sure that disabling the checker functionality in the middle
-> works properly.
->
-> david
->
-That's right, since most people won't enable integrity check
-until checking the all-yes config or running xfstests,
-it's better not to add this option.
+Some options should be paired to support triggering different functions
+when remounting.
 
-Qu
+This patchset add these missing pairing mount options except noinode_cache,
+which may need more investigation to ensure the safety and will be sent as
+independent patch.
+
+Qu Wenruo (9):
+  btrfs: Add "barrier" option to support "-o remount,barrier"
+  btrfs: Add noautodefrag mount option.
+  btrfs: Add nodiscard mount option.
+  btrfs: Add noenospc_debug mount option.
+  btrfs: Add noflushoncommit mount option.
+  btrfs: Add acl mount option.
+  btrfs: Add datacow mount option.
+  btrfs: Add datasum mount option.
+  btrfs: Add treelog mount option.
+
+ Documentation/filesystems/btrfs.txt | 47 +++++++++++++++++++------------
+ fs/btrfs/super.c                    | 55 ++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 84 insertions(+), 18 deletions(-)
+
+-- 
+1.8.5.2
+

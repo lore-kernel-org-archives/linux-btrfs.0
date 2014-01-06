@@ -1,80 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:40848 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751448AbaAEXCw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 18:02:52 -0500
-Received: by mail-vc0-f174.google.com with SMTP id if17so8070226vcb.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Jan 2014 15:02:51 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:43544 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755144AbaAFRxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 12:53:13 -0500
+Date: Mon, 6 Jan 2014 18:53:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gerhard Heift <gerhard@heift.name>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: FILE_EXTENT_SAME changes mtime and ctime
+Message-ID: <20140106175312.GB6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CACeaM8_zLWB_R3-kWWqGGk45ySbXEpb9J1f58adggoQ7Ovi-Ng@mail.gmail.com>
 MIME-Version: 1.0
-Date: Mon, 6 Jan 2014 00:02:51 +0100
-Message-ID: <CACeaM8_zLWB_R3-kWWqGGk45ySbXEpb9J1f58adggoQ7Ovi-Ng@mail.gmail.com>
-Subject: FILE_EXTENT_SAME changes mtime and ctime
-From: Gerhard Heift <gerhard@heift.name>
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=001a11c2c7da8943a004ef4124fe
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CACeaM8_zLWB_R3-kWWqGGk45ySbXEpb9J1f58adggoQ7Ovi-Ng@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---001a11c2c7da8943a004ef4124fe
-Content-Type: text/plain; charset=UTF-8
+On Mon, Jan 06, 2014 at 12:02:51AM +0100, Gerhard Heift wrote:
+> I am currently playing with snapshots and manual deduplication of
+> files. During these tests I noticed the change of ctime and mtime in
+> the snapshot after the deduplication with FILE_EXTENT_SAME. Does this
+> happens on purpose? Otherwise I would like to have ctime and mtime
+> left unmodified, because on a read only snapshot I cannot change them
+> back after the ioctl call.
 
-Hello,
+I'm not sure what's the correct behaviour wrt timestamps and extent
+cloning. The inode metadata are modified in some way, but the stat data
+and actual contents are left unchanged, so the timestamps do not reflect
+that something changed according to their definition (stat(2)).
 
-I am currently playing with snapshots and manual deduplication of
-files. During these tests I noticed the change of ctime and mtime in
-the snapshot after the deduplication with FILE_EXTENT_SAME. Does this
-happens on purpose? Otherwise I would like to have ctime and mtime
-left unmodified, because on a read only snapshot I cannot change them
-back after the ioctl call.
+On the other hand, the differences can be seen in the extent listing,
+the physical offset of the blocks will change. I'm not aware of any
+tools that would become broken by breaking this assumption. Also, the
+(partial) cloning functionality is not implemented anywhere so we could
+have a look and try to stay consistent with that.
 
-I attached a very basic patch, which illustrates my idea.
+My oppinion is to drop the mtime/iversion updates completely.
 
-Thanks,
-  Gerhard
 
---001a11c2c7da8943a004ef4124fe
-Content-Type: text/x-patch; charset=US-ASCII; name="dedup_no_m_c_time.patch"
-Content-Disposition: attachment; filename="dedup_no_m_c_time.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hq2wktzr0
-
-ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMgYi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDlk
-NDZmNjAuLjk3NWQyMDcgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMKKysrIGIvZnMvYnRy
-ZnMvaW9jdGwuYwpAQCAtNTksNyArNTksNyBAQAogI2luY2x1ZGUgImRldi1yZXBsYWNlLmgiCiAK
-IHN0YXRpYyBpbnQgYnRyZnNfY2xvbmUoc3RydWN0IGlub2RlICpzcmMsIHN0cnVjdCBpbm9kZSAq
-aW5vZGUsCi0JCSAgICAgICB1NjQgb2ZmLCB1NjQgb2xlbiwgdTY0IG9sZW5fYWxpZ25lZCwgdTY0
-IGRlc3RvZmYpOworCQkgICAgICAgdTY0IG9mZiwgdTY0IG9sZW4sIHU2NCBvbGVuX2FsaWduZWQs
-IHU2NCBkZXN0b2ZmLCBpbnQgdXBkYXRlX3RpbWUpOwogCiAvKiBNYXNrIG91dCBmbGFncyB0aGF0
-IGFyZSBpbmFwcHJvcHJpYXRlIGZvciB0aGUgZ2l2ZW4gdHlwZSBvZiBpbm9kZS4gKi8KIHN0YXRp
-YyBpbmxpbmUgX191MzIgYnRyZnNfbWFza19mbGFncyh1bW9kZV90IG1vZGUsIF9fdTMyIGZsYWdz
-KQpAQCAtMjY4Myw3ICsyNjgzLDcgQEAgc3RhdGljIGludCBidHJmc19leHRlbnRfc2FtZShzdHJ1
-Y3QgaW5vZGUgKnNyYywgdTY0IGxvZmYsIHU2NCBsZW4sCiAKIAlyZXQgPSBidHJmc19jbXBfZGF0
-YShzcmMsIGxvZmYsIGRzdCwgZHN0X2xvZmYsIGxlbik7CiAJaWYgKHJldCA9PSAwKQotCQlyZXQg
-PSBidHJmc19jbG9uZShzcmMsIGRzdCwgbG9mZiwgbGVuLCBsZW4sIGRzdF9sb2ZmKTsKKwkJcmV0
-ID0gYnRyZnNfY2xvbmUoc3JjLCBkc3QsIGxvZmYsIGxlbiwgbGVuLCBkc3RfbG9mZiwgLyogdXBk
-YXRlIHRpbWUgKi8gMCk7CiAKIG91dF91bmxvY2s6CiAJYnRyZnNfZG91YmxlX3VubG9jayhzcmMs
-IGxvZmYsIGRzdCwgZHN0X2xvZmYsIGxlbik7CkBAIC0yODM2LDkgKzI4MzYsMTAgQEAgb3V0Ogog
-ICogQG9sZW5fYWxpZ25lZDogQmxvY2stYWxpZ25lZCB2YWx1ZSBvZiBvbGVuLCBleHRlbnRfc2Ft
-ZSB1c2VzCiAgKiAgICAgICAgICAgICAgIGlkZW50aWNhbCB2YWx1ZXMgaGVyZQogICogQGRlc3Rv
-ZmY6IE9mZnNldCB3aXRoaW4gQGlub2RlIHRvIHN0YXJ0IGNsb25lCisgKiBAdXBkYXRlX3RpbWU6
-IFNob3VsZCB3ZSB1cGRhdGUgY3RpbWUgYW5kIG10aW1lIG9mIEBpbm9kZT8KICAqLwogc3RhdGlj
-IGludCBidHJmc19jbG9uZShzdHJ1Y3QgaW5vZGUgKnNyYywgc3RydWN0IGlub2RlICppbm9kZSwK
-LQkJICAgICAgIHU2NCBvZmYsIHU2NCBvbGVuLCB1NjQgb2xlbl9hbGlnbmVkLCB1NjQgZGVzdG9m
-ZikKKwkJICAgICAgIHU2NCBvZmYsIHU2NCBvbGVuLCB1NjQgb2xlbl9hbGlnbmVkLCB1NjQgZGVz
-dG9mZiwgaW50IHVwZGF0ZV90aW1lKQogewogCXN0cnVjdCBidHJmc19yb290ICpyb290ID0gQlRS
-RlNfSShpbm9kZSktPnJvb3Q7CiAJc3RydWN0IGJ0cmZzX3BhdGggKnBhdGggPSBOVUxMOwpAQCAt
-MzA4MSw4ICszMDgyLDEwIEBAIHN0YXRpYyBpbnQgYnRyZnNfY2xvbmUoc3RydWN0IGlub2RlICpz
-cmMsIHN0cnVjdCBpbm9kZSAqaW5vZGUsCiAJCQlidHJmc19tYXJrX2J1ZmZlcl9kaXJ0eShsZWFm
-KTsKIAkJCWJ0cmZzX3JlbGVhc2VfcGF0aChwYXRoKTsKIAotCQkJaW5vZGVfaW5jX2l2ZXJzaW9u
-KGlub2RlKTsKLQkJCWlub2RlLT5pX210aW1lID0gaW5vZGUtPmlfY3RpbWUgPSBDVVJSRU5UX1RJ
-TUU7CisJCQlpZiAodXBkYXRlX3RpbWUpIHsKKwkJCQlpbm9kZV9pbmNfaXZlcnNpb24oaW5vZGUp
-OworCQkJCWlub2RlLT5pX210aW1lID0gaW5vZGUtPmlfY3RpbWUgPSBDVVJSRU5UX1RJTUU7CisJ
-CQl9CiAKIAkJCS8qCiAJCQkgKiB3ZSByb3VuZCB1cCB0byB0aGUgYmxvY2sgc2l6ZSBhdCBlb2Yg
-d2hlbgpAQCAtMzIyNyw3ICszMjMwLDcgQEAgc3RhdGljIG5vaW5saW5lIGxvbmcgYnRyZnNfaW9j
-dGxfY2xvbmUoc3RydWN0IGZpbGUgKmZpbGUsIHVuc2lnbmVkIGxvbmcgc3JjZmQsCiAKIAlsb2Nr
-X2V4dGVudF9yYW5nZShzcmMsIG9mZiwgbGVuKTsKIAotCXJldCA9IGJ0cmZzX2Nsb25lKHNyYywg
-aW5vZGUsIG9mZiwgb2xlbiwgbGVuLCBkZXN0b2ZmKTsKKwlyZXQgPSBidHJmc19jbG9uZShzcmMs
-IGlub2RlLCBvZmYsIG9sZW4sIGxlbiwgZGVzdG9mZiwgLyogdXBkYXRlIHRpbWUgKi8gMSk7CiAK
-IAl1bmxvY2tfZXh0ZW50KCZCVFJGU19JKHNyYyktPmlvX3RyZWUsIG9mZiwgb2ZmICsgbGVuIC0g
-MSk7CiBvdXRfdW5sb2NrOgo=
---001a11c2c7da8943a004ef4124fe--
+david

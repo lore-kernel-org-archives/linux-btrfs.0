@@ -1,120 +1,292 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:9741 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753511AbaAFJSw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 04:18:52 -0500
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Cc: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH RESEND] xfstests: Enhance the scratch dev pool and deletable device check
-Date: Mon, 6 Jan 2014 17:19:42 +0800
-Message-Id: <1388999982-17877-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60045 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753298AbaAFT7A (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 14:59:00 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: kill lib/random.c
+Date: Mon, 6 Jan 2014 14:58:43 -0500
+Message-ID: <1389038323-8304-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Miao Xie <miaox@cn.fujitsu.com>
+I was trying to reproduce something with fsx and I noticed that no matter what
+seed I set I was getting the same file.  Come to find out we are overloading
+random() with our own custom horribleness for some unknown reason.  So nuke the
+damn thing from orbit and rely on glibc's random().  With this fix the -S option
+actually does something with fsx.  Thanks,
 
-_require_scratch_dev_pool() checks the devices number in
-SCRATCH_DEV_POOL, but it's not enough since some btrfs RAID10 tests
-needs 4 devices, but when 3 or less devices are provided, the check is
-useless and related test case will fail(btrfs/003 btrfs/011 btrfs/023).
-
-Also _require_deletable_scratch_dev_pool only checks whether it is
-virtul, like virtio(not including virtio-scsi) disk will pass the check
-but is unable to delete.
-
-This patch enhance _require_scratch_dev_pool by add optional $1 as
-needed device number to do extra check.
-And enhance _require_deletable_scratch_dev_pool by directly check
-/sys/class/block/$DEV/device/delete file.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- common/rc       | 22 ++++++++++++++--------
- tests/btrfs/003 |  2 +-
- tests/btrfs/011 |  2 +-
- 3 files changed, 16 insertions(+), 10 deletions(-)
+ lib/Makefile |   3 +-
+ lib/random.c | 240 -----------------------------------------------------------
+ 2 files changed, 1 insertion(+), 242 deletions(-)
+ delete mode 100644 lib/random.c
 
-diff --git a/common/rc b/common/rc
-index a2005c9..09644af 100644
---- a/common/rc
-+++ b/common/rc
-@@ -1927,16 +1927,24 @@ _test_inode_extsz()
- _require_scratch_dev_pool()
- {
- 	local i
-+	local ndevs
-+
- 	if [ -z "$SCRATCH_DEV_POOL" ]; then
- 		_notrun "this test requires a valid \$SCRATCH_DEV_POOL"
- 	fi
+diff --git a/lib/Makefile b/lib/Makefile
+index c7348ce..a9e32bc 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -16,8 +16,7 @@ LT_AGE = 0
+ #
+ CFILES = dataascii.c databin.c datapid.c file_lock.c forker.c \
+ 	pattern.c open_flags.c random_range.c string_to_tokens.c \
+-	str_to_bytes.c tlibio.c write_log.c \
+-	random.c
++	str_to_bytes.c tlibio.c write_log.c
  
--	# btrfs test case needs 2 or more scratch_dev_pool; other FS not sure
-+	if [ -z "$1" ]; then
-+		ndevs=2
-+	else
-+		ndevs=$1
-+	fi
-+
-+	# btrfs test case needs ndevs or more scratch_dev_pool; other FS not sure
- 	# so fail it
- 	case $FSTYP in
- 	btrfs)
--		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt 2 ]; then
--			_notrun "btrfs and this test needs 2 or more disks in SCRATCH_DEV_POOL"
-+		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt $ndevs ]; then
-+			_notrun "btrfs and this test needs $ndevs or more disks in SCRATCH_DEV_POOL"
- 		fi
- 	;;
- 	*)
-@@ -1963,17 +1971,15 @@ _require_scratch_dev_pool()
- 	done
- }
+ default: depend $(LTLIBRARY)
  
--# We will check if the device is virtual (eg: loop device) since it does not
--# have the delete entry-point. Otherwise SCSI and USB devices are fine. 
-+# We will check if the device is deletable
- _require_deletable_scratch_dev_pool()
- {
- 	local i
- 	local x
- 	for i in $SCRATCH_DEV_POOL; do
- 		x=`echo $i | cut -d"/" -f 3`
--		ls -l /sys/class/block/${x} | grep -q "virtual" 
--		if [ $? == "0" ]; then
--			_notrun "$i is a virtual device which is not deletable"
-+		if [ ! -f /sys/class/block/${x}/device/delete ]; then
-+			_notrun "$i is a device which is not deletable"
- 		fi
- 	done
- }
-diff --git a/tests/btrfs/003 b/tests/btrfs/003
-index 9105d06..29f947b 100755
---- a/tests/btrfs/003
-+++ b/tests/btrfs/003
-@@ -49,7 +49,7 @@ _need_to_be_root
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
--_require_scratch_dev_pool
-+_require_scratch_dev_pool 4
- _require_deletable_scratch_dev_pool
- _require_command $WIPEFS_PROG
- 
-diff --git a/tests/btrfs/011 b/tests/btrfs/011
-index 71ff3de..faa0402 100755
---- a/tests/btrfs/011
-+++ b/tests/btrfs/011
-@@ -62,7 +62,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _need_to_be_root
- _supported_fs btrfs
- _require_scratch
--_require_scratch_dev_pool
-+_require_scratch_dev_pool 4
- _require_command $BTRFS_SHOW_SUPER_PROG btrfs-show-super
- 
- rm -f $seqres.full
+diff --git a/lib/random.c b/lib/random.c
+deleted file mode 100644
+index eb23cd9..0000000
+--- a/lib/random.c
++++ /dev/null
+@@ -1,240 +0,0 @@
+-/**************************************************************************
+- *
+- * random.c -- pseudo random number generator
+- * Copyright (C) 1994  Chris Wallace (csw@bruce.cs.monash.edu.au)
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- *
+- *
+- **************************************************************************/
+-
+-#include <sys/types.h>
+-
+-/*
+- * modified by dxm@sgi.com so that this file acts as a drop in replacement
+- * for srandom and random.
+- */
+-
+-/*
+- *	A random number generator called as a function by
+- *	random (iseed)	or	irandm (iseed)
+- *	The parameter should be a pointer to a 2-element int32_t vector.
+- *	The first function returns a double uniform in 0 .. 1.
+- *	The second returns a int32_t integer uniform in 0 .. 2**31-1
+- *	Both update iseed[] in exactly the same way.
+- *	iseed[] must be a 2-element integer vector.
+- *	The initial value of the second element may be anything.
+- *
+- *	The period of the random sequence is 2**32 * (2**32-1)
+- *	The table mt[0:127] is defined by mt[i] = 69069 ** (128-i)
+- */
+-
+-#define MASK ((int32_t) 593970775)
+-/*	or in hex, 23674657	*/
+-
+-#define SCALE ((double) 1.0 / (1024.0 * 1024.0 * 1024.0 * 2.0))
+-/*	i.e. 2 to power -31	*/
+-
+-static int32_t mt [128] =   {
+-      902906369,
+-     2030498053,
+-     -473499623,
+-     1640834941,
+-      723406961,
+-     1993558325,
+-     -257162999,
+-    -1627724755,
+-      913952737,
+-      278845029,
+-     1327502073,
+-    -1261253155,
+-      981676113,
+-    -1785280363,
+-     1700077033,
+-      366908557,
+-    -1514479167,
+-     -682799163,
+-      141955545,
+-     -830150595,
+-      317871153,
+-     1542036469,
+-     -946413879,
+-    -1950779155,
+-      985397153,
+-      626515237,
+-      530871481,
+-      783087261,
+-    -1512358895,
+-     1031357269,
+-    -2007710807,
+-    -1652747955,
+-    -1867214463,
+-      928251525,
+-     1243003801,
+-    -2132510467,
+-     1874683889,
+-     -717013323,
+-      218254473,
+-    -1628774995,
+-    -2064896159,
+-       69678053,
+-      281568889,
+-    -2104168611,
+-     -165128239,
+-     1536495125,
+-      -39650967,
+-      546594317,
+-     -725987007,
+-     1392966981,
+-     1044706649,
+-      687331773,
+-    -2051306575,
+-     1544302965,
+-     -758494647,
+-    -1243934099,
+-      -75073759,
+-      293132965,
+-    -1935153095,
+-      118929437,
+-      807830417,
+-    -1416222507,
+-    -1550074071,
+-      -84903219,
+-     1355292929,
+-     -380482555,
+-    -1818444007,
+-     -204797315,
+-      170442609,
+-    -1636797387,
+-      868931593,
+-     -623503571,
+-     1711722209,
+-      381210981,
+-     -161547783,
+-     -272740131,
+-    -1450066095,
+-     2116588437,
+-     1100682473,
+-      358442893,
+-    -1529216831,
+-     2116152005,
+-     -776333095,
+-     1265240893,
+-     -482278607,
+-     1067190005,
+-      333444553,
+-       86502381,
+-      753481377,
+-       39000101,
+-     1779014585,
+-      219658653,
+-     -920253679,
+-     2029538901,
+-     1207761577,
+-    -1515772851,
+-     -236195711,
+-      442620293,
+-      423166617,
+-    -1763648515,
+-     -398436623,
+-    -1749358155,
+-     -538598519,
+-     -652439379,
+-      430550625,
+-    -1481396507,
+-     2093206905,
+-    -1934691747,
+-     -962631983,
+-     1454463253,
+-    -1877118871,
+-     -291917555,
+-    -1711673279,
+-      201201733,
+-     -474645415,
+-      -96764739,
+-    -1587365199,
+-     1945705589,
+-     1303896393,
+-     1744831853,
+-      381957665,
+-     2135332261,
+-      -55996615,
+-    -1190135011,
+-     1790562961,
+-    -1493191723,
+-      475559465,
+-          69069
+-		};
+-
+-double 
+-_random (int32_t is [2])
+-{
+-	int32_t it, leh, nit;
+-
+-	it = is [0];
+-	leh = is [1];
+-	if (it <= 0)	
+-		it = (it + it) ^ MASK;
+-	else
+-		it = it + it;
+-	nit = it - 1;
+-/*	to ensure all-ones pattern omitted    */
+-	leh = leh * mt[nit & 127] + nit;
+-	is [0] = it;    is [1] = leh;
+-	if (leh < 0) leh = ~leh;
+-	return (SCALE * ((int32_t) (leh | 1)));
+-}
+-
+-
+-
+-int32_t 
+-_irandm (int32_t is [2])
+-{
+-	int32_t it, leh, nit;
+-
+-	it = is [0];
+-	leh = is [1];
+-	if (it <= 0)	
+-		it = (it + it) ^ MASK;
+-	else
+-		it = it + it;
+-	nit = it - 1;
+-/*	to ensure all-ones pattern omitted    */
+-	leh = leh * mt[nit & 127] + nit;
+-	is [0] = it;    is [1] = leh;
+-	if (leh < 0) leh = ~leh;
+-	return (leh);
+-}
+-
+-/*
+- * make this a drop in replacement for random and srandom
+- *
+- * XXX not thread safe I guess.
+- */
+-
+-static int32_t saved_seed[2];
+-
+-long random(void)
+-{
+-    return _irandm(saved_seed);
+-}
+-
+-void srandom(unsigned seed)
+-{
+-    saved_seed[0]=seed;
+-    saved_seed[1]=0;
+-    _irandm(saved_seed);
+-}
+-
 -- 
-1.8.5.2
+1.8.3.1
 

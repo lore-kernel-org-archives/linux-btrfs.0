@@ -1,66 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56877 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:47147 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751407AbaAEX5M convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751407AbaAFAPV convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 18:57:12 -0500
-Content-Type: text/plain; charset=us-ascii
+	Sun, 5 Jan 2014 19:15:21 -0500
+Content-Type: text/plain; charset=US-ASCII
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: btrfs-transaction blocked for more than 120 seconds
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <846FC885-56B5-422B-9366-D690D4258139@colorremedies.com>
-Date: Sun, 5 Jan 2014 16:57:08 -0700
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <06E20869-27B1-4868-8F0E-F78A154E76F0@colorremedies.com>
-References: <52C2AE7C.5020601@gmx.at> <64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com> <52C9CBEF.2000309@gmx.at> <846FC885-56B5-422B-9366-D690D4258139@colorremedies.com>
-To: Sulla <Sulla@gmx.at>
+In-Reply-To: <52C9DE66.8080706@swiftspirit.co.za>
+Date: Sun, 5 Jan 2014 17:15:18 -0700
+Cc: Sulla <Sulla@gmx.at>, Brendan Hide <brendan@swiftspirit.co.za>
+Message-Id: <82B00B7C-0767-44E2-95A5-309D80D789F1@colorremedies.com>
+References: <52C2AE7C.5020601@gmx.at> <64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com> <52C9CBEF.2000309@gmx.at> <52C9DE66.8080706@swiftspirit.co.za>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jan 5, 2014, at 4:48 PM, Chris Murphy <lists@colorremedies.com> wrote:
+On Jan 5, 2014, at 3:36 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
 
+> WD Greens (Reds too, for that matter) have poor non-sequential performance. An educated guess I'd say there's a 15% chance this is a major factor to the problem and, perhaps, a 60% chance it is merely a "small contributor" to the problem. Greens are aimed at consumers wanting high capacity and a low pricepoint. The result is poor performance. See footnote * re my experience.
 > 
-> On Jan 5, 2014, at 2:17 PM, Sulla <Sulla@gmx.at> wrote:
-> 
->> -----BEGIN PGP SIGNED MESSAGE-----
->> Hash: SHA1
->> 
->> Dear Chris!
->> 
->> Certainly: I have 3 HDDs, all of which WD20EARS.
-> 
-> These drives don't have a configurable SCT ERC, so you need to modify the SCSI block layer timeout:
-> 
-> echo 120 >/sys/block/sdX/device/timeout
-> 
-> You also need to schedule regular scrubs at the md level as well.
-> 
-> echo check > /sys/block/mdX/md/sync_action
-> cat /sys/block/mdX/mismatch_cnt
-> 
-> More info about this is in man 4 md, and on the linux-raid list.
-> 
->> 
->>     3904907520 blocks super 1.2 level 5, 8k chunk, algorithm 2 [3/3] [UUU]
-> 
-> OK so 8KB chunk, 16KB full stripe, so that doesn't apply to what I was thinking might be the case. The workload is presumably small file sizes, like a mail server?
-> 
-> 
->> any other information I can supply?
-> 
-> I'm not a developer, I don't know if this problem is known or maybe fixed in a newer kernel than 3.11.0 - which has been around for 5-6 months. I think the main suggestion is to try a newer kernel, granted with the configuration of md, lvm, and btrfs you have three layers that will likely have kernel changes. I'd make sure you have backups. While this layout is valid and should work, it's also probably less common and therefore less tested.
-> 
-> Usually in case of blocking devs want to see sysrq+w issued. The setup is dmesg -n7, and enable sysrq functions. Then reproduce the block, and during the block issue w to the sysrq trigger, then capture dmesg contents and post the block and any other nearby btrfs messages.
-> 
-> https://www.kernel.org/doc/Documentation/sysrq.txt
+> My general recommendation (use cases vary of course) is to install a tiny SSD (60GB, for example) just for the OS. It is typically cheaper than the larger drives and will be *much* faster. WD Greens and Reds have good *sequential* throughput but comparatively abysmal random throughput even in comparison to regular non-SSD consumer drives.
 
-Also, this thread is pretty cluttered with other conversations by now so I think you're best off starting a new thread with this information, maybe a title of "PROBLEM: btrfs on LVM on md raid, blocking > 120 seconds"
 
-Since it's almost inevitable you'd be asked to test with a newer kernel anyway, you might as well go to 3.13rc7 and see if you can reproduce, if reproducible, be specific with the problem report by following this template:
+Another thing with md raid and parallel flie systems that's been an issue is cqf. On the XFS list cqf is approximately in the realm of persona non grata. It might be worth Sulla also setting elevator=deadline and see if simply different scheduling is a work around, not that it's OK to get blocks with cqf. But it might be worth a shot as a more conservative approach to upgrading the kernel from 3.11.0.
 
-https://www.kernel.org/pub/linux/docs/lkml/reporting-bugs.html
 
+> I had 8x 1.5TB WD1500EARS drives in an mdRAID5 array. With it I had a single 250GB IDE disk for the OS. When the very old IDE disk inevitably died, I decided to use a spare 1.5TB drive for the OS. Performance was bad enough that I simply bought my first SSD the same week.
+
+Yeah for what it's worth, the current WD Green PDF says these drives are not to be used in RAID at all. Not 0, 1, 5 or 6.  Even Caviar Black is proscribed from use in RAID environments using multibay chassis, as in, no warranty. It's desktop raid0 and raid1 only, and arguably the lack of configurable SCT ERC makes it not ideal even for raid1.
+
+Anyway, Sulla, how about putting up a smartctl -x for each drive? Curious if there are any bad sectors that have developed, and may be worth filtering all /var/log/messages for the word "reset" and see if you find any of these drives ever being reset by the kernel and if so, post the full output of that.
 
 
 Chris Murphy

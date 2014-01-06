@@ -1,45 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41660 "EHLO mx2.suse.de"
+Received: from atl.turmel.org ([74.117.157.138]:57036 "EHLO atl.turmel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754541AbaAFQaQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 11:30:16 -0500
-Date: Mon, 6 Jan 2014 17:30:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 1/4] Btrfs: fix wrong send_in_progress accounting
-Message-ID: <20140106163015.GX6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1389000306-15320-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	id S1755101AbaAFRRm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 12:17:42 -0500
+Message-ID: <52CAE18B.8020701@turmel.org>
+Date: Mon, 06 Jan 2014 12:02:03 -0500
+From: Phil Turmel <philip@turmel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1389000306-15320-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+To: Andrea Mazzoleni <amadvance@gmail.com>, neilb@suse.de
+CC: clm@fb.com, jbacik@fb.com, linux-kernel@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC v2 0/2] New RAID library supporting up to six parities
+References: <1389000716-3274-1-git-send-email-amadvance@gmail.com>
+In-Reply-To: <1389000716-3274-1-git-send-email-amadvance@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 06, 2014 at 05:25:06PM +0800, Wang Shilong wrote:
-> Steps to reproduce:
+On 01/06/2014 04:31 AM, Andrea Mazzoleni wrote:
+> Hi,
 > 
->  # mkfs.btrfs -f /dev/sda8
->  # mount /dev/sda8 /mnt
->  # btrfs sub snapshot -r /mnt /mnt/snap1
->  # btrfs sub snapshot -r /mnt /mnt/snap2
->  # btrfs send /mnt/snap2 -p /mnt/snap1
-> 
-> As @send_root will also add into clone_sources, and we should
-> take care not to decrease its count twice.
+> This is a port to the Linux kernel of a RAID engine that I'm currently using
+> in a hobby project called SnapRAID. This engine supports up to six parities
+> levels and at the same time maintains compatibility with the existing Linux
+> RAID6 one.
 
-Yes, send_root is appended to the clone_roots but the
-clone_sources_to_rollback does not track this, it's not updated after
-it's added in
+FWIW, your patch 1/2 doesn't seem to have gone through on linux-raid,
+although I saw it on lkml.  Probably a different file size limit, as
+that's a very large patch.
 
-  sctx->clone_roots[sctx->clone_roots_cnt++].root = sctx->send_root;
+You might want to break the next submission into smaller parts.  That
+might help people review it, too.
 
-so send->root->send_in_progress is not modified in the loop that
-decrements all clone_root's counters again.
+Thanks for doing this work!
 
-I don't see the warning that should catch negative values of the counter
-in btrfs_root_dec_send_in_progress. Am I missing something?
-
-
-david
+Phil

@@ -1,59 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:39925 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755666AbaAFQY0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jan 2014 11:24:26 -0500
-Received: by mail-ie0-f174.google.com with SMTP id at1so18847933iec.33
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jan 2014 08:24:26 -0800 (PST)
-Message-ID: <1389025462.18558.8.camel@sasami.ottawa.blindsidenetworks.com>
-Subject: Re: Help! - "btrfs device delete missing" running out of space
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Piotr =?UTF-8?Q?Paw=C5=82ow?= <pp@siedziba.pl>
-Cc: linux-btrfs@vger.kernel.org
-Date: Mon, 06 Jan 2014 11:24:22 -0500
-In-Reply-To: <laca4i$7lq$1@ger.gmane.org>
-References: <labocc$5ue$1@ger.gmane.org> <laca4i$7lq$1@ger.gmane.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from cantor2.suse.de ([195.135.220.15]:42303 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755597AbaAFQtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 11:49:46 -0500
+Date: Mon, 6 Jan 2014 17:49:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: [PATCH 4/4] Btrfs: handle EAGAIN case properly in
+ btrfs_drop_snapshot()
+Message-ID: <20140106164945.GY6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <1389000339-15388-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1389000339-15388-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2014-01-05 at 19:00 +0000, Piotr Pawłow wrote:
-> Hello,
-> > distribution, used space on each device should be accordingly: 160, 
-> > 216, and 405.
-> 
-> The last number should be 376, I copied the wrong one. Anyway, I deleted 
-> as much data as possible, which probably won't help in the end, but at 
-> the moment it's still going. Meanwhile, I made a script to replicate this 
-> problem:
-> 
-> http://pastebin.com/W2c2pJYp
+On Mon, Jan 06, 2014 at 05:25:39PM +0800, Wang Shilong wrote:
+> We may return early in btrfs_drop_snapshot(), we shouldn't
+> call btrfs_std_err() for this case, fix it.
 
-I'm not sure what the solution is, but the issue seems to be that btrfs
-is laying out the RAID1 like this:
+Somebody reported this 2 days ago on IRC. I think it should go to stable
+as well, so it would be good to squeeze it to the next rc kernel.
 
-Mirror A   Mirror B
-+------+   +------+
-| 250g |   | 300g |
-+------+   |      |
-|      |   +------+
-| 500g |   ////////
-|      |   ////////
-+------+   ////////
+The visible effect of the bug is that the filesystem incorrectly flips
+to read-only and the currently running transaction is not committed.
 
-Rather than the hoped-for:
-
-Mirror A   Mirror B
-+------+   +------+
-| 250g |   |      |
-+------+   | 500g |
-| 300g |   |      |
-|      |   +------+
-+------+   ////////
-
-As far as I know, there's no way to tune this at the moment.
-
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
-
+david

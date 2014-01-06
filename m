@@ -1,89 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:22079 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1732 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751968AbaAFB5q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 20:57:46 -0500
+	id S1751956AbaAFB5u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 20:57:50 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHO002425
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:43 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHR002425
+	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:48 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/9] btrfs: Add noautodefrag mount option.
-Date: Mon, 6 Jan 2014 09:58:26 +0800
-Message-Id: <1388973513-11240-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 6/9] btrfs: Add acl mount option.
+Date: Mon, 6 Jan 2014 09:58:30 +0800
+Message-Id: <1388973513-11240-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs has autodefrag mount option but no pairing noautodefrag option,
-which makes it impossible to disable autodefrag without umount.
+Add acl mount option to enable acl with remount option.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Reviewed-by: David Sterba <dsterba@suse.cz>
 
 ---
 Changelog:
-v2: Add noautodefrag option
+v2: add acl option
 v3: None
 ---
- Documentation/filesystems/btrfs.txt | 8 +++++---
- fs/btrfs/super.c                    | 8 +++++++-
- 2 files changed, 12 insertions(+), 4 deletions(-)
+ Documentation/filesystems/btrfs.txt | 3 ++-
+ fs/btrfs/super.c                    | 6 +++++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index ce487a2..e87609a 100644
+index 303b49c..79c08f3 100644
 --- a/Documentation/filesystems/btrfs.txt
 +++ b/Documentation/filesystems/btrfs.txt
-@@ -46,10 +46,12 @@ Options with (*) are default options and will not show in the mount options.
- 	bytes, optionally with a K, M, or G suffix, case insensitive.
- 	Default is 1MB.
+@@ -141,8 +141,9 @@ Options with (*) are default options and will not show in the mount options.
+ 	Specify that 1 metadata chunk should be allocated after every <value>
+ 	data chunks.  Off by default.
  
-+  noautodefrag(*)
-   autodefrag
--	Detect small random writes into files and queue them up for the
--	defrag process.  Works best for small files; Not well suited for
--	large database workloads.
-+	Disable/enable auto defragmentation.
-+	Auto defragmentation detects small random writes into files and queue
-+	them up for the defrag process.  Works best for small files;
-+	Not well suited for large database workloads.
++  acl(*)
+   noacl
+-	Disable support for Posix Access Control Lists (ACLs).  See the
++	Enable/disable support for Posix Access Control Lists (ACLs).  See the
+ 	acl(5) manual page for more information about ACLs.
  
-   check_int
-   check_int_data
+   barrier(*)
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index fe9d8a6..c65f696 100644
+index b2c752e..3d743cf 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -323,7 +323,7 @@ enum {
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+@@ -324,7 +324,7 @@ enum {
  	Opt_check_integrity, Opt_check_integrity_including_extent_data,
  	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
--	Opt_commit_interval, Opt_barrier,
-+	Opt_commit_interval, Opt_barrier, Opt_nodefrag,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+-	Opt_noenospc_debug, Opt_noflushoncommit,
++	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl,
  	Opt_err,
  };
  
-@@ -357,6 +357,7 @@ static match_table_t tokens = {
- 	{Opt_enospc_debug, "enospc_debug"},
- 	{Opt_subvolrootid, "subvolrootid=%d"},
- 	{Opt_defrag, "autodefrag"},
-+	{Opt_nodefrag, "noautodefrag"},
- 	{Opt_inode_cache, "inode_cache"},
- 	{Opt_no_space_cache, "nospace_cache"},
- 	{Opt_recovery, "recovery"},
-@@ -602,6 +603,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			btrfs_info(root->fs_info, "enabling auto defrag");
- 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
+@@ -347,6 +347,7 @@ static match_table_t tokens = {
+ 	{Opt_ssd, "ssd"},
+ 	{Opt_ssd_spread, "ssd_spread"},
+ 	{Opt_nossd, "nossd"},
++	{Opt_acl, "acl"},
+ 	{Opt_noacl, "noacl"},
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_flushoncommit, "flushoncommit"},
+@@ -552,6 +553,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				goto out;
+ 			}
  			break;
-+		case Opt_nodefrag:
-+			if (btrfs_test_opt(root, AUTO_DEFRAG))
-+				btrfs_info(root->fs_info, "disabling auto defrag");
-+			btrfs_clear_opt(info->mount_opt, AUTO_DEFRAG);
++		case Opt_acl:
++			root->fs_info->sb->s_flags |= MS_POSIXACL;
 +			break;
- 		case Opt_recovery:
- 			btrfs_info(root->fs_info, "enabling auto recovery");
- 			btrfs_set_opt(info->mount_opt, RECOVERY);
+ 		case Opt_noacl:
+ 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+ 			break;
 -- 
 1.8.5.2
 

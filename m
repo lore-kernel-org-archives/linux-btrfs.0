@@ -1,87 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f49.google.com ([209.85.160.49]:64356 "EHLO
-	mail-pb0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751112AbaAEQ26 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Jan 2014 11:28:58 -0500
+Received: from cn.fujitsu.com ([222.73.24.84]:8133 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752169AbaAFAyE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 5 Jan 2014 19:54:04 -0500
+Message-ID: <52C9FEDD.9010301@cn.fujitsu.com>
+Date: Mon, 06 Jan 2014 08:54:53 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20140105094639.GA7423@localhost>
-References: <20140102053101.GA29352@localhost>
-	<CAFR8uee-WTy6cj8bB4aMuGP1B0sZkc70sq1Drg7uhHS49EqHcg@mail.gmail.com>
-	<20140105094639.GA7423@localhost>
-Date: Sun, 5 Jan 2014 08:28:57 -0800
-Message-ID: <CAFR8uefqY95-_unXGOTj6Q5FKV0ZvHh48YxM73WeN-aeNC4o_g@mail.gmail.com>
-Subject: Re: [block:for-3.14/core] kernel BUG at fs/bio.c:1748
-From: Muthu Kumar <muthu.lkml@gmail.com>
-To: Fengguang Wu <fengguang.wu@intel.com>
-Cc: Kent Overstreet <kmo@daterainc.com>, Jens Axboe <axboe@kernel.dk>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>, lkp@linux.intel.com
-Content-Type: text/plain; charset=ISO-8859-1
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 07/11] btrfs: Add noinode_cache mount option.
+References: <1388729434-19799-1-git-send-email-quwenruo@cn.fujitsu.com> <1388729434-19799-8-git-send-email-quwenruo@cn.fujitsu.com> <20140103175244.GR6498@twin.jikos.cz>
+In-Reply-To: <20140103175244.GR6498@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fengguang,
-Instead of rebooting, can you trigger a crash dump when this happens
-and send us the backtrace (to start with)?
+On fri, 3 Jan 2014 18:52:44 +0100, David Sterba wrote:
+> On Fri, Jan 03, 2014 at 02:10:30PM +0800, Qu Wenruo wrote:
+>> Add noinode_cache mount option to disable inode map cache with
+>> remount option.
+> This looks almost safe, there's a sync_filesystem called before the
+> filesystem's remount handler, the transaction gets committed and flushes
+> all tha data related to inode_cache.
+>
+> The caching thread keeps running, which is not a serious problem as
+> it'll finish at umount time, only consuming resources.
+>
+> There's a window between sync_filesystem and successful remount when the
+> INODE_MAP_CACHE bit is set and the cache could be used to get a free ino,
+> then the INODE_MAP_CACHE is cleared but the ino cache remains is not
+> synced back to disk, normally called from transaction commit via
+> btrfs_unpin_free_ino. I haven't looked if something else blocks that to
+> happen.
+>
+> I'd leave this patch out for now, it probably needs more code updates
+> than just unsetting the bit.
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+Thanks for pointing out the hidden problem.
 
-Kent,
-Did you do any btrfs test with your changes?
+I'll check the related source again to keep this behavior safe or
+add new codes.
 
-Regards,
-Muthu
+So in next patchset, the inode map cache option will not be included
+and will be seperated to a new patch.
 
-On Sun, Jan 5, 2014 at 1:46 AM, Fengguang Wu <fengguang.wu@intel.com> wrote:
-> Hi Muthu,
->
-> On Fri, Jan 03, 2014 at 11:51:31AM -0800, Muthu Kumar wrote:
->> Looks like Kent missed the btrfs endio in the original commit. How
->> about this patch:
->>
->> ---------
->>
->> In btrfs_end_bio, call bio_endio_nodec on the restored bio so the
->> bi_remaining is accounted for correctly.
->>
->> Reported-by: fengguang.wu@intel.com
->> Cc: Kent Overstreet <kmo@daterainc.com>
->> CC: Jens Axboe <axboe@kernel.dk>
->> Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
->> --------
->>
->>  fs/btrfs/volumes.c |    6 +++++-
->>  1 files changed, 5 insertions(+), 1 deletions(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index f2130de..edfed52 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -5316,7 +5316,11 @@ static void btrfs_end_bio(struct bio *bio, int err)
->>                 }
->>                 kfree(bbio);
->>
->> -               bio_endio(bio, err);
->> +                /*
->> +                 * Call endio_nodec on the restored bio so the bi_remaining is
->> +                 * accounted for correctly
->> +                 */
->> +               bio_endio_nodec(bio, err);
->>         } else if (!is_orig_bio) {
->>                 bio_put(bio);
->>         }
->
-> Interestingly, the BUG message disappeared but it blocks the test run.
-> In the end, the test watchdog reboots the machine with SysRq:
->
->         2014-01-04 23:13:02 mount -t btrfs /dev/vda /fs/vda
->         [   20.184264] btrfs: device fsid f0e06999-0518-47e0-a622-21b8749438be devid 1 transid 4 /dev/vda
->         [   20.186552] btrfs: disk space caching is enabled
->         [  131.360457] random: nonblocking pool is initialized
-> ==>     [ 1465.069342] SysRq : Emergency Sync
-> ==>     [ 1475.071055] SysRq : Resetting
->
-> Attached is the full dmesg for a good run (v3.13-rc7) and a bad run
-> (this patch).
->
-> Thanks,
-> Fengguang
+Qu

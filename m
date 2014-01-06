@@ -1,85 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23518 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:60828 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751460AbaAFB5r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 5 Jan 2014 20:57:47 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s061vfHP002425
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 09:57:44 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	id S1754100AbaAFJ0H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 04:26:07 -0500
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/9] btrfs: Add nodiscard mount option.
-Date: Mon, 6 Jan 2014 09:58:27 +0800
-Message-Id: <1388973513-11240-4-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1388973513-11240-1-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/4] Btrfs: fix wrong send_in_progress accounting
+Date: Mon, 6 Jan 2014 17:25:06 +0800
+Message-Id: <1389000306-15320-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add nodiscard mount option to disable discard with remount option.
+Steps to reproduce:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+ # mkfs.btrfs -f /dev/sda8
+ # mount /dev/sda8 /mnt
+ # btrfs sub snapshot -r /mnt /mnt/snap1
+ # btrfs sub snapshot -r /mnt /mnt/snap2
+ # btrfs send /mnt/snap2 -p /mnt/snap1
 
+As @send_root will also add into clone_sources, and we should
+take care not to decrease its count twice.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
-Changelog:
-v2: Add nodiscard option
-v3: None
+Hi david, i am ok to fold this patch into your previous patch
+or as a seperated patch.
 ---
- Documentation/filesystems/btrfs.txt | 7 +++++--
- fs/btrfs/super.c                    | 6 +++++-
- 2 files changed, 10 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index e87609a..7254cf5 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -98,9 +98,12 @@ Options with (*) are default options and will not show in the mount options.
- 	can be avoided.  Especially useful when trying to mount a multi-device
- 	setup as root.  May be specified multiple times for multiple devices.
- 
-+  nodiscard(*)
-   discard
--	Issue frequent commands to let the block device reclaim space freed by
--	the filesystem.  This is useful for SSD devices, thinly provisioned
-+	Disable/enable discard mount option.
-+	Discard issues frequent commands to let the block device reclaim space
-+	freed by the filesystem.
-+	This is useful for SSD devices, thinly provisioned
- 	LUNs and virtual machine images, but may have a significant
- 	performance impact.  (The fstrim command is also available to
- 	initiate batch trims from userspace).
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c65f696..8731ee6 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -323,7 +323,7 @@ enum {
- 	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
- 	Opt_check_integrity, Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
--	Opt_commit_interval, Opt_barrier, Opt_nodefrag,
-+	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
- 	Opt_err,
- };
- 
-@@ -351,6 +351,7 @@ static match_table_t tokens = {
- 	{Opt_flushoncommit, "flushoncommit"},
- 	{Opt_ratio, "metadata_ratio=%d"},
- 	{Opt_discard, "discard"},
-+	{Opt_nodiscard, "nodiscard"},
- 	{Opt_space_cache, "space_cache"},
- 	{Opt_clear_cache, "clear_cache"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-@@ -575,6 +576,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		case Opt_discard:
- 			btrfs_set_opt(info->mount_opt, DISCARD);
- 			break;
-+		case Opt_nodiscard:
-+			btrfs_clear_opt(info->mount_opt, DISCARD);
-+			break;
- 		case Opt_space_cache:
- 			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 			break;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index bff0b1a..076b066 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4908,6 +4908,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			spin_unlock(&clone_root->root_item_lock);
+ 			sctx->clone_roots[i].root = clone_root;
+ 		}
++		clone_sources_to_rollback--;
+ 		vfree(clone_sources_tmp);
+ 		clone_sources_tmp = NULL;
+ 	}
 -- 
-1.8.5.2
+1.8.3.1
 

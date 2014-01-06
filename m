@@ -1,90 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:21786 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:15294 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752995AbaAFIt1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 03:49:27 -0500
-Message-ID: <52CA6DDF.3080306@cn.fujitsu.com>
-Date: Mon, 06 Jan 2014 16:48:31 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] xfstests: fix wrong return check for case 022
-References: <1388995737-3480-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <52CA67F2.9010108@jp.fujitsu.com>
-In-Reply-To: <52CA67F2.9010108@jp.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+	id S1752588AbaAFJMa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 04:12:30 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Cc: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH] xfstests: Enhance the scratch dev pool and deletable device check
+Date: Mon, 6 Jan 2014 17:13:18 +0800
+Message-Id: <1388999598-17058-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Itoh San,
+From: Miao Xie <miaox@cn.fujitsu.com>
 
-On 01/06/2014 04:23 PM, Tsutomu Itoh wrote:
-> On 2014/01/06 17:08, Wang Shilong wrote:
->> Here we expect 0 as return value, fix it.
->>
->> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->> Cc: Josef Bacik <jbacik@fb.com>
->> ---
->>   tests/btrfs/022 | 2 +-
->>   1 file changed, 1 insertion(+), 1 deletion(-)
->>   mode change 100644 => 100755 tests/btrfs/022
->>
->> diff --git a/tests/btrfs/022 b/tests/btrfs/022
->> old mode 100644
->> new mode 100755
->> index 5b18643..142aaf9
->> --- a/tests/btrfs/022
->> +++ b/tests/btrfs/022
->> @@ -106,7 +106,7 @@ _limit_test()
->>   	[ $? -ne 0 ] || _fail "quota should have limited us"
->>   	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=4M count=1 >> \
->>   		$seqres.full 2>&1
->> -	[ $? -eq 0 ] || _fail "should have been allowed to write"
->> +	[ $? -ne 0 ] || _fail "should have been allowed to write"
-> from "man bash",
->        An OR list has the form
->               command1 || command2
->        command2 is executed if and only if command1 returns a non-zero exit
->        status.
->
-> So, original code is OK, I think.
+From: Miao Xie <miaox@cn.fujitsu.com>
 
-You are absolutely right, during my test i found we fail this case.
-I took a careful think about this:
+_require_scratch_dev_pool() checks the devices number in
+SCRATCH_DEV_POOL, but it's not enough since some btrfs RAID10 tests
+needs 4 devices, but when 3 or less devices are provided, the check is
+useless and related test case will fail(btrfs/003 btrfs/011 btrfs/023).
 
-The problem is that we should clear the data we have written before,
-Because we may write some data before, for example we limit subvolume to 5M
-then we try this:
+Also _require_deletable_scratch_dev_pool only checks whether it is
+virtul, like virtio(not including virtio-scsi) disk will pass the check
+but is unable to delete.
 
-# dd if=/dev/zero of=/mnt/data bs=10M count=1
+This patch enhance _require_scratch_dev_pool by add optional $1 as
+needed device number to do extra check.
+And enhance _require_deletable_scratch_dev_pool by directly check
+/sys/class/block/$DEV/device/delete file.
 
-Although we try to write 10M once, in kernel, we may split it into
-several request,
-at the end, we can still write some data actually, you can try the
-following command
-after the above command.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ common/rc       | 22 ++++++++++++++--------
+ tests/btrfs/003 |  2 +-
+ tests/btrfs/011 |  2 +-
+ 3 files changed, 16 insertions(+), 10 deletions(-)
 
-# du -sh /mnt/data
-
-Here i think the best way to fix this problem is we disable quota and
-retry with 4m.
-
-# btrfs qgroup limit none /mnt <------------- in case we are nearly full
-and we can not delete file.
-# rm -rf /mnt/data && btrfs filesystem sync /mnt
-# btrfs qgroup limit 5m /mnt
-# dd if=/dev/zero of=/mnt bs=4m count=1
-
-Please correct me if i miss something here.^_^
-
-Thanks,
-Wang
-> Thanks,
-> Tsutomu
->
->>   }
->>   
->>   _scratch_mkfs > /dev/null 2>&1
->>
->
+diff --git a/common/rc b/common/rc
+index a2005c9..09644af 100644
+--- a/common/rc
++++ b/common/rc
+@@ -1927,16 +1927,24 @@ _test_inode_extsz()
+ _require_scratch_dev_pool()
+ {
+ 	local i
++	local ndevs
++
+ 	if [ -z "$SCRATCH_DEV_POOL" ]; then
+ 		_notrun "this test requires a valid \$SCRATCH_DEV_POOL"
+ 	fi
+ 
+-	# btrfs test case needs 2 or more scratch_dev_pool; other FS not sure
++	if [ -z "$1" ]; then
++		ndevs=2
++	else
++		ndevs=$1
++	fi
++
++	# btrfs test case needs ndevs or more scratch_dev_pool; other FS not sure
+ 	# so fail it
+ 	case $FSTYP in
+ 	btrfs)
+-		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt 2 ]; then
+-			_notrun "btrfs and this test needs 2 or more disks in SCRATCH_DEV_POOL"
++		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt $ndevs ]; then
++			_notrun "btrfs and this test needs $ndevs or more disks in SCRATCH_DEV_POOL"
+ 		fi
+ 	;;
+ 	*)
+@@ -1963,17 +1971,15 @@ _require_scratch_dev_pool()
+ 	done
+ }
+ 
+-# We will check if the device is virtual (eg: loop device) since it does not
+-# have the delete entry-point. Otherwise SCSI and USB devices are fine. 
++# We will check if the device is deletable
+ _require_deletable_scratch_dev_pool()
+ {
+ 	local i
+ 	local x
+ 	for i in $SCRATCH_DEV_POOL; do
+ 		x=`echo $i | cut -d"/" -f 3`
+-		ls -l /sys/class/block/${x} | grep -q "virtual" 
+-		if [ $? == "0" ]; then
+-			_notrun "$i is a virtual device which is not deletable"
++		if [ ! -f /sys/class/block/${x}/device/delete ]; then
++			_notrun "$i is a device which is not deletable"
+ 		fi
+ 	done
+ }
+diff --git a/tests/btrfs/003 b/tests/btrfs/003
+index 9105d06..29f947b 100755
+--- a/tests/btrfs/003
++++ b/tests/btrfs/003
+@@ -49,7 +49,7 @@ _need_to_be_root
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+-_require_scratch_dev_pool
++_require_scratch_dev_pool 4
+ _require_deletable_scratch_dev_pool
+ _require_command $WIPEFS_PROG
+ 
+diff --git a/tests/btrfs/011 b/tests/btrfs/011
+index 71ff3de..faa0402 100755
+--- a/tests/btrfs/011
++++ b/tests/btrfs/011
+@@ -62,7 +62,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
+ _need_to_be_root
+ _supported_fs btrfs
+ _require_scratch
+-_require_scratch_dev_pool
++_require_scratch_dev_pool 4
+ _require_command $BTRFS_SHOW_SUPER_PROG btrfs-show-super
+ 
+ rm -f $seqres.full
+-- 
+1.8.5.2
 

@@ -1,56 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39744 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932368AbaAaWA4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jan 2014 17:00:56 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W9M8o-0001jm-Nz
-	for linux-btrfs@vger.kernel.org; Fri, 31 Jan 2014 23:00:50 +0100
-Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 23:00:50 +0100
-Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 23:00:50 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex <alex@bpmit.com>
-Subject: Re: Booting with syslinux not possible
-Date: Fri, 31 Jan 2014 22:00:26 +0000 (UTC)
-Message-ID: <loom.20140131T225403-745@post.gmane.org>
-References: <52EBFD82.7080900@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cn.fujitsu.com ([222.73.24.84]:9148 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753005AbaAFIKI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 03:10:08 -0500
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        Josef Bacik <jbacik@fb.com>
+Subject: [PATCH] xfstests: fix wrong return check for case 022
+Date: Mon, 6 Jan 2014 16:08:57 +0800
+Message-Id: <1388995737-3480-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry KC:
+Here we expect 0 as return value, fix it.
 
-All my VM's are on syslinux (actually extlinux) and btrfs:
-   Device Boot      Start         End      Blocks   Id  System
-/dev/vda1   *        2048     7938047     3968000   83  Linux
-/dev/vda2         7938048     8388607      225280   82  Linux swap / Solaris
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>
+---
+ tests/btrfs/022 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ mode change 100644 => 100755 tests/btrfs/022
 
-root@<VM> ~ # ll /boot
-total 19452
--rw-r--r-- 1 root root  2319932 Jan 21 06:12 System.map-3.12-1-amd64
--rw-r--r-- 1 root root   149029 Jan 21 06:12 config-3.12-1-amd64
-drwxr-xr-x 1 root root      176 Jan 28 22:32 extlinux/
--rw-r--r-- 1 root root 14240605 Jan 28 22:32 initrd.img-3.12-1-amd64
--rw-r--r-- 1 root root   176764 Nov 13  2011 memtest86+.bin
--rw-r--r-- 1 root root   178944 Nov 13  2011 memtest86+_multiboot.bin
--rw-r--r-- 1 root root  2842064 Jan 21 06:08 vmlinuz-3.12-1-amd64
-root@china ~ #  
-
-Occasionally I get excited and decide to fix it 'til it breaks (usually I
-turn compression on, and /boot can't be accessed), but it's been working
-fine for a few years now.
-
-Kind regards.
-
-Al.
-
-
-
+diff --git a/tests/btrfs/022 b/tests/btrfs/022
+old mode 100644
+new mode 100755
+index 5b18643..142aaf9
+--- a/tests/btrfs/022
++++ b/tests/btrfs/022
+@@ -106,7 +106,7 @@ _limit_test()
+ 	[ $? -ne 0 ] || _fail "quota should have limited us"
+ 	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=4M count=1 >> \
+ 		$seqres.full 2>&1
+-	[ $? -eq 0 ] || _fail "should have been allowed to write"
++	[ $? -ne 0 ] || _fail "should have been allowed to write"
+ }
+ 
+ _scratch_mkfs > /dev/null 2>&1
+-- 
+1.8.3.1
 

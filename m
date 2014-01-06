@@ -1,70 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:23130 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753677AbaAFJ0i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 04:26:38 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s069QQDg030973
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jan 2014 17:26:36 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/4] Btrfs: remove unnecessary transaction commit before send
-Date: Mon, 6 Jan 2014 17:25:38 +0800
-Message-Id: <1389000339-15388-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1389000339-15388-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from csamuel.org ([74.50.50.137]:59805 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753888AbaAFKUM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 05:20:12 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id A9C51CC023
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2014 21:20:11 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 22759-01 for <linux-btrfs@vger.kernel.org>;
+ Mon,  6 Jan 2014 21:20:11 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 4F0ACCC004
+	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jan 2014 21:20:11 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
+Date: Mon, 06 Jan 2014 21:20:06 +1100
+Message-ID: <1416119.lWHlh5idGF@quad>
+In-Reply-To: <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
+References: <52C73987.7000106@jrs-s.net> <52C87A41.9030701@jrs-s.net> <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart19316048.MzK0ZPlZkV"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We will finish orphan cleanups during snapshot, so we don't
-have to commit transaction here.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/send.c | 29 -----------------------------
- 1 file changed, 29 deletions(-)
+--nextPart19316048.MzK0ZPlZkV
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index f9cdeb7..b769706 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4775,35 +4775,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	WARN_ON(send_root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE);
- 
- 	/*
--	 * If we just created this root we need to make sure that the orphan
--	 * cleanup has been done and committed since we search the commit root,
--	 * so check its commit root transid with our otransid and if they match
--	 * commit the transaction to make sure everything is updated.
--	 */
--	down_read(&send_root->fs_info->extent_commit_sem);
--	if (btrfs_header_generation(send_root->commit_root) ==
--	    btrfs_root_otransid(&send_root->root_item)) {
--		struct btrfs_trans_handle *trans;
--
--		up_read(&send_root->fs_info->extent_commit_sem);
--
--		trans = btrfs_attach_transaction_barrier(send_root);
--		if (IS_ERR(trans)) {
--			if (PTR_ERR(trans) != -ENOENT) {
--				ret = PTR_ERR(trans);
--				goto out;
--			}
--			/* ENOENT means theres no transaction */
--		} else {
--			ret = btrfs_commit_transaction(trans, send_root);
--			if (ret)
--				goto out;
--		}
--	} else {
--		up_read(&send_root->fs_info->extent_commit_sem);
--	}
--
--	/*
- 	 * Userspace tools do the checks and warn the user if it's
- 	 * not RO.
- 	 */
--- 
-1.8.3.1
+On Sun, 5 Jan 2014 01:25:19 PM Chris Murphy wrote:
+
+> Does the Ubuntu 12.03 LTS installer let you create sysroot on a Btrfs=
+ raid1
+> volume?
+
+I doubt it, given the alpha for 14.04 doesn't seem to have the concept =
+yet.=20
+:-)
+
+https://bugs.launchpad.net/ubuntu/+source/grub-installer/+bug/1266200
+
+All the best,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart19316048.MzK0ZPlZkV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUsqDVo1yjaOTJg85AQIHbgf/XLxetiCuCYyUGevH6oZ6bfc6fkOF/3EJ
+8F0tlWrnTl8YU/lpjt6TNVD5E4oKyx3bElSJQMncBRkjPCgPGs6ipZ2PRHXMECsR
+IvqNzvah2KlyewSjSa3pvmp/qbc/z8x6wCimJij/FyR9fqrrN21rj9BetPIYU2K6
+JHVYrBVghv0IRENRAXslm2Bj3nQZbpvjCOI9PjDYKLKO4ryFKAa7NwdF+QwFj042
+YFwY1yeZyIkcWwdbuszQJe0Gwsa4CtaWHbVcgGk8aooiBDwbj/b/Lc542XSTD1sE
+bIG47YtAT0Wc/AlqVytCnUEvmoxGP3HByehDYziZ7dkk8LcY5Mp3Vg==
+=t/lB
+-----END PGP SIGNATURE-----
+
+--nextPart19316048.MzK0ZPlZkV--
 

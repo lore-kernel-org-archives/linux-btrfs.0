@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21970 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750805AbaAFONF convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 09:13:05 -0500
-From: Chris Mason <clm@fb.com>
-To: "amadvance@gmail.com" <amadvance@gmail.com>
-CC: Josef Bacik <jbacik@fb.com>, "neilb@suse.de" <neilb@suse.de>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC v2 2/2] fs: btrfs: Extends btrfs/raid56 to support up to
- six parities
-Date: Mon, 6 Jan 2014 14:12:56 +0000
-Message-ID: <1389017609.23310.0.camel@ret.masoncoding.com>
-References: <1389000716-3274-1-git-send-email-amadvance@gmail.com>
-	 <1389000716-3274-3-git-send-email-amadvance@gmail.com>
-In-Reply-To: <1389000716-3274-3-git-send-email-amadvance@gmail.com>
-Content-Type: text/plain; charset="utf-7"
+Received: from mx1.redhat.com ([209.132.183.28]:42926 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751470AbaAFOza (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 09:55:30 -0500
+Date: Mon, 6 Jan 2014 15:55:17 +0100
+From: Karel Zak <kzak@redhat.com>
+To: Tom Gundersen <teg@jklm.no>
+Cc: Dave Chinner <david@fromorbit.com>, Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: missing /sbin/fsck.btrfs
+Message-ID: <20140106145517.GG31045@x2.net.home>
+References: <13F547BC-D81C-45FB-9DC8-9C076B8605EF@colorremedies.com>
+ <20131127005126.GC10988@dastard>
+ <CBAC6E46-0E69-477C-A177-E720C3184073@colorremedies.com>
+ <20131201230130.GS8803@dastard>
+ <CAG-2HqXvwHnEGp=O_pBj+Wv4Z3nBNqQCpidr7=--FPNjZAZ74g@mail.gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAG-2HqXvwHnEGp=O_pBj+Wv4Z3nBNqQCpidr7=--FPNjZAZ74g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-01-06 at 10:31 +-0100, Andrea Mazzoleni wrote:
-+AD4- This patch changes btrfs/raid56.c to use the new raid interface and
-+AD4- extends its support to an arbitrary number of parities.
-+AD4- 
-+AD4- More in details, the two faila/failb failure indexes are now replaced
-+AD4- with a fail+AFsAXQ- vector that keeps track of up to six failures, and now
-+AD4- the new raid+AF8-par() and raid+AF8-rec() functions are used to handle with
-+AD4- parity instead of the old xor/raid6 ones.
-+AD4- 
+On Mon, Dec 30, 2013 at 06:18:53PM +0100, Tom Gundersen wrote:
+>  * fsck is skipped for filesystems where the relevant helper does not
+> exist, so fs_passno=1 has the same effect for xfs and btrfs
+> filesystems (either way, nothing happens).
+> 
+> That still leaves non-systemd systems and calling "fsck -A" manually.
+> Maybe a good solution would be to patch fsck to adopt systemd's
+> behavior, which would avoid every filesystem having to ship these
+> "fake" fsck helpers? What do you think Karel?
 
-Neat.  The faila/failb were always my least favorite part of the btrfs
-code +ADs-)  Did you test just raid5/6 or also the higher parity counts?
+ It's already implemented for years, "fsck -A" ignores filesystems 
+ without fsck.<type> helpers. It only complains if you explicitly
+ specify the device on command line (e.g. fsck /dev/sdb1).
 
--chris
+    Karel
 
+-- 
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

@@ -1,43 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40062 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:40583 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751540AbaAQQO6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 11:14:58 -0500
-Date: Fri, 17 Jan 2014 17:14:56 +0100
+	id S1750899AbaAFPgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 10:36:04 -0500
+Date: Mon, 6 Jan 2014 16:36:02 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: add dedup subcommand
-Message-ID: <20140117161456.GX6498@twin.jikos.cz>
+To: Pascal VITOUX <vitoux.pascal@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Skip non-regular files in recursive defrag
+Message-ID: <20140106153602.GW6498@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
- <1388391175-29539-16-git-send-email-bo.li.liu@oracle.com>
- <20140114173419.GA6498@twin.jikos.cz>
- <20140115013516.GA11175@localhost.localdomain>
+References: <1388585425-7051-1-git-send-email-vitoux.pascal@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140115013516.GA11175@localhost.localdomain>
+In-Reply-To: <1388585425-7051-1-git-send-email-vitoux.pascal@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 15, 2014 at 09:35:17AM +0800, Liu Bo wrote:
-> > > @@ -430,6 +430,15 @@ struct btrfs_ioctl_get_dev_stats {
-> > >  	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
-> > >  };
-> > >  
-> > > +/* deduplication control ioctl modes */
-> > > +#define BTRFS_DEDUP_CTL_ENABLE 1
-> > > +#define BTRFS_DEDUP_CTL_DISABLE 2
-> > > +#define BTRFS_DEDUP_CTL_SET_BS 3
-> > > +struct btrfs_ioctl_dedup_args {
-> > > +	__u64 cmd;
-> > > +	__u64 bs;
-> > 
-> > I've spotted that you did not reserve any space for future extensions of
-> > the ioctl, especially the in-band dedup can be quite heavy, I think
-> > we'll want some tunables in the future.
-> > 
+On Wed, Jan 01, 2014 at 03:10:25PM +0100, Pascal VITOUX wrote:
+> ---
+>  cmds-filesystem.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> Good point, I think 128 bytes can be enough for that, agree?
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 1c1926b..979dbd9 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -646,7 +646,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
+>  	int e = 0;
+>  	int fd = 0;
+>  
+> -	if (typeflag == FTW_F) {
+> +	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
 
-Yes, should be enough.
+The ftw(3) documentation states that FTW_F gets the regular files, do you have a
+reproducer whre this does not work as expected?
+
+I think the check could be placed into cmd_defrag, there's a st_mode
+check for directories already. Defragmenting makes most sense for
+regular files (though there's the option to defrag portions of the
+metadata b-trees), so it's fine to handle just directories and regular
+files in userspace.
+
+If you're going to resend the patch, please add 'btrfs-progs: ' string
+to the subject, write a short changlog and add your Signed-off-by line.
+
+thanks,
+david

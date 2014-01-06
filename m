@@ -1,53 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60850 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:41660 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754473AbaAFQPI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 11:15:08 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W0CpU-0008Jd-0I
-	for linux-btrfs@vger.kernel.org; Mon, 06 Jan 2014 17:15:04 +0100
-Received: from c-50-132-41-203.hsd1.wa.comcast.net ([50.132.41.203])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jan 2014 17:15:04 +0100
-Received: from eternaleye by c-50-132-41-203.hsd1.wa.comcast.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jan 2014 17:15:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye@gmail.com>
-Subject: Re: [RFC v2 0/2] New RAID library supporting up to six parities
-Date: Mon, 06 Jan 2014 08:08:50 -0800
-Message-ID: <laeke6$eop$3@ger.gmane.org>
-References: <1389000716-3274-1-git-send-email-amadvance@gmail.com> <52CA9A97.4000803@shiftmail.org> <laea0q$d0g$2@ger.gmane.org> <52CAD0A0.8000306@shiftmail.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: linux-raid@vger.kernel.org
+	id S1754541AbaAFQaQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 11:30:16 -0500
+Date: Mon, 6 Jan 2014 17:30:15 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/4] Btrfs: fix wrong send_in_progress accounting
+Message-ID: <20140106163015.GX6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1389000306-15320-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1389000306-15320-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-joystick wrote:
-
-> On 06/01/2014 14:11, Alex Elsayed wrote:
->> joystick wrote:
->>
->>> Just by looking at the Subjects, it seems patch number 0/1 is missing.
->>> It might have not gotten through to the lists, or be a numbering
->>> mistake.
->> No, the numbering style is ${index}/${total}, where index = 0 is a cover
->> letter. So there are two patches total, 1/2 and 2/2, with the cover
->> letter 0/2.
+On Mon, Jan 06, 2014 at 05:25:06PM +0800, Wang Shilong wrote:
+> Steps to reproduce:
 > 
-> Ok sorry, I meant
+>  # mkfs.btrfs -f /dev/sda8
+>  # mount /dev/sda8 /mnt
+>  # btrfs sub snapshot -r /mnt /mnt/snap1
+>  # btrfs sub snapshot -r /mnt /mnt/snap2
+>  # btrfs send /mnt/snap2 -p /mnt/snap1
 > 
-> "Just by looking at the Subjects, it seems patch number 1/2 is missing."
-> 
-> and not 0/1
-> 
-> Can you see the 1/2 on the lists? I can't.
+> As @send_root will also add into clone_sources, and we should
+> take care not to decrease its count twice.
 
-Oh, I see. No, it looks fine from here - I'm reading via Gmane's NNTP 
-gateway, and 1/2 has
+Yes, send_root is appended to the clone_roots but the
+clone_sources_to_rollback does not track this, it's not updated after
+it's added in
 
-Message-ID: <1389000716-3274-2-git-send-email-amadvance@gmail.com>
+  sctx->clone_roots[sctx->clone_roots_cnt++].root = sctx->send_root;
 
+so send->root->send_in_progress is not modified in the loop that
+decrements all clone_root's counters again.
+
+I don't see the warning that should catch negative values of the counter
+in btrfs_root_dec_send_in_progress. Am I missing something?
+
+
+david

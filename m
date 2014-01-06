@@ -1,34 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:60347 "EHLO zlom.siedziba.pl"
+Received: from mail.jrs-s.net ([173.230.137.22]:32834 "EHLO mail.jrs-s.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755860AbaAFSxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 13:53:48 -0500
-Message-ID: <52CAF9A4.3060203@siedziba.pl>
-Date: Mon, 06 Jan 2014 19:44:52 +0100
-From: =?UTF-8?B?UGlvdHIgUGF3xYJvdw==?= <pp@siedziba.pl>
+	id S1755416AbaAFTZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jan 2014 14:25:19 -0500
+Message-ID: <52CB031C.7060403@jrs-s.net>
+Date: Mon, 06 Jan 2014 14:25:16 -0500
+From: Jim Salter <jim@jrs-s.net>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: Help! - "btrfs device delete missing" running out of space
-References: <labocc$5ue$1@ger.gmane.org> <laca4i$7lq$1@ger.gmane.org> <1389025462.18558.8.camel@sasami.ottawa.blindsidenetworks.com>
-In-Reply-To: <1389025462.18558.8.camel@sasami.ottawa.blindsidenetworks.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: Chris Murphy <lists@colorremedies.com>, Chris Samuel <chris@csamuel.org>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
+References: <52C73987.7000106@jrs-s.net> <52C87A41.9030701@jrs-s.net> <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com> <1416119.lWHlh5idGF@quad> <C7E0F781-5F46-4C76-BCC9-0DE416553046@colorremedies.com>
+In-Reply-To: <C7E0F781-5F46-4C76-BCC9-0DE416553046@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-> I'm not sure what the solution is, but the issue seems to be that
-> btrfs is laying out the RAID1 like this:
-[snip]
+FWIW, Ubuntu (and I presume Debian) will work just fine with a single / 
+on btrfs, single or multi disk.
 
-Yeah, it kinda ended up like this. I think the problem stems from the
-fact, that restoring redundancy works by relocating block groups, which
-rewrites all chunks instead of restoring only the ones that are missing.
-And it uses the usual allocation strategy, which fails in this case. It
-treats unreplicated data as allocated, when in fact all of that data
-will be, sooner or later, freed in the process.
+I currently have two machines booting to a btrfs-raid10 / with no 
+separate /boot, one booting to a btrfs single disk / with no /boot, and 
+one booting to a btrfs-raid10 / with an ext4-on-mdraid1 /boot.
 
-If I succeed deleting the missing device, then running "btrfs balance"
-should fix the problem.
+On 01/06/2014 01:30 PM, Chris Murphy wrote:
+> Color me surprised. Fedora 20 lets you create Btrfs raid1/raid0 for 
+> rootfs, but due to a long standing grubby bug [1] /boot can't be on 
+> Btrfs, so it's only ext4. 
 
-Regards
+

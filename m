@@ -1,77 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58755 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932065AbaAGD57 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 22:57:59 -0500
-Message-ID: <52CB7B96.2020701@cn.fujitsu.com>
-Date: Tue, 07 Jan 2014 11:59:18 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mga09.intel.com ([134.134.136.24]:9180 "EHLO mga09.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752995AbaAGFx1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Jan 2014 00:53:27 -0500
+Date: Tue, 7 Jan 2014 13:53:18 +0800
+From: Fengguang Wu <fengguang.wu@intel.com>
+To: Muthu Kumar <muthu.lkml@gmail.com>
+Cc: Kent Overstreet <kmo@daterainc.com>, Chris Mason <clm@fb.com>,
+        Jens Axboe <axboe@kernel.dk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>, lkp@linux.intel.com
+Subject: Re: [block:for-3.14/core] kernel BUG at fs/bio.c:1748
+Message-ID: <20140107055318.GA19016@localhost>
+References: <20140102053101.GA29352@localhost>
+ <CAFR8uee-WTy6cj8bB4aMuGP1B0sZkc70sq1Drg7uhHS49EqHcg@mail.gmail.com>
+ <20140106221036.GE9037@kmo>
+ <CAFR8uef3XUEsHUvfnkAbzsXict8qD_28fTgUQyA7gjUk03OUsw@mail.gmail.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 5/6] Btrfs: use flags instead of the bool variants
- in delayed node
-References: <1388034426-4935-1-git-send-email-miaox@cn.fujitsu.com> <1388034426-4935-5-git-send-email-miaox@cn.fujitsu.com> <20140102174955.GO6498@twin.jikos.cz> <52C68297.80707@cn.fujitsu.com> <20140103183610.GU6498@twin.jikos.cz>
-In-Reply-To: <20140103183610.GU6498@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAFR8uef3XUEsHUvfnkAbzsXict8qD_28fTgUQyA7gjUk03OUsw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 3 Jan 2014 19:36:10 +0100, David Sterba wrote:
-> On Fri, Jan 03, 2014 at 05:27:51PM +0800, Miao Xie wrote:
->> On Thu, 2 Jan 2014 18:49:55 +0100, David Sterba wrote:
->>> On Thu, Dec 26, 2013 at 01:07:05PM +0800, Miao Xie wrote:
->>>> +#define BTRFS_DELAYED_NODE_IN_LIST	0
->>>> +#define BTRFS_DELAYED_NODE_INODE_DIRTY	1
->>>> +
->>>>  struct btrfs_delayed_node {
->>>>  	u64 inode_id;
->>>>  	u64 bytes_reserved;
->>>> @@ -65,8 +68,7 @@ struct btrfs_delayed_node {
->>>>  	struct btrfs_inode_item inode_item;
->>>>  	atomic_t refs;
->>>>  	u64 index_cnt;
->>>> -	bool in_list;
->>>> -	bool inode_dirty;
->>>> +	unsigned long flags;
->>>>  	int count;
->>>>  };
->>>
->>> What's the reason to do that? Replacing 2 bools with a bitfield
->>> does not seem justified, not from saving memory, nor from a performance
->>> gain side.  Also some of the bit operations imply the lock instruction
->>> prefix so this affects the surrounding items as well.
->>>
->>> I don't think this is needed, unless you have further plans with the
->>> flags item.
->>
->> Yes, I introduced a flag in the next patch.
+On Mon, Jan 06, 2014 at 04:47:38PM -0800, Muthu Kumar wrote:
+> OK, after a bit more staring I believe the correct fix is the following.
 > 
-> That's still 3 bool flags that are quite independent and consume less
-> than the unsigned long anyway. Also the bool flags are something that
-> compiler understands and can use during optimizations unlike the
-> obfuscated bit access.
+> Fengguang, Please try this one?
 
-I made a mistake at the beginning, I though the size of boolean data type
-in the kernel was 4 bytes because I saw it was implemented by the enumeration
-type several years ago. But it has been changed for many years. So you are right.
+Yes, it runs fine now!
 
-But I read a discuss about the use of boolean type, some developers suggested
-us to use bitfields instead of bool, because the bitfields can work better,
-and they are more flexible, less misuse than bool.
-  https://lkml.org/lkml/2013/9/1/154
+Tested-by: Fengguang Wu <fengguang.wu@intel.com>
 
-Furthermore, we may introduce more flags in the future though I have no plan now.
-So this patch makes sense I think.
+Thanks,
+Fengguang
 
-Thanks
-Miao
-
-> I don't mind using bitfields, but it imo starts to make sense to use
-> them when there are more than a few, like BTRFS_INODE_* or
-> EXTENT_BUFFER_*. The point of my objections is to establish good coding
-> patterns to follow.
+> ------------
+> In btrfs_end_bio(), we increment bi_remaining if is_orig_bio. If not,
+> we restore the orig_bio but failed to increment bi_remaining for
+> orig_bio, which triggers a BUG_ON later when bio_endio is called. Fix
+> is to increment bi_remaining when we restore the orig bio as well.
 > 
-> david
+> Reported-by: fengguang.wu@intel.com
+> CC: Kent Overstreet <kmo@daterainc.com>
+> CC: Jens Axboe <axboe@kernel.dk>
+> CC: Chris Mason <clm@fv
+> Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
+> ----------------
+>  fs/btrfs/volumes.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
 > 
-
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 37972d5..2011cc0 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5297,9 +5297,9 @@ static void btrfs_end_bio(struct bio *bio, int err)
+>                 if (!is_orig_bio) {
+>                         bio_put(bio);
+>                         bio = bbio->orig_bio;
+> -               } else {
+> -                       atomic_inc(&bio->bi_remaining);
+>                 }
+> +               atomic_inc(&bio->bi_remaining);
+> +
+>                 bio->bi_private = bbio->private;
+>                 bio->bi_end_io = bbio->end_io;
+>                 btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+> 
+> --------------------------
+> 
+> 
+> 
+> On Mon, Jan 6, 2014 at 2:10 PM, Kent Overstreet <kmo@daterainc.com> wrote:
+> > Chris, the patch below seems to be incorrect - with it we get hangs, so
+> > bi_remaining (probably) isn't getting decremented when it should be. You sent
+> > Jens fixes for btrfs which I somehow lost when I rebased, do you remember how
+> > this is supposed to work? Looking at the code I'm not quite sure what's going on
+> > here.
+> >
+> > On Fri, Jan 03, 2014 at 11:51:31AM -0800, Muthu Kumar wrote:
+> >> Looks like Kent missed the btrfs endio in the original commit. How
+> >> about this patch:
+> >>
+> >> ---------
+> >>
+> >> In btrfs_end_bio, call bio_endio_nodec on the restored bio so the
+> >> bi_remaining is accounted for correctly.
+> >>
+> >> Reported-by: fengguang.wu@intel.com
+> >> Cc: Kent Overstreet <kmo@daterainc.com>
+> >> CC: Jens Axboe <axboe@kernel.dk>
+> >> Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
+> >> --------
+> >>
+> >>  fs/btrfs/volumes.c |    6 +++++-
+> >>  1 files changed, 5 insertions(+), 1 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> >> index f2130de..edfed52 100644
+> >> --- a/fs/btrfs/volumes.c
+> >> +++ b/fs/btrfs/volumes.c
+> >> @@ -5316,7 +5316,11 @@ static void btrfs_end_bio(struct bio *bio, int err)
+> >>                 }
+> >>                 kfree(bbio);
+> >>
+> >> -               bio_endio(bio, err);
+> >> +                /*
+> >> +                 * Call endio_nodec on the restored bio so the bi_remaining is
+> >> +                 * accounted for correctly
+> >> +                 */
+> >> +               bio_endio_nodec(bio, err);
+> >>         } else if (!is_orig_bio) {
+> >>                 bio_put(bio);
+> >>         }

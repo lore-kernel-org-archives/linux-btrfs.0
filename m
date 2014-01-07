@@ -1,75 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([80.100.93.5]:42504 "EHLO panda.humilis.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750865AbaAGLzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Jan 2014 06:55:10 -0500
-Date: Tue, 7 Jan 2014 12:55:06 +0100
-From: Sander <sander@humilis.net>
-To: Jim Salter <jim@jrs-s.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: correct way to rollback a root filesystem?
-Message-ID: <20140107115506.GA1919@panda>
-Reply-To: sander@humilis.net
-References: <52C73987.7000106@jrs-s.net>
- <52C87A41.9030701@jrs-s.net>
- <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com>
- <1416119.lWHlh5idGF@quad>
- <C7E0F781-5F46-4C76-BCC9-0DE416553046@colorremedies.com>
- <52CB0484.8030806@jrs-s.net>
+Received: from moutng.kundenserver.de ([212.227.17.9]:52694 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753382AbaAGUir (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jan 2014 15:38:47 -0500
+Message-ID: <52CC65C9.3090605@friedels.name>
+Date: Tue, 07 Jan 2014 21:38:33 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52CB0484.8030806@jrs-s.net>
+To: Chris Murphy <lists@colorremedies.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfsck does not fix
+References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name> <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com>
+In-Reply-To: <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jim Salter wrote (ao):
-> I tried a kernel upgrade with moderately disastrous
-> (non-btrfs-related) results this morning; after the kernel upgrade
-> Xorg was completely borked beyond my ability to get it working
-> properly again through any normal means. I do have hourly snapshots
-> being taken by cron, though, so I'm successfully X'ing again on the
-> machine in question right now.
-> 
-> It was quite a fight getting back to where I started even so, though
-> - I'm embarassed to admit I finally ended up just doing a cp
-> --reflink=all /mnt/@/.snapshots/snapshotname /mnt/@/ from the
-> initramfs BusyBox prompt.  Which WORKED well enough, but obviously
-> isn't ideal.
-> 
-> I tried the btrfs sub set-default command - again from BusyBox - and
-> it didn't seem to want to work for me; I got an inappropriate ioctl
-> error (which may be because I tried to use / instead of /mnt, where
-> the root volume was CURRENTLY mounted, as an argument?). Before
-> that, I'd tried setting subvol=@root (which is the writeable
-> snapshot I created from the original read-only hourly snapshot I
-> had) in GRUB and in fstab... but that's what landed me in BusyBox to
-> begin with.
-> 
-> When I DID mount the filesystem in BusyBox on /mnt, I saw that @ and
-> @home were listed under /mnt, but no other "directories" were -
-> which explains why mounting -o subvol=@root didn't work. I guess the
-> question is, WHY couldn't I see @root in there, since I had a
-> working, readable, writeable snapshot which showed its own name as
-> "root" when doing a btrfs sub show /.snapshots/root ?
+Hello,
 
-I don't quite get how your setup is.
+ >>>> I ran btrfsck on my volume with the repair option. When I re-run 
+it, >>I get the same errors as before.
+> It mounts without errors? So why then btrfsck/btrfs repair? What precipitated the repair?
 
-In my setup, all subvolumes and snapshots are under /.root/
+I don't know what caused the damage, but a check revealed this:
 
-# cat /etc/fstab
-LABEL=panda   /  btrfs  subvol=rootvolume,space_cache,inode_cache,compress=lzo,ssd  0  0
-LABEL=panda   /home           btrfs   subvol=home                                   0  0
-LABEL=panda   /root           btrfs   subvol=root                                   0  0
-LABEL=panda   /var            btrfs   subvol=var                                    0  0
-LABEL=panda   /holding        btrfs   subvol=.holding                               0  0
-LABEL=panda   /.root          btrfs   subvolid=0                                    0  0
-/Varlib       /var/lib        none    bind                                          0  0
+Checking filesystem on /dev/sdb1
+UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+checking extents
+
+Extent back ref already exists for 2994950590464 parent 863072366592 root 0
+Extent back ref already exists for 2994950836224 parent 863072366592 root 0
+Extent back ref already exists for 862762737664 parent 863072366592 root 0
+Extent back ref already exists for 2994950877184 parent 863072366592
+[...]
+Incorrect global backref count on 2995767250944 found 1 wanted 2
+backpointer mismatch on [2995767250944 4096]
+ref mismatch on [2995767304192 4096] extent item 1, found 2
+Incorrect global backref count on 2995767304192 found 1 wanted 2
+backpointer mismatch on [2995767304192 4096]
+ref mismatch on [2995768258560 4096] extent item 1, found 2
+Incorrect global backref count on 2995768258560 found 1 wanted 2
+backpointer mismatch on [2995768258560 4096]
+ref mismatch on [2995768459264 4096] extent item 1, found 2
+Incorrect global backref count on 2995768459264 found 1 wanted 2
+backpointer mismatch on [2995768459264 4096]
+Errors found in extent allocation tree or chunk allocation
+
+ref mismatch on [2995768459264 4096] extent item 1, found 2
+Incorrect global backref count on 2995768459264 found 1 wanted 2
+backpointer mismatch on [2995768459264 4096]
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+root 256 inode 9579 errors 100, file extent discount
+root 256 inode 9580 errors 100, file extent discount
+root 256 inode 14258 errors 100, file extent discount
+root 256 inode 14259 errors 100, file extent discount
+root 4444 inode 9579 errors 100, file extent discount
+root 4444 inode 9580 errors 100, file extent discount
+root 4444 inode 14258 errors 100, file extent discount
+root 4444 inode 14259 errors 100, file extent discount
+found 1993711951581 bytes used err is 1
+total csum bytes: 4560615360
+total tree bytes: 5643403264
+total fs tree bytes: 139776000
+total extent tree bytes: 263602176
+btree space waste bytes: 504484726
+file data blocks allocated: 6557032402944
+  referenced 6540949323776
+Btrfs v3.12
+
+This made me run btrfsck with the repair option:
 
 
-In case of an OS upgrade gone wrong, I would mount subvolid=0, move
-subvolume 'rootvolume' out of the way, and move (rename) the last known
-good snapshot to 'rootvolume'.
+Extent back ref already exists for 2994950590464 parent 863072366592 root 0
 
-Not sure if that works though. Never tried.
+ref mismatch on [32935936 4096] extent item 1, found 2
+repair deleting extent record: key 32935936 168 4096
+adding new tree backref on start 32935936 len 4096 parent 2994784206848 
+root 2994784206848
+Incorrect global backref count on 32935936 found 1 wanted 2
+backpointer mismatch on [32935936 4096]
+ref mismatch on [32997376 4096] extent item 1, found 2
+repair deleting extent record: key 32997376 168 4096
+adding new tree backref on start 32997376 len 4096 parent 2994824708096 
+root 2994824708096
+Incorrect global backref count on 32997376 found 1 wanted 2
+backpointer mismatch on [32997376 4096]
 
-	Sander
+Incorrect global backref count on 8988365651968 found 1 wanted 0
+backpointer mismatch on [8988365651968 4096]
+repaired damaged extent references
+checking free space cache
+checking fs roots
+root 256 inode 9579 errors 100, file extent discount
+root 256 inode 9580 errors 100, file extent discount
+root 256 inode 14258 errors 100, file extent discount
+root 256 inode 14259 errors 100, file extent discount
+root 4444 inode 9579 errors 100, file extent discount
+root 4444 inode 9580 errors 100, file extent discount
+root 4444 inode 14258 errors 100, file extent discount
+root 4444 inode 14259 errors 100, file extent discount
+enabling repair mode
+Checking filesystem on /dev/sdc1
+UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+cache and super generation don't match, space cache will be invalidated
+found 827360733827 bytes used err is 1
+total csum bytes: 4446455380
+total tree bytes: 5506977792
+total fs tree bytes: 137293824
+total extent tree bytes: 258691072
+btree space waste bytes: 496921489
+file data blocks allocated: 6440132583424
+  referenced 6424163344384
+Btrfs v3.12
+
+
+After this, I ran a check without the repair option again and the same 
+errors persist.
+
+Greetings,
+Hendrik
+
+
+-- 
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Mobil 0178 1874363

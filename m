@@ -1,59 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:34751 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751259AbaAGFnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Jan 2014 00:43:43 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id C2F1640E2D
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jan 2014 16:43:42 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 31133-02 for <linux-btrfs@vger.kernel.org>;
- Tue,  7 Jan 2014 16:43:42 +1100 (EST)
-Received: from [128.250.103.244] (unknown [128.250.103.244])
-	by csamuel.org (Postfix) with ESMTPSA id 41D9240E28
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jan 2014 16:43:42 +1100 (EST)
-Message-ID: <52CB940C.9010203@csamuel.org>
-Date: Tue, 07 Jan 2014 16:43:40 +1100
-From: Chris Samuel <chris@csamuel.org>
+Received: from fw6a-209.wadns.net ([196.220.39.209]:10748 "EHLO fw6a.wadns.net"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751901AbaAGKXE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Jan 2014 05:23:04 -0500
+Message-ID: <52CBD575.7060109@swiftspirit.co.za>
+Date: Tue, 07 Jan 2014 12:22:45 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs raid1 and btrfs raid10 arrays NOT REDUNDANT
-References: <52C73987.7000106@jrs-s.net> <52C87A41.9030701@jrs-s.net> <05C97109-682D-4A62-B074-4EDCF8E9CE1E@colorremedies.com> <1416119.lWHlh5idGF@quad> <C7E0F781-5F46-4C76-BCC9-0DE416553046@colorremedies.com> <52CB031C.7060403@jrs-s.net>
-In-Reply-To: <52CB031C.7060403@jrs-s.net>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Roman Mamedov <rm@romanrm.net>
+CC: Sulla <Sulla@gmx.at>, Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-transaction blocked for more than 120 seconds
+References: <52C2AE7C.5020601@gmx.at>	<64E70864-9830-4145-9EDF-F53A79977999@colorremedies.com>	<52C9CBEF.2000309@gmx.at>	<52C9DE66.8080706@swiftspirit.co.za> <20140106045704.7f20872f@natsu>
+In-Reply-To: <20140106045704.7f20872f@natsu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/01/14 06:25, Jim Salter wrote:
+On 2014/01/06 12:57 AM, Roman Mamedov wrote:
+> Did you align your partitions to accommodate for the 4K sector of the EARS?
+I had, yes. I had to do a lot of research to get the array working 
+"optimally". I didn't need to repartition the spare so this carried over 
+to its being used as an OS disk.
 
-> FWIW, Ubuntu (and I presume Debian) will work just fine with a single /
-> on btrfs, single or multi disk.
-> 
-> I currently have two machines booting to a btrfs-raid10 / with no
-> separate /boot, one booting to a btrfs single disk / with no /boot, and
-> one booting to a btrfs-raid10 / with an ext4-on-mdraid1 /boot.
+I actually lost the "Green" array twice - and learned some valuable lessons:
 
-Actually I've run into a problem with grub where a fresh install cannot
-boot from a btrfs /boot if your first partition is not 1MB aligned
-(sector 2048) then there is then not enough space for it to store its
-btrfs code. :-(
+1. I had an 8-port SCSI card which was dropping the disks due to the 
+timeout issue mentioned by Chris. That caused the first array failure. 
+Technically all the data was on the disks - but temporarily 
+irrecoverable as disks were constantly being dropped. I made a mistake 
+during ddrescue which simultaneously destroyed two disks' data, meaning 
+that the recovery operation was finally for nought. The only consolation 
+was that I had very little data at the time and none of it was 
+irreplaceable.
 
-https://bugs.launchpad.net/ubuntu/+source/grub-installer/+bug/1266195
+2. After replacing the SCSI card with two 4-port SATA cards, a few 
+months later I still had a double-failure (the second failure being 
+during the RAID5 rebuild). This time it was only due to bad disks and a 
+lack of scrubbing/early warning - clearly my own fault.
 
-I don't want to move my first partition as it's a Dell special (type
-'de') and I'm not sure what the impact would be, so I just created an
-ext4 /boot and the install then worked.
+Having learnt these lessons, I'm now a big fan of scrubbing and backups. ;)
 
-Regarding RAID, yes I realise it's easy to do post-fact, in fact on the
-same test system I added an external USB2 drive to the root filesystem
-and rebalanced as RAID-1, worked nicely.
+I'm also pushing for RAID15 wherever data is mission-critical. I simply 
+don't "trust" the reliability of disks any more and I also better 
+understand how, by having more and/or larger disks in a RAID5/6 array, 
+the overall reliability of that array array plummets.
 
-I'm planning on adding dual SSDs as my OS disks to my desktop and this
-experiment was to learn whether the Kubuntu installer handled it yet and
-if not to do a quick practice of setting it up by hand. :-)
-
-All the best,
-Chris
 -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

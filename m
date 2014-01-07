@@ -1,159 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47401 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752265AbaAUP4L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 10:56:11 -0500
-From: David Sterba <dsterba@suse.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:40588 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750766AbaAGJ0g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Jan 2014 04:26:36 -0500
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Stefan Behrens <sbehrens@giantdisaster.de>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: enclose uuid tree compat code with ifdefs
-Date: Tue, 21 Jan 2014 16:56:07 +0100
-Message-Id: <1390319767-11201-1-git-send-email-dsterba@suse.cz>
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2 1/4] Btrfs: fix wrong send_in_progress accounting
+Date: Tue, 7 Jan 2014 17:25:18 +0800
+Message-Id: <1389086721-19624-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit "Btrfs-progs: make send/receive compatible with older kernels"
-adds code that will become deprecated, let's clearly mark it in the
-sources.
+Steps to reproduce:
+ # mkfs.btrfs -f /dev/sda8
+ # mount /dev/sda8 /mnt
+ # btrfs sub snapshot -r /mnt /mnt/snap1
+ # btrfs sub snapshot -r /mnt /mnt/snap2
+ # btrfs send /mnt/snap1 -p /mnt/snap2 -f /mnt/1
+ # dmesg
 
-CC: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
+The problem is that we will sort clone roots(include @send_root), it
+might push @send_root before thus @send_root's @send_in_progress will
+be decreased twice.
+
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- send-utils.c |   28 ++++++++++++++++++++++++++++
- send-utils.h |   10 ++++++++++
- 2 files changed, 38 insertions(+), 0 deletions(-)
+Changelog v1->v2:
+	on the right way to fix the problem.(thanks to David)
+---
+ fs/btrfs/send.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/send-utils.c b/send-utils.c
-index 1772d2c5c0f3..8d4f46e3dd04 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -159,6 +159,7 @@ static int btrfs_read_root_item(int mnt_fd, u64 root_id,
- 	return 0;
- }
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index bff0b1a..5b69785 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4752,6 +4752,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	u32 i;
+ 	u64 *clone_sources_tmp = NULL;
+ 	int clone_sources_to_rollback = 0;
++	int sort_clone_roots = 0;
  
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- static struct rb_node *tree_insert(struct rb_root *root,
- 				   struct subvol_info *si,
- 				   enum subvol_search_type type)
-@@ -223,6 +224,7 @@ static struct rb_node *tree_insert(struct rb_root *root,
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+@@ -4942,6 +4943,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	sort(sctx->clone_roots, sctx->clone_roots_cnt,
+ 			sizeof(*sctx->clone_roots), __clone_root_cmp_sort,
+ 			NULL);
++	sort_clone_roots = 1;
+ 
+ 	ret = send_subvol(sctx);
+ 	if (ret < 0)
+@@ -4957,11 +4959,19 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
  	}
- 	return NULL;
- }
-+#endif
  
- int btrfs_subvolid_resolve(int fd, char *path, size_t path_len, u64 subvol_id)
- {
-@@ -320,6 +322,7 @@ static int btrfs_subvolid_resolve_sub(int fd, char *path, size_t *path_len,
- 	return 0;
- }
- 
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- static int count_bytes(void *buf, int len, char b)
- {
- 	int cnt = 0;
-@@ -416,6 +419,16 @@ static struct subvol_info *subvol_uuid_search_old(struct subvol_uuid_search *s,
- 		return NULL;
- 	return tree_search(root, root_id, uuid, transid, path, type);
- }
-+#else
-+void subvol_uuid_search_add(struct subvol_uuid_search *s,
-+			    struct subvol_info *si)
-+{
-+	if (si) {
-+		free(si->path);
-+		free(si);
+ out:
+-	for (i = 0; sctx && i < clone_sources_to_rollback; i++)
+-		btrfs_root_dec_send_in_progress(sctx->clone_roots[i].root);
++	if (sort_clone_roots) {
++		for (i = 0; i < sctx->clone_roots_cnt; i++)
++			btrfs_root_dec_send_in_progress(
++					sctx->clone_roots[i].root);
++	} else {
++		for (i = 0; sctx && i < clone_sources_to_rollback; i++)
++			btrfs_root_dec_send_in_progress(
++					sctx->clone_roots[i].root);
++
++		btrfs_root_dec_send_in_progress(send_root);
 +	}
-+}
-+#endif
+ 	if (sctx && !IS_ERR_OR_NULL(sctx->parent_root))
+ 		btrfs_root_dec_send_in_progress(sctx->parent_root);
+-	btrfs_root_dec_send_in_progress(send_root);
  
- struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
- 				       u64 root_id, const u8 *uuid, u64 transid,
-@@ -426,9 +439,11 @@ struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
- 	struct btrfs_root_item root_item;
- 	struct subvol_info *info = NULL;
- 
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- 	if (!s->uuid_tree_existed)
- 		return subvol_uuid_search_old(s, root_id, uuid, transid,
- 					     path, type);
-+#endif
- 	switch (type) {
- 	case subvol_search_by_received_uuid:
- 		ret = btrfs_lookup_uuid_received_subvol_item(s->mnt_fd, uuid,
-@@ -481,6 +496,7 @@ out:
- 	return info;
- }
- 
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- static int is_uuid_tree_supported(int fd)
- {
- 	int ret;
-@@ -679,6 +695,18 @@ void subvol_uuid_search_finit(struct subvol_uuid_search *s)
- 	s->received_subvols = RB_ROOT;
- 	s->path_subvols = RB_ROOT;
- }
-+#else
-+int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
-+{
-+	s->mnt_fd = mnt_fd;
-+
-+	return 0;
-+}
-+
-+void subvol_uuid_search_finit(struct subvol_uuid_search *s)
-+{
-+}
-+#endif
- 
- char *path_cat(const char *p1, const char *p2)
- {
-diff --git a/send-utils.h b/send-utils.h
-index 943b0277cf7e..f451c1cb6071 100644
---- a/send-utils.h
-+++ b/send-utils.h
-@@ -30,6 +30,12 @@
- extern "C" {
- #endif
- 
-+/*
-+ * Compatibility code for kernels < 3.12; the UUID tree is not available there
-+ * and we have to do the slow search. This should be deprecated someday.
-+ */
-+#define BTRFS_COMPAT_SEND_NO_UUID_TREE 1
-+
- enum subvol_search_type {
- 	subvol_search_by_root_id,
- 	subvol_search_by_uuid,
-@@ -38,10 +44,12 @@ enum subvol_search_type {
- };
- 
- struct subvol_info {
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- 	struct rb_node rb_root_id_node;
- 	struct rb_node rb_local_node;
- 	struct rb_node rb_received_node;
- 	struct rb_node rb_path_node;
-+#endif
- 
- 	u64 root_id;
- 	u8 uuid[BTRFS_UUID_SIZE];
-@@ -57,12 +65,14 @@ struct subvol_info {
- 
- struct subvol_uuid_search {
- 	int mnt_fd;
-+#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
- 	int uuid_tree_existed;
- 
- 	struct rb_root root_id_subvols;
- 	struct rb_root local_subvols;
- 	struct rb_root received_subvols;
- 	struct rb_root path_subvols;
-+#endif
- };
- 
- int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s);
+ 	kfree(arg);
+ 	vfree(clone_sources_tmp);
 -- 
-1.7.9
+1.8.3.1
 

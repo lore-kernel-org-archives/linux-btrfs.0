@@ -1,109 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49366 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752411AbaAGAeK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jan 2014 19:34:10 -0500
-Date: Tue, 7 Jan 2014 11:33:57 +1100
-From: NeilBrown <neilb@suse.de>
-To: Andrea Mazzoleni <amadvance@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com
-Subject: Re: [RFC] lib: raid: New RAID library supporting up to six parities
-Message-ID: <20140107113357.3bd67ad0@notabene.brown>
-In-Reply-To: <20140106094523.GA4602@gmail.com>
-References: <1388742436-3754-1-git-send-email-amadvance@gmail.com>
-	<20140106111529.7bcff024@notabene.brown>
-	<20140106094523.GA4602@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/=Ci+F7FClBMEgb/_8_j5c+W"; protocol="application/pgp-signature"
+Received: from mail-pd0-f174.google.com ([209.85.192.174]:36194 "EHLO
+	mail-pd0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750785AbaAGArj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jan 2014 19:47:39 -0500
+MIME-Version: 1.0
+In-Reply-To: <20140106221036.GE9037@kmo>
+References: <20140102053101.GA29352@localhost>
+	<CAFR8uee-WTy6cj8bB4aMuGP1B0sZkc70sq1Drg7uhHS49EqHcg@mail.gmail.com>
+	<20140106221036.GE9037@kmo>
+Date: Mon, 6 Jan 2014 16:47:38 -0800
+Message-ID: <CAFR8uef3XUEsHUvfnkAbzsXict8qD_28fTgUQyA7gjUk03OUsw@mail.gmail.com>
+Subject: Re: [block:for-3.14/core] kernel BUG at fs/bio.c:1748
+From: Muthu Kumar <muthu.lkml@gmail.com>
+To: Kent Overstreet <kmo@daterainc.com>
+Cc: Chris Mason <clm@fb.com>, Fengguang Wu <fengguang.wu@intel.com>,
+        Jens Axboe <axboe@kernel.dk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>, lkp@linux.intel.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/=Ci+F7FClBMEgb/_8_j5c+W
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+OK, after a bit more staring I believe the correct fix is the following.
 
-On Mon, 6 Jan 2014 10:45:23 +0100 Andrea Mazzoleni <amadvance@gmail.com>
-wrote:
+Fengguang, Please try this one?
 
-> Hi Neil,
->=20
-> Thanks for your feedback. In the meantime I went further in developing and
-> I've just sent version 2 of the patch, that contains a preliminary btrfs
-> modification to use the new interface.
->=20
-> Please use this one for any kind of review because it contains a modifica=
-tion
-> of the interface to match better the btrfs use.
-> I'll now try to do something similar to the async_tx layer and to improve=
- the
-> code documentation as you recommended.
+Regards,
+Muthu
 
-Thanks.
+------------
+In btrfs_end_bio(), we increment bi_remaining if is_orig_bio. If not,
+we restore the orig_bio but failed to increment bi_remaining for
+orig_bio, which triggers a BUG_ON later when bio_endio is called. Fix
+is to increment bi_remaining when we restore the orig bio as well.
 
->=20
-> Anyway, a good entry point to understand the code is to start from the
-> include/linux/raid/raid.h file. It contains the functions that external
-> modules should call with a complete description of them.
->=20
-> There is raid_par() used to compute parity, and raid_rec() to recover dam=
-aged
-> blocks. These two functions replace all the old xor_blocks and raid6 call=
-s.
->=20
-> And there is the raid_sort() you mention. It's an helper function that ca=
-n be
-> used to ensure that the blocks indexes are passed at the raid interface in
-> proper order. In existing code I saw that the indexes are often sorted be=
-fore
-> calling raid6, with something like:
->=20
-> 	if (faila > failb) {
-> 		int tmp =3D failb;
-> 		failb =3D faila;
-> 		faila =3D tmp;
-> 	}
->=20
-> To do the same with up to six failures, it's now required some kind of so=
-rt
-> function.
+Reported-by: fengguang.wu@intel.com
+CC: Kent Overstreet <kmo@daterainc.com>
+CC: Jens Axboe <axboe@kernel.dk>
+CC: Chris Mason <clm@fv
+Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
+----------------
+ fs/btrfs/volumes.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-I'm not totally convinced by this, but then I haven't played with the code
-so maybe I'm wrong.
-I don't see the above as "sorting" faila and failb, but rather determining
-which one is first.  Once you know which one is first, the remainder follow
-in order.
-So I would probably just make sure we always process the block is the "righ=
-t"
-order.  Then sorting would be irrelevant.
-But as I say, I haven't fiddled with the code, so maybe that would end up
-being more complex.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 37972d5..2011cc0 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5297,9 +5297,9 @@ static void btrfs_end_bio(struct bio *bio, int err)
+                if (!is_orig_bio) {
+                        bio_put(bio);
+                        bio = bbio->orig_bio;
+-               } else {
+-                       atomic_inc(&bio->bi_remaining);
+                }
++               atomic_inc(&bio->bi_remaining);
++
+                bio->bi_private = bbio->private;
+                bio->bi_end_io = bbio->end_io;
+                btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
 
-Thanks,
-NeilBrown
+--------------------------
 
 
---Sig_/=Ci+F7FClBMEgb/_8_j5c+W
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIVAwUBUstLdTnsnt1WYoG5AQKlmQ//TzKGXzAskIf3bSswe+RzUj80HmxPPgy9
-PYSSQgDlNEAiNhBa2xVB6aVFLk5atsxCwVI4o8ckif+vXkDyQCdS3o7usTjYCt9W
-/vFmtxzRCrCg9em5iv0KGk8Au2HV1EtF2+6mDlGGJQptoB4/zaG/k2ivMWn62v6A
-ELkdOy0ZGq6Z3bRprkntCqRBq/eNmkdHKquIvJpgjNx0VxOJS29vwzhknXesO012
-TwpXEFVC06MBuQ06TRmQQLSWM6ocA+1Cgzi5/5ZYySSQTd4FgSMhfhkRWfFVw2yJ
-Y/npgWQhcrp6xJUaAJEhko+KnyvpkdqjhE2fPd3xXsyvoRxEaW9w1qFXC5J5d4te
-vSB4iZcJ9xy5ADN2N8/gi1DUXfZzdSOPjG3rq996mYyaYiz2d6RluzcusY6/zyQK
-wUSNAOuxBYuNaj8lETmrpmzb6Xh15Fj+dANYme+CqpOS6rhV/qiHcl97UVtEnGe1
-ggnDwzfKiA1609edJ1uPu3QOa7ZVzEIEnjavkdL+Et01cWAt0yQI+McB7TnsKdoC
-bAs9zvBcfpQovxw60LM/YrZmqsXg6dRDQIjHKM4utNgwsSB0QXrBTl1In/tj6Y7M
-DMW5RDocTkCcUNl2ohmHsz46q0GhUfhuRG49ylc/BW19eWHArRVqttH6VdORqczD
-InnoV3U+lkc=
-=EmBH
------END PGP SIGNATURE-----
-
---Sig_/=Ci+F7FClBMEgb/_8_j5c+W--
+On Mon, Jan 6, 2014 at 2:10 PM, Kent Overstreet <kmo@daterainc.com> wrote:
+> Chris, the patch below seems to be incorrect - with it we get hangs, so
+> bi_remaining (probably) isn't getting decremented when it should be. You sent
+> Jens fixes for btrfs which I somehow lost when I rebased, do you remember how
+> this is supposed to work? Looking at the code I'm not quite sure what's going on
+> here.
+>
+> On Fri, Jan 03, 2014 at 11:51:31AM -0800, Muthu Kumar wrote:
+>> Looks like Kent missed the btrfs endio in the original commit. How
+>> about this patch:
+>>
+>> ---------
+>>
+>> In btrfs_end_bio, call bio_endio_nodec on the restored bio so the
+>> bi_remaining is accounted for correctly.
+>>
+>> Reported-by: fengguang.wu@intel.com
+>> Cc: Kent Overstreet <kmo@daterainc.com>
+>> CC: Jens Axboe <axboe@kernel.dk>
+>> Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
+>> --------
+>>
+>>  fs/btrfs/volumes.c |    6 +++++-
+>>  1 files changed, 5 insertions(+), 1 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index f2130de..edfed52 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -5316,7 +5316,11 @@ static void btrfs_end_bio(struct bio *bio, int err)
+>>                 }
+>>                 kfree(bbio);
+>>
+>> -               bio_endio(bio, err);
+>> +                /*
+>> +                 * Call endio_nodec on the restored bio so the bi_remaining is
+>> +                 * accounted for correctly
+>> +                 */
+>> +               bio_endio_nodec(bio, err);
+>>         } else if (!is_orig_bio) {
+>>                 bio_put(bio);
+>>         }

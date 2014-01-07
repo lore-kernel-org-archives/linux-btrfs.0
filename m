@@ -1,30 +1,425 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f178.google.com ([209.85.215.178]:52606 "EHLO
-	mail-ea0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752069AbaAGLTE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jan 2014 06:19:04 -0500
-Date: Tue, 7 Jan 2014 12:19:00 +0100
-From: Andrea Mazzoleni <amadvance@gmail.com>
-To: Andrea Mazzoleni <amadvance@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-raid@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC v2 0/2] New RAID library supporting up to six parities
-Message-ID: <20140107111900.GE16044@gmail.com>
-References: <1389000716-3274-1-git-send-email-amadvance@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1389000716-3274-1-git-send-email-amadvance@gmail.com>
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:40779 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751091AbaAGLoZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jan 2014 06:44:25 -0500
+Received: by mail-wi0-f174.google.com with SMTP id z2so4010725wiv.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jan 2014 03:44:24 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: faster file extent item replace operations
+Date: Tue,  7 Jan 2014 11:42:27 +0000
+Message-Id: <1389094947-27185-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+When writing to a file we drop existing file extent items that cover the
+write range and then add a new file extent item that represents that write
+range.
 
-It seems that the patch was to big for some linux lists.
-If you miss some patch files, you can download them also at:
+Before this change we were doing a tree lookup to remove the file extent
+items, and then after we did another tree lookup to insert the new file
+extent item.
+Most of the time all the file extent items we need to drop are located
+within a single leaf - this is the leaf where our new file extent item ends
+up at. Therefore, in this common case just combine these 2 operations into
+a single one.
 
-http://snapraid.sourceforge.net/linux/v2/
+By avoiding the second btree navigation for insertion of the new file extent
+item, we reduce btree node/leaf lock acquisitions/releases, btree block/leaf
+COW operations, CPU time on btree node/leaf key binary searches, etc.
 
-Sorry about that.
+Besides for file writes, this is an operation that happens for file fsync's
+as well. However log btrees are much less likely to big as big as regular
+fs btrees, therefore the impact of this change is smaller.
 
-Ciao,
-Andrea
+The following benchmark was performed against an SSD drive and a
+HDD drive, both for random and sequential writes:
+
+  sysbench --test=fileio --file-num=4096 --file-total-size=8G \
+     --file-test-mode=[rndwr|seqwr] --num-threads=512 \
+     --file-block-size=8192 \ --max-requests=1000000 \
+     --file-fsync-freq=0 --file-io-mode=sync [prepare|run]
+
+All results below are averages of 10 runs of the respective test.
+
+** SSD sequential writes
+
+Before this change: 225.88 Mb/sec
+After this change:  277.26 Mb/sec
+
+** SSD random writes
+
+Before this change: 49.91 Mb/sec
+After this change:  56.39 Mb/sec
+
+** HDD sequential writes
+
+Before this change: 68.53 Mb/sec
+After this change:  69.87 Mb/sec
+
+** HDD random writes
+
+Before this change: 13.04 Mb/sec
+After this change:  14.39 Mb/sec
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.h    |    5 ++-
+ fs/btrfs/file.c     |   44 +++++++++++++++++++++++---
+ fs/btrfs/inode.c    |   87 ++++++++++++++++++++++++++++++++-------------------
+ fs/btrfs/tree-log.c |   24 ++++++++------
+ 4 files changed, 114 insertions(+), 46 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 60d2021..3cebb4a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3774,7 +3774,10 @@ extern const struct file_operations btrfs_file_operations;
+ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root, struct inode *inode,
+ 			 struct btrfs_path *path, u64 start, u64 end,
+-			 u64 *drop_end, int drop_cache);
++			 u64 *drop_end, int drop_cache,
++			 int replace_extent,
++			 u32 extent_item_size,
++			 int *key_inserted);
+ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_root *root, struct inode *inode, u64 start,
+ 		       u64 end, int drop_cache);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 35bf838..030012e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -692,7 +692,10 @@ next:
+ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root, struct inode *inode,
+ 			 struct btrfs_path *path, u64 start, u64 end,
+-			 u64 *drop_end, int drop_cache)
++			 u64 *drop_end, int drop_cache,
++			 int replace_extent,
++			 u32 extent_item_size,
++			 int *key_inserted)
+ {
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_file_extent_item *fi;
+@@ -712,6 +715,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 	int modify_tree = -1;
+ 	int update_refs = (root->ref_cows || root == root->fs_info->tree_root);
+ 	int found = 0;
++	int leafs_visited = 0;
+ 
+ 	if (drop_cache)
+ 		btrfs_drop_extent_cache(inode, start, end - 1, 0);
+@@ -733,6 +737,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 				path->slots[0]--;
+ 		}
+ 		ret = 0;
++		leafs_visited++;
+ next_slot:
+ 		leaf = path->nodes[0];
+ 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
+@@ -744,6 +749,7 @@ next_slot:
+ 				ret = 0;
+ 				break;
+ 			}
++			leafs_visited++;
+ 			leaf = path->nodes[0];
+ 			recow = 1;
+ 		}
+@@ -927,14 +933,44 @@ next_slot:
+ 	}
+ 
+ 	if (!ret && del_nr > 0) {
++		/*
++		 * Set path->slots[0] to first slot, so that after the delete
++		 * if items are move off from our leaf to its immediate left or
++		 * right neighbor leafs, we end up with a correct and adjusted
++		 * path->slots[0] for our insertion.
++		 */
++		path->slots[0] = del_slot;
+ 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+ 		if (ret)
+ 			btrfs_abort_transaction(trans, root, ret);
++
++		leaf = path->nodes[0];
++		/*
++		 * leaf eb has flag EXTENT_BUFFER_STALE if it was deleted (that
++		 * is, its contents got pushed to its neighbors), in which case
++		 * it means path->locks[0] == 0
++		 */
++		if (!ret && replace_extent && leafs_visited == 1 &&
++		    path->locks[0] &&
++		    btrfs_leaf_free_space(root, leaf) >=
++		    sizeof(struct btrfs_item) + extent_item_size) {
++
++			key.objectid = ino;
++			key.type = BTRFS_EXTENT_DATA_KEY;
++			key.offset = start;
++			setup_items_for_insert(root, path, &key,
++					       &extent_item_size,
++					       extent_item_size,
++					       sizeof(struct btrfs_item) +
++					       extent_item_size, 1);
++			*key_inserted = 1;
++		}
+ 	}
+ 
++	if (!replace_extent || !(*key_inserted))
++		btrfs_release_path(path);
+ 	if (drop_end)
+ 		*drop_end = found ? min(end, extent_end) : end;
+-	btrfs_release_path(path);
+ 	return ret;
+ }
+ 
+@@ -949,7 +985,7 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 	ret = __btrfs_drop_extents(trans, root, inode, path, start, end, NULL,
+-				   drop_cache);
++				   drop_cache, 0, 0, NULL);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+@@ -2219,7 +2255,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	while (cur_offset < lockend) {
+ 		ret = __btrfs_drop_extents(trans, root, inode, path,
+ 					   cur_offset, lockend + 1,
+-					   &drop_end, 1);
++					   &drop_end, 1, 0, 0, NULL);
+ 		if (ret != -ENOSPC)
+ 			break;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d6a445f..93abbf9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -126,13 +126,12 @@ static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
+  * no overlapping inline items exist in the btree
+  */
+ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
++				struct btrfs_path *path, int extent_inserted,
+ 				struct btrfs_root *root, struct inode *inode,
+ 				u64 start, size_t size, size_t compressed_size,
+ 				int compress_type,
+ 				struct page **compressed_pages)
+ {
+-	struct btrfs_key key;
+-	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct page *page = NULL;
+ 	char *kaddr;
+@@ -141,29 +140,29 @@ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	int err = 0;
+ 	int ret;
+ 	size_t cur_size = size;
+-	size_t datasize;
+ 	unsigned long offset;
+ 
+ 	if (compressed_size && compressed_pages)
+ 		cur_size = compressed_size;
+ 
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
++	inode_add_bytes(inode, size);
+ 
+-	path->leave_spinning = 1;
++	if (!extent_inserted) {
++		struct btrfs_key key;
++		size_t datasize;
+ 
+-	key.objectid = btrfs_ino(inode);
+-	key.offset = start;
+-	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
+-	datasize = btrfs_file_extent_calc_inline_size(cur_size);
++		key.objectid = btrfs_ino(inode);
++		key.offset = start;
++		btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
+ 
+-	inode_add_bytes(inode, size);
+-	ret = btrfs_insert_empty_item(trans, root, path, &key,
+-				      datasize);
+-	if (ret) {
+-		err = ret;
+-		goto fail;
++		datasize = btrfs_file_extent_calc_inline_size(cur_size);
++		path->leave_spinning = 1;
++		ret = btrfs_insert_empty_item(trans, root, path, &key,
++					      datasize);
++		if (ret) {
++			err = ret;
++			goto fail;
++		}
+ 	}
+ 	leaf = path->nodes[0];
+ 	ei = btrfs_item_ptr(leaf, path->slots[0],
+@@ -204,7 +203,7 @@ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 		page_cache_release(page);
+ 	}
+ 	btrfs_mark_buffer_dirty(leaf);
+-	btrfs_free_path(path);
++	btrfs_release_path(path);
+ 
+ 	/*
+ 	 * we're an inline extent, so nobody can
+@@ -220,7 +219,6 @@ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 
+ 	return ret;
+ fail:
+-	btrfs_free_path(path);
+ 	return err;
+ }
+ 
+@@ -243,6 +241,9 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	u64 aligned_end = ALIGN(end, root->sectorsize);
+ 	u64 data_len = inline_len;
+ 	int ret;
++	struct btrfs_path *path;
++	int extent_inserted = 0;
++	u32 extent_item_size;
+ 
+ 	if (compressed_size)
+ 		data_len = compressed_size;
+@@ -257,12 +258,27 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 		return 1;
+ 	}
+ 
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
+ 	trans = btrfs_join_transaction(root);
+-	if (IS_ERR(trans))
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
+ 		return PTR_ERR(trans);
++	}
+ 	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
+ 
+-	ret = btrfs_drop_extents(trans, root, inode, start, aligned_end, 1);
++	if (compressed_size && compressed_pages)
++		extent_item_size = btrfs_file_extent_calc_inline_size(
++		   compressed_size);
++	else
++		extent_item_size = btrfs_file_extent_calc_inline_size(
++		    inline_len);
++
++	ret = __btrfs_drop_extents(trans, root, inode, path,
++				   start, aligned_end, NULL,
++				   1, 1, extent_item_size, &extent_inserted);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		goto out;
+@@ -270,7 +286,8 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 
+ 	if (isize > actual_end)
+ 		inline_len = min_t(u64, isize, actual_end);
+-	ret = insert_inline_extent(trans, root, inode, start,
++	ret = insert_inline_extent(trans, path, extent_inserted,
++				   root, inode, start,
+ 				   inline_len, compressed_size,
+ 				   compress_type, compressed_pages);
+ 	if (ret && ret != -ENOSPC) {
+@@ -285,6 +302,7 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ out:
++	btrfs_free_path(path);
+ 	btrfs_end_transaction(trans, root);
+ 	return ret;
+ }
+@@ -1842,14 +1860,13 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key ins;
++	int extent_inserted = 0;
+ 	int ret;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->leave_spinning = 1;
+-
+ 	/*
+ 	 * we may be replacing one extent in the tree with another.
+ 	 * The new extent is pinned in the extent map, and we don't want
+@@ -1859,17 +1876,23 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	 * the caller is expected to unpin it and allow it to be merged
+ 	 * with the others.
+ 	 */
+-	ret = btrfs_drop_extents(trans, root, inode, file_pos,
+-				 file_pos + num_bytes, 0);
++	ret = __btrfs_drop_extents(trans, root, inode, path, file_pos,
++				   file_pos + num_bytes, NULL, 0,
++				   1, sizeof(*fi), &extent_inserted);
+ 	if (ret)
+ 		goto out;
+ 
+-	ins.objectid = btrfs_ino(inode);
+-	ins.offset = file_pos;
+-	ins.type = BTRFS_EXTENT_DATA_KEY;
+-	ret = btrfs_insert_empty_item(trans, root, path, &ins, sizeof(*fi));
+-	if (ret)
+-		goto out;
++	if (!extent_inserted) {
++		ins.objectid = btrfs_ino(inode);
++		ins.offset = file_pos;
++		ins.type = BTRFS_EXTENT_DATA_KEY;
++
++		path->leave_spinning = 1;
++		ret = btrfs_insert_empty_item(trans, root, path, &ins,
++					      sizeof(*fi));
++		if (ret)
++			goto out;
++	}
+ 	leaf = path->nodes[0];
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index ba2f151..b561e7a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3495,21 +3495,27 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	int index = log->log_transid % 2;
+ 	bool skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+-
+-	ret = __btrfs_drop_extents(trans, log, inode, path, em->start,
+-				   em->start + em->len, NULL, 0);
+-	if (ret)
+-		return ret;
++	int extent_inserted = 0;
+ 
+ 	INIT_LIST_HEAD(&ordered_sums);
+ 	btrfs_init_map_token(&token);
+-	key.objectid = btrfs_ino(inode);
+-	key.type = BTRFS_EXTENT_DATA_KEY;
+-	key.offset = em->start;
+ 
+-	ret = btrfs_insert_empty_item(trans, log, path, &key, sizeof(*fi));
++	ret = __btrfs_drop_extents(trans, log, inode, path, em->start,
++				   em->start + em->len, NULL, 0, 1,
++				   sizeof(*fi), &extent_inserted);
+ 	if (ret)
+ 		return ret;
++
++	if (!extent_inserted) {
++		key.objectid = btrfs_ino(inode);
++		key.type = BTRFS_EXTENT_DATA_KEY;
++		key.offset = em->start;
++
++		ret = btrfs_insert_empty_item(trans, log, path, &key,
++					      sizeof(*fi));
++		if (ret)
++			return ret;
++	}
+ 	leaf = path->nodes[0];
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+-- 
+1.7.9.5
+

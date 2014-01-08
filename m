@@ -1,51 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from merlin.infradead.org ([205.233.59.134]:43391 "EHLO
-	merlin.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757101AbaAHVWG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jan 2014 16:22:06 -0500
-Message-ID: <52CDC140.6090307@kernel.dk>
-Date: Wed, 08 Jan 2014 14:21:04 -0700
-From: Jens Axboe <axboe@kernel.dk>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, "muthu.lkml@gmail.com" <muthu.lkml@gmail.com>
-CC: "kmo@daterainc.com" <kmo@daterainc.com>,
+Received: from mail-pd0-f181.google.com ([209.85.192.181]:42356 "EHLO
+	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751668AbaAHVXN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jan 2014 16:23:13 -0500
+Received: by mail-pd0-f181.google.com with SMTP id p10so2274348pdj.40
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jan 2014 13:23:12 -0800 (PST)
+Date: Wed, 8 Jan 2014 13:24:29 -0800
+From: Kent Overstreet <kmo@daterainc.com>
+To: Muthu Kumar <muthu.lkml@gmail.com>
+Cc: Chris Mason <clm@fb.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         "fengguang.wu@intel.com" <fengguang.wu@intel.com>,
         "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
         "lkp@linux.intel.com" <lkp@linux.intel.com>,
+        "axboe@kernel.dk" <axboe@kernel.dk>,
         "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
 Subject: Re: [block:for-3.14/core] kernel BUG at fs/bio.c:1748
-References: <20140102053101.GA29352@localhost>	 <CAFR8uee-WTy6cj8bB4aMuGP1B0sZkc70sq1Drg7uhHS49EqHcg@mail.gmail.com>	 <20140106221036.GE9037@kmo>	 <CAFR8uef3XUEsHUvfnkAbzsXict8qD_28fTgUQyA7gjUk03OUsw@mail.gmail.com>	 <20140107055318.GA19016@localhost>	 <CAFR8ueeC_fqpN+M5YOr8AT_o3BDgr+o1ELQQJQSW7s8uDm2y5Q@mail.gmail.com> <1389215654.23310.39.camel@ret.masoncoding.com>
-In-Reply-To: <1389215654.23310.39.camel@ret.masoncoding.com>
-Content-Type: text/plain; charset=UTF-7
+Message-ID: <20140108212429.GE7291@kmo-pixel>
+References: <CAFR8ueezG4U5ULcp0ayhY690RUE7280UL68d55+tGCqDW9A1Kg@mail.gmail.com>
+ <1389210102.23310.31.camel@ret.masoncoding.com>
+ <CAFR8uefXjN_nzHWsTF=-PxNPDMWMj5Hw+ueFYQwa8-qBEGMGTw@mail.gmail.com>
+ <1389212231.23310.33.camel@ret.masoncoding.com>
+ <CAFR8uec00zThzs5Q21ySG90shQHVxbRZDGrYBPrdn1KbNCQ_vw@mail.gmail.com>
+ <1389214325.23310.34.camel@ret.masoncoding.com>
+ <CAFR8uefj7=x149nAQOwX5pw-5OCXnS6oYYF8xZkQVrdmPJBD6g@mail.gmail.com>
+ <1389215536.23310.37.camel@ret.masoncoding.com>
+ <20140108211454.GC7291@kmo-pixel>
+ <CAFR8uecBvvxYL8x29Aqq47Lez5vz=wUO5+Ac=SBB+i9mwEXbAg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAFR8uecBvvxYL8x29Aqq47Lez5vz=wUO5+Ac=SBB+i9mwEXbAg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/08/2014 02:13 PM, Chris Mason wrote:
-> On Tue, 2014-01-07 at 12:15 -0800, Muthu Kumar wrote:
->> Thanks Fengguang. Final patch with added comment. BTW, fengguang
->> mentioned that git-am has trouble with the inline patch and "quilt
->> import" worked fine for him...
->>
->> ------------
->> In btrfs_end_bio(), we increment bi_remaining if is_orig_bio. If not,
->> we restore the orig_bio but failed to increment bi_remaining for
->> orig_bio, which triggers a BUG_ON later when bio_endio is called. Fix
->> is to increment bi_remaining when we restore the orig bio as well.
->>
->> Reported-and-Tested-by: Fengguang wu <fengguang.wu@intel.com>
->> CC: Kent Overstreet <kmo@daterainc.com>
->> CC: Jens Axboe <axboe@kernel.dk>
->> CC: Chris Mason <clm@fb.com>
->> Signed-off-by: Muthukumar Ratty <muthur@gmail.com>
->>
+On Wed, Jan 08, 2014 at 01:18:46PM -0800, Muthu Kumar wrote:
+> On Wed, Jan 8, 2014 at 1:14 PM, Kent Overstreet <kmo@daterainc.com> wrote:
+> > On Wed, Jan 08, 2014 at 09:11:49PM +0000, Chris Mason wrote:
+> >> On Wed, 2014-01-08 at 13:01 -0800, Muthu Kumar wrote:
+> >> > On Wed, Jan 8, 2014 at 12:51 PM, Chris Mason <clm@fb.com> wrote:
+> >> > > On Wed, 2014-01-08 at 12:40 -0800, Muthu Kumar wrote:
+> >> > >> On Wed, Jan 8, 2014 at 12:16 PM, Chris Mason <clm@fb.com> wrote:
+> >> > >> > On Wed, 2014-01-08 at 11:54 -0800, Muthu Kumar wrote:
+> >> > >> >> Chris,
+> >> > >> >>
+> >> > >> >> [    8.336061] WARNING: CPU: 0 PID: 0 at fs/bio.c:1778 bio_endio+0xbe/0x100()
+> >> > >> >> [    8.336062] bio_endio: bio for (unknown) without endio
+> >> > >> >>
+> >> > >> >> This is my recent change to avoid memory leak in bio_endio. But I
+> >> > >> >> think the problem is higher up, most likely bio_endio is called twice
+> >> > >> >> on the same bio (which was freed before).
+> >> > >> >>
+> >> > >> >
+> >> > >> > I think these are just two separate problems.  Lets ignore the WARN_ON
+> >> > >> > for now.
+> >> > >> >
+> >> > >>
+> >> > >> Not really... the BUG that is triggered:
+> >> > >>
+> >> > >> kernel BUG at fs/bio.c:523!
+> >> > >>
+> >> > >> It is in bio_put() (added to bio_endio() as part of recent change)
+> >> > >> which gets an already freed bio.
+> >> > >>
+> >> > >
+> >> > > Oh! I see.  Let me try with that one reverted.  Thanks!
+> >> > >
+> >> > > -chris
+> >> > >
+> >> >
+> >> > But, like I said, problem is in different place. I am running a "dd"
+> >> > on ext4 fs for a while now, but didn't hit the problem. Any idea to
+> >> > repro locally? I would also suggest running just the for-3.1/core to
+> >> > isolate the issue.
+> >>
+> >> Just reverting that change fixes it for me.  Jens mentioned it was
+> >> broken for on-stack bios.
+> >
+> > On-stack bios? I don't recall ever coming across such a thing, who what
+> > where why?
+> >
+> > i would expect on stack bios to work though, i'm really curious how it
+> > was broken
 > 
-> Reviewed-by: Chris Mason <clm@fb.com>
+> New change added a bio_put() which might not work if the bio is on stack.
 > 
-> Jens, please pull this one in.
+> I don't remember seeing a on-stack-bio either, any help to jog my memory?
 
-Done, with the added reviewed and tested-by's.
-
--- 
-Jens Axboe
-
+That's code that logically belongs in bio_chain_endio(), it's just a
+hack to avoid blowing the stack since the kernel is compiled with
+-fno-sibling-call-optimization when you enable frame pointers (otherwise
+would optimize those tail calls to jumps and we'd have no stack blowing
+issues).

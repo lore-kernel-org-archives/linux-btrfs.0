@@ -1,66 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:63917 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755919AbaAHPWY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Jan 2014 10:22:24 -0500
-Message-ID: <52CD6D2A.9090900@fb.com>
-Date: Wed, 8 Jan 2014 10:22:18 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:37539 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757299AbaAHSwB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jan 2014 13:52:01 -0500
+Date: Wed, 8 Jan 2014 19:51:59 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 00/18] Replace btrfs_workers with kernel workqueue
+ based btrfs_workqueue
+Message-ID: <20140108185159.GI6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1387272719-11889-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <52B3105A.5000102@fb.com>
+ <52B3B4BC.70204@cn.fujitsu.com>
+ <52B44688.5070603@fb.com>
+ <52B7A158.8000503@cn.fujitsu.com>
+ <52CCEF3E.5010807@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Btrfs: release subvolume's block_rsv before transaction
- commit
-References: <1388324691-24507-1-git-send-email-bo.li.liu@oracle.com> <1388324691-24507-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1388324691-24507-2-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52CCEF3E.5010807@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jan 08, 2014 at 02:25:02PM +0800, Qu Wenruo wrote:
+> >But according to the dmesg, which is expired now though, I made the
+> >following assumption:
+> >
+> >There is a possibility that out of order execution made the "work->wq =
+> >wq" sentence executed behind the "queue_work()" call,
+> >and the "normal_work_helper" is executed in another CPU instantly, which
+> >caused the problem.
 
-On 12/29/2013 08:44 AM, Liu Bo wrote:
-> We don't have to keep subvolume's block_rsv during transaction commit,
-> and within transaction commit, we may also need the free space reclaimed
-> from this block_rsv to process delayed refs.
->
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->   fs/btrfs/ioctl.c | 7 ++++---
->   1 file changed, 4 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 21da576..347bf61 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -417,7 +417,8 @@ static noinline int create_subvol(struct inode *dir,
->   	trans = btrfs_start_transaction(root, 0);
->   	if (IS_ERR(trans)) {
->   		ret = PTR_ERR(trans);
-> -		goto out;
-> +		btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-> +		return ret;
->   	}
->   	trans->block_rsv = &block_rsv;
->   	trans->bytes_reserved = block_rsv.size;
-> @@ -542,6 +543,8 @@ static noinline int create_subvol(struct inode *dir,
->   fail:
->   	trans->block_rsv = NULL;
->   	trans->bytes_reserved = 0;
-> +	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-> +
->   	if (async_transid) {
->   		*async_transid = trans->transid;
->   		err = btrfs_commit_transaction_async(trans, root, 1);
-> @@ -555,8 +558,6 @@ fail:
->   
->   	if (!ret)
->   		d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
-> -out:
-> -	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
->   	return ret;
->   }
->   
+This could be the reason, though I still don't see how exactly this
+happens.
 
-Doesn't compile, please rebase onto new btrfs-next and resubmit. Thanks,
+> >------
+> >static inline void __btrfs_queue_work(struct __btrfs_workqueue *wq,
+> >struct btrfs_work *work)
+> >{
+> >unsigned long flags;
+> >
+> >work->wq = wq;
+> >/* There is no memory barrier ensure the work->wq = wq is executed
+> >before queue_work */
+> >thresh_queue_hook(wq);
+> >if (work->ordered_func) {
+> >spin_lock_irqsave(&wq->list_lock, flags);
+> >list_add_tail(&work->ordered_list, &wq->ordered_list);
+> >spin_unlock_irqrestore(&wq->list_lock, flags);
+> >}
+> >queue_work(wq->normal_wq, &work->normal_work);
+> >}
+> >------
+> >
+> >The fix is as easy as just adding a smp_wmb() behind the "work->wq = wq"
+> >sentence, but since I failed to reproduce the bug,
+> >I can't confirm whether the fix is good or not.
+> >
+> >I know it's impolite but would you please first try the smp_wmb() first to
+> >confirm the fix?
+> If itis convenient for you,would you please give some feedback about the
+> smp_wmb() fix ?
+> 
+> Also incase that smp_wmb() doesn't work, it would be very nice of you to
+> also try smp_mb() fix.
 
-Josef
+The smp_wmb barriers have to pair with smp_rmb, which means that
+normal_work_helper() has to call smp_rmb at the beginning.
+
+What still puzzles me is why would the barriers are needed at all,
+although your example code shows the effects of a delayed store.
+
+Down the call stack, the barrier takes place:
+
+queue_work
+  queue_work_on(WORK_CPU_UNBOUND)
+    __queue_work
+      insert_work
+        smp_mb
+
+There is no barrier before the work is being processed in
+workqueue.c::process_one_work(), but there maybe an implied one.
+
+
+david

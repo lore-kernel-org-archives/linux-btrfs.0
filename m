@@ -1,54 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:2705 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752049AbaAGQnV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Jan 2014 11:43:21 -0500
-Message-ID: <52CC2EA4.50206@fb.com>
-Date: Tue, 7 Jan 2014 11:43:16 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
+Received: from cantor2.suse.de ([195.135.220.15]:54879 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756880AbaAHOd3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jan 2014 09:33:29 -0500
+Date: Wed, 8 Jan 2014 15:33:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 2/3] Btrfs: rework qgroup accounting
-References: <1387400849-7274-1-git-send-email-jbacik@fb.com> <1387400849-7274-3-git-send-email-jbacik@fb.com> <A4C427B3-2FE2-4032-A085-77117A678B0F@gmail.com>
-In-Reply-To: <A4C427B3-2FE2-4032-A085-77117A678B0F@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Message-ID: <20140108143327.GG6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1387400849-7274-1-git-send-email-jbacik@fb.com>
+ <1387400849-7274-3-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1387400849-7274-3-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Dec 18, 2013 at 04:07:28PM -0500, Josef Bacik wrote:
+>  /*
+> - * btrfs_qgroup_record_ref is called when the ref is added or deleted. it puts
+> - * the modification into a list that's later used by btrfs_end_transaction to
+> - * pass the recorded modifications on to btrfs_qgroup_account_ref.
+> + * Record a quota operation for processing later on.
+> + * @trans: the transaction we are adding the delayed op to.
+> + * @fs_info: the fs_info for this fs.
+> + * @ref_root: the root of the reference we are acting on,
+> + * @num_bytes: the number of bytes in the reference.
+> + * @parent: if we are removing a shared ref then this will be set.
+> + * @type: the type of operation this is.
+> + *
+> + * We just add it to our trans qgroup_ref_list and carry on and process these
+> + * operations in order at some later point.  If the reference root isn't a fs
+> + * root then we don't bother with doing anything.
+> + *
+> + * MUST BE HOLDING THE REF LOCK.
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On 12/21/2013 03:56 AM, Wang Shilong wrote:
-> Hello Josef,
->
-> Though i know there are still problems related to qgroup(for example removing snapshot
-> will beak qgroup accounting).I did a simple test about your patch..
->
->
-> # btrfs quota enable /mnt
-> # dd if=/dev/zero of=/mnt/data bs=4k count=102400 oflag=direct
-> # btrfs sub snapshot /mnt/ /mnt/snap1
-> # btrfs sub snapshot /mnt /mnt/snap2
-> # btrfs sub delete /mnt/snap1 /mnt/snap2
-> # sync
-> # rm -rf /mnt/data
-> # sync
-> # dmesg
-> # btrfs qgroup show /mnt
->
->
-> Firstly, qgroup accounting is wrong, this is maybe expected because efficient  fs tree removal.
-> However, from dmesg, i get the  WARNING:
->
-> WARNING: CPU: 1 PID: 2650 at fs/btrfs/qgroup.c:1486 btrfs_delayed_qgroup_accounting
->
-> I did not take a deep look at codes, but i think you will be interested in taking a look at this. ^_^
+>   */
+>  int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
+> -			    struct btrfs_delayed_ref_node *node,
+> -			    struct btrfs_delayed_extent_op *extent_op)
+> +			    struct btrfs_fs_info *fs_info, u64 ref_root,
+> +			    u64 bytenr, u64 num_bytes, u64 parent,
+> +			    enum btrfs_qgroup_operation_type type)
+>  {
+> -	struct qgroup_update *u;
+> +	struct btrfs_qgroup_operation *oper;
+> +	int ret;
+>  
+> -	BUG_ON(!trans->delayed_ref_elem.seq);
+> -	u = kmalloc(sizeof(*u), GFP_NOFS);
+> -	if (!u)
+> +	if (!is_fstree(ref_root) || !fs_info->quota_enabled)
+> +		return 0;
+> +
+> +	oper = kmalloc(sizeof(*oper), GFP_NOFS);
 
-Ok I finally sat down to look at this and it is because subvol deletion 
-screws up quota accounting no matter what.  I just added this WARN_ON() 
-to catch actual mistakes, it just so happens it gets tripped when the 
-snapshot deletion stuff happens too.  I'm going to put this on the "I'll 
-deal with it later" list since it is an existing issue with or without 
-my patch.  Thanks,
+Must use GFP_ATOMIC then, ohterwise spits some warnings:
 
-Josef
+BUG: sleeping function called from invalid context at mm/slab.c:2923
+[ 5845.017803]  [<ffffffff819ce6c3>] dump_stack+0x51/0x6e
+[ 5845.017811]  [<ffffffff8108285a>] __might_sleep+0xda/0x100
+[ 5845.017816]  [<ffffffff81159699>] kmem_cache_alloc_trace+0xd9/0x1f0
+[ 5845.017854]  [<ffffffffa01a6f89>] btrfs_qgroup_record_ref+0x89/0x310 [btrfs]
+[ 5845.017872]  [<ffffffffa0125a98>] __btrfs_inc_extent_ref+0x328/0x570 [btrfs]
+...
+
+> +/*
+> + * Record a shared ref in the most recent qgroup operation added.
+> + * @trans: the trans handle for this operation.
+> + * @ref_root: the ref_root this operation was for, this is to make sure we
+> + * actually need to do anything at all.  Use the same ref_root we called
+> + * btrfs_qgroup_record_ref with.
+> + * @parent: the parent of the shared ref.
+> + *
+> + * This is meant to be called directly after calling btrfs_qgroup_record_ref
+> + * for the ref we care about, it does no searching to make sure we're on the
+> + * right qgroup operation.
+> + *
+> + * MUST BE HOLDING THE REF LOCK.
+> + */
+> +int btrfs_qgroup_add_shared_ref(struct btrfs_trans_handle *trans, u64 ref_root,
+> +				u64 parent)
+> +{
+> +	struct qgroup_shared_ref *ref;
+> +	struct btrfs_qgroup_operation *oper;
+> +	int ret = 0;
+> +
+> +	if (!is_fstree(ref_root))
+> +		return 0;
+> +	ref = kmalloc(sizeof(*ref), GFP_NOFS);
+
+same here
+
+> +	if (!ref)
+> +		return -ENOMEM;
+> +	ref->parent = parent;
+> +	ref->ref_root = 0;
+> +	ASSERT(!list_empty(&trans->qgroup_ref_list));
+> +	oper = list_entry(trans->qgroup_ref_list.prev,
+> +			  struct btrfs_qgroup_operation, list);
+> +	list_add_tail(&ref->list, &oper->shared_refs);
+> +	return ret;
+> +}

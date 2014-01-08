@@ -1,112 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e31.co.us.ibm.com ([32.97.110.149]:33534 "EHLO
-	e31.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756815AbaAHUGd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jan 2014 15:06:33 -0500
-Received: from /spool/local
-	by e31.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <sekharan@us.ibm.com>;
-	Wed, 8 Jan 2014 13:06:32 -0700
-Received: from b03cxnp08028.gho.boulder.ibm.com (b03cxnp08028.gho.boulder.ibm.com [9.17.130.20])
-	by d03dlp01.boulder.ibm.com (Postfix) with ESMTP id 3A4261FF001B
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Jan 2014 13:06:00 -0700 (MST)
-Received: from d03av01.boulder.ibm.com (d03av01.boulder.ibm.com [9.17.195.167])
-	by b03cxnp08028.gho.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s08K6T2q66388022
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jan 2014 21:06:29 +0100
-Received: from d03av01.boulder.ibm.com (localhost [127.0.0.1])
-	by d03av01.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s08K6TKD014983
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jan 2014 13:06:29 -0700
-Received: from [9.49.220.166] ([9.49.220.166])
-	by d03av01.boulder.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with ESMTP id s08K6QS8014804
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jan 2014 13:06:27 -0700
-Subject: Re: [PATCH 0/7] Patches to support subpagesize blocksize
-From: Chandra Seetharaman <sekharan@us.ibm.com>
-Reply-To: sekharan@us.ibm.com
-To: linux-btrfs@vger.kernel.org
-In-Reply-To: <52AB5470.3090108@fb.com>
-References: <1386805122-23972-1-git-send-email-sekharan@us.ibm.com>
-	 <52AB5470.3090108@fb.com>
-Content-Type: text/plain; charset="UTF-8"
-Date: Wed, 08 Jan 2014 14:06:25 -0600
-Message-ID: <1389211585.11128.4.camel@chandra-laptop.ibm.com>
-Mime-Version: 1.0
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35675 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751273AbaAHUQz convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jan 2014 15:16:55 -0500
+From: Chris Mason <clm@fb.com>
+To: "muthu.lkml@gmail.com" <muthu.lkml@gmail.com>
+CC: "kmo@daterainc.com" <kmo@daterainc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "fengguang.wu@intel.com" <fengguang.wu@intel.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "lkp@linux.intel.com" <lkp@linux.intel.com>,
+        "axboe@kernel.dk" <axboe@kernel.dk>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: [block:for-3.14/core] kernel BUG at fs/bio.c:1748
+Date: Wed, 8 Jan 2014 20:16:43 +0000
+Message-ID: <1389212231.23310.33.camel@ret.masoncoding.com>
+References: <20140102053101.GA29352@localhost>
+	 <CAFR8uee-WTy6cj8bB4aMuGP1B0sZkc70sq1Drg7uhHS49EqHcg@mail.gmail.com>
+	 <20140106221036.GE9037@kmo>
+	 <CAFR8uef3XUEsHUvfnkAbzsXict8qD_28fTgUQyA7gjUk03OUsw@mail.gmail.com>
+	 <20140107055318.GA19016@localhost>
+	 <CAFR8ueeC_fqpN+M5YOr8AT_o3BDgr+o1ELQQJQSW7s8uDm2y5Q@mail.gmail.com>
+	 <1389126617.23310.19.camel@ret.masoncoding.com>
+	 <CAFR8ueezG4U5ULcp0ayhY690RUE7280UL68d55+tGCqDW9A1Kg@mail.gmail.com>
+	 <1389210102.23310.31.camel@ret.masoncoding.com>
+	 <CAFR8uefXjN_nzHWsTF=-PxNPDMWMj5Hw+ueFYQwa8-qBEGMGTw@mail.gmail.com>
+In-Reply-To: <CAFR8uefXjN_nzHWsTF=-PxNPDMWMj5Hw+ueFYQwa8-qBEGMGTw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-7"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello All,
+On Wed, 2014-01-08 at 11:54 -0800, Muthu Kumar wrote:
++AD4- Chris,
++AD4- 
++AD4- +AFs-    8.336061+AF0- WARNING: CPU: 0 PID: 0 at fs/bio.c:1778 bio+AF8-endio+-0xbe/0x100()
++AD4- +AFs-    8.336062+AF0- bio+AF8-endio: bio for (unknown) without endio
++AD4- 
++AD4- This is my recent change to avoid memory leak in bio+AF8-endio. But I
++AD4- think the problem is higher up, most likely bio+AF8-endio is called twice
++AD4- on the same bio (which was freed before).
++AD4- 
 
-I had some random corruption issues when I run some serious IOs with
-these patches.
+I think these are just two separate problems.  Lets ignore the WARN+AF8-ON
+for now.
 
-Found out that the function clean_tree_block() is the problem.
++AD4- Are you running the unmodified for-3.14/core or do you have local patches?
++AD4- 
 
-IIUC, this function is used to drop a dirty extent buffer when it is not
-needed any more to be written to the disk.
+It's for-3.14/core with my btrfs branch.  Basically rc7 instead of rc6
+but no changes to the block layer.  I hadn't mounted btrfs yet.
 
-In my case, the extent buffer is part of a page and I do not know how to
-handle this situation.
-
-Is my understanding correct ? Does anyone have any suggestion to
-circumvent this issue ?
-
-Thanks & regards,
-
-Chandra
-On Fri, 2013-12-13 at 13:39 -0500, Josef Bacik wrote:
-> On 12/11/2013 06:38 PM, Chandra Seetharaman wrote:
-> > In btrfs, blocksize, the basic IO size of the filesystem, has been
-> > more than PAGE_SIZE.
-> >
-> > But, some 64 bit architures, like PPC64 and ARM64 have the default
-> > PAGE_SIZE as 64K, which means the filesystems handled in these
-> > architectures are with a blocksize of 64K.
-> >
-> > This works fine as long as you create and use the filesystems within
-> > these systems.
-> >
-> > In other words, one cannot create a filesystem in some other architecture
-> > and use that filesystem in PPC64 or ARM64, and vice versa.,
-> >
-> > Another restriction is that we cannot use ext? filesystems in these
-> > architectures as btrfs filesystems, since ext? filesystems have a blocksize
-> > of 4K.
-> >
-> > Sometime last year, Wade Cline posted a patch(http://lwn.net/Articles/529682/).
-> > I started testing it, and found many locking/race issues. So, I changed the
-> > logic and created an extent_buffer_head that holds an array of extent buffers that
-> > belong to a page.
-> >
-> > There are few wrinkles in this patchset, like some xfstests are failing, which
-> > could be due to me doing something incorrectly w.r.t how the blocksize and
-> > PAGE_SIZE are used in these patched.
-> >
-> > Would like to get some feedback, review comments.
-> >
-> 
-> Ok so the more we talked about it on IRC and talking with Chris I think 
-> we have a way forward here.
-> 
-> 1) Add an extent_buffer_head that embeds an extent_buffer, and in the 
-> extent_buffer_head track the state of the whole page.  So this is where 
-> we have a linked list of all the extent_buffers on the page, we can keep 
-> track of the number of extent_buffers that are dirty/not so we can be 
-> sure to set the page state and everything right.
-> 
-> 2) Set page->private to the first extent_buffer like we currently do.  
-> Then we just have checks in the endio stuff to see if the eb we found is 
-> the one for our currently range (ie bv_offset == 0) and if not do a 
-> linear search through the extent_buffers on the extent_buffer_head part 
-> to get the right one.
-> 
-> We have to do this because we need to be able to track IO for each of 
-> the extent_buffer's independently of each other in case a page spans a 
-> block_group.
-> 
-> Hopefully that makes sense, this way you don't have to futz with any of 
-> my crazier long term goals of no longer using pagecache or any of that 
-> mess.  Thanks,
-> 
-> Josef
-> 
-
+-chris
 

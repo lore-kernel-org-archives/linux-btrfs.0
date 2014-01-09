@@ -1,69 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18355 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751086AbaAHPKJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Jan 2014 10:10:09 -0500
-Message-ID: <52CD6A46.2030802@fb.com>
-Date: Wed, 8 Jan 2014 10:09:58 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-CC: <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH 1/2] Btrfs: fix the race between write back and nocow
- buffered write
-References: <1388149910-31499-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1388149910-31499-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Received: from cn.fujitsu.com ([222.73.24.84]:53286 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750938AbaAICEw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Jan 2014 21:04:52 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0924o9O027323
+	for <linux-btrfs@vger.kernel.org>; Thu, 9 Jan 2014 10:04:50 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH V2 1/2] Btrfs: fix the race between write back and nocow buffered write
+Date: Thu, 9 Jan 2014 10:06:10 +0800
+Message-Id: <1389233170-27573-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <52CD6A46.2030802@fb.com>
+References: <52CD6A46.2030802@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+When we ran the 274th case of xfstests with nodatacow mount option,
+We met the following warning message:
+WARNING: CPU: 1 PID: 14185 at fs/btrfs/extent-tree.c:3734 btrfs_free_reserved_data_space+0xa6/0xd0
 
-On 12/27/2013 08:11 AM, Miao Xie wrote:
-> When we ran the 274th case of xfstests with nodatacow mount option,
-> We met the following warning message:
-> WARNING: CPU: 1 PID: 14185 at fs/btrfs/extent-tree.c:3734 btrfs_free_reserved_data_space+0xa6/0xd0
->
-> It is caused by the race between the write back and nocow buffered
-> write:
->    Task1				Task2
->    __btrfs_buffered_write()
->      skip data reservation
->      reserve the metadata space
->      copy the data
->      dirty the pages
->      unlock the pages
-> 				write back the pages
-> 				release the data space
->     				  becasue there is no
-> 				  noreserve flag
->     set the noreserve flag
->
-> This patch fixes this problem by unlocking the pages after
-> the noreserve flag is set.
->
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->   fs/btrfs/file.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 82d0342..f6960c2 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1523,7 +1523,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->   		}
->   
->   		release_bytes = 0;
-> -		btrfs_drop_pages(pages, num_pages);
->   
+It is caused by the race between the write back and nocow buffered
+write:
+  Task1				Task2
+  __btrfs_buffered_write()
+    skip data reservation
+    reserve the metadata space
+    copy the data
+    dirty the pages
+    unlock the pages
+				write back the pages
+				release the data space
+   				  becasue there is no
+				  noreserve flag
+   set the noreserve flag
 
-This isn't based on your other patch
+This patch fixes this problem by unlocking the pages after
+the noreserve flag is set.
 
-     Btrfs: fix the reserved space leak caused by the race between 
-nonlock dio and buffered io
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v1 -> v2:
+- rebase the patch to the btrfs-next tree
+---
+ fs/btrfs/file.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-You need to redo this one ontop of that patch, I'll take 2/2 tho. Thanks,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 453e43c..0218288 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1555,9 +1555,10 @@ again:
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 					     lockstart, lockend, &cached_state,
+ 					     GFP_NOFS);
+-		btrfs_drop_pages(pages, num_pages);
+-		if (ret)
++		if (ret) {
++			btrfs_drop_pages(pages, num_pages);
+ 			break;
++		}
+ 
+ 		release_bytes = 0;
+ 		if (only_release_metadata && copied > 0) {
+@@ -1571,6 +1572,8 @@ again:
+ 			only_release_metadata = false;
+ 		}
+ 
++		btrfs_drop_pages(pages, num_pages);
++
+ 		cond_resched();
+ 
+ 		balance_dirty_pages_ratelimited(inode->i_mapping);
+-- 
+1.8.1.4
 
-Josef

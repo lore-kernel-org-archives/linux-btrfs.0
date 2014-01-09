@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:57061 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755082AbaAISUc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 13:20:32 -0500
-Received: by mail-ie0-f174.google.com with SMTP id at1so3989646iec.33
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:20:31 -0800 (PST)
-Message-ID: <52CEE872.8040804@gmail.com>
-Date: Thu, 09 Jan 2014 13:20:34 -0500
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:42547 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752814AbaAIS2m (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 13:28:42 -0500
+Received: by mail-ig0-f182.google.com with SMTP id c10so8291569igq.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:28:42 -0800 (PST)
+Message-ID: <52CEE901.1090207@gmail.com>
+Date: Thu, 09 Jan 2014 13:22:57 -0500
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
 To: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com>	<20140109104247.GH15634@carfax.org.uk> <pan$ab233$2067aff9$a13049e6$e769dc55@cox.net> <52CE9B9C.2040006@gmail.com> <DA8C6B1F-100C-46D0-8DF5-F77C85FB9A50@colorremedies.com>
-In-Reply-To: <DA8C6B1F-100C-46D0-8DF5-F77C85FB9A50@colorremedies.com>
+References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com> <20140109104247.GH15634@carfax.org.uk> <pan$ab233$2067aff9$a13049e6$e769dc55@cox.net> <28EF9764-B846-4AB4-AA88-9A37F106B6C6@colorremedies.com>
+In-Reply-To: <28EF9764-B846-4AB4-AA88-9A37F106B6C6@colorremedies.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-01-09 12:31, Chris Murphy wrote:
+On 2014-01-09 13:08, Chris Murphy wrote:
 > 
-> On Jan 9, 2014, at 5:52 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> Just a thought, you might consider running btrfs on top of LVM in
->> the interim, it isn't quite as efficient as btrfs by itself, but
->> it does allow N-way mirroring (and the efficiency is much better
->> now that they have switched to RAID1 as the default mirroring
->> backend)
+> On Jan 9, 2014, at 5:41 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Having checksumming is good, and a second 
+>> copy in case one fails the checksum is nice, but what if they BOTH do?
+>> I'd love to have the choice of (at least) three-way-mirroring, as for me 
+>> that seems the best practical hassle/cost vs. risk balance I could get, 
+>> but it's not yet possible. =:^(
 > 
-> The problem that in case of mismatches, it's ambiguous which are
-> correct.
+> I'm on the fence on n-way. 
 > 
-At the moment that is correct, I've been planning for some time now to
-write a patch so that the RAID1 implementation on more than 2 devices
-checks what the majority of other devices say about the block, and
-then updates all of them with the majority.  Barring a manufacturing
-defect or firmware bug, any group of three or more disks is
-statistically very unlikely to have a read error at the same place on
-each disk until they have accumulated enough bad sectors that they are
-totally unusable, so this would allow recovery in a non-degraded RAID1
-array in most cases.
+> HDDs get bigger at a faster rate than their performance improves, so rebuild times keep getting higher. For cases where the data is really important, backup-restore doesn't provide the necessary uptime, and minimum single drive performance is needed, it can make sense to want three copies.
+> 
+> But what's the probability of both drives in a mirrored raid set dying, compared to something else in the storage stack dying? I think at 3 copies, you've got other risks that the 3rd copy doesn't manage, like a power supply, controller card, or logic board dying.
+> 
+The risk isn't as much both drives dying at the same time as one dying
+during a rebuild of the array, which is more and more likely as drives
+get bigger and bigger.
 

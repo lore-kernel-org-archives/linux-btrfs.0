@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f54.google.com ([209.85.160.54]:43444 "EHLO
-	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756930AbaAISk4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 13:40:56 -0500
-Received: by mail-pb0-f54.google.com with SMTP id un15so3390578pbc.27
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:40:55 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20140109174335.GL15634@carfax.org.uk>
-References: <20140109170945.GK15634@carfax.org.uk>
-	<CAPpBBdNKSUHCtM3fk7=ujJFZSL8LMf_iQXdZ-O-bXcTRN69c3g@mail.gmail.com>
-	<20140109174335.GL15634@carfax.org.uk>
-Date: Thu, 9 Jan 2014 19:40:55 +0100
-Message-ID: <CAPpBBdMbrEMjHaacu-ZYzEdJ5zTaGLu=70C+N71aFbZmoB5rkg@mail.gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39764 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751705AbaAISwJ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jan 2014 13:52:09 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:50584 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W1Ki7-003g5r-Ri
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jan 2014 11:52:08 -0700
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: How does btrfs handle bad blocks in raid1?
-From: George Eleftheriou <eleftg@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52CEE901.1090207@gmail.com>
+Date: Thu, 9 Jan 2014 11:52:08 -0700
+Message-Id: <DD76DCF3-93B9-4EAF-9732-C703D7C50A74@colorremedies.com>
+References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com> <20140109104247.GH15634@carfax.org.uk> <pan$ab233$2067aff9$a13049e6$e769dc55@cox.net> <28EF9764-B846-4AB4-AA88-9A37F106B6C6@colorremedies.com> <52CEE901.1090207@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Hugo,
 
-Since:
+On Jan 9, 2014, at 11:22 AM, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
 
--- i keep daily backups
--- all 4 devices are of the same size
+> On 2014-01-09 13:08, Chris Murphy wrote:
+>> 
+>> On Jan 9, 2014, at 5:41 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>>> Having checksumming is good, and a second 
+>>> copy in case one fails the checksum is nice, but what if they BOTH do?
+>>> I'd love to have the choice of (at least) three-way-mirroring, as for me 
+>>> that seems the best practical hassle/cost vs. risk balance I could get, 
+>>> but it's not yet possible. =:^(
+>> 
+>> I'm on the fence on n-way. 
+>> 
+>> HDDs get bigger at a faster rate than their performance improves, so rebuild times keep getting higher. For cases where the data is really important, backup-restore doesn't provide the necessary uptime, and minimum single drive performance is needed, it can make sense to want three copies.
+>> 
+>> But what's the probability of both drives in a mirrored raid set dying, compared to something else in the storage stack dying? I think at 3 copies, you've got other risks that the 3rd copy doesn't manage, like a power supply, controller card, or logic board dying.
+>> 
+> The risk isn't as much both drives dying at the same time as one dying
+> during a rebuild of the array, which is more and more likely as drives
+> get bigger and bigger.
 
-I think I can test it (as soon as I have some time to spend in the
-transition to BTRFS) and verify your assumptions (...and get my wish)
+Understood. I'm considering a 2nd drive dying during rebuild (from a 1st drive dying) as essentially simultaneous failures. And in the case of raid10, the likelihood of a 2nd drive failure being the lonesome drive in a mirrored set is statistically very unlikely. The next drive to fail is going to be some other drive in the array, which still has a mirror.
+
+I'm not saying there's no value in n-way. I'm just saying adding more redundancy only solves on particular vector for failure that's still probably less likely than losing a power supply or a controller or even user induced data loss that ends up affecting all three copies anyway.
+
+And yes, it's easier to just add drives and make 3 copies, than it is to setup a cluster. But that's the trade off when using such high density drives that the rebuild times cause consideration of adding even more high density drives to solve the problem. 
 
 
 
->    If you have an even number of devices and all the devices are the
-> same size, then:
->
->  * the block group allocator will use all the devices each time
->  * the amount of space on each device will always be the same
->
-> If the sort in the allocator is stable and resolves ties in free space
-> by using the device ID number, the above properties should guarantee
-> that the allocation is stable, so each new block group will have the
-> same functional chunk on the same device, and you get your wish.
->
->    It's been a few months since I looked at that code, but I don't
-> recall seeing anything directly contradictory to the above
-> assumptions.
->
->    Of course, if you have an odd number of devices, the allocator will
-> omit a different device on each block group, and you lose the ability
-> to survive (some) two-device failures. I suspect that the odds of
-> surviving a two-device failure are still non-zero, but less than if
-> you had an even number of devices. I'm not about to attempt an
-> ab-initio computation of the probabilities, but it shouldn't be too
-> hard to do either a monte-carlo simulation or a simple brute-force
-> enumeration of the possibilities for a given configuration.
->
->    Hugo.
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->    --- <Diablo-D3> My code is never released,  it escapes from the ---
->           git repo and kills a few beta testers on the way out
+
+Chris Murphy

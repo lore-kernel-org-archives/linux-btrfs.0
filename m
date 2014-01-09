@@ -1,65 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:40969 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751321AbaAIMnS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jan 2014 07:43:18 -0500
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from smtpfb2-g21.free.fr ([212.27.42.10]:46006 "EHLO
+	smtpfb2-g21.free.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754901AbaAIWrs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 17:47:48 -0500
+Received: from smtp5-g21.free.fr (smtp5-g21.free.fr [212.27.42.5])
+	by smtpfb2-g21.free.fr (Postfix) with ESMTP id 40422D1AEA4
+	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jan 2014 23:47:45 +0100 (CET)
+From: Pascal VITOUX <vitoux.pascal@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: alex@bpmit.com
-Subject: [PATCH] Btrfs-progs: fix to make list specified directory's subvolumes work
-Date: Thu, 9 Jan 2014 20:42:12 +0800
-Message-Id: <1389271332-12897-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: Pascal VITOUX <vitoux.pascal@gmail.com>
+Subject: [PATCH] btrfs-progs: skip non-regular files while defragmenting
+Date: Thu,  9 Jan 2014 23:47:14 +0100
+Message-Id: <1389307634-8226-1-git-send-email-vitoux.pascal@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs -f /dev/sda8
- # mount /dev/sda8 /mnt
- # mkdir /mnt/subvolumes
- # btrfs sub create /mnt/subvolumes/subv1
- # btrfs sub create /mnt/subvolumes/subv1/subv1.1
- # btrfs sub list -o /mnt/subvolumes/subv1   <----we did not list anything
+Skip non-regular files to avoid ioctl errors while defragmenting.
 
-The problem is that we don't set @top_id right, fix it.
+They are silently ignored in recursive mode but reported as errors when
+used as command-line arguments.
 
-Reported-by: Alex <alex@bpmit.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Pascal VITOUX <vitoux.pascal@gmail.com>
 ---
- btrfs-list.c | 13 ++++---------
- 1 file changed, 4 insertions(+), 9 deletions(-)
+ cmds-filesystem.c | 26 ++++++++++++++++----------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index fa69910..9effb27 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -578,23 +578,18 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
- 			full_path = strdup(found->path);
- 			len = add_len;
- 		}
-+		if (!ri->top_id)
-+			ri->top_id = found->ref_tree;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 1c1926b..54fba10 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -646,7 +646,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
+ 	int e = 0;
+ 	int fd = 0;
  
- 		next = found->ref_tree;
+-	if (typeflag == FTW_F) {
++	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
+ 		if (defrag_global_verbose)
+ 			printf("%s\n", fpath);
+ 		fd = open(fpath, O_RDWR);
+@@ -748,6 +748,7 @@ static int cmd_defrag(int argc, char **argv)
+ 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
+ 
+ 	for (i = optind; i < argc; i++) {
++		struct stat st;
+ 		dirstream = NULL;
+ 		fd = open_file_or_dir(argv[i], &dirstream);
+ 		if (fd < 0) {
+@@ -757,16 +758,21 @@ static int cmd_defrag(int argc, char **argv)
+ 			close_file_or_dir(fd, dirstream);
+ 			continue;
+ 		}
++		if (fstat(fd, &st)) {
++			fprintf(stderr, "ERROR: failed to stat %s - %s\n",
++					argv[i], strerror(errno));
++			defrag_global_errors++;
++			close_file_or_dir(fd, dirstream);
++			continue;
++		}
++		if (!(S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
++			fprintf(stderr, "ERROR: %s is not a directory or a regular "
++					"file.\n", argv[i]);
++			defrag_global_errors++;
++			close_file_or_dir(fd, dirstream);
++			continue;
++		}
+ 		if (recursive) {
+-			struct stat st;
 -
--		if (next == top_id) {
--			ri->top_id = top_id;
-+		if (next == top_id)
- 			break;
--		}
--
- 		/*
- 		* if the ref_tree = BTRFS_FS_TREE_OBJECTID,
- 		* we are at the top
- 		*/
--		if (next == BTRFS_FS_TREE_OBJECTID) {
--			ri->top_id = next;
-+		if (next == BTRFS_FS_TREE_OBJECTID)
- 			break;
--		}
--
- 		/*
- 		* if the ref_tree wasn't in our tree of roots, the
- 		* subvolume was deleted.
+-			if (fstat(fd, &st)) {
+-				fprintf(stderr, "ERROR: failed to stat %s - %s\n",
+-						argv[i], strerror(errno));
+-				defrag_global_errors++;
+-				close_file_or_dir(fd, dirstream);
+-				continue;
+-			}
+ 			if (S_ISDIR(st.st_mode)) {
+ 				ret = nftw(argv[i], defrag_callback, 10,
+ 						FTW_MOUNT | FTW_PHYS);
 -- 
-1.8.3.1
+1.8.5.2
 

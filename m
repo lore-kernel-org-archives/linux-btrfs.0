@@ -1,84 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39950 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752086AbaAIKmu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 05:42:50 -0500
-Date: Thu, 9 Jan 2014 10:42:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How does btrfs handle bad blocks in raid1?
-Message-ID: <20140109104247.GH15634@carfax.org.uk>
-References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com>
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:47051 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750702AbaAILgt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 06:36:49 -0500
+Received: by mail-pd0-f179.google.com with SMTP id y13so550618pdi.38
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 03:36:48 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="e5GLnnZ8mDMEwH4V"
-In-Reply-To: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com>
+In-Reply-To: <52CE051A.101@cn.fujitsu.com>
+References: <CAFTPBcJ3HHLm_ecxvjB5+ZnD+_s1uMCef_xAjD7tbp9SXgED8A@mail.gmail.com>
+	<52CE051A.101@cn.fujitsu.com>
+Date: Thu, 9 Jan 2014 12:36:48 +0100
+Message-ID: <CAFTPBc+Bqj7e7VM_Z3srQr+78xZ7PA6p=C9KXx3SOxYDV5P5SA@mail.gmail.com>
+Subject: Re: Problems with incremental send/receive
+From: Felix Blanke <felixblanke@gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Wang,
 
---e5GLnnZ8mDMEwH4V
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+thank you for your answer.
 
-On Thu, Jan 09, 2014 at 11:26:26AM +0100, Clemens Eisserer wrote:
-> Hi,
-> 
-> I am running write-intensive (well sort of, one write every 10s)
-> workloads on cheap flash media which proved to be horribly unreliable.
-> A 32GB microSDHC card reported bad blocks after 4 days, while a usb
-> pen drive returns bogus data without any warning at all.
-> 
-> So I wonder, how would btrfs behave in raid1 on two such devices?
-> Would it simply mark bad blocks as "bad" and continue to be
-> operational, or will it bail out when some block can not be
-> read/written anymore on one of the two devices?
+I am using the latest btrfs-progs with the 3.12 kernel. I don't have
+access to the machine right now (it looks like it crashed :/) but I
+can send the exact versions when I'm home.
 
-   If a block is read and fails its checksum, then the other copy (in
-RAID-1) is checked and used if it's good. The bad copy is rewritten to
-use the good data.
+Regards,
+Felix
 
-   If the block is bad such that writing to it won't fix it, then
-there's probably two cases: the device returns an IO error, in which
-case I suspect (but can't be sure) that the FS will go read-only. Or
-the device silently fails the write and claims success, in which case
-you're back to the situation above of the block failing its checksum.
-
-   There's no marking of bad blocks right now, and I don't know of
-anyone working on the feature, so the FS will probably keep going back
-to the bad blocks as it makes CoW copies for modification.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Trouble rather the tiger in his lair than the sage amongst ---    
-        his books for to you kingdoms and their armies are mighty        
-        and enduring,  but to him they are but toys of the moment        
-              to be overturned by the flicking of a finger.              
-
---e5GLnnZ8mDMEwH4V
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIVAwUBUs59J1heFHXiqx3kAQLuJBAAoJ9g5oqyE2qrq+kvLDJSH2jtJyKAx2He
-5wF2ktDhHvq81d1tVT5OLnWH4G58qFGFk2zAx+9JvExJJ4ov/otQYjiNCRWHuU6u
-wLkAWZHtybM+cDzjDTfzklzKX3MYtJN5VT5GjxltEi1UcXYcAs3M6UUtMjoJ9Bah
-KCN9m/X1GwgEo2zQISb92M9ByUw2IPLGx0AJ9jvmlPv8AQfcthAhNYSnspwo+xWt
-0rNRd1MDzzKaCJl0ymKoFnFUboPijyRm5vgOFfF81hCoXD32je88O1vsEj9boBKu
-l2c8E6srv7jY40yu9LnP5GZVeHPSNTEBcBBDbELc1Sqh2hJqXsoX7OQepDWAHjJs
-Cbn52M32mMAuk2fa/RxA7/kxtRtMBODfMx69CP8tUPag+jqZJHLyS6nu9Pf0lHMH
-uFmjWiOFdmCvOv5iTmUUrORyzqYzz8jK3AlMl6AReERS7uXWAyYg4lG5riGqbf3u
-GoV251nSUGOBNJ66bwPuexZ3ZqfFLTRAEb2Lvon1GJZBI12BglZ6Obuxif/+6TbM
-1pU1lXaOEu4WedHnoNNiSwDDeu+I+tVdwSLHXiYOzGltrsX/gSmrovwkbgpLB8jn
-9zPD+NgIZ/338BlRmzzp36uQG7rswwVE/b3TX3Bl/+MziapnotJY48K4LfrGaKZA
-uBzOE3I1yvw=
-=1onn
------END PGP SIGNATURE-----
-
---e5GLnnZ8mDMEwH4V--
+On Thu, Jan 9, 2014 at 3:10 AM, Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
+> Hi Felix,
+>
+> It seems some reported this problem before. The problem for your below case
+> is because you use latest btrfs-progs(v3.12?), which will need kernel
+> update,
+> kernel 3.12 is ok.
+>
+> However, i think btrfs-progs should keep compatibility, i will send a patch
+> to
+> make things more friendly.
+>
+> Thanks,
+> Wang
+>
+> On 01/09/2014 06:04 AM, Felix Blanke wrote:
+>>
+>> Hi List,
+>>
+>> My backup stopped working and I can't figure out why. I'm using
+>> send/receive with the "-p" switch for incremental backups using the
+>> last snapshot as a parent snapshot for sending only the changed data.
+>>
+>> The problem occurs using my own backup script. After I discovered the
+>> problem I did a quick test using the exact commands from the wiki with
+>> the same result: It doesn't work. Here is the output:
+>>
+>>
+>> server ~ # ./test_snapshot.sh
+>> ++ btrfs subvolume snapshot -r /mnt/root1/@root_home/
+>> /mnt/root1/snapshots/test
+>> Create a readonly snapshot of '/mnt/root1/@root_home/' in
+>> '/mnt/root1/snapshots/test'
+>> ++ sync
+>> ++ btrfs send /mnt/root1/snapshots/test
+>> ++ btrfs receive /mnt/backup1/
+>> At subvol /mnt/root1/snapshots/test
+>> At subvol test
+>> ++ btrfs subvolume snapshot -r /mnt/root1/@root_home/
+>> /mnt/root1/snapshots/test_new
+>> Create a readonly snapshot of '/mnt/root1/@root_home/' in
+>> '/mnt/root1/snapshots/test_new'
+>> ++ sync
+>> ++ btrfs send -p /mnt/root1/snapshots/test /mnt/root1/snapshots/test_new
+>> ++ btrfs receive /mnt/backup1/
+>> At subvol /mnt/root1/snapshots/test_new
+>> At snapshot test_new
+>> ERROR: open @/test failed. No such file or directory
+>>
+>> I don't get where the "@/" in front of the snapshot name comes from.
+>> It could be that I had a subvolume named @, but this doesn't exists
+>> anymore and I don't understand why this would be important for the
+>> send/receive.
+>>
+>> Some more details about the fs:
+>>
+>> server ~ # btrfs subvol list /mnt/root1/
+>> ID 259 gen 568053 top level 5 path @root
+>> ID 261 gen 568053 top level 5 path @var
+>> ID 263 gen 568049 top level 5 path @home
+>> ID 302 gen 568053 top level 5 path @owncloud_chroot
+>> ID 421 gen 568038 top level 5 path @root_home
+>> ID 30560 gen 563661 top level 5 path snapshots/home_2014-01-06-19:33_d
+>> ID 30561 gen 563665 top level 5 path
+>> snapshots/owncloud_chroot_2014-01-06-19:34_d
+>> ID 30562 gen 563674 top level 5 path
+>> snapshots/root_home_2014-01-06-19:38_d
+>> ID 30563 gen 563675 top level 5 path snapshots/var_2014-01-06-19:39_d
+>> ID 30564 gen 563697 top level 5 path snapshots/root_2014-01-06-19:50_d
+>>
+>> server ~ # btrfs subvol get-default /mnt/root1/
+>> ID 5 (FS_TREE)
+>>
+>> server ~ # ls -l /mnt/root1/
+>> total 0
+>> drwxr-xr-x. 1 root root  30 May 10  2013 @home
+>> drwxr-xr-x. 1 root root 134 Jan  5 19:27 @owncloud_chroot
+>> drwxr-xr-x. 1 root root 204 Nov 24 18:16 @root
+>> drwx------. 1 root root 468 Jan  8 22:47 @root_home
+>> drwxr-xr-x. 1 root root 114 Oct  7 17:39 @var
+>> drwx------. 1 root root 420 Jan  8 22:50 snapshots
+>>
+>>
+>> Any ideas? Thanks in advance.
+>>
+>>
+>> Regards,
+>> Felix
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message tomajordomo@vger.kernel.org
+>> More majordomo info athttp://vger.kernel.org/majordomo-info.html
+>>
+>

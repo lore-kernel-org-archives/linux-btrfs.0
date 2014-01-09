@@ -1,61 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41748 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752543AbaAISkX convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jan 2014 13:40:23 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from mail-pb0-f54.google.com ([209.85.160.54]:43444 "EHLO
+	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756930AbaAISk4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 13:40:56 -0500
+Received: by mail-pb0-f54.google.com with SMTP id un15so3390578pbc.27
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:40:55 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20140109174335.GL15634@carfax.org.uk>
+References: <20140109170945.GK15634@carfax.org.uk>
+	<CAPpBBdNKSUHCtM3fk7=ujJFZSL8LMf_iQXdZ-O-bXcTRN69c3g@mail.gmail.com>
+	<20140109174335.GL15634@carfax.org.uk>
+Date: Thu, 9 Jan 2014 19:40:55 +0100
+Message-ID: <CAPpBBdMbrEMjHaacu-ZYzEdJ5zTaGLu=70C+N71aFbZmoB5rkg@mail.gmail.com>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140109104247.GH15634@carfax.org.uk>
-Date: Thu, 9 Jan 2014 11:40:20 -0700
-Cc: Hugo Mills <hugo@carfax.org.uk>
-Message-Id: <3A9CDBC9-ACFF-43E3-AFB9-33A6FFE7FB35@colorremedies.com>
-References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com> <20140109104247.GH15634@carfax.org.uk>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: George Eleftheriou <eleftg@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks Hugo,
 
-On Jan 9, 2014, at 3:42 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+Since:
 
-> On Thu, Jan 09, 2014 at 11:26:26AM +0100, Clemens Eisserer wrote:
->> Hi,
->> 
->> I am running write-intensive (well sort of, one write every 10s)
->> workloads on cheap flash media which proved to be horribly unreliable.
->> A 32GB microSDHC card reported bad blocks after 4 days, while a usb
->> pen drive returns bogus data without any warning at all.
->> 
->> So I wonder, how would btrfs behave in raid1 on two such devices?
->> Would it simply mark bad blocks as "bad" and continue to be
->> operational, or will it bail out when some block can not be
->> read/written anymore on one of the two devices?
-> 
->   If a block is read and fails its checksum, then the other copy (in
-> RAID-1) is checked and used if it's good. The bad copy is rewritten to
-> use the good data.
-> 
->   If the block is bad such that writing to it won't fix it, then
-> there's probably two cases: the device returns an IO error, in which
-> case I suspect (but can't be sure) that the FS will go read-only. Or
-> the device silently fails the write and claims success, in which case
-> you're back to the situation above of the block failing its checksum.
+-- i keep daily backups
+-- all 4 devices are of the same size
 
-In a normally operating drive, when the drive firmware locates a physical sector with persistent write failures, it's dereferenced. So the LBA points to a reserve physical sector, the originally can't be accessed by LBA. If all of the reserve sectors get used up, the next persistent write failure will result in a write error reported to libata and this will appear in dmesg, and should be treated as the drive being no longer in normal operation. It's a drive useful for storage developers, but not for production usage.
-
->   There's no marking of bad blocks right now, and I don't know of
-> anyone working on the feature, so the FS will probably keep going back
-> to the bad blocks as it makes CoW copies for modification.
-
-This is maybe relevant:
-https://www.kernel.org/doc/htmldocs/libata/ataExceptions.html
-
-"READ and WRITE commands report CHS or LBA of the first failed sector but ATA/ATAPI standard specifies that the amount of transferred data on error completion is indeterminate, so we cannot assume that sectors preceding the failed sector have been transferred and thus cannot complete those sectors successfully as SCSI does."
-
-If I understand that correctly, Btrfs really ought to either punt the device, or make the whole volume read-only. For production use, going read-only very well could mean data loss, even while preserving the state of the file system. Eventually I'd rather see the offending device ejected from the volume, and for the volume to remain rw,degraded.
+I think I can test it (as soon as I have some time to spend in the
+transition to BTRFS) and verify your assumptions (...and get my wish)
 
 
-Chris Murphy
 
+>    If you have an even number of devices and all the devices are the
+> same size, then:
+>
+>  * the block group allocator will use all the devices each time
+>  * the amount of space on each device will always be the same
+>
+> If the sort in the allocator is stable and resolves ties in free space
+> by using the device ID number, the above properties should guarantee
+> that the allocation is stable, so each new block group will have the
+> same functional chunk on the same device, and you get your wish.
+>
+>    It's been a few months since I looked at that code, but I don't
+> recall seeing anything directly contradictory to the above
+> assumptions.
+>
+>    Of course, if you have an odd number of devices, the allocator will
+> omit a different device on each block group, and you lose the ability
+> to survive (some) two-device failures. I suspect that the odds of
+> surviving a two-device failure are still non-zero, but less than if
+> you had an even number of devices. I'm not about to attempt an
+> ab-initio computation of the probabilities, but it shouldn't be too
+> hard to do either a monte-carlo simulation or a simple brute-force
+> enumeration of the possibilities for a given configuration.
+>
+>    Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>    --- <Diablo-D3> My code is never released,  it escapes from the ---
+>           git repo and kills a few beta testers on the way out

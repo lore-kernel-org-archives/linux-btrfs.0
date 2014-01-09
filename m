@@ -1,71 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41187 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751183AbaAIG52 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 01:57:28 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:42327 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752717AbaAIJZz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jan 2014 04:25:55 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W1Bs8-0006B4-Sz
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jan 2014 10:25:52 +0100
+Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:25:52 +0100
+Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 10:25:52 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v2] Btrfs: release subvolume's block_rsv before transaction commit
-Date: Thu,  9 Jan 2014 14:57:06 +0800
-Message-Id: <1389250626-3461-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <52CD6D2A.9090900@fb.com>
-References: <52CD6D2A.9090900@fb.com>
+From: Alex <alex@bpmit.com>
+Subject: Re: REQ: btrfs list <subvols only> option
+Date: Thu, 9 Jan 2014 09:25:29 +0000 (UTC)
+Message-ID: <loom.20140109T101900-881@post.gmane.org>
+References: <loom.20140109T020430-693@post.gmane.org> <38A0596B-F366-453C-ABC2-D4FB25637403@colorremedies.com> <loom.20140109T045506-475@post.gmane.org> <2DD5D524-F505-4CF7-8639-8D1BD10495F0@colorremedies.com> <E6F1CF4A-1981-44CA-98C6-024D2C7F5BBC@colorremedies.com> <E10A01DB-A88E-40F9-8EEC-E72BB91D7803@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't have to keep subvolume's block_rsv during transaction commit,
-and within transaction commit, we may also need the free space reclaimed
-from this block_rsv to process delayed refs.
+Chris Murphy <lists <at> colorremedies.com> writes:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: rebase onto the latest btrfs-next.
+> > Hmm, actually you might have found a bug.
+> > 
+> > Small typo while we're at it, below should have one l.
+> 
+> kernel-3.13.0-0.rc6.git0.1.fc21.x86_64
+> btrfs-progs-3.12-1.fc20.x86_64
+> 
+> Chris Murphy
+> 
 
- fs/btrfs/ioctl.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+Thank you muchly!
+I'm kinda glad because I didn't really understand your second response in
+context. ;-) I would have been stuck had you not updated it!
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3970f32..332b624 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -436,7 +436,9 @@ static noinline int create_subvol(struct inode *dir,
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
--		goto out;
-+		btrfs_subvolume_release_metadata(root, &block_rsv,
-+						 qgroup_reserved);
-+		return ret;
- 	}
- 	trans->block_rsv = &block_rsv;
- 	trans->bytes_reserved = block_rsv.size;
-@@ -561,6 +563,8 @@ static noinline int create_subvol(struct inode *dir,
- fail:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-+	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
-+
- 	if (async_transid) {
- 		*async_transid = trans->transid;
- 		err = btrfs_commit_transaction_async(trans, root, 1);
-@@ -574,14 +578,10 @@ fail:
- 
- 	if (!ret) {
- 		inode = btrfs_lookup_dentry(dir, dentry);
--		if (IS_ERR(inode)) {
--			ret = PTR_ERR(inode);
--			goto out;
--		}
-+		if (IS_ERR(inode))
-+			return PTR_ERR(inode);
- 		d_instantiate(dentry, inode);
- 	}
--out:
--	btrfs_subvolume_release_metadata(root, &block_rsv, qgroup_reserved);
- 	return ret;
- }
- 
--- 
-1.8.1.4
+
+
 

@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34880 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755190AbaAVMoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jan 2014 07:44:00 -0500
-Date: Wed, 22 Jan 2014 13:43:58 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: dsterba@suse.cz, Miao Xie <miaox@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/4] Btrfs: fix protection between send and root
- deletion
-Message-ID: <20140122124358.GI6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1389086721-19624-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <1389086721-19624-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <20140113182745.GS6498@twin.jikos.cz>
- <52D49F80.6020604@cn.fujitsu.com>
- <20140115164038.GD6498@twin.jikos.cz>
- <52D744C6.7040006@cn.fujitsu.com>
- <20140121181626.GC6498@twin.jikos.cz>
- <52DF84DE.6080904@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:38779 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754925AbaAIRxY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 12:53:24 -0500
+Date: Thu, 9 Jan 2014 20:53:14 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: fholton@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: Btrfs: convert printk to btrfs_ and fix BTRFS prefix
+Message-ID: <20140109175314.GA3827@elgon.mountain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52DF84DE.6080904@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 22, 2014 at 04:44:14PM +0800, Wang Shilong wrote:
-> >So we disagree, I see a reason for the deletion protection and will do
-> >the patch myself. Let's see if we can get more user feedback then.
-> >
-> >I'm NAKing this patch in current state, if it helps anything.
-> Both ways are ok for me actually, don't be annoyed anyway,
+Hello Frank Holton,
 
-Nah, this is a message to maintainers that the patch discussion has
-reached some conclusion and should help deciding if the patch should be
-merged or not. We've seen in the past that after a moderate discussion
-against patch inclusion, the patch ended up merged as if nothing
-happend. _This_ can be annoying.
+This is a semi-automatic email about new static checker warnings.
 
-> You and Miao are really doing a good job to Btrfs, just go ahead, i
-> am ok with dropping this patch.^_^
+The patch f2ee0bf65a1c: "Btrfs: convert printk to btrfs_ and fix 
+BTRFS prefix" from Dec 20, 2013, leads to the following Smatch 
+complaint:
 
-Ok, thanks.
+fs/btrfs/super.c:298 __btrfs_panic()
+	 error: we previously assumed 'fs_info' could be null (see line 294)
+
+fs/btrfs/super.c
+   293		errstr = btrfs_decode_error(errno);
+   294		if (fs_info && (fs_info->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR))
+                    ^^^^^^^
+Existing check.
+
+   295			panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (errno=%d %s)\n",
+   296				s_id, function, line, &vaf, errno, errstr);
+   297	
+   298		btrfs_crit(fs_info, "panic in %s:%d: %pV (errno=%d %s)",
+                           ^^^^^^^
+Patch introduces new unchecked dereference inside btrfs_crit().
+
+   299			   function, line, &vaf, errno, errstr);
+   300		va_end(args);
+
+regards,
+dan carpenter

@@ -1,210 +1,475 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f49.google.com ([209.85.214.49]:62569 "EHLO
-	mail-bk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750892AbaAGLvK convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jan 2014 06:51:10 -0500
-Received: by mail-bk0-f49.google.com with SMTP id my13so194280bkb.36
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jan 2014 03:51:08 -0800 (PST)
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.221]:22169 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751276AbaAILzs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 06:55:48 -0500
+Message-ID: <52CE8CDC.6030408@giantdisaster.de>
+Date: Thu, 09 Jan 2014 12:49:48 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20131123005243.GK5007@twin.jikos.cz>
-References: <1384263706-25549-1-git-send-email-fdmanana@gmail.com>
-	<20131123005243.GK5007@twin.jikos.cz>
-Date: Tue, 7 Jan 2014 11:51:08 +0000
-Message-ID: <CAL3q7H6P5eDSui4pN0aeVtKPGctLqCqXShKMcPmBQZBfECkcXQ@mail.gmail.com>
-Subject: Re: [PATCH 0/5] Add support for object properties
-From: Filipe David Manana <fdmanana@gmail.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>,
-        Filipe David Borba Manana <fdmanana@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: make send/receive compatible with older
+ kernels
+References: <1389264758-9495-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1389264758-9495-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 23, 2013 at 12:52 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Tue, Nov 12, 2013 at 01:41:41PM +0000, Filipe David Borba Manana wrote:
->> This is a revised version of the original proposal/work from Alexander Block
->> to introduce a generic framework to set properties on btrfs filesystem objects
->> (inodes, subvolumes, filesystems, devices).
->
->>         Currently the command group looks like this:
->>         btrfs prop set [-t <type>] /path/to/object <name> <value>
->>         btrfs prop get [-t <type>] /path/to/object [<name>] (omitting name dumps all)
->>         btrfs prop list [-t <type>] /path/to/object (lists properties with description)
->>
->>         The type is used to explicitly specify what type of object you mean. This is
->>         necessary in case the object+property combination is ambiguous.  For example
->>         '/path/to/fs/root' could mean the root subvolume, the directory inode or the
->>         filesystem itself. Normally, btrfs-progs will try to detect the type
->>         automatically.
->
-> The generic commandline UI still looks ok to me, storing properties as xattr’s
-> is also ok (provided that we can capture the “btrfs.” xattr namespace).
->
-> I’ll dump my thoughts and questions about the rest.
->
-> 1) Where are stored properties that are not directly attached to an inode? Ie.
->    whole-filesystem and device. How can I access props for a subvolume that is
->    not currently reachable in the directory tree?
->
-> A fs or device props must be accessible any time, eg. no matter which subvolume
-> is currently mounted. This should be probably a special case where the property
-> can be queried from any inode but will be internally routed to eg. toplevel
-> subvolume that will store the respective xattrs.
->
->
-> 2) if a property’s object can be ambiguous, how is that distinguished in the
->    xattrs?
->
-> We don’t have a list of props yet, so I’m trying to use one that hopefully
-> makes some sense. The example here can be persistent-mount-options that are
-> attached to fs and a subvolume. The fs-wide props will apply when a different
-> subvolume is explicitly mounted.
->
-> Assuming that the xattrs are stored with the toplevel subvolume, the fs-wide
-> and per-subvolume property must have a differnt xattr name (another option is
-> to store fs-wide elsewhere). So the question is, if we should encode the
-> property object into the xattr name directly. Eg.:
->
->   btrfs.fs.persistent_mount
->   btrfs.subvol.persistent_mount
->
-> or if the fs-wide uses a reserved naming scheme that would appear as xattr
-> named
->
->   btrfs.persistent_mount
->
-> but the value would differ if queried with ‘-t fs or ‘-t subvolume’.
->
->
-> 3) property precedence, interaction with mount options
->
-> The precedence should follow the rule of the least surprise, ie. if I set eg. a
-> compression of a file to zlib, set the subvolume compression type to ‘none’ and
-> have fs-wide mount the filesystem with compress=lzo, I’m expecting that the
-> file will use ‘zlib’.
->
-> The generic rule says that mount options (that have a corresponding property)
-> take precedence. There may be exceptions.
->
-> What if there are no specific mount options, but the subvolume has eg.
-> compression set? Should new files inherit that automatically or only if
-> explicitly marked as such?
->
-> The background concern is how far do I need to look and whether this could be a
-> potential performance problem. The lookup chain can be long: inode -> dir ->
-> subvol -> fs, plus mount options along the path where applicable.
->
-> If the xattr values are cached in structs that are accessed anyway (containing
-> subvol, fs_info) and updated when property xattr changes, this could work.
->
->
-> 4) behaviour of tools that see the btrfs-specific props
->
-> What would cp or rsync do when copying the xattrs to a different filesystem?
-> They may simply ignore it and just try to copy the user. namespace, I haven’t
-> done any research here.
->
->
-> 5) properties to consider, naming, xattr name namespaces, inheritable props
->
-> Here’s a list of properties that I’ve collected so far:
->
-> filesystem-wide
-> - persistent mount options
-> - default raid allocation profile
-> - default compression parameters
-> - label
-> - scrub ioprio
->
-> subvolume
-> - persistent mount options
-> - default raid allocation profile
-> - default compression parameters
-> - writable
->
-> device
-> - writable/ro/dead
-> - hot-spare
-> - preferred for metadata
-> - preferred data reads
-> - preferred data writes
-> - no new allocations if possible
-> - speed profile, io priorities
-> - allocation group - from project idea "Chunk allocation groups"
-> - "ssd cache", L2ARC
-> - scrub ioprio
->
-> file, directory
-> - compression parameters
-> - raid allocation profile
->
-> details on compression parameters:
-> - compression algo
-> - compression level
-> - desired compression ratio target
-> - file compressibility hint - from project idea “Compression updates”
-> - compression container type - dtto
->
-> The props should be basically self explanatory. This is not a complete or
-> finalized list, feel free to suggest what you think should/not be here.
->
-> The number of compression parameters suggest that a namespace would be
-> appropriate. This could establish a common practice for any set of properties
-> that are not attached to any filesystem object but are grouped logically.
->
-> Most of the props are expected to be read-write, I don’t have a counterexample
-> for a property that makes sense, is persistent and must be read-only. Such one
-> can be exported through the sysfs, so s/Most of/All/ in the previous sentence.
->
-> I don’t have a proposal how to mark inheritable props yet.
+On Thu, 9 Jan 2014 18:52:38 +0800, Wang Shilong wrote:
+> Some users complaint that with latest btrfs-progs, they will
+> fail to use send/receive. The problem is new tool will try
+> to use uuid tree while it dosen't work on older kernel.
+> 
+> Now we first check if we support uuid tree, if not we fall into
+> normal search as previous way.i copy most of codes from Alexander
+> Block's previous codes and did some adjustments to make it work.
+> 
+> Signed-off-by: Alexander Block <ablock84@googlemail.com>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+>  send-utils.c | 352 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  send-utils.h |  11 ++
+>  2 files changed, 359 insertions(+), 4 deletions(-)
 
-Thanks for sharing your thoughts on this David.
+I'd prefer a printf("Needs kernel 3.12 or better\n") if no UUID tree is
+found. The code that you add will never be tested by anyone and will
+become broken sooner or later.
 
-There seems to be a lot of details for this feature, and many other
-projects (such as those you point on the wiki) would benefit from
-properties.
-It might be hard to get all requirements at once, so I think it might
-be better to start simple, but in a way that doesn't prevent adding
-the more advanced requirements later.
+The new kernel is compatible to old progs and to new progs. But new
+progs require a new kernel and IMO this is normal. A printf is friendly
+enough in this case.
 
-As for the xattrs namespace: yes, we can capture the "btrfs."
-namespace. hfsplus does this, it captures the "osx." namespace.
-See my reply to Hugo about this on this thread:
-http://comments.gmane.org/gmane.comp.file-systems.btrfs/29972
-
-My work so far, for the kernel side, was all about inode (and
-subvolume) properties. Haven't considered properties for devices so
-far.
-I think the inheritable detail can depend on the specific property.
-What I did so far, adds generic support  for both inheritable and
-non-inheritable ones.
-
-And yes, so far it has some impact on performance. I added some
-results (and concerns) in the last rfc patch (v4) I just sent minutes
-ago.
-By using xattrs, while simplifying the storage and not
-touching/extending the on-disk format, it will always have some impact
-on performance - they take leaf space, hence btrees will be larger
-than before.
-
-I think we need to clearly define what are the initial requirements,
-start with a simple approach, always thinking on how to extend/refine
-it later without the need for breaking backwards compatibility later
-of course.
-
-Thanks David.
+IMHO maintaining compatibility in progs to old kernels should be limited
+to code that is small enough to not cost effort and problems in the future.
 
 
->
->
-> david
+> 
+> diff --git a/send-utils.c b/send-utils.c
+> index 874f8a5..1772d2c 100644
+> --- a/send-utils.c
+> +++ b/send-utils.c
+> @@ -159,6 +159,71 @@ static int btrfs_read_root_item(int mnt_fd, u64 root_id,
+>  	return 0;
+>  }
+>  
+> +static struct rb_node *tree_insert(struct rb_root *root,
+> +				   struct subvol_info *si,
+> +				   enum subvol_search_type type)
+> +{
+> +	struct rb_node **p = &root->rb_node;
+> +	struct rb_node *parent = NULL;
+> +	struct subvol_info *entry;
+> +	__s64 comp;
+> +
+> +	while (*p) {
+> +		parent = *p;
+> +		if (type == subvol_search_by_received_uuid) {
+> +			entry = rb_entry(parent, struct subvol_info,
+> +					rb_received_node);
+> +
+> +			comp = memcmp(entry->received_uuid, si->received_uuid,
+> +					BTRFS_UUID_SIZE);
+> +			if (!comp) {
+> +				if (entry->stransid < si->stransid)
+> +					comp = -1;
+> +				else if (entry->stransid > si->stransid)
+> +					comp = 1;
+> +				else
+> +					comp = 0;
+> +			}
+> +		} else if (type == subvol_search_by_uuid) {
+> +			entry = rb_entry(parent, struct subvol_info,
+> +					rb_local_node);
+> +			comp = memcmp(entry->uuid, si->uuid, BTRFS_UUID_SIZE);
+> +		} else if (type == subvol_search_by_root_id) {
+> +			entry = rb_entry(parent, struct subvol_info,
+> +					rb_root_id_node);
+> +			comp = entry->root_id - si->root_id;
+> +		} else if (type == subvol_search_by_path) {
+> +			entry = rb_entry(parent, struct subvol_info,
+> +					rb_path_node);
+> +			comp = strcmp(entry->path, si->path);
+> +		} else {
+> +			BUG();
+> +		}
+> +
+> +		if (comp < 0)
+> +			p = &(*p)->rb_left;
+> +		else if (comp > 0)
+> +			p = &(*p)->rb_right;
+> +		else
+> +			return parent;
+> +	}
+> +
+> +	if (type == subvol_search_by_received_uuid) {
+> +		rb_link_node(&si->rb_received_node, parent, p);
+> +		rb_insert_color(&si->rb_received_node, root);
+> +	} else if (type == subvol_search_by_uuid) {
+> +		rb_link_node(&si->rb_local_node, parent, p);
+> +		rb_insert_color(&si->rb_local_node, root);
+> +	} else if (type == subvol_search_by_root_id) {
+> +		rb_link_node(&si->rb_root_id_node, parent, p);
+> +		rb_insert_color(&si->rb_root_id_node, root);
+> +	} else if (type == subvol_search_by_path) {
+> +		rb_link_node(&si->rb_path_node, parent, p);
+> +		rb_insert_color(&si->rb_path_node, root);
+> +	}
+> +	return NULL;
+> +}
+> +
+>  int btrfs_subvolid_resolve(int fd, char *path, size_t path_len, u64 subvol_id)
+>  {
+>  	if (path_len < 1)
+> @@ -255,13 +320,101 @@ static int btrfs_subvolid_resolve_sub(int fd, char *path, size_t *path_len,
+>  	return 0;
+>  }
+>  
+> +static int count_bytes(void *buf, int len, char b)
+> +{
+> +	int cnt = 0;
+> +	int i;
+> +
+> +	for (i = 0; i < len; i++) {
+> +		if (((char *)buf)[i] == b)
+> +			cnt++;
+> +	}
+> +	return cnt;
+> +}
+> +
+>  void subvol_uuid_search_add(struct subvol_uuid_search *s,
+>  			    struct subvol_info *si)
+>  {
+> -	if (si) {
+> -		free(si->path);
+> -		free(si);
+> +	int cnt;
+> +
+> +	tree_insert(&s->root_id_subvols, si, subvol_search_by_root_id);
+> +	tree_insert(&s->path_subvols, si, subvol_search_by_path);
+> +
+> +	cnt = count_bytes(si->uuid, BTRFS_UUID_SIZE, 0);
+> +	if (cnt != BTRFS_UUID_SIZE)
+> +		tree_insert(&s->local_subvols, si, subvol_search_by_uuid);
+> +	cnt = count_bytes(si->received_uuid, BTRFS_UUID_SIZE, 0);
+> +	if (cnt != BTRFS_UUID_SIZE)
+> +		tree_insert(&s->received_subvols, si,
+> +				subvol_search_by_received_uuid);
+> +}
+> +
+> +static struct subvol_info *tree_search(struct rb_root *root,
+> +				       u64 root_id, const u8 *uuid,
+> +				       u64 stransid, const char *path,
+> +				       enum subvol_search_type type)
+> +{
+> +	struct rb_node *n = root->rb_node;
+> +	struct subvol_info *entry;
+> +	__s64 comp;
+> +
+> +	while (n) {
+> +		if (type == subvol_search_by_received_uuid) {
+> +			entry = rb_entry(n, struct subvol_info,
+> +					rb_received_node);
+> +			comp = memcmp(entry->received_uuid, uuid,
+> +					BTRFS_UUID_SIZE);
+> +			if (!comp) {
+> +				if (entry->stransid < stransid)
+> +					comp = -1;
+> +				else if (entry->stransid > stransid)
+> +					comp = 1;
+> +				else
+> +					comp = 0;
+> +			}
+> +		} else if (type == subvol_search_by_uuid) {
+> +			entry = rb_entry(n, struct subvol_info, rb_local_node);
+> +			comp = memcmp(entry->uuid, uuid, BTRFS_UUID_SIZE);
+> +		} else if (type == subvol_search_by_root_id) {
+> +			entry = rb_entry(n, struct subvol_info,
+> +					 rb_root_id_node);
+> +			comp = entry->root_id - root_id;
+> +		} else if (type == subvol_search_by_path) {
+> +			entry = rb_entry(n, struct subvol_info, rb_path_node);
+> +			comp = strcmp(entry->path, path);
+> +		} else {
+> +			BUG();
+> +		}
+> +		if (comp < 0)
+> +			n = n->rb_left;
+> +		else if (comp > 0)
+> +			n = n->rb_right;
+> +		else
+> +			return entry;
+>  	}
+> +	return NULL;
+> +}
+> +
+> +/*
+> + * this function will be only called if kernel dosen't support uuid tree.
+> + */
+> +static struct subvol_info *subvol_uuid_search_old(struct subvol_uuid_search *s,
+> +				       u64 root_id, const u8 *uuid, u64 transid,
+> +				       const char *path,
+> +				       enum subvol_search_type type)
+> +{
+> +	struct rb_root *root;
+> +	if (type == subvol_search_by_received_uuid)
+> +		root = &s->received_subvols;
+> +	else if (type == subvol_search_by_uuid)
+> +		root = &s->local_subvols;
+> +	else if (type == subvol_search_by_root_id)
+> +		root = &s->root_id_subvols;
+> +	else if (type == subvol_search_by_path)
+> +		root = &s->path_subvols;
+> +	else
+> +		return NULL;
+> +	return tree_search(root, root_id, uuid, transid, path, type);
+>  }
+>  
+>  struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
+> @@ -273,6 +426,9 @@ struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
+>  	struct btrfs_root_item root_item;
+>  	struct subvol_info *info = NULL;
+>  
+> +	if (!s->uuid_tree_existed)
+> +		return subvol_uuid_search_old(s, root_id, uuid, transid,
+> +					     path, type);
+>  	switch (type) {
+>  	case subvol_search_by_received_uuid:
+>  		ret = btrfs_lookup_uuid_received_subvol_item(s->mnt_fd, uuid,
+> @@ -325,15 +481,203 @@ out:
+>  	return info;
+>  }
+>  
+> +static int is_uuid_tree_supported(int fd)
+> +{
+> +	int ret;
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +
+> +	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> +
+> +	sk->min_objectid = BTRFS_UUID_TREE_OBJECTID;
+> +	sk->max_objectid = BTRFS_UUID_TREE_OBJECTID;
+> +	sk->max_type = BTRFS_ROOT_ITEM_KEY;
+> +	sk->min_type = BTRFS_ROOT_ITEM_KEY;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +	sk->nr_items = 1;
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	/* the ioctl returns the number of item it found in nr_items */
+> +	if (sk->nr_items == 0)
+> +		return 0;
+> +
+> +	return 1;
+> +}
+> +
+> +/*
+> + * this function is mainly used to read all root items
+> + * it will be only used when we use older kernel which uuid
+> + * tree is not supported yet
+> + */
+>  int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+>  {
+> +	int ret;
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +	struct btrfs_ioctl_search_header *sh;
+> +	struct btrfs_root_item *root_item_ptr;
+> +	struct btrfs_root_item root_item;
+> +	struct subvol_info *si = NULL;
+> +	int root_item_valid = 0;
+> +	unsigned long off = 0;
+> +	int i;
+> +	int e;
+> +	char *path;
+> +
+>  	s->mnt_fd = mnt_fd;
+>  
+> -	return 0;
+> +	s->root_id_subvols = RB_ROOT;
+> +	s->local_subvols = RB_ROOT;
+> +	s->received_subvols = RB_ROOT;
+> +	s->path_subvols = RB_ROOT;
+> +
+> +	ret = is_uuid_tree_supported(mnt_fd);
+> +	if (ret < 0) {
+> +		fprintf(stderr,
+> +			"ERROR: check if we support uuid tree fails- %s\n",
+> +			strerror(errno));
+> +		return ret;
+> +	} else if (ret) {
+> +		/* uuid tree is supported */
+> +		s->uuid_tree_existed = 1;
+> +		return 0;
+> +	}
+> +	memset(&args, 0, sizeof(args));
+> +
+> +	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> +
+> +	sk->max_objectid = (u64)-1;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +	sk->min_type = BTRFS_ROOT_ITEM_KEY;
+> +	sk->max_type = BTRFS_ROOT_BACKREF_KEY;
+> +	sk->nr_items = 4096;
+> +
+> +	while (1) {
+> +		ret = ioctl(mnt_fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +		e = errno;
+> +		if (ret < 0) {
+> +			fprintf(stderr, "ERROR: can't perform the search- %s\n",
+> +				strerror(e));
+> +			return ret;
+> +		}
+> +		if (sk->nr_items == 0)
+> +			break;
+> +
+> +		off = 0;
+> +
+> +		for (i = 0; i < sk->nr_items; i++) {
+> +			sh = (struct btrfs_ioctl_search_header *)(args.buf +
+> +								  off);
+> +			off += sizeof(*sh);
+> +
+> +			if ((sh->objectid != 5 &&
+> +			    sh->objectid < BTRFS_FIRST_FREE_OBJECTID) ||
+> +			    sh->objectid > BTRFS_LAST_FREE_OBJECTID)
+> +				goto skip;
+> +
+> +			if (sh->type == BTRFS_ROOT_ITEM_KEY) {
+> +				/* older kernels don't have uuids+times */
+> +				if (sh->len < sizeof(root_item)) {
+> +					root_item_valid = 0;
+> +					goto skip;
+> +				}
+> +				root_item_ptr = (struct btrfs_root_item *)
+> +						(args.buf + off);
+> +				memcpy(&root_item, root_item_ptr,
+> +						sizeof(root_item));
+> +				root_item_valid = 1;
+> +			} else if (sh->type == BTRFS_ROOT_BACKREF_KEY ||
+> +				   root_item_valid) {
+> +				if (!root_item_valid)
+> +					goto skip;
+> +
+> +				path = btrfs_list_path_for_root(mnt_fd,
+> +								sh->objectid);
+> +				if (!path)
+> +					path = strdup("");
+> +				if (IS_ERR(path)) {
+> +					ret = PTR_ERR(path);
+> +					fprintf(stderr, "ERROR: unable to "
+> +							"resolve path "
+> +							"for root %llu\n",
+> +							sh->objectid);
+> +					goto out;
+> +				}
+> +
+> +				si = calloc(1, sizeof(*si));
+> +				si->root_id = sh->objectid;
+> +				memcpy(si->uuid, root_item.uuid,
+> +						BTRFS_UUID_SIZE);
+> +				memcpy(si->parent_uuid, root_item.parent_uuid,
+> +						BTRFS_UUID_SIZE);
+> +				memcpy(si->received_uuid,
+> +						root_item.received_uuid,
+> +						BTRFS_UUID_SIZE);
+> +				si->ctransid = btrfs_root_ctransid(&root_item);
+> +				si->otransid = btrfs_root_otransid(&root_item);
+> +				si->stransid = btrfs_root_stransid(&root_item);
+> +				si->rtransid = btrfs_root_rtransid(&root_item);
+> +				si->path = path;
+> +				subvol_uuid_search_add(s, si);
+> +				root_item_valid = 0;
+> +			} else {
+> +				goto skip;
+> +			}
+> +
+> +skip:
+> +			off += sh->len;
+> +
+> +			/*
+> +			 * record the mins in sk so we can make sure the
+> +			 * next search doesn't repeat this root
+> +			 */
+> +			sk->min_objectid = sh->objectid;
+> +			sk->min_offset = sh->offset;
+> +			sk->min_type = sh->type;
+> +		}
+> +		sk->nr_items = 4096;
+> +		if (sk->min_offset < (u64)-1)
+> +			sk->min_offset++;
+> +		else if (sk->min_objectid < (u64)-1) {
+> +			sk->min_objectid++;
+> +			sk->min_offset = 0;
+> +			sk->min_type = 0;
+> +		} else
+> +			break;
+> +	}
+> +
+> +out:
+> +	return ret;
+>  }
+>  
+>  void subvol_uuid_search_finit(struct subvol_uuid_search *s)
+>  {
+> +	struct rb_root *root = &s->root_id_subvols;
+> +	struct rb_node *node;
+> +
+> +	if (!s->uuid_tree_existed)
+> +		return;
+> +
+> +	while ((node = rb_first(root))) {
+> +		struct subvol_info *entry =
+> +			rb_entry(node, struct subvol_info, rb_root_id_node);
+> +
+> +		free(entry->path);
+> +		rb_erase(node, root);
+> +		free(entry);
+> +	}
+> +
+> +	s->root_id_subvols = RB_ROOT;
+> +	s->local_subvols = RB_ROOT;
+> +	s->received_subvols = RB_ROOT;
+> +	s->path_subvols = RB_ROOT;
+>  }
+>  
+>  char *path_cat(const char *p1, const char *p2)
+> diff --git a/send-utils.h b/send-utils.h
+> index ed1a40e..943b027 100644
+> --- a/send-utils.h
+> +++ b/send-utils.h
+> @@ -38,6 +38,11 @@ enum subvol_search_type {
+>  };
+>  
+>  struct subvol_info {
+> +	struct rb_node rb_root_id_node;
+> +	struct rb_node rb_local_node;
+> +	struct rb_node rb_received_node;
+> +	struct rb_node rb_path_node;
+> +
+>  	u64 root_id;
+>  	u8 uuid[BTRFS_UUID_SIZE];
+>  	u8 parent_uuid[BTRFS_UUID_SIZE];
+> @@ -52,6 +57,12 @@ struct subvol_info {
+>  
+>  struct subvol_uuid_search {
+>  	int mnt_fd;
+> +	int uuid_tree_existed;
+> +
+> +	struct rb_root root_id_subvols;
+> +	struct rb_root local_subvols;
+> +	struct rb_root received_subvols;
+> +	struct rb_root path_subvols;
+>  };
+>  
+>  int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s);
+> 
 
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

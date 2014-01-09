@@ -1,90 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f177.google.com ([209.85.216.177]:56292 "EHLO
-	mail-qc0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751490AbaANNVF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 08:21:05 -0500
-Received: by mail-qc0-f177.google.com with SMTP id i8so4088521qcq.22
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 05:21:04 -0800 (PST)
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29490 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753729AbaAIW2h convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jan 2014 17:28:37 -0500
+Received: from pps.filterd (m0004003 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s09MIwh2018360
+	for <linux-btrfs@vger.kernel.org>; Thu, 9 Jan 2014 14:28:37 -0800
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1ha3n187c5-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 14:28:36 -0800
+From: Chris Mason <clm@fb.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH]   Btrfs: setup inode location during btrfs_init_inode_locked
+Date: Thu, 9 Jan 2014 22:28:34 +0000
+Message-ID: <1389306538.839.2.camel@ret.masoncoding.com>
+Content-Type: text/plain; charset="utf-7"
 MIME-Version: 1.0
-Date: Tue, 14 Jan 2014 14:21:03 +0100
-Message-ID: <CAF1_xX3TX0JSEeDOG65p3e5g+R201T7HDkNVjm5zaaetPEhtGg@mail.gmail.com>
-Subject: v3.13-rc3 OOPS
-From: Ronald <ronald645@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear developers,
+We have a race during inode init because the BTRFS+AF8-I(inode)-+AD4-location is setup
+after the inode hash table lock is dropped.  btrfs+AF8-find+AF8-actor uses the location
+field, so our search might not find an existing inode in the hash table if we
+race with the inode init code.
 
-I have a 1250MHZ 512MB RAM x86 UP system. It contains several btrfs
-partitions on top of LVM mounted with compress=lzo,space_cache,noatime
-and some other standard options.
+This commit things to setup the location field sooner.  Also the find actor now
+uses only the location objectid to match inodes.  For inode hashing, we just
+need a unique and stable test, it doesn't have to reflect the inode numbers we
+show to userland.
 
-It uses a trimmed custom kernel. The -dirty part in it's name is
-because the command 'hostname' was not there at the time of build.
+Signed-off-by: Chris Mason +ADw-clm+AEA-fb.com+AD4-
 
-This gave an OOPS. It's typed over from a photo, so please be careful.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9eaa1c8..8010b49 100644
+--- a/fs/btrfs/inode.c
++-+-+- b/fs/btrfs/inode.c
++AEAAQA- -60,7 +-60,7 +AEAAQA-
+ +ACM-include +ACI-hash.h+ACI-
+ 
+ struct btrfs+AF8-iget+AF8-args +AHs-
+-	u64 ino+ADs-
++-	struct btrfs+AF8-key +ACo-location+ADs-
+ 	struct btrfs+AF8-root +ACo-root+ADs-
+ +AH0AOw-
+ 
++AEAAQA- -4932,7 +-4932,9 +AEAAQA- again:
+ static int btrfs+AF8-init+AF8-locked+AF8-inode(struct inode +ACo-inode, void +ACo-p)
+ +AHs-
+ 	struct btrfs+AF8-iget+AF8-args +ACo-args +AD0- p+ADs-
+-	inode-+AD4-i+AF8-ino +AD0- args-+AD4-ino+ADs-
++-	inode-+AD4-i+AF8-ino +AD0- args-+AD4-location-+AD4-objectid+ADs-
++-	memcpy(+ACY-BTRFS+AF8-I(inode)-+AD4-location, args-+AD4-location,
++-	       sizeof(+ACo-args-+AD4-location))+ADs-
+ 	BTRFS+AF8-I(inode)-+AD4-root +AD0- args-+AD4-root+ADs-
+ 	return 0+ADs-
+ +AH0-
++AEAAQA- -4940,19 +-4942,19 +AEAAQA- static int btrfs+AF8-init+AF8-locked+AF8-inode(struct inode +ACo-inode, void +ACo-p)
+ static int btrfs+AF8-find+AF8-actor(struct inode +ACo-inode, void +ACo-opaque)
+ +AHs-
+ 	struct btrfs+AF8-iget+AF8-args +ACo-args +AD0- opaque+ADs-
+-	return args-+AD4-ino +AD0APQ- btrfs+AF8-ino(inode) +ACYAJg-
++-	return args-+AD4-location-+AD4-objectid +AD0APQ- BTRFS+AF8-I(inode)-+AD4-location.objectid +ACYAJg-
+ 		args-+AD4-root +AD0APQ- BTRFS+AF8-I(inode)-+AD4-root+ADs-
+ +AH0-
+ 
+ static struct inode +ACo-btrfs+AF8-iget+AF8-locked(struct super+AF8-block +ACo-s,
+-				       u64 objectid,
++-				       struct btrfs+AF8-key +ACo-location,
+ 				       struct btrfs+AF8-root +ACo-root)
+ +AHs-
+ 	struct inode +ACo-inode+ADs-
+ 	struct btrfs+AF8-iget+AF8-args args+ADs-
+-	unsigned long hashval +AD0- btrfs+AF8-inode+AF8-hash(objectid, root)+ADs-
++-	unsigned long hashval +AD0- btrfs+AF8-inode+AF8-hash(location-+AD4-objectid, root)+ADs-
+ 
+-	args.ino +AD0- objectid+ADs-
++-	args.location +AD0- location+ADs-
+ 	args.root +AD0- root+ADs-
+ 
+ 	inode +AD0- iget5+AF8-locked(s, hashval, btrfs+AF8-find+AF8-actor,
++AEAAQA- -4969,13 +-4971,11 +AEAAQA- struct inode +ACo-btrfs+AF8-iget(struct super+AF8-block +ACo-s, struct btrfs+AF8-key +ACo-location,
+ +AHs-
+ 	struct inode +ACo-inode+ADs-
+ 
+-	inode +AD0- btrfs+AF8-iget+AF8-locked(s, location-+AD4-objectid, root)+ADs-
++-	inode +AD0- btrfs+AF8-iget+AF8-locked(s, location, root)+ADs-
+ 	if (+ACE-inode)
+ 		return ERR+AF8-PTR(-ENOMEM)+ADs-
+ 
+ 	if (inode-+AD4-i+AF8-state +ACY- I+AF8-NEW) +AHs-
+-		BTRFS+AF8-I(inode)-+AD4-root +AD0- root+ADs-
+-		memcpy(+ACY-BTRFS+AF8-I(inode)-+AD4-location, location, sizeof(+ACo-location))+ADs-
+ 		btrfs+AF8-read+AF8-locked+AF8-inode(inode)+ADs-
+ 		if (+ACE-is+AF8-bad+AF8-inode(inode)) +AHs-
+ 			inode+AF8-tree+AF8-add(inode)+ADs-
 
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/async-thread.c:619!
-invalid opcode: 0000 [#1]
-CPU: 0 PID: 16753 Comm: btrfs-endio-met Not tainted 3.13.0-rc3-dirty #3
-Hardware name: MSI MS-6712/MS-6712, BIOS Version 07.00T
-task: d2c45440 ti: c0096000 task.ti: c405e000
-EIP: 0060:[<c11bd9b1>] EFLAGS: 00010046 CPU: 0
-EIP is at btrfs_queue_worker+0x221/0x230
-EAX: 00000000 EBX: cdf2256c ECX: 00000286 EDX: cdf22588
-ESI: 00000000 EDI: 00000000 EBP: c0097e18 ESP: c0097e00
- DS: 007b ES: 007b FS: 0000 GS: 00e0 SS: 0068
-CR0: 8005003b CR2: 080e0000 CR3: 1132e000 CR4: 000007d0
-Stack:
- cdf22588 c41b3e60 cdf22590 cdf22000 d7ef52f4 00000000 c0097e24 c1185e2b
- c77aa3c0 c0097e2c c10d0664 c0097e40 c11b3441 de4b2c00 d339a4f8 00000029
- c0097e48 c10d0664 c0097e80 c13e243e 00000000 c0097e5c c107fabe c0097e70
-Call Trace:
- [<c1185e2b>] end_workqueue_bio+0x7b/0xa0
- [<c10d0664>] bio_endio+0x14/0x30
- [<c11b3441>] btrfs_end_bio+0xe1/0x150
- [<c10d0664>] bio_endio+0x14/0x30
- [<c13e243e>] dec_pending+0x11e/0x220
- [<c107fabe>] ? mempool_free_slab+0xe/0x10
- [<c107fa6b>] ? mempool_free+0x2b/0x60
- [<c13e2631>] clone_endio+0x71/0xa0
- [<c10d0664>] bio_endio+0x14/0x30
- [<c1213d5a>] blk_update_request+0x7a/0x2c0
- [<c12127a8>] ? __blk_run_queue+0x28/0x40
- [<c1213fb5>] blk_update_bidi_request+0x15/0x70
- [<c1214030>] blk_end_bidi_request+0x20/0x60
- [<c12140f2>] blk_end_request+0x12/0x20
- [<c1380d43>] scsi_io_completion+0x93/0x5c0
- [<c137b424>] scsi_finish_command+0x84/0xb0
- [<c1380bde>] scsi_softirq_done+0xee/0x120
- [<c103deb7>] ? put_cred_rcu+0x37/0x70
- [<c1218b68>] blk_done_softirq+0x58/0x70
- [<c1027661>] __do_softirq+0xa1/0x180
- [<c10275c0>] ? _local_bh_enable+0x40/0x40
-<IRQ>
- [<c1027975>] ? irq_exit+0x95/0xa0
- [<c1003473>] ? do_IRQ+0x43/0xb0
- [<c11fcc70>] ? shm_try_destroy_orphaned+0x40/0x40
- [<c14e91b0>] ? common_interrupt+0x30/0x35
- [<c11fcc70>] ? shm_try_destroy_orphaned+0x40/0x40
- [<c11fcc7a>] ? shm_try_destroy_current+0xa/0x40
- [<c122ca4b>] ? idr_for_each+0xab/0x100
- [<c11fcc70>] ? shm_try_destroy_orphaned+0x40/0x40
- [<c1022b2b>] ? mm_release+0x6b/0xf0
- [<c11fd1d7>] ? exit_shm+0x57/0x60
- [<c1025b3b>] ? do_exit+0x1bb/0x7f0
- [<c11bd9c0>] ? btrfs_queue_worker+0x230/0x230
- [<c1039dee>] ? kthread+0x8e/0xb0
- [<c14e8c77>] ? ret_from_kernel_thread+0x1b/0x28
- [<c1039d60>] ? __kthread_parkme+0x60/0x60
-Code: 83 c3 2e 89 59 1c 89 41 20 89 10 e9 e0 fe ff ff 66 90 c7 43 14
-01 00 00 00 8b 73 24 8d 53 1c 8b 43 1c e?b bf 8b 75 f0 31 c?0 eb bc
-<0f> 0b 8d
- b6 00 00 00 00 8d bc 27 00 00 00 00 55 8b 0d dc 01 61
-EIP: [<c11bd9b1>] btrfs_queue_worker+0x221/0x230 SS:ESP 0068:c0097e00
-Kernel panic - not syncing: Fatal exception in interrupt
-drm_kms_helper: panic occurred, switching back to text console

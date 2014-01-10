@@ -1,80 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38939 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:33035 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750944AbaAJPxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jan 2014 10:53:47 -0500
+	id S1751213AbaAJQ04 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 11:26:56 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W1eP3-0008Mb-Uo
-	for linux-btrfs@vger.kernel.org; Fri, 10 Jan 2014 16:53:45 +0100
+	id 1W1ev9-0004Ls-A0
+	for linux-btrfs@vger.kernel.org; Fri, 10 Jan 2014 17:26:55 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 16:53:45 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 17:26:55 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 16:53:45 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 17:26:55 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: backpointer mismatch
-Date: Fri, 10 Jan 2014 15:53:19 +0000 (UTC)
-Message-ID: <pan$3cf85$2453ae59$210fcea3$d7c39e55@cox.net>
-References: <52CF7032.3090004@oma.be>
-	<pan$d701f$adb6e087$f10cdac$a6ccb243@cox.net>
-	<20140110211659.2bc9e1d7@natsu>
+Subject: Re: Problems with incremental send/receive
+Date: Fri, 10 Jan 2014 16:26:33 +0000 (UTC)
+Message-ID: <pan$77172$984d3ca3$b9ceaed1$a8af8577@cox.net>
+References: <CAFTPBcJ3HHLm_ecxvjB5+ZnD+_s1uMCef_xAjD7tbp9SXgED8A@mail.gmail.com>
+	<52CE051A.101@cn.fujitsu.com>
+	<CAFTPBc+Bqj7e7VM_Z3srQr+78xZ7PA6p=C9KXx3SOxYDV5P5SA@mail.gmail.com>
+	<CAFTPBc+0G9BR1ugLDXfyDQK9CU+VdC9NRCzKsjYga4TK1PbsPQ@mail.gmail.com>
+	<52CFA927.8040107@cn.fujitsu.com>
+	<CAFTPBcKCZwoYoFFOsU3Jg6Cc1evQVOvJ-tjLqDufEaNkx=XkhA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Fri, 10 Jan 2014 21:16:59 +0600 as excerpted:
+Felix Blanke posted on Fri, 10 Jan 2014 14:15:07 +0100 as excerpted:
 
-> On Fri, 10 Jan 2014 14:26:19 +0000 (UTC)
-> Duncan <1i5t5.duncan@cox.net> wrote:
-> 
->> IOW, your backups shouldn't be btrfs, because btrfs itself is testing,
->> and any data stored on it is by definition testing-only data you don't
->> particularly care about, either because you have good tested-restorable
->> backups, or because the data really isn't that valuable to you in the
->> first place.
-> 
-> On the contrary, I think a backup storage area is an excellent place to
-> start rolling-out btrfs from, because:
-> 
-> 1) the snapshot capability 
+> Hi Want,
 
-Point agreed. =:^)
+[snip]
+ 
+> On Fri, Jan 10, 2014 at 9:02 AM, Wang Shilong
 
-> 2) it's *backups*, by definition it's non-unique replaceable data that
-> also exists elsewhere (and in this case on the primary storage, that's
-> probably much less experimental and more redundant as well).
-> 
-> My primary storage is currently Ext4 and backups are all on btrfs.
+OT, but...
 
-But what happens if you actually /need/ those backups, and in going to 
-use them, you find they're bugged due to some as yet unfixed bug in still 
-under development btrfs?
+In language circles that's commonly known as a Cupertino, named for the 
+fact that some older spellcheckers didn't know the word cooperation, and 
+would suggest replacing it with Cupertino (the city), instead of the dash-
+compounded co-operation.
 
-To me, the /point/ of backups is reliability.  I need to *KNOW* they're 
-reliable, and btrfs simply isn't intended or claimed to provide that 
-guaranteed stable reliability yet.
+So an inappropriate (and often amusing) spellcheck correction is known as 
+a Cupertino, with the phenomenon known as the Cupertino effect.
 
-While admittedly a lot of people are now using btrfs without issue, and 
-I'm using it here myself as my primary/working copy as well as first 
-level backup (with off-btrfs backups to my first-level btrfs backups), I 
-simply couldn't rest well if I were using it for (all level) backups, 
-because it simply doesn't provide the proven over years level of 
-stability and reliability that for me is the whole /point/ of backups 
-(otherwise, why bother?), yet.
+http://en.wiktionary.org/wiki/Cupertino_effect
 
-Never-the-less, if you're comfortable with that level of additional risk 
-in your backups, it's your system and your data at risk, so more power to 
-you! =:^)
+(I personally would have named it an "allot", the frequent but 
+inappropriate suggestion to replace the informal "alot", where the 
+suggestion /should/ be the more acceptable "a lot", since that's the case 
+where I first became aware of the phenomenon, and I see "allot" used in 
+the "alot" context frequently enough that I know I'm definitely not the 
+only one to have the problem.)
 
-But IMO, /recommending/ btrfs for backups at this point (regardless of 
-what I was or was not doing myself, accepting the brown-bag should my 
-decision for my own data turn out to have been a bad one) is nothing 
-other than irresponsible, and as such I could never do it.
+(See also Mondegreen, Snowclone, and Crashblossom (this one too new to 
+appear in wiktionary apparently, but google has it), other christened 
+phenomena of common modern language mistakes.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,82 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpfb2-g21.free.fr ([212.27.42.10]:46006 "EHLO
-	smtpfb2-g21.free.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754901AbaAIWrs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 17:47:48 -0500
-Received: from smtp5-g21.free.fr (smtp5-g21.free.fr [212.27.42.5])
-	by smtpfb2-g21.free.fr (Postfix) with ESMTP id 40422D1AEA4
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jan 2014 23:47:45 +0100 (CET)
-From: Pascal VITOUX <vitoux.pascal@gmail.com>
+Received: from mail-pd0-f173.google.com ([209.85.192.173]:46910 "EHLO
+	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751202AbaAJOu2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 09:50:28 -0500
+Received: by mail-pd0-f173.google.com with SMTP id p10so4647797pdj.18
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 06:50:27 -0800 (PST)
+From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Pascal VITOUX <vitoux.pascal@gmail.com>
-Subject: [PATCH] btrfs-progs: skip non-regular files while defragmenting
-Date: Thu,  9 Jan 2014 23:47:14 +0100
-Message-Id: <1389307634-8226-1-git-send-email-vitoux.pascal@gmail.com>
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH] Btrfs-progs: check return value of read_tree_block() in check_chunks_and_extents()
+Date: Fri, 10 Jan 2014 22:50:02 +0800
+Message-Id: <1389365402-1866-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Skip non-regular files to avoid ioctl errors while defragmenting.
+The following steps could trigger btrfs segfault:
 
-They are silently ignored in recursive mode but reported as errors when
-used as command-line arguments.
+mkfs -t btrfs -m raid5 -d raid5 /dev/loop{0..3}
+losetup -d /dev/loop2
+btrfs check /dev/loop0
 
-Signed-off-by: Pascal VITOUX <vitoux.pascal@gmail.com>
+The reason is that read_tree_block() returns NULL and
+add_root_to_pending() dereferences it without checking it first.
+
+Also replace a BUG_ON with proper error checking.
+
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
 ---
- cmds-filesystem.c | 26 ++++++++++++++++----------
- 1 file changed, 16 insertions(+), 10 deletions(-)
+ cmds-check.c       | 6 +++++-
+ disk-io.c          | 5 ++++-
+ free-space-cache.c | 2 +-
+ 3 files changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 1c1926b..54fba10 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -646,7 +646,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	int e = 0;
- 	int fd = 0;
+diff --git a/cmds-check.c b/cmds-check.c
+index a65670e..1059c0a 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -5513,7 +5513,11 @@ again:
+ 			buf = read_tree_block(root->fs_info->tree_root,
+ 					      btrfs_root_bytenr(&ri),
+ 					      btrfs_level_size(root,
+-					       btrfs_root_level(&ri)), 0);
++					      btrfs_root_level(&ri)), 0);
++			if (!buf) {
++				ret = -EIO;
++				goto out;
++			}
+ 			add_root_to_pending(buf, &extent_cache, &pending,
+ 					    &seen, &nodes, &found_key);
+ 			free_extent_buffer(buf);
+diff --git a/disk-io.c b/disk-io.c
+index 0af3898..b0a8d01 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -644,7 +644,10 @@ out:
+ 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
+ 	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
+ 				     blocksize, generation);
+-	BUG_ON(!root->node);
++	if (!root->node) {
++		free(root);
++		return ERR_PTR(-EIO);
++	}
+ insert:
+ 	root->ref_cows = 1;
+ 	return root;
+diff --git a/free-space-cache.c b/free-space-cache.c
+index ddeeeb6..899a766 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -435,7 +435,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 	if (ret < 0) {
+ 		ret = 0;
  
--	if (typeflag == FTW_F) {
-+	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
- 		if (defrag_global_verbose)
- 			printf("%s\n", fpath);
- 		fd = open(fpath, O_RDWR);
-@@ -748,6 +748,7 @@ static int cmd_defrag(int argc, char **argv)
- 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
+-		printf("failed to load free space cache for block group %llu",
++		printf("failed to load free space cache for block group %llu\n",
+ 			block_group->key.objectid);
+ 	}
  
- 	for (i = optind; i < argc; i++) {
-+		struct stat st;
- 		dirstream = NULL;
- 		fd = open_file_or_dir(argv[i], &dirstream);
- 		if (fd < 0) {
-@@ -757,16 +758,21 @@ static int cmd_defrag(int argc, char **argv)
- 			close_file_or_dir(fd, dirstream);
- 			continue;
- 		}
-+		if (fstat(fd, &st)) {
-+			fprintf(stderr, "ERROR: failed to stat %s - %s\n",
-+					argv[i], strerror(errno));
-+			defrag_global_errors++;
-+			close_file_or_dir(fd, dirstream);
-+			continue;
-+		}
-+		if (!(S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
-+			fprintf(stderr, "ERROR: %s is not a directory or a regular "
-+					"file.\n", argv[i]);
-+			defrag_global_errors++;
-+			close_file_or_dir(fd, dirstream);
-+			continue;
-+		}
- 		if (recursive) {
--			struct stat st;
--
--			if (fstat(fd, &st)) {
--				fprintf(stderr, "ERROR: failed to stat %s - %s\n",
--						argv[i], strerror(errno));
--				defrag_global_errors++;
--				close_file_or_dir(fd, dirstream);
--				continue;
--			}
- 			if (S_ISDIR(st.st_mode)) {
- 				ret = nftw(argv[i], defrag_callback, 10,
- 						FTW_MOUNT | FTW_PHYS);
 -- 
-1.8.5.2
+1.8.4.2
 

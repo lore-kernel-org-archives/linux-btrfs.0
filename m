@@ -1,121 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob09.myregisteredsite.com ([209.17.115.47]:57745 "EHLO
-	atl4mhob09.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751691AbaAJPqE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jan 2014 10:46:04 -0500
-Received: from mailpod1.hostingplatform.com ([10.30.71.116])
-	by atl4mhob09.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0AFk298004583
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 10:46:02 -0500
-Message-ID: <52D015D5.4050909@chinilu.com>
-Date: Fri, 10 Jan 2014 07:46:29 -0800
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
-MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: How does btrfs handle bad blocks in raid1?
-References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com>	<20140109104247.GH15634@carfax.org.uk>	<pan$ab233$2067aff9$a13049e6$e769dc55@cox.net>	<52CE9B9C.2040006@gmail.com>	<pan$5a8b0$23680cbf$a1bd97e9$1743c66f@cox.net>	<CAPpBBdNNHB3igMK67j5FpZxg7f6tmxGZk8x1OSwKd8GhTqsj=w@mail.gmail.com> <pan$d99db$e3c147a3$da4732f1$5ec5ee5@cox.net>
-In-Reply-To: <pan$d99db$e3c147a3$da4732f1$5ec5ee5@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:38939 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750944AbaAJPxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 10:53:47 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W1eP3-0008Mb-Uo
+	for linux-btrfs@vger.kernel.org; Fri, 10 Jan 2014 16:53:45 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 16:53:45 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 16:53:45 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: backpointer mismatch
+Date: Fri, 10 Jan 2014 15:53:19 +0000 (UTC)
+Message-ID: <pan$3cf85$2453ae59$210fcea3$d7c39e55@cox.net>
+References: <52CF7032.3090004@oma.be>
+	<pan$d701f$adb6e087$f10cdac$a6ccb243@cox.net>
+	<20140110211659.2bc9e1d7@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/10/2014 07:27 AM, Duncan wrote:
-> George Eleftheriou posted on Thu, 09 Jan 2014 17:49:48 +0100 as excerpted:
->
->> I'm really looking forward to the day that typing:
->>
->> mkfs.btrfs -d raid10 -m raid10  /dev/sd[abcd]
->>
->> will do exactly what is expected to do. A true RAID10 resilient in 2
->> disks' failure. Simple and beautiful.
->>
->> We're almost there...
-> I see the further discussion, but three comments:
->
-> 1) (As should be obvious by now, but as the saying goes...)
->
-> I want N-way-mirroring so bad I can taste it!  =:^)
->
-> 2) Assuming a guaranteed 2-device-drop safe 3(+)-way-mirroring
-> possibility, the above mkfs.btrfs would by the same assumption of
-> necessity be a bit more complicated than that (and would require six
-> devices of the same size for simplest conceptual formulation, not the
-> four shown above).
->
-> Because at that point, a distinction between these two possibilities for
-> a 6-device raid10 would need to be made:
->
-> * Two-way raid1/mirror on the devices, three-way raid0/stripe on top.
->
-> This is the current default and only choice, as discussed elsewhere in
-> the subthread.  The three-way-stripe is 3X fast (ideal, probably more
-> like 2X fast in practice, allowing for overhead), while the 2-way-mirror
-> provides guaranteed 1-device-drop safety, with a possibility to lose two
-> devices and recover, or not, depending on which two they are.
->
-> For maximum backward compatibility with what we have now, since it /is/
-> what we have now, that's likely what you'd still get with this:
->
-> mkfs.btrfs -d raid10 -m raid10 /dev/sd[abcdef]
->
-> ... but it'd only guarantee single-device-drop safety.
->
-> The alternative, which I want so bad I can taste it, would be:
->
-> * Three-way raid1/mirror on the devices, two-way raid0/stripe on top.
->
-> That would sacrifice the 3X speed reducing it to 2X (ideal, probably 1.5X
-> in practice due to overhead), but the 3-way-mirror would provide *BOTH*
-> guaranteed 2-device-drop safety, *AND* guaranteed checksummed 3-way
-> individual-btrfs-node integrity-checked mirroring, such that should any
-> two of the three mirrors fail checksum, there'd still be that third copy.
->
-> What would the mkfs.btrfs command look like for that?  I've no insight on
-> exactly how they plan to implement it, but here's one possible idea:
->
-> mkfs.btrfs -d raid10.3 -m raid10.3 /dev/sd[abcdef]
->
-> The ".3" bit would indicate three-way-mirroring instead of the default 2-
-> way-mirroring.  It has the advantage of relative brevity, but isn't
-> entirely intuitive.
->
-> Another possibility would be a more explicit two-component mode-spec,
-> like this:
->
-> mkfs.btrfs -d mirror3 (-d) raid10, -m mirror3 (-m) raid10 /dev/sd[abcdef]
->
-> (Whether the second -d/-m specifier was required to be there, optional,
-> or could not be there, would depend on how they setup the parser.
-> Another option would be a no-space comma separator: -d mirror3,raid10
-> -m mirror3,raid10 .)
->
-> This is more verbose but MUCH clearer, and as such I believe would be
-> preferred to the dot-format, since after all, mkfs isn't something most
-> peope do a lot of, so clarity should be preferred to brevity.  And I'd
-> predict the no-space-comma-separator, since that format's least
-> complicated in terms of shell parsing, and is already familiar from usage
-> in fstab, among other places.
->
-> Oh, that would taste SOOO good! =:^)
->
-> 3) Just for clarity in case anyone were to get mixed up, those devices
-> can be partitions (or for that matter, mdraids or whatever) too.  They
-> don't have to be actual whole physical devices.  So /dev/sd[abcdef]5 ,
-> for instance, would work too.  That's actually what I'm already doing
-> here, altho obviously not with the n-way-mirroring I so want, as it's not
-> available yet.
->
-> (This comment specifically included since the fact that multi-device
-> btrfs could be on partition-devices wasn't clear to at least one list
-> poster, not that long ago.  So just to make it explicitly clear to
-> anybody stumbling on this post from google or whatever...)
->
-Duncan, you are describing exactly the sort of ROBUST RAID product I 
-would like to see btrfs become.  In this world of ridiculously 
-inexpensive hard drives I don't think we should ever have to risk ending 
-up in a degraded state, at least certainly not for long, but not ever 
-would be ideal.  We should never end up being in a panic to change out a 
-drive and facing additional panic as to whether a rebuild is going to 
-succeed or fall on its face.  Those days should be over forever, 
-barring, of course, a direct nuclear hit.  - George
+Roman Mamedov posted on Fri, 10 Jan 2014 21:16:59 +0600 as excerpted:
+
+> On Fri, 10 Jan 2014 14:26:19 +0000 (UTC)
+> Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+>> IOW, your backups shouldn't be btrfs, because btrfs itself is testing,
+>> and any data stored on it is by definition testing-only data you don't
+>> particularly care about, either because you have good tested-restorable
+>> backups, or because the data really isn't that valuable to you in the
+>> first place.
+> 
+> On the contrary, I think a backup storage area is an excellent place to
+> start rolling-out btrfs from, because:
+> 
+> 1) the snapshot capability 
+
+Point agreed. =:^)
+
+> 2) it's *backups*, by definition it's non-unique replaceable data that
+> also exists elsewhere (and in this case on the primary storage, that's
+> probably much less experimental and more redundant as well).
+> 
+> My primary storage is currently Ext4 and backups are all on btrfs.
+
+But what happens if you actually /need/ those backups, and in going to 
+use them, you find they're bugged due to some as yet unfixed bug in still 
+under development btrfs?
+
+To me, the /point/ of backups is reliability.  I need to *KNOW* they're 
+reliable, and btrfs simply isn't intended or claimed to provide that 
+guaranteed stable reliability yet.
+
+While admittedly a lot of people are now using btrfs without issue, and 
+I'm using it here myself as my primary/working copy as well as first 
+level backup (with off-btrfs backups to my first-level btrfs backups), I 
+simply couldn't rest well if I were using it for (all level) backups, 
+because it simply doesn't provide the proven over years level of 
+stability and reliability that for me is the whole /point/ of backups 
+(otherwise, why bother?), yet.
+
+Never-the-less, if you're comfortable with that level of additional risk 
+in your backups, it's your system and your data at risk, so more power to 
+you! =:^)
+
+But IMO, /recommending/ btrfs for backups at this point (regardless of 
+what I was or was not doing myself, accepting the brown-bag should my 
+decision for my own data turn out to have been a bad one) is nothing 
+other than irresponsible, and as such I could never do it.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

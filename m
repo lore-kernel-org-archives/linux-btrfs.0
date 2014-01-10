@@ -1,85 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mirapoint3.brutele.be ([212.68.199.148]:59934 "EHLO
-	mirapoint3.brutele.be" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751029AbaAJEFw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 23:05:52 -0500
-Message-ID: <52CF7032.3090004@oma.be>
-Date: Fri, 10 Jan 2014 04:59:46 +0100
-From: Peter van Hoof <p.vanhoof@oma.be>
+Received: from mail-pd0-f180.google.com ([209.85.192.180]:52778 "EHLO
+	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751930AbaAJH0g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 02:26:36 -0500
+Received: by mail-pd0-f180.google.com with SMTP id q10so4225717pdj.25
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jan 2014 23:26:36 -0800 (PST)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: backpointer mismatch
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CAFTPBc+Bqj7e7VM_Z3srQr+78xZ7PA6p=C9KXx3SOxYDV5P5SA@mail.gmail.com>
+References: <CAFTPBcJ3HHLm_ecxvjB5+ZnD+_s1uMCef_xAjD7tbp9SXgED8A@mail.gmail.com>
+	<52CE051A.101@cn.fujitsu.com>
+	<CAFTPBc+Bqj7e7VM_Z3srQr+78xZ7PA6p=C9KXx3SOxYDV5P5SA@mail.gmail.com>
+Date: Fri, 10 Jan 2014 08:26:36 +0100
+Message-ID: <CAFTPBc+0G9BR1ugLDXfyDQK9CU+VdC9NRCzKsjYga4TK1PbsPQ@mail.gmail.com>
+Subject: Re: Problems with incremental send/receive
+From: Felix Blanke <felixblanke@gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Wang,
 
-I am using btrfs for my backup RAID. This had been running well for 
-about a year. Recently I decided the upgrade the backup server to 
-openSUSE 13.1. I checked all filesystems before the upgrade and 
-everything was clean. I had several attempts at upgrading the system, 
-but all failed (the installation of some rpm would hang indefinitely). 
-So I aborted the installation and reverted the system back to openSUSE 
-12.3 (with a custom-installed 3.9.7 kernel). Unfortunately, after this 
-the backup RAID reported lots of errors.
+here are the versioninformation:
 
-When I run btrfsck on the filesystem, I get around 1.3M of these messages:
+server log # btrfs version
+Btrfs v3.12-dirty
+server log # uname -a
+Linux server.home 3.12.6-hardened-r3 #1 SMP Thu Jan 2 13:16:48 CET
+2014 x86_64 Intel(R) Celeron(R) CPU G1610 @ 2.60GHz GenuineIntel
+GNU/Linux
 
-Extent back ref already exists for 1116254208 parent 11145490432 root 0
+This should work if I understood you correct?
 
-and around 1.2M of these:
+Regards,
+Felix
 
-ref mismatch on [90670907392 4096] extent item 11, found 12
-Incorrect global backref count on 90670907392 found 11 wanted 12
-backpointer mismatch on [90670907392 4096]
-
-Filtering these out, this is the remaining output:
-
-checking extents
-Errors found in extent allocation tree or chunk allocation
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-Checking filesystem on /dev/md2
-UUID: 0b6a9d0d-e501-4a23-9d09-259b1f5b5652
-found 2213988384746 bytes used err is 0
-total csum bytes: 3185850148
-total tree bytes: 42770862080
-total fs tree bytes: 36787625984
-total extent tree bytes: 1643925504
-btree space waste bytes: 12475940633
-file data blocks allocated: 5269432860672
-  referenced 5254870626304
-Btrfs v3.12+20131125
-
-(this version of btrfsck comes from openSUSE factory).
-
-I also ran btrfs scrub on the file system. This uncovered 4 checksum 
-errors which I could repair manually. I do not know if that is related 
-to the problem above. At least it didn't solve it...
-
-The btrfs file system is installed on top of an mdadm RAID5.
-
-How worried should I be about the reported errors? What confuses me is 
-that in the end btrfsck reports an error count of 0.
-
-Should I try to repair this? I have had bad experiences in the past with 
-"btrfsck --repair", but that was with a much older version...
-
-I can of course recreate the backups, but this would take a long time 
-and I would loose my entire snapshot history which I would rather avoid...
-
-
-Cheers,
-
-Peter.
-
--- 
-Peter van Hoof
-Royal Observatory of Belgium
-Ringlaan 3
-1180 Brussel
-Belgium
-http://homepage.oma.be/pvh
+On Thu, Jan 9, 2014 at 12:36 PM, Felix Blanke <felixblanke@gmail.com> wrote:
+> Hi Wang,
+>
+> thank you for your answer.
+>
+> I am using the latest btrfs-progs with the 3.12 kernel. I don't have
+> access to the machine right now (it looks like it crashed :/) but I
+> can send the exact versions when I'm home.
+>
+> Regards,
+> Felix
+>
+> On Thu, Jan 9, 2014 at 3:10 AM, Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
+>> Hi Felix,
+>>
+>> It seems some reported this problem before. The problem for your below case
+>> is because you use latest btrfs-progs(v3.12?), which will need kernel
+>> update,
+>> kernel 3.12 is ok.
+>>
+>> However, i think btrfs-progs should keep compatibility, i will send a patch
+>> to
+>> make things more friendly.
+>>
+>> Thanks,
+>> Wang
+>>
+>> On 01/09/2014 06:04 AM, Felix Blanke wrote:
+>>>
+>>> Hi List,
+>>>
+>>> My backup stopped working and I can't figure out why. I'm using
+>>> send/receive with the "-p" switch for incremental backups using the
+>>> last snapshot as a parent snapshot for sending only the changed data.
+>>>
+>>> The problem occurs using my own backup script. After I discovered the
+>>> problem I did a quick test using the exact commands from the wiki with
+>>> the same result: It doesn't work. Here is the output:
+>>>
+>>>
+>>> server ~ # ./test_snapshot.sh
+>>> ++ btrfs subvolume snapshot -r /mnt/root1/@root_home/
+>>> /mnt/root1/snapshots/test
+>>> Create a readonly snapshot of '/mnt/root1/@root_home/' in
+>>> '/mnt/root1/snapshots/test'
+>>> ++ sync
+>>> ++ btrfs send /mnt/root1/snapshots/test
+>>> ++ btrfs receive /mnt/backup1/
+>>> At subvol /mnt/root1/snapshots/test
+>>> At subvol test
+>>> ++ btrfs subvolume snapshot -r /mnt/root1/@root_home/
+>>> /mnt/root1/snapshots/test_new
+>>> Create a readonly snapshot of '/mnt/root1/@root_home/' in
+>>> '/mnt/root1/snapshots/test_new'
+>>> ++ sync
+>>> ++ btrfs send -p /mnt/root1/snapshots/test /mnt/root1/snapshots/test_new
+>>> ++ btrfs receive /mnt/backup1/
+>>> At subvol /mnt/root1/snapshots/test_new
+>>> At snapshot test_new
+>>> ERROR: open @/test failed. No such file or directory
+>>>
+>>> I don't get where the "@/" in front of the snapshot name comes from.
+>>> It could be that I had a subvolume named @, but this doesn't exists
+>>> anymore and I don't understand why this would be important for the
+>>> send/receive.
+>>>
+>>> Some more details about the fs:
+>>>
+>>> server ~ # btrfs subvol list /mnt/root1/
+>>> ID 259 gen 568053 top level 5 path @root
+>>> ID 261 gen 568053 top level 5 path @var
+>>> ID 263 gen 568049 top level 5 path @home
+>>> ID 302 gen 568053 top level 5 path @owncloud_chroot
+>>> ID 421 gen 568038 top level 5 path @root_home
+>>> ID 30560 gen 563661 top level 5 path snapshots/home_2014-01-06-19:33_d
+>>> ID 30561 gen 563665 top level 5 path
+>>> snapshots/owncloud_chroot_2014-01-06-19:34_d
+>>> ID 30562 gen 563674 top level 5 path
+>>> snapshots/root_home_2014-01-06-19:38_d
+>>> ID 30563 gen 563675 top level 5 path snapshots/var_2014-01-06-19:39_d
+>>> ID 30564 gen 563697 top level 5 path snapshots/root_2014-01-06-19:50_d
+>>>
+>>> server ~ # btrfs subvol get-default /mnt/root1/
+>>> ID 5 (FS_TREE)
+>>>
+>>> server ~ # ls -l /mnt/root1/
+>>> total 0
+>>> drwxr-xr-x. 1 root root  30 May 10  2013 @home
+>>> drwxr-xr-x. 1 root root 134 Jan  5 19:27 @owncloud_chroot
+>>> drwxr-xr-x. 1 root root 204 Nov 24 18:16 @root
+>>> drwx------. 1 root root 468 Jan  8 22:47 @root_home
+>>> drwxr-xr-x. 1 root root 114 Oct  7 17:39 @var
+>>> drwx------. 1 root root 420 Jan  8 22:50 snapshots
+>>>
+>>>
+>>> Any ideas? Thanks in advance.
+>>>
+>>>
+>>> Regards,
+>>> Felix
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message tomajordomo@vger.kernel.org
+>>> More majordomo info athttp://vger.kernel.org/majordomo-info.html
+>>>
+>>

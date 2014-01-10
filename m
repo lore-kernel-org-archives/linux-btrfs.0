@@ -1,39 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob17.myregisteredsite.com ([209.17.115.57]:45767 "EHLO
-	atl4mhob17.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751745AbaAJBam (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jan 2014 20:30:42 -0500
-Received: from mailpod1.hostingplatform.com ([10.30.71.113])
-	by atl4mhob17.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0A1UeWe021573
-	for <linux-btrfs@vger.kernel.org>; Thu, 9 Jan 2014 20:30:40 -0500
-Message-ID: <52CF4D5D.2010709@chinilu.com>
-Date: Thu, 09 Jan 2014 17:31:09 -0800
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
+Received: from mirapoint3.brutele.be ([212.68.199.148]:59934 "EHLO
+	mirapoint3.brutele.be" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751029AbaAJEFw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jan 2014 23:05:52 -0500
+Message-ID: <52CF7032.3090004@oma.be>
+Date: Fri, 10 Jan 2014 04:59:46 +0100
+From: Peter van Hoof <p.vanhoof@oma.be>
 MIME-Version: 1.0
-To: Jim Salter <jim@jrs-s.net>
-CC: Clemens Eisserer <linuxhippy@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: How does btrfs handle bad blocks in raid1?
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>
-In-Reply-To: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: backpointer mismatch
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/09/2014 05:06 PM, Jim Salter wrote:
-> On Jan 9, 2014 7:46 PM, George Mitchell <george@chinilu.com> wrote:
->> I would prefer that the drive, even flash media type, would
->> catch and resolve write failures.  If it doesn't happen at the hardware
->> layer, according to how I understand Hugo's answer, btrfs, at least for
->> now, is not capable of it.
-> Not sure what you mean by this. If a bit flips on a btrfs-raid1 block, btrfs will detect it. Then it checks the mirror's copy of that block. It returns the good copy, then immediately writes the good copy over the bad copy.
->
-> I know this because I tested it directly just last week by flipping a bit in an offline btrfs filesystem manually. When I brought the volume back online and read the file containing the bit I flipped, it operated exactly as described, and logged its actions in kern.log, . :-)
-Jim, my point was that IF the drive does not successfully resolve the 
-bad block issue and btrfs takes a write failure every time it attempts 
-to overwrite the bad data, it is not going to remap that data, but 
-rather it is going to fail the drive.  In other words, if the drive has 
-a bad sector which it has not done anything about at the drive level, 
-btrfs will not remap the sector.  It will, rather, fail the drive. Is 
-that not correct?
+Hi,
+
+I am using btrfs for my backup RAID. This had been running well for 
+about a year. Recently I decided the upgrade the backup server to 
+openSUSE 13.1. I checked all filesystems before the upgrade and 
+everything was clean. I had several attempts at upgrading the system, 
+but all failed (the installation of some rpm would hang indefinitely). 
+So I aborted the installation and reverted the system back to openSUSE 
+12.3 (with a custom-installed 3.9.7 kernel). Unfortunately, after this 
+the backup RAID reported lots of errors.
+
+When I run btrfsck on the filesystem, I get around 1.3M of these messages:
+
+Extent back ref already exists for 1116254208 parent 11145490432 root 0
+
+and around 1.2M of these:
+
+ref mismatch on [90670907392 4096] extent item 11, found 12
+Incorrect global backref count on 90670907392 found 11 wanted 12
+backpointer mismatch on [90670907392 4096]
+
+Filtering these out, this is the remaining output:
+
+checking extents
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/md2
+UUID: 0b6a9d0d-e501-4a23-9d09-259b1f5b5652
+found 2213988384746 bytes used err is 0
+total csum bytes: 3185850148
+total tree bytes: 42770862080
+total fs tree bytes: 36787625984
+total extent tree bytes: 1643925504
+btree space waste bytes: 12475940633
+file data blocks allocated: 5269432860672
+  referenced 5254870626304
+Btrfs v3.12+20131125
+
+(this version of btrfsck comes from openSUSE factory).
+
+I also ran btrfs scrub on the file system. This uncovered 4 checksum 
+errors which I could repair manually. I do not know if that is related 
+to the problem above. At least it didn't solve it...
+
+The btrfs file system is installed on top of an mdadm RAID5.
+
+How worried should I be about the reported errors? What confuses me is 
+that in the end btrfsck reports an error count of 0.
+
+Should I try to repair this? I have had bad experiences in the past with 
+"btrfsck --repair", but that was with a much older version...
+
+I can of course recreate the backups, but this would take a long time 
+and I would loose my entire snapshot history which I would rather avoid...
+
+
+Cheers,
+
+Peter.
+
+-- 
+Peter van Hoof
+Royal Observatory of Belgium
+Ringlaan 3
+1180 Brussel
+Belgium
+http://homepage.oma.be/pvh

@@ -1,84 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33603 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751950AbaAJRER (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jan 2014 12:04:17 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W1fVI-00072y-0e
-	for linux-btrfs@vger.kernel.org; Fri, 10 Jan 2014 18:04:16 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 18:04:16 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 18:04:16 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: How does btrfs handle bad blocks in raid1?
-Date: Fri, 10 Jan 2014 17:03:52 +0000 (UTC)
-Message-ID: <pan$e7d15$902dd302$8a10224f$9d8c4bb8@cox.net>
-References: <CAFvQSYRWBqMdAm-9yWhv4SS1YW-LB71iOZvgkNPc9BG3Wh7erw@mail.gmail.com>
-	<20140109104247.GH15634@carfax.org.uk>
-	<pan$ab233$2067aff9$a13049e6$e769dc55@cox.net>
-	<28EF9764-B846-4AB4-AA88-9A37F106B6C6@colorremedies.com>
-	<52CEE901.1090207@gmail.com>
-	<DD76DCF3-93B9-4EAF-9732-C703D7C50A74@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from moutng.kundenserver.de ([212.227.126.186]:49773 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752291AbaAJXx7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 18:53:59 -0500
+Message-ID: <52D08812.3040707@friedels.name>
+Date: Sat, 11 Jan 2014 00:53:54 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfsck does not fix
+References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name> <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com> <52CC65C9.3090605@friedels.name>
+In-Reply-To: <52CC65C9.3090605@friedels.name>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Thu, 09 Jan 2014 11:52:08 -0700 as excerpted:
+Hello,
 
-> Understood. I'm considering a 2nd drive dying during rebuild (from a 1st
-> drive dying) as essentially simultaneous failures. And in the case of
-> raid10, the likelihood of a 2nd drive failure being the lonesome drive
-> in a mirrored set is statistically very unlikely. The next drive to fail
-> is going to be some other drive in the array, which still has a mirror.
+I was wondering whether I am doing something wrong in the way I am 
+asking/what I am asking.
+My understanding is, that btrfsck is not able to fix this error yet. So, 
+I am surprised, that noone is interested in this, apparently?
 
-While still statistically unlikely, the likelihood of that critical 
-second device[1] in a mirror-pair on a raid10 dying isn't /as/ unlikely 
-as you might think -- it's actually more likely than that of any one of 
-the still mirrored devices failing, for example.
+Regards,
+Hendrik Friedel
 
-The reason is that as soon as one of the devices in a mirror-pair fails, 
-the other one is suddenly doing double the work it was previously, and 
-twice the work any other still-paired devices in the array are doing!  
-And as any human who has tried to pull an 80-hour-work-week can attest, 
-double the work is *NOT* simply double the stress!
+Am 07.01.2014 21:38, schrieb Hendrik Friedel:
+> Hello,
+>
+>  >>>> I ran btrfsck on my volume with the repair option. When I re-run
+> it, >>I get the same errors as before.
+>> It mounts without errors? So why then btrfsck/btrfs repair? What
+>> precipitated the repair?
+>
+> I don't know what caused the damage, but a check revealed this:
+>
+> Checking filesystem on /dev/sdb1
+> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+> checking extents
+>
+> Extent back ref already exists for 2994950590464 parent 863072366592 root 0
+> Extent back ref already exists for 2994950836224 parent 863072366592 root 0
+> Extent back ref already exists for 862762737664 parent 863072366592 root 0
+> Extent back ref already exists for 2994950877184 parent 863072366592
+> [...]
+> Incorrect global backref count on 2995767250944 found 1 wanted 2
+> backpointer mismatch on [2995767250944 4096]
+> ref mismatch on [2995767304192 4096] extent item 1, found 2
+> Incorrect global backref count on 2995767304192 found 1 wanted 2
+> backpointer mismatch on [2995767304192 4096]
+> ref mismatch on [2995768258560 4096] extent item 1, found 2
+> Incorrect global backref count on 2995768258560 found 1 wanted 2
+> backpointer mismatch on [2995768258560 4096]
+> ref mismatch on [2995768459264 4096] extent item 1, found 2
+> Incorrect global backref count on 2995768459264 found 1 wanted 2
+> backpointer mismatch on [2995768459264 4096]
+> Errors found in extent allocation tree or chunk allocation
+>
+> ref mismatch on [2995768459264 4096] extent item 1, found 2
+> Incorrect global backref count on 2995768459264 found 1 wanted 2
+> backpointer mismatch on [2995768459264 4096]
+> Errors found in extent allocation tree or chunk allocation
+> checking free space cache
+> checking fs roots
+> root 256 inode 9579 errors 100, file extent discount
+> root 256 inode 9580 errors 100, file extent discount
+> root 256 inode 14258 errors 100, file extent discount
+> root 256 inode 14259 errors 100, file extent discount
+> root 4444 inode 9579 errors 100, file extent discount
+> root 4444 inode 9580 errors 100, file extent discount
+> root 4444 inode 14258 errors 100, file extent discount
+> root 4444 inode 14259 errors 100, file extent discount
+> found 1993711951581 bytes used err is 1
+> total csum bytes: 4560615360
+> total tree bytes: 5643403264
+> total fs tree bytes: 139776000
+> total extent tree bytes: 263602176
+> btree space waste bytes: 504484726
+> file data blocks allocated: 6557032402944
+>   referenced 6540949323776
+> Btrfs v3.12
+>
+> This made me run btrfsck with the repair option:
+>
+>
+> Extent back ref already exists for 2994950590464 parent 863072366592 root 0
+>
+> ref mismatch on [32935936 4096] extent item 1, found 2
+> repair deleting extent record: key 32935936 168 4096
+> adding new tree backref on start 32935936 len 4096 parent 2994784206848
+> root 2994784206848
+> Incorrect global backref count on 32935936 found 1 wanted 2
+> backpointer mismatch on [32935936 4096]
+> ref mismatch on [32997376 4096] extent item 1, found 2
+> repair deleting extent record: key 32997376 168 4096
+> adding new tree backref on start 32997376 len 4096 parent 2994824708096
+> root 2994824708096
+> Incorrect global backref count on 32997376 found 1 wanted 2
+> backpointer mismatch on [32997376 4096]
+>
+> Incorrect global backref count on 8988365651968 found 1 wanted 0
+> backpointer mismatch on [8988365651968 4096]
+> repaired damaged extent references
+> checking free space cache
+> checking fs roots
+> root 256 inode 9579 errors 100, file extent discount
+> root 256 inode 9580 errors 100, file extent discount
+> root 256 inode 14258 errors 100, file extent discount
+> root 256 inode 14259 errors 100, file extent discount
+> root 4444 inode 9579 errors 100, file extent discount
+> root 4444 inode 9580 errors 100, file extent discount
+> root 4444 inode 14258 errors 100, file extent discount
+> root 4444 inode 14259 errors 100, file extent discount
+> enabling repair mode
+> Checking filesystem on /dev/sdc1
+> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+> cache and super generation don't match, space cache will be invalidated
+> found 827360733827 bytes used err is 1
+> total csum bytes: 4446455380
+> total tree bytes: 5506977792
+> total fs tree bytes: 137293824
+> total extent tree bytes: 258691072
+> btree space waste bytes: 496921489
+> file data blocks allocated: 6440132583424
+>   referenced 6424163344384
+> Btrfs v3.12
+>
+>
+> After this, I ran a check without the repair option again and the same
+> errors persist.
+>
+> Greetings,
+> Hendrik
+>
+>
 
-If both devices in the pair are from the same manufacturing run and were 
-installed at the same time and run under exactly the same conditions, as 
-quite likely unless deliberately guarded against, chances are rather 
-higher than you'd like that by the time one fails, suddenly piling twice 
-the workload on the OTHER one isn't going to end well, especially under 
-the increased workload of a recovery after a replacement device has been 
-added.
-
-That's the well known but all too infrequently considered trap of both 
-raid5 and 2-way-mirrored raid1, thus the reason many admins are so 
-reluctant to trust them and prefer N-way-mirroring/parity, with N bumped 
-upward as necessary to suit the level of device-failure paranoia.
-
-For me, that cost/benefit/paranoia balance tends toward N=3 for 
-mirroring, N=2 for parity (since parity parallels mirror redundancy 
-count, not mirror total count). =:^)
-
----
-[1] I'm trying to train myself to use "device" in most cases where I 
-formerly used "drive", since "device" is generally technically correct 
-even if it's a logical/virtual device such as an mdraid device or even 
-simply a partition on a physical device, while "drive" may well be 
-technically incorrect, since both virtual devices such as mdraid and 
-partitions, and physical devices such as SSDs, are arguably not "drives" 
-at all.  But it's definitely a process I'm still in the middle of.  It's 
-not a formed habit yet and if I'm not thinking about that when I chose my 
-term...
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Mobil 0178 1874363

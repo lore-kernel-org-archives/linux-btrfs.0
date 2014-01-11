@@ -1,154 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:42283 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750834AbaAKV3v (ORCPT
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:39302 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750899AbaAKVas (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Jan 2014 16:29:51 -0500
-Received: by mail-wg0-f52.google.com with SMTP id b13so4991862wgh.31
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jan 2014 13:29:50 -0800 (PST)
+	Sat, 11 Jan 2014 16:30:48 -0500
+Received: by mail-wg0-f42.google.com with SMTP id l18so1583159wgh.5
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jan 2014 13:30:47 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix send to not send non-aligned clone operations
-Date: Sat, 11 Jan 2014 21:29:32 +0000
-Message-Id: <1389475772-19286-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: faster file extent item search in clone ioctl
+Date: Sat, 11 Jan 2014 21:30:28 +0000
+Message-Id: <1389475828-19339-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is possible for the send feature to send clone operations that
-request a cloning range (offset + length) that is not aligned with
-the block size. This makes the btrfs receive command send issue a
-clone ioctl call that will fail, as the ioctl will return an -EINVAL
-error because of the unaligned range.
-
-Fix this by not sending clone operations for non block aligned ranges,
-and instead send regular write operation for these (less common) cases.
-
-The following xfstest reproduces this issue, which fails on the second
-btrfs receive command without this change:
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-
-  tmp=`mktemp -d`
-
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -fr $tmp
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _need_to_be_root
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >/dev/null 2>&1
-  _scratch_mount
-
-  $XFS_IO_PROG -f -c "truncate 819200" $SCRATCH_MNT/foo | _filter_xfs_io
-  $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-
-  $XFS_IO_PROG -c "falloc -k 819200 667648" $SCRATCH_MNT/foo | _filter_xfs_io
-  $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-
-  $XFS_IO_PROG -f -c "pwrite 1482752 2978" $SCRATCH_MNT/foo | _filter_xfs_io
-  $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-
-  $BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1 | \
-      _filter_scratch
-
-  $XFS_IO_PROG -f -c "truncate 883305" $SCRATCH_MNT/foo | _filter_xfs_io
-  $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-
-  $BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2 | \
-      _filter_scratch
-
-  $BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap 2>&1 | _filter_scratch
-  $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-      -f $tmp/2.snap 2>&1 | _filter_scratch
-
-  md5sum $SCRATCH_MNT/foo | _filter_scratch
-  md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-
-  _scratch_unmount
-  _check_btrfs_filesystem $SCRATCH_DEV
-  _scratch_mkfs >/dev/null 2>&1
-  _scratch_mount
-
-  $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
-  md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-
-  $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
-  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-
-  _scratch_unmount
-  _check_btrfs_filesystem $SCRATCH_DEV
-
-  status=0
-  exit
-
-The tests expected output is:
-
-  QA output created by 025
-  FSSync 'SCRATCH_MNT'
-  FSSync 'SCRATCH_MNT'
-  wrote 2978/2978 bytes at offset 1482752
-  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-  FSSync 'SCRATCH_MNT'
-  Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap1'
-  FSSync 'SCRATCH_MNT'
-  Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap2'
-  At subvol SCRATCH_MNT/mysnap1
-  At subvol SCRATCH_MNT/mysnap2
-  129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/foo
-  42b6369eae2a8725c1aacc0440e597aa  SCRATCH_MNT/mysnap1/foo
-  129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/mysnap2/foo
-  At subvol mysnap1
-  42b6369eae2a8725c1aacc0440e597aa  SCRATCH_MNT/mysnap1/foo
-  At snapshot mysnap2
-  129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/mysnap2/foo
+When we are looking for file extent items that intersect the cloning
+range, for each one that falls completely outside the range, don't
+release the path and do another full tree search - just move on
+to the next slot and copy the file extent item into our buffer only
+if the item intersects the cloning range.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/send.c |    6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c |   21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 591063d..86de7c8 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3761,6 +3761,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 	u64 len;
- 	u32 l;
- 	u8 type;
-+	u64 bs;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3970f32..cced205 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2911,6 +2911,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 			goto out;
  
- 	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 			struct btrfs_file_extent_item);
-@@ -3784,7 +3785,10 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 		goto out;
- 	}
+ 		nritems = btrfs_header_nritems(path->nodes[0]);
++process_slot:
+ 		if (path->slots[0] >= nritems) {
+ 			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
+ 			if (ret < 0)
+@@ -2937,11 +2938,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 			u8 comp;
+ 			u64 endoff;
  
--	if (clone_root) {
-+	if (clone_root)
-+		bs = clone_root->root->fs_info->sb->s_blocksize;
+-			size = btrfs_item_size_nr(leaf, slot);
+-			read_extent_buffer(leaf, buf,
+-					   btrfs_item_ptr_offset(leaf, slot),
+-					   size);
+-
+ 			extent = btrfs_item_ptr(leaf, slot,
+ 						struct btrfs_file_extent_item);
+ 			comp = btrfs_file_extent_compression(leaf, extent);
+@@ -2960,11 +2956,19 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 				datal = btrfs_file_extent_ram_bytes(leaf,
+ 								    extent);
+ 			}
+-			btrfs_release_path(path);
+ 
+ 			if (key.offset + datal <= off ||
+-			    key.offset >= off + len - 1)
+-				goto next;
++			    key.offset >= off + len - 1) {
++				path->slots[0]++;
++				goto process_slot;
++			}
 +
-+	if (clone_root && IS_ALIGNED(offset + len, bs)) {
- 		ret = send_clone(sctx, offset, len, clone_root);
- 	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
- 		ret = send_update_extent(sctx, offset, len);
++			size = btrfs_item_size_nr(leaf, slot);
++			read_extent_buffer(leaf, buf,
++					   btrfs_item_ptr_offset(leaf, slot),
++					   size);
++
++			btrfs_release_path(path);
+ 
+ 			memcpy(&new_key, &key, sizeof(new_key));
+ 			new_key.objectid = btrfs_ino(inode);
+@@ -3135,7 +3139,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 			}
+ 			ret = btrfs_end_transaction(trans, root);
+ 		}
+-next:
+ 		btrfs_release_path(path);
+ 		key.offset++;
+ 	}
 -- 
 1.7.9.5
 

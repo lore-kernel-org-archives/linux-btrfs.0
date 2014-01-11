@@ -1,144 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.126.186]:49773 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752291AbaAJXx7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jan 2014 18:53:59 -0500
-Message-ID: <52D08812.3040707@friedels.name>
-Date: Sat, 11 Jan 2014 00:53:54 +0100
-From: Hendrik Friedel <hendrik@friedels.name>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:34028 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751149AbaAKBFk convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jan 2014 20:05:40 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: btrfsck does not fix
-References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name> <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com> <52CC65C9.3090605@friedels.name>
-In-Reply-To: <52CC65C9.3090605@friedels.name>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52D08812.3040707@friedels.name>
+Date: Fri, 10 Jan 2014 18:05:33 -0700
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com>
+References: <52C7127F.3060902@friedels.name> <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com> <52C87B67.1040503@friedels.name> <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com> <52CC65C9.3090605@friedels.name> <52D08812.3040707@friedels.name>
+To: Hendrik Friedel <hendrik@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I was wondering whether I am doing something wrong in the way I am 
-asking/what I am asking.
-My understanding is, that btrfsck is not able to fix this error yet. So, 
-I am surprised, that noone is interested in this, apparently?
+On Jan 10, 2014, at 4:53 PM, Hendrik Friedel <hendrik@friedels.name> wrote:
 
-Regards,
-Hendrik Friedel
-
-Am 07.01.2014 21:38, schrieb Hendrik Friedel:
 > Hello,
->
->  >>>> I ran btrfsck on my volume with the repair option. When I re-run
-> it, >>I get the same errors as before.
->> It mounts without errors? So why then btrfsck/btrfs repair? What
->> precipitated the repair?
->
-> I don't know what caused the damage, but a check revealed this:
->
-> Checking filesystem on /dev/sdb1
-> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
-> checking extents
->
-> Extent back ref already exists for 2994950590464 parent 863072366592 root 0
-> Extent back ref already exists for 2994950836224 parent 863072366592 root 0
-> Extent back ref already exists for 862762737664 parent 863072366592 root 0
-> Extent back ref already exists for 2994950877184 parent 863072366592
-> [...]
-> Incorrect global backref count on 2995767250944 found 1 wanted 2
-> backpointer mismatch on [2995767250944 4096]
-> ref mismatch on [2995767304192 4096] extent item 1, found 2
-> Incorrect global backref count on 2995767304192 found 1 wanted 2
-> backpointer mismatch on [2995767304192 4096]
-> ref mismatch on [2995768258560 4096] extent item 1, found 2
-> Incorrect global backref count on 2995768258560 found 1 wanted 2
-> backpointer mismatch on [2995768258560 4096]
-> ref mismatch on [2995768459264 4096] extent item 1, found 2
-> Incorrect global backref count on 2995768459264 found 1 wanted 2
-> backpointer mismatch on [2995768459264 4096]
-> Errors found in extent allocation tree or chunk allocation
->
-> ref mismatch on [2995768459264 4096] extent item 1, found 2
-> Incorrect global backref count on 2995768459264 found 1 wanted 2
-> backpointer mismatch on [2995768459264 4096]
-> Errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> checking fs roots
-> root 256 inode 9579 errors 100, file extent discount
-> root 256 inode 9580 errors 100, file extent discount
-> root 256 inode 14258 errors 100, file extent discount
-> root 256 inode 14259 errors 100, file extent discount
-> root 4444 inode 9579 errors 100, file extent discount
-> root 4444 inode 9580 errors 100, file extent discount
-> root 4444 inode 14258 errors 100, file extent discount
-> root 4444 inode 14259 errors 100, file extent discount
-> found 1993711951581 bytes used err is 1
-> total csum bytes: 4560615360
-> total tree bytes: 5643403264
-> total fs tree bytes: 139776000
-> total extent tree bytes: 263602176
-> btree space waste bytes: 504484726
-> file data blocks allocated: 6557032402944
->   referenced 6540949323776
-> Btrfs v3.12
->
-> This made me run btrfsck with the repair option:
->
->
-> Extent back ref already exists for 2994950590464 parent 863072366592 root 0
->
-> ref mismatch on [32935936 4096] extent item 1, found 2
-> repair deleting extent record: key 32935936 168 4096
-> adding new tree backref on start 32935936 len 4096 parent 2994784206848
-> root 2994784206848
-> Incorrect global backref count on 32935936 found 1 wanted 2
-> backpointer mismatch on [32935936 4096]
-> ref mismatch on [32997376 4096] extent item 1, found 2
-> repair deleting extent record: key 32997376 168 4096
-> adding new tree backref on start 32997376 len 4096 parent 2994824708096
-> root 2994824708096
-> Incorrect global backref count on 32997376 found 1 wanted 2
-> backpointer mismatch on [32997376 4096]
->
-> Incorrect global backref count on 8988365651968 found 1 wanted 0
-> backpointer mismatch on [8988365651968 4096]
-> repaired damaged extent references
-> checking free space cache
-> checking fs roots
-> root 256 inode 9579 errors 100, file extent discount
-> root 256 inode 9580 errors 100, file extent discount
-> root 256 inode 14258 errors 100, file extent discount
-> root 256 inode 14259 errors 100, file extent discount
-> root 4444 inode 9579 errors 100, file extent discount
-> root 4444 inode 9580 errors 100, file extent discount
-> root 4444 inode 14258 errors 100, file extent discount
-> root 4444 inode 14259 errors 100, file extent discount
-> enabling repair mode
-> Checking filesystem on /dev/sdc1
-> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
-> cache and super generation don't match, space cache will be invalidated
-> found 827360733827 bytes used err is 1
-> total csum bytes: 4446455380
-> total tree bytes: 5506977792
-> total fs tree bytes: 137293824
-> total extent tree bytes: 258691072
-> btree space waste bytes: 496921489
-> file data blocks allocated: 6440132583424
->   referenced 6424163344384
-> Btrfs v3.12
->
->
-> After this, I ran a check without the repair option again and the same
-> errors persist.
->
-> Greetings,
-> Hendrik
->
->
+> 
+> I was wondering whether I am doing something wrong in the way I am asking/what I am asking.
+> My understanding is, that btrfsck is not able to fix this error yet. So, I am surprised, that noone is interested in this, apparently?
 
 
--- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Mobil 0178 1874363
+I don't know what the error messages mean, or why they aren't being fixed. It's known btrfs repair doesn't fix everything yet and can sometimes make problems worse.
+
+Kernel version?
+It mounts OK with no kernel messages?
+
+What do you get for:
+btrfs fi show
+btrfs fi df <mp>
+
+btrfs device stats </dev or mountpoint>
+
+If there are any errors reported for device stats, what do you get for smartctl -x /dev/X
+
+
+Chris Murphy

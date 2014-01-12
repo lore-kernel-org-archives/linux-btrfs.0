@@ -1,34 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:44717 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750849AbaALOtQ convert rfc822-to-8bit (ORCPT
+Received: from mail01.jit-creatives.de ([188.40.162.6]:37294 "EHLO
+	mail01.jit-creatives.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751192AbaALTl1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jan 2014 09:49:16 -0500
-Received: by mail-wi0-f177.google.com with SMTP id hm2so1272347wib.4
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jan 2014 06:49:15 -0800 (PST)
-Received: from ?IPv6:2001:980:5211:1:bdc3:8c28:edf0:e7cd? ([2001:980:5211:1:bdc3:8c28:edf0:e7cd])
-        by mx.google.com with ESMTPSA id eo4sm12270425wib.9.2014.01.12.06.49.14
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sun, 12 Jan 2014 06:49:14 -0800 (PST)
-From: Remco Hosman - Yerf IT <remco@yerf-it.nl>
-Content-Type: text/plain; charset=windows-1252
-Subject: ENOSPC during balance
-Message-Id: <97A7F0AC-8A96-4BFA-A6C0-DD878629FCF2@yerf-it.nl>
-Date: Sun, 12 Jan 2014 15:49:12 +0100
-To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0 (Mac OS X Mail 7.1 \(1827\))
+	Sun, 12 Jan 2014 14:41:27 -0500
+To: <linux-btrfs@vger.kernel.org>
+Subject: RAID 1 with no data on it when accidentally switched HDD
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Sun, 12 Jan 2014 20:35:21 +0100
+From: Ingo Ebel <ingo.ebel@ingoebel.de>
+Message-ID: <7e169377e2a149281902ebbce55a9f7e@www.jitmail.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-HI,
+Hi,
 
-I am trying to convert my array from raid10 to 1, and its partially completed, but at the moment i am getting a '59366.459092] btrfs: 185 enospc errors during balance’ when i try to balance anything more with `btrfs bal start -dconvert=raid1,soft /mountpoint`
+I'm not sure whether it's a bug in btrfs or my distro but I discovered 
+an odd behavior today.
 
-I have already scanned for files with extends over 1gig gig, and there is at least 100gig unallocated on each of the disks, and scrub reports no error at all.
-Kernel is 3.13-rc7 and tools are latest from git.
+My Setup:
 
-Anything else i can try ?
+* Btrfs v3.12+20131125
+* /dev/sda â€“ Boot OS - opensuse 13.1
+* Btrfs RAID 1 on /dev/sdb1 and /dev/sdc1
 
-Thanks,
-Remco
+I added an extra HDD with an other OS and Data on it witch accidentally 
+became /dev/sdc.
+
+Btrfs got mounted at boot time without any complains but in the main 
+volume was empty.
+Some subvolumes still had Data.
+
+I took the extra HDD out but still no data in the Btrfs main volume. 
+Bfrfsck reported no error.
+Some Parts on the (accidentally) /dev/sdc are now corrupt.
+
+I would expect that btrfs would throw an error when getting in the kind 
+of scenario.
+
+Regards
+
+Ingo

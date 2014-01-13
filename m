@@ -1,79 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38911 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751593AbaAMN14 (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:43843 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752148AbaAMVXJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 08:27:56 -0500
-Message-ID: <52D3E9D6.2030104@oracle.com>
-Date: Mon, 13 Jan 2014 21:27:50 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Mon, 13 Jan 2014 16:23:09 -0500
+Date: Tue, 14 Jan 2014 08:23:03 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Eric Sandeen <sandeen@sandeen.net>, xfs@oss.sgi.com,
+        Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] xfstests: Add pairing mount options test
+Message-ID: <20140113212303.GL3469@dastard>
+References: <1389162648-19309-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <52D01CA9.4040107@sandeen.net>
+ <52D33F92.2000609@cn.fujitsu.com>
+ <52D342F0.5020402@sandeen.net>
+ <20140113015239.GD3469@dastard>
+ <52D34EBD.4020508@cn.fujitsu.com>
+ <20140113032650.GH3469@dastard>
+ <52D364DA.4000708@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] xfstests: make btrfs/001.out in line with subvol
- delete output
-References: <1389618990-24544-1-git-send-email-anand.jain@oracle.com> <5A6081D2-68E6-47BC-A534-6502B680DDDD@gmail.com>
-In-Reply-To: <5A6081D2-68E6-47BC-A534-6502B680DDDD@gmail.com>
-Content-Type: text/plain; charset=GB2312
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52D364DA.4000708@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Hi Wang,
-
- Ah yes. why did I miss that point earlier.
- Will fix it.
-
-Thanks, Anand
-
-
-On 13/01/2014 21:14, Wang Shilong wrote:
-> Hello Anand,
+On Mon, Jan 13, 2014 at 12:00:26PM +0800, Qu Wenruo wrote:
+> On Mon, 13 Jan 2014 14:26:50 +1100, Dave Chinner wrote:
+> >On Mon, Jan 13, 2014 at 10:26:05AM +0800, Qu Wenruo wrote:
+> >>On mon, 13 Jan 2014 12:52:39 +1100, Dave Chinner wrote:
+> >>>On Sun, Jan 12, 2014 at 07:35:44PM -0600, Eric Sandeen wrote:
+> >>>>I won't say no to this, but it seems to be of somewhat limited use.
+> >>>What happens to the test when mount options are deprecated/removed?
+> >>>How are we going to handle the matrix of testable/untestable mount
+> >>>options across kernels with different mount option support?
+> >>In my opinion,there may be two ways to deal it:
+> >>1) Introduce up_limit_kver and down_limit_kver to *every* mount option.
+> >>If needed also add deprecated flags.
+> >Both of which are messy, and kernel version number checks don't work
+> >with vendor kernels that have stuff back ported to them.
+> >
+> >>This method will introduce more effort tomaintain the test case, but
+> >>due to the small codes and
+> >>relativly less changes in mount options, I consider it as an
+> >>acceptable method.
+> >What you are saying is that such a test will require constant
+> >maintenance from upstream developers to keep working across all the
+> >kernels that btrfs supports.
+> >
+> >When combined with Eric's comments that it doesn't test the
+> >functionality and so has relatively little benefit in terms of
+> >improving code coverage, it doesn't paint a pretty picture. So from
+> >that point of view, I'd say no to such a test.
+> >
+> >>It would be quite nice if any one can provide any better idea.
+> >Write a test for each individual feature that exercises and
+> >validates that feature in some way. Part of a functional test would
+> >be to test that the mount options for that function do what they are
+> >intended to do. Eric suggested the same thing (though in a different
+> >way).
+> >
+> >Cheers,
+> >
+> >Dave.
+> That's right, individual test case is the best way.
 > 
-> I was noticing this problem when using the latest btrfs-progs to test ^_^
-> 
-> I think a better way is to filter message 'Transaction commit: none (default)'
-> Rather than add it, otherwise, people will fail this test if they use previous
-> btrfs-progs¡­¡­
-> 
-> Thanks,
-> Wang
->> From: Anand Jain <Anand.Jain@oracle.com>
->>
->> btrfs/001 is failing as below btrfs-progs patch changed the
->> output during subvol delete.
->> Patch :
->> btrfs-progs: add options to set commit mode after subvol delete
->>
->> so add it to the btrfs/001.out
->>
->> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->> ---
->> tests/btrfs/001.out | 1 +
->> 1 file changed, 1 insertion(+)
->>
->> diff --git a/tests/btrfs/001.out b/tests/btrfs/001.out
->> index c782bde..a255614 100644
->> --- a/tests/btrfs/001.out
->> +++ b/tests/btrfs/001.out
->> @@ -33,6 +33,7 @@ subvol
->> Listing subvolumes
->> snap
->> subvol
->> +Transaction commit: none (default)
->> Delete subvolume 'SCRATCH_MNT/snap'
->> List root dir
->> subvol
->> -- 
->> 1.8.4.2
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> But most of the options are just instructive options,
+> and only affects performance, it's very hard to test. (like
+> space_cace and nospace_cache)
+
+Bad example. nospace_cache/space_cache change what is stored on
+disk, and affect *mount* processing depending on whether there is
+a cache or not. It also affects how tools like fsck.btrfs check the
+filesystem and so on. There is far more to test than just remount
+behaviour when testing the functionality of such a mount option, and
+that's the reason why they should be done in targeted feature
+tests.
+
+> Now I'm interested in how other filesystems like xfs makes sure that
+> every pairing
+> mount options are tested.
+
+XFS has extremely limited remount option support, and we already
+have xfs/189 for that. And it does all sorts of interesting things
+to support the different configurations and behaviours of /etc/mtab
+that different distros use because that changes mount behaviour....
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

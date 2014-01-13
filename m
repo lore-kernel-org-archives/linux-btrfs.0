@@ -1,22 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.jrs-s.net ([173.230.137.22]:55260 "EHLO mail.jrs-s.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751413AbaAMShb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 13:37:31 -0500
-Message-ID: <52D4326B.6040009@jrs-s.net>
-Date: Mon, 13 Jan 2014 13:37:31 -0500
-From: Jim Salter <jim@jrs-s.net>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27470 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751213AbaAMShw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 13:37:52 -0500
+Message-ID: <52D43235.7060502@fb.com>
+Date: Mon, 13 Jan 2014 13:36:37 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>, jbacik@fb.com
+To: <dsterba@suse.cz>, Jim Salter <jim@jrs-s.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs send: page allocation failure
 References: <52D3E308.7060309@jrs-s.net> <20140113182312.GR6498@twin.jikos.cz>
 In-Reply-To: <20140113182312.GR6498@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-What makes you believe that? The bug filed there appears to be related 
-to defragging, which I am not doing either manually or automatically.
 
 On 01/13/2014 01:23 PM, David Sterba wrote:
 > On Mon, Jan 13, 2014 at 07:58:48AM -0500, Jim Salter wrote:
@@ -44,10 +44,7 @@ On 01/13/2014 01:23 PM, David Sterba wrote:
 > That's the krealloc failure, Josef has a patch that came out of
 > https://bugzilla.kernel.org/show_bug.cgi?id=60579
 > but I don't see it merged anywhere.
->
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That patch isn't quite right which is why it isn't merged, I'll come up 
+with something better and send it out soonish.  Thanks,
 
+Josef

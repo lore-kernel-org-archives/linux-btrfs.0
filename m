@@ -1,85 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34409 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751531AbaAMLyI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 06:54:08 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id s0DBs7vk009783
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:07 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0DBs6Z7028241
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:06 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s0DBs626009112
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:06 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix extent state leak on transaction abortion
-Date: Mon, 13 Jan 2014 19:53:53 +0800
-Message-Id: <1389614033-31706-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail.jrs-s.net ([173.230.137.22]:55356 "EHLO mail.jrs-s.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751612AbaAMM6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 07:58:51 -0500
+Received: from [192.168.100.50] (cpe-024-088-095-145.sc.res.rr.com [24.88.95.145])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: jim@jrs-s.net)
+	by mail.jrs-s.net (Postfix) with ESMTPSA id 32EE8D2A8
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 07:58:49 -0500 (EST)
+Message-ID: <52D3E308.7060309@jrs-s.net>
+Date: Mon, 13 Jan 2014 07:58:48 -0500
+From: Jim Salter <jim@jrs-s.net>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfs send: page allocation failure
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When transaction is aborted, we fail to commit transaction, instead we do
-cleanup work.  After that when we umount btrfs, we get to free fs roots' log
-trees respectively, but that happens after we unpin extents, so those extents
-pinned by freeing log trees will remain in memory and lead to the leak.
+Hi list -
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/disk-io.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+Getting sporadic page allocation failures in btrfs send. This happened 
+once several weeks ago but was fine after a reboot; yesterday I did not 
+reboot, but had the failure back-to-back trying to send two different 
+snapshots. These are full sends, not incremental, of a bit over 600G of 
+data. Test machine has 32G of RAM, with 21G of it free (not including 
+cache):
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8072cfa..aef0d96 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2080,6 +2080,12 @@ static void del_fs_roots(struct btrfs_fs_info *fs_info)
- 		for (i = 0; i < ret; i++)
- 			btrfs_drop_and_free_fs_root(fs_info, gang[i]);
- 	}
-+
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
-+		btrfs_free_log_root_tree(NULL, fs_info);
-+		btrfs_destroy_pinned_extent(fs_info->tree_root,
-+					    fs_info->pinned_extents);
-+	}
- }
- 
- int open_ctree(struct super_block *sb,
-@@ -3455,10 +3461,8 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 	if (btrfs_root_refs(&root->root_item) == 0)
- 		synchronize_srcu(&fs_info->subvol_srcu);
- 
--	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
- 		btrfs_free_log(NULL, root);
--		btrfs_free_log_root_tree(NULL, fs_info);
--	}
- 
- 	__btrfs_remove_free_space_cache(root->free_ino_pinned);
- 	__btrfs_remove_free_space_cache(root->free_ino_ctl);
-@@ -3569,8 +3573,6 @@ int close_ctree(struct btrfs_root *root)
- 	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
- 		btrfs_error_commit_super(root);
- 
--	btrfs_put_block_group_cache(fs_info);
--
- 	kthread_stop(fs_info->transaction_kthread);
- 	kthread_stop(fs_info->cleaner_kthread);
- 
-@@ -3586,6 +3588,8 @@ int close_ctree(struct btrfs_root *root)
- 
- 	del_fs_roots(fs_info);
- 
-+	btrfs_put_block_group_cache(fs_info);
-+
- 	btrfs_free_block_groups(fs_info);
- 
- 	btrfs_stop_all_workers(fs_info);
--- 
-1.8.1.4
+root@gwa-virt1:/data/images/.snapshots# free -m
+              total       used       free     shared    buffers cached
+Mem:         32159      31789        369          0          0 21276
+-/+ buffers/cache:      10513      21646
+Swap:            0          0          0
+
+In both cases (all three, really) the btrfs send failed a bit more than 
+half of the way through the send (somewhere around the 380GB mark).
+
+Kern log snippets follow:
+
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627611] btrfs: page allocation 
+failure: order:6, mode:0x104050
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627622] CPU: 6 PID: 9642 Comm: 
+btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627773] [<ffffffffa0142214>] ? 
+btrfs_get_token_64+0x64/0xf0 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627818] [<ffffffffa01876dd>] ? 
+ulist_add_merge+0xcd/0x270 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627860] [<ffffffffa01876dd>] 
+ulist_add_merge+0xcd/0x270 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627894] [<ffffffffa018615c>] 
+find_parent_nodes+0x50c/0x6f0 [btrf ]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627930] [<ffffffffa018e550>] ? 
+compare_refs.isra.23+0x130/0x130 btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.627965] [<ffffffffa0187019>] 
+iterate_extent_inodes+0xf9/0x270 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628003] [<ffffffffa014b7a5>] ? 
+free_extent_buffer+0x35/0x40 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628037] [<ffffffffa018dc9d>] 
+find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628072] [<ffffffffa0191207>] 
+process_extent+0xd7/0x180 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628107] [<ffffffffa01918ff>] 
+changed_cb+0xdf/0x170 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628141] [<ffffffffa0191ad2>] 
+full_send_tree+0x142/0x280 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628174] [<ffffffffa0191ccc>] ? 
+send_subvol_begin+0xbc/0x2b0 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628209] [<ffffffffa0191fa0>] 
+send_subvol+0xe0/0xf0 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628244] [<ffffffffa01922f1>] 
+btrfs_ioctl_send+0x341/0x520 [btrfs]
+Jan 12 14:05:36 gwa-virt1 kernel: [535523.628279] [<ffffffffa01606d3>] 
+btrfs_ioctl+0x953/0xac0 [btrfs]
+
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016512] btrfs: page allocation 
+failure: order:5, mode:0x104050
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016518] CPU: 4 PID: 18689 
+Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016597] [<ffffffffa0142214>] ? 
+btrfs_get_token_64+0x64/0xf0 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016617] [<ffffffffa01876dd>] ? 
+ulist_add_merge+0xcd/0x270 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016637] [<ffffffffa01876dd>] 
+ulist_add_merge+0xcd/0x270 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016653] [<ffffffffa018615c>] 
+find_parent_nodes+0x50c/0x6f0 [btrf ]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016669] [<ffffffffa018e550>] ? 
+compare_refs.isra.23+0x130/0x130 btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016684] [<ffffffffa0187019>] 
+iterate_extent_inodes+0xf9/0x270 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016700] [<ffffffffa014b7a5>] ? 
+free_extent_buffer+0x35/0x40 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016716] [<ffffffffa018dc9d>] 
+find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016732] [<ffffffffa0191207>] 
+process_extent+0xd7/0x180 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016747] [<ffffffffa01918ff>] 
+changed_cb+0xdf/0x170 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016763] [<ffffffffa0191ad2>] 
+full_send_tree+0x142/0x280 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016778] [<ffffffffa0191ccc>] ? 
+send_subvol_begin+0xbc/0x2b0 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016794] [<ffffffffa0191fa0>] 
+send_subvol+0xe0/0xf0 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016810] [<ffffffffa01922f1>] 
+btrfs_ioctl_send+0x341/0x520 [btrfs]
+Jan 12 21:34:00 gwa-virt1 kernel: [562448.016826] [<ffffffffa01606d3>] 
+btrfs_ioctl+0x953/0xac0 [btrfs]
 

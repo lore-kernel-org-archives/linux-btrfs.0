@@ -1,93 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:51858 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:49117 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751010AbaAOL7f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 06:59:35 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0FBxSMO003391
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 19:59:28 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
+	id S1751213AbaAMFgU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 00:36:20 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/5] Btrfs: change the members' order of btrfs_space_info structure to reduce the cache miss
-Date: Wed, 15 Jan 2014 20:00:54 +0800
-Message-Id: <1389787258-10865-1-git-send-email-miaox@cn.fujitsu.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 1/2] btrfs: Add noinode_cache mount option
+Date: Mon, 13 Jan 2014 13:36:06 +0800
+Message-Id: <1389591367-23420-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is better that the position of the lock is close to the data which is
-protected by it, because they may be in the same cache line, we will load
-less cache lines when we access them. So we rearrange the members' position
-of btrfs_space_info structure to make the lock be closer to the its data.
+Add noinode_cache mount option for btrfs.
 
+Since inode map cache involves all the btrfs_find_free_ino/return_ino
+things and if just trigger the mount_opt,
+an inode number get from inode map cache will not returned to inode map
+cache.
+
+To keep the find and return inode both in the same behavior,
+a new bit in mount_opt, CHANGE_INODE_CACHE, is introduced for this idea.
+CHANGE_INODE_CACHE is set/cleared in remounting, and the original
+INODE_MAP_CACHE is set/cleared according to CHANGE_INODE_CACHE after a
+success transaction.
+Since find/return inode is all done between btrfs_start_transaction and
+btrfs_commit_transaction, this will keep consistent behavior.
+
+Also noinode_cache mount option will not stop the caching_kthread.
+
+Cc: David Sterba <dsterba@suse.cz>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h | 29 +++++++++++++++--------------
- 1 file changed, 15 insertions(+), 14 deletions(-)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     |  4 ++++
+ fs/btrfs/super.c       | 10 ++++++++--
+ fs/btrfs/transaction.c |  9 +++++++++
+ 4 files changed, 22 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 54ab861..1667c9a 100644
+index 3cebb4a..0a357ca 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1094,7 +1094,7 @@ struct btrfs_qgroup_limit_item {
- } __attribute__ ((__packed__));
+@@ -2022,6 +2022,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+ #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
++#define	BTRFS_MOUNT_CHANGE_INODE_CACHE	(1 << 24)
  
- struct btrfs_space_info {
--	u64 flags;
-+	spinlock_t lock;
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
  
- 	u64 total_bytes;	/* total bytes in the space,
- 				   this doesn't take mirrors into account */
-@@ -1104,14 +1104,25 @@ struct btrfs_space_info {
- 				   transaction finishes */
- 	u64 bytes_reserved;	/* total bytes the allocator has reserved for
- 				   current allocations */
--	u64 bytes_readonly;	/* total bytes that are read only */
--
- 	u64 bytes_may_use;	/* number of bytes that may be used for
- 				   delalloc/allocations */
-+	u64 bytes_readonly;	/* total bytes that are read only */
-+
-+	unsigned int full:1;	/* indicates that we cannot allocate any more
-+				   chunks for this space */
-+	unsigned int chunk_alloc:1;	/* set if we are allocating a chunk */
-+
-+	unsigned int flush:1;		/* set if we are trying to make space */
-+
-+	unsigned int force_alloc;	/* set if we need to force a chunk
-+					   alloc for this space */
-+
- 	u64 disk_used;		/* total bytes used on disk */
- 	u64 disk_total;		/* total bytes on disk, takes mirrors into
- 				   account */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9850a51..629f411 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2776,6 +2776,10 @@ retry_root_backup:
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
+ 	}
  
-+	u64 flags;
++	/* Set the real inode map cache flag */
++	if (btrfs_test_opt(tree_root, CHANGE_INODE_CACHE))
++		btrfs_set_opt(tree_root->fs_info->mount_opt, INODE_MAP_CACHE);
 +
- 	/*
- 	 * bytes_pinned is kept in line with what is actually pinned, as in
- 	 * we've called update_block_group and dropped the bytes_used counter
-@@ -1124,21 +1135,11 @@ struct btrfs_space_info {
- 	 */
- 	struct percpu_counter total_bytes_pinned;
- 
--	unsigned int full:1;	/* indicates that we cannot allocate any more
--				   chunks for this space */
--	unsigned int chunk_alloc:1;	/* set if we are allocating a chunk */
--
--	unsigned int flush:1;		/* set if we are trying to make space */
--
--	unsigned int force_alloc;	/* set if we need to force a chunk
--					   alloc for this space */
--
- 	struct list_head list;
- 
-+	struct rw_semaphore groups_sem;
- 	/* for block groups in our same type */
- 	struct list_head block_groups[BTRFS_NR_RAID_TYPES];
--	spinlock_t lock;
--	struct rw_semaphore groups_sem;
- 	wait_queue_head_t wait;
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	if (btrfs_test_opt(tree_root, CHECK_INTEGRITY)) {
+ 		ret = btrfsic_mount(tree_root, fs_devices,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 461e41c..d1012251 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -326,7 +326,7 @@ enum {
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+-	Opt_datasum, Opt_treelog,
++	Opt_datasum, Opt_treelog, Opt_noinode_cache,
+ 	Opt_err,
  };
  
+@@ -369,6 +369,7 @@ static match_table_t tokens = {
+ 	{Opt_defrag, "autodefrag"},
+ 	{Opt_nodefrag, "noautodefrag"},
+ 	{Opt_inode_cache, "inode_cache"},
++	{Opt_noinode_cache, "noinode_cache"},
+ 	{Opt_no_space_cache, "nospace_cache"},
+ 	{Opt_recovery, "recovery"},
+ 	{Opt_skip_balance, "skip_balance"},
+@@ -626,7 +627,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			break;
+ 		case Opt_inode_cache:
+ 			btrfs_info(root->fs_info, "enabling inode map caching");
+-			btrfs_set_opt(info->mount_opt, INODE_MAP_CACHE);
++			btrfs_set_opt(info->mount_opt, CHANGE_INODE_CACHE);
++			break;
++		case Opt_noinode_cache:
++			if (btrfs_test_opt(root, CHANGE_INODE_CACHE))
++				btrfs_info(root->fs_info, "disabling inode map caching");
++			btrfs_clear_opt(info->mount_opt, CHANGE_INODE_CACHE);
+ 			break;
+ 		case Opt_clear_cache:
+ 			btrfs_info(root->fs_info, "force clearing of disk cache");
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index da2ac4c..b5ef045 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1830,6 +1830,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		goto cleanup_transaction;
+ 	}
+ 
++	/*
++	 * Since the transaction is done, we should set the inode map cache flag
++	 * before any other comming transaction.
++	 */
++	if (btrfs_test_opt(root, CHANGE_INODE_CACHE))
++		btrfs_set_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
++	else
++		btrfs_clear_opt(root->fs_info->mount_opt, INODE_MAP_CACHE);
++
+ 	/* commit_fs_roots gets rid of all the tree log roots, it is now
+ 	 * safe to free the root of tree log roots
+ 	 */
 -- 
-1.8.3.1
+1.8.5.2
 

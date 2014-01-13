@@ -1,78 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:53286 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750938AbaAICEw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Jan 2014 21:04:52 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0924o9O027323
-	for <linux-btrfs@vger.kernel.org>; Thu, 9 Jan 2014 10:04:50 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH V2 1/2] Btrfs: fix the race between write back and nocow buffered write
-Date: Thu, 9 Jan 2014 10:06:10 +0800
-Message-Id: <1389233170-27573-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <52CD6A46.2030802@fb.com>
-References: <52CD6A46.2030802@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:39376 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751214AbaAMSez (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 13:34:55 -0500
+Date: Mon, 13 Jan 2014 19:27:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2 2/4] Btrfs: fix protection between send and root
+ deletion
+Message-ID: <20140113182745.GS6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1389086721-19624-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <1389086721-19624-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1389086721-19624-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we ran the 274th case of xfstests with nodatacow mount option,
-We met the following warning message:
-WARNING: CPU: 1 PID: 14185 at fs/btrfs/extent-tree.c:3734 btrfs_free_reserved_data_space+0xa6/0xd0
+On Tue, Jan 07, 2014 at 05:25:19PM +0800, Wang Shilong wrote:
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1971,6 +1971,19 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
+>  	}
+>  	root = list_first_entry(&fs_info->dead_roots,
+>  			struct btrfs_root, root_list);
 
-It is caused by the race between the write back and nocow buffered
-write:
-  Task1				Task2
-  __btrfs_buffered_write()
-    skip data reservation
-    reserve the metadata space
-    copy the data
-    dirty the pages
-    unlock the pages
-				write back the pages
-				release the data space
-   				  becasue there is no
-				  noreserve flag
-   set the noreserve flag
+You're pulling the root from dead_roots here ...
 
-This patch fixes this problem by unlocking the pages after
-the noreserve flag is set.
+> +	/*
+> +	 * Make sure root is not involved in send,
 
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v2:
-- rebase the patch to the btrfs-next tree
----
- fs/btrfs/file.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+... and there's no way to send such a thing.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 453e43c..0218288 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1555,9 +1555,10 @@ again:
- 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 					     lockstart, lockend, &cached_state,
- 					     GFP_NOFS);
--		btrfs_drop_pages(pages, num_pages);
--		if (ret)
-+		if (ret) {
-+			btrfs_drop_pages(pages, num_pages);
- 			break;
-+		}
- 
- 		release_bytes = 0;
- 		if (only_release_metadata && copied > 0) {
-@@ -1571,6 +1572,8 @@ again:
- 			only_release_metadata = false;
- 		}
- 
-+		btrfs_drop_pages(pages, num_pages);
-+
- 		cond_resched();
- 
- 		balance_dirty_pages_ratelimited(inode->i_mapping);
--- 
-1.8.1.4
-
+> +	 * if we fail with first root, we return
+> +	 * directly rather than continue.
+> +	 */
+> +	spin_lock(&root->root_item_lock);
+> +	if (root->send_in_progress) {
+> +		spin_unlock(&fs_info->trans_lock);
+> +		spin_unlock(&root->root_item_lock);
+> +		return 0;
+> +	}
+> +	spin_unlock(&root->root_item_lock);
+> +
+>  	list_del_init(&root->root_list);
+>  	spin_unlock(&fs_info->trans_lock);

@@ -1,86 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:59343 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751214AbaAMKfM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 05:35:12 -0500
-Date: Mon, 13 Jan 2014 11:35:08 +0100
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:1593! with 3.13.0-rc7
-Message-ID: <20140113113508.004513cb@virtall.com>
-In-Reply-To: <52D3905E.9090606@cn.fujitsu.com>
-References: <20140112234702.63f4750a@virtall.com>
-	<52D3905E.9090606@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from aserp1040.oracle.com ([141.146.126.69]:34409 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751531AbaAMLyI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 06:54:08 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.1/Sentrion-MTA-4.3.1) with ESMTP id s0DBs7vk009783
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:07 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0DBs6Z7028241
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:06 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s0DBs626009112
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:54:06 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix extent state leak on transaction abortion
+Date: Mon, 13 Jan 2014 19:53:53 +0800
+Message-Id: <1389614033-31706-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've applied it to 3.13-rc8, let's see if it helps.
+When transaction is aborted, we fail to commit transaction, instead we do
+cleanup work.  After that when we umount btrfs, we get to free fs roots' log
+trees respectively, but that happens after we unpin extents, so those extents
+pinned by freeing log trees will remain in memory and lead to the leak.
 
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8072cfa..aef0d96 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2080,6 +2080,12 @@ static void del_fs_roots(struct btrfs_fs_info *fs_info)
+ 		for (i = 0; i < ret; i++)
+ 			btrfs_drop_and_free_fs_root(fs_info, gang[i]);
+ 	}
++
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
++		btrfs_free_log_root_tree(NULL, fs_info);
++		btrfs_destroy_pinned_extent(fs_info->tree_root,
++					    fs_info->pinned_extents);
++	}
+ }
+ 
+ int open_ctree(struct super_block *sb,
+@@ -3455,10 +3461,8 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
+ 	if (btrfs_root_refs(&root->root_item) == 0)
+ 		synchronize_srcu(&fs_info->subvol_srcu);
+ 
+-	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
++	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
+ 		btrfs_free_log(NULL, root);
+-		btrfs_free_log_root_tree(NULL, fs_info);
+-	}
+ 
+ 	__btrfs_remove_free_space_cache(root->free_ino_pinned);
+ 	__btrfs_remove_free_space_cache(root->free_ino_ctl);
+@@ -3569,8 +3573,6 @@ int close_ctree(struct btrfs_root *root)
+ 	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
+ 		btrfs_error_commit_super(root);
+ 
+-	btrfs_put_block_group_cache(fs_info);
+-
+ 	kthread_stop(fs_info->transaction_kthread);
+ 	kthread_stop(fs_info->cleaner_kthread);
+ 
+@@ -3586,6 +3588,8 @@ int close_ctree(struct btrfs_root *root)
+ 
+ 	del_fs_roots(fs_info);
+ 
++	btrfs_put_block_group_cache(fs_info);
++
+ 	btrfs_free_block_groups(fs_info);
+ 
+ 	btrfs_stop_all_workers(fs_info);
 -- 
-Tomasz Chmielewski
-
-
-On Mon, 13 Jan 2014 15:06:06 +0800
-Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
-
-> On 01/13/2014 06:47 AM, Tomasz Chmielewski wrote:
-> 
-> Hello Tomasz,
-> 
-> Chris recently sent a patch that addressed a race condition with
-> loading inode, i think it might be related to your first dmesg
-> warning.
-> 
-> Chris' patch url can be seen:
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg30332.html
-> 
-> Thanks,
-> Wang
-> > Just had this on a btrfs filesystem running 3.13-rc7.
-> >
-> > The filesystem was working fine till now and was passing balance and
-> > scrub properly without any issues a couple of days ago:
-> >
-> > [273059.042280] ------------[ cut here ]------------
-> > [273059.042369] WARNING: CPU: 6 PID: 20754 at fs/btrfs/inode.c:4721
-> > inode_tree_add+0xc2/0x13f [btrfs]() [273059.042484] Modules linked
-> > in: ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4
-> > nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand
-> > cpufreq_conservative cpufreq_powersave cpufreq_stats bridge stp llc
-> > ipv6 btrfs xor raid6_pq zlib_deflate loop lpc_ich mfd_core i2c_i801
-> > i2c_core pcspkr button video ehci_pci ehci_hcd acpi_cpufreq ext4
-> > crc16 jbd2 mbcache raid1 sg sd_mod ahci libahci libata scsi_mod
-> > r8169 mii [273059.042901] CPU: 6 PID: 20754 Comm: btrfs-endio-wri
-> > Tainted: G        W    3.13.0-rc7 #1 [273059.043014] Hardware name:
-> > System manufacturer System Product Name/P8H77-M PRO, BIOS 1101
-> > 02/04/2013 [273059.043129]  0000000000000009 ffff8807a7959b18
-> > ffffffff81389887 0000000000000006 [273059.043245]  0000000000000000
-> > ffff8807a7959b58 ffffffff810370a9 ffff8801b0d21040 [273059.043360]
-> > ffffffffa027d623 ffff880637209968 ffff88020a8bde88 ffff880667c1b800
-> > [273059.043476] Call Trace: [273059.043536]  [<ffffffff81389887>]
-> > dump_stack+0x46/0x58 [273059.043599]  [<ffffffff810370a9>]
-> > warn_slowpath_common+0x77/0x91 [273059.043674]
-> > [<ffffffffa027d623>] ? inode_tree_add+0xc2/0x13f [btrfs]
-> > [273059.043738]  [<ffffffff810370d8>] warn_slowpath_null+0x15/0x17
-> > [273059.043810]  [<ffffffffa027d623>] inode_tree_add+0xc2/0x13f
-> > [btrfs] [273059.043885]  [<ffffffffa02840cb>]
-> > btrfs_iget+0x46c/0x4b6 [btrfs] [273059.043958]
-> > [<ffffffffa028421a>] relink_extent_backref+0x105/0x6cf [btrfs]
-> > [273059.044032]  [<ffffffffa0284fa1>]
-> > btrfs_finish_ordered_io+0x7bd/0x877 [btrfs] [273059.044155]
-> > [<ffffffffa028506b>] finish_ordered_fn+0x10/0x12 [btrfs]
-> > [273059.044232]  [<ffffffffa02a00d1>] worker_loop+0x15e/0x495
-> > [btrfs] [273059.044307]  [<ffffffffa029ff73>] ?
-> > btrfs_queue_worker+0x269/0x269 [btrfs] [273059.044372]
-> > [<ffffffff8104ee9a>] kthread+0xcd/0xd5 [273059.044434]
-> > [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
-> > [273059.044498]  [<ffffffff8138e6bc>] ret_from_fork+0x7c/0xb0
-> > [273059.044560]  [<ffffffff8104edcd>] ?
-> > kthread_freezable_should_stop+0x43/0x43 [273059.044624] ---[ end
-> > trace 714ee71af93c5bba ]--- [366782.707007] ------------[ cut here
-> > ]------------
-> >
+1.8.1.4
 

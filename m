@@ -1,85 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:36069 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751291AbaAMPRx convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 10:17:53 -0500
-Received: by mail-pa0-f42.google.com with SMTP id kl14so92231pab.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 07:17:53 -0800 (PST)
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Received: from mail.jrs-s.net ([173.230.137.22]:38779 "EHLO mail.jrs-s.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750899AbaAMPTz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 10:19:55 -0500
+Message-ID: <52D4042F.8020805@jrs-s.net>
+Date: Mon, 13 Jan 2014 10:20:15 -0500
+From: Jim Salter <jim@jrs-s.net>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs send: page allocation failure
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <52D3E308.7060309@jrs-s.net>
-Date: Mon, 13 Jan 2014 23:17:48 +0800
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <1AFA86F3-02FD-4A97-AA64-EA2FC73B2410@gmail.com>
-References: <52D3E308.7060309@jrs-s.net>
-To: Jim Salter <jim@jrs-s.net>
+References: <52D3E308.7060309@jrs-s.net> <1AFA86F3-02FD-4A97-AA64-EA2FC73B2410@gmail.com>
+In-Reply-To: <1AFA86F3-02FD-4A97-AA64-EA2FC73B2410@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Er... I can't use incremental send if I can't get one full send to go 
+through first. =)
 
-I took a careful think about your problems below, i think this is because btrfs *ulist* implement use
-krealloc which might cause memory allocation fails especial you use full send.
+I'm hoping the problem will go away for long enough to get a full send 
+completed once I reboot the box, but I can't do that until (much) later 
+in the day.
 
-Before we kicked off now stupid  *ulist* implements, i think you can use incremental send to solve
-this issue.
-
-Thanks,
-Wang
-
-> Hi list -
-> 
-> Getting sporadic page allocation failures in btrfs send. This happened once several weeks ago but was fine after a reboot; yesterday I did not reboot, but had the failure back-to-back trying to send two different snapshots. These are full sends, not incremental, of a bit over 600G of data. Test machine has 32G of RAM, with 21G of it free (not including cache):
-> 
-> root@gwa-virt1:/data/images/.snapshots# free -m
->             total       used       free     shared    buffers cached
-> Mem:         32159      31789        369          0          0 21276
-> -/+ buffers/cache:      10513      21646
-> Swap:            0          0          0
-> 
-> In both cases (all three, really) the btrfs send failed a bit more than half of the way through the send (somewhere around the 380GB mark).
-> 
-> Kern log snippets follow:
-> 
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627611] btrfs: page allocation failure: order:6, mode:0x104050
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627622] CPU: 6 PID: 9642 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627773] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627818] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627860] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627894] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627930] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627965] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628003] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628037] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628072] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628107] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628141] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628174] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628209] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628244] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
-> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628279] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
-> 
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016512] btrfs: page allocation failure: order:5, mode:0x104050
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016518] CPU: 4 PID: 18689 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016597] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016617] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016637] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016653] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016669] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016684] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016700] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016716] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016732] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016747] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016763] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016778] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016794] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016810] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
-> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016826] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
-> 
+On 01/13/2014 10:17 AM, Wang Shilong wrote:
+> Hello,
+>
+> I took a careful think about your problems below, i think this is because btrfs *ulist* implement use
+> krealloc which might cause memory allocation fails especial you use full send.
+>
+> Before we kicked off now stupid  *ulist* implements, i think you can use incremental send to solve
+> this issue.
+>
+> Thanks,
+> Wang
+>
+>> Hi list -
+>>
+>> Getting sporadic page allocation failures in btrfs send. This happened once several weeks ago but was fine after a reboot; yesterday I did not reboot, but had the failure back-to-back trying to send two different snapshots. These are full sends, not incremental, of a bit over 600G of data. Test machine has 32G of RAM, with 21G of it free (not including cache):
+>>
+>> root@gwa-virt1:/data/images/.snapshots# free -m
+>>              total       used       free     shared    buffers cached
+>> Mem:         32159      31789        369          0          0 21276
+>> -/+ buffers/cache:      10513      21646
+>> Swap:            0          0          0
+>>
+>> In both cases (all three, really) the btrfs send failed a bit more than half of the way through the send (somewhere around the 380GB mark).
+>>
+>> Kern log snippets follow:
+>>
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627611] btrfs: page allocation failure: order:6, mode:0x104050
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627622] CPU: 6 PID: 9642 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627773] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627818] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627860] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627894] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627930] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627965] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628003] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628037] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628072] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628107] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628141] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628174] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628209] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628244] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
+>> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628279] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
+>>
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016512] btrfs: page allocation failure: order:5, mode:0x104050
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016518] CPU: 4 PID: 18689 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016597] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016617] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016637] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016653] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016669] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016684] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016700] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016716] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016732] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016747] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016763] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016778] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016794] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016810] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
+>> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016826] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

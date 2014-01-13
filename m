@@ -1,84 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:46910 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751202AbaAJOu2 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25382 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751527AbaAMNFn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jan 2014 09:50:28 -0500
-Received: by mail-pd0-f173.google.com with SMTP id p10so4647797pdj.18
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jan 2014 06:50:27 -0800 (PST)
-From: Eryu Guan <guaneryu@gmail.com>
+	Mon, 13 Jan 2014 08:05:43 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s0DD5gZZ015204
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 13:05:43 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0DD5f3g003236
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 13:05:42 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0DD5fam026863
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 13:05:41 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH] Btrfs-progs: check return value of read_tree_block() in check_chunks_and_extents()
-Date: Fri, 10 Jan 2014 22:50:02 +0800
-Message-Id: <1389365402-1866-1-git-send-email-guaneryu@gmail.com>
+Subject: [RFC PATCH] btrfs-progs: btrfsck operations should be exclusive
+Date: Mon, 13 Jan 2014 21:14:55 +0800
+Message-Id: <1389618895-24460-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following steps could trigger btrfs segfault:
+From: Anand Jain <Anand.Jain@oracle.com>
 
-mkfs -t btrfs -m raid5 -d raid5 /dev/loop{0..3}
-losetup -d /dev/loop2
-btrfs check /dev/loop0
+this patch will make btrfsck operations to open disk in exclusive mode,
+so that mount will fail when btrfsck is running
 
-The reason is that read_tree_block() returns NULL and
-add_root_to_pending() dereferences it without checking it first.
-
-Also replace a BUG_ON with proper error checking.
-
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
 ---
- cmds-check.c       | 6 +++++-
- disk-io.c          | 5 ++++-
- free-space-cache.c | 2 +-
- 3 files changed, 10 insertions(+), 3 deletions(-)
+ cmds-check.c |  3 ++-
+ disk-io.c    | 10 ++++++++--
+ disk-io.h    |  1 +
+ volumes.c    |  2 +-
+ 4 files changed, 12 insertions(+), 4 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index a65670e..1059c0a 100644
+index 1569d6f..ac456bb 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -5513,7 +5513,11 @@ again:
- 			buf = read_tree_block(root->fs_info->tree_root,
- 					      btrfs_root_bytenr(&ri),
- 					      btrfs_level_size(root,
--					       btrfs_root_level(&ri)), 0);
-+					      btrfs_root_level(&ri)), 0);
-+			if (!buf) {
-+				ret = -EIO;
-+				goto out;
-+			}
- 			add_root_to_pending(buf, &extent_cache, &pending,
- 					    &seen, &nodes, &found_key);
- 			free_extent_buffer(buf);
+@@ -6382,7 +6382,8 @@ int cmd_check(int argc, char **argv)
+ 	int option_index = 0;
+ 	int init_csum_tree = 0;
+ 	int init_extent_tree = 0;
+-	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_PARTIAL;
++	enum btrfs_open_ctree_flags ctree_flags =
++				OPEN_CTREE_PARTIAL|OPEN_CTREE_O_EXCL;
+ 
+ 	while(1) {
+ 		int c;
 diff --git a/disk-io.c b/disk-io.c
-index 0af3898..b0a8d01 100644
+index bd90417..44d6f6f 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -644,7 +644,10 @@ out:
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
- 	root->node = read_tree_block(root, btrfs_root_bytenr(&root->root_item),
- 				     blocksize, generation);
--	BUG_ON(!root->node);
-+	if (!root->node) {
-+		free(root);
-+		return ERR_PTR(-EIO);
-+	}
- insert:
- 	root->ref_cows = 1;
- 	return root;
-diff --git a/free-space-cache.c b/free-space-cache.c
-index ddeeeb6..899a766 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -435,7 +435,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 	if (ret < 0) {
- 		ret = 0;
+@@ -1062,6 +1062,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 	struct btrfs_fs_devices *fs_devices = NULL;
+ 	struct extent_buffer *eb;
+ 	int ret;
++	int oflags;
  
--		printf("failed to load free space cache for block group %llu",
-+		printf("failed to load free space cache for block group %llu\n",
- 			block_group->key.objectid);
+ 	if (sb_bytenr == 0)
+ 		sb_bytenr = BTRFS_SUPER_INFO_OFFSET;
+@@ -1085,9 +1086,14 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 
+ 	fs_info->fs_devices = fs_devices;
+ 	if (flags & OPEN_CTREE_WRITES)
+-		ret = btrfs_open_devices(fs_devices, O_RDWR);
++		oflags = O_RDWR;
+ 	else
+-		ret = btrfs_open_devices(fs_devices, O_RDONLY);
++		oflags = O_RDONLY;
++
++	if (flags & OPEN_CTREE_O_EXCL)
++		oflags |= O_EXCL;
++
++	ret = btrfs_open_devices(fs_devices, oflags);
+ 	if (ret)
+ 		goto out_devices;
+ 
+diff --git a/disk-io.h b/disk-io.h
+index ca6af2d..594deba 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -32,6 +32,7 @@ enum btrfs_open_ctree_flags {
+ 	OPEN_CTREE_RECOVER_SUPER	= 8,
+ 	OPEN_CTREE_RESTORE		= 16,
+ 	OPEN_CTREE_NO_BLOCK_GROUPS	= 32,
++	OPEN_CTREE_O_EXCL		= 64,
+ };
+ 
+ static inline u64 btrfs_sb_offset(int mirror)
+diff --git a/volumes.c b/volumes.c
+index 65be5f0..8c45851 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -214,7 +214,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices, int flags)
+ 		if (device->devid == fs_devices->lowest_devid)
+ 			fs_devices->lowest_bdev = fd;
+ 		device->fd = fd;
+-		if (flags == O_RDWR)
++		if (flags & O_RDWR)
+ 			device->writeable = 1;
  	}
- 
+ 	return 0;
 -- 
 1.8.4.2
 

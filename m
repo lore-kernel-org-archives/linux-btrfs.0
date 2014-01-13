@@ -1,102 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:34562 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751612AbaAMNlQ (ORCPT
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:36069 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751291AbaAMPRx convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 08:41:16 -0500
-Received: by mail-wi0-f169.google.com with SMTP id e4so1141215wiv.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 05:41:15 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: faster file extent item search in clone ioctl
-Date: Mon, 13 Jan 2014 13:38:58 +0000
-Message-Id: <1389620338-17424-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1389475828-19339-1-git-send-email-fdmanana@gmail.com>
-References: <1389475828-19339-1-git-send-email-fdmanana@gmail.com>
+	Mon, 13 Jan 2014 10:17:53 -0500
+Received: by mail-pa0-f42.google.com with SMTP id kl14so92231pab.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 07:17:53 -0800 (PST)
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: btrfs send: page allocation failure
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <52D3E308.7060309@jrs-s.net>
+Date: Mon, 13 Jan 2014 23:17:48 +0800
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <1AFA86F3-02FD-4A97-AA64-EA2FC73B2410@gmail.com>
+References: <52D3E308.7060309@jrs-s.net>
+To: Jim Salter <jim@jrs-s.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we are looking for file extent items that intersect the cloning
-range, for each one that falls completely outside the range, don't
-release the path and do another full tree search - just move on
-to the next slot and copy the file extent item into our buffer only
-if the item intersects the cloning range.
-Also leave the btree node/leaf locks in spinning mode to not make other
-tasks sleep since we process each leaf very quickly.
+Hello,
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+I took a careful think about your problems below, i think this is because btrfs *ulist* implement use
+krealloc which might cause memory allocation fails especial you use full send.
 
-V2: Set path->leave_spinning to 1.
+Before we kicked off now stupid  *ulist* implements, i think you can use incremental send to solve
+this issue.
 
- fs/btrfs/ioctl.c |   23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+Thanks,
+Wang
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3970f32..e3b72da 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2893,7 +2893,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		vfree(buf);
- 		return ret;
- 	}
--
-+	path->leave_spinning = 1;
- 	path->reada = 2;
- 	/* clone data */
- 	key.objectid = btrfs_ino(src);
-@@ -2911,6 +2911,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			goto out;
- 
- 		nritems = btrfs_header_nritems(path->nodes[0]);
-+process_slot:
- 		if (path->slots[0] >= nritems) {
- 			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
- 			if (ret < 0)
-@@ -2937,11 +2938,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			u8 comp;
- 			u64 endoff;
- 
--			size = btrfs_item_size_nr(leaf, slot);
--			read_extent_buffer(leaf, buf,
--					   btrfs_item_ptr_offset(leaf, slot),
--					   size);
--
- 			extent = btrfs_item_ptr(leaf, slot,
- 						struct btrfs_file_extent_item);
- 			comp = btrfs_file_extent_compression(leaf, extent);
-@@ -2960,11 +2956,19 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 				datal = btrfs_file_extent_ram_bytes(leaf,
- 								    extent);
- 			}
--			btrfs_release_path(path);
- 
- 			if (key.offset + datal <= off ||
--			    key.offset >= off + len - 1)
--				goto next;
-+			    key.offset >= off + len - 1) {
-+				path->slots[0]++;
-+				goto process_slot;
-+			}
-+
-+			size = btrfs_item_size_nr(leaf, slot);
-+			read_extent_buffer(leaf, buf,
-+					   btrfs_item_ptr_offset(leaf, slot),
-+					   size);
-+
-+			btrfs_release_path(path);
- 
- 			memcpy(&new_key, &key, sizeof(new_key));
- 			new_key.objectid = btrfs_ino(inode);
-@@ -3135,7 +3139,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			}
- 			ret = btrfs_end_transaction(trans, root);
- 		}
--next:
- 		btrfs_release_path(path);
- 		key.offset++;
- 	}
--- 
-1.7.9.5
+> Hi list -
+> 
+> Getting sporadic page allocation failures in btrfs send. This happened once several weeks ago but was fine after a reboot; yesterday I did not reboot, but had the failure back-to-back trying to send two different snapshots. These are full sends, not incremental, of a bit over 600G of data. Test machine has 32G of RAM, with 21G of it free (not including cache):
+> 
+> root@gwa-virt1:/data/images/.snapshots# free -m
+>             total       used       free     shared    buffers cached
+> Mem:         32159      31789        369          0          0 21276
+> -/+ buffers/cache:      10513      21646
+> Swap:            0          0          0
+> 
+> In both cases (all three, really) the btrfs send failed a bit more than half of the way through the send (somewhere around the 380GB mark).
+> 
+> Kern log snippets follow:
+> 
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627611] btrfs: page allocation failure: order:6, mode:0x104050
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627622] CPU: 6 PID: 9642 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627773] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627818] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627860] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627894] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627930] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.627965] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628003] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628037] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628072] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628107] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628141] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628174] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628209] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628244] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
+> Jan 12 14:05:36 gwa-virt1 kernel: [535523.628279] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
+> 
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016512] btrfs: page allocation failure: order:5, mode:0x104050
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016518] CPU: 4 PID: 18689 Comm: btrfs Not tainted 3.13.0-031300rc7-generic #201401041835
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016597] [<ffffffffa0142214>] ? btrfs_get_token_64+0x64/0xf0 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016617] [<ffffffffa01876dd>] ? ulist_add_merge+0xcd/0x270 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016637] [<ffffffffa01876dd>] ulist_add_merge+0xcd/0x270 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016653] [<ffffffffa018615c>] find_parent_nodes+0x50c/0x6f0 [btrf ]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016669] [<ffffffffa018e550>] ? compare_refs.isra.23+0x130/0x130 btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016684] [<ffffffffa0187019>] iterate_extent_inodes+0xf9/0x270 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016700] [<ffffffffa014b7a5>] ? free_extent_buffer+0x35/0x40 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016716] [<ffffffffa018dc9d>] find_extent_clone.isra.26+0x26d/0x340 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016732] [<ffffffffa0191207>] process_extent+0xd7/0x180 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016747] [<ffffffffa01918ff>] changed_cb+0xdf/0x170 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016763] [<ffffffffa0191ad2>] full_send_tree+0x142/0x280 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016778] [<ffffffffa0191ccc>] ? send_subvol_begin+0xbc/0x2b0 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016794] [<ffffffffa0191fa0>] send_subvol+0xe0/0xf0 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016810] [<ffffffffa01922f1>] btrfs_ioctl_send+0x341/0x520 [btrfs]
+> Jan 12 21:34:00 gwa-virt1 kernel: [562448.016826] [<ffffffffa01606d3>] btrfs_ioctl+0x953/0xac0 [btrfs]
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

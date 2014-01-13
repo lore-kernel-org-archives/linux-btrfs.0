@@ -1,29 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:42598 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751131AbaAMEoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jan 2014 23:44:12 -0500
-Message-ID: <52D36F19.3070207@sandeen.net>
-Date: Sun, 12 Jan 2014 22:44:09 -0600
-From: Eric Sandeen <sandeen@sandeen.net>
-MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Dave Chinner <david@fromorbit.com>
-CC: xfs@oss.sgi.com, Eric Sandeen <sandeen@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: Add pairing mount options test
-References: <1389162648-19309-1-git-send-email-quwenruo@cn.fujitsu.com> <52D01CA9.4040107@sandeen.net> <52D33F92.2000609@cn.fujitsu.com> <52D342F0.5020402@sandeen.net> <20140113015239.GD3469@dastard> <52D34EBD.4020508@cn.fujitsu.com> <20140113032650.GH3469@dastard> <52D364DA.4000708@cn.fujitsu.com>
-In-Reply-To: <52D364DA.4000708@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:29787 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751142AbaAMNHS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 08:07:18 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] xfstests: make btrfs/001.out in line with subvol delete output
+Date: Mon, 13 Jan 2014 21:16:29 +0800
+Message-Id: <1389618990-24544-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 1/12/14, 10:00 PM, Qu Wenruo wrote:
-> Now I'm interested in how other filesystems like xfs makes sure that every pairing
-> mount options are tested.
+From: Anand Jain <Anand.Jain@oracle.com>
 
-For starters, xfs actually doesn't handle very many options during remount.
+btrfs/001 is failing as below btrfs-progs patch changed the
+output during subvol delete.
+Patch :
+btrfs-progs: add options to set commit mode after subvol delete
 
-Many of them are quite tricky to do, which made me wonder if they all
-actually worked properly for btrfs.  :)
+so add it to the btrfs/001.out
 
--Eric
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+---
+ tests/btrfs/001.out | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tests/btrfs/001.out b/tests/btrfs/001.out
+index c782bde..a255614 100644
+--- a/tests/btrfs/001.out
++++ b/tests/btrfs/001.out
+@@ -33,6 +33,7 @@ subvol
+ Listing subvolumes
+ snap
+ subvol
++Transaction commit: none (default)
+ Delete subvolume 'SCRATCH_MNT/snap'
+ List root dir
+ subvol
+-- 
+1.8.4.2
+

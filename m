@@ -1,102 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:64941 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752050AbaAMTfT (ORCPT
+Received: from mar44-4-88-161-154-132.fbx.proxad.net ([88.161.154.132]:35595
+	"EHLO arthur.lutz.im" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751345AbaAMWdH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 14:35:19 -0500
-Received: by mail-wg0-f49.google.com with SMTP id a1so4726650wgh.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 11:35:18 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+	Mon, 13 Jan 2014 17:33:07 -0500
+Received: from [192.168.0.11] (unknown [192.168.0.254])
+	by arthur.lutz.im (Postfix) with ESMTPSA id 0DE9F38CE0BC
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 23:23:25 +0100 (CET)
+Message-ID: <52D46759.2090000@lutz.im>
+Date: Mon, 13 Jan 2014 23:23:21 +0100
+From: Arthur Lutz <arthur@lutz.im>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: faster file extent item search in clone ioctl
-Date: Mon, 13 Jan 2014 19:35:01 +0000
-Message-Id: <1389641701-19162-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1389475828-19339-1-git-send-email-fdmanana@gmail.com>
-References: <1389475828-19339-1-git-send-email-fdmanana@gmail.com>
+Subject: Add speed profiles to devices
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we are looking for file extent items that intersect the cloning
-range, for each one that falls completely outside the range, don't
-release the path and do another full tree search - just move on
-to the next slot and copy the file extent item into our buffer only
-if the item intersects the cloning range.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-V2: Set path->leave_spinning to 1.
-V3: Reset path->leave_spinning to 0 before path is used by btrfs_drop_extents,
-    as that function allocates memory without GFP_ATOMIC and therefore can
-    sleep.
+Hi,
 
- fs/btrfs/ioctl.c |   23 ++++++++++++++---------
- 1 file changed, 14 insertions(+), 9 deletions(-)
+It would be a great feature to have speed profiles linked to devices so
+that btrfs could differentiate write or read operations according to
+some metrics collected over time.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3970f32..25301bb 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2905,12 +2905,14 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		 * note the key will change type as we walk through the
- 		 * tree.
- 		 */
-+		path->leave_spinning = 1;
- 		ret = btrfs_search_slot(NULL, BTRFS_I(src)->root, &key, path,
- 				0, 0);
- 		if (ret < 0)
- 			goto out;
- 
- 		nritems = btrfs_header_nritems(path->nodes[0]);
-+process_slot:
- 		if (path->slots[0] >= nritems) {
- 			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
- 			if (ret < 0)
-@@ -2937,11 +2939,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			u8 comp;
- 			u64 endoff;
- 
--			size = btrfs_item_size_nr(leaf, slot);
--			read_extent_buffer(leaf, buf,
--					   btrfs_item_ptr_offset(leaf, slot),
--					   size);
--
- 			extent = btrfs_item_ptr(leaf, slot,
- 						struct btrfs_file_extent_item);
- 			comp = btrfs_file_extent_compression(leaf, extent);
-@@ -2960,11 +2957,20 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 				datal = btrfs_file_extent_ram_bytes(leaf,
- 								    extent);
- 			}
--			btrfs_release_path(path);
- 
- 			if (key.offset + datal <= off ||
--			    key.offset >= off + len - 1)
--				goto next;
-+			    key.offset >= off + len - 1) {
-+				path->slots[0]++;
-+				goto process_slot;
-+			}
-+
-+			size = btrfs_item_size_nr(leaf, slot);
-+			read_extent_buffer(leaf, buf,
-+					   btrfs_item_ptr_offset(leaf, slot),
-+					   size);
-+
-+			btrfs_release_path(path);
-+			path->leave_spinning = 0;
- 
- 			memcpy(&new_key, &key, sizeof(new_key));
- 			new_key.objectid = btrfs_ino(inode);
-@@ -3135,7 +3141,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			}
- 			ret = btrfs_end_transaction(trans, root);
- 		}
--next:
- 		btrfs_release_path(path);
- 		key.offset++;
- 	}
--- 
-1.7.9.5
+The use case would be : one has 3 disks as RAID1 but one of the disks is
+older and slower than the two other disks. In this configuration the
+third disk serves a bit as an online backup but it would be nice for a
+write to be considered as done when the two fast disks have completed
+the write, the third one acting asynchronously. If one of the two fast
+disks fails we fall back to syncronous writing on that third device.
+
+This would be great for mixing SSD and traditional drives too.
+
+Issue submitted on https://bugzilla.kernel.org/show_bug.cgi?id=68671
+
+Thanks.
+
+Arthur
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJS1GdZAAoJELB9duUjqo16KxIQALNLqogzuJyaNDHuyHezJvrf
+fSHC3vjyEsGjTc8H/lC+VqbetzEep0w7do1yF0blZVrAbqJVArY1kCOXkb7dUHuA
+BzWHVIgGD3JBvYnU4tEJML35zPBXsHtV+ouCp+h7P30RASDDRdtDnRo7CtP7nEJO
+T75ZyUfHyZmUnEMWTkrdoFJT1xI+6TeMS+5ACHLe8bz7+rgUXyyjDUBdmTNJ87+8
+/ya7Mjc8ICHhAkmzFtXUwMcoIwjBo872pgffQxNGLxvX6/f9cVpo1foc+TPuMkat
+1rRjtksNx36n7yX4DeNH3c2qvg9wB2BFFlCGcD+bL5xr87ql9l/UlyVxvFMCtCrK
+UVXXDU56V51kk75wJu4QssxKcQ80I7zj2/aHVDEr/+OnAkRWTYs/2KKGv+1kih3u
+qNaz0fm5aWF6MHlFhtOHCVMEy68evpzGddMPgMDM+pmxrfzdbhPdSL5UAX5WXuHQ
+YKo2qzYsew19/nE6OomWCR+0m+FoVokbERNqcsPfSANcghyQ+QWWytPGOlxPFdB9
+uL8vZ+GoErMH78Q0b6ZNlona+cIH0bWmmh54RCWw24KyagXU9KPx33zOd/TnI847
+2LNhXStkMKWNMEhErblwSK3RqOr8jUJ111HviQCQO5B/TfaAHoV+0VNhaLIhR25Y
+oLKcrGti8FiKhDiVySN1
+=AJ4Y
+-----END PGP SIGNATURE-----
 

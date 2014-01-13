@@ -1,39 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:44850 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754295AbaAMQqP convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 11:46:15 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: RAID 1 with no data on it when accidentally switched HDD
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$137$6980616b$bce212bf$29519e1a@cox.net>
-Date: Mon, 13 Jan 2014 09:46:08 -0700
+Received: from cantor2.suse.de ([195.135.220.15]:38583 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752606AbaAMRnq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 12:43:46 -0500
+Date: Mon, 13 Jan 2014 18:43:44 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Remco Hosman - Yerf IT <remco@yerf-it.nl>
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <BD7CFF7E-E75E-40D8-92B5-902C2F523A28@colorremedies.com>
-References: <b93a253364541dd18356eaefb64d3168@www.jitmail.de> <EF449A1E-2C53-43BB-883E-98EE848E60CB@colorremedies.com> <pan$137$6980616b$bce212bf$29519e1a@cox.net>
-To: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ENOSPC during balance
+Message-ID: <20140113174344.GQ6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <97A7F0AC-8A96-4BFA-A6C0-DD878629FCF2@yerf-it.nl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <97A7F0AC-8A96-4BFA-A6C0-DD878629FCF2@yerf-it.nl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Jan 13, 2014, at 1:18 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+On Sun, Jan 12, 2014 at 03:49:12PM +0100, Remco Hosman - Yerf IT wrote:
+> I am trying to convert my array from raid10 to 1, and its partially
+> completed, but at the moment i am getting a '59366.459092] btrfs: 185
+> enospc errors during balance’ when i try to balance anything more with
+> `btrfs bal start -dconvert=raid1,soft /mountpoint`
 > 
-> I use GPT partitioning (instead of MBR) for better fault tolerance and 
-> flexibility here, too,
+> I have already scanned for files with extends over 1gig gig, and there
+> is at least 100gig unallocated on each of the disks, and scrub reports
+> no error at all.
+> Kernel is 3.13-rc7 and tools are latest from git.
 
-Off topic but related to above, you might find it vaguely interesting/annoying in that the current kernel behavior actually makes GPT less reliable than MBR because it face plants if it finds a problem with the primary GPT, rather than use the backup:
-https://bugzilla.kernel.org/show_bug.cgi?id=63591
+By unalocated you mean from 'btrfs fi df' output "total - used = 100G"
+or that the sum of all occupied space is 100G less than the device size?
+So if there's some space left to allocate new 1G-chunks for balance.
+
+How many disks does the fs contain?
+
+> Anything else i can try ?
+
+Run
+$ btrfs balance start -dusage=0,profiles=raid10\|raid1 /mnt
+
+if there are some chunks preallocated from previous balance runs, this
+will clean them. The -musage=0 filter could also get some space.
+
+I've experienced similar problems with conversion from raid1 to raid10,
+where it's probably worse regarding the 1G-chunks, because the raid-0
+level needs the chunk on each disk, while raid1 is fine with just 2.
+
+I had done the -dusage=0 cleanup step every time the 'enospc during
+balance' was hit, and it finished in the end. Not perfect, an automatic
+and more intelligent chunk reclaim is among the project ideas though.
+
+If nothing from above helps, please post the output of 'fi df' and 'fi
+show' commands.
 
 
-> and it has partition names/labels which can be 
-> used in fstab, too.  I use the same label and partlabel scheme, with the 
-> filesystem label generally reflecting the partlabel(s) it's created on, 
-> however, so it doesn't really matter which I use, except that PARTLABEL= 
-> is longer in fstab, so I use the shorter LABEL=, instead.
-
-While considering how to make Btrfs snapshots bootable in a sane manner over on grub-devel@, I'm finding that fstab is almost entirely obsolete and we need a more dynamic approach. Any rootfs snapshot contains a wrong fstab. So it's almost like we need a revamped format that enables some entries to be static and others to be 2nd guessed/dynamically altered, so that the right subvolumes are mounted rather than prior ones.
-
-Chris Murphy
-
+david

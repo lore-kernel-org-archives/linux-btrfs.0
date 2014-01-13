@@ -1,177 +1,229 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f179.google.com ([74.125.82.179]:40639 "EHLO
-	mail-we0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750790AbaAKVhQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Jan 2014 16:37:16 -0500
-Received: by mail-we0-f179.google.com with SMTP id w62so98945wes.10
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jan 2014 13:37:14 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] xfstests: test btrfs send issue with non-aligned clone operations
-Date: Sat, 11 Jan 2014 21:36:42 +0000
-Message-Id: <1389476202-19683-1-git-send-email-fdmanana@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:59194 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751019AbaAMBUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 12 Jan 2014 20:20:38 -0500
+Message-ID: <52D33F92.2000609@cn.fujitsu.com>
+Date: Mon, 13 Jan 2014 09:21:22 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@sandeen.net>, xfs@oss.sgi.com
+CC: Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] xfstests: Add pairing mount options test
+References: <1389162648-19309-1-git-send-email-quwenruo@cn.fujitsu.com> <52D01CA9.4040107@sandeen.net>
+In-Reply-To: <52D01CA9.4040107@sandeen.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test for an issue in btrfs send where it sent clone operations to user
-space with a range (offset + length) that was not aligned with the block
-size. This caused the btrfs receive command to send such clone operations
-to the ioctl clone API, which would return -EINVAL errors to btrfs receive,
-causing the receive command to abort immediately.
+On fri, 10 Jan 2014 10:15:37 -0600, Eric Sandeen wrote:
+> On 1/8/14, 12:30 AM, Qu Wenruo wrote:
+>> Test remount btrfs with different pairing options like barrier and no barrier.
+> It seems that while this tests that the remount succeeds, and that
+> the option string is present in /proc/mounts, it does not test that
+> the mount option is actually in effect.
 
-This corresponding btrfs linux kernel patch that fixes this issue is at:
+Yes, this is what the new test case is intended to do.
+This case was just a test case tests the mount options themselves
+to ensure all the pairing mount options works during remounting,
+since most pairing options are missing before.
+>
+> I suppose for many of these options that would be hard to test; for
+> i.e. acl though it should be trivial.
+>
+> What do you think, is this enough to ensure that remount handling
+> is working as expected for all of these options?
+In my opinion, this test should just focuses on the remount handling and
+the pairing options.
+For the detailed function should be examineed in other test cases.
 
-https://patchwork.kernel.org/patch/3470401/
+Also, most of the pairing options are instructive,
+and some may not be in effect before next transaction (for the incomming 
+noinode_cache options),
+so I think is OK for just examining the options and remount handling for 
+now.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- tests/btrfs/025     |   98 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/025.out |   18 ++++++++++
- tests/btrfs/group   |    1 +
- 3 files changed, 117 insertions(+)
- create mode 100755 tests/btrfs/025
- create mode 100644 tests/btrfs/025.out
-
-diff --git a/tests/btrfs/025 b/tests/btrfs/025
-new file mode 100755
-index 0000000..5f13832
---- /dev/null
-+++ b/tests/btrfs/025
-@@ -0,0 +1,98 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/025
-+#
-+# Test for an issue in btrfs send where it sent clone operations to user
-+# space with a range (offset + length) that was not aligned with the block
-+# size. This caused the btrfs receive command to send such clone operations
-+# to the ioctl clone API, which would return -EINVAL errors to btrfs receive,
-+# causing the receive command to abort immediately.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=`mktemp -d`
-+
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    rm -fr $tmp
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_need_to_be_root
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+$XFS_IO_PROG -f -c "truncate 819200" $SCRATCH_MNT/foo | _filter_xfs_io
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-+
-+$XFS_IO_PROG -c "falloc -k 819200 667648" $SCRATCH_MNT/foo | _filter_xfs_io
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-+
-+$XFS_IO_PROG -f -c "pwrite 1482752 2978" $SCRATCH_MNT/foo | _filter_xfs_io
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-+
-+$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1 | \
-+    _filter_scratch
-+
-+$XFS_IO_PROG -f -c "truncate 883305" $SCRATCH_MNT/foo | _filter_xfs_io
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT | _filter_scratch
-+
-+$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2 | \
-+    _filter_scratch
-+
-+$BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap 2>&1 | _filter_scratch
-+$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+    -f $tmp/2.snap 2>&1 | _filter_scratch
-+
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-+md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-+
-+_scratch_unmount
-+_check_btrfs_filesystem $SCRATCH_DEV
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
-+md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-+
-+$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
-+md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-+
-+_scratch_unmount
-+_check_btrfs_filesystem $SCRATCH_DEV
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/025.out b/tests/btrfs/025.out
-new file mode 100644
-index 0000000..aaad4ab
---- /dev/null
-+++ b/tests/btrfs/025.out
-@@ -0,0 +1,18 @@
-+QA output created by 025
-+FSSync 'SCRATCH_MNT'
-+FSSync 'SCRATCH_MNT'
-+wrote 2978/2978 bytes at offset 1482752
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+FSSync 'SCRATCH_MNT'
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap1'
-+FSSync 'SCRATCH_MNT'
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap2'
-+At subvol SCRATCH_MNT/mysnap1
-+At subvol SCRATCH_MNT/mysnap2
-+129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/foo
-+42b6369eae2a8725c1aacc0440e597aa  SCRATCH_MNT/mysnap1/foo
-+129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/mysnap2/foo
-+At subvol mysnap1
-+42b6369eae2a8725c1aacc0440e597aa  SCRATCH_MNT/mysnap1/foo
-+At snapshot mysnap2
-+129b8eaee8d3c2bcad49bec596591cb3  SCRATCH_MNT/mysnap2/foo
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 87e7bca..1a4dad8 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -27,3 +27,4 @@
- 022 auto
- 023 auto
- 024 auto quick
-+025 auto quick
--- 
-1.7.9.5
+Thanks
+Qu
+>
+> Thanks,
+> -Eric
+>
+>> Mainly used to test the following comming btrfs kernel commit:(Not in
+>> mainline yet)
+>> 8dd6d2c btrfs: Add treelog mount option.
+>> f1eccd3 btrfs: Add datasum mount option.
+>> aad3269 btrfs: Add datacow mount option.
+>> 22bab74 btrfs: Add acl mount option.
+>> 170e45e btrfs: Add noflushoncommit mount option.
+>> ce41bc9 btrfs: Add noenospc_debug mount option.
+>> f3c639b btrfs: Add nodiscard mount option.
+>> 962cbee btrfs: Add noautodefrag mount option.
+>> 0b4fa2a btrfs: Add "barrier" option to support "-o remount,barrier"
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> Cc: Eric Sandeen <sandeen@redhat.com>
+>> ---
+>>   tests/btrfs/025     | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   tests/btrfs/025.out |   2 +
+>>   tests/btrfs/group   |   1 +
+>>   3 files changed, 128 insertions(+)
+>>   create mode 100755 tests/btrfs/025
+>>   create mode 100644 tests/btrfs/025.out
+>>
+>> diff --git a/tests/btrfs/025 b/tests/btrfs/025
+>> new file mode 100755
+>> index 0000000..014da19
+>> --- /dev/null
+>> +++ b/tests/btrfs/025
+>> @@ -0,0 +1,125 @@
+>> +#!/bin/bash
+>> +# Btrfs QA test No. 025
+>> +#
+>> +# Check for paired btrfs mount options
+>> +#
+>> +# Regression test for the following btrfs commits
+>> +# 8dd6d2c btrfs: Add treelog mount option.
+>> +# f1eccd3 btrfs: Add datasum mount option.
+>> +# aad3269 btrfs: Add datacow mount option.
+>> +# 22bab74 btrfs: Add acl mount option.
+>> +# 170e45e btrfs: Add noflushoncommit mount option.
+>> +# ce41bc9 btrfs: Add noenospc_debug mount option.
+>> +# f3c639b btrfs: Add nodiscard mount option.
+>> +# 962cbee btrfs: Add noautodefrag mount option.
+>> +# 0b4fa2a btrfs: Add "barrier" option to support "-o remount,barrier"
+>> +#
+>> +#-----------------------------------------------------------------------
+>> +# Copyright (c) 2014 Fujitsu, Inc.  All Rights Reserved.
+>> +#
+>> +# This program is free software; you can redistribute it and/or
+>> +# modify it under the terms of the GNU General Public License as
+>> +# published by the Free Software Foundation.
+>> +#
+>> +# This program is distributed in the hope that it would be useful,
+>> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+>> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+>> +# GNU General Public License for more details.
+>> +#
+>> +# You should have received a copy of the GNU General Public License
+>> +# along with this program; if not, write the Free Software Foundation,
+>> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+>> +#-----------------------------------------------------------------------
+>> +#
+>> +
+>> +seq=`basename $0`
+>> +seqres=$RESULT_DIR/$seq
+>> +echo "QA output created by $seq"
+>> +
+>> +status=0	# success is the default!
+>> +trap "_cleanup; exit \$status" 0 1 2 3 15
+>> +
+>> +PAIRING_OPTIONS="autodefrag noautodefrag discard nodiscard enospc_debug noenospc_debug flushoncommit noflushoncommit noacl acl nobarrier barrier nodatacow datacow nodatasum datasum notreelog treelog space_cache nospace_cache ssd nossd"
+>> +
+>> +# options that does not show in mount options
+>> +HIDDEN_OPTIONS="noautodefrag nodiscard noenospc_debug noflushoncommit acl barrier datacow datasum treelog nossd"
+>> +_cleanup()
+>> +{
+>> +	rm $tmp.running &> /dev/null
+>> +	wait
+>> +	cd /
+>> +	_scratch_unmount &> /dev/null
+>> +}
+>> +
+>> +# check the mount option
+>> +check_mount_opt()
+>> +{
+>> +	mount_point=$1
+>> +	expected_opt=$2
+>> +
+>> +	mount_opt=`cat /proc/mounts | grep $mount_point | cut -d\  -f4`
+>> +	if grep $2 $mount_opt; then
+>> +		_fail "test failed: expected $expected_opt option not shown in mount options"
+>> +	fi
+>> +}
+>> +
+>> +# background noise
+>> +start_bgnoise()
+>> +{
+>> +	touch $tmp.running
+>> +	while [ -f "$tmp.running" ]; do
+>> +		run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 500 -p 4
+>> +		if [ $? != 0 ]; then
+>> +			_fail "Some error happened executing fsstress when remounting"
+>> +		fi
+>> +	done &
+>> +	noise_pid=`jobs -p %1`
+>> +	echo $noise_pid > $tmp.running
+>> +}
+>> +
+>> +stop_bgnoise()
+>> +{
+>> +	pid=`cat $tmp.running`
+>> +	rm $tmp.running
+>> +	wait $pid
+>> +}
+>> +
+>> +# get standard environment, filters
+>> +. ./common/rc
+>> +. ./common/filter
+>> +
+>> +# real QA test starts here
+>> +_supported_fs btrfs
+>> +_supported_os Linux
+>> +
+>> +_need_to_be_root
+>> +_require_scratch
+>> +
+>> +# no need to use the original mount options
+>> +unset MOUNT_OPTIONS
+>> +
+>> +_scratch_mkfs > /dev/null 2>&1
+>> +_scratch_mount
+>> +
+>> +start_bgnoise
+>> +for remount_opt in $PAIRING_OPTIONS; do
+>> +	# Sleep for a while ensuring fsstress to do enough stress
+>> +	sleep 1
+>> +	_remount $SCRATCH_MNT $remount_opt
+>> +	if [ $? != 0 ]; then
+>> +		stop_bgnoise
+>> +		_fail "test failed: $remount_opt not supported"
+>> +	fi
+>> +	if [[ ! $HIDDEN_OPTIONS =~ $remount ]]; then
+>> +		check_mount_opt $SCRATCH_MNT $remount_opt
+>> +			
+>> +		# Special check for nodatacow
+>> +		if [ $remount_opt == "nodatacow" ]; then
+>> +			check_mount_opt $SCRATCH_MNT nodatasum
+>> +		fi
+>> +	fi
+>> +done
+>> +stop_bgnoise
+>> +_scratch_unmount || _fail "umount failed"
+>> +echo "Silence is golden"
+>> +status=0; exit
+>> diff --git a/tests/btrfs/025.out b/tests/btrfs/025.out
+>> new file mode 100644
+>> index 0000000..3d70951
+>> --- /dev/null
+>> +++ b/tests/btrfs/025.out
+>> @@ -0,0 +1,2 @@
+>> +QA output created by 025
+>> +Silence is golden
+>> diff --git a/tests/btrfs/group b/tests/btrfs/group
+>> index 87e7bca..1a4dad8 100644
+>> --- a/tests/btrfs/group
+>> +++ b/tests/btrfs/group
+>> @@ -27,3 +27,4 @@
+>>   022 auto
+>>   023 auto
+>>   024 auto quick
+>> +025 auto quick
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

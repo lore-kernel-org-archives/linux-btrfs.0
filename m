@@ -1,118 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f175.google.com ([209.85.192.175]:61067 "EHLO
-	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751351AbaAMXxo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jan 2014 18:53:44 -0500
-Received: by mail-pd0-f175.google.com with SMTP id r10so4038786pdi.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jan 2014 15:53:44 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAFP7zVuzBRD17APtz=GgMX4rAnFw=fiPTb1Z3L=KC0EAx+qUHw@mail.gmail.com>
-References: <CAFP7zVthUK54N5-8+QRABBpz2R9-mAbJGjiOc6Ty3nVS4O-EDA@mail.gmail.com>
-	<CAFP7zVuzBRD17APtz=GgMX4rAnFw=fiPTb1Z3L=KC0EAx+qUHw@mail.gmail.com>
-Date: Tue, 14 Jan 2014 00:53:44 +0100
-Message-ID: <CAFP7zVtGNE32w7SATd+anUEkayv4iNAeq+jHhjorZT5xfhi3Cg@mail.gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41808 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752928AbaANAhd convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jan 2014 19:37:33 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:58826 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W2s0a-0017RX-QL
+	for linux-btrfs@vger.kernel.org; Mon, 13 Jan 2014 17:37:32 -0700
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: btrfsck failes
-From: Holger Brandsmeier <brandsmeier@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAFP7zVthUK54N5-8+QRABBpz2R9-mAbJGjiOc6Ty3nVS4O-EDA@mail.gmail.com>
+Date: Mon, 13 Jan 2014 17:37:31 -0700
+Message-Id: <A76390BF-4D85-47D3-A332-AD09809F6632@colorremedies.com>
+References: <CAFP7zVthUK54N5-8+QRABBpz2R9-mAbJGjiOc6Ty3nVS4O-EDA@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I modified the code (now I am using the git repository) of disk-io.c
-to include the debug output
 
-  if(ret) {
-    printf("btrfs_map_block(bytenr=%u, length=%u) has code %d\n",
-bytenr, length, ret);
-  }
+On Jan 13, 2014, at 3:58 PM, Holger Brandsmeier <brandsmeier@gmail.com> wrote:
+> 
+> Currently btrfsck failes to repair my partition, I get the output:
+> 
+> [root@ho-think bholger]# btrfsck --repair /dev/sda5
 
- before the assertion throws, and I get:
+This is almost the last resort and you probably should be posting to the list before using repair.
 
-btrfs_map_block(bytenr=2684354560, length=4096) has code -2
 
-i.e. the error is ENOENT.
+> [...]
+> leaf parent key incorrect 600846336
+> parent transid verify failed on 600846336 wanted 23460 found 23463
+> Ignoring transid failure
+> leaf parent key incorrect 600846336
+> bad block 600395776
+> bad block 600518656
+> bad block 600547328
 
--Holger
+Please provide the following information for this volume:
 
-On Tue, Jan 14, 2014 at 12:15 AM, Holger Brandsmeier
-<brandsmeier@gmail.com> wrote:
-> Oh and if I do
-> mount -o recovery /dev/sda5 /some/path/
->
-> then I get the following in dmesg:
->
-> [ 1449.171259] btrfs: device fsid f6907d81-f46f-4911-8600-858e8b6bd1a0
-> devid 1 transid 23462 /dev/sda5
-> [ 1449.171635] btrfs: enabling auto recovery
-> [ 1449.171638] btrfs: disk space caching is enabled
-> [ 1451.848339] btrfs: space cache generation (23463) does not match
-> inode (23461)
-> [ 1451.848360] BTRFS error (device sda5): failed to load free space
-> cache for block group 1103101952
-> [ 1451.959865] parent transid verify failed on 601710592 wanted 23460
-> found 23463
-> [ 1451.969678] parent transid verify failed on 601710592 wanted 23460
-> found 23463
-> [ 1452.461075] btrfs: space cache generation (23463) does not match
-> inode (23461)
-> [ 1452.461094] BTRFS error (device sda5): failed to load free space
-> cache for block group 2176843776
-> [ 1456.915205] parent transid verify failed on 603377664 wanted 23460
-> found 23463
-> [ 1456.925074] parent transid verify failed on 603377664 wanted 23460
-> found 23463
-> [ 1456.925827] BTRFS error (device sda5) in open_ctree:2847: errno=-5
-> IO failure (Failed to recover log tree)
-> [ 1456.971476] btrfs: open_ctree failed
->
->
-> On Mon, Jan 13, 2014 at 11:58 PM, Holger Brandsmeier
-> <brandsmeier@gmail.com> wrote:
->> Dear BTRFS developers,
->>
->> thanks for providing a filesystem with which I am happy so far!
->>
->> Currently btrfsck failes to repair my partition, I get the output:
->>
->> [root@ho-think bholger]# btrfsck --repair /dev/sda5
->> [...]
->> leaf parent key incorrect 600846336
->> parent transid verify failed on 600846336 wanted 23460 found 23463
->> Ignoring transid failure
->> leaf parent key incorrect 600846336
->> bad block 600395776
->> bad block 600518656
->> bad block 600547328
->> leaf parent key incorrect 600846336
->> bad block 600846336
->> bad block 601710592
->> bad block 603197440
->> Ignoring transid failure
->> parent transid verify failed on 601710592 wanted 23460 found 23463
->> Ignoring transid failure
->> parent transid verify failed on 602529792 wanted 23460 found 23463
->> Ignoring transid failure
->> btrfsck: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
->> Aborted (core dumped)
->>
->>
->> From dmesg I get the additional information:
->>
->> [  629.447677] btrfs: device fsid f6907d81-f46f-4911-8600-858e8b6bd1a0
->> devid 1 transid 23462 /dev/sda5
->> [  629.671835] systemd-journald[182]: Vacuuming done, freed 0 bytes
->> [  629.843055] systemd-journald[182]: Failed to write entry (26 items,
->> 416256620 bytes) despite vacuuming, ignoring: Argument list too long
->>
->> I am running Arch linux with btrfs-progs-3.12-1 and
->> [root@ho-think bholger]# uname -r
->> 3.12.7-2-ARCH
->>
->> The filesystem got some problems today while being mounted, it got
->> mounted read-only due to an error, but I still had access to my data.
->> I had to unmount it to run btrfsck, but because it fails to repair my
->> disk, I cannot mount it any more.
->>
->> Any advice?
->> Holger
+btrfs fi show
+btrfs fi df <mountpoint>
+dmesg
+smartctl -x <dev>
+
+
+> I had to unmount it to run btrfsck, but because it fails to repair my
+> disk, I cannot mount it any more.
+
+Try to mount with -o clear_cache.
+
+Chris Murphy
+

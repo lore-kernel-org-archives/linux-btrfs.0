@@ -1,111 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57522 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752276AbaATCak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 21:30:40 -0500
-Message-ID: <52DC8AAF.3000002@cn.fujitsu.com>
-Date: Mon, 20 Jan 2014 10:32:15 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Vladi Gergov <vladi@aresgate.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: 2 year old raid1 issue chunk-recovery help
-References: <20140115194008.GA5425@gypsyops.denof.sin> <52D73F9F.6030909@cn.fujitsu.com> <20140116182042.GB5425@gypsyops.denof.sin> <52D894F8.1040300@cn.fujitsu.com> <20140117165254.GA32526@gypsyops.denof.sin>
-In-Reply-To: <20140117165254.GA32526@gypsyops.denof.sin>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from userp1040.oracle.com ([156.151.31.81]:36824 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751090AbaANLHz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 06:07:55 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s0EB7sxQ021075
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:54 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s0EB7rq3019473
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:54 GMT
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0EB7rLF020656
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:53 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: return non zero when label is not found
+Date: Tue, 14 Jan 2014 19:17:07 +0800
+Message-Id: <1389698228-9580-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On fri, 17 Jan 2014 08:52:55 -0800, Vladi Gergov wrote:
-> Not sure if my previous email was received as I sent it from my phone. I
-> had to dd the disk off and then losetup mount the image. What do you
-> mean by erase the data on loop7? I have tried to mount separately without
-> success.
+btrfs filesystem show <not-found-label> should return non zero
 
-When we mount a btrfs filesystem, the kernel will find out all the devices that
-belongs to the filesystem by searching all the devices and comparing fs uuid in
-the super block. So I think you can erase the super block data in loop7 to prevent
-it being found since it broken the mount. But I made a mistake, actually you needn't
-erase the data on loop7, just detach it.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-filesystem.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
-BTW, I have tried the method I said below on my box, and the device was replaced
-successfully.
- # mkfs.btrfs -d raid1 -m raid1 <dev1> <dev2>
- # mount <dev1> <mnt>
- # dd if=<in> of=<mnt>/<out> bs=1M count=1024
- # umount <mnt>
- # unplug <dev2>
- # mount <dev1> -o degraded <mnt>
- # btrfs replace start missing <new_dev>
-
-Thanks
-Miao
-
-> 
-> On Friday, 17.01.14 at 10:27, Miao Xie wrote:
->> On Thu, 16 Jan 2014 10:20:42 -0800, Vladi Gergov wrote:
->>> Thanks Miao,
->>>
->>> I have tried to mount it with -o degraded and -o recovery here is the
->>> outputs:
->>>
->>> [216094.269443] btrfs: device label das4 devid 2 transid 107954
->>> /dev/loop7
->>> [216094.281965] btrfs: device label das1 devid 7 transid 1168964
->>> /dev/sdi
->>> [216094.313419] btrfs: device label das4 devid 3 transid 107954 /dev/sdj
->>> [216113.887503] btrfs: device label das4 devid 2 transid 107954
->>> /dev/loop7
->>> [216113.888690] btrfs: allowing degraded mounts
->>> [216113.889440] btrfs: failed to read chunk root on loop7
->>> [216113.905742] btrfs: open_ctree failed
->>> [216135.144739] btrfs: device label das4 devid 2 transid 107954
->>> /dev/loop7
->>> [216135.145996] btrfs: enabling auto recovery
->>> [216135.146783] btrfs: failed to read chunk root on loop7
->>> [216135.155985] btrfs: open_ctree failed
->>>
->>> any other suggestions? Thanks again.
->>
->> Is loop7 used to instead of the bad device /dev/sdi? If so, I think
->> we should erase the data in the loop7, and then
->>
->>>>  # mount <dev> -o degraded <mnt>
->>>>  # btrfs replace start missing <new_dev>
->>
->> Thanks
->> Miao
->>
->>>
->>> On Thursday, 16.01.14 at 10:10, Miao Xie wrote:
->>>> On wed, 15 Jan 2014 11:40:09 -0800, Vladi Gergov wrote:
->>>>> Hi, in 2010 i had an issue with my raid1 when one drive failed and i
->>>>> added another drive to the array and tried to rebuild. Here is what bug
->>>>> I hit according to Chris Mason
->>>>> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg06868.html
->>>>>
->>>>> I have since updated to lastes btrfs-tools 3.12 + kernel 3.13-rc7 and
->>>>> attempted an chunk recovery which failed with this
->>>>> http://bpaste.net/show/168445/
->>>>>
->>>>> If anyone can help me get at least some of the data off this bad boy it
->>>>> would be great! I am cc'ing Miao since his name was thrown under the bus
->>>>> in irc :). Thanks in advance!
->>>>>
->>>>
->>>> Chunk recover command can only recover the case that the devices are good, only
->>>> the chunk tree is corrupted. So it is not suitable to fix your issue.
->>>>
->>>> I think you can try the replace function if you can mount the device successfully,
->>>> just like:
->>>>  # mount <dev> -o degraded <mnt>
->>>>  # btrfs replace start missing <new_dev>
->>>>
->>>> Thanks
->>>> Miao
->>>>
->>>
->>
-> 
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index c50a65f..ee6cc84 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -612,6 +612,7 @@ static int cmd_show(int argc, char **argv)
+ 	char path[PATH_MAX];
+ 	__u8 fsid[BTRFS_FSID_SIZE];
+ 	char uuid_buf[37];
++	int found = 0;
+ 
+ 	while (1) {
+ 		int long_index;
+@@ -694,8 +695,10 @@ static int cmd_show(int argc, char **argv)
+ 	ret = btrfs_scan_kernel_v2(search);
+ 	if (ret == -ENOTTY)
+ 		ret = btrfs_scan_kernel(search);
+-	if (search && !ret)
+-		return 0;
++	if (search && !ret) {
++		/* since search is found we are done */
++		goto out;
++	}
+ 
+ 	/* shows mounted only */
+ 	if (where == BTRFS_SCAN_MOUNTED)
+@@ -717,12 +720,15 @@ devs_only:
+ 			continue;
+ 
+ 		print_one_uuid(fs_devices);
++		found = 1;
+ 	}
++	if (search && !found)
++		ret = 1;
+ 
+ out:
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ 	free_seen_fsid();
+-	return 0;
++	return ret;
+ }
+ 
+ static const char * const cmd_sync_usage[] = {
+-- 
+1.7.1
 

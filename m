@@ -1,86 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53986 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:46167 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750949AbaANIZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 03:25:05 -0500
+	id S1750962AbaANJKo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 04:10:44 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W2zJ1-0007b8-Ot
-	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 09:25:03 +0100
-Received: from ppp-188-174-36-10.dynamic.mnet-online.de ([188.174.36.10])
+	id 1W301C-0003M9-6e
+	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 10:10:42 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 09:25:03 +0100
-Received: from tom by ppp-188-174-36-10.dynamic.mnet-online.de with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 10:10:42 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 09:25:03 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 10:10:42 +0100
 To: linux-btrfs@vger.kernel.org
-From: Thomas Kuther <tom@kuther.net>
-Subject: Re: Issues with 
-Date: Tue, 14 Jan 2014 08:23:41 +0000 (UTC)
-Message-ID: <loom.20140114T083934-800@post.gmane.org>
-References: <20140113002532.3975c806@ws> <52D3C012.9040308@kuther.net> <pan$13b5$4830a55$8e383081$f7bb4fd7@cox.net>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID 1 with no data on it when accidentally switched HDD
+Date: Tue, 14 Jan 2014 09:10:17 +0000 (UTC)
+Message-ID: <pan$a50cc$d2573e20$d506fc0e$a9fb385b@cox.net>
+References: <b93a253364541dd18356eaefb64d3168@www.jitmail.de>
+	<EF449A1E-2C53-43BB-883E-98EE848E60CB@colorremedies.com>
+	<pan$137$6980616b$bce212bf$29519e1a@cox.net>
+	<BD7CFF7E-E75E-40D8-92B5-902C2F523A28@colorremedies.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan <at> cox.net> writes:
+Chris Murphy posted on Mon, 13 Jan 2014 09:46:08 -0700 as excerpted:
 
-[...]
-> Normally you'd do a data balance to consolidate data in the data chunks 
-> and return the now freed chunks to the unallocated space pool, but you're 
-> going to have problems doing that ATM, for two reasons.  The likely 
-> easiest to work around is that since all space is allocated and balance 
-> works by allocating new chunks and copying data/metadata from the old 
-> chunks over, rewriting, defragging and consolidating as it goes, but 
-> there's no space left to allocate that new one...
+> On Jan 13, 2014, at 1:18 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> 
+>> I use GPT partitioning (instead of MBR) for better fault tolerance and
+>> flexibility here, too,
 > 
-> The usual solution to that is to temporarily btrfs device add another 
-> device with a few gigs available, do the rebalance with it providing the 
-> necessary new-chunk space, then btrfs device delete, to move the chunks 
-> on the temporary-add back to the main device so you can safely remove the 
-> temporary-add.  Ordinarily, even a loopback on tmpfs could be used to 
-> provide a few gigs, and that should be enough, but of course you can't 
-> reboot while the chunks are on that tmpfs-based loopback or you'll lose 
-> that data, and the below will likely trigger a live-lock and you'll 
-> pretty much HAVE to reboot, so having those chunks on tmpfs probably 
-> isn't such a good idea after all.  But a few gig thumbdrive should work, 
-> and should keep the data safe over a reboot, so that's probably what I'd 
-> recommend ATM.
+> Off topic but related to above, you might find it vaguely
+> interesting/annoying in that the current kernel behavior actually makes
+> GPT less reliable than MBR because it face plants if it finds a problem
+> with the primary GPT, rather than use the backup:
+> https://bugzilla.kernel.org/show_bug.cgi?id=63591
 
+I wasn't aware of that, and it's troubling. =:^(
 
-Thanks again for your input, Duncan.
+Fortunately, however, my recovery plan doesn't assume I can actually boot 
+from a drive if its first partition table is corrupt anyway.  Instead, I 
+expect to boot to one of my system backups on an entirely different 
+device.
 
-What I did now was:
-a) took another read on the matter first
-b) verified the qemu-img'ed backup of the VM is working properly
-c) deleted the original vm image and refreshed my system backups
+Since those backups are effectively copies of the system taken at the 
+time they were made, they're fully functional (both theoretically and as 
+tested by booting to them, starting X, and generally running them for 
+awhile, on occasion), not just function-limited recovery tools.  That 
+means I have access to X and the net for googling and other reference, 
+all manpages, and all tools I have on my normal system, including 
+gptfdisk. =:^)
 
-At that point data was still fully allocated.
+So my primary recovery plan in case of gpt first partition table 
+corruption is to boot to a backup rootfs on a different device, and from 
+there run cgdisk or gdisk and use /it/ to retrieve the hopefully intact 
+second partition table, and booting from the drive with the corrupted 
+first gpt partition table by using the second instead, would be a nice 
+surprise, but isn't assumed, so the fact that the kernel breaks and 
+refuses to boot if the first partition table is corrupt isn't a deal 
+breaker as I wasn't assuming it'd work in the first place. =:^)
 
-d) dropped that single system chunk as you suggested previously. 
-Interestingly this gave me:
+If the second partition table is corrupt too, perhaps because the system 
+crashed in the middle of updating the tables using gdisk, there's a fair 
+chance I can copy the table from a different device, since I often use 
+identical devices with identical partitioning, in raid.  If all else 
+fails, at least my recent layouts are reasonably easy to remember, with 
+all sub-gig partitions in the first gig, and further partitions all of 
+whole-GiB sizes on GiB boundaries, so if worse comes to worse, I can 
+probably trial and error guess them.  (Tho I actually posted my latest 
+main-system layout in a thread right here on this list a few weeks ago, 
+so before I went trial and error guessing, I'd go see if I could find 
+that.  As Linus says, real (wo)men let the net be their backup. =:^)
 
-Label: none  uuid: 52bc94ba-b21a-400f-a80d-e75c4cd8a936
-        Total devices 1 FS bytes used 43.92GiB
-        devid    1 size 119.24GiB used 119.03GiB path /dev/sda2
+>> and it has partition names/labels which can be used in fstab, too.  I
+>> use the same label and partlabel scheme, with the filesystem label
+>> generally reflecting the partlabel(s) it's created on, however, so it
+>> doesn't really matter which I use, except that PARTLABEL=
+>> is longer in fstab, so I use the shorter LABEL=, instead.
+> 
+> While considering how to make Btrfs snapshots bootable in a sane manner
+> over on grub-devel@, I'm finding that fstab is almost entirely obsolete
+> and we need a more dynamic approach. Any rootfs snapshot contains a
+> wrong fstab. So it's almost like we need a revamped format that enables
+> some entries to be static and others to be 2nd guessed/dynamically
+> altered, so that the right subvolumes are mounted rather than prior
+> ones.
 
-..some free data chunks.
+I tend to be wary of snapshot-backups (except perhaps for first-level) in 
+any case, since btrfs is still immature enough I consider it a primary 
+risk point and I don't want all my backup eggs in the same basket.
 
-e) Ran an iteration with balance -dusage=5, -dusage=10, 15, 20, 25.
-After 25 it looks like:
+But I faced the same problem here some years ago, since my backup system 
+uses what amounts to snapshot copies (copies of the entire filesystem 
+frozen at the time I copied them, a snapshot in time, as it were) to 
+other independent filesystems, thus allowing me to boot either the 
+working copy or a backup copy by simply switching the kernel commandline 
+root= flag.
 
-Label: none  uuid: 52bc94ba-b21a-400f-a80d-e75c4cd8a936
-        Total devices 1 FS bytes used 43.92GiB
-        devid    1 size 119.24GiB used 95.02GiB path /dev/sda2
+My solution has evolved a bit over time and may continue to, but as of 
+now I have a setup where /etc/fstab is actually a symlink to one of 
+several fstab.X files in /etc/fstab.d.  These multiple fstab.X files are 
+in turn created by scripts, using stub-sources of just a few lines each, 
+as found in /etc/fstab.d/mk/.  Running a single master script runs 
+several individual fstab.X creator scripts each in its turn, each 
+creating an fstab targeting a different rootfs backup, with each rootfs 
+having two fstab.X files, one that mounts the working copy of extra 
+filesystems (/home, etc), the other mounting the backup in place of the 
+working copy, with each one having the unmounted set manually mountable 
+if desired,  Additionally, each stub-source file is identified with a 
+#comment listing the filename, so I can trace what file it originates in 
+when I'm reading fstab.
 
+After I copy my rootfs to a partition located elsewhere, before I umount 
+I switch the /etc/fstab symlink to point at the appropriate fstab with 
+the working-copy extra partitions.  So all I have to do to boot it is 
+point the kernel's root= option appropriately.
 
-So, your suggestion regarding d) saved me from having to recreate the FS or 
-having to add a drive.
+If instead I want to mount the backup copies of the extra partitions as 
+the working copies (with the normally working copies in turn available as 
+to mount as backups), I add s (single user) to the kernel's command line 
+as well, and when I get the singleuser-mode shell, I remount / rw and 
+flip the symlink to the fstab.X that loads the backups as the working 
+copy.  I can then either reboot or exit single-user and the init system 
+will pickup where it left off, except fstab will point at the fstab.X 
+file I want now, so those non-rootfs filesystems will be mounted instead.
 
-Now I need to make sure I get a notice when data gets filled up too much.
+The arrangement is thus a bunch of fstab stub files, the scripts to 
+assemble them into a bunch of fstab.X files, and fstab itself as a 
+symlink, pointing to the fstab.X I actually want. =:^)
 
-Regards,
-Tom
+It ends up working reasonably well, but don't forget the #comments in the 
+stub-files identifying what's providing those fstab lines as that's 
+critical debug info when you're trying to figure out why the fstab.X file 
+doesn't have the lines you thought it should have (is it the script 
+catting in the wrong stub file, or is the stub file wrong, and if it's 
+the latter, which stubfile?).
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,56 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35359 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751719AbaANV1p convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:27:45 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:55122 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1W3BWP-000PBx-Va
-	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 14:27:42 -0700
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from atl4mhob03.myregisteredsite.com ([209.17.115.41]:47896 "EHLO
+	atl4mhob03.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751490AbaANV22 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 16:28:28 -0500
+Received: from mailpod1.hostingplatform.com ([10.30.71.113])
+	by atl4mhob03.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0ELSQIw003748
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 16:28:26 -0500
+Message-ID: <52D5ABC2.6000505@chinilu.com>
+Date: Tue, 14 Jan 2014 13:27:30 -0800
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
+MIME-Version: 1.0
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140114210617.GK7221@carfax.org.uk>
-Date: Tue, 14 Jan 2014 14:27:40 -0700
-Message-Id: <AF3AF222-D59D-4209-BC7A-91D6EB58EC50@colorremedies.com>
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com> <52CF4D5D.2010709@chinilu.com> <486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com> <52D59E28.7010200@chinilu.com> <20140115030021.0b001eeb@natsu> <20140114210617.GK7221@carfax.org.uk>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>	<52CF4D5D.2010709@chinilu.com>	<486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>	<52D59E28.7010200@chinilu.com> <20140115030021.0b001eeb@natsu>
+In-Reply-To: <20140115030021.0b001eeb@natsu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 01/14/2014 01:00 PM, Roman Mamedov wrote:
+> On Tue, 14 Jan 2014 12:29:28 -0800
+> George Mitchell <george@chinilu.com> wrote:
+>
+>> what we are lacking at this point is a SMART capability to provide
+>> visual notifications to the user when any hard drive starts to seriously
+>> degrade or suddenly fails.
+> You can configure smartd (from smartmontools) to send you E-Mails on any
+> change of the monitored SMART attributes.
+Well, sorry, email is nice, but it doesn't work for me as a desktop 
+user.  1) I don't want to have to hand configure and email system like 
+sendmail to generate outgoing emails.  2) I don't want to have to go 
+through and hand configure /etc/smartd/conf.  3) I don't want my email 
+clogged up with SMART messages.
+>
+>> If SMART were capable of launching pop up warnings
+> And I'm sure there are a number of GUI tools out there for just about any OS,
+> which can do just that
+Really?  And for Linux they are?  I know it can be done because various 
+administrative tools provided by my distro routinely flash up status 
+notices on my screen.  I really like that.  It lets my know what my 
+system is doing.  journalctl provides red type warnings when a drive is 
+failing.  That should be thrown up on the screen and stay there till I 
+dismiss it.  To me thats a no brainer.
+>
+>> btrfs would not have to worry so much about arrays going simplex undetected.
+> That said, do not fall into a false sense of security relying on proprietary,
+> barely if ever updated after the device has been shipped, and often very
+> peculiar-behaving SMART routines inside the black-box HDD firmware as your
+> most important data safeguard.
+>
+> Of course SMART must be checked and monitored, but don't delude yourself into
+> thinking it will always warn you of anything going wrong well in advance of
+> failure, or even at all.
 
-On Jan 14, 2014, at 2:06 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+Well, since I began using SMART I have had a total of two drive failures 
+so far and both of them generated warnings and the drives in question 
+were still operating normally when I disgarded them. Plenty of 
+opportunity to retrieve the data and wipe the drives.  I'm sure SMART 
+does fail advance notifictation in some instances, but even when it 
+does, at least it will certainly warn me IMMEDIATELY that the drive is 
+gone after the fact.
+>
 
-> On Wed, Jan 15, 2014 at 03:00:21AM +0600, Roman Mamedov wrote:
->> That said, do not fall into a false sense of security relying on proprietary,
->> barely if ever updated after the device has been shipped, and often very
->> peculiar-behaving SMART routines inside the black-box HDD firmware as your
->> most important data safeguard.
->> 
->> Of course SMART must be checked and monitored, but don't delude yourself into
->> thinking it will always warn you of anything going wrong well in advance of
->> failure, or even at all.
-> 
->   The famous paper from Google a few years back suggested that SMART
-> was a useful predictor of failure in something like 20% of failures.
-
-https://static.googleusercontent.com/media/research.google.com/en/us/archive/disk_failures.pdf
-
-
-"Out of all failed drives, over 56% of them have no count in any of the four strong SMART signals,"
-
-and
-
-"even when we add all remaining SMART parameters (except temperature) we still ﬁnd that over 36% of all failed drives had zero
-counts on all variables."
-
-For those that do report counts, they still weren't able to come up with a good predictor of failures based on any combination of the current attributes.
-
-So there's a really good chance the drive will fail without warning. This study doesn't report on the accuracy of the health self-assessment, i.e. the PASS/FAIL state for the drive.
-
-
-Chris Murphy

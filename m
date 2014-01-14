@@ -1,85 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38285 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750750AbaANIRM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 03:17:12 -0500
-Date: Tue, 14 Jan 2014 08:16:43 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Hendrik Friedel <hendrik@friedels.name>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfsck does not fix
-Message-ID: <20140114081643.GC7221@carfax.org.uk>
-References: <52C7127F.3060902@friedels.name>
- <6E517D5F-B921-47E7-82E7-27865077C43D@colorremedies.com>
- <52C87B67.1040503@friedels.name>
- <F9C2788F-B057-4C3F-A490-8F8A19C37F97@colorremedies.com>
- <52CC65C9.3090605@friedels.name>
- <52D08812.3040707@friedels.name>
- <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com>
- <52D317CF.2070007@friedels.name>
- <EDD506BE-1DAC-4C2C-9FF4-184180315557@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="DSayHWYpDlRfCAAQ"
-In-Reply-To: <EDD506BE-1DAC-4C2C-9FF4-184180315557@colorremedies.com>
+Received: from plane.gmane.org ([80.91.229.3]:53986 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750949AbaANIZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 03:25:05 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W2zJ1-0007b8-Ot
+	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 09:25:03 +0100
+Received: from ppp-188-174-36-10.dynamic.mnet-online.de ([188.174.36.10])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 09:25:03 +0100
+Received: from tom by ppp-188-174-36-10.dynamic.mnet-online.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 09:25:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Thomas Kuther <tom@kuther.net>
+Subject: Re: Issues with 
+Date: Tue, 14 Jan 2014 08:23:41 +0000 (UTC)
+Message-ID: <loom.20140114T083934-800@post.gmane.org>
+References: <20140113002532.3975c806@ws> <52D3C012.9040308@kuther.net> <pan$13b5$4830a55$8e383081$f7bb4fd7@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Duncan <1i5t5.duncan <at> cox.net> writes:
 
---DSayHWYpDlRfCAAQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Jan 13, 2014 at 05:40:33PM -0700, Chris Murphy wrote:
-> I see no obvious hardware source for the problem, SATA Phy Event Counters are zeros except a few COMRESET events which is pretty minor. No ICRC or UDMA-CRC errors recorded. No reallocated or pending bad sectors.
+[...]
+> Normally you'd do a data balance to consolidate data in the data chunks 
+> and return the now freed chunks to the unallocated space pool, but you're 
+> going to have problems doing that ATM, for two reasons.  The likely 
+> easiest to work around is that since all space is allocated and balance 
+> works by allocating new chunks and copying data/metadata from the old 
+> chunks over, rewriting, defragging and consolidating as it goes, but 
+> there's no space left to allocate that new one...
 > 
-> I'd look at your historical system logs, messages or journalctl, and do case insensitive search for: err, unc, reset and see if anything along those lines has been reported that might explain it.
-> 
-> If you decide to backup, reformat, restore, then first I suggest 
-> 
-> btrfs-image -c 9-t 4 /dev/sdX /mnt/<pathtoanothervolume+filename>
+> The usual solution to that is to temporarily btrfs device add another 
+> device with a few gigs available, do the rebalance with it providing the 
+> necessary new-chunk space, then btrfs device delete, to move the chunks 
+> on the temporary-add back to the main device so you can safely remove the 
+> temporary-add.  Ordinarily, even a loopback on tmpfs could be used to 
+> provide a few gigs, and that should be enough, but of course you can't 
+> reboot while the chunks are on that tmpfs-based loopback or you'll lose 
+> that data, and the below will likely trigger a live-lock and you'll 
+> pretty much HAVE to reboot, so having those chunks on tmpfs probably 
+> isn't such a good idea after all.  But a few gig thumbdrive should work, 
+> and should keep the data safe over a reboot, so that's probably what I'd 
+> recommend ATM.
 
-btrfs-image -c 9 -t 4 /dev/sdX /mnt/<pathtoanothervolume+filename>
 
-   Space between the 9 and the -t.
+Thanks again for your input, Duncan.
 
-   Hugo.
+What I did now was:
+a) took another read on the matter first
+b) verified the qemu-img'ed backup of the VM is working properly
+c) deleted the original vm image and refreshed my system backups
 
-> You can keep it handy in case a dev asks for it or you can attach it to a kernel.org bug report.
-> 
-> Chris Murphy--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+At that point data was still fully allocated.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- I think that everything darkling says is actually a joke. ---    
-         It's just that we haven't worked out most of them yet.          
+d) dropped that single system chunk as you suggested previously. 
+Interestingly this gave me:
 
---DSayHWYpDlRfCAAQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Label: none  uuid: 52bc94ba-b21a-400f-a80d-e75c4cd8a936
+        Total devices 1 FS bytes used 43.92GiB
+        devid    1 size 119.24GiB used 119.03GiB path /dev/sda2
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+..some free data chunks.
 
-iQIVAwUBUtTya1heFHXiqx3kAQKsnhAAlsJfXtfGiLoFP4Z24VKPntoz/ToB7meF
-LWYNMqqtMKZH/uobL3h6qaa8wnbTH4o0huQRWKsNI/r28I+JtR2J19BmZVJaKMxA
-/2JM4yXuYRfOlgX+5AXKUlv7HucH6Af+nuaEg0qlAmCz5KasKE9sWN+HrDzjo4nI
-uaAZxC7Ydrw/7INz+YY0cLFFyP0K+GV+Lxz7ZND90SD89Mbao68Q1j79vHglg2Wd
-Ogu7cyTOjvbDj6fIkvfP1ddMa0phSInlfhS7gDAzbOUjHxadf+xufB8+NLGwLxEl
-ugj9QyauN5Cb+8ANcp0fbLdpMzGiZIoa/yL+v8OX612JQ27P7PjoIexGPBKuY4lg
-K3UCtdqiNxkrqOO6VIX9j0mM53HN2D53OUNFYZYdmM//esxCAxGt71W2Y7JD5UkZ
-it9PGCaQPbB6bZsZ3Ue3jblgDggOVR+FzzuF3h4sd7GNrcvEHy6W64PIOlHUFs66
-krptZrnQoiAtirBTngwMTVw3JqkKEBObCoyJHXyVYOtm2Qvi2Yqse3Fcia3vWdZq
-CrnewNAt190cxJy9lPsBP5BsMwStlNEAysXfHkYvUXmU1fTpQulvrlj6F47e2ScQ
-bklSsChyV6fmqT8nGYF6bFTMtYQNhs4lUA6lUJnza6+gPaWZPCk9Khg0pcIJ5N4S
-MAQVO2dp9S0=
-=jeDO
------END PGP SIGNATURE-----
+e) Ran an iteration with balance -dusage=5, -dusage=10, 15, 20, 25.
+After 25 it looks like:
 
---DSayHWYpDlRfCAAQ--
+Label: none  uuid: 52bc94ba-b21a-400f-a80d-e75c4cd8a936
+        Total devices 1 FS bytes used 43.92GiB
+        devid    1 size 119.24GiB used 95.02GiB path /dev/sda2
+
+
+So, your suggestion regarding d) saved me from having to recreate the FS or 
+having to add a drive.
+
+Now I need to make sure I get a notice when data gets filled up too much.
+
+Regards,
+Tom
+

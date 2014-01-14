@@ -1,50 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36742 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751780AbaANVFO convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:05:14 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:55093 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1W3BAf-000EVG-Dt
-	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 14:05:13 -0700
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from frost.carfax.org.uk ([85.119.82.111]:42840 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751618AbaANVGq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 16:06:46 -0500
+Date: Tue, 14 Jan 2014 21:06:17 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: george@chinilu.com, Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140115013703.33bb2799@natsu>
-Date: Tue, 14 Jan 2014 14:05:11 -0700
-Message-Id: <1207CF09-B2A4-4DB6-9CA8-C3C78C1DA0F3@colorremedies.com>
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com> <52CF4D5D.2010709@chinilu.com> <486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com> <20140115013703.33bb2799@natsu>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <20140114210617.GK7221@carfax.org.uk>
+References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>
+ <52CF4D5D.2010709@chinilu.com>
+ <486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>
+ <52D59E28.7010200@chinilu.com>
+ <20140115030021.0b001eeb@natsu>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="LHvWgpbS7VDUdu2f"
+In-Reply-To: <20140115030021.0b001eeb@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jan 14, 2014, at 12:37 PM, Roman Mamedov <rm@romanrm.net> wrote:
+--LHvWgpbS7VDUdu2f
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Wed, Jan 15, 2014 at 03:00:21AM +0600, Roman Mamedov wrote:
+> That said, do not fall into a false sense of security relying on proprietary,
+> barely if ever updated after the device has been shipped, and often very
+> peculiar-behaving SMART routines inside the black-box HDD firmware as your
+> most important data safeguard.
 > 
-> I vaguely remember having some drives that were not able to remap a single
-> block on write, but doing that successfully if I overwrote a sizable area
-> around (and including) that block, or overwrite the whole drive. And after
-> that they worked without issue not exhibiting further bad blocks.
+> Of course SMART must be checked and monitored, but don't delude yourself into
+> thinking it will always warn you of anything going wrong well in advance of
+> failure, or even at all.
 
-Presumably the SMART self-assessment for this drive was FAIL? And if so what's the point of the work around when we only have a pass/fail level granularity for drive health?
+   The famous paper from Google a few years back suggested that SMART
+was a useful predictor of failure in something like 20% of failures.
 
-> 
-> Or for example consider the 4k sector drives. If even any portion of the
-> physical 4k sector is corrupt, some of the eight 512 virtual blocks will be
-> unreadable; but the thing is, writing to ANY of them individually will fail,
-> because the drive's internal r-m-w will fail to obtain all the pieces of the
-> 4k sector from disk to overwrite it.
-> 
-> So in my opinion one (and perhaps one of the easier) things to consider here,
-> would be to try being "generous" in recovery-overwrite, say, rewrite a
-> whole 1MB-sized region centered at the unreadable sector.
+   Hugo.
 
-Not if the SMART status is a FAIL. And if it's not a fail then that sounds like a firmware bug. A better feature would be a way to send a command to the firmware to persistently increase the reserve sectors at the expensive of available space - in effect it reduces the LBA count by e.g. 10MB, thereby increasing the reserve pool by 10MB. Changing this setting in either directionwould obviously mean data loss; but at least it's managed by firmware which transports the accumulated knowledge. Otherwise these block files are going to be backed up, or subject to btrfs send. And then restored invariably in the wrong location on the same drive, or unnecessarily restored onto a new drive so then you need exception code if you don't want that behavior. I think it's trouble.
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+              --- Python is executable pseudocode; perl ---              
+                        is executable line-noise.                        
 
+--LHvWgpbS7VDUdu2f
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
 
+iQIVAwUBUtWmyFheFHXiqx3kAQLyug/+KYji25O7YEA614Wh06ihsmR87+BA34ZH
+E8xsDboNNTN3O9X5Y4glDXKi5Q3gViBgzD8bEBNBdGabyu+LfDrJQ25ln0puxtjq
+mpeC0oR29U1PEW4+oimVUMjL8GjixRKCwIE1H7kEWG1dF+7bqIQ7QKIEcb2wepFb
+xL94uZRIeE3VrXGSALSaTTexZxmg02V7lQWXjjZmJe8pr5lK6SJryAAZKqDP9vF2
+hRPm9M9kxPCtn8StJ24b07wBYunDZ17UxizrjV2GL8tArjQLHDMnUapw23lCaBgi
+Evov1Hkr3KkbbRU3EANig9TZdT3Kiy2AL7wDOMoPU4uu/EjRpzhyDEbX9T/yFoQw
+vT1NLDACGWupffogZ9t4Q9idBG1W7teoJpz8qVsqC1pcftKmt09iy+Z+4jgJ/7Md
+VTLN3u/sY2A8Lo3H4vPP0lXBEOqwJCmZgVxdvNqdlQXOXDl8dwySZ3UAr/ycrcYQ
+/mv7dwFSxgsNvluTiR5SCgDFD2Cfk2S0k567eASuCx2q0bWSo1YQyd20zVEKKDDc
+G3xPbiHve/+weJrOH75IVLi0xYfoeKloMyK69ve7eY8CwHVPbnOkx5p61S4kedla
+3aBtcecHqPFx5h25rbZou3rYBOMnEwcKyRoVP4zvQwZ5GoshI2c+VNBpolo9JT7R
+tNNiktTy7k4=
+=mhfR
+-----END PGP SIGNATURE-----
+
+--LHvWgpbS7VDUdu2f--

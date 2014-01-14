@@ -1,67 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob03.myregisteredsite.com ([209.17.115.41]:47896 "EHLO
-	atl4mhob03.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751490AbaANV22 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:28:28 -0500
-Received: from mailpod1.hostingplatform.com ([10.30.71.113])
-	by atl4mhob03.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0ELSQIw003748
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 16:28:26 -0500
-Message-ID: <52D5ABC2.6000505@chinilu.com>
-Date: Tue, 14 Jan 2014 13:27:30 -0800
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
-MIME-Version: 1.0
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:34150 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751490AbaANVhu convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 16:37:50 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:55126 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W3BgC-000TT7-EA
+	for linux-btrfs@vger.kernel.org; Tue, 14 Jan 2014 14:37:48 -0700
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: How does btrfs handle bad blocks in raid1?
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>	<52CF4D5D.2010709@chinilu.com>	<486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>	<52D59E28.7010200@chinilu.com> <20140115030021.0b001eeb@natsu>
-In-Reply-To: <20140115030021.0b001eeb@natsu>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: unlisted-recipients:; (no To-header on input)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140115031927.4fd1d44b@natsu>
+Date: Tue, 14 Jan 2014 14:37:46 -0700
+Message-Id: <6F3D91C0-8CCA-4713-BFEC-244E3D65F306@colorremedies.com>
+References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com> <52CF4D5D.2010709@chinilu.com> <486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com> <20140115013703.33bb2799@natsu> <1207CF09-B2A4-4DB6-9CA8-C3C78C1DA0F3@colorremedies.com> <20140115031927.4fd1d44b@natsu>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/14/2014 01:00 PM, Roman Mamedov wrote:
-> On Tue, 14 Jan 2014 12:29:28 -0800
-> George Mitchell <george@chinilu.com> wrote:
->
->> what we are lacking at this point is a SMART capability to provide
->> visual notifications to the user when any hard drive starts to seriously
->> degrade or suddenly fails.
-> You can configure smartd (from smartmontools) to send you E-Mails on any
-> change of the monitored SMART attributes.
-Well, sorry, email is nice, but it doesn't work for me as a desktop 
-user.  1) I don't want to have to hand configure and email system like 
-sendmail to generate outgoing emails.  2) I don't want to have to go 
-through and hand configure /etc/smartd/conf.  3) I don't want my email 
-clogged up with SMART messages.
->
->> If SMART were capable of launching pop up warnings
-> And I'm sure there are a number of GUI tools out there for just about any OS,
-> which can do just that
-Really?  And for Linux they are?  I know it can be done because various 
-administrative tools provided by my distro routinely flash up status 
-notices on my screen.  I really like that.  It lets my know what my 
-system is doing.  journalctl provides red type warnings when a drive is 
-failing.  That should be thrown up on the screen and stay there till I 
-dismiss it.  To me thats a no brainer.
->
->> btrfs would not have to worry so much about arrays going simplex undetected.
-> That said, do not fall into a false sense of security relying on proprietary,
-> barely if ever updated after the device has been shipped, and often very
-> peculiar-behaving SMART routines inside the black-box HDD firmware as your
-> most important data safeguard.
->
-> Of course SMART must be checked and monitored, but don't delude yourself into
-> thinking it will always warn you of anything going wrong well in advance of
-> failure, or even at all.
 
-Well, since I began using SMART I have had a total of two drive failures 
-so far and both of them generated warnings and the drives in question 
-were still operating normally when I disgarded them. Plenty of 
-opportunity to retrieve the data and wipe the drives.  I'm sure SMART 
-does fail advance notifictation in some instances, but even when it 
-does, at least it will certainly warn me IMMEDIATELY that the drive is 
-gone after the fact.
->
+On Jan 14, 2014, at 2:19 PM, Roman Mamedov <rm@romanrm.net> wrote:
+
+> On Tue, 14 Jan 2014 14:05:11 -0700
+> Chris Murphy <lists@colorremedies.com> wrote:
+> 
+>> 
+>> On Jan 14, 2014, at 12:37 PM, Roman Mamedov <rm@romanrm.net> wrote:
+>>> 
+>>> I vaguely remember having some drives that were not able to remap a single
+>>> block on write, but doing that successfully if I overwrote a sizable area
+>>> around (and including) that block, or overwrite the whole drive. And after
+>>> that they worked without issue not exhibiting further bad blocks.
+>> 
+>> Presumably the SMART self-assessment for this drive was FAIL? 
+> 
+> No of course not, why?
+
+Reserve sectors are fundamental to ECC. If there are no more reserves, the status should be a failed drive, it can no longer do its own relocation of data experiencing transient read errors in this case.
+
+> SMART goes to FAIL only if one of the attributes falls
+> below threshold, in this case that would be Reallocated Sector Count having
+> too much sectors. But nope, it either had zero, or in single-digit numbers.
+
+It sounds like we aren't talking about the same thing. I'm considering persistent write failure as a result of no more reserve sectors being available.
+
+> I don't ever remember seeing a SMART FAIL drive that would function in any
+> usual sense of that word.
+
+Oh I have. For a week a drive was reporting failure imminent before we got around to replacing it. It hadn't actually failed at that time still.
+
+
+>> And if so what's the point of the work around when we only have a pass/fail
+>> level granularity for drive health?
+> 
+> Not sure what you're referring to here. As said above, the FAIL/PASS status is
+> largely useless, and the more important indicators are the values and dynamics
+> in Reallocated sector count, Current pending sectors, Reported uncorrectable,
+> etc.
+
+Well, not totally useless, if it flags the user with an hour's notice in Gnome, they can do some minimal backup. I've seen that happen on OS X Server (client doesn't produce SMART warnings in user space).
+
+
+> 
+>> a way to send a command to the firmware to persistently increase the reserve
+>> sectors at the expensive of available space - in effect it reduces the LBA
+>> count by e.g. 10MB, thereby increasing the reserve pool by 10MB.
+> 
+> Yes please that, and also a pony. :)
+
+That seems a lot easier to implement than anything else being discussed. 
+
+Chris Murphy
 

@@ -1,57 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob02.myregisteredsite.com ([209.17.115.40]:35078 "EHLO
-	atl4mhob02.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751929AbaANVsQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:48:16 -0500
-Received: from mailpod1.hostingplatform.com ([10.30.71.115])
-	by atl4mhob02.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0ELmDrl010052
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 16:48:13 -0500
-Message-ID: <52D5B0BA.2070609@chinilu.com>
-Date: Tue, 14 Jan 2014 13:48:42 -0800
-From: George Mitchell <george@chinilu.com>
-Reply-To: george@chinilu.com
-MIME-Version: 1.0
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from len.romanrm.net ([91.229.20.24]:44646 "EHLO len.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751761AbaANVy2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 16:54:28 -0500
+Date: Wed, 15 Jan 2014 03:54:25 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com> <52CF4D5D.2010709@chinilu.com> <486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com> <52D59E28.7010200@chinilu.com> <B24DFFC0-3B9D-41CA-ADC4-B0C4429C294A@colorremedies.com>
-In-Reply-To: <B24DFFC0-3B9D-41CA-ADC4-B0C4429C294A@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Message-ID: <20140115035425.7395087f@natsu>
+In-Reply-To: <6F3D91C0-8CCA-4713-BFEC-244E3D65F306@colorremedies.com>
+References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>
+	<52CF4D5D.2010709@chinilu.com>
+	<486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>
+	<20140115013703.33bb2799@natsu>
+	<1207CF09-B2A4-4DB6-9CA8-C3C78C1DA0F3@colorremedies.com>
+	<20140115031927.4fd1d44b@natsu>
+	<6F3D91C0-8CCA-4713-BFEC-244E3D65F306@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/5t2GEVfWBwpdA4hP9K+rQY3"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/14/2014 01:14 PM, Chris Murphy wrote:
-> On Jan 14, 2014, at 1:29 PM, George Mitchell <george@chinilu.com> wrote:
->>> And the key to monitoring hard drive health, in my opinion, is SMART and what we are lacking at this point is a SMART capability to provide visual notifications to the user when any hard drive starts to seriously degrade or suddenly fails.
-> Gnome does this:
-> https://mail.gnome.org/archives/commits-list/2012-November/msg03124.html
->
-> The problem is that something around 40% of failures come with absolutely no advance warning by SMART. So yes it's better than nothing but we're still rather likely to not get sufficient warning.
->
-The journal already marks and red types serious problems.  I agree that 
-the role of bringing this information to the desktop would be the 
-desktop, in my case KDE, which in my case is not providing me with a 
-solution to this.  I am glad that at least Gnome has taken care of this, 
-thanks probably to Red Hat.
->>   If SMART were capable of launching pop up warnings, btrfs would not have to worry so much about arrays going simplex undetected.
-> I don't see a tie in between Btrfs and SMART. Btrfs's behavior in the face of SMART indicating e.g. a high number of reallocated sectors in the past hour, shouldn't change. Only once the drive reports read or write failures would Btrfs need to change its behavior. The SMART warnings preferably should flag the user with some kind of warning.
-Well OK, I get that.
->
->>    And it should really be the user's responsibility to be running SMART and providing sufficient number of drives AND sufficient additional free space to accommodate potential drive failure and still retain desired level of redundancy extra drives in their RAID arrays.  That is where I stand on this.
-> I'd say the OS should do it. With linux distros, that's the desktop. I don't think users should have to be configuring SMART at all.
->
-The problem is that some users might be running systems that, for 
-whatever reason, are not compatible with SMART and distros are loath to 
-automatically enable functions that might result in DOAs.  I myself have 
-had multiple cases of locked up systems before due to SMART issues.  But 
-I do think the distros need to make SMART configuration a whole lot 
-easier than it currently is.
-> Chris Murphy
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+--Sig_/5t2GEVfWBwpdA4hP9K+rQY3
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
+On Tue, 14 Jan 2014 14:37:46 -0700
+Chris Murphy <lists@colorremedies.com> wrote:
+
+> Reserve sectors are fundamental to ECC. If there are no more reserves, the
+> status should be a failed drive, it can no longer do its own relocation of
+> data experiencing transient read errors in this case.
+
+With the Reallocated sector count being low in that case, I assume the drive
+*had* a lot of reserve space, but due to a buggy firmware didn't "see the n=
+eed
+to use it" just yet for this particular sector.
+
+It's not the question of what is "fundamental" or right, I am describing
+observed behavior in the real world - and yes, of course, that behavior is
+incorrect and probably an indication of a buggy peculiar firmware.
+
+> I'm considering persistent write failure as a result of no more reserve
+> sectors being available.
+
+Write doesn't fail, it succeeds, but you still can't read back the bad bloc=
+k.
+And the "reallocated sector count" does not increase.
+
+> Well, not totally useless, if it flags the user with an hour's notice in =
+Gnome,
+
+If we're again talking the user GUI-level indicators, then an increase in
+"Reallocated sector count", "Current pending sectors" or "Reported
+uncorrectable" should also be a reason for such GUI notice to appear. And
+AFAIK that's how smartd howto/manual recommends configuring it (i.e. an E-M=
+ail
+on any change in those critical attributes).
+
+> >> a way to send a command to the firmware to persistently increase the r=
+eserve
+> >> sectors at the expensive of available space - in effect it reduces the=
+ LBA
+> >> count by e.g. 10MB, thereby increasing the reserve pool by 10MB.
+> >=20
+> > Yes please that, and also a pony. :)
+>=20
+> That seems a lot easier to implement than anything else being discussed.=
+=20
+
+Oh really? Pushing that feature into multiple competing vendor's HDD firmwa=
+res
+across diverse models, product lines, interfaces and revisions is *easier* =
+than
+mainlining a patch into the Linux kernel?... My point was that this would h=
+ave
+been a good feature, but no chance we're going to see it realized.
+
+--=20
+With respect,
+Roman
+
+--Sig_/5t2GEVfWBwpdA4hP9K+rQY3
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlLVshIACgkQTLKSvz+PZwhtWwCfeF+LhRob6hGBAYsrsA/EUNNg
+yCQAnir/dHYUSKu7/7SXbDse6Gsk+/1i
+=dCs8
+-----END PGP SIGNATURE-----
+
+--Sig_/5t2GEVfWBwpdA4hP9K+rQY3--

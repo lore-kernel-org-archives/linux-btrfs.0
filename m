@@ -1,91 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.229.20.24]:36129 "EHLO len.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751580AbaANVTa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:19:30 -0500
-Date: Wed, 15 Jan 2014 03:19:27 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from atl4mhob08.myregisteredsite.com ([209.17.115.46]:40479 "EHLO
+	atl4mhob08.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751719AbaANV1r (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 16:27:47 -0500
+Received: from mailpod1.hostingplatform.com ([10.30.71.117])
+	by atl4mhob08.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0ELRjcx009081
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 16:27:45 -0500
+Message-ID: <52D5ABE9.6040008@chinilu.com>
+Date: Tue, 14 Jan 2014 13:28:09 -0800
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
+MIME-Version: 1.0
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: How does btrfs handle bad blocks in raid1?
-Message-ID: <20140115031927.4fd1d44b@natsu>
-In-Reply-To: <1207CF09-B2A4-4DB6-9CA8-C3C78C1DA0F3@colorremedies.com>
-References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>
-	<52CF4D5D.2010709@chinilu.com>
-	<486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>
-	<20140115013703.33bb2799@natsu>
-	<1207CF09-B2A4-4DB6-9CA8-C3C78C1DA0F3@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/1Hj/+SU_.qg5FpbzA8MElJ9"; protocol="application/pgp-signature"
+References: <201401100106.s0A16CNd016476@atl4mhib27.myregisteredsite.com>	<52CF4D5D.2010709@chinilu.com>	<486C0640-409D-4636-858C-84A679C0AF4E@colorremedies.com>	<52D59E28.7010200@chinilu.com> <20140115030021.0b001eeb@natsu>
+In-Reply-To: <20140115030021.0b001eeb@natsu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/1Hj/+SU_.qg5FpbzA8MElJ9
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On 01/14/2014 01:00 PM, Roman Mamedov wrote:
+> On Tue, 14 Jan 2014 12:29:28 -0800
+> George Mitchell <george@chinilu.com> wrote:
+>
+>> what we are lacking at this point is a SMART capability to provide
+>> visual notifications to the user when any hard drive starts to seriously
+>> degrade or suddenly fails.
+> You can configure smartd (from smartmontools) to send you E-Mails on any
+> change of the monitored SMART attributes.
+Well, sorry, email is nice, but it doesn't work for me as a desktop 
+user.  1) I don't want to have to hand configure and email system like 
+sendmail to generate outgoing emails.  2) I don't want to have to go 
+through and hand configure /etc/smartd/conf.  3) I don't want my email 
+clogged up with SMART messages.
+>
+>> If SMART were capable of launching pop up warnings
+> And I'm sure there are a number of GUI tools out there for just about any OS,
+> which can do just that
+Really?  And for Linux they are?  I know it can be done because various 
+administrative tools provided by my distro routinely flash up status 
+notices on my screen.  I really like that.  It lets my know what my 
+system is doing.  journalctl provides red type warnings when a drive is 
+failing.  That should be thrown up on the screen and stay there till I 
+dismiss it.  To me thats a no brainer.
+>
+>> btrfs would not have to worry so much about arrays going simplex undetected.
+> That said, do not fall into a false sense of security relying on proprietary,
+> barely if ever updated after the device has been shipped, and often very
+> peculiar-behaving SMART routines inside the black-box HDD firmware as your
+> most important data safeguard.
+>
+> Of course SMART must be checked and monitored, but don't delude yourself into
+> thinking it will always warn you of anything going wrong well in advance of
+> failure, or even at all.
 
-On Tue, 14 Jan 2014 14:05:11 -0700
-Chris Murphy <lists@colorremedies.com> wrote:
+Well, since I began using SMART I have had a total of two drive failures 
+so far and both of them generated warnings and the drives in question 
+were still operating normally when I disgarded them. Plenty of 
+opportunity to retrieve the data and wipe the drives.  I'm sure SMART 
+does fail advance notifictation in some instances, but even when it 
+does, at least it will certainly warn me IMMEDIATELY that the drive is 
+gone after the fact.
+>
 
->=20
-> On Jan 14, 2014, at 12:37 PM, Roman Mamedov <rm@romanrm.net> wrote:
-> >=20
-> > I vaguely remember having some drives that were not able to remap a sin=
-gle
-> > block on write, but doing that successfully if I overwrote a sizable ar=
-ea
-> > around (and including) that block, or overwrite the whole drive. And af=
-ter
-> > that they worked without issue not exhibiting further bad blocks.
->=20
-> Presumably the SMART self-assessment for this drive was FAIL?=20
-
-No of course not, why? SMART goes to FAIL only if one of the attributes fal=
-ls
-below threshold, in this case that would be Reallocated Sector Count having
-too much sectors. But nope, it either had zero, or in single-digit numbers.
-
-I don't ever remember seeing a SMART FAIL drive that would function in any
-usual sense of that word. Whereas such pecularities (bad sectors /
-unremappable sectors / not wanting to remap until you overwrite large area =
-and
-perhaps even multiple times at that), all with SMART =3D PASS, are seen left
-right and center.
-
-> And if so what's the point of the work around when we only have a pass/fa=
-il
-> level granularity for drive health?
-
-Not sure what you're referring to here. As said above, the FAIL/PASS status=
- is
-largely useless, and the more important indicators are the values and dynam=
-ics
-in Reallocated sector count, Current pending sectors, Reported uncorrectabl=
-e,
-etc.
-
-> a way to send a command to the firmware to persistently increase the rese=
-rve
-> sectors at the expensive of available space - in effect it reduces the LBA
-> count by e.g. 10MB, thereby increasing the reserve pool by 10MB.
-
-Yes please that, and also a pony. :)
-
--=20
-With respect,
-Roman
-
---Sig_/1Hj/+SU_.qg5FpbzA8MElJ9
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlLVqd8ACgkQTLKSvz+PZwhBaACgkMGzdB32ZvgkriTQSLa6sdKS
-9ogAnjKVz8wO1Kc1D24ZuL1Ow3d3Tavw
-=1Mg6
------END PGP SIGNATURE-----
-
---Sig_/1Hj/+SU_.qg5FpbzA8MElJ9--

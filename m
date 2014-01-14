@@ -1,39 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50747 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751342AbaANLeZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 06:34:25 -0500
-Message-ID: <52D522E2.40503@oracle.com>
-Date: Tue, 14 Jan 2014 19:43:30 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [bug] its messy when missing device reappears after its been
- replaced in RAID1
-References: <52CAE033.3020604@oracle.com> <52D3BA54.6010601@cn.fujitsu.com>
-In-Reply-To: <52D3BA54.6010601@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from cn.fujitsu.com ([222.73.24.84]:26089 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751818AbaANNQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jan 2014 08:16:12 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0ECUOnB015721
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 20:30:25 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH V2 1/4] Btrfs: filter the ordered extents that has been logged
+Date: Tue, 14 Jan 2014 20:31:49 +0800
+Message-Id: <1389702712-26638-2-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1389702712-26638-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1389702712-26638-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Wang,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ordered-data.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 69582d5..e4c3d56 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -433,6 +433,8 @@ void btrfs_get_logged_extents(struct btrfs_root *log, struct inode *inode)
+ 	spin_lock_irq(&tree->lock);
+ 	for (n = rb_first(&tree->tree); n; n = rb_next(n)) {
+ 		ordered = rb_entry(n, struct btrfs_ordered_extent, rb_node);
++		if (test_bit(BTRFS_ORDERED_LOGGED_CSUM, &ordered->flags))
++			continue;
+ 		spin_lock(&log->log_extents_lock[index]);
+ 		if (list_empty(&ordered->log_list)) {
+ 			list_add_tail(&ordered->log_list, &log->logged_list[index]);
+-- 
+1.7.1
 
-> I agree we use transid to find most proper device, but this check is not
-> right.
-> Here @found_transid is the most biggest generation, so a right candidate
-> device's
-> transid should be @found_tranid -1 (power off for example)or same as
-> @found_transid.
->
-> Anyway, i think the right way should be to check two same id device, and
-> we only replace
-> existed one if new found one's transid > previous one.
->
-> Please correct me if i miss something here.^_^
-
-  Thanks for the review comments ! I am writing the fix.
-
-Anand

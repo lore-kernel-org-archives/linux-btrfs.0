@@ -1,66 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:17483 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:51858 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751342AbaANLn2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 06:43:28 -0500
+	id S1751010AbaAOL7f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jan 2014 06:59:35 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0EBhP8L014316
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 19:43:25 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0FBxSMO003391
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 19:59:28 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix transaction abortion when remounting btrfs from RW to RO
-Date: Tue, 14 Jan 2014 19:42:20 +0800
-Message-Id: <1389699740-21442-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/5] Btrfs: change the members' order of btrfs_space_info structure to reduce the cache miss
+Date: Wed, 15 Jan 2014 20:00:54 +0800
+Message-Id: <1389787258-10865-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs -f /dev/sda8
- # mount /dev/sda8 /mnt -o flushoncommit
- # dd if=/dev/zero of=/mnt/data bs=4k count=102400 &
- # mount /dev/sda8 /mnt -o remount, ro
+It is better that the position of the lock is close to the data which is
+protected by it, because they may be in the same cache line, we will load
+less cache lines when we access them. So we rearrange the members' position
+of btrfs_space_info structure to make the lock be closer to the its data.
 
-When remounting RW to RO, the logic is to firstly set flag
-to RO and then commit transaction, however with option
-flushoncommit enabled,we will do RO check within committing
-transaction, so we get a transaction abortion here.
-
-Actually,here check is wrong, we should check if FS_STATE_ERROR
-is set, fix it.
-
-Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Suggested-by: Miao Xie <miaox@cn.fujitsu.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-Changelog v1->v2:
-	Miao makes me in the right way as soon as he gets time
-	to review this,thanks.
----
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h | 29 +++++++++++++++--------------
+ 1 file changed, 15 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1ea19ce..7b61ea3 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8477,7 +8477,7 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput)
- {
- 	int ret;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 54ab861..1667c9a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1094,7 +1094,7 @@ struct btrfs_qgroup_limit_item {
+ } __attribute__ ((__packed__));
  
--	if (root->fs_info->sb->s_flags & MS_RDONLY)
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
- 		return -EROFS;
+ struct btrfs_space_info {
+-	u64 flags;
++	spinlock_t lock;
  
- 	ret = __start_delalloc_inodes(root, delay_iput);
-@@ -8503,7 +8503,7 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput)
- 	struct list_head splice;
- 	int ret;
+ 	u64 total_bytes;	/* total bytes in the space,
+ 				   this doesn't take mirrors into account */
+@@ -1104,14 +1104,25 @@ struct btrfs_space_info {
+ 				   transaction finishes */
+ 	u64 bytes_reserved;	/* total bytes the allocator has reserved for
+ 				   current allocations */
+-	u64 bytes_readonly;	/* total bytes that are read only */
+-
+ 	u64 bytes_may_use;	/* number of bytes that may be used for
+ 				   delalloc/allocations */
++	u64 bytes_readonly;	/* total bytes that are read only */
++
++	unsigned int full:1;	/* indicates that we cannot allocate any more
++				   chunks for this space */
++	unsigned int chunk_alloc:1;	/* set if we are allocating a chunk */
++
++	unsigned int flush:1;		/* set if we are trying to make space */
++
++	unsigned int force_alloc;	/* set if we need to force a chunk
++					   alloc for this space */
++
+ 	u64 disk_used;		/* total bytes used on disk */
+ 	u64 disk_total;		/* total bytes on disk, takes mirrors into
+ 				   account */
  
--	if (fs_info->sb->s_flags & MS_RDONLY)
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
- 		return -EROFS;
++	u64 flags;
++
+ 	/*
+ 	 * bytes_pinned is kept in line with what is actually pinned, as in
+ 	 * we've called update_block_group and dropped the bytes_used counter
+@@ -1124,21 +1135,11 @@ struct btrfs_space_info {
+ 	 */
+ 	struct percpu_counter total_bytes_pinned;
  
- 	INIT_LIST_HEAD(&splice);
+-	unsigned int full:1;	/* indicates that we cannot allocate any more
+-				   chunks for this space */
+-	unsigned int chunk_alloc:1;	/* set if we are allocating a chunk */
+-
+-	unsigned int flush:1;		/* set if we are trying to make space */
+-
+-	unsigned int force_alloc;	/* set if we need to force a chunk
+-					   alloc for this space */
+-
+ 	struct list_head list;
+ 
++	struct rw_semaphore groups_sem;
+ 	/* for block groups in our same type */
+ 	struct list_head block_groups[BTRFS_NR_RAID_TYPES];
+-	spinlock_t lock;
+-	struct rw_semaphore groups_sem;
+ 	wait_queue_head_t wait;
+ };
+ 
 -- 
 1.8.3.1
 

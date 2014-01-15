@@ -1,72 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50329 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751616AbaAOJWp (ORCPT
+Received: from mail-oa0-f49.google.com ([209.85.219.49]:62289 "EHLO
+	mail-oa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751499AbaAOQPK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 04:22:45 -0500
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Anand Jain <Anand.Jain@oracle.com>
-Subject: [RFC PATCH] btrfs: fix null pointer deference at btrfs_sysfs_add_one+0x105
-Date: Wed, 15 Jan 2014 17:22:28 +0800
-Message-Id: <1389777748-4341-1-git-send-email-Anand.Jain@oracle.com>
+	Wed, 15 Jan 2014 11:15:10 -0500
+Received: by mail-oa0-f49.google.com with SMTP id n16so1428256oag.36
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 08:15:09 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <A76390BF-4D85-47D3-A332-AD09809F6632@colorremedies.com>
+References: <CAFP7zVthUK54N5-8+QRABBpz2R9-mAbJGjiOc6Ty3nVS4O-EDA@mail.gmail.com>
+	<A76390BF-4D85-47D3-A332-AD09809F6632@colorremedies.com>
+Date: Wed, 15 Jan 2014 10:15:09 -0600
+Message-ID: <CAKcLGm-Km3svoJ4oPGUdv8Wh__qsNAjujVmhF=46dwQP4HaeNw@mail.gmail.com>
+Subject: Re: btrfsck failes
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-bdev is null when disk has disappeared and mounted with
-the degrade option
+On Mon, Jan 13, 2014 at 6:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Jan 13, 2014, at 3:58 PM, Holger Brandsmeier <brandsmeier@gmail.com> wrote:
+>>
+>> Currently btrfsck failes to repair my partition, I get the output:
+>>
+>> [root@ho-think bholger]# btrfsck --repair /dev/sda5
+>
+> This is almost the last resort and you probably should be posting to the list before using repair.
+>
+>
 
-stack trace
----------
-btrfs_sysfs_add_one+0x105/0x1c0 [btrfs]
-open_ctree+0x15f3/0x1fe0 [btrfs]
-btrfs_mount+0x5db/0x790 [btrfs]
-? alloc_pages_current+0xa4/0x160
-mount_fs+0x34/0x1b0
-vfs_kern_mount+0x62/0xf0
-do_mount+0x22e/0xa80
-? __get_free_pages+0x9/0x40
-? copy_mount_options+0x31/0x170
-SyS_mount+0x7e/0xc0
-system_call_fastpath+0x16/0x1b
----------
+This is like saying:
 
-reproducer:
--------
-mkfs.btrfs -draid1 -mraid1 /dev/sdc /dev/sdd
-(detach a disk)
-devmgt detach /dev/sdc [1]
-mount -o degrade /dev/sdd /btrfs
--------
+"Yes, btrfs does now have a working btrfsck, but only for the select
+few who manage to get through on the mailing list for support."
 
-[1] github.com/anajain/devmgt.git
-
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/sysfs.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index ba94b27..f20bc1f 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -578,8 +578,14 @@ static int add_device_membership(struct btrfs_fs_info *fs_info)
- 		return -ENOMEM;
- 
- 	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
--		struct hd_struct *disk = dev->bdev->bd_part;
--		struct kobject *disk_kobj = &part_to_dev(disk)->kobj;
-+		struct hd_struct *disk;
-+		struct kobject *disk_kobj;
-+
-+		if (!dev->bdev)
-+			continue;
-+
-+		disk = dev->bdev->bd_part;
-+		disk_kobj = &part_to_dev(disk)->kobj;
- 
- 		error = sysfs_create_link(fs_info->device_dir_kobj,
- 					  disk_kobj, disk_kobj->name);
--- 
-1.8.4.2
-
+I'd like to think that's not the case.

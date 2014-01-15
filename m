@@ -1,30 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f179.google.com ([209.85.192.179]:57626 "EHLO
-	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751703AbaANUr6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 15:47:58 -0500
-Received: by mail-pd0-f179.google.com with SMTP id y10so147227pdj.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 12:47:57 -0800 (PST)
+Received: from cn.fujitsu.com ([222.73.24.84]:52055 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751253AbaAOM6f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jan 2014 07:58:35 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0FCwRQM005020
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 20:58:27 +0800
+Message-ID: <52D685B3.3080103@cn.fujitsu.com>
+Date: Wed, 15 Jan 2014 20:57:23 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Date: Tue, 14 Jan 2014 21:47:57 +0100
-Message-ID: <CABmsrd0NucWHC6oKCU-V9mxhyt2p63etyu0db+==0cGuQLkYPg@mail.gmail.com>
-Subject: backporting btrfs to 3.0.x kernel for android phone
-From: "Dr. Johannes Zellner" <johannes@zellner.org>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [PATCH] Btrfs: don't miss roots in deletion during walking backrefs
+References: <1389703008-1781-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1389703008-1781-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Please ignore this patch, there is still a race condition between
+root deletion and walking backrefs, i will send them together later!
 
-I'd like to have a recent btrfs kernel implementation on my android phone.
-Unfortunately, I've only kernel sources like 3.0.64 for the phone
-(cyanogenmod rom for samsung galaxy note 2).
+Thanks,
+Wang
+On 01/14/2014 08:36 PM, Wang Shilong wrote:
+> btrfs_read_fs_root_no_name() will check its root refs, and will
+> return us ENOENT if this root in deletion.
+>
+> However, in some case, for example qgroup, we still need to track
+> those roots, fix it.
+>
+> Signed-off-by: Wang Shilong<wangsl.fnst@cn.fujitsu.com>
+> ---
+>   fs/btrfs/backref.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 835b6c9..ec4a1d2 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -303,7 +303,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+>   	root_key.objectid = ref->root_id;
+>   	root_key.type = BTRFS_ROOT_ITEM_KEY;
+>   	root_key.offset = (u64)-1;
+> -	root = btrfs_read_fs_root_no_name(fs_info, &root_key);
+> +	root = btrfs_get_fs_root(fs_info, &root_key, false);
+>   	if (IS_ERR(root)) {
+>   		ret = PTR_ERR(root);
+>   		goto out;
 
-Is there a chance to get the recent btrfs implementation backported to
-a 3.0 kernel?
-
-best
--- 
-Dr. Johannes Zellner <johannes@zellner.org>

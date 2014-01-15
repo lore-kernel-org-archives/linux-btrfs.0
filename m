@@ -1,43 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50895 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751037AbaAOPQB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 10:16:01 -0500
-Date: Wed, 15 Jan 2014 07:15:45 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Holger Brandsmeier <brandsmeier@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Fwd: btrfsck failes
-Message-ID: <20140115151545.GI10639@merlins.org>
-References: <CAFP7zVtDEfDjKA1GvBq_QMs6gKv9t=K_qNyv6dcxawe5iuj8Kw@mail.gmail.com>
- <D942F4C1-471E-476F-BEC1-3090DDAEB115@colorremedies.com>
- <CAFP7zVuB=A2Lty275-VdixjzG6twXKmJo0qB3gZEH=9noQbpRQ@mail.gmail.com>
- <CAFP7zVvk_cXfCrdie9CqGpAa2y6=t4L4bn93v3kNJdudH5nDhw@mail.gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:52157 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752583AbaAOP4T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jan 2014 10:56:19 -0500
+Date: Wed, 15 Jan 2014 16:56:18 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] Btrfs: change the members' order of btrfs_space_info
+ structure to reduce the cache miss
+Message-ID: <20140115155618.GC6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1389787258-10865-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAFP7zVvk_cXfCrdie9CqGpAa2y6=t4L4bn93v3kNJdudH5nDhw@mail.gmail.com>
+In-Reply-To: <1389787258-10865-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 15, 2014 at 08:53:55AM +0100, Holger Brandsmeier wrote:
-> # btrfs-zero-log /dev/sda5
-> parent transid verify failed on 602529792 wanted 23460 found 23463
-> parent transid verify failed on 602529792 wanted 23460 found 23463
-> parent transid verify failed on 602529792 wanted 23460 found 23463
-> parent transid verify failed on 602529792 wanted 23460 found 23463
-> Ignoring transid failure
-> btrfs-zero-log: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
-> Aborted (core dumped)
+On Wed, Jan 15, 2014 at 08:00:54PM +0800, Miao Xie wrote:
+> It is better that the position of the lock is close to the data which is
+> protected by it, because they may be in the same cache line, we will load
+> less cache lines when we access them. So we rearrange the members' position
+> of btrfs_space_info structure to make the lock be closer to the its data.
 
-I've been seeing this quite a bit too. Is this fixed already, or known
-broken?
+I like that
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-I can run under gdb next time if needed.
+New structure layout according to pahole looks reasonable. We can try to
+split 'groups_sem' and 'wait' to 2 cachelines, but this would need more
+shuffling and maybe some measurement if this wins any perf percents.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+struct btrfs_space_info {
+        spinlock_t                 lock;                 /*     0     4 */
+
+        /* XXX 4 bytes hole, try to pack */
+
+        u64                        total_bytes;          /*     8     8 */
+        u64                        bytes_used;           /*    16     8 */
+        u64                        bytes_pinned;         /*    24     8 */
+        u64                        bytes_reserved;       /*    32     8 */
+        u64                        bytes_may_use;        /*    40     8 */
+        u64                        bytes_readonly;       /*    48     8 */
+        unsigned int               full:1;               /*    56:31  4 */
+        unsigned int               chunk_alloc:1;        /*    56:30  4 */
+        unsigned int               flush:1;              /*    56:29  4 */
+
+        /* XXX 29 bits hole, try to pack */
+
+        unsigned int               force_alloc;          /*    60     4 */
+        /* --- cacheline 1 boundary (64 bytes) --- */
+        u64                        disk_used;            /*    64     8 */
+        u64                        disk_total;           /*    72     8 */
+        u64                        flags;                /*    80     8 */
+        struct percpu_counter      total_bytes_pinned;   /*    88    40 */
+        /* --- cacheline 2 boundary (128 bytes) --- */
+        struct list_head           list;                 /*   128    16 */
+        struct rw_semaphore        groups_sem;           /*   144    32 */
+        struct list_head           block_groups[7];      /*   176   112 */
+        /* --- cacheline 4 boundary (256 bytes) was 32 bytes ago --- */
+        wait_queue_head_t          wait;                 /*   288    24 */
+
+        /* size: 312, cachelines: 5, members: 19 */
+        /* sum members: 308, holes: 1, sum holes: 4 */
+        /* bit holes: 1, sum bit holes: 29 bits */
+        /* last cacheline: 56 bytes */
+};

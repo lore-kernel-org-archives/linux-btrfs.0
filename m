@@ -1,70 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36569 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750856AbaAOTi5 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42022 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751314AbaAOTkf convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 14:38:57 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:58651 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1W3WIh-004OOc-M7
-	for linux-btrfs@vger.kernel.org; Wed, 15 Jan 2014 12:38:56 -0700
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+	Wed, 15 Jan 2014 14:40:35 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: why am  I getting "No space left on device" here?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140115115543.790adafb@wpkg.org>
-Date: Wed, 15 Jan 2014 12:38:56 -0700
-Message-Id: <90D4E931-4763-4369-BCCC-93B4B6E2EA1E@colorremedies.com>
-References: <20140115115543.790adafb@wpkg.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 15 Jan 2014 20:40:29 +0100
+Message-ID: <2656163.prAmgAF69M@merkaba>
+In-Reply-To: <pan$6d4dc$e3f7651a$b8f89b4a$ecb5f643@cox.net>
+References: <20140115115543.790adafb@wpkg.org> <pan$6d4dc$e3f7651a$b8f89b4a$ecb5f643@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Mittwoch, 15. Januar 2014, 19:05:41 schrieb Duncan:
+> But just as my already allocated mixed-mode chunks were just about full 
+> and I needed another one allocated to complete the job, so your data 
+> chunks are full or very close, according to btrfs fi df, and you need a 
+> new one allocated (and if the file is greater than a gig in size, likely 
+> more than one) to finish the job.
+> 
+> And in both our cases, there's plenty of unallocated space in the pool, 
+> but for whatever reason, btrfs isn't allocating that new chunk when it 
+> should!  Why, I can't say, but as I mentioned, I was able to work around 
+> the problem here by trying the remaining files in a different order, and 
+> at some point, btrfs figured out it needed that new chunk allocated, and 
+> everything went fine after that.
+> 
+> So... why btrfs is failing to allocate a new chunk when it needs to I 
+> can't say, but I *CAN* say you're not the only one to have run into the 
+> problem recently; I did too.
+> 
+> And just as I did, here, with a bit of monkeying around, you can 
+> /probably/ get btrfs to allocate that new data chunk and get on with 
+> things.  But the trouble is, since I don't know what the exact problem is 
+> or what exactly I did to persuade btrfs to do that new chunk allocation, 
+> I can't tell you exactly what to do to get it to happen, all I can do is 
+> suggest you try copying smaller files or files of different sizes around 
+> a bit, hoping to trigger that allocation.
+> 
+> Once that chunk allocation happens, you should be good for at least a 
+> gig, since that's the data-chunk size, but if your file is over a gig in 
+> size, you may run into the problem again.  In that case...  Well, you 
+> could try copying several gigs of smaller files, then once it allocates 
+> what you need, delete them, leaving the data chunks allocated but with 
+> enough unused space to copy the original multi-gig file over.
 
-On Jan 15, 2014, at 3:55 AM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
+I think you can cause BTRFS to allocate a chunk or more by creating a file with 
+the fallocate command. Unless BTRFS doesn´t do it due to a bug and errors out 
+with no space left.
 
-> I'm no longer able to write to this btrfs filesystem:
-> 
-> # df -h /home
-> Filesystem      Size  Used Avail Use% Mounted on
-> /dev/sdb4       5.2T  3.6T  1.6T  71% /home
-> 
-> 
-> # btrfs fi show /home
-> Label: crawler-btrfs  uuid: 60f1759c-45f6-4484-9f60-66a4e9bbf2b6
->        Total devices 2 FS bytes used 1.80TiB
->        devid    3 size 2.56TiB used 1.80TiB path /dev/sdb4
->        devid    4 size 2.56TiB used 1.80TiB path /dev/sda4
-> 
-> Btrfs v3.12
-> 
-> 
-> # btrfs filesystem df /home
-> Data, RAID1: total=1.75TiB, used=1.75TiB
-> System, RAID1: total=32.00MiB, used=268.00KiB
-> Metadata, RAID1: total=53.00GiB, used=51.71GiB
-> 
-> 
-> However:
-> 
-> # dd if=/dev/urandom of=bigfile
-> dd: writing to `bigfile': No space left on device
-> 186+0 records in
-> 185+0 records out
-> 94720 bytes (95 kB) copied, 0.0144045 s, 6.6 MB/s
-> 
-> 
-> I don't understand why - can anyone explain?
+fallocate gives also an easy way to find out how much it might still allocate 
+and at what point it fails – and that without writing tons of data first. 
+fallocate just triggers allocation and does not write any actual data.
 
-What kernel version? Can you:
-
-umount
-dmesg -n7
-mount
-
-And then try to reproduce the behavior and note any kernel messages in dmesg?
-
-
-Chris Murphy
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

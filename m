@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:10497 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:55178 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752643AbaAOSTB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 13:19:01 -0500
-Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s0FIJ05s024610
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 13:19:00 -0500
-Received: from agrover.csb ([10.3.113.13])
-	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id s0FIJ0LZ001428
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 13:19:00 -0500
-Message-ID: <52D6D113.10308@redhat.com>
-Date: Wed, 15 Jan 2014 10:18:59 -0800
-From: Andy Grover <agrover@redhat.com>
+	id S1752596AbaAOSjT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jan 2014 13:39:19 -0500
+Date: Wed, 15 Jan 2014 19:39:18 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gerhard Heift <gerhard@heift.name>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS_SEARCH_ARGS_BUFSIZE too small
+Message-ID: <20140115183918.GF6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CACeaM885anPZOwbAw_2w43vOU8e0zkj-w_drar1sJhpppCsJeA@mail.gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Btrfs-progs Relicensing effort has begun
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CACeaM885anPZOwbAw_2w43vOU8e0zkj-w_drar1sJhpppCsJeA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Fri, Jan 10, 2014 at 12:44:17AM +0100, Gerhard Heift wrote:
+> I'm playing around with the BTRFS_IOC_SEARCH_TREE to extract the csums
+> of the physical blocks. During the tests some item_header had len = 0,
+> which indicates the buffer was to small to hold the item. I added a
+> printk into the kernel to get the original size of the item and it was
+> around 6600 bytes.
 
-We want to relicense btrfs-progs, using the LGPLv2.1 instead of GPLv2.
+This can happen with the metadata blocks bigger than 4k, the search
+ioctl does not have buffer large enough as you've found. The EXTENT_CSUM
+items seem to cap at 16k, no matter what's the node size (tried with
+64k).
 
-We can then build btrfs-progs code as a shared library, libbtrfs, and 
-this library can be used by other code -- GPLv3+, BSD/Apache, and 
-non-free, without causing the GPLv2 to apply to the other code.
+> Is there another way to get the item? Otherwise I would suggest to
+> create an ioctl, which is a little bit more flexible, something like
+> 
+> struct btrfs_ioctl_search_args2 {
+>         struct btrfs_ioctl_search_key key;
+>         __u64 buf_len
+>         char buf[0];
+> };
 
-This will allow btrfs support to be more tightly integrated into other 
-management tools.
+Yeah, a V2 ioctl has to be introduced, the structure could look like
+this. Kernel would have uo directly copy_to_user to the buffer without
+the intermediate memcpy to the in-kernel copy of the ioctl structure.
 
-Chris Mason, as well as Oracle, have approved this change and are 
-on-board, but we also need *all* contributors to agree.
 
-I will be emailing all contributors (as shown by git) over the next few 
-weeks. Progress will be shown here:
-
-https://docs.google.com/spreadsheet/ccc?key=0AuE18RMM7JeKdFF4OVdsYU9GVmVEOGNKajdPYThHSWc&usp=sharing
-
-Instead of waiting for the email, you can also email me now 
-(agrover@redhat.com) with the below phrase, or something similar:
-
--I grant permission to re-license my contributed code to btrfs-progs 
-under the GNU LGPLv2.1 license.-
-
-or with any questions.
-
-Thanks! -- Regards -- Andy
+david

@@ -1,67 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49236 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750994AbaAPUFs convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jan 2014 15:05:48 -0500
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: [newb] btrfs send problem
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <lb8ue0$hic$1@ger.gmane.org>
-Date: Thu, 16 Jan 2014 13:05:41 -0700
-Cc: Users Fedora <users@lists.fedoraproject.org>
-Message-Id: <AA1BAEB9-93C6-4D28-9C70-CB5705EA81FF@colorremedies.com>
-References: <lb8ue0$hic$1@ger.gmane.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-pb0-f47.google.com ([209.85.160.47]:43706 "EHLO
+	mail-pb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751400AbaAPUaa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jan 2014 15:30:30 -0500
+Received: by mail-pb0-f47.google.com with SMTP id um1so3133613pbc.34
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jan 2014 12:30:30 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20140116121906.GP10639@merlins.org>
+References: <CAFP7zVthUK54N5-8+QRABBpz2R9-mAbJGjiOc6Ty3nVS4O-EDA@mail.gmail.com>
+	<A76390BF-4D85-47D3-A332-AD09809F6632@colorremedies.com>
+	<CAKcLGm-Km3svoJ4oPGUdv8Wh__qsNAjujVmhF=46dwQP4HaeNw@mail.gmail.com>
+	<5A3CA53B-B359-4DE0-A31B-49F98A1EBF7C@colorremedies.com>
+	<20140116121906.GP10639@merlins.org>
+Date: Thu, 16 Jan 2014 21:30:29 +0100
+Message-ID: <CAFP7zVsCBq6=+3jGFA-3BAAXUXeH1A72xM=GPG=88oZZdV5dPg@mail.gmail.com>
+Subject: Re: btrfsck failes
+From: Holger Brandsmeier <brandsmeier@gmail.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: multipart/mixed; boundary=047d7b33d628e8b17104f01c4b2d
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--047d7b33d628e8b17104f01c4b2d
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-On Jan 16, 2014, at 8:38 AM, Neal Becker <ndbecker2@gmail.com> wrote:
+I agree to Marc, I created a small patch to `cmds-check.c` (see
+attachments). It displays a warning message for 10 seconds if the
+repair option is enabled. If you think this is a good idea, can
+someone apply this patch?
 
-> I hope this is an appropriate place to ask user questions.
-> 
-> I'm trying out snapshot and replication.  I have
-> 
-> /dev/sda3 on / type btrfs (rw,relatime,ssd,space_cache)
-> /dev/sda3 on /home type btrfs (rw,relatime,ssd,space_cache)
-> 
-> create a subvolume for snapshots:
-> 
-> #btrfs sub create /.snapshots
-> Create subvolume '//.snapshots'
-> 
-> [root@nbecker1 nbecker]# btrfs subvolume list /
-> ID 256 gen 563396 top level 5 path home
-> ID 258 gen 563396 top level 5 path root
-> ID 372 gen 563396 top level 258 path .snapshots
-> 
-> [root@nbecker1 nbecker]# btrfs sub snapshot -r /home /.snapshots
-> Create a readonly snapshot of '/home' in '/.snapshots/home'
-> 
-> [root@nbecker1 nbecker]# btrfs subvolume list /
-> ID 256 gen 563398 top level 5 path home
-> ID 258 gen 563398 top level 5 path root
-> ID 372 gen 563398 top level 258 path .snapshots
-> ID 373 gen 563398 top level 258 path .snapshots/home
-> 
-> [root@nbecker1 nbecker]# btrfs send /.snapshots/home > /dev/null
-> At subvol /.snapshots/home
-> ERROR: open root/.snapshots/home failed. No such file or directory
+I am going to roll in my backup soon. Is there anything more that I
+should give you as a feedback? I did file one bug:
 
-It's not OK to multipost. You should have crossposted. Or better, pick one list, wait some reasonable time for an answer, then post to a different list. Otherwise you look impatient and are just wasting people's time reading and answering emails they've already read or answered elsewhere. 
+https://bugzilla.kernel.org/show_bug.cgi?id=3D68771
 
-Like I said on Fedora Users, this command:
-> btrfs sub snapshot -r /home /.snapshots
+On Thu, Jan 16, 2014 at 1:19 PM, Marc MERLIN <marc@merlins.org> wrote:
+> On Wed, Jan 15, 2014 at 10:16:13AM -0700, Chris Murphy wrote:
+>>
+>> On Jan 15, 2014, at 9:15 AM, Mitch Harder <mitch.harder@sabayonlinux.org=
+> wrote:
+>>
+>> > On Mon, Jan 13, 2014 at 6:37 PM, Chris Murphy <lists@colorremedies.com=
+> wrote:
+>> >>
+>> >> On Jan 13, 2014, at 3:58 PM, Holger Brandsmeier <brandsmeier@gmail.co=
+m> wrote:
+>> >>>
+>> >>> Currently btrfsck failes to repair my partition, I get the output:
+>> >>>
+>> >>> [root@ho-think bholger]# btrfsck --repair /dev/sda5
+>> >>
+>> >> This is almost the last resort and you probably should be posting to =
+the list before using repair.
+>> >>
+>> >>
+>> >
+>> > This is like saying:
+>> >
+>> > "Yes, btrfs does now have a working btrfsck, but only for the select
+>> > few who manage to get through on the mailing list for support."
+>> >
+>> > I'd like to think that's not the case.
+>>
+>> Yet that's exactly what the wiki suggests: "If you have a broken filesys=
+tem, it is probably better to use btrfsck with advice from one of the btrfs=
+ developers, just in case something goes wrong. (But even if it does go bad=
+ly wrong, you've still got your backups, right?)"
+>>
+>> I think it's understandably annoying that the repair tool could make thi=
+ngs worse rather than fail gracefully, because restoring from backups is te=
+dious. But the only way it gets better is if people break both the file sys=
+tem and the repair tools in ways the devs can't possibly predict.
+>
+> I hate to be a broken record :) but telling people they should read/have
+> read a wiki when they are in the middle of fixing a filesystem is not
+> the right way to go.
+> On my laptop while travelling, it would even be my only way to boot and
+> maybe I can't get to the internet until my FS is fixed (maybe, maybe
+> not, but you get the idea).
+>
+> My main point again (sorry) is still that the man page and usage info of =
+btrfsck
+> should really warn users "this is likely NOT what you want to run,
+> please read the manpage, or HOWTO in /usr/share/doc/ with details about
+> mount recovery and other things to try first".
+>
+> Think of it as a good thing, it means more btrfs users, and they are
+> used to working a certain way. It's for btrfs to adapt to how they're
+> used to working when possible.
+>
+> Marc
+> --
+> "A mouse is a device used to point at the xterm you want to type in" - A.=
+S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet c=
+ooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/7=
+63BE901
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-has created a read-only snapshot of /home, inside <TOP_level>/root/.snapshots/home
+--047d7b33d628e8b17104f01c4b2d
+Content-Type: text/x-patch; charset=US-ASCII; name="cmds-check.patch"
+Content-Disposition: attachment; filename="cmds-check.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hqih0pks0
 
-And this:
-> [root@nbecker1 nbecker]# btrfs send /.snapshots/home > /dev/null
-> At subvol /.snapshots/home
-> ERROR: open root/.snapshots/home failed. No such file or directory
-
-That could be a bug. I'm able to reproduce this on 3.13.0-0.rc8.
-
-Chris Murphy
+LS0tIGNtZHMtY2hlY2suYworKysgY21kcy1jaGVjay5jCkBAIC02NDI3LDYgKzY0MjcsMTUgQEAg
+aW50IGNtZF9jaGVjayhpbnQgYXJnYywgY2hhciAqKmFyZ3YpCiAgICAgICAgaWYgKGFyZ2MgIT0g
+MSkKICAgICAgICAgICAgICAgIHVzYWdlKGNtZF9jaGVja191c2FnZSk7CiAKKyAgICAgICBpZiAo
+cmVwYWlyICE9IDApIHsKKyAgICAgICAgICAgICAgIHByaW50ZigiXG5XQVJOSU5HOiB5b3UgZW5h
+YmxlZCByZXBhaXIgbW9kZSwgdGhpcyBvcHRpb24gY291bGQgbWFrZSAiCisgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgIm1hdHRlcnMgd29yc2UgZm9yIHlvdXIgZGF0YS4gSXQgaXMgcmVj
+b21tZW5kZWQgdG8gY2hlY2sgd2l0aCB0aGUgIgorICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICJsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcgbWFpbGluZyBsaXN0IGJlZm9yZSB5b3Ug
+cHJvY2VlZC5cbiIpOworICAgICAgICAgICAgICAgcHJpbnRmKCJTbGVlcGluZyBmb3IgMTAgc2Vj
+b25kcyB0byBnaXZlIHlvdSB0aW1lIHRvIGNvbnNpZGVyLi4uIgorICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICIgaGl0IGN0cmwrYyBpZiB5b3UgY2hhbmdlZCB5b3VyIG1pbmQuXG4iKTsK
+KyAgICAgICAgICAgICAgIHNsZWVwKDEwKTsKKyAgICAgICB9CisKICAgICAgICByYWRpeF90cmVl
+X2luaXQoKTsKICAgICAgICBjYWNoZV90cmVlX2luaXQoJnJvb3RfY2FjaGUpOwoK
+--047d7b33d628e8b17104f01c4b2d--

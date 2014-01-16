@@ -1,75 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from qmta08.emeryville.ca.mail.comcast.net ([76.96.30.80]:37672 "EHLO
-	qmta08.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750967AbaAPSXL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jan 2014 13:23:11 -0500
-Date: Thu, 16 Jan 2014 10:20:42 -0800
-From: Vladi Gergov <vladi@aresgate.net>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: 2 year old raid1 issue chunk-recovery help
-Message-ID: <20140116182042.GB5425@gypsyops.denof.sin>
-References: <20140115194008.GA5425@gypsyops.denof.sin>
- <52D73F9F.6030909@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52D73F9F.6030909@cn.fujitsu.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49236 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750994AbaAPUFs convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jan 2014 15:05:48 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: [newb] btrfs send problem
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <lb8ue0$hic$1@ger.gmane.org>
+Date: Thu, 16 Jan 2014 13:05:41 -0700
+Cc: Users Fedora <users@lists.fedoraproject.org>
+Message-Id: <AA1BAEB9-93C6-4D28-9C70-CB5705EA81FF@colorremedies.com>
+References: <lb8ue0$hic$1@ger.gmane.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Miao,
 
-I have tried to mount it with -o degraded and -o recovery here is the
-outputs:
+On Jan 16, 2014, at 8:38 AM, Neal Becker <ndbecker2@gmail.com> wrote:
 
-[216094.269443] btrfs: device label das4 devid 2 transid 107954
-/dev/loop7
-[216094.281965] btrfs: device label das1 devid 7 transid 1168964
-/dev/sdi
-[216094.313419] btrfs: device label das4 devid 3 transid 107954 /dev/sdj
-[216113.887503] btrfs: device label das4 devid 2 transid 107954
-/dev/loop7
-[216113.888690] btrfs: allowing degraded mounts
-[216113.889440] btrfs: failed to read chunk root on loop7
-[216113.905742] btrfs: open_ctree failed
-[216135.144739] btrfs: device label das4 devid 2 transid 107954
-/dev/loop7
-[216135.145996] btrfs: enabling auto recovery
-[216135.146783] btrfs: failed to read chunk root on loop7
-[216135.155985] btrfs: open_ctree failed
-
-any other suggestions? Thanks again.
-
-On Thursday, 16.01.14 at 10:10, Miao Xie wrote:
-> On wed, 15 Jan 2014 11:40:09 -0800, Vladi Gergov wrote:
-> > Hi, in 2010 i had an issue with my raid1 when one drive failed and i
-> > added another drive to the array and tried to rebuild. Here is what bug
-> > I hit according to Chris Mason
-> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg06868.html
-> >
-> > I have since updated to lastes btrfs-tools 3.12 + kernel 3.13-rc7 and
-> > attempted an chunk recovery which failed with this
-> > http://bpaste.net/show/168445/
-> >
-> > If anyone can help me get at least some of the data off this bad boy it
-> > would be great! I am cc'ing Miao since his name was thrown under the bus
-> > in irc :). Thanks in advance!
-> >
+> I hope this is an appropriate place to ask user questions.
 > 
-> Chunk recover command can only recover the case that the devices are good, only
-> the chunk tree is corrupted. So it is not suitable to fix your issue.
+> I'm trying out snapshot and replication.  I have
 > 
-> I think you can try the replace function if you can mount the device successfully,
-> just like:
->  # mount <dev> -o degraded <mnt>
->  # btrfs replace start missing <new_dev>
+> /dev/sda3 on / type btrfs (rw,relatime,ssd,space_cache)
+> /dev/sda3 on /home type btrfs (rw,relatime,ssd,space_cache)
 > 
-> Thanks
-> Miao
+> create a subvolume for snapshots:
 > 
+> #btrfs sub create /.snapshots
+> Create subvolume '//.snapshots'
+> 
+> [root@nbecker1 nbecker]# btrfs subvolume list /
+> ID 256 gen 563396 top level 5 path home
+> ID 258 gen 563396 top level 5 path root
+> ID 372 gen 563396 top level 258 path .snapshots
+> 
+> [root@nbecker1 nbecker]# btrfs sub snapshot -r /home /.snapshots
+> Create a readonly snapshot of '/home' in '/.snapshots/home'
+> 
+> [root@nbecker1 nbecker]# btrfs subvolume list /
+> ID 256 gen 563398 top level 5 path home
+> ID 258 gen 563398 top level 5 path root
+> ID 372 gen 563398 top level 258 path .snapshots
+> ID 373 gen 563398 top level 258 path .snapshots/home
+> 
+> [root@nbecker1 nbecker]# btrfs send /.snapshots/home > /dev/null
+> At subvol /.snapshots/home
+> ERROR: open root/.snapshots/home failed. No such file or directory
 
--- 
+It's not OK to multipost. You should have crossposted. Or better, pick one list, wait some reasonable time for an answer, then post to a different list. Otherwise you look impatient and are just wasting people's time reading and answering emails they've already read or answered elsewhere. 
 
-,-| Vladi
-`-| Gergov
+Like I said on Fedora Users, this command:
+> btrfs sub snapshot -r /home /.snapshots
+
+has created a read-only snapshot of /home, inside <TOP_level>/root/.snapshots/home
+
+And this:
+> [root@nbecker1 nbecker]# btrfs send /.snapshots/home > /dev/null
+> At subvol /.snapshots/home
+> ERROR: open root/.snapshots/home failed. No such file or directory
+
+That could be a bug. I'm able to reproduce this on 3.13.0-0.rc8.
+
+Chris Murphy

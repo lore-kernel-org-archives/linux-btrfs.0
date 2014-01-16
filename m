@@ -1,101 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:51502 "EHLO mail.virtall.com"
+Received: from cantor2.suse.de ([195.135.220.15]:60959 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755266AbaAOWho (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jan 2014 17:37:44 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-	by mail.virtall.com (Postfix) with ESMTP id 123C53663E4
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 23:37:40 +0100 (CET)
-Received: from localhost (abtx239.neoplus.adsl.tpnet.pl [83.8.169.239])
-	by mail.virtall.com (Postfix) with ESMTPSA id B035B36612A
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jan 2014 23:37:39 +0100 (CET)
-Date: Wed, 15 Jan 2014 23:37:38 +0100
-From: Tomasz Chmielewski <tch@virtall.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: kernel BUG at fs/btrfs/relocation.c:4026!
-Message-ID: <20140115233738.10071ee8@virtall.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	id S1752446AbaAPBZe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Jan 2014 20:25:34 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 1A1BAAC34
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jan 2014 01:25:33 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: add simple debugfs interface
+Date: Thu, 16 Jan 2014 02:25:29 +0100
+Message-Id: <1389835529-23944-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was doing balance and hit these:
+Help during debugging to export various interesting infromation and
+tunables without the need of extra mount options or ioctls.
 
-[34363.498746] ------------[ cut here ]------------
-[34363.498825] WARNING: CPU: 3 PID: 2237 at fs/btrfs/super.c:254 __btrfs_abort_transaction+0x4d/0xff [btrfs]()
-[34363.498937] btrfs: Transaction aborted (error -28)
-[34363.498938] Modules linked in: xt_tcpudp iptable_filter ip_tables x_tables tun cpufreq_powersave cpufreq_ondemand cpufreq_conservative cpufreq_stats ipv6 btrfs zlib_deflate ext3 jbd loop pcspkr ehci_pci ehci_hcd lpc_ich i2c_i801 mfd_core acpi_cpufreq i2c_core video button ext4 crc16 jbd2 mbcache aacraid 3w_9xxx 3w_xxxx raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 raid0 sata_nv sata_sil sata_via sg sd_mod ahci libahci libata scsi_mod r8169 mii
-[34363.499369] CPU: 3 PID: 2237 Comm: btrfs-transacti Not tainted 3.13.0-rc6 #1
-[34363.499433] Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 1106 10/17/2011
-[34363.499541]  0000000000000009 ffff88080d39fa48 ffffffff8138987d 0000000000000006
-[34363.499648]  ffff88080d39fa98 ffff88080d39fa88 ffffffff810370a9 0000000000001000
-[34363.499751]  ffffffffa02e4524 00000000ffffffe4 ffff8808110e9800 ffff880808f06dc0
-[34363.499851] Call Trace:
-[34363.499901]  [<ffffffff8138987d>] dump_stack+0x46/0x58
-[34363.499955]  [<ffffffff810370a9>] warn_slowpath_common+0x77/0x91
-[34363.500010]  [<ffffffffa02e4524>] ? __btrfs_abort_transaction+0x4d/0xff [btrfs]
-[34363.500110]  [<ffffffff81037157>] warn_slowpath_fmt+0x41/0x43
-[34363.500164]  [<ffffffffa02e4524>] __btrfs_abort_transaction+0x4d/0xff [btrfs]
-[34363.500222]  [<ffffffffa02f2ea4>] __btrfs_free_extent+0x79e/0x7e3 [btrfs]
-[34363.500277]  [<ffffffff8138843e>] ? __slab_free+0x294/0x2b8
-[34363.500336]  [<ffffffffa033f10a>] ? btrfs_merge_delayed_refs+0x2c9/0x305 [btrfs]
-[34363.500438]  [<ffffffffa02f7658>] run_clustered_refs+0x9b5/0xba7 [btrfs]
-[34363.500496]  [<ffffffffa02f96b3>] btrfs_run_delayed_refs+0x219/0x46f [btrfs]
-[34363.500551]  [<ffffffff8103f58f>] ? lock_timer_base.isra.25+0x26/0x4a
-[34363.500610]  [<ffffffffa0306b61>] btrfs_commit_transaction+0xe2/0x7df [btrfs]
-[34363.500669]  [<ffffffffa0305345>] transaction_kthread+0xef/0x1c2 [btrfs]
-[34363.500727]  [<ffffffffa0305256>] ? open_ctree+0x1ac7/0x1ac7 [btrfs]
-[34363.500781]  [<ffffffff8104ee9a>] kthread+0xcd/0xd5
-[34363.500833]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
-[34363.500888]  [<ffffffff8138e6bc>] ret_from_fork+0x7c/0xb0
-[34363.500940]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
-[34363.500994] ---[ end trace 99a0c80048824a4c ]---
-[34363.501046] BTRFS error (device sdb4) in __btrfs_free_extent:5783: errno=-28 No space left
-[34363.501144] BTRFS info (device sdb4): forced readonly
-[34363.501195] BTRFS debug (device sdb4): run_one_delayed_ref returned -28
-[34363.501196] BTRFS error (device sdb4) in btrfs_run_delayed_refs:2730: errno=-28 No space left
-[34453.456505] ------------[ cut here ]------------
-[34453.456560] kernel BUG at fs/btrfs/relocation.c:4026!
-[34453.456611] invalid opcode: 0000 [#1] SMP 
-[34453.456663] Modules linked in: xt_tcpudp iptable_filter ip_tables x_tables tun cpufreq_powersave cpufreq_ondemand cpufreq_conservative cpufreq_stats ipv6 btrfs zlib_deflate ext3 jbd loop pcspkr ehci_pci ehci_hcd lpc_ich i2c_i801 mfd_core acpi_cpufreq i2c_core video button ext4 crc16 jbd2 mbcache aacraid 3w_9xxx 3w_xxxx raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 raid0 sata_nv sata_sil sata_via sg sd_mod ahci libahci libata scsi_mod r8169 mii
-[34453.457065] CPU: 1 PID: 5833 Comm: btrfs Tainted: G        W    3.13.0-rc6 #1
-[34453.457120] Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 1106 10/17/2011
-[34453.457221] task: ffff8806bce22e20 ti: ffff8806a77a4000 task.ti: ffff8806a77a4000
-[34453.457319] RIP: 0010:[<ffffffffa03453e0>]  [<ffffffffa03453e0>] relocate_block_group+0x286/0x4c7 [btrfs]
-[34453.457432] RSP: 0018:ffff8806a77a5a68  EFLAGS: 00010286
-[34453.457484] RAX: 00000000ffffffe4 RBX: ffff8808101831b0 RCX: 0000000180190002
-[34453.457564] RDX: 0000000180190003 RSI: ffffea0020405080 RDI: ffff880811551300
-[34453.457619] RBP: ffff8806a77a5ad8 R08: 0000000000000001 R09: ffffea0020405080
-[34453.457673] R10: 0000000000001dc7 R11: ffffffffa030752f R12: 00000000fffffff5
-[34453.457727] R13: ffff880810142b40 R14: ffff88074c7a3000 R15: 0000000000000002
-[34453.457781] FS:  00007f8afc0f0840(0000) GS:ffff88083fa40000(0000) knlGS:0000000000000000
-[34453.457880] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[34453.457932] CR2: 00007e79b2ccc000 CR3: 000000069f630000 CR4: 00000000000407e0
-[34453.457986] Stack:
-[34453.458032]  ffff8806a77a5ad8 ffffffff00018d21 ffff8806a77a5a70 0000000000000000
-[34453.458132]  000000a70000020c 00ff8806a77a5a98 a80000052421e5e0 0000000000001000
-[34453.458232]  ffff88081ed3ba20 ffff88074c7a3000 ffff880812fdc5c8 ffff880812fdc000
-[34453.458331] Call Trace:
-[34453.458386]  [<ffffffffa034576f>] btrfs_relocate_block_group+0x14e/0x28d [btrfs]
-[34453.458490]  [<ffffffffa03248d2>] btrfs_relocate_chunk.isra.65+0x58/0x60e [btrfs]
-[34453.458592]  [<ffffffffa03321ff>] ? btrfs_set_lock_blocking_rw+0x89/0xb2 [btrfs]
-[34453.458693]  [<ffffffffa02e71b7>] ? btrfs_set_path_blocking+0x23/0x54 [btrfs]
-[34453.458751]  [<ffffffffa02eba1b>] ? btrfs_search_slot+0x72f/0x789 [btrfs]
-[34453.458810]  [<ffffffffa0320be1>] ? free_extent_buffer+0x6f/0x7c [btrfs]
-[34453.458869]  [<ffffffffa0327709>] btrfs_balance+0x9fe/0xbe0 [btrfs]
-[34453.458928]  [<ffffffffa032d4c9>] btrfs_ioctl_balance+0x220/0x29f [btrfs]
-[34453.458987]  [<ffffffffa0330a66>] btrfs_ioctl+0xfce/0x2128 [btrfs]
-[34453.459042]  [<ffffffff810c9b0c>] ? handle_mm_fault+0x41a/0x965
-[34453.459096]  [<ffffffff810ccc91>] ? __vm_enough_memory+0x26/0x13d
-[34453.459149]  [<ffffffff8110224a>] do_vfs_ioctl+0x3f7/0x441
-[34453.459201]  [<ffffffff811022e6>] SyS_ioctl+0x52/0x80
-[34453.459254]  [<ffffffff8138e762>] system_call_fastpath+0x16/0x1b
-[34453.459308] Code: 89 86 a8 05 00 00 41 8a 86 b9 05 00 00 49 8b 76 08 a8 08 74 18 83 e0 f7 4c 89 ef 41 88 86 b9 05 00 00 e8 a3 16 fc ff 85 c0 74 13 <0f> 0b 4c 89 ef e8 7b 21 fc ff 49 8b 7e 08 e8 fb d7 fb ff 41 80
-[34453.459496] RIP  [<ffffffffa03453e0>] relocate_block_group+0x286/0x4c7 [btrfs]
-[34453.459598]  RSP <ffff8806a77a5a68>
-[34453.459967] ---[ end trace 99a0c80048824a4d ]---
+Usage:
+* declare your variable in sysfs.h, and include where you need it
+* define the variable in sysfs.c and make it visible via
+  debugfs_create_TYPE
 
+Depends on CONFIG_DEBUG_FS.
 
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/sysfs.c |   23 +++++++++++++++++++++++
+ 1 files changed, 23 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index ba94b277e98d..d0023196e996 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -24,6 +24,7 @@
+ #include <linux/kobject.h>
+ #include <linux/bug.h>
+ #include <linux/genhd.h>
++#include <linux/debugfs.h>
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -593,6 +594,12 @@ static int add_device_membership(struct btrfs_fs_info *fs_info)
+ /* /sys/fs/btrfs/ entry */
+ static struct kset *btrfs_kset;
+ 
++/* /sys/kernel/debug/btrfs */
++static struct dentry *btrfs_debugfs_root_dentry;
++
++/* Debugging tunables and exported data */
++u64 btrfs_debugfs_test;
++
+ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
+ {
+ 	int error;
+@@ -636,6 +643,18 @@ failure:
+ 	return error;
+ }
+ 
++static int btrfs_init_debugfs(void)
++{
++#ifdef CONFIG_DEBUG_FS
++	btrfs_debugfs_root_dentry = debugfs_create_dir("btrfs", NULL);
++	if (!btrfs_debugfs_root_dentry)
++		return -ENOMEM;
++
++	debugfs_create_u64("test", S_IRUGO | S_IWUGO, btrfs_debugfs_root_dentry,
++			&btrfs_debugfs_test);
++#endif
++}
++
+ int btrfs_init_sysfs(void)
+ {
+ 	int ret;
+@@ -643,6 +662,7 @@ int btrfs_init_sysfs(void)
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
+ 
++	btrfs_init_debugfs();
+ 	init_feature_attrs();
+ 
+ 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+@@ -658,5 +678,8 @@ void btrfs_exit_sysfs(void)
+ {
+ 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ 	kset_unregister(btrfs_kset);
++#ifdef CONFIG_DEBUG_FS
++	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
++#endif
+ }
+ 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+1.7.9
+

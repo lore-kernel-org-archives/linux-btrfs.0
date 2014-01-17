@@ -1,127 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga02.intel.com ([134.134.136.20]:37237 "EHLO mga02.intel.com"
+Received: from cantor2.suse.de ([195.135.220.15]:39269 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751038AbaAOAko (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 19:40:44 -0500
-From: "Timothy Pepper" <timothy.c.pepper@linux.intel.com>
-Date: Tue, 14 Jan 2014 16:40:28 -0800
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH] Btrfs-progs: Add optional 'uuid' parameter to
- mkfs.btrfs
-Message-ID: <20140115004028.GB7850@tcpepper-desk.jf.intel.com>
-References: <20140108215058.GA31124@tcpepper-desk.jf.intel.com>
- <20140114160629.GY6498@twin.jikos.cz>
+	id S1752147AbaAQPeE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jan 2014 10:34:04 -0500
+Date: Fri, 17 Jan 2014 16:34:03 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Toggenburger Lukas <Lukas.Toggenburger@htwchur.ch>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        sbehrens@giantdisaster.de
+Subject: Re: Working on Btrfs as topic for master thesis
+Message-ID: <20140117153403.GW6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140114160629.GY6498@twin.jikos.cz>
+In-Reply-To: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 14 Jan at 17:06:29 +0100 dsterba@suse.cz said:
-> On Wed, Jan 08, 2014 at 01:50:58PM -0800, Timothy Pepper wrote:
-> > The patch below is a simple quick attempt at allowing the filesystem
-> > UUID to be specified by the user at mkfs time.
+On Thu, Jan 16, 2014 at 07:23:18PM +0000, Toggenburger Lukas wrote:
+> Hi all
 > 
-> There was a similar patch some time ago, that also added it to convert:
-> http://www.spinics.net/lists/linux-btrfs/msg21193.html
-> 
-> and my comments apply to your patch as well:
-> http://www.spinics.net/lists/linux-btrfs/msg22889.html
-> 
-> "Can you please enhance it with a check that the UUID is not duplicate
-> among other filesystems? It should be available through libblkid:
-> 
-> 	blkid_probe_lookup_value(probe, "UUID", &uuid, NULL);
-> 
-> This is a sort of paranoia check with the generated UUID, but I think
-> that an accidentally repeated command or copy&paste with an existing
-> uuid can happen."
+> I'm a student of ICT currently doing my master's degree besides
+> working as a research assistant. Currently I'm looking for topics for
+> my master thesis. One of my ideas was to work on Btrfs. I studied the
+> list of project ideas at
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas and am
+> especially interested in working on one of the following topics:
 
-This makes sense, but feels like a separate and distinct need.  I've
-simply followed the existing implementation for user specified labels.
-Both arguably should have additional logic for interacting with the user
-or making explicit whether a duplicate UUID/LABEL is or is not allowable
-to the user.  In my oddball use case I happen to be ok with a duplicate
-UUID's and explicitly want them ;)
+Please beware that the project ideas are unreviewed, sometimes very
+short on details or not up-to-date with the people silently implementing
+them. (Wiki is not the perfect tool for tracking tasks.)
 
-> 
-> > @@ -335,12 +336,25 @@ static char *parse_label(char *input)
-> >  	return strdup(input);
-> >  }
-> >  
-> > +static char *parse_uuid(char *input)
-> 
-> please use libuuid API instead
+> 1. (Enhanced) hot spare support as described in
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Hot_spare_support
+> and
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#.22Enhanced.22_.28ala_RAID.29_support
 
-As in uuid_parse(), which I use later?
+This logically fits to the set of features like 'error statistics',
+device replace, so I'm not sure if Stefan is not working on this
+already.
 
-> > +{
-> > +	int len = strlen(input);
-> > +#define	BTRFS_UUID_STRING_SIZE	(2*BTRFS_UUID_SIZE + 5)
-> > +	if (len >= BTRFS_UUID_STRING_SIZE) {
-> > +		fprintf(stderr, "UUID %s is too long (max %d)\n", input,
-> > +			BTRFS_UUID_STRING_SIZE - 1);
-> > +		exit(1);
-> > +	}
-> > +	return strdup(input);
-> > +}
-> > +
-> > @@ -1288,6 +1303,9 @@ int main(int ac, char **av)
-> >  			case 'L':
-> >  				label = parse_label(optarg);
-> >  				break;
-> > +			case 'U':
-> > +				uuid = parse_uuid(optarg);
-> 
-> Error handling needed.
+> 2. Adding more checksumming algorithms ( https://btrfs.wiki.kernel.org/index.php/Project_ideas#More_checksumming_algorithms )
 
-The uuid is initialized to NULL, same as label.  The two
-parse_{uuid,name}() functions return a strdup of the user input or
-exit(1).  If strdup returned NULL, it's the same is if the user gave no
-input and the code didn't hit the 'L' and/or 'U' cases.
+As you've found, Josef is claiming this, but it's not mentioned on the
+idea's page.
 
-The patch may make more sense in the context of the full file where you
-see it mirroring the user specified label case in the lines just prior
-to each addition hunk in mkfs.c.
+> 3. Improving subvolume handling regarding taking recursive snapshots (
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Take_recursive_snapshots
+> ) and taking snapshots of arbitrary directories (
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Snapshot_arbitrary_directories
+> )
 
-This makes for a simpler, more natural addition in utils.c where I've
-done the following hunk:
+Goffredo sent patches for the recursive snapshots, implemented in
+userspace. http://www.spinics.net/lists/linux-btrfs/msg29553.html
+I have some notes on kernel implementation from the time I reviewed the
+patches.
 
-diff --git a/utils.c b/utils.c
-index f499023..4b85eeb 100644
---- a/utils.c
-+++ b/utils.c
-@@ -71,7 +71,7 @@ static u64 reference_root_table[] = {
- 	[6] =	BTRFS_CSUM_TREE_OBJECTID,
- };
- 
--int make_btrfs(int fd, const char *device, const char *label,
-+int make_btrfs(int fd, const char *device, const char *label, const char *uuid,
- 	       u64 blocks[7], u64 num_bytes, u32 nodesize,
- 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features)
- {
-@@ -103,7 +103,10 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	memset(&super, 0, sizeof(super));
- 
- 	num_bytes = (num_bytes / sectorsize) * sectorsize;
--	uuid_generate(super.fsid);
-+	if (uuid)
-+		uuid_parse(uuid, super.fsid);
-+	else
-+		uuid_generate(super.fsid);
- 	uuid_generate(super.dev_item.uuid);
- 	uuid_generate(chunk_tree_uuid);
+The second project is essentially implementing the
+'cp --reflink=always dir newsubvol' workaround.
 
-I could remove the strdup in mkfs.c, move the uuid_parse() up into mkfs.c,
-and do a memcpy into super down here.  The way I did it seem the easiest
-to understand for overall code readability within each of mkfs.c and
-utils.c, keeping a similar set of initializations in mkfs.c and the set
-of uuid_*() calls next to each other in utils.c.
+> What is the current state of development concerning these features?
 
-After that hunk in utils.c, and even without my change, the code
-could/should check whether these three uuid's are unique and enable policy
-choice there.
+Unless there are patches in the mailinglist, hard to say. Sometimes the
+status is shared on IRC.
 
--- 
-Tim Pepper <timothy.c.pepper@linux.intel.com>
-Intel Open Source Technology Center
+> What would I need to know before going about one of these?
+
+Not sure what exactly you're asking about.
+Have an idea how to implement it. Then try to get ack from someobody
+familiar with the area you're going to touch. Implement, write tests,
+write some howto/docs, submit it.
+
+HTH,
+david

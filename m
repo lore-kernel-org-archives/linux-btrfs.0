@@ -1,30 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38286 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751679AbaAQPCR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 10:02:17 -0500
-Date: Fri, 17 Jan 2014 16:02:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: Tomasz Chmielewski <tch@virtall.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS critical: unable to find logical 0 len 4096, No mapping
- for 0-4096
-Message-ID: <20140117150215.GV6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20140116062741.2be67c5b@virtall.com>
- <52D77042.3060905@cn.fujitsu.com>
+Received: from nm14-vm1.bullet.mail.ird.yahoo.com ([77.238.189.91]:48518 "EHLO
+	nm14-vm1.bullet.mail.ird.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752521AbaAQSkF convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jan 2014 13:40:05 -0500
+Message-ID: <1389983615.90027.YahooMailNeo@web172606.mail.ir2.yahoo.com>
+Date: Fri, 17 Jan 2014 18:33:35 +0000 (GMT)
+From: "valleysmail-lol5@yahoo.de" <valleysmail-lol5@yahoo.de>
+Reply-To: "valleysmail-lol5@yahoo.de" <valleysmail-lol5@yahoo.de>
+Subject: drawbacks of non-ECC RAM
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <52D77042.3060905@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 16, 2014 at 01:38:10PM +0800, Wang Shilong wrote:
-> This problem should be fixed by Filipe, and pused into josef's btrfs-next:-)
-> 
-> patch url is:
-> https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=5d157162be99f950a0b64b526c04dff03f8c4eeb
 
-For the recrod, the patch has been tagged for stable and queued for next
-merge window, so it'll get into the 3.13.x releases.
+
+I'd like to know if there are drawbacks in using btrfs with non-ECC RAM instead of using ext4 with non-ECC RAM. I know that some features of btrfs may rely on ECC RAM but is the chance of data corruption or even a damaged filesystem higher than when i use ext4 instead of btrfs?
+I want to know this because i would like to use the snapshot feature of btrfs and ext4 does not support that. I will not use btrfs for fixing silent data corruption nor for using RAID like features or encryption. ZFS however checks files in the background (even if i don't want) and if it thinks there is an error it will fix it and i cannot disable this feature. So errors in RAM may corrupt my files or even more.
+
+
+If you have some information regarding this topic or some good links i would be very happy! =)
+

@@ -1,32 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f52.google.com ([209.85.220.52]:37639 "EHLO
-	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750898AbaAQEDT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jan 2014 23:03:19 -0500
-Received: by mail-pa0-f52.google.com with SMTP id bj1so2085308pad.39
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jan 2014 20:03:19 -0800 (PST)
+Received: from cantor2.suse.de ([195.135.220.15]:37639 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751701AbaAQOg0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jan 2014 09:36:26 -0500
+Date: Fri, 17 Jan 2014 15:36:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: ivo.welch@gmail.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs FAQ
+Message-ID: <20140117143624.GU6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAPr7RtX2NGWssKd=Z8MHt4QpfHt+uUy3wyVcwCSpKwTTE7J2dg@mail.gmail.com>
 MIME-Version: 1.0
-Reply-To: ivo.welch@gmail.com
-From: ivo welch <ivo.welch@anderson.ucla.edu>
-Date: Thu, 16 Jan 2014 20:02:58 -0800
-Message-ID: <CAPr7RtX2NGWssKd=Z8MHt4QpfHt+uUy3wyVcwCSpKwTTE7J2dg@mail.gmail.com>
-Subject: btrfs FAQ
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPr7RtX2NGWssKd=Z8MHt4QpfHt+uUy3wyVcwCSpKwTTE7J2dg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FAQ:
+On Thu, Jan 16, 2014 at 08:02:58PM -0800, ivo welch wrote:
+> FAQ:
+> 
+> [1] where should I send FAQ questions or suggestions?
 
-[1] where should I send FAQ questions or suggestions?
+Good question, we need some place for that. Do you think that a section
+on the FAQ page would be good enough? I'm not the right person to judge
+that, my POV is different.
 
-[2] mixed HDD and SSD setups are becoming very common.  hybrid drives
-even have two partitions.  is it possible to use the HDD to keep
-backup sector information for crc scrubbing?  I do not want to RAID1
-the SSD with the HDD for obvious speed reasons.  rather, I want to use
-the HDD as an asynchronously-updated less important quasi-backup
-location for SSD sectors to protect against bitrot.
+> [2] mixed HDD and SSD setups are becoming very common.  hybrid drives
+> even have two partitions.  is it possible to use the HDD to keep
+> backup sector information for crc scrubbing?  I do not want to RAID1
+> the SSD with the HDD for obvious speed reasons.  rather, I want to use
+> the HDD as an asynchronously-updated less important quasi-backup
+> location for SSD sectors to protect against bitrot.
 
-----
-Ivo Welch (ivo.welch@gmail.com)
+Nothing of that sort is implemented ATM.

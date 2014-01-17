@@ -1,29 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgateway3.uni-freiburg.de ([132.230.2.213]:59839 "EHLO
-	mailgateway3.uni-freiburg.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752225AbaAQP5b (ORCPT
+Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:43205
+	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751973AbaAQQz0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 10:57:31 -0500
-Received: from mawa.ruf.uni-freiburg.de ([132.230.1.30]) port 57966
-	by mailgateway3.uni-freiburg.de with esmtp
-	(Exim 4.80.1 #2 built 22-Apr-2013 16:36:34 running on Gentoo)
-	id 1W4AFu-0002uE-QN
-	for linux-btrfs@vger.kernel.org; Fri, 17 Jan 2014 15:18:42 +0100
-Date: Fri, 17 Jan 2014 15:18:41 +0100
-From: Martin Walter <mawa@uni-freiburg.de>
-To: linux-btrfs@vger.kernel.org
-Subject: usrquota
-Message-ID: <20140117141841.GA2838@rz.uni-freiburg.de>
+	Fri, 17 Jan 2014 11:55:26 -0500
+Date: Fri, 17 Jan 2014 08:52:55 -0800
+From: Vladi Gergov <vladi@aresgate.net>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: 2 year old raid1 issue chunk-recovery help
+Message-ID: <20140117165254.GA32526@gypsyops.denof.sin>
+References: <20140115194008.GA5425@gypsyops.denof.sin>
+ <52D73F9F.6030909@cn.fujitsu.com>
+ <20140116182042.GB5425@gypsyops.denof.sin>
+ <52D894F8.1040300@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52D894F8.1040300@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Our problem is a zfs with 20,000 quota-enabled homedirectories and 100 snapshots.
-We would really like to do the same with btrfs, but we don't know how to replace the
-zfs quotas with btrfs subvolume quotas. It seems unfeasible to handle 2,000,000 subvolumes.
-e.g. we would have to create every hour 20,000 snapshots and delete the same amount.
+Hi,
 
-Is there any chance to get real user quotas with btrfs?
+Not sure if my previous email was received as I sent it from my phone. I
+had to dd the disk off and then losetup mount the image. What do you
+mean by erase the data on loop7? I have tried to mount separately without
+success.
 
-Martin
+On Friday, 17.01.14 at 10:27, Miao Xie wrote:
+> On Thu, 16 Jan 2014 10:20:42 -0800, Vladi Gergov wrote:
+> > Thanks Miao,
+> >
+> > I have tried to mount it with -o degraded and -o recovery here is the
+> > outputs:
+> >
+> > [216094.269443] btrfs: device label das4 devid 2 transid 107954
+> > /dev/loop7
+> > [216094.281965] btrfs: device label das1 devid 7 transid 1168964
+> > /dev/sdi
+> > [216094.313419] btrfs: device label das4 devid 3 transid 107954 /dev/sdj
+> > [216113.887503] btrfs: device label das4 devid 2 transid 107954
+> > /dev/loop7
+> > [216113.888690] btrfs: allowing degraded mounts
+> > [216113.889440] btrfs: failed to read chunk root on loop7
+> > [216113.905742] btrfs: open_ctree failed
+> > [216135.144739] btrfs: device label das4 devid 2 transid 107954
+> > /dev/loop7
+> > [216135.145996] btrfs: enabling auto recovery
+> > [216135.146783] btrfs: failed to read chunk root on loop7
+> > [216135.155985] btrfs: open_ctree failed
+> >
+> > any other suggestions? Thanks again.
+> 
+> Is loop7 used to instead of the bad device /dev/sdi? If so, I think
+> we should erase the data in the loop7, and then
+> 
+> >>  # mount <dev> -o degraded <mnt>
+> >>  # btrfs replace start missing <new_dev>
+> 
+> Thanks
+> Miao
+> 
+> >
+> > On Thursday, 16.01.14 at 10:10, Miao Xie wrote:
+> >> On wed, 15 Jan 2014 11:40:09 -0800, Vladi Gergov wrote:
+> >>> Hi, in 2010 i had an issue with my raid1 when one drive failed and i
+> >>> added another drive to the array and tried to rebuild. Here is what bug
+> >>> I hit according to Chris Mason
+> >>> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg06868.html
+> >>>
+> >>> I have since updated to lastes btrfs-tools 3.12 + kernel 3.13-rc7 and
+> >>> attempted an chunk recovery which failed with this
+> >>> http://bpaste.net/show/168445/
+> >>>
+> >>> If anyone can help me get at least some of the data off this bad boy it
+> >>> would be great! I am cc'ing Miao since his name was thrown under the bus
+> >>> in irc :). Thanks in advance!
+> >>>
+> >>
+> >> Chunk recover command can only recover the case that the devices are good, only
+> >> the chunk tree is corrupted. So it is not suitable to fix your issue.
+> >>
+> >> I think you can try the replace function if you can mount the device successfully,
+> >> just like:
+> >>  # mount <dev> -o degraded <mnt>
+> >>  # btrfs replace start missing <new_dev>
+> >>
+> >> Thanks
+> >> Miao
+> >>
+> >
+> 
+
+-- 
+
+,-| Vladi
+`-| Gergov

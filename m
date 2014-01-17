@@ -1,74 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43490 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752193AbaANVsR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 16:48:17 -0500
-Date: Tue, 14 Jan 2014 21:47:56 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Mitchel Humpherys <mitch.special@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36850 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752616AbaAQN6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jan 2014 08:58:15 -0500
+Date: Fri, 17 Jan 2014 14:58:13 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Ivan Jager <aij+@mrph.org>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Minor grammar nitpick
-Message-ID: <20140114214756.GA3314@carfax.org.uk>
-References: <1389735843-11685-1-git-send-email-mitch.special@gmail.com>
+Subject: Re: [PATCH] Btrfs-progs: Fix bus error on sparc
+Message-ID: <20140117135813.GT6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAB5sJHwdf+MmNPfFrrmX7HYnmTjKXY-Wju2db_0i3VQ7A+eMag@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="u3/rZRmxL6MmkK24"
-In-Reply-To: <1389735843-11685-1-git-send-email-mitch.special@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAB5sJHwdf+MmNPfFrrmX7HYnmTjKXY-Wju2db_0i3VQ7A+eMag@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jan 16, 2014 at 09:22:57PM -0500, Ivan Jager wrote:
+> After patching this I realized Liu Bo had already written a similar
+> patch, but I think mine is cleaner, so I'm sending it anyway.
 
---u3/rZRmxL6MmkK24
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thanks for taking the time, I like your version better and will replace
+Liu Bo's patch in integration branch.
 
-On Tue, Jan 14, 2014 at 01:44:02PM -0800, Mitchel Humpherys wrote:
-> This patch removes the word `to' from the `Can't access to X' error
-> messages.
+> If you like, I could also change the location->objectid references
+> between my two changes, which would make the patch bigger, but would
+> make it actually reduce the overall code size slightly.
 
-   Thanks. That's been annoying me intermittently for years. (Just not
-quite enough to do anything about it).
+Not necessary.
 
-   Hugo.
+> Feel free to make or request any necessary style changes as I couldn't
+> find documentation on the coding style for btrfs-tools.
 
-> Mitchel Humpherys (1):
->   btrfs-progs: fix minor grammar issues
-> 
->  cmds-balance.c    | 10 +++++-----
->  cmds-device.c     |  4 ++--
->  cmds-filesystem.c |  6 +++---
->  cmds-scrub.c      |  2 +-
->  cmds-subvolume.c  | 10 +++++-----
->  5 files changed, 16 insertions(+), 16 deletions(-)
-> 
+I'ts the same as the kernel coding style, code and people are mostly the
+shared.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-              --- Python is executable pseudocode; perl ---              
-                        is executable line-noise.                        
+> PS: Here is the gdb output in case anyone is interested.
 
---u3/rZRmxL6MmkK24
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+It helps to verify how the unaligned access propagated, thanks.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
+I'll put your analysis as a changelog and the missing Signed-off-by
+line from your name + email.
+It's the "Developer's Certificate of Origin 1.1", see
+http://lxr.free-electrons.com/source/Documentation/SubmittingPatches#L307
+if you'r not familiar with this practice.
 
-iQIVAwUBUtWwi1heFHXiqx3kAQJ33BAAhOtLo7zo0GuiXXtu4E1Ssw8XrW2kr/RW
-OsNY1vscfPEwybVWSHNDeQcgPUagW3hVWY/IUnQrlqxhKnwL/EinhuEXBnkSae7W
-6E7TgffuggYV0Lwg/T+jRM8wENoL3AWtkWCV6RNHRxU9Qo2gBKew56g95i7dUDVA
-zV506k5yJCuVM+FQfMA+3xVAfLAYDuDeXH04uhX0MgutK7RS2iqmUxCV72OELC0l
-SNsf/KeRyzC8G4iR1nVln59CYbZrQSWHh4RKpRcMZE2FFtAnT2yh/tBNOzTov2nI
-r3MOdGAw8+ytJVoVAI5JLMVgiaEAwl+WR9BtU97oDLgcoXHr4AjokMxVMXpqBW8c
-wZJEvteuot+4e7ttPNdlcw+6aotOB01CczK0D14ukV0ASbjlHpFIBrlIkNqwTm+E
-UcNYcs5g15tUI0TMzITmrs6uvki1fIad6fv1bxFKSCBlzHKXlKtzphmXqCEhX4+y
-oxdrAi7r+JBweJ0kQcLL4L6dWKZNimJIZUqueiPolNhjrvN2nPMJyfUyF4Duj+s7
-XCax90R9TrfmyQruxTSUUXj74aEx8m8ERmvdVP8tkeLfaZBjK1SHu1xdjFN4OPyJ
-Teys3GIn45rWBLe0/nKsR+CqVIU4lskqi08tXtK3l9ba1Jz5exPZSJTVqxlm8Py/
-wUGxfR740R4=
-=Gnu9
------END PGP SIGNATURE-----
 
---u3/rZRmxL6MmkK24--
+david

@@ -1,89 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f175.google.com ([209.85.215.175]:35967 "EHLO
-	mail-ea0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752144AbaARAQV (ORCPT
+Received: from mail-ee0-f50.google.com ([74.125.83.50]:48473 "EHLO
+	mail-ee0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752766AbaARAQW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 19:16:21 -0500
-Received: by mail-ea0-f175.google.com with SMTP id z10so2020242ead.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jan 2014 16:16:20 -0800 (PST)
+	Fri, 17 Jan 2014 19:16:22 -0500
+Received: by mail-ee0-f50.google.com with SMTP id d17so2442654eek.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jan 2014 16:16:21 -0800 (PST)
 Received: from localhost (host-115-115.kawo1.rwth-aachen.de. [134.130.115.115])
-        by mx.google.com with ESMTPSA id z46sm30832425een.1.2014.01.17.16.16.18
+        by mx.google.com with ESMTPSA id o13sm30864540eex.19.2014.01.17.16.16.20
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
-        Fri, 17 Jan 2014 16:16:18 -0800 (PST)
+        Fri, 17 Jan 2014 16:16:20 -0800 (PST)
 From: Gerhard Heift <gerhard@heift.name>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 3/5] btrfs: copy_to_sk returns EOVERFLOW for too small buffer
-Date: Sat, 18 Jan 2014 01:15:51 +0100
-Message-Id: <1390004153-4228-4-git-send-email-Gerhard@Heift.Name>
+Subject: [PATCH RFC 4/5] btrfs: new ioctl TREE_SEARCH_V2
+Date: Sat, 18 Jan 2014 01:15:52 +0100
+Message-Id: <1390004153-4228-5-git-send-email-Gerhard@Heift.Name>
 In-Reply-To: <1390004153-4228-1-git-send-email-Gerhard@Heift.Name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1390004153-4228-1-git-send-email-Gerhard@Heift.Name>
 
-In copy_to_sk, if an item is too large for the given buffer, it now returns
--EOVERFLOW instead of copying a search_header with len = 0. For backward
-compatibility for the first item it still copies such a header to the buffer,
-but not any other following items, which could have fitted.
+This new ioctl call allows the user to supply a buffer of varying size in which
+a tree search can store its results. This is much more flexible if you want to
+receive items which are larger than the current fixed buffer of 3992 bytes or
+if you want to fetch mor item at once.
 
-tree_search changes -EOVERFLOW back to 0 to behave similiar to the way it
-behaved before this patch.
+Currently the buffer is limited to 32 pages.
 
 Signed-off-by: Gerhard Heift <Gerhard@Heift.Name>
 ---
- fs/btrfs/ioctl.c | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c           | 48 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  8 ++++++++
+ 2 files changed, 56 insertions(+)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 919d928..9fa222d 100644
+index 9fa222d..cc82bd9 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -1883,8 +1883,15 @@ static noinline int copy_to_sk(struct btrfs_root *root,
- 		if (!key_in_sk(key, sk))
- 			continue;
+@@ -2032,6 +2032,52 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 	return ret;
+ }
  
--		if (sizeof(sh) + item_len > buf_size)
-+		if (sizeof(sh) + item_len > buf_size) {
-+			if (*num_found) {
-+				ret = 1;
-+				goto overflow;
-+			}
++static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
++					   void __user *argp)
++{
++	 struct btrfs_ioctl_search_args_v2 *args;
++	 struct inode *inode;
++	 int ret;
++	 char *buf;
++	 size_t buf_size;
 +
- 			item_len = 0;
-+			ret = -EOVERFLOW;
-+		}
- 
- 		if (sizeof(sh) + item_len + *sk_offset > buf_size) {
- 			ret = 1;
-@@ -1910,6 +1917,9 @@ static noinline int copy_to_sk(struct btrfs_root *root,
- 		}
- 		(*num_found)++;
- 
-+		if (ret) /* -EOVERFLOW from above */
-+			goto overflow;
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
 +
- 		if (*num_found >= sk->nr_items)
- 			break;
- 	}
-@@ -1990,7 +2000,8 @@ static noinline int search_ioctl(struct inode *inode,
- 			break;
++	/* copy search header and buffer size */
++	args = memdup_user(argp, sizeof(*args));
++	if (IS_ERR(args))
++		return PTR_ERR(args);
++
++	buf_size = args->buf_size;
++
++	if (buf_size < sizeof(struct btrfs_ioctl_search_header)) {
++		kfree(args);
++		return -ENOMEM;
++	}
++
++	/* limit memory */
++	if (buf_size > PAGE_SIZE * 32)
++		buf_size = PAGE_SIZE * 32;
++
++	buf = memdup_user(argp->buf, buf_size);
++	if (IS_ERR(buf)) {
++		kfree(args);
++		return PTR_ERR(buf);
++	}
++
++	inode = file_inode(file);
++	ret = search_ioctl(inode, &args->key, buf_size, buf);
++	if (ret == 0 && (
++		copy_to_user(argp, args, sizeof(*args)) ||
++		copy_to_user(argp->buf, buf, buf_size)
++		))
++		ret = -EFAULT;
++	kfree(buf);
++	kfree(args);
++	return ret;
++}
++
+ /*
+  * Search INODE_REFs to identify path name of 'dirid' directory
+  * in a 'tree_id' tree. and sets path name to 'name'.
+@@ -4777,6 +4823,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_trans_end(file);
+ 	case BTRFS_IOC_TREE_SEARCH:
+ 		return btrfs_ioctl_tree_search(file, argp);
++	case BTRFS_IOC_TREE_SEARCH_V2:
++		return btrfs_ioctl_tree_search_v2(file, argp);
+ 	case BTRFS_IOC_INO_LOOKUP:
+ 		return btrfs_ioctl_ino_lookup(file, argp);
+ 	case BTRFS_IOC_INO_PATHS:
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 1b8a0f4..6ba0d0f 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -301,6 +301,12 @@ struct btrfs_ioctl_search_args {
+ 	char buf[BTRFS_SEARCH_ARGS_BUFSIZE];
+ };
  
- 	}
--	ret = 0;
-+	if (ret > 0)
-+		ret = 0;
- err:
- 	sk->nr_items = num_found;
- 	btrfs_free_path(path);
-@@ -2013,6 +2024,8 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
- 
- 	inode = file_inode(file);
- 	ret = search_ioctl(inode, &args->key, sizeof(args->buf), args->buf);
-+	if (ret == -EOVERFLOW)
-+		ret = 0;
- 	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
- 		ret = -EFAULT;
- 	kfree(args);
++struct btrfs_ioctl_search_args_v2 {
++	struct btrfs_ioctl_search_key key;
++	size_t buf_size;
++	char buf[0];
++};
++
+ struct btrfs_ioctl_clone_range_args {
+   __s64 src_fd;
+   __u64 src_offset, src_length;
+@@ -553,6 +559,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				struct btrfs_ioctl_defrag_range_args)
+ #define BTRFS_IOC_TREE_SEARCH _IOWR(BTRFS_IOCTL_MAGIC, 17, \
+ 				   struct btrfs_ioctl_search_args)
++#define BTRFS_IOC_TREE_SEARCH_V2 _IOWR(BTRFS_IOCTL_MAGIC, 17, \
++					   struct btrfs_ioctl_search_args_v2)
+ #define BTRFS_IOC_INO_LOOKUP _IOWR(BTRFS_IOCTL_MAGIC, 18, \
+ 				   struct btrfs_ioctl_ino_lookup_args)
+ #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, __u64)
 -- 
 1.8.5.3
 

@@ -1,88 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44326 "EHLO plane.gmane.org"
+Received: from csamuel.org ([74.50.50.137]:49196 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753558AbaARHRI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Jan 2014 02:17:08 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W4Q9S-000307-Vj
-	for linux-btrfs@vger.kernel.org; Sat, 18 Jan 2014 08:17:06 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 08:17:06 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 08:17:06 +0100
+	id S1752119AbaARHUh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 18 Jan 2014 02:20:37 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 067E6409D2
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 18:20:37 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 06697-07 for <linux-btrfs@vger.kernel.org>;
+ Sat, 18 Jan 2014 18:20:36 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 9BFA6409C9
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 18:20:36 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs and ECC RAM
-Date: Sat, 18 Jan 2014 07:16:42 +0000 (UTC)
-Message-ID: <pan$a84be$d3729bcc$cd2b0fdb$783fe765@cox.net>
-References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: btrfsck does not fix
+Date: Sat, 18 Jan 2014 18:20:30 +1100
+Message-ID: <1992297.bYFikluJQe@quad>
+In-Reply-To: <C8D65D2E-6D7D-4E4A-A649-F092A624943D@colorremedies.com>
+References: <52C7127F.3060902@friedels.name> <pan$8a0dd$9f46c908$89053e7c$efd0a239@cox.net> <C8D65D2E-6D7D-4E4A-A649-F092A624943D@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2564575.MOUyfPdcOr"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ian Hinder posted on Sat, 18 Jan 2014 01:23:41 +0100 as excerpted:
 
-> I have been reading a lot of articles online about the dangers of using
-> ZFS with non-ECC RAM.  Specifically, the fact that when good data is
-> read from disk and compared with its checksum, a RAM error can cause the
-> read data to be incorrect, causing a checksum failure, and the bad data
-> might now be written back to the disk in an attempt to correct it,
-> corrupting it in the process.  This would be exacerbated by a scrub,
-> which could run through all your data and potentially corrupt it.  There
-> is a strong current of opinion that using ZFS without ECC RAM is
-> "suicide for your data".
-> 
-> I have been unable to find any discussion of the extent to which this is
-> true for btrfs.  Does btrfs handle checksum errors in the same way as
-> ZFS, or does it perform additional checks before writing "corrected"
-> data back to disk?  For example, if it detects a checksum error, it
-> could read the data again to a different memory location to determine
-> if the error existed in the disk copy or the memory.
+--nextPart2564575.MOUyfPdcOr
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-Given the license issues around zfs and linux, zfs is a non-starter for 
-me here, and as a result I've never looked particularly closely at how it 
-works, so I can't really say what it does with checksums or how that 
-compares to btrfs.
+On Tue, 14 Jan 2014 10:17:19 AM Chris Murphy wrote:
 
-I /can/ however say that btrfs does /not/ work the way described above, 
-however.
+> -c 9 is max compression although I don't know what algorithm btrfs-im=
+age
+> uses off hand. If I use xz on it, 193MB becomes 192MB.
 
-When reading data from disk, btrfs will check the checksum.  If it shows 
-up as bad and btrfs has another copy of the data available (as it will in 
-dup, raid1 or raid10 mode, but not in single or raid0 mode, I'm not 
-actually sure how the newer and still not fully complete raid5 and raid6 
-modes work in that regard), btrfs will read the other copy and see if 
-that matches the checksum.  If it does, the good copy is used and the bad 
-copy is rewritten.  If no good copy exists, btrfs fails the read.
+Be interesting to generate the same image without compression in btrfs-=
+image=20
+and then xz it, in case it can do better with the raw data.
 
-So while I don't know how zfs works and whether your scenario of 
-rewriting bad data due to checksum failure could happen there or not, it 
-can't happen with btrfs, because btrfs will only rewrite the data if it 
-has another copy that matches the checksum.  Otherwise it (normally) 
-fails the read entirely.  
+cheers!
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-It is possible to turn off btrfs checksumming entirely with a mount 
-option, or to turn off both COW and checksumming on an individual file 
-using xattributes, but that's definitely not recommended in general (tho 
-it is on specific types of files, generally large internal-write files 
-that otherwise end up hugely fragmented due to COW).
+This email may come with a PGP signature as a file. Do not panic.
+For more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-As George Mitchell mentions in his followup, there's another thread 
-discussing ECC memory and btrfs already.  However, the OP in that thread 
-didn't explain the alleged problem with zfs (which again, I've no idea 
-whether it's true or not, since due to the licensing issues zfs is a flat 
-non-starter for me so I've never looked into it that closely) in that 
-regard, so all we were able to say was that ECC and btrfs aren't related 
-in that way.  At least here you explained a bit about the alleged 
-problem, so we can say for sure that btrfs doesn't work that way.
+--nextPart2564575.MOUyfPdcOr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUtorPo1yjaOTJg85AQKNZggAi1d+cETQ5l7CrQpXeH/ojykhfC3GexnB
+B5csnwwFynsENrBt1wdri07YUjEc0u8OPsXCVR9tia1nCwI9o5NJ8xPN5HM6G2mE
+29A1uVOtdu2RBwPAurjdviZnqVF0yvb3HHGIk4Hx7RbO4MvSePD3xwdOmMwEs07C
+OZTc/PXIo7q6H7hlkK/5E5aOy8a4vNW9zVV1ysBGO1A9GJ8H5F95VBxywbAE0a0U
+pF68nlWVC7H9a5lgnT45xIA4ZfIBzADyG3NisJR4ye4lid7qt04PF6qR51Pjw3I+
+8kaTLBsDsOXLtOQZoZwG8v1KGWVhAvOVq66UeZxY2pDNVB9ea+stWw==
+=VpdZ
+-----END PGP SIGNATURE-----
+
+--nextPart2564575.MOUyfPdcOr--
 

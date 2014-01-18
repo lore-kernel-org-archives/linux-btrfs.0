@@ -1,69 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:49196 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752119AbaARHUh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Jan 2014 02:20:37 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 067E6409D2
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 18:20:37 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 06697-07 for <linux-btrfs@vger.kernel.org>;
- Sat, 18 Jan 2014 18:20:36 +1100 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 9BFA6409C9
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 18:20:36 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfsck does not fix
-Date: Sat, 18 Jan 2014 18:20:30 +1100
-Message-ID: <1992297.bYFikluJQe@quad>
-In-Reply-To: <C8D65D2E-6D7D-4E4A-A649-F092A624943D@colorremedies.com>
-References: <52C7127F.3060902@friedels.name> <pan$8a0dd$9f46c908$89053e7c$efd0a239@cox.net> <C8D65D2E-6D7D-4E4A-A649-F092A624943D@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2564575.MOUyfPdcOr"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Received: from mail-ea0-f172.google.com ([209.85.215.172]:43973 "EHLO
+	mail-ea0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752544AbaARHyR convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 18 Jan 2014 02:54:17 -0500
+Received: by mail-ea0-f172.google.com with SMTP id g15so1535305eak.31
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jan 2014 23:54:15 -0800 (PST)
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 7.1 \(1827\))
+Subject: Re: ENOSPC during balance
+From: Remco Hosman - Yerf IT <remco@yerf-it.nl>
+In-Reply-To: <20140113174344.GQ6498@twin.jikos.cz>
+Date: Sat, 18 Jan 2014 08:54:13 +0100
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <B94AC96D-3F9A-42DD-BC97-2029CEEBA16D@yerf-it.nl>
+References: <97A7F0AC-8A96-4BFA-A6C0-DD878629FCF2@yerf-it.nl> <20140113174344.GQ6498@twin.jikos.cz>
+To: dsterba@suse.cz
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart2564575.MOUyfPdcOr
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
 
-On Tue, 14 Jan 2014 10:17:19 AM Chris Murphy wrote:
+i did a `btrfs file convert -dconvert=raid10,soft /data`, which converted the whole filesystem back to raid10, it completed without errors.
+then i did a `btrfs convert -dconvert=raid1 /data`, which completed with 184 ENOSPC errors, exactly the same amount as before the covert back to raid10
 
-> -c 9 is max compression although I don't know what algorithm btrfs-im=
-age
-> uses off hand. If I use xz on it, 193MB becomes 192MB.
 
-Be interesting to generate the same image without compression in btrfs-=
-image=20
-and then xz it, in case it can do better with the raw data.
 
-cheers!
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+On 13 Jan 2014, at 18:43, David Sterba <dsterba@suse.cz> wrote:
 
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
+> On Sun, Jan 12, 2014 at 03:49:12PM +0100, Remco Hosman - Yerf IT wrote:
+>> I am trying to convert my array from raid10 to 1, and its partially
+>> completed, but at the moment i am getting a '59366.459092] btrfs: 185
+>> enospc errors during balance’ when i try to balance anything more with
+>> `btrfs bal start -dconvert=raid1,soft /mountpoint`
+>> 
+>> I have already scanned for files with extends over 1gig gig, and there
+>> is at least 100gig unallocated on each of the disks, and scrub reports
+>> no error at all.
+>> Kernel is 3.13-rc7 and tools are latest from git.
+> 
+> By unalocated you mean from 'btrfs fi df' output "total - used = 100G"
+> or that the sum of all occupied space is 100G less than the device size?
+> So if there's some space left to allocate new 1G-chunks for balance.
+> 
+> How many disks does the fs contain?
+> 
 
---nextPart2564575.MOUyfPdcOr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+filesystem is 6 disks of varying sizes.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
+>> Anything else i can try ?
+> 
+> Run
+> $ btrfs balance start -dusage=0,profiles=raid10\|raid1 /mnt
+> 
+> if there are some chunks preallocated from previous balance runs, this
+> will clean them. The -musage=0 filter could also get some space.
+> 
+> I've experienced similar problems with conversion from raid1 to raid10,
+> where it's probably worse regarding the 1G-chunks, because the raid-0
+> level needs the chunk on each disk, while raid1 is fine with just 2.
+> 
+> I had done the -dusage=0 cleanup step every time the 'enospc during
+> balance' was hit, and it finished in the end. Not perfect, an automatic
+> and more intelligent chunk reclaim is among the project ideas though.
+> 
+> If nothing from above helps, please post the output of 'fi df' and 'fi
+> show' commands.
+> 
 
-iQEVAwUAUtorPo1yjaOTJg85AQKNZggAi1d+cETQ5l7CrQpXeH/ojykhfC3GexnB
-B5csnwwFynsENrBt1wdri07YUjEc0u8OPsXCVR9tia1nCwI9o5NJ8xPN5HM6G2mE
-29A1uVOtdu2RBwPAurjdviZnqVF0yvb3HHGIk4Hx7RbO4MvSePD3xwdOmMwEs07C
-OZTc/PXIo7q6H7hlkK/5E5aOy8a4vNW9zVV1ysBGO1A9GJ8H5F95VBxywbAE0a0U
-pF68nlWVC7H9a5lgnT45xIA4ZfIBzADyG3NisJR4ye4lid7qt04PF6qR51Pjw3I+
-8kaTLBsDsOXLtOQZoZwG8v1KGWVhAvOVq66UeZxY2pDNVB9ea+stWw==
-=VpdZ
------END PGP SIGNATURE-----
+i did a `btrfs bal start -dconvert=raid10,soft /data`, and it completed without errors.
+then a `btrfs bal start -donvert=raid1 /data`, which resulted in 184 ENOSPC errors.
 
---nextPart2564575.MOUyfPdcOr--
+currently, the filesystem looks like this:
+
+Data, RAID10: total=431.57GiB, used=430.22GiB
+Data, RAID1: total=5.18TiB, used=5.18TiB
+System, RAID10: total=96.00MiB, used=804.00KiB
+Metadata, RAID10: total=12.38GiB, used=9.34GiB
+
+Label: data  uuid: a8626d67-4684-4b23-99b3-8d5fa8e7fd69
+	Total devices 6 FS bytes used 5.61TiB
+	devid    1 size 1.82TiB used 1.27TiB path /dev/sdg2
+	devid    2 size 1.82TiB used 1.27TiB path /dev/sdb2
+	devid    3 size 1.82TiB used 1.27TiB path /dev/sdf2
+	devid    5 size 2.73TiB used 2.17TiB path /dev/sdd2
+	devid    10 size 2.73TiB used 2.18TiB path /dev/sde2
+	devid    11 size 3.64TiB used 3.08TiB path /dev/sdc1
+
+when i do a `btrfs bal start -dconvert=raid1,soft /data` :
+dmesg: [560325.834835] btrfs: 184 enospc errors during balance
+
+Data, RAID10: total=428.57GiB, used=428.57GiB
+Data, RAID1: total=5.72TiB, used=5.18TiB
+System, RAID10: total=96.00MiB, used=880.00KiB
+Metadata, RAID10: total=12.38GiB, used=9.34GiB
+
+Label: data  uuid: a8626d67-4684-4b23-99b3-8d5fa8e7fd69
+	Total devices 6 FS bytes used 5.61TiB
+	devid    1 size 1.82TiB used 1.45TiB path /dev/sdg2
+	devid    2 size 1.82TiB used 1.44TiB path /dev/sdb2
+	devid    3 size 1.82TiB used 1.44TiB path /dev/sdf2
+	devid    5 size 2.73TiB used 2.35TiB path /dev/sdd2
+	devid    10 size 2.73TiB used 2.36TiB path /dev/sde2
+	devid    11 size 3.64TiB used 3.26TiB path /dev/sdc1
+
+so it looks like it did allocate all the space it needed, but still failed
+
+kernel is currently 3.13-rc7
+
+Remco
+
+
+> 
+> david
+
+
 

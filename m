@@ -1,105 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38488 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751369AbaAQXSb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 18:18:31 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W4IgG-0000Zb-8v
-	for linux-btrfs@vger.kernel.org; Sat, 18 Jan 2014 00:18:28 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 00:18:28 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 00:18:28 +0100
+Received: from ngcobalt08.manitu.net ([217.11.48.108]:60510 "EHLO
+	ngcobalt08.manitu.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751951AbaARAw7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jan 2014 19:52:59 -0500
+Received: from [172.22.99.183] (p4FF1D561.dip0.t-ipconnect.de [79.241.213.97])
+	(Authenticated sender: jseifert)
+	by ngcobalt08.manitu.net (Postfix) with ESMTPSA id AABC63A801E
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jan 2014 01:53:01 +0100 (CET)
+Message-ID: <52D9D061.1070100@dergleichrichter.de>
+Date: Sat, 18 Jan 2014 01:52:49 +0100
+From: Justus Seifert <justus.seifert@dergleichrichter.de>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: drawbacks of non-ECC RAM
-Date: Fri, 17 Jan 2014 23:18:02 +0000 (UTC)
-Message-ID: <pan$8d0bb$f4bae0c6$a4261ffd$c2bc88eb@cox.net>
-References: <1389983615.90027.YahooMailNeo@web172606.mail.ir2.yahoo.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <1389983615.90027.YahooMailNeo@web172606.mail.ir2.yahoo.com> <pan$8d0bb$f4bae0c6$a4261ffd$c2bc88eb@cox.net>
+In-Reply-To: <pan$8d0bb$f4bae0c6$a4261ffd$c2bc88eb@cox.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="lk4XmtVCdvckLhwdCcsdUVoOlJh0tOI6R"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-valleysmail-lol5@yahoo.de posted on Fri, 17 Jan 2014 18:33:35 +0000 as
-excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--lk4XmtVCdvckLhwdCcsdUVoOlJh0tOI6R
+Content-Type: multipart/mixed;
+ boundary="------------000109080709080302000708"
 
-> I'd like to know if there are drawbacks in using btrfs with non-ECC RAM
-> instead of using ext4 with non-ECC RAM. I know that some features of
-> btrfs may rely on ECC RAM 
+This is a multi-part message in MIME format.
+--------------000109080709080302000708
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-Crossed signals somewhere, as that's entirely incorrect.  Btrfs does have 
-date integrity checksumming as one of its features -- one which I'm using 
-here BTW with raid1 mode so there's two copies of everything, on 
-different devices, in case one goes bad -- but BTRFS IN NO WAY REQUIRES 
-ECC RAM.  ECC RAM is a hardware solution to a conceptually similar data 
-integrity problem in memory to the problem btrfs addresses as filesystem 
-software for non-volatile storage, but the two shouldn't be confused for 
-each other or conflated at all -- they're entirely separate in practice, 
-and one is hardware while the other is software.
+On 18.01.2014 00:18, Duncan wrote:
+> valleysmail-lol5@yahoo.de posted on Fri, 17 Jan 2014 18:33:35 +0000 as
+> excerpted:
+>=20
+>> I'd like to know if there are drawbacks in using btrfs with non-ECC RA=
+M
+>> instead of using ext4 with non-ECC RAM. I know that some features of
+>> btrfs may rely on ECC RAM=20
+>=20
+> Crossed signals somewhere, as that's entirely incorrect.  Btrfs does ha=
+ve=20
+> date integrity checksumming as one of its features -- one which I'm usi=
+ng=20
+> here BTW with raid1 mode so there's two copies of everything, on=20
+> different devices, in case one goes bad -- but BTRFS IN NO WAY REQUIRES=
+=20
+> ECC RAM.  ECC RAM is a hardware solution to a conceptually similar data=
+=20
+> integrity problem in memory to the problem btrfs addresses as filesyste=
+m=20
+> software for non-volatile storage, but the two shouldn't be confused fo=
+r=20
+> each other or conflated at all -- they're entirely separate in practice=
+,=20
+> and one is hardware while the other is software.
 
-> [...] but is the chance of data corruption or even a
-> damaged filesystem higher than when i use ext4 instead of btrfs?
+To be fair: Both problems are essentially hardware problems where data
+gets corrupted, but the solutions are different.  ECC is only used in
+systems where the additional cost for the hardware, energy (registered
+ECC-RAM uses more electricity than register-less non-ECC-RAM), and space
+(ECC-RAM is physically larger) is less than the cost of recovery in case
+of soft errors caused by non-ECC-RAM.  ECC-RAM does not offer a memory
+performance advantage.  See Wikipedia for more info about registered RAM
+and ECC-RAM.
+Raid1 uses more power and space as well, but also adds read performance.
+ So _there are reasons to use Raid1 besides resilience_.
 
-The chances of data corruption or a damaged filesystem are certainly not 
-higher on btrfs for that reason, because as I said, ECC memory is 
-entirely unrelated to btrfs data checksumming and integrity measures.
+> [=E2=80=A6]
 
-However, btrfs /is/ a rather less mature filesystem than ext4 ATM, and is 
-in fact just now beginning to stabilize.  As such, there are still bugs 
-being actively fixed, and as the warning in mkfs.btrfs says when you 
-create a filesystem, it's still critical to keep non-btrfs backups of 
-anything you value, AND actually test that you can recover from them, 
-because at this point, you just might hit one of those still existing 
-corner-case bugs and may very well need to do just that, recover from 
-backup!
 
-If that's concerning to you, then it's likely that btrfs isn't a good 
-choice as your filesystem at this point.  Perhaps in a year or so, as 
-2014 really does look to be the year that btrfs finally begins to really 
-stabilize, but not right now.
+--------------000109080709080302000708
+Content-Type: text/x-vcard; charset=utf-8;
+ name="justus_seifert.vcf"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="justus_seifert.vcf"
 
-> I want to know this because i would like to use the snapshot feature of
-> btrfs and ext4 does not support that. I will not use btrfs for fixing
-> silent data corruption nor for using RAID like features or encryption.
-> ZFS however checks files in the background (even if i don't want) and if
-> it thinks there is an error it will fix it and i cannot disable this
-> feature.
+YmVnaW46dmNhcmQNCmZuOkp1c3R1cyBTZWlmZXJ0DQpuOlNlaWZlcnQ7SnVzdHVzDQphZHI6
+Ozs7RHJlc2RlbjtTYXhvbnk7O0dlcm1hbnkNCmVtYWlsO2ludGVybmV0Omp1c3R1cy5zZWlm
+ZXJ0QGRlcmdsZWljaHJpY2h0ZXIuZGUNCnRlbDtjZWxsOis0OTE1NzMwNjQwNTA5DQp4LW1v
+emlsbGEtaHRtbDpGQUxTRQ0KdmVyc2lvbjoyLjENCmVuZDp2Y2FyZA0KDQo=
+--------------000109080709080302000708--
 
-> So errors in RAM may corrupt my files or even more.
+--lk4XmtVCdvckLhwdCcsdUVoOlJh0tOI6R
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-While it's possible to disable the checksumming in btrfs, and in fact 
-that and COW (copy-on-write) are recommended to be disabled for specific 
-use-cases (large "internal-write" files such as VM images, large 
-databases, and large pre-allocated files then filled in as the file gets 
-written, such as many bittorrent clients create) it's definitely *NOT* 
-recommended in general.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-And in fact, disabling COW would disable efficient snapshots usage as 
-well, so it's probably not what you want.
+iQIcBAEBAgAGBQJS2dBoAAoJELFJh75Z+IvIX4IP/3iPdgBgrb6w66yMG5imz2QE
+KbE8C44ADHLMxFwVEAdI8zlIxu1rErNSitCo1BNT15bTh/EQimz0fmfS7UcT2Pd5
+Ab1oTUV0cZQlPmEB2tCskPG8hQshqcqTnIHtFeFhDkjC8hJ83zIreu8PwMPJgjwH
+5Yjn5iiw49ScrmSZld1PWkncai50eOmC2wSuSvMpaCmqSe55mmMwW+dhlKKfb2wr
+7DpqdNkZEbur1bNC/qOyLeSNwn2iEMaSX8Z+7/EevHaEpx/w3ZGlnHJs10n+nVup
+k8iGM7cHIg85IdmDKtwRiNywlFaUZAmmCRviXSXQPptOxh/cV73iFfwhn6Duf3lx
+5H+DojVOBRhkZ3nGWjUFXV+LX5/sMhhLT+DWvaxB2jh01v6n91QVLn7WB1ulnQqA
+UNh7eiaNwM+vz1KGN6LFqjpNAod/EcjAcrxe8bB1LRGmxA0pxPrnxtSKn2RidZ8A
+3MjWnfZwBO8QTeb+VqvDf0IWgvuxVvzhLcGP/sFqYvRjen4n+xs25xcE8c1Ao4PJ
+1vYhXKs72PPeKO71ERnt21TmDA00wA+i12KeeR8cdT6hZZwHCX8f88MpOXjl6fQE
+d/I4wSQGGXJ9wkHyHh65QnjXOzMn7fHDPHb1iCRjm8OzTsxuDbuFXC5d48lgSc6r
+jERUHtD/WGBzHlT1dTck
+=4VOk
+-----END PGP SIGNATURE-----
 
-If you're after snapshotting ability without checksumming, I'd suggest 
-looking into something like LVM, which has snapshotting as one of its 
-major features, but without checksumming/data-integrity.  LVM is a 
-relatively mature technology that a number of distros use by default, and 
-you can use the ext4 that you're already familiar with and that is 
-reasonably mature as well, on top of LVM.
-
-However, I really think you need to do a bit more research, because it 
-appears you are rather confused about filesystem checksumming and data 
-integrity at the filesystem level, and are in fact conflating it with the 
-entirely separate hardware ECC data integrity at memory level.  The two 
-are entirely distinct, and data-integrity at the filesystem level 
-certainly isn't the bugbear you make it out to be, but rather, a vital 
-part of how some filesystems work, particularly as storage sizes reach 
-farther and farther into the multi-terabyte range.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--lk4XmtVCdvckLhwdCcsdUVoOlJh0tOI6R--

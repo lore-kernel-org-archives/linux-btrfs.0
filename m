@@ -1,74 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgateway3.uni-freiburg.de ([132.230.2.213]:36973 "EHLO
-	mailgateway3.uni-freiburg.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752337AbaASQb3 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42221 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751538AbaASSvj convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 11:31:29 -0500
-Date: Sun, 19 Jan 2014 17:31:25 +0100
-From: Martin Walter <mawa@uni-freiburg.de>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: usrquota
-Message-ID: <20140119163125.GA6905@rz.uni-freiburg.de>
-References: <20140117141841.GA2838@rz.uni-freiburg.de>
- <pan$195b9$80426a01$8783bbd1$4f640ee9@cox.net>
+	Sun, 19 Jan 2014 13:51:39 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Sir Civit <sircivit@yahoo.com>
+Subject: Re: btrfs-convert destroyed my system
+Date: Sun, 19 Jan 2014 19:51:37 +0100
+Message-ID: <4701079.A6ieFUm802@merkaba>
+In-Reply-To: <1390015849.15401.YahooMailNeo@web122606.mail.ne1.yahoo.com>
+References: <1390015849.15401.YahooMailNeo@web122606.mail.ne1.yahoo.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <pan$195b9$80426a01$8783bbd1$4f640ee9@cox.net>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 17, 2014 at 06:24:26PM +0000, Duncan wrote:
-> Martin Walter posted on Fri, 17 Jan 2014 15:18:41 +0100 as excerpted:
-> 
-> > Our problem is a zfs with 20,000 quota-enabled homedirectories and 100
-> > snapshots.
-> > We would really like to do the same with btrfs, but we don't know how to
-> > replace the zfs quotas with btrfs subvolume quotas. It seems unfeasible
-> > to handle 2,000,000 subvolumes.
-> > e.g. we would have to create every hour 20,000 snapshots and delete the
-> > same amount.
-> > 
-> > Is there any chance to get real user quotas with btrfs?
-> 
-> At present I'd suggest staying away from quotas on btrfs in any case, as 
-> there have been some serious bugs (quotas going negative with snapshot 
-> deletion, etc) in the way they're tracked.  I don't use quotas here so 
-> haven't closely followed status and perhaps the bugs are fixed, but never-
-> the-less, it's something I'd recommend staying away from for the time 
-> being.  Certainly for usage at that scale.  I'd suggest reexamining that 
-> decision perhaps a year from now, but it's simply not ready for that, now.
-> 
-> So I'd say stick with zfs for quota usage at that scale, for now.
-> 
-> On a more general note, btrfs is just beginning to stabilize in 
-> general... the kernel config warnings were just toned down for 3.13, 
-> etc.  However, as mkfs.btrfs warns when you create a btrfs filesystem, 
-> it's still not entirely stable.  This year should bring a lot of 
-> stabilization as development focus gradually switches from features to 
-> stabilization, but again, for production deployment at that scale, I'd 
-> suggest waiting a year and reexamining the question.
-> 
-> Of course you can still do pilot deployments now, but even more than with 
-> fully stable filesystems, be sure you have current and tested backups, 
-> because it's still possible you'll need to use them.  Also, using the 
-> current latest stable kernel (so 3.12.x currently, soon to be 3.13) if 
-> not the development kernel is still recommended, as critical fixes still 
-> go into every new kernel, and while they're marking more of them for 
-> stable now, not all of them reach stable.  Again, the warning was only 
-> toned down with 3.13, so from there I'd hope they backport stable fixes, 
-> but I wouldn't count on it before that.  And btrfs-tools, while less 
-> critical, is kernel-version synced from 3.12 as well, so you want a btrfs-
-> tools release at least reasonably comparable to your current kernel (v3.12 
-> current and minimum).
-> 
-> (This as just a user and list regular, not a dev, myself.)
+Am Freitag, 17. Januar 2014, 19:30:49 schrieben Sie:
+> To start off, I have an encrypted LVM setup with a root logical volume and a
+> home logical volume. Today decided to upgrade my home LV to btrfs for
+> compression. I installed btrfs-progs, unmounted /home, and ran
+> btrfs-convert /dev/MyVolumeGroup/home
+> and it completed with no errors reported. I rebooted my system, and I got a
+> "Welcome to emergency mode!" message. I rebooted into a live CD and found
 
-I am actually very happy with btrfs. I use it everywhere, where I need no userquotas.
-Unfortunately subvolume quotas are not a real substitute for userquotas.
-Hopefully the developers will implement it someday.
+Unless you changes fstab, I´d not be that surprised about this.
 
-In any case, many thanks,
-Martin
+> that all of my logical volumes were showing up, but almost all of them
+> showed status "NOT available". I ran vgck and lvck, both of which found no
+> errors. I ran lvscan and still /dev/MyVolumeGroup/ (and
+> /dev/mapper/MyVolumeGroup-*) contains only one of the LVs.
 
+>From the live CD you probably have to issue
 
+vgchange -ay
+
+to make all volumes available.
+
+> It seems that btrfs-convert possibly overwrote the LVM metadata somehow, but
+> I have no idea how since the argument was a logical volume. Even if I had
+> accidentally typed /dev/MyVolumeGroup, I would think that btrfs-convert
+> should have realized that it was not an ext2/3/4 filesystem.
+
+As to what I know this can´t be possible. A logical volume is a block device 
+which boundaries the kernel does guarantee. A userspace application should not 
+be able to write beyond these boundaries. Now it might by that part of the 
+conversion is happening in kernel, but I doubt it… and… I think even then the 
+kernel guarentees it unless the part of the kernel that does the writing 
+deliberately writes into completely different memory (then lots of bad things 
+could probably happen).
+
+> I tried mounting one of the "available" LVs, and got
+> mount: /dev/MyVolumeGroup/root is write-protected, mounting read only.
+> mount: special device /dev/MyVolumeGroup/root does not exist.
+
+What does dmesg say to this?
+
+> I've already
+> started a fresh installation due to time constraints, but I'd like to
+> find out why this happened and let everyone know about a potential bug.
+
+Do you have a backup?
+
+I strongly recommend making one directly before such a bold conversion.
+
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

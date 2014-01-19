@@ -1,39 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:45156 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751727AbaASThq convert rfc822-to-8bit (ORCPT
+Received: from atl4mhob11.myregisteredsite.com ([209.17.115.49]:57563 "EHLO
+	atl4mhob11.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751909AbaASUTy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 14:37:46 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Hendrik Friedel <hendrik@friedels.name>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfsck does not fix
-Date: Sun, 19 Jan 2014 20:37:31 +0100
-Message-ID: <6210673.6TYUkLGl6b@merkaba>
-In-Reply-To: <52D317CF.2070007@friedels.name>
-References: <52C7127F.3060902@friedels.name> <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com> <52D317CF.2070007@friedels.name>
+	Sun, 19 Jan 2014 15:19:54 -0500
+Received: from mailpod1.hostingplatform.com ([10.30.71.113])
+	by atl4mhob11.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s0JKJqX5024144
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Jan 2014 15:19:52 -0500
+Message-ID: <52DC3386.7020502@chinilu.com>
+Date: Sun, 19 Jan 2014 12:20:22 -0800
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs and ECC RAM
+References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de> <pan$a84be$d3729bcc$cd2b0fdb$783fe765@cox.net> <1420240.1BEopi7BrR@merkaba>
+In-Reply-To: <1420240.1BEopi7BrR@merkaba>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 12. Januar 2014, 23:31:43 schrieb Hendrik Friedel:
-> > It mounts OK with no kernel messages?
-> 
-> Yes. Here I mount the three subvolumes:
-
-Does scrubbing the volume give any errors?
-
-I´d test this. If scrubbing runs through without errors at least your data is 
-currently safe.
-
-As to the error messages: I do not know how critical those are.
-
-I usually just scrub my filesystems once in a while and would only try btrfs 
-check on one that fails the scrubbing or has problems mounting or (in some 
-cases) yields strange messages in dmesg.
-
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Just my opinion, of course, but I simply cannot imagine how "an 
+incorrect checksum could appear correct due to a memory error". Sorry, 
+but I just cannot get my brain around that one.  The odds against it 
+happening would be beyond comprehension.  I can easily imagine btrfs 
+taking a system down due to memory error, but not btrfs causing data 
+corruption due to a memory error.

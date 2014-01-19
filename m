@@ -1,102 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39612 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752374AbaASOrw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 09:47:52 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W4tfD-0000IL-3I
-	for linux-btrfs@vger.kernel.org; Sun, 19 Jan 2014 15:47:51 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jan 2014 15:47:51 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jan 2014 15:47:51 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: btrfs scrub ioprio
-Date: Sun, 19 Jan 2014 14:49:04 +0100
-Message-ID: <gn1tqa-i9d.ln1@hurikhan77.spdns.de>
-References: <5292C7F7.8010200@jrs-s.net> <pan.2013.11.26.00.50.14.749597@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mail-qa0-f44.google.com ([209.85.216.44]:53469 "EHLO
+	mail-qa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752314AbaASPtv convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 Jan 2014 10:49:51 -0500
+Received: by mail-qa0-f44.google.com with SMTP id w5so4803807qac.17
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jan 2014 07:49:51 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20140119140913.501c73e8@virtall.com>
+References: <20140119140913.501c73e8@virtall.com>
+Date: Sun, 19 Jan 2014 23:49:51 +0800
+Message-ID: <CAP9B-Qn1PChub2fbwL6Mv6mDt_h3jjYs8r+h28Z3=hOHzdwB=A@mail.gmail.com>
+Subject: Re: WARNING at fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2
+From: Shilong Wang <wangshilong1991@gmail.com>
+To: Tomasz Chmielewski <tch@virtall.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Holger Hoffstaette <holger.hoffstaette@googlemail.com> schrieb:
+Hello Tomasz,
 
-> On Sun, 24 Nov 2013 22:45:59 -0500, Jim Salter wrote:
-> 
->> TL;DR scrub's ioprio argument isn't really helpful - a scrub murders
->> system performance til it's done.
->> 
->> My system:
->> 
->> 3.11 kernel (from Ubuntu Saucy)
-> 
-> I don't run Ubuntu, but *maybe* they use the deadline IO scheduler by
-> default, which does not handle IO priorities (by design). So maybe make
-> sure your devices don't say "deadline" in /sys/block/sdX/queue/scheduler,
-> and if they do, set them to cfq.
+This seems a new bug, did you run balance and defragment concurrently for
+triggering the following warning?
 
-OTOH I've switched from CFQ to Deadline in Gentoo and IO responsiveness has 
-greatly improved since then (spinning rust). The system boots faster, is 
-able to start programs faster during IO stress, but swapping seems to stress 
-the system a lot more. But since I got 16 GB RAM this is not a big problem. 
-Throughput is not as good as with CFQ - but this is a desktop system: 
-latency counts more than throughput, and that improved a lot.
-
-I've tried BFQ before switching to Deadline but BFQ just does not cut it. 
-During high IO loads it simply does not feel interactive although it was 
-designed to guarantee exactly that. The fact that it also made my kernel 
-unstable (with bfq related backtraces in the kernel log) I've switched away 
-from it.
-
-But I have to admit that I'm using the following setting to reduce processes 
-blocking on high IO loads, tho you should have enough RAM to use it:
-
-$ cat /etc/local.d/nr_requests.start 
-#!/bin/sh
-
-for nr_requests in /sys/block/sd[abc]/queue/nr_requests; do
-        echo -n 4096 >$nr_requests
-done
-
-My btrfs pool spans sd[abc].
-
-I'm using a weekly scrubbing job and a daily rsync backup job and see no 
-drawbacks from using deadline scheduler, rather it improved a lot.
-
-@OP:
-
-I suggest looking at the surrounding parameters also for trouble shooting: 
-Maybe the SATA driver just doesn't cut it? Maybe a BIOS setting is wrong 
-(AHCI mode?)... Does your system run low on RAM (with deadline this can 
-become a heavy bottleneck)? Also, 3.12 kernel improved btrfs performance, 
-you may want to try that first.
-
-Did you check which IO scheduler is in use?
-
-BTW: Yes, Ubuntu has switched from CFQ to Deadline by default for servers 
-and desktops - with the same finding I had when trying. CFQ is more or less 
-optimized for the general usecase and tries to behave like the old 
-anticipatory scheduler, but it is designed with "fair" bandwidth 
-distribution in mind which hurts interactivity a lot. But desktop systems 
-feel fast by reducing latency, not by improving or fair-sharing bandwidth. 
-Most servers need low latency for good service response times, throughput is 
-not important. So deadline is not a bad choice for most use-cases (I know, 
-"most use-cases" is subjective but I think for the edge-cases which benefit 
-from CFQ the user already knows how to switch to the right scheduler). We've 
-switched all our virtualized servers from CFQ to noop and they are running a 
-lot better now with much decreased IO latency and lower IO wait. I think 
-"fair bandwidth distribution" is just no longer that important with devices 
-being able to deliver 100+ MB/s of bandwidth and low latency becomes more 
-and more important...
-
-But: YMMV... ;-)
-
-Regards,
-Kai
-
+Thanks,
+Wang
+2014/1/19 Tomasz Chmielewski <tch@virtall.com>:
+> Just had a few of these with 3.13.0-rc8:
+>
+> [262162.560701] ------------[ cut here ]------------
+> [262162.560764] WARNING: CPU: 0 PID: 22705 at fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2 [btrfs]()
+> [262162.560872] Modules linked in: ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand cpufreq_conservative cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor raid6_pq zlib_deflate loop pcspkr ehci_pci ehci_hcd button lpc_ich mfd_core i2c_i801 i2c_core video acpi_cpufreq ext4 crc16 jbd2 mbcache raid1 sg sd_mod ahci libahci libata r8169 mii scsi_mod
+> [262162.562685] CPU: 0 PID: 22705 Comm: btrfs-endio-wri Not tainted 3.13.0-rc8 #2
+> [262162.562796] Hardware name: System manufacturer System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
+> [262162.562911]  0000000000000009 ffff88009e911a78 ffffffff813898b7 0000000000000006
+> [262162.563028]  0000000000000000 ffff88009e911ab8 ffffffff810370a9 0100000000000846
+> [262162.563143]  ffffffffa02b7a6f ffff8807e7248090 ffff8807f2d5e000 ffff88009e911b40
+> [262162.563259] Call Trace:
+> [262162.563319]  [<ffffffff813898b7>] dump_stack+0x46/0x58
+> [262162.563382]  [<ffffffff810370a9>] warn_slowpath_common+0x77/0x91
+> [262162.563458]  [<ffffffffa02b7a6f>] ? find_parent_nodes+0x378/0x5d2 [btrfs]
+> [262162.563522]  [<ffffffff810370d8>] warn_slowpath_null+0x15/0x17
+> [262162.563595]  [<ffffffffa02b7a6f>] find_parent_nodes+0x378/0x5d2 [btrfs]
+> [262162.563671]  [<ffffffffa02b84dc>] iterate_extent_inodes+0xc9/0x1d6 [btrfs]
+> [262162.563748]  [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
+> [262162.563824]  [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
+> [262162.563899]  [<ffffffffa02b8668>] iterate_inodes_from_logical+0x7f/0x95 [btrfs]
+> [262162.564022]  [<ffffffffa0270919>] record_extent_backrefs+0x5b/0xc3 [btrfs]
+> [262162.564098]  [<ffffffffa0278f67>] btrfs_finish_ordered_io+0x77a/0x877 [btrfs]
+> [262162.564221]  [<ffffffffa0279074>] finish_ordered_fn+0x10/0x12 [btrfs]
+> [262162.564296]  [<ffffffffa02940d9>] worker_loop+0x15e/0x495 [btrfs]
+> [262162.564371]  [<ffffffffa0293f7b>] ? btrfs_queue_worker+0x269/0x269 [btrfs]
+> [262162.564437]  [<ffffffff8104ee9a>] kthread+0xcd/0xd5
+> [262162.564499]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
+> [262162.564563]  [<ffffffff8138e6fc>] ret_from_fork+0x7c/0xb0
+> [262162.564626]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
+> [262162.564689] ---[ end trace 50ae39e01ebd7394 ]---
+> [262162.564753] ------------[ cut here ]------------
+> [262162.564825] WARNING: CPU: 0 PID: 22705 at fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2 [btrfs]()
+> [262162.564939] Modules linked in: ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack ip_tables x_tables cpufreq_ondemand cpufreq_conservative cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor raid6_pq zlib_deflate loop pcspkr ehci_pci ehci_hcd button lpc_ich mfd_core i2c_i801 i2c_core video acpi_cpufreq ext4 crc16 jbd2 mbcache raid1 sg sd_mod ahci libahci libata r8169 mii scsi_mod
+> [262162.565348] CPU: 0 PID: 22705 Comm: btrfs-endio-wri Tainted: G        W    3.13.0-rc8 #2
+> [262162.565461] Hardware name: System manufacturer System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
+> [262162.565575]  0000000000000009 ffff88009e911a78 ffffffff813898b7 0000000000000006
+> [262162.565689]  0000000000000000 ffff88009e911ab8 ffffffff810370a9 ffff8807f33be200
+> [262162.565804]  ffffffffa02b7a6f ffff8807e7248090 ffff8807f2d5e000 ffff88009e911b40
+> [262162.565920] Call Trace:
+> [262162.565975]  [<ffffffff813898b7>] dump_stack+0x46/0x58
+> [262162.566037]  [<ffffffff810370a9>] warn_slowpath_common+0x77/0x91
+> [262162.566109]  [<ffffffffa02b7a6f>] ? find_parent_nodes+0x378/0x5d2 [btrfs]
+> [262162.566174]  [<ffffffff810370d8>] warn_slowpath_null+0x15/0x17
+> [262162.566247]  [<ffffffffa02b7a6f>] find_parent_nodes+0x378/0x5d2 [btrfs]
+> [262162.566321]  [<ffffffffa02b84dc>] iterate_extent_inodes+0xc9/0x1d6 [btrfs]
+> [262162.566396]  [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
+> [262162.566469]  [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
+> [262162.566544]  [<ffffffffa02b8668>] iterate_inodes_from_logical+0x7f/0x95 [btrfs]
+> [262162.566667]  [<ffffffffa0270919>] record_extent_backrefs+0x5b/0xc3 [btrfs]
+> [262162.566742]  [<ffffffffa0278f67>] btrfs_finish_ordered_io+0x77a/0x877 [btrfs]
+> [262162.566866]  [<ffffffffa0279074>] finish_ordered_fn+0x10/0x12 [btrfs]
+> [262162.566941]  [<ffffffffa02940d9>] worker_loop+0x15e/0x495 [btrfs]
+> [262162.567015]  [<ffffffffa0293f7b>] ? btrfs_queue_worker+0x269/0x269 [btrfs]
+> [262162.567080]  [<ffffffff8104ee9a>] kthread+0xcd/0xd5
+> [262162.567141]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
+> [262162.567205]  [<ffffffff8138e6fc>] ret_from_fork+0x7c/0xb0
+> [262162.567267]  [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
+> [262162.567330] ---[ end trace 50ae39e01ebd7395 ]---
+>
+>
+> --
+> Tomasz Chmielewski
+> http://wpkg.org
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,71 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:42221 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:34555 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751538AbaASSvj convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1751699AbaASTCo convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 13:51:39 -0500
+	Sun, 19 Jan 2014 14:02:44 -0500
 From: Martin Steigerwald <Martin@lichtvoll.de>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: Sir Civit <sircivit@yahoo.com>
-Subject: Re: btrfs-convert destroyed my system
-Date: Sun, 19 Jan 2014 19:51:37 +0100
-Message-ID: <4701079.A6ieFUm802@merkaba>
-In-Reply-To: <1390015849.15401.YahooMailNeo@web122606.mail.ne1.yahoo.com>
-References: <1390015849.15401.YahooMailNeo@web122606.mail.ne1.yahoo.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs and ECC RAM
+Date: Sun, 19 Jan 2014 20:02:41 +0100
+Message-ID: <1420240.1BEopi7BrR@merkaba>
+In-Reply-To: <pan$a84be$d3729bcc$cd2b0fdb$783fe765@cox.net>
+References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de> <pan$a84be$d3729bcc$cd2b0fdb$783fe765@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 17. Januar 2014, 19:30:49 schrieben Sie:
-> To start off, I have an encrypted LVM setup with a root logical volume and a
-> home logical volume. Today decided to upgrade my home LV to btrfs for
-> compression. I installed btrfs-progs, unmounted /home, and ran
-> btrfs-convert /dev/MyVolumeGroup/home
-> and it completed with no errors reported. I rebooted my system, and I got a
-> "Welcome to emergency mode!" message. I rebooted into a live CD and found
+Am Samstag, 18. Januar 2014, 07:16:42 schrieb Duncan:
+> Ian Hinder posted on Sat, 18 Jan 2014 01:23:41 +0100 as excerpted:
+> > I have been reading a lot of articles online about the dangers of using
+> > ZFS with non-ECC RAM.  Specifically, the fact that when good data is
+> > read from disk and compared with its checksum, a RAM error can cause the
+> > read data to be incorrect, causing a checksum failure, and the bad data
+> > might now be written back to the disk in an attempt to correct it,
+> > corrupting it in the process.  This would be exacerbated by a scrub,
+> > which could run through all your data and potentially corrupt it.  There
+> > is a strong current of opinion that using ZFS without ECC RAM is
+> > "suicide for your data".
+> > 
+> > I have been unable to find any discussion of the extent to which this is
+> > true for btrfs.  Does btrfs handle checksum errors in the same way as
+> > ZFS, or does it perform additional checks before writing "corrected"
+> > data back to disk?  For example, if it detects a checksum error, it
+> > could read the data again to a different memory location to determine
+> > if the error existed in the disk copy or the memory.
+> 
+> Given the license issues around zfs and linux, zfs is a non-starter for
+> me here, and as a result I've never looked particularly closely at how it
+> works, so I can't really say what it does with checksums or how that
+> compares to btrfs.
+> 
+> I /can/ however say that btrfs does /not/ work the way described above,
+> however.
+> 
+> When reading data from disk, btrfs will check the checksum.  If it shows
+> up as bad and btrfs has another copy of the data available (as it will in
+> dup, raid1 or raid10 mode, but not in single or raid0 mode, I'm not
+> actually sure how the newer and still not fully complete raid5 and raid6
+> modes work in that regard), btrfs will read the other copy and see if
+> that matches the checksum.  If it does, the good copy is used and the bad
+> copy is rewritten.  If no good copy exists, btrfs fails the read.
+> 
+> So while I don't know how zfs works and whether your scenario of
+> rewriting bad data due to checksum failure could happen there or not, it
+> can't happen with btrfs, because btrfs will only rewrite the data if it
+> has another copy that matches the checksum.  Otherwise it (normally)
+> fails the read entirely.
 
-Unless you changes fstab, I´d not be that surprised about this.
+I think Ian refers to the slight chance that BTRFS assumes the checksum on one 
+disk to be incorrect due to a memory error *and* on another disk to be correct 
+due to another memory error *and* will silently rewrite the incorrect data to 
+the correct data.
 
-> that all of my logical volumes were showing up, but almost all of them
-> showed status "NOT available". I ran vgck and lvck, both of which found no
-> errors. I ran lvscan and still /dev/MyVolumeGroup/ (and
-> /dev/mapper/MyVolumeGroup-*) contains only one of the LVs.
+AFAIK BTRFS still does not correct such errors automatically, but only on a 
+scrub. There this *could* happen theoretically.
 
->From the live CD you probably have to issue
+My gut feeling is, that this is highly, highly unlikely.
 
-vgchange -ay
+At least not more likely than a controller writing out garbage or other such 
+hardware issues.
 
-to make all volumes available.
+And for hardware issues there are backups.
 
-> It seems that btrfs-convert possibly overwrote the LVM metadata somehow, but
-> I have no idea how since the argument was a logical volume. Even if I had
-> accidentally typed /dev/MyVolumeGroup, I would think that btrfs-convert
-> should have realized that it was not an ext2/3/4 filesystem.
+I´d probably like if all computers had ECC RAM, but then I heard more than 
+once that ECC doesn´t even detect all possible memory errors.
 
-As to what I know this can´t be possible. A logical volume is a block device 
-which boundaries the kernel does guarantee. A userspace application should not 
-be able to write beyond these boundaries. Now it might by that part of the 
-conversion is happening in kernel, but I doubt it… and… I think even then the 
-kernel guarentees it unless the part of the kernel that does the writing 
-deliberately writes into completely different memory (then lots of bad things 
-could probably happen).
+Maybe at one point the kernel will be able to checksum memory pages itself?
 
-> I tried mounting one of the "available" LVs, and got
-> mount: /dev/MyVolumeGroup/root is write-protected, mounting read only.
-> mount: special device /dev/MyVolumeGroup/root does not exist.
+Actually I only once had a memory error in a machine which went completely 
+undetected under Windows XP, but let Debian and Ubuntu installers segfault at 
+random places. This was years ago. I have never notices a memory error since 
+then and I am not aware of any co-workers having had memory errors on their 
+laptops. But then… those are usually enterprise grade laptops, which to my 
+knowledge nonetheless just use RAM without ECC. I don´t think that this 
+ThinkPad T520 uses ECC RAM.
 
-What does dmesg say to this?
-
-> I've already
-> started a fresh installation due to time constraints, but I'd like to
-> find out why this happened and let everyone know about a potential bug.
-
-Do you have a backup?
-
-I strongly recommend making one directly before such a bold conversion.
-
-Thanks,
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

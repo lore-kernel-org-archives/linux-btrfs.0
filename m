@@ -1,59 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41457 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750721AbaATFow (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jan 2014 00:44:52 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W57fG-0005Ma-LK
-	for linux-btrfs@vger.kernel.org; Mon, 20 Jan 2014 06:44:50 +0100
-Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 06:44:50 +0100
-Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 06:44:50 +0100
-To: linux-btrfs@vger.kernel.org
-From: Roger Binns <rogerb@rogerbinns.com>
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:61031 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752581AbaATM1u (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jan 2014 07:27:50 -0500
+Received: by mail-ig0-f180.google.com with SMTP id m12so7796751iga.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 04:27:49 -0800 (PST)
+Message-ID: <52DD148E.3060200@gmail.com>
+Date: Mon, 20 Jan 2014 07:20:30 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: Toggenburger Lukas <Lukas.Toggenburger@htwchur.ch>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Working on Btrfs as topic for master thesis
-Date: Sun, 19 Jan 2014 21:44:39 -0800
-Message-ID: <lbid3r$1ui$1@ger.gmane.org>
 References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
 In-Reply-To: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 2014-01-16 14:23, Toggenburger Lukas wrote:
+> Hi all
+> 
+> I'm a student of ICT currently doing my master's degree besides working as a research assistant. Currently I'm looking for topics for my master thesis. One of my ideas was to work on Btrfs. I studied the list of project ideas at https://btrfs.wiki.kernel.org/index.php/Project_ideas and am especially interested in working on one of the following topics:
+> 
+> 1. (Enhanced) hot spare support as described in https://btrfs.wiki.kernel.org/index.php/Project_ideas#Hot_spare_support and https://btrfs.wiki.kernel.org/index.php/Project_ideas#.22Enhanced.22_.28ala_RAID.29_support
+> 
+> 2. Adding more checksumming algorithms ( https://btrfs.wiki.kernel.org/index.php/Project_ideas#More_checksumming_algorithms )
+> 
+> 3. Improving subvolume handling regarding taking recursive snapshots ( https://btrfs.wiki.kernel.org/index.php/Project_ideas#Take_recursive_snapshots ) and taking snapshots of arbitrary directories ( https://btrfs.wiki.kernel.org/index.php/Project_ideas#Snapshot_arbitrary_directories )
 
-On 16/01/14 11:23, Toggenburger Lukas wrote:
-> One of my ideas was to work on Btrfs.
+Another option that I would personally love to see would be support for
+write-mostly devices (that is, devices in a RAID1/RAID10 setup that only
+get written too unless the data can't be found elsewhere).  This would
+in particular provide an alternative to using bcache/dm-cache (namely an
+SSD and HDD in RAID1 with the HDD set to write-mostly).
+Based on the current development focus, I don't think anybody is working
+on this already (I would be, but I don't have either the time or the
+skills with kernel programming that would be needed).
 
-One thing I would like see it automatic backup copies of data.  For
-example if you are only using 10% of the total space then make an
-additional 9 copies of the data in the free space (low priority in the
-background).  As more space is used reclaim that dup/free space.  The
-principle especially applies when you have more than one device.
-
-The goal is to ensure that all the space is used, and that there is the
-maximum probability of data recovery.
-
-If you are more interested in the theoretical side then looking into
-compression would be interesting.  ie how close to the theoretical best
-compression are we.  Various filesystems like btrfs and NTFS make all
-sorts of compromises in algorithm choices but also especially in the size
-of blocks they compress.  How much better could be done?
-
-Roger
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iEYEARECAAYFAlLct8cACgkQmOOfHg372QTiNACgs1WNJF1tCM5boWP8L3obD0jU
-4qsAnAjANq6TE6Gh5ATNbEGTmoA6/W+s
-=YnrI
------END PGP SIGNATURE-----
 

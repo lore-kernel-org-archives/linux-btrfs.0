@@ -1,141 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:38261 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752055AbaASVrD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Jan 2014 16:47:03 -0500
-Date: Sun, 19 Jan 2014 22:46:54 +0100
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Shilong Wang <wangshilong1991@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: WARNING at fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2
-Message-ID: <20140119224654.4e600232@virtall.com>
-In-Reply-To: <CAP9B-Qn1PChub2fbwL6Mv6mDt_h3jjYs8r+h28Z3=hOHzdwB=A@mail.gmail.com>
-References: <20140119140913.501c73e8@virtall.com>
-	<CAP9B-Qn1PChub2fbwL6Mv6mDt_h3jjYs8r+h28Z3=hOHzdwB=A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-pd0-f171.google.com ([209.85.192.171]:47152 "EHLO
+	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752193AbaATARI convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 19 Jan 2014 19:17:08 -0500
+Received: by mail-pd0-f171.google.com with SMTP id g10so5420613pdj.30
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jan 2014 16:17:08 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
+References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
+Date: Mon, 20 Jan 2014 01:17:08 +0100
+Message-ID: <CAPpBBdNfxchPw0DCLxNNoFZc5jGec88Q5j0C-uGy88oae0TDiw@mail.gmail.com>
+Subject: Re: btrfs and ECC RAM
+From: George Eleftheriou <eleftg@gmail.com>
+To: Ian Hinder <ian.hinder@aei.mpg.de>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No balance was running. The usual rsync and btrfs snapshots; I'm unable
-to say when exactly it happened (i.e. if it was during rsync or snapshot
-adding/removal).
+I have been wondering the same thing for quite some time after having
+read this post (which makes a pretty clear case in favour of ECC
+RAM)...
 
-As of defragment - I didn't run it manually, but I have autodefrag
-option enabled:
+hxxp://forums.freenas.org/threads/ecc-vs-non-ecc-ram-and-zfs.15449/
 
-/dev/sdc1 on /mnt/lxc2 type btrfs
-(rw,noatime,compress-force=zlib,space_cache,autodefrag)
+... and the ZFS on Linux FAQ
+hxxp://zfsonlinux.org/faq.html#DoIHaveToUseECCMemory
 
+Moreover, the ZFS community seem to cite this article quite often:
+hxxp://research.cs.wisc.edu/adsl/Publications/zfs-corruption-fast10.pdf
 
--- 
-Tomasz Chmielewski
+Without having further knowledge on that matter, I tend to believe
+(but I hope I'm wrong) that BTRFS is as vulnerable as ZFS to memory
+errors. Since I upgraded recently, it's a bit too late for purchasing
+ECC-capable infrastructure (change of CPU + motherboard + RAM) so I
+just chose to ignore this risk by performing a memtest86 right before
+every scrub (and having my regular backups ready). I've been using ZFS
+on Linux for almost 5 months (having occasional issues with kernel
+updates) until last week that I finally switched to BTRFS and I'm
+happy.
 
+As for the reliability of ECC RAM (from what I've read about it) it's
+just that it corrects single-bit errors and it immediately halts the
+system when it finds multi-bit errors.
 
-On Sun, 19 Jan 2014 23:49:51 +0800
-Shilong Wang <wangshilong1991@gmail.com> wrote:
-
-> Hello Tomasz,
-> 
-> This seems a new bug, did you run balance and defragment concurrently
-> for triggering the following warning?
-> 
-> Thanks,
-> Wang
-> 2014/1/19 Tomasz Chmielewski <tch@virtall.com>:
-> > Just had a few of these with 3.13.0-rc8:
-> >
-> > [262162.560701] ------------[ cut here ]------------
-> > [262162.560764] WARNING: CPU: 0 PID: 22705 at
-> > fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2 [btrfs]()
-> > [262162.560872] Modules linked in: ipt_MASQUERADE iptable_nat
-> > nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-> > ip_tables x_tables cpufreq_ondemand cpufreq_conservative
-> > cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor
-> > raid6_pq zlib_deflate loop pcspkr ehci_pci ehci_hcd button lpc_ich
-> > mfd_core i2c_i801 i2c_core video acpi_cpufreq ext4 crc16 jbd2
-> > mbcache raid1 sg sd_mod ahci libahci libata r8169 mii scsi_mod
-> > [262162.562685] CPU: 0 PID: 22705 Comm: btrfs-endio-wri Not tainted
-> > 3.13.0-rc8 #2 [262162.562796] Hardware name: System manufacturer
-> > System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
-> > [262162.562911]  0000000000000009 ffff88009e911a78 ffffffff813898b7
-> > 0000000000000006 [262162.563028]  0000000000000000 ffff88009e911ab8
-> > ffffffff810370a9 0100000000000846 [262162.563143]  ffffffffa02b7a6f
-> > ffff8807e7248090 ffff8807f2d5e000 ffff88009e911b40 [262162.563259]
-> > Call Trace: [262162.563319]  [<ffffffff813898b7>]
-> > dump_stack+0x46/0x58 [262162.563382]  [<ffffffff810370a9>]
-> > warn_slowpath_common+0x77/0x91 [262162.563458]
-> > [<ffffffffa02b7a6f>] ? find_parent_nodes+0x378/0x5d2 [btrfs]
-> > [262162.563522]  [<ffffffff810370d8>] warn_slowpath_null+0x15/0x17
-> > [262162.563595]  [<ffffffffa02b7a6f>] find_parent_nodes+0x378/0x5d2
-> > [btrfs] [262162.563671]  [<ffffffffa02b84dc>]
-> > iterate_extent_inodes+0xc9/0x1d6 [btrfs] [262162.563748]
-> > [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
-> > [262162.563824]  [<ffffffffa0270981>] ?
-> > record_extent_backrefs+0xc3/0xc3 [btrfs] [262162.563899]
-> > [<ffffffffa02b8668>] iterate_inodes_from_logical+0x7f/0x95 [btrfs]
-> > [262162.564022]  [<ffffffffa0270919>]
-> > record_extent_backrefs+0x5b/0xc3 [btrfs] [262162.564098]
-> > [<ffffffffa0278f67>] btrfs_finish_ordered_io+0x77a/0x877 [btrfs]
-> > [262162.564221]  [<ffffffffa0279074>] finish_ordered_fn+0x10/0x12
-> > [btrfs] [262162.564296]  [<ffffffffa02940d9>]
-> > worker_loop+0x15e/0x495 [btrfs] [262162.564371]
-> > [<ffffffffa0293f7b>] ? btrfs_queue_worker+0x269/0x269 [btrfs]
-> > [262162.564437]  [<ffffffff8104ee9a>] kthread+0xcd/0xd5
-> > [262162.564499]  [<ffffffff8104edcd>] ?
-> > kthread_freezable_should_stop+0x43/0x43 [262162.564563]
-> > [<ffffffff8138e6fc>] ret_from_fork+0x7c/0xb0 [262162.564626]
-> > [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
-> > [262162.564689] ---[ end trace 50ae39e01ebd7394 ]---
-> > [262162.564753] ------------[ cut here ]------------
-> > [262162.564825] WARNING: CPU: 0 PID: 22705 at
-> > fs/btrfs/backref.c:936 find_parent_nodes+0x378/0x5d2 [btrfs]()
-> > [262162.564939] Modules linked in: ipt_MASQUERADE iptable_nat
-> > nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-> > ip_tables x_tables cpufreq_ondemand cpufreq_conservative
-> > cpufreq_powersave cpufreq_stats bridge stp llc ipv6 btrfs xor
-> > raid6_pq zlib_deflate loop pcspkr ehci_pci ehci_hcd button lpc_ich
-> > mfd_core i2c_i801 i2c_core video acpi_cpufreq ext4 crc16 jbd2
-> > mbcache raid1 sg sd_mod ahci libahci libata r8169 mii scsi_mod
-> > [262162.565348] CPU: 0 PID: 22705 Comm: btrfs-endio-wri Tainted:
-> > G        W    3.13.0-rc8 #2 [262162.565461] Hardware name: System
-> > manufacturer System Product Name/P8H77-M PRO, BIOS 1101 02/04/2013
-> > [262162.565575]  0000000000000009 ffff88009e911a78 ffffffff813898b7
-> > 0000000000000006 [262162.565689]  0000000000000000 ffff88009e911ab8
-> > ffffffff810370a9 ffff8807f33be200 [262162.565804]  ffffffffa02b7a6f
-> > ffff8807e7248090 ffff8807f2d5e000 ffff88009e911b40 [262162.565920]
-> > Call Trace: [262162.565975]  [<ffffffff813898b7>]
-> > dump_stack+0x46/0x58 [262162.566037]  [<ffffffff810370a9>]
-> > warn_slowpath_common+0x77/0x91 [262162.566109]
-> > [<ffffffffa02b7a6f>] ? find_parent_nodes+0x378/0x5d2 [btrfs]
-> > [262162.566174]  [<ffffffff810370d8>] warn_slowpath_null+0x15/0x17
-> > [262162.566247]  [<ffffffffa02b7a6f>] find_parent_nodes+0x378/0x5d2
-> > [btrfs] [262162.566321]  [<ffffffffa02b84dc>]
-> > iterate_extent_inodes+0xc9/0x1d6 [btrfs] [262162.566396]
-> > [<ffffffffa0270981>] ? record_extent_backrefs+0xc3/0xc3 [btrfs]
-> > [262162.566469]  [<ffffffffa0270981>] ?
-> > record_extent_backrefs+0xc3/0xc3 [btrfs] [262162.566544]
-> > [<ffffffffa02b8668>] iterate_inodes_from_logical+0x7f/0x95 [btrfs]
-> > [262162.566667]  [<ffffffffa0270919>]
-> > record_extent_backrefs+0x5b/0xc3 [btrfs] [262162.566742]
-> > [<ffffffffa0278f67>] btrfs_finish_ordered_io+0x77a/0x877 [btrfs]
-> > [262162.566866]  [<ffffffffa0279074>] finish_ordered_fn+0x10/0x12
-> > [btrfs] [262162.566941]  [<ffffffffa02940d9>]
-> > worker_loop+0x15e/0x495 [btrfs] [262162.567015]
-> > [<ffffffffa0293f7b>] ? btrfs_queue_worker+0x269/0x269 [btrfs]
-> > [262162.567080]  [<ffffffff8104ee9a>] kthread+0xcd/0xd5
-> > [262162.567141]  [<ffffffff8104edcd>] ?
-> > kthread_freezable_should_stop+0x43/0x43 [262162.567205]
-> > [<ffffffff8138e6fc>] ret_from_fork+0x7c/0xb0 [262162.567267]
-> > [<ffffffff8104edcd>] ? kthread_freezable_should_stop+0x43/0x43
-> > [262162.567330] ---[ end trace 50ae39e01ebd7395 ]---
-> >
-> >
-> > --
-> > Tomasz Chmielewski
-> > http://wpkg.org
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe
-> > linux-btrfs" in the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+On Sat, Jan 18, 2014 at 1:23 AM, Ian Hinder <ian.hinder@aei.mpg.de> wrote:
+> Hi,
+>
+> I have been reading a lot of articles online about the dangers of using ZFS with non-ECC RAM.  Specifically, the fact that when good data is read from disk and compared with its checksum, a RAM error can cause the read data to be incorrect, causing a checksum failure, and the bad data might now be written back to the disk in an attempt to correct it, corrupting it in the process.  This would be exacerbated by a scrub, which could run through all your data and potentially corrupt it.  There is a strong current of opinion that using ZFS without ECC RAM is "suicide for your data".
+>
+> I have been unable to find any discussion of the extent to which this is true for btrfs.  Does btrfs handle checksum errors in the same way as ZFS, or does it perform additional checks before writing "corrected" data back to disk?  For example, if it detects a checksum error, it could read the data again to a different memory location to determine if the error existed in the disk copy or the memory.
+>
+> From what I've been reading, it sounds like ZFS should not be used with non-ECC RAM.  This is reasonable, as ZFS' resource requirements mean that you probably only want to run it on server-grade hardware anyway.  But with btrfs eventually being the default filesystem for Linux, that would mean that all linux machines, even cheap consumer-grade hardware, would need ECC RAM, or forego many of the advantages of btrfs.
+>
+> What is the situation?
+>
+> --
+> Ian Hinder
+> http://numrel.aei.mpg.de/people/hinder
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

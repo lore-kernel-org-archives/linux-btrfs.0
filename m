@@ -1,95 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37427 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751740AbaATQNq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jan 2014 11:13:46 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W5HTp-0002UT-QX
-	for linux-btrfs@vger.kernel.org; Mon, 20 Jan 2014 17:13:41 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 17:13:41 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 17:13:41 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs and ECC RAM
-Date: Mon, 20 Jan 2014 16:13:18 +0000 (UTC)
-Message-ID: <pan$36f1b$8300c6a3$5960d52c$7e050399@cox.net>
-References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
-	<CAPpBBdNfxchPw0DCLxNNoFZc5jGec88Q5j0C-uGy88oae0TDiw@mail.gmail.com>
-	<52DC9453.4000705@gmail.com>
-	<96091903-E1B0-4455-9EDC-EF94EE2E5110@aei.mpg.de>
+Received: from mail-qe0-f42.google.com ([209.85.128.42]:46476 "EHLO
+	mail-qe0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751917AbaATQvh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jan 2014 11:51:37 -0500
+Received: by mail-qe0-f42.google.com with SMTP id i11so3173503qej.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 08:51:37 -0800 (PST)
+Message-ID: <1390236695.1869.3.camel@sasami.ottawa.blindsidenetworks.com>
+Subject: Re: Confirmation on how btrfs works with RAID and single.
+From: Calvin Walton <mailing-lists@kepstin.ca>
+To: "G. Michael Carter" <mikey@carterfamily.ca>
+Cc: linux-btrfs@vger.kernel.org
+Date: Mon, 20 Jan 2014 11:51:35 -0500
+In-Reply-To: <CANjusZdjBTzreOTc3xvNeiu-LOBzbO2kLCOmjn=m19B-76m67w@mail.gmail.com>
+References: <CANjusZdjBTzreOTc3xvNeiu-LOBzbO2kLCOmjn=m19B-76m67w@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ian Hinder posted on Mon, 20 Jan 2014 15:57:42 +0100 as excerpted:
-
-> In hxxp://forums.freenas.org/threads/ecc-vs-non-ecc-ram-and-zfs.15449,
-> they talk about reconstructing corrupted data from parity information:
+On Mon, 2014-01-20 at 10:43 -0500, G. Michael Carter wrote:
+> I'm pretty sure I know the answers but just wanted confirmation.
 > 
->> Ok, no problem. ZFS will check against its parity. Oops, the parity
->> failed since we have a new corrupted bit. Remember, the checksum data
->> was calculated after the corruption from the first memory error
->> occurred. So now the parity data is used to "repair" the bad data. So
->> the data is "fixed" in RAM.
 > 
-> i.e. that there is parity information stored with every piece of data,
-> and ZFS will "correct" errors automatically from the parity information.
-> I start to suspect that there is confusion here between checksumming
-> for data integrity and parity information.  If this is really how ZFS
-> works, then if memory corruption interferes with this process, then I
-> can see how a scrub could be devastating.  I don't know if ZFS really
-> works like this.  It sounds very odd to do this without an additional
-> checksum check.
+> RAID1:  When it reads does it read from only one disk or does it try
+> to read from multiple disks?
 
-Good point on the difference between parity and checksumming.
+The current implementation of RAID1 on btrfs will, with a single process
+reading, only read from one disk. If there are multiple processes
+reading, it can have one process read from one disk and one process read
+from another (the algorithm for this still needs tuning, though.)
 
-I've absolutely no confirmation of this, but privately I've begun to 
-wonder if this difference has anything at all to do with the delay in 
-getting "complete" raid5/6 support in btrfs, including scrub; if once 
-they actually started working with it, they realized that the traditional 
-parity solution of raid5/6 didn't end up working out so well with 
-checksumming, such that in an ungraceful shutdown/crash situation, if the 
-crash happened at just the wrong point, if the parity and checksumming 
-would actually fight each other, such that restoring one (presumably 
-parity, since it'd be the lower level, closer to the metal) triggered a 
-failure of the other (presumably the checksumming, existing above the 
-parity).
+> Single:  When it writes does it simple fill up one drive then move to
+> the next or does it write in a round robin type fashion?
 
-That could trigger all sorts of issues that I suppose to be solvable in 
-theory, but said theory is well beyond me, and could well invite complex 
-coding issues that are incredibly difficult to resolve in a satisfactory 
-way, thus the hiccup in getting /complete/ btrfs raid5/6 support, even 
-when the basic parity calculation and write-out as been in-kernel for 
-several kernel cycles already, and was available as patches from well 
-before that.
+I'm not totally sure, this depends on the vagaries of the chunk
+allocator. When writing only new files to an initially blank filesystem,
+I would expect this to be a case; but on a used filesystem you will
+probably get files fragmented over both disks.
 
-If that's correct (and again, I've absolutely nothing but the delay and 
-personal intuition to back it up, and the delay in itself means little, 
-as it seems most btrfs features have taken longer to complete than 
-originally planned, such that btrfs as a whole is now years behind the 
-originally it turned out wildly optimistic plan, meaning it's simply 
-personal intuition, and as I'm not a dev that should mean approximately 
-nothing to anyone else, so take it for what it's worth...), then 
-ultimately we may end up with btrfs raid5/6 modes that end up being 
-declared usable, but that come with lower integrity and checksumming 
-guarantees (particularly across device failure and replace) than those 
-that normally apply to btrfs in other configurations.  At least for the 
-btrfs initially considered stable.  Perhaps down the road a few years a 
-more advanced btrfs raid5/6 implementation, with better integrity/
-checksumming guarantees, would become available.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Perhaps zfs has a similar parity mode, as opposed to real checksumming, 
-but has real checksumming in other modes?
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

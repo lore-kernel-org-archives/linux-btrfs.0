@@ -1,86 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from umail.aei.mpg.de ([194.94.224.6]:38448 "EHLO umail.aei.mpg.de"
+Received: from umail.aei.mpg.de ([194.94.224.6]:42577 "EHLO umail.aei.mpg.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750807AbaATO5p convert rfc822-to-8bit (ORCPT
+	id S1750758AbaATP17 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jan 2014 09:57:45 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfs and ECC RAM
+	Mon, 20 Jan 2014 10:27:59 -0500
+Received: from [172.16.22.49] (unknown [172.16.22.49])
+	by umail.aei.mpg.de (Postfix) with ESMTPSA id 11D3B200C6C
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 16:27:58 +0100 (CET)
 From: Ian Hinder <ian.hinder@aei.mpg.de>
-In-Reply-To: <52DC9453.4000705@gmail.com>
-Date: Mon, 20 Jan 2014 15:57:42 +0100
-Cc: George Eleftheriou <eleftg@gmail.com>, linux-btrfs@vger.kernel.org
-Message-Id: <96091903-E1B0-4455-9EDC-EF94EE2E5110@aei.mpg.de>
-References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de> <CAPpBBdNfxchPw0DCLxNNoFZc5jGec88Q5j0C-uGy88oae0TDiw@mail.gmail.com> <52DC9453.4000705@gmail.com>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: Re: btrfs and ECC RAM
+Message-Id: <A206B26E-5CB3-4507-9177-7E7A7DE73FBB@aei.mpg.de>
+Date: Mon, 20 Jan 2014 16:27:57 +0100
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(apologies for messing up the threading; I thought I could get away with not subscribing.  I've subscribed now.)
 
-On 20 Jan 2014, at 04:13, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+> Martin Steigerwald <Martin <at> lichtvoll.de> wrote:Am Samstag, 18. Januar 2014, 07:16:42 schrieb :
+> I think Ian refers to the slight chance that BTRFS assumes the checksum on one 
+> disk to be incorrect due to a memory error 
+> *and*
+>  on another disk to be correct 
+> due to another memory error 
+> *and*
+>  will silently rewrite the incorrect data to 
+> the correct data.
+> 
+> AFAIK BTRFS still does not correct such errors automatically, but only on a 
+> scrub. There this 
+> *could*
+>  happen theoretically.
+> 
+> My gut feeling is, that this is highly, highly unlikely.
+> 
+> At least not more likely than a controller writing out garbage or other such 
+> hardware issues.
 
-> On 01/19/2014 07:17 PM, George Eleftheriou wrote:
->> I have been wondering the same thing for quite some time after
->> having read this post (which makes a pretty clear case in favour of
->> ECC RAM)...
->> 
->> hxxp://forums.freenas.org/threads/ecc-vs-non-ecc-ram-and-zfs.15449/
->> 
->> ... and the ZFS on Linux FAQ 
->> hxxp://zfsonlinux.org/faq.html#DoIHaveToUseECCMemory
->> 
->> Moreover, the ZFS community seem to cite this article quite often: 
->> hxxp://research.cs.wisc.edu/adsl/Publications/zfs-corruption-fast10.pdf
->> 
->> Without having further knowledge on that matter, I tend to
->> believe (but I hope I'm wrong) that BTRFS is as vulnerable as ZFS
->> to memory errors. Since I upgraded recently, it's a bit too late
->> for purchasing ECC-capable infrastructure (change of CPU +
->> motherboard + RAM) so I just chose to ignore this risk by
->> performing a memtest86 right before every scrub (and having my
->> regular backups ready). I've been using ZFS on Linux for almost 5
->> months (having occasional issues with kernel updates) until last
->> week that I finally switched to BTRFS and I'm happy.
-> AFAIK, ZFS does background data scrubbing without user intervention
-> (which on a separate note can make it a huge energy hog) to correct
-> on-disk errors.  For performance reasons though, it has no built-in
-> check to make sure that there really is an error, it just assumes that
-> if the checksum is wrong, the data on the disk must be wrong.  This is
-> fine for enterprise level hardware with ECC RAM, because the disk IS
-> more likely to be wrong in that case than the RAM is.  This assumption
-> falls apart though on commodity hardware (ie, no ECC RAM), hence the
-> warnings about using ZFS without ECC RAM.
+Actually, I hadn't fully understood this scenario; I was just asking because of what some of the ZFS people were saying.  
 
-In hxxp://forums.freenas.org/threads/ecc-vs-non-ecc-ram-and-zfs.15449, they talk about reconstructing corrupted data from parity information:
+To clarify, what you describe could happen like this (is this what you meant?):
 
-> Ok, no problem. ZFS will check against its parity. Oops, the parity failed since we have a new corrupted bit. Remember, the checksum data was calculated after the corruption from the first memory error occurred. So now the parity data is used to "repair" the bad data. So the data is "fixed" in RAM.
+- Checksum is computed
+- Checksum and data written to locations A and B, but location B suffers a memory corruption of the data en-route (maybe in some intermediate buffer) so is stored incorrectly on disk
+- btrfs scrub then reads A, but suffers a memory error, and thinks the good data is bad
+- Hence B is read, but another memory error causes the checksum to pass
+- Since the checksum passed, B is written to A, overwriting the data
 
-i.e. that there is parity information stored with every piece of data, and ZFS will "correct" errors automatically from the parity information.  I start to suspect that there is confusion here between checksumming for data integrity and parity information.  If this is really how ZFS works, then if memory corruption interferes with this process, then I can see how a scrub could be devastating.  I don't know if ZFS really works like this.  It sounds very odd to do this without an additional checksum check.  This sounds very different to what you say below that btrfs does, which is only to check against redundantly-stored copies, which I agree sounds much safer.  
+This requires a collision in the checksumming algorithm, so I don't think we need to worry about this case. It's at least as what could happen by chance with a random disk error, but the chance is negligible.
 
-The second link above from the ZFS FAQ just says that if you place a very high value on data integrity, you should be using ECC memory anyway, which I'm sure we can all agree with.
-
-hxxp://zfsonlinux.org/faq.html#DoIHaveToUseECCMemory:
-
-> 1.16 Do I have to use ECC memory for ZFS?
-> Using ECC memory for ZFS is strongly recommended for enterprise environments where the strongest data integrity guarantees are required. Without ECC memory rare random bit flips caused by cosmic rays or by faulty memory can go undetected. If this were to occur ZFS (or any other filesystem) will write the damaged data to disk and be unable to automatically detect the corruption.
-
-i.e. if the data is bad in RAM, the checksumming in ZFS isn't going to help you, but it also isn't going to make things worse.  It doesn't say that a scrub can kill all your data, like the previous link does.  
-
-In hxxp://research.cs.wisc.edu/adsl/Publications/zfs-corruption-fast10.pdf, they essentially say that memory errors can cause problems, and it would be nice if filesystems used their checksumming to also checksum memory locations etc, which would help to detect and mitigate these.
-
-On 20 Jan 2014, at 04:13, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
-
-> BTRFS however works differently, it only scrubs data when you tell it
-> to.  If it encounters a checksum or read error on a data block, it
-> first tries to find another copy of that block elsewhere (usually on
-> another disk), if it still sees a wrong checksum there, or gets
-> another read error, or can't find another copy, then it returns a read
-> error to userspace, usually resulting in the program reading the data
-> crashing.  In most environments other than HA clustering, this is an
-> excellent compromise that still protects data integrity.
-
-Yes, this sounds fine.
+Another possibility is that A and B are both correctly written.  A memory error then happen when reading A from disk, triggering a read of B, which passes its checksum.  B is then written to A, but another memory error in some buffer causes a corruption.  This doesn't require a checksum collision, just frequent memory errors.  But it could indeed lead to trashing the whole FS during a scrub if memory errors are sufficiently frequent perhaps?  If you have memory errors occurring sufficiently frequently that you get two errors while processing a single block during a scrub, then your memory is probably very far gone.  On the other hand, if btrfs is reusing the same two memory buffers for reads and writes, and you happen to have errors in those buffers, then maybe this isn't so unlikely?  This could maybe be mitigated by cancelling the scrub if there are too many errors requiring rewrites.  
 
 -- 
 Ian Hinder

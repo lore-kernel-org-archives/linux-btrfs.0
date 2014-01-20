@@ -1,184 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18324 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751326AbaAQNDI (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:42808 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750721AbaATFpk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jan 2014 08:03:08 -0500
-From: Koen De Wit <koen.de.wit@oracle.com>
+	Mon, 20 Jan 2014 00:45:40 -0500
+Date: Mon, 20 Jan 2014 16:45:33 +1100
+From: Dave Chinner <david@fromorbit.com>
 To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, Koen De Wit <koen.de.wit@oracle.com>,
-        Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH RESEND] xfstests: btrfs/030: sparse copy between different filesystems/mountpoints
-Date: Fri, 17 Jan 2014 14:02:57 +0100
-Message-Id: <1389963777-29051-1-git-send-email-koen.de.wit@oracle.com>
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [ANNOUNCE] xfstests updated to 3099791
+Message-ID: <20140120054533.GA13997@dastard>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check if creating a sparse copy ("reflink") of a file on btrfs
-expectedly fails when it's done between different filesystems or
-different mount points of the same filesystem.
+Hi all,
 
-For both situations, these actions are executed:
-   - Copy a file with the reflink=auto option.
-     A normal copy should be created.
-   - Copy a file with the reflink=always option. Should result in
-     error.
+The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
+just been updated. Patches often get missed, so please check if your
+outstanding patches were in this update. If they have not been in
+this update, please resubmit them to xfs@oss.sgi.com so they can be
+picked up in the next update.
 
-[sandeen: mostly cosmetic changes]
+Note that I didn't pull in the tmpfs support patch series this time
+around as I'm not sure the discussions ever came to a conclusion
+before xmas/new year/LCA intervened. That will need to be picked up
+again...
 
-Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+The new head of the master branch is commit:
 
-Originally submitted as test 301, btrfs/311
+3099791 btrfs: sparse copy between different filesystems/mountpoints
 
-The functions _require_cp_reflink() and _verify_reflink() in common/rc
-have been submitted with btrfs/027
+New Commits:
 
-diff --git a/tests/btrfs/030 b/tests/btrfs/030
-new file mode 100644
-index 0000000..7bbc89a
---- /dev/null
-+++ b/tests/btrfs/030
-@@ -0,0 +1,108 @@
-+#! /bin/bash
-+# FS QA Test No. 030
-+#
-+# Check if creating a sparse copy ("reflink") of a file on btrfs
-+# expectedly fails when it's done between different filesystems or
-+# different mount points of the same filesystem.
-+#
-+# For both situations, these actions are executed:
-+#    - Copy a file with the reflink=auto option.
-+#      A normal copy should be created.
-+#    - Copy a file with the reflink=always option. Should result in
-+#      error.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    umount $SCRATCH_MNT &>/dev/null
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+
-+_require_scratch
-+_require_cp_reflink
-+
-+SOURCE_DIR=$TEST_DIR/test-$seq
-+CROSS_DEV_DIR=$SCRATCH_MNT/test-$seq
-+# mount point & target for twice-mounted device
-+TEST_DIR2=$TEST_DIR/mount2
-+DUAL_MOUNT_DIR=$SCRATCH_MNT/test-bis-$seq
-+
-+rm -rf $SOURCE_DIR
-+mkdir $SOURCE_DIR
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $SOURCE_DIR/original \
-+ >> $seqres.full
-+
-+_filter_testdirs()
-+{
-+    _filter_test_dir | _filter_scratch
-+}
-+
-+_create_reflinks_to()
-+{
-+    # auto reflink, should fall back to non-reflink
-+    rm -rf $1; mkdir $1
-+    echo "reflink=auto:"
-+    cp --reflink=auto $SOURCE_DIR/original $1/copy
-+    md5sum $SOURCE_DIR/original | _filter_testdirs
-+    md5sum $1/copy | _filter_testdirs
-+
-+    # always reflink, should fail outright
-+    rm -rf $1; mkdir $1
-+    echo "reflink=always:"
-+    cp --reflink=always $SOURCE_DIR/original $1/copyfail \
-+        2>&1 | _filter_testdirs
-+
-+    # The failed target actually gets created by cp:
-+    ls $1/copyfail | _filter_testdirs
-+}
-+
-+echo "test reflinks across different devices"
-+_scratch_mount
-+_create_reflinks_to $CROSS_DEV_DIR
-+_scratch_unmount
-+
-+echo "test reflinks across different mountpoints of same device"
-+mount $TEST_DEV $SCRATCH_MNT || _fail "Couldn't double-mount $TEST_DEV"
-+_create_reflinks_to $DUAL_MOUNT_DIR
-+umount $SCRATCH_MNT
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/030.out b/tests/btrfs/030.out
-new file mode 100644
-index 0000000..923a6e1
---- /dev/null
-+++ b/tests/btrfs/030.out
-@@ -0,0 +1,15 @@
-+QA output created by 030
-+test reflinks across different devices
-+reflink=auto:
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-030/original
-+42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-030/copy
-+reflink=always:
-+cp: failed to clone 'SCRATCH_MNT/test-030/copyfail': Invalid cross-device link
-+SCRATCH_MNT/test-030/copyfail
-+test reflinks across different mountpoints of same device
-+reflink=auto:
-+42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-030/original
-+42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-bis-030/copy
-+reflink=always:
-+cp: failed to clone 'SCRATCH_MNT/test-bis-030/copyfail': Invalid cross-device link
-+SCRATCH_MNT/test-bis-030/copyfail
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 87e7bca..9231f7b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -27,3 +27,4 @@
- 022 auto
- 023 auto
- 024 auto quick
-+030 auto quick
+Anand Jain (2):
+      [83adc23] btrfs/006: fails with mixed-mode/small disks
+      [7cb5299] btrfs/001: filter subvol delete output
+
+David Sterba (3):
+      [9ced657] Makefile: fix minor build warning
+      [d7e5b7f] check: accept tests/ prefix for test name on commandline
+      [a050cb0] lsqa.pl: update for new tests layout
+
+Eric Sandeen (2):
+      [94d3f77] xfs/049, 073: use MKFS_XFS_PROG where appropriate
+      [6571cea] xfstests: allow override of XFS_IOC_DIOINFO
+
+Filipe David Borba Manana (1):
+      [74643fc] btrfs: test send issue with non-aligned clone operations
+
+Jeff Mahoney (1):
+      [99b3a9a] aio-stress: use calloc for thread_info array
+
+Jie Liu (4):
+      [2086933] common: introduce two pre-checkup routines for xfs crc specified testing
+      [cc92a95] xfs: refactor xfs/299 for crc feature pre-checkup
+      [b42851e] xfs: verify turn group/project quotas off while user quotas is on
+      [9645d9a] xfs: disable group/project quotas along with fsstress
+
+Koen De Wit (4):
+      [c8d9f19] btrfs: simple sparse copy testcase for btrfs
+      [890bc11] btrfs: sparse copy of a directory tree on btrfs
+      [9b48c97] btrfs: moving and deleting sparse copies on btrfs
+      [3099791] btrfs: sparse copy between different filesystems/mountpoints
+
+Lukas Czerner (3):
+      [a056ab7] common: Filter out lost+found directory from _ls_l() output
+      [1a98c8b] generic/322: use _filter_scratch()
+      [3128e9c] generic/321, 322: do not remove lost+found
+
+Miao Xie (1):
+      [5aafebc] common: Enhance the scratch dev pool and deletable device check
+
+Wang Shilong (1):
+      [d1d43f6] btrfs/022: fix failed case with qgroup limit test
+
+
+Code Diffstat:
+
+ Makefile              |   3 +-
+ check                 |   3 +-
+ common/filter         |   6 +++
+ common/filter.btrfs   |  11 +++++
+ common/rc             |  63 ++++++++++++++++++++++++-----
+ lsqa.pl               |  32 +++++++++++----
+ ltp/aio-stress.c      |   4 +-
+ ltp/doio.c            |  12 ++++++
+ ltp/fsstress.c        |  12 ++++++
+ ltp/iogen.c           |  10 +++++
+ src/unwritten_sync.c  |   5 +++
+ tests/btrfs/001       |   3 +-
+ tests/btrfs/003       |   2 +-
+ tests/btrfs/011       |   2 +-
+ tests/btrfs/022       |  20 ++++++++--
+ tests/btrfs/025       |  98 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/025.out   |  18 +++++++++
+ tests/btrfs/026       |  90 +++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/026.out   |  16 ++++++++
+ tests/btrfs/027       | 107 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/027.out   |  25 ++++++++++++
+ tests/btrfs/028       |  81 +++++++++++++++++++++++++++++++++++++
+ tests/btrfs/028.out   |   7 ++++
+ tests/btrfs/029       | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/029.out   |  15 +++++++
+ tests/btrfs/group     |   5 +++
+ tests/generic/321     |   2 +-
+ tests/generic/322     |  10 ++---
+ tests/generic/322.out |   8 ++--
+ tests/xfs/049         |   2 +-
+ tests/xfs/073         |   2 +-
+ tests/xfs/299         |  14 ++-----
+ tests/xfs/299.out     |   1 -
+ tests/xfs/304         |  86 ++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/304.out     |   7 ++++
+ tests/xfs/305         |  89 +++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/305.out     |   7 ++++
+ tests/xfs/group       |   2 +
+ 38 files changed, 937 insertions(+), 51 deletions(-)
+
 -- 
-1.7.1
-
+Dave Chinner
+david@fromorbit.com

@@ -1,54 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.fh-htwchur.ch ([193.5.58.4]:32659 "EHLO
-	mail01.fh-htwchur.ch" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752032AbaARMtn convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 18 Jan 2014 07:49:43 -0500
-From: Toggenburger Lukas <Lukas.Toggenburger@htwchur.ch>
-To: Tomasz Torcz <tomek@pipebreaker.pl>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Working on Btrfs as topic for master thesis
-Date: Sat, 18 Jan 2014 12:50:54 +0000
-Message-ID: <8E968DF3B7EC0D40B67B5A9D25675A6A0400BF@MBXSRV03EDU.edu.local>
-References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>,<20140117160436.GA3356@mother.pipebreaker.pl>
-In-Reply-To: <20140117160436.GA3356@mother.pipebreaker.pl>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:41457 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750721AbaATFow (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jan 2014 00:44:52 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W57fG-0005Ma-LK
+	for linux-btrfs@vger.kernel.org; Mon, 20 Jan 2014 06:44:50 +0100
+Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 06:44:50 +0100
+Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 06:44:50 +0100
+To: linux-btrfs@vger.kernel.org
+From: Roger Binns <rogerb@rogerbinns.com>
+Subject: Re: Working on Btrfs as topic for master thesis
+Date: Sun, 19 Jan 2014 21:44:39 -0800
+Message-ID: <lbid3r$1ui$1@ger.gmane.org>
+References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Tomasz
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> Have you considered per-file/per-directory selection of raid level?
+On 16/01/14 11:23, Toggenburger Lukas wrote:
+> One of my ideas was to work on Btrfs.
 
-Sounds great, I haven't thought about it before.
+One thing I would like see it automatic backup copies of data.  For
+example if you are only using 10% of the total space then make an
+additional 9 copies of the data in the free space (low priority in the
+background).  As more space is used reclaim that dup/free space.  The
+principle especially applies when you have more than one device.
 
-Do you or someone else know what the current state of development is? Is someone working on this?
+The goal is to ensure that all the space is used, and that there is the
+maximum probability of data recovery.
 
-Lukas
+If you are more interested in the theoretical side then looking into
+compression would be interesting.  ie how close to the theoretical best
+compression are we.  Various filesystems like btrfs and NTFS make all
+sorts of compromises in algorithm choices but also especially in the size
+of blocks they compress.  How much better could be done?
 
+Roger
 
-________________________________________
-From: linux-btrfs-owner@vger.kernel.org [linux-btrfs-owner@vger.kernel.org] on behalf of Tomasz Torcz [tomek@pipebreaker.pl]
-Sent: Friday, January 17, 2014 5:04 PM
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Working on Btrfs as topic for master thesis
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
 
-On Thu, Jan 16, 2014 at 07:23:18PM +0000, Toggenburger Lukas wrote:
-> Hi all
-> I'm a student of ICT currently doing my master's degree besides working as
-> a research assistant. Currently I'm looking for topics for my master thesis.
-> One of my ideas was to work on Btrfs. I studied the list of project ideas at
-> https://btrfs.wiki.kernel.org/index.php/Project_ideas and am especially
-> interested in working on one of the following topics:
+iEYEARECAAYFAlLct8cACgkQmOOfHg372QTiNACgs1WNJF1tCM5boWP8L3obD0jU
+4qsAnAjANq6TE6Gh5ATNbEGTmoA6/W+s
+=YnrI
+-----END PGP SIGNATURE-----
 
-  Have you considered per-file/per-directory selection of raid level?
-
---
-Tomasz Torcz                 "God, root, what's the difference?"
-xmpp: zdzichubg@chrome.pl         "God is more forgiving."
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

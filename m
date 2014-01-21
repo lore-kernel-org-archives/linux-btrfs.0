@@ -1,45 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19461 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754230AbaAULlT (ORCPT
+Received: from mail-we0-f172.google.com ([74.125.82.172]:57770 "EHLO
+	mail-we0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750824AbaAUX46 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 06:41:19 -0500
-From: Koen De Wit <koen.de.wit@oracle.com>
+	Tue, 21 Jan 2014 18:56:58 -0500
+Received: by mail-we0-f172.google.com with SMTP id q58so8797984wes.31
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 15:56:57 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, Koen De Wit <koen.de.wit@oracle.com>
-Subject: [PATCH RESEND] xfstests: btrfs: cross-subvolume sparse copy
-Date: Tue, 21 Jan 2014 12:40:48 +0100
-Message-Id: <1390304448-25752-1-git-send-email-koen.de.wit@oracle.com>
+Cc: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs incremental send infinite loop issue
+Date: Tue, 21 Jan 2014 23:56:50 +0000
+Message-Id: <1390348610-8098-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This testscript creates reflinks to files on different subvolumes,
-overwrites the original files and reflinks, and moves reflinked files
-between subvolumes.
+Regression test for btrfs' incremental send feature:
 
-Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
+1) Create several nested directories;
+
+2) Create a read only snapshot;
+
+3) Change the parentship of some of the deepest directories in a reverse
+   way, so that parents become children and children become parents;
+
+4) Create another read only snapshot and use it for an incremental send
+   relative to the first snapshot.
+
+At step 4 btrfs' send entered an infinite loop, increasing the memory it
+used while building path strings until a krealloc was unable to allocate
+more memory, which caused a warning dump in dmesg.
+
+The following linux kernel patch fixes this issue.
+
+   Btrfs: fix infinite path build loops in incremental send
+   (https://patchwork.kernel.org/patch/3521191/)
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-
-Originally submitted as test 302, btrfs/316
+ tests/btrfs/030     |  140 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/030.out |    9 ++++
+ tests/btrfs/group   |    1 +
+ 3 files changed, 150 insertions(+)
+ create mode 100755 tests/btrfs/030
+ create mode 100644 tests/btrfs/030.out
 
 diff --git a/tests/btrfs/030 b/tests/btrfs/030
-new file mode 100644
-index 0000000..5ebc555
+new file mode 100755
+index 0000000..a492877
 --- /dev/null
 +++ b/tests/btrfs/030
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,140 @@
 +#! /bin/bash
-+# FS QA Test No. 030
++# FS QA Test No. btrfs/030
 +#
-+# Testing cross-subvolume sparse copy on btrfs
-+#    - Create two subvolumes, mount one of them
-+#    - Create a file on each (sub/root)volume,
-+#      reflink them on the other volumes
-+#    - Change one original and two reflinked files
-+#    - Move reflinked files between subvolumes
++# Regression test for btrfs' incremental send feature:
++#
++# 1) Create several nested directories;
++# 2) Create a read only snapshot;
++# 3) Change the parentship of some of the deepest directories in a reverse
++#    way, so that parents become children and children become parents;
++# 4) Create another read only snapshot and use it for an incremental send
++#    relative to the first snapshot.
++#
++# At step 4 btrfs' send entered an infinite loop, increasing the memory it
++# used while building path strings until a krealloc was unable to allocate
++# more memory, which caused a warning dump in dmesg.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -54,24 +84,20 @@ index 0000000..5ebc555
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
++#
 +
 +seq=`basename $0`
++seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
++tmp=`mktemp -d`
++status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+    umount $SCRATCH_MNT
-+    rm -rf $TESTDIR1
-+    rm -rf $TESTDIR2
-+    btrfs subvolume delete $SUBVOL1 >> $seqres.full
-+    btrfs subvolume delete $SUBVOL2 >> $seqres.full
-+    cd /
-+    rm -f $tmp.*
++    rm -fr $tmp
 +}
 +
 +# get standard environment, filters and checks
@@ -81,144 +107,106 @@ index 0000000..5ebc555
 +# real QA test starts here
 +_supported_fs btrfs
 +_supported_os Linux
-+
 +_require_scratch
-+_require_cp_reflink
++_need_to_be_root
 +
-+_checksum_files() {
-+    for F in file1 file2 file3
-+    do
-+        echo "$F:"
-+        for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
-+        do
-+            _md5_checksum $D/$F
-+        done
-+    done
-+}
++FSSUM_PROG=$here/src/fssum
++[ -x $FSSUM_PROG ] || _notrun "fssum not built"
 +
-+TESTDIR1=$TEST_DIR/test-$seq-1
-+TESTDIR2=$TEST_DIR/test-$seq-2
-+SUBVOL1=$TEST_DIR/subvol-$seq-1
-+SUBVOL2=$TEST_DIR/subvol-$seq-2
++rm -f $seqres.full
 +
-+_scratch_unmount 2>/dev/null
-+rm -rf $seqres.full
-+rm -rf $TESTDIR1 $TESTDIR2
-+btrfs subvol delete $SUBVOL1 >/dev/null 2>&1
-+btrfs subvol delete $SUBVOL2 >/dev/null 2>&1
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
 +
-+mkdir $TESTDIR1
-+mkdir $TESTDIR2
-+btrfs subvolume create $SUBVOL1 >> $seqres.full
-+btrfs subvolume create $SUBVOL2 >> $seqres.full
-+_mount -t btrfs -o subvol=subvol-$seq-1 $TEST_DEV $SCRATCH_MNT
 +
-+echo "Create initial files"
-+# TESTDIR1/file1 is very small and will be inlined
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 10' $TESTDIR1/file1 \
-+    >> $seqres.full
-+$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $SCRATCH_MNT/file2 \
-+    >> $seqres.full
-+$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $SUBVOL2/file3 \
-+    >> $seqres.full
++mkdir -p $SCRATCH_MNT/a/b/c
++echo "hello" > $SCRATCH_MNT/a/b/c/file.txt
++mkdir $SCRATCH_MNT/a/b/c/d
++mkdir $SCRATCH_MNT/a/b/c2
++mkdir -p $SCRATCH_MNT/a/b/c3/x/y
 +
-+echo "Create reflinks to the initial files on other subvolumes"
-+cp --reflink $TESTDIR1/file1 $SUBVOL1
-+cp --reflink $TESTDIR1/file1 $SUBVOL2
-+cp --reflink $SUBVOL1/file2 $TESTDIR1/
-+cp --reflink $SUBVOL1/file2 $SUBVOL2
-+cp --reflink $SUBVOL2/file3 $TESTDIR1/
-+cp --reflink $SUBVOL2/file3 $SUBVOL1
++# Directory tree looks like:
++#
++# .                         (ino 256)
++# |-- a/                    (ino 257)
++#     |-- b/                (ino 258)
++#         |-- c/            (ino 259)
++#         |   |-- file.txt  (ino 260)
++#         |   |-- d/        (ino 261)
++#         |
++#         |-- c2/           (ino 262)
++#         |
++#         |-- c3/           (ino 263)
++#             |-- x/        (ino 264)
++#                 |-- y/    (ino 265)
 +
-+echo "Verify the reflinks"
-+_verify_reflink $SCRATCH_MNT/file2 $TESTDIR1/file2
-+_verify_reflink $SCRATCH_MNT/file2 $SUBVOL2/file2
-+_verify_reflink $SUBVOL2/file3 $TESTDIR1/file3
-+_verify_reflink $SUBVOL2/file3 $SCRATCH_MNT/file3
-+echo "Verify the file contents:"
-+_checksum_files
++$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1 | \
++    _filter_scratch
 +
-+echo -e "---\nOverwrite some files with new content"
-+$XFS_IO_PROG -c 'pwrite -S 0x64 0 20' $TESTDIR1/file1 >> $seqres.full
-+$XFS_IO_PROG -c 'pwrite -S 0x66 0 21000' $SUBVOL2/file2 >> $seqres.full
-+$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $SCRATCH_MNT/file3 \
-+    >> $seqres.full
++echo " world" >> $SCRATCH_MNT/a/b/c/file.txt
++mv $SCRATCH_MNT/a/b/c/d $SCRATCH_MNT/a/b/c2/d2
++mv $SCRATCH_MNT/a/b/c $SCRATCH_MNT/a/b/c2/d2/cc
++mv $SCRATCH_MNT/a/b/c3/x/y $SCRATCH_MNT/a/b/c2/y2
++mv $SCRATCH_MNT/a/b/c3/x $SCRATCH_MNT/a/b/c2/y2/x2
++mv $SCRATCH_MNT/a/b/c3 $SCRATCH_MNT/a/b/c2/y2/x2/Z
++ln $SCRATCH_MNT/a/b/c2/d2/cc/file.txt $SCRATCH_MNT/a/b/c2/y2/x2/Z/file_link.txt
++mv $SCRATCH_MNT/a/b/c2/d2/cc/file.txt $SCRATCH_MNT/a/b/c2/y2/x2
 +
-+echo -n "Verify that non-overwritten reflinks "
-+echo "still have the same data blocks"
-+_verify_reflink $TESTDIR1/file2 $SCRATCH_MNT/file2
-+_verify_reflink $TESTDIR1/file3 $SUBVOL2/file3
-+echo "Verify the file contents:"
-+_checksum_files
++# Directory tree now looks like:
++#
++# .                                         (ino 256)
++# |-- a/                                    (ino 257)
++#     |-- b/                                (ino 258)
++#         |-- c2/                           (ino 262)
++#             |-- d2/                       (ino 261)
++#             |   |-- cc/                   (ino 259)
++#             |        |-- file.txt         (ino 260)
++#             |-- y2/                       (ino 265)
++#                 |-- x2/                   (ino 264)
++#                     |-- Z/                (ino 263)
++#                         |-- file_link.txt
 +
-+echo -e "---\nShuffle files between directories"
-+mv $TESTDIR1/file* $TESTDIR2
-+mv $SCRATCH_MNT/file* $TESTDIR1/
-+mv $SUBVOL2/file* $SCRATCH_MNT/
-+mv $TESTDIR2/file* $SUBVOL2/
++$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2 | \
++    _filter_scratch
 +
-+# No _verify_reflink here as data is copied when moving files
-+# between subvols
-+echo "Verify the file contents:"
-+_checksum_files
++$FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/mysnap1
++$FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/mysnap2/mysnap1 \
++    $SCRATCH_MNT/mysnap2
 +
-+# success, all done
++$BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap 2>&1 | _filter_scratch
++$BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++    -f $tmp/2.snap 2>&1 | _filter_scratch
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
++$FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/mysnap1
++$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
++$FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/mysnap2
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++
 +status=0
 +exit
 diff --git a/tests/btrfs/030.out b/tests/btrfs/030.out
 new file mode 100644
-index 0000000..050ae0b
+index 0000000..2999f8c
 --- /dev/null
 +++ b/tests/btrfs/030.out
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,9 @@
 +QA output created by 030
-+Create initial files
-+Create reflinks to the initial files on other subvolumes
-+Verify the reflinks
-+Verify the file contents:
-+file1:
-+e09c80c42fda55f9d992e59ca6b3307d
-+e09c80c42fda55f9d992e59ca6b3307d
-+e09c80c42fda55f9d992e59ca6b3307d
-+file2:
-+d7402b46310fbbfbc5e466b1dccb043b
-+d7402b46310fbbfbc5e466b1dccb043b
-+d7402b46310fbbfbc5e466b1dccb043b
-+file3:
-+5a95800e4c04b11117aa4e4de057721f
-+5a95800e4c04b11117aa4e4de057721f
-+5a95800e4c04b11117aa4e4de057721f
-+---
-+Overwrite some files with new content
-+Verify that non-overwritten reflinks still have the same data blocks
-+Verify the file contents:
-+file1:
-+00d620f69f30327f0f8946b95c12de44
-+e09c80c42fda55f9d992e59ca6b3307d
-+e09c80c42fda55f9d992e59ca6b3307d
-+file2:
-+d7402b46310fbbfbc5e466b1dccb043b
-+d7402b46310fbbfbc5e466b1dccb043b
-+917619ae44b38bb9968af261c3c45440
-+file3:
-+5a95800e4c04b11117aa4e4de057721f
-+b9f275cd638cb784c9e61def94c622a8
-+5a95800e4c04b11117aa4e4de057721f
-+---
-+Shuffle files between directories
-+Verify the file contents:
-+file1:
-+e09c80c42fda55f9d992e59ca6b3307d
-+e09c80c42fda55f9d992e59ca6b3307d
-+00d620f69f30327f0f8946b95c12de44
-+file2:
-+d7402b46310fbbfbc5e466b1dccb043b
-+917619ae44b38bb9968af261c3c45440
-+d7402b46310fbbfbc5e466b1dccb043b
-+file3:
-+b9f275cd638cb784c9e61def94c622a8
-+5a95800e4c04b11117aa4e4de057721f
-+5a95800e4c04b11117aa4e4de057721f
++Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap1'
++Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/mysnap2'
++At subvol SCRATCH_MNT/mysnap1
++At subvol SCRATCH_MNT/mysnap2
++At subvol mysnap1
++OK
++At snapshot mysnap2
++OK
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index 8eb8c4f..3f61799 100644
 --- a/tests/btrfs/group
@@ -229,5 +217,5 @@ index 8eb8c4f..3f61799 100644
  029 auto quick
 +030 auto quick
 -- 
-1.7.1
+1.7.9.5
 

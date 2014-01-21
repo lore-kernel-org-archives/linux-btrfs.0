@@ -1,44 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49167 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754942AbaAUR4L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 12:56:11 -0500
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:54351 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754942AbaAUSD2 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Jan 2014 13:03:28 -0500
+Received: by mail-pd0-f175.google.com with SMTP id w10so3236748pde.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 10:03:27 -0800 (PST)
+Received: from [10.2.10.160] (206.214.244.2.epikip.net. [206.214.244.2])
+        by mx.google.com with ESMTPSA id pe3sm14409874pbc.23.2014.01.21.10.03.27
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Tue, 21 Jan 2014 10:03:27 -0800 (PST)
+From: Graham Fleming <graham.fleming@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: RE: Scrubbing with BTRFS Raid 5
+Message-Id: <DC8CDADE-5C7A-4DA3-8081-EB631136621B@gmail.com>
+Date: Tue, 21 Jan 2014 10:03:26 -0800
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/2] btrfs: sysfs: list the NO_HOLES feature
-Date: Tue, 21 Jan 2014 18:56:09 +0100
-Message-Id: <ad4794d0db7ed08e2967e7a1391ce3d37d78bf46.1390326770.git.dsterba@suse.cz>
-In-Reply-To: <cover.1390326770.git.dsterba@suse.cz>
-References: <cover.1390326770.git.dsterba@suse.cz>
+Mime-Version: 1.0 (Mac OS X Mail 7.1 \(1827\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/sysfs.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Thanks again for the added info; very helpful.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 1a893860d66b..782374d8fd19 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -202,6 +202,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(big_metadata, BIG_METADATA);
- BTRFS_FEAT_ATTR_INCOMPAT(extended_iref, EXTENDED_IREF);
- BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
- BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
-+BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
- 
- static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
-@@ -212,6 +213,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(extended_iref),
- 	BTRFS_FEAT_ATTR_PTR(raid56),
- 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
-+	BTRFS_FEAT_ATTR_PTR(no_holes),
- 	NULL
- };
- 
--- 
-1.7.9
-
+I want to keep playing around with BTRFSS RAID 5 and testing with it... assuming I have a drive with bad blocks, or let's say some inconsistent parity am I right in assuming that a) a btrfs scrub operation will not fix the stripes with bad parity and b) a balance operation will not be successful? Or would a balance operation work to re-write parity?

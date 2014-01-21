@@ -1,124 +1,233 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:42808 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750721AbaATFpk (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:19461 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754230AbaAULlT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jan 2014 00:45:40 -0500
-Date: Mon, 20 Jan 2014 16:45:33 +1100
-From: Dave Chinner <david@fromorbit.com>
+	Tue, 21 Jan 2014 06:41:19 -0500
+From: Koen De Wit <koen.de.wit@oracle.com>
 To: xfs@oss.sgi.com
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests updated to 3099791
-Message-ID: <20140120054533.GA13997@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Koen De Wit <koen.de.wit@oracle.com>
+Subject: [PATCH RESEND] xfstests: btrfs: cross-subvolume sparse copy
+Date: Tue, 21 Jan 2014 12:40:48 +0100
+Message-Id: <1390304448-25752-1-git-send-email-koen.de.wit@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+This testscript creates reflinks to files on different subvolumes,
+overwrites the original files and reflinks, and moves reflinked files
+between subvolumes.
 
-The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
-just been updated. Patches often get missed, so please check if your
-outstanding patches were in this update. If they have not been in
-this update, please resubmit them to xfs@oss.sgi.com so they can be
-picked up in the next update.
+Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
+---
 
-Note that I didn't pull in the tmpfs support patch series this time
-around as I'm not sure the discussions ever came to a conclusion
-before xmas/new year/LCA intervened. That will need to be picked up
-again...
+Originally submitted as test 302, btrfs/316
 
-The new head of the master branch is commit:
-
-3099791 btrfs: sparse copy between different filesystems/mountpoints
-
-New Commits:
-
-Anand Jain (2):
-      [83adc23] btrfs/006: fails with mixed-mode/small disks
-      [7cb5299] btrfs/001: filter subvol delete output
-
-David Sterba (3):
-      [9ced657] Makefile: fix minor build warning
-      [d7e5b7f] check: accept tests/ prefix for test name on commandline
-      [a050cb0] lsqa.pl: update for new tests layout
-
-Eric Sandeen (2):
-      [94d3f77] xfs/049, 073: use MKFS_XFS_PROG where appropriate
-      [6571cea] xfstests: allow override of XFS_IOC_DIOINFO
-
-Filipe David Borba Manana (1):
-      [74643fc] btrfs: test send issue with non-aligned clone operations
-
-Jeff Mahoney (1):
-      [99b3a9a] aio-stress: use calloc for thread_info array
-
-Jie Liu (4):
-      [2086933] common: introduce two pre-checkup routines for xfs crc specified testing
-      [cc92a95] xfs: refactor xfs/299 for crc feature pre-checkup
-      [b42851e] xfs: verify turn group/project quotas off while user quotas is on
-      [9645d9a] xfs: disable group/project quotas along with fsstress
-
-Koen De Wit (4):
-      [c8d9f19] btrfs: simple sparse copy testcase for btrfs
-      [890bc11] btrfs: sparse copy of a directory tree on btrfs
-      [9b48c97] btrfs: moving and deleting sparse copies on btrfs
-      [3099791] btrfs: sparse copy between different filesystems/mountpoints
-
-Lukas Czerner (3):
-      [a056ab7] common: Filter out lost+found directory from _ls_l() output
-      [1a98c8b] generic/322: use _filter_scratch()
-      [3128e9c] generic/321, 322: do not remove lost+found
-
-Miao Xie (1):
-      [5aafebc] common: Enhance the scratch dev pool and deletable device check
-
-Wang Shilong (1):
-      [d1d43f6] btrfs/022: fix failed case with qgroup limit test
-
-
-Code Diffstat:
-
- Makefile              |   3 +-
- check                 |   3 +-
- common/filter         |   6 +++
- common/filter.btrfs   |  11 +++++
- common/rc             |  63 ++++++++++++++++++++++++-----
- lsqa.pl               |  32 +++++++++++----
- ltp/aio-stress.c      |   4 +-
- ltp/doio.c            |  12 ++++++
- ltp/fsstress.c        |  12 ++++++
- ltp/iogen.c           |  10 +++++
- src/unwritten_sync.c  |   5 +++
- tests/btrfs/001       |   3 +-
- tests/btrfs/003       |   2 +-
- tests/btrfs/011       |   2 +-
- tests/btrfs/022       |  20 ++++++++--
- tests/btrfs/025       |  98 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/025.out   |  18 +++++++++
- tests/btrfs/026       |  90 +++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/026.out   |  16 ++++++++
- tests/btrfs/027       | 107 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/027.out   |  25 ++++++++++++
- tests/btrfs/028       |  81 +++++++++++++++++++++++++++++++++++++
- tests/btrfs/028.out   |   7 ++++
- tests/btrfs/029       | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/029.out   |  15 +++++++
- tests/btrfs/group     |   5 +++
- tests/generic/321     |   2 +-
- tests/generic/322     |  10 ++---
- tests/generic/322.out |   8 ++--
- tests/xfs/049         |   2 +-
- tests/xfs/073         |   2 +-
- tests/xfs/299         |  14 ++-----
- tests/xfs/299.out     |   1 -
- tests/xfs/304         |  86 ++++++++++++++++++++++++++++++++++++++++
- tests/xfs/304.out     |   7 ++++
- tests/xfs/305         |  89 +++++++++++++++++++++++++++++++++++++++++
- tests/xfs/305.out     |   7 ++++
- tests/xfs/group       |   2 +
- 38 files changed, 937 insertions(+), 51 deletions(-)
-
+diff --git a/tests/btrfs/030 b/tests/btrfs/030
+new file mode 100644
+index 0000000..5ebc555
+--- /dev/null
++++ b/tests/btrfs/030
+@@ -0,0 +1,137 @@
++#! /bin/bash
++# FS QA Test No. 030
++#
++# Testing cross-subvolume sparse copy on btrfs
++#    - Create two subvolumes, mount one of them
++#    - Create a file on each (sub/root)volume,
++#      reflink them on the other volumes
++#    - Change one original and two reflinked files
++#    - Move reflinked files between subvolumes
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    umount $SCRATCH_MNT
++    rm -rf $TESTDIR1
++    rm -rf $TESTDIR2
++    btrfs subvolume delete $SUBVOL1 >> $seqres.full
++    btrfs subvolume delete $SUBVOL2 >> $seqres.full
++    cd /
++    rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++
++_require_scratch
++_require_cp_reflink
++
++_checksum_files() {
++    for F in file1 file2 file3
++    do
++        echo "$F:"
++        for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
++        do
++            _md5_checksum $D/$F
++        done
++    done
++}
++
++TESTDIR1=$TEST_DIR/test-$seq-1
++TESTDIR2=$TEST_DIR/test-$seq-2
++SUBVOL1=$TEST_DIR/subvol-$seq-1
++SUBVOL2=$TEST_DIR/subvol-$seq-2
++
++_scratch_unmount 2>/dev/null
++rm -rf $seqres.full
++rm -rf $TESTDIR1 $TESTDIR2
++btrfs subvol delete $SUBVOL1 >/dev/null 2>&1
++btrfs subvol delete $SUBVOL2 >/dev/null 2>&1
++
++mkdir $TESTDIR1
++mkdir $TESTDIR2
++btrfs subvolume create $SUBVOL1 >> $seqres.full
++btrfs subvolume create $SUBVOL2 >> $seqres.full
++_mount -t btrfs -o subvol=subvol-$seq-1 $TEST_DEV $SCRATCH_MNT
++
++echo "Create initial files"
++# TESTDIR1/file1 is very small and will be inlined
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 10' $TESTDIR1/file1 \
++    >> $seqres.full
++$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $SCRATCH_MNT/file2 \
++    >> $seqres.full
++$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $SUBVOL2/file3 \
++    >> $seqres.full
++
++echo "Create reflinks to the initial files on other subvolumes"
++cp --reflink $TESTDIR1/file1 $SUBVOL1
++cp --reflink $TESTDIR1/file1 $SUBVOL2
++cp --reflink $SUBVOL1/file2 $TESTDIR1/
++cp --reflink $SUBVOL1/file2 $SUBVOL2
++cp --reflink $SUBVOL2/file3 $TESTDIR1/
++cp --reflink $SUBVOL2/file3 $SUBVOL1
++
++echo "Verify the reflinks"
++_verify_reflink $SCRATCH_MNT/file2 $TESTDIR1/file2
++_verify_reflink $SCRATCH_MNT/file2 $SUBVOL2/file2
++_verify_reflink $SUBVOL2/file3 $TESTDIR1/file3
++_verify_reflink $SUBVOL2/file3 $SCRATCH_MNT/file3
++echo "Verify the file contents:"
++_checksum_files
++
++echo -e "---\nOverwrite some files with new content"
++$XFS_IO_PROG -c 'pwrite -S 0x64 0 20' $TESTDIR1/file1 >> $seqres.full
++$XFS_IO_PROG -c 'pwrite -S 0x66 0 21000' $SUBVOL2/file2 >> $seqres.full
++$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $SCRATCH_MNT/file3 \
++    >> $seqres.full
++
++echo -n "Verify that non-overwritten reflinks "
++echo "still have the same data blocks"
++_verify_reflink $TESTDIR1/file2 $SCRATCH_MNT/file2
++_verify_reflink $TESTDIR1/file3 $SUBVOL2/file3
++echo "Verify the file contents:"
++_checksum_files
++
++echo -e "---\nShuffle files between directories"
++mv $TESTDIR1/file* $TESTDIR2
++mv $SCRATCH_MNT/file* $TESTDIR1/
++mv $SUBVOL2/file* $SCRATCH_MNT/
++mv $TESTDIR2/file* $SUBVOL2/
++
++# No _verify_reflink here as data is copied when moving files
++# between subvols
++echo "Verify the file contents:"
++_checksum_files
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/030.out b/tests/btrfs/030.out
+new file mode 100644
+index 0000000..050ae0b
+--- /dev/null
++++ b/tests/btrfs/030.out
+@@ -0,0 +1,48 @@
++QA output created by 030
++Create initial files
++Create reflinks to the initial files on other subvolumes
++Verify the reflinks
++Verify the file contents:
++file1:
++e09c80c42fda55f9d992e59ca6b3307d
++e09c80c42fda55f9d992e59ca6b3307d
++e09c80c42fda55f9d992e59ca6b3307d
++file2:
++d7402b46310fbbfbc5e466b1dccb043b
++d7402b46310fbbfbc5e466b1dccb043b
++d7402b46310fbbfbc5e466b1dccb043b
++file3:
++5a95800e4c04b11117aa4e4de057721f
++5a95800e4c04b11117aa4e4de057721f
++5a95800e4c04b11117aa4e4de057721f
++---
++Overwrite some files with new content
++Verify that non-overwritten reflinks still have the same data blocks
++Verify the file contents:
++file1:
++00d620f69f30327f0f8946b95c12de44
++e09c80c42fda55f9d992e59ca6b3307d
++e09c80c42fda55f9d992e59ca6b3307d
++file2:
++d7402b46310fbbfbc5e466b1dccb043b
++d7402b46310fbbfbc5e466b1dccb043b
++917619ae44b38bb9968af261c3c45440
++file3:
++5a95800e4c04b11117aa4e4de057721f
++b9f275cd638cb784c9e61def94c622a8
++5a95800e4c04b11117aa4e4de057721f
++---
++Shuffle files between directories
++Verify the file contents:
++file1:
++e09c80c42fda55f9d992e59ca6b3307d
++e09c80c42fda55f9d992e59ca6b3307d
++00d620f69f30327f0f8946b95c12de44
++file2:
++d7402b46310fbbfbc5e466b1dccb043b
++917619ae44b38bb9968af261c3c45440
++d7402b46310fbbfbc5e466b1dccb043b
++file3:
++b9f275cd638cb784c9e61def94c622a8
++5a95800e4c04b11117aa4e4de057721f
++5a95800e4c04b11117aa4e4de057721f
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 8eb8c4f..3f61799 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -32,3 +32,4 @@
+ 027 auto quick
+ 028 auto quick
+ 029 auto quick
++030 auto quick
 -- 
-Dave Chinner
-david@fromorbit.com
+1.7.1
+

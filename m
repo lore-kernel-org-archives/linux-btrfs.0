@@ -1,47 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.126.171]:58228 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751014AbaAUUCF (ORCPT
+Received: from mail-pd0-f173.google.com ([209.85.192.173]:36999 "EHLO
+	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750773AbaAUTSg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 15:02:05 -0500
-Message-ID: <52DED234.4060305@friedels.name>
-Date: Tue, 21 Jan 2014 21:01:56 +0100
-From: Hendrik Friedel <hendrik@friedels.name>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfsck does not fix
-References: <52C7127F.3060902@friedels.name> <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com> <52D317CF.2070007@friedels.name> <6210673.6TYUkLGl6b@merkaba> <52DED1C2.60103@friedels.name>
-In-Reply-To: <52DED1C2.60103@friedels.name>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Tue, 21 Jan 2014 14:18:36 -0500
+Received: by mail-pd0-f173.google.com with SMTP id y10so5034721pdj.32
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 11:18:35 -0800 (PST)
+From: Justin Maggard <jmaggard10@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Justin Maggard <jmaggard10@gmail.com>
+Subject: [PATCH] btrfs: fix defrag 32-bit integer overflow
+Date: Tue, 21 Jan 2014 11:18:29 -0800
+Message-Id: <1390331909-7476-1-git-send-email-jmaggard10@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello again:
+When defragging a very large file, the cluster variable can wrap its 32-bit
+signed int type and become negative, which eventually gets passed to
+btrfs_force_ra() as a very large unsigned long value.  On 32-bit platforms,
+this eventually results in an Oops from the SLAB allocator.
 
-> I think, I do/did have some symptoms, but I cannot exclude other reasons..
-> -High Load without high cpu-usage (io was the bottleneck)
-> -Just now: transfer from one directory to the other on the same
-> subvolume (from /mnt/subvol/A/B to /mnt/subvol/A) I get 1.2MB/s instead
-> of > 60.
-> -For some of the files I even got a "no space left on device" error.
+Change the cluster and max_cluster signed int variables to unsigned long to
+match the readahead functions.  This also allows the min() comparison in
+btrfs_defrag_file() to work as intended.
+---
+ fs/btrfs/ioctl.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-And the first symptom is also there:
-top - 21:00:58 up 22:19,  5 users,  load average: 1.08, 1.15, 1.09
-Tasks: 204 total,   1 running, 203 sleeping,   0 stopped,   0 zombie
-Cpu(s):  1.5%us,  2.7%sy,  0.3%ni, 66.6%id, 28.6%wa,  0.3%hi,  0.0%si, 
-0.0%st
-Mem:   3795584k total,  3614088k used,   181496k free,   367820k buffers
-Swap:  8293372k total,    45464k used,  8247908k free,  2337704k cached
-
-Greetings,
-Hendrik
-
-
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 21da576..22e9837 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1011,7 +1011,7 @@ out:
+ static int cluster_pages_for_defrag(struct inode *inode,
+ 				    struct page **pages,
+ 				    unsigned long start_index,
+-				    int num_pages)
++				    unsigned long num_pages)
+ {
+ 	unsigned long file_end;
+ 	u64 isize = i_size_read(inode);
+@@ -1169,8 +1169,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	int defrag_count = 0;
+ 	int compress_type = BTRFS_COMPRESS_ZLIB;
+ 	int extent_thresh = range->extent_thresh;
+-	int max_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
+-	int cluster = max_cluster;
++	unsigned long max_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
++	unsigned long cluster = max_cluster;
+ 	u64 new_align = ~((u64)128 * 1024 - 1);
+ 	struct page **pages = NULL;
+ 
 -- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Mobil 0178 1874363
+1.7.9.5
+

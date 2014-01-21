@@ -1,158 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f51.google.com ([209.85.214.51]:64883 "EHLO
-	mail-bk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754949AbaAUQwa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 11:52:30 -0500
-Received: by mail-bk0-f51.google.com with SMTP id w10so3113453bkz.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 08:52:29 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <B043A7E1-6AEF-4446-AD4C-554744E9E67A@gmail.com>
-References: <1390021080-30788-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-	<CAL3q7H7+TcotGES=RZUOz0FRyJfyt0tkZQ9mMmZg2o8AdS_TqA@mail.gmail.com>
-	<B043A7E1-6AEF-4446-AD4C-554744E9E67A@gmail.com>
-Date: Tue, 21 Jan 2014 16:52:29 +0000
-Message-ID: <CAL3q7H4EhWjfrWpm6im10yZRhCx54=wfuuufVuKbZ6ecA2Nfuw@mail.gmail.com>
-Subject: Re: [PATCH v3 1/4] Btrfs: fix wrong send_in_progress accounting
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
+Received: from plane.gmane.org ([80.91.229.3]:55175 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754466AbaAURI0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Jan 2014 12:08:26 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W5eoK-0002Xv-BV
+	for linux-btrfs@vger.kernel.org; Tue, 21 Jan 2014 18:08:24 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 18:08:24 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 18:08:24 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Scrubbing with BTRFS Raid 5
+Date: Tue, 21 Jan 2014 17:08:01 +0000 (UTC)
+Message-ID: <pan$226f4$e1329373$53c2dcca$438e95e@cox.net>
+References: <95DB9BB3-D706-4023-940A-D100D93D560A@gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 21, 2014 at 4:45 PM, Wang Shilong <wangshilong1991@gmail.com> wrote:
->
-> Hello Filipe,
->
->> On Sat, Jan 18, 2014 at 4:58 AM, Wang Shilong
->> <wangsl.fnst@cn.fujitsu.com> wrote:
->>> Steps to reproduce:
->>> # mkfs.btrfs -f /dev/sda8
->>> # mount /dev/sda8 /mnt
->>> # btrfs sub snapshot -r /mnt /mnt/snap1
->>> # btrfs sub snapshot -r /mnt /mnt/snap2
->>> # btrfs send /mnt/snap1 -p /mnt/snap2 -f /mnt/1
->>> # dmesg
->>>
->>> The problem is that we will sort clone roots(include @send_root), it
->>> might push @send_root before thus @send_root's @send_in_progress will
->>> be decreased twice.
->>>
->>> Cc: David Sterba <dsterba@suse.cz>
->>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->>> ---
->>> changelog
->>> v2->v3:
->>>        add comments as david addressed.
->>> v1->v2:
->>>        use right root to check
->>> ---
->>> fs/btrfs/send.c | 19 ++++++++++++++++---
->>> 1 file changed, 16 insertions(+), 3 deletions(-)
->>>
->>> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
->>> index bff0b1a..83b6bdb 100644
->>> --- a/fs/btrfs/send.c
->>> +++ b/fs/btrfs/send.c
->>> @@ -4752,6 +4752,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->>>        u32 i;
->>>        u64 *clone_sources_tmp = NULL;
->>>        int clone_sources_to_rollback = 0;
->>> +       int sort_clone_roots = 0;
->>>
->>>        if (!capable(CAP_SYS_ADMIN))
->>>                return -EPERM;
->>> @@ -4942,6 +4943,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->>>        sort(sctx->clone_roots, sctx->clone_roots_cnt,
->>>                        sizeof(*sctx->clone_roots), __clone_root_cmp_sort,
->>>                        NULL);
->>> +       sort_clone_roots = 1;
->>>
->>>        ret = send_subvol(sctx);
->>>        if (ret < 0)
->>> @@ -4957,11 +4959,22 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->>>        }
->>>
->>> out:
->>> -       for (i = 0; sctx && i < clone_sources_to_rollback; i++)
->>> -               btrfs_root_dec_send_in_progress(sctx->clone_roots[i].root);
->>> +       if (sort_clone_roots) {
->>> +               for (i = 0; i < sctx->clone_roots_cnt; i++)
->>> +                       btrfs_root_dec_send_in_progress(
->>> +                                       sctx->clone_roots[i].root);
->>
->> sctx can be NULL here, anywhere after the 'out' label.
->
-> Not really, if @sort_clone_roots is set which means we must have allocated
-> sctx successfully.
+Graham Fleming posted on Tue, 21 Jan 2014 01:06:37 -0800 as excerpted:
 
-Right missed that, same below.
-Static checker was complaining about this.
+> Thanks for all the info guys.
+> 
+> I ran some tests on the latest 3.12.8 kernel. I set up 3 1GB files and
+> attached them to /dev/loop{1..3} and created a BTRFS RAID 5 volume with
+> them.
+> 
+> I copied some data (from dev/urandom) into two test files and got their
+> MD5 sums and saved them to a text file.
+> 
+> I then unmounted the volume, trashed Disk3 and created a new Disk4 file,
+> attached to /dev/loop4.
+> 
+> I mounted the BTRFS RAID 5 volume degraded and the md5 sums were fine. I
+> added /dev/loop4 to the volume and then deleted the missing device and
+> it rebalanced. I had data spread out on all three devices now. MD5 sums
+> unchanged on test files.
+> 
+> This, to me, implies BTRFS RAID 5 is working quite well and I can in
+> fact,
+> replace a dead drive.
+> 
+> Am I missing something?
 
-thanks
+What you're missing is that device death and replacement rarely happens 
+as neatly as your test (clean unmounts and all, no middle-of-process 
+power-loss, etc).  You tested best-case, not real-life or worst-case.
 
->
->>
->>> +       } else {
->>> +               for (i = 0; sctx && i < clone_sources_to_rollback; i++)
->>> +                       btrfs_root_dec_send_in_progress(
->>> +                                       sctx->clone_roots[i].root);
->>
->> Same here.
->
-> Notice there is a check above,
->
-> sctx && i < clone_sources_to_rollback
->
-> I really took care of that when i wrote the patch, please correct
-> me if i miss something here^_^.
->
-> Thanks,
-> Wang
->>
->>> +               /*
->>> +                * if we fail to add @send_root in clone roots, we still
->>> +                * need to decrease @send_in_progress count here.
->>> +                */
->>> +               btrfs_root_dec_send_in_progress(send_root);
->>> +       }
->>>        if (sctx && !IS_ERR_OR_NULL(sctx->parent_root))
->>>                btrfs_root_dec_send_in_progress(sctx->parent_root);
->>> -       btrfs_root_dec_send_in_progress(send_root);
->>>
->>>        kfree(arg);
->>>        vfree(clone_sources_tmp);
->>> --
->>> 1.8.3.1
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->> --
->> Filipe David Manana,
->>
->> "Reasonable men adapt themselves to the world.
->> Unreasonable men adapt the world to themselves.
->> That's why all progress depends on unreasonable men."
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Try that again, setting up the raid5, setting up a big write to it, 
+disconnect one device in the middle of that write (I'm not sure if just 
+dropping the loop works or if the kernel gracefully shuts down the loop 
+device), then unplugging the system without unmounting... and /then/ see 
+what sense btrfs can make of the resulting mess.  In theory, with an 
+atomic write btree filesystem such as btrfs, even that should work fine, 
+minus perhaps the last few seconds of file-write activity, but the 
+filesystem should remain consistent on degraded remount and device add, 
+device remove, and rebalance, even if another power-pull happens in the 
+middle of /that/.
 
-
+But given btrfs' raid5 incompleteness, I don't expect that will work.
 
 -- 
-Filipe David Manana,
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

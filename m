@@ -1,94 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f51.google.com ([209.85.216.51]:40881 "EHLO
-	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753817AbaAUN5T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 08:57:19 -0500
-Received: by mail-qa0-f51.google.com with SMTP id f11so6500056qae.38
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 05:57:18 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <52DE7797.30400@uab.edu>
-References: <52DE7797.30400@uab.edu>
-Date: Tue, 21 Jan 2014 14:57:18 +0100
-Message-ID: <CABjx-yqm5AZQmDAcQnetPk14_iP9ybq4kdZ+z2fQFSPAVA28FQ@mail.gmail.com>
-Subject: Re: Btrfs shows incorrect disk size after running a replace command
-From: Andreas Fischer <fisch0r@gmail.com>
-To: Kyle Bentley <kwbent@uab.edu>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:52364 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754274AbaAUOmb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Jan 2014 09:42:31 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W5cX8-0001b6-GY
+	for linux-btrfs@vger.kernel.org; Tue, 21 Jan 2014 15:42:30 +0100
+Received: from router1.itwm.fhg.de ([131.246.191.250])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 15:42:30 +0100
+Received: from bernd.schubert by router1.itwm.fhg.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 15:42:30 +0100
+To: linux-btrfs@vger.kernel.org
+From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+Subject: statfs f_bfree vs. f_bavail
+Date: Tue, 21 Jan 2014 15:42:20 +0100
+Message-ID: <lbm0vv$k7t$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Kyle,
+Hi all,
 
-you will probably have to tell btrfs to use the complete devices.
-Checkout "btrfs filesystem resize". There are cases when one does not
-want to grow the used space on a replacement disk automatically, e.g.
-when the disk is to be replaced with a smaller disk again, so this is
-not a bug.
+I just noticed a mismatch between statfs.f_bfree and statfs.f_bavail, i.e.
 
-Cheers,
-Andreas
+(squeeze)fslab2:~# ./statfs /data/fhgfs/storage1/
 
-On Tue, Jan 21, 2014 at 2:35 PM, Kyle Bentley <kwbent@uab.edu> wrote:
->
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> I have just recently replaced two 750 GB disks with two 1 TB disks.  I
-> used the replace command to do so, aka "btrfs replace start /dev/sdX
-> /dev/sdY /mountpoint".  Each replacement went smoothly, with no errors
-> reporting.  I'm positive that the source and destination drives were
-> identified correctly.  However, when I run "btrfs filesystem show", the
-> output is
->
-> Label: none  uuid: b2dbc0e4-94fc-4089-9221-d79d7919f8cb
->     Total devices 2 FS bytes used 494.23GB
->     devid    2 size 698.64GB used 495.03GB path /dev/sda
->     devid    1 size 698.64GB used 495.03GB path /dev/sdb
->
-> Btrfs v0.20-rc1
->
-> The disks show up as the 750 GB, when they are in fact 1 TB.  smartctl
-> for each drive shows
->
-> root@Lore:/home/kyle# smartctl -i /dev/sda |grep "User Capacity"
-> User Capacity:    1,000,204,886,016 bytes [1.00 TB]
->
-> root@Lore:/home/kyle# smartctl -i /dev/sdb |grep "User Capacity"
-> User Capacity:    1,000,204,886,016 bytes [1.00 TB]
->
-> Is there any harm in this?  If it is simply a superficial bug I will not
-> worry.  Would running a balance help?  As for the specifics, I'm using
->
-> Debian testing x64
-> Vanilla kernel 3.13.0
-> AMD hardware
->
-> Thanks,
->
-> Kyle Bentley
->
-> - ---------------------------------------
-> kwbent@uab.edu
-> UAB Dept of Physics
-> 1300 University Blvd
-> CH 310
-> Birmingham, AL
-> - ---------------------------------------
->
->
->
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1
-> Comment: Using GnuPG with Icedove - http://www.enigmail.net/
->
-> iQEcBAEBAgAGBQJS3neNAAoJEKZ75usGhR84secH/iIbH/FcU3pTsg7+V9vwqMgB
-> VuQeZpU13RH/2fwupuFJtu4wK021xWLrSuN7nUGG0WzrWSmt8nHvQqIV1TBY+2PO
-> QqttgbBK5yDEIY6QB3lUn2fQDWohlrbG4/3CTjILoTdHWsihTBzXIug6D6aEpM1o
-> 1b3smiBPM6mg6sy3d+JSr47TGi8Wko1QnOh2ory5FlkJMTZLDNWBqG2ja00B7W9H
-> UKnwgaU3KZr9UcbiVlvM1BLgDBxRZlhsjWMMo+diX92PHgaBovhEOzCrHI/nyXv7
-> vY3YKcwU1zH3f0olHXfp9lFjo06C/4/+EggCrQ3BEe0hxm5r3bHc44zrTCnH/Wg=
-> =a/VY
-> -----END PGP SIGNATURE-----
->
+/data/fhgfs/storage1/: avail: 3162112 free: 801586610176
+
+(with 
+        uint64_t avail = statbuf.f_bavail * statbuf.f_bsize;
+        uint64_t free  = statbuf.f_bfree * statbuf.f_bsize;
+)
+
+Given the fact that I write much data to this file system anymore, 
+f_bavail seems to be give the number I'm interested in.
+
+
+According to 'man 2 statfs'
+
+>                fsblkcnt_t   f_bfree;   /* free blocks in fs */
+>                fsblkcnt_t   f_bavail;  /* free blocks available to
+>                                           unprivileged user */
+
+f_bfree and f_bavail shouldn't differ too much. 
+But btrfs uses two entirely different calculations for that
+(btrfs_statfs).
+
+
+f_bavail = disk_with_block_groups_total_ - disk_used - block_group_space + free_data_space
+f_bfree = all_disk_blocks - total_used
+
+Now for any raid level (I'm using raid6) using the sum of all
+data disk blocks without substracting redundancy blocks doesn't seem
+to be something the user is interested in. 
+In our particular case we are using f_bavail if fhgfs-storage was started
+as root and f_bfree when it started from non-root (extN root user space
+reservation). Now with btrfs this entirely fails and even confuses our
+low target pool detection. I could add a workaround for btrfs for that
+into our code based on f_type, but I wonder if it wouldn't be better to 
+improve btrfs_statfs. 
+What is the actual intention for the current f_bfree value?
+
+
+Thanks,
+Bernd
+
+

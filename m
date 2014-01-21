@@ -1,56 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36833 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751351AbaANLH4 (ORCPT
+Received: from mail-ve0-f176.google.com ([209.85.128.176]:54556 "EHLO
+	mail-ve0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750862AbaAUFao (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jan 2014 06:07:56 -0500
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s0EB7tF4021084
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:56 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0EB7sXX020696
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:55 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0EB7sre022378
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jan 2014 11:07:54 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: mid flight return leaks memory during filesystem show mnt
-Date: Tue, 14 Jan 2014 19:17:08 +0800
-Message-Id: <1389698228-9580-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1389698228-9580-1-git-send-email-anand.jain@oracle.com>
-References: <1389698228-9580-1-git-send-email-anand.jain@oracle.com>
+	Tue, 21 Jan 2014 00:30:44 -0500
+Received: by mail-ve0-f176.google.com with SMTP id oz11so2144411veb.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jan 2014 21:30:44 -0800 (PST)
+MIME-Version: 1.0
+From: Andy Lutomirski <luto@amacapital.net>
+Date: Mon, 20 Jan 2014 21:30:24 -0800
+Message-ID: <CALCETrVLF_1d5cg5izPLmZa_e7bxHH-rrgp-m0uGFmuVwO_73w@mail.gmail.com>
+Subject: [BTRFS-specific] Re: Dirty deleted files cause pointless I/O storms
+ (unless truncated first)
+To: Dave Chinner <david@fromorbit.com>, linux-btrfs@vger.kernel.org
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-mm@kvack.org" <linux-mm@kvack.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-since now handle_print()->print_one_fs() calls add_seen_fsid()
-the thread has to go through free_seen_fsid()
+[cc: btrfs]
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-filesystem.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+On Mon, Jan 20, 2014 at 8:46 PM, Dave Chinner <david@fromorbit.com> wrote:
+> On Mon, Jan 20, 2014 at 04:59:23PM -0800, Andy Lutomirski wrote:
+>> The code below runs quickly for a few iterations, and then it slows
+>> down and the whole system becomes laggy for far too long.
+>>
+>> Removing the sync_file_range call results in no I/O being performed at
+>> all (which means that the kernel isn't totally screwing this up), and
+>> changing "4096" to SIZE causes lots of I/O but without
+>> the going-out-to-lunch bit (unsurprisingly).
+>
+> More details please. hardware, storage, kernel version, etc.
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index ee6cc84..d38fae6 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -681,10 +681,11 @@ static int cmd_show(int argc, char **argv)
- 			}
- 		} else if (type == BTRFS_ARG_MNTPOINT) {
- 			char label[BTRFS_LABEL_SIZE];
--			if (get_label_mounted(search, label))
-+			ret = get_label_mounted(search, label);
-+			if (ret)
- 				return 1;
- 			handle_print(search, label);
--			return 0;
-+			goto out;
- 		}
- 	}
- 
--- 
-1.7.1
+The kernel is 3.11.10-301.fc20.x86_64.  It's an excessively fast CPU
+(Intel i7-3930K) with 16GB RAM and a Corsair Force 3 SSD (6Gb/s SATA)
+SSD.  The FS is btrfs on LVM on dm-crypt.
 
+In that setup, this thing goes quickly for 100 iterations or so, at
+which point even trying to Ctrl-C it lags out for ten seconds or so.
+
+I clearly should have tested more thoroughly, though -- I can't
+reproduce this problem on ext4.
+
+>
+> I can't reproduce any slowdown with the code as posted on a VM
+> running 3.31-rc5 with 16GB RAM and an SSD w/ ext4 or XFS. The
+> workload is only generating about 80 IOPS on ext4 so even a slow
+> spindle should be able handle this without problems...
+>
+>> Surprisingly, uncommenting the ftruncate call seems to fix the
+>> problem.  This suggests that all the necessary infrastructure to avoid
+>> wasting time writing to deleted files is there but that it's not
+>> getting used.
+>
+> Not surprising at all - if it's stuck in a writeback loop somewhere,
+> truncating the file will terminate writeback because it end up being
+> past EOF and so stops immediately...
+
+Presumably ext4 and xfs are smart enough to stop writeback when the
+inode is gone, but btrfs is still either keeping the inode alive or
+just finishes writeback anyway.
+
+--Andy
+
+#define _GNU_SOURCE
+#include <sys/mman.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#define SIZE (16 * 1048576)
+
+static void hammer(const char *name)
+{
+  int fd = open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
+  if (fd == -1)
+    err(1, "open");
+
+  fallocate(fd, 0, 0, SIZE);
+
+  void *addr = mmap(NULL, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+  if (addr == MAP_FAILED)
+    err(1, "mmap");
+
+  memset(addr, 0, SIZE);
+
+  if (munmap(addr, SIZE) != 0)
+    err(1, "munmap");
+
+  if (sync_file_range(fd, 0, 4096,
+              SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE |
+              SYNC_FILE_RANGE_WAIT_AFTER) != 0)
+    err(1, "sync_file_range");
+
+  if (unlink(name) != 0)
+    err(1, "unlink");
+
+  //  if (ftruncate(fd, 0) != 0)
+  //    err(1, "ftruncate");
+
+  close(fd);
+}
+
+int main(int argc, char **argv)
+{
+  if (argc != 2) {
+    printf("Usage: hammer_and_delete FILENAME\n");
+    return 1;
+  }
+
+  while (true) {
+    hammer(argv[1]);
+    write(1, ".", 1);
+  }
+}

@@ -1,57 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40980 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:60278 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753148AbaAVPjv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jan 2014 10:39:51 -0500
+	id S1751379AbaAVQDT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Jan 2014 11:03:19 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W5zu9-0004A4-Uh
-	for linux-btrfs@vger.kernel.org; Wed, 22 Jan 2014 16:39:49 +0100
+	id 1W60Gm-0005jD-2R
+	for linux-btrfs@vger.kernel.org; Wed, 22 Jan 2014 17:03:12 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 16:39:49 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 17:03:12 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 16:39:49 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 17:03:12 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Scrubbing with BTRFS Raid 5
-Date: Wed, 22 Jan 2014 15:39:27 +0000 (UTC)
-Message-ID: <pan$90f3c$88756f33$d6abe04$395cafd4@cox.net>
-References: <DC8CDADE-5C7A-4DA3-8081-EB631136621B@gmail.com>
+Date: Wed, 22 Jan 2014 16:02:47 +0000 (UTC)
+Message-ID: <pan$8caeb$d0be9e00$b714cdaf$5ed18e96@cox.net>
+References: <95DB9BB3-D706-4023-940A-D100D93D560A@gmail.com>
+	<pan$226f4$e1329373$53c2dcca$438e95e@cox.net> <52DEABC9.2040205@jrs-s.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Graham Fleming posted on Tue, 21 Jan 2014 10:03:26 -0800 as excerpted:
+Jim Salter posted on Tue, 21 Jan 2014 12:18:01 -0500 as excerpted:
 
-> I want to keep playing around with BTRFSS RAID 5 and testing with it...
-> assuming I have a drive with bad blocks, or let's say some inconsistent
-> parity am I right in assuming that a) a btrfs scrub operation will not
-> fix the stripes with bad parity
+> Would it be reasonably accurate to say "btrfs' RAID5 implementation is
+> likely working well enough and safe enough if you are backing up
+> regularly and are willing and able to restore from backup if necessary
+> if a device failure goes horribly wrong", then?
 
-What I know is that it is said btrfs scrub doesn't work with btrfs raid5/6 
-yet.  I don't know how it actually fails (tho I'd hope it simply returns 
-an error to the effect that it doesn't work with raid5/6 yet) as I've not 
-actually tried that mode, here.
+I'd say (and IIRC I did say somewhere, but don't remember if it was this 
+thread) that in reliability terms btrfs raid5 should be treated like 
+btrfs raid0 at this point.  Raid0 is well known to have absolutely no 
+failover -- if a device fails, the raid is toast.  It's possible so-
+called "extreme measures" may recover data from the surviving bits (think 
+the $expen$ive$ $ervice$ of data recovery firms), but the idea is that 
+either no data that's not easily replaced is stored on a raid0 in the 
+first place, or if it is, there's (tested recoverable) backup to the 
+level that you're fully comfortable with losing EVERYTHING not backed up.
 
-> and b) a balance operation will not be
-> successful? Or would a balance operation work to re-write parity?
+Examples of good data for raid0 are the kernel sources (as a user, not a 
+dev, so you're not hacking on them), your distro's local package cache, 
+browser cache, etc.  This because by definition all those examples have 
+the net as their backup, so loss of a local copy means a bit more to 
+download, at worst.
 
-Balance actually rewrites everything (well, everything matching its 
-filters if a filtered balance is used, everything, if not), so it should 
-rewrite parity correctly.
+That's what btrfs raid5/6 are at the moment, effectively raid0 from a 
+recovery perspective.
 
-AFAIK, all the writing works and routine read works.  It's the error 
-recovery that's still only partially implemented.  Since reading just 
-reads data, not parity unless there's a dropped device or the like to 
-recover from, as long as all devices are active and there's a good copy 
-of the data (based on btrfs checksumming) to read, the rebalance should 
-just use and rewrite that, ignoring the bad parity.
-
-
+Now the parity /is/ being written; it simply can't be treated as 
+available for recovery.  So supposing you do /not/ lose a device (or 
+suffer a bad checksum) on the raid5 until after the recovery code is 
+complete and available, you've effectively "free" upgraded from raid0 
+reliability to raid5 reliability as soon as recovery is possible, which 
+will be nice, and meanwhile you can test the operational functionality, 
+so there /are/ reasons you might want to run the btrfs raid5 mode now.  
+As long as you remember it's currently effectively raid0 should something 
+go wrong, and you either don't use it for valuable data in the first 
+place, or you're willing to do without any updates to that data since the 
+last tested backup, should it come to that.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

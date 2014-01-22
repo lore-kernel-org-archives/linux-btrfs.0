@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f170.google.com ([74.125.82.170]:43455 "EHLO
-	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750781AbaAVD6y (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:58113 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752831AbaAVKBT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 22:58:54 -0500
-Received: by mail-we0-f170.google.com with SMTP id u57so8923335wes.15
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 19:58:53 -0800 (PST)
+	Wed, 22 Jan 2014 05:01:19 -0500
+Received: by mail-wi0-f179.google.com with SMTP id hr1so400690wib.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 02:01:17 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v5] Btrfs: fix infinite path build loops in incremental send
-Date: Wed, 22 Jan 2014 03:57:57 +0000
-Message-Id: <1390363077-7844-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v6] Btrfs: fix infinite path build loops in incremental send
+Date: Wed, 22 Jan 2014 10:00:53 +0000
+Message-Id: <1390384853-6831-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1390347421-6548-1-git-send-email-fdmanana@gmail.com>
 References: <1390347421-6548-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -108,12 +108,15 @@ V3: Make sure stack list entries are freed on error path in function
 V4: Simplified function apply_children_dir_moves, removed repeated and
     confusing code.
 V5: Cleaner error path in add_pending_dir_move function.
+V6: Properly deal with multiple directories waiting for the same parent
+    directory move/rename to happen. Updated test case for xfstests to
+    exercise that code path too.
 
- fs/btrfs/send.c |  528 ++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 507 insertions(+), 21 deletions(-)
+ fs/btrfs/send.c |  535 ++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 514 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 27edc5e..2f5a06e 100644
+index 27edc5e..78aba99 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
 @@ -121,6 +121,74 @@ struct send_ctx {
@@ -284,7 +287,7 @@ index 27edc5e..2f5a06e 100644
  		ret = fs_path_add_path(dest, name);
  		if (ret < 0)
  			goto out;
-@@ -2636,10 +2728,338 @@ out:
+@@ -2636,10 +2728,345 @@ out:
  	return ret;
  }
  
@@ -491,29 +494,40 @@ index 27edc5e..2f5a06e 100644
 +
 +static void free_pending_move(struct send_ctx *sctx, struct pending_dir_move *m)
 +{
-+	list_del(&m->list);
++	if (!list_empty(&m->list))
++		list_del(&m->list);
 +	if (!RB_EMPTY_NODE(&m->node))
 +		rb_erase(&m->node, &sctx->pending_dir_moves);
 +	__free_recorded_refs(&m->update_refs);
 +	kfree(m);
 +}
 +
++static void tail_append_pending_moves(struct pending_dir_move *moves,
++				      struct list_head *stack)
++{
++	if (list_empty(&moves->list)) {
++		list_add_tail(&moves->list, stack);
++	} else {
++		LIST_HEAD(list);
++		list_splice_init(&moves->list, &list);
++		list_add_tail(&moves->list, stack);
++		list_splice_tail(&list, stack);
++	}
++}
++
 +static int apply_children_dir_moves(struct send_ctx *sctx)
 +{
-+	struct pending_dir_move *moves, *pm;
++	struct pending_dir_move *pm;
 +	struct list_head stack;
 +	u64 parent_ino = sctx->cur_ino;
 +	int ret = 0;
 +
-+	moves = get_pending_dir_moves(sctx, parent_ino);
-+	if (!moves)
++	pm = get_pending_dir_moves(sctx, parent_ino);
++	if (!pm)
 +		return 0;
 +
 +	INIT_LIST_HEAD(&stack);
-+	if (list_empty(&moves->list))
-+		list_add_tail(&moves->list, &stack);
-+	else
-+		list_splice_tail(&moves->list, &stack);
++	tail_append_pending_moves(pm, &stack);
 +
 +	while (!list_empty(&stack)) {
 +		pm = list_first_entry(&stack, struct pending_dir_move, list);
@@ -523,12 +537,8 @@ index 27edc5e..2f5a06e 100644
 +		if (ret)
 +			goto out;
 +		pm = get_pending_dir_moves(sctx, parent_ino);
-+		if (pm) {
-+			if (list_empty(&pm->list))
-+				list_add_tail(&pm->list, &stack);
-+			else
-+				list_splice_tail(&pm->list, &stack);
-+		}
++		if (pm)
++			tail_append_pending_moves(pm, &stack);
 +	}
 +	return 0;
 +
@@ -624,7 +634,7 @@ index 27edc5e..2f5a06e 100644
  {
  	int ret = 0;
  	struct recorded_ref *cur;
-@@ -2788,11 +3208,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+@@ -2788,11 +3215,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
  				 * dirs, we always have one new and one deleted
  				 * ref. The deleted ref is ignored later.
  				 */
@@ -647,7 +657,7 @@ index 27edc5e..2f5a06e 100644
  				if (ret < 0)
  					goto out;
  			} else {
-@@ -3161,6 +3587,7 @@ static int process_all_refs(struct send_ctx *sctx,
+@@ -3161,6 +3594,7 @@ static int process_all_refs(struct send_ctx *sctx,
  	struct extent_buffer *eb;
  	int slot;
  	iterate_inode_ref_t cb;
@@ -655,7 +665,7 @@ index 27edc5e..2f5a06e 100644
  
  	path = alloc_path_for_send();
  	if (!path)
-@@ -3204,7 +3631,9 @@ static int process_all_refs(struct send_ctx *sctx,
+@@ -3204,7 +3638,9 @@ static int process_all_refs(struct send_ctx *sctx,
  	}
  	btrfs_release_path(path);
  
@@ -666,7 +676,7 @@ index 27edc5e..2f5a06e 100644
  
  out:
  	btrfs_free_path(path);
-@@ -4165,7 +4594,9 @@ out:
+@@ -4165,7 +4601,9 @@ out:
  	return ret;
  }
  
@@ -677,7 +687,7 @@ index 27edc5e..2f5a06e 100644
  {
  	int ret = 0;
  
-@@ -4177,17 +4608,11 @@ static int process_recorded_refs_if_needed(struct send_ctx *sctx, int at_end)
+@@ -4177,17 +4615,11 @@ static int process_recorded_refs_if_needed(struct send_ctx *sctx, int at_end)
  	if (list_empty(&sctx->new_refs) && list_empty(&sctx->deleted_refs))
  		goto out;
  
@@ -697,7 +707,7 @@ index 27edc5e..2f5a06e 100644
  out:
  	return ret;
  }
-@@ -4203,11 +4628,29 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+@@ -4203,11 +4635,29 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
  	u64 right_gid;
  	int need_chmod = 0;
  	int need_chown = 0;
@@ -728,7 +738,7 @@ index 27edc5e..2f5a06e 100644
  	if (sctx->cur_ino == 0 || sctx->cur_inode_deleted)
  		goto out;
  	if (!at_end && sctx->cmp_key->objectid == sctx->cur_ino)
-@@ -4269,9 +4712,21 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+@@ -4269,9 +4719,21 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
  	}
  
  	/*
@@ -752,7 +762,7 @@ index 27edc5e..2f5a06e 100644
  	ret = send_utimes(sctx, sctx->cur_ino, sctx->cur_inode_gen);
  	if (ret < 0)
  		goto out;
-@@ -4839,6 +5294,9 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+@@ -4839,6 +5301,9 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
  		goto out;
  	}
  
@@ -762,7 +772,7 @@ index 27edc5e..2f5a06e 100644
  	sctx->clone_roots = vzalloc(sizeof(struct clone_root) *
  			(arg->clone_sources_count + 1));
  	if (!sctx->clone_roots) {
-@@ -4947,6 +5405,34 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+@@ -4947,6 +5412,34 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
  	}
  
  out:

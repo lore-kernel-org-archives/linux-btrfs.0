@@ -1,52 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:22195 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753251AbaAGUel (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31131 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750778AbaAVGKJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Jan 2014 15:34:41 -0500
-Received: from pps.filterd (m0044008 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s07KVqGa021145
-	for <linux-btrfs@vger.kernel.org>; Tue, 7 Jan 2014 12:34:40 -0800
-Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
-	by mx0a-00082601.pphosted.com with ESMTP id 1h80sf5k4w-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 07 Jan 2014 12:34:40 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: bail if we find errors in the extent tree
-Date: Tue, 7 Jan 2014 15:34:21 -0500
-Message-ID: <1389126861-31257-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Wed, 22 Jan 2014 01:10:09 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s0M6A8ur010962
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 06:10:09 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0M6A7tt010382
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 06:10:08 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s0M6A7UY002035
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 06:10:07 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: update INSTALL file
+Date: Wed, 22 Jan 2014 14:19:37 +0800
+Message-Id: <1390371577-1789-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For some reason we weren't exiting if there were errors in the extent tree,
-which means we could have errors in just the extent tree and things like
-xfstests would keep going because we completely throw away the return value.
-Thanks,
+with the changes that has happened since last time it was updated
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-check.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ INSTALL |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 689fe6c..cbabfdc 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6409,8 +6409,10 @@ int cmd_check(int argc, char **argv)
- 		goto out;
- 	}
- 	ret = check_chunks_and_extents(root);
--	if (ret)
-+	if (ret) {
- 		fprintf(stderr, "Errors found in extent allocation tree or chunk allocation\n");
-+		goto out;
-+	}
+diff --git a/INSTALL b/INSTALL
+index 8ead607..a86878a 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -12,7 +12,8 @@ complete:
+ modprobe libcrc32c
+ insmod btrfs.ko
  
- 	fprintf(stderr, "checking free space cache\n");
- 	ret = check_space_cache(root);
+-The Btrfs utility programs require libuuid to build.  This can be found
++The Btrfs utility programs (btrfs-progs) require libattr zlib libacl
++e2fsprogs libblkid lzo2 to build.  This can be found
+ in the e2fsprogs sources, and is usually available as libuuid or
+ e2fsprogs-devel from various distros.
+ 
+@@ -49,6 +50,3 @@ btrfsck: do a limited check of the FS extent trees.</li>
+ btrfs-debug-tree: print all of the FS metadata in text form.  Example:
+ 
+ 	btrfs-debug-tree /dev/sda2 >& big_output_file
+-
+-
+-
 -- 
-1.8.3.1
+1.7.1
 

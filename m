@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f172.google.com ([74.125.82.172]:57770 "EHLO
-	mail-we0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750824AbaAUX46 (ORCPT
+Received: from mail-we0-f178.google.com ([74.125.82.178]:43136 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751773AbaAVKFi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jan 2014 18:56:58 -0500
-Received: by mail-we0-f172.google.com with SMTP id q58so8797984wes.31
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jan 2014 15:56:57 -0800 (PST)
+	Wed, 22 Jan 2014 05:05:38 -0500
+Received: by mail-we0-f178.google.com with SMTP id t60so134411wes.23
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 02:05:36 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] xfstests: add test for btrfs incremental send infinite loop issue
-Date: Tue, 21 Jan 2014 23:56:50 +0000
-Message-Id: <1390348610-8098-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add test for btrfs incremental send infinite loop issue
+Date: Wed, 22 Jan 2014 10:05:19 +0000
+Message-Id: <1390385119-6998-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1390348610-8098-1-git-send-email-fdmanana@gmail.com>
+References: <1390348610-8098-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -35,23 +37,27 @@ more memory, which caused a warning dump in dmesg.
 The following linux kernel patch fixes this issue.
 
    Btrfs: fix infinite path build loops in incremental send
-   (https://patchwork.kernel.org/patch/3521191/)
+   (https://patchwork.kernel.org/patch/3522361/)
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- tests/btrfs/030     |  140 +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+V2: Updated test to trigger one more code path in the corresponding
+    btrfs linux kernel patch that fixes this issue.
+
+ tests/btrfs/030     |  144 +++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/030.out |    9 ++++
  tests/btrfs/group   |    1 +
- 3 files changed, 150 insertions(+)
+ 3 files changed, 154 insertions(+)
  create mode 100755 tests/btrfs/030
  create mode 100644 tests/btrfs/030.out
 
 diff --git a/tests/btrfs/030 b/tests/btrfs/030
 new file mode 100755
-index 0000000..a492877
+index 0000000..5e1b4fc
 --- /dev/null
 +++ b/tests/btrfs/030
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,144 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/030
 +#
@@ -123,6 +129,7 @@ index 0000000..a492877
 +echo "hello" > $SCRATCH_MNT/a/b/c/file.txt
 +mkdir $SCRATCH_MNT/a/b/c/d
 +mkdir $SCRATCH_MNT/a/b/c2
++mkdir $SCRATCH_MNT/a/b/www
 +mkdir -p $SCRATCH_MNT/a/b/c3/x/y
 +
 +# Directory tree looks like:
@@ -135,10 +142,11 @@ index 0000000..a492877
 +#         |   |-- d/        (ino 261)
 +#         |
 +#         |-- c2/           (ino 262)
++#         |-- www/          (ino 263)
 +#         |
-+#         |-- c3/           (ino 263)
-+#             |-- x/        (ino 264)
-+#                 |-- y/    (ino 265)
++#         |-- c3/           (ino 264)
++#             |-- x/        (ino 265)
++#                 |-- y/    (ino 266)
 +
 +$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1 | \
 +    _filter_scratch
@@ -149,6 +157,7 @@ index 0000000..a492877
 +mv $SCRATCH_MNT/a/b/c3/x/y $SCRATCH_MNT/a/b/c2/y2
 +mv $SCRATCH_MNT/a/b/c3/x $SCRATCH_MNT/a/b/c2/y2/x2
 +mv $SCRATCH_MNT/a/b/c3 $SCRATCH_MNT/a/b/c2/y2/x2/Z
++mv $SCRATCH_MNT/a/b/www $SCRATCH_MNT/a/b/c2/y2/x2/WWW
 +ln $SCRATCH_MNT/a/b/c2/d2/cc/file.txt $SCRATCH_MNT/a/b/c2/y2/x2/Z/file_link.txt
 +mv $SCRATCH_MNT/a/b/c2/d2/cc/file.txt $SCRATCH_MNT/a/b/c2/y2/x2
 +
@@ -161,9 +170,10 @@ index 0000000..a492877
 +#             |-- d2/                       (ino 261)
 +#             |   |-- cc/                   (ino 259)
 +#             |        |-- file.txt         (ino 260)
-+#             |-- y2/                       (ino 265)
-+#                 |-- x2/                   (ino 264)
-+#                     |-- Z/                (ino 263)
++#             |-- y2/                       (ino 266)
++#                 |-- x2/                   (ino 265)
++#                     |-- WWW/              (ino 263)
++#                     |-- Z/                (ino 264)
 +#                         |-- file_link.txt
 +
 +$BTRFS_UTIL_PROG subvol snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2 | \

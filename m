@@ -1,111 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:60919 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752539AbaAVWgY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jan 2014 17:36:24 -0500
-Received: by mail-pa0-f51.google.com with SMTP id ld10so1017840pab.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jan 2014 14:36:23 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1390425459.1198.51.camel@ret.masoncoding.com>
-References: <95DB9BB3-D706-4023-940A-D100D93D560A@gmail.com>
-	<pan$226f4$e1329373$53c2dcca$438e95e@cox.net>
-	<1390423628.1198.49.camel@ret.masoncoding.com>
-	<CAN05THQP_BZR5r6DC8NVk0XLv8BcoZjuYAuMU=+Z6fsdBBHcyA@mail.gmail.com>
-	<1390425459.1198.51.camel@ret.masoncoding.com>
-Date: Wed, 22 Jan 2014 14:36:23 -0800
-Message-ID: <CAN05THS5p9CR5YjzQdEd3ffzStRAa_xQrC0RtYyZJh6gGLnXmQ@mail.gmail.com>
-Subject: Re: Scrubbing with BTRFS Raid 5
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Chris Mason <clm@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "1i5t5.duncan@cox.net" <1i5t5.duncan@cox.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cn.fujitsu.com ([222.73.24.84]:64519 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750927AbaAWFoZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jan 2014 00:44:25 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0N5iJrq002030
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 13:44:19 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: fix warning while merging two adjacent extents
+Date: Thu, 23 Jan 2014 13:41:09 +0800
+Message-Id: <1390455669-2022-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 22, 2014 at 1:16 PM, Chris Mason <clm@fb.com> wrote:
-> On Wed, 2014-01-22 at 13:06 -0800, ronnie sahlberg wrote:
->> On Wed, Jan 22, 2014 at 12:45 PM, Chris Mason <clm@fb.com> wrote:
->> > On Tue, 2014-01-21 at 17:08 +0000, Duncan wrote:
->> >> Graham Fleming posted on Tue, 21 Jan 2014 01:06:37 -0800 as excerpted:
->> >>
->> >> > Thanks for all the info guys.
->> >> >
->> >> > I ran some tests on the latest 3.12.8 kernel. I set up 3 1GB files and
->> >> > attached them to /dev/loop{1..3} and created a BTRFS RAID 5 volume with
->> >> > them.
->> >> >
->> >> > I copied some data (from dev/urandom) into two test files and got their
->> >> > MD5 sums and saved them to a text file.
->> >> >
->> >> > I then unmounted the volume, trashed Disk3 and created a new Disk4 file,
->> >> > attached to /dev/loop4.
->> >> >
->> >> > I mounted the BTRFS RAID 5 volume degraded and the md5 sums were fine. I
->> >> > added /dev/loop4 to the volume and then deleted the missing device and
->> >> > it rebalanced. I had data spread out on all three devices now. MD5 sums
->> >> > unchanged on test files.
->> >> >
->> >> > This, to me, implies BTRFS RAID 5 is working quite well and I can in
->> >> > fact,
->> >> > replace a dead drive.
->> >> >
->> >> > Am I missing something?
->> >>
->> >> What you're missing is that device death and replacement rarely happens
->> >> as neatly as your test (clean unmounts and all, no middle-of-process
->> >> power-loss, etc).  You tested best-case, not real-life or worst-case.
->> >>
->> >> Try that again, setting up the raid5, setting up a big write to it,
->> >> disconnect one device in the middle of that write (I'm not sure if just
->> >> dropping the loop works or if the kernel gracefully shuts down the loop
->> >> device), then unplugging the system without unmounting... and /then/ see
->> >> what sense btrfs can make of the resulting mess.  In theory, with an
->> >> atomic write btree filesystem such as btrfs, even that should work fine,
->> >> minus perhaps the last few seconds of file-write activity, but the
->> >> filesystem should remain consistent on degraded remount and device add,
->> >> device remove, and rebalance, even if another power-pull happens in the
->> >> middle of /that/.
->> >>
->> >> But given btrfs' raid5 incompleteness, I don't expect that will work.
->> >>
->> >
->> > raid5/6 deals with IO errors from one or two drives, and it is able to
->> > reconstruct the parity from the remaining drives and give you good data.
->> >
->> > If we hit a crc error, the raid5/6 code will try a parity reconstruction
->> > to make good data, and if we find good data from the other copy, it'll
->> > return that up to userland.
->> >
->> > In other words, for those cases it works just like raid1/10.  What it
->> > won't do (yet) is write that good data back to the storage.  It'll stay
->> > bad until you remove the device or run balance to rewrite everything.
->> >
->> > Balance will reconstruct parity to get good data as it balances.  This
->> > isn't as useful as scrub, but that work is coming.
->> >
->>
->> That is awesome!
->>
->> What about online conversion from not-raid5/6 to raid5/6  what is the
->> status for that code, for example
->> what happens if there is a failure during the conversion or a reboot ?
->
-> The conversion code uses balance, so that works normally.  If there is a
-> failure during the conversion you'll end up with some things raid5/6 and
-> somethings at whatever other level you used.
->
-> The data will still be there, but you are more prone to enospc
-> problems ;)
->
+When we have two adjacent extents in relink_extent_backref,
+we try to merge them. When we use btrfs_search_slot to locate the
+slot for the current extent, we shouldn't set "ins_len = 1",
+because we will merge it into the previous extent rather than
+insert a new item. Otherwise, we may happen to create a new leaf
+in btrfs_search_slot and path->slot[0] will be 0. Then we try to
+fetch the previous item using "path->slots[0]--", and it will cause
+a warning as follows:
 
-Ok, but if there is enough space,  you could just restart the balance
-and it will eventually finish and all should, with some luck, be ok?
+	[  145.713385] WARNING: CPU: 3 PID: 1796 at fs/btrfs/extent_io.c:5043 map_private_extent_buffer+0xd4/0xe0
+	[  145.713387] btrfs bad mapping eb start 5337088 len 4096, wanted 167772306 8
+	...
+	[  145.713462]  [<ffffffffa034b1f4>] map_private_extent_buffer+0xd4/0xe0
+	[  145.713476]  [<ffffffffa030097a>] ? btrfs_free_path+0x2a/0x40
+	[  145.713485]  [<ffffffffa0340864>] btrfs_get_token_64+0x64/0xf0
+	[  145.713498]  [<ffffffffa033472c>] relink_extent_backref+0x41c/0x820
+	[  145.713508]  [<ffffffffa0334d69>] btrfs_finish_ordered_io+0x239/0xa80
 
-Awesome. This sounds like things are a lot closer to raid5/6 being
-fully operational than I realized.
+I encounter this warning when running defrag having mkfs.btrfs
+with option -M. At the same time there are read/writes & snapshots
+running at background.
 
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> -chris
->
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1ea19ce..7f955d6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2314,7 +2314,7 @@ again:
+ 		u64 extent_len;
+ 		struct btrfs_key found_key;
+ 
+-		ret = btrfs_search_slot(trans, root, &key, path, 1, 1);
++		ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 		if (ret < 0)
+ 			goto out_free_path;
+ 
+-- 
+1.8.0.1
+

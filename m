@@ -1,73 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44151 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750969AbaAWHVM (ORCPT
+Received: from mail1207.opentransfer.com ([98.130.1.227]:47902 "EHLO
+	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751408AbaAWJ3e (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 02:21:12 -0500
-Date: Thu, 23 Jan 2014 15:20:56 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix warning while merging two adjacent extents
-Message-ID: <20140123072055.GC24664@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1390455669-2022-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	Thu, 23 Jan 2014 04:29:34 -0500
+Message-ID: <52E0DF6B.2080200@friendlyvirus.org>
+Date: Thu, 23 Jan 2014 09:22:51 +0000
+From: =?ISO-8859-1?Q?Miguel_Negr=E3o?=
+	<miguel.negrao-lists@friendlyvirus.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1390455669-2022-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: "list, btrfs" <linux-btrfs@vger.kernel.org>
+Subject: btrfs send 3.11 vs 3.12
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="WdWdWheopU5W5m2uw3QQTR2MmH5sipSTu"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 23, 2014 at 01:41:09PM +0800, Gui Hecheng wrote:
-> When we have two adjacent extents in relink_extent_backref,
-> we try to merge them. When we use btrfs_search_slot to locate the
-> slot for the current extent, we shouldn't set "ins_len = 1",
-> because we will merge it into the previous extent rather than
-> insert a new item. Otherwise, we may happen to create a new leaf
-> in btrfs_search_slot and path->slot[0] will be 0. Then we try to
-> fetch the previous item using "path->slots[0]--", and it will cause
-> a warning as follows:
-> 
-> 	[  145.713385] WARNING: CPU: 3 PID: 1796 at fs/btrfs/extent_io.c:5043 map_private_extent_buffer+0xd4/0xe0
-> 	[  145.713387] btrfs bad mapping eb start 5337088 len 4096, wanted 167772306 8
-> 	...
-> 	[  145.713462]  [<ffffffffa034b1f4>] map_private_extent_buffer+0xd4/0xe0
-> 	[  145.713476]  [<ffffffffa030097a>] ? btrfs_free_path+0x2a/0x40
-> 	[  145.713485]  [<ffffffffa0340864>] btrfs_get_token_64+0x64/0xf0
-> 	[  145.713498]  [<ffffffffa033472c>] relink_extent_backref+0x41c/0x820
-> 	[  145.713508]  [<ffffffffa0334d69>] btrfs_finish_ordered_io+0x239/0xa80
-> 
-> I encounter this warning when running defrag having mkfs.btrfs
-> with option -M. At the same time there are read/writes & snapshots
-> running at background.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--WdWdWheopU5W5m2uw3QQTR2MmH5sipSTu
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Looks good.
+Hi
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Sending snapshots incrementally started to fail on the 3.11 kernel on my
+system after I once booted with 3.12 and did the incremental send of a
+snapshot. After when I booted back to 3.11 I can no longer send the
+snapshots incrementally based on the last one sent (I could still send
+based on the last one sent from 3.11), although booting again to 3.12 I
+can send me fine again.
 
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> ---
->  fs/btrfs/inode.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 1ea19ce..7f955d6 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2314,7 +2314,7 @@ again:
->  		u64 extent_len;
->  		struct btrfs_key found_key;
->  
-> -		ret = btrfs_search_slot(trans, root, &key, path, 1, 1);
-> +		ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
->  		if (ret < 0)
->  			goto out_free_path;
->  
-> -- 
-> 1.8.0.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It this intenteded ?
+
+best,
+--=20
+Miguel Negr=E3o
+http://www.friendlyvirus.org/miguelnegrao
+
+
+--WdWdWheopU5W5m2uw3QQTR2MmH5sipSTu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iQEcBAEBAgAGBQJS4N9rAAoJEPo6SjfPe12D1UEIAIKs/8X4EHRRvCYPmD68FxoX
+DpC9qIfP0hqoqSPzbwjK4eXpuCLOljs+3rBqMj+NkTS3qrUkYLuprvwvd9sxhWOr
++Ju8U+mhGrdDL+X+TxhHBSvGxm3jceZx7apRt+UHLOZKSs8ocqlG4N2IDVsGa30K
+AXh/YsyOnQ1jlQU88tf+HKSnrulUwxjBS/pS8TzYCcYhJ1FDvLnj7GZW4/zlF4pc
+GZVT0BMdHu5or1XYLm6bAw2lnc2dCAxG3a3Q5PRkVFXdfsqHaW1jwDCeQ3cAemNg
+8JnIbvr8rVqN46K0CDQp5TO9uvZWiN2h8LmQJ+YG7u4+SacsrtkC2d+88X4D2Zs=
+=OXHV
+-----END PGP SIGNATURE-----
+
+--WdWdWheopU5W5m2uw3QQTR2MmH5sipSTu--

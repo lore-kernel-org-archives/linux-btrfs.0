@@ -1,98 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1207.opentransfer.com ([98.130.1.227]:51016 "EHLO
-	mail1207.opentransfer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932225AbaAWR6N (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28786 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750826AbaAWVGW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 12:58:13 -0500
-Message-ID: <52E1582F.9080308@friendlyvirus.org>
-Date: Thu, 23 Jan 2014 17:58:07 +0000
-From: =?ISO-8859-1?Q?Miguel_Negr=E3o?=
-	<miguel.negrao-lists@friendlyvirus.org>
+	Thu, 23 Jan 2014 16:06:22 -0500
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s0NL2Yfv026424
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 13:06:21 -0800
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1hk62p127q-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 13:06:20 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix extent_from_logical to deal with skinny metadata
+Date: Thu, 23 Jan 2014 16:06:17 -0500
+Message-ID: <1390511177-3395-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, "list, btrfs" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs send 3.11 vs 3.12
-References: <52E0DF6B.2080200@friendlyvirus.org> <52E124E0.4040702@fb.com>
-In-Reply-To: <52E124E0.4040702@fb.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="5sb0c4gkeK4wLHtG2F4F0uFWgJOgBnu0o"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5sb0c4gkeK4wLHtG2F4F0uFWgJOgBnu0o
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+I don't think this is an issue and I've not seen it in practice but
+extent_from_logical will fail to find a skinny extent because it uses
+btrfs_previous_item and gives it the normal extent item type.  This is just not
+a place to use btrfs_previous_item since we care about either normal extents or
+skinny extents, so open code btrfs_previous_item to properly check.  This would
+only affect metadata and the only place this is used for metadata is scrub and
+I'm pretty sure it's just for printing stuff out, not actually doing any work so
+hopefully it was never a problem other than a cosmetic one.  Thanks,
 
-Em 23-01-2014 14:19, Josef Bacik escreveu:
->=20
-> On 01/23/2014 04:22 AM, Miguel Negr=E3o wrote:
->> Hi
->>
->> Sending snapshots incrementally started to fail on the 3.11 kernel on =
-my
->> system after I once booted with 3.12 and did the incremental send of a=
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/backref.c | 41 +++++++++++++++++++++++++++++++++--------
+ 1 file changed, 33 insertions(+), 8 deletions(-)
 
->> snapshot. After when I booted back to 3.11 I can no longer send the
->> snapshots incrementally based on the last one sent (I could still send=
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 34a8952..dcf2448 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1302,20 +1302,45 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+ 	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		return ret;
+-	ret = btrfs_previous_item(fs_info->extent_root, path,
+-					0, BTRFS_EXTENT_ITEM_KEY);
+-	if (ret < 0)
+-		return ret;
+ 
+-	btrfs_item_key_to_cpu(path->nodes[0], found_key, path->slots[0]);
++	while (1) {
++		u32 nritems;
++		if (path->slots[0] == 0) {
++			btrfs_set_path_blocking(path);
++			ret = btrfs_prev_leaf(fs_info->extent_root, path);
++			if (ret != 0) {
++				if (ret > 0) {
++					pr_debug("logical %llu is not within "
++						 "any extent\n", logical);
++					ret = -ENOENT;
++				}
++				return ret;
++			}
++		} else {
++			path->slots[0]--;
++		}
++		nritems = btrfs_header_nritems(path->nodes[0]);
++		if (nritems == 0) {
++			pr_debug("logical %llu is not within any extent\n",
++				 logical);
++			return -ENOENT;
++		}
++		if (path->slots[0] == nritems)
++			path->slots[0]--;
++
++		btrfs_item_key_to_cpu(path->nodes[0], found_key,
++				      path->slots[0]);
++		if (found_key->type == BTRFS_EXTENT_ITEM_KEY ||
++		    found_key->type == BTRFS_METADATA_ITEM_KEY)
++			break;
++	}
++
+ 	if (found_key->type == BTRFS_METADATA_ITEM_KEY)
+ 		size = fs_info->extent_root->leafsize;
+ 	else if (found_key->type == BTRFS_EXTENT_ITEM_KEY)
+ 		size = found_key->offset;
+ 
+-	if ((found_key->type != BTRFS_EXTENT_ITEM_KEY &&
+-	     found_key->type != BTRFS_METADATA_ITEM_KEY) ||
+-	    found_key->objectid > logical ||
++	if (found_key->objectid > logical ||
+ 	    found_key->objectid + size <= logical) {
+ 		pr_debug("logical %llu is not within any extent\n", logical);
+ 		return -ENOENT;
+-- 
+1.8.3.1
 
->> based on the last one sent from 3.11), although booting again to 3.12 =
-I
->> can send me fine again.
->>
->> It this intenteded ?
-> This is definitely not intended, I will look into why this is
-> happening.  Thanks,
-
-Great, thanks.  The error:
-
-> miguel@miguel-MacBookPro:~$ sudo btrfs send -p /mnt/ssd/backups/@-2014-=
-01-22-11\:29/ /mnt/ssd/backups/@-2014-01-23-17\:51/ | sudo btrfs receive =
-/media/miguel/backup/backups/@=20
-> At subvol /mnt/ssd/backups/@-2014-01-23-17:51/
-> At snapshot @-2014-01-23-17:51
-> ERROR: could not find parent subvolume
-
-> miguel@miguel-MacBookPro:~$ ls -l /media/miguel/backup/backups/@
-> total 0
-=2E..
-> drwxr-xr-x 1 root root 358 Jan 22 11:31 @-2014-01-22-11:29
-
-Don't know if it's relevant, but I'm already mounting the filesystem
-with subvolid=3D5 since was an issue too:
-
-> sudo mount -o subvolid=3D5 -U f2e4e4d3-2d8e-4764-a818-de9176405c4b /mnt=
-/ssd
-
-best,
-Miguel
-
-
-
-
-
-
---=20
-Miguel Negr=E3o
-http://www.friendlyvirus.org/miguelnegrao
-
-
---5sb0c4gkeK4wLHtG2F4F0uFWgJOgBnu0o
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQEcBAEBAgAGBQJS4Vg0AAoJEPo6SjfPe12DnnUH/0U9gIwCAZVtKFD0f+XgaHRA
-ri1xWHbw8Hkk1iCaEZnsDAt1X6RSsURnRpJRbzc9maD4z2o5+n6b+tsL+aaa9hSG
-NwfwX/Ex2VwtGVv6d9XQ441+gD2UBIvnRl8ZDlWL0X+mnjXDvhCAaceA0xDg111s
-RJokIANg0+x7b2JjUhSmpGn3Y8Szmm/msKh0PT1FVjdGIuvrH/nmPMp9qiKjv76o
-HOR9qDxkaTV9whf6PhHzWHzUDaQ+4lz5QfrF3D1ddze4WB43hLf07wDChL9Gs/Gt
-bW06u79KWHqz7fM+oYxqLYt09PVHc+nEtBD2NqA+hgfrR6FukxKxiEPQGERMlWY=
-=HvaQ
------END PGP SIGNATURE-----
-
---5sb0c4gkeK4wLHtG2F4F0uFWgJOgBnu0o--

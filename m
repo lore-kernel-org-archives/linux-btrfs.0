@@ -1,29 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f170.google.com ([209.85.216.170]:41413 "EHLO
-	mail-qc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751490AbaAWXhw (ORCPT
+Received: from mail-bk0-f43.google.com ([209.85.214.43]:48946 "EHLO
+	mail-bk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751775AbaAWXmE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 18:37:52 -0500
-Received: by mail-qc0-f170.google.com with SMTP id e9so3573990qcy.29
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 15:37:51 -0800 (PST)
+	Thu, 23 Jan 2014 18:42:04 -0500
+Received: by mail-bk0-f43.google.com with SMTP id mx11so753024bkb.16
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 15:42:03 -0800 (PST)
 MIME-Version: 1.0
-From: Jonathan H <pythonnut@gmail.com>
-Date: Thu, 23 Jan 2014 15:37:21 -0800
-Message-ID: <CAAW2-ZeF89ZKi3yhhmRpuEBJT9hhbE=c5aehO-wSPsjfsf0YDQ@mail.gmail.com>
-Subject: Zombie BTRFS subvolume
-To: linux-btrfs@vger.kernel.org
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1390513554-32732-1-git-send-email-jbacik@fb.com>
+References: <1390513554-32732-1-git-send-email-jbacik@fb.com>
+Date: Thu, 23 Jan 2014 23:42:03 +0000
+Message-ID: <CAL3q7H7WGFpYC9AuyhFPhNgudyUAmVA3mgGaqVY+Ay=Z9=0_2Q@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix qgroup rescan to work with skinny metadata
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I deleted a subvolume using "rm -rf .snapshots" (the subvolume was
-created by snapper). Now, it's gone from the filesystem, but it's
-still show in "btrfs su list /" where it was originally. This makes me
-worried. I ran a btrfsck and it didn't spot any errors that seemed
-relevant.
+On Thu, Jan 23, 2014 at 9:45 PM, Josef Bacik <jbacik@fb.com> wrote:
+> Could have sworn I fixed this before but apparently not.  This makes us pass
+> btrfs/022 with skinny metadata enabled.  Thanks,
+>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/qgroup.c | 18 +++++++++++++-----
+>  1 file changed, 13 insertions(+), 5 deletions(-)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index d22e0a1..7d04026 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1897,9 +1897,17 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+>         mutex_unlock(&fs_info->qgroup_rescan_lock);
+>
+>         for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
+> +               u64 num_bytes;
+> +
+>                 btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
+> -               if (found.type != BTRFS_EXTENT_ITEM_KEY)
+> +               if (found.type != BTRFS_EXTENT_ITEM_KEY ||
+> +                   found.type != BTRFS_METADATA_ITEM_KEY)
+>                         continue;
 
-The system is alive and well, but I'm worried that something's not
-right. Is this okay, and, if not, how can I fix it?
+Hi Josef,
 
-Thanks,
-PythonNut
+Shouldn't it be && instead of || ?
+
+thanks
+
+
+> +               if (found.type == BTRFS_METADATA_ITEM_KEY)
+> +                       num_bytes = fs_info->extent_root->leafsize;
+> +               else
+> +                       num_bytes = found.offset;
+> +
+>                 ret = btrfs_find_all_roots(trans, fs_info, found.objectid,
+>                                            tree_mod_seq_elem.seq, &roots);
+>                 if (ret < 0)
+> @@ -1944,12 +1952,12 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+>                         struct btrfs_qgroup_list *glist;
+>
+>                         qg = (struct btrfs_qgroup *)(uintptr_t) unode->aux;
+> -                       qg->rfer += found.offset;
+> -                       qg->rfer_cmpr += found.offset;
+> +                       qg->rfer += num_bytes;
+> +                       qg->rfer_cmpr += num_bytes;
+>                         WARN_ON(qg->tag >= seq);
+>                         if (qg->refcnt - seq == roots->nnodes) {
+> -                               qg->excl += found.offset;
+> -                               qg->excl_cmpr += found.offset;
+> +                               qg->excl += num_bytes;
+> +                               qg->excl_cmpr += num_bytes;
+>                         }
+>                         qgroup_dirty(fs_info, qg);
+>
+> --
+> 1.8.3.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

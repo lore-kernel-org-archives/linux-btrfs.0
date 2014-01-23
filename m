@@ -1,170 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1433 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750969AbaAWHny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 02:43:54 -0500
-Message-ID: <52E0C7ED.3000709@cn.fujitsu.com>
-Date: Thu, 23 Jan 2014 15:42:37 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.217]:35184 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750831AbaAWIU1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jan 2014 03:20:27 -0500
+Message-ID: <52E0D0C8.3090502@giantdisaster.de>
+Date: Thu, 23 Jan 2014 09:20:24 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>
-CC: linux-btrfs@vger.kernel.org, Stefan Behrens <sbehrens@giantdisaster.de>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs-progs: enclose uuid tree compat code with ifdefs
-References: <1390319767-11201-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1390319767-11201-1-git-send-email-dsterba@suse.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+References: <1390319767-11201-1-git-send-email-dsterba@suse.cz> <52E0C7ED.3000709@cn.fujitsu.com>
+In-Reply-To: <52E0C7ED.3000709@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+On Thu, 23 Jan 2014 15:42:37 +0800, Wang Shilong wrote:
+> Hi David,
+> 
+> On 01/21/2014 11:56 PM, David Sterba wrote:
+>> Commit "Btrfs-progs: make send/receive compatible with older kernels"
+>> adds code that will become deprecated, let's clearly mark it in the
+>> sources.
+>>
+>> CC: Stefan Behrens <sbehrens@giantdisaster.de>
+>> CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+>> Signed-off-by: David Sterba <dsterba@suse.cz>
+>> ---
+>>   send-utils.c |   28 ++++++++++++++++++++++++++++
+>>   send-utils.h |   10 ++++++++++
+>>   2 files changed, 38 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/send-utils.c b/send-utils.c
+[...]
+>> +#else
+>> +void subvol_uuid_search_add(struct subvol_uuid_search *s,
+>> +                struct subvol_info *si)
+>> +{
+>> +    if (si) {
+>> +        free(si->path);
+>> +        free(si);
+>> +    }
+>> +}
+>> +#endif
+> I noticed subvol_uuid_search_add() function before, anyway
+> it is not called anywhere before, aslo IMO it is a little strange that
+> we free
+> memory here.
 
-On 01/21/2014 11:56 PM, David Sterba wrote:
-> Commit "Btrfs-progs: make send/receive compatible with older kernels"
-> adds code that will become deprecated, let's clearly mark it in the
-> sources.
->
-> CC: Stefan Behrens <sbehrens@giantdisaster.de>
-> CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->   send-utils.c |   28 ++++++++++++++++++++++++++++
->   send-utils.h |   10 ++++++++++
->   2 files changed, 38 insertions(+), 0 deletions(-)
->
-> diff --git a/send-utils.c b/send-utils.c
-> index 1772d2c5c0f3..8d4f46e3dd04 100644
-> --- a/send-utils.c
-> +++ b/send-utils.c
-> @@ -159,6 +159,7 @@ static int btrfs_read_root_item(int mnt_fd, u64 root_id,
->   	return 0;
->   }
->   
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   static struct rb_node *tree_insert(struct rb_root *root,
->   				   struct subvol_info *si,
->   				   enum subvol_search_type type)
-> @@ -223,6 +224,7 @@ static struct rb_node *tree_insert(struct rb_root *root,
->   	}
->   	return NULL;
->   }
-> +#endif
->   
->   int btrfs_subvolid_resolve(int fd, char *path, size_t path_len, u64 subvol_id)
->   {
-> @@ -320,6 +322,7 @@ static int btrfs_subvolid_resolve_sub(int fd, char *path, size_t *path_len,
->   	return 0;
->   }
->   
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   static int count_bytes(void *buf, int len, char b)
->   {
->   	int cnt = 0;
-> @@ -416,6 +419,16 @@ static struct subvol_info *subvol_uuid_search_old(struct subvol_uuid_search *s,
->   		return NULL;
->   	return tree_search(root, root_id, uuid, transid, path, type);
->   }
-> +#else
-> +void subvol_uuid_search_add(struct subvol_uuid_search *s,
-> +			    struct subvol_info *si)
-> +{
-> +	if (si) {
-> +		free(si->path);
-> +		free(si);
-> +	}
-> +}
-> +#endif
-I noticed subvol_uuid_search_add() function before, anyway
-it is not called anywhere before, aslo IMO it is a little strange that 
-we free
-memory here.
+The old code calls subvol_uuid_search_add() when btrfs receive finishes
+receiving a snapshot. This is required when you receive an incremental
+stream which includes multiple snapshots, and each snapshot is
+incremental to the previous one in the stream. If the uuid-tree is not
+available and the old code is used, subvol_uuid_search_add() needs to be
+called in finish_subvol().
 
-Thanks,
-Wang
->   
->   struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
->   				       u64 root_id, const u8 *uuid, u64 transid,
-> @@ -426,9 +439,11 @@ struct subvol_info *subvol_uuid_search(struct subvol_uuid_search *s,
->   	struct btrfs_root_item root_item;
->   	struct subvol_info *info = NULL;
->   
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   	if (!s->uuid_tree_existed)
->   		return subvol_uuid_search_old(s, root_id, uuid, transid,
->   					     path, type);
-> +#endif
->   	switch (type) {
->   	case subvol_search_by_received_uuid:
->   		ret = btrfs_lookup_uuid_received_subvol_item(s->mnt_fd, uuid,
-> @@ -481,6 +496,7 @@ out:
->   	return info;
->   }
->   
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   static int is_uuid_tree_supported(int fd)
->   {
->   	int ret;
-> @@ -679,6 +695,18 @@ void subvol_uuid_search_finit(struct subvol_uuid_search *s)
->   	s->received_subvols = RB_ROOT;
->   	s->path_subvols = RB_ROOT;
->   }
-> +#else
-> +int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
-> +{
-> +	s->mnt_fd = mnt_fd;
-> +
-> +	return 0;
-> +}
-> +
-> +void subvol_uuid_search_finit(struct subvol_uuid_search *s)
-> +{
-> +}
-> +#endif
->   
->   char *path_cat(const char *p1, const char *p2)
->   {
-> diff --git a/send-utils.h b/send-utils.h
-> index 943b0277cf7e..f451c1cb6071 100644
-> --- a/send-utils.h
-> +++ b/send-utils.h
-> @@ -30,6 +30,12 @@
->   extern "C" {
->   #endif
->   
-> +/*
-> + * Compatibility code for kernels < 3.12; the UUID tree is not available there
-> + * and we have to do the slow search. This should be deprecated someday.
-> + */
-> +#define BTRFS_COMPAT_SEND_NO_UUID_TREE 1
-> +
->   enum subvol_search_type {
->   	subvol_search_by_root_id,
->   	subvol_search_by_uuid,
-> @@ -38,10 +44,12 @@ enum subvol_search_type {
->   };
->   
->   struct subvol_info {
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   	struct rb_node rb_root_id_node;
->   	struct rb_node rb_local_node;
->   	struct rb_node rb_received_node;
->   	struct rb_node rb_path_node;
-> +#endif
->   
->   	u64 root_id;
->   	u8 uuid[BTRFS_UUID_SIZE];
-> @@ -57,12 +65,14 @@ struct subvol_info {
->   
->   struct subvol_uuid_search {
->   	int mnt_fd;
-> +#ifdef BTRFS_COMPAT_SEND_NO_UUID_TREE
->   	int uuid_tree_existed;
->   
->   	struct rb_root root_id_subvols;
->   	struct rb_root local_subvols;
->   	struct rb_root received_subvols;
->   	struct rb_root path_subvols;
-> +#endif
->   };
->   
->   int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s);
+The free()s in subvol_uuid_search_add() in the new code are correct. And
+that this function is not called in the new code is correct as well. It
+is only there since it is part of the exported functions of the
+"btrfs-lib". And since the old code used subvol_uuid_search_add()
+instead of free(), to add the pointers to the database, which does not
+exist anymore in the new code, now it's just a free() of the memory, to
+prevent a memory leak in existing applications that use the "btrfs-lib".
+
 

@@ -1,82 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35177 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:39444 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750927AbaAWSg0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 13:36:26 -0500
-Date: Thu, 23 Jan 2014 19:36:24 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Roger Binns <rogerb@rogerbinns.com>
-Cc: linux-btrfs@vger.kernel.org
+	id S1752122AbaAWVra (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jan 2014 16:47:30 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W6S7V-0004Dp-7m
+	for linux-btrfs@vger.kernel.org; Thu, 23 Jan 2014 22:47:29 +0100
+Received: from 50-0-67-239.dsl.static.fusionbroadband.com ([50.0.67.239])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 22:47:29 +0100
+Received: from rogerb by 50-0-67-239.dsl.static.fusionbroadband.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jan 2014 22:47:29 +0100
+To: linux-btrfs@vger.kernel.org
+From: Roger Binns <rogerb@rogerbinns.com>
 Subject: Re: Working on Btrfs as topic for master thesis
-Message-ID: <20140123183624.GQ6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local>
- <lbid3r$1ui$1@ger.gmane.org>
- <20140122121220.GF6498@twin.jikos.cz>
- <lbpb7v$7m2$1@ger.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <lbpb7v$7m2$1@ger.gmane.org>
+Date: Thu, 23 Jan 2014 13:47:17 -0800
+Message-ID: <lbs2kp$6km$1@ger.gmane.org>
+References: <8E968DF3B7EC0D40B67B5A9D25675A6A03FC70@MBXSRV03EDU.edu.local> <lbid3r$1ui$1@ger.gmane.org> <20140122121220.GF6498@twin.jikos.cz> <lbpb7v$7m2$1@ger.gmane.org> <20140123183624.GQ6498@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20140123183624.GQ6498@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 22, 2014 at 12:55:39PM -0800, Roger Binns wrote:
-> There was the theoretical side - ie coming up with a way of defining
-> perfection which then allows measuring against.  For example you have
-> going up to a 128K block size but without knowing the theoretical best we
-> don't know if that is a stopgap or very good.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-I got some inspiration from
-http://web.archive.org/web/20060511214233/http://www.namesys.com/compression.txt
-there's a metric proposed and some analysis of cluster sizes.
+On 23/01/14 10:36, David Sterba wrote:
+> 'Theoretical best' seems too vaguely defined,
 
-Referenced from
-http://web.archive.org/web/20070403001821/http://www.namesys.com/cryptcompress_design.html
-with the related filesysem details
+It seems like a good thing for someone to tackle as part of a master's
+thesis :-)
 
-'Theoretical best' seems too vaguely defined, with compression it's
-always some trade-off and compromise (comp/decomp speed vs ratio) and
-counting the filesystem requirements like a reasonable read and write
-latencies/throughput it's not getting easier.
+> with compression it's always some trade-off and compromise
 
-The main categories I'm targeting are 'real-time, good on average for
-random read-write', and 'slow, high compression ratio, expected
-streaming reads/writes'.
+Which you can put in context against the theoretical best.  The links you
+gave are a good example of trying to do that.
 
-I'm trying to evaluate the effects of the changes with respect to the
-filesystem, eg. when the larger chunk means the ratio improves from 80%
-to 70% for some data set type, what's the reduced block count and if
-it's worth.
+> This is a bit different usecase, defrag is triggered by user at the
+> time he knows the resources are available
 
-If the interface is flexible enough, it gives the user chance to
-experiment with the options and make the choice.
+I'm a user and I use autodefrag :-)  As a developer you are more
+interested in making users be aware of what they do, when they do it, and
+carefully select the optimum conditions and configuration.
 
-> That also feeds into things like if it would be a good idea to go back
-> afterwards (perhaps as part of defrag) and spend more effort on
-> (re)compression.
+As a user I just want to point to a pile of storage and have btrfs do the
+right thing, without me having to babysit it or play admin.  Computers
+have billions of processor cycles per second, gigabytes of memory etc.
+They should just figure this stuff out and not require me to be versed in
+lots of intricate details!
 
-This is a bit different usecase, defrag is triggered by user at the time
-he knows the resources are available and usually on known files and
-their potential compressibility. More, the userspace defrag process can
-do a preliminary analysis of the files, eg. guess the mime type or do a
-random sample of the file data and guess compressibility.
+> Keeping the dictionary implies more data to be read/written, with
+> small chunks there's a low chance of actual dictionary reuse for other
+> files.
 
-> Another consideration is perhaps having the compression dictionary kept
-> separate from the compressed blocks thereby allowing it to be used across
-> blocks and potentially files.  Compressors like smaz (very good on short
-> pieces of text) work by having a precomputed dictionary - perhaps those
-> can be used too.
+I'm willing to bet that there is a good chance of reuse for files with the
+same extension as an example.  And it is highly likely for Maildir files.
 
-Keeping the dictionary implies more data to be read/written, with small
-chunks there's a low chance of actual dictionary reuse for other files.
-Also, thinking about the implementaion, it would become too complex to
-do in kernel for this particular usecase.
+> Also, thinking about the implementaion, it would become too complex to 
+> do in kernel for this particular usecase.
 
-It's interesting theoretically, there's a paper about that
+A thesis could study if it is worth doing first.  If it found that was a
+good idea, then figuring out how to implement it is a second step.
 
-"To Zip or Not to Zip: Effective Resource Usage for Real-Time
-Compression"
-https://www.usenix.org/conference/fast13/technical-sessions/presentation/harnik
+> "To Zip or Not to Zip: Effective Resource Usage for Real-Time 
+> Compression"
 
-but haven't found it feasible to push the implementation to kernel and
-worth the required disk format changes.
+Except for systems that are 100% busy all the time, there is no need to
+get perfect real time compression.  IMHO it is fine coming back later and
+doing a better job of it.  Again this assumes that there is a sufficiently
+large difference between what real time does and what a later
+recompression does.
+
+Roger
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iEYEARECAAYFAlLhjeUACgkQmOOfHg372QTBKwCgxbWmfwr0MMfAo9bVwThmGTOq
+F1EAoIsgVlzfeqPZS9zpKM1mJ3Cdw9LL
+=IINU
+-----END PGP SIGNATURE-----
+

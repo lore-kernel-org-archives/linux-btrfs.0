@@ -1,36 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:28789 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932104AbaAWOTR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 09:19:17 -0500
-Message-ID: <52E124E0.4040702@fb.com>
-Date: Thu, 23 Jan 2014 09:19:12 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Miguel_Negr=E3o?=
+Received: from cantor2.suse.de ([195.135.220.15]:57094 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753906AbaAWOlJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jan 2014 09:41:09 -0500
+Date: Thu, 23 Jan 2014 15:41:07 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Joshua =?iso-8859-1?Q?Sch=FCler?= <joshua.schueler@gmail.com>
+Cc: Miguel =?iso-8859-1?Q?Negr=E3o?=
 	<miguel.negrao-lists@friendlyvirus.org>,
         "list, btrfs" <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs send 3.11 vs 3.12
+Message-ID: <20140123144107.GN6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <52E0DF6B.2080200@friendlyvirus.org>
-In-Reply-To: <52E0DF6B.2080200@friendlyvirus.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+ <52E10B06.4080703@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <52E10B06.4080703@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jan 23, 2014 at 01:28:54PM +0100, Joshua Schüler wrote:
+> btrfs guarantees backward compatibility since 3.13(?), but never
+> guaranteed forward compatibility.
 
-On 01/23/2014 04:22 AM, Miguel Negrão wrote:
-> Hi
->
-> Sending snapshots incrementally started to fail on the 3.11 kernel on my
-> system after I once booted with 3.12 and did the incremental send of a
-> snapshot. After when I booted back to 3.11 I can no longer send the
-> snapshots incrementally based on the last one sent (I could still send
-> based on the last one sent from 3.11), although booting again to 3.12 I
-> can send me fine again.
->
-> It this intenteded ?
-This is definitely not intended, I will look into why this is 
-happening.  Thanks,
+Isnt' this the opposite way? Forward means that old fs will be mountable
+on a newer kernel.
 
-Josef
+I don't know what you mean by 'backward compatibility is guaranteed
+since 3.13'. There are some features that get turned on automatically if
+used for the first time, but not all of them prevent mounting on an
+older kernel. Exmaple is the uuid tree, "generation v2" that's been
+introduced with send. Older kernel ignores the changes and newer kernel
+is usually able to recognize that the data are not all-ok and recovers
+itself or allows the user to do so manually.
+
+> So it is not yet supported to mount the fs with an older kernel once
+> it was mounted with a newer one.
+
+That's right, but in practice is not that bad.
+
+> Especially when using features that are under heavy development right now.
+
+Which features do you mean? Once a feature is introduced, the format
+and incompatibility bits should not change. The code may change, and
+does of course, but always in a compatible way.

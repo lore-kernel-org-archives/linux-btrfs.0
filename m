@@ -1,106 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:35670 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:30541 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751015AbaAXBIy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 20:08:54 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0O18qbF004522
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 09:08:52 +0800
-Message-ID: <52E1BCDB.9060004@cn.fujitsu.com>
-Date: Fri, 24 Jan 2014 09:07:39 +0800
+	id S1750753AbaAXJLT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jan 2014 04:11:19 -0500
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix extent_from_logical to deal with skinny metadata
-References: <1390511177-3395-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1390511177-3395-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: add regression test for transaction abortion when remounting
+Date: Fri, 24 Jan 2014 17:09:56 +0800
+Message-Id: <1390554597-11076-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef,
+Btrfs would get a transaction abortion when remounting RW to RO with
+flushoncommit enabled.This test is to check if bug still exists.
 
-I have sent a patch before to address this issue:
-       https://patchwork.kernel.org/patch/3472211/
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ tests/btrfs/032     | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/032.out |  3 +++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 61 insertions(+)
+ create mode 100755 tests/btrfs/032
+ create mode 100644 tests/btrfs/032.out
 
-I introduced another function btrfs_previous_extent_item() to
-search previous extent item, I think you must miss my path before
-giving this patch ^_^.
-
-Thanks,
-Wang
-
-On 01/24/2014 05:06 AM, Josef Bacik wrote:
-> I don't think this is an issue and I've not seen it in practice but
-> extent_from_logical will fail to find a skinny extent because it uses
-> btrfs_previous_item and gives it the normal extent item type.  This is just not
-> a place to use btrfs_previous_item since we care about either normal extents or
-> skinny extents, so open code btrfs_previous_item to properly check.  This would
-> only affect metadata and the only place this is used for metadata is scrub and
-> I'm pretty sure it's just for printing stuff out, not actually doing any work so
-> hopefully it was never a problem other than a cosmetic one.  Thanks,
->
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->   fs/btrfs/backref.c | 41 +++++++++++++++++++++++++++++++++--------
->   1 file changed, 33 insertions(+), 8 deletions(-)
->
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 34a8952..dcf2448 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -1302,20 +1302,45 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
->   	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, path, 0, 0);
->   	if (ret < 0)
->   		return ret;
-> -	ret = btrfs_previous_item(fs_info->extent_root, path,
-> -					0, BTRFS_EXTENT_ITEM_KEY);
-> -	if (ret < 0)
-> -		return ret;
->   
-> -	btrfs_item_key_to_cpu(path->nodes[0], found_key, path->slots[0]);
-> +	while (1) {
-> +		u32 nritems;
-> +		if (path->slots[0] == 0) {
-> +			btrfs_set_path_blocking(path);
-> +			ret = btrfs_prev_leaf(fs_info->extent_root, path);
-> +			if (ret != 0) {
-> +				if (ret > 0) {
-> +					pr_debug("logical %llu is not within "
-> +						 "any extent\n", logical);
-> +					ret = -ENOENT;
-> +				}
-> +				return ret;
-> +			}
-> +		} else {
-> +			path->slots[0]--;
-> +		}
-> +		nritems = btrfs_header_nritems(path->nodes[0]);
-> +		if (nritems == 0) {
-> +			pr_debug("logical %llu is not within any extent\n",
-> +				 logical);
-> +			return -ENOENT;
-> +		}
-> +		if (path->slots[0] == nritems)
-> +			path->slots[0]--;
-> +
-> +		btrfs_item_key_to_cpu(path->nodes[0], found_key,
-> +				      path->slots[0]);
-> +		if (found_key->type == BTRFS_EXTENT_ITEM_KEY ||
-> +		    found_key->type == BTRFS_METADATA_ITEM_KEY)
-> +			break;
-> +	}
-> +
->   	if (found_key->type == BTRFS_METADATA_ITEM_KEY)
->   		size = fs_info->extent_root->leafsize;
->   	else if (found_key->type == BTRFS_EXTENT_ITEM_KEY)
->   		size = found_key->offset;
->   
-> -	if ((found_key->type != BTRFS_EXTENT_ITEM_KEY &&
-> -	     found_key->type != BTRFS_METADATA_ITEM_KEY) ||
-> -	    found_key->objectid > logical ||
-> +	if (found_key->objectid > logical ||
->   	    found_key->objectid + size <= logical) {
->   		pr_debug("logical %llu is not within any extent\n", logical);
->   		return -ENOENT;
+diff --git a/tests/btrfs/032 b/tests/btrfs/032
+new file mode 100755
+index 0000000..0b666e5
+--- /dev/null
++++ b/tests/btrfs/032
+@@ -0,0 +1,57 @@
++#!/bin/bash
++# FS QA Test No. btrfs/032
++#
++# Regression test for transaction abortion when remounting RW to RO
++# with flushoncommit option enabled.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount "-o flushoncommit"
++
++$XFS_IO_PROG -f -c "pwrite 0 10M" "$SCRATCH_MNT/tmpfile" | _filter_xfs_io
++
++_scratch_mount "-o remount,ro"
++
++status=0 ; exit
+diff --git a/tests/btrfs/032.out b/tests/btrfs/032.out
+new file mode 100644
+index 0000000..bd0ac21
+--- /dev/null
++++ b/tests/btrfs/032.out
+@@ -0,0 +1,3 @@
++QA output created by 032
++wrote 10485760/10485760 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 2e2b8e1..7f48b04 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -34,3 +34,4 @@
+ 029 auto quick
+ 030 auto quick
+ 031 auto quick
++032 auto quick
+-- 
+1.8.3.1
 

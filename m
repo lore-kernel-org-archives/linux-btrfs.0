@@ -1,35 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51838 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752445AbaAXOwH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 09:52:07 -0500
-Date: Fri, 24 Jan 2014 15:52:05 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Calvin Walton <mailing-lists@kepstin.ca>
-Cc: "G. Michael Carter" <mikey@carterfamily.ca>, linux-btrfs@vger.kernel.org
-Subject: Re: Confirmation on how btrfs works with RAID and single.
-Message-ID: <20140124145205.GS6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CANjusZdjBTzreOTc3xvNeiu-LOBzbO2kLCOmjn=m19B-76m67w@mail.gmail.com>
- <1390236695.1869.3.camel@sasami.ottawa.blindsidenetworks.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57440 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752710AbaAXOxG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jan 2014 09:53:06 -0500
+Message-ID: <52E27E4D.6070107@fb.com>
+Date: Fri, 24 Jan 2014 09:53:01 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1390236695.1869.3.camel@sasami.ottawa.blindsidenetworks.com>
+To: <bo.li.liu@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: throttle delayed refs better
+References: <1390500472-15144-1-git-send-email-jbacik@fb.com> <20140124073448.GC31638@localhost.localdomain>
+In-Reply-To: <20140124073448.GC31638@localhost.localdomain>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 20, 2014 at 11:51:35AM -0500, Calvin Walton wrote:
-> > Single:  When it writes does it simple fill up one drive then move to
-> > the next or does it write in a round robin type fashion?
-> 
-> I'm not totally sure, this depends on the vagaries of the chunk
-> allocator. When writing only new files to an initially blank filesystem,
-> I would expect this to be a case; but on a used filesystem you will
-> probably get files fragmented over both disks.
 
-The chunks are sorted by remaining free space, descending, so after some
-GBs written it will become ~round robin (depending on the device sizes).
+On 01/24/2014 02:34 AM, Liu Bo wrote:
+> On Thu, Jan 23, 2014 at 01:07:52PM -0500, Josef Bacik wrote:
+>> On one of our gluster clusters we noticed some pretty big lag spikes.  This
+>> turned out to be because our transaction commit was taking like 3 minutes to
+>> complete.  This is because we have like 30 gigs of metadata, so our global
+>> reserve would end up being the max which is like 512 mb.  So our throttling code
+>> would allow a ridiculous amount of delayed refs to build up and then they'd all
+>> get run at transaction commit time, and for a cold mounted file system that
+>> could take up to 3 minutes to run.  So fix the throttling to be based on both
+>> the size of the global reserve and how long it takes us to run delayed refs.
+>> This patch tracks the time it takes to run delayed refs and then only allows 1
+>> seconds worth of outstanding delayed refs at a time.  This way it will auto-tune
+>> itself from cold cache up to when everything is in memory and it no longer has
+>> to go to disk.  This makes our transaction commits take much less time to run.
+>> Thanks,
+> Which version of btrfs is the patch made for?
+>
+> I checked the code and it doesn't seem to be btrfs-next, either...we don't
+> have a __btrfs_run_delayed_refs().
 
-The 'fill one device first" is addressed by
-"Btrfs: Add linear chunk allocation support"
-http://www.spinics.net/lists/linux-btrfs/msg29616.html
+It depends on the patch I sent before where I move delayed refs onto a 
+delayed ref head rb tree.  Thanks,
+
+Josef

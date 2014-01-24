@@ -1,95 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:64227 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751820AbaAXTYw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 14:24:52 -0500
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s0OJOZYj019484
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 11:24:51 -0800
-Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
-	by mx0a-00082601.pphosted.com with ESMTP id 1hktw6gp6x-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 11:24:51 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: only process as many file extents as there are refs
-Date: Fri, 24 Jan 2014 14:24:48 -0500
-Message-ID: <1390591488-17642-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:46956 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751780AbaAXUOt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jan 2014 15:14:49 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W6n9H-0000Yg-Fx
+	for linux-btrfs@vger.kernel.org; Fri, 24 Jan 2014 21:14:43 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 21:14:43 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 21:14:43 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Options for SSD - autodefrag etc?
+Date: Fri, 24 Jan 2014 21:14:21 +0100
+Message-ID: <t5uara-vp4.ln1@hurikhan77.spdns.de>
+References: <52E19667.6090005@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The backref walking code will search down to the key it is looking for and then
-proceed to walk _all_ of the extents on the file until it hits the end.  This is
-suboptimal with large files, we only need to look for as many extents as we have
-references for that inode.  I have a testcase that creates a randomly written 4
-gig file and before this patch it took 6min 30sec to do the initial send, with
-this patch it takes 2min 30sec to do the intial send.  Thanks,
+KC <conrad.francois.artus@googlemail.com> schrieb:
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/backref.c | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+> I was wondering about whether using options like "autodefrag" and
+> "inode_cache" on SSDs.
+> 
+> On one hand, one always hears that defragmentation of SSD is a no-no,
+> does that apply to BTRFS's autodefrag?
+> Also, just recently, I heard something similar about "inode_cache".
+> 
+> On the other hand, Arch BTRFS wiki recommends to use both options on SSDs
+>   http://wiki.archlinux.org/index.php/Btrfs#Mount_options
+> 
+> So to clear things up, I ask at the source where people should know best.
+> 
+> Does using those options on SSDs gives any benefits and causes
+> non-negligible increase in SSD wear?
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index dcf2448..1538496 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -209,18 +209,19 @@ static int __add_prelim_ref(struct list_head *head, u64 root_id,
- }
- 
- static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
--				struct ulist *parents, int level,
--				struct btrfs_key *key_for_search, u64 time_seq,
--				u64 wanted_disk_byte,
--				const u64 *extent_item_pos)
-+			   struct ulist *parents, struct __prelim_ref *ref,
-+			   int level, u64 time_seq, const u64 *extent_item_pos)
- {
- 	int ret = 0;
- 	int slot;
- 	struct extent_buffer *eb;
- 	struct btrfs_key key;
-+	struct btrfs_key *key_for_search = &ref->key_for_search;
- 	struct btrfs_file_extent_item *fi;
- 	struct extent_inode_elem *eie = NULL, *old = NULL;
- 	u64 disk_byte;
-+	u64 wanted_disk_byte = ref->wanted_disk_byte;
-+	u64 count = 0;
- 
- 	if (level != 0) {
- 		eb = path->nodes[level];
-@@ -238,7 +239,7 @@ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
- 	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0]))
- 		ret = btrfs_next_old_leaf(root, path, time_seq);
- 
--	while (!ret) {
-+	while (!ret && count < ref->count) {
- 		eb = path->nodes[0];
- 		slot = path->slots[0];
- 
-@@ -254,6 +255,7 @@ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
- 		if (disk_byte == wanted_disk_byte) {
- 			eie = NULL;
- 			old = NULL;
-+			count++;
- 			if (extent_item_pos) {
- 				ret = check_extent_in_eb(&key, eb, fi,
- 						*extent_item_pos,
-@@ -334,9 +336,8 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 		eb = path->nodes[level];
- 	}
- 
--	ret = add_all_parents(root, path, parents, level, &ref->key_for_search,
--				time_seq, ref->wanted_disk_byte,
--				extent_item_pos);
-+	ret = add_all_parents(root, path, parents, ref, level, time_seq,
-+			      extent_item_pos);
- out:
- 	path->lowest_level = 0;
- 	btrfs_release_path(path);
+I'm not an expert, but I wondered myself. And while I still have not SSD yet 
+I would prefer turning autodefrag on even for SSD - at least when I have no 
+big write-intensive files on the device (but you should plan your FS to not 
+have those on a SSD anyways) because btrfs may rewrite large files on SSD 
+just for the purpose of autodefragging. I hope that will improve soon, maybe 
+by only defragging parts of the file given some sane thresholds.
+
+Why I decided I would turn it on? Well, heavily fragmented files give a 
+performance overhead, and btrfs tends to fragment files fast (except for the 
+nodatacow mount flag with its own downsides). An adaptive online defrag 
+ensures you gain no performance loss due to very scattert extents. And: 
+Fragmented files (or let's better say fragmented free space) increases 
+write-amplification (at least for long-living filesystems) because when 
+small amounts of free space are randomly scattered all over the device the 
+filesystem has to fill these holes at some point in time. This decreases 
+performance because it has to find these holes and possibly split batched 
+write requests, and it potentially decreases life-time of your SSD because 
+the read-modify-write-erase cycle takes action in more places than what 
+would be needed if the free space hole had just been big enough. I don't 
+know how big erase blocks [*] are - but think about it. You will come to the 
+conclusion that it will reduce life-time.
+
+So it is generally recommended to defragment heavily fragmented files, leave 
+alone the not-so-heavily fragmented files and coalesce free space holes into 
+bigger free space areas on a regular basis. I think, an effective algorithm 
+could coalesce free space into bigger areas of freespace and as a side 
+effect simply defragment those files whose parts had to be moved anyways to 
+merge free space. During this process, a trim should be applied.
+
+I wonder if btrfs will optimize for this use case in the future...
+
+All in all, I'd say: Defragmenting a SSD is not that bad if done right, and 
+if done right it will even improve life-time and performance. And I believe 
+this is why the wiki recommends it. I'd recommend combining it with 
+compress=lzo or maybe even compress-force=lzo (unless your SSD firmware does 
+compression) - it should give a performance boost and reduces writes to your 
+SSD. YMMV - so do your (long-term) benchmarking.
+
+If performance and life-time is a really big concern then only partition and 
+ever use 75% of your device and leave the rest of it untouched so it can be 
+used as spare area for wear-levelling [**]. It will give you a good long-
+term performance and should increase life-time.
+
+[*] Erase blocks are usually much much bigger than the block size you can 
+read and write data at. Flash memory cannot be overwritten, it is 
+essentially write-once-read-many, so it needs to be erased. This is where 
+the read-modify-write-erase cycle comes from and why wear-leveling is 
+needed: Read the whole erase block, modify it with your data block, write it 
+to a new location, erase and free the old block. So you see: Writing just 4k 
+can result in (128k-4k) read, 128k written, 128k erased (so something like a 
+write-amplification factor of 64), given an erase block size of 128k. Do 
+this a lot and randomly scattered, and performance and life-time will suffer 
+a lot. The SSD firmware will try to buffer as much data as possible before 
+the read-modify-write-erase-cycle kicks in to decrease the bad effects of 
+random writes. So a block-sorting scheduler (deadline instead of noop) and 
+increasing nr_requests may be a good idea. This is also why you may want to 
+look into filesystems that turn random writes into sequential writes like 
+f2fs or why you may want to use bcache which also turns random writes into 
+sequential writes for the cache device (your SSD).
+
+[**] This ([*]) is why you should keep a spare area...
+
+These are just my humble thoughts. You see: The topic may be a lot more 
+complex than just saying "use noop scheduler" and "SSD needs no 
+defragmentation". I think those statements are just plain wrong.
+
 -- 
-1.8.3.1
+Replies to list only preferred.
 

@@ -1,73 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:28718 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750825AbaAXJR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 04:17:26 -0500
-Message-ID: <52E22F5C.7050006@cn.fujitsu.com>
-Date: Fri, 24 Jan 2014 17:16:12 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:51838 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752445AbaAXOwH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jan 2014 09:52:07 -0500
+Date: Fri, 24 Jan 2014 15:52:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Calvin Walton <mailing-lists@kepstin.ca>
+Cc: "G. Michael Carter" <mikey@carterfamily.ca>, linux-btrfs@vger.kernel.org
+Subject: Re: Confirmation on how btrfs works with RAID and single.
+Message-ID: <20140124145205.GS6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CANjusZdjBTzreOTc3xvNeiu-LOBzbO2kLCOmjn=m19B-76m67w@mail.gmail.com>
+ <1390236695.1869.3.camel@sasami.ottawa.blindsidenetworks.com>
 MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: optimize to remove unnecessary removal with ulist
- reallocation
-References: <1389360346-23842-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140113023109.GA26294@localhost.localdomain>
-In-Reply-To: <20140113023109.GA26294@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1390236695.1869.3.camel@sasami.ottawa.blindsidenetworks.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Liu,
+On Mon, Jan 20, 2014 at 11:51:35AM -0500, Calvin Walton wrote:
+> > Single:  When it writes does it simple fill up one drive then move to
+> > the next or does it write in a round robin type fashion?
+> 
+> I'm not totally sure, this depends on the vagaries of the chunk
+> allocator. When writing only new files to an initially blank filesystem,
+> I would expect this to be a case; but on a used filesystem you will
+> probably get files fragmented over both disks.
 
-On 01/13/2014 10:31 AM, Liu Bo wrote:
-> On Fri, Jan 10, 2014 at 09:25:46PM +0800, Wang Shilong wrote:
->> Here we are not going to free memory, no need to remove every node
->> one by one, just init root node here is ok.
-> Looks fine, but we need to make sure that it passes the regression test since you're
-> working on an old bug.
-Sorry for late reply, i have just sent a regression test for this.
+The chunks are sorted by remaining free space, descending, so after some
+GBs written it will become ~round robin (depending on the device sizes).
 
-I did some hacking in kernel codes, and make sure test covers
-ulist reallocation, hopely it is helpful in the future.^_^
-
-url can be seen:
-https://patchwork.kernel.org/patch/3533801/
-
-
-Thanks,
-Wang
->
-> -liubo
->
->> Cc:  Liu Bo <bo.li.liu@oracle.com>
->> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->> ---
->>   fs/btrfs/ulist.c | 4 +---
->>   1 file changed, 1 insertion(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
->> index b0a523b2..35f5de9 100644
->> --- a/fs/btrfs/ulist.c
->> +++ b/fs/btrfs/ulist.c
->> @@ -207,9 +207,6 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
->>   		void *old = NULL;
->>   		int i;
->>   
->> -		for (i = 0; i < ulist->nnodes; i++)
->> -			rb_erase(&ulist->nodes[i].rb_node, &ulist->root);
->> -
->>   		/*
->>   		 * if nodes_alloced == ULIST_SIZE no memory has been allocated
->>   		 * yet, so pass NULL to krealloc
->> @@ -234,6 +231,7 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
->>   		 * pointers, so we have to do it ourselves.  Otherwise we may
->>   		 * be bitten by crashes.
->>   		 */
->> +		ulist->root = RB_ROOT;
->>   		for (i = 0; i < ulist->nnodes; i++) {
->>   			ret = ulist_rbtree_insert(ulist, &ulist->nodes[i]);
->>   			if (ret < 0)
->> -- 
->> 1.8.3.1
->>
-
+The 'fill one device first" is addressed by
+"Btrfs: Add linear chunk allocation support"
+http://www.spinics.net/lists/linux-btrfs/msg29616.html

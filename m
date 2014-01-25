@@ -1,41 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:37241 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750903AbaAYAJ4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 19:09:56 -0500
-Received: by mail-ie0-f174.google.com with SMTP id tp5so3661533ieb.33
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 16:09:55 -0800 (PST)
-MIME-Version: 1.0
-From: Aastha Mehta <aasthakm@gmail.com>
-Date: Sat, 25 Jan 2014 01:09:35 +0100
-Message-ID: <CAEx9m47jxKWro0x6U7h9Ma2=kGTNm7cGFM+VZkFyHvY7qt87dg@mail.gmail.com>
-Subject: questions regarding fsync in btrfs
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53018 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751153AbaAYApI convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Jan 2014 19:45:08 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:59678 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W6rMx-001FKp-UX
+	for linux-btrfs@vger.kernel.org; Fri, 24 Jan 2014 17:45:08 -0700
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs and ECC RAM
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52DD49F3.8050100@chinilu.com>
+Date: Fri, 24 Jan 2014 17:45:06 -0700
+Message-Id: <75B4E5E0-07FF-401B-BE23-1B3D768AB0EF@colorremedies.com>
+References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de> <CAPpBBdNfxchPw0DCLxNNoFZc5jGec88Q5j0C-uGy88oae0TDiw@mail.gmail.com> <52DC9453.4000705@gmail.com> <96091903-E1B0-4455-9EDC-EF94EE2E5110@aei.mpg.de> <52DD426A.5020104@shiftmail.org> <52DD49F3.8050100@chinilu.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I would like to clarify a bit on how the fsync works in btrfs. The log
-tree journals only the metadata of the files that have been modified
-prior to the fsync, correct? It does not log the data extents of
-files, which are directly sync'ed to the disk. Also, if I understand
-correctly, fsync and fdatasync are the same thing in btrfs currently.
-Is it more like fsync or fdatasync?
+On Jan 20, 2014, at 9:08 AM, George Mitchell <george@chinilu.com> wrote:
 
-What exactly happens once a file inode is in the tree log? Does it
-mean it is guaranteed to be persisted on disk, or is it already on
-disk? I see two flags in btrfs_sync_file -
-BTRFS_INODE_HAS_ASYNC_EXTENT and BTRFS_INODE_NEEDS_FULL_SYNC. I do not
-fully understand them. After full sync, what does log_dentry_safe and
-sync_log do?
+> After reading the recent posts on this topic I am beginning to think there is some real confusion between "check sums" and "parity". 
 
-Finally, Wikipedia says that "the items in the log tree are replayed
-and deleted at the next full tree commit or (if there was a system
-crash) at the next remount". Even if there is no crash, why is there a
-need to replay the log?
+Yes, I often see conventional raid6 assumed to always be capable of detecting and correcting corruption, not merely the ability to rebuild missing data of known location and length in a stripe (known either due to the drive reporting read error along with LBA; or a physical device becoming unavailable or unresponsive).
 
-Thanks,
-Aastha.
+> But I CAN see how bad RAM could affect parity calculations and resulting data IN THE ABSENCE of protective checksums and cannot help but wonder if THAT is what the original article is describing.
+
+Does Btrfs (and I'd presume ZFS) raid5/6 checksum both data and parity chunks? And in the case of raid6 are the two parities separately checksummed?
+
+
+Chris Murphy
+

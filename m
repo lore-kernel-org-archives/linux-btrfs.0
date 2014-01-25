@@ -1,39 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:60886 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750903AbaAXX5y (ORCPT
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:37241 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750903AbaAYAJ4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 18:57:54 -0500
-From: Russell Coker <russell@coker.com.au>
-To: george@chinilu.com
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs and ECC RAM
-Date: Sat, 25 Jan 2014 10:57:43 +1100
-Message-ID: <126421479.FuRWa26fOs@russell.coker.com.au>
-In-Reply-To: <52DC3386.7020502@chinilu.com>
-References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de> <1420240.1BEopi7BrR@merkaba> <52DC3386.7020502@chinilu.com>
+	Fri, 24 Jan 2014 19:09:56 -0500
+Received: by mail-ie0-f174.google.com with SMTP id tp5so3661533ieb.33
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2014 16:09:55 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Aastha Mehta <aasthakm@gmail.com>
+Date: Sat, 25 Jan 2014 01:09:35 +0100
+Message-ID: <CAEx9m47jxKWro0x6U7h9Ma2=kGTNm7cGFM+VZkFyHvY7qt87dg@mail.gmail.com>
+Subject: questions regarding fsync in btrfs
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 19 Jan 2014 12:20:22 George Mitchell wrote:
-> I can easily imagine btrfs 
-> taking a system down due to memory error, but not btrfs causing data 
-> corruption due to a memory error.
+Hello,
 
-I had a system which had apparently worked OK on Ext4 but had some memory 
-errors.  After twice having a serious BTRFS corruption (needed backup-format-
-restore) I ran memtest and found that a DIMM was broken.
+I would like to clarify a bit on how the fsync works in btrfs. The log
+tree journals only the metadata of the files that have been modified
+prior to the fsync, correct? It does not log the data extents of
+files, which are directly sync'ed to the disk. Also, if I understand
+correctly, fsync and fdatasync are the same thing in btrfs currently.
+Is it more like fsync or fdatasync?
 
-In that sort of situation it seems that BTRFS is likely to be more fragile due 
-to the more complex data structures and due to the fact that it's a newer 
-filesystem with less corner cases handled.
+What exactly happens once a file inode is in the tree log? Does it
+mean it is guaranteed to be persisted on disk, or is it already on
+disk? I see two flags in btrfs_sync_file -
+BTRFS_INODE_HAS_ASYNC_EXTENT and BTRFS_INODE_NEEDS_FULL_SYNC. I do not
+fully understand them. After full sync, what does log_dentry_safe and
+sync_log do?
 
-That said, it's working well for me on a few systems without ECC RAM.
+Finally, Wikipedia says that "the items in the log tree are replayed
+and deleted at the next full tree commit or (if there was a system
+crash) at the next remount". Even if there is no crash, why is there a
+need to replay the log?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+Thanks,
+Aastha.

@@ -1,85 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:35153 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751277AbaAYOBP convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Jan 2014 09:01:15 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Imran Geriskovan <imran.geriskovan@gmail.com>
-Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>, linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:56783 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751282AbaAYOMT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 25 Jan 2014 09:12:19 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W73y6-0002rM-6l
+	for linux-btrfs@vger.kernel.org; Sat, 25 Jan 2014 15:12:18 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 15:12:18 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 15:12:18 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Subject: Re: Options for SSD - autodefrag etc?
-Date: Sat, 25 Jan 2014 15:01:13 +0100
-Message-ID: <3664592.9YULOPb9vW@merkaba>
-In-Reply-To: <CAK5rZE6bF+z6Y9=X7SxtRPHE=1nNRPMmASC0VU8u90HQ_LbzVA@mail.gmail.com>
-References: <52E2B73E.1050903@gmail.com> <7uuara-hf5.ln1@hurikhan77.spdns.de> <CAK5rZE6bF+z6Y9=X7SxtRPHE=1nNRPMmASC0VU8u90HQ_LbzVA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Date: Sat, 25 Jan 2014 15:06:24 +0100
+Message-ID: <00tcra-bh7.ln1@hurikhan77.spdns.de>
+References: <52E19667.6090005@gmail.com> <t5uara-vp4.ln1@hurikhan77.spdns.de> <1730344.q7ECaAgUWV@merkaba>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 25. Januar 2014, 15:33:08 schrieb Imran Geriskovan:
-> Every write on a SSD block reduces its data retension capability.
+Martin Steigerwald <Martin@lichtvoll.de> schrieb:
+
+> Okay, I have seen 260 MB/s. But frankly I am pretty sure that Virtuoso
+> isn´t doing this kind of large scale I/O on a highly fragmented file. Its
+> a database. Its random access. My oppinion is that Virtuoso couldn´t care
+> less about the fragmentation of the file. As long as it is stored on the
+> SSD.
+
+I think it makes no real difference here since access to virtuoso is random 
+anyway. And if I got you right you run it nocow, so upon writes you aren't 
+introducing more fragmentation to the file. All is good... It probably would 
+even be good with cow as virtuoso is read-most, so rarely written to. 
+
+For VM images it might be a whole different story. The guest system sees a 
+block device and expects it to be continuous. All optimizations for access 
+patterns cannot work right if btrfs is constantly moving parts of the file 
+around for doing cow. So make it nocow and all should be as good as it can 
+get.
+
+> Well… take this with caveat. This is LZO compressed, those 2,4 GiB / 128
+> KiB gives at least about 20000 extents already provided that my
+> calculation is correct. And these extents could be sequential (I doubt it
+> tough also give the high free space fragmention I suspect to be on this
+> FS).
+
+Your CPU is more mighty than the flash chips. LZO improves read performance. 
+But does it make sense on Intel drives? I think they already do compression.
+
+> Anyway: I do not perceive any noticable performance issues due to file
+> fragmentation on SSD and think that at least on highly filled BTRFS
+> filesystem autodefrag may do more harm than good (like fragment free space
+> and then let btrfs-delalloc go crazy on new allocations). I know xfs_fsr
+> for defragmenting XFS in the background, even via cron job. And I think I
+> remember Dave Chinner telling in some post that even for harddisks it may
+> not be a very wise idea to run this frequently due to the risk to fragment
+> free space.
 > 
-> No concrete figures but it is assumed to be
-> - 10 years for new devices
-> - 1 year at rated usage. (There are much lower figures around)
+> There are several kinds of fragmentations. And defragmenting files may
+> increase freespace fragmentation.
 
-Where do you have these figures from?
+This is why I wondered if btrfs will be optimized for keeping free space 
+together in the future for SSD. But it's not as simple as this. It should 
+not scatter file blocks all over the disk just to fill tiny holes. It should 
+try to keep file blocks together so the read-modify-write-erase cycle of 
+SSDs can work optimally.
 
-For the Intel SSD 320 in this ThinkPad T520 I read about a minimal usable live 
-of 5 years with 20 GB host writes each day in the tech specs. Thats 7300 GB a 
-year or 7,3 TB. I assume metric system here.
+> Thus, I am not yet convinced regarding autodefrag on SSDs.
 
-According to smartctl it has written
+I think everything would be easier if btrfs exposed some stats about what 
+the autodefrag thread is really doing...
 
-241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       
--       360158
-
-360158 * 32 MiB (hmmm, now according to smartctl output this is MiB) which 
-gives almost 11 TiB (10,99).
-
-The SSD is over 2,5 years old. Thats less than 5 TiB a year.
-
-So that would lay within the range you say. Although the Intel SSD 320 isn´t 
-basically a new device in my eyes.
-
-
-Thats with KDE session with Akonadi and desktop search, sometimes even two KDE 
-sessions and a load of applications running at times.
-
-
-Anyway that SSDs still thinks it is well *new*:
-
-233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       
--       0
-
-
-Thats the same media wearout indicator (which takes into account the amount of 
-Erase cycles according to Intel docs) it had at the first day I used it.
-
-
-So I am basically not concerned.
-
-
-While autodefrag mal cause additional writes… that would not even be the main 
-reason for me not to use it at the moment. I am just not convinced that it 
-gives any noticable benefit. And given that… of course it doesn´t make sense to 
-me to have it cause additional writes to the SSD.
-
-But I am not using it due to avoiding those additional writes in the first 
-place.
-
-
-My most important recommendation regarding SSDs still is: Keep some space 
-free. Yeah, SSD manufacturers are doing this. But in another Intel SSD PDF I 
-saw some graphs that convinced me in an instant that leaving free about 20% is 
-a good idea. But heck, due to the current fill status of this SSD I do not even 
-adhere to my own recommendation at the moment.
-
-Then a occasional fstrim, maybe mount with noatime (cause who cares about it 
-at all?)…
-
-Ciao,
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Replies to list only preferred.
+

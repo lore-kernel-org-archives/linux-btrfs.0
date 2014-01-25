@@ -1,70 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56582 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:34489 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750788AbaAYEei (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jan 2014 23:34:38 -0500
+	id S1750763AbaAYFKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 25 Jan 2014 00:10:01 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W6ux2-0000Fj-W2
-	for linux-btrfs@vger.kernel.org; Sat, 25 Jan 2014 05:34:36 +0100
+	id 1W6vVG-0003eD-Ls
+	for linux-btrfs@vger.kernel.org; Sat, 25 Jan 2014 06:09:58 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 05:34:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 06:09:58 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 05:34:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 06:09:58 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs and ECC RAM
-Date: Sat, 25 Jan 2014 04:34:14 +0000 (UTC)
-Message-ID: <pan$e5673$29a4d4ab$eacdefea$4b2cc29f@cox.net>
-References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
-	<1420240.1BEopi7BrR@merkaba> <52DC3386.7020502@chinilu.com>
-	<126421479.FuRWa26fOs@russell.coker.com.au>
+Subject: Re: Options for SSD - autodefrag etc?
+Date: Sat, 25 Jan 2014 05:09:35 +0000 (UTC)
+Message-ID: <pan$a07a$608e1613$631e8f4f$ff0dfe6@cox.net>
+References: <52E2B73E.1050903@gmail.com>
+	<7uuara-hf5.ln1@hurikhan77.spdns.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Russell Coker posted on Sat, 25 Jan 2014 10:57:43 +1100 as excerpted:
+Kai Krakow posted on Fri, 24 Jan 2014 21:27:19 +0100 as excerpted:
 
-> On Sun, 19 Jan 2014 12:20:22 George Mitchell wrote:
->> I can easily imagine btrfs taking a system down due to memory error,
->> but not btrfs causing data corruption due to a memory error.
+> KC <conrad.francois.artus@googlemail.com> schrieb:
 > 
-> I had a system which had apparently worked OK on Ext4 but had some
-> memory errors.  After twice having a serious BTRFS corruption (needed
-> backup-format- restore) I ran memtest and found that a DIMM was broken.
+>> I followed your advice on NOCOW for virtualbox images and torrents
+>> [...]
+>> 
+>> As you can see, i used the recursive flag. However, I do not know
+>> whether this will automatically apply to files that will be created in
+>> the future in subfolders that do not yet exist.
+>> 
+>> Also, how can I confirm whether a file/folder has a NOCOW attribute set
+>> on it?
 > 
-> In that sort of situation it seems that BTRFS is likely to be more
-> fragile due to the more complex data structures and due to the fact that
-> it's a newer filesystem with less corner cases handled.
+> The C attribute is also inherited by newly created directories. But keep
+> in mind that, at the time applied, it only has effects on existing files
+> if they are empty (read: never written to yet). Newly created files will
+> inherit the attribute from its directory and then behave as expected.
+> 
+> You can use lsattr to confirm the C attribute was set. But again keep in
+> mind: it does not reflect the file is actually nocow because of the
+> above caveat.
 
-I believe that was his point (as it has been mine, elsewhere).  If there 
-are memory errors, btrfs might well "take down the system", or as you 
-mention, corrupt the btrfs such that it needs blown away with a mkfs and 
-restore from backup, but it should NOT invisibly corrupt the data.  If 
-the data is available, it should be correct as it was stored, memory 
-issue or no memory issue, ECC DRAM or non-ECC DRAM.  (Tho there's a small 
-chance that the data was corrupted in memory before it was stored, but 
-that's the case no matter the filesystem, as the filesystem has nothing 
-to do with it then.)
+Excellent reply (including what I snipped).  I don't actually work with 
+VMs or other huge internal-write files much here, and don't otherwise 
+work with extended attributes much, so would have had to lookup lsattr, 
+and wasn't actually sure on the nested subdirs inheritance point myself 
+tho I thought it /should/ work that way.
 
-IOW, btrfs is binary.  The data is either there and valid, or its not 
-there, period.  There's no there but not valid case -- btrfs simply won't 
-serve the data period if it's invalid and there's no valid copy available 
-to substitute for it.
+And your chattr/rsync routine ensures all data will be newly copied in 
+AFTER the chattr on the dir, thus nicely addressing the very critical 
+point about NEW DATA ONLY coverage I was most worried about communicating 
+correctly. =:^)
 
-And yes, that does make btrfs more brittle on defective equipment, 
-because it'll break all the way much more frequently than filesystems 
-that would instead serve only slightly invalid data, without knowing how 
-valid it is because they don't do the checks btrfs does.
-
-*CAVEAT!  This assumes the filesystem isn't mounted with nodatacow/
-nodatasum, and that we're not talking about files with the NOCOW extended 
-attribute set, thus specific-case disabling these important features of 
-btrfs.
+Which is why I so enjoy mailing lists and newsgroups.  Time and again 
+I've seen one person's answer simply not getting the whole job done no 
+matter how mightily they struggle to do so, but because it's a public 
+list/group, someone else steps in with a followup that addresses the gaps 
+left by the first answer.  It nicely takes the pressure off any one 
+person to have the "perfect" reply "every" time, as well as benefiting 
+untold numbers of lurkers who now understand something they didn't know 
+before, but may have never thought to ask themselves. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

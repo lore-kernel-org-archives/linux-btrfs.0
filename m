@@ -1,227 +1,394 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f51.google.com ([209.85.214.51]:33080 "EHLO
-	mail-bk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752651AbaAYVrm (ORCPT
+Received: from mail-la0-f43.google.com ([209.85.215.43]:59749 "EHLO
+	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751348AbaAZPLK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Jan 2014 16:47:42 -0500
-Received: by mail-bk0-f51.google.com with SMTP id w10so2012031bkz.24
-        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jan 2014 13:47:41 -0800 (PST)
-Received: from ?IPv6:2001:470:8:414::10? (wolf.welp.gs. [2001:470:8:414::10])
-        by mx.google.com with ESMTPSA id q5sm7600907bkr.5.2014.01.25.13.47.39
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sat, 25 Jan 2014 13:47:40 -0800 (PST)
-Message-ID: <52E430F7.7030801@gmail.com>
-Date: Sat, 25 Jan 2014 16:47:35 -0500
-From: Dan Merillat <dan.merillat@gmail.com>
+	Sun, 26 Jan 2014 10:11:10 -0500
+Received: by mail-la0-f43.google.com with SMTP id pv20so3814883lab.16
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jan 2014 07:11:08 -0800 (PST)
 MIME-Version: 1.0
-To: BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Rapid memory exhaustion during normal operation
+Date: Sun, 26 Jan 2014 10:11:08 -0500
+Message-ID: <CANjusZfFXaNZcMew+6tWfKVdoKuVv+cSCWefvzCr0nMMJJk2sg@mail.gmail.com>
+Subject: bad block and io errors
+From: "G. Michael Carter" <mikey@carterfamily.ca>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm trying to track this down - this started happening without changing the kernel in use, so probably
-a corrupted filesystem. The symptoms are that all memory is suddenly used by no apparent source.  OOM
-killer is invoked on every task, still can't free up enough memory to continue.
+When it rains it pours.   My other array is having some issues.  I
+think I have two problems, and wondering if someone can help me make
+sense of this:
 
-When it goes wrong, it's extremely rapid - system goes from stable to dead in less than 30 seconds.
+I've basically got four questions:
 
-Tested 3.9.0, 3.12.0, 3.12.8.   Limited testing on 3.13 shows I think the same problem but I need
-to double-check that it's not a different issue.  Blows up the exact same way on a real kernel or in
-UML.
+1.  How do I repair, or drop block 35435896033280?
 
-All sorts of things can trigger it - defrag, random writes to files.  Balance and scrub don't,
-readonly mount doesn't.
+2.  How do I identify which drive out of 5 this block is on?
 
-I can reproduce this trivially, mount the filesystem read-write and perform some activity.  It only
-takes a few minutes.   The other btrfs filesystems on the same machine don't show similar problems.
-Unfortunately, the output of btrfs-image -c9 is 75gb, much more than I can reasonably share.  I've got
-a reliable reproducer in UML using UML-COW to always start with the same base image, defrag a file with
-33,000 extents and the system explodes within a minute.
+3.  How do I detect which drive is causing the errno=-5 IO failure
 
-Here's the OOM report, the formatting is a bit off due to being delivered via netconsole.
-Swap was disabled on this run, but it makes no difference.  I get insta-OOM issues out of the blue
-with very little memory swapped out.
+4.  How do I identify what files I'm going to loose by this block problem?
 
-[ 1184.871419] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.879873] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.894932] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.898207] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.902116] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.902454] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.903333] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.903588] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.904592] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1184.904839] parent transid verify failed on 8049834639360 wanted 1736567 found 1734749
-[ 1192.113082] verify_parent_transid: 16 callbacks suppressed
-[ 1192.113166] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.113269] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.176637] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.178119] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.203369] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.203503] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.204112] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.205324] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.814465] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1192.817226] parent transid verify failed on 8049835315200 wanted 1736567 found 1736533
-[ 1219.366168] ntpd invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
-[ 1219.366270] CPU: 1 PID: 5479 Comm: ntpd Not tainted 3.12.8-00848-g97f15f1 #2
-[ 1219.366324] Hardware name: Gigabyte Technology Co., Ltd. GA-MA78GPM-DS2H/GA-MA78GPM-DS2H, BIOS F1 06/03/2008
-[ 1219.366402]  0000000000000000 ffff8800c02339a8 ffffffff815ccf3b 000000003f51a67e
-[ 1219.366632]  ffff8800c557ae40 ffff8800c0233a48 ffffffff815c8551 0000000000000100
-[ 1219.366861]  0000000000000001 ffff8800c02339e8 ffffffff815d4f46 00000000000ef3e4
-[ 1219.367086] Call Trace:
-[ 1219.367155]  [<ffffffff815ccf3b>] dump_stack+0x50/0x85
-[ 1219.367262]  [<ffffffff815c8551>] dump_header.isra.14+0x6d/0x1b5
-[ 1219.367322]  [<ffffffff815d4f46>] ? sub_preempt_count+0x33/0x46
-[ 1219.367390]  [<ffffffff815d1b9d>] ? _raw_spin_unlock_irqrestore+0x2b/0x48
-[ 1219.367448]  [<ffffffff8132849a>] ? ___ratelimit+0xda/0xf8
-[ 1219.367514]  [<ffffffff810cf773>] oom_kill_process+0x70/0x303
-[ 1219.367614]  [<ffffffff81041930>] ? has_capability_noaudit+0x12/0x16
-[ 1219.367672]  [<ffffffff810cfe91>] out_of_memory+0x314/0x347
-[ 1219.367734]  [<ffffffff810d3ee3>] __alloc_pages_nodemask+0x629/0x7c8
-[ 1219.367798]  [<ffffffff811052db>] alloc_pages_current+0xb2/0xbb
-[ 1219.367852]  [<ffffffff810cd36e>] __page_cache_alloc+0xb/0xd
-[ 1219.367915]  [<ffffffff810ceb9a>] filemap_fault+0x249/0x362
-[ 1219.367973]  [<ffffffff810eb378>] __do_fault+0xa7/0x418
-[ 1219.368071]  [<ffffffff815d1b9d>] ? _raw_spin_unlock_irqrestore+0x2b/0x48
-[ 1219.368130]  [<ffffffff810606c4>] ? get_parent_ip+0xe/0x3e
-[ 1219.368184]  [<ffffffff810eed47>] handle_mm_fault+0x2b4/0x907
-[ 1219.368239]  [<ffffffff815d1a93>] ? _raw_spin_unlock_irq+0x17/0x32
-[ 1219.368297]  [<ffffffff815d4dc4>] __do_page_fault+0x489/0x4e6
-[ 1219.368354]  [<ffffffff8100b22e>] ? __restore_xstate_sig+0x30a/0x4dc
-[ 1219.368408]  [<ffffffff810606c4>] ? get_parent_ip+0xe/0x3e
-[ 1219.368462]  [<ffffffff815d1cdd>] ? _raw_spin_lock_irq+0x19/0x38
-[ 1219.368518]  [<ffffffff815d4f46>] ? sub_preempt_count+0x33/0x46
-[ 1219.368575]  [<ffffffff8132da3a>] ? trace_hardirqs_off_thunk+0x3a/0x6c
-[ 1219.368633]  [<ffffffff815d4e2a>] do_page_fault+0x9/0xb
-[ 1219.368687]  [<ffffffff815d25a2>] page_fault+0x22/0x30
-[ 1219.370803] Mem-Info:
-[ 1219.370858] Node 0
-[ 1219.371146] CPU    0: hi:    0, btch:   1 usd:   0
-[ 1219.371202] CPU    1: hi:    0, btch:   1 usd:   0
-[ 1219.371264] Node 0
-[ 1219.371555] CPU    0: hi:  186, btch:  31 usd:  42
-[ 1219.371617] CPU    1: hi:  186, btch:  31 usd:  29
-[ 1219.371670] Node 0
-[ 1219.371772] CPU    0: hi:  186, btch:  31 usd:  30
-[ 1219.371832] CPU    1: hi:  186, btch:  31 usd:  26
-[ 1219.371893] active_anon:46310 inactive_anon:940 isolated_anon:0#012
-[ 1219.371893]  active_file:768 inactive_file:1155 isolated_file:0#012
-[ 1219.371893]  unevictable:0 dirty:827 writeback:0 unstable:0#012
-[ 1219.371893]  free:21409 slab_reclaimable:5668 slab_unreclaimable:5883#012
-[ 1219.371893]  mapped:1276 shmem:1261 pagetables:2591 bounce:0#012
-[ 1219.371893]  free_cma:0
-[ 1219.372411] Node 0
-[ 1219.372628] lowmem_reserve[]: 0 3106 3811 3811
-[ 1219.372970] Node 0
-[ 1219.373149] lowmem_reserve[]: 0 0 705 705
-[ 1219.373475] Node 0
-[ 1219.373654] lowmem_reserve[]: 0 0 0 0
-[ 1219.373930] Node 0 DMA: 3*4kB (M) 4*8kB (UM) 5*16kB (UM) 3*32kB (UM) 1*64kB (U) 1*128kB (U) 1*256kB (M) 1*512kB (M) 2*1024kB (UM) 2*2048kB (MR) 2*4096kB (EM) = 15516kB
-[ 1219.375077] Node 0 DMA32: 945*4kB (UEM) 1764*8kB (UEM) 1107*16kB (UEM) 366*32kB (UEM) 84*64kB (UEM) 6*128kB (UEM) 0*256kB 0*512kB 0*1024kB 0*2048kB 1*4096kB (R) = 57556kB
-[ 1219.376072] Node 0 Normal: 2139*4kB (UEM) 36*8kB (M) 0*16kB 0*32kB 1*64kB (R) 1*128kB (R) 1*256kB (R) 0*512kB 1*1024kB (R) 1*2048kB (R) 0*4096kB = 12364kB
-[ 1219.377031] Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
-[ 1219.377100] 3230 total pagecache pages
-[ 1219.377151] 0 pages in swap cache
-[ 1219.377211] Swap cache stats: add 0, delete 0, find 0/0
-[ 1219.377263] Free swap  = 0kB
-[ 1219.377320] Total swap = 0kB
-[ 1219.428078] 1015807 pages RAM
-[ 1219.428154] 35867 pages reserved
-[ 1219.428224] 536682 pages shared
-[ 1219.428273] 953367 pages non-shared
-[ 1219.428330] [ pid ]   uid  tgid total_vm      rss nr_ptes swapents oom_score_adj name
-[ 1219.428414] [ 1249]     0  1249     6103      316      16        0         -1000 udevd
-[ 1219.428477] [ 1479]     0  1479     6092      313      15        0         -1000 udevd
-[ 1219.428552] [ 3285]     0  3285     2130       39      10        0             0 dhcpcd-bin
-[ 1219.428614] [ 3383]     0  3383     5989      208      15        0         -1000 udevd
-[ 1219.428681] [ 3717]     0  3717     4779      104      15        0             0 rpcbind
-[ 1219.428743] [ 3749]   106  3749     5872      148      17        0             0 rpc.statd
-[ 1219.428811] [ 3761]     0  3761     6359       72      17        0             0 rpc.idmapd
-[ 1219.428873] [ 3766]     0  3766     7681      108      19        0             0 rpc.gssd
-[ 1219.428941] [ 4227]    13  4227     1169       44       8        0             0 polipo
-[ 1219.429107] [ 4288]   130  4288     3165       98      12        0             0 syslogd
-[ 1219.430837] [ 4309]   135  4309     4774       96      14        0             0 dirmngr
-[ 1219.430899] [ 4367]     0  4367    17697      210      35        0             0 nmbd
-[ 1219.430972] [ 4371]     0  4371    24778      284      48        0             0 smbd
-[ 1219.431033] [ 4389]   101  4389     8094      137      19        0             0 dbus-daemon
-[ 1219.431101] [ 4390]     0  4390    24804      264      47        0             0 smbd
-[ 1219.431162] [ 4408]     0  4408    10567      120      24        0             0 krb5kdc
-[ 1219.431230] [ 4439]     0  4439     7094      249      17        0             0 openvpn
-[ 1219.431290] [ 4525]     0  4525    96084      181      31        0             0 automount
-[ 1219.431358] [ 4531]     0  4531     4204       56      12        0             0 atd
-[ 1219.431418] [ 4605]   136  4605    64452     7713      57        0             0 named
-[ 1219.431485] [ 4664]     0  4664     2128       49       9        0             0 dd
-[ 1219.431545] [ 4666]   131  4666     2073     1093       9        0             0 klogd
-[ 1219.431613] [ 4674]     0  4674    10589      160      26        0             0 kadmind
-[ 1219.431673] [ 4751]     0  4751     3297       80      11        0             0 mdadm
-[ 1219.431742] [ 4772]   114  4772    33045      260      28        0             0 bacula-sd
-[ 1219.431802] [ 4831]     0  4831    21770      629      46        0             0 apache2
-[ 1219.431873] [ 4833]    33  4833    21703      544      45        0             0 apache2
-[ 1219.431934] [ 4834]     0  4834    21703      545      44        0             0 apache2
-[ 1219.432002] [ 4835]    33  4835    61700     1035      87        0             0 php5-cgi
-[ 1219.432085] [ 4837]    33  4837    94011     1123      75        0             0 apache2
-[ 1219.432147] [ 4839]    33  4839    94013     1128      75        0             0 apache2
-[ 1219.432215] [ 4975]     0  4975     6155       88      18        0             0 cron
-[ 1219.432275] [ 4977]     0  4977     2646       58      10        0             0 inetd
-[ 1219.432342] [ 5039]     0  5039     3379     1410      10        0             0 dhcpd
-[ 1219.432403] [ 5064]     0  5064     2368       98      10        0             0 mysqld_safe
-[ 1219.432471] [ 5383]   103  5383   138079    16199      74        0             0 mysqld
-[ 1219.432532] [ 5384]     0  5384     1057       49       8        0             0 logger
-[ 1219.432599] [ 5399]   113  5399    27465      840      44        0             0 postgres
-[ 1219.432660] [ 5449]   129  5449     5481      176      15        0             0 privoxy
-[ 1219.432727] [ 5476]     0  5476     3691       48      11        0             0 radvd
-[ 1219.432788] [ 5478]   119  5478     3691       65      12        0             0 radvd
-[ 1219.432854] [ 5479]   110  5479     9911      231      24        0             0 ntpd
-[ 1219.432915] [ 5660]     0  5660     5510      245      14        0             0 smartd
-[ 1219.432982] [ 5763]     0  5763     3791      126      13        0             0 tincd
-[ 1219.433043] [ 5780]     0  5780    13075      182      28        0         -1000 sshd
-[ 1219.433110] [ 5798]   113  5798    27465      354      41        0             0 postgres
-[ 1219.433172] [ 5799]   113  5799    27465      310      40        0             0 postgres
-[ 1219.433239] [ 5800]   113  5800    27498      348      40        0             0 postgres
-[ 1219.433300] [ 5801]   113  5801    20047      324      36        0             0 postgres
-[ 1219.433368] [ 5894]     0  5894    20888      237      43        0             0 winbindd
-[ 1219.433429] [ 5897]     0  5897    20887      232      41        0             0 winbindd
-[ 1219.433497] [ 6010]   118  6010   421074     4794     354        0             0 asterisk
-[ 1219.433558] [ 6367]   102  6367    11866      141      25        0             0 exim4
-[ 1219.433625] [ 6399]   120  6399     1057       49       8        0             0 uml_switch
-[ 1219.433686] [ 6443]     0  6443     1023       30       7        0             0 minissdpd
-[ 1219.433754] [ 6472]     0  6472     2633       61      11        0             0 miniupnpd
-[ 1219.433815] [ 6522]     0  6522     4542       68      14        0             0 getty
-[ 1219.433882] [ 6523]     0  6523     4542       67      14        0             0 getty
-[ 1219.433943] [ 6524]     0  6524     4542       67      14        0             0 getty
-[ 1219.434010] [ 6525]     0  6525     4542       67      14        0             0 getty
-[ 1219.434071] [ 6526]     0  6526     4542       66      13        0             0 getty
-[ 1219.434137] [ 6527]     0  6527     4542       67      14        0             0 getty
-[ 1219.434198] [ 6528]     0  6528    23174      345      49        0             0 sshd
-[ 1219.434265] [ 6540]     0  6540   261278      379      44        0             0 console-kit-dae
-[ 1219.434327] [ 6607]     0  6607    48754      209      33        0             0 polkitd
-[ 1219.434395] [ 6613]     0  6613     5802      625      17        0             0 bash
-[ 1219.434455] [ 6850]     0  6850    23138      302      50        0             0 sshd
-[ 1219.434522] [ 6855]     0  6855     5801      619      17        0             0 bash
-[ 1219.434582] [ 7006]     0  7006     6335      245      17        0             0 top
-[ 1219.434649] [ 7021]     0  7021    23138      276      49        0             0 sshd
-[ 1219.434710] [ 7026]     0  7026     5801      621      16        0             0 bash
-[ 1219.434781] [ 7463]     0  7463    23138      300      48        0             0 sshd
-[ 1219.434841] [ 7468]     0  7468     5801      618      17        0             0 bash
-[ 1219.434909] [ 7623]     0  7623    14346     2321      33        0             0 iotop
-[ 1219.434970] [ 7646]     0  7646     4096      187      14        0             0 watch
-[ 1219.435037] [ 7657]     0  7657    23138      271      48        0             0 sshd
-[ 1219.435097] [ 7662]     0  7662     5801      622      16        0             0 bash
-[ 1219.435164] [ 7852]     0  7852     1948       48       9        0             0 xargs
-[ 1219.435224] [ 7872]     0  7872     1886       47       9        0             0 tail
-[ 1219.435292] [ 7892]     0  7892    20890      225      41        0             0 winbindd
-[ 1219.435353] [ 7893]     0  7893    20886      235      41        0             0 winbindd
-[ 1219.435423] [ 8666]     0  8666     3166       72      12        0             0 fixfrag
-[ 1219.435484] [ 8675]     0  8675     1022       28       7        0             0 time
-[ 1219.435551] [ 8676]     0  8676     2900       42      10        0             0 btrfs
-[ 1219.435612] [ 8707]   113  8707    27710      686      42        0             0 postgres
-[ 1219.435679] [ 8708]     0  8708     4095      104      10        0             0 watch
-[ 1219.435740] [ 8709]     0  8709     2391       38       7        0             0 sh
-[ 1219.435805] Out of memory: Kill process 5383 (mysqld) score 16 or sacrifice child
-[ 1219.435874] Killed process 5383 (mysqld) total-vm:552316kB, anon-rss:64576kB, file-rss:220kB
-[ 1220.014027] verify_parent_transid: 97 callbacks suppressed
-[ 1220.014109] parent transid verify failed on 8049836576768 wanted 1736567 found 1736533
-[ 1220.020710] parent transid verify failed on 8049836576768 wanted 1736567 found 1736533
+----------------------------
+
+[  398.189454] btrfs: corrupt leaf, bad key order:
+block=35435896033280,root=1, slot=23
+[  398.189616] btrfs: corrupt leaf, bad key order:
+block=35435896033280,root=1, slot=23
+[  819.115270] btrfs: corrupt leaf, bad key order:
+block=35435896033280,root=1, slot=23
+[  819.115311] ------------[ cut here ]------------
+[  819.115325] WARNING: CPU: 6 PID: 530 at fs/btrfs/super.c:255
+__btrfs_abort_transaction+0x11d/0x130 [btrfs]()
+[  819.115326] btrfs: Transaction aborted (error -5)
+[  819.115326] Modules linked in: ebtable_nat ebtables xt_CHECKSUM tun
+bridge stp llc xt_LOG xt_limit ip6t_REJECT nf_conntrack_ipv6
+nf_defrag_ipv6 ipt_MASQUERADE xt_conntrack iptable_nat
+nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 ip6table_filter nf_nat
+nf_conntrack ip6_tables iptable_mangle hwmon_vid snd_hda_codec_hdmi
+snd_hda_codec_realtek iTCO_wdt iTCO_vendor_support btrfs eeepc_wmi
+asus_wmi sparse_keymap rfkill mxm_wmi x86_pkg_temp_thermal coretemp
+kvm_intel kvm crct10dif_pclmul crc32_pclmul crc32c_intel
+ghash_clmulni_intel raid6_pq libcrc32c microcode serio_raw xor
+i2c_i801 joydev hid_logitech_dj snd_hda_intel snd_seq lpc_ich
+snd_hda_codec snd_seq_device mfd_core snd_hwdep snd_pcm e1000e mei_me
+ptp snd_page_alloc mei pps_core snd_timer snd soundcore video shpchp
+wmi nfsd auth_rpcgss nfs_acl lockd
+[  819.115349]  sunrpc uinput binfmt_misc ata_generic pata_acpi radeon
+i2c_algo_bit drm_kms_helper ttm drm i2c_core pata_jmicron usb_storage
+[  819.115355] CPU: 6 PID: 530 Comm: btrfs-transacti Not tainted
+3.12.6-200.fc19.x86_64 #1
+[  819.115356] Hardware name: System manufacturer System Product
+Name/SABERTOOTH Z77, BIOS 0801 02/24/2012
+[  819.115357]  0000000000000009 ffff8803f325dad0 ffffffff81662651
+ffff8803f325db18
+[  819.115359]  ffff8803f325db08 ffffffff810691dd 00000000fffffffb
+ffff88040584b800
+[  819.115360]  ffff8803f43f0000 ffffffffa06e2b80 0000000000001661
+ffff8803f325db68
+[  819.115361] Call Trace:
+[  819.115366]  [<ffffffff81662651>] dump_stack+0x45/0x56
+[  819.115369]  [<ffffffff810691dd>] warn_slowpath_common+0x7d/0xa0
+[  819.115370]  [<ffffffff8106924c>] warn_slowpath_fmt+0x4c/0x50
+[  819.115374]  [<ffffffffa0647bbd>]
+__btrfs_abort_transaction+0x11d/0x130 [btrfs]
+[  819.115379]  [<ffffffffa0658890>] __btrfs_free_extent+0x520/0xa60 [btrfs]
+[  819.115386]  [<ffffffffa06b5e14>] ?
+btrfs_merge_delayed_refs+0x1f4/0x3d0 [btrfs]
+[  819.115390]  [<ffffffffa065ccee>] run_clustered_refs+0x83e/0xeb0 [btrfs]
+[  819.115395]  [<ffffffffa065c9cf>] ? run_clustered_refs+0x51f/0xeb0 [btrfs]
+[  819.115399]  [<ffffffffa06617a0>] btrfs_run_delayed_refs+0xe0/0x540 [btrfs]
+[  819.115405]  [<ffffffffa06718ee>] btrfs_commit_transaction+0x4e/0x970 [btrfs]
+[  819.115409]  [<ffffffffa0669005>] transaction_kthread+0x1a5/0x230 [btrfs]
+[  819.115414]  [<ffffffffa0668e60>] ? verify_parent_transid+0x150/0x150 [btrfs]
+[  819.115416]  [<ffffffff8108b0d0>] kthread+0xc0/0xd0
+[  819.115417]  [<ffffffff8108b010>] ? insert_kthread_work+0x40/0x40
+[  819.115419]  [<ffffffff816715fc>] ret_from_fork+0x7c/0xb0
+[  819.115421]  [<ffffffff8108b010>] ? insert_kthread_work+0x40/0x40
+[  819.115422] ---[ end trace 2faf5e88680fa1e9 ]---
+[  819.115423] BTRFS error (device sdg1) in __btrfs_free_extent:5729:
+errno=-5 IO failure
+[  819.115440] BTRFS info (device sdg1): forced readonly
+[  819.115442] BTRFS debug (device sdg1): run_one_delayed_ref returned -5
+[  819.115443] BTRFS error (device sdg1) in
+btrfs_run_delayed_refs:2715: errno=-5 IO failure
+
+-----
+
+Btrfs v3.12
+[root@andromeda ~]# btrfs-debug-tree -b 35435896033280
+usage: btrfs-debug-tree [-e] [-d] [-r] [-R] [-u]
+                        [-b block_num ] device
+    -e : print detailed extents info
+    -d : print info of btrfs device and root tree dirs only
+    -r : print info of roots only
+    -R : print info of roots and root backups
+    -u : print info of uuid tree only
+    -b block_num : print info of the specified block only
+Btrfs v3.12
+[root@andromeda ~]# btrfs-debug-tree -b 35435896033280 /dev/sdg1
+ERROR: device scan failed '/dev/sdg' - Device or resource busy
+leaf 35435896033280 items 50 free space 195 generation 967625 owner 2
+fs uuid 7bdca818-fa22-4a90-8fb8-9a2e756f0002
+chunk uuid 5fb3ebe3-ea00-4f59-92cc-79b3d4a4cfa3
+    item 0 key (35453976346624 EXTENT_ITEM 4096) itemoff 3944 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615530287104) level 0
+        tree block backref root 7
+    item 1 key (35453976350720 EXTENT_ITEM 4096) itemoff 3893 itemsize 51
+        extent refs 1 gen 967222 flags 2
+        tree block key (9122 DIR_INDEX 7) level 0
+        tree block backref root 269
+    item 2 key (35453976354816 EXTENT_ITEM 4096) itemoff 3842 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640570 DIR_INDEX 2704) level 0
+        tree block backref root 264
+    item 3 key (35453976358912 EXTENT_ITEM 4096) itemoff 3791 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615534321664) level 0
+        tree block backref root 7
+    item 4 key (35453976363008 EXTENT_ITEM 4096) itemoff 3740 itemsize 51
+        extent refs 1 gen 967222 flags 2
+        tree block key (9645 INODE_ITEM 0) level 0
+        tree block backref root 269
+    item 5 key (35453976367104 EXTENT_ITEM 4096) itemoff 3689 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615538356224) level 0
+        tree block backref root 7
+    item 6 key (35453976371200 EXTENT_ITEM 4096) itemoff 3638 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640572 EXTENT_DATA 0) level 0
+        tree block backref root 264
+    item 7 key (35453976375296 EXTENT_ITEM 4096) itemoff 3587 itemsize 51
+        extent refs 1 gen 967222 flags 2
+        tree block key (21118 INODE_ITEM 0) level 0
+        tree block backref root 269
+    item 8 key (35453976379392 EXTENT_ITEM 4096) itemoff 3536 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640575 INODE_ITEM 0) level 0
+        tree block backref root 264
+    item 9 key (35453976383488 EXTENT_ITEM 4096) itemoff 3485 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615542390784) level 0
+        tree block backref root 7
+    item 10 key (35453976387584 EXTENT_ITEM 4096) itemoff 3434 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257195364352) level 0
+        tree block backref root 7
+    item 11 key (35453976391680 EXTENT_ITEM 4096) itemoff 3383 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640582 INODE_ITEM 0) level 0
+        tree block backref root 264
+    item 12 key (35453976395776 EXTENT_ITEM 4096) itemoff 3332 itemsize 51
+        extent refs 1 gen 960302 flags 2
+        tree block key (887734 DIR_INDEX 864) level 0
+        tree block backref root 276
+    item 13 key (35453976399872 EXTENT_ITEM 4096) itemoff 3281 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640594 INODE_ITEM 0) level 0
+        tree block backref root 264
+    item 14 key (35453976403968 EXTENT_ITEM 4096) itemoff 3230 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615546425344) level 0
+        tree block backref root 7
+    item 15 key (35453976408064 EXTENT_ITEM 4096) itemoff 3179 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257199398912) level 0
+        tree block backref root 7
+    item 16 key (35453976412160 EXTENT_ITEM 4096) itemoff 3128 itemsize 51
+        extent refs 1 gen 959744 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38122935197696) level 0
+        tree block backref root 7
+    item 17 key (35453976416256 EXTENT_ITEM 4096) itemoff 3077 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615550459904) level 0
+        tree block backref root 7
+    item 18 key (35453976420352 EXTENT_ITEM 4096) itemoff 3026 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386503053312) level 0
+        tree block backref root 7
+    item 19 key (35453976424448 EXTENT_ITEM 4096) itemoff 2975 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257203433472) level 0
+        tree block backref root 7
+    item 20 key (35453976428544 EXTENT_ITEM 4096) itemoff 2924 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257207468032) level 0
+        tree block backref root 7
+    item 21 key (35453976432640 EXTENT_ITEM 4096) itemoff 2873 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615554494464) level 0
+        tree block backref root 7
+    item 22 key (35453976436736 EXTENT_ITEM 4096) itemoff 2822 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386507087872) level 0
+        tree block backref root 7
+    item 23 key (36003732254720 EXTENT_ITEM 4096) itemoff 2771 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615558529024) level 0
+        tree block backref root 7
+    item 24 key (35453976444928 EXTENT_ITEM 4096) itemoff 2720 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615562563584) level 0
+        tree block backref root 7
+    item 25 key (35453976449024 EXTENT_ITEM 4096) itemoff 2669 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615566598144) level 0
+        tree block backref root 7
+    item 26 key (35453976453120 EXTENT_ITEM 4096) itemoff 2618 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615570632704) level 0
+        tree block backref root 7
+    item 27 key (35453976457216 EXTENT_ITEM 4096) itemoff 2567 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386511122432) level 0
+        tree block backref root 7
+    item 28 key (35453976461312 EXTENT_ITEM 4096) itemoff 2516 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386515156992) level 0
+        tree block backref root 7
+    item 29 key (35453976465408 EXTENT_ITEM 4096) itemoff 2465 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615574667264) level 0
+        tree block backref root 7
+    item 30 key (35453976469504 EXTENT_ITEM 4096) itemoff 2414 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386519191552) level 0
+        tree block backref root 7
+    item 31 key (35453976473600 EXTENT_ITEM 4096) itemoff 2363 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386523226112) level 0
+        tree block backref root 7
+    item 32 key (35453976477696 EXTENT_ITEM 4096) itemoff 2312 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615578701824) level 0
+        tree block backref root 7
+    item 33 key (35453976481792 EXTENT_ITEM 4096) itemoff 2261 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615582736384) level 0
+        tree block backref root 7
+    item 34 key (35453976485888 EXTENT_ITEM 4096) itemoff 2210 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615586770944) level 0
+        tree block backref root 7
+    item 35 key (35453976489984 EXTENT_ITEM 4096) itemoff 2159 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386527260672) level 0
+        tree block backref root 7
+    item 36 key (35453976494080 EXTENT_ITEM 4096) itemoff 2108 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615590805504) level 0
+        tree block backref root 7
+    item 37 key (35453976498176 EXTENT_ITEM 4096) itemoff 2057 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257211502592) level 0
+        tree block backref root 7
+    item 38 key (35453976502272 EXTENT_ITEM 4096) itemoff 2006 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615594840064) level 0
+        tree block backref root 7
+    item 39 key (35453976506368 EXTENT_ITEM 4096) itemoff 1955 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615598874624) level 0
+        tree block backref root 7
+    item 40 key (35453976510464 EXTENT_ITEM 4096) itemoff 1904 itemsize 51
+        extent refs 1 gen 966094 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 39257215537152) level 0
+        tree block backref root 7
+    item 41 key (35453976514560 EXTENT_ITEM 4096) itemoff 1853 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640606 INODE_ITEM 0) level 0
+        tree block backref root 264
+    item 42 key (35453976518656 EXTENT_ITEM 4096) itemoff 1802 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640613 INODE_ITEM 0) level 0
+        tree block backref root 264
+    item 43 key (35453976522752 EXTENT_ITEM 4096) itemoff 1751 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386531295232) level 0
+        tree block backref root 7
+    item 44 key (35453976526848 EXTENT_ITEM 4096) itemoff 1700 itemsize 51
+        extent refs 1 gen 958302 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 37615602909184) level 0
+        tree block backref root 7
+    item 45 key (35453976530944 EXTENT_ITEM 4096) itemoff 1649 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386535329792) level 0
+        tree block backref root 7
+    item 46 key (35453976535040 EXTENT_ITEM 4096) itemoff 1598 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386539364352) level 0
+        tree block backref root 7
+    item 47 key (35453976539136 EXTENT_ITEM 4096) itemoff 1547 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386543398912) level 0
+        tree block backref root 7
+    item 48 key (35453976543232 EXTENT_ITEM 4096) itemoff 1496 itemsize 51
+        extent refs 1 gen 960307 flags 2
+        tree block key (EXTENT_CSUM EXTENT_CSUM 38386547433472) level 0
+        tree block backref root 7
+    item 49 key (35453976551424 EXTENT_ITEM 4096) itemoff 1445 itemsize 51
+        extent refs 1 gen 967250 flags 2
+        tree block key (640625 INODE_ITEM 0) level 0
+        tree block backref root 264
+extent buffer leak: start 35435896033280 len 4096
+
+----
+
+[root@andromeda mnt]# btrfsck --repair /dev/sda
+enabling repair mode
+ERROR: device scan failed '/dev/sdg' - Device or resource busy
+Checking filesystem on /dev/sda
+UUID: 7bdca818-fa22-4a90-8fb8-9a2e756f0002
+checking extents
+bad key ordering 23 24
+bad block 35435896033280
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+bad key ordering 23 24
+deleting pointer to block 35435896033280
+owner ref check failed [35435896033280 4096]
+repair deleting extent record: key 35435896033280 168 4096
+ref mismatch on [35453976346624 4096] extent item 0, found 1
+btrfsck: extent-tree.c:2717: alloc_reserved_tree_block: Assertion
+`!(ret)' failed.
+Aborted
+
+---
+
+[root@andromeda ~]# btrfs fi show /mnt/bt_store
+Label: bt_store  uuid: 7bdca818-fa22-4a90-8fb8-9a2e756f0002
+    Total devices 5 FS bytes used 8.92TiB
+    devid    1 size 2.73TiB used 1.55TiB path /dev/sdg1
+    devid    2 size 3.64TiB used 2.00TiB path /dev/sda
+    devid    3 size 2.73TiB used 2.07TiB path /dev/sdf
+    devid    4 size 2.73TiB used 1.36TiB path /dev/sdd
+    devid    5 size 3.64TiB used 2.08TiB path /dev/sdh

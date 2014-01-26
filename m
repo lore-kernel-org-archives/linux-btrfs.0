@@ -1,73 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f48.google.com ([209.85.160.48]:44170 "EHLO
-	mail-pb0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751348AbaAZOcc (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:9235 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752461AbaAZSSQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jan 2014 09:32:32 -0500
-Received: by mail-pb0-f48.google.com with SMTP id rr13so4947380pbb.35
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jan 2014 06:32:31 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] Btrfs: add a reschedule point in btrfs_find_all_roots()
-Date: Sun, 26 Jan 2014 22:32:18 +0800
-Message-Id: <1390746738-7500-1-git-send-email-wangshilong1991@gmail.com>
+	Sun, 26 Jan 2014 13:18:16 -0500
+Message-ID: <52E5515C.20907@fb.com>
+Date: Sun, 26 Jan 2014 13:18:04 -0500
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Liu Bo <bo.li.liu@oracle.com>,
+        Zach Brown <zab@redhat.com>
+Subject: Re: [PATCH RFC v2 1/2] Btrfs: rework ulist with list+rb_tree
+References: <1390633178-2104-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1390633178-2104-1-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-I can easily trigger the following warnings when enabling quota
-in my virtual machine(running Opensuse), Steps are firstly creating
-a subvolume full of fragment extents, and then create many snapshots
-(500 in my test case).
+On 01/25/2014 01:59 AM, Wang Shilong wrote:
+> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+>
+> We are really suffering from now ulist's implementation, some developers
+> gave their try, and i just gave some of my ideas for things:
+>
+>   1. use list+rb_tree instead of arrary+rb_tree
+>
+>   2. add cur_list to iterator rather than ulist structure.
+>
+>   3. add seqnum into every node when they are added, this is
+>   used to do selfcheck when iterating node.
+>
+> I noticed Zach Brown's comments before, long term is to kick off
+> ulist implementation, however, for now, we need at least avoid
+> arrary from ulist.
+>
+> Cc: Liu Bo <bo.li.liu@oracle.com>
+> Cc: Josef Bacik <jbacik@fb.com>
+> Cc: Zach Brown <zab@redhat.com>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
 
-[ 2362.808459] BUG: soft lockup - CPU#0 stuck for 22s! [btrfs-qgroup-re:1970]
+I like it, can we use CONFIG_BTRFS_DEBUG or whatever it's called for the 
+seqnum check to make the struct a bit smaller in the normal case?  Thanks,
 
-[ 2362.809023] task: e4af8450 ti: e371c000 task.ti: e371c000
-[ 2362.809026] EIP: 0060:[<fa38f4ae>] EFLAGS: 00000246 CPU: 0
-[ 2362.809049] EIP is at __merge_refs+0x5e/0x100 [btrfs]
-[ 2362.809051] EAX: 00000000 EBX: cfadbcf0 ECX: 00000000 EDX: cfadbcb0
-[ 2362.809052] ESI: dd8d3370 EDI: e371dde0 EBP: e371dd6c ESP: e371dd5c
-[ 2362.809054]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
-[ 2362.809055] CR0: 80050033 CR2: ac454d50 CR3: 009a9000 CR4: 001407d0
-[ 2362.809099] Stack:
-[ 2362.809100]  00000001 e371dde0 dfcc6890 f29f8000 e371de28 fa39016d 00000011 00000001
-[ 2362.809105]  99bfc000 00000000 93928000 00000000 00000001 00000050 e371dda8 00000001
-[ 2362.809109]  f3a31000 f3413000 00000001 e371ddb8 000040a8 00000202 00000000 00000023
-[ 2362.809113] Call Trace:
-[ 2362.809136]  [<fa39016d>] find_parent_nodes+0x34d/0x1280 [btrfs]
-[ 2362.809156]  [<fa391172>] btrfs_find_all_roots+0xb2/0x110 [btrfs]
-[ 2362.809174]  [<fa3934a8>] btrfs_qgroup_rescan_worker+0x358/0x7a0 [btrfs]
-[ 2362.809180]  [<c024d0ce>] ? lock_timer_base.isra.39+0x1e/0x40
-[ 2362.809199]  [<fa3648df>] worker_loop+0xff/0x470 [btrfs]
-[ 2362.809204]  [<c027a88a>] ? __wake_up_locked+0x1a/0x20
-[ 2362.809221]  [<fa3647e0>] ? btrfs_queue_worker+0x2b0/0x2b0 [btrfs]
-[ 2362.809225]  [<c025ebbc>] kthread+0x9c/0xb0
-[ 2362.809229]  [<c06b487b>] ret_from_kernel_thread+0x1b/0x30
-[ 2362.809233]  [<c025eb20>] ? kthread_create_on_node+0x110/0x110
-
-By adding a reschedule point at the end of btrfs_find_all_roots(), i no longer
-hit these warnings.
-
-Cc: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/backref.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 3512437..14e6a61 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1118,6 +1118,7 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
- 		if (!node)
- 			break;
- 		bytenr = node->val;
-+		cond_resched();
- 	}
- 
- 	ulist_free(tmp);
--- 
-1.8.4
-
+Josef

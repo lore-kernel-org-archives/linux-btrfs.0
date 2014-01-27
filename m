@@ -1,61 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41302 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753580AbaA0NLU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 08:11:20 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1W7lyB-0001gD-1q
-	for linux-btrfs@vger.kernel.org; Mon, 27 Jan 2014 14:11:19 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 14:11:19 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 14:11:19 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Monitoring for disk failures
-Date: Mon, 27 Jan 2014 13:10:53 +0000 (UTC)
-Message-ID: <pan$2540$a024a2e$1649dd5d$60e61fd@cox.net>
-References: <52E64665.5020109@elastichosts.com>
+Received: from mail-qc0-f182.google.com ([209.85.216.182]:39443 "EHLO
+	mail-qc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753058AbaA0QJA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jan 2014 11:09:00 -0500
+Received: by mail-qc0-f182.google.com with SMTP id c9so8303941qcz.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 08:09:00 -0800 (PST)
+Message-ID: <1390838938.1692.14.camel@sasami.ottawa.blindsidenetworks.com>
+Subject: Re: btrfs and ECC RAM
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 27 Jan 2014 11:08:58 -0500
+In-Reply-To: <75B4E5E0-07FF-401B-BE23-1B3D768AB0EF@colorremedies.com>
+References: <AE93F05D-BEE7-4CE6-970E-137EA41D1C7B@aei.mpg.de>
+	 <CAPpBBdNfxchPw0DCLxNNoFZc5jGec88Q5j0C-uGy88oae0TDiw@mail.gmail.com>
+	 <52DC9453.4000705@gmail.com>
+	 <96091903-E1B0-4455-9EDC-EF94EE2E5110@aei.mpg.de>
+	 <52DD426A.5020104@shiftmail.org> <52DD49F3.8050100@chinilu.com>
+	 <75B4E5E0-07FF-401B-BE23-1B3D768AB0EF@colorremedies.com>
+Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alin Dobre posted on Mon, 27 Jan 2014 11:43:33 +0000 as excerpted:
-
-> I am trying to create a very simple script that would alert in case of
-> disk failures from a RAID Btrfs.
+On Fri, 2014-01-24 at 17:45 -0700, Chris Murphy wrote:
+> On Jan 20, 2014, at 9:08 AM, George Mitchell <george@chinilu.com> wrote:
 > 
-> Digging into the code, I have noticed that the "btrfs fi sh" command
-> should display a warning if there is a missing disk. However, testing in
-> a Qemu, I used "drive_del" via QMP to remove a "live" SCSI drive,
-> already mounted as part of a RAID10 array, the "fi sh" command still
-> gave no indication that the drive is missing. Then, I tried removing a
-> scsi disk from the host via "echo 1 >/sys/block/sdX/device/delete" to
-> actually make the kernel SCSI host forget about it, and "fi sh" still
-> doesn't show anything.
+> > After reading the recent posts on this topic I am beginning to think
+> there is some real confusion between "check sums" and "parity". 
 > 
-> I have tested using btrfs-progs v3.12 and kernel 3.13.0.
+> Yes, I often see conventional raid6 assumed to always be capable of
+> detecting and correcting corruption, not merely the ability to rebuild
+> missing data of known location and length in a stripe (known either
+> due to the drive reporting read error along with LBA; or a physical
+> device becoming unavailable or unresponsive).
+> 
+> > But I CAN see how bad RAM could affect parity calculations and
+> resulting data IN THE ABSENCE of protective checksums and cannot help
+> but wonder if THAT is what the original article is describing.
+> 
+> Does Btrfs (and I'd presume ZFS) raid5/6 checksum both data and parity
+> chunks? And in the case of raid6 are the two parities separately
+> checksummed?
 
-Without actually trying it here... I believe by default that'd update 
-only when there was an I/O error.
+The checksumming in Btrfs is actually the other way around; the file
+extents and filesystem metadata structures are checksummed before the
+RAID parity is applied. The resulting blocks containing both data and
+checksums are split over multiple drives with parity.
 
-Did you try btrfs filesystem show --all-devices?  That scans differently.
-
-If that doesn't work try btrfs device scan first as that updates the in-
-kernel list, then filesystem show.  Alternatively, monitor the kernel log 
-for output as the scanned devices show up there.
-
-And if /that/ doesn't work, try show, followed by a probe of all the 
-devices listed by show.  But I strongly suspect a device scan will force 
-the update you're looking for.
+Presumably once scrub is implemented in btrfs RAID5/6, it will work by
+first reconstructing the filesystem structure using data chunks, then
+checking the checksum; if the checksum fails, it will attempt to
+reconstruct the filesystem structure using the parity chunks instead of
+data chunks and then re-check the checksum to confirm the reconstruction
+was successful.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Calvin Walton <calvin.walton@kepstin.ca>
 

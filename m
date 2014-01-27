@@ -1,131 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:55609 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:32849 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753347AbaA0KBL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1753138AbaA0KBL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 27 Jan 2014 05:01:11 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0RA17mv013223
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0RA1750013224
 	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 18:01:08 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: allocate ulist with a slab allocator
-Date: Mon, 27 Jan 2014 17:59:49 +0800
-Message-Id: <1390816789-3901-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 2/2] Btrfs: do not export ulist functions
+Date: Mon, 27 Jan 2014 17:59:48 +0800
+Message-Id: <1390816789-3901-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1390816789-3901-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1390816789-3901-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Walking backrefs is heavily relying on ulist, so it is better
-to allocate ulist with a slab allocator especially with autodefrag
-and quota enabled.
+There are not any users that use ulist except Btrfs,don't
+export them.
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/super.c |  7 +++++++
- fs/btrfs/ulist.c | 22 ++++++++++++++++++++--
- fs/btrfs/ulist.h |  2 ++
- 3 files changed, 29 insertions(+), 2 deletions(-)
+v2->v3: none.
+v1->v2: make ulist_fini() static since it is not called anywhere.
+---
+ fs/btrfs/ulist.c | 10 +---------
+ fs/btrfs/ulist.h |  1 -
+ 2 files changed, 1 insertion(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 461e41c..1a9ac6d 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1906,6 +1906,10 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		goto free_prelim_ref;
- 
-+	err = btrfs_ulist_init();
-+	if (err)
-+		goto free_ulist;
-+
- 	err = btrfs_interface_init();
- 	if (err)
- 		goto free_delayed_ref;
-@@ -1926,6 +1930,8 @@ static int __init init_btrfs_fs(void)
- 
- unregister_ioctl:
- 	btrfs_interface_exit();
-+free_ulist:
-+	btrfs_ulist_exit();
- free_prelim_ref:
- 	btrfs_prelim_ref_exit();
- free_delayed_ref:
-@@ -1955,6 +1961,7 @@ static void __exit exit_btrfs_fs(void)
- 	btrfs_auto_defrag_exit();
- 	btrfs_delayed_inode_exit();
- 	btrfs_prelim_ref_exit();
-+	btrfs_ulist_exit();
- 	ordered_data_exit();
- 	extent_map_exit();
- 	extent_io_exit();
 diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-index 84ea442..bf9127d 100644
+index 1c9e2c9..84ea442 100644
 --- a/fs/btrfs/ulist.c
 +++ b/fs/btrfs/ulist.c
-@@ -8,6 +8,7 @@
+@@ -5,7 +5,6 @@
+  */
+ 
+ #include <linux/slab.h>
+-#include <linux/export.h>
  #include "ulist.h"
  #include "ctree.h"
  
-+static struct kmem_cache *btrfs_ulist_cache;
- /*
-  * ulist is a generic data structure to hold a collection of unique u64
-  * values. The only operations it supports is adding to the list and
-@@ -66,7 +67,7 @@ static void ulist_fini(struct ulist *ulist)
- 	struct ulist_node *next;
+@@ -53,7 +52,6 @@ void ulist_init(struct ulist *ulist)
+ 	ulist->nnodes = 0;
+ #endif
+ }
+-EXPORT_SYMBOL(ulist_init);
  
- 	list_for_each_entry_safe(node, next, &ulist->nodes, list) {
--		kfree(node);
-+		kmem_cache_free(btrfs_ulist_cache, node);
- 	}
+ /**
+  * ulist_fini - free up additionally allocated memory for the ulist
+@@ -62,7 +60,7 @@ EXPORT_SYMBOL(ulist_init);
+  * This is useful in cases where the base 'struct ulist' has been statically
+  * allocated.
+  */
+-void ulist_fini(struct ulist *ulist)
++static void ulist_fini(struct ulist *ulist)
+ {
+ 	struct ulist_node *node;
+ 	struct ulist_node *next;
+@@ -73,7 +71,6 @@ void ulist_fini(struct ulist *ulist)
  	ulist->root = RB_ROOT;
  	INIT_LIST_HEAD(&ulist->nodes);
-@@ -156,6 +157,23 @@ static int ulist_rbtree_insert(struct ulist *ulist, struct ulist_node *ins)
- 	return 0;
  }
+-EXPORT_SYMBOL(ulist_fini);
  
-+int __init btrfs_ulist_init(void)
-+{
-+	btrfs_ulist_cache = kmem_cache_create("btrfs_ulist_cache",
-+					sizeof(struct ulist_node), 0,
-+					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+					NULL);
-+	if (!btrfs_ulist_cache)
-+		return -ENOMEM;
-+	return 0;
-+}
-+
-+void btrfs_ulist_exit(void)
-+{
-+	if (btrfs_ulist_cache)
-+		kmem_cache_destroy(btrfs_ulist_cache);
-+}
-+
  /**
-  * ulist_add - add an element to the ulist
-  * @ulist:	ulist to add the element to
-@@ -193,7 +211,7 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
- 			*old_aux = node->aux;
- 		return 0;
- 	}
--	node = kmalloc(sizeof(*node), gfp_mask);
-+	node = kmem_cache_alloc(btrfs_ulist_cache, gfp_mask);
- 	if (!node)
- 		return -ENOMEM;
+  * ulist_reinit - prepare a ulist for reuse
+@@ -87,7 +84,6 @@ void ulist_reinit(struct ulist *ulist)
+ 	ulist_fini(ulist);
+ 	ulist_init(ulist);
+ }
+-EXPORT_SYMBOL(ulist_reinit);
  
+ /**
+  * ulist_alloc - dynamically allocate a ulist
+@@ -106,7 +102,6 @@ struct ulist *ulist_alloc(gfp_t gfp_mask)
+ 
+ 	return ulist;
+ }
+-EXPORT_SYMBOL(ulist_alloc);
+ 
+ /**
+  * ulist_free - free dynamically allocated ulist
+@@ -121,7 +116,6 @@ void ulist_free(struct ulist *ulist)
+ 	ulist_fini(ulist);
+ 	kfree(ulist);
+ }
+-EXPORT_SYMBOL(ulist_free);
+ 
+ static struct ulist_node *ulist_rbtree_search(struct ulist *ulist, u64 val)
+ {
+@@ -218,7 +212,6 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
+ 
+ 	return 1;
+ }
+-EXPORT_SYMBOL(ulist_add);
+ 
+ /**
+  * ulist_next - iterate ulist
+@@ -260,4 +253,3 @@ struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_iterator *uiter)
+ #endif
+ 	return node;
+ }
+-EXPORT_SYMBOL(ulist_next);
 diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
-index 154117d..d094621 100644
+index 7be97fc..154117d 100644
 --- a/fs/btrfs/ulist.h
 +++ b/fs/btrfs/ulist.h
-@@ -51,6 +51,8 @@ struct ulist {
- 	struct rb_root root;
+@@ -52,7 +52,6 @@ struct ulist {
  };
  
-+int __init btrfs_ulist_init(void);
-+void btrfs_ulist_exit(void);
  void ulist_init(struct ulist *ulist);
+-void ulist_fini(struct ulist *ulist);
  void ulist_reinit(struct ulist *ulist);
  struct ulist *ulist_alloc(gfp_t gfp_mask);
+ void ulist_free(struct ulist *ulist);
 -- 
 1.8.3.1
 

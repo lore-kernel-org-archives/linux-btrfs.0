@@ -1,108 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59728 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753628AbaA0Tbs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 14:31:48 -0500
-Date: Mon, 27 Jan 2014 19:31:23 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: kreijack@inwind.it
-Cc: Gerhard Heift <gerhard@heift.name>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFCv2] new ioctl TREE_SEARCH_V2
-Message-ID: <20140127193123.GO3314@carfax.org.uk>
-References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
- <52E6AF3C.1070401@libero.it>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Y4VYWfdFdHwFhC6D"
-In-Reply-To: <52E6AF3C.1070401@libero.it>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54833 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753781AbaA0Tta convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jan 2014 14:49:30 -0500
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: =?windows-1252?Q?Re=3A_Snapshots_=96_noob_questions?=
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140127185008.GN3314@carfax.org.uk>
+Date: Mon, 27 Jan 2014 12:49:27 -0700
+Cc: KC <impactoria@googlemail.com>, linux-btrfs@vger.kernel.org
+Message-Id: <E6CD1D22-3297-42C2-A951-D296E4156132@colorremedies.com>
+References: <52E664E0.5070909@gmail.com> <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com> <20140127185008.GN3314@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Y4VYWfdFdHwFhC6D
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Jan 27, 2014, at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
 
-On Mon, Jan 27, 2014 at 08:10:52PM +0100, Goffredo Baroncelli wrote:
-> Hi,
->=20
-> On 2014-01-27 14:28, Gerhard Heift wrote:
-> > This patch series adds a new ioctl TREE_SEARCH_V2 with which we could s=
-tore the
-> > results in a varying buffer. Now even items larger than 3992 bytes or a=
- large
-> > amount of items can be returned.
->=20
->=20
-> One of the main strangeness of the current TREE_SEARCH ioctl, which I
-> found is the fact that the search was not in a "rectangular" region, but
-> in a "linear" region.
+> On Mon, Jan 27, 2014 at 11:44:24AM -0700, Chris Murphy wrote:
+>> 
+>> On Jan 27, 2014, at 6:53 AM, KC <impactoria@googlemail.com> wrote:
+>>> 4. If I have a snapshot of  /, can I completely erase this partition and later restore it in full form that snapshot, or do snapshots work only if a limited number of files has been changed?
+>>> If the former, then does it mean that snapshot size will be comparable to the original data size?
+>> 
+>> I'm confused by what you mean by completely erase this partitions and later restore it. What do you mean by partition? Taken literally I'd say no because a snapshot is a subvolume, it's a function of a Btrfs file system, and if you erase the partition you've erased the file system and everything on it.
+>> 
+>> Otherwise, either the snapshot or its parent subvolume can be deleted at any time. At the moment the snapshot is taken, they are clones, but they behave as completely separate file systems. Any changes to one do not affect the other.
+> 
+>   Probably slightly more accurate to say "completely different file
+> trees", as they're part of the same filesystem (the single btrfs FS
+> that contains all of the subvolumes in this example).
 
-> This is due the fact that after a ioctl call, we have to set the min_*
-> fields with the sh->{objectid,offset,type} +1 rounding to 0 if case of
-> overflow.
->=20
-> This because the min_* fields are both the "lower bound" of the search
-> and the "starting point" of the next search. Adding a new set of fields
-> named start_* could solve this issue.
->=20
-> I discussed this topic few years ago in [1].
->=20
-> Because we are introducing a new ioctl, is it possible to solve this
-> issue ? We could avoid some userspace<->kernelspace transition, which
-> seems be one of the goal of your patch.
+Yes good point. File system = volume; file tree = subvolume.
 
-   Aargh, not this again. :(
+> 
+>>> 5. Can a snapshot be stored on a different partition?
+>> 
+>> Yes Btrfs send/receive.
+> 
+>   Mmmm... debatable semantics again. You can transfer the data with
+> btrfs send/receive, but after that it's not really a snapshot in the
+> sense of being a CoW copy on the same filesystem…
 
-   The keyspace is *linear*, consisting of a concatenation of three
-data fields, sorted lexically. This is how they're stored in the
-trees, and it's how they're returned by TREE_SEARCH. You can't
-traverse the keyspace with an O(1) "next" operation in anything other
-than that order. Each tree represents a linear keyspace (because
-that's the fundamental nature of the data structure).
+Ahh yes I was being very literal rather than thinking of a magical hard link that can work across file system boundaries.
 
-   If you want to treat the keyspace as a 3-dimensional tuple space
-(in a subspace of |N=B3), then you have to search separately in the tree
-each time you come to the end of an (objectid, type, _) range. The
-other alternative is to retrieve all of the linear range, and filter
-out the unwanted keys whilst traversing the sequence.
+Maybe the question needs to be phrased in terms of a use case question, and possibly a seed-device would fit?
 
-   Bottom line: it's a linear data structure, not a 3-dimensional one.
-Please treat it as such, otherwise things are going to get complicated
-and confusing.
+https://btrfs.wiki.kernel.org/index.php/Seed-device
 
-   Hugo.
 
-> [1] http://www.spinics.net/lists/linux-btrfs/msg07617.html
+Chris Murphy
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Great oxymorons of the world, no. 7: The Simple Truth ---     =20
-
---Y4VYWfdFdHwFhC6D
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIVAwUBUua0C1heFHXiqx3kAQKOCw/9HKDYJ6E79LJmYzI1Ed/D+RC9bE+rYF2/
-TS03rhuDQm3AWJiAencwlVJw0z3ArgKNaaQP/QX+fzOb+ik2vVaDXOH9PNVKvDTG
-Gb3tC0sPOnk3lBHEJQYRYwehMRZHWLgkNPwdRkoQAisRJWzlA0Rb4bklWpwm0zHp
-zbWWFJjsOTLaejESM9is1rymTv5GGq9FMUpzJjWu8wyYXOuHc3I0jZcQkX5L2MZP
-WOidnnxcTAK7FVr4SgmwzrCkpuPoQ5XLC2hICgRZVpY7LkohHeROy1XTgjlnNivq
-G1FQJLDTS7xIhflGcnA3LFj1ukIW5yk1ncxKTegMi7n8A956+qOmYgoD40bnOaMR
-1r/ab/t+mk+HPTm/rf4eyndKrYRGb4eVWc6fLgEP+gI28MtMULBILoBykFyBzozo
-iXgpDAJEtivR2pC1Hg63FA5Y20EvZy5BP5J0XPKfL2Lsh0xpO9HtsaHJLriIepAC
-6u7Q3SM3cNs4tPhBCbSuaz/J8Q4KcX5UINNeIfViBbCn1MHS5J/FXlZXe9qGELyI
-FXy+fKjq4bjLjUWejMjKBkjiDhQCPwKk5c+wNtDYuPTIutTI1NEYu/bvxh+dlWEx
-OKi8QtR1UWXU3d2eURX4iWtsbi6vI/wkLHYSYPbLeKPBeSc+O3bAFiC5rtZ5hVA2
-DHuQAd/XbZI=
-=mcZE
------END PGP SIGNATURE-----
-
---Y4VYWfdFdHwFhC6D--

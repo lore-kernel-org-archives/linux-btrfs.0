@@ -1,56 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54833 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753781AbaA0Tta convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 14:49:30 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: =?windows-1252?Q?Re=3A_Snapshots_=96_noob_questions?=
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140127185008.GN3314@carfax.org.uk>
-Date: Mon, 27 Jan 2014 12:49:27 -0700
-Cc: KC <impactoria@googlemail.com>, linux-btrfs@vger.kernel.org
-Message-Id: <E6CD1D22-3297-42C2-A951-D296E4156132@colorremedies.com>
-References: <52E664E0.5070909@gmail.com> <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com> <20140127185008.GN3314@carfax.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
+Received: from outrelay07.libero.it ([212.52.84.111]:43792 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753310AbaA0Vnz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jan 2014 16:43:55 -0500
+Message-ID: <52E6D0C5.7050707@inwind.it>
+Date: Mon, 27 Jan 2014 22:33:57 +0100
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Hugo Mills <hugo@carfax.org.uk>, Gerhard Heift <gerhard@heift.name>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFCv2] new ioctl TREE_SEARCH_V2
+References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name> <52E6AF3C.1070401@libero.it> <20140127193123.GO3314@carfax.org.uk>
+In-Reply-To: <20140127193123.GO3314@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Hugo,
 
-On Jan 27, 2014, at 11:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-
-> On Mon, Jan 27, 2014 at 11:44:24AM -0700, Chris Murphy wrote:
->> 
->> On Jan 27, 2014, at 6:53 AM, KC <impactoria@googlemail.com> wrote:
->>> 4. If I have a snapshot of  /, can I completely erase this partition and later restore it in full form that snapshot, or do snapshots work only if a limited number of files has been changed?
->>> If the former, then does it mean that snapshot size will be comparable to the original data size?
->> 
->> I'm confused by what you mean by completely erase this partitions and later restore it. What do you mean by partition? Taken literally I'd say no because a snapshot is a subvolume, it's a function of a Btrfs file system, and if you erase the partition you've erased the file system and everything on it.
->> 
->> Otherwise, either the snapshot or its parent subvolume can be deleted at any time. At the moment the snapshot is taken, they are clones, but they behave as completely separate file systems. Any changes to one do not affect the other.
+On 2014-01-27 20:31, Hugo Mills wrote:
+>> > One of the main strangeness of the current TREE_SEARCH ioctl, which I
+>> > found is the fact that the search was not in a "rectangular" region, but
+>> > in a "linear" region.
+>> > This is due the fact that after a ioctl call, we have to set the min_*
+>> > fields with the sh->{objectid,offset,type} +1 rounding to 0 if case of
+>> > overflow.
+>> > 
+>> > This because the min_* fields are both the "lower bound" of the search
+>> > and the "starting point" of the next search. Adding a new set of fields
+>> > named start_* could solve this issue.
+>> > 
+>> > I discussed this topic few years ago in [1].
+>> > 
+>> > Because we are introducing a new ioctl, is it possible to solve this
+>> > issue ? We could avoid some userspace<->kernelspace transition, which
+>> > seems be one of the goal of your patch.
+>    Aargh, not this again. :(
 > 
->   Probably slightly more accurate to say "completely different file
-> trees", as they're part of the same filesystem (the single btrfs FS
-> that contains all of the subvolumes in this example).
+>    The keyspace is *linear*, consisting of a concatenation of three
+> data fields, sorted lexically. This is how they're stored in the
+> trees, and it's how they're returned by TREE_SEARCH. 
 
-Yes good point. File system = volume; file tree = subvolume.
+I never told anything different
 
-> 
->>> 5. Can a snapshot be stored on a different partition?
->> 
->> Yes Btrfs send/receive.
-> 
->   Mmmm... debatable semantics again. You can transfer the data with
-> btrfs send/receive, but after that it's not really a snapshot in the
-> sense of being a CoW copy on the same filesystem…
+> You can't
+> traverse the keyspace with an O(1) "next" operation in anything other
+> than that order. 
 
-Ahh yes I was being very literal rather than thinking of a magical hard link that can work across file system boundaries.
+I didn't requested that. I am suggesting to filter out in the kernel
+space the "out of range" values, to avoid return them in user space. The
+search is still performed in "linear" mode.
 
-Maybe the question needs to be phrased in terms of a use case question, and possibly a seed-device would fit?
+Now, the min_* values are updated with the last key found+1 after each
+ioctl. I am only suggesting to never reset the min_* values and to add
+other three fields to store the "cursor" position.
 
-https://btrfs.wiki.kernel.org/index.php/Seed-device
+When a key is found, it is checked in kernel space if it is valid or
+none (if it is in the range min_* ... max_*). If it is valid, it is
+returned in user space; in *any case* the search starts from the last+1 key.
+
+Today this is not possible, because the min_* values are overridden.
+
+I repeat, the search is still performed linearity (ok, some values could
+be skipped but this is a further optimization); I want only to avoid
+kernel space returning "out of range" data.
+
+BR
+Goffredo
 
 
-Chris Murphy
-
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,48 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:9235 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752461AbaAZSSQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jan 2014 13:18:16 -0500
-Message-ID: <52E5515C.20907@fb.com>
-Date: Sun, 26 Jan 2014 13:18:04 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Liu Bo <bo.li.liu@oracle.com>,
-        Zach Brown <zab@redhat.com>
-Subject: Re: [PATCH RFC v2 1/2] Btrfs: rework ulist with list+rb_tree
-References: <1390633178-2104-1-git-send-email-wangshilong1991@gmail.com>
-In-Reply-To: <1390633178-2104-1-git-send-email-wangshilong1991@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37617 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753241AbaA0CYe convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 26 Jan 2014 21:24:34 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:55953 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W7bsH-000JMg-HY
+	for linux-btrfs@vger.kernel.org; Sun, 26 Jan 2014 19:24:33 -0700
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: RFE: proactive "marginally bad" block detection during scrubs
+Message-Id: <E71DD6C6-524F-4DFC-B136-BAC906668D47@colorremedies.com>
+Date: Sun, 26 Jan 2014 19:24:32 -0700
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 01/25/2014 01:59 AM, Wang Shilong wrote:
-> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->
-> We are really suffering from now ulist's implementation, some developers
-> gave their try, and i just gave some of my ideas for things:
->
->   1. use list+rb_tree instead of arrary+rb_tree
->
->   2. add cur_list to iterator rather than ulist structure.
->
->   3. add seqnum into every node when they are added, this is
->   used to do selfcheck when iterating node.
->
-> I noticed Zach Brown's comments before, long term is to kick off
-> ulist implementation, however, for now, we need at least avoid
-> arrary from ulist.
->
-> Cc: Liu Bo <bo.li.liu@oracle.com>
-> Cc: Josef Bacik <jbacik@fb.com>
-> Cc: Zach Brown <zab@redhat.com>
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> ---
+Most consumer drives have bad sector timeouts that aren't configurable, and are in the ~120 second realm. The kernel puts a SCSI command timer on each command, which by default is 30 seconds. This mismatch means drives can develop bad sectors that can't be recovered, because the kernel resets the device before the drive gives up and reports a media error along with the affected LBA.
 
-I like it, can we use CONFIG_BTRFS_DEBUG or whatever it's called for the 
-seqnum check to make the struct a bit smaller in the normal case?  Thanks,
+Would it be possible for Btrfs scrubs to put a timer on each LBA read request, and if there's a delay, overwrite the delayed LBAs? That way latent sector errors won't get so bad that they take more than 30 seconds to recover. Overwriting slow sectors should fix the problem.
 
-Josef
+Yes? No? Other?
+
+
+Chris Murphy

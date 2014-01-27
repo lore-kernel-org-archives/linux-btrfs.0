@@ -1,31 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37617 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753241AbaA0CYe convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 26 Jan 2014 21:24:34 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:55953 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1W7bsH-000JMg-HY
-	for linux-btrfs@vger.kernel.org; Sun, 26 Jan 2014 19:24:33 -0700
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: RFE: proactive "marginally bad" block detection during scrubs
-Message-Id: <E71DD6C6-524F-4DFC-B136-BAC906668D47@colorremedies.com>
-Date: Sun, 26 Jan 2014 19:24:32 -0700
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from mail-ob0-f175.google.com ([209.85.214.175]:45916 "EHLO
+	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753310AbaA0Gyc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jan 2014 01:54:32 -0500
+Received: by mail-ob0-f175.google.com with SMTP id wn1so5975605obc.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jan 2014 22:54:31 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <1390805294-24617-1-git-send-email-sachin.kamat@linaro.org>
+References: <1390805294-24617-1-git-send-email-sachin.kamat@linaro.org>
+Date: Mon, 27 Jan 2014 12:24:31 +0530
+Message-ID: <CAK9yfHzOxQqmzAtiTxrHnqjB2x1uvtWNqJuebHU=0=YQ=c+-kA@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: Use PTR_ERR_OR_ZERO
+From: Sachin Kamat <sachin.kamat@linaro.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: clm <clm@fb.com>, jbacik <jbacik@fb.com>,
+        Sachin Kamat <sachin.kamat@linaro.org>,
+        Patch Tracking <patches@linaro.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 27 January 2014 12:18, Sachin Kamat <sachin.kamat@linaro.org> wrote:
+> PTR_RET is deprecated. Use PTR_ERR_OR_ZERO instead. While at it
+> also include missing err.h header.
+>
+> Signed-off-by: Sachin Kamat <sachin.kamat@linaro.org>
+> ---
 
-Most consumer drives have bad sector timeouts that aren't configurable, and are in the ~120 second realm. The kernel puts a SCSI command timer on each command, which by default is 30 seconds. This mismatch means drives can develop bad sectors that can't be recovered, because the kernel resets the device before the drive gives up and reports a media error along with the affected LBA.
+Please note, there is no second patch in this series. Sorry for the
+confusion caused if any by the
+patch title.
 
-Would it be possible for Btrfs scrubs to put a timer on each LBA read request, and if there's a delay, overwrite the delayed LBAs? That way latent sector errors won't get so bad that they take more than 30 seconds to recover. Overwriting slow sectors should fix the problem.
-
-Yes? No? Other?
-
-
-Chris Murphy
+-- 
+With warm regards,
+Sachin

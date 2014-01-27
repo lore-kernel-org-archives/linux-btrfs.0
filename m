@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f177.google.com ([209.85.192.177]:44834 "EHLO
-	mail-pd0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753626AbaA0G6a (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:45370 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750832AbaA0H7U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 01:58:30 -0500
-Received: by mail-pd0-f177.google.com with SMTP id x10so5343391pdj.22
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Jan 2014 22:58:29 -0800 (PST)
-From: Sachin Kamat <sachin.kamat@linaro.org>
+	Mon, 27 Jan 2014 02:59:20 -0500
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 5B15E2186F
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 18:59:17 +1100 (EST)
+From: Russell Coker <russell@coker.com.au>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, sachin.kamat@linaro.org, patches@linaro.org
-Subject: [PATCH 1/2] btrfs: Use PTR_ERR_OR_ZERO
-Date: Mon, 27 Jan 2014 12:18:14 +0530
-Message-Id: <1390805294-24617-1-git-send-email-sachin.kamat@linaro.org>
+Reply-To: russell@coker.com.au
+Subject: deleting files and qgroups
+Date: Mon, 27 Jan 2014 18:59:16 +1100
+Message-ID: <6820542.RmHzTAgQHU@russell.coker.com.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-PTR_RET is deprecated. Use PTR_ERR_OR_ZERO instead. While at it
-also include missing err.h header.
+(sysadm_t:s0-s0:c0.c1023)root@play:/tmp# btrfs qgroup limit 20m /tmp
+(sysadm_t:s0-s0:c0.c1023)root@play:/tmp# du -h test
+931M    test
+(sysadm_t:s0-s0:c0.c1023)root@play:/tmp# rm test
+rm: cannot remove 'test': Disk quota exceeded
+(sysadm_t:s0-s0:c0.c1023)root@play:/tmp# echo -n > test
+-bash: test: Disk quota exceeded
 
-Signed-off-by: Sachin Kamat <sachin.kamat@linaro.org>
----
- fs/btrfs/root-tree.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Is the above expected?  If there's excess disk space usage I'd like to set a 
+qgroup first then delete or truncate files.
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 1389b69059de..38bb47e7d6b1 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -16,6 +16,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+#include <linux/err.h>
- #include <linux/uuid.h>
- #include "ctree.h"
- #include "transaction.h"
-@@ -271,7 +272,7 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
- 		key.offset++;
- 
- 		root = btrfs_read_fs_root(tree_root, &root_key);
--		err = PTR_RET(root);
-+		err = PTR_ERR_OR_ZERO(root);
- 		if (err && err != -ENOENT) {
- 			break;
- 		} else if (err == -ENOENT) {
+As an aside, is it expected that a SE Linux Play Machine (with hostile "root" 
+user) should survive with BTRFS?  I'm preparing a new Play Machine which will 
+run BTRFS and use qgroups, are there any bugs or missing features I should be 
+aware of?
+
+I realise that qgroups are an area of BTRFS that hasn't been tested a lot and 
+that using them to restrict actively hostile users is probably more 
+experimental than most BTRFS stuff.  But I'm happy to get a broken system if we 
+learn something useful.
+
 -- 
-1.7.9.5
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

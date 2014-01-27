@@ -1,79 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59480 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753903AbaA0Sub (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:44218 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753804AbaA0TGX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 13:50:31 -0500
-Date: Mon, 27 Jan 2014 18:50:08 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: KC <impactoria@googlemail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Snapshots =?utf-8?B?4oCTIG5vbw==?= =?utf-8?Q?b?= questions
-Message-ID: <20140127185008.GN3314@carfax.org.uk>
-References: <52E664E0.5070909@gmail.com>
- <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com>
+	Mon, 27 Jan 2014 14:06:23 -0500
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Gerhard Heift <gerhard@heift.name>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFCv2 2/6] btrfs: search_ioctl rejects unused setted values
+Date: Mon, 27 Jan 2014 20:06:20 +0100
+Message-ID: <4207589.mCGRS1gQ4T@merkaba>
+In-Reply-To: <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
+References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name> <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="g6DVDhPhk1bqxDrC"
-In-Reply-To: <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Montag, 27. Januar 2014, 14:28:28 schrieb Gerhard Heift:
+> To prevent unexpectet values in the unused fields of the search key fail
 
---g6DVDhPhk1bqxDrC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+unexpected
 
-On Mon, Jan 27, 2014 at 11:44:24AM -0700, Chris Murphy wrote:
+> early. Otherwise future extensions would break the behavior of the search
+> if current implementations in userspace set them to values other than zero.
 > 
-> On Jan 27, 2014, at 6:53 AM, KC <impactoria@googlemail.com> wrote:
-> > 4. If I have a snapshot of  /, can I completely erase this partition and later restore it in full form that snapshot, or do snapshots work only if a limited number of files has been changed?
-> > If the former, then does it mean that snapshot size will be comparable to the original data size?
+> Signed-off-by: Gerhard Heift <Gerhard@Heift.Name>
+> ---
+>  fs/btrfs/ioctl.c | 3 +++
+>  1 file changed, 3 insertions(+)
 > 
-> I'm confused by what you mean by completely erase this partitions and later restore it. What do you mean by partition? Taken literally I'd say no because a snapshot is a subvolume, it's a function of a Btrfs file system, and if you erase the partition you've erased the file system and everything on it.
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index be4c780..919d928 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1947,6 +1947,9 @@ static noinline int search_ioctl(struct inode *inode,
+>  	if (buf_size < sizeof(struct btrfs_ioctl_search_header))
+>  		return -EOVERFLOW;
 > 
-> Otherwise, either the snapshot or its parent subvolume can be deleted at any time. At the moment the snapshot is taken, they are clones, but they behave as completely separate file systems. Any changes to one do not affect the other.
-
-   Probably slightly more accurate to say "completely different file
-trees", as they're part of the same filesystem (the single btrfs FS
-that contains all of the subvolumes in this example).
-
-> > 5. Can a snapshot be stored on a different partition?
-> 
-> Yes Btrfs send/receive.
-
-   Mmmm... debatable semantics again. You can transfer the data with
-btrfs send/receive, but after that it's not really a snapshot in the
-sense of being a CoW copy on the same filesystem...
-
-   Hugo.
+> +	if (sk->unused || sk->unused1 | sk->unused2 | sk->unused3 | sk->unused4)
+> +		return -EINVAL;
+> +
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+>  		return -ENOMEM;
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- I always felt that as a C programmer, I ---             
-                         was becoming typecast.                          
-
---g6DVDhPhk1bqxDrC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIUAwUBUuaqYFheFHXiqx3kAQIjAQ/4sTcm+yRMzXqxbPn/B0692LqvBqy124ie
-0qmQvOQXpc+4VRysTvIfzNehbUjdVa65zkeV5OnvPlNQZ6CdQdcUjQDYTe25BwVQ
-V1/vKxQpOcDQo1NGousyNQN4saPt26wjCaeQcGjsZS9t3RS2gtJH/XPVDdyzpDKn
-Q4CUATZCFqleetAhxcSDCuyEKX9mQ8Gs2fdr5xMf4/DfGnwjAY57/Kkrb5EoUfoc
-AuRw6U2X2mbhTcEF0bqJG7qEnPOKBYnLQnch/rC+2E04+uoof41PYwaOWXxcejSw
-TEhDSWwZnMSIpHzoJ7dB5AQmesZQpPcqEE49jux+Z2+Sg2skALwIRXBUd4bhR2zF
-xZfry5VNfSYCaUZ3h/wqd9DW+bYIcfkFMnaTLC88ICKfLpdA84pxC8nM6mhccq7q
-ogBu63qC4F30l+BWjqKZA+4CrmhrLKEIsaGypxqVXLj7CntDYgn8L8ZmVM4Skt8B
-9a1emsGqIXQII9KYbDGi0K2e2dCfwELdljkjsBOMoE680jWqHV+7b3bBu8hKbDWi
-iLUra0AvaKpxn0/fMKmfcffBr6bftqkrjLkpVwBvGqtoFXFbA0QOqyp4utM7SJT+
-WDHOBJw48ZFyLVmk9bplpy50beJJ3QpMDmNP7hW2Tj35Ecnf4/f4pi/DY3Pd8Dax
-nFQvbNPxFg==
-=odQy
------END PGP SIGNATURE-----
-
---g6DVDhPhk1bqxDrC--
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

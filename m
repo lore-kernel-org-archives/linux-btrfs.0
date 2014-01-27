@@ -1,35 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f41.google.com ([74.125.83.41]:48634 "EHLO
-	mail-ee0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751135AbaA0JOG (ORCPT
+Received: from old.lon-b.elastichosts.com ([84.45.121.3]:58154 "EHLO
+	lon-b.elastichosts.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753480AbaA0MEk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 04:14:06 -0500
-Received: by mail-ee0-f41.google.com with SMTP id e49so2129698eek.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 01:14:05 -0800 (PST)
-Received: from [192.168.0.29] (ppp-2-85-89-247.home.otenet.gr. [2.85.89.247])
-        by mx.google.com with ESMTPSA id b41sm39875612eef.16.2014.01.27.01.14.03
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 27 Jan 2014 01:14:04 -0800 (PST)
-Message-ID: <52E62358.8030406@gmail.com>
-Date: Mon, 27 Jan 2014 11:14:00 +0200
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+	Mon, 27 Jan 2014 07:04:40 -0500
+Received: from [79.135.116.105] (helo=[192.168.0.190])
+	by lon-b.elastichosts.com with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <alin.dobre@elastichosts.com>)
+	id 1W7kbH-0004CY-Hc
+	for linux-btrfs@vger.kernel.org; Mon, 27 Jan 2014 11:43:35 +0000
+Message-ID: <52E64665.5020109@elastichosts.com>
+Date: Mon, 27 Jan 2014 11:43:33 +0000
+From: Alin Dobre <alin.dobre@elastichosts.com>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: Btrfs send 4-5 times slower than rsync on local
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Subject: Monitoring for disk failures
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, i am using btrfs send to copy a snapshot to another btrfs 
-filesystem on the same machine, and it has a maximum speed of 
-30-35MByte/sec.
-Incredibly rsync is much faster, at 120-140MB/sec. Source btrfs is a 
-5x2TB raid 0 and target is 1x4TB.
+Hi all!
 
-mount options: rw,noatime,compress-force=zlib,space_cache
-kernel is linux-3.13.0-rc6-git and btrfs tools is built from git at 
-about the same time linux-3.13.0-rc6 was released
+I am trying to create a very simple script that would alert in case of
+disk failures from a RAID Btrfs.
 
-Finally, is there a way to resume an interrupted send?
+Digging into the code, I have noticed that the "btrfs fi sh" command
+should display a warning if there is a missing disk. However, testing in
+a Qemu, I used "drive_del" via QMP to remove a "live" SCSI drive,
+already mounted as part of a RAID10 array, the "fi sh" command still
+gave no indication that the drive is missing. Then, I tried removing a
+scsi disk from the host via "echo 1 >/sys/block/sdX/device/delete" to
+actually make the kernel SCSI host forget about it, and "fi sh" still
+doesn't show anything.
 
+I have tested using btrfs-progs v3.12 and kernel 3.13.0.
+
+Do you guys know what's wrong with the setup explained above or do you
+have any indication on how to detect if there is a failing disk, part of
+a Btrfs RAID?
+
+Cheers,
+Alin.

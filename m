@@ -1,50 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44218 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753804AbaA0TGX (ORCPT
+Received: from outrelay07.libero.it ([212.52.84.111]:40644 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753869AbaA0TKz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 14:06:23 -0500
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Gerhard Heift <gerhard@heift.name>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFCv2 2/6] btrfs: search_ioctl rejects unused setted values
-Date: Mon, 27 Jan 2014 20:06:20 +0100
-Message-ID: <4207589.mCGRS1gQ4T@merkaba>
-In-Reply-To: <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
-References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name> <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
+	Mon, 27 Jan 2014 14:10:55 -0500
+Message-ID: <52E6AF3C.1070401@libero.it>
+Date: Mon, 27 Jan 2014 20:10:52 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Gerhard Heift <gerhard@heift.name>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFCv2] new ioctl TREE_SEARCH_V2
+References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
+In-Reply-To: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 27. Januar 2014, 14:28:28 schrieb Gerhard Heift:
-> To prevent unexpectet values in the unused fields of the search key fail
+Hi,
 
-unexpected
+On 2014-01-27 14:28, Gerhard Heift wrote:
+> This patch series adds a new ioctl TREE_SEARCH_V2 with which we could store the
+> results in a varying buffer. Now even items larger than 3992 bytes or a large
+> amount of items can be returned.
 
-> early. Otherwise future extensions would break the behavior of the search
-> if current implementations in userspace set them to values other than zero.
-> 
-> Signed-off-by: Gerhard Heift <Gerhard@Heift.Name>
-> ---
->  fs/btrfs/ioctl.c | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index be4c780..919d928 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1947,6 +1947,9 @@ static noinline int search_ioctl(struct inode *inode,
->  	if (buf_size < sizeof(struct btrfs_ioctl_search_header))
->  		return -EOVERFLOW;
-> 
-> +	if (sk->unused || sk->unused1 | sk->unused2 | sk->unused3 | sk->unused4)
-> +		return -EINVAL;
-> +
->  	path = btrfs_alloc_path();
->  	if (!path)
->  		return -ENOMEM;
+
+One of the main strangeness of the current TREE_SEARCH ioctl, which I
+found is the fact that the search was not in a "rectangular" region, but
+in a "linear" region.
+
+This is due the fact that after a ioctl call, we have to set the min_*
+fields with the sh->{objectid,offset,type} +1 rounding to 0 if case of
+overflow.
+
+This because the min_* fields are both the "lower bound" of the search
+and the "starting point" of the next search. Adding a new set of fields
+named start_* could solve this issue.
+
+I discussed this topic few years ago in [1].
+
+Because we are introducing a new ioctl, is it possible to solve this
+issue ? We could avoid some userspace<->kernelspace transition, which
+seems be one of the goal of your patch.
+
+BR
+G.Baroncelli
+
+
+
+[1] http://www.spinics.net/lists/linux-btrfs/msg07617.html
+
+
 
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

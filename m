@@ -1,164 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45083 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753845AbaA0SLg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jan 2014 13:11:36 -0500
-Date: Mon, 27 Jan 2014 19:11:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gerhard Heift <gerhard@heift.name>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFCv2 5/6] btrfs: search_ioctl: direct copy to userspace
-Message-ID: <20140127181134.GD6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
- <1390829312-814-6-git-send-email-Gerhard@Heift.Name>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1390829312-814-6-git-send-email-Gerhard@Heift.Name>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:46416 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753651AbaA0SfG convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jan 2014 13:35:06 -0500
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: =?windows-1252?Q?Re=3A_Snapshots_=96_noob_questions?=
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140127140350.GL3314@carfax.org.uk>
+Date: Mon, 27 Jan 2014 11:35:03 -0700
+Cc: KC <impactoria@googlemail.com>, linux-btrfs@vger.kernel.org
+Message-Id: <D927B5A8-4670-4A26-8C21-E389BBB0487E@colorremedies.com>
+References: <52E664E0.5070909@gmail.com> <20140127140350.GL3314@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 27, 2014 at 02:28:31PM +0100, Gerhard Heift wrote:
-> By copying each found item seperatly to userspace, we only need a small buffer
-> in the kernel. This allows to run a large search inside of a single call.
+
+On Jan 27, 2014, at 7:03 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+
+> On Mon, Jan 27, 2014 at 02:53:36PM +0100, KC wrote:
+>> I have been trying to understand how snapshots work (in BRTFS and in
+>> general), but I still have some questions, and would appreciate if
+>> someone could clear them for me.
+>> To make things easier, I tried to make most of them Yes/No questions:
+>> 
+>> 1. When creating the filesystem, I only made btrfs partition with no
+>> subvolumes. Do I have to use subvolumes, or can I snapshot entire
+>> “/“?
 > 
-> Signed-off-by: Gerhard Heift <Gerhard@Heift.Name>
-> ---
->  fs/btrfs/ioctl.c | 107 ++++++++++++++++++++++++++++++++++++-------------------
->  1 file changed, 71 insertions(+), 36 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index c44fcdd..38403e6 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1905,20 +1908,47 @@ static noinline int copy_to_sk(struct btrfs_root *root,
->  		sh.transid = found_transid;
->  
->  		/* copy search result header */
-> -		memcpy(buf + *sk_offset, &sh, sizeof(sh));
-> +		if (copy_to_user(buf + *sk_offset, &sh, sizeof(sh))) {
-> +			ret = -EFAULT;
-> +			goto err;
-> +		}
-> +
->  		*sk_offset += sizeof(sh);
->  
->  		if (item_len) {
-> -			char *p = buf + *sk_offset;
-> +			/* resize internal buffer if needed */
-> +			if (content_buffer_size < item_len) {
-> +				kfree(content_buffer);
-> +
-> +				content_buffer_size =
-> +					ALIGN(item_len, PAGE_SIZE);
-> +
-> +				content_buffer = kmalloc_track_caller(
-> +					content_buffer_size, GFP_KERNEL);
+>   / (the top level of the FS) is a subvolume as well -- it's the only
+> one that can't be renamed or deleted, though.
 
-So that's another allocation. I see it's due to read_extent_buffer()
-that wants a kernel memory, and the buffer size is again up to the item
-size, potentially spanning multiple pages.
 
-> +				if (!content_buffer) {
-> +					content_buffer_size = 0;
-> +					ret = -ENOMEM;
-> +					goto err;
-> +				}
-> +			}
-> +
->  			/* copy the item */
-> -			read_extent_buffer(leaf, p,
-> +			read_extent_buffer(leaf, content_buffer,
->  					   item_off, item_len);
+I'll point out a source of confusion I've had, and see new users have the same confusion quite often also. Within the file system hierarchy, / is a mount point. It could be that subvolume ID 5 is mounted there, which is how opensuse's default rootfs on Btrfs works. However, Fedora's / is a subvolume named root, the top level ID 5 subvolume isn't mounted by default.
 
-My suggestion is to introduce read_extent_buffer_user that does
-copy_to_user instead of the memcpy. It is code duplication, but we can
-clean it in a separate patch.
+So / is not necessarily the top level of the file system. I'm not sure what to call the undeleteable ID 5 subvolume. It's the default subvolume, but if the user changes the default subvolume then it isn't. Calling it the default default is maybe more confusing. And calling it subvolume ID 5 is a bit confusing because subvolume ID 0 maps to 5, and many users are more familiar with subvol ID 0 than ID 5. And then if I have a subvolume within a subvolume mounted and do a btrfs list, it shows top level ID with a value other than 5.
 
-> +
-> +			if (copy_to_user(buf + *sk_offset,
-> +					 content_buffer, item_len)) {
-> +				ret = -EFAULT;
-> +				goto err;
-> +			}
-> +
->  			*sk_offset += item_len;
->  		}
->  		(*num_found)++;
->  
->  		if (ret) /* -EOVERFLOW from above */
-> -			goto overflow;
-> +			goto err;
->  
->  		if (*num_found >= sk->nr_items)
->  			break;
-> @@ -1936,14 +1966,25 @@ advance_key:
->  		key->objectid++;
->  	} else
->  		ret = 1;
-> -overflow:
-> +err:
-> +	/*
-> +	    0: all items from this leaf copied, continue with next
-> +	    1: more items can be copied, but buffer is too small or all items
-> +	       were found. Either way, it will stops the loop which iterates to
-> +	       the next leaf
-> +	    -EOVERFLOW: item was to large for buffer
-> +	    -ENOMEM: could not allocate memory for a temporary extent buffer
-> +	    -EFAULT: could not copy extent buffer back to userspace
-> +	*/
+Anyway I really don't know what else to call the undeletable first subvolume.
 
-Please use the kernel style for comments.
+Chris Murphy
 
-> +	kfree(content_buffer);
-> +
->  	return ret;
->  }
->  
-> @@ -2011,34 +2053,39 @@ err:
->  static noinline int btrfs_ioctl_tree_search(struct file *file,
->  					   void __user *argp)
->  {
-> -	 struct btrfs_ioctl_search_args *args;
-> -	 struct inode *inode;
-> -	 int ret;
-> +	struct btrfs_ioctl_search_args __user *usarg;
-> +	struct btrfs_ioctl_search_key *sk;
-> +	struct inode *inode;
-> +	int ret;
->  
->  	if (!capable(CAP_SYS_ADMIN))
->  		return -EPERM;
->  
-> -	args = memdup_user(argp, sizeof(*args));
-> -	if (IS_ERR(args))
-> -		return PTR_ERR(args);
-> +	usarg = (struct btrfs_ioctl_search_args __user *)argp;
-> +
-> +	sk = memdup_user(&usarg->key, sizeof(*sk));
-
-Search key is 13x u64 = 104 bytes, you can use a local variable. This is
-usually possible in ioctl functions, the stack is not deep at this
-moment and will usually not grow too much. Removing the allocation makes
-it a bit more resilient against ENOMEM conditions.
-
-> +	if (IS_ERR(sk))
-> +		return PTR_ERR(sk);
->  
->  	inode = file_inode(file);
-> -	ret = search_ioctl(inode, &args->key, sizeof(args->buf), args->buf);
-> +	ret = search_ioctl(inode, sk, sizeof(usarg->buf), usarg->buf);
-
-Ok, v1 ioctl uses the same code in the end.
-
-> +	/* the origin ioctl does handle too large results by returning an item
-> +	* with a len of 0 */
->  	if (ret == -EOVERFLOW)
->  		ret = 0;
-> -	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
-> +	if (ret == 0 && copy_to_user(argp, sk, sizeof(*sk)))
->  		ret = -EFAULT;
-> -	kfree(args);
-> +	kfree(sk);
->  	return ret;
->  }

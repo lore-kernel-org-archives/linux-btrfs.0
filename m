@@ -1,293 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f176.google.com ([209.85.192.176]:59900 "EHLO
-	mail-pd0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755225AbaA1QZg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jan 2014 11:25:36 -0500
-Received: by mail-pd0-f176.google.com with SMTP id w10so530587pde.21
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jan 2014 08:25:34 -0800 (PST)
-Received: from promote.localdomain ([112.2.80.174])
-        by mx.google.com with ESMTPSA id e6sm44034738pbg.4.2014.01.28.08.25.32
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 28 Jan 2014 08:25:33 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:41774 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755412AbaA1Sj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Jan 2014 13:39:57 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W8DZk-0004sR-3U
+	for linux-btrfs@vger.kernel.org; Tue, 28 Jan 2014 19:39:56 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jan 2014 19:39:56 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jan 2014 19:39:56 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 1/2 ] Btrfs: rework ulist with list+rb_tree
-Date: Wed, 29 Jan 2014 00:25:34 +0800
-Message-Id: <1390926335-6100-1-git-send-email-wangshilong1991@gmail.com>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Snapshots =?windows-1252?Q?=96_noob_questions?=
+Date: Tue, 28 Jan 2014 18:39:45 +0000
+Message-ID: <lc8th4$8um$1@ger.gmane.org>
+References: <52E664E0.5070909@gmail.com> <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+On 27/01/14 18:44, Chris Murphy wrote:
+> 
+> On Jan 27, 2014, at 6:53 AM, KC <impactoria@googlemail.com> wrote:
+>>
+>> 3. If I make a snapshot of / and there are some separate partitions mounted under /mnt/ or /home/, will snapshot skip them?
+> 
+> A snapshot of a subvolume only snapshots that subvolume, not other subvolumes contained in it or other partitions/file systems.
 
-We are really suffering from now ulist's implementation, some developers
-gave their try, and i just gave some of my ideas for things:
+Thanks. That's a critical detail to know.
 
- 1. use list+rb_tree instead of arrary+rb_tree
 
- 2. add cur_list to iterator rather than ulist structure.
+A few follow-on questions... Are taking snapshots:
 
- 3. add seqnum into every node when they are added, this is
- used to do selfcheck when iterating node.
 
-I noticed Zach Brown's comments before, long term is to kick off
-ulist implementation, however, for now, we need at least avoid
-arrary from ulist.
+"atomic"?
 
-Cc: Liu Bo <bo.li.liu@oracle.com>
-Cc: Josef Bacik <jbacik@fb.com>
-Cc: Zach Brown <zab@redhat.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
-v3->v4:
-	fix compilie issues.(sorry for noise!)
-v2->v3:
-	only do selfchecks with CONFIG_BTRFS_DEBUG enabled(Thanks to Josef!)
-	update ulist's comments since they are out of date.
-v1->v2:
-	add RFC title since this patch needs more reviews and comments.
-	fix a used after free bug in ulist_fini().
----
- fs/btrfs/ulist.c | 105 +++++++++++++++++++++++--------------------------------
- fs/btrfs/ulist.h |  38 ++++++--------------
- 2 files changed, 55 insertions(+), 88 deletions(-)
+Do they hold up or lock out other disk activity?
 
-diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-index 35f5de9..8dd0e8d 100644
---- a/fs/btrfs/ulist.c
-+++ b/fs/btrfs/ulist.c
-@@ -7,6 +7,7 @@
- #include <linux/slab.h>
- #include <linux/export.h>
- #include "ulist.h"
-+#include "ctree.h"
- 
- /*
-  * ulist is a generic data structure to hold a collection of unique u64
-@@ -14,10 +15,6 @@
-  * enumerating it.
-  * It is possible to store an auxiliary value along with the key.
-  *
-- * The implementation is preliminary and can probably be sped up
-- * significantly. A first step would be to store the values in an rbtree
-- * as soon as ULIST_SIZE is exceeded.
-- *
-  * A sample usage for ulists is the enumeration of directed graphs without
-  * visiting a node twice. The pseudo-code could look like this:
-  *
-@@ -50,10 +47,9 @@
-  */
- void ulist_init(struct ulist *ulist)
- {
--	ulist->nnodes = 0;
--	ulist->nodes = ulist->int_nodes;
--	ulist->nodes_alloced = ULIST_SIZE;
-+	INIT_LIST_HEAD(&ulist->nodes);
- 	ulist->root = RB_ROOT;
-+	ulist->nnodes = 0;
- }
- EXPORT_SYMBOL(ulist_init);
- 
-@@ -66,14 +62,14 @@ EXPORT_SYMBOL(ulist_init);
-  */
- void ulist_fini(struct ulist *ulist)
- {
--	/*
--	 * The first ULIST_SIZE elements are stored inline in struct ulist.
--	 * Only if more elements are alocated they need to be freed.
--	 */
--	if (ulist->nodes_alloced > ULIST_SIZE)
--		kfree(ulist->nodes);
--	ulist->nodes_alloced = 0;	/* in case ulist_fini is called twice */
-+	struct ulist_node *node;
-+	struct ulist_node *next;
-+
-+	list_for_each_entry_safe(node, next, &ulist->nodes, list) {
-+		kfree(node);
-+	}
- 	ulist->root = RB_ROOT;
-+	INIT_LIST_HEAD(&ulist->nodes);
- }
- EXPORT_SYMBOL(ulist_fini);
- 
-@@ -192,57 +188,29 @@ int ulist_add(struct ulist *ulist, u64 val, u64 aux, gfp_t gfp_mask)
- int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
- 		    u64 *old_aux, gfp_t gfp_mask)
- {
--	int ret = 0;
--	struct ulist_node *node = NULL;
-+	int ret;
-+	struct ulist_node *node;
-+
- 	node = ulist_rbtree_search(ulist, val);
- 	if (node) {
- 		if (old_aux)
- 			*old_aux = node->aux;
- 		return 0;
- 	}
-+	node = kmalloc(sizeof(*node), gfp_mask);
-+	if (!node)
-+		return -ENOMEM;
- 
--	if (ulist->nnodes >= ulist->nodes_alloced) {
--		u64 new_alloced = ulist->nodes_alloced + 128;
--		struct ulist_node *new_nodes;
--		void *old = NULL;
--		int i;
--
--		/*
--		 * if nodes_alloced == ULIST_SIZE no memory has been allocated
--		 * yet, so pass NULL to krealloc
--		 */
--		if (ulist->nodes_alloced > ULIST_SIZE)
--			old = ulist->nodes;
-+	node->val = val;
-+	node->aux = aux;
-+#ifdef CONFIG_BTRFS_DEBUG
-+	node->seqnum = ulist->nnodes;
-+#endif
- 
--		new_nodes = krealloc(old, sizeof(*new_nodes) * new_alloced,
--				     gfp_mask);
--		if (!new_nodes)
--			return -ENOMEM;
--
--		if (!old)
--			memcpy(new_nodes, ulist->int_nodes,
--			       sizeof(ulist->int_nodes));
--
--		ulist->nodes = new_nodes;
--		ulist->nodes_alloced = new_alloced;
--
--		/*
--		 * krealloc actually uses memcpy, which does not copy rb_node
--		 * pointers, so we have to do it ourselves.  Otherwise we may
--		 * be bitten by crashes.
--		 */
--		ulist->root = RB_ROOT;
--		for (i = 0; i < ulist->nnodes; i++) {
--			ret = ulist_rbtree_insert(ulist, &ulist->nodes[i]);
--			if (ret < 0)
--				return ret;
--		}
--	}
--	ulist->nodes[ulist->nnodes].val = val;
--	ulist->nodes[ulist->nnodes].aux = aux;
--	ret = ulist_rbtree_insert(ulist, &ulist->nodes[ulist->nnodes]);
--	BUG_ON(ret);
--	++ulist->nnodes;
-+	ret = ulist_rbtree_insert(ulist, node);
-+	ASSERT(!ret);
-+	list_add_tail(&node->list, &ulist->nodes);
-+	ulist->nnodes++;
- 
- 	return 1;
- }
-@@ -266,11 +234,26 @@ EXPORT_SYMBOL(ulist_add);
-  */
- struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_iterator *uiter)
- {
--	if (ulist->nnodes == 0)
-+	struct ulist_node *node;
-+
-+	if (list_empty(&ulist->nodes))
- 		return NULL;
--	if (uiter->i < 0 || uiter->i >= ulist->nnodes)
-+	if (uiter->cur_list && uiter->cur_list->next == &ulist->nodes)
- 		return NULL;
--
--	return &ulist->nodes[uiter->i++];
-+	if (uiter->cur_list) {
-+		uiter->cur_list = uiter->cur_list->next;
-+	} else {
-+		uiter->cur_list = ulist->nodes.next;
-+#ifdef CONFIG_BTRFS_DEBUG
-+		uiter->i = 0;
-+#endif
-+	}
-+	node = list_entry(uiter->cur_list, struct ulist_node, list);
-+#ifdef CONFIG_BTRFS_DEBUG
-+	ASSERT(node->seqnum == uiter->i);
-+	ASSERT(uiter->i >= 0 && uiter->i < ulist->nnodes);
-+	uiter->i++;
-+#endif
-+	return node;
- }
- EXPORT_SYMBOL(ulist_next);
-diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
-index fb36731..2be7102 100644
---- a/fs/btrfs/ulist.h
-+++ b/fs/btrfs/ulist.h
-@@ -17,18 +17,12 @@
-  * enumerating it.
-  * It is possible to store an auxiliary value along with the key.
-  *
-- * The implementation is preliminary and can probably be sped up
-- * significantly. A first step would be to store the values in an rbtree
-- * as soon as ULIST_SIZE is exceeded.
-  */
--
--/*
-- * number of elements statically allocated inside struct ulist
-- */
--#define ULIST_SIZE 16
--
- struct ulist_iterator {
-+#ifdef CONFIG_BTRFS_DEBUG
- 	int i;
-+#endif
-+	struct list_head *cur_list;  /* hint to start search */
- };
- 
- /*
-@@ -37,6 +31,12 @@ struct ulist_iterator {
- struct ulist_node {
- 	u64 val;		/* value to store */
- 	u64 aux;		/* auxiliary value saved along with the val */
-+
-+#ifdef CONFIG_BTRFS_DEBUG
-+	int seqnum;		/* sequence number this node is added */
-+#endif
-+
-+	struct list_head list;  /* used to link node */
- 	struct rb_node rb_node;	/* used to speed up search */
- };
- 
-@@ -46,24 +46,8 @@ struct ulist {
- 	 */
- 	unsigned long nnodes;
- 
--	/*
--	 * number of nodes we already have room for
--	 */
--	unsigned long nodes_alloced;
--
--	/*
--	 * pointer to the array storing the elements. The first ULIST_SIZE
--	 * elements are stored inline. In this case the it points to int_nodes.
--	 * After exceeding ULIST_SIZE, dynamic memory is allocated.
--	 */
--	struct ulist_node *nodes;
--
-+	struct list_head nodes;
- 	struct rb_root root;
--
--	/*
--	 * inline storage space for the first ULIST_SIZE entries
--	 */
--	struct ulist_node int_nodes[ULIST_SIZE];
- };
- 
- void ulist_init(struct ulist *ulist);
-@@ -77,6 +61,6 @@ int ulist_add_merge(struct ulist *ulist, u64 val, u64 aux,
- struct ulist_node *ulist_next(struct ulist *ulist,
- 			      struct ulist_iterator *uiter);
- 
--#define ULIST_ITER_INIT(uiter) ((uiter)->i = 0)
-+#define ULIST_ITER_INIT(uiter) ((uiter)->cur_list = NULL)
- 
- #endif
--- 
-1.8.4
+Is there an overhead to keeping many snapshots other than the storage
+any changed files take?
+
+Can we now consider making and deleting snapshots a "debugged stable
+feature"?
+
+
+Thanks,
+Martin
 

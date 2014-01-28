@@ -1,37 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47443 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754620AbaA1O4H (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:42981 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755143AbaA1PE6 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jan 2014 09:56:07 -0500
-Message-ID: <52E7C4FE.80104@fb.com>
-Date: Tue, 28 Jan 2014 09:55:58 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2 3/4] Btrfs: don't mix the ordered extents of all files
- together during logging the inodes
-References: <1389702712-26638-1-git-send-email-miaox@cn.fujitsu.com> <1389702712-26638-4-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1389702712-26638-4-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+	Tue, 28 Jan 2014 10:04:58 -0500
+Received: by mail-pa0-f48.google.com with SMTP id kx10so464390pab.35
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jan 2014 07:04:57 -0800 (PST)
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH v2] Btrfs: do not use extent commit root for sending
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <52E7C09D.4020808@fb.com>
+Date: Tue, 28 Jan 2014 23:04:59 +0800
+Cc: <linux-btrfs@vger.kernel.org>
+Message-Id: <E11CE2B5-DBA8-470F-9929-2C2E6FBCDB59@gmail.com>
+References: <1389716803-2415-1-git-send-email-wangshilong1991@gmail.com> <52E7C09D.4020808@fb.com>
+To: Josef Bacik <jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello Josef,
 
-On 01/14/2014 07:31 AM, Miao Xie wrote:
-> There was a problem in the old code:
-> If we failed to log the csum, we would free all the ordered extents in the log list
-> including those ordered extents that were logged successfully, it would make the
-> log committer not to wait for the completion of the ordered extents.
->
-> This patch doesn't insert the ordered extents that is about to be logged into
-> a global list, instead, we insert them into a local list. If we log the ordered
-> extents successfully, we splice them with the global list, or we will throw them
-> away, then do full sync. It can also reduce the lock contention and the traverse
-> time of list.
->
-If we fail to log the csums we'll return an error and commit the 
-transaction so it doesn't matter that we free all the ordered extents, 
-everything will be waited on properly.  Thanks,
+> 
+> On 01/14/2014 11:26 AM, Wang Shilong wrote:
+>> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+>> 
+>> Now we have kicked off transaction from btrfs send, it is not safe
+>> that we use extent commit root to search.
+>> 
+>> I happended to catch this problem when running sending and snapshot
+>> in my desktop.
+> 
+> I'm confused about this, we are searching a read only snapshot, why isn't looking at the commit root ok?  Thanks,
 
-Josef
+I sent a patch to remove transaction outsize before.
+
+http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/?h=integration&id=e0cbfccf3d518f1fb6f8e10932a67d75df2a4380
+
+Previously, we can search extent commit root, it is because we are protected by join and end transaction, since this patch, we can not.
+
+A further  question is now we still have to join transaction actually, only the transaction protection range is smaller,  but we may encounter
+extent root's lock contention. I don't know which approach is better, the url's patch have been pushed into chris's integration branch before
+i realized it would caused other problems.
+
+Maybe a better a approach is to join and end transaction outsize of find_extent_clone(), and then we still can use extent commit
+root for sending.^_^
+
+Thanks,
+Wang
+> 
+> Josef
+

@@ -1,37 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:1575 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754635AbaA1OwJ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15330 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754970AbaA1Skk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jan 2014 09:52:09 -0500
-Message-ID: <52E7C403.5020700@fb.com>
-Date: Tue, 28 Jan 2014 09:51:47 -0500
+	Tue, 28 Jan 2014 13:40:40 -0500
 From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <xfs@oss.sgi.com>
+Subject: [PATCH] xfstests: change btrfs/029's golden output and it's filtering
+Date: Tue, 28 Jan 2014 13:40:33 -0500
+Message-ID: <1390934433-22299-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: Filipe David Borba Manana <fdmanana@gmail.com>, <xfs@oss.sgi.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: make test btrfs/025 more robust
-References: <1390920396-20311-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1390920396-20311-1-git-send-email-fdmanana@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I noticed while testing a different mkfs option that btrfs/029 was failing
+because it was getting the extra output from our mkfs.btrfs.  After I fixed that
+I was still failing because my version of cp will spit out the source and
+destination files, not just the destination file.  So redirect _scratch_mkfs to
+/dev/null like everybody does and make the golden output just expect to see "cp
+failed" instead of the cp specific output.  Thanks,
 
-On 01/28/2014 09:46 AM, Filipe David Borba Manana wrote:
-> Make the test btrfs/025 not depend on the output of the btrfs tools
-> subvolume, send, receive and filesystem commands output. The output
-> of these commands has changed several times in the past, and it can
-> change again in the future. Therefore just test for failure/success
-> and not for the exact output on the success case.
->
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ tests/btrfs/029     | 6 +++---
+ tests/btrfs/029.out | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-Wow sorry didn't realize this already got taken, but still a good change 
-to have anyway.
+diff --git a/tests/btrfs/029 b/tests/btrfs/029
+index b93b6df..80c05e3 100644
+--- a/tests/btrfs/029
++++ b/tests/btrfs/029
+@@ -66,7 +66,7 @@ mkdir $SOURCE_DIR
+ 
+ rm -f $seqres.full
+ 
+-_scratch_mkfs
++_scratch_mkfs > /dev/null 2>&1
+ $XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $SOURCE_DIR/original \
+  >> $seqres.full
+ 
+@@ -87,8 +87,8 @@ _create_reflinks_to()
+     # always reflink, should fail outright
+     rm -rf $1; mkdir $1
+     echo "reflink=always:"
+-    cp --reflink=always $SOURCE_DIR/original $1/copyfail \
+-        2>&1 | _filter_testdirs
++    cp --reflink=always $SOURCE_DIR/original $1/copyfail > $seqres.full 2>&1 \
++	|| echo "cp reflink failed"
+ 
+     # The failed target actually gets created by cp:
+     ls $1/copyfail | _filter_testdirs
+diff --git a/tests/btrfs/029.out b/tests/btrfs/029.out
+index 655c081..9390d95 100644
+--- a/tests/btrfs/029.out
++++ b/tests/btrfs/029.out
+@@ -4,12 +4,12 @@ reflink=auto:
+ 42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-029/original
+ 42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-029/copy
+ reflink=always:
+-cp: failed to clone 'SCRATCH_MNT/test-029/copyfail': Invalid cross-device link
++cp reflink failed
+ SCRATCH_MNT/test-029/copyfail
+ test reflinks across different mountpoints of same device
+ reflink=auto:
+ 42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-029/original
+ 42d69d1a6d333a7ebdf64792a555e392  SCRATCH_MNT/test-bis-029/copy
+ reflink=always:
+-cp: failed to clone 'SCRATCH_MNT/test-bis-029/copyfail': Invalid cross-device link
++cp reflink failed
+ SCRATCH_MNT/test-bis-029/copyfail
+-- 
+1.8.3.1
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-
-Thanks,
-
-Josef

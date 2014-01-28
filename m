@@ -1,108 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:22757 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750969AbaAXC7S (ORCPT
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:38970 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751425AbaA1BlE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jan 2014 21:59:18 -0500
-Date: Fri, 24 Jan 2014 13:58:46 +1100
-From: Dave Chinner <david@fromorbit.com>
+	Mon, 27 Jan 2014 20:41:04 -0500
+Received: by mail-wg0-f47.google.com with SMTP id m15so6557710wgh.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jan 2014 17:41:03 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests updated to 197f773
-Message-ID: <20140124025846.GL27606@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs incremental send data corruption
+Date: Tue, 28 Jan 2014 01:40:42 +0000
+Message-Id: <1390873242-8723-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Btrfs incremental send had an issue where it would detect a non-existent
+file hole and then overwrite the file section that hole covers with zeroes,
+overriding file data that it shouldn't.
 
-The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
-just been updated. Patches often get missed, so please check if your
-outstanding patches were in this update. If they have not been in
-this update, please resubmit them to xfs@oss.sgi.com so they can be
-picked up in the next update.
+The respective btrfs kernel patch that fixed this issue is titled:
 
-The new head of the master branch is commit:
+   Btrfs: fix send file hole detection leading to data corruption
+   (https://patchwork.kernel.org/patch/3544831/)
 
-197f773 xfstests: define $seqres in btrfs/026-029
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ tests/btrfs/034     |  101 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/034.out |    6 +++
+ tests/btrfs/group   |    1 +
+ 3 files changed, 108 insertions(+)
+ create mode 100755 tests/btrfs/034
+ create mode 100644 tests/btrfs/034.out
 
-New Commits:
-
-Dave Chinner (7):
-      [ea0b6eb] xfs: test scratch device mkfs features
-      [b9b5d74] xfs: New _require_* tests for CRC enabled filesystems
-      [86e91cc] xfs: add fsstress/recovery test
-      [5b524ee] xfs/073, 208: remove .full output before starting the test
-      [b04b0fd] xfs: support xfs_metadump with external logs
-      [3ed573e] xfs/104: use fixed log size
-      [7657a10] generic/204: use fixed log size for XFS
-
-David Sterba (3):
-      [80622a6] xfstests: don't suggest to run full diff when DIFF_LENGTH is 0
-      [586a06c] xfstests: use value of FSTYP if defined externally
-      [1ed9046] xfstests: clean command names in btrfs tests
-
-Eric Sandeen (1):
-      [a93b1dd] ext4: regression test for ext4 resize with non-extent files
-
-Filipe David Borba Manana (1):
-      [8c427eb] xfstests: add test for btrfs incremental send infinite loop issue
-
-Koen De Wit (2):
-      [0c58766] xfstests: btrfs: cross-subvolume sparse copy
-      [197f773] xfstests: define $seqres in btrfs/026-029
-
-
-Code Diffstat:
-
- README              |   3 ++
- check               |  13 ++---
- common/attr         |   6 +++
- common/rc           | 122 +++++++++++++++++++++++++++---------------
- tests/btrfs/003     |   2 +-
- tests/btrfs/004     |   2 +-
- tests/btrfs/007     |   4 +-
- tests/btrfs/008     |  12 ++---
- tests/btrfs/009     |   6 +--
- tests/btrfs/013     |   2 +-
- tests/btrfs/014     |   6 +--
- tests/btrfs/015     |   2 +-
- tests/btrfs/016     |  14 ++---
- tests/btrfs/017     |   2 +-
- tests/btrfs/019     |  14 ++---
- tests/btrfs/022     |   6 +--
- tests/btrfs/024     |   2 +-
- tests/btrfs/025     |   4 +-
- tests/btrfs/026     |   1 +
- tests/btrfs/027     |   1 +
- tests/btrfs/028     |   1 +
- tests/btrfs/029     |   1 +
- tests/btrfs/030     | 149 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/030.out |   1 +
- tests/btrfs/031     | 138 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/031.out |  48 +++++++++++++++++
- tests/btrfs/group   |   2 +
- tests/ext4/306      |  82 +++++++++++++++++++++++++++++
- tests/ext4/306.out  |  13 +++++
- tests/ext4/group    |   1 +
- tests/generic/204   |   4 ++
- tests/generic/208   |   2 +
- tests/shared/298    |   2 +-
- tests/xfs/073       |   2 +
- tests/xfs/104       |   2 +-
- tests/xfs/186       |   1 +
- tests/xfs/187       |  32 ++++++-----
- tests/xfs/244       |   1 +
- tests/xfs/253       |   3 +-
- tests/xfs/278       |   1 +
- tests/xfs/287       |   3 +-
- tests/xfs/291       |   4 +-
- tests/xfs/306       | 105 ++++++++++++++++++++++++++++++++++++
- tests/xfs/306.out   |   2 +
- tests/xfs/group     |   1 +
- 45 files changed, 716 insertions(+), 109 deletions(-)
-
+diff --git a/tests/btrfs/034 b/tests/btrfs/034
+new file mode 100755
+index 0000000..db792de
+--- /dev/null
++++ b/tests/btrfs/034
+@@ -0,0 +1,101 @@
++#! /bin/bash
++# FS QA Test No. btrfs/034
++#
++# Test for a btrfs incremental send data corruption issue due to
++# bad detection of file holes.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=`mktemp -d`
++
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++rm -f $seqres.full
++
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++# Create a file such that its file extent items span at least 3 btree leafs.
++# This is necessary to trigger a btrfs incremental send bug where file hole
++# detection was not correct, leading to data corruption by overriding latest
++# data regions of a file with zeroes.
++
++run_check $XFS_IO_PROG -f -c "truncate 104857600" $SCRATCH_MNT/foo
++
++for ((i = 0; i < 940; i++))
++do
++    OFFSET=$((32768 + i * 8192))
++    LEN=$((OFFSET + 8192))
++    run_check $XFS_IO_PROG -c "falloc -k $OFFSET $LEN" $SCRATCH_MNT/foo
++    run_check $XFS_IO_PROG -c "pwrite -S 0xf0 $OFFSET 4096" $SCRATCH_MNT/foo
++done
++
++run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
++    $SCRATCH_MNT/mysnap1
++
++run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
++run_check $XFS_IO_PROG -c "truncate 3882008" $SCRATCH_MNT/foo
++
++run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
++    $SCRATCH_MNT/mysnap2
++
++run_check $BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
++run_check $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++    -f $tmp/2.snap
++
++md5sum $SCRATCH_MNT/foo | _filter_scratch
++md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
++md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
++md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
++
++run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
++md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++
++status=0
++exit
+diff --git a/tests/btrfs/034.out b/tests/btrfs/034.out
+new file mode 100644
+index 0000000..808e6b4
+--- /dev/null
++++ b/tests/btrfs/034.out
+@@ -0,0 +1,6 @@
++QA output created by 034
++9023ed93111c422d82e9cd54043a6fb0  SCRATCH_MNT/foo
++8e58ce8749d203f29f6b8f6990da722f  SCRATCH_MNT/mysnap1/foo
++9023ed93111c422d82e9cd54043a6fb0  SCRATCH_MNT/mysnap2/foo
++8e58ce8749d203f29f6b8f6990da722f  SCRATCH_MNT/mysnap1/foo
++9023ed93111c422d82e9cd54043a6fb0  SCRATCH_MNT/mysnap2/foo
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 3f61799..b0a6b70 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -33,3 +33,4 @@
+ 028 auto quick
+ 029 auto quick
+ 030 auto quick
++034 auto quick
 -- 
-Dave Chinner
-david@fromorbit.com
+1.7.9.5
+

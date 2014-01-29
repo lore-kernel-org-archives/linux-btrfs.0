@@ -1,66 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:53662 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55826 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751796AbaA2SsI (ORCPT
+	by vger.kernel.org with ESMTP id S1751040AbaA2TBJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 13:48:08 -0500
-Message-ID: <52E94CE2.7030500@fb.com>
-Date: Wed, 29 Jan 2014 13:48:02 -0500
+	Wed, 29 Jan 2014 14:01:09 -0500
+Message-ID: <52E94FEA.5060404@fb.com>
+Date: Wed, 29 Jan 2014 14:00:58 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2 3/4] Btrfs: don't mix the ordered extents of all files
- together during logging the inodes
-References: <1389702712-26638-1-git-send-email-miaox@cn.fujitsu.com> <1389702712-26638-4-git-send-email-miaox@cn.fujitsu.com> <52E7C4FE.80104@fb.com> <52E865FB.9050300@cn.fujitsu.com>
-In-Reply-To: <52E865FB.9050300@cn.fujitsu.com>
+To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs
+ send
+References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com>
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 01/28/2014 09:22 PM, Miao Xie wrote:
-> On Tue, 28 Jan 2014 09:55:58 -0500, Josef Bacik wrote:
->> On 01/14/2014 07:31 AM, Miao Xie wrote:
->>> There was a problem in the old code:
->>> If we failed to log the csum, we would free all the ordered extents in the log list
->>> including those ordered extents that were logged successfully, it would make the
->>> log committer not to wait for the completion of the ordered extents.
->>>
->>> This patch doesn't insert the ordered extents that is about to be logged into
->>> a global list, instead, we insert them into a local list. If we log the ordered
->>> extents successfully, we splice them with the global list, or we will throw them
->>> away, then do full sync. It can also reduce the lock contention and the traverse
->>> time of list.
->>>
->> If we fail to log the csums we'll return an error and commit the transaction so it doesn't matter that we free all the ordered extents, everything will be waited on properly.  Thanks,
+On 01/29/2014 10:32 AM, Wang Shilong wrote:
+> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 >
-> No. Maybe my explanation is not clear. Please consider the following case:
+> I sent a patch to kick off transaction from btrfs send, however it gets
+> a regression that btrfs send try to search extent commit root without
+> transaction protection.
 >
-> Task1 (sync file1)		Task2 (sync file2)
-> btrfs_sync_file()
-> 				btrfs_sync_file()
->    start_log_trans()
-> 				  start_log_trans()
->    btrfs_get_logged_extents()
->    btrfs_log_changed_extents()
-> 				  btrfs_get_logged_extents()
-> 				  btrfs_log_changed_extents() failed
-> 				  btrfs_free_logged_extents()
-> 				    this function will free all logged extents
-> 				    including the ones that are inserted by task1
->    btrfs_end_log_trans()
->    btrfs_sync_log()
->      btrfs_wait_logged_extents()
->        but no extents to be
->        waited
->    sync end
-> 				  btrfs_wait_ordered_extents()
-> 				    but this operation just wait for file2's
-> 				    extents that is in the specified range.
-> 				  btrfs_commit_transaction()
-> 				    the committer also doesn't wait for the extents
-> 				    of file1
+> To fix this regression, we have two ideas:
 >
-Ah I see then yes that's correct.  I'll pull it in, thanks,
+>   1. don't use extent commit root for sending.
+>
+>   2. add transaction protection to use extent commit root safely.
+>
+> Both approaches need transaction actually, however, the first approach
+> will add extent tree lock contention, so we'd better adopt the second
+> approach.
+>
+> Luckily, now we only need transaction protection when iterating
+> extent root, the protection's *range* is smaller than before.
+So what is the problem exactly?  How does it show up and what are you 
+doing to make it happen?  I'd really like to kill the transaction taking 
+completely in the send path so I'd like to know what is going wrong so 
+we can either take the extent commit semaphore and be satisfied that is 
+ok or come up with a different solution.  Thanks,
 
 Josef

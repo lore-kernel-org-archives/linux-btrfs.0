@@ -1,34 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49297 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752064AbaA2Qoc convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 11:44:32 -0500
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Deleting subvolumes - there be dragons
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <52E8E905.8030105@gmail.com>
-Date: Wed, 29 Jan 2014 09:44:30 -0700
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <614BCF7D-76D4-4F2C-99E5-D4132575C203@colorremedies.com>
-References: <52E8E905.8030105@gmail.com>
-To: KC <impactoria@googlemail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55579 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751304AbaA2RMn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jan 2014 12:12:43 -0500
+Date: Wed, 29 Jan 2014 18:12:41 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gerhard Heift <gerhard@heift.name>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFCv2 2/6] btrfs: search_ioctl rejects unused setted
+ values
+Message-ID: <20140129171241.GF6498@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
+ <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
+ <20140127172835.GB6498@twin.jikos.cz>
+ <CACeaM89+t0dse3znsq5_YrEemMCLt5KdJ9kxLqNOMYj8LkqkOw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CACeaM89+t0dse3znsq5_YrEemMCLt5KdJ9kxLqNOMYj8LkqkOw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Jan 29, 2014, at 4:41 AM, KC <impactoria@googlemail.com> wrote:
-
-> I just read this article here: https://lwn.net/Articles/579009/  which states:
+On Tue, Jan 28, 2014 at 01:32:36AM +0100, Gerhard Heift wrote:
+> > If any future version of the ioctl uses the now unused fields, it also
+> > has to increase the version.
 > 
-> ---------------------------------
-> btrfs subvolume delete path
-> 
-> For ordinary subvolumes (as opposed to snapshots, described below), the subvolume indicated by path must be empty before it can be deleted.
-> ---------------------------------
+> Just for me to learn: If we have to increase the version, why do we
+> have the unused fields anyway? We could expand the struct on demand if
+> we need new fields. Do I miss something?
 
-That's not correct, but maybe the author meant that a subvolume you intend to delete must not contain another subvolume. A subvolume in another subvolume will anchor the parent.
+The spare fields can be used for minor updates, eg. returning a simple
+number or status information, or passing some flags down to the ioctl.
 
-
-Chris Murphy
+Your patch does a major change to the crucial member of the ioctl
+structure, the existing unused fileds don't help here and will stay
+unused.

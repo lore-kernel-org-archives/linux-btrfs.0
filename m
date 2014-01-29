@@ -1,94 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:42454 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751341AbaA2M2d (ORCPT
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:53213 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750938AbaA2Pxm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 07:28:33 -0500
-Date: Wed, 29 Jan 2014 12:28:10 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: KC <impactoria@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Deleting subvolumes - there be dragons
-Message-ID: <20140129122809.GS3314@carfax.org.uk>
-References: <52E8E905.8030105@gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ZgGN478A9hzzvyZc"
-In-Reply-To: <52E8E905.8030105@gmail.com>
+	Wed, 29 Jan 2014 10:53:42 -0500
+Received: by mail-pd0-f169.google.com with SMTP id v10so1860555pde.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 07:53:41 -0800 (PST)
+Received: from linux-b0ol.localdomain ([36.58.227.58])
+        by mx.google.com with ESMTPSA id pe3sm8367192pbc.23.2014.01.29.07.53.00
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 29 Jan 2014 07:53:40 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: remove unused argument from read_block_for_search()
+Date: Wed, 29 Jan 2014 23:52:05 +0800
+Message-Id: <1391010725-4604-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
---ZgGN478A9hzzvyZc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+@time_seq is no longer used in read_block_for_search(), remove it.
 
-On Wed, Jan 29, 2014 at 12:41:57PM +0100, KC wrote:
-> I just read this article here: https://lwn.net/Articles/579009/
-> which states:
-> 
-> ---------------------------------
-> btrfs subvolume delete path
-> 
->  For ordinary subvolumes (as opposed to snapshots, described below),
-> the subvolume indicated by path must be empty before it can be
-> deleted.
-> ---------------------------------
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-   As you have found, that's not correct. In fact, there's a couple of
-potentially misleading things in that article, just from skimming the
-first few paragraphs...
-
-> So I gave it a try:
-> 
-> $ sudo btrfs subvolume create /home2
-> $ sudo mkdir /home2/lalala
-> < copy a random pdf file into /home2/lalala) >
-> $ sudo btrfs subvolume delete /home2
-> 
-> And boom! It's all gone!
-> Even though subvolume was not empty.
-> 
-> So apart from the fact that it looks like the article is wrong here,
-> it seems very dangerous to me that one simple command can nuke an
-> entire volume, even if it's full of files and folders.
-
-   You can do the same thing with rm -rf on any filesystem. So yes,
-it's a dangerous command, and you need to be sure you want to run it.
-
-> Of course I'm new to btrfs so maybe I'm reading something wrong. If
-> so, then please do set me straight.
-
-   No, I think the author of the article is just mistaken.
-
-   Hugo.
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 30f5b11..b484cd5 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2478,7 +2478,7 @@ static int
+ read_block_for_search(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_root *root, struct btrfs_path *p,
+ 		       struct extent_buffer **eb_ret, int level, int slot,
+-		       struct btrfs_key *key, u64 time_seq)
++		       struct btrfs_key *key)
+ {
+ 	u64 blocknr;
+ 	u64 gen;
+@@ -2906,7 +2906,7 @@ cow_done:
+ 			}
+ 
+ 			err = read_block_for_search(trans, root, p,
+-						    &b, level, slot, key, 0);
++						    &b, level, slot, key);
+ 			if (err == -EAGAIN)
+ 				goto again;
+ 			if (err) {
+@@ -3049,7 +3049,7 @@ again:
+ 			}
+ 
+ 			err = read_block_for_search(NULL, root, p, &b, level,
+-						    slot, key, time_seq);
++						    slot, key);
+ 			if (err == -EAGAIN)
+ 				goto again;
+ 			if (err) {
+@@ -5833,7 +5833,7 @@ again:
+ 		next = c;
+ 		next_rw_lock = path->locks[level];
+ 		ret = read_block_for_search(NULL, root, path, &next, level,
+-					    slot, &key, 0);
++					    slot, &key);
+ 		if (ret == -EAGAIN)
+ 			goto again;
+ 
+@@ -5883,7 +5883,7 @@ again:
+ 			break;
+ 
+ 		ret = read_block_for_search(NULL, root, path, &next, level,
+-					    0, &key, 0);
++					    0, &key);
+ 		if (ret == -EAGAIN)
+ 			goto again;
+ 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- You can't expect a boy to be depraved until he's gone to ---     
-                             a good school.                              
+1.8.4
 
---ZgGN478A9hzzvyZc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQIVAwUBUujz2VheFHXiqx3kAQI4Mw//US4IbJ/shOaK12F6OdDQDbPx90ZET8w2
-h2Rqlyq1wapOepMoY6ibIOcFAzWuDJ3oXyGb+EpVJSvM+TrDVdkzIgaOiYJPNodS
-64eULCtCRVaz/wfFjevnxEFerve80jCM90u3K+rdxLUfBlwnlR6liNXKDcHPf2PU
-FG9Piui9QvNcUMuzEzbo22US3oWGopui0PZzDn8yrUuJDe4aFaPU3E+LKlF7UfAz
-5+uXA2dHVApJwYu06OWNqxEgGO3eBQD8ZDV5O9jn0ND0kmty2EXjoKlowCHm2RbQ
-CMoYRXg3z+XOGPQMWZk8usehQFM4OEQJoviQnjwq8nALvv0m8HzuGr1kSqUphfcl
-9EZvB7e0qendlXwzbjtCqj1cX2hOTheON+ZySEbSMhKcePKjoHLXxidFna3oBd+5
-SR/9JF2MWrvWiwPoSb8y1x9/ZurWTVwUQmwrOGjIKtd8fCOjhL5OSaMG3EH8lgel
-9T5/cw+/a5e1Z9Obnjgp+kmvxlIiqZr0XDqpSWhZXMVLOYACC9+Me2InbIOpmq5O
-xmty7AoZe18hWlrwxTg9iPraers9Ji+Dv2RuUo8JOkpW7Q1SF7ZR5o25k/P9K9+d
-4n/Ggsn+j9XmXGRNvM280zBsNBxNP8cNGm8sr1CgNDyEcSPthVuzO+koPx6rtW2o
-OE3xEuBnn8Y=
-=rFuT
------END PGP SIGNATURE-----
-
---ZgGN478A9hzzvyZc--

@@ -1,82 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:53213 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750938AbaA2Pxm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 10:53:42 -0500
-Received: by mail-pd0-f169.google.com with SMTP id v10so1860555pde.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 07:53:41 -0800 (PST)
-Received: from linux-b0ol.localdomain ([36.58.227.58])
-        by mx.google.com with ESMTPSA id pe3sm8367192pbc.23.2014.01.29.07.53.00
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 29 Jan 2014 07:53:40 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove unused argument from read_block_for_search()
-Date: Wed, 29 Jan 2014 23:52:05 +0800
-Message-Id: <1391010725-4604-1-git-send-email-wangshilong1991@gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49297 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752064AbaA2Qoc convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jan 2014 11:44:32 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Deleting subvolumes - there be dragons
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52E8E905.8030105@gmail.com>
+Date: Wed, 29 Jan 2014 09:44:30 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <614BCF7D-76D4-4F2C-99E5-D4132575C203@colorremedies.com>
+References: <52E8E905.8030105@gmail.com>
+To: KC <impactoria@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-@time_seq is no longer used in read_block_for_search(), remove it.
+On Jan 29, 2014, at 4:41 AM, KC <impactoria@googlemail.com> wrote:
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/ctree.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+> I just read this article here: https://lwn.net/Articles/579009/  which states:
+> 
+> ---------------------------------
+> btrfs subvolume delete path
+> 
+> For ordinary subvolumes (as opposed to snapshots, described below), the subvolume indicated by path must be empty before it can be deleted.
+> ---------------------------------
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 30f5b11..b484cd5 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2478,7 +2478,7 @@ static int
- read_block_for_search(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *root, struct btrfs_path *p,
- 		       struct extent_buffer **eb_ret, int level, int slot,
--		       struct btrfs_key *key, u64 time_seq)
-+		       struct btrfs_key *key)
- {
- 	u64 blocknr;
- 	u64 gen;
-@@ -2906,7 +2906,7 @@ cow_done:
- 			}
- 
- 			err = read_block_for_search(trans, root, p,
--						    &b, level, slot, key, 0);
-+						    &b, level, slot, key);
- 			if (err == -EAGAIN)
- 				goto again;
- 			if (err) {
-@@ -3049,7 +3049,7 @@ again:
- 			}
- 
- 			err = read_block_for_search(NULL, root, p, &b, level,
--						    slot, key, time_seq);
-+						    slot, key);
- 			if (err == -EAGAIN)
- 				goto again;
- 			if (err) {
-@@ -5833,7 +5833,7 @@ again:
- 		next = c;
- 		next_rw_lock = path->locks[level];
- 		ret = read_block_for_search(NULL, root, path, &next, level,
--					    slot, &key, 0);
-+					    slot, &key);
- 		if (ret == -EAGAIN)
- 			goto again;
- 
-@@ -5883,7 +5883,7 @@ again:
- 			break;
- 
- 		ret = read_block_for_search(NULL, root, path, &next, level,
--					    0, &key, 0);
-+					    0, &key);
- 		if (ret == -EAGAIN)
- 			goto again;
- 
--- 
-1.8.4
+That's not correct, but maybe the author meant that a subvolume you intend to delete must not contain another subvolume. A subvolume in another subvolume will anchor the parent.
 
+
+Chris Murphy

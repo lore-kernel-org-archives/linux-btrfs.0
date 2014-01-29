@@ -1,37 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55579 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751304AbaA2RMn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 12:12:43 -0500
-Date: Wed, 29 Jan 2014 18:12:41 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gerhard Heift <gerhard@heift.name>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFCv2 2/6] btrfs: search_ioctl rejects unused setted
- values
-Message-ID: <20140129171241.GF6498@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1390829312-814-1-git-send-email-Gerhard@Heift.Name>
- <1390829312-814-3-git-send-email-Gerhard@Heift.Name>
- <20140127172835.GB6498@twin.jikos.cz>
- <CACeaM89+t0dse3znsq5_YrEemMCLt5KdJ9kxLqNOMYj8LkqkOw@mail.gmail.com>
+Received: from ec2-54-200-0-65.us-west-2.compute.amazonaws.com ([54.200.0.65]:51511
+	"EHLO wecheer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751040AbaA2Tlt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jan 2014 14:41:49 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by wecheer.com (Postfix) with ESMTP id 9C48B45453
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 19:26:46 +0000 (UTC)
+Received: from wecheer.com ([127.0.0.1])
+	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id t1m7AbRparDL for <linux-btrfs@vger.kernel.org>;
+	Wed, 29 Jan 2014 19:26:44 +0000 (UTC)
+Received: from [10.10.22.177] (unknown [207.194.255.202])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: m)
+	by wecheer.com (Postfix) with ESMTPSA id 77F304313C
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 19:26:44 +0000 (UTC)
+Message-ID: <52E955F2.60608@matthewlai.ca>
+Date: Wed, 29 Jan 2014 11:26:42 -0800
+From: Matthew Lai <m@matthewlai.ca>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CACeaM89+t0dse3znsq5_YrEemMCLt5KdJ9kxLqNOMYj8LkqkOw@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs send requires root
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 28, 2014 at 01:32:36AM +0100, Gerhard Heift wrote:
-> > If any future version of the ioctl uses the now unused fields, it also
-> > has to increase the version.
-> 
-> Just for me to learn: If we have to increase the version, why do we
-> have the unused fields anyway? We could expand the struct on demand if
-> we need new fields. Do I miss something?
+Hello!
 
-The spare fields can be used for minor updates, eg. returning a simple
-number or status information, or passing some flags down to the ioctl.
+I have just started playing with btrfs, and noticed that "btrfs send" 
+only works for root (ERROR: failed to initialize subvol search. 
+Operation not permitted), even on subvolumes created by the user.
 
-Your patch does a major change to the crucial member of the ioctl
-structure, the existing unused fileds don't help here and will stay
-unused.
+Am I doing something wrong? Or is this the intended behaviour?
+
+My setup (/data is the root subvolume):
+mkdir /data/snapshots
+btrfs subvolume snapshot -r /data /data/snapshots (creates 
+/data/snapshots/data)
+btrfs send /data/snapshots/data > /dev/null
+
+Returns:
+ERROR: can't perform the search- Operation not permitted
+ERROR: failed to initialize subvol search. Operation not permitted
+
+Thanks!
+Matthew

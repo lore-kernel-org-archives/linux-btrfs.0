@@ -1,70 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52062 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751553AbaA2CXh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jan 2014 21:23:37 -0500
-Message-ID: <52E8667E.7000800@cn.fujitsu.com>
-Date: Wed, 29 Jan 2014 10:25:02 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2 2/4] Btrfs: don't get the lock when adding a csum into
- a ordered extent
-References: <1389702712-26638-1-git-send-email-miaox@cn.fujitsu.com> <1389702712-26638-3-git-send-email-miaox@cn.fujitsu.com> <52E7D436.4060100@fb.com>
-In-Reply-To: <52E7D436.4060100@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42873 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751560AbaA2D5r convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Jan 2014 22:57:47 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:62936 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1W8MHa-001L8n-D8
+	for linux-btrfs@vger.kernel.org; Tue, 28 Jan 2014 20:57:46 -0700
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Rapid memory exhaustion during normal operation
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52E430F7.7030801@gmail.com>
+Date: Tue, 28 Jan 2014 20:57:45 -0700
+Message-Id: <E429CA17-EBB7-4EA7-80EE-82FDA3D1DA05@colorremedies.com>
+References: <52E430F7.7030801@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	tue, 28 Jan 2014 11:00:54 -0500, Josef Bacik wrote:
-> 
-> On 01/14/2014 07:31 AM, Miao Xie wrote:
->> We are sure that:
->> - one ordered extent just has one csum calculation worker, and no one
->>    access the csum list during the csum calculation except the worker.
->> - we don't change the list and free the csum until no one reference
->>    to the ordered extent
->> So it is safe to add csum without the lock.
->>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>   fs/btrfs/ordered-data.c |    5 -----
->>   1 files changed, 0 insertions(+), 5 deletions(-)
->>
->> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
->> index e4c3d56..396c6d1 100644
->> --- a/fs/btrfs/ordered-data.c
->> +++ b/fs/btrfs/ordered-data.c
->> @@ -280,16 +280,11 @@ void btrfs_add_ordered_sum(struct inode *inode,
->>                  struct btrfs_ordered_extent *entry,
->>                  struct btrfs_ordered_sum *sum)
->>   {
->> -    struct btrfs_ordered_inode_tree *tree;
->> -
->> -    tree = &BTRFS_I(inode)->ordered_tree;
->> -    spin_lock_irq(&tree->lock);
->>       list_add_tail(&sum->list, &entry->list);
->>       WARN_ON(entry->csum_bytes_left < sum->len);
->>       entry->csum_bytes_left -= sum->len;
->>       if (entry->csum_bytes_left == 0)
->>           wake_up(&entry->wait);
->> -    spin_unlock_irq(&tree->lock);
->>   }
->>     /*
-> This blew up in xfstests so one of your assumptions is incorrect. Thanks,
 
-I think it is because there is a bug in the other place. Please tell me
-the case that can reproduce the problem.
+On Jan 25, 2014, at 2:47 PM, Dan Merillat <dan.merillat@gmail.com> wrote:
 
-Thanks
-Miao
+
+> [ 1219.366168] ntpd invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
+> [ 1219.366270] CPU: 1 PID: 5479 Comm: ntpd Not tainted 3.12.8-00848-g97f15f1 #2
+
+This and the whole call track don't have anything in it that's implicating btrfs or vfs.
 
 > 
-> Josef
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> [ 1219.377263] Free swap  = 0kB
+> [ 1219.377320] Total swap = 0kB
+
+No swap?
+
 > 
+> [ 1219.428330] [ pid ]   uid  tgid total_vm      rss nr_ptes swapents oom_score_adj name
+> [ 1219.432471] [ 5383]   103  5383   138079    16199      74        0             0 mysqld
+> 
+> [ 1219.435805] Out of memory: Kill process 5383 (mysqld) score 16 or sacrifice child
+> [ 1219.435874] Killed process 5383 (mysqld) total-vm:552316kB, anon-rss:64576kB, file-rss:220kB
+
+It sounds like mysqld is hogging memory for whatever reason, and in the runaway there's no swap to fall back on so things start imploding, which who knows maybe it cause some file system corruption in the process or once the system had to be force quit.
+
+Off hand to me it doesn't seem to be directly related to Btrfs. Try reproducing without running the things implicated in this event: ntpd, mysqld.
+
+Chris Murphy
 

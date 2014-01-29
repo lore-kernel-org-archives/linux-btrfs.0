@@ -1,46 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:52208 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751317AbaA2VAp (ORCPT
+Received: from ec2-54-200-0-65.us-west-2.compute.amazonaws.com ([54.200.0.65]:51621
+	"EHLO wecheer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750879AbaA2V0z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 16:00:45 -0500
-Message-ID: <52E96BF8.3000601@fb.com>
-Date: Wed, 29 Jan 2014 16:00:40 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 29 Jan 2014 16:26:55 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by wecheer.com (Postfix) with ESMTP id 9465845451
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 21:26:56 +0000 (UTC)
+Received: from wecheer.com ([127.0.0.1])
+	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id FK38EGGjYVOJ for <linux-btrfs@vger.kernel.org>;
+	Wed, 29 Jan 2014 21:26:54 +0000 (UTC)
+Received: from [10.10.22.177] (unknown [207.194.255.202])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: m)
+	by wecheer.com (Postfix) with ESMTPSA id 70EB2432E4
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 21:26:54 +0000 (UTC)
+Message-ID: <52E9721D.6000908@matthewlai.ca>
+Date: Wed, 29 Jan 2014 13:26:53 -0800
+From: Matthew Lai <m@matthewlai.ca>
 MIME-Version: 1.0
-To: Dan Merillat <dan.merillat@gmail.com>, BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Rapid memory exhaustion during normal operation
-References: <52E430F7.7030801@gmail.com>
-In-Reply-To: <52E430F7.7030801@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Receive on same subvolume
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
-On 01/25/2014 04:47 PM, Dan Merillat wrote:
-> I'm trying to track this down - this started happening without changing the kernel in use, so probably
-> a corrupted filesystem. The symptoms are that all memory is suddenly used by no apparent source.  OOM
-> killer is invoked on every task, still can't free up enough memory to continue.
->
-> When it goes wrong, it's extremely rapid - system goes from stable to dead in less than 30 seconds.
->
-> Tested 3.9.0, 3.12.0, 3.12.8.   Limited testing on 3.13 shows I think the same problem but I need
-> to double-check that it's not a different issue.  Blows up the exact same way on a real kernel or in
-> UML.
->
-> All sorts of things can trigger it - defrag, random writes to files.  Balance and scrub don't,
-> readonly mount doesn't.
->
-> I can reproduce this trivially, mount the filesystem read-write and perform some activity.  It only
-> takes a few minutes.   The other btrfs filesystems on the same machine don't show similar problems.
-> Unfortunately, the output of btrfs-image -c9 is 75gb, much more than I can reasonably share.  I've got
-> a reliable reproducer in UML using UML-COW to always start with the same base image, defrag a file with
-> 33,000 extents and the system explodes within a minute.
->
-> Here's the OOM report, the formatting is a bit off due to being delivered via netconsole.
-> Swap was disabled on this run, but it makes no difference.  I get insta-OOM issues out of the blue
-> with very little memory swapped out.
-Don't defrag right now, the snapshot aware defrag is horribly broken and 
-will OOM the box.  Thanks,
+Is this supposed to work? (/data is the root volume, /data/a is a subvolume)
 
-Josef
+btrfs subvolume snapshot /data/a /data/b
+# make some changes in b
+btrfs send -p /data/a /data/b > delta
+btrfs receive /data/a < delta
+
+I'm getting "ERROR: could not find parent subvolume" on receive.
+
+What I'm trying to do is to back up using send/receive, but I don't have 
+50% free space, and (please correct me if I'm wrong) since receive 
+doesn't do deduplication, I want to use snapshot to do the initial 
+bootstrapping, instead of send/receive without a parent.
+
+Thanks!
+Matthew

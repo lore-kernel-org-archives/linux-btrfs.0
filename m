@@ -1,57 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f178.google.com ([209.85.216.178]:60832 "EHLO
-	mail-qc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751519AbaA2TQv convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:52208 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751317AbaA2VAp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 14:16:51 -0500
-Received: by mail-qc0-f178.google.com with SMTP id m20so3398965qcx.23
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 11:16:50 -0800 (PST)
+	Wed, 29 Jan 2014 16:00:45 -0500
+Message-ID: <52E96BF8.3000601@fb.com>
+Date: Wed, 29 Jan 2014 16:00:40 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-From: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
-Date: Wed, 29 Jan 2014 20:16:09 +0100
-Message-ID: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
-Subject: lost with degraded RAID1
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Dan Merillat <dan.merillat@gmail.com>, BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Rapid memory exhaustion during normal operation
+References: <52E430F7.7030801@gmail.com>
+In-Reply-To: <52E430F7.7030801@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My situation:
 
-Former btrfs-RAID1 on two luks encrypted partitions (bunkerA and bunkerB).
-Disk holding bunkerB died online.
-Now I started rebalancing bunkerA to single, but in between had the
-idea to go over a reboot ("maybe the disk reappears"?). So stopped
-rebalancing, rebooted.
-Now the damaged disk disappeared completely. No sign of it in /proc/diskstats.
-So, i wanted to finish the rebalancing to single.
+On 01/25/2014 04:47 PM, Dan Merillat wrote:
+> I'm trying to track this down - this started happening without changing the kernel in use, so probably
+> a corrupted filesystem. The symptoms are that all memory is suddenly used by no apparent source.  OOM
+> killer is invoked on every task, still can't free up enough memory to continue.
+>
+> When it goes wrong, it's extremely rapid - system goes from stable to dead in less than 30 seconds.
+>
+> Tested 3.9.0, 3.12.0, 3.12.8.   Limited testing on 3.13 shows I think the same problem but I need
+> to double-check that it's not a different issue.  Blows up the exact same way on a real kernel or in
+> UML.
+>
+> All sorts of things can trigger it - defrag, random writes to files.  Balance and scrub don't,
+> readonly mount doesn't.
+>
+> I can reproduce this trivially, mount the filesystem read-write and perform some activity.  It only
+> takes a few minutes.   The other btrfs filesystems on the same machine don't show similar problems.
+> Unfortunately, the output of btrfs-image -c9 is 75gb, much more than I can reasonably share.  I've got
+> a reliable reproducer in UML using UML-COW to always start with the same base image, defrag a file with
+> 33,000 extents and the system explodes within a minute.
+>
+> Here's the OOM report, the formatting is a bit off due to being delivered via netconsole.
+> Swap was disabled on this run, but it makes no difference.  I get insta-OOM issues out of the blue
+> with very little memory swapped out.
+Don't defrag right now, the snapshot aware defrag is horribly broken and 
+will OOM the box.  Thanks,
 
-Label: bunker  uuid: 7f954a85-7566-4251-832c-44f2d3de2211
-        Total devices 2 FS bytes used 1.58TiB
-        devid    1 size 1.82TiB used 1.58TiB path
-        devid    2 size 1.82TiB used 1.59TiB path /dev/mapper/bunkerA
-
-btrfs filesystem df /mnt
-Data, RAID1: total=1.58TiB, used=1.57TiB
-Data, single: total=11.00GiB, used=10.00GiB
-System, RAID1: total=8.00MiB, used=240.00KiB
-Metadata, RAID1: total=3.00GiB, used=1.61GiB
-
-The 11 GiB single Data was balanced in this way while having no second
-actually functioning device in the array before reboot!
-
-But now, I can't mount bunkerA degraded,RW because degraded
-filesystems are not allowed to be mounted RW (?). The consequence is,
-that I felt unable to do anything other than mounting it RO and back
-it up (all data is fine) to another filesystem. I don't have a new
-substitute disk, yet, so I couldn't test whether I can add a new
-device to a RO-mounted filesystem. Adding a loop device didn't work.
-
-What are my options now? What further information could be useful? I
-cant believe, that I have all my data in front of me and have to start
-over again with a new filesystem because of security checks and no
-enforcement option to mount it RW.
-
-Thanks
-
-Johan Kröckel
+Josef

@@ -1,58 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:50390 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932112AbaA1UQn convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jan 2014 15:16:43 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: =?windows-1252?Q?Re=3A_Snapshots_=96_noob_questions?=
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <52E808CB.9020005@gmail.com>
-Date: Tue, 28 Jan 2014 13:16:38 -0700
-Message-Id: <ABFB6A50-ACAF-4BAA-8A93-4BC4CB6D0D65@colorremedies.com>
-References: <52E664E0.5070909@gmail.com> <3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com> <52E808CB.9020005@gmail.com>
-To: KC <impactoria@googlemail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:40698 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754026AbaA2BV3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Jan 2014 20:21:29 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W8JqK-0002bS-1e
+	for linux-btrfs@vger.kernel.org; Wed, 29 Jan 2014 02:21:28 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 02:21:28 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 02:21:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Snapshots =?CP1251?B?lg==?= noob questions
+Date: Wed, 29 Jan 2014 01:21:05 +0000 (UTC)
+Message-ID: <pan$9f7b4$f33706f0$e7ef68e8$58886cd2@cox.net>
+References: <52E664E0.5070909@gmail.com>
+	<3022B1A5-391E-431C-B5F9-2BE9206B8578@colorremedies.com>
+	<lc8th4$8um$1@ger.gmane.org> <20140128191616.GP3314@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Tue, 28 Jan 2014 19:16:16 +0000 as excerpted:
 
-On Jan 28, 2014, at 12:45 PM, KC <impactoria@googlemail.com> wrote:
-
-> On 27/01/14 19:44, Chris Murphy wrote:
->> 
->> On Jan 27, 2014, at 6:53 AM, KC <impactoria@googlemail.com> wrote:
->>> 
->>> 3. If I make a snapshot of / and there are some separate partitions mounted under /mnt/ or /home/, will snapshot skip them?
->> 
->> A snapshot of a subvolume only snapshots that subvolume, not other subvolumes contained in it or other partitions/file systems.
->> 
+>> Can we now consider making and deleting snapshots a "debugged stable
+>> feature"?
 > 
-> Excellent, thank you.
-> 
-> If currently my /home is just a folder on the / subvolume, is there any way to promote existing /home to a subvolume status so that if I take a snapshot of /, the /home gets skipped?
+> I think so, yes, although there are still cases where having lots
+> of snapshots (thousands and upwards) can cause problems. I'm thinking
+> specifically of deletion of snapshots, where the system can bog down
+> quite heavily doing all the deletions.
 
-Multiple ways. I think the easiest is for the subvolumes to be at the top level of the Btrfs volume, and mount them where you want with fstab. So for example on Fedora 20 my top level subvolumes are:
+What about the recent pathologic large (half-gig-plus) frequently-
+internally-rewritten and thus without NOCOW highly fragmented file case, 
+made pathologic (even on SSD, it's a CPU not an IO bottleneck) by 
+thousands of snapshots?
 
-boot
-root
-home
+To my knowledge that's speculatively pinned down to the not all that long 
+ago snapshot-aware-defrag code (which itself was in response to the 
+problem of defrag not being snapshot aware before that), but while I'm 
+not a dev and thus don't/can't-easily follow developing patches in code-
+level detail (tho I routinely read both intros and followups), I'm not 
+aware of pending patches that address that yet.
 
-root is mounted at / using mount option subvol=root
-boot is mounted at /boot using mount option subvol=boot
-home is mounted at /home using mount option subvol=home
-
-I've also decided to put systemd-journals on a separate subvolume:
-journald is mounted at /var/log/journal using mount option subvol=journald
-
-That way I can snapshot root, and rollback but have a persistent journal rather than a snapshot specific journal. Of course /home is also persistent because I don't roll it back.
-
-You could also rename /home, create a subvolume home within current subvolume root, then move the files from directory /home_old to the subvolume /home. Now when you snapshot rootfs, /home isn't snapshot. In this case you don't need to separately mount the home subvolume because it's available as if it were a directory. It's an organizational thing I don't know that there's a right or wrong here.
-
-One thing that came up recently on the Fedora devel list though, with respect to roofs snapshots available in the mounted fs hierarchy, is that an old rootfs snapshot could contain vulnerabilities. So two ways to handle it are to keep snapshots in the top level of the fs outside of the mounted fs hierarchy (only mount it as needed when taking snapshots); and/or mount that snapshots subvolume with noexec or nosuid mount option. That way its executables aren't root executable.
-
-
+Altho recommended procedure is to NOCOW such files at creation (generally 
+by setting NOCOW on the directory they're to be placed in, before the 
+file is written at all), based on reports here, quite a few people get 
+caught in the trap of not knowing about that until it's too late, and 
+then are stuck with a file that it can literally take *DAYS* to do 
+anything with due to the pathelogic lack of btrfs ability to scale or 
+make pretty much any progress at all in attempting to move/defrag/delete 
+such files (altho I believe they can be renamed in-place on the same 
+snapshot).
 
 
-Chris Murphy
+That said, in general I'd agree, snapshots can practically be considered 
+/reasonably/ debugged-stable, as long as you're doing reasonable snapshot 
+management and don't get thousands (and preferably not too many hundreds) 
+of them to deal with on the same filesystem.
+
+An automated script that say takes a snapshot a minute, but keeps only 
+say 30 one-minute snapshots, keeping a snapshot every half hour for a day 
+(47, 30+47=77), keeping a snapshot every hour for another two days (48, 
+total three days covered, 77+48=125), keeping a snapshot every 6 hours to 
+fill out the week ((7-3)*4=16, 125+16=141), keeping a snapshot a day to 
+fill out the month (31-7=24, 142+24=165), keeping a snapshot a week to 
+fill out the year (52-4=48, 166+48=213), and finally keeping a snapshot a 
+quarter (13 weeks) out to say a decade (40-4=36, 213+36=249), if the 
+filesystem remains in use that long... should be reasonable, and assuming 
+the math is correct, that's under 250 snapshots total, with coverage of a 
+snapshot a minute out to a half hour, a snapshot a half-hour out to a 
+day, a snapshot a day out to a month, a snapshot a week out to a year, 
+and a snapshot a quarter out to a decade (!!).  If you need history back 
+more than a decade and you don't have some sort of longer-term storage 
+archiving involved... well let's just say I seriously doubt the quality 
+of your decisions in that case.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

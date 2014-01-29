@@ -1,49 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ec2-54-200-0-65.us-west-2.compute.amazonaws.com ([54.200.0.65]:51511
-	"EHLO wecheer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751040AbaA2Tlt (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35249 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750851AbaA2VFh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jan 2014 14:41:49 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by wecheer.com (Postfix) with ESMTP id 9C48B45453
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 19:26:46 +0000 (UTC)
-Received: from wecheer.com ([127.0.0.1])
-	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id t1m7AbRparDL for <linux-btrfs@vger.kernel.org>;
-	Wed, 29 Jan 2014 19:26:44 +0000 (UTC)
-Received: from [10.10.22.177] (unknown [207.194.255.202])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: m)
-	by wecheer.com (Postfix) with ESMTPSA id 77F304313C
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 19:26:44 +0000 (UTC)
-Message-ID: <52E955F2.60608@matthewlai.ca>
-Date: Wed, 29 Jan 2014 11:26:42 -0800
-From: Matthew Lai <m@matthewlai.ca>
+	Wed, 29 Jan 2014 16:05:37 -0500
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s0TL2l8H007278
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 13:05:36 -0800
+Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
+	by mx0b-00082601.pphosted.com with ESMTP id 1hq5t08t69-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jan 2014 13:05:36 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: disable snapshot aware defrag for now
+Date: Wed, 29 Jan 2014 16:05:30 -0500
+Message-ID: <1391029530-17686-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs send requires root
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+It's just broken and it's taking a lot of effort to fix it, so for now just
+disable it so people can defrag in peace.  Thanks,
 
-I have just started playing with btrfs, and noticed that "btrfs send" 
-only works for root (ERROR: failed to initialize subvol search. 
-Operation not permitted), even on subvolumes created by the user.
+Cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Am I doing something wrong? Or is this the intended behaviour?
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3b65987..8c0bc31 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2628,7 +2628,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 			EXTENT_DEFRAG, 1, cached_state);
+ 	if (ret) {
+ 		u64 last_snapshot = btrfs_root_last_snapshot(&root->root_item);
+-		if (last_snapshot >= BTRFS_I(inode)->generation)
++		if (0 && last_snapshot >= BTRFS_I(inode)->generation)
+ 			/* the inode is shared */
+ 			new = record_old_file_extents(inode, ordered_extent);
+ 
+-- 
+1.8.3.1
 
-My setup (/data is the root subvolume):
-mkdir /data/snapshots
-btrfs subvolume snapshot -r /data /data/snapshots (creates 
-/data/snapshots/data)
-btrfs send /data/snapshots/data > /dev/null
-
-Returns:
-ERROR: can't perform the search- Operation not permitted
-ERROR: failed to initialize subvol search. Operation not permitted
-
-Thanks!
-Matthew

@@ -1,45 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55933 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751154AbaA3R5k convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 12:57:40 -0500
-Content-Type: text/plain; charset=iso-8859-1
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from frost.carfax.org.uk ([85.119.82.111]:49924 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751468AbaA3R6z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jan 2014 12:58:55 -0500
+Date: Thu, 30 Jan 2014 17:58:31 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: lost with degraded RAID1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CABgvyo_Tn-u7Lfo4NPeWyiiSFj2ZFG9MM2z3CAD9f3hjfLM44g@mail.gmail.com>
-Date: Thu, 30 Jan 2014 10:57:41 -0700
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <7D962F82-BAB8-48E5-8B4D-3CDBFD10D9C5@colorremedies.com>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com> <CABgvyo_Tn-u7Lfo4NPeWyiiSFj2ZFG9MM2z3CAD9f3hjfLM44g@mail.gmail.com>
-To: =?iso-8859-1?Q?Johan_Kr=F6ckel?= <johan.kroeckel@gmail.com>
+Message-ID: <20140130175831.GU3314@carfax.org.uk>
+References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
+ <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="gh9b96O0vZdbsJLX"
+In-Reply-To: <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jan 30, 2014, at 4:53 AM, Johan Kröckel <johan.kroeckel@gmail.com> wrote:
-> 
-> [As I said, to the best of my (non-dev btrfs user and list regular)
-> knowledge, mount -o degraded,rw should work.]
-> 
-> No, it doesnt.
-> Syslog says: "Jan 30 12:44:02 fortknox kernel: [756677.795661] Btrfs:
-> too many missing devices, writeable mount is not allowed"
+--gh9b96O0vZdbsJLX
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Is this encrypted Btrfs volume used for rootfs? Or is it only for data?  If it's only for data, then make sure the volume (all subvolumes) are umounted, then mount with this:
+On Thu, Jan 30, 2014 at 10:33:21AM -0700, Chris Murphy wrote:
+>=20
+> On Jan 29, 2014, at 12:16 PM, Johan Kr=F6ckel <johan.kroeckel@gmail.com> =
+wrote:
+>=20
+> > My situation:
+> >=20
+> > Former btrfs-RAID1 on two luks encrypted partitions (bunkerA and bunker=
+B).
+> > Disk holding bunkerB died online.
+> > Now I started rebalancing bunkerA to single,
+>=20
+>=20
+> You're doing an online conversion of a degraded raid1 volume into single?=
+ Does anyone know if this is expected or intended to work?
 
--o degraded,recovery,skip_balance
+   I don't see why not. One suggested method of recovering RAID from a
+degraded situation is to rebalance over just the remaining devices
+(space permitting, of course).
 
-Do you still get too many missing devices message?
+   Hugo.
 
-Vaguely related questions (for everyone) are:
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Everything simple is false. Everything which is ---        =20
+                          complex is unusable.                          =20
 
-- If this is rootfs, by default grub options mount ro. So when we use rootflags=degraded,recovery that's effectively -o ro,degraded,recovery. Upon fstab being read, rootfs is remounted rw. Does the previous ro,degraded,recovery repair get written to the volume upon fstab remount rw?
+--gh9b96O0vZdbsJLX
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-This is somewhat important to understand, and whether the grub default of ro mount, and the remount rw switch at fstab time is sufficiently detecting and repairing Btrfs problems (with and without rootflags=recovery).
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-- Is an online conversion from profile X to profile Y expected to work when the volume is mounted degraded? If it's not expected to work, or isn't a good idea, then maybe balance needs to be disabled on degraded mounts?
+iQIVAwUBUuqSx1heFHXiqx3kAQKMzw//Vl5XJf2RGo8LxP1VRcVqk+Yp7+hr8vGu
+T7H/hBoyEXXD1DZDx2L2gAg8fiw6U29qtHN5T7w/u7dwOVNCcO9Q1ZFmr84frEG3
+lfKjkzUl78W1HkTUVlz4ZfHef44cuKqpJpfLIjasFId2oF55ypOiGAFDYwO0ig38
+KN3hWvoFx1QyJBieLUngZdEZq1JJsy9PJ499NU/7Ar/50wZvdjlwQKRUoymkACmo
+Fdso5cG9PWhnWjGp3FmC0cVX1UFQvA7N5wv7Y28F3Cnmy07JwsUj/D3xz5EKhNlU
+FGmRt2S6T95Ygd0x9RMvhDiqfJu78j6CNKPZTjfwafS3D5fH95lb2zi73NxoN2Xc
+fBM0EKmf4Q2C9/mXCSOeR/UDywSPVSHx5NIQ8YQ19YRn2Ncw/8zlrlwECFKY1X4/
+O4jKk2PLfKlxGGZBHVsR+VEOZXvz3nOpGGKmToRljQt+wepQi0650sSaUH1dfskE
+zjjAuNwGwSM71ByYApXqOVUqDaKsiubgLxnRREn+Ci6lm3PW8/oVWuOJIEia/fCU
+K+0/n23X/a0sXxmgBioGamnAbrup0Fp0g7ZgxDvvVSYW6N69vsFgRPGmmGptHlqE
+N4gwp1HugAodSbSLm1GJlosOiWhGnRzRW7N7ws0pe7kdBM8xsEyA2o/YcTpHMkiM
+8dyepNnxS0Y=
+=skR7
+-----END PGP SIGNATURE-----
 
-Chris Murphy
-
+--gh9b96O0vZdbsJLX--

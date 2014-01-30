@@ -1,41 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ae2-f129.auone-net.jp ([111.87.219.129]:42745 "EHLO
-	dmta01.auone-net.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750954AbaA3Hxh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 02:53:37 -0500
-Date: Thu, 30 Jan 2014 16:32:02 +0900
-From: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Received: from cn.fujitsu.com ([222.73.24.84]:39113 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750982AbaA3Ip2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jan 2014 03:45:28 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s0U8jQLt009255
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 16:45:26 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: Return EXDEV for cross file system snapshot
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-Id: <52e9fff3000260ca00006df700005bb6e0000bb51ac1@amlmta038.auone-net.jp>
+Subject: [PATCH 1/2] Btrfs: fix unprotected alloc list insertion during the finishing procedure of replace
+Date: Thu, 30 Jan 2014 16:46:54 +0800
+Message-Id: <1391071615-6729-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-EXDEV seems an appropriate error if an operation fails bacause it
-crosses file system boundaries.
+the alloc list of the filesystem is protected by ->chunk_mutex, we need
+get that mutex when we insert the new device into the list.
 
-Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/dev-replace.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 34772cb..0176045 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1573,7 +1573,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 		if (src_inode->i_sb != file_inode(file)->i_sb) {
- 			btrfs_info(BTRFS_I(src_inode)->root->fs_info,
- 				   "Snapshot src from another FS");
--			ret = -EINVAL;
-+			ret = -EXDEV;
- 		} else if (!inode_owner_or_capable(src_inode)) {
- 			/*
- 			 * Subvolume creation is not restricted, but snapshots
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 564c926..b20d59e 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -484,6 +484,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	WARN_ON(ret);
+ 
+ 	/* keep away write_all_supers() during the finishing procedure */
++	mutex_lock(&root->fs_info->chunk_mutex);
+ 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+ 	btrfs_dev_replace_lock(dev_replace);
+ 	dev_replace->replace_state =
+@@ -503,6 +504,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 			      rcu_str_deref(tgt_device->name), scrub_ret);
+ 		btrfs_dev_replace_unlock(dev_replace);
+ 		mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
++		mutex_unlock(&root->fs_info->chunk_mutex);
+ 		if (tgt_device)
+ 			btrfs_destroy_dev_replace_tgtdev(fs_info, tgt_device);
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+@@ -543,6 +545,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	 */
+ 	btrfs_dev_replace_unlock(dev_replace);
+ 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
++	mutex_unlock(&root->fs_info->chunk_mutex);
+ 
+ 	/* write back the superblocks */
+ 	trans = btrfs_start_transaction(root, 0);
 -- 
-1.9.rc1
+1.8.5.3
 

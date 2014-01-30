@@ -1,36 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpksrv1.mitre.org ([198.49.146.77]:52179 "EHLO
-	smtpksrv1.mitre.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753405AbaA3ViH convert rfc822-to-8bit (ORCPT
+Received: from ec2-54-200-0-65.us-west-2.compute.amazonaws.com ([54.200.0.65]:53135
+	"EHLO wecheer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753108AbaA3VlP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 16:38:07 -0500
-Received: from smtpksrv1.mitre.org (localhost.localdomain [127.0.0.1])
-	by localhost (Postfix) with SMTP id 59DD41F0467
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 16:27:56 -0500 (EST)
-Received: from IMCCAS02.MITRE.ORG (imccas02.mitre.org [129.83.29.79])
-	by smtpksrv1.mitre.org (Postfix) with ESMTP id 37C301F045C
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 16:27:56 -0500 (EST)
-From: "Maziarz, Jeremy M." <jmaziarz@mitre.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Stop using btrfs
-Date: Thu, 30 Jan 2014 21:27:55 +0000
-Message-ID: <CC0E5F0A-26F9-46B9-9C24-1DDD1FF72004@mitre.org>
-Content-Type: text/plain; charset="us-ascii"
+	Thu, 30 Jan 2014 16:41:15 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by wecheer.com (Postfix) with ESMTP id 7F75C455F1
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 21:41:18 +0000 (UTC)
+Received: from wecheer.com ([127.0.0.1])
+	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Gi1fTsRUXMD2 for <linux-btrfs@vger.kernel.org>;
+	Thu, 30 Jan 2014 21:41:15 +0000 (UTC)
+Received: from [10.10.22.177] (unknown [207.194.255.202])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: m)
+	by wecheer.com (Postfix) with ESMTPSA id E7BD14313C
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 21:41:15 +0000 (UTC)
+Message-ID: <52EAC6F8.9040005@matthewlai.ca>
+Date: Thu, 30 Jan 2014 13:41:12 -0800
+From: Matthew Lai <m@matthewlai.ca>
 MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send requires root
+References: <52E955F2.60608@matthewlai.ca> <20140130183007.GD1364@twin.jikos.cz>
+In-Reply-To: <20140130183007.GD1364@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Everyone, here is a noob question: how do completely delete a btrfs filesystem (RAID10)?
+Ah I see. Thanks for clarifying!
 
-$ sudo btrfs filesystem show
-Label: none  uuid: 0ee72c25-9169-4836-873d-468ebdea8c1a
-	Total devices 4 FS bytes used 92.00KB
-	devid    1 size 1.82TB used 76.02GB path /dev/sda
-	devid    2 size 1.82TB used 76.00GB path /dev/sdb
-	devid    3 size 1.82TB used 76.01GB path /dev/sdd
-	devid    4 size 1.82TB used 76.01GB path /dev/sde
+Matthew
 
-Btrfs Btrfs v0.19
+On 30/01/2014 10:30 AM, David Sterba wrote:
+> On Wed, Jan 29, 2014 at 11:26:42AM -0800, Matthew Lai wrote:
+>> I have just started playing with btrfs, and noticed that "btrfs send" only
+>> works for root (ERROR: failed to initialize subvol search. Operation not
+>> permitted), even on subvolumes created by the user.
+>>
+>> Am I doing something wrong? Or is this the intended behaviour?
+> Intended but can be revisited to allow non-root owner's to send their
+> snapshots.
+>
+>> Returns:
+>> ERROR: can't perform the search- Operation not permitted
+>> ERROR: failed to initialize subvol search. Operation not permitted
+> The SEARCH_TREE ioctl is also root-only and a unconstrained interface to
+> the filesystem internals, so a new ioctl would have to be introduced to
+> do what send needs.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Thanks,
-Jeremy

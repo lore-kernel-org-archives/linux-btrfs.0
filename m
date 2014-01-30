@@ -1,96 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ea0-f170.google.com ([209.85.215.170]:52399 "EHLO
-	mail-ea0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753430AbaA3PYU (ORCPT
+Received: from mail-ee0-f42.google.com ([74.125.83.42]:43516 "EHLO
+	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753532AbaA3PYW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 10:24:20 -0500
-Received: by mail-ea0-f170.google.com with SMTP id k10so1721380eaj.15
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 07:24:19 -0800 (PST)
+	Thu, 30 Jan 2014 10:24:22 -0500
+Received: by mail-ee0-f42.google.com with SMTP id e49so1665941eek.15
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 07:24:21 -0800 (PST)
 Received: from localhost (host-115-115.kawo1.rwth-aachen.de. [134.130.115.115])
-        by mx.google.com with ESMTPSA id u7sm23679987eep.11.2014.01.30.07.24.18
+        by mx.google.com with ESMTPSA id k6sm23770984eep.17.2014.01.30.07.24.20
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
-        Thu, 30 Jan 2014 07:24:19 -0800 (PST)
+        Thu, 30 Jan 2014 07:24:20 -0800 (PST)
 From: Gerhard Heift <gerhard@heift.name>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFCv4 5/7] btrfs: new function read_extent_buffer_to_user
-Date: Thu, 30 Jan 2014 16:24:01 +0100
-Message-Id: <1391095443-20287-6-git-send-email-Gerhard@Heift.Name>
+Subject: [PATCH RFCv4 6/7] btrfs: tree_search, search_ioctl: direct copy to userspace
+Date: Thu, 30 Jan 2014 16:24:02 +0100
+Message-Id: <1391095443-20287-7-git-send-email-Gerhard@Heift.Name>
 In-Reply-To: <1391095443-20287-1-git-send-email-Gerhard@Heift.Name>
 References: <1391095443-20287-1-git-send-email-Gerhard@Heift.Name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This new function reads the content of an extent directly to user memory.
+By copying each found item seperatly to userspace, we do not need extra
+buffer in the kernel.
 
 Signed-off-by: Gerhard Heift <Gerhard@Heift.Name>
 ---
- fs/btrfs/extent_io.c | 37 +++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |  3 +++
- 2 files changed, 40 insertions(+)
+ fs/btrfs/ioctl.c | 48 +++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 33 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fbe501d..d1e9dd8 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4956,6 +4956,43 @@ void read_extent_buffer(struct extent_buffer *eb, void *dstv,
- 	}
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1180293..bab8c67 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1855,7 +1855,7 @@ static noinline int copy_to_sk(struct btrfs_root *root,
+ 			       struct btrfs_key *key,
+ 			       struct btrfs_ioctl_search_key *sk,
+ 			       size_t *buf_size,
+-			       char *buf,
++			       char __user *ubuf,
+ 			       unsigned long *sk_offset,
+ 			       int *num_found)
+ {
+@@ -1915,14 +1915,22 @@ static noinline int copy_to_sk(struct btrfs_root *root,
+ 		sh.transid = found_transid;
  
-+int read_extent_buffer_to_user(struct extent_buffer *eb, void __user *dstv,
-+			unsigned long start,
-+			unsigned long len)
-+{
-+	size_t cur;
-+	size_t offset;
-+	struct page *page;
-+	char *kaddr;
-+	char __user *dst = (char __user *)dstv;
-+	size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
-+	unsigned long i = (start_offset + start) >> PAGE_CACHE_SHIFT;
-+	int ret = 0;
-+
-+	WARN_ON(start > eb->len);
-+	WARN_ON(start + len > eb->start + eb->len);
-+
-+	offset = (start_offset + start) & (PAGE_CACHE_SIZE - 1);
-+
-+	while (len > 0) {
-+		page = extent_buffer_page(eb, i);
-+
-+		cur = min(len, (PAGE_CACHE_SIZE - offset));
-+		kaddr = page_address(page);
-+		if (copy_to_user(dst, kaddr + offset, cur)) {
+ 		/* copy search result header */
+-		memcpy(buf + *sk_offset, &sh, sizeof(sh));
++		if (copy_to_user(ubuf + *sk_offset, &sh, sizeof(sh))) {
 +			ret = -EFAULT;
-+			break;
++			goto out;
 +		}
 +
-+		dst += cur;
-+		len -= cur;
-+		offset = 0;
-+		i++;
-+	}
+ 		*sk_offset += sizeof(sh);
+ 
+ 		if (item_len) {
+-			char *p = buf + *sk_offset;
++			char __user *up = ubuf + *sk_offset;
+ 			/* copy the item */
+-			read_extent_buffer(leaf, p,
+-					   item_off, item_len);
++			if (read_extent_buffer_to_user(leaf, up,
++						       item_off, item_len)) {
++				ret = -EFAULT;
++				goto out;
++			}
 +
-+	return ret;
-+}
+ 			*sk_offset += item_len;
+ 		}
+ 		(*num_found)++;
+@@ -1949,13 +1957,22 @@ advance_key:
+ 	} else
+ 		ret = 1;
+ out:
++	/*
++	 *  0: all items from this leaf copied, continue with next
++	 *  1: * more items can be copied, but unused buffer is too small
++	 *     * all items were found
++	 *     Either way, it will stops the loop which iterates to the next
++	 *     leaf
++	 *  -EOVERFLOW: item was to large for buffer
++	 *  -EFAULT: could not copy extent buffer back to userspace
++	 */
+ 	return ret;
+ }
+ 
+ static noinline int search_ioctl(struct inode *inode,
+ 				 struct btrfs_ioctl_search_key *sk,
+ 				 size_t *buf_size,
+-				 char *buf)
++				 char __user *ubuf)
+ {
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+@@ -2003,7 +2020,7 @@ static noinline int search_ioctl(struct inode *inode,
+ 				ret = 0;
+ 			goto err;
+ 		}
+-		ret = copy_to_sk(root, path, &key, sk, buf_size, buf,
++		ret = copy_to_sk(root, path, &key, sk, buf_size, ubuf,
+ 				 &sk_offset, &num_found);
+ 		btrfs_release_path(path);
+ 		if (ret)
+@@ -2021,7 +2038,8 @@ err:
+ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 					   void __user *argp)
+ {
+-	struct btrfs_ioctl_search_args *args;
++	struct btrfs_ioctl_search_args __user *uargs;
++	struct btrfs_ioctl_search_key sk;
+ 	struct inode *inode;
+ 	int ret;
+ 	size_t buf_size;
+@@ -2029,14 +2047,15 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	args = memdup_user(argp, sizeof(*args));
+-	if (IS_ERR(args))
+-		return PTR_ERR(args);
++	uargs = (struct btrfs_ioctl_search_args __user *)argp;
+ 
+-	buf_size = sizeof(args->buf);
++	if (copy_from_user(&sk, &uargs->key, sizeof(sk)))
++		return -EFAULT;
 +
- int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 			       unsigned long min_len, char **map,
- 			       unsigned long *map_start,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 58b27e5..d0b1541 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -304,6 +304,9 @@ int memcmp_extent_buffer(struct extent_buffer *eb, const void *ptrv,
- void read_extent_buffer(struct extent_buffer *eb, void *dst,
- 			unsigned long start,
- 			unsigned long len);
-+int read_extent_buffer_to_user(struct extent_buffer *eb, void __user *dst,
-+			       unsigned long start,
-+			       unsigned long len);
- void write_extent_buffer(struct extent_buffer *eb, const void *src,
- 			 unsigned long start, unsigned long len);
- void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
++	buf_size = sizeof(uargs->buf);
+ 
+ 	inode = file_inode(file);
+-	ret = search_ioctl(inode, &args->key, &buf_size, args->buf);
++	ret = search_ioctl(inode, &sk, &buf_size, uargs->buf);
+ 
+ 	/*
+ 	 * In the origin implementation an overflow is handled by returning a
+@@ -2045,9 +2064,8 @@ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 	if (ret == -EOVERFLOW)
+ 		ret = 0;
+ 
+-	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
++	if (ret == 0 && copy_to_user(&uargs->key, &sk, sizeof(sk)))
+ 		ret = -EFAULT;
+-	kfree(args);
+ 	return ret;
+ }
+ 
 -- 
 1.8.5.3
 

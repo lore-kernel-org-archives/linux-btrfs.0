@@ -1,56 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ec2-54-200-0-65.us-west-2.compute.amazonaws.com ([54.200.0.65]:53135
-	"EHLO wecheer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753108AbaA3VlP (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:50962 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753401AbaA3Vn5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 16:41:15 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by wecheer.com (Postfix) with ESMTP id 7F75C455F1
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 21:41:18 +0000 (UTC)
-Received: from wecheer.com ([127.0.0.1])
-	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Gi1fTsRUXMD2 for <linux-btrfs@vger.kernel.org>;
-	Thu, 30 Jan 2014 21:41:15 +0000 (UTC)
-Received: from [10.10.22.177] (unknown [207.194.255.202])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: m)
-	by wecheer.com (Postfix) with ESMTPSA id E7BD14313C
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 21:41:15 +0000 (UTC)
-Message-ID: <52EAC6F8.9040005@matthewlai.ca>
-Date: Thu, 30 Jan 2014 13:41:12 -0800
-From: Matthew Lai <m@matthewlai.ca>
+	Thu, 30 Jan 2014 16:43:57 -0500
+Date: Thu, 30 Jan 2014 21:43:33 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: "Maziarz, Jeremy M." <jmaziarz@mitre.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Stop using btrfs
+Message-ID: <20140130214333.GA18327@carfax.org.uk>
+References: <CC0E5F0A-26F9-46B9-9C24-1DDD1FF72004@mitre.org>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send requires root
-References: <52E955F2.60608@matthewlai.ca> <20140130183007.GD1364@twin.jikos.cz>
-In-Reply-To: <20140130183007.GD1364@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="6TrnltStXW4iwmi0"
+In-Reply-To: <CC0E5F0A-26F9-46B9-9C24-1DDD1FF72004@mitre.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ah I see. Thanks for clarifying!
 
-Matthew
+--6TrnltStXW4iwmi0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 30/01/2014 10:30 AM, David Sterba wrote:
-> On Wed, Jan 29, 2014 at 11:26:42AM -0800, Matthew Lai wrote:
->> I have just started playing with btrfs, and noticed that "btrfs send" only
->> works for root (ERROR: failed to initialize subvol search. Operation not
->> permitted), even on subvolumes created by the user.
->>
->> Am I doing something wrong? Or is this the intended behaviour?
-> Intended but can be revisited to allow non-root owner's to send their
-> snapshots.
->
->> Returns:
->> ERROR: can't perform the search- Operation not permitted
->> ERROR: failed to initialize subvol search. Operation not permitted
-> The SEARCH_TREE ioctl is also root-only and a unconstrained interface to
-> the filesystem internals, so a new ioctl would have to be introduced to
-> do what send needs.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Thu, Jan 30, 2014 at 09:27:55PM +0000, Maziarz, Jeremy M. wrote:
+> Everyone, here is a noob question: how do completely delete a btrfs filesystem (RAID10)?
 
+   wipefs, on each device, is the precision approach -- it will very
+carefully damage the magic number in the first superblock on each
+device, which is enough to make most tools ignore the filesystem.
+
+   Alternatively, the nuclear approach is simply to overwrite the
+first megabyte or so of the filesystem with zeros, with something like:
+
+dd count=1k bs=1k if=/dev/zero of=/dev/sda
+
+> $ sudo btrfs filesystem show
+> Label: none  uuid: 0ee72c25-9169-4836-873d-468ebdea8c1a
+> 	Total devices 4 FS bytes used 92.00KB
+> 	devid    1 size 1.82TB used 76.02GB path /dev/sda
+> 	devid    2 size 1.82TB used 76.00GB path /dev/sdb
+> 	devid    3 size 1.82TB used 76.01GB path /dev/sdd
+> 	devid    4 size 1.82TB used 76.01GB path /dev/sde
+> 
+> Btrfs Btrfs v0.19
+
+   Incidentally, this is a very old version of the userspace tools. If
+you're running this, it's quite likely that you also have a fairly old
+kernel, which may account for any other problems you might be
+experiencing...
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+          --- ...  one ping(1) to rule them all, and in the ---          
+                         darkness bind(2) them.                          
+
+--6TrnltStXW4iwmi0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUurHhVheFHXiqx3kAQLnnRAAiX2LdVWERfRaQWVrRtvyT5oR2Pfzf4ky
+grOcFwxgERg8O4KLok7T3S99tMb/wjM5gAvQnojokahnvtCl0c7PAjTQsMuDsqrX
+ik7JGFHVAoGoAZ29pelk0/uJHYNUslCUiQ8y2SmBbcPS4zUL76q6e4M+thDrQRq5
+6Np5e+4jTt46oFCxsOEMysHSn4IKc+Ycai6PPwdcXILSJUzoVOA2A6X/leN/hKTi
+CmULJGjtPJS77RtATpBsiOi6E+uIFloP5zSg+vS2meRBfDFOsga8SynGw5wDqo0l
+tyJJr1leFhhwLWB4eHgKmoO+dztqzCmvX0Q/Lwj7qmP3YHSUYdBVMqvaY7gvOuZW
+8pwOIo4WgB+We+ZgOJwlH5f1OCJjNyvezWyfBFllnD0Y4yJRAjp2GOBwudQR9i6H
+V+cJOTxE8l/HmtaM5jeBkjht2pZGs1u0Mc+GlpragVVrdGaWKFRz2AGjMyd00TuR
+acs7rN4lfEUCZjzBly9WmIZ00SU1Y/OQ5dA7g1vEKUku3iqMai/fTIMNX8JZMVTK
+CcM1zXFE5tSGaHFtsdB8v1qFohQ2gJevQ6SJH60ltQo6aY4MORRlnmZlGrLJH7es
+ZBm2G5vVUNIikrKuERQkfEKVmof0Q2uwfvEgBgH67uJ4NwUL1QmoWj0VWWWOZGFF
+lWAvTtAu2ag=
+=APJv
+-----END PGP SIGNATURE-----
+
+--6TrnltStXW4iwmi0--

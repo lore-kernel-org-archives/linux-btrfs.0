@@ -1,115 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41009 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47075 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751974AbaA3RZE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 12:25:04 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 9AEDFAC5D
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jan 2014 17:25:02 +0000 (UTC)
+	id S1751468AbaA3SaJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Jan 2014 13:30:09 -0500
+Date: Thu, 30 Jan 2014 19:30:07 +0100
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs: add simple debugfs interface
-Date: Thu, 30 Jan 2014 18:25:00 +0100
-Message-Id: <1391102700-6779-1-git-send-email-dsterba@suse.cz>
+To: Matthew Lai <m@matthewlai.ca>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send requires root
+Message-ID: <20140130183007.GD1364@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52E955F2.60608@matthewlai.ca>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52E955F2.60608@matthewlai.ca>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Help during debugging to export various interesting infromation and
-tunables without the need of extra mount options or ioctls.
+On Wed, Jan 29, 2014 at 11:26:42AM -0800, Matthew Lai wrote:
+> I have just started playing with btrfs, and noticed that "btrfs send" only
+> works for root (ERROR: failed to initialize subvol search. Operation not
+> permitted), even on subvolumes created by the user.
+> 
+> Am I doing something wrong? Or is this the intended behaviour?
 
-Usage:
-* declare your variable in sysfs.h, and include where you need it
-* define the variable in sysfs.c and make it visible via
-  debugfs_create_TYPE
+Intended but can be revisited to allow non-root owner's to send their
+snapshots.
 
-Depends on CONFIG_DEBUG_FS.
+> Returns:
+> ERROR: can't perform the search- Operation not permitted
+> ERROR: failed to initialize subvol search. Operation not permitted
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
-
-v2:
-- added missing return to btrfs_init_debugfs
-- updated error handling to btrfs_init_sysfs, the cleanup
-  is done in btrfs_exit_sysfs
-- removed #ifdef in btrfs_exit_sysfs,
-
- fs/btrfs/sysfs.c |   33 +++++++++++++++++++++++++++------
- 1 files changed, 27 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 782374d8fd19..b725e4574448 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -24,6 +24,7 @@
- #include <linux/kobject.h>
- #include <linux/bug.h>
- #include <linux/genhd.h>
-+#include <linux/debugfs.h>
- 
- #include "ctree.h"
- #include "disk-io.h"
-@@ -593,6 +594,12 @@ static int add_device_membership(struct btrfs_fs_info *fs_info)
- /* /sys/fs/btrfs/ entry */
- static struct kset *btrfs_kset;
- 
-+/* /sys/kernel/debug/btrfs */
-+static struct dentry *btrfs_debugfs_root_dentry;
-+
-+/* Debugging tunables and exported data */
-+u64 btrfs_debugfs_test;
-+
- int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- {
- 	int error;
-@@ -636,27 +643,41 @@ failure:
- 	return error;
- }
- 
-+static int btrfs_init_debugfs(void)
-+{
-+#ifdef CONFIG_DEBUG_FS
-+	btrfs_debugfs_root_dentry = debugfs_create_dir("btrfs", NULL);
-+	if (!btrfs_debugfs_root_dentry)
-+		return -ENOMEM;
-+
-+	debugfs_create_u64("test", S_IRUGO | S_IWUGO, btrfs_debugfs_root_dentry,
-+			&btrfs_debugfs_test);
-+#endif
-+	return 0;
-+}
-+
- int btrfs_init_sysfs(void)
- {
- 	int ret;
-+
- 	btrfs_kset = kset_create_and_add("btrfs", NULL, fs_kobj);
- 	if (!btrfs_kset)
- 		return -ENOMEM;
- 
--	init_feature_attrs();
-+	ret = btrfs_init_debugfs();
-+	if (ret)
-+		return ret;
- 
-+	init_feature_attrs();
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
--	if (ret) {
--		kset_unregister(btrfs_kset);
--		return ret;
--	}
- 
--	return 0;
-+	return ret;
- }
- 
- void btrfs_exit_sysfs(void)
- {
- 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- 	kset_unregister(btrfs_kset);
-+	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- }
- 
--- 
-1.7.9
-
+The SEARCH_TREE ioctl is also root-only and a unconstrained interface to
+the filesystem internals, so a new ioctl would have to be introduced to
+do what send needs.

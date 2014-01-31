@@ -1,24 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49196 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754275AbaAaUy2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jan 2014 15:54:28 -0500
-Date: Fri, 31 Jan 2014 13:54:25 -0700
+Received: from plane.gmane.org ([80.91.229.3]:39744 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932368AbaAaWA4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 31 Jan 2014 17:00:56 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W9M8o-0001jm-Nz
+	for linux-btrfs@vger.kernel.org; Fri, 31 Jan 2014 23:00:50 +0100
+Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 23:00:50 +0100
+Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 23:00:50 +0100
+To: linux-btrfs@vger.kernel.org
+From: Alex <alex@bpmit.com>
 Subject: Re: Booting with syslinux not possible
-Message-ID: <pgp3jf3k1opyx3577pvf14gm.1391201665542@email.android.com>
-From: Chris Murphy <lists@colorremedies.com>
-To: KC <impactoria@googlemail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Date: Fri, 31 Jan 2014 22:00:26 +0000 (UTC)
+Message-ID: <loom.20140131T225403-745@post.gmane.org>
+References: <52EBFD82.7080900@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Sorry KC:
+
+All my VM's are on syslinux (actually extlinux) and btrfs:
+   Device Boot      Start         End      Blocks   Id  System
+/dev/vda1   *        2048     7938047     3968000   83  Linux
+/dev/vda2         7938048     8388607      225280   82  Linux swap / Solaris
+
+root@<VM> ~ # ll /boot
+total 19452
+-rw-r--r-- 1 root root  2319932 Jan 21 06:12 System.map-3.12-1-amd64
+-rw-r--r-- 1 root root   149029 Jan 21 06:12 config-3.12-1-amd64
+drwxr-xr-x 1 root root      176 Jan 28 22:32 extlinux/
+-rw-r--r-- 1 root root 14240605 Jan 28 22:32 initrd.img-3.12-1-amd64
+-rw-r--r-- 1 root root   176764 Nov 13  2011 memtest86+.bin
+-rw-r--r-- 1 root root   178944 Nov 13  2011 memtest86+_multiboot.bin
+-rw-r--r-- 1 root root  2842064 Jan 21 06:08 vmlinuz-3.12-1-amd64
+root@china ~ #  
+
+Occasionally I get excited and decide to fix it 'til it breaks (usually I
+turn compression on, and /boot can't be accessed), but it's been working
+fine for a few years now.
+
+Kind regards.
+
+Al.
 
 
 
-Use extlinux, variant of syslinux.
 
-
-Chris MurphyˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

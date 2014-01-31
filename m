@@ -1,50 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:33653 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753797AbaAaDAi convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jan 2014 22:00:38 -0500
-Received: from 70-89-167-59-colorado-co.hfc.comcastbusiness.net ([70.89.167.59]:2169 helo=[10.18.80.7])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1W94LN-000cvh-Ar
-	for linux-btrfs@vger.kernel.org; Thu, 30 Jan 2014 20:00:37 -0700
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:43362 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751101AbaAaF6z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 31 Jan 2014 00:58:55 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1W977u-0006f3-3c
+	for linux-btrfs@vger.kernel.org; Fri, 31 Jan 2014 06:58:54 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 06:58:54 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 06:58:54 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: lost with degraded RAID1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$3f5b6$fcf027de$d8c8fe27$ce2a7e6f@cox.net>
-Date: Thu, 30 Jan 2014 20:00:39 -0700
-Message-Id: <8FF7CD63-3B07-42CB-88C3-E88D39280892@colorremedies.com>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com> <CABgvyo_Tn-u7Lfo4NPeWyiiSFj2ZFG9MM2z3CAD9f3hjfLM44g@mail.gmail.com> <pan$3f5b6$fcf027de$d8c8fe27$ce2a7e6f@cox.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Fri, 31 Jan 2014 05:58:27 +0000 (UTC)
+Message-ID: <pan$7d02a$d46a4ede$2832dda8$da2d2ddd@cox.net>
+References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
+	<CABgvyo_Tn-u7Lfo4NPeWyiiSFj2ZFG9MM2z3CAD9f3hjfLM44g@mail.gmail.com>
+	<pan$3f5b6$fcf027de$d8c8fe27$ce2a7e6f@cox.net>
+	<8FF7CD63-3B07-42CB-88C3-E88D39280892@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Thu, 30 Jan 2014 20:00:39 -0700 as excerpted:
 
-On Jan 30, 2014, at 3:18 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Another question for Johann is what exact balance command was to go back
+> to single? Was there -dconvert and -mconvert? Both are required to go
+> from raid1/raid to single/DUP or single/single, and actually get rid of
+> the 2nd device. And looking at the man page, I'm not sure how we do that
+> conversion and specify which multiple device we're dropping:
+> 
+> [filesystem] balance start [options] <path>
+> 
+> With a missing device, presumably this is obvious, butâ€¦
 
-> IOW, I guess I don't agree with that patch as it was apparently 
-> committed.  There needs to be a force option as well.
+Of course the normal no-missing-device usage of a balance converting back 
+to single would be one of:
 
--o degraded is the force option. I think the problem here is that there's sufficient damage to the one remaining device, that it cannot be mounted rw. It's sort of a chicken - egg problem, the single device available has a file system that's sufficiently damaged that it undamaged metadata to get a rw mount. Since there are too few devices for that, it fails to mount rw.
+1) Multi-device raidN converting back to single with all devices present, 
+presumably either to get more space (from raid1/5/6/10), or to get back 
+/some/ device-loss tolerance when converting back from raid0 (presumably 
+a data-only conversion in that case, with metadata kept as the default 
+multi-device raid1).
 
-I'm not seeing it as any different from a single device volume with data/metadata profile single, with sufficient damage to cause it to not mount rw. If -o recovery can't fix it, I think it's done for.
+2) Single-device, converting metadata-only to single from dup, either for 
+space reasons, or because the physical device is SSD (in which case 
+single-device metadata default is used due to some devices doing hardware/
+firmware dedup with the effect of dup metadata on such a device thus not 
+entirely predictable anyway), possibly an ssd that does deduping in 
+hardware, so dup mode's not particularly useful and is somewhat 
+unpredictable in any case.
 
-So something Johan sent to me but didn't make the list (I've asked him to repost) is that his attempts to mount degraded,recovery,skip_balance, result in a:
-/dev/mapper/bunkerA /mnt
-mount: wrong fs type, bad option, bad superblock 
+IOW, just because it's a conversion to single mode doesn't mean we're 
+dropping a device, and a rebalance to single mode wasn't in fact designed 
+to drop a device (that's what device delete is for), so it doesn't really 
+need a way to specify a device to drop.  If one is missing, a rebalance 
+will obviously rebalance to existing devices, that's obvious, but 
+otherwise, balance isn't the command for that, device delete is.
 
-He gets other errors also, and he has the results of btrfs check that might be more revealing, but to say the least it looks pretty nasty.
+But your question to Johann remains valid, since we don't know for sure 
+that he was doing the "correct" full balance -dconvert -mconvert, and so 
+far I've simply assumed he was.
 
-Another question for Johann is what exact balance command was to go back to single? Was there -dconvert and -mconvert? Both are required to go from raid1/raid to single/DUP or single/single, and actually get rid of the 2nd device. And looking at the man page, I'm not sure how we do that conversion and specify which multiple device we're dropping:
-
-[filesystem] balance start [options] <path>
-
-With a missing device, presumably this is obvious, but…
-
-
-
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

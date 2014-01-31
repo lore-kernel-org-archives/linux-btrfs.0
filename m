@@ -1,29 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f42.google.com ([74.125.83.42]:54411 "EHLO
-	mail-ee0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754015AbaAaTqP (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:57008 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932489AbaAaTxt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jan 2014 14:46:15 -0500
-Received: by mail-ee0-f42.google.com with SMTP id b15so664806eek.15
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 11:46:14 -0800 (PST)
-Received: from [192.168.7.7] (a207.net131.okay.pl. [85.28.131.207])
-        by mx.google.com with ESMTPSA id 8sm40613848eeq.15.2014.01.31.11.46.11
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Fri, 31 Jan 2014 11:46:12 -0800 (PST)
-Message-ID: <52EBFD82.7080900@gmail.com>
-Date: Fri, 31 Jan 2014 20:46:10 +0100
-From: KC <impactoria@googlemail.com>
+	Fri, 31 Jan 2014 14:53:49 -0500
+Date: Fri, 31 Jan 2014 19:53:25 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: KC <impactoria@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Booting with syslinux not possible
+Message-ID: <20140131195325.GC18327@carfax.org.uk>
+References: <52EBFD82.7080900@gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Booting with syslinux not possible
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="Izn7cH1Com+I3R9J"
+In-Reply-To: <52EBFD82.7080900@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I do not know if people her are aware of it, but just in case I thought 
-it is worth mentioning that currently it is not possible to boot with 
-Syslinux bootloader, if the boot partition is on BTRFS.
 
-Perhaps it's worth adding to the wiki.
+--Izn7cH1Com+I3R9J
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Fri, Jan 31, 2014 at 08:46:10PM +0100, KC wrote:
+> I do not know if people her are aware of it, but just in case I
+> thought it is worth mentioning that currently it is not possible to
+> boot with Syslinux bootloader, if the boot partition is on BTRFS.
+> 
+> Perhaps it's worth adding to the wiki.
+
+   Are you certain? I've definitely had it working late last year. You
+can't boot from a multi-device filesystem with it, but a single-device
+FS worked fine for me.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+           --- Great films about cricket:  Batsman Returns ---           
+
+--Izn7cH1Com+I3R9J
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUuv/NVheFHXiqx3kAQJJ7RAApd3zzSidvYBVsxoT3yIe5TsS4yZjLE3F
+SNxYV5KmHrSLRDBjmiRTboTeuI4dLSHEkuVMHvgDu5cVrFM360qvv3tpqBO3lwI5
+3dXKjFUK4dLQpXdTbl6QDJk+afAtC1LOboFB2HsEZmzqZJVoQzrX2HNwNIS3z9XX
+XHC+urhiTFeCrVVaRL65AE/L/2cb+uqkT3d2zq3JK8jqKmzR7sU6/LooZOU2VQgG
+JY1D03BBd2ACeakATeT6GxVj4RKLiCRFzEi/kW9oqTd/bC3FFqFGxMh3jbtDY6b7
+tIpEBqw8AwgryGp9xV9iwLvNxm88U6EZVIq6okp+2jSw6x8a2vLTFjfK4AJRJOkS
+uEX63eYa8c+o6sFqdSDT2jWoQdtfdNaxeQzvSHgra56an0kVXVmmoJJxCCzBATmh
+xto6Z0SAlS2jpH3zgRdKWB7wvY6IAufmkSlHsJiMczyvMEZCgMPmSuq66EVhlkq4
+t8Dz9mjDUXpuvsoPWdH+A53v072T8ct9tbPOsNPmWQOtkMmplz8EG4zVxRO/+eGp
+QsKYk/tc0tHHhZNc+mj+CwswZsfWptG6ku1JYwRThVgH2ZCqPN+MantewGBa1UXz
+VTp37bDRSucsmOff4c+KWRISiFl93gKz4G8U22gMpddjKzDgT91QI+EjiHPkvi9O
+ErM+01ST+Vw=
+=NiQz
+-----END PGP SIGNATURE-----
+
+--Izn7cH1Com+I3R9J--

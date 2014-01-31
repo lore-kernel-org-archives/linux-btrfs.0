@@ -1,61 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:31056 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932269AbaAaOJx (ORCPT
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:59851 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932281AbaAaQmV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jan 2014 09:09:53 -0500
-Message-ID: <52EBAF11.7080603@fb.com>
-Date: Fri, 31 Jan 2014 09:11:29 -0500
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>
-CC: <russell@coker.com.au>, <linux-btrfs@vger.kernel.org>
-Subject: Re: GPF on access to presumably corrupted file
-References: <201401311824.29611.russell@coker.com.au> <52EBAE13.9000405@fb.com>
-In-Reply-To: <52EBAE13.9000405@fb.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+	Fri, 31 Jan 2014 11:42:21 -0500
+Received: by mail-pa0-f42.google.com with SMTP id kl14so4651992pab.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jan 2014 08:42:20 -0800 (PST)
+Received: from linux-b0ol.localdomain ([36.59.228.44])
+        by mx.google.com with ESMTPSA id om6sm29181142pbc.43.2014.01.31.08.42.16
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 31 Jan 2014 08:42:20 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: switch to btrfs_previous_extent_item()
+Date: Sat,  1 Feb 2014 00:42:04 +0800
+Message-Id: <1391186525-2965-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 31 Jan 2014 09:07:15 AM EST, Josef Bacik wrote:
->
-> On 01/31/2014 02:24 AM, Russell Coker wrote:
->> The attached dmesg log shows the results of trying to cat a file on a
->> BTRFS
->> filesystem when running the latest Debian/Unstable kernel (upstream
->> 3.12.8
->> with some Debian patches that probably aren't relevant to BTRFS).
->>
->> I've rebooted the Thinkpad in question and repeated the problem after a
->> reboot.  So I am fairly sure that the problem isn't directly caused
->> by memory
->> corruption.  I presume that it's corruption on disk causing this
->> repeatable
->> problem and such corruption could be caused by a memory error (which is
->> something I've had happen before on a different system).  But I don't
->> think
->> that such corruption should cause a GPF.
->>
->> So while I think we should consider the possibility that the
->> filesystem was
->> corrupted due to a hardware fault (of which there are several
->> possibilities
->> when dealing with a laptop) the inability to recover seems like a bug in
->> BTRFS.
->>
->> When this happens every process that tries to access the file in
->> question is
->> reported as being stuck in D state.  Sometimes such processes respond
->> to kill
->> -9 (I thought that was impossible) and sometimes they remain until
->> reboot.
->>
-> This may be a bug we just fixed in the recent git pull, are you
-> running with compression?  If you are try the recent for-linus branch
-> from Chris and see if you still have the problem.  Thanks,
->
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-It does look like one we fixed, even without compression please give 
-for-linus a shot.
+Since we have introduced btrfs_previous_extent_item() to search previous
+extent item, just switch into it.
 
--chris
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/backref.c | 34 +++-------------------------------
+ 1 file changed, 3 insertions(+), 31 deletions(-)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index aded3ef..4f59f07 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1333,37 +1333,9 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	while (1) {
+-		u32 nritems;
+-		if (path->slots[0] == 0) {
+-			btrfs_set_path_blocking(path);
+-			ret = btrfs_prev_leaf(fs_info->extent_root, path);
+-			if (ret != 0) {
+-				if (ret > 0) {
+-					pr_debug("logical %llu is not within "
+-						 "any extent\n", logical);
+-					ret = -ENOENT;
+-				}
+-				return ret;
+-			}
+-		} else {
+-			path->slots[0]--;
+-		}
+-		nritems = btrfs_header_nritems(path->nodes[0]);
+-		if (nritems == 0) {
+-			pr_debug("logical %llu is not within any extent\n",
+-				 logical);
+-			return -ENOENT;
+-		}
+-		if (path->slots[0] == nritems)
+-			path->slots[0]--;
+-
+-		btrfs_item_key_to_cpu(path->nodes[0], found_key,
+-				      path->slots[0]);
+-		if (found_key->type == BTRFS_EXTENT_ITEM_KEY ||
+-		    found_key->type == BTRFS_METADATA_ITEM_KEY)
+-			break;
+-	}
++	ret = btrfs_previous_extent_item(fs_info->extent_root, path, 0);
++	if (ret)
++		return ret;
+ 
+ 	if (found_key->type == BTRFS_METADATA_ITEM_KEY)
+ 		size = fs_info->extent_root->leafsize;
+-- 
+1.8.4
+

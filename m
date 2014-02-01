@@ -1,86 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:28498 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753462AbaAaXko (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jan 2014 18:40:44 -0500
-Message-ID: <52EC3468.6080702@fb.com>
-Date: Fri, 31 Jan 2014 18:40:24 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from mail-ob0-f172.google.com ([209.85.214.172]:41304 "EHLO
+	mail-ob0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751406AbaBAKFR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Feb 2014 05:05:17 -0500
+Received: by mail-ob0-f172.google.com with SMTP id vb8so6126947obc.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Feb 2014 02:05:17 -0800 (PST)
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs
- send
-References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com>
-In-Reply-To: <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com>
-Content-Type: text/plain; charset="GB2312"
+In-Reply-To: <20140130215634.GB8796@birch.djwong.org>
+References: <1389475651-19179-1-git-send-email-fdmanana@gmail.com>
+	<1389493366-15264-1-git-send-email-fdmanana@gmail.com>
+	<20140130031135.GA8796@birch.djwong.org>
+	<CAL3q7H7fT9Mz6m=a2iqHgSyGgYO28aRt_BFc95gQYOh4gaRA2A@mail.gmail.com>
+	<20140130215634.GB8796@birch.djwong.org>
+Date: Sat, 1 Feb 2014 11:05:16 +0100
+Message-ID: <CAFDW0jJ__9EbidepKD1uF239H3ZDMvZszw_f_Nsem9iuX4Rv-w@mail.gmail.com>
+Subject: Re: [PATCH v2] Btrfs: fix btrfs boot when compiled as built-in
+From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: Filipe David Manana <fdmanana@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There is still a problem when btrfs is built-in:
 
-On 01/31/2014 11:37 AM, Wang Shilong wrote:
-> Hello Josef,
->
->> ÔÚ 2014-1-31£¬ÉÏÎç12:23£¬Josef Bacik <jbacik@fb.com> Ð´µÀ£º
->>
->>> On 01/30/2014 11:20 AM, Wang Shilong wrote:
->>>> Hello Josef,
->>>>
->>>>> On 01/30/2014 04:42 AM, Wang Shilong wrote:
->>>>>> Hi Josef,
->>>>>>
->>>>>>> On 01/29/2014 10:32 AM, Wang Shilong wrote:
->>>>>>>> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->>>>>>>>
->>>>>>>> I sent a patch to kick off transaction from btrfs send, however it gets
->>>>>>>> a regression that btrfs send try to search extent commit root without
->>>>>>>> transaction protection.
->>>>>>>>
->>>>>>>> To fix this regression, we have two ideas:
->>>>>>>>
->>>>>>>> 1. don't use extent commit root for sending.
->>>>>>>>
->>>>>>>> 2. add transaction protection to use extent commit root safely.
->>>>>>>>
->>>>>>>> Both approaches need transaction actually, however, the first approach
->>>>>>>> will add extent tree lock contention, so we'd better adopt the second
->>>>>>>> approach.
->>>>>>>>
->>>>>>>> Luckily, now we only need transaction protection when iterating
->>>>>>>> extent root, the protection's *range* is smaller than before.
->>>>>>> So what is the problem exactly?  How does it show up and what are you doing to make it happen?  I'd really like to kill the transaction taking completely in the send path so I'd like to know what is going wrong so we can either take the extent commit semaphore and be satisfied that is ok or come up with a different solution.  Thanks,
->>>>>> See in find_extent_clone(), we have to walk backrefs  while we have to search extent tree!
->>>>>> i was thinking to kick off transaction for initial  full send, however, we need to consider ref links even
->>>>>> in the initial send.
->>>>>>
->>>>>> It is easy to trigger problems like the following steps:
->>>>>>
->>>>>> # mkfs.btrfs -f /dev/sda8
->>>>>> # mount /dev/sda8 /mnt
->>>>>> # dd if=/dev/zero of=/mnt/data bs=4k count=102400 oflag=direct
->>>>>> # btrfs sub snapshot -r /mnt /mnt/snap
->>>>>> # btrfs send /mnt/snap -f /mnt/send_file &
->>>>>> # btrfs sub snapshot /mnt/snap /mnt/snap_1
->>>>>>
->>>>>> Feel free to correct me if i miss something here^_^(As i sometimes made some mistakes).
->>>>>>
->>>>> Ok so this is a lot of broken things, but it's not really the extent root, cause like I said before nothings going to change that matters for the snapshots bytes.
->>>>>
->>>>> What _does_ matter is the actual commit root for the actual fs root, and that requires quite a bit of manoeuvring to get right.  So I'll send a patch in a few minutes when I'm happy with what I have to fix this.  In the meantime would you rig this example up into an xfstest so we can make sure we don't have this problem in the future? Thanks,
->>>> I am a little confused that we don't need protect extent commit root anyway, it is really safe to search extent commit  root without any transaction protection^_^¡­.
->>>> And i am ok to send a xfstest case for this..
->>>>
->>> Sorry I didn't say that quite right.  We definitely need to protect the commit root for the extent root because we could easily swap it out and then write over blocks as we search down it, which would break things.  But that's not what was screwing up here, we are cow'ing the root for /mnt/snap and swapping out the commit root out from under us which is screwing us up because we end up with a different root level than what we are expecting.
->>>
->>> So we need to use extent_commit_sem anywhere we search the commit root for the extent tree, but we also need to do the same for searching the fs roots.  Thanks,
-> By some debugging, i found snapshots  will cow src root(this is a little strange...), we need do the same thing
-> for searching fs roots. Really thanks for looking into issue, and correct me,  waiting for your fix.^_^ ^_^
->
+err = btrfs_hash_init();
 
-Yeah I've spent all day on this and protecting the commit roots doesn't
-fix it completely, just makes it harder to hit. I'm still trying to
-figure out what is going on, hopefully I'll have a patch early next
-week. Thanks,
+Will not succeed if run on an slow cpu (intel u7300) or in qemu if
+btrfs is built-in:
 
-Josef
+# qemu-kvm -enable-kvm -usbdevice tablet -m 2048 -smp 2 -sdl -kernel
+/usr/src/linux/arch/x86/boot/bzImage
+
+But it works, when btrfs is a module.
+
+I really do not want to go back using modules in my initramfs ..
+
+There must be a way to move init_btrfs_fs to the end of Linux built-in
+initializations ..
+
+Ahmet

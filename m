@@ -1,63 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:51098 "EHLO
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:50887 "EHLO
 	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752476AbaBBW0W (ORCPT
+	by vger.kernel.org with ESMTP id S1752522AbaBBXt5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 2 Feb 2014 17:26:22 -0500
-Date: Mon, 3 Feb 2014 09:25:58 +1100
+	Sun, 2 Feb 2014 18:49:57 -0500
+Date: Mon, 3 Feb 2014 10:49:52 +1100
 From: Dave Chinner <david@fromorbit.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: xfs@oss.sgi.com,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] xfstests: more tests for test case btrfs/030
-Message-ID: <20140202222558.GV2212@dastard>
-References: <1391220332-22118-1-git-send-email-fdmanana@gmail.com>
- <20140202215720.GT2212@dastard>
- <CAL3q7H7wgDvUWUJdZJSswm+hx==GvyeVMd=sh_yNkCVOTyyypw@mail.gmail.com>
+To: xfs@oss.sgi.com
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [ANNOUCE] xfstests: updated to ad969ca
+Message-ID: <20140202234952.GO13997@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7wgDvUWUJdZJSswm+hx==GvyeVMd=sh_yNkCVOTyyypw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 02, 2014 at 10:08:06PM +0000, Filipe David Manana wrote:
-> On Sun, Feb 2, 2014 at 9:57 PM, Dave Chinner <david@fromorbit.com> wrote:
-> > On Sat, Feb 01, 2014 at 02:05:32AM +0000, Filipe David Borba Manana wrote:
-> >> This change adds some new tests for btrfs' incremental send feature.
-> >> These are all related with inverting the parent-child relationship
-> >> of directories, and cover the cases:
-> >>
-> >> * when the new parent didn't get renamed (just moved)
-> >> * when a child file of the former parent gets renamed too
-> >>
-> >> These new cases are fixed by the following btrfs linux kernel patches:
-> >>
-> >> * "Btrfs: more send support for parent/child dir relationship inversion"
-> >> * "Btrfs: fix send dealing with file renames and directory moves"
-> >>
-> >> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> >
-> > Rather than modifying 030 which will cause it to fail on kernels
-> > where it previously passed, can you factor out the common code and
-> > create a new test with the additional coverage?
-> >
-> > i.e. the rule of thumb is that once a test is "done" we don't go
-> > back and modify it in significant ways - we write a new unit test
-> > that covers the new/extended functionality. Redundancy in unit tests
-> > is not a bad thing...
-> 
-> Right. The only reason I did this, instead of a new test file, is that
-> because the former fix which btrfs/030 relates to is not yet in any
-> kernel release. Given this fact, what do you think?
+Hi folks,
 
-Ok, so if it already fails for everyone, then I think we'll be fine
-to modify it like this. "done" is a flexible concept when it comes
-to unit tests ;)
+The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
+just been updated. Patches often get missed, so please check if your
+outstanding patches were in this update. If they have not been in
+this update, please resubmit them to xfs@oss.sgi.com so they can be
+picked up in the next update.
 
-Cheers,
+The new head of the master branch is commit:
 
-Dave.
+ad969ca btrfs/030: add more test cases
+
+New Commits:
+
+Brian Foster (2):
+      [20641b8] xfs: remove spurious line continuation from _require_xfs_crc
+      [710281f] generic/313: initialise TEST_DIR before use
+
+Eric Whitney (1):
+      [138ea5c] ext4/306: avoid failures caused by incompatible mount options
+
+Filipe David Borba Manana (2):
+      [fd7a8e8] btrfs/025: make test more robust
+      [ad969ca] btrfs/030: add more test cases
+
+Josef Bacik (2):
+      [78d86b9] btrfs/029: filter mkfs and cp output
+      [8ebabf7] generic/299: truncate can fail with ENOSPC
+
+Wang Shilong (2):
+      [6717b24] Btrfs: add regression test for transaction abortion when remounting
+      [cd86825] Btrfs: add regression test for iterating backrefs
+
+
+Code Diffstat:
+
+ common/rc           |  2 +-
+ tests/btrfs/025     | 34 ++++++++++-----------
+ tests/btrfs/025.out | 12 --------
+ tests/btrfs/029     |  6 ++--
+ tests/btrfs/029.out |  4 +--
+ tests/btrfs/030     | 86 ++++++++++++++++++++++++++++++++++++++++-------------
+ tests/btrfs/032     | 57 +++++++++++++++++++++++++++++++++++
+ tests/btrfs/032.out |  3 ++
+ tests/btrfs/033     | 71 +++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/033.out |  2 ++
+ tests/btrfs/group   |  2 ++
+ tests/ext4/306      | 21 +++++--------
+ tests/generic/299   |  2 +-
+ tests/generic/313   |  3 +-
+ 14 files changed, 233 insertions(+), 72 deletions(-)
+ create mode 100755 tests/btrfs/032
+ create mode 100644 tests/btrfs/032.out
+ create mode 100755 tests/btrfs/033
+ create mode 100644 tests/btrfs/033.out
 -- 
 Dave Chinner
 david@fromorbit.com

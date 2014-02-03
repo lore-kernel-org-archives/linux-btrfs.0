@@ -1,111 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:12150 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753813AbaBCVbg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Feb 2014 16:31:36 -0500
-Message-ID: <52F00AAE.6070509@fb.com>
-Date: Mon, 3 Feb 2014 16:31:26 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from mail-qa0-f51.google.com ([209.85.216.51]:57688 "EHLO
+	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753826AbaBCVbq convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Feb 2014 16:31:46 -0500
+Received: by mail-qa0-f51.google.com with SMTP id f11so10907818qae.24
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Feb 2014 13:31:45 -0800 (PST)
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs
- send
-References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com>
-In-Reply-To: <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com>
-Content-Type: text/plain; charset="GB2312"
+In-Reply-To: <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com>
+References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
+ <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com> <20140130175831.GU3314@carfax.org.uk>
+ <C3B0EA86-0CBA-4500-81A8-7F3A99306E76@colorremedies.com> <CABgvyo8ZG=pk=i-7iXzoOWqZj_fVvUd6xiaXef1KWR8QLibhXg@mail.gmail.com>
+ <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com>
+From: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
+Date: Mon, 3 Feb 2014 22:31:05 +0100
+Message-ID: <CABgvyo-cZ1bw7Gyd5sUYK11mMUp3N2w6v=SNEdXBRYqbNSNNFQ@mail.gmail.com>
+Subject: Re: lost with degraded RAID1
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+State is: I wont use this filesystem again. I have a backup. So I am
+interested to give the necessary information for debuging it and
+afterwards format it and create a new one. I already did fscks and
+btrfschk --repair and pushed the output to txt-files but they are more
+than 4 mb in size.
 
-On 01/31/2014 11:37 AM, Wang Shilong wrote:
-> Hello Josef,
+So I will post excerpts:
+
+============file: btrfsck.out===========================
+Checking filesystem on /dev/mapper/bunkerA
+UUID: 7f954a85-7566-4251-832c-44f2d3de2211
+42
+parent transid verify failed on 1887688011776 wanted 121037 found 88533
+parent transid verify failed on 1888518615040 wanted 121481 found 90267
+parent transid verify failed on 1681394102272 wanted 110919 found 91024
+parent transid verify failed on 1888522838016 wanted 121486 found 90270
+parent transid verify failed on 1888398331904 wanted 121062 found 89987
+leaf parent key incorrect 1887867330560
+bad block 1887867330560
+leaf parent key incorrect 1888120320000
+bad block 1888120320000
+leaf parent key incorrect 1888124637184
+bad block 1888124637184
+leaf parent key incorrect 1888131444736
+bad block 1888131444736
+
+[...and so on for 4MB]
+
+bad block 1888513552384
+leaf parent key incorrect 1888513642496
+bad block 1888513642496
+leaf parent key incorrect 1888513654784
+bad block 1888513654784
+leaf parent key incorrect 1888514023424
+bad block 1888514023424
+btrfsck: cmds-check.c:2212: check_owner_ref: Assertion `!(rec->is_root)' failed.
+
+================file: smartctl-before-btrfschk-repair==============
+smartctl 5.41 2011-06-09 r3365 [x86_64-linux-3.12-0.bpo.1-amd64] (local build)
+Copyright (C) 2002-11 by Bruce Allen, http://smartmontools.sourceforge.net
+
+=== START OF READ SMART DATA SECTION ===
+SMART Attributes Data Structure revision number: 10
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
+UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x000f   118   099   006    Pre-fail
+Always       -       172055696
+  3 Spin_Up_Time            0x0003   093   093   000    Pre-fail
+Always       -       0
+  4 Start_Stop_Count        0x0032   100   100   020    Old_age
+Always       -       7
+  5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail
+Always       -       0
+  7 Seek_Error_Rate         0x000f   069   060   030    Pre-fail
+Always       -       9085642
+  9 Power_On_Hours          0x0032   097   097   000    Old_age
+Always       -       2769
+ 10 Spin_Retry_Count        0x0013   100   100   097    Pre-fail
+Always       -       0
+ 12 Power_Cycle_Count       0x0032   100   100   020    Old_age
+Always       -       7
+184 End-to-End_Error        0x0032   100   100   099    Old_age
+Always       -       0
+187 Reported_Uncorrect      0x0032   100   100   000    Old_age
+Always       -       0
+188 Command_Timeout         0x0032   100   100   000    Old_age
+Always       -       0
+189 High_Fly_Writes         0x003a   083   083   000    Old_age
+Always       -       17
+190 Airflow_Temperature_Cel 0x0022   077   071   045    Old_age
+Always       -       23 (Min/Max 22/23)
+191 G-Sense_Error_Rate      0x0032   100   100   000    Old_age
+Always       -       0
+192 Power-Off_Retract_Count 0x0032   100   100   000    Old_age
+Always       -       5
+193 Load_Cycle_Count        0x0032   100   100   000    Old_age
+Always       -       7
+194 Temperature_Celsius     0x0022   023   040   000    Old_age
+Always       -       23 (0 20 0 0)
+197 Current_Pending_Sector  0x0012   100   100   000    Old_age
+Always       -       0
+198 Offline_Uncorrectable   0x0010   100   100   000    Old_age
+Offline      -       0
+199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age
+Always       -       0
+
+=================file:btrfsck-repair.out========================
+enabling repair mode
+Checking filesystem on /dev/mapper/bunkerA
+UUID: 7f954a85-7566-4251-832c-44f2d3de2211
+ify failed on 1887688011776 wanted 121037 found 88533
+parent transid verify failed on 1888518615040 wanted 121481 found 90267
+parent transid verify failed on 1681394102272 wanted 110919 found 91024
+parent transid verify failed on 1888522838016 wanted 121486 found 90270
+parent transid verify failed on 1888398331904 wanted 121062 found 89987
+leaf parent key incorrect 1887867330560
+bad block 1887867330560
+
+[...and so on for 4MB]
+
+bad block 1888513642496
+leaf parent key incorrect 1888513654784
+bad block 1888513654784
+leaf parent key incorrect 1888514023424
+bad block 1888514023424
+btrfsck: cmds-check.c:2212: check_owner_ref: Assertion `!(rec->is_root)' failed.
+
+==============file:smartctl-after-btrfschk-repair==================
+smartctl 5.41 2011-06-09 r3365 [x86_64-linux-3.12-0.bpo.1-amd64] (local build)
+Copyright (C) 2002-11 by Bruce Allen, http://smartmontools.sourceforge.net
+
+=== START OF READ SMART DATA SECTION ===
+SMART Attributes Data Structure revision number: 10
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
+UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x000f   118   099   006    Pre-fail
+Always       -       178377016
+  3 Spin_Up_Time            0x0003   093   093   000    Pre-fail
+Always       -       0
+  4 Start_Stop_Count        0x0032   100   100   020    Old_age
+Always       -       7
+  5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail
+Always       -       0
+  7 Seek_Error_Rate         0x000f   069   060   030    Pre-fail
+Always       -       9087571
+  9 Power_On_Hours          0x0032   097   097   000    Old_age
+Always       -       2769
+ 10 Spin_Retry_Count        0x0013   100   100   097    Pre-fail
+Always       -       0
+ 12 Power_Cycle_Count       0x0032   100   100   020    Old_age
+Always       -       7
+184 End-to-End_Error        0x0032   100   100   099    Old_age
+Always       -       0
+187 Reported_Uncorrect      0x0032   100   100   000    Old_age
+Always       -       0
+188 Command_Timeout         0x0032   100   100   000    Old_age
+Always       -       0
+189 High_Fly_Writes         0x003a   083   083   000    Old_age
+Always       -       17
+190 Airflow_Temperature_Cel 0x0022   077   071   045    Old_age
+Always       -       23 (Min/Max 22/23)
+191 G-Sense_Error_Rate      0x0032   100   100   000    Old_age
+Always       -       0
+192 Power-Off_Retract_Count 0x0032   100   100   000    Old_age
+Always       -       5
+193 Load_Cycle_Count        0x0032   100   100   000    Old_age
+Always       -       7
+194 Temperature_Celsius     0x0022   023   040   000    Old_age
+Always       -       23 (0 20 0 0)
+197 Current_Pending_Sector  0x0012   100   100   000    Old_age
+Always       -       0
+198 Offline_Uncorrectable   0x0010   100   100   000    Old_age
+Offline      -       0
+199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age
+Always       -       0
+
+2014-02-03 Chris Murphy <lists@colorremedies.com>:
 >
->> ÔÚ 2014-1-31£¬ÉÏÎç12:23£¬Josef Bacik <jbacik@fb.com> Ð´µÀ£º
->>
->>> On 01/30/2014 11:20 AM, Wang Shilong wrote:
->>>> Hello Josef,
->>>>
->>>>> On 01/30/2014 04:42 AM, Wang Shilong wrote:
->>>>>> Hi Josef,
->>>>>>
->>>>>>> On 01/29/2014 10:32 AM, Wang Shilong wrote:
->>>>>>>> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->>>>>>>>
->>>>>>>> I sent a patch to kick off transaction from btrfs send, however it gets
->>>>>>>> a regression that btrfs send try to search extent commit root without
->>>>>>>> transaction protection.
->>>>>>>>
->>>>>>>> To fix this regression, we have two ideas:
->>>>>>>>
->>>>>>>> 1. don't use extent commit root for sending.
->>>>>>>>
->>>>>>>> 2. add transaction protection to use extent commit root safely.
->>>>>>>>
->>>>>>>> Both approaches need transaction actually, however, the first approach
->>>>>>>> will add extent tree lock contention, so we'd better adopt the second
->>>>>>>> approach.
->>>>>>>>
->>>>>>>> Luckily, now we only need transaction protection when iterating
->>>>>>>> extent root, the protection's *range* is smaller than before.
->>>>>>> So what is the problem exactly?  How does it show up and what are you doing to make it happen?  I'd really like to kill the transaction taking completely in the send path so I'd like to know what is going wrong so we can either take the extent commit semaphore and be satisfied that is ok or come up with a different solution.  Thanks,
->>>>>> See in find_extent_clone(), we have to walk backrefs  while we have to search extent tree!
->>>>>> i was thinking to kick off transaction for initial  full send, however, we need to consider ref links even
->>>>>> in the initial send.
->>>>>>
->>>>>> It is easy to trigger problems like the following steps:
->>>>>>
->>>>>> # mkfs.btrfs -f /dev/sda8
->>>>>> # mount /dev/sda8 /mnt
->>>>>> # dd if=/dev/zero of=/mnt/data bs=4k count=102400 oflag=direct
->>>>>> # btrfs sub snapshot -r /mnt /mnt/snap
->>>>>> # btrfs send /mnt/snap -f /mnt/send_file &
->>>>>> # btrfs sub snapshot /mnt/snap /mnt/snap_1
->>>>>>
->>>>>> Feel free to correct me if i miss something here^_^(As i sometimes made some mistakes).
->>>>>>
->>>>> Ok so this is a lot of broken things, but it's not really the extent root, cause like I said before nothings going to change that matters for the snapshots bytes.
->>>>>
->>>>> What _does_ matter is the actual commit root for the actual fs root, and that requires quite a bit of manoeuvring to get right.  So I'll send a patch in a few minutes when I'm happy with what I have to fix this.  In the meantime would you rig this example up into an xfstest so we can make sure we don't have this problem in the future? Thanks,
->>>> I am a little confused that we don't need protect extent commit root anyway, it is really safe to search extent commit  root without any transaction protection^_^¡­.
->>>> And i am ok to send a xfstest case for this..
->>>>
->>> Sorry I didn't say that quite right.  We definitely need to protect the commit root for the extent root because we could easily swap it out and then write over blocks as we search down it, which would break things.  But that's not what was screwing up here, we are cow'ing the root for /mnt/snap and swapping out the commit root out from under us which is screwing us up because we end up with a different root level than what we are expecting.
+> On Feb 3, 2014, at 1:55 PM, Johan KrÃ¶ckel <johan.kroeckel@gmail.com> wrote:
+>
+>> 2014-01-30 Chris Murphy <lists@colorremedies.com>:
 >>>
->>> So we need to use extent_commit_sem anywhere we search the commit root for the extent tree, but we also need to do the same for searching the fs roots.  Thanks,
-> By some debugging, i found snapshots  will cow src root(this is a little strange...), we need do the same thing
-> for searching fs roots. Really thanks for looking into issue, and correct me,  waiting for your fix.^_^ ^_^
+>>> On Jan 30, 2014, at 10:58 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>>>
+>>>> On Thu, Jan 30, 2014 at 10:33:21AM -0700, Chris Murphy wrote:
+>>>>> You're doing an online conversion of a degraded raid1 volume into single? Does anyone know if this is expected or intended to work?
+>>>>
+>>>>  I don't see why not. One suggested method of recovering RAID from a
+>>>> degraded situation is to rebalance over just the remaining devices
+>>>> (space permitting, of course).
+>>>
+>>> Right but that's not a conversion. That's a regular balance on a degraded mount, with multiple remaining devices: e.g. a 4 disk raid1, drive fails, mount -o degraded, delete missing, then balance will replicate any missing 2nd copies onto three drives.
+>>>
+>>> The bigger problem at the moment is that -o degraded isn't working for Johan. The too many missing devices message seems like a bug and with limited information it may even be whatever that bug is, that cause the conversion to fail. Some 11GB were converted prior to the failure.
+>> Which usefull information can provide. On the weekend I was at the
+>> server and found out, that the vanishing of the drive at reboot was
+>> strange behavior of the bios. So the drive is online again. but the
+>> filesystem is still showing strange behavior, but now I can mount it
+>> rw.
 >
-So I've figured it out. We definitely need to protect the commit roots,
-but that's not what is screwing us. Say we have commit root for snap at
-block 1 and we search down the extent tree and see that it is at 1. Then
-we go to do the search down to level on the root for that block, but in
-the meantime we've snapshotted and switched the commit root for that
-fs_tree to block 2. We go to search down and don't find our bytenr we
-were looking for and we exit out without finding our original subvolume.
-
-So there are a few things we can do here
-
-1) Only switch the commit roots for the fs_root _after_ we switch the
-extent root commit root. This works out well because we'd need to hold
-the extent_commit_sem for the entirety of this operation so we'd end up
-with a consistent view of everything. The drawback of this is that we
-have to process the fs_roots twice, once to update the root items and
-then again to swap the commit roots.
-
-2) Remove the per-root rwsem for the commit root and just make one big
-rwsem that covers all commit root switching. This way everybody who
-wants to search with the commit root can just use this semaphore and all
-be safe. It will mean that the inode cache stuff may block longer than
-normal but I don't think that's too big of a deal.
-
-3) Go back to using btrfs_join_transaction(). This is probably the least
-likely to bite somebody in the ass, but it's taking a transaction in the
-place where we really just want read-only protection without some
-asshole taking a snapshot and screwing us.
-
-I'm inclined to go with (and am coding up) #2. Yell if you have any
-better suggestions or hate my suggestion. Thanks,
-
-Josef
+> I'd like to see btrfs fi df results for the volume. And new btrfs check. And then a backup if needed, and then a scrub to see if that fixes anything broken between them. I'm not sure what happens if a new generation object is broken and the old generation is OK, what scrub will do? Maybe it just reports it, I'm not sure. If you want you could do a btrfs scrub -r which is read only and just reports what the problems are.
+>
+> You also have an incomplete balance, right? So it's possible some things might not be fixable if the conversion to single was successful. You'll need to decide if you want to reconvert back to data/metadata raid1/raid from whatever you're at now.
+>
+>
+> Chris Murphy

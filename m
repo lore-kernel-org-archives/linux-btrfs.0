@@ -1,116 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37422 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37434 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753466AbaBCSXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Feb 2014 13:23:21 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id E265CAAD1
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 18:23:20 +0000 (UTC)
+	id S1753637AbaBCSXh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Feb 2014 13:23:37 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 24920AAD1
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 18:23:37 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 1/6] btrfs: send: remove prepared member from fs_path
-Date: Mon,  3 Feb 2014 19:23:19 +0100
-Message-Id: <5ce2bdc21c1b17d2c44e75972637bde349cef870.1391447200.git.dsterba@suse.cz>
+Subject: [PATCH 2/6] btrfs: send: remove virtual_mem member from fs_path
+Date: Mon,  3 Feb 2014 19:23:33 +0100
+Message-Id: <69346f7e70562dc836fd2ebf6241d0b2f46c65b5.1391447200.git.dsterba@suse.cz>
 In-Reply-To: <cover.1391447200.git.dsterba@suse.cz>
 References: <cover.1391447200.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The member is used only to return value back from
-fs_path_prepare_for_add, we can do it locally and save 8 bytes for the
-inline_buf path.
+We don't need to keep track of that, it's available via is_vmalloc_addr.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/send.c |   26 +++++++++++++-------------
- 1 files changed, 13 insertions(+), 13 deletions(-)
+ fs/btrfs/send.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 04c07ed51df5..524086a882f9 100644
+index 524086a882f9..ea427624e842 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -51,7 +51,6 @@ struct fs_path {
- 		struct {
- 			char *start;
- 			char *end;
--			char *prepared;
- 
+@@ -55,7 +55,6 @@ struct fs_path {
  			char *buf;
  			int buf_len;
-@@ -338,7 +337,8 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
- 	return 0;
- }
- 
--static int fs_path_prepare_for_add(struct fs_path *p, int name_len)
-+static int fs_path_prepare_for_add(struct fs_path *p, int name_len,
-+				   char **prepared)
- {
- 	int ret;
- 	int new_len;
-@@ -354,11 +354,11 @@ static int fs_path_prepare_for_add(struct fs_path *p, int name_len)
- 		if (p->start != p->end)
- 			*--p->start = '/';
- 		p->start -= name_len;
--		p->prepared = p->start;
-+		*prepared = p->start;
+ 			unsigned int reversed:1;
+-			unsigned int virtual_mem:1;
+ 			char inline_buf[];
+ 		};
+ 		char pad[PAGE_SIZE];
+@@ -241,7 +240,6 @@ static struct fs_path *fs_path_alloc(void)
+ 	if (!p)
+ 		return NULL;
+ 	p->reversed = 0;
+-	p->virtual_mem = 0;
+ 	p->buf = p->inline_buf;
+ 	p->buf_len = FS_PATH_INLINE_SIZE;
+ 	fs_path_reset(p);
+@@ -265,7 +263,7 @@ static void fs_path_free(struct fs_path *p)
+ 	if (!p)
+ 		return;
+ 	if (p->buf != p->inline_buf) {
+-		if (p->virtual_mem)
++		if (is_vmalloc_addr(p->buf))
+ 			vfree(p->buf);
+ 		else
+ 			kfree(p->buf);
+@@ -299,13 +297,12 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+ 			tmp_buf = vmalloc(len);
+ 			if (!tmp_buf)
+ 				return -ENOMEM;
+-			p->virtual_mem = 1;
+ 		}
+ 		memcpy(tmp_buf, p->buf, p->buf_len);
+ 		p->buf = tmp_buf;
+ 		p->buf_len = len;
  	} else {
- 		if (p->start != p->end)
- 			*p->end++ = '/';
--		p->prepared = p->end;
-+		*prepared = p->end;
- 		p->end += name_len;
- 		*p->end = 0;
- 	}
-@@ -370,12 +370,12 @@ out:
- static int fs_path_add(struct fs_path *p, const char *name, int name_len)
- {
- 	int ret;
-+	char *prepared;
- 
--	ret = fs_path_prepare_for_add(p, name_len);
-+	ret = fs_path_prepare_for_add(p, name_len, &prepared);
- 	if (ret < 0)
- 		goto out;
--	memcpy(p->prepared, name, name_len);
--	p->prepared = NULL;
-+	memcpy(prepared, name, name_len);
- 
- out:
- 	return ret;
-@@ -384,12 +384,12 @@ out:
- static int fs_path_add_path(struct fs_path *p, struct fs_path *p2)
- {
- 	int ret;
-+	char *prepared;
- 
--	ret = fs_path_prepare_for_add(p, p2->end - p2->start);
-+	ret = fs_path_prepare_for_add(p, p2->end - p2->start, &prepared);
- 	if (ret < 0)
- 		goto out;
--	memcpy(p->prepared, p2->start, p2->end - p2->start);
--	p->prepared = NULL;
-+	memcpy(prepared, p2->start, p2->end - p2->start);
- 
- out:
- 	return ret;
-@@ -400,13 +400,13 @@ static int fs_path_add_from_extent_buffer(struct fs_path *p,
- 					  unsigned long off, int len)
- {
- 	int ret;
-+	char *prepared;
- 
--	ret = fs_path_prepare_for_add(p, len);
-+	ret = fs_path_prepare_for_add(p, len, &prepared);
- 	if (ret < 0)
- 		goto out;
- 
--	read_extent_buffer(eb, p->prepared, off, len);
--	p->prepared = NULL;
-+	read_extent_buffer(eb, prepared, off, len);
- 
- out:
- 	return ret;
+-		if (p->virtual_mem) {
++		if (is_vmalloc_addr(p->buf)) {
+ 			tmp_buf = vmalloc(len);
+ 			if (!tmp_buf)
+ 				return -ENOMEM;
+@@ -319,7 +316,6 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+ 					return -ENOMEM;
+ 				memcpy(tmp_buf, p->buf, p->buf_len);
+ 				kfree(p->buf);
+-				p->virtual_mem = 1;
+ 			}
+ 		}
+ 		p->buf = tmp_buf;
 -- 
 1.7.9
 

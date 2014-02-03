@@ -1,211 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f51.google.com ([209.85.216.51]:57688 "EHLO
-	mail-qa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753826AbaBCVbq convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Feb 2014 16:31:46 -0500
-Received: by mail-qa0-f51.google.com with SMTP id f11so10907818qae.24
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Feb 2014 13:31:45 -0800 (PST)
+Received: from wecheer.com ([54.200.0.65]:57915 "EHLO wecheer.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751864AbaBCWx2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Feb 2014 17:53:28 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by wecheer.com (Postfix) with ESMTP id 6674B45B90
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 22:53:35 +0000 (UTC)
+Received: from wecheer.com ([127.0.0.1])
+	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id lXna732zQafA for <linux-btrfs@vger.kernel.org>;
+	Mon,  3 Feb 2014 22:53:32 +0000 (UTC)
+Received: from [10.10.22.177] (unknown [207.194.255.202])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: m)
+	by wecheer.com (Postfix) with ESMTPSA id 6E39C45B8D
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 22:53:32 +0000 (UTC)
+Message-ID: <52F01DE1.7030102@matthewlai.ca>
+Date: Mon, 03 Feb 2014 14:53:21 -0800
+From: Matthew Lai <m@matthewlai.ca>
 MIME-Version: 1.0
-In-Reply-To: <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
- <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com> <20140130175831.GU3314@carfax.org.uk>
- <C3B0EA86-0CBA-4500-81A8-7F3A99306E76@colorremedies.com> <CABgvyo8ZG=pk=i-7iXzoOWqZj_fVvUd6xiaXef1KWR8QLibhXg@mail.gmail.com>
- <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com>
-From: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
-Date: Mon, 3 Feb 2014 22:31:05 +0100
-Message-ID: <CABgvyo-cZ1bw7Gyd5sUYK11mMUp3N2w6v=SNEdXBRYqbNSNNFQ@mail.gmail.com>
-Subject: Re: lost with degraded RAID1
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Receive on same subvolume
+References: <52E9721D.6000908@matthewlai.ca> <4D0416BE-42D6-4458-9519-9836CC979005@colorremedies.com> <52EFDDA6.2060907@matthewlai.ca> <8BD36B4A-F9AF-40C6-81B8-85FD14CD5EA1@colorremedies.com>
+In-Reply-To: <8BD36B4A-F9AF-40C6-81B8-85FD14CD5EA1@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-State is: I wont use this filesystem again. I have a backup. So I am
-interested to give the necessary information for debuging it and
-afterwards format it and create a new one. I already did fscks and
-btrfschk --repair and pushed the output to txt-files but they are more
-than 4 mb in size.
-
-So I will post excerpts:
-
-============file: btrfsck.out===========================
-Checking filesystem on /dev/mapper/bunkerA
-UUID: 7f954a85-7566-4251-832c-44f2d3de2211
-42
-parent transid verify failed on 1887688011776 wanted 121037 found 88533
-parent transid verify failed on 1888518615040 wanted 121481 found 90267
-parent transid verify failed on 1681394102272 wanted 110919 found 91024
-parent transid verify failed on 1888522838016 wanted 121486 found 90270
-parent transid verify failed on 1888398331904 wanted 121062 found 89987
-leaf parent key incorrect 1887867330560
-bad block 1887867330560
-leaf parent key incorrect 1888120320000
-bad block 1888120320000
-leaf parent key incorrect 1888124637184
-bad block 1888124637184
-leaf parent key incorrect 1888131444736
-bad block 1888131444736
-
-[...and so on for 4MB]
-
-bad block 1888513552384
-leaf parent key incorrect 1888513642496
-bad block 1888513642496
-leaf parent key incorrect 1888513654784
-bad block 1888513654784
-leaf parent key incorrect 1888514023424
-bad block 1888514023424
-btrfsck: cmds-check.c:2212: check_owner_ref: Assertion `!(rec->is_root)' failed.
-
-================file: smartctl-before-btrfschk-repair==============
-smartctl 5.41 2011-06-09 r3365 [x86_64-linux-3.12-0.bpo.1-amd64] (local build)
-Copyright (C) 2002-11 by Bruce Allen, http://smartmontools.sourceforge.net
-
-=== START OF READ SMART DATA SECTION ===
-SMART Attributes Data Structure revision number: 10
-Vendor Specific SMART Attributes with Thresholds:
-ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
-UPDATED  WHEN_FAILED RAW_VALUE
-  1 Raw_Read_Error_Rate     0x000f   118   099   006    Pre-fail
-Always       -       172055696
-  3 Spin_Up_Time            0x0003   093   093   000    Pre-fail
-Always       -       0
-  4 Start_Stop_Count        0x0032   100   100   020    Old_age
-Always       -       7
-  5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail
-Always       -       0
-  7 Seek_Error_Rate         0x000f   069   060   030    Pre-fail
-Always       -       9085642
-  9 Power_On_Hours          0x0032   097   097   000    Old_age
-Always       -       2769
- 10 Spin_Retry_Count        0x0013   100   100   097    Pre-fail
-Always       -       0
- 12 Power_Cycle_Count       0x0032   100   100   020    Old_age
-Always       -       7
-184 End-to-End_Error        0x0032   100   100   099    Old_age
-Always       -       0
-187 Reported_Uncorrect      0x0032   100   100   000    Old_age
-Always       -       0
-188 Command_Timeout         0x0032   100   100   000    Old_age
-Always       -       0
-189 High_Fly_Writes         0x003a   083   083   000    Old_age
-Always       -       17
-190 Airflow_Temperature_Cel 0x0022   077   071   045    Old_age
-Always       -       23 (Min/Max 22/23)
-191 G-Sense_Error_Rate      0x0032   100   100   000    Old_age
-Always       -       0
-192 Power-Off_Retract_Count 0x0032   100   100   000    Old_age
-Always       -       5
-193 Load_Cycle_Count        0x0032   100   100   000    Old_age
-Always       -       7
-194 Temperature_Celsius     0x0022   023   040   000    Old_age
-Always       -       23 (0 20 0 0)
-197 Current_Pending_Sector  0x0012   100   100   000    Old_age
-Always       -       0
-198 Offline_Uncorrectable   0x0010   100   100   000    Old_age
-Offline      -       0
-199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age
-Always       -       0
-
-=================file:btrfsck-repair.out========================
-enabling repair mode
-Checking filesystem on /dev/mapper/bunkerA
-UUID: 7f954a85-7566-4251-832c-44f2d3de2211
-ify failed on 1887688011776 wanted 121037 found 88533
-parent transid verify failed on 1888518615040 wanted 121481 found 90267
-parent transid verify failed on 1681394102272 wanted 110919 found 91024
-parent transid verify failed on 1888522838016 wanted 121486 found 90270
-parent transid verify failed on 1888398331904 wanted 121062 found 89987
-leaf parent key incorrect 1887867330560
-bad block 1887867330560
-
-[...and so on for 4MB]
-
-bad block 1888513642496
-leaf parent key incorrect 1888513654784
-bad block 1888513654784
-leaf parent key incorrect 1888514023424
-bad block 1888514023424
-btrfsck: cmds-check.c:2212: check_owner_ref: Assertion `!(rec->is_root)' failed.
-
-==============file:smartctl-after-btrfschk-repair==================
-smartctl 5.41 2011-06-09 r3365 [x86_64-linux-3.12-0.bpo.1-amd64] (local build)
-Copyright (C) 2002-11 by Bruce Allen, http://smartmontools.sourceforge.net
-
-=== START OF READ SMART DATA SECTION ===
-SMART Attributes Data Structure revision number: 10
-Vendor Specific SMART Attributes with Thresholds:
-ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
-UPDATED  WHEN_FAILED RAW_VALUE
-  1 Raw_Read_Error_Rate     0x000f   118   099   006    Pre-fail
-Always       -       178377016
-  3 Spin_Up_Time            0x0003   093   093   000    Pre-fail
-Always       -       0
-  4 Start_Stop_Count        0x0032   100   100   020    Old_age
-Always       -       7
-  5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail
-Always       -       0
-  7 Seek_Error_Rate         0x000f   069   060   030    Pre-fail
-Always       -       9087571
-  9 Power_On_Hours          0x0032   097   097   000    Old_age
-Always       -       2769
- 10 Spin_Retry_Count        0x0013   100   100   097    Pre-fail
-Always       -       0
- 12 Power_Cycle_Count       0x0032   100   100   020    Old_age
-Always       -       7
-184 End-to-End_Error        0x0032   100   100   099    Old_age
-Always       -       0
-187 Reported_Uncorrect      0x0032   100   100   000    Old_age
-Always       -       0
-188 Command_Timeout         0x0032   100   100   000    Old_age
-Always       -       0
-189 High_Fly_Writes         0x003a   083   083   000    Old_age
-Always       -       17
-190 Airflow_Temperature_Cel 0x0022   077   071   045    Old_age
-Always       -       23 (Min/Max 22/23)
-191 G-Sense_Error_Rate      0x0032   100   100   000    Old_age
-Always       -       0
-192 Power-Off_Retract_Count 0x0032   100   100   000    Old_age
-Always       -       5
-193 Load_Cycle_Count        0x0032   100   100   000    Old_age
-Always       -       7
-194 Temperature_Celsius     0x0022   023   040   000    Old_age
-Always       -       23 (0 20 0 0)
-197 Current_Pending_Sector  0x0012   100   100   000    Old_age
-Always       -       0
-198 Offline_Uncorrectable   0x0010   100   100   000    Old_age
-Offline      -       0
-199 UDMA_CRC_Error_Count    0x003e   200   200   000    Old_age
-Always       -       0
-
-2014-02-03 Chris Murphy <lists@colorremedies.com>:
+On 03/02/2014 11:26 AM, Chris Murphy wrote:
+> On Feb 3, 2014, at 11:19 AM, Matthew Lai <m@matthewlai.ca> wrote:
 >
-> On Feb 3, 2014, at 1:55 PM, Johan Kröckel <johan.kroeckel@gmail.com> wrote:
+>> Thanks. I should clarify what I'm trying to do.
+>>
+>> I'm trying to use btrfs send for backup, without having another btrfs volume.
+>>
+>> So the initial backup is a complete send, piped to Amazon Glacier (so my machine never has the whole file, and doesn't have space for one).
+> OK so you've use btrfs send piped to Glacier which creates a *file*, I'll call it "initial", not a navigable directory of files? Right?
+That is correct.
+>> It looks like the problem now is the sent file can't be applied to the original volume (for restore).
+> I'm counting two sent files: initial, increment1. I'm not sure which one you're applying. If you have the exact same read-only snapshot that the btrfs send file "initial" is based on, then you'd apply the increment1 to that read-only snapshot which will cause a new read-only snapshot to be created with the incremental data applied to it. The error you're getting sounds like the parent read-only snapshot isn't available?
 >
->> 2014-01-30 Chris Murphy <lists@colorremedies.com>:
->>>
->>> On Jan 30, 2014, at 10:58 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>>
->>>> On Thu, Jan 30, 2014 at 10:33:21AM -0700, Chris Murphy wrote:
->>>>> You're doing an online conversion of a degraded raid1 volume into single? Does anyone know if this is expected or intended to work?
->>>>
->>>>  I don't see why not. One suggested method of recovering RAID from a
->>>> degraded situation is to rebalance over just the remaining devices
->>>> (space permitting, of course).
->>>
->>> Right but that's not a conversion. That's a regular balance on a degraded mount, with multiple remaining devices: e.g. a 4 disk raid1, drive fails, mount -o degraded, delete missing, then balance will replicate any missing 2nd copies onto three drives.
->>>
->>> The bigger problem at the moment is that -o degraded isn't working for Johan. The too many missing devices message seems like a bug and with limited information it may even be whatever that bug is, that cause the conversion to fail. Some 11GB were converted prior to the failure.
->> Which usefull information can provide. On the weekend I was at the
->> server and found out, that the vanishing of the drive at reboot was
->> strange behavior of the bios. So the drive is online again. but the
->> filesystem is still showing strange behavior, but now I can mount it
->> rw.
->
-> I'd like to see btrfs fi df results for the volume. And new btrfs check. And then a backup if needed, and then a scrub to see if that fixes anything broken between them. I'm not sure what happens if a new generation object is broken and the old generation is OK, what scrub will do? Maybe it just reports it, I'm not sure. If you want you could do a btrfs scrub -r which is read only and just reports what the problems are.
->
-> You also have an incomplete balance, right? So it's possible some things might not be fixable if the conversion to single was successful. You'll need to decide if you want to reconvert back to data/metadata raid1/raid from whatever you're at now.
->
->
-> Chris Murphy
+That is also correct. There are 2 sent files. I am trying to apply 
+increment1, on a snapshot of the parent (that was used to create 
+increment1).
+
+I added -vv. Here is the test script for reproducing this entire setup.
+
+-----------------------------------------------------------------------
+#!/bin/sh
+
+btrfs subvolume create data
+btrfs subvolume snapshot -r data first_backup
+touch data/a
+btrfs subvolume snapshot -r data second_backup
+btrfs send -p first_backup second_backup > increment
+btrfs subvolume snapshot first_backup first_backup_rw
+btrfs receive -vv first_backup_rw < increment
+-----------------------------------------------------------------------
+
+Output:
+-----------------------------------------------------------------------
+Create subvolume './data'
+Create a readonly snapshot of 'data' in './first_backup'
+Create a readonly snapshot of 'data' in './second_backup'
+At subvol second_backup
+Create a snapshot of 'first_backup' in './first_backup_rw'
+At snapshot second_backup
+receiving snapshot second_backup 
+uuid=e6159a2a-3430-344a-a23d-b9bb83851a63, ctransid=28 
+parent_uuid=20c4ff66-a9ec-fc44-93c6-2c12637e95e6, parent_ctransid=26
+ERROR: could not find parent subvolume
+-----------------------------------------------------------------------
+
+I would think applying the "patch" to first_backup_rw should succeed, 
+because it's exactly the same as first_backup, which is the parent for 
+the send, but it doesn't.
+
+Thanks
+Matthew

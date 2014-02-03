@@ -1,83 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from wecheer.com ([54.200.0.65]:57575 "EHLO wecheer.com"
+Received: from datenkhaos.de ([81.89.99.198]:41790 "EHLO datenkhaos.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753150AbaBCS1L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Feb 2014 13:27:11 -0500
-Received: from localhost (localhost [127.0.0.1])
-	by wecheer.com (Postfix) with ESMTP id 8EE8745607
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 18:19:29 +0000 (UTC)
-Received: from wecheer.com ([127.0.0.1])
-	by localhost (ip-172-31-45-254.us-west-2.compute.internal [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id VsjVccPXSn6h for <linux-btrfs@vger.kernel.org>;
-	Mon,  3 Feb 2014 18:19:26 +0000 (UTC)
-Received: from [10.10.22.177] (unknown [207.194.255.202])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: m)
-	by wecheer.com (Postfix) with ESMTPSA id A863045B72
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 18:19:26 +0000 (UTC)
-Message-ID: <52EFDDA6.2060907@matthewlai.ca>
-Date: Mon, 03 Feb 2014 10:19:18 -0800
-From: Matthew Lai <m@matthewlai.ca>
+	id S1751999AbaBCShP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Feb 2014 13:37:15 -0500
+Date: Mon, 3 Feb 2014 19:28:11 +0100
+From: Johannes Hirte <johannes.hirte@datenkhaos.de>
+To: Josef Bacik <jbacik@fb.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: throttle delayed refs better
+Message-ID: <20140203192811.72866921@datenkhaos.de>
+In-Reply-To: <1390500472-15144-1-git-send-email-jbacik@fb.com>
+References: <1390500472-15144-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Receive on same subvolume
-References: <52E9721D.6000908@matthewlai.ca> <4D0416BE-42D6-4458-9519-9836CC979005@colorremedies.com>
-In-Reply-To: <4D0416BE-42D6-4458-9519-9836CC979005@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks. I should clarify what I'm trying to do.
+On Thu, 23 Jan 2014 13:07:52 -0500
+Josef Bacik <jbacik@fb.com> wrote:
 
-I'm trying to use btrfs send for backup, without having another btrfs 
-volume.
+> On one of our gluster clusters we noticed some pretty big lag
+> spikes.  This turned out to be because our transaction commit was
+> taking like 3 minutes to complete.  This is because we have like 30
+> gigs of metadata, so our global reserve would end up being the max
+> which is like 512 mb.  So our throttling code would allow a
+> ridiculous amount of delayed refs to build up and then they'd all get
+> run at transaction commit time, and for a cold mounted file system
+> that could take up to 3 minutes to run.  So fix the throttling to be
+> based on both the size of the global reserve and how long it takes us
+> to run delayed refs. This patch tracks the time it takes to run
+> delayed refs and then only allows 1 seconds worth of outstanding
+> delayed refs at a time.  This way it will auto-tune itself from cold
+> cache up to when everything is in memory and it no longer has to go
+> to disk.  This makes our transaction commits take much less time to
+> run. Thanks,
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-So the initial backup is a complete send, piped to Amazon Glacier (so my 
-machine never has the whole file, and doesn't have space for one).
+This one breaks my system. Shortly after boot the btrfs-freespace
+thread goes up to 100% CPU usage and the system is nearly unresponsive.
+I've seen it first with the full pull request for 3.14-rc1 and was able
+to track it down to this patch.
 
-At the same time I'm keeping a snapshot of the current volume.
-
-On the next incremental backup, I would use the first snapshot as the 
-parent, and send the differences to Glacier again (without having the 
-entire file on the system at any time).
-
-It looks like the problem now is the sent file can't be applied to the 
-original volume (for restore).
-
-Thanks
-Matthew
-
-On 03/02/2014 9:30 AM, Chris Murphy wrote:
-> On Jan 29, 2014, at 2:26 PM, Matthew Lai <m@matthewlai.ca> wrote:
->
->> Hello,
->>
->> Is this supposed to work? (/data is the root volume, /data/a is a subvolume)
->>
->> btrfs subvolume snapshot /data/a /data/b
->> # make some changes in b
->> btrfs send -p /data/a /data/b > delta
->> btrfs receive /data/a < delta
->>
->> I'm getting "ERROR: could not find parent subvolume" on receive.
->> What I'm trying to do is to back up using send/receive, but I don't have 50% free space, and (please correct me if I'm wrong) since receive doesn't do deduplication, I want to use snapshot to do the initial bootstrapping, instead of send/receive without a parent.
-> I think you've oversimplified your commands, because it looks like you're using send/receive on the same file system. But if it's a backup, necessarily you'd have to be sending the subvolume(s) to another file system on another disk (either on the same system or remotely). So that needs some clarification.
->
-> Also, btrfs send requires subvolumes to be read only. Are they?
->
-> And btrfs incremental receive expects the identical parent already on the destination. Is it?
->
-> Also, while I'm not certain it matters, man page says to use -f to specify files. I haven't tested < and >. But then also the step where you create this intermediate snapshot file isn't necessary, just combine the send receive commands through pipe.
->
->
-> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
->
->
-> Chris Murphy
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+regards,
+  Johannes

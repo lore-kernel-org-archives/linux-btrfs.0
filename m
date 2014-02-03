@@ -1,131 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:60930 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752114AbaBCPWu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Feb 2014 10:22:50 -0500
-Received: by mail-pa0-f51.google.com with SMTP id ld10so7166203pab.24
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Feb 2014 07:22:49 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com
-Subject: [PATCH] Btrfs: add regression test for running snapshot and send concurrently
-Date: Mon,  3 Feb 2014 23:22:36 +0800
-Message-Id: <1391440956-31924-1-git-send-email-wangshilong1991@gmail.com>
+Received: from mail.py-ro.de ([89.238.75.159]:50986 "EHLO mail.py-ro.de"
+	rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752382AbaBCQWN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Feb 2014 11:22:13 -0500
+Received: from localhost (virt.py-ro.de [127.0.0.1])
+	by mail.py-ro.de (Postfix) with ESMTP id 0311349613
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 17:12:24 +0100 (CET)
+Received: from mail.py-ro.de ([127.0.0.1])
+	by localhost (virt.py-ro.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id jC0yWWING1du for <linux-btrfs@vger.kernel.org>;
+	Mon,  3 Feb 2014 17:12:22 +0100 (CET)
+Received: from trediske.ws.office.manitu.net (unknown [IPv6:2a00:1828:0:1::9])
+	by mail.py-ro.de (Postfix) with ESMTPA
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Feb 2014 17:12:22 +0100 (CET)
+Date: Mon, 3 Feb 2014 17:12:24 +0100
+From: Tetja Rediske <tetja@tetja.de>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs raid5 unmountable
+Message-ID: <20140203171224.3835fea1@trediske.ws.office.manitu.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Hi,
 
-Btrfs would fail to send if snapshot run concurrently, this test is to make
-sure we have fixed the bug.
+since Freenode is doomed today, i ask the direct way.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- tests/btrfs/034     | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/034.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 78 insertions(+)
- create mode 100644 tests/btrfs/034
- create mode 100644 tests/btrfs/034.out
+Following Filesystem:
 
-diff --git a/tests/btrfs/034 b/tests/btrfs/034
-new file mode 100644
-index 0000000..e27e3cf
---- /dev/null
-+++ b/tests/btrfs/034
-@@ -0,0 +1,75 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/034
-+#
-+# Regression test for running snapshots and send concurrently.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+
-+touch $SCRATCH_MNT/foo
-+
-+# get file with fragments by using backwards writes.
-+for i in `seq 10240 -1 1`; do
-+	$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
-+	$SCRATCH_MNT/foo > /dev/null | _filter_xfs_io
-+done
-+
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
-+
-+$BTRFS_UTIL_PROG send -f $SCRATCH_MNT/send_file \
-+	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1 &
-+
-+pid=$!
-+
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/snap_1 \
-+	$SCRATCH_MNT/snap_2 >> $seqres.full 2>&1
-+
-+wait $pid || echo "Failed to send, see dmesg"
-+
-+echo "Silence is golden"
-+status=0 ; exit
-diff --git a/tests/btrfs/034.out b/tests/btrfs/034.out
-new file mode 100644
-index 0000000..4c8873c
---- /dev/null
-+++ b/tests/btrfs/034.out
-@@ -0,0 +1,2 @@
-+QA output created by 034
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index b29236c..f9f062f 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -36,3 +36,4 @@
- 031 auto quick
- 032 auto quick
- 033 auto quick
-+034 auto quick
--- 
-1.8.4
+Label: 'data'  uuid: 3a6fd6d7-5943-4cad-b56f-2e6dcabff453
+        Total devices 6 FS bytes used 7.02TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sda3
+        devid    2 size 2.73TiB used 2.48TiB path /dev/sdc3
+        devid    3 size 931.38GiB used 931.38GiB path /dev/sdd3
+        devid    5 size 931.51GiB used 931.51GiB path /dev/sde1
+        devid    6 size 931.51GiB used 931.51GiB path /dev/sdf1
+        devid    7 size 2.73TiB used 2.48TiB path /dev/sdb3
+
+Btrfs v3.12-dirty
+
+If I try to mount it from dmesg:
+
+[30644.681210] parent transid verify failed on 32059176910848 wanted
+259627 found 259431 
+[30644.681307] parent transid verify failed on 32059176910848 wanted
+259627 found 259431 
+[30644.681399] btrfs bad tree block start 0 32059176910848 
+[30644.681407] Failed to read block groups: -5 
+[30644.776879] btrfs: open_ctree failed
+
+btrfs check aborts with (many of the 1st lines)
+
+[...] 
+Ignoring transid failure parent transid verify failed on 32059196616704
+wanted 259627 found 259432
+parent transid verify failed on 32059196616704 wanted 259627 found
+259432 Check tree block failed, want=32059196616704, have=32059196747776
+
+parent transid verify failed on 32059196616704 wanted 259627 found259432
+Ignoring transid failure
+parent transid verify failed on 32059196616704 wanted 259627 found259432
+Ignoring transid failure
+parent transid verify failed on 32059177230336 wanted 259627 found259431
+Ignoring transid failure
+parent transid verify failed on 32059196620800 wanted 259627 found259432
+parent transid verify failed on 32059196620800 wanted 259627 found259432
+Check tree block failed, want=32059196620800, have=1983699371120445514
+Check tree block failed, want=32059196620800, have=1983699371120445514
+Check tree block failed, want=32059196620800, have=1983699371120445514
+read block failed check_tree_block
+btrfs: cmds-check.c:2212: check_owner_ref: Assertion `!(rec->is_root)'
+failed.
+Aborted
+
+What happened before:
+
+One disk was faulty, I added a new one and removed the old one,
+followed by a balance.
+
+So far so good.
+
+Some days after this I accidently removed a SATA Power Connector from
+another drive, without noticing it at first. Worked about an hour on
+the system, building new Kernel on another Filesystem. Rebooted with my
+new Kernel and the FS was not mountable. I noticed the "missing" disk
+and reattached the power.
+
+So far i tried:
+
+mount -o recovery
+btrfs check
+(after google) btrfs-zero-log
+
+Sadly no luck. Whoever I can get my Files with btrfs restore. The
+Filesystem contains mainly Mediafiles, so it is not so bad, if they
+were lost, but restoring them from backups and sources will need
+atleast about a week. (Most of the Files are mirrored on a private
+Server, but even with 100MBit this takes a lot of time ; )
+
+Some Idea who to recover this FS?
+
+Kind Regards
+Tetja Rediske
+
+
+
 

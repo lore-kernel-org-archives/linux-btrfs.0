@@ -1,52 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47990 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750780AbaBDGVf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Feb 2014 01:21:35 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WAZO1-0002Bb-UV
-	for linux-btrfs@vger.kernel.org; Tue, 04 Feb 2014 07:21:33 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Feb 2014 07:21:33 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Feb 2014 07:21:33 +0100
+Received: from mail.py-ro.de ([89.238.75.159]:51123 "EHLO mail.py-ro.de"
+	rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1752083AbaBDJbJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Feb 2014 04:31:09 -0500
+Received: from localhost (virt.py-ro.de [127.0.0.1])
+	by mail.py-ro.de (Postfix) with ESMTP id 4CA1E49617
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2014 10:31:08 +0100 (CET)
+Received: from mail.py-ro.de ([127.0.0.1])
+	by localhost (virt.py-ro.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 3oOK50yVX7VZ for <linux-btrfs@vger.kernel.org>;
+	Tue,  4 Feb 2014 10:31:04 +0100 (CET)
+Received: from trediske.ws.office.manitu.net (unknown [IPv6:2a00:1828:0:1::9])
+	by mail.py-ro.de (Postfix) with ESMTPA
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2014 10:31:04 +0100 (CET)
+Date: Tue, 4 Feb 2014 10:31:05 +0100
+From: Tetja Rediske <tetja@tetja.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: hitting BUG_ON on troublesome FS
-Date: Tue, 4 Feb 2014 06:21:11 +0000 (UTC)
-Message-ID: <pan$e1dcf$78ef7ada$46bc0f01$840ccb1c@cox.net>
-References: <CCAC08D7-4639-40F4-85DD-459E6D795DAD@yerf-it.com>
+Subject: Re: btrfs raid5 unmountable
+Message-ID: <20140204103105.16d09394@trediske.ws.office.manitu.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remco Hosman - Yerf-it.com posted on Mon, 03 Feb 2014 21:51:26 +0100 as
-excerpted:
+Hello Duncan,
 
-> Anything i can do to resolve / debug the issue?
+> Of course if you'd been following the list as btrfs testers really
+> should still be doing at this point, you'd have seen all this covered
+> before. And of course, if you had done pre-deployment testing before
+> you stuck valuable data on that btrfs raid5, you'd have noted the
+> problems, even without reading about it on-list or on the wiki.  But
+> of course hindsight is 20/20, as they say, and at least you DO have
+> backups, even if they'll take awhile to restore.  =:^) That's already
+> vastly better than a lot of the reports we unfortunately get here.
+> =:^\
 
-I see from the trace you're running kernel 3.13.0.  (FWIW 3.13.1 is out, 
-but there weren't any btrfs commits therein, as they weren't upstream in 
-3.14-pre yet at that time.)
+yeah, i saw it. Main reason for me "toying" with btrfs is my work. We
+rent Linux servers to customers. While they install and manage them by
+them self, there will be questions about btrfs to our support, sooner or
+later. So getting your hands on it early saves some headache later.
 
-You might try kernel 3.14-rc1 now that it's out.  There's a big btrfs git 
-pull in that, including a number of btrfs send/receive fixes.  FWIW, 
-btrfs send/receive seems to be a big focus right now, and I see a lot of 
-patches floating by on the list even after that pull, so there's more 
-where those came from.
+It is just inconvient for me now, so no big deal.
 
-I'm not a dev (just another btrfs user and list regular for several 
-kernel cycles now) and haven't followed the patches closely enough to 
-know if your particular balance problem is covered in one of them, but as 
-I said, since 3.14-rc1 is out now, you might as well try it...
+I first tried degraded, I also tried repair, no luck.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+What I do now is, getting as much data from the broken fs with btrfs
+recover and do a rsync after. It is just faster then downloading all
+the data from my own mirror in the datacenter. ;)
+
+After that I will even be so crazy and try it again. Next on my list is
+send/receive. 
+
+Tetja
+
+
 

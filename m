@@ -1,37 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:61683 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751234AbaBDOHv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Feb 2014 09:07:51 -0500
-Message-ID: <52F0F426.7030605@fb.com>
-Date: Tue, 4 Feb 2014 09:07:34 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from skade.schwarzvogel.de ([144.76.18.87]:40487 "EHLO
+	mail.schwarzvogel.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751234AbaBDOkL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Feb 2014 09:40:11 -0500
+Received: from klausman by mail.schwarzvogel.de with local (Exim 4.82)
+	(envelope-from <klausman@schwarzvogel.de>)
+	id 1WAguz-000PB1-NH
+	for linux-btrfs@vger.kernel.org; Tue, 04 Feb 2014 15:24:05 +0100
+Date: Tue, 4 Feb 2014 15:24:05 +0100
+From: Tobias Klausmann <klausman@schwarzvogel.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: use late_initcall instead of module_init
+Message-ID: <20140204142405.GA93647@skade.schwarzvogel.de>
 MIME-Version: 1.0
-To: Roger Binns <rogerb@rogerbinns.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: disable snapshot aware defrag for now
-References: <1391029530-17686-1-git-send-email-jbacik@fb.com> <20140203144802.GK1364@twin.jikos.cz> <52EFD19C.3050404@fb.com> <lcpm87$15e$1@ger.gmane.org>
-In-Reply-To: <lcpm87$15e$1@ger.gmane.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1391290076-13149-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hey,
 
-On 02/03/2014 10:19 PM, Roger Binns wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 03/02/14 09:27, Josef Bacik wrote:
->> It is so totally broken that I don't want it being turned on by anybody
->> who can't edit this and change it themselves.
-> The symptoms I saw are huge amounts of kernel memory consumption, possibly
-> till exhaustion of swap.  Are there other ways in which is it broken (eg
-> corruption)?
->
-> Also is this patch making its way to the various stables?
-No corruption, and frankly if you had just small files and a small 
-number of snapshots it worked just fine, but otherwise it would use all 
-of your ram.  I cc'ed stable@ so it should make it back to all the 
-stables.  Thanks,
+as discussed on IRC, this makes 3.14-rc1 able tomount brtfs
+again. Key difference (aside from being (un)able to mount) is that
+btrfs now actually shows up in /proc/filesystems, where with
+vanilla 3.14-rc1 it does not.
 
-Josef
+Tested on an i5-3470T.
+
+Tested-By: Tobias Klausmann <klausman@schwarzvogel.de>
+
+

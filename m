@@ -1,44 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:32835 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753542AbaBDR6T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Feb 2014 12:58:19 -0500
-Message-ID: <52F12A66.3000707@fb.com>
-Date: Tue, 4 Feb 2014 12:59:02 -0500
-From: Chris Mason <clm@fb.com>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:55442 "EHLO
+	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753440AbaBDTtK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Feb 2014 14:49:10 -0500
+Date: Tue, 4 Feb 2014 11:50:16 -0800
+From: Greg KH <gregkh@linuxfoundation.org>
+To: Chris Mason <clm@fb.com>
+Cc: dsterba@suse.cz, Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        stable@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs
+Message-ID: <20140204195016.GA5264@kroah.com>
+References: <52EAC9B6.7090603@fb.com>
+ <20140203175405.GL1364@twin.jikos.cz>
+ <52EFDD80.4050800@fb.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52EFDD80.4050800@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Feb 03, 2014 at 01:18:40PM -0500, Chris Mason wrote:
+> On Mon 03 Feb 2014 12:54:05 PM EST, David Sterba wrote:
+> >On Thu, Jan 30, 2014 at 04:52:54PM -0500, Chris Mason wrote:
+> >>Chris Mason (3) commits (+64/-32):
+> >>     Btrfs: setup inode location during btrfs_init_inode_locked (+9/-9)
+> >>     Btrfs: don't use ram_bytes for uncompressed inline items (+52/-22)
+> >
+> >The patches are CC: stable, but haven't gone through the mailinglist.
+> >Are they still going to be picked by stable?
+> 
+> We do need both in -stable, I'll help with backports.
 
-Hi Linus,
+Very few of the patches you marked for -stable, actually would apply (or
+build once applied.)  Can you please send a set of patches you want
+applied?
 
-Please pull my for-linus:
+thanks,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-
-Filipe is fixing compile and boot problems with our crc32c rework, and
-Josef has disabled snapshot aware defrag for now.  As the number of
-snapshots increases, we're hitting OOM.  For the short term we're
-disabling things until a bigger fix is ready.
-
-Filipe David Borba Manana (2) commits (+7/-7):
-    Btrfs: use btrfs_crc32c everywhere instead of libcrc32c (+6/-6)
-    Btrfs: use late_initcall instead of module_init (+1/-1)
-
-Josef Bacik (1) commits (+1/-1):
-    Btrfs: disable snapshot aware defrag for now
-
-Total: (3) commits (+8/-8)
-
- fs/btrfs/check-integrity.c | 4 ++--
- fs/btrfs/disk-io.c         | 4 ++--
- fs/btrfs/inode.c           | 2 +-
- fs/btrfs/send.c            | 4 ++--
- fs/btrfs/super.c           | 2 +-
- 5 files changed, 8 insertions(+), 8 deletions(-)
+greg k-h

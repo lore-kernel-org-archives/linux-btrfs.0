@@ -1,32 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dub0-omc1-s35.dub0.hotmail.com ([157.55.0.234]:40718 "EHLO
-	dub0-omc1-s35.dub0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750937AbaBDK47 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Feb 2014 05:56:59 -0500
-Message-ID: <DUB130-W6707D22BE962A3F4EF70B29CAA0@phx.gbl>
-From: David Binderman <dcb314@hotmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [cmds-scrub.c:539]: (style) Array index 'i' is used before limits
- check.
-Date: Tue, 4 Feb 2014 10:48:46 +0000
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47952 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751234AbaBDONO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Feb 2014 09:13:14 -0500
+Message-ID: <52F0F566.1090206@fb.com>
+Date: Tue, 4 Feb 2014 09:12:54 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
+To: Johannes Hirte <johannes.hirte@datenkhaos.de>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: throttle delayed refs better
+References: <1390500472-15144-1-git-send-email-jbacik@fb.com>	<20140203192811.72866921@datenkhaos.de>	<52F00538.3010505@fb.com> <20140203235334.791312d1@datenkhaos.de>
+In-Reply-To: <20140203235334.791312d1@datenkhaos.de>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello there,
 
-Static analyser cppcheck says many things
-about btrfs-progs, including the subject line.
+On 02/03/2014 05:53 PM, Johannes Hirte wrote:
+> On Mon, 3 Feb 2014 16:08:08 -0500
+> Josef Bacik <jbacik@fb.com> wrote:
+>
+>> On 02/03/2014 01:28 PM, Johannes Hirte wrote:
+>>> On Thu, 23 Jan 2014 13:07:52 -0500
+>>> Josef Bacik <jbacik@fb.com> wrote:
+>>>
+>>>> On one of our gluster clusters we noticed some pretty big lag
+>>>> spikes.  This turned out to be because our transaction commit was
+>>>> taking like 3 minutes to complete.  This is because we have like 30
+>>>> gigs of metadata, so our global reserve would end up being the max
+>>>> which is like 512 mb.  So our throttling code would allow a
+>>>> ridiculous amount of delayed refs to build up and then they'd all
+>>>> get run at transaction commit time, and for a cold mounted file
+>>>> system that could take up to 3 minutes to run.  So fix the
+>>>> throttling to be based on both the size of the global reserve and
+>>>> how long it takes us to run delayed refs. This patch tracks the
+>>>> time it takes to run delayed refs and then only allows 1 seconds
+>>>> worth of outstanding delayed refs at a time.  This way it will
+>>>> auto-tune itself from cold cache up to when everything is in
+>>>> memory and it no longer has to go to disk.  This makes our
+>>>> transaction commits take much less time to run. Thanks,
+>>>>
+>>>> Signed-off-by: Josef Bacik <jbacik@fb.com>
+>>> This one breaks my system. Shortly after boot the btrfs-freespace
+>>> thread goes up to 100% CPU usage and the system is nearly
+>>> unresponsive. I've seen it first with the full pull request for
+>>> 3.14-rc1 and was able to track it down to this patch.
+>> Could you turn on the softlockup timer and see if you can get a
+>> backtrace of where it is stuck?  In the meantime I will go through
+>> and see if I can pinpoint where it may be happening.  Thanks,
+>>
+>> Josef
+> This is what I've got with
+>
+Hrm I was hoping that was going to be more helpful.  Can you get perf 
+record -ag and then perf report while it's at full cpu and get the first 
+3 or 4 things with their traces?  I'm going to try and reproduce today, 
+is there anything special about your fs? Compression, large blocksizes, 
+skinny metadata?  Thanks,
 
-Source code is
-
-            while (isspace(l[i]) && i < avail) {
-
-Suggest code rework. I checked the latest source
-code and the bug exists there too.
-
-Regards
-
-David Binderman 		 	   		  
+Josef

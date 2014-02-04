@@ -1,63 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47952 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751234AbaBDONO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Feb 2014 09:13:14 -0500
-Message-ID: <52F0F566.1090206@fb.com>
-Date: Tue, 4 Feb 2014 09:12:54 -0500
-From: Josef Bacik <jbacik@fb.com>
+Received: from vps01.maxiapps.eu ([212.44.99.234]:57815 "EHLO
+	vps01.maxiapps.eu" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751177AbaBDP6Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Feb 2014 10:58:25 -0500
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by vps01.maxiapps.eu (Postfix) with ESMTP id 6FDCD358A15D
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2014 18:52:14 +0300 (MSK)
+Received: from vps01.maxiapps.eu ([127.0.0.1])
+	by localhost (vps01.maxiapps.eu [127.0.0.1]) (amavisd-new, port 10032)
+	with ESMTP id a62E35ApIo3z for <linux-btrfs@vger.kernel.org>;
+	Tue,  4 Feb 2014 18:52:14 +0300 (MSK)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by vps01.maxiapps.eu (Postfix) with ESMTP id EB7B7358A15F
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2014 18:52:13 +0300 (MSK)
+Received: from vps01.maxiapps.eu ([127.0.0.1])
+	by localhost (vps01.maxiapps.eu [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id O_QI35ZOvPgJ for <linux-btrfs@vger.kernel.org>;
+	Tue,  4 Feb 2014 18:52:13 +0300 (MSK)
+Received: from [192.168.139.5] (mail.laly.si [89.212.74.161])
+	by vps01.maxiapps.eu (Postfix) with ESMTPSA id CC22F358A15D
+	for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2014 18:52:13 +0300 (MSK)
+Message-ID: <52F10CAC.5030306@laly.si>
+Date: Tue, 04 Feb 2014 16:52:12 +0100
+From: Blaz Balon <blaz.balon@laly.si>
 MIME-Version: 1.0
-To: Johannes Hirte <johannes.hirte@datenkhaos.de>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: throttle delayed refs better
-References: <1390500472-15144-1-git-send-email-jbacik@fb.com>	<20140203192811.72866921@datenkhaos.de>	<52F00538.3010505@fb.com> <20140203235334.791312d1@datenkhaos.de>
-In-Reply-To: <20140203235334.791312d1@datenkhaos.de>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Booting with syslinux not possible
+References: <52EBFD82.7080900@gmail.com> <loom.20140131T225403-745@post.gmane.org>
+In-Reply-To: <loom.20140131T225403-745@post.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I also had some problems with syslinux.
 
-On 02/03/2014 05:53 PM, Johannes Hirte wrote:
-> On Mon, 3 Feb 2014 16:08:08 -0500
-> Josef Bacik <jbacik@fb.com> wrote:
->
->> On 02/03/2014 01:28 PM, Johannes Hirte wrote:
->>> On Thu, 23 Jan 2014 13:07:52 -0500
->>> Josef Bacik <jbacik@fb.com> wrote:
->>>
->>>> On one of our gluster clusters we noticed some pretty big lag
->>>> spikes.  This turned out to be because our transaction commit was
->>>> taking like 3 minutes to complete.  This is because we have like 30
->>>> gigs of metadata, so our global reserve would end up being the max
->>>> which is like 512 mb.  So our throttling code would allow a
->>>> ridiculous amount of delayed refs to build up and then they'd all
->>>> get run at transaction commit time, and for a cold mounted file
->>>> system that could take up to 3 minutes to run.  So fix the
->>>> throttling to be based on both the size of the global reserve and
->>>> how long it takes us to run delayed refs. This patch tracks the
->>>> time it takes to run delayed refs and then only allows 1 seconds
->>>> worth of outstanding delayed refs at a time.  This way it will
->>>> auto-tune itself from cold cache up to when everything is in
->>>> memory and it no longer has to go to disk.  This makes our
->>>> transaction commits take much less time to run. Thanks,
->>>>
->>>> Signed-off-by: Josef Bacik <jbacik@fb.com>
->>> This one breaks my system. Shortly after boot the btrfs-freespace
->>> thread goes up to 100% CPU usage and the system is nearly
->>> unresponsive. I've seen it first with the full pull request for
->>> 3.14-rc1 and was able to track it down to this patch.
->> Could you turn on the softlockup timer and see if you can get a
->> backtrace of where it is stuck?  In the meantime I will go through
->> and see if I can pinpoint where it may be happening.  Thanks,
->>
->> Josef
-> This is what I've got with
->
-Hrm I was hoping that was going to be more helpful.  Can you get perf 
-record -ag and then perf report while it's at full cpu and get the first 
-3 or 4 things with their traces?  I'm going to try and reproduce today, 
-is there anything special about your fs? Compression, large blocksizes, 
-skinny metadata?  Thanks,
+For me it only works if I put boot folder to root of btrfs.
+Didn't have a chance to do more test, but I copied /boot from default 
+subvolume to subvolume 0 and it boots OK.
 
-Josef
+----------
+regards
+Blaz Balon
+
+On 01/31/2014 11:00 PM, Alex wrote:
+> Sorry KC:
+>
+> All my VM's are on syslinux (actually extlinux) and btrfs:
+>     Device Boot      Start         End      Blocks   Id  System
+> /dev/vda1   *        2048     7938047     3968000   83  Linux
+> /dev/vda2         7938048     8388607      225280   82  Linux swap / Solaris
+>
+> root@<VM> ~ # ll /boot
+> total 19452
+> -rw-r--r-- 1 root root  2319932 Jan 21 06:12 System.map-3.12-1-amd64
+> -rw-r--r-- 1 root root   149029 Jan 21 06:12 config-3.12-1-amd64
+> drwxr-xr-x 1 root root      176 Jan 28 22:32 extlinux/
+> -rw-r--r-- 1 root root 14240605 Jan 28 22:32 initrd.img-3.12-1-amd64
+> -rw-r--r-- 1 root root   176764 Nov 13  2011 memtest86+.bin
+> -rw-r--r-- 1 root root   178944 Nov 13  2011 memtest86+_multiboot.bin
+> -rw-r--r-- 1 root root  2842064 Jan 21 06:08 vmlinuz-3.12-1-amd64
+> root@china ~ #
+>
+> Occasionally I get excited and decide to fix it 'til it breaks (usually I
+> turn compression on, and /boot can't be accessed), but it's been working
+> fine for a few years now.
+>
+> Kind regards.
+>
+> Al.
+>
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

@@ -1,25 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f54.google.com ([209.85.160.54]:52251 "EHLO
-	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751187AbaBENFN convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 08:05:13 -0500
-Received: by mail-pb0-f54.google.com with SMTP id uo5so344167pbc.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 05:05:12 -0800 (PST)
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:63556 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750985AbaBENXj convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 08:23:39 -0500
+Received: by mail-pd0-f179.google.com with SMTP id q10so350825pdj.24
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 05:23:38 -0800 (PST)
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
 Subject: Re: [PATCH 1/2] Btrfs: switch to btrfs_previous_extent_item()
 From: Wang Shilong <wangshilong1991@gmail.com>
 In-Reply-To: <CAL3q7H7n+L2CqT9whDDT1ZjUzgU378HUhOuQHhjKUp7eiKD=aw@mail.gmail.com>
-Date: Wed, 5 Feb 2014 21:05:08 +0800
+Date: Wed, 5 Feb 2014 21:23:33 +0800
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <A7FF0585-7081-434F-BBB9-EB70CDFB95D1@gmail.com>
+Message-Id: <337FC422-D102-4310-A714-FA35538DD402@gmail.com>
 References: <1391186525-2965-1-git-send-email-wangshilong1991@gmail.com> <CAL3q7H7n+L2CqT9whDDT1ZjUzgU378HUhOuQHhjKUp7eiKD=aw@mail.gmail.com>
 To: fdmanana@gmail.com
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+So i knew what was wrong here, we need found_key while btrfs_previous_extent_item() did set
+it properly..^_^
 
-Hi Filipe,
+I will send a v2 to fix this, thanks!
+
 
 > On Fri, Jan 31, 2014 at 4:42 PM, Wang Shilong <wangshilong1991@gmail.com> wrote:
 >> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
@@ -58,14 +61,6 @@ Hi Filipe,
 > Failed 1 of 1 tests
 > 
 > See comment inline below as well.
-
-I could not reproduce this problem in my virtual box, how did you
-trigger the problem(for a loop, options etc?)
-
-Also, the strange thing is that this patch did not change the logic before,
-the function btrfs_previous_extent_item() had the same behavior as josef's
-previous codes did.
-
 > 
 > Thanks
 > 
@@ -119,11 +114,6 @@ previous codes did.
 > This isn't equivalent to what we had before. We're now returning 1
 > when we previously returned -ENOENT. However this isn't what's making
 > the test fail.
-
-Yeah, Filipe, thanks for pointing this out.^_^
-
-Thanks,
-Wang
 > 
 >> 
 >>        if (found_key->type == BTRFS_METADATA_ITEM_KEY)

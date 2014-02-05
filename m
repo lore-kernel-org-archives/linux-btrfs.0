@@ -1,40 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60700 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751582AbaBKSTz convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 13:19:55 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: BTRFS with RAID1 cannot boot when removing drive
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAJbEPe67biUB001mvFZkdKOyTOrWesgsbr+W9uonE8aBoDO64A@mail.gmail.com>
-Date: Tue, 11 Feb 2014 11:19:52 -0700
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <4C14DE8A-B78F-4BC6-B29D-AA87B59052AA@colorremedies.com>
-References: <20140209224055.3175e70f@system> <191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com> <20140211041527.57ef96c4@system> <0812CEB3-ACEC-4582-BD86-18B7F6A3F74D@colorremedies.com> <CAJbEPe67biUB001mvFZkdKOyTOrWesgsbr+W9uonE8aBoDO64A@mail.gmail.com>
-To: Saint Germain <saintger@gmail.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:47743 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751352AbaBEHfJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 02:35:09 -0500
+Message-ID: <52F1E98E.2000207@jp.fujitsu.com>
+Date: Wed, 05 Feb 2014 16:34:38 +0900
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+CC: stable@vger.kernel.org
+Subject: [PATCH] Btrfs: skip submitting barrier for missing device
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I got an error on v3.13:
+ BTRFS error (device sdf1) in write_all_supers:3378: errno=-5 IO failure (errors while submitting device barriers.)
 
-On Feb 11, 2014, at 10:36 AM, Saint Germain <saintger@gmail.com> wrote:
->> 
->> grub-install <device> shouldn't work on UEFI because the only place grub-install installs is to the volume mounted at /boot/efi. And also grub-install /dev/sdb implies installing grub to a disk boot sector, which also isn't applicable to UEFI.
->> 
-> 
-> I am still not up to date on UEFI partition and so.
-> But I have read these pages:
-> http://tanguy.ortolo.eu/blog/article51/debian-efi
-> http://forums.debian.net/viewtopic.php?f=16&t=81120
-> And apparently is grub-install <device> is the correct command (but
-> you have to copy file in addition).
-> It is maybe because they use a special package grub-efi-amd64, which
-> replace the grub-install.
-> It is quite difficult to find reliable info on the topic…
+how to reproduce:
+  > mkfs.btrfs -f -d raid1 /dev/sdf1 /dev/sdf2
+  > wipefs -a /dev/sdf2
+  > mount -o degraded /dev/sdf1 /mnt
+  > btrfs balance start -f -sconvert=single -mconvert=single -dconvert=single /mnt
 
-grub-install <device> probably works insofar as <device> is being ignored. I bet you get the same results no matter what device you choose, but maybe I'm mistaken and they have some way to write to an unmounted ESP which seems like not such a great idea.
+The reason of the error is that barrier_all_devices() failed to submit
+barrier to the missing device.  However it is clear that we cannot do
+anything on missing device, and also it is not necessary to care chunks
+on the missing device.
 
+This patch stops sending/waiting barrier if device is missing.
 
-Chris Murphy
+Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+Cc: <stable@vger.kernel.org>
+---
+ fs/btrfs/disk-io.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8072cfa..7eb50f3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3238,6 +3238,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 	/* send down all the barriers */
+ 	head = &info->fs_devices->devices;
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
++		if (dev->missing)
++			continue;
+ 		if (!dev->bdev) {
+ 			errors_send++;
+ 			continue;
+@@ -3252,6 +3254,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 
+ 	/* wait for all the barriers */
+ 	list_for_each_entry_rcu(dev, head, dev_list) {
++		if (dev->missing)
++			continue;
+ 		if (!dev->bdev) {
+ 			errors_wait++;
+ 			continue;
+-- 
+1.7.1
+
 

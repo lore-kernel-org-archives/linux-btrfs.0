@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48595 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752696AbaBEVrF (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:2944 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755405AbaBEWXE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Feb 2014 16:47:05 -0500
-Message-ID: <52F2B151.70307@fb.com>
-Date: Wed, 5 Feb 2014 16:46:57 -0500
+	Wed, 5 Feb 2014 17:23:04 -0500
+Message-ID: <52F2B9C2.2090207@fb.com>
+Date: Wed, 5 Feb 2014 17:22:58 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
 To: Johannes Hirte <johannes.hirte@datenkhaos.de>
@@ -74,7 +74,6 @@ On 02/05/2014 04:42 PM, Johannes Hirte wrote:
 >> to happen?  Thanks,
 > Yes it does. Same behavior as without ktime stuff commented out.
 >
-Ok perfect, can you send me a btrfs fi df of that volume, and do you 
-have any snapshots or anything?  Thanks,
+Do you happen to have qgroups enabled?  Thanks,
 
 Josef

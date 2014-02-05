@@ -1,67 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:42191 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750789AbaBEOEY (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17747 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750918AbaBEOW7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Feb 2014 09:04:24 -0500
-Message-ID: <52F244DE.9030108@fb.com>
-Date: Wed, 5 Feb 2014 09:04:14 -0500
+	Wed, 5 Feb 2014 09:22:59 -0500
+Message-ID: <52F2493E.3070900@fb.com>
+Date: Wed, 5 Feb 2014 09:22:54 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs
- send
-References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com> <52F00AAE.6070509@fb.com> <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
-In-Reply-To: <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
-Content-Type: text/plain; charset="GB2312"
+To: "Remco Hosman - Yerf-it.com" <remco@yerf-it.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: hitting BUG_ON on troublesome FS
+References: <CCAC08D7-4639-40F4-85DD-459E6D795DAD@yerf-it.com> <52F16045.5020808@fb.com> <50C9BA7F-4988-4765-963C-20B241A13C84@yerf-it.com>
+In-Reply-To: <50C9BA7F-4988-4765-963C-20B241A13C84@yerf-it.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 02/05/2014 03:59 AM, Wang Shilong wrote:
-> Hi Josef,
+On 02/05/2014 01:34 AM, Remco Hosman - Yerf-it.com wrote:
+> How can i tell?
 >
-> [..SNIP..]
->> On 01/31/2014 11:37 AM, Wang Shilong wrote:
->>> Hello Josef,
->>>
->>>>  
->> 2) Remove the per-root rwsem for the commit root and just make one big
->> rwsem that covers all commit root switching. This way everybody who
->> wants to search with the commit root can just use this semaphore and all
->> be safe. It will mean that the inode cache stuff may block longer than
->> normal but I don't think that's too big of a deal.
->>
-> I am ok with this fix,  I wanted to talk something about protecting searching commit file root, this is really a
-> problem especially for full send.
+> Label: data  uuid: a8626d67-4684-4b23-99b3-8d5fa8e7fd69
+> Total devices 5 FS bytes used 820.00KiB
+> devid    2 size 1.82TiB used 1.00GiB path /dev/sdb2
+> devid    3 size 1.82TiB used 1.00GiB path /dev/sdf2
+> devid    5 size 2.73TiB used 3.00GiB path /dev/sdd2
+> devid    10 size 2.73TiB used 2.03GiB path /dev/sde2
+> devid    11 size 3.64TiB used 1.03GiB path /dev/sdc1
 >
-> I have some ideas about this issue:
+> Data, RAID10: total=2.00GiB, used=768.00KiB
+> Data, RAID1: total=1.00GiB, used=12.00KiB
+> System, RAID1: total=32.00MiB, used=4.00KiB
+> Metadata, RAID1: total=1.00GiB, used=36.00KiB
 >
-> #1.don't use commit file root to search.
-> This will become a nightmare when we are doing full send which will iterate the whole file tree,
-> at the same time, we snapshot send root, snapshots will be blocked until send finished.
+> i made a image with `btrfs-image`, when i do -c 9, the file size is 
+> 7k, so eazy enough to mail if it would be of any use.
 >
-> #2. don't allow snapshot if we are sending root.
-> This may be a little confusing, snapshots are readonly, but users can not snapshot it.
-I think this is the best bet. The fact is we don't want to hold this
-commit_root_sem for the entire duration of the send, it would block
-people trying to commit the transaction. We could check for contention
-and drop the sem and re-search down to where we were but I think that
-would be prone to errors. If we just check to see if the snapshot is
-being sent and just return -EBUSY when we try to create a snapshot I
-think that's perfectly reasonable.
-> #3. after one iteration, we do check send_root's generation, and make sure it doesn't
-> change, if it changed, then we restart send again.
->
-> I don't know which approach is better,and also snapshot-aware defragment will change
-> read-only snapshot?
->
-> Did you have any better ideas about this issue? Share it with me here.^_^
->
-Snapshot-aware defrag will definitely screw us here. I think we need to
-do the same thing above as we do here, which is to simply skip the
-snapshot aware defrag if we are currently using that root for send. This
-sound reasonable to you? Thanks,
+Yup that would be perfect.  THanks,
 
 Josef

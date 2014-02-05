@@ -1,62 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from datenkhaos.de ([81.89.99.198]:38706 "EHLO datenkhaos.de"
+Received: from plane.gmane.org ([80.91.229.3]:60037 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753018AbaBEReK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Feb 2014 12:34:10 -0500
-Date: Wed, 5 Feb 2014 18:34:06 +0100
-From: Johannes Hirte <johannes.hirte@datenkhaos.de>
-To: Josef Bacik <jbacik@fb.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: throttle delayed refs better
-Message-ID: <20140205183406.47023d24@datenkhaos.de>
-In-Reply-To: <52F25D7B.90807@fb.com>
-References: <1390500472-15144-1-git-send-email-jbacik@fb.com>
-	<20140203192811.72866921@datenkhaos.de>
-	<52F00538.3010505@fb.com>
-	<20140203235334.791312d1@datenkhaos.de>
-	<52F0F566.1090206@fb.com>
-	<20140205091428.076fa15c@datenkhaos.de>
-	<52F25D7B.90807@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	id S1752189AbaBESX0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Feb 2014 13:23:26 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WB785-00077F-0o
+	for linux-btrfs@vger.kernel.org; Wed, 05 Feb 2014 19:23:21 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 19:23:21 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 19:23:21 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Are nocow files snapshot-aware
+Date: Wed, 05 Feb 2014 19:17:10 +0100
+Message-ID: <6qbasa-fq1.ln1@hurikhan77.spdns.de>
+References: <mh08sa-5tp.ln1@hurikhan77.spdns.de> <52F1923D.8090306@fb.com> <20140205020239.GP1364@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 5 Feb 2014 10:49:15 -0500
-Josef Bacik <jbacik@fb.com> wrote:
+David Sterba <dsterba@suse.cz> schrieb:
 
-> Ok none of those make sense which makes me think it may be the ktime 
-> bits, instead of un-applying the whole patch could you just comment
-> out the parts
+> On Tue, Feb 04, 2014 at 08:22:05PM -0500, Josef Bacik wrote:
+>> On 02/04/2014 03:52 PM, Kai Krakow wrote:
+>> >Hi!
+>> >
+>> >I'm curious... The whole snapshot thing on btrfs is based on its COW
+>> >design. But you can make individual files and directory contents nocow
+>> >by applying the C attribute on it using chattr. This is usually
+>> >recommended for database files and VM images. So far, so good...
+>> >
+>> >But what happens to such files when they are part of a snapshot? Do they
+>> >become duplicated during the snapshot? Do they become unshared (as a
+>> >whole) when written to? Or when the the parent snapshot becomes deleted?
+>> >Or maybe the nocow attribute is just ignored after a snapshot was taken?
+>> >
+>> >After all they are nocow and thus would be handled in another way when
+>> >snapshotted.
+>> >
+>> When snapshotted nocow files fallback to normal cow behaviour.
 > 
->          ktime_t start = ktime_get();
-> 
-> and
-> 
->          if (actual_count > 0) {
->                  u64 runtime = ktime_to_ns(ktime_sub(ktime_get(),
-> start)); u64 avg;
-> 
->                  /*
->                   * We weigh the current average higher than our
-> current runtime
->                   * to avoid large swings in the average.
->                   */
->                  spin_lock(&delayed_refs->lock);
->                  avg = fs_info->avg_delayed_ref_runtime * 3 + runtime;
->                  avg = div64_u64(avg, 4);
->                  fs_info->avg_delayed_ref_runtime = avg;
->                  spin_unlock(&delayed_refs->lock);
->          }
-> 
-> in __btrfs_run_delayed_refs and see if that makes the problem stop?
-> If it does will you try chris's for-linus branch to see if it still 
-> reproduces there?  Maybe some patch changed ktime_get() in -rc1 that
-> is causing issues and we're just now exposing it.  Thanks,
+> This may seem unclear to people not familiar with the actual
+> implementation, and I had to think for a second about that sentence. The
+> file will keep the NOCOW status, but any modified blocks will be newly
+> allocated on the first write (in a COW manner), then the block location
+> will not change anymore (unlike ordinary COW).
 
-With the ktime bits disabled, I wasn't able to reproduce the
-problem anymore. With Chris' for-linus branch it took longer but still
-appeared.
+Ah okay, that makes it clear. So, actually, in the snapshot the file is 
+still nocow - just for the exception that blocks being written to become 
+unshared and relocated. This may introduce a lot of fragmentation but it 
+won't become worse when rewriting the same blocks over and over again.
 
-regards,
-  Johannes
+> HTH
+
+Yes, it does. ;-)
+
+-- 
+Replies to list only preferred.
+

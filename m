@@ -1,58 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f48.google.com ([209.85.160.48]:61370 "EHLO
-	mail-pb0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751352AbaBENcI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 08:32:08 -0500
-Received: by mail-pb0-f48.google.com with SMTP id rr13so372538pbb.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 05:32:08 -0800 (PST)
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:42191 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750789AbaBEOEY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Feb 2014 09:04:24 -0500
+Message-ID: <52F244DE.9030108@fb.com>
+Date: Wed, 5 Feb 2014 09:04:14 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-From: Elifarley Callado Coelho Cruz <elifarley@gmail.com>
-Date: Wed, 5 Feb 2014 11:31:28 -0200
-Message-ID: <CALU6X8=qRRT5CTj0M_E34dJapQemo61Qi2QZRpxRG91O3Z8yxg@mail.gmail.com>
-Subject: Frequent error messages (block group X has wrong amount of free space)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Wang Shilong <wangshilong1991@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs
+ send
+References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com> <52F00AAE.6070509@fb.com> <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
+In-Reply-To: <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
+Content-Type: text/plain; charset="GB2312"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've recently installed ArchLinux on a Lenovo Ideapad laptop.
-Right on the first day of use, I received error messages at boot time
-like these:
 
-BTRFS error (device dm-0): block group 11840520192 has wrong amount of
-free space
-BTRFS error (device dm-0): failed to load free space cache for block
-group 11840520192
+On 02/05/2014 03:59 AM, Wang Shilong wrote:
+> Hi Josef,
+>
+> [..SNIP..]
+>> On 01/31/2014 11:37 AM, Wang Shilong wrote:
+>>> Hello Josef,
+>>>
+>>>>  
+>> 2) Remove the per-root rwsem for the commit root and just make one big
+>> rwsem that covers all commit root switching. This way everybody who
+>> wants to search with the commit root can just use this semaphore and all
+>> be safe. It will mean that the inode cache stuff may block longer than
+>> normal but I don't think that's too big of a deal.
+>>
+> I am ok with this fix,  I wanted to talk something about protecting searching commit file root, this is really a
+> problem especially for full send.
+>
+> I have some ideas about this issue:
+>
+> #1.don't use commit file root to search.
+> This will become a nightmare when we are doing full send which will iterate the whole file tree,
+> at the same time, we snapshot send root, snapshots will be blocked until send finished.
+>
+> #2. don't allow snapshot if we are sending root.
+> This may be a little confusing, snapshots are readonly, but users can not snapshot it.
+I think this is the best bet. The fact is we don't want to hold this
+commit_root_sem for the entire duration of the send, it would block
+people trying to commit the transaction. We could check for contention
+and drop the sem and re-search down to where we were but I think that
+would be prone to errors. If we just check to see if the snapshot is
+being sent and just return -EBUSY when we try to create a snapshot I
+think that's perfectly reasonable.
+> #3. after one iteration, we do check send_root's generation, and make sure it doesn't
+> change, if it changed, then we restart send again.
+>
+> I don't know which approach is better,and also snapshot-aware defragment will change
+> read-only snapshot?
+>
+> Did you have any better ideas about this issue? Share it with me here.^_^
+>
+Snapshot-aware defrag will definitely screw us here. I think we need to
+do the same thing above as we do here, which is to simply skip the
+snapshot aware defrag if we are currently using that root for send. This
+sound reasonable to you? Thanks,
 
-
-Then I added the clear_cache option to see if the problem would go
-away. After 3 boots, it did go away. But after some more boots, it's
-back!
-
-I believe there has been no unclean shutdowns nor lock-ups so far.
-
-What could be causing this error during normal operation?
-
-I have:
-Kernel 3.12.9
-btrfs-progs 3.12
-
-/etc/fstab:
-
-# /dev/mapper/luks-pool
-UUID=c56031b3-af27-41f6-8103-ede1f0743ac0       /               btrfs
-         subvol=arch,compress=zlib,nospace_cache,rw,noatime,clear_cache
- 0 0
-
-# /dev/mapper/luks-pool
-UUID=c56031b3-af27-41f6-8103-ede1f0743ac0       /var            btrfs
-         subvol=arch-var,compress=lzo,nospace_cache,commit=180,rw,noatime,clear_cache
-   0 0
-
-# /dev/mapper/luks-pool
-UUID=c56031b3-af27-41f6-8103-ede1f0743ac0       /home           btrfs
-         subvol=home,compress=zlib,nospace_cache,rw,noatime,clear_cache
- 0 0
-
-
-Thanks!
+Josef

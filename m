@@ -1,62 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f47.google.com ([209.85.160.47]:50937 "EHLO
-	mail-pb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751188AbaBEI7o convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 03:59:44 -0500
-Received: by mail-pb0-f47.google.com with SMTP id rp16so101771pbb.20
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 00:59:44 -0800 (PST)
-Content-Type: text/plain; charset=GB2312
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs send
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <52F00AAE.6070509@fb.com>
-Date: Wed, 5 Feb 2014 16:59:39 +0800
-Cc: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Message-Id: <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
-References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com> <52F00AAE.6070509@fb.com>
-To: Josef Bacik <jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:48256 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751540AbaBELRB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Feb 2014 06:17:01 -0500
+From: David Disseldorp <ddiss@suse.de>
+To: xfs@oss.sgi.com
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        David Disseldorp <ddiss@suse.de>
+Subject: [PATCH 2/2] btrfs/035: add new clone overwrite regression test
+Date: Wed,  5 Feb 2014 12:16:49 +0100
+Message-Id: <1391599009-2402-3-git-send-email-ddiss@suse.de>
+In-Reply-To: <1391599009-2402-1-git-send-email-ddiss@suse.de>
+References: <1391599009-2402-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This test uses the newly added cloner binary to dispatch full file and
+range specific clone (reflink) requests.
 
-Hi Josef,
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ tests/btrfs/035     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035.out |  3 +++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 80 insertions(+)
+ create mode 100755 tests/btrfs/035
+ create mode 100644 tests/btrfs/035.out
 
-[..SNIP..]
-> 
-> On 01/31/2014 11:37 AM, Wang Shilong wrote:
->> Hello Josef,
->> 
->>>  
-> 
-> 2) Remove the per-root rwsem for the commit root and just make one big
-> rwsem that covers all commit root switching. This way everybody who
-> wants to search with the commit root can just use this semaphore and all
-> be safe. It will mean that the inode cache stuff may block longer than
-> normal but I don't think that's too big of a deal.
-> 
-
-I am ok with this fix,  I wanted to talk something about protecting searching commit file root, this is really a
-problem especially for full send.
-
-I have some ideas about this issue:
-
-#1.don't use commit file root to search.
-This will become a nightmare when we are doing full send which will iterate the whole file tree,
-at the same time, we snapshot send root, snapshots will be blocked until send finished.
-
-#2. don't allow snapshot if we are sending root.
-This may be a little confusing, snapshots are readonly, but users can not snapshot it.
-
-#3. after one iteration, we do check send_root's generation, and make sure it doesn't
-change, if it changed, then we restart send again.
-
-I don't know which approach is better,and also snapshot-aware defragment will change
-read-only snapshot?
-
-Did you have any better ideas about this issue? Share it with me here.^_^
-
-Thanks,
-Wang
-> 
-> Josef
+diff --git a/tests/btrfs/035 b/tests/btrfs/035
+new file mode 100755
+index 0000000..03c2cd3
+--- /dev/null
++++ b/tests/btrfs/035
+@@ -0,0 +1,76 @@
++#!/bin/bash
++# FS QA Test No. btrfs/035
++#
++# Regression test for overwriting clones
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++    rm -f $tmp.*
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++CLONER_PROG=$here/src/cloner
++
++src_str="aaaaaaaaaa"
++
++echo -n "$src_str" > $SCRATCH_MNT/src || _fail "failed to create src"
++
++$CLONER_PROG $SCRATCH_MNT/src  $SCRATCH_MNT/src.clone1
++
++src_str="bbbbbbbbbbcccccccccc"
++
++echo -n "$src_str" > $SCRATCH_MNT/src || _fail "failed to create src"
++
++$CLONER_PROG $SCRATCH_MNT/src $SCRATCH_MNT/src.clone2
++
++snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone1 | awk '{print $5}'`
++echo "attempting ioctl (src.clone1 src)"
++$CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
++	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src || _fail "ioctl failed"
++
++snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
++echo "attempting ioctl (src.clone2 src)"
++$CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
++	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src || _fail "ioctl failed"
++
++status=0 ; exit
+diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
+new file mode 100644
+index 0000000..f86cadf
+--- /dev/null
++++ b/tests/btrfs/035.out
+@@ -0,0 +1,3 @@
++QA output created by 035
++attempting ioctl (src.clone1 src)
++attempting ioctl (src.clone2 src)
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f9f062f..bee57cb 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -37,3 +37,4 @@
+ 032 auto quick
+ 033 auto quick
+ 034 auto quick
++035 auto quick
+-- 
+1.8.4.5
 

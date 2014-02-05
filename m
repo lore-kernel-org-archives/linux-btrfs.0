@@ -1,132 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:48256 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:48254 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751540AbaBELRB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751745AbaBELRB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 5 Feb 2014 06:17:01 -0500
 From: David Disseldorp <ddiss@suse.de>
 To: xfs@oss.sgi.com
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        David Disseldorp <ddiss@suse.de>
-Subject: [PATCH 2/2] btrfs/035: add new clone overwrite regression test
-Date: Wed,  5 Feb 2014 12:16:49 +0100
-Message-Id: <1391599009-2402-3-git-send-email-ddiss@suse.de>
-In-Reply-To: <1391599009-2402-1-git-send-email-ddiss@suse.de>
-References: <1391599009-2402-1-git-send-email-ddiss@suse.de>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] __btrfs_drop_extents() BUG_ON reproducer
+Date: Wed,  5 Feb 2014 12:16:47 +0100
+Message-Id: <1391599009-2402-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test uses the newly added cloner binary to dispatch full file and
-range specific clone (reflink) requests.
+This patch-set provides a reproducer for hitting the 3.14.0-rc1 BUG_ON()
+at:
+ 692 int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+...
+ 839                 /*
+ 840                  *  | ---- range to drop ----- |
+ 841                  *      | -------- extent -------- |
+ 842                  */
+ 843                 if (start <= key.offset && end < extent_end) {
+ 844                         BUG_ON(extent_type == BTRFS_FILE_EXTENT_INLINE);
+ 845 
+ 846                         memcpy(&new_key, &key, sizeof(new_key));
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
----
- tests/btrfs/035     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/035.out |  3 +++
- tests/btrfs/group   |  1 +
- 3 files changed, 80 insertions(+)
- create mode 100755 tests/btrfs/035
- create mode 100644 tests/btrfs/035.out
+The first patch adds a small cloner binary which is used by btrfs/035 to
+dispatch BTRFS_IOC_CLONE_RANGE requests.
 
-diff --git a/tests/btrfs/035 b/tests/btrfs/035
-new file mode 100755
-index 0000000..03c2cd3
---- /dev/null
-+++ b/tests/btrfs/035
-@@ -0,0 +1,76 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/035
-+#
-+# Regression test for overwriting clones
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+CLONER_PROG=$here/src/cloner
-+
-+src_str="aaaaaaaaaa"
-+
-+echo -n "$src_str" > $SCRATCH_MNT/src || _fail "failed to create src"
-+
-+$CLONER_PROG $SCRATCH_MNT/src  $SCRATCH_MNT/src.clone1
-+
-+src_str="bbbbbbbbbbcccccccccc"
-+
-+echo -n "$src_str" > $SCRATCH_MNT/src || _fail "failed to create src"
-+
-+$CLONER_PROG $SCRATCH_MNT/src $SCRATCH_MNT/src.clone2
-+
-+snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone1 | awk '{print $5}'`
-+echo "attempting ioctl (src.clone1 src)"
-+$CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
-+	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src || _fail "ioctl failed"
-+
-+snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
-+echo "attempting ioctl (src.clone2 src)"
-+$CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
-+	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src || _fail "ioctl failed"
-+
-+status=0 ; exit
-diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
-new file mode 100644
-index 0000000..f86cadf
---- /dev/null
-+++ b/tests/btrfs/035.out
-@@ -0,0 +1,3 @@
-+QA output created by 035
-+attempting ioctl (src.clone1 src)
-+attempting ioctl (src.clone2 src)
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f9f062f..bee57cb 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -37,3 +37,4 @@
- 032 auto quick
- 033 auto quick
- 034 auto quick
-+035 auto quick
--- 
-1.8.4.5
+This workload resembles that of Samba's vfs_btrfs module, when a Windows
+client restores a file from a shadow-copy (snapshot) using server-side
+copy requests.
+
+Feedback appreciated.
+
+Cheers, David
+
+
+ src/Makefile        |   2 +-
+ src/cloner.c        | 168 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035     |  76 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035.out |   3 +++
+ tests/btrfs/group   |   1 +
+ 5 files changed, 249 insertions(+), 1 deletion(-)
 

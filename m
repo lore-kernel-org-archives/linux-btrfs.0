@@ -1,63 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60150 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750996AbaBTBcp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 20:32:45 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K1Wg0X006794
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 09:32:42 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:22036 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750757AbaBEMrw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 07:47:52 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s15Clo0c012630
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:51 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s15Clnvo028663
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:50 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s15Clnpl019908
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:49 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/4] Btrfs-progs: cleanups: new helper for parsing string to u64
-Date: Thu, 20 Feb 2014 09:30:48 +0800
-Message-Id: <1392859852-15829-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: fix typo in reported error
+Date: Wed,  5 Feb 2014 20:57:51 +0800
+Message-Id: <1391605071-15225-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are many places that need parse string to u64 for btrfs commands,
-in fact, we do such things *too casually*, using atoi/atol/atoll..is not
-right at all, and even we don't check whether it is a valid string.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ utils.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Let's do everything more gracefully, we introduce a new helper
-arg_strtou64() which will do all the necessary checks.If we fail to
-parse string to u64, we will output message and exit directly, this is
-something like what usage() is doing. It is ok to not return erro to
-it's caller, because this function should be called when parsing arg
-(just like usage!)
-
-I convert most places to arg_strtou64, test patches with xfstests.
-Feel free to review and comment.
-
-Changelog v1->v2:
-	s/btrfs_strtoull64/arg_strtou64 addressed by G.Baroncelli
-	fix out of range check,support hex and octal numbers pointed by Stefan.
-	add negative check pointed by Eric Sandeen.
-	plus more codes cleanups.
-
-Wang Shilong (4):
-  Btrfs-progs: new helper to parse string to u64 for btrfs
-  Btrfs-progs: switch to arg_strtou64() part1
-  Btrfs-progs: switch to arg_strtou64() part2
-  Btrfs-progs: switch to arg_strtou64() part3
-
- btrfs-corrupt-block.c | 45 +++++++++------------------------------------
- btrfs-debug-tree.c    |  2 +-
- btrfs-find-root.c     | 23 +++--------------------
- btrfs-image.c         | 12 ++++++------
- btrfs-list.c          | 14 +++-----------
- btrfs-map-logical.c   | 26 ++++++--------------------
- btrfs-select-super.c  | 12 +++++++++---
- btrfs-show-super.c    | 10 +++++-----
- btrfstune.c           |  4 ++--
- cmds-check.c          | 14 ++++++++++----
- cmds-inspect.c        |  8 ++++----
- cmds-replace.c        |  7 +------
- cmds-restore.c        | 27 +++++----------------------
- cmds-subvolume.c      |  8 ++------
- utils.c               | 35 ++++++++++++++++++++++++++++++++++-
- utils.h               |  1 +
- 16 files changed, 101 insertions(+), 147 deletions(-)
-
+diff --git a/utils.c b/utils.c
+index a045ffd..1e72b77 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1340,7 +1340,7 @@ static int set_label_mounted(const char *mount_path, const char *label)
+ 
+ 	fd = open(mount_path, O_RDONLY | O_NOATIME);
+ 	if (fd < 0) {
+-		fprintf(stderr, "ERROR: unable access to '%s'\n", mount_path);
++		fprintf(stderr, "ERROR: unable to access '%s'\n", mount_path);
+ 		return -1;
+ 	}
+ 
+@@ -1397,7 +1397,7 @@ int get_label_mounted(const char *mount_path, char *labelp)
+ 
+ 	fd = open(mount_path, O_RDONLY | O_NOATIME);
+ 	if (fd < 0) {
+-		fprintf(stderr, "ERROR: unable access to '%s'\n", mount_path);
++		fprintf(stderr, "ERROR: unable to access '%s'\n", mount_path);
+ 		return -1;
+ 	}
+ 
 -- 
-1.8.3.1
+1.7.1
 

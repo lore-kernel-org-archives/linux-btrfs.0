@@ -1,79 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from datenkhaos.de ([81.89.99.198]:34284 "EHLO datenkhaos.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932101AbaBEIOc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Feb 2014 03:14:32 -0500
-Date: Wed, 5 Feb 2014 09:14:28 +0100
-From: Johannes Hirte <johannes.hirte@datenkhaos.de>
+Received: from mail-pb0-f47.google.com ([209.85.160.47]:50937 "EHLO
+	mail-pb0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751188AbaBEI7o convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 03:59:44 -0500
+Received: by mail-pb0-f47.google.com with SMTP id rp16so101771pbb.20
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 00:59:44 -0800 (PST)
+Content-Type: text/plain; charset=GB2312
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs send
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <52F00AAE.6070509@fb.com>
+Date: Wed, 5 Feb 2014 16:59:39 +0800
+Cc: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Message-Id: <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com>
+References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com> <52F00AAE.6070509@fb.com>
 To: Josef Bacik <jbacik@fb.com>
-Cc: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: throttle delayed refs better
-Message-ID: <20140205091428.076fa15c@datenkhaos.de>
-In-Reply-To: <52F0F566.1090206@fb.com>
-References: <1390500472-15144-1-git-send-email-jbacik@fb.com>
-	<20140203192811.72866921@datenkhaos.de>
-	<52F00538.3010505@fb.com>
-	<20140203235334.791312d1@datenkhaos.de>
-	<52F0F566.1090206@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 4 Feb 2014 09:12:54 -0500
-Josef Bacik <jbacik@fb.com> wrote:
 
-> Hrm I was hoping that was going to be more helpful.  Can you get perf 
-> record -ag and then perf report while it's at full cpu and get the
-> first 3 or 4 things with their traces?
+Hi Josef,
 
-Here it comes:
+[..SNIP..]
+> 
+> On 01/31/2014 11:37 AM, Wang Shilong wrote:
+>> Hello Josef,
+>> 
+>>>  
+> 
+> 2) Remove the per-root rwsem for the commit root and just make one big
+> rwsem that covers all commit root switching. This way everybody who
+> wants to search with the commit root can just use this semaphore and all
+> be safe. It will mean that the inode cache stuff may block longer than
+> normal but I don't think that's too big of a deal.
+> 
 
-# ========
-# captured on: Wed Feb  5 00:11:41 2014
-# ========
-#
-no symbols found in /usr/sbin/acpid, maybe install a debug package?
-unexpected end of event stream
-# Samples: 168K of event 'cycles'                                                                                                                                           
-# Event count (approx.): 126847081763                                                                                                                                       
-#                                                                                                                                                                           
-# Overhead          Command               Shared Object                                                                                           Symbol                    
-# ........  ...............  ..........................  ...............................................................................................                    
-#                                                                                                                                                                           
-    18.48%  btrfs-freespace  [kernel.kallsyms]           [k] state_store                                                                                                    
-            |
-            --- state_store
+I am ok with this fix,  I wanted to talk something about protecting searching commit file root, this is really a
+problem especially for full send.
 
-    10.25%  btrfs-freespace  [kernel.kallsyms]           [k] sys_sched_rr_get_interval                                                                  
-            |
-            --- sys_sched_rr_get_interval
+I have some ideas about this issue:
 
-     9.02%  btrfs-freespace  [kernel.kallsyms]           [k] rt_mutex_slowunlock                                                                        
-            |
-            --- rt_mutex_slowunlock
+#1.don't use commit file root to search.
+This will become a nightmare when we are doing full send which will iterate the whole file tree,
+at the same time, we snapshot send root, snapshots will be blocked until send finished.
 
-     8.76%  btrfs-freespace  [kernel.kallsyms]           [k] btrfs_submit_compressed_write                                                              
-            |
-            --- btrfs_submit_compressed_write
+#2. don't allow snapshot if we are sending root.
+This may be a little confusing, snapshots are readonly, but users can not snapshot it.
 
-     6.63%  btrfs-freespace  [kernel.kallsyms]           [k] sched_show_task                                                                            
-            |
-            --- sched_show_task
+#3. after one iteration, we do check send_root's generation, and make sure it doesn't
+change, if it changed, then we restart send again.
 
-     5.19%  btrfs-freespace  [kernel.kallsyms]           [k] find_free_extent                                                                           
-            |
-            --- find_free_extent
+I don't know which approach is better,and also snapshot-aware defragment will change
+read-only snapshot?
 
-     5.15%  btrfs-freespace  [kernel.kallsyms]           [k] trace_print_graph_duration                                                                 
-            |
-            --- trace_print_graph_duration
+Did you have any better ideas about this issue? Share it with me here.^_^
 
-> I'm going to try and
-> reproduce today, is there anything special about your fs?
-> Compression, large blocksizes, skinny metadata?  Thanks,
+Thanks,
+Wang
+> 
+> Josef
 
-Filesystem was created with -l 32768 -n 32768 and skinny metadata enabled.
-
-regards,
-  Johannes

@@ -1,62 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw12a-caryn.wadns.net ([196.220.39.178]:53987 "EHLO
-	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751942AbaBFHid (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 02:38:33 -0500
-Message-ID: <52F33BE7.4020708@swiftspirit.co.za>
-Date: Thu, 06 Feb 2014 09:38:15 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
-MIME-Version: 1.0
-To: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Provide a better free space estimate on RAID1
-References: <20140206021516.304732cd@natsu>
-In-Reply-To: <20140206021516.304732cd@natsu>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from cantor2.suse.de ([195.135.220.15]:36637 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755713AbaBFKDx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 05:03:53 -0500
+Date: Thu, 6 Feb 2014 11:03:48 +0100
+From: David Disseldorp <ddiss@suse.de>
+To: Dave Chinner <david@fromorbit.com>
+Cc: xfs@oss.sgi.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: add small program for clone testing
+Message-ID: <20140206110348.10c44bae@plati.site>
+In-Reply-To: <20140205230936.GI13997@dastard>
+References: <1391599009-2402-1-git-send-email-ddiss@suse.de>
+	<1391599009-2402-2-git-send-email-ddiss@suse.de>
+	<20140205230936.GI13997@dastard>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/02/05 10:15 PM, Roman Mamedov wrote:
-> Hello,
->
-> On a freshly-created RAID1 filesystem of two 1TB disks:
->
-> # df -h /mnt/p2/
-> Filesystem      Size  Used Avail Use% Mounted on
-> /dev/sda2       1.8T  1.1M  1.8T   1% /mnt/p2
->
-> I cannot write 2TB of user data to that RAID1, so this estimate is clearly
-> misleading. I got tired of looking at the bogus disk free space on all my
-> RAID1 btrfs systems, so today I decided to do something about this:
-...
-> After:
->
-> # df -h /mnt/p2/
-> Filesystem      Size  Used Avail Use% Mounted on
-> /dev/sda2       1.8T  1.1M  912G   1% /mnt/p2
->
-> Until per-subvolume RAID profiles are implemented, this estimate will be
-> correct, and even after, it should be closer to the truth than assuming the
-> user will fill their RAID1 FS only with subvolumes of single or raid0 profiles.
-This is a known issue: 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
+Hi Dave,
 
-Btrfs is still considered experimental - this is just one of those 
-caveats we've learned to adjust to.
+On Thu, 6 Feb 2014 10:09:36 +1100, Dave Chinner wrote:
 
-The change could work well for now and I'm sure it has been considered. 
-I guess the biggest end-user issue is that you can, at a whim, change 
-the model for new blocks - raid0/5/6,single etc and your value from 5 
-minutes ago is far out from your new value without having written 
-anything or taken up any space. Not a show-stopper problem, really.
+> On Wed, Feb 05, 2014 at 12:16:48PM +0100, David Disseldorp wrote:
+> > The cloner program is capable of cloning files using the BTRFS_IOC_CLONE
+> > and BTRFS_IOC_CLONE_RANGE ioctls.
+> > 
+> > Signed-off-by: David Disseldorp <ddiss@suse.de>
+> 
+> Hi Dave - long time since I've seen your head pop up around here ;)
 
-The biggest dev issue is that future features will break this behaviour, 
-such as the "per-subvolume RAID profiles" you mentioned. It is difficult 
-to motivate including code (for which there's a known workaround) where 
-we know it will be obsoleted.
+Indeed, it's been a while. Thanks for the review :)
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+> 
+> A few comments below.
+> 
+> > +struct btrfs_ioctl_clone_range_args {
+> > +	int64_t src_fd;
+> > +	uint64_t src_offset;
+> > +	uint64_t src_length;
+> > +	uint64_t dest_offset;
+> > +};
+> > +
+> > +#define BTRFS_IOCTL_MAGIC 0x94
+> > +#define BTRFS_IOC_CLONE       _IOW(BTRFS_IOCTL_MAGIC, 9, int)
+> > +#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
+> > +				   struct btrfs_ioctl_clone_range_args)
+> 
+> Is there some published header file that these belong to? i.e.
+> somewhere in the include/linux/uapi/ kernel directory? Normally the
+> way to handle this sort of thing is by autoconf - if the header file
+> exists, then we include it, otherwise we use the manual definitions.
+> This just means that if the public api ever changes, we'll pick it
+> up automatically in future...
 
+I'd wanted to avoid the addition of another xfsqa prereq, but I guess
+it'll work with the fall-back.
+I'll add the autoconf logic to the next round, along with changes
+addressing your other remarks.
+
+Cheers, David

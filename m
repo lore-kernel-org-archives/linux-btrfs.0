@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:63644 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750774AbaBFOwS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 09:52:18 -0500
-Received: by mail-pa0-f44.google.com with SMTP id kq14so1774368pab.31
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 06:52:18 -0800 (PST)
+Received: from mail-pb0-f41.google.com ([209.85.160.41]:46340 "EHLO
+	mail-pb0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752686AbaBFQMS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 11:12:18 -0500
+Received: by mail-pb0-f41.google.com with SMTP id up15so1934037pbc.14
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 08:12:18 -0800 (PST)
 From: Wang Shilong <wangshilong1991@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com, david@fromorbit.com
-Subject: [PATCH v2] Btrfs: add regression test for running snapshot and send concurrently
-Date: Thu,  6 Feb 2014 22:50:12 +0800
-Message-Id: <1391698212-2358-1-git-send-email-wangshilong1991@gmail.com>
+Subject: [PATCH v3] Btrfs: add regression test for running snapshot and send concurrently
+Date: Fri,  7 Feb 2014 00:10:08 +0800
+Message-Id: <1391703008-2322-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -21,8 +21,11 @@ sure we have fixed the bug.
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
-Changelog v1->v2:
-	Avoid race codes and a code style update(Thanks to Dave Chinner's comments)
+Changelog
+ v1->v2:
+        Avoid race codes and a code style update(Thanks to Dave Chinner's comments)
+ v2->v3:
+        make sure we kill background snapshots on test failure
 ---
  tests/btrfs/034     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/034.out |  2 ++
@@ -33,7 +36,7 @@ Changelog v1->v2:
 
 diff --git a/tests/btrfs/034 b/tests/btrfs/034
 new file mode 100644
-index 0000000..1fcd792
+index 0000000..5152969
 --- /dev/null
 +++ b/tests/btrfs/034
 @@ -0,0 +1,83 @@
@@ -77,7 +80,7 @@ index 0000000..1fcd792
 +do_snapshots()
 +{
 +	i=2
-+	while [ 1 ]
++	while [ $i -lt 50 ]
 +	do
 +		$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/snap_1 \
 +			$SCRATCH_MNT/snap_$i >> $seqres.full 2>&1
@@ -114,7 +117,7 @@ index 0000000..1fcd792
 +do_snapshots &
 +snapshots_pid=$!
 +
-+$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || _fail "btrfs send failed"
++$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || echo "btrfs send failed"
 +
 +kill -TERM $snapshots_pid 2> /dev/null
 +

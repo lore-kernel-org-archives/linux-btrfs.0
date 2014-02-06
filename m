@@ -1,77 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:46579 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754517AbaBFV3s (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:11828 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1756025AbaBFWnn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Feb 2014 16:29:48 -0500
-Received: from pps.filterd (m0044012 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s16LM3Av012581
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Feb 2014 13:29:47 -0800
-Received: from mail.thefacebook.com (prn1-cmdf-dc01-fw1-nat.corp.tfbnw.net [173.252.71.129] (may be forged))
-	by mx0a-00082601.pphosted.com with ESMTP id 1hvg6fgfsj-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 13:29:47 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: balance delayed inode updates V2
-Date: Thu, 6 Feb 2014 16:29:45 -0500
-Message-ID: <1391722185-5349-1-git-send-email-jbacik@fb.com>
+	Thu, 6 Feb 2014 17:43:43 -0500
+Date: Fri, 7 Feb 2014 09:43:37 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, jbacik@fb.com
+Subject: Re: [PATCH v3] Btrfs: add regression test for running snapshot and
+ send concurrently
+Message-ID: <20140206224337.GB13647@dastard>
+References: <1391703008-2322-1-git-send-email-wangshilong1991@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1391703008-2322-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While trying to reproduce a delayed ref problem I noticed the box kept falling
-over using all 80gb of my ram with btrfs_inode's and btrfs_delayed_node's.
-Turns out this is because we only throttle delayed inode updates in
-btrfs_dirty_inode, which doesn't actually get called that often, especially when
-all you are doing is creating a bunch of files.  So balance delayed inode
-updates everytime we create a new inode.  With this patch we no longer use up
-all of our ram with delayed inode updates.  Thanks,
+On Fri, Feb 07, 2014 at 12:10:08AM +0800, Wang Shilong wrote:
+> +$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
+> +	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
+> +
+> +do_snapshots &
+> +snapshots_pid=$!
+> +
+> +$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || echo "btrfs send failed"
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
-V1->V2: this time without the debug part I was using.
+Let's stop this anti-pattern before it takes hold.
 
- fs/btrfs/inode.c | 4 ++++
- 1 file changed, 4 insertions(+)
+If there's output from the send command it should be
+filtered and captured in the golden image. Hence any deviation
+caused by errors is automatically flagged as an error.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1af34d0..d44ff9f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5795,6 +5795,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
- 	}
- out_unlock:
- 	btrfs_end_transaction(trans, root);
-+	btrfs_balance_delayed_items(root);
- 	btrfs_btree_balance_dirty(root);
- 	if (drop_inode) {
- 		inode_dec_link_count(inode);
-@@ -5868,6 +5869,7 @@ out_unlock:
- 		inode_dec_link_count(inode);
- 		iput(inode);
- 	}
-+	btrfs_balance_delayed_items(root);
- 	btrfs_btree_balance_dirty(root);
- 	return err;
- }
-@@ -5926,6 +5928,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	}
- 
- 	btrfs_end_transaction(trans, root);
-+	btrfs_balance_delayed_items(root);
- fail:
- 	if (drop_inode) {
- 		inode_dec_link_count(inode);
-@@ -5992,6 +5995,7 @@ out_fail:
- 	btrfs_end_transaction(trans, root);
- 	if (drop_on_err)
- 		iput(inode);
-+	btrfs_balance_delayed_items(root);
- 	btrfs_btree_balance_dirty(root);
- 	return err;
- }
+That's the whole point of using golden images for capturing errors -
+you don't need to capture return values from binaries and it
+guarantees that users are informed about failures through error
+messages. IOWs:
+
+$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 | _btrfs_send_filter
+
+is what you should be doing here.
+
+Cheers,
+
+Dave.
 -- 
-1.8.3.1
-
+Dave Chinner
+david@fromorbit.com

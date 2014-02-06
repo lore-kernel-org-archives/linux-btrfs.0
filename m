@@ -1,54 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:22036 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750757AbaBEMrw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 07:47:52 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s15Clo0c012630
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:51 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s15Clnvo028663
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:50 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s15Clnpl019908
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Feb 2014 12:47:49 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:43682 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754284AbaBFO3W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 09:29:22 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 04304ABB3
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Feb 2014 14:29:22 +0000 (UTC)
+From: David Disseldorp <ddiss@suse.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fix typo in reported error
-Date: Wed,  5 Feb 2014 20:57:51 +0800
-Message-Id: <1391605071-15225-1-git-send-email-anand.jain@oracle.com>
+Cc: David Disseldorp <ddiss@suse.de>
+Subject: [PATCH] ioctl: add note regarding CLONE_RANGE(len=0) behaviour
+Date: Thu,  6 Feb 2014 15:29:18 +0100
+Message-Id: <1391696958-4522-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- utils.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+A BTRFS_IOC_CLONE_RANGE request with a src_length value of zero has the
+effect of cloning all data from src_offset through to end-of-file.
 
-diff --git a/utils.c b/utils.c
-index a045ffd..1e72b77 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1340,7 +1340,7 @@ static int set_label_mounted(const char *mount_path, const char *label)
+Document this behaviour in the header file for those who (like me)
+incorrectly assume that no data is cloned in such a case.
+
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ ioctl.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ioctl.h b/ioctl.h
+index a589cd7..f7d435d 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -506,6 +506,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+ 				   struct btrfs_ioctl_vol_args)
  
- 	fd = open(mount_path, O_RDONLY | O_NOATIME);
- 	if (fd < 0) {
--		fprintf(stderr, "ERROR: unable access to '%s'\n", mount_path);
-+		fprintf(stderr, "ERROR: unable to access '%s'\n", mount_path);
- 		return -1;
- 	}
- 
-@@ -1397,7 +1397,7 @@ int get_label_mounted(const char *mount_path, char *labelp)
- 
- 	fd = open(mount_path, O_RDONLY | O_NOATIME);
- 	if (fd < 0) {
--		fprintf(stderr, "ERROR: unable access to '%s'\n", mount_path);
-+		fprintf(stderr, "ERROR: unable to access '%s'\n", mount_path);
- 		return -1;
- 	}
- 
++/* With a @src_length of zero, the range from @src_offset->EOF is cloned! */
+ struct btrfs_ioctl_clone_range_args {
+ 	__s64 src_fd;
+ 	__u64 src_offset, src_length;
 -- 
-1.7.1
+1.8.4.5
 

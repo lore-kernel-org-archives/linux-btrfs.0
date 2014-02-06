@@ -1,250 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42936 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932359AbaBFN7W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Feb 2014 08:59:22 -0500
-From: David Disseldorp <ddiss@suse.de>
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:63644 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750774AbaBFOwS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 09:52:18 -0500
+Received: by mail-pa0-f44.google.com with SMTP id kq14so1774368pab.31
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 06:52:18 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: xfs@oss.sgi.com
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        David Disseldorp <ddiss@suse.de>
-Subject: [PATCH v2 1/3] btrfs: add small program for clone testing
-Date: Thu,  6 Feb 2014 14:59:12 +0100
-Message-Id: <1391695154-2039-2-git-send-email-ddiss@suse.de>
-In-Reply-To: <1391695154-2039-1-git-send-email-ddiss@suse.de>
-References: <1391695154-2039-1-git-send-email-ddiss@suse.de>
+Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com, david@fromorbit.com
+Subject: [PATCH v2] Btrfs: add regression test for running snapshot and send concurrently
+Date: Thu,  6 Feb 2014 22:50:12 +0800
+Message-Id: <1391698212-2358-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The cloner program is capable of cloning files using the BTRFS_IOC_CLONE
-and BTRFS_IOC_CLONE_RANGE ioctls.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
+Btrfs would fail to send if snapshot run concurrently, this test is to make
+sure we have fixed the bug.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- .gitignore   |   1 +
- src/Makefile |   2 +-
- src/cloner.c | 188 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 190 insertions(+), 1 deletion(-)
- create mode 100644 src/cloner.c
+Changelog v1->v2:
+	Avoid race codes and a code style update(Thanks to Dave Chinner's comments)
+---
+ tests/btrfs/034     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/034.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 86 insertions(+)
+ create mode 100644 tests/btrfs/034
+ create mode 100644 tests/btrfs/034.out
 
-diff --git a/.gitignore b/.gitignore
-index ee4cb41..b6f2463 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -104,6 +104,7 @@
- /src/aio-dio-regress/aio-free-ring-with-bogus-nr-pages
- /src/aio-dio-regress/aio-io-setup-with-nonwritable-context-pointer
- /src/aio-dio-regress/aiodio_sparse2
-+/src/cloner
- 
- # dmapi/ binaries
- /dmapi/src/common/cmd/read_invis
-diff --git a/src/Makefile b/src/Makefile
-index 84c8297..6509f2d 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -18,7 +18,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	locktest unwritten_mmap bulkstat_unlink_test t_stripealign \
- 	bulkstat_unlink_test_modified t_dir_offset t_futimens t_immutable \
- 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
--	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester nsexec
-+	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester nsexec cloner
- 
- SUBDIRS =
- 
-diff --git a/src/cloner.c b/src/cloner.c
+diff --git a/tests/btrfs/034 b/tests/btrfs/034
 new file mode 100644
-index 0000000..dfce837
+index 0000000..1fcd792
 --- /dev/null
-+++ b/src/cloner.c
-@@ -0,0 +1,188 @@
-+/*
-+ *  Tiny program to perform file (range) clones using raw Btrfs ioctls.
-+ *  It should only be needed until btrfs-progs has an xfs_io equivalent.
-+ *
-+ *  Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-+ *
-+ *  This program is free software; you can redistribute it and/or modify
-+ *  it under the terms of the GNU General Public License as published by
-+ *  the Free Software Foundation; either version 2 of the License, or
-+ *  (at your option) any later version.
-+ *
-+ *  This program is distributed in the hope that it will be useful,
-+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *  GNU General Public License for more details.
-+ *
-+ *  You should have received a copy of the GNU General Public License
-+ *  along with this program; if not, write to the Free Software
-+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-+ */
++++ b/tests/btrfs/034
+@@ -0,0 +1,83 @@
++#!/bin/bash
++# FS QA Test No. btrfs/034
++#
++# Regression test for running snapshots and send concurrently.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
 +
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <sys/ioctl.h>
-+#include <stdint.h>
-+#include <stdbool.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <errno.h>
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
 +
-+struct btrfs_ioctl_clone_range_args {
-+	int64_t src_fd;
-+	uint64_t src_offset;
-+	uint64_t src_length;
-+	uint64_t dest_offset;
-+};
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
 +
-+#define BTRFS_IOCTL_MAGIC 0x94
-+#define BTRFS_IOC_CLONE       _IOW(BTRFS_IOCTL_MAGIC, 9, int)
-+#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
-+				   struct btrfs_ioctl_clone_range_args)
-+
-+static void
-+usage(char *name, const char *msg)
++_cleanup()
 +{
-+	printf("Fatal: %s\n"
-+	       "Usage:\n"
-+	       "%s [options] <src_file> <dest_file>\n"
-+	       "\tA full file clone (reflink) is performed by default, "
-+	       "unless any of the following are specified:\n"
-+	       "\t-s <offset>:	source file offset (default = 0)\n"
-+	       "\t-d <offset>:	destination file offset (default = 0)\n"
-+	       "\t-l <length>:	length of clone (default = 0)\n",
-+	       msg, name);
-+	_exit(1);
++    rm -f $tmp.*
 +}
 +
-+static int
-+clone_file(int src_fd, int dst_fd)
++do_snapshots()
 +{
-+	int ret = ioctl(dst_fd, BTRFS_IOC_CLONE, src_fd);
-+	if (ret != 0)
-+		ret = errno;
-+	return ret;
++	i=2
++	while [ 1 ]
++	do
++		$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/snap_1 \
++			$SCRATCH_MNT/snap_$i >> $seqres.full 2>&1
++		let i=$i+1
++	done
 +}
 +
-+static int
-+clone_file_range(int src_fd, int dst_fd, uint64_t src_off, uint64_t dst_off,
-+		 uint64_t len)
-+{
-+	struct btrfs_ioctl_clone_range_args cr_args;
-+	int ret;
++trap "_cleanup ; exit \$status" 0 1 2 3 15
 +
-+	memset(&cr_args, 0, sizeof(cr_args));
-+	cr_args.src_fd = src_fd;
-+	cr_args.src_offset = src_off;
-+	cr_args.src_length = len;
-+	cr_args.dest_offset = dst_off;
-+	ret = ioctl(dst_fd, BTRFS_IOC_CLONE_RANGE, &cr_args);
-+	if (ret != 0)
-+		ret = errno;
-+	return ret;
-+}
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
 +
-+int
-+main(int argc, char **argv)
-+{
-+	bool full_file = true;
-+	uint64_t src_off = 0;
-+	uint64_t dst_off = 0;
-+	uint64_t len = 0;
-+	char *src_file;
-+	int src_fd;
-+	char *dst_file;
-+	int dst_fd;
-+	int ret;
-+	int opt;
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
 +
-+	while ((opt = getopt(argc, argv, "s:d:l:")) != -1) {
-+		char *sval_end;
-+		switch (opt) {
-+		case 's':
-+			errno = 0;
-+			src_off = strtoull(optarg, &sval_end, 10);
-+			if ((errno) || (*sval_end != '\0'))
-+				usage(argv[0], "invalid source offset");
-+			full_file = false;
-+			break;
-+		case 'd':
-+			errno = 0;
-+			dst_off = strtoull(optarg, &sval_end, 10);
-+			if ((errno) || (*sval_end != '\0'))
-+				usage(argv[0], "invalid destination offset");
-+			full_file = false;
-+			break;
-+		case 'l':
-+			errno = 0;
-+			len = strtoull(optarg, &sval_end, 10);
-+			if ((errno) || (*sval_end != '\0'))
-+				usage(argv[0], "invalid length");
-+			full_file = false;
-+			break;
-+		default:
-+			usage(argv[0], "invalid argument");
-+		}
-+	}
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
 +
-+	/* should be exactly two args left */
-+	if (optind != argc - 2)
-+		usage(argv[0], "src_file and dst_file arguments are madatory");
 +
-+	src_file = (char *)strdup(argv[optind++]);
-+	if (src_file == NULL) {
-+		ret = ENOMEM;
-+		printf("no memory\n");
-+		goto err_out;
-+	}
-+	dst_file = (char *)strdup(argv[optind++]);
-+	if (dst_file == NULL) {
-+		ret = ENOMEM;
-+		printf("no memory\n");
-+		goto err_src_free;
-+	}
++touch $SCRATCH_MNT/foo
 +
-+	src_fd = open(src_file, O_RDONLY);
-+	if (src_fd == -1) {
-+		ret = errno;
-+		printf("failed to open %s: %s\n", src_file, strerror(errno));
-+		goto err_dst_free;
-+	}
-+	dst_fd = open(dst_file, O_CREAT | O_WRONLY, 0644);
-+	if (dst_fd == -1) {
-+		ret = errno;
-+		printf("failed to open %s: %s\n", dst_file, strerror(errno));
-+		goto err_src_close;
-+	}
++# get file with fragments by using backwards writes.
++for i in `seq 10240 -1 1`; do
++	$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
++		$SCRATCH_MNT/foo > /dev/null | _filter_xfs_io
++done
 +
-+	if (full_file) {
-+		ret = clone_file(src_fd, dst_fd);
-+	} else {
-+		ret = clone_file_range(src_fd, dst_fd, src_off, dst_off, len);
-+	}
-+	if (ret != 0) {
-+		printf("clone failed: %s\n", strerror(ret));
-+		goto err_dst_close;
-+	}
++$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
++	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
 +
-+	ret = 0;
-+err_dst_close:
-+	if (close(dst_fd)) {
-+		ret |= errno;
-+		printf("failed to close dst file: %s\n", strerror(errno));
-+	}
-+err_src_close:
-+	if (close(src_fd)) {
-+		ret |= errno;
-+		printf("failed to close src file: %s\n", strerror(errno));
-+	}
-+err_dst_free:
-+	free(dst_file);
-+err_src_free:
-+	free(src_file);
-+err_out:
-+	return ret;
-+}
++do_snapshots &
++snapshots_pid=$!
++
++$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || _fail "btrfs send failed"
++
++kill -TERM $snapshots_pid 2> /dev/null
++
++echo "Silence is golden"
++status=0 ; exit
+diff --git a/tests/btrfs/034.out b/tests/btrfs/034.out
+new file mode 100644
+index 0000000..4c8873c
+--- /dev/null
++++ b/tests/btrfs/034.out
+@@ -0,0 +1,2 @@
++QA output created by 034
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index b29236c..f9f062f 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -36,3 +36,4 @@
+ 031 auto quick
+ 032 auto quick
+ 033 auto quick
++034 auto quick
 -- 
-1.8.4.5
+1.8.4
 

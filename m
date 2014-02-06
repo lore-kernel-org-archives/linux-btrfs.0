@@ -1,41 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:42572 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750706AbaBFF1z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 00:27:55 -0500
-Received: by mail-pd0-f178.google.com with SMTP id y13so1262631pdi.37
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 21:27:55 -0800 (PST)
-Message-ID: <52F31D51.8040609@gmail.com>
-Date: Thu, 06 Feb 2014 16:27:45 +1100
-From: Thermionix <thermionix@gmail.com>
+Received: from fw12a-caryn.wadns.net ([196.220.39.178]:53987 "EHLO
+	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751942AbaBFHid (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 02:38:33 -0500
+Message-ID: <52F33BE7.4020708@swiftspirit.co.za>
+Date: Thu, 06 Feb 2014 09:38:15 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: device delete missing panic
-References: <52F30422.8@gmail.com> <52F3112C.3070309@oracle.com> <52F31726.7000200@gmail.com> <52F31BAF.5040507@oracle.com>
-In-Reply-To: <52F31BAF.5040507@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Provide a better free space estimate on RAID1
+References: <20140206021516.304732cd@natsu>
+In-Reply-To: <20140206021516.304732cd@natsu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-~ # dmesg | tail
-[  351.083338] btrfs: failed to read chunk tree on sdg
-[  351.088283] btrfs: open_ctree failed
-[  392.541465] device label pool devid 7 transid 55056 /dev/sdh
-[  393.558496] btrfs: allowing degraded mounts
-[  393.558503] btrfs: disk space caching is enabled
-[  393.605461] BTRFS critical (device sdg): unable to find logical 1563838812160 len 4096
-[  393.605479] BTRFS critical (device sdg): unable to find logical 1563838812160 len 4096
-[  393.605491] BTRFS critical (device sdg): unable to find logical 1563838812160 len 4096
-[  393.605495] btrfs: failed to read tree root on sdg
-[  393.612297] btrfs: open_ctree failed
+On 2014/02/05 10:15 PM, Roman Mamedov wrote:
+> Hello,
+>
+> On a freshly-created RAID1 filesystem of two 1TB disks:
+>
+> # df -h /mnt/p2/
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sda2       1.8T  1.1M  1.8T   1% /mnt/p2
+>
+> I cannot write 2TB of user data to that RAID1, so this estimate is clearly
+> misleading. I got tired of looking at the bogus disk free space on all my
+> RAID1 btrfs systems, so today I decided to do something about this:
+...
+> After:
+>
+> # df -h /mnt/p2/
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sda2       1.8T  1.1M  912G   1% /mnt/p2
+>
+> Until per-subvolume RAID profiles are implemented, this estimate will be
+> correct, and even after, it should be closer to the truth than assuming the
+> user will fill their RAID1 FS only with subvolumes of single or raid0 profiles.
+This is a known issue: 
+https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
 
-On 06/02/14 16:20, Anand Jain wrote:
-> 
-> 
-> 
->> as I now can't mount (open_ctree failed)
-> 
->  at around open_ctree failed message should help.
-> 
-> Thanks, Anand
+Btrfs is still considered experimental - this is just one of those 
+caveats we've learned to adjust to.
+
+The change could work well for now and I'm sure it has been considered. 
+I guess the biggest end-user issue is that you can, at a whim, change 
+the model for new blocks - raid0/5/6,single etc and your value from 5 
+minutes ago is far out from your new value without having written 
+anything or taken up any space. Not a show-stopper problem, really.
+
+The biggest dev issue is that future features will break this behaviour, 
+such as the "per-subvolume RAID profiles" you mentioned. It is difficult 
+to motivate including code (for which there's a known workaround) where 
+we know it will be obsoleted.
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

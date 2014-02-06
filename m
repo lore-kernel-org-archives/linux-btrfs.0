@@ -1,95 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f41.google.com ([209.85.214.41]:58287 "EHLO
-	mail-bk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751667AbaBEWIx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 17:08:53 -0500
-Received: by mail-bk0-f41.google.com with SMTP id na10so411744bkb.28
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Feb 2014 14:08:52 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1391635161-3983-1-git-send-email-jbacik@fb.com>
-References: <1391635161-3983-1-git-send-email-jbacik@fb.com>
-Date: Wed, 5 Feb 2014 22:08:51 +0000
-Message-ID: <CAL3q7H6PgEqOZDNUprKUGSKG1Po3UwSst2EK4FUJQ=2EP4N5tA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix assert screwup for the pending move stuff
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:42934 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932085AbaBFN7W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 08:59:22 -0500
+From: David Disseldorp <ddiss@suse.de>
+To: xfs@oss.sgi.com
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/3] __btrfs_drop_extents() BUG_ON reproducer
+Date: Thu,  6 Feb 2014 14:59:11 +0100
+Message-Id: <1391695154-2039-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 5, 2014 at 9:19 PM, Josef Bacik <jbacik@fb.com> wrote:
-> Wang noticed that he was failing btrfs/030 even though me and Filipe couldn't
-> reproduce.  Turns out this is because Wang didn't have CONFIG_BTRFS_ASSERT set,
-> which meant that a key part of Filipe's original patch was not being built in.
-> This appears to be a mess up with merging Filipe's patch as it does not exist in
-> his original patch.  Fix this by changing how we make sure del_waiting_dir_move
-> asserts that it did not error and take the function out of the ifdef check.
-> This makes btrfs/030 pass with the assert on or off.  Thanks,
->
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+This patch-set provides a reproducer for hitting the 3.14.0-rc1 BUG_ON()
+at:
+ 692 int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+...
+ 839                 /*
+ 840                  *  | ---- range to drop ----- |
+ 841                  *      | -------- extent -------- |
+ 842                  */
+ 843                 if (start <= key.offset && end < extent_end) {
+ 844                         BUG_ON(extent_type == BTRFS_FILE_EXTENT_INLINE);
+ 845 
+ 846                         memcpy(&new_key, &key, sizeof(new_key));
 
-Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+The first patch adds a small cloner binary which is used by btrfs/035 to
+dispatch BTRFS_IOC_CLONE_RANGE requests.
 
-Thanks Josef.
+This workload resembles that of Samba's vfs_btrfs module, when a Windows
+client restores a file from a shadow-copy (snapshot) using server-side
+copy requests.
 
-I actually had the ASSERT(del_waiting_dir_move(sctx, pm->ino) == 0), I
-didn't had only the function declaration inside #ifdef
-CONFIG_BTRFS_ASSERT ... #endif. Obviously because I never built with
-assertions disabled and totally forgot about not using expressions
-with side effects inside assert macros.
+Changes since V1:
+- Use strtoull instead of atoi
+- Print error conditions in cloner
+- Check for cloner binary before running test
+- Continue test on failure
+- Add cloner to .gitignore
 
-> ---
->  fs/btrfs/send.c | 8 +++-----
->  1 file changed, 3 insertions(+), 5 deletions(-)
->
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index f71fcbc..afb145d 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -2734,8 +2734,6 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
->         return 0;
->  }
->
-> -#ifdef CONFIG_BTRFS_ASSERT
-> -
->  static int del_waiting_dir_move(struct send_ctx *sctx, u64 ino)
->  {
->         struct rb_node *n = sctx->waiting_dir_moves.rb_node;
-> @@ -2756,8 +2754,6 @@ static int del_waiting_dir_move(struct send_ctx *sctx, u64 ino)
->         return -ENOENT;
->  }
->
-> -#endif
-> -
->  static int add_pending_dir_move(struct send_ctx *sctx, u64 parent_ino)
->  {
->         struct rb_node **p = &sctx->pending_dir_moves.rb_node;
-> @@ -2862,7 +2858,9 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
->         }
->
->         sctx->send_progress = sctx->cur_ino + 1;
-> -       ASSERT(del_waiting_dir_move(sctx, pm->ino) == 0);
-> +       ret = del_waiting_dir_move(sctx, pm->ino);
-> +       ASSERT(ret == 0);
-> +
->         ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
->         if (ret < 0)
->                 goto out;
-> --
-> 1.8.3.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Feedback appreciated.
+
+Cheers, David
 
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+ .gitignore          |   1 +
+ configure.ac        |   1 +
+ src/Makefile        |   2 +-
+ src/cloner.c        | 192 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035     |  77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035.out |   3 +++
+ tests/btrfs/group   |   1 +
+ 7 files changed, 276 insertions(+), 1 deletion(-)
+ create mode 100644 src/cloner.c
+ create mode 100755 tests/btrfs/035
+ create mode 100644 tests/btrfs/035.out

@@ -1,121 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24830 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752065AbaBSLTn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 06:19:43 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1JBJZMF025817
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 19:19:36 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] Btrfs-progs: switch to btrfs_strtoull() part3
-Date: Wed, 19 Feb 2014 19:17:54 +0800
-Message-Id: <1392808674-21656-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1392808674-21656-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1392808674-21656-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:51312 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752659AbaBFTth (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 14:49:37 -0500
+Date: Thu, 6 Feb 2014 20:49:36 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Hugo Mills <hugo@carfax.org.uk>, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: introduce BTRFS_IOC_GET_DEVS
+Message-ID: <20140206194935.GT1364@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1390812770-11720-1-git-send-email-anand.jain@oracle.com>
+ <1390812770-11720-2-git-send-email-anand.jain@oracle.com>
+ <20140127084709.GK3314@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140127084709.GK3314@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- btrfs-show-super.c | 7 ++++---
- btrfstune.c        | 4 ++--
- cmds-replace.c     | 7 +------
- cmds-subvolume.c   | 8 ++------
- 4 files changed, 9 insertions(+), 17 deletions(-)
+On Mon, Jan 27, 2014 at 08:47:09AM +0000, Hugo Mills wrote:
+> On Mon, Jan 27, 2014 at 04:52:50PM +0800, Anand Jain wrote:
+> > The user land progs needs   a simple way to read
+> > the raw list of disks and its parameters as
+> > btrfs kernel understands it. This patch will
+> > introduce BTRFS_IOC_GET_DEVS which dumps
+> > every thing under fs_devices.
+> > 
+> > As of now btrfs-devlist uses this ioctl.
+> > 
+> > In the long run this ioctl would help to optimize
+> > some part of btrfs-progs, mainly the current
+> > btrfs filesystem show
+> 
+>    Just thinking out loud here, really, but can we export this
+> information in /sys instead, rather than adding yet more ioctls?
 
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index b87f16a..378c7d2 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -59,17 +59,18 @@ int main(int argc, char **argv)
- 	int all = 0;
- 	char *filename;
- 	int fd = -1;
--	int arg, i;
-+	int i;
-+	u64 arg;
- 	u64 sb_bytenr = btrfs_sb_offset(0);
- 
- 	while ((opt = getopt(argc, argv, "ai:")) != -1) {
- 		switch (opt) {
- 		case 'i':
--			arg = atoi(optarg);
-+			arg = btrfs_strtoull(optarg, 10);
- 
- 			if (arg < 0 || arg >= BTRFS_SUPER_MIRROR_MAX) {
- 				fprintf(stderr,
--					"Illegal super_mirror %d\n",
-+					"Illegal super_mirror %llu\n",
- 					arg);
- 				print_usage();
- 				exit(1);
-diff --git a/btrfstune.c b/btrfstune.c
-index da82f36..744dec5 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
- 	int success = 0;
- 	int extrefs_flag = 0;
- 	int seeding_flag = 0;
--	int seeding_value = 0;
-+	u64 seeding_value = 0;
- 	int skinny_flag = 0;
- 	int ret;
- 
-@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
- 		switch(c) {
- 		case 'S':
- 			seeding_flag = 1;
--			seeding_value = atoi(optarg);
-+			seeding_value = btrfs_strtoull(optarg, 10);
- 			break;
- 		case 'r':
- 			extrefs_flag = 1;
-diff --git a/cmds-replace.c b/cmds-replace.c
-index c683d6c..3dc6c49 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -210,12 +210,7 @@ static int cmd_start_replace(int argc, char **argv)
- 		struct btrfs_ioctl_fs_info_args fi_args;
- 		struct btrfs_ioctl_dev_info_args *di_args = NULL;
- 
--		if (atoi(srcdev) == 0) {
--			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
--				srcdev);
--			goto leave_with_error;
--		}
--		start_args.start.srcdevid = (__u64)atoi(srcdev);
-+		start_args.start.srcdevid = btrfs_strtoull(srcdev, 10);
- 
- 		ret = get_fs_info(path, &fi_args, &di_args);
- 		if (ret) {
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 0bd76f2..98470f7 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -820,11 +820,7 @@ static int cmd_subvol_set_default(int argc, char **argv)
- 	subvolid = argv[1];
- 	path = argv[2];
- 
--	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
--	if (errno == ERANGE) {
--		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
--		return 1;
--	}
-+	objectid = btrfs_strtoull(subvolid, 10);
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
-@@ -861,7 +857,7 @@ static int cmd_find_new(int argc, char **argv)
- 		usage(cmd_find_new_usage);
- 
- 	subvol = argv[1];
--	last_gen = atoll(argv[2]);
-+	last_gen = btrfs_strtoull(argv[2], 10);
- 
- 	ret = test_issubvolume(subvol);
- 	if (ret < 0) {
--- 
-1.8.3.1
+I tend to agree that this belongs to sysfs, it's more flexible in case
+we'll add more per-device stats, ie. one file that holds all the stats
+about the device. This is also easier to use from scripts that gather
+system information.
 
+With 3.14 the sysfs interface is available, but the devices under
+ /sys/fs/btrfs/<fs-uuid>/devices/...
+are symlinks to the sysfs devices, so this btrfs-specific device
+information has to be located in a separate directory.

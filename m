@@ -1,106 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f50.google.com ([209.85.214.50]:42976 "EHLO
-	mail-bk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756084AbaBFMbQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 07:31:16 -0500
-Received: by mail-bk0-f50.google.com with SMTP id w16so615648bkz.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 04:31:14 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1391688149-2319-1-git-send-email-wangshilong1991@gmail.com>
-References: <1391688149-2319-1-git-send-email-wangshilong1991@gmail.com>
-Date: Thu, 6 Feb 2014 12:31:13 +0000
-Message-ID: <CAL3q7H6RucFhxnHSywMyo0xpAjxwca6u5URT4wN4FunWV_i3dw@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2 ] Btrfs: switch to btrfs_previous_extent_item()
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from luka.romanrm.net ([213.163.64.74]:46487 "EHLO luka.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756204AbaBFMpG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 07:45:06 -0500
+Date: Thu, 6 Feb 2014 18:45:02 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Provide a better free space estimate on RAID1
+Message-ID: <20140206184502.128b7dbe@natsu>
+In-Reply-To: <52F33BE7.4020708@swiftspirit.co.za>
+References: <20140206021516.304732cd@natsu>
+	<52F33BE7.4020708@swiftspirit.co.za>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/d_Q=M9YDJNUtsy8T9EqDzln"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 6, 2014 at 12:02 PM, Wang Shilong <wangshilong1991@gmail.com> wrote:
-> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->
-> Since we have introduced btrfs_previous_extent_item() to search previous
-> extent item, just switch into it.
->
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+--Sig_/d_Q=M9YDJNUtsy8T9EqDzln
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+On Thu, 06 Feb 2014 09:38:15 +0200
+Brendan Hide <brendan@swiftspirit.co.za> wrote:
 
-Thanks Shilong.
+> This is a known issue:=20
+> https://btrfs.wiki.kernel.org/index.php/FAQ#Why_does_df_show_incorrect_fr=
+ee_space_for_my_RAID_volume.3F
+> Btrfs is still considered experimental=20
 
-> ---
-> Changelog:
-> v1->v2:
->         set @found_key properly and fix return value(thanks to Filipe)
-> ---
->  fs/btrfs/backref.c | 37 ++++++-------------------------------
->  1 file changed, 6 insertions(+), 31 deletions(-)
->
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index c39891c..4dedb89 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -1325,38 +1325,13 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
->         if (ret < 0)
->                 return ret;
->
-> -       while (1) {
-> -               u32 nritems;
-> -               if (path->slots[0] == 0) {
-> -                       btrfs_set_path_blocking(path);
-> -                       ret = btrfs_prev_leaf(fs_info->extent_root, path);
-> -                       if (ret != 0) {
-> -                               if (ret > 0) {
-> -                                       pr_debug("logical %llu is not within "
-> -                                                "any extent\n", logical);
-> -                                       ret = -ENOENT;
-> -                               }
-> -                               return ret;
-> -                       }
-> -               } else {
-> -                       path->slots[0]--;
-> -               }
-> -               nritems = btrfs_header_nritems(path->nodes[0]);
-> -               if (nritems == 0) {
-> -                       pr_debug("logical %llu is not within any extent\n",
-> -                                logical);
-> -                       return -ENOENT;
-> -               }
-> -               if (path->slots[0] == nritems)
-> -                       path->slots[0]--;
-> -
-> -               btrfs_item_key_to_cpu(path->nodes[0], found_key,
-> -                                     path->slots[0]);
-> -               if (found_key->type == BTRFS_EXTENT_ITEM_KEY ||
-> -                   found_key->type == BTRFS_METADATA_ITEM_KEY)
-> -                       break;
-> +       ret = btrfs_previous_extent_item(fs_info->extent_root, path, 0);
-> +       if (ret) {
-> +               if (ret > 0)
-> +                       ret = -ENOENT;
-> +               return ret;
->         }
-> -
-> +       btrfs_item_key_to_cpu(path->nodes[0], found_key, path->slots[0]);
->         if (found_key->type == BTRFS_METADATA_ITEM_KEY)
->                 size = fs_info->extent_root->leafsize;
->         else if (found_key->type == BTRFS_EXTENT_ITEM_KEY)
-> --
-> 1.8.4
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It's long overdue to start tackling these snags and 'stop hiding behind the
+experimental flag' [1], which is also no longer present as of 3.13.
 
+[1] http://www.spinics.net/lists/linux-btrfs/msg30396.html
 
+> this is just one of those caveats we've learned to adjust to.
 
--- 
-Filipe David Manana,
+Sure, but it's hard to argue this particular behavior is clearly broken from
+the user perspective, even if it's "broken by design", and there are a numb=
+er
+of very "smart" and "future-proof" reasons to keep it broken today.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Personally I tired of trying to keep in mind which partitions are btrfs rai=
+d1,
+and mentally divide the displayed free space by two for those. That's what
+computers are for, to keep track of such things.
+
+> The change could work well for now and I'm sure it has been considered.=20
+> I guess the biggest end-user issue is that you can, at a whim, change=20
+> the model for new blocks - raid0/5/6,single etc and your value from 5=20
+> minutes ago is far out from your new value without having written=20
+> anything or taken up any space. Not a show-stopper problem, really.
+
+Changing the allocation profile for new blocks is a serious change you don'=
+t do
+accidentally, it's about the same importance level as e.g. resizing the
+filesystem. And no one is really surprised when the 'df' result changes aft=
+er
+an FS resize.
+
+> The biggest dev issue is that future features will break this behaviour,=
+=20
+
+That could be years away.
+
+> such as the "per-subvolume RAID profiles" you mentioned. It is difficult=
+=20
+> to motivate including code (for which there's a known workaround) where=20
+> we know it will be obsoleted.
+
+There's not a lot of code to include (as my 3-line patch demonstrates), it
+could just as easily be removed when it's obsolete. But I did not have any
+high hopes of defeating the "broken by design" philosophy, that's why I did=
+n't
+submit it as a real patch for inclusion but rather just as a helpful hint f=
+or
+people to add to their own kernels if they want this change to happen.
+
+--=20
+With respect,
+Roman
+
+--Sig_/d_Q=M9YDJNUtsy8T9EqDzln
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlLzg84ACgkQTLKSvz+PZwhfFgCgggq1TTCkx0clXnB9/5ifaoFU
+DMAAn0rpRl+AgU274WbIsJC9Zq3IUqqn
+=bTfY
+-----END PGP SIGNATURE-----
+
+--Sig_/d_Q=M9YDJNUtsy8T9EqDzln--

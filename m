@@ -1,145 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f41.google.com ([209.85.160.41]:46340 "EHLO
-	mail-pb0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752686AbaBFQMS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 11:12:18 -0500
-Received: by mail-pb0-f41.google.com with SMTP id up15so1934037pbc.14
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 08:12:18 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com, david@fromorbit.com
-Subject: [PATCH v3] Btrfs: add regression test for running snapshot and send concurrently
-Date: Fri,  7 Feb 2014 00:10:08 +0800
-Message-Id: <1391703008-2322-1-git-send-email-wangshilong1991@gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:23795 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751234AbaBFVH5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Feb 2014 16:07:57 -0500
+Received: from pps.filterd (m0044008 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s16L5ojs020779
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Feb 2014 13:07:57 -0800
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0a-00082601.pphosted.com with ESMTP id 1hvd6x12p3-2
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 13:07:57 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: balance delayed inode updates
+Date: Thu, 6 Feb 2014 16:07:53 -0500
+Message-ID: <1391720873-4961-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+While trying to reproduce a delayed ref problem I noticed the box kept falling
+over using all 80gb of my ram with btrfs_inode's and btrfs_delayed_node's.
+Turns out this is because we only throttle delayed inode updates in
+btrfs_dirty_inode, which doesn't actually get called that often, especially when
+all you are doing is creating a bunch of files.  So balance delayed inode
+updates everytime we create a new inode.  With this patch we no longer use up
+all of our ram with delayed inode updates.  Thanks,
 
-Btrfs would fail to send if snapshot run concurrently, this test is to make
-sure we have fixed the bug.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
-Changelog
- v1->v2:
-        Avoid race codes and a code style update(Thanks to Dave Chinner's comments)
- v2->v3:
-        make sure we kill background snapshots on test failure
----
- tests/btrfs/034     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/034.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 86 insertions(+)
- create mode 100644 tests/btrfs/034
- create mode 100644 tests/btrfs/034.out
+ fs/btrfs/extent-tree.c | 1 +
+ fs/btrfs/inode.c       | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-diff --git a/tests/btrfs/034 b/tests/btrfs/034
-new file mode 100644
-index 0000000..5152969
---- /dev/null
-+++ b/tests/btrfs/034
-@@ -0,0 +1,83 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/034
-+#
-+# Regression test for running snapshots and send concurrently.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+do_snapshots()
-+{
-+	i=2
-+	while [ $i -lt 50 ]
-+	do
-+		$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/snap_1 \
-+			$SCRATCH_MNT/snap_$i >> $seqres.full 2>&1
-+		let i=$i+1
-+	done
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+
-+touch $SCRATCH_MNT/foo
-+
-+# get file with fragments by using backwards writes.
-+for i in `seq 10240 -1 1`; do
-+	$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
-+		$SCRATCH_MNT/foo > /dev/null | _filter_xfs_io
-+done
-+
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
-+
-+do_snapshots &
-+snapshots_pid=$!
-+
-+$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || echo "btrfs send failed"
-+
-+kill -TERM $snapshots_pid 2> /dev/null
-+
-+echo "Silence is golden"
-+status=0 ; exit
-diff --git a/tests/btrfs/034.out b/tests/btrfs/034.out
-new file mode 100644
-index 0000000..4c8873c
---- /dev/null
-+++ b/tests/btrfs/034.out
-@@ -0,0 +1,2 @@
-+QA output created by 034
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index b29236c..f9f062f 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -36,3 +36,4 @@
- 031 auto quick
- 032 auto quick
- 033 auto quick
-+034 auto quick
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9c9ecc9..1d9d9ce 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2660,6 +2660,7 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans,
+ 		atomic_read(&trans->transaction->delayed_refs.num_entries);
+ 	u64 avg_runtime;
+ 
++	return 1;
+ 	smp_mb();
+ 	avg_runtime = fs_info->avg_delayed_ref_runtime;
+ 	if (num_entries * avg_runtime >= NSEC_PER_SEC)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1af34d0..d44ff9f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5795,6 +5795,7 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
+ 	}
+ out_unlock:
+ 	btrfs_end_transaction(trans, root);
++	btrfs_balance_delayed_items(root);
+ 	btrfs_btree_balance_dirty(root);
+ 	if (drop_inode) {
+ 		inode_dec_link_count(inode);
+@@ -5868,6 +5869,7 @@ out_unlock:
+ 		inode_dec_link_count(inode);
+ 		iput(inode);
+ 	}
++	btrfs_balance_delayed_items(root);
+ 	btrfs_btree_balance_dirty(root);
+ 	return err;
+ }
+@@ -5926,6 +5928,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	}
+ 
+ 	btrfs_end_transaction(trans, root);
++	btrfs_balance_delayed_items(root);
+ fail:
+ 	if (drop_inode) {
+ 		inode_dec_link_count(inode);
+@@ -5992,6 +5995,7 @@ out_fail:
+ 	btrfs_end_transaction(trans, root);
+ 	if (drop_on_err)
+ 		iput(inode);
++	btrfs_balance_delayed_items(root);
+ 	btrfs_btree_balance_dirty(root);
+ 	return err;
+ }
 -- 
-1.8.4
+1.8.3.1
 

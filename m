@@ -1,32 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52451 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751620AbaBGSo6 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Feb 2014 13:44:58 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:51129 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751854AbaBGUdH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Feb 2014 15:33:07 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WBs6j-00054s-Bb
+	for linux-btrfs@vger.kernel.org; Fri, 07 Feb 2014 21:33:05 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 21:33:05 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 21:33:05 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Subject: Re: Provide a better free space estimate on RAID1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140207120812.43dc7982@natsu>
-Date: Fri, 7 Feb 2014 11:44:54 -0700
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <A9FC77DF-E4FC-4E60-94C9-CE8927FB1B9F@colorremedies.com>
-References: <20140206021516.304732cd@natsu> <52F33BE7.4020708@swiftspirit.co.za> <20140206184502.128b7dbe@natsu> <52F3E86B.4030805@libero.it> <20140207104005.7bd1438a@natsu> <1B8BB06F-64EA-40EC-B0D7-FB4A38928DA3@colorremedies.com> <20140207120812.43dc7982@natsu>
-To: Roman Mamedov <rm@romanrm.net>
+Date: Fri, 07 Feb 2014 21:32:42 +0100
+Message-ID: <agsfsa-mks.ln1@hurikhan77.spdns.de>
+References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Josef Bacik <jbacik@fb.com> schrieb:
 
-On Feb 6, 2014, at 11:08 PM, Roman Mamedov <rm@romanrm.net> wrote:
+> 
+> On 02/05/2014 03:15 PM, Roman Mamedov wrote:
+>> Hello,
+>>
+>> On a freshly-created RAID1 filesystem of two 1TB disks:
+>>
+>> # df -h /mnt/p2/
+>> Filesystem      Size  Used Avail Use% Mounted on
+>> /dev/sda2       1.8T  1.1M  1.8T   1% /mnt/p2
+>>
+>> I cannot write 2TB of user data to that RAID1, so this estimate is
+>> clearly misleading. I got tired of looking at the bogus disk free space
+>> on all my RAID1 btrfs systems, so today I decided to do something about
+>> this:
+>>
+>> --- fs/btrfs/super.c.orig	2014-02-06 01:28:36.636164982 +0600
+>> +++ fs/btrfs/super.c	2014-02-06 01:28:58.304164370 +0600
+>> @@ -1481,6 +1481,11 @@
+>>   }
+>>   
+>>   kfree(devices_info);
+>> +
+>> +	if (type & BTRFS_BLOCK_GROUP_RAID1) {
+>> +		do_div(avail_space, min_stripes);
+>> +	}
+>> +
+>>   *free_bytes = avail_space;
+>>   return 0;
+>>   }
+> 
+> This needs to be more flexible, and also this causes the problem where
+> now you show the actual usable amount of space _but_ you are also
+> showing twice the amount of used space.  I'm ok with going in this
+> direction, but we need to convert everybody over so it works for raid10
+> as well and the used values need to be adjusted.  Thanks,
 
->  And what
-> if I am accessing that partition on a server via a network CIFS/NFS share and
-> don't even *have a way to find out* any of that.
+It should show the raw space available. Btrfs also supports compression and 
+doesn't try to be smart about how much compressed data would fit in the free 
+space of the drive. If one is using RAID1, it's supposed to fill up with a 
+rate of 2:1. If one is using compression, it's supposed to fill up with a 
+rate of maybe 1:5 for mostly text files.
 
-That's the strongest argument. And if the user is using Explorer/Finder/Nautilus to copy files to the share, I'm pretty sure all three determine if there's enough free space in advance of starting the copy. So if it thinks there's free space, it will start to copy and then later fail midstream when there's no more space. And then the user's copy task is in a questionable state as to what's been copied, depending on how the file copies are being threaded.
+However, btrfs should probably provide its own df utility (like "btrfs fi 
+df") which is smart about disk usage and tries to predict the usable space. 
+But df should stay with actually showing the _free_ space, not _usable_ 
+space (the latter is unpredictable anyway based on the usage patterns 
+applied to the drive, so it can be a rough guess as its best, like looking 
+into the crystal ball).
 
-And due to Btrfs metadata requirements even when deleting, we actually need an Avail estimate that accounts for "phantom future metadata" as if it's currently in use, otherwise we don't really have the right indication of whether or not files can be copied. 
+The point here is about "free" vs. "usable" space, the first being a known 
+number, the latter only being a prediction based on current usage. I'd like 
+to stay with "free space" actually showing raw free space.
 
+-- 
+Replies to list only preferred.
 
-Chris Murphy

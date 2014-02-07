@@ -1,95 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54835 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751547AbaBGW04 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Feb 2014 17:26:56 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WBtst-0000c4-8v
-	for linux-btrfs@vger.kernel.org; Fri, 07 Feb 2014 23:26:55 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 23:26:55 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 23:26:55 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Are nocow files snapshot-aware
-Date: Fri, 07 Feb 2014 23:26:34 +0100
-Message-ID: <r53gsa-d85.ln1@hurikhan77.spdns.de>
-References: <mh08sa-5tp.ln1@hurikhan77.spdns.de> <52F1923D.8090306@fb.com> <20140205020239.GP1364@twin.jikos.cz> <6qbasa-fq1.ln1@hurikhan77.spdns.de> <pan$9252f$8363907a$3eaa17a6$f558018@cox.net> <r5mdsa-hng.ln1@hurikhan77.spdns.de> <CAE5mzviWHA=RmibQ_B3fD355nhAXgGFAGJV=Shk9M6tT6htEdQ@mail.gmail.com> <6C86A9EB-75D7-4783-B055-8D509F695412@colorremedies.com> <qhufsa-27u.ln1@hurikhan77.spdns.de> <D3E4553E-C9D8-4D94-A124-506961946360@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from magic.merlins.org ([209.81.13.136]:46516 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751377AbaBGXF7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 18:05:59 -0500
+Date: Fri, 7 Feb 2014 15:05:58 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: Can you keep reflink relationship during a copy/backup to another filesystem?
+Message-ID: <20140207230558.GA9265@merlins.org>
+References: <20140129075025.GM14998@merlins.org> <20140129080514.GQ3314@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="3V7upXqbjpZ4EhLz"
+In-Reply-To: <20140129080514.GQ3314@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy <lists@colorremedies.com> schrieb:
 
-> 
-> On Feb 7, 2014, at 2:07 PM, Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
-> 
->> Chris Murphy <lists@colorremedies.com> schrieb:
->> 
->>>> If the database/virtual machine/whatever is crash safe, then the
->>>> atomic state that a snapshot grabs will be useful.
->>> 
->>> How fast is this state fixed on disk from the time of the snapshot
->>> command? Loosely speaking. I'm curious if this is < 1 second; a few
->>> seconds; or possibly up to the 30 second default commit interval? And
->>> also if it's even related to the commit interval time at all?
->> 
->> Such constructs can only be crash-safe if write-barriers are passed down
->> through the cow logic of btrfs to the storage layer. That won't probably
->> ever happen. Atomic and transactional updates cannot happen without
->> write- barriers or synchronous writes. To make it work, you need to
->> design the storage-layers from the ground up to work without
->> write-barriers, like having battery-backed write-caches, synchronous
->> logical file-system layers etc. Otherwise, database/vm/whatever
->> transactional/atomic writes are just having undefined status down at the
->> lowest storage layer.
-> 
-> This explanation makes sense. But I failed to qualify the "state fixed on
-> disk". I'm not concerned about when bits actually arrive on disk. I'm
-> wondering what state they describe. So assume no crash or power failure,
-> and assume writes eventually make it onto the media without a problem.
-> What I'm wondering is, what state of the subvolume I'm snapshotting do I
-> end up with? Is there a delay and how long is it, or is it pretty much
-> instant? The command completes really quickly even when the file system is
-> actively being used, so the feedback is that the snapshot state is
-> established very fast but I'm not sure what bearing that has in reality.
+--3V7upXqbjpZ4EhLz
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I think from that perspective it is more or less the same taking a snapshot 
-or cycling the power. For the state of the file consistency it means the 
-same, I suppose. I got your argument about "state fixed on disk", but I 
-implied from perspective of the writing process it is just the same 
-situation: in the moment of the snapshot the data file is in a crashed 
-state. That is like cycling the power without having a mechanism to support 
-transactional guarantees.
+On Wed, Jan 29, 2014 at 08:05:14AM +0000, Hugo Mills wrote:
+> On Tue, Jan 28, 2014 at 11:50:25PM -0800, Marc MERLIN wrote:
+> > So I used to use hardlinks to do historical backups of the same filesys=
+tem
+> > but I know it's preferable to use refllink with btrfs to avoid having t=
+oo
+> > many hardlinks.
+>=20
+>    If you use btrfstune to set the "extended inode refs" option on the
+> device, then there's no hardlink limit (and the limit was only on the
 
-So the question is: Do btrfs snapshots give the same guarantees on the 
-filesystem level that write-barriers give on the storage level which exactly 
-those processes rely upon? The cleanest solution would be if processes could 
-give btrfs hints about what belongs to their transactions so in the moment 
-of a snapshot the data file would be in clean state. I guess snapshots are 
-atomic in that way, that pending writes will never reach the snapshots just 
-taken, which is good.
+I'm not too clear about that part:
+https://btrfs.wiki.kernel.org/index.php/Btrfstune
+doesn't seem to match what you're saying.
 
-But what about the ordering of writes? Maybe some younger write requests 
-already made it to the disk, while older ones didn't. The file system 
-usually only has to care about its own transactional integrity, not those of 
-its writing processes, and that is completely unrelated to what the writing 
-process expects. Or in other words: A following crash only guarantees that 
-the active subvolume being written to is clean from the transactional 
-perspective of the process, but the snapshot may be broken. As far as I 
-know, user processes cannot tell the filesystem when to issue write-
-barriers, it could only issue fsyncs (which hurts performance). Otherwise 
-this discussion would be a whole different story.
+> number of hardlinks to the same thing *in the same directory*).
 
-Did you test how btrfs snapshots perform while running fsync with a lot of 
-data to be committed? Could give a clue...
+I didn't catch the 'same directory' part. I used hardlinks.py to compare
+all my files from many backups across filesystems and hardlink files
+together if they were the same.
+You're saying that I could have 500 hardlinks to the same file as long as
+they are in 500 different directories, and that this is not a performance
+problem or limitation for btrfs (maybe anymore? I could swear I had issues
+with this in the past).
 
--- 
-Replies to list only preferred.
+If the limit is now hardlinking many times to the same file in the same
+directory, I don't actually have a need for that use case.
+=20
+> > But if I need to backup this filesystem to another one some other way t=
+han
+> > btrfs send/receive (let's say cp -a, tar, or rsync), is it correct to s=
+ay
+> > that reflink relationships will be lost and my data will take more spac=
+e?
+> >=20
+> > That is unless the target filesytem can do deduplication like btrs now =
+can?
+> > (I haven't tried it yet, but it's about time that I do)
+>=20
+>    Correct.
 
+Thanks.
+I just noticed that on the fly deduplication wasn't in 3.12 yet, so I'm
+better off keeping my hardlinks for backups since it's easy to keep that
+relationship when copying my backup tree to a backup device (backups of
+backups, of course, y'all don't do that? :) ).
+
+Thanks,
+Marc
+--=20
+"A mouse is a device used to point at the xterm you want to type in" - A.S.=
+R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet coo=
+king
+Home page: http://marc.merlins.org/ =20
+
+--3V7upXqbjpZ4EhLz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQCVAwUBUvVm1n4xUKZ2O+kBAQJsVwP+KaGdnDnjF7AE6q8R5oWtD9Renlvh+yst
+B7aqmpGf6L81zSfnKzRjb9gGMHogKrvgnIQegM1pAgjJ3GfMIPCtdWiOAJXserNr
+rMz7EptSVVdkAwNUDYwLAJ5aWlDqm70d356R6eJdc2i3VR1uf0fBVxcs7/078qQ8
+snjbhDVTkIE=
+=wtBE
+-----END PGP SIGNATURE-----
+
+--3V7upXqbjpZ4EhLz--

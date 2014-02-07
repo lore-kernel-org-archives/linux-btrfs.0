@@ -1,48 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46643 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751209AbaBGS6E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Feb 2014 13:58:04 -0500
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s17Im4BP022093
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Feb 2014 10:58:03 -0800
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1hw3m4rbfv-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 10:58:03 -0800
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't loop forever if we can't run because of the tree mod log
-Date: Fri, 7 Feb 2014 13:57:59 -0500
-Message-ID: <1391799479-14886-1-git-send-email-jbacik@fb.com>
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:52505 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751526AbaBGVNI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 16:13:08 -0500
+Received: by mail-pa0-f52.google.com with SMTP id bj1so3688874pad.25
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 13:13:07 -0800 (PST)
+Date: Fri, 7 Feb 2014 13:13:06 -0800 (PST)
+From: David Rientjes <rientjes@google.com>
+To: Fengguang Wu <fengguang.wu@intel.com>
+cc: Tejun Heo <tj@kernel.org>, Filipe David Borba Manana <fdmanana@gmail.com>,
+        Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [btrfs] BUG: unable to handle kernel NULL pointer dereference
+ at 0000000000000038
+In-Reply-To: <20140207121038.GA1690@localhost>
+Message-ID: <alpine.DEB.2.02.1402071307590.4212@chino.kir.corp.google.com>
+References: <20140207023801.GC11051@localhost> <alpine.DEB.2.02.1402070213020.22146@chino.kir.corp.google.com> <20140207121038.GA1690@localhost>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a 100% cpu hang with my new delayed ref code.  Turns out I
-forgot to increase the count check when we can't run a delayed ref because of
-the tree mod log.  If we can't run any delayed refs during this there is no
-point in continuing to look, and we need to break out.  Thanks,
+On Fri, 7 Feb 2014, Fengguang Wu wrote:
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
+> On Fri, Feb 07, 2014 at 02:13:59AM -0800, David Rientjes wrote:
+> > On Fri, 7 Feb 2014, Fengguang Wu wrote:
+> > 
+> > > [    1.625020] BTRFS: selftest: Running btrfs_split_item tests
+> > > [    1.627004] BTRFS: selftest: Running find delalloc tests
+> > > [    2.289182] tsc: Refined TSC clocksource calibration: 2299.967 MHz
+> > > [  292.084537] kthreadd invoked oom-killer: gfp_mask=0x3000d0, order=1, oom_score_adj=0
+> > > [  292.086439] kthreadd cpuset=
+> > > [  292.087072] BUG: unable to handle kernel NULL pointer dereference at 0000000000000038
+> > > [  292.087372] IP: [<ffffffff812119de>] pr_cont_kernfs_name+0x1b/0x6c
+> > 
+> > This looks like a problem with the cpuset cgroup name, are you sure this 
+> > isn't related to the removal of cgroup->name?
+> 
+> It looks not related to patch "cgroup: remove cgroup->name", because
+> that patch lies in the cgroup tree and not contained in output of "git log BAD_COMMIT".
+> 
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9c9ecc9..32312e0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2385,6 +2385,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			spin_unlock(&delayed_refs->lock);
- 			locked_ref = NULL;
- 			cond_resched();
-+			count++;
- 			continue;
- 		}
- 
--- 
-1.8.3.1
+It's dying on pr_cont_kernfs_name which is some tree that has "kernfs: 
+implement kernfs_get_parent(), kernfs_name/path() and friends", which is 
+not in linux-next, and is obviously printing the cpuset cgroup name.
 
+It doesn't look like it has anything at all to do with btrfs or why they 
+would care about this failure.

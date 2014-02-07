@@ -1,43 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43682 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754284AbaBFO3W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Feb 2014 09:29:22 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 04304ABB3
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Feb 2014 14:29:22 +0000 (UTC)
-From: David Disseldorp <ddiss@suse.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:29769 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751246AbaBGHGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Feb 2014 02:06:30 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Disseldorp <ddiss@suse.de>
-Subject: [PATCH] ioctl: add note regarding CLONE_RANGE(len=0) behaviour
-Date: Thu,  6 Feb 2014 15:29:18 +0100
-Message-Id: <1391696958-4522-1-git-send-email-ddiss@suse.de>
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH v2 1/2] btrfs-progs: Add missing devices check for mounted btrfs.
+Date: Fri, 7 Feb 2014 15:07:19 +0800
+Message-Id: <1391756839-23466-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A BTRFS_IOC_CLONE_RANGE request with a src_length value of zero has the
-effect of cloning all data from src_offset through to end-of-file.
+In btrfs/003 of xfstest, it will check whether btrfs fi show can find
+missing devices.
 
-Document this behaviour in the header file for those who (like me)
-incorrectly assume that no data is cloned in such a case.
+But before the patch, btrfs-progs will not check whether device missing
+if given a mounted btrfs mountpoint/block device.
+This patch fixes the bug and will pass btrfs/003.
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Anand Jain <anand.jain@oracle.com>
 ---
- ioctl.h | 1 +
- 1 file changed, 1 insertion(+)
+changelog:
+v1->v2: fix a uninitialized variant int print_one_fs.
+---
+ cmds-filesystem.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/ioctl.h b/ioctl.h
-index a589cd7..f7d435d 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -506,6 +506,7 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 384d1b9..c1bdab4 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -363,6 +363,8 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 		char *label, char *path)
+ {
+ 	int i;
++	int fd;
++	int missing = 0;
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
+ 	int ret;
+@@ -385,6 +387,14 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
  
-+/* With a @src_length of zero, the range from @src_offset->EOF is cloned! */
- struct btrfs_ioctl_clone_range_args {
- 	__s64 src_fd;
- 	__u64 src_offset, src_length;
+ 	for (i = 0; i < fs_info->num_devices; i++) {
+ 		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
++
++		/* Add check for missing devices even mounted */
++		fd = open((char *)tmp_dev_info->path, O_RDONLY);
++		if (fd < 0) {
++			missing = 1;
++			continue;
++		}
++		close(fd);
+ 		printf("\tdevid %4llu size %s used %s path %s\n",
+ 			tmp_dev_info->devid,
+ 			pretty_size(tmp_dev_info->total_bytes),
+@@ -392,6 +402,8 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 			tmp_dev_info->path);
+ 	}
+ 
++	if (missing)
++		printf("\t*** Some devices missing\n");
+ 	printf("\n");
+ 	return 0;
+ }
 -- 
-1.8.4.5
+1.8.5.4
 

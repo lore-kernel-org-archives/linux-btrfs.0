@@ -1,31 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41387 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52451 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753437AbaBGRn5 convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751620AbaBGSo6 convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Feb 2014 12:43:57 -0500
-Content-Type: text/plain; charset=iso-8859-1
+	Fri, 7 Feb 2014 13:44:58 -0500
+Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: lost with degraded RAID1
+Subject: Re: Provide a better free space estimate on RAID1
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CABgvyo8iS-8i-NKDUPX30B+Mk-B8-ZjLU7p_N7XefXtcSDvCFg@mail.gmail.com>
-Date: Fri, 7 Feb 2014 10:43:56 -0700
+In-Reply-To: <20140207120812.43dc7982@natsu>
+Date: Fri, 7 Feb 2014 11:44:54 -0700
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <C37F3250-AA5B-4C75-8ECB-D1E7B6FFEADD@colorremedies.com>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com> <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com> <20140130175831.GU3314@carfax.org.uk> <C3B0EA86-0CBA-4500-81A8-7F3A99306E76@colorremedies.com> <CABgvyo8ZG=pk=i-7iXzoOWqZj_fVvUd6xiaXef1KWR8QLibhXg@mail.gmail.com> <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com> <CABgvyo-cZ1bw7Gyd5sUYK11mMUp3N2w6v=SNEdXBRYqbNSNNFQ@mail.gmail.com> <CABgvyo8iS-8i-NKDUPX30B+Mk-B8-ZjLU7p_N7XefXtcSDvCFg@mail.gmail.com>
-To: =?iso-8859-1?Q?Johan_Kr=F6ckel?= <johan.kroeckel@gmail.com>
+Message-Id: <A9FC77DF-E4FC-4E60-94C9-CE8927FB1B9F@colorremedies.com>
+References: <20140206021516.304732cd@natsu> <52F33BE7.4020708@swiftspirit.co.za> <20140206184502.128b7dbe@natsu> <52F3E86B.4030805@libero.it> <20140207104005.7bd1438a@natsu> <1B8BB06F-64EA-40EC-B0D7-FB4A38928DA3@colorremedies.com> <20140207120812.43dc7982@natsu>
+To: Roman Mamedov <rm@romanrm.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Feb 7, 2014, at 4:34 AM, Johan Kröckel <johan.kroeckel@gmail.com> wrote:
+On Feb 6, 2014, at 11:08 PM, Roman Mamedov <rm@romanrm.net> wrote:
 
-> Is there anything else I should do with this setup or may I nuke the
-> two partitions and reuse them?
+>  And what
+> if I am accessing that partition on a server via a network CIFS/NFS share and
+> don't even *have a way to find out* any of that.
 
-Well I'm pretty sure once you run 'btrfs check --repair' that you've hit the end of the road. Possibly btrfs restore can still extract some files, it might be worth testing whether that works.
+That's the strongest argument. And if the user is using Explorer/Finder/Nautilus to copy files to the share, I'm pretty sure all three determine if there's enough free space in advance of starting the copy. So if it thinks there's free space, it will start to copy and then later fail midstream when there's no more space. And then the user's copy task is in a questionable state as to what's been copied, depending on how the file copies are being threaded.
 
-Otherwise blow it away. I'd say test with 3.14-rc2 with a new file system and see if you can reproduce the sequence that caused this problem in the first place. If it's reproducible, I think there's a bug here somewhere.
+And due to Btrfs metadata requirements even when deleting, we actually need an Avail estimate that accounts for "phantom future metadata" as if it's currently in use, otherwise we don't really have the right indication of whether or not files can be copied. 
 
 
 Chris Murphy

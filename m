@@ -1,64 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:41167 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750708AbaBGFvf convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 00:51:35 -0500
-Received: by mail-pa0-f51.google.com with SMTP id ld10so2741736pab.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 21:51:35 -0800 (PST)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: user creation/deletion of snapshots permissions bug
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <2524068.SeylZtQnKR@russell.coker.com.au>
-Date: Fri, 7 Feb 2014 13:51:31 +0800
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <215B90D2-64B9-4A94-BE76-89260704EBB7@gmail.com>
-References: <2524068.SeylZtQnKR@russell.coker.com.au>
-To: russell@coker.com.au
+Received: from luka.romanrm.net ([213.163.64.74]:39828 "EHLO luka.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750707AbaBGGIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Feb 2014 01:08:15 -0500
+Date: Fri, 7 Feb 2014 12:08:12 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: kreijack@inwind.it, kreijack@libero.it,
+        Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Subject: Re: Provide a better free space estimate on RAID1
+Message-ID: <20140207120812.43dc7982@natsu>
+In-Reply-To: <1B8BB06F-64EA-40EC-B0D7-FB4A38928DA3@colorremedies.com>
+References: <20140206021516.304732cd@natsu>
+	<52F33BE7.4020708@swiftspirit.co.za>
+	<20140206184502.128b7dbe@natsu>
+	<52F3E86B.4030805@libero.it>
+	<20140207104005.7bd1438a@natsu>
+	<1B8BB06F-64EA-40EC-B0D7-FB4A38928DA3@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/j3W4PpkOtU0w/k=9an3hG.y"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+--Sig_/j3W4PpkOtU0w/k=9an3hG.y
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> $ /sbin/btrfs subvol create /tmp/test
-> Create subvolume '/tmp/test'
-> $ /sbin/btrfs subvol delete /tmp/test
-> Delete subvolume '/tmp/test'
-> ERROR: cannot delete '/tmp/test' - Operation not permitted
+On Thu, 6 Feb 2014 22:30:46 -0700
+Chris Murphy <lists@colorremedies.com> wrote:
 
-That is a little strange anyway. Looking into codes, i found
-For sub-volume creation, we don't check CAP_SYS_ADMIN while
-For sub-voule deletion, we do check CAP_SYS_ADMIN, however, we still have
-a mount option "user_rm_subvol_allowed" to delete a sub-volume by regular users!
+> >From the original post, context is a 2x 1TB raid volume:
+>=20
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sda2       1.8T  1.1M  1.8T   1% /mnt/p2
+>=20
+> Earlier conventions would have stated Size ~900GB, and Avail ~900GB. But =
+that's not exactly true either, is it?
 
-IMO, this is a little confusing and arguable. i see there are some discussion by googling, for example:
+Much better, and matching the user expectations of how RAID1 should behave,
+without a major "gotcha" blowing up into their face the first minute they a=
+re
+trying it out. In fact next step that I planned would be finding how to adj=
+ust
+also Size and Used on all my machines to show what you just mentioned. I ge=
+t it
+that btrfs is special and its RAID1 is not the usual RAID1 either, but that=
+'s
+not a good reason to break the 'df' behavior; do whatever you want with in
+'btrfs fi df', but if I'm not mistaken the UNIX 'df' always was about user
+data, how much of my data I have already stored on this partition and how m=
+uch
+more can I store. If that's not possible to tell, then try to be reasonably
+close to the truth, not deliberately off by 2x.
 
-http://unix.stackexchange.com/questions/88932/why-cant-a-regular-user-delete-a-btrfs-subvolume
+> On Btrfs ...the amount Avail is likewise not wrong because that space is =
+"not otherwise occupied" which is the definition of available.
 
-Thanks,
-Wang
-> 
-> The above is when running Debian kernel 3.12 based on Linux upstream 3.12.8.  
-> I believe that the BTRFS kernel code should do a capabilities check for 
-> CAP_SYS_ADMIN (which is used for mount/umount among many other things) before 
-> creating a snapshot.  Currently it appears that the only access control is 
-> write access to the parent directory.
-> 
-> There is some possibility of debate about the access control needed for 
-> creating a subvol.  I want to use capabilities set by SE Linux policy to 
-> prevent unwanted actions by hostile root processes and I think that such use 
-> of capabilities (which is used by more than just SE Linux) should be 
-> supported.  I don't think that there is any downside to such checks.
-> 
-> In any case allowing a subvol to be created but not deleted with the same 
-> level of access is obviously a bug.
-> 
-> -- 
-> My Main Blog         http://etbe.coker.com.au/
-> My Documents Blog    http://doc.coker.com.au/
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That's not the definition of available that's directly useful to anyone, but
+rather a filesystem-designer level implementation detail, if anything.
 
+What usually interests me is, I have a 100 GB file, can I fit it on this
+filesystem, yes/no? Sure let's find out, just check 'df'. Oh wait, not so f=
+ast
+let's remember was this btrfs? Is that the one with RAID1 or not?... And wh=
+at
+if I am accessing that partition on a server via a network CIFS/NFS share a=
+nd
+don't even *have a way to find out* any of that.
+
+
+--=20
+With respect,
+Roman
+
+--Sig_/j3W4PpkOtU0w/k=9an3hG.y
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlL0eE0ACgkQTLKSvz+PZwjxyQCfRLvQon78pyiMFSiz5bs+W9Fi
+7psAmwa7HpG1b/ATmZHMElU9BhF/ICO0
+=CRAe
+-----END PGP SIGNATURE-----
+
+--Sig_/j3W4PpkOtU0w/k=9an3hG.y--

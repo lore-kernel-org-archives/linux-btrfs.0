@@ -1,88 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f44.google.com ([209.85.212.44]:41282 "EHLO
-	mail-vb0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751770AbaBGAiX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 19:38:23 -0500
-Received: by mail-vb0-f44.google.com with SMTP id f12so2098756vbg.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 16:38:22 -0800 (PST)
-MIME-Version: 1.0
-Date: Fri, 7 Feb 2014 00:38:22 +0000
-Message-ID: <CALOYprUjGn0rEEJAUw+ggnsazL_F5x4KUMCg2n_+ZeAZT=RJ-w@mail.gmail.com>
-Subject: integration-20140206 build failure
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:39235 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751312AbaBGESg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2014 23:18:36 -0500
+Received: by mail-pd0-f169.google.com with SMTP id v10so2629390pde.28
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Feb 2014 20:18:36 -0800 (PST)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH v3] Btrfs: add regression test for running snapshot and send concurrently
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <20140206224337.GB13647@dastard>
+Date: Fri, 7 Feb 2014 12:18:31 +0800
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org, jbacik@fb.com
+Message-Id: <D32F9438-DA80-41AF-9247-A81E6EC90497@gmail.com>
+References: <1391703008-2322-1-git-send-email-wangshilong1991@gmail.com> <20140206224337.GB13647@dastard>
+To: Dave Chinner <david@fromorbit.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Building the latest integration snapshot, I get the following failure:
 
-----
-...
-    [CC]     cmds-filesystem.o
-cmds-filesystem.c: In function 'cmd_show':
-cmds-filesystem.c:740:12: error: invalid storage class for function 'cmd_sync'
- static int cmd_sync(int argc, char **argv)
-            ^
-cmds-filesystem.c:770:12: error: invalid storage class for function
-'parse_compress_type'
- static int parse_compress_type(char *s)
-            ^
-cmds-filesystem.c:796:12: error: invalid storage class for function 'do_defrag'
- static int do_defrag(int fd, int fancy_ioctl,
-            ^
-cmds-filesystem.c:813:12: error: invalid storage class for function
-'defrag_callback'
- static int defrag_callback(const char *fpath, const struct stat *sb,
-            ^
-cmds-filesystem.c:848:12: error: invalid storage class for function 'cmd_defrag'
- static int cmd_defrag(int argc, char **argv)
-            ^
-cmds-filesystem.c:1000:12: error: invalid storage class for function
-'cmd_resize'
- static int cmd_resize(int argc, char **argv)
-            ^
-cmds-filesystem.c:1047:12: error: invalid storage class for function 'cmd_label'
- static int cmd_label(int argc, char **argv)
-            ^
-cmds-filesystem.c:1076:2: error: non-static initialization of a
-flexible array member
-  }
-  ^
-cmds-filesystem.c:1076:2: error: (near initialization for
-'filesystem_cmd_group')
-cmds-filesystem.c:1082:1: error: expected declaration or statement at
-end of input
- }
- ^
-cmds-filesystem.c: At top level:
-cmds-filesystem.c:602:12: warning: 'cmd_show' defined but not used
-[-Wunused-function]
- static int cmd_show(int argc, char **argv)
-            ^
-Makefile:113: recipe for target 'cmds-filesystem.o' failed
-make: *** [cmds-filesystem.o] Error 1
-----
+Hi Dave,
 
-Full output at [1]
+> On Fri, Feb 07, 2014 at 12:10:08AM +0800, Wang Shilong wrote:
+>> +$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
+>> +	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
+>> +
+>> +do_snapshots &
+>> +snapshots_pid=$!
+>> +
+>> +$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 > /dev/null 2>&1 || echo "btrfs send failed"
+> 
+> Let's stop this anti-pattern before it takes hold.
+> 
+> If there's output from the send command it should be
+> filtered and captured in the golden image. Hence any deviation
+> caused by errors is automatically flagged as an error.
+> 
+> That's the whole point of using golden images for capturing errors -
+> you don't need to capture return values from binaries and it
+> guarantees that users are informed about failures through error
+> messages. IOWs:
+> 
+> $BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 | _btrfs_send_filter
+> 
+> is what you should be doing here.
 
-Apologies if this has already been reported somewhere else, I couldn't
-find anything on the mailing list.
+I knew what you mean here, in fact, i did this on purpose.
+for this test failure, btrfs-prog did not output failure information from the beginning.
+So to make older progs can also detect the test failure, i dropped into this way.
 
-Build environment:
+Anyway, if you don't like this and think  old btrfs-progs needn't consider this,  i will update
+the patch.^_^
 
-Arch Linux
-gcc: 4.8.2
-glibc: 2.18
-make: 4.0
-e2fsprogs: 1.42.9
-lzo2: 2.06
-CFLAGS: -march=x86-64 -mtune=generic -O2 -pipe -fstack-protector
---param=ssp-buffer-size=4
+Thanks,
+Wang
 
-Cheers,
+> Cheers,
+> 
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com
 
-
-WorMzy
-
-[1] http://pastie.org/8706689

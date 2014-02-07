@@ -1,57 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f173.google.com ([209.85.192.173]:54796 "EHLO
-	mail-pd0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752772AbaBGODC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 09:03:02 -0500
-Received: by mail-pd0-f173.google.com with SMTP id y10so3175783pdj.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 06:03:02 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:20764 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751370AbaBGRPJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 12:15:09 -0500
+From: Koen De Wit <koen.de.wit@oracle.com>
 To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: [PATCH v4] xfstests/btrfs: add a regression test for running snapshot and send concurrently
-Date: Fri,  7 Feb 2014 22:00:56 +0800
-Message-Id: <1391781656-9469-1-git-send-email-wangshilong1991@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Koen De Wit <koen.de.wit@oracle.com>
+Subject: [PATCH] xfstests: Btrfs: add test for large metadata blocks
+Date: Fri,  7 Feb 2014 18:14:45 +0100
+Message-Id: <1391793285-935-1-git-send-email-koen.de.wit@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Tests Btrfs filesystems with all possible metadata block sizes, by
+setting large extended attributes on files.
 
-Btrfs would fail to send if snapshot run concurrently, this test is to make
-sure we have fixed the bug.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
 ---
-v3->v4:
-  avoid to use silent send command(thanks to Dave Chinner)
-  rename patch's subject from Btrfs to xfstest/btrfs(thanks to Anand)
-  make sure background snapshots exists before killing it. 
+ tests/btrfs/036     |  128 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/036.out |    7 +++
+ tests/btrfs/group   |    1 +
+ 3 files changed, 136 insertions(+), 0 deletions(-)
+ create mode 100644 tests/btrfs/036
+ create mode 100644 tests/btrfs/036.out
 
-v2->v3:
-  make sure we kill backgrund snapshots on test failure.
-
-v1-v2:
-  Avoid race codes and a code style update(Thanks to Dave Chinner's comments)
----
- tests/btrfs/034     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/034.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 88 insertions(+)
- create mode 100644 tests/btrfs/034
- create mode 100644 tests/btrfs/034.out
-
-diff --git a/tests/btrfs/034 b/tests/btrfs/034
+diff --git a/tests/btrfs/036 b/tests/btrfs/036
 new file mode 100644
-index 0000000..06c796e
+index 0000000..0f8287a
 --- /dev/null
-+++ b/tests/btrfs/034
-@@ -0,0 +1,85 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/034
++++ b/tests/btrfs/036
+@@ -0,0 +1,128 @@
++#! /bin/bash
++# FS QA Test No. 036
 +#
-+# Regression test for running snapshots and send concurrently.
++# Tests large metadata blocks in btrfs, which allows large extended
++# attributes.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
++# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -65,88 +51,135 @@ index 0000000..06c796e
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
 +#-----------------------------------------------------------------------
-+#
 +
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
-+tmp=/tmp/$$
 +status=1	# failure is the default!
-+snapshots_pid=0
-+
-+_cleanup()
-+{
-+	# kill backgroud snapshots
-+	if [ $snapshots_pid -ne 0 ] && ps -p $snapshots_pid | grep -q $snapshots_pid; then
-+		kill -TERM $snapshots_pid 2> /dev/null
-+	fi
-+	rm -f $tmp.*
-+}
-+
-+do_snapshots()
-+{
-+	i=2
-+	while [ 1 ]
-+	do
-+		$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/snap_1 \
-+			$SCRATCH_MNT/snap_$i >> $seqres.full 2>&1
-+		let i=$i+1
-+		sleep 1
-+	done
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
 +
 +# real QA test starts here
++
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
++_need_to_be_root
 +
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
++rm -f $seqres.full
 +
-+touch $SCRATCH_MNT/foo
++pagesize=`$here/src/feature -s`
++pagesize_kb=`expr $pagesize / 1024`
 +
-+# get file with fragments by using backwards writes.
-+for i in `seq 10240 -1 1`; do
-+	$XFS_IO_PROG -f -d -c "pwrite $(($i * 4096)) 4096" \
-+		$SCRATCH_MNT/foo > /dev/null | _filter_xfs_io
++# Test all valid leafsizes
++for leafsize in `seq $pagesize_kb $pagesize_kb 64`; do
++    _scratch_unmount >/dev/null 2>&1
++    _scratch_mkfs -l ${leafsize}K >/dev/null
++    _scratch_mount
++    # Calculate the xattr size, but leave 512 bytes for other metadata.
++    xattr_size=`expr $leafsize \* 1024 - 512`
++
++    touch $SCRATCH_MNT/emptyfile
++    # smallfile will be inlined, bigfile not.
++    $XFS_IO_PROG -f -c "pwrite 0 100" $SCRATCH_MNT/smallfile >/dev/null
++    $XFS_IO_PROG -f -c "pwrite 0 9000" $SCRATCH_MNT/bigfile >/dev/null
++    ln -s $SCRATCH_MNT/bigfile $SCRATCH_MNT/bigfile_softlink
++
++    files=(emptyfile smallfile bigfile bigfile_softlink)
++    chars=(a b c d)
++    for i in `seq 0 1 3`; do
++        char=${chars[$i]}
++        file=$SCRATCH_MNT/${files[$i]}
++        lnkfile=${file}_hardlink
++        ln $file $lnkfile
++        xattr_value=`head -c $xattr_size < /dev/zero | tr '\0' $char`
++
++        set_md5=`echo -n "$xattr_value" | md5sum`
++        ${ATTR_PROG} -Lq -s attr_$char -V $xattr_value $file
++        get_md5=`${ATTR_PROG} -Lq -g attr_$char $file | md5sum`
++        get_ln_md5=`${ATTR_PROG} -Lq -g attr_$char $lnkfile | md5sum`
++
++        # Using md5sums for comparison instead of the values themselves
++        # because bash command lines cannot be larger than 64K chars.
++        if [ "$set_md5" != "$get_md5" ]; then
++            echo "Got unexpected xattr value for attr_$char"
++            echo "from file $file . (leafsize is ${leafsize}K)"
++        fi
++        if [ "$set_md5" != "$get_ln_md5" ]; then
++            echo "Value for attr_$char differs for $file and"
++            echo "$lnkfile . (leafsize is ${leafsize}K)"
++        fi
++    done
++
++    # Test attributes with a size larger than the leafsize.
++    # Should result in an error.
++    if [ "$leafsize" -lt "64" ]; then
++        # Bash command lines cannot be larger than 64K characters, so we
++        # do not test attribute values with a size >64KB.
++        xattr_size=`expr $leafsize \* 1024 + 512`
++        xattr_value=`head -c $xattr_size < /dev/zero | tr '\0' x`
++        ${ATTR_PROG} -q -s attr_toobig -V $xattr_value \
++            $SCRATCH_MNT/emptyfile >> $seqres.full 2>&1
++        if [ "$?" -eq "0" ]; then
++            echo "Expected error, xattr_size is bigger than ${leafsize}K"
++        fi
++    fi
++
 +done
 +
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/snap_1 >> $seqres.full 2>&1
++# Illegal attribute name (more than 256 characters)
++attr_name=`head -c 260 < /dev/zero | tr '\0' n`
++${ATTR_PROG} -s $attr_name -V attribute_name_too_big \
++    $SCRATCH_MNT/emptyfile 2>&1 | head -n 1
 +
-+do_snapshots &
-+snapshots_pid=$!
++_scratch_unmount
 +
-+$BTRFS_UTIL_PROG send $SCRATCH_MNT/snap_1 -f /dev/null 2>&1 | _filter_scratch
++# Some illegal leafsizes
 +
-+status=0 ; exit
-diff --git a/tests/btrfs/034.out b/tests/btrfs/034.out
++_scratch_mkfs -l 0 2>> $seqres.full
++echo $?
++
++_scratch_mkfs -l 5678 2>> $seqres.full
++echo $?
++
++_scratch_mkfs -l `expr $pagesize / 2 + $pagesize` 2>> $seqres.full
++echo $?
++
++_scratch_mkfs -l 128K 2>> $seqres.full
++echo $?
++
++_scratch_mkfs -l K
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/036.out b/tests/btrfs/036.out
 new file mode 100644
-index 0000000..9ed31e8
+index 0000000..1d9bdfb
 --- /dev/null
-+++ b/tests/btrfs/034.out
-@@ -0,0 +1,2 @@
-+QA output created by 034
-+At subvol SCRATCH_MNT/snap_1
++++ b/tests/btrfs/036.out
+@@ -0,0 +1,7 @@
++QA output created by 036
++attr_set: Invalid argument
++1
++1
++1
++1
++ERROR: size value is empty
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index b29236c..f9f062f 100644
+index f9f062f..2ca2225 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -36,3 +36,4 @@
- 031 auto quick
+@@ -37,3 +37,4 @@
  032 auto quick
  033 auto quick
-+034 auto quick
+ 034 auto quick
++036 auto quick
 -- 
-1.8.4
+1.7.1
 

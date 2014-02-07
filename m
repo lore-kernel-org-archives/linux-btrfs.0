@@ -1,57 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46282 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751123AbaBJJhf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 04:37:35 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s1A9bYD8022774
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 09:37:35 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1A9bXsn029752
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 09:37:33 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s1A9bWiD018966
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 09:37:33 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: avoid warning bomb of btrfs_invalidate_inodes
-Date: Mon, 10 Feb 2014 17:37:25 +0800
-Message-Id: <1392025045-26201-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <52C8A9F7.6080701@fb.com>
-References: <52C8A9F7.6080701@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34647 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751068AbaBGKfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Feb 2014 05:35:45 -0500
+From: David Disseldorp <ddiss@suse.de>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/3] __btrfs_drop_extents() BUG_ON reproducer
+Date: Fri,  7 Feb 2014 11:35:38 +0100
+Message-Id: <1391769341-20688-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So after transaction is aborted, we need to cleanup inode resources by
-calling btrfs_invalidate_inodes(), and btrfs_invalidate_inodes() hopes
-roots' refs to be zero in old times and sets a WARN_ON(), however, this
-is not always true within cleaning up transaction, so we get to detect
-transaction abortion and not warn at all.
+This patch-set provides a reproducer for hitting the 3.14.0-rc1 BUG_ON()
+at:
+ 692 int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+...
+ 839                 /*
+ 840                  *  | ---- range to drop ----- |
+ 841                  *      | -------- extent -------- |
+ 842                  */
+ 843                 if (start <= key.offset && end < extent_end) {
+ 844                         BUG_ON(extent_type == BTRFS_FILE_EXTENT_INLINE);
+ 845 
+ 846                         memcpy(&new_key, &key, sizeof(new_key));
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Follow Josef's advice, ie. in case of aborting transaction, we no more warn.
+The first patch adds a small cloner binary which is used by btrfs/035 to
+dispatch BTRFS_IOC_CLONE_RANGE requests.
 
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+This workload resembles that of Samba's vfs_btrfs module, when a Windows
+client restores a file from a shadow-copy (snapshot) using server-side
+copy requests.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1af34d0..e876c1e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4920,7 +4920,8 @@ void btrfs_invalidate_inodes(struct btrfs_root *root)
- 	struct inode *inode;
- 	u64 objectid = 0;
- 
--	WARN_ON(btrfs_root_refs(&root->root_item) != 0);
-+	if (!test_bit(BTRFS_FS_STATE_ERROR, &root->fs_info->fs_state))
-+		WARN_ON(btrfs_root_refs(&root->root_item) != 0);
- 
- 	spin_lock(&root->inode_lock);
- again:
--- 
-1.8.1.4
+Changes since V2:
+- Remove explicit write error checks
 
+Changes since V1:
+- Use strtoull instead of atoi
+- Print error conditions in cloner
+- Check for cloner binary before running test
+- Continue test on failure
+- Add cloner to .gitignore
+
+Feedback appreciated.
+
+Cheers, David
+
+
+ .gitignore          |   1 +
+ configure.ac        |   1 +
+ src/Makefile        |   2 +-
+ src/cloner.c        | 192 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035     |  77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/035.out |   3 +++
+ tests/btrfs/group   |   1 +
+ 7 files changed, 276 insertions(+), 1 deletion(-)

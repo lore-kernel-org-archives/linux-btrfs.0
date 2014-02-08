@@ -1,32 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga09.intel.com ([134.134.136.24]:31366 "EHLO mga09.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750957AbaBHNHv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 8 Feb 2014 08:07:51 -0500
-Date: Sat, 8 Feb 2014 21:07:49 +0800
-From: Fengguang Wu <fengguang.wu@intel.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Tejun Heo <tj@kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-kernel@vger.kernel.org, David Rientjes <rientjes@google.com>
-Subject: Re: [btrfs] BUG: unable to handle kernel NULL pointer dereference at
- 0000000000000038
-Message-ID: <20140208130749.GB16468@localhost>
-References: <20140207023801.GC11051@localhost>
- <alpine.DEB.2.02.1402070213020.22146@chino.kir.corp.google.com>
- <20140207121038.GA1690@localhost>
- <52F4F755.4090503@fb.com>
- <CAL3q7H6ZRzXqaxF_DQbeiRdE_dy=62BjFHiBKt=YAiGgEeiCRA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H6ZRzXqaxF_DQbeiRdE_dy=62BjFHiBKt=YAiGgEeiCRA@mail.gmail.com>
+Received: from mail-we0-f178.google.com ([74.125.82.178]:59069 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751393AbaBHPsA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 10:48:00 -0500
+Received: by mail-we0-f178.google.com with SMTP id q59so3141957wes.9
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 07:47:59 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com, clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix data corruption when reading/updating compressed extents
+Date: Sat,  8 Feb 2014 15:47:46 +0000
+Message-Id: <1391874466-19574-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> If you disable CONFIG_BTRFS_FS_RUN_SANITY_TESTS, does it still crash?
+When using a mix of compressed file extents and prealloc extents, it
+is possible to fill a page of a file with random, garbage data from
+some unrelated previous use of the page, instead of a sequence of zeroes.
 
-Good idea! I've queued test jobs for that config. However sorry that
-I'll be offline for the next 2 days. So please expect some delays.
+A simple sequence of steps to get into such case, taken from the test
+case I made for xfstests, is:
 
-Thanks,
-Fengguang
+   _scratch_mkfs
+   _scratch_mount "-o compress-force=lzo"
+   $XFS_IO_PROG -f -c "pwrite -S 0x06 -b 18670 266978 18670" $SCRATCH_MNT/foobar
+   $XFS_IO_PROG -c "falloc 26450 665194" $SCRATCH_MNT/foobar
+   $XFS_IO_PROG -c "truncate 542872" $SCRATCH_MNT/foobar
+   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
+
+This results in the following file items in the fs tree:
+
+   item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
+       inode generation 6 transid 6 size 542872 block group 0 mode 100600
+   item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
+       inode ref index 2 namelen 6 name: foobar
+   item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
+       extent data disk byte 0 nr 0 gen 6
+       extent data offset 0 nr 24576 ram 266240
+       extent compression 0
+   item 7 key (257 EXTENT_DATA 24576) itemoff 15757 itemsize 53
+       prealloc data disk byte 12849152 nr 241664 gen 6
+       prealloc data offset 0 nr 241664
+   item 8 key (257 EXTENT_DATA 266240) itemoff 15704 itemsize 53
+       extent data disk byte 12845056 nr 4096 gen 6
+       extent data offset 0 nr 20480 ram 20480
+       extent compression 2
+   item 9 key (257 EXTENT_DATA 286720) itemoff 15651 itemsize 53
+       prealloc data disk byte 13090816 nr 405504 gen 6
+       prealloc data offset 0 nr 258048
+
+The on disk extent at offset 266240 (which corresponds to 1 single disk block),
+contains 5 compressed chunks of file data. Each of the first 4 compress 4096
+bytes of file data, while the last one only compresses 3024 bytes of file data.
+Therefore a read into the file region [285648 ; 286720[ (length = 4096 - 3024 =
+1072 bytes) should always return zeroes (our next extent is a prealloc one).
+
+The solution here is the compression code path to zero the remaining (untouched)
+bytes of the last page it uncompressed data into, as the information about how
+much space the file data consumes in the last page is not known in the upper layer
+fs/btrfs/extent_io.c:__do_readpage(). In __do_readpage we were correctly zeroing
+the remainder of the page but only if it corresponds to the last page of the inode
+and if the inode's size is not a multiple of the page size.
+
+This would cause not only returning random data on reads, but also permanently
+storing random data when updating parts of the region that should be zeroed.
+For the example above, it means updating a single byte in the region [285648 ; 286720[
+would store that byte correctly but also store random data on disk.
+
+A test case for xfstests follows soon.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/compression.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index af815eb..ed1ff1cb 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -1011,6 +1011,8 @@ int btrfs_decompress_buf2page(char *buf, unsigned long buf_start,
+ 		bytes = min(bytes, working_bytes);
+ 		kaddr = kmap_atomic(page_out);
+ 		memcpy(kaddr + *pg_offset, buf + buf_offset, bytes);
++		if (*pg_index == (vcnt - 1) && *pg_offset == 0)
++			memset(kaddr + bytes, 0, PAGE_CACHE_SIZE - bytes);
+ 		kunmap_atomic(kaddr);
+ 		flush_dcache_page(page_out);
+ 
+-- 
+1.7.9.5
+

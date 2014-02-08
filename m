@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27161 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:28781 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750811AbaBHHdc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 02:33:32 -0500
+	with ESMTP id S1750773AbaBHHil (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 02:38:41 -0500
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s187XVkb017174
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s187ceCe021575
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:31 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s187XT5B016277
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:38:41 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s187cdPl021497
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:31 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s187XSsS016268
-	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:29 GMT
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:38:39 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s187cd37023946
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:38:39 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix a lockdep warning when cleaning up aborted transaction
-Date: Sat,  8 Feb 2014 15:33:08 +0800
-Message-Id: <1391844788-14517-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: fix a spinlock warning when cleaning up aborted transaction
+Date: Sat,  8 Feb 2014 15:38:08 +0800
+Message-Id: <1391845088-14665-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -59,6 +59,8 @@ head_ref, so cond_resched_lock(&head_ref->lock) is not necessary here.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: Fix typo in the title, s/lockdep/spinlock/g
+
  fs/btrfs/disk-io.c | 1 -
  1 file changed, 1 deletion(-)
 

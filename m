@@ -1,97 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46516 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751377AbaBGXF7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 18:05:59 -0500
-Date: Fri, 7 Feb 2014 15:05:58 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: Can you keep reflink relationship during a copy/backup to another filesystem?
-Message-ID: <20140207230558.GA9265@merlins.org>
-References: <20140129075025.GM14998@merlins.org> <20140129080514.GQ3314@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="3V7upXqbjpZ4EhLz"
-In-Reply-To: <20140129080514.GQ3314@carfax.org.uk>
+Received: from mail-pb0-f53.google.com ([209.85.160.53]:58110 "EHLO
+	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750898AbaBHDHC convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 22:07:02 -0500
+Received: by mail-pb0-f53.google.com with SMTP id md12so4018571pbc.40
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 19:07:00 -0800 (PST)
+Content-Type: text/plain; charset=GB2312
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH] Btrfs: convert to add transaction protection for btrfs send
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <52F2A370.2080509@fb.com>
+Date: Sat, 8 Feb 2014 11:06:56 +0800
+Cc: <linux-btrfs@vger.kernel.org>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Message-Id: <E2D932EC-EEEA-46DA-92D8-CEA762893951@gmail.com>
+References: <1391009539-2326-1-git-send-email-wangshilong1991@gmail.com> <52E94FEA.5060404@fb.com> <EA799A56-E02C-4D2E-957A-99CE1ED9CDB4@gmail.com> <52EA78E3.9060009@fb.com> <98BBA3BC-1CB6-4840-A5AF-6CE9C76B72AA@gmail.com> <52EA7C78.2030509@fb.com> <2DED49DB-B86D-46FB-B05C-3FB5E655749C@gmail.com> <15132D45-7C4B-41FD-A240-43BCFE314726@gmail.com> <52F00AAE.6070509@fb.com> <15BD028C-7568-4ACF-84D1-CA39092AD285@gmail.com> <52F244DE.9030108@fb.com> <2ECC0789-2FE8-4644-B439-35B682502867@gmail.com> <52F2A370.2080509@fb.com>
+To: Josef Bacik <jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Josef,
 
---3V7upXqbjpZ4EhLz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+[..SNIP..]
 
-On Wed, Jan 29, 2014 at 08:05:14AM +0000, Hugo Mills wrote:
-> On Tue, Jan 28, 2014 at 11:50:25PM -0800, Marc MERLIN wrote:
-> > So I used to use hardlinks to do historical backups of the same filesys=
-tem
-> > but I know it's preferable to use refllink with btrfs to avoid having t=
-oo
-> > many hardlinks.
->=20
->    If you use btrfstune to set the "extended inode refs" option on the
-> device, then there's no hardlink limit (and the limit was only on the
+>> Yeah, very reasonable, if you don't mind, i would give a patch for this issue.
+> Go for it, you'll be faster than I will be, all I do is run xfstests and
+> try to reproduce things that will never reproduce for me.
 
-I'm not too clear about that part:
-https://btrfs.wiki.kernel.org/index.php/Btrfstune
-doesn't seem to match what you're saying.
+So Finally, i've figured everything out.
 
-> number of hardlinks to the same thing *in the same directory*).
+Previous send is almostly safe is because we deal every item by transaction protection, 
+and we will search next item from root again next time (see btrfs_search_slot_for_read())
+And we will check root's @ctransid to make sure root did not change during send. (For readonly root,
+usually it should not except snapshot-aware defrag, ok we should fix it!!)
 
-I didn't catch the 'same directory' part. I used hardlinks.py to compare
-all my files from many backups across filesystems and hardlink files
-together if they were the same.
-You're saying that I could have 500 hardlinks to the same file as long as
-they are in 500 different directories, and that this is not a performance
-problem or limitation for btrfs (maybe anymore? I could swear I had issues
-with this in the past).
+Since we kicked off transaction from send, life will become a little complex,we should take care of
+everything can change readonly snapshot, from i can say now:
 
-If the limit is now hardlinking many times to the same file in the same
-directory, I don't actually have a need for that use case.
-=20
-> > But if I need to backup this filesystem to another one some other way t=
-han
-> > btrfs send/receive (let's say cp -a, tar, or rsync), is it correct to s=
-ay
-> > that reflink relationships will be lost and my data will take more spac=
-e?
-> >=20
-> > That is unless the target filesytem can do deduplication like btrs now =
-can?
-> > (I haven't tried it yet, but it's about time that I do)
->=20
->    Correct.
+1. snapshot @send_root will cow everything
+2. snapshot-aware defrag also work for readonly root.
+3. balance, device resize, add,remove, scrub(repair mode)
 
-Thanks.
-I just noticed that on the fly deduplication wasn't in 3.12 yet, so I'm
-better off keeping my hardlinks for backups since it's easy to keep that
-relationship when copying my backup tree to a backup device (backups of
-backups, of course, y'all don't do that? :) ).
+So there are two ideas in my mind:
+
+#Approach 1
+convert to previous ways that means add transaction protection for send. and Filipe's optimizations
+for send search should be reverted, this way is simple and make codes less complex, but we will involve
+transaction protection.
+
+#Approach 2.
+Add a local flag to root structure to sync snapshot with send.
+Add a global flag to sync balance's etc options with send
+don't defray readonly snapshot for snapshot-aware defrag.
+
+Approach 2 will make it safe to avoid transaction from send, but it add complexity to codes.Personally,
+i do not like approach 2 very much because it make btrfs codes more *ugly*  and make it *harder* to maintain.
+
+Anyway, I am ok to implement  both ways, Tell me if you have any better ideas or which approach is your
+appreciated way to fix the issue^_^
 
 Thanks,
-Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
+Wang
+> 
+> Josef
 
---3V7upXqbjpZ4EhLz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQCVAwUBUvVm1n4xUKZ2O+kBAQJsVwP+KaGdnDnjF7AE6q8R5oWtD9Renlvh+yst
-B7aqmpGf6L81zSfnKzRjb9gGMHogKrvgnIQegM1pAgjJ3GfMIPCtdWiOAJXserNr
-rMz7EptSVVdkAwNUDYwLAJ5aWlDqm70d356R6eJdc2i3VR1uf0fBVxcs7/078qQ8
-snjbhDVTkIE=
-=wtBE
------END PGP SIGNATURE-----
-
---3V7upXqbjpZ4EhLz--

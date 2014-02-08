@@ -1,92 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f178.google.com ([74.125.82.178]:59069 "EHLO
-	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751393AbaBHPsA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 10:48:00 -0500
-Received: by mail-we0-f178.google.com with SMTP id q59so3141957wes.9
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 07:47:59 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from mail-pb0-f51.google.com ([209.85.160.51]:33273 "EHLO
+	mail-pb0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751826AbaBHPsq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 10:48:46 -0500
+Received: by mail-pb0-f51.google.com with SMTP id un15so4491889pbc.38
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 07:48:46 -0800 (PST)
+From: Wang Shilong <wangshilong1991@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix data corruption when reading/updating compressed extents
-Date: Sat,  8 Feb 2014 15:47:46 +0000
-Message-Id: <1391874466-19574-1-git-send-email-fdmanana@gmail.com>
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Josef Bacik <jbacik@fb.com>
+Subject: [RFC PATCH 2/2] Revert "Btrfs: remove transaction from btrfs send"
+Date: Sat,  8 Feb 2014 23:46:36 +0800
+Message-Id: <1391874396-2273-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1391874396-2273-1-git-send-email-wangshilong1991@gmail.com>
+References: <1391874396-2273-1-git-send-email-wangshilong1991@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When using a mix of compressed file extents and prealloc extents, it
-is possible to fill a page of a file with random, garbage data from
-some unrelated previous use of the page, instead of a sequence of zeroes.
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 
-A simple sequence of steps to get into such case, taken from the test
-case I made for xfstests, is:
+This reverts commit 41ce9970a8a6a362ae8df145f7a03d789e9ef9d2.
+Previously i was thinking we can use readonly root's commit root
+safely while it is not true, readonly root may be cowed with the
+following cases.
 
-   _scratch_mkfs
-   _scratch_mount "-o compress-force=lzo"
-   $XFS_IO_PROG -f -c "pwrite -S 0x06 -b 18670 266978 18670" $SCRATCH_MNT/foobar
-   $XFS_IO_PROG -c "falloc 26450 665194" $SCRATCH_MNT/foobar
-   $XFS_IO_PROG -c "truncate 542872" $SCRATCH_MNT/foobar
-   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
+1.snapshot send root will cow source root.
+2.balance,device operations will also cow readonly send root
+to relocate.
 
-This results in the following file items in the fs tree:
+So i have two ideas to make us safe to use commit root.
 
-   item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
-       inode generation 6 transid 6 size 542872 block group 0 mode 100600
-   item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
-       inode ref index 2 namelen 6 name: foobar
-   item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
-       extent data disk byte 0 nr 0 gen 6
-       extent data offset 0 nr 24576 ram 266240
-       extent compression 0
-   item 7 key (257 EXTENT_DATA 24576) itemoff 15757 itemsize 53
-       prealloc data disk byte 12849152 nr 241664 gen 6
-       prealloc data offset 0 nr 241664
-   item 8 key (257 EXTENT_DATA 266240) itemoff 15704 itemsize 53
-       extent data disk byte 12845056 nr 4096 gen 6
-       extent data offset 0 nr 20480 ram 20480
-       extent compression 2
-   item 9 key (257 EXTENT_DATA 286720) itemoff 15651 itemsize 53
-       prealloc data disk byte 13090816 nr 405504 gen 6
-       prealloc data offset 0 nr 258048
+-->approach 1:
+make it protected by transaction and end transaction properly and we research
+next item from root node(see btrfs_search_slot_for_read()).
 
-The on disk extent at offset 266240 (which corresponds to 1 single disk block),
-contains 5 compressed chunks of file data. Each of the first 4 compress 4096
-bytes of file data, while the last one only compresses 3024 bytes of file data.
-Therefore a read into the file region [285648 ; 286720[ (length = 4096 - 3024 =
-1072 bytes) should always return zeroes (our next extent is a prealloc one).
+-->approach 2:
+add another counter to local root structure to sync snapshot with send.
+and add a global counter to sync send with exclusive device operations.
 
-The solution here is the compression code path to zero the remaining (untouched)
-bytes of the last page it uncompressed data into, as the information about how
-much space the file data consumes in the last page is not known in the upper layer
-fs/btrfs/extent_io.c:__do_readpage(). In __do_readpage we were correctly zeroing
-the remainder of the page but only if it corresponds to the last page of the inode
-and if the inode's size is not a multiple of the page size.
+So with approach 2, send can use commit root safely, because we make sure
+send root can not be cowed during send. Unfortunately, it make codes *ugly*
+and more complex to maintain.
 
-This would cause not only returning random data on reads, but also permanently
-storing random data when updating parts of the region that should be zeroed.
-For the example above, it means updating a single byte in the region [285648 ; 286720[
-would store that byte correctly but also store random data on disk.
+To make snapshot and send exclusively, device operations and send operation
+exclusively with each other is a little confusing for common users.
 
-A test case for xfstests follows soon.
+So why not drop into previous way.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/compression.c |    2 ++
- 1 file changed, 2 insertions(+)
+Josef, if we reach agreement to adopt this approach, please revert
+Filipe's patch(Btrfs: make some tree searches in send.c more efficient)
+from btrfs-next.
+---
+ fs/btrfs/send.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index af815eb..ed1ff1cb 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1011,6 +1011,8 @@ int btrfs_decompress_buf2page(char *buf, unsigned long buf_start,
- 		bytes = min(bytes, working_bytes);
- 		kaddr = kmap_atomic(page_out);
- 		memcpy(kaddr + *pg_offset, buf + buf_offset, bytes);
-+		if (*pg_index == (vcnt - 1) && *pg_offset == 0)
-+			memset(kaddr + bytes, 0, PAGE_CACHE_SIZE - bytes);
- 		kunmap_atomic(kaddr);
- 		flush_dcache_page(page_out);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 168b9ec..e9d1265 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5098,6 +5098,7 @@ out:
+ static int full_send_tree(struct send_ctx *sctx)
+ {
+ 	int ret;
++	struct btrfs_trans_handle *trans = NULL;
+ 	struct btrfs_root *send_root = sctx->send_root;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+@@ -5119,6 +5120,19 @@ static int full_send_tree(struct send_ctx *sctx)
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
++join_trans:
++	/*
++	 * We need to make sure the transaction does not get committed
++	 * while we do anything on commit roots. Join a transaction to prevent
++	 * this.
++	 */
++	trans = btrfs_join_transaction(send_root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		trans = NULL;
++		goto out;
++	}
++
+ 	/*
+ 	 * Make sure the tree has not changed after re-joining. We detect this
+ 	 * by comparing start_ctransid and ctransid. They should always match.
+@@ -5142,6 +5156,19 @@ static int full_send_tree(struct send_ctx *sctx)
+ 		goto out_finish;
+ 
+ 	while (1) {
++		/*
++		 * When someone want to commit while we iterate, end the
++		 * joined transaction and rejoin.
++		 */
++		if (btrfs_should_end_transaction(trans, send_root)) {
++			ret = btrfs_end_transaction(trans, send_root);
++			trans = NULL;
++			if (ret < 0)
++				goto out;
++			btrfs_release_path(path);
++			goto join_trans;
++		}
++
+ 		eb = path->nodes[0];
+ 		slot = path->slots[0];
+ 		btrfs_item_key_to_cpu(eb, &found_key, slot);
+@@ -5169,6 +5196,12 @@ out_finish:
+ 
+ out:
+ 	btrfs_free_path(path);
++	if (trans) {
++		if (!ret)
++			ret = btrfs_end_transaction(trans, send_root);
++		else
++			btrfs_end_transaction(trans, send_root);
++	}
+ 	return ret;
+ }
  
 -- 
-1.7.9.5
+1.8.4
 

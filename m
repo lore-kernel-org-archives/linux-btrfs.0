@@ -1,127 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay07.libero.it ([212.52.84.111]:41940 "EHLO
-	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751393AbaBHQg1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 11:36:27 -0500
-Message-ID: <52F65D09.3030400@libero.it>
-Date: Sat, 08 Feb 2014 17:36:25 +0100
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from hapkido.dreamhost.com ([66.33.216.122]:50616 "EHLO
+	hapkido.dreamhost.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751980AbaBHS3M convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 13:29:12 -0500
+Received: from homiemail-a14.g.dreamhost.com (caiajhbdcahe.dreamhost.com [208.97.132.74])
+	by hapkido.dreamhost.com (Postfix) with ESMTP id E3FFC9581
+	for <linux-btrfs@vger.kernel.org>; Sat,  8 Feb 2014 10:29:10 -0800 (PST)
+Message-ID: <52F6776C.4000109@spicycrypto.ca>
+Date: Sat, 08 Feb 2014 13:29:00 -0500
+From: Nathan Kidd <nathan@spicycrypto.ca>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-CC: Roman Mamedov <rm@romanrm.net>, Brendan Hide <brendan@swiftspirit.co.za>
-Subject: [PATCH][V2] Re: Provide a better free space estimate on RAID1
-References: <20140206021516.304732cd@natsu>	<52F33BE7.4020708@swiftspirit.co.za>	<20140206184502.128b7dbe@natsu>	<52F3E86B.4030805@libero.it> <20140207104005.7bd1438a@natsu>
-In-Reply-To: <20140207104005.7bd1438a@natsu>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Recovering from persistent  kernel oops on  'btrfs balance'
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/07/2014 05:40 AM, Roman Mamedov wrote:
-> On Thu, 06 Feb 2014 20:54:19 +0100
-> Goffredo Baroncelli <kreijack@libero.it> wrote:
-> 
-[...]
+Hi,
 
-Even I am not entirely convinced, I update the Roman's PoC in order
-to take in account all the RAID levels.
+I added a 2nd device and 'btrfs balance' crashed (kernel oops) half way 
+through, now I can only read the fs from a rawhide livedvd, but even 
+that can't fix the fs (finish balance, or remove 2nd device to try 
+again).  I'd be grateful for any advice on getting back to a working 
+btrfs filesystem.
 
-The filesystem test is composed by 7 51GB disks. Here my "df" results:
+Details
+=======
 
-Profile: single
-Filesystem                          Size  Used Avail Use% Mounted on
-/dev/vdc                            351G  512K  348G   1% /mnt/btrfs1
+Hardware： Asus P5G41T-M with Pentium dual core E2140，4GB ram, OS on 
+ext4 drive, two 4TB Segate "NAS" SATA drives.
 
-Profile: raid1
-Filesystem                          Size  Used Avail Use% Mounted on
-/dev/vdc                            351G  1.3M  150G   1% /mnt/btrfs1
+On Ubuntu 13.04 x86_64 (3.8 kernel, btrfs-tools 0.19+20130117)
 
-Profile: raid10
-Filesystem                          Size  Used Avail Use% Mounted on
-/dev/vdc                            351G  2.3M  153G   1% /mnt/btrfs1
+1. Install new 4TB drive (/dev/sdb), use gparted to create full-disk 
+btrfs partition, mount on /ark copy ~500GB data, everything working well 
+for a couple weeks
 
-Profile: raid5
-Filesystem                          Size  Used Avail Use% Mounted on
-/dev/vdc                            351G  2.0M  298G   1% /mnt/btrfs1
+2. Install additional identical 4TB drive,
 
-Profile: raid6
-Filesystem                          Size  Used Avail Use% Mounted on
-/dev/vdc                            351G  1.8M  248G   1% /mnt/btrfs1
+Following 
+https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Adding_new_devices
 
+3. btrfs device add /dev/sdc /ark
 
-Note that RAID1 and RAID10 can only use an even number of disks.
-The mixing mode (data and metadata in the same chunk) 
-return strange results.
+4. btrfs balance start -dconvert=raid1 -mconvert=raid1 /ark
 
-Below my patch.
+5. After ~1 hour, at about 50% (according to 'btrfs balance status', the 
+system locks up with this displayed (sorry, JPEG): 
+http://i.imgur.com/Ds9pnZV.jpg
 
-BR
-G.Baroncelli
+6. System repeat same oops on startup
 
-Changes history:
-V1	First issue
-V2	Correct a (old) bug when in RAID10 the disks aren't 
-        a multiple of 4
+7. After removing /dev/sdc system boots but can't see anything on /ark
 
+I guess using a 3.8 kernel wasn't the smartest idea. Let's update.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d71a11d..aea9afa 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1481,10 +1481,16 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
-                num_stripes = nr_devices;
-        } else if (type & BTRFS_BLOCK_GROUP_RAID1) {
-                min_stripes = 2;
--               num_stripes = 2;
-+               num_stripes = nr_devices & ~1llu;
-        } else if (type & BTRFS_BLOCK_GROUP_RAID10) {
-                min_stripes = 4;
--               num_stripes = 4;
-+               num_stripes = nr_devices & ~1llu;
-+       } else if (type & BTRFS_BLOCK_GROUP_RAID5) {
-+               min_stripes = 3;
-+               num_stripes = nr_devices;
-+       } else if (type & BTRFS_BLOCK_GROUP_RAID6) {
-+               min_stripes = 4;
-+               num_stripes = nr_devices;
-        }
- 
-        if (type & BTRFS_BLOCK_GROUP_DUP)
-@@ -1561,8 +1567,30 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
-                if (devices_info[i].max_avail >= min_stripe_size) {
-                        int j;
-                        u64 alloc_size;
-+                       int k;
- 
--                       avail_space += devices_info[i].max_avail * num_stripes;
-+                       /*
-+                        * Depending by the RAID profile, we use some
-+                        * disk space as redundancy:
-+                        * RAID1, RAID10, DUP -> half of space used as redundancy
-+                        * RAID5              -> 1 stripe used as redundancy
-+                        * RAID6              -> 2 stripes used as redundancy
-+                        * RAID0,LINEAR       -> no redundancy
-+                        */
-+                       if (type & BTRFS_BLOCK_GROUP_RAID1) {
-+                               k = num_stripes >> 1;
-+                       } else if (type & BTRFS_BLOCK_GROUP_DUP) {
-+                               k = num_stripes >> 1;
-+                       } else if (type & BTRFS_BLOCK_GROUP_RAID10) {
-+                               k = num_stripes >> 1;
-+                       } else if (type & BTRFS_BLOCK_GROUP_RAID5) {
-+                               k = num_stripes-1;
-+                       } else if (type & BTRFS_BLOCK_GROUP_RAID6) {
-+                               k = num_stripes-2;
-+                       } else { /* RAID0/LINEAR */
-+                               k = num_stripes;
-+                       }
-+                       avail_space += devices_info[i].max_avail * k;
-                        alloc_size = devices_info[i].max_avail;
-                        for (j = i + 1 - num_stripes; j <= i; j++)
-                                devices_info[j].max_avail -= alloc_size;
+8. Update to Ubuntu 13.11 x86_64 (3.11 kernel, btrfs-tools 
+0.19+20130705-1) 	
+
+9. Now system boots with /dev/sdc plugged in but still can't see data on 
+/ark, IIRC the balance command gave similar kernel oops.
+
+10。 Fine I'll try Rawhide. From Jan 30, 2014, kernel 
+3.14.0-0.rc0.git17.1.fc21.x86_64
+
+11. I can see data on /ark！
+
+12. If I try to 'btrfs balance resume' or 'btrfs balance cancel' I get 
+roughly the same kernel oops: http://pastebin.ca/2634583
+
+13. 'btrfs device delete /dev/sdc /ark' says it cannot be done while 
+balance is underway
+
+14. Help!  Any suggestion on how to recover the btrfs fs?
+
+My last resort idea is pull /dev/sdb (which seems to have actual data 
+that rawhide can see), format /dev/sdc ext4, plug both drives in again 
+and copy from btrfs /dev/sdb to ext4 /dev/sdc, then wipe the btrfs fs on 
+/dev/sdb and try again with the 3.11 kernel (or just with rawhide?).
+But that is a whole lot of copying it would be nice to avoid.
+
+Thanks,
+
+-Nathan
 
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

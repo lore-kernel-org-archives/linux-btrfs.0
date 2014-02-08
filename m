@@ -1,62 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f44.google.com ([209.85.216.44]:56677 "EHLO
-	mail-qa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751228AbaBHLK0 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 06:10:26 -0500
-Received: by mail-qa0-f44.google.com with SMTP id w5so6828982qac.17
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 03:10:26 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <C37F3250-AA5B-4C75-8ECB-D1E7B6FFEADD@colorremedies.com>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
- <C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com> <20140130175831.GU3314@carfax.org.uk>
- <C3B0EA86-0CBA-4500-81A8-7F3A99306E76@colorremedies.com> <CABgvyo8ZG=pk=i-7iXzoOWqZj_fVvUd6xiaXef1KWR8QLibhXg@mail.gmail.com>
- <6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com> <CABgvyo-cZ1bw7Gyd5sUYK11mMUp3N2w6v=SNEdXBRYqbNSNNFQ@mail.gmail.com>
- <CABgvyo8iS-8i-NKDUPX30B+Mk-B8-ZjLU7p_N7XefXtcSDvCFg@mail.gmail.com> <C37F3250-AA5B-4C75-8ECB-D1E7B6FFEADD@colorremedies.com>
-From: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
-Date: Sat, 8 Feb 2014 12:09:46 +0100
-Message-ID: <CABgvyo89WYpOFqb7fE4Ls5U63c_Kc8bLeNGebge87Up9H+NBiQ@mail.gmail.com>
-Subject: Re: lost with degraded RAID1
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from luka.romanrm.net ([213.163.64.74]:42722 "EHLO luka.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751312AbaBHLVp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Feb 2014 06:21:45 -0500
+Date: Sat, 8 Feb 2014 17:21:42 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Chris Murphy <lists@colorremedies.com>, kreijack@inwind.it,
+        kreijack@libero.it, Brendan Hide <brendan@swiftspirit.co.za>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Provide a better free space estimate on RAID1
+Message-ID: <20140208172142.44243c67@natsu>
+In-Reply-To: <20140207120812.43dc7982@natsu>
+References: <20140206021516.304732cd@natsu>
+	<52F33BE7.4020708@swiftspirit.co.za>
+	<20140206184502.128b7dbe@natsu>
+	<52F3E86B.4030805@libero.it>
+	<20140207104005.7bd1438a@natsu>
+	<1B8BB06F-64EA-40EC-B0D7-FB4A38928DA3@colorremedies.com>
+	<20140207120812.43dc7982@natsu>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/k4/7hO5FQzdIdVY8qPtH.xW"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, I did nuke it now and created the fs again using 3.12 kernel. So
-far so good. Runs fine.
-Finally, I know its kind of offtopic, but can some help me
-interpreting this (I think this is the error in the smart-log which
-started the whole mess)?
+--Sig_/k4/7hO5FQzdIdVY8qPtH.xW
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Error 1 occurred at disk power-on lifetime: 2576 hours (107 days + 8 hours)
-  When the command that caused the error occurred, the device was
-active or idle.
+On Fri, 7 Feb 2014 12:08:12 +0600
+Roman Mamedov <rm@romanrm.net> wrote:
 
-  After command completion occurred, registers were:
-  ER ST SC SN CL CH DH
-  -- -- -- -- -- -- --
-  04 71 00 ff ff ff 0f  Device Fault; Error: ABRT at LBA = 0x0fffffff
-= 268435455
+> > Earlier conventions would have stated Size ~900GB, and Avail ~900GB. Bu=
+t that's not exactly true either, is it?
+>=20
+> Much better, and matching the user expectations of how RAID1 should behav=
+e,
+> without a major "gotcha" blowing up into their face the first minute they=
+ are
+> trying it out. In fact next step that I planned would be finding how to a=
+djust
+> also Size and Used on all my machines to show what you just mentioned.
 
-  Commands leading to the command that caused the error were:
-  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
-  -- -- -- -- -- -- -- --  ----------------  --------------------
-  61 00 08 ff ff ff 4f 00   5d+04:53:11.169  WRITE FPDMA QUEUED
-  61 00 08 80 18 00 40 00   5d+04:52:45.129  WRITE FPDMA QUEUED
-  61 00 08 ff ff ff 4f 00   5d+04:52:44.701  WRITE FPDMA QUEUED
-  61 00 08 ff ff ff 4f 00   5d+04:52:44.700  WRITE FPDMA QUEUED
-  61 00 08 ff ff ff 4f 00   5d+04:52:44.679  WRITE FPDMA QUEUED
+OK done; again, this is just what I will personally use from now on (and for
+anyone who finds this helpful).
 
-2014-02-07 Chris Murphy <lists@colorremedies.com>:
->
-> On Feb 7, 2014, at 4:34 AM, Johan Kröckel <johan.kroeckel@gmail.com> wrote:
->
->> Is there anything else I should do with this setup or may I nuke the
->> two partitions and reuse them?
->
-> Well I'm pretty sure once you run 'btrfs check --repair' that you've hit the end of the road. Possibly btrfs restore can still extract some files, it might be worth testing whether that works.
->
-> Otherwise blow it away. I'd say test with 3.14-rc2 with a new file system and see if you can reproduce the sequence that caused this problem in the first place. If it's reproducible, I think there's a bug here somewhere.
->
->
-> Chris Murphy
+----
+
+--- fs/btrfs/super.c.orig	2014-02-06 01:28:36.636164982 +0600
++++ fs/btrfs/super.c	2014-02-08 17:16:50.361931959 +0600
+@@ -1481,6 +1481,11 @@
+ 	}
+=20
+ 	kfree(devices_info);
++
++	if (type & BTRFS_BLOCK_GROUP_RAID1) {
++		do_div(avail_space, min_stripes);
++	}
++ =20
+ 	*free_bytes =3D avail_space;
+ 	return 0;
+ }
+@@ -1491,8 +1496,10 @@
+ 	struct btrfs_super_block *disk_super =3D fs_info->super_copy;
+ 	struct list_head *head =3D &fs_info->space_info;
+ 	struct btrfs_space_info *found;
++	u64 total_size;
+ 	u64 total_used =3D 0;
+ 	u64 total_free_data =3D 0;
++	u64 type;
+ 	int bits =3D dentry->d_sb->s_blocksize_bits;
+ 	__be32 *fsid =3D (__be32 *)fs_info->fsid;
+ 	int ret;
+@@ -1512,7 +1519,13 @@
+ 	rcu_read_unlock();
+=20
+ 	buf->f_namelen =3D BTRFS_NAME_LEN;
+-	buf->f_blocks =3D btrfs_super_total_bytes(disk_super) >> bits;
++	total_size =3D btrfs_super_total_bytes(disk_super);
++	type =3D btrfs_get_alloc_profile(fs_info->tree_root, 1);
++	if (type & BTRFS_BLOCK_GROUP_RAID1) {
++		do_div(total_size, 2);
++		do_div(total_used, 2);
++	}
++	buf->f_blocks =3D total_size >> bits;
+ 	buf->f_bfree =3D buf->f_blocks - (total_used >> bits);
+ 	buf->f_bsize =3D dentry->d_sb->s_blocksize;
+ 	buf->f_type =3D BTRFS_SUPER_MAGIC;
+
+
+----
+
+2x1TB RAID1 with a 1GB file:
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2       912G  1.1G  911G   1% /mnt/p2
+
+
+--=20
+With respect,
+Roman
+
+--Sig_/k4/7hO5FQzdIdVY8qPtH.xW
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlL2E0YACgkQTLKSvz+PZwgS6ACgjZ0fJgedjuxObwLX8FKErHa4
+HiEAnAjI0jgLWrafZPLS9k60aaUwo6ik
+=UUFy
+-----END PGP SIGNATURE-----
+
+--Sig_/k4/7hO5FQzdIdVY8qPtH.xW--

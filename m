@@ -1,49 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f52.google.com ([209.85.220.52]:52505 "EHLO
-	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751526AbaBGVNI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2014 16:13:08 -0500
-Received: by mail-pa0-f52.google.com with SMTP id bj1so3688874pad.25
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2014 13:13:07 -0800 (PST)
-Date: Fri, 7 Feb 2014 13:13:06 -0800 (PST)
-From: David Rientjes <rientjes@google.com>
-To: Fengguang Wu <fengguang.wu@intel.com>
-cc: Tejun Heo <tj@kernel.org>, Filipe David Borba Manana <fdmanana@gmail.com>,
-        Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [btrfs] BUG: unable to handle kernel NULL pointer dereference
- at 0000000000000038
-In-Reply-To: <20140207121038.GA1690@localhost>
-Message-ID: <alpine.DEB.2.02.1402071307590.4212@chino.kir.corp.google.com>
-References: <20140207023801.GC11051@localhost> <alpine.DEB.2.02.1402070213020.22146@chino.kir.corp.google.com> <20140207121038.GA1690@localhost>
-MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Received: from aserp1040.oracle.com ([141.146.126.69]:27161 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750811AbaBHHdc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 02:33:32 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s187XVkb017174
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:31 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s187XT5B016277
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:31 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s187XSsS016268
+	for <linux-btrfs@vger.kernel.org>; Sat, 8 Feb 2014 07:33:29 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix a lockdep warning when cleaning up aborted transaction
+Date: Sat,  8 Feb 2014 15:33:08 +0800
+Message-Id: <1391844788-14517-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 7 Feb 2014, Fengguang Wu wrote:
+Given now we have 2 spinlock for management of delayed refs,
+CONFIG_DEBUG_SPINLOCK=y helped me find this,
 
-> On Fri, Feb 07, 2014 at 02:13:59AM -0800, David Rientjes wrote:
-> > On Fri, 7 Feb 2014, Fengguang Wu wrote:
-> > 
-> > > [    1.625020] BTRFS: selftest: Running btrfs_split_item tests
-> > > [    1.627004] BTRFS: selftest: Running find delalloc tests
-> > > [    2.289182] tsc: Refined TSC clocksource calibration: 2299.967 MHz
-> > > [  292.084537] kthreadd invoked oom-killer: gfp_mask=0x3000d0, order=1, oom_score_adj=0
-> > > [  292.086439] kthreadd cpuset=
-> > > [  292.087072] BUG: unable to handle kernel NULL pointer dereference at 0000000000000038
-> > > [  292.087372] IP: [<ffffffff812119de>] pr_cont_kernfs_name+0x1b/0x6c
-> > 
-> > This looks like a problem with the cpuset cgroup name, are you sure this 
-> > isn't related to the removal of cgroup->name?
-> 
-> It looks not related to patch "cgroup: remove cgroup->name", because
-> that patch lies in the cgroup tree and not contained in output of "git log BAD_COMMIT".
-> 
+[ 4723.413809] BUG: spinlock wrong CPU on CPU#1, btrfs-transacti/2258
+[ 4723.414882]  lock: 0xffff880048377670, .magic: dead4ead, .owner: btrfs-transacti/2258, .owner_cpu: 2
+[ 4723.417146] CPU: 1 PID: 2258 Comm: btrfs-transacti Tainted: G        W  O 3.12.0+ #4
+[ 4723.421321] Call Trace:
+[ 4723.421872]  [<ffffffff81680fe7>] dump_stack+0x54/0x74
+[ 4723.422753]  [<ffffffff81681093>] spin_dump+0x8c/0x91
+[ 4723.424979]  [<ffffffff816810b9>] spin_bug+0x21/0x26
+[ 4723.425846]  [<ffffffff81323956>] do_raw_spin_unlock+0x66/0x90
+[ 4723.434424]  [<ffffffff81689bf7>] _raw_spin_unlock+0x27/0x40
+[ 4723.438747]  [<ffffffffa015da9e>] btrfs_cleanup_one_transaction+0x35e/0x710 [btrfs]
+[ 4723.443321]  [<ffffffffa015df54>] btrfs_cleanup_transaction+0x104/0x570 [btrfs]
+[ 4723.444692]  [<ffffffff810c1b5d>] ? trace_hardirqs_on_caller+0xfd/0x1c0
+[ 4723.450336]  [<ffffffff810c1c2d>] ? trace_hardirqs_on+0xd/0x10
+[ 4723.451332]  [<ffffffffa015e5ee>] transaction_kthread+0x22e/0x270 [btrfs]
+[ 4723.452543]  [<ffffffffa015e3c0>] ? btrfs_cleanup_transaction+0x570/0x570 [btrfs]
+[ 4723.457833]  [<ffffffff81079efa>] kthread+0xea/0xf0
+[ 4723.458990]  [<ffffffff81079e10>] ? kthread_create_on_node+0x140/0x140
+[ 4723.460133]  [<ffffffff81692aac>] ret_from_fork+0x7c/0xb0
+[ 4723.460865]  [<ffffffff81079e10>] ? kthread_create_on_node+0x140/0x140
+[ 4723.496521] ------------[ cut here ]------------
 
-It's dying on pr_cont_kernfs_name which is some tree that has "kernfs: 
-implement kernfs_get_parent(), kernfs_name/path() and friends", which is 
-not in linux-next, and is obviously printing the cpuset cgroup name.
+----------------------------------------------------------------------
 
-It doesn't look like it has anything at all to do with btrfs or why they 
-would care about this failure.
+The reason is that we get to call cond_resched_lock(&head_ref->lock) while
+still holding @delayed_refs->lock.
+
+So it's different with __btrfs_run_delayed_refs(), where we do drop-acquire
+dance before and after actually processing delayed refs.
+
+Here we don't drop the lock, others are not able to add new delayed refs to
+head_ref, so cond_resched_lock(&head_ref->lock) is not necessary here.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index de6a48f..735738b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3853,7 +3853,6 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 			rb_erase(&ref->rb_node, &head->ref_root);
+ 			atomic_dec(&delayed_refs->num_entries);
+ 			btrfs_put_delayed_ref(ref);
+-			cond_resched_lock(&head->lock);
+ 		}
+ 		if (head->must_insert_reserved)
+ 			pin_bytes = true;
+-- 
+1.8.1.4
+

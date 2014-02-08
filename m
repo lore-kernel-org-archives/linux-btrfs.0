@@ -1,123 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30834 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751433AbaBHIa5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 03:30:57 -0500
-Message-ID: <52F5EB3B.5030902@oracle.com>
-Date: Sat, 08 Feb 2014 09:30:51 +0100
-From: Koen De Wit <koen.de.wit@oracle.com>
-MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] xfstests: Btrfs: add test for large metadata blocks
-References: <1391793285-935-1-git-send-email-koen.de.wit@oracle.com> <20140207224934.GH13647@dastard>
-In-Reply-To: <20140207224934.GH13647@dastard>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-we0-f177.google.com ([74.125.82.177]:64905 "EHLO
+	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751617AbaBHPuc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 10:50:32 -0500
+Received: by mail-we0-f177.google.com with SMTP id t61so3077640wes.22
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 07:50:31 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com, clm@fb.com,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs data corruption when using compression
+Date: Sat,  8 Feb 2014 15:50:09 +0000
+Message-Id: <1391874609-19721-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the review, Dave!
-Comments inline.
+Test for a btrfs data corruption when using compressed files/extents.
+Under certain cases, it was possible for reads to return random data
+(content from a previously used page) instead of zeroes. This also
+caused partial updates to those regions that were supposed to be filled
+with zeroes to save random (and invalid) data into the file extents.
 
-On 02/07/2014 11:49 PM, Dave Chinner wrote:
-> On Fri, Feb 07, 2014 at 06:14:45PM +0100, Koen De Wit wrote:
->> Tests Btrfs filesystems with all possible metadata block sizes, by
->> setting large extended attributes on files.
->>
->> Signed-off-by: Koen De Wit <koen.de.wit@oracle.com>
-> There's a few things here that need fixing.
->
->> +pagesize=`$here/src/feature -s`
->> +pagesize_kb=`expr $pagesize / 1024`
->> +
->> +# Test all valid leafsizes
->> +for leafsize in `seq $pagesize_kb $pagesize_kb 64`; do
->> +    _scratch_unmount >/dev/null 2>&1
-> Indentation are tabs, and tabs are 8 spaces in size, please.
+This is fixed by the commit for the linux kernel titled:
 
-OK, I fixed this in v2.
+   Btrfs: fix data corruption when reading/updating compressed extents
+   (https://patchwork.kernel.org/patch/3610391/)
 
->> +    _scratch_mkfs -l ${leafsize}K >/dev/null
->> +    _scratch_mount
-> No need to use _scratch_unmount here - you should be doing a
-> _check_scratch_fs at the end of the loop.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ tests/btrfs/036     |  111 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/036.out |    1 +
+ tests/btrfs/group   |    1 +
+ 3 files changed, 113 insertions(+)
+ create mode 100755 tests/btrfs/036
+ create mode 100644 tests/btrfs/036.out
 
-Fixed in v2 too.
+diff --git a/tests/btrfs/036 b/tests/btrfs/036
+new file mode 100755
+index 0000000..533b6ee
+--- /dev/null
++++ b/tests/btrfs/036
+@@ -0,0 +1,111 @@
++#! /bin/bash
++# FS QA Test No. btrfs/036
++#
++# Test for a btrfs data corruption when using compressed files/extents.
++# Under certain cases, it was possible for reads to return random data
++# (content from a previously used page) instead of zeroes. This also
++# caused partial updates to those regions that were supposed to be filled
++# with zeroes to save random (and invalid) data into the file extents.
++#
++# This is fixed by the commit for the linux kernel titled:
++#
++#   Btrfs: fix data corruption when reading/updating compressed extents
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=`mktemp -d`
++
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++rm -f $seqres.full
++
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount "-o compress-force=lzo"
++
++run_check $XFS_IO_PROG -f -c "pwrite -S 0x06 -b 18670 266978 18670" \
++    $SCRATCH_MNT/foobar
++run_check $XFS_IO_PROG -c "falloc 26450 665194" $SCRATCH_MNT/foobar
++run_check $XFS_IO_PROG -c "truncate 542872" $SCRATCH_MNT/foobar
++run_check $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
++
++# Expected file items in the fs tree are (from btrfs-debug-tree):
++#
++#   item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
++#       inode generation 6 transid 6 size 542872 block group 0 mode 100600
++#   item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
++#       inode ref index 2 namelen 6 name: foobar
++#   item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
++#       extent data disk byte 0 nr 0 gen 6
++#       extent data offset 0 nr 24576 ram 266240
++#       extent compression 0
++#   item 7 key (257 EXTENT_DATA 24576) itemoff 15757 itemsize 53
++#       prealloc data disk byte 12849152 nr 241664 gen 6
++#       prealloc data offset 0 nr 241664
++#   item 8 key (257 EXTENT_DATA 266240) itemoff 15704 itemsize 53
++#       extent data disk byte 12845056 nr 4096 gen 6
++#       extent data offset 0 nr 20480 ram 20480
++#       extent compression 2
++#   item 9 key (257 EXTENT_DATA 286720) itemoff 15651 itemsize 53
++#       prealloc data disk byte 13090816 nr 405504 gen 6
++#       prealloc data offset 0 nr 258048
++#
++# The on disk extent at 266240, contains 5 compressed chunks of file data.
++# Each of the first 4 chunks compress 4096 bytes of file data, while the last
++# one compresses only 3024 bytes of file data. Because this extent item is not
++# the last one in the file, as it followed by a prealloc extent, reads into
++# the region [285648 ; 286720[ (length = 4096 - 3024) should return zeroes.
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++
++EXPECTED_MD5="b8b0dbb8e02f94123c741c23659a1c0a"
++
++for i in `seq 1 27`
++do
++    _scratch_mount "-o ro"
++    MD5=`md5sum $SCRATCH_MNT/foobar | cut -f 1 -d ' '`
++    _scratch_unmount
++    if [ "${MD5}x" != "${EXPECTED_MD5}x" ]
++    then
++	echo "Unexpected file digest (wanted $EXPECTED_MD5, got $MD5)"
++    fi
++done
++
++status=0
++exit
+diff --git a/tests/btrfs/036.out b/tests/btrfs/036.out
+new file mode 100644
+index 0000000..8a5bd23
+--- /dev/null
++++ b/tests/btrfs/036.out
+@@ -0,0 +1 @@
++QA output created by 036
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f9f062f..2ca2225 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -37,3 +37,4 @@
+ 032 auto quick
+ 033 auto quick
+ 034 auto quick
++036 auto quick
+-- 
+1.7.9.5
 
->> +    # Calculate the xattr size, but leave 512 bytes for other metadata.
->> +    xattr_size=`expr $leafsize \* 1024 - 512`
->> +
->> +    touch $SCRATCH_MNT/emptyfile
->> +    # smallfile will be inlined, bigfile not.
->> +    $XFS_IO_PROG -f -c "pwrite 0 100" $SCRATCH_MNT/smallfile >/dev/null
->> +    $XFS_IO_PROG -f -c "pwrite 0 9000" $SCRATCH_MNT/bigfile >/dev/null
->> +    ln -s $SCRATCH_MNT/bigfile $SCRATCH_MNT/bigfile_softlink
->> +
->> +    files=(emptyfile smallfile bigfile bigfile_softlink)
->> +    chars=(a b c d)
->> +    for i in `seq 0 1 3`; do
->> +        char=${chars[$i]}
->> +        file=$SCRATCH_MNT/${files[$i]}
->> +        lnkfile=${file}_hardlink
->> +        ln $file $lnkfile
->> +        xattr_value=`head -c $xattr_size < /dev/zero | tr '\0' $char`
->> +
->> +        set_md5=`echo -n "$xattr_value" | md5sum`
-> Just dump the md5sum to the output file.
->
->> +        ${ATTR_PROG} -Lq -s attr_$char -V $xattr_value $file
->> +        get_md5=`${ATTR_PROG} -Lq -g attr_$char $file | md5sum`
->> +        get_ln_md5=`${ATTR_PROG} -Lq -g attr_$char $lnkfile | md5sum`
-> And dump these to the output file, too. Then the golden image
-> matching when the test is finish will tell you if it passed or not.
-> i.e:
->
-> 	echo -n "$xattr_value" | md5sum
-> 	${ATTR_PROG} -Lq -s attr_$char -V $xattr_value $file
-> 	${ATTR_PROG} -Lq -g attr_$char $file | md5sum
-> 	${ATTR_PROG} -Lq -g attr_$char $lnkfile | md5sum
->
-> is all that neds to be done here.
-
-The problem with this is that the length of the output will depend on the page size. The code above runs for every valid leafsize, which can be any multiple of the page size up to 64KB, as defined in the loop initialization:
-     for leafsize in `seq $pagesize_kb $pagesize_kb 64`; do
-
->> +    # Test attributes with a size larger than the leafsize.
->> +    # Should result in an error.
->> +    if [ "$leafsize" -lt "64" ]; then
->> +        # Bash command lines cannot be larger than 64K characters, so we
->> +        # do not test attribute values with a size >64KB.
->> +        xattr_size=`expr $leafsize \* 1024 + 512`
->> +        xattr_value=`head -c $xattr_size < /dev/zero | tr '\0' x`
->> +        ${ATTR_PROG} -q -s attr_toobig -V $xattr_value \
->> +            $SCRATCH_MNT/emptyfile >> $seqres.full 2>&1
->> +        if [ "$?" -eq "0" ]; then
->> +            echo "Expected error, xattr_size is bigger than ${leafsize}K"
->> +        fi
-> What you are doing is redirecting the error to $seqres.full
-> so that it doesn't end up in the output file, then detecting the
-> absence of an error and dumping a message to the output file to make
-> the test fail.
->
-> IOWs, the ATTR_PROG failure message should be in the golden output
-> file and you don't have to do anything else to detect a pass/fail
-> condition.
-
-Same here: the bigger the page size, the less this code will be executed. If the page size is 64KB, this code isn't executed at all.
-To make sure the golden output does not depend on the page size, I chose to suppress all output as long as the test is successful. Is there a better way to accomplish this?
-
->> +_scratch_unmount
->> +
->> +# Some illegal leafsizes
->> +
->> +_scratch_mkfs -l 0 2>> $seqres.full
->> +echo $?
-> Same again - you are dumping the error output into a different file,
-> then detecting the error manually. pass the output of _scratch_mkfs
-> through a filter, and let errors cause golden output mismatches.
-
-I did this to make the golden output not depend on the output of mkfs.btrfs, inspired by http://oss.sgi.com/cgi-bin/gitweb.cgi?p=xfs/cmds/xfstests.git;a=commit;h=fd7a8e885732475c17488e28b569ac1530c8eb59 and http://oss.sgi.com/cgi-bin/gitweb.cgi?p=xfs/cmds/xfstests.git;a=commit;h=78d86b996c9c431542fdbac11fa08764b16ceb7d
-However, in my opinion the test should simply be updated if the output of mkfs.btrfs changes, so I agree with you and I fixed this in v2.
-
-Thanks,
-Koen.

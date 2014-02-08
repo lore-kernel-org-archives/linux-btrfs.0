@@ -1,225 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hapkido.dreamhost.com ([66.33.216.122]:51741 "EHLO
-	hapkido.dreamhost.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751985AbaBHSfG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 13:35:06 -0500
-Received: from homiemail-a43.g.dreamhost.com (caibbdcaacei.dreamhost.com [208.113.200.248])
-	by hapkido.dreamhost.com (Postfix) with ESMTP id 1B49C78156
-	for <linux-btrfs@vger.kernel.org>; Sat,  8 Feb 2014 10:35:05 -0800 (PST)
-Received: from homiemail-a43.g.dreamhost.com (localhost [127.0.0.1])
-	by homiemail-a43.g.dreamhost.com (Postfix) with ESMTP id 4EBD08C058
-	for <linux-btrfs@vger.kernel.org>; Sat,  8 Feb 2014 10:34:56 -0800 (PST)
-Received: from [192.168.1.9] (unknown [50.46.251.200])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: john@navitsky.org)
-	by homiemail-a43.g.dreamhost.com (Postfix) with ESMTPSA id 26ED28C056
-	for <linux-btrfs@vger.kernel.org>; Sat,  8 Feb 2014 10:34:56 -0800 (PST)
-Message-ID: <52F67926.7060209@navitsky.org>
-Date: Sat, 08 Feb 2014 10:36:22 -0800
-From: John Navitsky <john@navitsky.org>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:52835 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751022AbaBHVuf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Feb 2014 16:50:35 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WCFnD-0002Pt-PS
+	for linux-btrfs@vger.kernel.org; Sat, 08 Feb 2014 22:50:31 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 22:50:31 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Feb 2014 22:50:31 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: system stuck with flush-btrfs-4 at 100% after filesystem resize
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Provide a better free space estimate on RAID1
+Date: Sat, 08 Feb 2014 22:35:40 +0100
+Message-ID: <cikisa-qf7.ln1@hurikhan77.spdns.de>
+References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com> <agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu> <20140208114634.GH6490@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hugo Mills <hugo@carfax.org.uk> schrieb:
 
-I have a large file system that has been growing.  We've resized it a 
-couple of times with the following approach:
+> On Sat, Feb 08, 2014 at 05:33:10PM +0600, Roman Mamedov wrote:
+>> On Fri, 07 Feb 2014 21:32:42 +0100
+>> Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+>> 
+>> > It should show the raw space available. Btrfs also supports compression
+>> > and doesn't try to be smart about how much compressed data would fit in
+>> > the free space of the drive. If one is using RAID1, it's supposed to
+>> > fill up with a rate of 2:1. If one is using compression, it's supposed
+>> > to fill up with a rate of maybe 1:5 for mostly text files.
+>> 
+>> Imagine a small business with some 30-40 employees. There is a piece of
+>> paper near the door at the office so that everyone sees it when entering
+>> or leaving, which says:
+>> 
+>> "Dear employees,
+>> 
+>> Please keep in mind that on the fileserver '\\DepartmentC', in the
+>> directory '\PublicStorage7' the free space you see as being available
+>> needs to be divided by two; On the server '\\DepartmentD', in
+>> '\StorageArchive' and '\VideoFiles', multiplied by two-thirds. For more
+>> details please contact the IT operations team. Further assistance will be
+>> provided at the monthly training seminar.
+>> 
+>> Regards,
+>> John S, CTO.'
+> 
+>    In my experience, nobody who uses a shared filesystem *ever* looks
+> at the amount of free space on it, until it fills up, at which point
+> they may look at the free space and see "0". Or most likely, they'll
+> be alerted to the issue by an email from the systems people saying,
+> "please will everyone delete unnecessary files from the shared drive,
+> because it's full up."
 
-   lvextend -L +800G /dev/raid/virtual_machines
-   btrfs filesystem resize +800G /vms
+Exactly that is the point from my practical experience. Only sysadmins watch 
+these numbers, and they'd know how to handle them.
 
-I think the FS started out at 200G, we increased it by 200GB a time or 
-two, then by 800GB and everything worked fine.
+Imagine the future: Btrfs supports different RAID levels per subvolume. We 
+need to figure out where to place a new subvolume. I need raw numbers for 
+it. Df won't tell me that now. Things become very difficult now.
 
-The filesystem hosts a number of virtual machines so the file system is 
-in use, although the VMs individually tend not to be overly active.
+Free space is a number unimportant to end users. They won't look at it. They 
+start to cry and call helpdesk if an application says: Disk is full. You 
+cannot even save your unsaved document, because: Disk full.
 
-VMs tend to be in subvolumes, and some of those subvolumes have snapshots.
+The only way to solve this, is to apply quotas to users and let the 
+sysadmins do the space usage planning. That will work.
 
-This time, I increased it by another 800GB, and it it has hung for many 
-hours (over night) with flush-btrfs-4 near 100% cpu all that time.
+I still think, there should be an extra utility which guesses the predicted 
+usable free space - or an option added to df to show that.
 
-I'm not clear at this point that it will finish or where to go from here.
+Roman's argument is only one view of the problem. My argument (sysadmin 
+space planning) is exactly the opposite view. In the future, free space 
+prediction will only become more complicated, involves more code, introduces 
+bugs... It should be done in user space. Df should receive raw numbers.
 
-Any pointers would be much appreciated.
+Storage space is cheap these days. You should just throw another disk at the 
+array if free space falls below a certain threshold. End users do not care 
+for free space. They just cry when it's full - no matter how accurate the 
+numbers had been before. They will certainly not cry if they copied 2 MB to 
+the disk but 4 MB had been taken. In a shared storage space this is probably 
+always the case anyway, because just the very same moment someone else also 
+copied 2 MB to the volume. So what?
 
-Thanks,
+>    Having a more accurate estimate of the free space is a laudable
+> aim, and in principle I agree with attempts to do it, but I think the
+> argument above isn't exactly a strong one in practice.
 
--john (newbie to BTRFS)
+I do not disagree, too. But I think it should go to a separate utility or 
+there should be a new API call in the kernel to get predicted usable free 
+space based on current usage pattern. Df is meant as a utility to get 
+accurate numbers. It should not tell you guessed numbers.
 
+Whatever you design a df calculater in btrfs, it could always be too 
+pessimistic or too optimistic (and could even switch unpredictably between 
+both situations). So whatever you do: It is always inaccurate. It will never 
+be able to exactly tell you the numbers you need. If disk space is low: Add 
+disks. Clean up. Whatever. Just simply do not try to fill up your FS to just 
+1kb left. Btrfs doesn't like that anyway. So: Use quotas.
 
--------- procedure log ----------
+Picking up the piece of paper example: You still have to tell your employees 
+that the free space numbers aren't exact anyways, so their best chance is to 
+simply not look at them and are better off with just trying to copy 
+something.
 
-romulus:/home/users/johnn # lvextend -L +800G /dev/raid/virtual_machines
-romulus:/home/users/johnn #  btrfs filesystem resize +800G /vms
-Resize '/vms' of '+800G'
-[hangs]
+Besides: If you want to fix this, what about the early-ENOSPC problem which 
+is there by design (allocation in chunks)? You'd need to fix that, too.
 
-
-top - 12:21:53 up 136 days,  2:45, 13 users,  load average: 30.39, 
-30.37, 30.37
-Tasks:   1 total,   1 running,   0 sleeping,   0 stopped,   0 zombie
-%Cpu(s):  2.4 us,  2.3 sy,  0.0 ni, 95.1 id,  0.1 wa,  0.0 hi,  0.0 si, 
-  0.0 st
-MiB Mem:    129147 total,   127427 used,     1720 free,      264 buffers
-MiB Swap:   262143 total,      661 used,   261482 free,    93666 cached
-
-    PID USER      PR  NI  VIRT  RES  SHR S  %CPU %MEM     TIME+ COMMAND 
-
-  48809 root      20   0     0    0    0 R  99.3  0.0   1449:14 
-flush-btrfs-4
-
-------- misc info -----------
-
-romulus:/home/users/johnn # cat /etc/SuSE-release
-openSUSE 12.3 (x86_64)
-VERSION = 12.3
-CODENAME = Dartmouth
-romulus:/home/users/johnn # uname -a
-Linux romulus.us.redacted.com 3.7.10-1.16-desktop #1 SMP PREEMPT Fri May 
-31 20:21:23 UTC 2013 (97c14ba) x86_64 x86_64 x86_64 GNU/Linux
-romulus:/home/users/johnn #
-
-
-romulus:/home/users/johnn # vgdisplay
-   --- Volume group ---
-   VG Name               raid
-   System ID
-   Format                lvm2
-   Metadata Areas        1
-   Metadata Sequence No  19
-   VG Access             read/write
-   VG Status             resizable
-   MAX LV                0
-   Cur LV                7
-   Open LV               7
-   Max PV                0
-   Cur PV                1
-   Act PV                1
-   VG Size               10.91 TiB
-   PE Size               4.00 MiB
-   Total PE              2859333
-   Alloc PE / Size       1371136 / 5.23 TiB
-   Free  PE / Size       1488197 / 5.68 TiB
-   VG UUID               npyvGj-7vxF-IoI8-Z4tF-ygpP-Q2Ja-vV8sLA
-[...]
-
-
-romulus:/home/users/johnn # lvdisplay
-[...]
-   --- Logical volume ---
-   LV Path                /dev/raid/virtual_machines
-   LV Name                virtual_machines
-   VG Name                raid
-   LV UUID                qtzNBG-vuLV-EsgO-FDIf-sO7A-GKmd-EVjGjp
-   LV Write Access        read/write
-   LV Creation host, time romulus.redacted.com, 2013-09-25 11:05:54 -0500
-   LV Status              available
-   # open                 1
-   LV Size                2.54 TiB
-   Current LE             665600
-   Segments               2
-   Allocation             inherit
-   Read ahead sectors     auto
-   - currently set to     256
-   Block device           253:4
-[...]
-
-
-johnn@romulus:~> df -h /vms
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/dm-4       1.8T  1.8T  6.0G 100% /vms
-johnn@romulus:~>
-
-
-romulus:/home/users/johnn # btrfs filesystem show
-[...]
-Label: none  uuid: f08c5602-f53a-43c9-b498-fa788b01e679
-         Total devices 1 FS bytes used 1.74TB
-         devid    1 size 1.76TB used 1.76TB path /dev/dm-4
-[...]
-Btrfs v0.19+
-romulus:/home/users/johnn #
-
-
-romulus:/home/users/johnn # btrfs subvolume list /vms
-ID 324 top level 5 path johnn-centos64
-ID 325 top level 5 path johnn-ubuntu1304
-ID 326 top level 5 path johnn-opensuse1203
-ID 327 top level 5 path johnn-sles11sp3
-ID 328 top level 5 path johnn-sles11sp2
-ID 329 top level 5 path johnn-fedora19
-ID 330 top level 5 path johnn-sles11sp1
-ID 394 top level 5 path redacted-glance
-ID 396 top level 5 path redacted_test
-ID 397 top level 5 path glance
-ID 403 top level 5 path test_redacted
-ID 414 top level 5 path johnn-disktest
-ID 460 top level 5 path redacted-opensuse-01
-ID 472 top level 5 path redacted
-ID 473 top level 5 path redacted2
-ID 496 top level 5 path redacted_test
-ID 524 top level 5 path redacted-moab
-ID 525 top level 5 path redacted_redacted-1
-ID 531 top level 5 path 
-.snapshots/johnn-sles11sp2/2013.10.11-14:25.18/johnn-sles11sp2
-ID 533 top level 5 path 
-.snapshots/johnn-centos64/2013.10.11-15:32.16/johnn-centos64
-ID 534 top level 5 path 
-.snapshots/johnn-ubuntu1304/2013.10.11-15:33.20/johnn-ubuntu1304
-ID 535 top level 5 path 
-.snapshots/johnn-opensuse1203/2013.10.11-15:36.19/johnn-opensuse1203
-ID 536 top level 5 path 
-.snapshots/johnn-sles11sp3/2013.10.11-15:39.51/johnn-sles11sp3
-ID 537 top level 5 path 
-.snapshots/johnn-fedora19/2013.10.11-15:41.08/johnn-fedora19
-ID 538 top level 5 path 
-.snapshots/johnn-sles11sp2/2013.10.11-16:48.02/johnn-sles11sp2
-ID 539 top level 5 path 
-.snapshots/johnn-sles11sp1/2013.10.11-17:17.17/johnn-sles11sp1
-ID 540 top level 5 path redacted-master
-ID 547 top level 5 path redacted-client
-ID 583 top level 5 path redacted-sles11sp3
-ID 584 top level 5 path .snapshots/2013.11.07-12:52.01/vms
-ID 586 top level 5 path rur_vm
-ID 599 top level 5 path redacted-redactedsp3
-ID 727 top level 5 path redacted-redactedsp3-test2
-ID 771 top level 5 path redacted-sp3-standalone
-ID 787 top level 5 path .trash/redacted-redactedsp3-Dec10
-ID 806 top level 5 path 
-.snapshots/redacted-redactedsp3-Dec10/2013.12.10-12:24.17/redacted-redactedsp3-Dec10
-ID 826 top level 5 path redacted-sp3-standalone2
-ID 894 top level 5 path redacted-redactedsp3-update01
-ID 941 top level 5 path redacted-redacted-testvm
-ID 1194 top level 5 path redacted-redactedsp3-jan3
-ID 1210 top level 5 path redacted-sle11sp3-01
-ID 1298 top level 5 path 
-redacted_redacted_standalone_SLES11SP3-redacted_20140117+0928
-ID 1324 top level 5 path redacted_redacted_SLES11SP3-redacted_20140117+0928
-ID 1356 top level 5 path redacted_redacted_SP3
-ID 1383 top level 5 path redacted_redacted-redacted-redacted11SP3-20140204
-ID 1964 top level 5 path redacted-redacted-base
-ID 1971 top level 5 path .trash/redacted-redacted-redacted
-ID 1972 top level 5 path .trash/redacted-redacted-redacted2
-ID 1988 top level 5 path .trash/redacted-redacted-redacted3
-ID 1989 top level 5 path .trash/redacted-redacted-redacted4
-ID 2002 top level 5 path redacted-feature-branch_71
-ID 2003 top level 5 path 
-.snapshots/johnn-sles11sp3/2014.02.07-10:51.57/johnn-sles11sp3
-romulus:/home/users/johnn #
-
-
-romulus:/home/users/johnn # lsof | grep vms | wc -l
-1127
-romulus:/home/users/johnn #
-
-
-romulus:/home/users/johnn # ps -ef | grep VBoxHeadless | wc -l
-18
-romulus:/home/users/johnn #
+-- 
+Replies to list only preferred.
 

@@ -1,104 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54918 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751768AbaBHLrA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 06:47:00 -0500
-Date: Sat, 8 Feb 2014 11:46:34 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Provide a better free space estimate on RAID1
-Message-ID: <20140208114634.GH6490@carfax.org.uk>
-References: <20140206021516.304732cd@natsu>
- <52F3EED4.7030603@fb.com>
- <agsfsa-mks.ln1@hurikhan77.spdns.de>
- <20140208173310.1f90af3b@natsu>
+Received: from outrelay06.libero.it ([212.52.84.110]:44889 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751393AbaBHPq7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Feb 2014 10:46:59 -0500
+Message-ID: <52F65147.2080505@libero.it>
+Date: Sat, 08 Feb 2014 16:46:15 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="r5lq+205vWdkqwtk"
-In-Reply-To: <20140208173310.1f90af3b@natsu>
+To: Roman Mamedov <rm@romanrm.net>, kreijack@inwind.it
+CC: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Subject: Re: Provide a better free space estimate on RAID1
+References: <20140206021516.304732cd@natsu>	<52F33BE7.4020708@swiftspirit.co.za>	<20140206184502.128b7dbe@natsu>	<52F3E86B.4030805@libero.it> <20140207104005.7bd1438a@natsu>
+In-Reply-To: <20140207104005.7bd1438a@natsu>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---r5lq+205vWdkqwtk
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Feb 08, 2014 at 05:33:10PM +0600, Roman Mamedov wrote:
-> On Fri, 07 Feb 2014 21:32:42 +0100
-> Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+On 02/07/2014 05:40 AM, Roman Mamedov wrote:
+> On Thu, 06 Feb 2014 20:54:19 +0100
+> Goffredo Baroncelli <kreijack@libero.it> wrote:
 > 
-> > It should show the raw space available. Btrfs also supports compression and 
-> > doesn't try to be smart about how much compressed data would fit in the free 
-> > space of the drive. If one is using RAID1, it's supposed to fill up with a 
-> > rate of 2:1. If one is using compression, it's supposed to fill up with a 
-> > rate of maybe 1:5 for mostly text files.
-> 
-> Imagine a small business with some 30-40 employees. There is a piece of paper
-> near the door at the office so that everyone sees it when entering or leaving,
-> which says:
-> 
-> "Dear employees,
-> 
-> Please keep in mind that on the fileserver '\\DepartmentC', in the directory
-> '\PublicStorage7' the free space you see as being available needs to be divided
-> by two; On the server '\\DepartmentD', in '\StorageArchive' and '\VideoFiles',
-> multiplied by two-thirds. For more details please contact the IT operations
-> team. Further assistance will be provided at the monthly training seminar.
-> 
-> Regards,
-> John S, CTO.'
+[...]
 
-   In my experience, nobody who uses a shared filesystem *ever* looks
-at the amount of free space on it, until it fills up, at which point
-they may look at the free space and see "0". Or most likely, they'll
-be alerted to the issue by an email from the systems people saying,
-"please will everyone delete unnecessary files from the shared drive,
-because it's full up."
+Even I am not entirely convinced, I update the Roman's PoC in order
+to take in account all the RAID levels.
 
-   Having a more accurate estimate of the free space is a laudable
-aim, and in principle I agree with attempts to do it, but I think the
-argument above isn't exactly a strong one in practice.
+I performed some tests with 7 48.8GB disks. Here my "df" results
 
-   Even in the current code with only one RAID setting available for
-data, if you have parity RAID, you've got to look at the number of
-drives with available free space to make an estimate of available
-space. I think your best bet, ultimately, is to write code to give
-either a pessimistic (lower bound) or optimistic (upper bound)
-estimate of available space based on the profiles in use and the
-current distribution of free/unallocated space, and stick with that. I
-think I'd prefer to see a pessimistic bound, although that could break
-anything like an installer that attempts to see how much free space
-there is before proceeding.
+Profile: single
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                            342G  512K  340G   1% /mnt/btrfs1
 
-   Hugo.
+Profile: raid1
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                            342G  1.3M  147G   1% /mnt/btrfs1
+
+Profile: raid10
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                            342G  2.3M  102G   1% /mnt/btrfs1
+
+Profile: raid5
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                            342G  2.0M  291G   1% /mnt/btrfs1
+
+Profile: raid6
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                            342G  1.8M  243G   1% /mnt/btrfs1
+
+Note that RAID1 can only uses 6 disks; raid 10 only four, but I think that it 
+is due to a previous bug. 
+Still the mixing mode (data and metadata raid in the same chunk) is unsupported
+
+below my patch.
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d71a11d..e5c58b3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1485,6 +1485,12 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+        } else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+                min_stripes = 4;
+                num_stripes = 4;
++       } else if (type & BTRFS_BLOCK_GROUP_RAID5) {
++               min_stripes = 3;
++               num_stripes = nr_devices;
++       } else if (type & BTRFS_BLOCK_GROUP_RAID6) {
++               min_stripes = 4;
++               num_stripes = nr_devices;
+        }
+ 
+        if (type & BTRFS_BLOCK_GROUP_DUP)
+@@ -1561,8 +1567,30 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+                if (devices_info[i].max_avail >= min_stripe_size) {
+                        int j;
+                        u64 alloc_size;
++                       int k;
+ 
+-                       avail_space += devices_info[i].max_avail * num_stripes;
++                       /*
++                        * Depending by the RAID profile, we use some
++                        * disk space as redundancy:
++                        * RAID1, RAID10, DUP -> half of space used as redundancy
++                        * RAID5              -> 1 stripe used as redundancy
++                        * RAID6              -> 2 stripes used as redundancy
++                        * RAID0,LINEAR       -> no redundancy
++                        */
++                       if (type & BTRFS_BLOCK_GROUP_RAID1) {
++                               k = num_stripes >> 1;
++                       } else if (type & BTRFS_BLOCK_GROUP_DUP) {
++                               k = num_stripes >> 1;
++                       } else if (type & BTRFS_BLOCK_GROUP_RAID10) {
++                               k = num_stripes >> 1;
++                       } else if (type & BTRFS_BLOCK_GROUP_RAID5) {
++                               k = num_stripes-1;
++                       } else if (type & BTRFS_BLOCK_GROUP_RAID6) {
++                               k = num_stripes-2;
++                       } else { /* RAID0/LINEAR */
++                               k = num_stripes;
++                       }
++                       avail_space += devices_info[i].max_avail * k;
+                        alloc_size = devices_info[i].max_avail;
+                        for (j = i + 1 - num_stripes; j <= i; j++)
+                                devices_info[j].max_avail -= alloc_size;
+
+
+
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                 --- This year,  I'm giving up Lent. ---                 
-
---r5lq+205vWdkqwtk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBUvYZGlheFHXiqx3kAQLoqg/+NK2JfxvgDKCs04oPKcXtyD44T8Y303dA
-nyCoHaXWLX6R5Hp0F6FT/f8264FiTgSWNvdvRHkLJS1aIqzZcVbfbBDjfg1Vtmqv
-a7TTQRa11YKvZAD4YnR2eLTCOgVluNgVFTvEC4CwIS2Qf4FdSl+ZFMXYEIX4/wVI
-1qRUWFUUM0FonnJDiU6sUn9LBrsV9jyO0i1yKLPHxqoBOkMYK7ugDFBPDLTDGrFk
-n/eYp2rMRUt1tw3M0NPty8I9qoFCunVgzku9uMv7kMwtMTkGF9LlHOpjCM8IPor1
-iPsD1aSkLZNhklVvlK45OfA4Bb5E8mH4gjsnR5RNRRa+TPCB1uJjbgp+gJ7EwQqd
-dR4mJ8Ft5OgvO9yXuCR6efa6QFWQBUbWqQyrNUoVuvtbWSLIzScI1vwCBRgGq7z4
-qD35/5vfgThvcy/Llmtk0o8KYyKjr5eD4q/B6CFP2eH3PgTnE7KnGe2v+8aWzgh5
-uUqROW+orxgFrvA+invH2pi2vc7yjwhoItgDf0wI9QqJoj8IH3fAeDL9SBMrANoP
-QNl3Uu6+VIx/sy96lGDPqgcqlVkMukXGhh/AFeQTXqWAxCj0qY23PFGG8IsGEYCU
-0cwMV+6xfhTRRgkeLNR1EFACfw2t+uZg/b9y5z+3s+bbkddsSV3pvjEaOOAe3E3D
-b7dQYgmftx4=
-=lMGa
------END PGP SIGNATURE-----
-
---r5lq+205vWdkqwtk--
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

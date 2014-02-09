@@ -1,89 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from luka.romanrm.net ([213.163.64.74]:44786 "EHLO luka.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751287AbaBIBzj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 8 Feb 2014 20:55:39 -0500
-Date: Sun, 9 Feb 2014 07:55:33 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:40833 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751290AbaBICVi convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Feb 2014 21:21:38 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Provide a better free space estimate on RAID1
-Message-ID: <20140209075533.26b4b730@natsu>
-In-Reply-To: <9hqisa-46c.ln1@hurikhan77.spdns.de>
-References: <20140206021516.304732cd@natsu>
-	<52F3EED4.7030603@fb.com>
-	<agsfsa-mks.ln1@hurikhan77.spdns.de>
-	<20140208173310.1f90af3b@natsu>
-	<9hqisa-46c.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/fPZx=VYfCqtFrzXD5lCbISu"; protocol="application/pgp-signature"
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140209075533.26b4b730@natsu>
+Date: Sat, 8 Feb 2014 19:21:37 -0700
+Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>, linux-btrfs@vger.kernel.org
+Message-Id: <38386895-51E4-4A9E-AA3D-4D941DDCC793@colorremedies.com>
+References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com> <agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu> <9hqisa-46c.ln1@hurikhan77.spdns.de> <20140209075533.26b4b730@natsu>
+To: Roman Mamedov <rm@romanrm.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/fPZx=VYfCqtFrzXD5lCbISu
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-On Sun, 09 Feb 2014 00:17:29 +0100
-Kai Krakow <hurikhan77+btrfs@gmail.com> wrote:
+On Feb 8, 2014, at 6:55 PM, Roman Mamedov <rm@romanrm.net> wrote:
+> 
+> Not sure what exactly becomes problematic if a 2-device RAID1 tells the user
+> they can store 1 TB of their data on it, and is no longer lying about the 
+> possibility to store 2 TB on it as currently.
+> 
+> Two 1TB disks in RAID1.
 
-> "Dear employees,
->=20
-> Please keep in mind that when you run out of space on the fileserver=20
-> '\\DepartmentC', when you free up space in the directory '\PublicStorage7=
-'=20
-> the free space you gain on '\StorageArchive' is only one third of the amo=
-unt=20
-> you deleted, and in '\VideoFiles', you gain only one half.
+OK but while we don't have a top level switch for variable raid on a volume yet, the on-disk format doesn't consider the device to be raid1 at all. Not the device, nor the volume, nor the subvolume have this attribute. It's a function of the data, metadata or system chunk via their profiles.
 
-But that's simply incorrect. Looking at my 2nd patch which also changes the
-total reported size and 'used' size, the 'total' space, 'used' space and sp=
-ace
-freed up as 'available' after file deletion will all match up perfectly.
+I can do a partial conversion on a volume, and even could do this multiple times and end up with some chunks in every available option, some chunks single, some raid1, some raid0, some raid5. All I have to do is cancel the conversion before each conversion is complete, successively shortening the time.
 
-> The exercise of why is left to the reader...
->=20
-> The proposed fix simply does not fix the problem. It simply shifts it=20
-> introducing the need for another fix somewhere else, which in turn probab=
-ly=20
-> also introduces another need for a fix, and so forth... This will become =
-an=20
-> endless effort of fixing and tuning.
+And it's not fair to say this has no application because such conversions take a long time. I might not want to fully do a conversion all at once. There's no requirement that I do so.
 
-Not sure what exactly becomes problematic if a 2-device RAID1 tells the user
-they can store 1 TB of their data on it, and is no longer lying about the=20
-possibility to store 2 TB on it as currently.
+In any case I object to the language being used that implicitly indicates the 'raidness' is a device or disk attribute.
 
-Two 1TB disks in RAID1. Total space 1TB. Can store of my data: 1TB.
-Wrote 100 GB of files? 100 GB used, 900 GB available, 1TB total.
-Deleted 50 GB of those? 50 GB used, 950 GB available, 1TB total.
 
-Can't see anything horribly broken about this behavior.
+Chris Murphy
 
-For when you need to "get to the bottom of things", as mentioned earlier
-there's always 'btrfs fi df'.
-
-> Feel free to fix it but be prepared for the reincarnation of this problem=
- when
-> per-subvolume raid levels become introduced.
-
-AFAIK no one has even begun to write any code code to implement those yet.
-
---=20
-With respect,
-Roman
-
---Sig_/fPZx=VYfCqtFrzXD5lCbISu
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlL24BUACgkQTLKSvz+PZwh6fgCfe/iZmk0bb1UpJA2MKAVyhXNz
-HSYAnR3trqSCbJ4XC3+GmBDLoL45laLW
-=A62Y
------END PGP SIGNATURE-----
-
---Sig_/fPZx=VYfCqtFrzXD5lCbISu--

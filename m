@@ -1,71 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40718 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:41228 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750781AbaBIFlU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Feb 2014 00:41:20 -0500
+	id S1751294AbaBIGjW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 9 Feb 2014 01:39:22 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WCN8o-0001Ag-MY
-	for linux-btrfs@vger.kernel.org; Sun, 09 Feb 2014 06:41:18 +0100
+	id 1WCO2y-0003uP-Ko
+	for linux-btrfs@vger.kernel.org; Sun, 09 Feb 2014 07:39:20 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 06:41:18 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 07:39:20 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 06:41:18 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 07:39:20 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: lost with degraded RAID1
-Date: Sun, 9 Feb 2014 05:40:55 +0000 (UTC)
-Message-ID: <pan$9975$a22e4391$1abcb3d9$aba51d08@cox.net>
-References: <CABgvyo-rw8To-=8_Kt+j8gXiJyX43oWPrWxhAGWqhpE83oCCAw@mail.gmail.com>
-	<C0AD9885-8F81-4642-809F-BDC3933A5932@colorremedies.com>
-	<20140130175831.GU3314@carfax.org.uk>
-	<C3B0EA86-0CBA-4500-81A8-7F3A99306E76@colorremedies.com>
-	<CABgvyo8ZG=pk=i-7iXzoOWqZj_fVvUd6xiaXef1KWR8QLibhXg@mail.gmail.com>
-	<6C293A14-9A38-4DAA-A720-1F77B9CB083D@colorremedies.com>
-	<CABgvyo-cZ1bw7Gyd5sUYK11mMUp3N2w6v=SNEdXBRYqbNSNNFQ@mail.gmail.com>
-	<CABgvyo8iS-8i-NKDUPX30B+Mk-B8-ZjLU7p_N7XefXtcSDvCFg@mail.gmail.com>
-	<C37F3250-AA5B-4C75-8ECB-D1E7B6FFEADD@colorremedies.com>
-	<CABgvyo89WYpOFqb7fE4Ls5U63c_Kc8bLeNGebge87Up9H+NBiQ@mail.gmail.com>
+Subject: Re: Provide a better free space estimate on RAID1
+Date: Sun, 9 Feb 2014 06:38:53 +0000 (UTC)
+Message-ID: <pan$e196e$601e36f4$65c8817c$b6141c66@cox.net>
+References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com>
+	<agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu>
+	<20140208114634.GH6490@carfax.org.uk> <cikisa-qf7.ln1@hurikhan77.spdns.de>
+	<20140209041050.529ff6f9@natsu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Johan Kröckel posted on Sat, 08 Feb 2014 12:09:46 +0100 as excerpted:
+Roman Mamedov posted on Sun, 09 Feb 2014 04:10:50 +0600 as excerpted:
 
-> Ok, I did nuke it now and created the fs again using 3.12 kernel. So far
-> so good. Runs fine.
-> Finally, I know its kind of offtopic, but can some help me interpreting
-> this (I think this is the error in the smart-log which started the whole
-> mess)?
+> If you need to perform a btrfs-specific operation, you can easily use
+> the btrfs-specific tools to prepare for it, specifically use "btrfs fi
+> df" which could give provide every imaginable interpretation of free
+> space estimate and then some.
 > 
-> Error 1 occurred at disk power-on lifetime: 2576 hours (107 days + 8
-> hours)
->   When the command that caused the error occurred, the device was
-> active or idle.
-> 
->   After command completion occurred, registers were:
->   ER ST SC SN CL CH DH
->   -- -- -- -- -- -- --
->   04 71 00 ff ff ff 0f
->  Device Fault; Error: ABRT at LBA = 0x0fffffff = 268435455
+> UNIX 'df' and the 'statfs' call on the other hand should keep the
+> behavior people are accustomized to rely on since 1970s.
 
-I'm no SMART expert, but that LBA number is incredibly suspicious.  With 
-standard 512-byte sectors that's the 128 GiB boundary, the old 28-bit LBA 
-limit (LBA28, introduced with ATA-1 in 1994, modern drives are LBA48, 
-introduced in 2003 with ATA-6 and offering an addressing capacity of 128 
-PiB, according to wikipedia's article on LBA).
+Which it does... on filesystems that only have 1970s filesystem features. 
+=:^)
 
-It looks like something flipped back to LBA28, and when a continuing 
-operation happened to write past that value... it triggered the abort you 
-see in the SMART log.
+RAID or multi-device filesystems aren't 1970s features and break 1970s 
+behavior and the assumptions associated with it.  If you're not prepared 
+to deal with those broken assumptions, don't.  Use mdraid or dmraid or lvm 
+or whatever to combine your multiple devices into one logical devices as 
+presented, and put your filesystem (either traditional filesystem, or 
+even btrfs using traditional single-device functionality) on top of the 
+single device the layer beneath the filesystem presents.  Problem solved! 
+=:^)
 
-Double-check your BIOS to be sure it didn't somehow revert to the old 
-LBA28 compatibility mode or some such, and the drives, to make sure they 
-aren't "clipped" to LBA28 compatibility mode as well.
+Note that df only lists a single device as well, not the multiple 
+component devices of the filesystem.  That's broken functionality by your 
+definition, too, and again, using some other layer like lvm or mdraid to 
+present multiple devices as a single virtual device, with a traditional 
+single-device filesystem layout on top of that single device... solves 
+the problem!
+
+
+Meanwhile, what I've done here is use one of df's commandline options to 
+set its block size to 2 MiB, and further used bash's alias functionality 
+to setup an alias accordingly:
+
+alias df='df -B2M'
+
+$ df /h
+Filesystem     2M-blocks  Used Available Use% Mounted on
+/dev/sda6          20480 12186      7909  61% /h
+
+$ sudo btrfs fi show /h
+Label: hm0238gcnx+35l0  uuid: ce23242a-b0a9-423f-a9c3-7db2729f48d6
+        Total devices 2 FS bytes used 11.90GiB
+        devid    1 size 20.00GiB used 14.78GiB path /dev/sda6
+        devid    2 size 20.00GiB used 14.78GiB path /dev/sdb6
+
+$ sudo btrfs fi df /h
+Data, RAID1: total=14.00GiB, used=11.49GiB
+System, RAID1: total=32.00MiB, used=16.00KiB
+Metadata, RAID1: total=768.00MiB, used=414.94MiB
+
+
+On btrfs such as the above I can read the 2M blocks as 1M and be happy.  
+On btrfs such as my /boot, which aren't raid1 (I have two separate 
+/boots, one on each device, with grub2 configured separately for each to 
+provide a backup), or if I df my media partitions still on reiserfs on 
+the old spinning rust, I can either double the figures DF gives me, or 
+add a second -B option at the CLI, overriding the aliased option.
+
+If I wanted something fully automated, it'd be easy enough to setup a 
+script that checked what filesystem I was df-ing, matched that against a 
+table of filesystems to preferred df block sizes, and supplied the 
+appropriate -BxX option accordingly.  As I guess most admins after a few 
+years, I've developed quite a library of scripts/aliases for various 
+things I do routinely enough to warrant it, and this would be just one 
+more joining the list. =:^)
+
+
+But of course it's your system in question, and you can patch btrfs to 
+output anything you like, in any format you like.  No need to bother with 
+df's -B option if you'd prefer to patch the kernel instead.  Me, I'll 
+stick to the -B option.  =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

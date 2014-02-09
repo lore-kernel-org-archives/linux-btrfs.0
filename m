@@ -1,128 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41675 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751467AbaBIJzE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Feb 2014 04:55:04 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WCR6N-0006ix-2z
-	for linux-btrfs@vger.kernel.org; Sun, 09 Feb 2014 10:55:03 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 10:55:03 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 10:55:03 +0100
+Received: from outrelay08.libero.it ([212.52.84.112]:60287 "EHLO
+	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751721AbaBIRVF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 12:21:05 -0500
+Message-ID: <52F7B8F9.6040004@libero.it>
+Date: Sun, 09 Feb 2014 18:20:57 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Provide a better free space estimate on RAID1
-Date: Sun, 09 Feb 2014 10:37:03 +0100
-Message-ID: <vqujsa-7l3.ln1@hurikhan77.spdns.de>
-References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com> <agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu> <20140208114634.GH6490@carfax.org.uk> <cikisa-qf7.ln1@hurikhan77.spdns.de> <20140209041050.529ff6f9@natsu> <pan$e196e$601e36f4$65c8817c$b6141c66@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+CC: Roman Mamedov <rm@romanrm.net>, Brendan Hide <brendan@swiftspirit.co.za>
+Subject: [PATCH][V3] Provide a better free space estimate [was]Re: Provide
+ a better free space estimate on RAID1
+References: <20140206021516.304732cd@natsu>	<52F33BE7.4020708@swiftspirit.co.za>	<20140206184502.128b7dbe@natsu>	<52F3E86B.4030805@libero.it> <20140207104005.7bd1438a@natsu>
+In-Reply-To: <20140207104005.7bd1438a@natsu>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan <1i5t5.duncan@cox.net> schrieb:
+On 02/07/2014 05:40 AM, Roman Mamedov wrote:
+> On Thu, 06 Feb 2014 20:54:19 +0100
+> Goffredo Baroncelli <kreijack@libero.it> wrote:
+> 
+[...]
 
-> Roman Mamedov posted on Sun, 09 Feb 2014 04:10:50 +0600 as excerpted:
-> 
->> If you need to perform a btrfs-specific operation, you can easily use
->> the btrfs-specific tools to prepare for it, specifically use "btrfs fi
->> df" which could give provide every imaginable interpretation of free
->> space estimate and then some.
->> 
->> UNIX 'df' and the 'statfs' call on the other hand should keep the
->> behavior people are accustomized to rely on since 1970s.
-> 
-> Which it does... on filesystems that only have 1970s filesystem features.
-> =:^)
-> 
-> RAID or multi-device filesystems aren't 1970s features and break 1970s
-> behavior and the assumptions associated with it.  If you're not prepared
-> to deal with those broken assumptions, don't.  Use mdraid or dmraid or lvm
-> or whatever to combine your multiple devices into one logical devices as
-> presented, and put your filesystem (either traditional filesystem, or
-> even btrfs using traditional single-device functionality) on top of the
-> single device the layer beneath the filesystem presents.  Problem solved!
-> =:^)
-> 
-> Note that df only lists a single device as well, not the multiple
-> component devices of the filesystem.  That's broken functionality by your
-> definition, too, and again, using some other layer like lvm or mdraid to
-> present multiple devices as a single virtual device, with a traditional
-> single-device filesystem layout on top of that single device... solves
-> the problem!
-> 
-> 
-> Meanwhile, what I've done here is use one of df's commandline options to
-> set its block size to 2 MiB, and further used bash's alias functionality
-> to setup an alias accordingly:
-> 
-> alias df='df -B2M'
-> 
-> $ df /h
-> Filesystem     2M-blocks  Used Available Use% Mounted on
-> /dev/sda6          20480 12186      7909  61% /h
-> 
-> $ sudo btrfs fi show /h
-> Label: hm0238gcnx+35l0  uuid: ce23242a-b0a9-423f-a9c3-7db2729f48d6
->         Total devices 2 FS bytes used 11.90GiB
->         devid    1 size 20.00GiB used 14.78GiB path /dev/sda6
->         devid    2 size 20.00GiB used 14.78GiB path /dev/sdb6
-> 
-> $ sudo btrfs fi df /h
-> Data, RAID1: total=14.00GiB, used=11.49GiB
-> System, RAID1: total=32.00MiB, used=16.00KiB
-> Metadata, RAID1: total=768.00MiB, used=414.94MiB
-> 
-> 
-> On btrfs such as the above I can read the 2M blocks as 1M and be happy.
-> On btrfs such as my /boot, which aren't raid1 (I have two separate
-> /boots, one on each device, with grub2 configured separately for each to
-> provide a backup), or if I df my media partitions still on reiserfs on
-> the old spinning rust, I can either double the figures DF gives me, or
-> add a second -B option at the CLI, overriding the aliased option.
-> 
-> If I wanted something fully automated, it'd be easy enough to setup a
-> script that checked what filesystem I was df-ing, matched that against a
-> table of filesystems to preferred df block sizes, and supplied the
-> appropriate -BxX option accordingly.  As I guess most admins after a few
-> years, I've developed quite a library of scripts/aliases for various
-> things I do routinely enough to warrant it, and this would be just one
-> more joining the list. =:^)
+As Roman pointed out, df show the "raw" space available. However
+when a RAID level is used, the space available to the user is
+less.
+This patch try to address this estimation correcting the value
+on the basis of the RAID level.
 
-Well done... And a good idea, I didn't think of it yet. But it's my idea of 
-fixing it in user space. :-)
+This is my third revision of this patch. In this last issue, I
+addressed the bugs related to an uncorrected evaluation of the 
+free space in case of RAID1 [1] and DUP.
 
-I usually leave the discussion when people start to argument with pointers 
-to unix tradition... That's like starting a systemd discussion and telling 
-me that systemd is broken by design while mentioning in the same sentence 
-that sysvinit is working perfectly fine. The latter doesn't do so. The first 
-is a matter of personal taste but is in no case broken... But... Well...
+I have to point out that the free space estimation is quite
+approximative, because it assumes:
 
-> But of course it's your system in question, and you can patch btrfs to
-> output anything you like, in any format you like.  No need to bother with
-> df's -B option if you'd prefer to patch the kernel instead.  Me, I'll
-> stick to the -B option.  =:^)
+a) all the new files are allocated in data "chunk"
+b) the free space will not consumed by metadata
+c) the already allocated chunk are not evaluated for the free
+space estimation
 
-That's essentially the FOSS idea. Actually, I don't want df behavior being 
-broken for me. It uses fstat syscall, that returns blocks. Cutting returned 
-values into half lies about the properties of the device - for EVERY 
-application out there, no matter which assumptions are being made about the 
-returned values. This breaks the fstat syscall. User-space should simply not 
-rely on the assumption that 1k of user data occupies 1k worth of blocks 
-(that's not true anyways because meta-data has to be allocated, too). When I 
-had contact with unix first, df returned used/free blocks - native BLOCKS! 
-No option to make it human readable. No forced intention that it would show 
-you usable space for actual written data. The blocks were given as 512-byte 
-sectors. I've been okay with that. I knew: If I cut the values in half, I'd 
-get about the size of data I perhabs could fit in the device. If it had been 
-a property of the device that 512 byte of user data would write two blocks, 
-nobody had cared about df displaying "wrong" values.
+Both these assumptions are unrelated to my patch.
+
+I performed some tests with a filesystem composed by 7 51GB disks. 
+Here my "df" results:
+
+Profile: single
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdb                            351G  512K  348G   1% /mnt/btrfs1
+
+Profile: raid1
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdb                            351G  1.3M  175G   1% /mnt/btrfs1
+
+Profile: raid10
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdb                            351G  2.3M  177G   1% /mnt/btrfs1
+
+Profile: raid5
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdb                            351G  2.0M  298G   1% /mnt/btrfs1
+
+Profile: raid6
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdb                            351G  1.8M  248G   1% /mnt/btrfs1
+
+
+Profile: DUP (only one 50GB disk was used)
+Filesystem                          Size  Used Avail Use% Mounted on
+/dev/vdc                             51G  576K   26G   1% /mnt/btrfs1
+
+
+Below my patch.
+
+BR
+G.Baroncelli
+
+[1] the bug is before my patch; try to see what happens when you 
+create a RAID1 filesystem with three disks.
+
+Changes history:
+V1	First issue
+V2	Correct a (old) bug when in RAID10 the disks aren't 
+        a multiple of 4
+V3	Correct the free space estimation in RAID1 (when the
+        number of disks are odd) and DUP
+
+
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d71a11d..4064a5f 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1481,10 +1481,16 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 		num_stripes = nr_devices;
+ 	} else if (type & BTRFS_BLOCK_GROUP_RAID1) {
+ 		min_stripes = 2;
+-		num_stripes = 2;
++		num_stripes = nr_devices;
+ 	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+ 		min_stripes = 4;
+-		num_stripes = 4;
++		num_stripes = nr_devices;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
++		min_stripes = 3;
++		num_stripes = nr_devices;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
++		min_stripes = 4;
++		num_stripes = nr_devices;
+ 	}
  
--- 
-Replies to list only preferred.
+ 	if (type & BTRFS_BLOCK_GROUP_DUP)
+@@ -1560,9 +1566,44 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 
+ 		if (devices_info[i].max_avail >= min_stripe_size) {
+ 			int j;
+-			u64 alloc_size;
++			u64 alloc_size, delta;
++			int k, div;
++
++			/*
++			 * Depending by the RAID profile, we use some
++			 * disk space as redundancy:
++			 * RAID1, RAID10, DUP -> half of space used as redundancy
++			 * RAID5              -> 1 stripe used as redundancy
++			 * RAID6              -> 2 stripes used as redundancy
++			 * RAID0,LINEAR       -> no redundancy
++			 */
++			if (type & BTRFS_BLOCK_GROUP_RAID1) {
++				k = num_stripes;
++				div = 2;
++			} else if (type & BTRFS_BLOCK_GROUP_DUP) {
++				k = num_stripes;
++				div = 2;
++			} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
++				k = num_stripes;
++				div = 2;
++			} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
++				k = num_stripes-1;
++				div = 1;
++			} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
++				k = num_stripes-2;
++				div = 1;
++			} else { /* RAID0/LINEAR */
++				k = num_stripes;
++				div = 1;
++			}
++
++			delta = devices_info[i].max_avail*k;
++			if (div==2)
++				delta >>= 1;
++			else if (div>2)
++				do_div(delta, div);
++			avail_space += delta;
+ 
+-			avail_space += devices_info[i].max_avail * num_stripes;
+ 			alloc_size = devices_info[i].max_avail;
+ 			for (j = i + 1 - num_stripes; j <= i; j++)
+ 				devices_info[j].max_avail -= alloc_size;
 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

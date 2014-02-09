@@ -1,108 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41228 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751294AbaBIGjW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Feb 2014 01:39:22 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WCO2y-0003uP-Ko
-	for linux-btrfs@vger.kernel.org; Sun, 09 Feb 2014 07:39:20 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 07:39:20 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 07:39:20 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Provide a better free space estimate on RAID1
-Date: Sun, 9 Feb 2014 06:38:53 +0000 (UTC)
-Message-ID: <pan$e196e$601e36f4$65c8817c$b6141c66@cox.net>
-References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com>
-	<agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu>
-	<20140208114634.GH6490@carfax.org.uk> <cikisa-qf7.ln1@hurikhan77.spdns.de>
-	<20140209041050.529ff6f9@natsu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from moutng.kundenserver.de ([212.227.126.187]:56697 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751379AbaBIIhP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 03:37:15 -0500
+Message-ID: <52F73E2B.9080103@friedels.name>
+Date: Sun, 09 Feb 2014 09:36:59 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>
+CC: Martin Steigerwald <Martin@lichtvoll.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfsck does not fix
+References: <52C7127F.3060902@friedels.name> <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com> <52D317CF.2070007@friedels.name> <6210673.6TYUkLGl6b@merkaba> <52DED1C2.60103@friedels.name> <52F6A955.5020808@friedels.name> <A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com>
+In-Reply-To: <A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Sun, 09 Feb 2014 04:10:50 +0600 as excerpted:
+Hi Chris,
 
-> If you need to perform a btrfs-specific operation, you can easily use
-> the btrfs-specific tools to prepare for it, specifically use "btrfs fi
-> df" which could give provide every imaginable interpretation of free
-> space estimate and then some.
-> 
-> UNIX 'df' and the 'statfs' call on the other hand should keep the
-> behavior people are accustomized to rely on since 1970s.
+thanks for your reply.
 
-Which it does... on filesystems that only have 1970s filesystem features. 
-=:^)
+ >> ./btrfs filesystem show /dev/sdb1
+>> Label: none  uuid: 989306aa-d291-4752-8477-0baf94f8c42f
+>>         Total devices 2 FS bytes used 3.47TiB
+>>         devid    1 size 2.73TiB used 1.74TiB path /dev/sdb1
+>>         devid    2 size 2.73TiB used 1.74TiB path /dev/sdc1
+>
+> I don't understand the no spare part. You have 3.47T of data, and yet the single device size is 2.73T.
+> There is no way to migrate 1.74T from sdc1 to sdb1 because there isn't enough space.
 
-RAID or multi-device filesystems aren't 1970s features and break 1970s 
-behavior and the assumptions associated with it.  If you're not prepared 
-to deal with those broken assumptions, don't.  Use mdraid or dmraid or lvm 
-or whatever to combine your multiple devices into one logical devices as 
-presented, and put your filesystem (either traditional filesystem, or 
-even btrfs using traditional single-device functionality) on top of the 
-single device the layer beneath the filesystem presents.  Problem solved! 
-=:^)
-
-Note that df only lists a single device as well, not the multiple 
-component devices of the filesystem.  That's broken functionality by your 
-definition, too, and again, using some other layer like lvm or mdraid to 
-present multiple devices as a single virtual device, with a traditional 
-single-device filesystem layout on top of that single device... solves 
-the problem!
+Fair point. I summed up manually (with du) and apparently missed some 
+data. I can move the 0.8TiB out of the way. I just don't have 3.5TiB 
+'spare'.
 
 
-Meanwhile, what I've done here is use one of df's commandline options to 
-set its block size to 2 MiB, and further used bash's alias functionality 
-to setup an alias accordingly:
 
-alias df='df -B2M'
+>> btrfs device delete /dev/sdc1 /mnt/BTRFS/rsnapshot/
+>> btrfs device delete /dev/sdc1 /mnt/BTRFS/backups/
+>> btrfs device delete /dev/sdc1 /mnt/BTRFS/Video/
+>> btrfs filesystem balance start /mnt/BTRFS/Video/
+>
+> I don't understand this sequence because I don't know what you've mounted where,
 
-$ df /h
-Filesystem     2M-blocks  Used Available Use% Mounted on
-/dev/sda6          20480 12186      7909  61% /h
-
-$ sudo btrfs fi show /h
-Label: hm0238gcnx+35l0  uuid: ce23242a-b0a9-423f-a9c3-7db2729f48d6
-        Total devices 2 FS bytes used 11.90GiB
-        devid    1 size 20.00GiB used 14.78GiB path /dev/sda6
-        devid    2 size 20.00GiB used 14.78GiB path /dev/sdb6
-
-$ sudo btrfs fi df /h
-Data, RAID1: total=14.00GiB, used=11.49GiB
-System, RAID1: total=32.00MiB, used=16.00KiB
-Metadata, RAID1: total=768.00MiB, used=414.94MiB
+I'm sorry. here you go:
+/btrfs subvolume list /mnt/BTRFS/Video
+ID 256 gen 226429 top level 5 path Video --> /mnt/BTRFS/Video/
+ID 1495 gen 226141 top level 5 path rsnapshot  --> /mnt/BTRFS/rsnapshot
+ID 4444 gen 226429 top level 256 path Snapshot --> not mounted
+ID 5845 gen 226375 top level 5 path backups --> /mnt/BTRFS/backups
 
 
-On btrfs such as the above I can read the 2M blocks as 1M and be happy.  
-On btrfs such as my /boot, which aren't raid1 (I have two separate 
-/boots, one on each device, with grub2 configured separately for each to 
-provide a backup), or if I df my media partitions still on reiserfs on 
-the old spinning rust, I can either double the figures DF gives me, or 
-add a second -B option at the CLI, overriding the aliased option.
-
-If I wanted something fully automated, it'd be easy enough to setup a 
-script that checked what filesystem I was df-ing, matched that against a 
-table of filesystems to preferred df block sizes, and supplied the 
-appropriate -BxX option accordingly.  As I guess most admins after a few 
-years, I've developed quite a library of scripts/aliases for various 
-things I do routinely enough to warrant it, and this would be just one 
-more joining the list. =:^)
+> but in any case maybe it's a bug that you're not getting errors for each
+ > of these commands because  you can't delete sdc1 from a raid0 volume.
+That makes sense. I read that procedure somewhere in the -totally 
+unvalidated- Internet.
+In case the missing Error-Message is a Bug: Is this place here 
+sufficient to report it, or is there a Bug-Tracker?
 
 
-But of course it's your system in question, and you can patch btrfs to 
-output anything you like, in any format you like.  No need to bother with 
-df's -B option if you'd prefer to patch the kernel instead.  Me, I'll 
-stick to the -B option.  =:^)
+ > You'd first have to convert the data, metadata, and system profiles to
+ > single (metadata can be set to dup). And then you'd be able to delete
+ > a device so long as there's room on remaining devices, which you 
+don't have.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Yes, but I can create that space.
+So, for me the next steps would be to:
+-generate enough room on the filesystem
+-btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/BTRFS/Video
+-btrfs device delete /dev/sdc1 /mnt/BTRFS/Video
 
+Right?
+
+>> next, I'm doing the balance for the subvolume /mnt/BTRFS/backups
+>
+> You told us above  you deleted that subvolume. So how are you balancing it?
+
+Yes, that was my understanding from my research:
+You tell btrfs, that you want to remove one disc from the filesystem and 
+then balance it to move the data on the remaining disc. I did find this 
+logical. I was expecting that I possibly need a further command to tell 
+btrfs that it's not a raid anymore, but I thought this could also be 
+automagical.
+I understand, that's not the way it is implemented, but it's not a crazy 
+idea, is it?
+
+> And also, balance applies to a mountpoint, and even if you mount a
+ > subvolume to that mountpoint, the whole file system is balanced.
+ > Not just the mounted subvolume.
+
+That is confusing. (I mean: I understand what you are saying, but it's 
+counterintuitive). Why is this the case?
+
+>> In parallel, I try to delete /mnt/BTRFS/rsnapshot, but it fails:
+>>   btrfs subvolume delete  /mnt/BTRFS/rsnapshot/
+>>   Delete subvolume '/mnt/BTRFS/rsnapshot'
+>>   ERROR: cannot delete '/mnt/BTRFS/rsnapshot' - Inappropriate ioctl
+>>   for  device
+>>
+>> Why's that?
+>> But even more: How do I free sdc1 now?!
+>
+>
+> Well I'm pretty confused because again, I can't tell if your paths refer to
+ > subvolumes or if they refer to mount points.
+
+Now I am confused. These paths are the paths to which I mounted the 
+subvolumes:
+my (abbreviated) fstab:
+UUID=xy      /mnt/BTRFS/Video btrfs subvol=Video
+UUID=xy     /mnt/BTRFS/rsnapshot btrfs subvol=rsnapshot
+UUID=xy     /mnt/BTRFS/backups btrfs subvol=backups
+
+
+ > The balance and device delete commands all refer to a mount point, 
+which is the path returned by the df command.
+So this:
+/dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/Video
+/dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/backups
+/dev/sdc1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/rsnapshot
+
+> The subvolume delete command needs a path to subvolume that starts with the mount point.
+Sorry, this I do not understand, no matter how hard I think about it..
+What would it be in my case?
+
+Thanks for your help! I appreciate it.
+
+
+Greetings,
+Hendrik

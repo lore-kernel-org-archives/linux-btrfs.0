@@ -1,43 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f182.google.com ([209.85.217.182]:51216 "EHLO
-	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751556AbaBIUVA convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 15:21:00 -0500
-Received: by mail-lb0-f182.google.com with SMTP id w7so4286489lbi.27
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 12:20:59 -0800 (PST)
-Received: from melforce.localnet (melforce.xtsubasa.org. [2a02:578:5002:8062::2])
-        by mx.google.com with ESMTPSA id qx7sm13188488lbb.9.2014.02.09.12.20.56
+Received: from mail-bk0-f48.google.com ([209.85.214.48]:36124 "EHLO
+	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751691AbaBIVk7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 16:40:59 -0500
+Received: by mail-bk0-f48.google.com with SMTP id ej10so1621091bkb.21
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 13:40:58 -0800 (PST)
+Received: from system (e180181179.adsl.alicedsl.de. [85.180.181.179])
+        by mx.google.com with ESMTPSA id f3sm10632999bkk.4.2014.02.09.13.40.57
         for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sun, 09 Feb 2014 12:20:57 -0800 (PST)
-From: Pavel Volkov <negaipub@gmail.com>
+        (version=SSLv3 cipher=RC4-SHA bits=128/128);
+        Sun, 09 Feb 2014 13:40:57 -0800 (PST)
+Date: Sun, 9 Feb 2014 22:40:55 +0100
+From: Saint Germain <saintger@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Error: could not do orphan cleanup -22
-Date: Mon, 10 Feb 2014 00:20:54 +0400
-Message-ID: <2047669.QmpNhlvBGM@melforce>
+Subject: BTRFS with RAID1 cannot boot when removing drive
+Message-ID: <20140209224055.3175e70f@system>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There was a similar discussion about an error in January 2013 but it related to some kernel panic.
-I don't know if I encountered the same thing.
+Hello,
 
-These errors from system journal bother me:
+I am experimenting with BTRFS and RAID1 on my Debian Wheezy (with
+backported kernel 3.12-0.bpo.1-amd64) using a a motherboard with UEFI.
 
- 2æœˆ 09 22:18:53 melforce kernel: BTRFS error (device sdb3): Error removing orphan entry, stopping orphan cleanup
- 2æœˆ 09 22:18:53 melforce kernel: BTRFS critical (device sdb3): could not do orphan cleanup -22
+However I haven't managed to make the system boot when the removing the
+first hard drive.
 
-I run kernel 3.12.10.
-I'll explain what I did at that moment.
-Subvolumes were already mounted at /home and /var and I mounted the root subvolume at /mnt/btr2.
-Then executed ls command on /home/btr2. ls gave me "invalid argument" errors, but still displayed the contents. 
-Next time I ran ls (right away), there were no more errors.
+I have installed Debian with the following partition on the first hard
+drive (no BTRFS subsystem):
+/dev/sda1: for / (BTRFS)
+/dev/sda2: for /home (BTRFS)
+/dev/sda3: for swap
 
-Another example is a script that mounts the same thing and then takes snapshots.
-If I run the script manually, it never fails. If I run it from cron job, one of the snapshot commands fails
-telling me that /home/btr2/var isn't accesible (I don't remember the exact error message, I can look if it
-shows up again).
+Then I added another drive for a RAID1 configuration (with btrfs
+balance) and I installed grub on the second hard drive with
+"grub-install /dev/sdb".
 
-Someone said in the January thread that -22 error messages are harmless but in this case userspace tools break
-so I wouldn't consider this totally harmless.
+If I boot on sdb, it takes sda1 as the root filesystem
+If I switched the cable, it always take the first hard drive as the
+root filesystem (now sdb)
+If I disconnect /dev/sda, the system doesn't boot with a message
+saying that it hasn't found the UUID:
+
+Scanning for BTRFS filesystems...
+mount: mounting /dev/disk/by-uuid/c64fca2a-5700-4cca-abac-3a61f2f7486c on /root failed: Invalid argument
+
+Can you tell me what I have done incorrectly ?
+Is it because of UEFI ? If yes I haven't understood how I can correct
+it in a simple way.
+
+As extra question, I don't see also how I can configure the system to
+get the correct swap in case of disk failure. Should I force both swap partition
+to have the same UUID ?
+
+Many thanks in advance !
+
+****************************************************
+Here are some outputs for info:
+
+btrfs filesystem show
+Label: none  uuid: 743d6b3b-71a7-4869-a0af-83549555284b
+	Total devices 2 FS bytes used 27.96MB
+	devid    1 size 897.98GB used 3.03GB path /dev/sda2
+	devid    2 size 897.98GB used 3.03GB path /dev/sdb2
+
+Label: none  uuid: c64fca2a-5700-4cca-abac-3a61f2f7486c
+	Total devices 2 FS bytes used 3.85GB
+	devid    1 size 27.94GB used 7.03GB path /dev/sda1
+	devid    2 size 27.94GB used 7.03GB path /dev/sdb1
+
+blkid 
+/dev/sda1: UUID="c64fca2a-5700-4cca-abac-3a61f2f7486c" UUID_SUB="77ffad34-681c-4c43-9143-9b73da7d1ae3" TYPE="btrfs" 
+/dev/sda3: UUID="469715b2-2fa3-4462-b6f5-62c04a60a4a2" TYPE="swap" 
+/dev/sda2: UUID="743d6b3b-71a7-4869-a0af-83549555284b" UUID_SUB="744510f5-5bd5-4df4-b8c4-0fc1a853199a" TYPE="btrfs" 
+/dev/sdb1: UUID="c64fca2a-5700-4cca-abac-3a61f2f7486c" UUID_SUB="2615fd98-f2ad-4e7b-84bc-0ee7f9770ca0" TYPE="btrfs" 
+/dev/sdb2: UUID="743d6b3b-71a7-4869-a0af-83549555284b" UUID_SUB="8783a7b1-57ef-4bcc-ae7f-be20761e9a19" TYPE="btrfs" 
+/dev/sdb3: UUID="56fbbe2f-7048-488f-b263-ab2eb000d1e1" TYPE="swap"
+
+cat /etc/fstab
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c /               btrfs   defaults        0       1
+UUID=743d6b3b-71a7-4869-a0af-83549555284b /home           btrfs   defaults        0       2
+UUID=469715b2-2fa3-4462-b6f5-62c04a60a4a2 none            swap    sw              0       0
+
+cat /boot/grub/grub.cfg 
+#
+# DO NOT EDIT THIS FILE
+#
+# It is automatically generated by grub-mkconfig using templates
+# from /etc/grub.d and settings from /etc/default/grub
+#
+
+### BEGIN /etc/grub.d/00_header ###
+if [ -s $prefix/grubenv ]; then
+  load_env
+fi
+set default="0"
+if [ "${prev_saved_entry}" ]; then
+  set saved_entry="${prev_saved_entry}"
+  save_env saved_entry
+  set prev_saved_entry=
+  save_env prev_saved_entry
+  set boot_once=true
+fi
+
+function savedefault {
+  if [ -z "${boot_once}" ]; then
+    saved_entry="${chosen}"
+    save_env saved_entry
+  fi
+}
+
+function load_video {
+  insmod vbe
+  insmod vga
+  insmod video_bochs
+  insmod video_cirrus
+}
+
+insmod part_msdos
+insmod btrfs
+set root='(hd1,msdos1)'
+search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
+if loadfont /usr/share/grub/unicode.pf2 ; then
+  set gfxmode=640x480
+  load_video
+  insmod gfxterm
+  insmod part_msdos
+  insmod btrfs
+  set root='(hd1,msdos1)'
+  search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
+  set locale_dir=($root)/boot/grub/locale
+  set lang=fr_FR
+  insmod gettext
+fi
+terminal_output gfxterm
+set timeout=5
+### END /etc/grub.d/00_header ###
+
+### BEGIN /etc/grub.d/05_debian_theme ###
+insmod part_msdos
+insmod btrfs
+set root='(hd1,msdos1)'
+search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
+insmod png
+if background_image /usr/share/images/desktop-base/joy-grub.png; then
+  set color_normal=white/black
+  set color_highlight=black/white
+else
+  set menu_color_normal=cyan/blue
+  set menu_color_highlight=white/blue
+fi
+### END /etc/grub.d/05_debian_theme ###
+
+### BEGIN /etc/grub.d/10_linux ###
+menuentry 'Debian GNU/Linux, with Linux 3.12-0.bpo.1-amd64' --class debian --class gnu-linux --class gnu --class os {
+	load_video
+	insmod gzio
+	insmod part_msdos
+	insmod btrfs
+	set root='(hd1,msdos1)'
+	search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
+	echo	'Chargement de Linux 3.12-0.bpo.1-amd64 ...'
+	linux	/boot/vmlinuz-3.12-0.bpo.1-amd64 root=UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c ro  quiet
+	echo	'Chargement du disque mémoire initial ...'
+	initrd	/boot/initrd.img-3.12-0.bpo.1-amd64
+}
+menuentry 'Debian GNU/Linux, with Linux 3.12-0.bpo.1-amd64 (mode de dépannage)' --class debian --class gnu-linux --class gnu --class os {
+	load_video
+	insmod gzio
+	insmod part_msdos
+	insmod btrfs
+	set root='(hd1,msdos1)'
+	search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
+	echo	'Chargement de Linux 3.12-0.bpo.1-amd64 ...'
+	linux	/boot/vmlinuz-3.12-0.bpo.1-amd64 root=UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c ro single 
+	echo	'Chargement du disque mémoire initial ...'
+	initrd	/boot/initrd.img-3.12-0.bpo.1-amd64
+}
+### END /etc/grub.d/10_linux ###
+
+### BEGIN /etc/grub.d/20_linux_xen ###
+### END /etc/grub.d/20_linux_xen ###
+
+### BEGIN /etc/grub.d/30_os-prober ###
+### END /etc/grub.d/30_os-prober ###
+
+### BEGIN /etc/grub.d/40_custom ###
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above.
+### END /etc/grub.d/40_custom ###
+
+### BEGIN /etc/grub.d/41_custom ###
+if [ -f  $prefix/custom.cfg ]; then
+  source $prefix/custom.cfg;
+fi
+### END /etc/grub.d/41_custom ###

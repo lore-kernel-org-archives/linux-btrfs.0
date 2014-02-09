@@ -1,90 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f45.google.com ([209.85.214.45]:37339 "EHLO
-	mail-bk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751792AbaBNNjZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Feb 2014 08:39:25 -0500
-Received: by mail-bk0-f45.google.com with SMTP id mz13so210823bkb.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Feb 2014 05:39:24 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20140214134656.7c1f2544@plati.site>
-References: <1391769341-20688-1-git-send-email-ddiss@suse.de>
-	<20140214134656.7c1f2544@plati.site>
-Date: Fri, 14 Feb 2014 13:39:24 +0000
-Message-ID: <CAL3q7H7f0xSnny1B75bhztsYxM1n92aUpNDqwTaF60BVGo2zFA@mail.gmail.com>
-Subject: Re: [PATCH v3 0/3] __btrfs_drop_extents() BUG_ON reproducer
-From: Filipe David Manana <fdmanana@gmail.com>
-To: David Disseldorp <ddiss@suse.de>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        xfs@oss.sgi.com
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-we0-f176.google.com ([74.125.82.176]:40239 "EHLO
+	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751710AbaBIXpb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 18:45:31 -0500
+Received: by mail-we0-f176.google.com with SMTP id q58so3683764wes.21
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 15:45:30 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: faster/more efficient insertion of file extent items
+Date: Sun,  9 Feb 2014 23:45:12 +0000
+Message-Id: <1391989512-31797-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 14, 2014 at 12:46 PM, David Disseldorp <ddiss@suse.de> wrote:
-> Ping, any Btrfsers get a chance to look at this patch series?
-> I'd like to get it into the QA tree.
+This is an extension to my previous commit titled:
 
-If no one else gets there first, I'll take a look at it soon.
-thanks
+  "Btrfs: faster file extent item replace operations"
+  (hash 1acae57b161ef1282f565ef907f72aeed0eb71d9)
 
->
-> On Fri,  7 Feb 2014 11:35:38 +0100, David Disseldorp wrote:
->
->> This patch-set provides a reproducer for hitting the 3.14.0-rc1 BUG_ON()
->> at:
->>  692 int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
->> ...
->>  839                 /*
->>  840                  *  | ---- range to drop ----- |
->>  841                  *      | -------- extent -------- |
->>  842                  */
->>  843                 if (start <= key.offset && end < extent_end) {
->>  844                         BUG_ON(extent_type == BTRFS_FILE_EXTENT_INLINE);
->>  845
->>  846                         memcpy(&new_key, &key, sizeof(new_key));
->>
->> The first patch adds a small cloner binary which is used by btrfs/035 to
->> dispatch BTRFS_IOC_CLONE_RANGE requests.
->>
->> This workload resembles that of Samba's vfs_btrfs module, when a Windows
->> client restores a file from a shadow-copy (snapshot) using server-side
->> copy requests.
->>
->> Changes since V2:
->> - Remove explicit write error checks
->>
->> Changes since V1:
->> - Use strtoull instead of atoi
->> - Print error conditions in cloner
->> - Check for cloner binary before running test
->> - Continue test on failure
->> - Add cloner to .gitignore
->>
->> Feedback appreciated.
->>
->> Cheers, David
->>
->>
->>  .gitignore          |   1 +
->>  configure.ac        |   1 +
->>  src/Makefile        |   2 +-
->>  src/cloner.c        | 192 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/btrfs/035     |  77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  tests/btrfs/035.out |   3 +++
->>  tests/btrfs/group   |   1 +
->>  7 files changed, 276 insertions(+), 1 deletion(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Instead of inserting the new file extent item if we deleted existing
+file extent items covering our target file range, also allow to insert
+the new file extent item if we didn't find any existing items to delete
+and replace_extent != 0, since in this case our caller would do another
+tree search to insert the new file extent item anyway, therefore just
+combine the two tree searches into a single one, saving cpu time, reducing
+lock contention and reducing btree node/leaf COW operations.
 
+This covers the case where applications keep doing tail append writes to
+files, which for example is the case of Apache CouchDB (its database and
+view index files are always open with O_APPEND).
 
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/file.c |   52 ++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 30 insertions(+), 22 deletions(-)
 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0165b86..006af2f 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -720,7 +720,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 	if (drop_cache)
+ 		btrfs_drop_extent_cache(inode, start, end - 1, 0);
+ 
+-	if (start >= BTRFS_I(inode)->disk_i_size)
++	if (start >= BTRFS_I(inode)->disk_i_size && !replace_extent)
+ 		modify_tree = 0;
+ 
+ 	while (1) {
+@@ -938,34 +938,42 @@ next_slot:
+ 		 * Set path->slots[0] to first slot, so that after the delete
+ 		 * if items are move off from our leaf to its immediate left or
+ 		 * right neighbor leafs, we end up with a correct and adjusted
+-		 * path->slots[0] for our insertion.
++		 * path->slots[0] for our insertion (if replace_extent != 0).
+ 		 */
+ 		path->slots[0] = del_slot;
+ 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+ 		if (ret)
+ 			btrfs_abort_transaction(trans, root, ret);
++	}
+ 
+-		leaf = path->nodes[0];
+-		/*
+-		 * leaf eb has flag EXTENT_BUFFER_STALE if it was deleted (that
+-		 * is, its contents got pushed to its neighbors), in which case
+-		 * it means path->locks[0] == 0
+-		 */
+-		if (!ret && replace_extent && leafs_visited == 1 &&
+-		    path->locks[0] &&
+-		    btrfs_leaf_free_space(root, leaf) >=
+-		    sizeof(struct btrfs_item) + extent_item_size) {
+-
+-			key.objectid = ino;
+-			key.type = BTRFS_EXTENT_DATA_KEY;
+-			key.offset = start;
+-			setup_items_for_insert(root, path, &key,
+-					       &extent_item_size,
+-					       extent_item_size,
+-					       sizeof(struct btrfs_item) +
+-					       extent_item_size, 1);
+-			*key_inserted = 1;
++	leaf = path->nodes[0];
++	/*
++	 * If btrfs_del_items() was called, it might have deleted a leaf, in
++	 * which case it unlocked our path, so check path->locks[0] matches a
++	 * write lock.
++	 */
++	if (!ret && replace_extent && leafs_visited == 1 &&
++	    (path->locks[0] == BTRFS_WRITE_LOCK_BLOCKING ||
++	     path->locks[0] == BTRFS_WRITE_LOCK) &&
++	    btrfs_leaf_free_space(root, leaf) >=
++	    sizeof(struct btrfs_item) + extent_item_size) {
++
++		key.objectid = ino;
++		key.type = BTRFS_EXTENT_DATA_KEY;
++		key.offset = start;
++		if (!del_nr && path->slots[0] < btrfs_header_nritems(leaf)) {
++			struct btrfs_key slot_key;
++
++			btrfs_item_key_to_cpu(leaf, &slot_key, path->slots[0]);
++			if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
++				path->slots[0]++;
+ 		}
++		setup_items_for_insert(root, path, &key,
++				       &extent_item_size,
++				       extent_item_size,
++				       sizeof(struct btrfs_item) +
++				       extent_item_size, 1);
++		*key_inserted = 1;
+ 	}
+ 
+ 	if (!replace_extent || !(*key_inserted))
 -- 
-Filipe David Manana,
+1.7.9.5
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

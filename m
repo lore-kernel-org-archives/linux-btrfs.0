@@ -1,93 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f176.google.com ([209.85.216.176]:37455 "EHLO
-	mail-qc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752292AbaBJOfu convert rfc822-to-8bit (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42955 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751744AbaBJPlc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 09:35:50 -0500
-Received: by mail-qc0-f176.google.com with SMTP id e16so10530802qcx.21
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 06:35:49 -0800 (PST)
+	Mon, 10 Feb 2014 10:41:32 -0500
+Message-ID: <52F8F316.8070105@fb.com>
+Date: Mon, 10 Feb 2014 10:41:10 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAP9B-QmQVys_hZ_2OgDwX4S2YGV1Q6Af6msKqrrNLM8TtVRq0w@mail.gmail.com>
-References: <CABgvyo-osstpR9wYa0jPp56bFsbUKov4b5po8Wsjg6NiV6r9FA@mail.gmail.com>
- <CAP9B-QmQVys_hZ_2OgDwX4S2YGV1Q6Af6msKqrrNLM8TtVRq0w@mail.gmail.com>
-From: =?UTF-8?Q?Johan_Kr=C3=B6ckel?= <johan.kroeckel@gmail.com>
-Date: Mon, 10 Feb 2014 15:35:09 +0100
-Message-ID: <CABgvyo8HrLsJ7qexkcksk8=B=uki+AvfsHFFMEnXNsUfk7RPFA@mail.gmail.com>
-Subject: Re: scrub crashed?
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+To: Wang Shilong <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
+CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [RFC PATCH 2/2] Revert "Btrfs: remove transaction from btrfs
+ send"
+References: <1391874396-2273-1-git-send-email-wangshilong1991@gmail.com> <1391874396-2273-2-git-send-email-wangshilong1991@gmail.com>
+In-Reply-To: <1391874396-2273-2-git-send-email-wangshilong1991@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you Shilong, that was the problem.
 
-2014-02-10 Shilong Wang <wangshilong1991@gmail.com>:
-> Hello Johan,
+
+On 02/08/2014 10:46 AM, Wang Shilong wrote:
+> From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 >
-> This should be a known problem.
+> This reverts commit 41ce9970a8a6a362ae8df145f7a03d789e9ef9d2.
+> Previously i was thinking we can use readonly root's commit root
+> safely while it is not true, readonly root may be cowed with the
+> following cases.
 >
-> The problem seemed that scrub log file is corrupt, so i added an option
-> -f something like:
+> 1.snapshot send root will cow source root.
+> 2.balance,device operations will also cow readonly send root
+> to relocate.
 >
-> btrfs scrub start -f <..>
+> So i have two ideas to make us safe to use commit root.
 >
-> You can update latest btrfs-progs from david's latest integration
-> branch and try it. if you don't
-> want to do that, just rm /var/lib/btrfs/scrub* should fix your problem.
+> -->approach 1:
+> make it protected by transaction and end transaction properly and we research
+> next item from root node(see btrfs_search_slot_for_read()).
 >
-> Hopely it can help you.^_^
+> -->approach 2:
+> add another counter to local root structure to sync snapshot with send.
+> and add a global counter to sync send with exclusive device operations.
 >
-> Thanks,
-> Wang
+> So with approach 2, send can use commit root safely, because we make sure
+> send root can not be cowed during send. Unfortunately, it make codes *ugly*
+> and more complex to maintain.
 >
+> To make snapshot and send exclusively, device operations and send operation
+> exclusively with each other is a little confusing for common users.
 >
-> 2014-02-10 22:02 GMT+08:00 Johan Kröckel <johan.kroeckel@gmail.com>:
->> root@fortknox:~# uname -a
->> Linux fortknox 3.12-0.bpo.1-amd64 #1 SMP Debian 3.12.9-1~bpo70+1
->> (2014-02-07) x86_64 GNU/Linux
->> root@fortknox:~# btrfs version
->> Btrfs v3.12
->> root@fortknox:~# btrfs scrub status -d /bunker
->> scrub status for 11312131-3372-4637-b526-35a4ef0c31eb
->> scrub device /dev/mapper/bunkerA (id 1) status
->>         scrub started at Sun Feb  9 19:12:22 2014, running for 11317 seconds
->>         total bytes scrubbed: 325.32GiB with 0 errors
->> scrub device /dev/dm-1 (id 2) status
->>         scrub started at Sun Feb  9 19:12:22 2014, running for 11317 seconds
->>         total bytes scrubbed: 321.76GiB with 0 errors
->> root@fortknox:~# btrfs scrub cancel /bunker
->> ERROR: scrub cancel failed on /bunker: not running
->> root@fortknox:~# btrfs scrub start /bunker
->> ERROR: scrub is already running.
->> To cancel use 'btrfs scrub cancel /bunker'.
->> To see the status use 'btrfs scrub status [-d] /bunker'.
->> root@fortknox:~# ps -A|grep btrfs
->>  3704 ?        00:00:00 btrfs-genwork-1
->>  3705 ?        00:00:00 btrfs-submit-1
->>  3706 ?        00:00:00 btrfs-delalloc-
->>  3707 ?        00:00:00 btrfs-fixup-1
->>  3708 ?        00:00:02 btrfs-endio-1
->>  3709 ?        00:00:00 btrfs-endio-met
->>  3710 ?        00:00:00 btrfs-rmw-1
->>  3711 ?        00:00:00 btrfs-endio-rai
->>  3712 ?        00:00:00 btrfs-endio-met
->>  3714 ?        00:00:05 btrfs-freespace
->>  3715 ?        00:00:00 btrfs-delayed-m
->>  3716 ?        00:00:00 btrfs-cache-1
->>  3717 ?        00:00:00 btrfs-readahead
->>  3718 ?        00:00:00 btrfs-flush_del
->>  3719 ?        00:00:00 btrfs-qgroup-re
->>  3720 ?        00:00:00 btrfs-cleaner
->>  3721 ?        00:02:00 btrfs-transacti
->>  8380 ?        00:00:00 btrfs-endio-wri
->>  8836 ?        00:00:00 btrfs-worker-4
->>  8936 ?        00:00:00 btrfs-worker-3
->>  8961 ?        00:00:00 btrfs-worker-3
->>  9138 ?        00:00:00 btrfs-worker-4
->>
->> What can/should I do now?
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> So why not drop into previous way.
+>
+> Cc: Josef Bacik <jbacik@fb.com>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+> Josef, if we reach agreement to adopt this approach, please revert
+> Filipe's patch(Btrfs: make some tree searches in send.c more efficient)
+> from btrfs-next.
+
+I agree, I'll leave Filipe's patch alone but I'll drop my search commit 
+root patch since we don't need it any more.  Do you want me to take this 
+or do you want to resubmit without the rfc?  Thanks,
+
+Josef

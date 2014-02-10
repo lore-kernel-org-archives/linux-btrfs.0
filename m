@@ -1,61 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from luka.romanrm.net ([213.163.64.74]:49841 "EHLO luka.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751240AbaBJJOX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 04:14:23 -0500
-Date: Mon, 10 Feb 2014 15:14:20 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Provide a better free space estimate on RAID1
-Message-ID: <20140210151420.3ae80ef6@natsu>
-In-Reply-To: <pan$54634$38204be5$c7d36933$70b8f264@cox.net>
-References: <20140206021516.304732cd@natsu>
-	<52F3EED4.7030603@fb.com>
-	<agsfsa-mks.ln1@hurikhan77.spdns.de>
-	<20140208173310.1f90af3b@natsu>
-	<20140208114634.GH6490@carfax.org.uk>
-	<cikisa-qf7.ln1@hurikhan77.spdns.de>
-	<20140209041050.529ff6f9@natsu>
-	<pan$e196e$601e36f4$65c8817c$b6141c66@cox.net>
-	<20140209152000.209756de@natsu>
-	<pan$54634$38204be5$c7d36933$70b8f264@cox.net>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/mTC6JsrWWKawSlOyxXDlNVp"; protocol="application/pgp-signature"
+Received: from mail-ve0-f180.google.com ([209.85.128.180]:55156 "EHLO
+	mail-ve0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752349AbaBJLHS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Feb 2014 06:07:18 -0500
+Received: by mail-ve0-f180.google.com with SMTP id db12so4676868veb.25
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 03:07:18 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <52F83A69.8080503@gmail.com>
+References: <52F83A69.8080503@gmail.com>
+Date: Mon, 10 Feb 2014 13:07:17 +0200
+Message-ID: <CAK5rZE7hbMFiPOh5LDQsLFTeQw-1H18JKTeopiHMUe1R6b953w@mail.gmail.com>
+Subject: Re: Issue with btrfs balance
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/mTC6JsrWWKawSlOyxXDlNVp
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+I've experienced the following with balance:
 
-On Mon, 10 Feb 2014 00:02:38 +0000 (UTC)
-Duncan <1i5t5.duncan@cox.net> wrote:
+Setup:
+- Kernel 3.12.9
+- 11 DVD sized (4.3GB) loopback devices.
+(9 Read-Only Seed devices + 2 Read/Write devices)
+- 9 device seed created with "-m single -d single" and made
+Read-only with "btrfstune -S 1 ..."
+- 2 devices was added at different dates. NO balance performed until now.
+- NOW add 1 more device to the array and perform a balance.
 
-> Meanwhile, you said it yourself, users aren't normally concerned about=20
-> this.
+Result:
+Balance did run for a while and exited displaying "Process Killed".
+Any attempt to unmount the array failed, preventing any
+shutdown. Hence I had no option other than hard reset.
 
-I think you're being mistaken here, the point that "users aren't looking at
-the free space, hence it is not important to provide a correct estimate" was
-made by someone else, not me. Personally I found that to be just a bit too
-surrealistic to try and seriously answer; much like the rest of your messag=
-e.
+After reboot, issuing balance command gave the message
+"Balance in progress".
 
---=20
-With respect,
-Roman
+I cancelled the balance and tried to remove the last device
+which ended with a kernel crash. So I dumped 2 + 1 normal devices.
 
---Sig_/mTC6JsrWWKawSlOyxXDlNVp
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+Former 9 multi device seed was OK and was mountable.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlL4mGwACgkQTLKSvz+PZwhJdwCffKqC8zaXi1ja75iyETHfi/LR
-VSsAn2KUP4v9ymNAgc6uZbo+dwpK/Wfu
-=+ear
------END PGP SIGNATURE-----
-
---Sig_/mTC6JsrWWKawSlOyxXDlNVp--
+Regards,
+Imran

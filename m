@@ -1,201 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f48.google.com ([209.85.214.48]:36124 "EHLO
-	mail-bk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751691AbaBIVk7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 16:40:59 -0500
-Received: by mail-bk0-f48.google.com with SMTP id ej10so1621091bkb.21
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 13:40:58 -0800 (PST)
-Received: from system (e180181179.adsl.alicedsl.de. [85.180.181.179])
-        by mx.google.com with ESMTPSA id f3sm10632999bkk.4.2014.02.09.13.40.57
-        for <linux-btrfs@vger.kernel.org>
-        (version=SSLv3 cipher=RC4-SHA bits=128/128);
-        Sun, 09 Feb 2014 13:40:57 -0800 (PST)
-Date: Sun, 9 Feb 2014 22:40:55 +0100
-From: Saint Germain <saintger@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:53462 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751732AbaBJADD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 9 Feb 2014 19:03:03 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WCeKz-0008Md-7x
+	for linux-btrfs@vger.kernel.org; Mon, 10 Feb 2014 01:03:01 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 01:03:01 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 01:03:01 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: BTRFS with RAID1 cannot boot when removing drive
-Message-ID: <20140209224055.3175e70f@system>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Provide a better free space estimate on RAID1
+Date: Mon, 10 Feb 2014 00:02:38 +0000 (UTC)
+Message-ID: <pan$54634$38204be5$c7d36933$70b8f264@cox.net>
+References: <20140206021516.304732cd@natsu> <52F3EED4.7030603@fb.com>
+	<agsfsa-mks.ln1@hurikhan77.spdns.de> <20140208173310.1f90af3b@natsu>
+	<20140208114634.GH6490@carfax.org.uk> <cikisa-qf7.ln1@hurikhan77.spdns.de>
+	<20140209041050.529ff6f9@natsu>
+	<pan$e196e$601e36f4$65c8817c$b6141c66@cox.net>
+	<20140209152000.209756de@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Roman Mamedov posted on Sun, 09 Feb 2014 15:20:00 +0600 as excerpted:
 
-I am experimenting with BTRFS and RAID1 on my Debian Wheezy (with
-backported kernel 3.12-0.bpo.1-amd64) using a a motherboard with UEFI.
+> On Sun, 9 Feb 2014 06:38:53 +0000 (UTC)
+> Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+>> RAID or multi-device filesystems aren't 1970s features and break 1970s
+>> behavior and the assumptions associated with it.  If you're not
+>> prepared to deal with those broken assumptions, don't.  Use mdraid or
+>> dmraid or lvm or whatever to combine your multiple devices into one
+>> logical devices as presented, and put your filesystem (either
+>> traditional filesystem, or even btrfs using traditional single-device
+>> functionality) on top of the single device the layer beneath the
+>> filesystem presents.  Problem solved! =:^)
+> 
+> No reason BTRFS can't work well in a similar simplistic usage scenario.
+> 
+> You seem to insist there is no way around it being "too flexible for its
+> own good", but all those advanced features absolutely don't *have* to
+> get in the way of everyday usage for users who don't require them.
 
-However I haven't managed to make the system boot when the removing the
-first hard drive.
+Not really.  I'm more insisting that I've not seen a good kernel-space 
+solution to the problem yet, and believe that it's a userspace or wetware 
+problem.
 
-I have installed Debian with the following partition on the first hard
-drive (no BTRFS subsystem):
-/dev/sda1: for / (BTRFS)
-/dev/sda2: for /home (BTRFS)
-/dev/sda3: for swap
+And I provided a userspace/wetware solution that works for me, too. =:^)
 
-Then I added another drive for a RAID1 configuration (with btrfs
-balance) and I installed grub on the second hard drive with
-"grub-install /dev/sdb".
+>> Meanwhile, what I've done here is use one of df's commandline options
+>> to set its block size to 2 MiB, and further used bash's alias
+>> functionality to setup an alias accordingly:
+>> 
+>> alias df='df -B2M'
+>> 
+>> $ df /h Filesystem     2M-blocks  Used Available Use% Mounted on
+>> /dev/sda6          20480 12186      7909  61% /h
 
-If I boot on sdb, it takes sda1 as the root filesystem
-If I switched the cable, it always take the first hard drive as the
-root filesystem (now sdb)
-If I disconnect /dev/sda, the system doesn't boot with a message
-saying that it hasn't found the UUID:
+>> On btrfs such as the above I can read the 2M blocks as 1M and be happy.
+>>
+>> On btrfs such as my /boot, which aren't raid1 (I have two separate
+>> /boots, one on each device, with grub2 configured separately for each
+>> to provide a backup), or if I df my media partitions still on reiserfs
+>> on the old spinning rust, I can either double the figures DF gives me,
+>> or add a second -B option at the CLI, overriding the aliased option.
+> 
+> Congratulations, you broke your df readings on all other filesystems to
+> fix them on btrfs.
 
-Scanning for BTRFS filesystems...
-mount: mounting /dev/disk/by-uuid/c64fca2a-5700-4cca-abac-3a61f2f7486c on /root failed: Invalid argument
+No.  It clearly says 2M blocks.  Nothing's broken at all, except perhaps 
+the user's wetware.
 
-Can you tell me what I have done incorrectly ?
-Is it because of UEFI ? If yes I haven't understood how I can correct
-it in a simple way.
+I just find it a easier to do the doubling in wetware on the occasion 
+it's needed, in MiB, then halving on more frequent occasions (since all 
+my core automounted filesystems that I'd normally be doing df on are 
+btrfs raid1), larger KiB or byte units, and don't need to do that wetware 
+halving often enough to have gone to the trouble of setting up the 
+software-scripted version I propose below.
 
-As extra question, I don't see also how I can configure the system to
-get the correct swap in case of disk failure. Should I force both swap partition
-to have the same UUID ?
+>> If I wanted something fully automated, it'd be easy enough to setup a
+>> script that checked what filesystem I was df-ing, matched that against
+>> a table of filesystems to preferred df block sizes, and supplied the
+>> appropriate -BxX option accordingly.
+> 
+> I am not sure this would work well in the network share scenario
+> described earlier, with clients which in the real world are largely
+> Windows-based.
 
-Many thanks in advance !
+So patch the window-based stuff... oh, you've let them be your master (in 
+the context of my sig below) and you can't...  Well, servant by choice, I 
+guess...  There's freedom if you want it... which in fact you are using 
+to do your kernel patches.  Try patching the MS Windows kernel and 
+distributing those patches, and see how far you get! =:^(
 
-****************************************************
-Here are some outputs for info:
+FWIW/IMO, in the business context Ernie Ball made the right decision.  
+One BSA audit was enough.  He said no more, and the company moved to free 
+as in freedom software and isn't beholden to the whims of any servantware 
+or the BSA auditors enforcing it, any longer. =:^)
 
-btrfs filesystem show
-Label: none  uuid: 743d6b3b-71a7-4869-a0af-83549555284b
-	Total devices 2 FS bytes used 27.96MB
-	devid    1 size 897.98GB used 3.03GB path /dev/sda2
-	devid    2 size 897.98GB used 3.03GB path /dev/sdb2
+But as I said, your systems (or your company's systems), play servant 
+with them and be subject to the BSA gestapo (or the equivalent in your 
+country) if you will.  No skin off my nose.  <shrug>
 
-Label: none  uuid: c64fca2a-5700-4cca-abac-3a61f2f7486c
-	Total devices 2 FS bytes used 3.85GB
-	devid    1 size 27.94GB used 7.03GB path /dev/sda1
-	devid    2 size 27.94GB used 7.03GB path /dev/sdb1
 
-blkid 
-/dev/sda1: UUID="c64fca2a-5700-4cca-abac-3a61f2f7486c" UUID_SUB="77ffad34-681c-4c43-9143-9b73da7d1ae3" TYPE="btrfs" 
-/dev/sda3: UUID="469715b2-2fa3-4462-b6f5-62c04a60a4a2" TYPE="swap" 
-/dev/sda2: UUID="743d6b3b-71a7-4869-a0af-83549555284b" UUID_SUB="744510f5-5bd5-4df4-b8c4-0fc1a853199a" TYPE="btrfs" 
-/dev/sdb1: UUID="c64fca2a-5700-4cca-abac-3a61f2f7486c" UUID_SUB="2615fd98-f2ad-4e7b-84bc-0ee7f9770ca0" TYPE="btrfs" 
-/dev/sdb2: UUID="743d6b3b-71a7-4869-a0af-83549555284b" UUID_SUB="8783a7b1-57ef-4bcc-ae7f-be20761e9a19" TYPE="btrfs" 
-/dev/sdb3: UUID="56fbbe2f-7048-488f-b263-ab2eb000d1e1" TYPE="swap"
+Meanwhile, you said it yourself, users aren't normally concerned about 
+this.  And others pointed out that to the degree users /are/ concerned, 
+they should be looking at their quotas, not filesystem level usage.
 
-cat /etc/fstab
-# <file system> <mount point>   <type>  <options>       <dump>  <pass>
-UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c /               btrfs   defaults        0       1
-UUID=743d6b3b-71a7-4869-a0af-83549555284b /home           btrfs   defaults        0       2
-UUID=469715b2-2fa3-4462-b6f5-62c04a60a4a2 none            swap    sw              0       0
+And admins, assuming they're proper admins, not the simple "here's my 
+MCSE, I'm certified to do anything, and if I can't do it, it's not 
+possible", types, should have the wetware resources to either deal with 
+the problem there, or script their own solutions, offloading it from 
+wetware to installation-specific userspace software scripts as necessary.
 
-cat /boot/grub/grub.cfg 
-#
-# DO NOT EDIT THIS FILE
-#
-# It is automatically generated by grub-mkconfig using templates
-# from /etc/grub.d and settings from /etc/default/grub
-#
 
-### BEGIN /etc/grub.d/00_header ###
-if [ -s $prefix/grubenv ]; then
-  load_env
-fi
-set default="0"
-if [ "${prev_saved_entry}" ]; then
-  set saved_entry="${prev_saved_entry}"
-  save_env saved_entry
-  set prev_saved_entry=
-  save_env prev_saved_entry
-  set boot_once=true
-fi
+All that said, it's worth noting that there ARE already API changes 
+proposed and working their way thru the pipeline, that would expose 
+various bits of necessary data to userspace in a standardized API that 
+filesystems other than btrfs could make use of as well, with the intent 
+of then updating coreutils (the package containing df) and friends to 
+allow them to make use of the information exposed by this API to improve 
+their default information output and allow for additional CLI level 
+options as appropriate.  Presumably other userspace apps, including the 
+GUIs over time, would follow the same course.
 
-function savedefault {
-  if [ -z "${boot_once}" ]; then
-    saved_entry="${chosen}"
-    save_env saved_entry
-  fi
-}
+But the key is, getting a standardized modern API ready and the data 
+exposed to userspace via said API in a standardized way, so that all 
+userspace apps can make use of it the same way they use the existing APIs 
+to provide used/free-space data today, but updated from the 1970s style 
+APIs their currently using, to this standardized more modern one, in 
+ordered to provide correct and accurate information to the user, 
+regardless of whether they're using legacy filesystems or something more 
+modern such as btrfs.
 
-function load_video {
-  insmod vbe
-  insmod vga
-  insmod video_bochs
-  insmod video_cirrus
-}
+The point being, it's early days yet, in terms of btrfs and similar 
+modern multi-device flexible usage filesystems, it's basically early 
+adopters having to deal with it now and /as/ early adopters, they can 
+cope with it.  Meanwhile, as we know, premature optimization is the root 
+of evil, so be patient, and a reasonable solution, standardized so that 
+other modern filesystems can use the same APIs and expose the same sort 
+of information for userspace to work out the presentation of, will 
+eventually appear.
 
-insmod part_msdos
-insmod btrfs
-set root='(hd1,msdos1)'
-search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
-if loadfont /usr/share/grub/unicode.pf2 ; then
-  set gfxmode=640x480
-  load_video
-  insmod gfxterm
-  insmod part_msdos
-  insmod btrfs
-  set root='(hd1,msdos1)'
-  search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
-  set locale_dir=($root)/boot/grub/locale
-  set lang=fr_FR
-  insmod gettext
-fi
-terminal_output gfxterm
-set timeout=5
-### END /etc/grub.d/00_header ###
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-### BEGIN /etc/grub.d/05_debian_theme ###
-insmod part_msdos
-insmod btrfs
-set root='(hd1,msdos1)'
-search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
-insmod png
-if background_image /usr/share/images/desktop-base/joy-grub.png; then
-  set color_normal=white/black
-  set color_highlight=black/white
-else
-  set menu_color_normal=cyan/blue
-  set menu_color_highlight=white/blue
-fi
-### END /etc/grub.d/05_debian_theme ###
-
-### BEGIN /etc/grub.d/10_linux ###
-menuentry 'Debian GNU/Linux, with Linux 3.12-0.bpo.1-amd64' --class debian --class gnu-linux --class gnu --class os {
-	load_video
-	insmod gzio
-	insmod part_msdos
-	insmod btrfs
-	set root='(hd1,msdos1)'
-	search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
-	echo	'Chargement de Linux 3.12-0.bpo.1-amd64 ...'
-	linux	/boot/vmlinuz-3.12-0.bpo.1-amd64 root=UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c ro  quiet
-	echo	'Chargement du disque mémoire initial ...'
-	initrd	/boot/initrd.img-3.12-0.bpo.1-amd64
-}
-menuentry 'Debian GNU/Linux, with Linux 3.12-0.bpo.1-amd64 (mode de dépannage)' --class debian --class gnu-linux --class gnu --class os {
-	load_video
-	insmod gzio
-	insmod part_msdos
-	insmod btrfs
-	set root='(hd1,msdos1)'
-	search --no-floppy --fs-uuid --set=root c64fca2a-5700-4cca-abac-3a61f2f7486c
-	echo	'Chargement de Linux 3.12-0.bpo.1-amd64 ...'
-	linux	/boot/vmlinuz-3.12-0.bpo.1-amd64 root=UUID=c64fca2a-5700-4cca-abac-3a61f2f7486c ro single 
-	echo	'Chargement du disque mémoire initial ...'
-	initrd	/boot/initrd.img-3.12-0.bpo.1-amd64
-}
-### END /etc/grub.d/10_linux ###
-
-### BEGIN /etc/grub.d/20_linux_xen ###
-### END /etc/grub.d/20_linux_xen ###
-
-### BEGIN /etc/grub.d/30_os-prober ###
-### END /etc/grub.d/30_os-prober ###
-
-### BEGIN /etc/grub.d/40_custom ###
-# This file provides an easy way to add custom menu entries.  Simply type the
-# menu entries you want to add after this comment.  Be careful not to change
-# the 'exec tail' line above.
-### END /etc/grub.d/40_custom ###
-
-### BEGIN /etc/grub.d/41_custom ###
-if [ -f  $prefix/custom.cfg ]; then
-  source $prefix/custom.cfg;
-fi
-### END /etc/grub.d/41_custom ###

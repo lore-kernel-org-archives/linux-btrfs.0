@@ -1,104 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16592 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751770AbaBJQl5 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:45015 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751889AbaBJRGc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 11:41:57 -0500
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s1AGcKjm031187
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 08:41:55 -0800
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1hxv1t99r6-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 08:41:54 -0800
-Message-ID: <52F9014F.6070901@fb.com>
-Date: Mon, 10 Feb 2014 11:41:51 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: "lin >> \"linux-btrfs@vger.kernel.org\""
+	Mon, 10 Feb 2014 12:06:32 -0500
+Date: Mon, 10 Feb 2014 17:06:06 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Josef Bacik <jbacik@fb.com>
+Cc: "lin >> \"linux-btrfs@vger.kernel.org\""
 	<linux-btrfs@vger.kernel.org>
-Subject: What to do about df and btrfs fi df
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Subject: Re: What to do about df and btrfs fi df
+Message-ID: <20140210170606.GK6490@carfax.org.uk>
+References: <52F9014F.6070901@fb.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="gBYU9MM4gf8jKg2V"
+In-Reply-To: <52F9014F.6070901@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-So first of all this is going to get a lot of responses, so straight 
-away I'm only going to consider your opinion if I recognize your name 
-and think you are a sane person.  This basically means any big 
-contributors and we'll make sanity exceptions for cwillu.
+--gBYU9MM4gf8jKg2V
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-These are just broad strokes, let us not get bogged down in the details, 
-I just want to come to a consensus on how things _generally_ should be 
-portrayed to the user.  We can worry about implementation details once 
-we agree on the direction we want to go.
+tl;dr: Yes to proposed df changes. Keep btrfs fi df as-is.
 
-We all know space is a loaded question with btrfs, so I'm just going to 
-explain the reasoning of why we chose what we chose originally and then 
-offer the direction we should go in.  If you agree say yay, if not 
-please provide a very concise alternative suggestion with a very short 
-explanation of why it is better than I'm suggesting.  I'm not looking to 
-spend a whole lot of time this problem.
+On Mon, Feb 10, 2014 at 11:41:51AM -0500, Josef Bacik wrote:
+[snip]
+> =====  What to do moving forward =====
+> 
+> Flip what both of these do.  Do not multiply for normal df, and
+> multiply for btrfs fi df.
+> 
+> ===== New and improved df =====
+> 
+> Since this is the lowest common denominator we should just spit out
+> how much space is used based on the block groups and then divide the
+> remaining space that hasn't been allocated yet by the raid
+> multiplier.
+> 
+> This is going to be kind of tricky once we do per-subvolume RAID
+> levels, but this falls under the b_avail voodoo which is just a
+> guess anyway, so for this we will probably take the biggest
+> multiplier and use that to show how much available space you have.
 
-Also this isn't going to address b_avail, cause frankly that is some 
-fucking voodoo right there, suffice it to say we will just adjust 
-b_avail based on how we should represent total and used.
+   Biggest multiplier leads to the pessimistic estimate, which is what
+I'd prefer to see here, so that's good. Agree with this.
 
-===== ye olde df =====
+> This way with RAID1 it shows you have 1tb of total space and you've
+> used 1tb of space.
+> 
+> ===== New and improved btrfs fi df =====
+> 
+> Since people using this tool are already going to be better informed
+> and since we are already given the block group flags we can go ahead
+> and do the raid multiplier in btrfs-progs and spit out the adjusted
+> numbers rather than the raw numbers we get from the ioctl.  This
+> will just be a progs thing and that way we can possibly add an
+> option to not apply the multipliers and just get the raw output.
 
-I don't remember what we did originally, but IIRC we would only show 
-used space from the block groups and would show the entire size of the 
-fs.  So for example with two 1 tb drives in RAID1 you'd see ENOSPC and 
-look at df and it would show total of 2TB and used at 1TB.  Obviously 
-not good, so we switched to the mechanism we have today, which is you 
-see 2TB for total, you see 2TB for used and you see 0 for available.  We 
-just scaled up the used and available based on your raid multiplier.
+   Keep this unchanged, IMO.
 
-===== btrfs fi df =====
+(a) I quite like the non-multiplied version as it is, as it gives you
+    the quantities of real, actual data stored -- the value you
+    generally care about anyway ("how much stuff do I have on here?").
 
-I made this for me because of ENOSPC issues but of course it's also 
-really useful for users.  It is just a dump of the block group 
-information and their flags, so really just spits out bytes_used and 
-total_bytes and flags.  Because at the block_group/space_info level in 
-btrfs we don't care about how much actual space is taken up this number 
-is not adjusted for RAID values, and these numbers are reflected in the 
-tools output.  So if you have RAID1 you need to mentally multiply the 
-Total and Used values by 2 because that is how much actual space is 
-being used.
+(b) Using the non-multiplied version here as well as above would then
+    give >gasp< comparable values for btrfs fi df and Plain Old df.
+    Less confusion all round, I think.
 
-=====  What to do moving forward =====
+(c) The difficulty with using multiplied values is the behaviour of
+    parity RAID on filesystems with different sized devices: there
+    isn't a single multiplier that will give an accurate answer at
+    all. (Detailed arguments available on application ;) )
 
-Flip what both of these do.  Do not multiply for normal df, and multiply 
-for btrfs fi df.
+   Hugo.
 
-===== New and improved df =====
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+            --- "Can I offer you anything? Tea? Seedcake? ---            
+                         Glass of Amontillado?"                          
 
-Since this is the lowest common denominator we should just spit out how 
-much space is used based on the block groups and then divide the 
-remaining space that hasn't been allocated yet by the raid multiplier.
+--gBYU9MM4gf8jKg2V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-This is going to be kind of tricky once we do per-subvolume RAID levels, 
-but this falls under the b_avail voodoo which is just a guess anyway, so 
-for this we will probably take the biggest multiplier and use that to 
-show how much available space you have.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-This way with RAID1 it shows you have 1tb of total space and you've used 
-1tb of space.
+iQIVAwUBUvkG/lheFHXiqx3kAQLDOw//TfNNos6WfTdXbCSgjumoWJfVWUCAmgcU
+vlq4EpWVxIW2mmGTrrPmDDujv4nqUMhZi0ayVordGS0mKp8gTgbUyJMc/q/9traL
+4RdBt6qXkZl0k0Xl5HlikWD3838fnS78mP5xm7MjwmM/eJcYeAZ0KBbkQmMOieVV
+M7WjymuUKfXngpQiL1oyjbqx57VYELvJxan5gLBsr4nmGTOsdOLHli2azxezocnE
+QfxmCjj1EoRAl1LqEGxb+epV0AWNb0V35gTthfMVC+BNVHt3f6y+gcOVHbT19cLm
++q9rjTEzY+YFQgsugN+SBnDLsMyVlgDCxQkKuiwd1QL0QzWSFKe2bqEJxBRs3eHg
++CTRxlJE1zYWw4j4ZGgAmr5ZxG5aRc/fZgcFgp6O6RQBwPqv1Nb0bLq24iT+d0lJ
+unPIq6PDfurb5yg3qPooBDZZOBKd6yRvdEMWrJFG2xVbxz4WhsazP5WaKf4LE18X
+LvorrC0F26whpjbjaLtA+sZd2r3mn8UBMLbRJNGk1wKhYYplOeFO7PU+wD5b00Q5
+ExZFoVHbSv+gXL9vuQuQ22RH9VjQ8EvVzNxyuTIiqkrZMlYVyPvBoW3A6KCj4thM
+qqvCa0w5+jA/J2Lm/6teF5JPwOk47/1LXdejORitToANfX99CUavvu7mkcZMm+Fw
+W4FPJO3J9No=
+=UKGK
+-----END PGP SIGNATURE-----
 
-===== New and improved btrfs fi df =====
-
-Since people using this tool are already going to be better informed and 
-since we are already given the block group flags we can go ahead and do 
-the raid multiplier in btrfs-progs and spit out the adjusted numbers 
-rather than the raw numbers we get from the ioctl.  This will just be a 
-progs thing and that way we can possibly add an option to not apply the 
-multipliers and just get the raw output.
-
-===== Conclusion =====
-
-Let me know if this is acceptable to everybody.  Remember this is just 
-broad strokes, keep your responses short and simple or I simply won't 
-read them.  Thanks,
-
-Josef
+--gBYU9MM4gf8jKg2V--

@@ -1,85 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:29041 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751570AbaB1NFe (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16592 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751770AbaBJQl5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Feb 2014 08:05:34 -0500
-Message-ID: <53108991.4030504@fb.com>
-Date: Fri, 28 Feb 2014 08:05:21 -0500
+	Mon, 10 Feb 2014 11:41:57 -0500
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s1AGcKjm031187
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 08:41:55 -0800
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1hxv1t99r6-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 08:41:54 -0800
+Message-ID: <52F9014F.6070901@fb.com>
+Date: Mon, 10 Feb 2014 11:41:51 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BUG: >16TB Btrfs volumes are mountable on 32 bit kernels
-References: <994B6F86-9AF0-4826-8352-8573EE8003B6@colorremedies.com> <530FA8FA.9020700@fb.com> <20140228043807.GC13647@dastard>
-In-Reply-To: <20140228043807.GC13647@dastard>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: "lin >> \"linux-btrfs@vger.kernel.org\""
+	<linux-btrfs@vger.kernel.org>
+Subject: What to do about df and btrfs fi df
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hello,
 
-On 02/27/2014 11:38 PM, Dave Chinner wrote:
-> On Thu, Feb 27, 2014 at 04:07:06PM -0500, Josef Bacik wrote:
->> -----BEGIN PGP SIGNED MESSAGE----- Hash: SHA1
->> 
->> On 02/27/2014 04:05 PM, Chris Murphy wrote:
->>> User reports successfully formatting and using an ~18TB Btrfs 
->>> volume on hardware raid5 using i686 kernel for over a year,
->>> and then suddenly the file system starts behaving weirdly:
->>> 
->>> https://urldefense.proofpoint.com/v1/url?u=http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg31856.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=6eUt5RgBggFh930oFrH19iR4z%2BFVzT%2F0%2F4dYPt3g48U%3D%0A&s=5ac126734d7fa1d3238ab09a2ddc021a8dcc8fff7b022560a4d068be2de37c00
->>>
->>>
->>>
->>>
->>> 
-I think this is due to the kernel page cache address space being
->>> 16TB limited on 32-bit kernels, as mentioned by Dave Chinner
->>> in this thread:
->>> 
->>> https://urldefense.proofpoint.com/v1/url?u=http://oss.sgi.com/pipermail/xfs/2014-February/034588.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=6eUt5RgBggFh930oFrH19iR4z%2BFVzT%2F0%2F4dYPt3g48U%3D%0A&s=3e45f9288e6a77bc1a24dded368802c2ab46b812bf59953f74d4ee1d4141f7d2
->>>
->>>
->>> 
-So it sounds like it shouldn't be possible to mount a Btrfs volume
->>> larger than 16TB on 32-bit kernels. This is consistent with
->>> ext4 and XFS which refuse to mount large file systems.
->>> 
->>> 
->> 
->> Well that's not good, I'll fix this up.  Thanks,
-> 
-> Well, don't go assuming there's a problem just because I made an 
-> off-hand comment. i.e my comment was simply "maybe it hasn't been 
-> tested", and not an assertion that there is a bug or a problem....
-> 
+So first of all this is going to get a lot of responses, so straight 
+away I'm only going to consider your opinion if I recognize your name 
+and think you are a sane person.  This basically means any big 
+contributors and we'll make sanity exceptions for cwillu.
 
-If I can't take your word as gospel then my whole life has been a lie!
- I'll look into it some more then but I seem to remember this being a
-real problem, like we'd wrap around in pagecache once we went above
-16tb, which would cause problems for metadata since our btree inode is
-mapped logically to the entire fs.  Thanks,
+These are just broad strokes, let us not get bogged down in the details, 
+I just want to come to a consensus on how things _generally_ should be 
+portrayed to the user.  We can worry about implementation details once 
+we agree on the direction we want to go.
+
+We all know space is a loaded question with btrfs, so I'm just going to 
+explain the reasoning of why we chose what we chose originally and then 
+offer the direction we should go in.  If you agree say yay, if not 
+please provide a very concise alternative suggestion with a very short 
+explanation of why it is better than I'm suggesting.  I'm not looking to 
+spend a whole lot of time this problem.
+
+Also this isn't going to address b_avail, cause frankly that is some 
+fucking voodoo right there, suffice it to say we will just adjust 
+b_avail based on how we should represent total and used.
+
+===== ye olde df =====
+
+I don't remember what we did originally, but IIRC we would only show 
+used space from the block groups and would show the entire size of the 
+fs.  So for example with two 1 tb drives in RAID1 you'd see ENOSPC and 
+look at df and it would show total of 2TB and used at 1TB.  Obviously 
+not good, so we switched to the mechanism we have today, which is you 
+see 2TB for total, you see 2TB for used and you see 0 for available.  We 
+just scaled up the used and available based on your raid multiplier.
+
+===== btrfs fi df =====
+
+I made this for me because of ENOSPC issues but of course it's also 
+really useful for users.  It is just a dump of the block group 
+information and their flags, so really just spits out bytes_used and 
+total_bytes and flags.  Because at the block_group/space_info level in 
+btrfs we don't care about how much actual space is taken up this number 
+is not adjusted for RAID values, and these numbers are reflected in the 
+tools output.  So if you have RAID1 you need to mentally multiply the 
+Total and Used values by 2 because that is how much actual space is 
+being used.
+
+=====  What to do moving forward =====
+
+Flip what both of these do.  Do not multiply for normal df, and multiply 
+for btrfs fi df.
+
+===== New and improved df =====
+
+Since this is the lowest common denominator we should just spit out how 
+much space is used based on the block groups and then divide the 
+remaining space that hasn't been allocated yet by the raid multiplier.
+
+This is going to be kind of tricky once we do per-subvolume RAID levels, 
+but this falls under the b_avail voodoo which is just a guess anyway, so 
+for this we will probably take the biggest multiplier and use that to 
+show how much available space you have.
+
+This way with RAID1 it shows you have 1tb of total space and you've used 
+1tb of space.
+
+===== New and improved btrfs fi df =====
+
+Since people using this tool are already going to be better informed and 
+since we are already given the block group flags we can go ahead and do 
+the raid multiplier in btrfs-progs and spit out the adjusted numbers 
+rather than the raw numbers we get from the ioctl.  This will just be a 
+progs thing and that way we can possibly add an option to not apply the 
+multipliers and just get the raw output.
+
+===== Conclusion =====
+
+Let me know if this is acceptable to everybody.  Remember this is just 
+broad strokes, keep your responses short and simple or I simply won't 
+read them.  Thanks,
 
 Josef
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJTEImAAAoJEANb+wAKly3BtrwP/jChKmHL74UNkeKytwRtbKn9
-MxudB5MxzaAzYcXpwVXOxhDAYy870htbzyePddhEjMCubY5Hnb10klGx3QztxV1z
-G7qnoJp0FchpLSMSAhQE0B8steRTPbawKBIYqb1Kj7p39j+HmQ4K6fafcajtA929
-rgFcNIa61rTjurknI9N9Lf2palReycl1Ee3psiH+mXN+RvPBAZ13sFp1sVJWJvoE
-qHDB0g1vC47MbsvrADMeI/W6MUS8hXaZ31xS5PVOBTQiabH2ycw2853fAJsVdSsZ
-0oh4E8AwnWf5+/V0wqFXFE0zMoEpWOc5JScbWMB1kZYQbBLCWUue5olLoPyOv2M6
-WUS89IpTrspQ80KvWIGN1Bg4p7BAJ2h74zWWrEyGLtt3ujoKffcycGI19i7ln9cq
-glLf8ofCiOCGs5VSTQMdSl6Eu0XYPQQViq0autpcBhkit0DV7A/caK+b351+t3c7
-SI+Xx8LsvUVVATo11nSI/Z9lRol/XEX08G2XrDI+YiSOaW1qjDueNDBrpai/8gRt
-dN8qbooDPArf82maNfCXsuEkKQIvkICxhRc3BWFvKeS/UTw5T9Y20UWAwanJfRfD
-bLE357shUKimRtunr0MplQU9GVyCD/0tTtm3BPzOcWlG5QX7fugAobJPRqpQTD6b
-d6PAQswquwuEfcqr38nk
-=+lP6
------END PGP SIGNATURE-----

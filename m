@@ -1,57 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:33332 "EHLO
-	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751996AbaBJOI2 (ORCPT
+Received: from caibbdcaabie.dreamhost.com ([208.113.200.184]:39227 "EHLO
+	homiemail-a52.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751770AbaBJPed (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 09:08:28 -0500
-Received: by mail-ig0-f181.google.com with SMTP id j1so6613977iga.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 06:08:27 -0800 (PST)
-Message-ID: <52F8DD59.6060903@gmail.com>
-Date: Mon, 10 Feb 2014 09:08:25 -0500
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Mon, 10 Feb 2014 10:34:33 -0500
+Received: from homiemail-a52.g.dreamhost.com (localhost [127.0.0.1])
+	by homiemail-a52.g.dreamhost.com (Postfix) with ESMTP id B0D026B82F6
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 07:34:32 -0800 (PST)
+Received: from [192.168.1.9] (unknown [50.46.251.200])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: john@navitsky.org)
+	by homiemail-a52.g.dreamhost.com (Postfix) with ESMTPSA id 94A3A6B82F3
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 07:34:32 -0800 (PST)
+Message-ID: <52F8F1C4.5070701@navitsky.org>
+Date: Mon, 10 Feb 2014 07:35:32 -0800
+From: John Navitsky <john@navitsky.org>
 MIME-Version: 1.0
-To: Brendan Hide <brendan@swiftspirit.co.za>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Issue with btrfs balance
-References: <52F83A69.8080503@gmail.com> <52F8D70B.1090201@swiftspirit.co.za>
-In-Reply-To: <52F8D70B.1090201@swiftspirit.co.za>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Re: system stuck with flush-btrfs-4 at 100% after filesystem resize
+References: <52F67926.7060209@navitsky.org>
+In-Reply-To: <52F67926.7060209@navitsky.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-02-10 08:41, Brendan Hide wrote:
-> On 2014/02/10 04:33 AM, Austin S Hemmelgarn wrote:
->> <snip>
->> Apparently, trying to use -mconvert=dup or -sconvert=dup on a
->> multi-device filesystem using one of the RAID profiles for metadata
->> fails with a statement to look at the kernel log, which doesn't show
->> anything at all about the failure.
-> ^ If this is the case then it is definitely a bug. Can you provide some
-> version info? Specifically kernel, btrfs-tools, and Distro.
-In this case, btrfs-progs 3.12, kernel 3.13.2, and Gentoo.
->> <snip> it appears
->> that the kernel stops you from converting to a dup profile for metadata
->> in this case because it thinks that such a profile doesn't work on
->> multiple devices, despite the fact that you can take a single device
->> filesystem, and a device, and it will still work fine even without
->> converting the metadata/system profiles.
-> I believe dup used to work on multiple devices but the facility was
-> removed. In the standard case it doesn't make sense to use dup with
-> multiple devices: It uses the same amount of diskspace but is more
-> vulnerable than the RAID1 alternative.
->> <snip> Ideally, this
->> should be changed to allow converting to dup so that when converting a
->> multi-device filesystem to single-device, you never have to have
->> metadata or system chunks use a single profile.
-> This is a good use-case for having the facility. I'm thinking that, if
-> it is brought back in, the only caveat is that appropriate warnings
-> should be put in place to indicate that it is inappropriate.
-> 
-> My guess on how you'd like to migrate from raid1/raid1 to single/dup,
-> assuming sda and sdb:
-> btrfs balance start -dconvert=single -mconvert=dup /
-> btrfs device delete /dev/sdb /
-> 
-Ideally, yes.  The exact command I tried to use was:
-btrfs balance start -dconvert=single -mconvert=dup -sconvert=dup -f -v /
-Trying again without the system chunk conversion also failed.
+As a follow-up, at some point over the weekend things did finish on 
+their own:
+
+romulus:/vms/johnn-sles11sp3 # df -h /vms
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/dm-4       2.6T  1.6T  1.1T  60% /vms
+romulus:/vms/johnn-sles11sp3 #
+
+I'd still be interested in any comments about what was going on or 
+suggestions.
+
+Thanks,
+
+-john
+
+On 2/8/2014 10:36 AM, John Navitsky wrote:
+> Hello,
+>
+> I have a large file system that has been growing.  We've resized it a
+> couple of times with the following approach:
+>
+>    lvextend -L +800G /dev/raid/virtual_machines
+>    btrfs filesystem resize +800G /vms
+>
+> I think the FS started out at 200G, we increased it by 200GB a time or
+> two, then by 800GB and everything worked fine.
+>
+> The filesystem hosts a number of virtual machines so the file system is
+> in use, although the VMs individually tend not to be overly active.
+>
+> VMs tend to be in subvolumes, and some of those subvolumes have snapshots.
+>
+> This time, I increased it by another 800GB, and it it has hung for many
+> hours (over night) with flush-btrfs-4 near 100% cpu all that time.
+>
+> I'm not clear at this point that it will finish or where to go from here.
+>
+> Any pointers would be much appreciated.
+>
+> Thanks,
+>
+> -john (newbie to BTRFS)
+

@@ -1,46 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from caibbdcaabie.dreamhost.com ([208.113.200.184]:39227 "EHLO
-	homiemail-a52.g.dreamhost.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751770AbaBJPed (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:31722 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752148AbaBJQnc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 10:34:33 -0500
-Received: from homiemail-a52.g.dreamhost.com (localhost [127.0.0.1])
-	by homiemail-a52.g.dreamhost.com (Postfix) with ESMTP id B0D026B82F6
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 07:34:32 -0800 (PST)
-Received: from [192.168.1.9] (unknown [50.46.251.200])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: john@navitsky.org)
-	by homiemail-a52.g.dreamhost.com (Postfix) with ESMTPSA id 94A3A6B82F3
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 07:34:32 -0800 (PST)
-Message-ID: <52F8F1C4.5070701@navitsky.org>
-Date: Mon, 10 Feb 2014 07:35:32 -0800
-From: John Navitsky <john@navitsky.org>
+	Mon, 10 Feb 2014 11:43:32 -0500
+Message-ID: <52F901AE.1080908@fb.com>
+Date: Mon, 10 Feb 2014 11:43:26 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
+To: John Navitsky <john@navitsky.org>, <linux-btrfs@vger.kernel.org>
 Subject: Re: system stuck with flush-btrfs-4 at 100% after filesystem resize
 References: <52F67926.7060209@navitsky.org>
 In-Reply-To: <52F67926.7060209@navitsky.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As a follow-up, at some point over the weekend things did finish on 
-their own:
 
-romulus:/vms/johnn-sles11sp3 # df -h /vms
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/dm-4       2.6T  1.6T  1.1T  60% /vms
-romulus:/vms/johnn-sles11sp3 #
 
-I'd still be interested in any comments about what was going on or 
-suggestions.
-
-Thanks,
-
--john
-
-On 2/8/2014 10:36 AM, John Navitsky wrote:
+On 02/08/2014 01:36 PM, John Navitsky wrote:
 > Hello,
 >
 > I have a large file system that has been growing.  We've resized it a
@@ -67,4 +45,41 @@ On 2/8/2014 10:36 AM, John Navitsky wrote:
 > Thanks,
 >
 > -john (newbie to BTRFS)
+>
+>
+> -------- procedure log ----------
+>
+> romulus:/home/users/johnn # lvextend -L +800G /dev/raid/virtual_machines
+> romulus:/home/users/johnn #  btrfs filesystem resize +800G /vms
+> Resize '/vms' of '+800G'
+> [hangs]
+>
+>
+> top - 12:21:53 up 136 days,  2:45, 13 users,  load average: 30.39,
+> 30.37, 30.37
+> Tasks:   1 total,   1 running,   0 sleeping,   0 stopped,   0 zombie
+> %Cpu(s):  2.4 us,  2.3 sy,  0.0 ni, 95.1 id,  0.1 wa,  0.0 hi,  0.0 si,
+>   0.0 st
+> MiB Mem:    129147 total,   127427 used,     1720 free,      264 buffers
+> MiB Swap:   262143 total,      661 used,   261482 free,    93666 cached
+>
+>     PID USER      PR  NI  VIRT  RES  SHR S  %CPU %MEM     TIME+ COMMAND
+>   48809 root      20   0     0    0    0 R  99.3  0.0   1449:14
+> flush-btrfs-4
+>
+> ------- misc info -----------
+>
+> romulus:/home/users/johnn # cat /etc/SuSE-release
+> openSUSE 12.3 (x86_64)
+> VERSION = 12.3
+> CODENAME = Dartmouth
+> romulus:/home/users/johnn # uname -a
+> Linux romulus.us.redacted.com 3.7.10-1.16-desktop #1 SMP PREEMPT Fri May
+> 31 20:21:23 UTC 2013 (97c14ba) x86_64 x86_64 x86_64 GNU/Linux
+> romulus:/home/users/johnn #
 
+Found your problem!  Basically if you are going to run btrfs you should 
+at the very least keep up with the stable kernels.  3.11.whatever is 
+fine, 3.12.whatever is better.  Thanks,
+
+Josef

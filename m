@@ -1,90 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:41093 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751749AbaBKSqW (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:53654 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751966AbaBKS5Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 13:46:22 -0500
-Message-ID: <52FA6FFD.2030402@inwind.it>
-Date: Tue, 11 Feb 2014 19:46:21 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>,
+	Tue, 11 Feb 2014 13:57:24 -0500
+Date: Tue, 11 Feb 2014 18:56:57 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: kreijack@inwind.it
+Cc: Josef Bacik <jbacik@fb.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: What to do about df and btrfs fi df
-References: <52F9014F.6070901@fb.com> <52F95222.1010403@libero.it> <52FA224B.1030805@fb.com> <52FA69E7.7020206@libero.it> <52FA6CEE.9010106@fb.com>
-In-Reply-To: <52FA6CEE.9010106@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20140211185657.GM6490@carfax.org.uk>
+References: <52F9014F.6070901@fb.com>
+ <52F95222.1010403@libero.it>
+ <52FA224B.1030805@fb.com>
+ <52FA69E7.7020206@libero.it>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="7vLGWvOrvbSM0Ba8"
+In-Reply-To: <52FA69E7.7020206@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/11/2014 07:33 PM, Josef Bacik wrote:
-> 
-> 
-> On 02/11/2014 01:20 PM, Goffredo Baroncelli wrote:
->> On 02/11/2014 02:14 PM, Josef Bacik wrote:
->>>
->>>
->>> On 02/10/2014 05:26 PM, Goffredo Baroncelli wrote:
->>>> On 02/10/2014 05:41 PM, Josef Bacik wrote:
->>>>> ===== New and improved btrfs fi df =====
->> [...]
->>
->> Hi Josef
->>
->>> The problem I had with this patch was it didn't give me a way to get
->>> the original output.  I as a developer really need to have the raw
->>> dump of the block group info as I'm doing stuff.  So I like this
->>> output, but I still need my old output, if you fix that part up I'll
->>> review/ack it. Thanks,
->>
->> I am open to improve this patch. What about the following output (it
->> was a copy and paste, no code for now, the number are invented)
->>
->> $ sudo btrfs filesystem df /mnt/btrfs1/
->> Disk size:         400.00GB
->> Disk unallocated:     391.97GB
->> Disk allocation:
->>                          Allocated    Used
->>     Data, single:           2.01GB,         1.00GB
->>     System, DUP:            4.00MB          2.00MB
->>     System, single:         4.00MB          1.00MB
->>     Metadata, DUP:          2.00GB        750.00MB
->>     Metadata, single:       8.00MB          2.20MB
->>                             ------         -------
->>     Total:                  7.00GB          1.75GB
->>
->> Free (Estimated):     250.45GB    (Max: 396.99GB, min: 201.00GB)
->> Data to disk ratio:         63 %
->>
->> Do you like ? Do you have further suggestions ?
->>
->> Anyway if you want a more understandable block group info dump,
->> I suggest you to give a look to the other command (same patch set):
->>
->> $ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
->>           Data   Data    Metadata Metadata System System
->>           Single RAID6   Single   RAID5    Single RAID5   Unallocated
->>
->> /dev/vdb 8.00MB  1.00GB   8.00MB   1.00GB 4.00MB  4.00MB     97.98GB
->> /dev/vdc      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
->> /dev/vdd      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
->> /dev/vde      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
->>           ====== ======= ======== ======== ====== ======= ===========
->> Total    8.00MB  2.00GB   8.00MB   3.00GB 4.00MB 12.00MB    391.97GB
->> Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB
->>
-> 
-> I did not notice this before, as long as I have a way to get to this
-> information still then I'm good with what you had originally. I guess
-> update and resend and I'll review it. Thanks,> 
-> Josef
 
-Ok, let me few day to rebase the patches.
+--7vLGWvOrvbSM0Ba8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Tue, Feb 11, 2014 at 07:20:23PM +0100, Goffredo Baroncelli wrote:
+> On 02/11/2014 02:14 PM, Josef Bacik wrote:
+> > 
+> > 
+> > On 02/10/2014 05:26 PM, Goffredo Baroncelli wrote:
+> >> On 02/10/2014 05:41 PM, Josef Bacik wrote:
+> >>> ===== New and improved btrfs fi df =====
+> [...]
 > 
+> Hi Josef
+> 
+> > The problem I had with this patch was it didn't give me a way to get
+> > the original output.  I as a developer really need to have the raw
+> > dump of the block group info as I'm doing stuff.  So I like this
+> > output, but I still need my old output, if you fix that part up I'll
+> > review/ack it. Thanks,
+> 
+> I am open to improve this patch. What about the following output (it 
+> was a copy and paste, no code for now, the number are invented)
+> 
+> $ sudo btrfs filesystem df /mnt/btrfs1/
+> Disk size:		 400.00GB
+> Disk unallocated:	 391.97GB
+> Disk allocation:
+>                         Allocated	Used
+>    Data, single:           2.01GB,         1.00GB
+>    System, DUP:            4.00MB          2.00MB
+>    System, single:         4.00MB          1.00MB
+>    Metadata, DUP:          2.00GB        750.00MB
+>    Metadata, single:       8.00MB          2.20MB
+>                            ------         -------
+>    Total:                  7.00GB          1.75GB
 
+   Two minor nits here: please put a space between the number and the
+units, and distinguish between e.g. MB (powers of 10) and MiB (powers
+of 2).
+
+   Hugo.
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- But somewhere along the line, it seems / That pimp became ---    
+                       cool,  and punk mainstream.                       
+
+--7vLGWvOrvbSM0Ba8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUvpyeVheFHXiqx3kAQKS8w//aUK/revrBZFHbpzZEtEtMQ1oifUG41Co
+VwbzKpADqGEblscwBr2OVWnxJUDXWuuaF+0SJbZQIWk3B3f/ywIJYpZPQW8XeYrm
+8aa4XQr8JEeEKduJtSAqaTwQfrjyUlew7v10se7WhgGaPheUD8+8vcCCIEKUvoV4
+S+CyPG+wGrh0FpT47hGXt6IQVfPSOjLlE9xqvzFtx/KSq1tCHaQHz3uQICSishAe
+xKdV6MzIH/rF2xdXbs1XNYxtmw0sQIH8WWomUOF/feMdCVcJ19vM6eopQbhpGCFg
+YdmaEiqmKp8q05SC+uvSNvmexv9AdQSEzJ8Z+xbh9aeGZLix9AdJT1xHcO/Cwbjp
+mOm+aUTfJAgIkBF47OdZJQThGPJN7VaC5Taw5Q0bcX+xPHT/eY9MTzpQhU+nvu/C
+McxYO4W5PjopGvWrQW3+tejjA2SDrV3ecxc3jVXwQGHmhk9Lz+lc6JTrgebwT8UO
+fpl9dmMLcEYgBPdnAF/JAVJx+Rk1vjXn+6OAhsLqRwkNpX98IsQFY2XMI8IRAFXq
+xCLvx9mJWd7s5sD87vvmFHo0SQqOroo6svc+gpAWW0a2X6yx8w6ozgQkVgRc4+eg
+3XK83Awh9LmR7gg0eppjG0Esp41P/CPAHuYNyqcla3/WmMjkRW5cndwH7aEF7F3O
+nioNxfu5ZRw=
+=0cix
+-----END PGP SIGNATURE-----
+
+--7vLGWvOrvbSM0Ba8--

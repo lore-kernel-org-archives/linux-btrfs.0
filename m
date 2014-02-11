@@ -1,33 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45621 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751770AbaBJRBZ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23424 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750807AbaBKISI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 12:01:25 -0500
-Message-ID: <52F90677.90107@fb.com>
-Date: Mon, 10 Feb 2014 12:03:51 -0500
-From: Chris Mason <clm@fb.com>
+	Tue, 11 Feb 2014 03:18:08 -0500
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s1B8I65Y014775
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:07 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s1B8I61s012405
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:06 GMT
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1B8I5ug017426
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:05 GMT
+Message-ID: <52F9DCBA.1010002@oracle.com>
+Date: Tue, 11 Feb 2014 16:18:02 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-CC: Jeff Mahoney <jeffm@suse.com>, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH 3/4][RFC] btrfs: export global block reserve size as space_info
-References: <cover.1391779611.git.dsterba@suse.cz> <21dfbfe3b1361092ad1dc286f636c1fff4a2a4f6.1391779611.git.dsterba@suse.cz>
-In-Reply-To: <21dfbfe3b1361092ad1dc286f636c1fff4a2a4f6.1391779611.git.dsterba@suse.cz>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: "linux-btrfs@vger.kernel.org >> btrfs" <linux-btrfs@vger.kernel.org>
+Subject: btrfs multiple mounts stacked on the same mount point
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/07/2014 08:34 AM, David Sterba wrote:
-> Introduce a block group type bit for a global reserve and fill the space
-> info for SPACE_INFO ioctl. This should replace the newly added ioctl
-> (01e219e8069516cdb98594d417b8bb8d906ed30d) to get just the 'size' part
-> of the global reserve, while the actual usage can be now visible in the
-> 'btrfs fi df' output during ENOSPC stress.
->
-> The unpatched userspace tools will show the blockgroup as 'unknown'.
->
 
-This wasn't in my rc2 pull because I wanted to sync up with Jeff on it. 
-  I like the idea of combining this into SPACE_INFO, any objections?
 
--chris
+per mount(2)
+
+  ---
+   multiple mounts can be stacked on the same mount point.
+  ---
+
+  In this situation how could ioctl communicate
+  (using mount point) with each FS stacked on the
+  same mount point ?
+
+  BTW I don't understand the need for multiple
+  mounts on the same mount point ?
+
+  Any idea. ?
+
+Thanks Anand

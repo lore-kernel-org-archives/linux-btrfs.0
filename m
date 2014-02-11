@@ -1,50 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kingswood-consulting.co.uk ([88.97.16.53]:52968 "EHLO
-	andromeda.kingswood-consulting.co.uk" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751591AbaBKSUd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 13:20:33 -0500
-Message-ID: <52FA69EC.8010704@kingswood-consulting.co.uk>
-Date: Tue, 11 Feb 2014 18:20:28 +0000
-From: "Frank A. Kingswood" <frank@kingswood-consulting.co.uk>
-MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send runs out of memory and file handles
-References: <52F8D406.7000207@kingswood-consulting.co.uk> <20140210134748.GI6490@carfax.org.uk> <52F8DB2B.6090902@kingswood-consulting.co.uk> <20140211181159.GJ16073@twin.jikos.cz>
-In-Reply-To: <20140211181159.GJ16073@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37310 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752736AbaBKU5i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Feb 2014 15:57:38 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WDKOe-0002VA-Tk
+	for linux-btrfs@vger.kernel.org; Tue, 11 Feb 2014 21:57:36 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 21:57:36 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 21:57:36 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs multiple mounts stacked on the same mount point
+Date: Tue, 11 Feb 2014 20:57:07 +0000 (UTC)
+Message-ID: <pan$9211b$42bef7b0$dd1350ae$978558c5@cox.net>
+References: <52F9DCBA.1010002@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/02/14 18:11, David Sterba wrote:
-> On Mon, Feb 10, 2014 at 01:59:07PM +0000, Frank Kingswood wrote:
->> On 10/02/14 13:47, Hugo Mills wrote:
->>> On Mon, Feb 10, 2014 at 01:28:38PM +0000, Frank Kingswood wrote:
->>>> I'm attempting to back up a btrfs subvolume
->>>> [...]
->>>> Doing so runs out of file descriptors on the sending machine (having
->>>> over 100k files open) and eventually runs out of memory and gets
->>>> killed by the OOM killer.
->>>
->>>     This sounds like a known bug, and I think it was fixed in 3.13.
->>> What kernel version are you using?
->>
->> This is on 3.12.5.
->
-> The fix went into 3.12.6 stable
+Anand Jain posted on Tue, 11 Feb 2014 16:18:02 +0800 as excerpted:
 
-Just missed getting the fix then.
+> per mount(2)
+> 
+>   ---
+>    multiple mounts can be stacked on the same mount point.
+>   ---
+> 
+>   In this situation how could ioctl communicate (using mount point) with
+>   each FS stacked on the same mount point ?
+> 
+>   BTW I don't understand the need for multiple mounts on the same mount
+>   point ?
 
->> I can build and install 3.13.2 and test it again.
->
-> And it's in 3.13.x as well.
+The most common case of multiple over-mounts is almost certainly the 
+kernel's built-in rootfs in RAM, usually as an initramfs or initrd, with 
+real-root often directly over-mounted the same mountpoint, tho it can 
+also be mounted elsewhere on the initramfs.
 
-I built and booted into 3.13.2 and the btrfs send seems to be working - 
-it's rate limited to 10MB/s and so far has managed to send about 40% of 
-the snapshot.
-Memory and CPU usage are low on both the sending and receiving end.
+The various union-filesystem solutions also directly use over-mounting, 
+with the read-only mount often directly over-mounted with the writable 
+but semi-transparent overlay, such that if a file hasn't changed from the 
+read-only version on the under-mount, that's the version that gets used.
 
-Thanks for your help,
+Otherwise, over-mounts generally obscure what's underneath them, making 
+direct access to it impossible, unless that underneath filesystem is bind-
+mounted elsewhere.
 
-Frank
+(Which is actually how I backup my root filesystem, using a bind-mount to 
+mount it elsewhere for the backup, so for instance the /dev/console and 
+/dev/null device nodes located directly on root get copied over to my 
+backup root as well, instead of the devtmpfs content otherwise over-
+mounted on /dev.)
+
+That principle of over-mount obscuring what's beneath it should apply to 
+the ioctls as well.  They will always communicate with the top mounted 
+layers.  To communicate with anything underneath, the over-mounting 
+layers will either need umounted, or (if it's not the exact same 
+mountpoint, which might have been your point) a bind-mount of the under-
+mount can be used.
+
+But an over-mount obscuring under-mounts is how Linux (and I believe POSIX 
+in general) normally works.  (The semi-transparent union-filesystem 
+solutions mentioned above thus being exceptions with those exceptions 
+being the hairy bits, that explaining the several implementations with 
+their various limitations and bugs.)  So not being able to access under-
+mounts is the normal state of affairs. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

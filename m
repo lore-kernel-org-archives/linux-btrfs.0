@@ -1,43 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f53.google.com ([209.85.160.53]:55947 "EHLO
-	mail-pb0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753050AbaBJMip (ORCPT
+Received: from mail-yh0-f42.google.com ([209.85.213.42]:37249 "EHLO
+	mail-yh0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750862AbaBKNA0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 07:38:45 -0500
-Received: by mail-pb0-f53.google.com with SMTP id md12so6178754pbc.40
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 04:38:44 -0800 (PST)
-From: Wang Shilong <wangshilong1991@gmail.com>
+	Tue, 11 Feb 2014 08:00:26 -0500
+Received: by mail-yh0-f42.google.com with SMTP id a41so6727208yho.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 05:00:24 -0800 (PST)
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
 To: linux-btrfs@vger.kernel.org
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: [PATCH] Btrfs-progs: receive: don't output normal message into stderr
-Date: Mon, 10 Feb 2014 20:36:37 +0800
-Message-Id: <1392035797-2887-1-git-send-email-wangshilong1991@gmail.com>
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: [PATCH] btrfs-progs: Remove superfluous BUG_ON check.
+Date: Tue, 11 Feb 2014 07:00:12 -0600
+Message-Id: <1392123612-11065-1-git-send-email-mitch.harder@sabayonlinux.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+The function call that set the ret parameter evaluated in this
+BUG_ON was removed in a previous commit:
+11be10f71e1af5256f221feb9e91300b3e28bbef
+Btrfs-progs: make fsck fix certain file extent inconsistencies
 
-Don't output normal messages into stderr, this make xfstests
-filter output easier.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
 ---
- cmds-receive.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ cmds-check.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index cce37a7..2d55c53 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -213,7 +213,7 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
- 	free(r->full_subvol_path);
- 	r->full_subvol_path = path_cat3(r->root_path, r->dest_dir_path, path);
- 
--	fprintf(stderr, "At snapshot %s\n", path);
-+	fprintf(stdout, "At snapshot %s\n", path);
- 
- 	memcpy(r->cur_subvol->received_uuid, uuid, BTRFS_UUID_SIZE);
- 	r->cur_subvol->stransid = ctransid;
+diff --git a/cmds-check.c b/cmds-check.c
+index eef7c6c..ffc5d3e 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4037,7 +4037,6 @@ static int run_next_block(struct btrfs_trans_handle *trans,
+ 				parent, owner, key.objectid, key.offset -
+ 				btrfs_file_extent_offset(buf, fi), 1, 1,
+ 				btrfs_file_extent_disk_num_bytes(buf, fi));
+-			BUG_ON(ret);
+ 		}
+ 	} else {
+ 		int level;
 -- 
-1.8.4
+1.8.3.2
 

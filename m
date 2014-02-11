@@ -1,45 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23424 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750807AbaBKISI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 03:18:08 -0500
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s1B8I65Y014775
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:07 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s1B8I61s012405
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:06 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1B8I5ug017426
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 08:18:05 GMT
-Message-ID: <52F9DCBA.1010002@oracle.com>
-Date: Tue, 11 Feb 2014 16:18:02 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:51258 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750978AbaBKSMA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Feb 2014 13:12:00 -0500
+Date: Tue, 11 Feb 2014 19:11:59 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Frank Kingswood <frank@kingswood-consulting.co.uk>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send runs out of memory and file handles
+Message-ID: <20140211181159.GJ16073@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52F8D406.7000207@kingswood-consulting.co.uk>
+ <20140210134748.GI6490@carfax.org.uk>
+ <52F8DB2B.6090902@kingswood-consulting.co.uk>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org >> btrfs" <linux-btrfs@vger.kernel.org>
-Subject: btrfs multiple mounts stacked on the same mount point
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52F8DB2B.6090902@kingswood-consulting.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Feb 10, 2014 at 01:59:07PM +0000, Frank Kingswood wrote:
+> On 10/02/14 13:47, Hugo Mills wrote:
+> >On Mon, Feb 10, 2014 at 01:28:38PM +0000, Frank Kingswood wrote:
+> >>I'm attempting to back up a btrfs subvolume
+> >> [...]
+> >>Doing so runs out of file descriptors on the sending machine (having
+> >>over 100k files open) and eventually runs out of memory and gets
+> >>killed by the OOM killer.
+> >
+> >    This sounds like a known bug, and I think it was fixed in 3.13.
+> >What kernel version are you using?
+> 
+> This is on 3.12.5.
 
+The fix went into 3.12.6 stable
 
-per mount(2)
+> I can build and install 3.13.2 and test it again.
 
-  ---
-   multiple mounts can be stacked on the same mount point.
-  ---
-
-  In this situation how could ioctl communicate
-  (using mount point) with each FS stacked on the
-  same mount point ?
-
-  BTW I don't understand the need for multiple
-  mounts on the same mount point ?
-
-  Any idea. ?
-
-Thanks Anand
+And it's in 3.13.x as well.

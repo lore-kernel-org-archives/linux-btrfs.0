@@ -1,43 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f48.google.com ([209.85.215.48]:53388 "EHLO
-	mail-la0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752801AbaBJVwr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 16:52:47 -0500
-Received: by mail-la0-f48.google.com with SMTP id mc6so5176970lab.21
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Feb 2014 13:52:46 -0800 (PST)
-Received: from melforce.localnet (melforce.xtsubasa.org. [2a02:578:5002:8062::2])
-        by mx.google.com with ESMTPSA id y2sm24192773lal.10.2014.02.10.13.52.44
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Mon, 10 Feb 2014 13:52:45 -0800 (PST)
-From: Pavel Volkov <negaipub@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Error: could not do orphan cleanup -22
-Date: Tue, 11 Feb 2014 01:52:42 +0400
-Message-ID: <1726046.kZYFW4zOS4@melforce>
-In-Reply-To: <52F94104.4030201@fb.com>
-References: <2047669.QmpNhlvBGM@melforce> <2047838.eX9UXPvc1f@melforce> <52F94104.4030201@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53499 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751291AbaBKBp0 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Feb 2014 20:45:26 -0500
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfsck does not fix
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <52F73E2B.9080103@friedels.name>
+Date: Mon, 10 Feb 2014 18:45:23 -0700
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <837FAEE6-9A8E-4A88-AEDF-B9B2B3C3B618@colorremedies.com>
+References: <52C7127F.3060902@friedels.name> <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com> <52D317CF.2070007@friedels.name> <6210673.6TYUkLGl6b@merkaba> <52DED1C2.60103@friedels.name> <52F6A955.5020808@friedels.name> <A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com> <52F73E2B.9080103@friedels.name>
+To: Hendrik Friedel <hendrik@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 10 February 2014 16:13:40 Josef Bacik wrote:
-> Build a kernel with this patch applied
+
+On Feb 9, 2014, at 1:36 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
 > 
-> http://ur1.ca/glslj
+> Yes, but I can create that space.
+> So, for me the next steps would be to:
+> -generate enough room on the filesystem
+> -btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/BTRFS/Video
+> -btrfs device delete /dev/sdc1 /mnt/BTRFS/Video
 > 
-> and re-run the mount and when it fails attach dmesg to this email.  Thanks,
+> Right?
 
-I don't see these new messages nor the previous "-22" messages in dmesg now.
-Only the access problem:
+No. You said you need to recreate the file system, and only have these two devices and therefore must remove one device. You can't achieve that with raid1 which requires minimum two devices.
 
-melforce mnt # ls btr2
-home  vap-snap1  vap-snap2  var
+-dconvert=single -mconvert=dup -sconvert=dup
 
-melforce mnt # ls btr2/var-snap1
-ls: cannot access btr2/var-snap1: No such file or directory
+> 
+>>> next, I'm doing the balance for the subvolume /mnt/BTRFS/backups
+>> 
+>> You told us above  you deleted that subvolume. So how are you balancing it?
+> 
+> Yes, that was my understanding from my research:
+> You tell btrfs, that you want to remove one disc from the filesystem and then balance it to move the data on the remaining disc. I did find this logical. I was expecting that I possibly need a further command to tell btrfs that it's not a raid anymore, but I thought this could also be automagical.
+> I understand, that's not the way it is implemented, but it's not a crazy idea, is it?
 
-melforce mnt # ls btr2/var
-cache  db  empty  lib  lock  log  mail  nmbd  run  spool  src  tmp  www
+Well it's not the right way to think that devices are raid1 or raid0. It's the data or metadata that has that attribute. And by removing a device you are managing devices, not the attribute of data or metadata chunks. Since you're already at the minimum number of disks for raid0, that's why conversion is needed first.
+
+
+> 
+>> And also, balance applies to a mountpoint, and even if you mount a
+> > subvolume to that mountpoint, the whole file system is balanced.
+> > Not just the mounted subvolume.
+> 
+> That is confusing. (I mean: I understand what you are saying, but it's counterintuitive). Why is this the case?
+
+A subvolume is a file system tree. The data created in that tree is allocated to chunks which can contain data from other trees. And balance reads/writes chunks. It's not a subvolume aware command.
+
+
+> 
+>>> In parallel, I try to delete /mnt/BTRFS/rsnapshot, but it fails:
+>>>  btrfs subvolume delete  /mnt/BTRFS/rsnapshot/
+>>>  Delete subvolume '/mnt/BTRFS/rsnapshot'
+>>>  ERROR: cannot delete '/mnt/BTRFS/rsnapshot' - Inappropriate ioctl
+>>>  for  device
+>>> 
+>>> Why's that?
+>>> But even more: How do I free sdc1 now?!
+>> 
+>> 
+>> Well I'm pretty confused because again, I can't tell if your paths refer to
+> > subvolumes or if they refer to mount points.
+> 
+> Now I am confused. These paths are the paths to which I mounted the subvolumes:
+> my (abbreviated) fstab:
+> UUID=xy      /mnt/BTRFS/Video btrfs subvol=Video
+> UUID=xy     /mnt/BTRFS/rsnapshot btrfs subvol=rsnapshot
+> UUID=xy     /mnt/BTRFS/backups btrfs subvol=backups
+> 
+> 
+> > The balance and device delete commands all refer to a mount point, which is the path returned by the df command.
+> So this:
+> /dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/Video
+> /dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/backups
+> /dev/sdc1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/rsnapshot
+
+You can't delete a mounted subvolume. You'd have to unmount it first. And then you'd have to mount a parent subvolume. So if the subvolume you want to delete is in the ID 5 subvolume, you must mount that subvolume, for example:
+ 
+mount /dev/sdb1 /mnt/btrfs
+btrfs subvolume delete /mnt/btrfs/<subvolumetodelete>
+
+
+
+Chris Murphy

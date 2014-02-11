@@ -1,91 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53499 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54002 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751291AbaBKBp0 convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1752133AbaBKCSY convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Feb 2014 20:45:26 -0500
+	Mon, 10 Feb 2014 21:18:24 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:49431 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WD2vX-001CmL-2u
+	for linux-btrfs@vger.kernel.org; Mon, 10 Feb 2014 19:18:23 -0700
 Content-Type: text/plain; charset=US-ASCII
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfsck does not fix
+Subject: Re: BTRFS with RAID1 cannot boot when removing drive
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <52F73E2B.9080103@friedels.name>
-Date: Mon, 10 Feb 2014 18:45:23 -0700
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <837FAEE6-9A8E-4A88-AEDF-B9B2B3C3B618@colorremedies.com>
-References: <52C7127F.3060902@friedels.name> <0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com> <52D317CF.2070007@friedels.name> <6210673.6TYUkLGl6b@merkaba> <52DED1C2.60103@friedels.name> <52F6A955.5020808@friedels.name> <A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com> <52F73E2B.9080103@friedels.name>
-To: Hendrik Friedel <hendrik@friedels.name>
+In-Reply-To: <20140209224055.3175e70f@system>
+Date: Mon, 10 Feb 2014 19:18:22 -0700
+Message-Id: <191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com>
+References: <20140209224055.3175e70f@system>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Feb 9, 2014, at 1:36 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
+On Feb 9, 2014, at 2:40 PM, Saint Germain <saintger@gmail.com> wrote:
 > 
-> Yes, but I can create that space.
-> So, for me the next steps would be to:
-> -generate enough room on the filesystem
-> -btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt/BTRFS/Video
-> -btrfs device delete /dev/sdc1 /mnt/BTRFS/Video
-> 
-> Right?
+> Then I added another drive for a RAID1 configuration (with btrfs
+> balance) and I installed grub on the second hard drive with
+> "grub-install /dev/sdb".
 
-No. You said you need to recreate the file system, and only have these two devices and therefore must remove one device. You can't achieve that with raid1 which requires minimum two devices.
+That can't work on UEFI. UEFI firmware effectively requires a GPT partition map and something to serve as an EFI System partition on all bootable drives.
 
--dconvert=single -mconvert=dup -sconvert=dup
+Second there's a difference between UEFI with and without secure boot.
 
-> 
->>> next, I'm doing the balance for the subvolume /mnt/BTRFS/backups
->> 
->> You told us above  you deleted that subvolume. So how are you balancing it?
-> 
-> Yes, that was my understanding from my research:
-> You tell btrfs, that you want to remove one disc from the filesystem and then balance it to move the data on the remaining disc. I did find this logical. I was expecting that I possibly need a further command to tell btrfs that it's not a raid anymore, but I thought this could also be automagical.
-> I understand, that's not the way it is implemented, but it's not a crazy idea, is it?
+With secure boot you need to copy the files your distro installer puts on the target drive EFI System partition to each addition drive's ESP if you want multibooting to work in case of disk failure. The grub on each ESP likely looks on only its own ESP for a grub.cfg. So that then means having to sync grub.cfg's among each disk used for booting. A way around this is to create a single grub.cfg that merely forwards to the "true" grub.cfg. And you can copy this forward-only grub.cfg to each ESP. That way the ESP's never need updating or syncing again.
 
-Well it's not the right way to think that devices are raid1 or raid0. It's the data or metadata that has that attribute. And by removing a device you are managing devices, not the attribute of data or metadata chunks. Since you're already at the minimum number of disks for raid0, that's why conversion is needed first.
+Without secure boot, you must umount /boot/efi and mount the ESP for each bootable disk is turn, and then merely run:
+
+grub-install
+
+That will cause a core.img to be created for that particular ESP, and it will point to the usual grub.cfg location at /boot/grub.
+
 
 
 > 
->> And also, balance applies to a mountpoint, and even if you mount a
-> > subvolume to that mountpoint, the whole file system is balanced.
-> > Not just the mounted subvolume.
+> If I boot on sdb, it takes sda1 as the root filesystem
+> If I switched the cable, it always take the first hard drive as the
+> root filesystem (now sdb)
+> If I disconnect /dev/sda, the system doesn't boot with a message
+> saying that it hasn't found the UUID:
 > 
-> That is confusing. (I mean: I understand what you are saying, but it's counterintuitive). Why is this the case?
+> Scanning for BTRFS filesystems...
+> mount: mounting /dev/disk/by-uuid/c64fca2a-5700-4cca-abac-3a61f2f7486c on /root failed: Invalid argument
 
-A subvolume is a file system tree. The data created in that tree is allocated to chunks which can contain data from other trees. And balance reads/writes chunks. It's not a subvolume aware command.
+Well if /dev/sda is missing, and you have an unpartitioned /dev/sdb I don't even know how you're getting this far, and it seems like the UEFI computer might actually be booting in CSM-BIOS mode which presents a conventional BIOS to the operating system. Disintguishing such things gets messy quickly.
 
 
 > 
->>> In parallel, I try to delete /mnt/BTRFS/rsnapshot, but it fails:
->>>  btrfs subvolume delete  /mnt/BTRFS/rsnapshot/
->>>  Delete subvolume '/mnt/BTRFS/rsnapshot'
->>>  ERROR: cannot delete '/mnt/BTRFS/rsnapshot' - Inappropriate ioctl
->>>  for  device
->>> 
->>> Why's that?
->>> But even more: How do I free sdc1 now?!
->> 
->> 
->> Well I'm pretty confused because again, I can't tell if your paths refer to
-> > subvolumes or if they refer to mount points.
+> Can you tell me what I have done incorrectly ?
+> Is it because of UEFI ? If yes I haven't understood how I can correct
+> it in a simple way.
 > 
-> Now I am confused. These paths are the paths to which I mounted the subvolumes:
-> my (abbreviated) fstab:
-> UUID=xy      /mnt/BTRFS/Video btrfs subvol=Video
-> UUID=xy     /mnt/BTRFS/rsnapshot btrfs subvol=rsnapshot
-> UUID=xy     /mnt/BTRFS/backups btrfs subvol=backups
-> 
-> 
-> > The balance and device delete commands all refer to a mount point, which is the path returned by the df command.
-> So this:
-> /dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/Video
-> /dev/sdb1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/backups
-> /dev/sdc1       5,5T    3,5T  2,0T   64% /mnt/BTRFS/rsnapshot
+> As extra question, I don't see also how I can configure the system to
+> get the correct swap in case of disk failure. Should I force both swap partition
+> to have the same UUID ?
 
-You can't delete a mounted subvolume. You'd have to unmount it first. And then you'd have to mount a parent subvolume. So if the subvolume you want to delete is in the ID 5 subvolume, you must mount that subvolume, for example:
- 
-mount /dev/sdb1 /mnt/btrfs
-btrfs subvolume delete /mnt/btrfs/<subvolumetodelete>
+If you're really expecting to create a system that can accept a disk failure and continue to work, I don't see how it can depend on swap partitions. It's fine to create them, but just realize if they're actually being used and the underlying physical device dies, the kernel isn't going to like it.
 
+A possible work around is using an md raid1 partition as swap.
 
 
 Chris Murphy

@@ -1,68 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f179.google.com ([209.85.216.179]:45371 "EHLO
-	mail-qc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752724AbaBKRgs convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 12:36:48 -0500
-Received: by mail-qc0-f179.google.com with SMTP id e16so13695200qcx.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 09:36:47 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <0812CEB3-ACEC-4582-BD86-18B7F6A3F74D@colorremedies.com>
-References: <20140209224055.3175e70f@system>
-	<191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com>
-	<20140211041527.57ef96c4@system>
-	<0812CEB3-ACEC-4582-BD86-18B7F6A3F74D@colorremedies.com>
-Date: Tue, 11 Feb 2014 18:36:47 +0100
-Message-ID: <CAJbEPe67biUB001mvFZkdKOyTOrWesgsbr+W9uonE8aBoDO64A@mail.gmail.com>
-Subject: Re: BTRFS with RAID1 cannot boot when removing drive
-From: Saint Germain <saintger@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Murphy <lists@colorremedies.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:40970 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751753AbaBKSP6 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Feb 2014 13:15:58 -0500
 Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: BTRFS partitioning scheme (was BTRFS with RAID1 cannot boot when removing drive)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAJbEPe6COMz0Dmj9rSOjb0wCVu-e0OR_2d8irKxgSA3N4sBB+g@mail.gmail.com>
+Date: Tue, 11 Feb 2014 11:15:56 -0700
+Cc: linux-btrfs@vger.kernel.org, Kyle Gates <kylegates@hotmail.com>
+Message-Id: <E588F10F-919E-405C-8120-7375A2A6885B@colorremedies.com>
+References: <CAJbEPe6COMz0Dmj9rSOjb0wCVu-e0OR_2d8irKxgSA3N4sBB+g@mail.gmail.com>
+To: Saint Germain <saintger@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 February 2014 18:21, Chris Murphy <lists@colorremedies.com> wrote:
->
-> On Feb 10, 2014, at 8:15 PM, Saint Germain <saintger@gmail.com> wrote:
->>
->> Ok I need to really understand how my motherboard works (new Z87E-ITX).
->> It is written "64Mb AMI UEFI Legal BIOS", so I thought it was really
->> UEFI.
->
-> Manufacturers have done us a disservice by equating UEFI and BIOS. Some UEFI also have a compatibility support module (CSM) which presents a BIOS to the operating system. It's intended for legacy operating systems that won't ever directly support UEFI.
->
-> A way to tell in linux if you're booting with or without the CSM is issue the efibootmgr command. If it return something that looks like an error message, the CSM is enabled and the OS thinks it's running on a BIOS computer. If it returns some numbered list then the CSM isn't enabled and the OS thinks it's running on a UEFI computer.
->
 
-Nice trick ! Thanks.
+On Feb 11, 2014, at 10:02 AM, Saint Germain <saintger@gmail.com> wrote:
 
->> /dev/sdb has the same partition as /dev/sda.
->
-> grub-install <device> shouldn't work on UEFI because the only place grub-install installs is to the volume mounted at /boot/efi. And also grub-install /dev/sdb implies installing grub to a disk boot sector, which also isn't applicable to UEFI.
->
+> Hello and thanks for your feedback !
+> 
+> Cc back to the mailing-list as it may be of interest here as well.
+> 
+> On 11 February 2014 16:11, Kyle Gates <kylegates@hotmail.com> wrote:
+>>> The big problem I currently have is that based on your input, I
+>>> hesitate a lot on my partitioning scheme: should I use a dedicated
+>>> /boot partition or should I have one global BTRFS partition ?
+>>> It is not very clear in the doc (a lof of people used a dedicated
+>>> /boot because at that time, grub couldn't natively boot BTRFS it
+>>> seems, but it has changed).
+>>> Could you recommend a partitioning scheme for a simple RAID1 with 2
+>>> identical hard drives (just for home computing, not business).
+>> 
+>> I run a 1GiB RAID1 btrfs /boot in mixed mode with grub2 and gpt partitions.
+>> IIRC grub2 doesn't understand lzo compression nor subvolumes.
 
-I am still not up to date on UEFI partition and so.
-But I have read these pages:
-http://tanguy.ortolo.eu/blog/article51/debian-efi
-http://forums.debian.net/viewtopic.php?f=16&t=81120
-And apparently is grub-install <device> is the correct command (but
-you have to copy file in addition).
-It is maybe because they use a special package grub-efi-amd64, which
-replace the grub-install.
-It is quite difficult to find reliable info on the topic...
+Any sufficiently recent version of GRUB2 understands both lzo, zlib. 
 
->
->> I understand. Normally the swap will only be used for hibernating. I
->> don't expect to use it except perhaps in some extreme case.
->
-> I consider hibernate fundamentally broken right now because whether it'll work depends on too many things. It works for some people and not others, and for those it does work it largely didn't work out of the box. It never worked for me and did induce Btrfs corruptions so I've just given up on hibernate entirely. There's a long old Fedora thread that discusses myriad issues about it: https://bugzilla.redhat.com/show_bug.cgi?id=781749 and shows even if it's working, it can stop working without warning after X number of hibernate-resume cycles.
->
+Grub doesn't directly understand the concept of subvolumes, but it treats them as directories, which is expected to work.
 
-I am among the fortunate to have a working hibernate out of the box
-(Debian stable) and it works reliably (even it ultimately it WILL fail
-after 20-30 iterations). So I use the feature to save on electricity
-cost ;-)
-But yes, maybe I will get rid of the swap...
+grub-mkconfig likewise is indirectly aware of subvolumes. If fstab indicates / is on Btrfs and there's a subvol= option, grub-mkconfig creates a rootflags=subvol= boot parameter in the resulting grub.cfg.
 
-Thanks !
+
+> Well I did tried to read about this and ended up being confused
+> because development is so fast, documentation can become quickly
+> outdated.
+> It seems that grub can boot BTRFS /boot subvolumes:
+> https://bbs.archlinux.org/viewtopic.php?pid=1222358
+
+I think it's more accurate to say it can locate boot files on a subvolume by treating the subvolume as a directory. So as long as the path to those boot files is correct, it should work.
+
+And yes it's true that distros are frequently very far behind with grub, and this poses problems. Fedora has been on grub 2.00 since release two years ago. Many other distros are still using pre-release grub2 versions 1.97 through 1.99 which isn't good. The distros should be pressured to move to grub 2.02, currently in beta, upon release. And I think it would be good for Btrfs testers to build grub 2.02 beta, and try to break it with various Btrfs configurations so that it can be better tested grub release.
+
+
+
+> However Chris Murphy has some problems a few months ago:
+> http://comments.gmane.org/gmane.comp.file-systems.btrfs/29140
+
+The decision by Grub upstream is that Grub should always treat pathnames as starting from the top level of the file system, ID5, rather than starting from the user defined default subvolume. Otherwise, the user can instantly render their system unbootable just by changing the default subvolume.
+
+subvol= option is intended to be read as starting from the top level of the file system regardless of the default subvolume. Probably more testing of this is needed, along with grub2, and other boot loaders.
+
+
+> 
+> So I still don't know if it is a good idea or not to have a BTRFS /boot ?
+> Of course the idea is that I would like to snapshot /boot and have it on RAID1.
+
+It's fine to do that, and it does work. You can also just have /boot as a directory within a root subvolume.
+
+
+> 
+> To summarize, I think I have 3 options for partitioning (I am not
+> considering UEFI secure boot or swap):
+> 1) grub, BTRFS partition (i.e. full disk in BTRFS), /boot inside BTRFS subvolume
+
+This doesn't seem like a good idea for a boot drive to be without partitions.
+
+
+> 2) grub, GPT partition, with (A) on sda1, and a BTRFS partition on
+> sda2, /boot inside BTRFS subvolume
+> 3) grub, GPT partition, with (A) on sda1, /boot (ext4) on sda2, and a
+> BTRFS on sda3
+> 
+> (A) = BIOS Boot partition (1 MiB) or EFI System Partition (FAT32, 550MiB)
+> 
+> I don't really see the point of having UEFI/ESP if I don't use other
+> proprietary operating system, so I think I will go with (A) = BIOS
+> Boot partition except if there is someting I have missed.
+
+You need to boot your system in UEFI and CSM-BIOS modes, and compare the dmesg for each. I'm finding it common the CSM limits power management, and relegates drives to IDE speeds rather than full SATA link speeds. Sometimes it's unavoidable to use the CSM if it has better overall behavior for your use case. I've found it to be lacking and have abandoned it. It's basically intended for booting Windows XP, right?
+
+Chris Murphy

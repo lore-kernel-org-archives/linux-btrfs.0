@@ -1,41 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42131 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:43060 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751285AbaBKRVV convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751566AbaBKRdk convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 12:21:21 -0500
+	Tue, 11 Feb 2014 12:33:40 -0500
 Content-Type: text/plain; charset=us-ascii
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: BTRFS with RAID1 cannot boot when removing drive
+Subject: Re: UEFI/BIOS, was: BTRFS with RAID1 cannot boot when removing drive
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140211041527.57ef96c4@system>
-Date: Tue, 11 Feb 2014 10:21:17 -0700
+In-Reply-To: <pan$e606d$929b6b8a$283bf1a2$38f7ec5@cox.net>
+Date: Tue, 11 Feb 2014 10:33:36 -0700
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <0812CEB3-ACEC-4582-BD86-18B7F6A3F74D@colorremedies.com>
-References: <20140209224055.3175e70f@system> <191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com> <20140211041527.57ef96c4@system>
-To: Saint Germain <saintger@gmail.com>
+Message-Id: <566EB7E3-55A0-48BA-95E7-573307D19705@colorremedies.com>
+References: <20140209224055.3175e70f@system> <191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com> <20140211041527.57ef96c4@system> <pan$e606d$929b6b8a$283bf1a2$38f7ec5@cox.net>
+To: Duncan <1i5t5.duncan@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Feb 10, 2014, at 8:15 PM, Saint Germain <saintger@gmail.com> wrote:
+On Feb 10, 2014, at 11:59 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+
+> Saint Germain posted on Tue, 11 Feb 2014 04:15:27 +0100 as excerpted:
 > 
-> Ok I need to really understand how my motherboard works (new Z87E-ITX).
-> It is written "64Mb AMI UEFI Legal BIOS", so I thought it was really
-> UEFI.
+>> Ok I need to really understand how my motherboard works (new Z87E-ITX).
+>> It is written "64Mb AMI UEFI Legal BIOS", so I thought it was really
+>> UEFI.
+> 
+> I expect it's truly UEFI.  But from what I've read most UEFI based 
+> firmware(possibly all in theory, with the caveat that there's bugs and 
+> some might not actually work as intended due to bugs) on x86/amd64 (as 
+> opposed to arm) has a legacy-BIOS mode fallback.  Provided it's not in 
+> secure-boot mode, if the storage devices it is presented don't have a 
+> valid UEFI config, it'll fall back to legacy-BIOS mode and try to detect 
+> and boot that.
 
-Manufacturers have done us a disservice by equating UEFI and BIOS. Some UEFI also have a compatibility support module (CSM) which presents a BIOS to the operating system. It's intended for legacy operating systems that won't ever directly support UEFI.
-
-A way to tell in linux if you're booting with or without the CSM is issue the efibootmgr command. If it return something that looks like an error message, the CSM is enabled and the OS thinks it's running on a BIOS computer. If it returns some numbered list then the CSM isn't enabled and the OS thinks it's running on a UEFI computer.
-
-> /dev/sdb has the same partition as /dev/sda.
-
-grub-install <device> shouldn't work on UEFI because the only place grub-install installs is to the volume mounted at /boot/efi. And also grub-install /dev/sdb implies installing grub to a disk boot sector, which also isn't applicable to UEFI.
-
-
-> I understand. Normally the swap will only be used for hibernating. I
-> don't expect to use it except perhaps in some extreme case.
-
-I consider hibernate fundamentally broken right now because whether it'll work depends on too many things. It works for some people and not others, and for those it does work it largely didn't work out of the box. It never worked for me and did induce Btrfs corruptions so I've just given up on hibernate entirely. There's a long old Fedora thread that discusses myriad issues about it: https://bugzilla.redhat.com/show_bug.cgi?id=781749 and shows even if it's working, it can stop working without warning after X number of hibernate-resume cycles.
+There are UEFI implementations that behave this way with respect to removable and optical devices, they'll try to boot UEFI mode first, and then fallback to BIOS. I've yet to find one that does this for a HDD although maybe it exists. What I've seen is the NVRAM has a boot option that expressly calls for booting a particular device with CSM-BIOS mode boot, or the user has to go into firmware setup and enable the CSM which does so for all boots. This option is sometimes hideously labeled as "disable UEFI". There are some (probably rare) UEFI firmware implementations without a CSM, the only two I can think of off hand are Itanium computers, and Apple's intel rack servers (since discontinued). But CSM isn't a UEFI requirement so there may be other cases where manufacturers have decided to go with only EFI or BIOS.
 
 Chris Murphy
+

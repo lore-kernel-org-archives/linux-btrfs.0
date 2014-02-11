@@ -1,64 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:47743 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751352AbaBEHfJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Feb 2014 02:35:09 -0500
-Message-ID: <52F1E98E.2000207@jp.fujitsu.com>
-Date: Wed, 05 Feb 2014 16:34:38 +0900
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:57223 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751783AbaBKUgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Feb 2014 15:36:04 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WDK3b-0003Rf-Jt
+	for linux-btrfs@vger.kernel.org; Tue, 11 Feb 2014 21:35:51 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 21:35:51 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 21:35:51 +0100
 To: linux-btrfs@vger.kernel.org
-CC: stable@vger.kernel.org
-Subject: [PATCH] Btrfs: skip submitting barrier for missing device
-Content-Type: text/plain; charset=ISO-2022-JP
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS with RAID1 cannot boot when removing drive
+Date: Tue, 11 Feb 2014 20:35:19 +0000 (UTC)
+Message-ID: <pan$9c91a$c8fe6c36$f85dce0f$d0a92204@cox.net>
+References: <20140209224055.3175e70f@system>
+	<191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com>
+	<20140211041527.57ef96c4@system>
+	<pan$e606d$929b6b8a$283bf1a2$38f7ec5@cox.net>
+	<CAJbEPe44PoBQkovMz=-w=A4DYYS2vAVoS+29z7J8Q+xaQrYGXQ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got an error on v3.13:
- BTRFS error (device sdf1) in write_all_supers:3378: errno=-5 IO failure (errors while submitting device barriers.)
+Saint Germain posted on Tue, 11 Feb 2014 11:04:57 +0100 as excerpted:
 
-how to reproduce:
-  > mkfs.btrfs -f -d raid1 /dev/sdf1 /dev/sdf2
-  > wipefs -a /dev/sdf2
-  > mount -o degraded /dev/sdf1 /mnt
-  > btrfs balance start -f -sconvert=single -mconvert=single -dconvert=single /mnt
+> The big problem I currently have is that based on your input, I hesitate
+> a lot on my partitioning scheme: should I use a dedicated /boot
+> partition or should I have one global BTRFS partition ?
+> It is not very clear in the doc (a lof of people used a dedicated /boot
+> because at that time, grub couldn't natively boot BTRFS it seems, but it
+> has changed).
+> Could you recommend a partitioning scheme for a simple RAID1 with 2
+> identical hard drives (just for home computing, not business).
 
-The reason of the error is that barrier_all_devices() failed to submit
-barrier to the missing device.  However it is clear that we cannot do
-anything on missing device, and also it is not necessary to care chunks
-on the missing device.
+FWIW... I'm planning to and have your previous message covering that 
+still marked unread to reply to later.  But "real life" has temporarily 
+been monopolizing my time so the last day or two I've only done 
+relatively short and quick replies.  That one will require a bit more 
+time to answer to my satisfaction.
 
-This patch stops sending/waiting barrier if device is missing.
+So I'm punting for the moment.  But FWIW I tend to be a reasonably heavy 
+partitioner (tho nowhere near what I used to be), so a lot of folks will 
+consider my setup somewhat extreme.  That's OK.  It's my computer, setup 
+for my purposes, not their computer for theirs, and it works very well 
+for me, so it's all good. =:^)
 
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Cc: <stable@vger.kernel.org>
----
- fs/btrfs/disk-io.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+But hopefully I'll get back to that with a longer reply by the end of the 
+week.  If I don't, you can probably consider that monopoly lasting longer 
+than I thought, and it could be that I'll never get back to properly 
+reply.  But it's an interesting enough topic to me that I'll /probably/ 
+get back, just not right ATM.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8072cfa..7eb50f3 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3238,6 +3238,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 	/* send down all the barriers */
- 	head = &info->fs_devices->devices;
- 	list_for_each_entry_rcu(dev, head, dev_list) {
-+		if (dev->missing)
-+			continue;
- 		if (!dev->bdev) {
- 			errors_send++;
- 			continue;
-@@ -3252,6 +3254,8 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- 	/* wait for all the barriers */
- 	list_for_each_entry_rcu(dev, head, dev_list) {
-+		if (dev->missing)
-+			continue;
- 		if (!dev->bdev) {
- 			errors_wait++;
- 			continue;
 -- 
-1.7.1
-
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

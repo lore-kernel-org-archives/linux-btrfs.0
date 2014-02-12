@@ -1,42 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f42.google.com ([209.85.213.42]:37249 "EHLO
-	mail-yh0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750862AbaBKNA0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Feb 2014 08:00:26 -0500
-Received: by mail-yh0-f42.google.com with SMTP id a41so6727208yho.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2014 05:00:24 -0800 (PST)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:2073 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751133AbaBLFnr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Feb 2014 00:43:47 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [PATCH] btrfs-progs: Remove superfluous BUG_ON check.
-Date: Tue, 11 Feb 2014 07:00:12 -0600
-Message-Id: <1392123612-11065-1-git-send-email-mitch.harder@sabayonlinux.org>
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: Fix check_arg_type() which doesn't use realpath() result.
+Date: Wed, 12 Feb 2014 13:44:37 +0800
+Message-Id: <1392183877-25032-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function call that set the ret parameter evaluated in this
-BUG_ON was removed in a previous commit:
-11be10f71e1af5256f221feb9e91300b3e28bbef
-Btrfs-progs: make fsck fix certain file extent inconsistencies
+Fix a problem that does not use the result of realpath(), which caused
+check_arg_type() can't handle mount point which ends with a final '/'.
 
-Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-check.c | 1 -
- 1 file changed, 1 deletion(-)
+ cmds-filesystem.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index eef7c6c..ffc5d3e 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -4037,7 +4037,6 @@ static int run_next_block(struct btrfs_trans_handle *trans,
- 				parent, owner, key.objectid, key.offset -
- 				btrfs_file_extent_offset(buf, fi), 1, 1,
- 				btrfs_file_extent_disk_num_bytes(buf, fi));
--			BUG_ON(ret);
- 		}
- 	} else {
- 		int level;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index b12976f..e3c1156 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -448,10 +448,10 @@ static int check_arg_type(char *input)
+ 		return -EINVAL;
+ 
+ 	if (realpath(input, path)) {
+-		if (is_block_device(input) == 1)
++		if (is_block_device(path) == 1)
+ 			return BTRFS_ARG_BLKDEV;
+ 
+-		if (is_mount_point(input) == 1)
++		if (is_mount_point(path) == 1)
+ 			return BTRFS_ARG_MNTPOINT;
+ 
+ 		return BTRFS_ARG_UNKNOWN;
 -- 
-1.8.3.2
+1.8.5.4
 

@@ -1,52 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:42661 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752922AbaBLVDw (ORCPT
+Received: from outrelay08.libero.it ([212.52.84.112]:41034 "EHLO
+	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752922AbaBLVMQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Feb 2014 16:03:52 -0500
-Message-ID: <52FBE1A9.7080100@libero.it>
-Date: Wed, 12 Feb 2014 22:03:37 +0100
+	Wed, 12 Feb 2014 16:12:16 -0500
+Message-ID: <52FBE3A3.6040205@libero.it>
+Date: Wed, 12 Feb 2014 22:12:03 +0100
 From: Goffredo Baroncelli <kreijack@libero.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>
-CC: Josef Bacik <jbacik@fb.com>,
+To: Kostia Khlebopros <kkhlebopros@netgear.com>,
+        Sandy McArthur <sandymac@gmail.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: Josef Bacik <jbacik@fb.com>
 Subject: Re: What to do about df and btrfs fi df
-References: <52F9014F.6070901@fb.com> <52F95222.1010403@libero.it> <52FA224B.1030805@fb.com> <52FA69E7.7020206@libero.it> <20140211185657.GM6490@carfax.org.uk>
-In-Reply-To: <20140211185657.GM6490@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+References: <52F9014F.6070901@fb.com> <CAPs0BigohtKrGW9MKGZzPrc_rUxkHDhtS-XcL-TzxEQgE-qZ4Q@mail.gmail.com> <C4D5B07324A04D4784C9F6D0FB2B0C336FFA9CA2@PERSES.netgear.com>
+In-Reply-To: <C4D5B07324A04D4784C9F6D0FB2B0C336FFA9CA2@PERSES.netgear.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hugo,
+Hi Kostia,
 
-On 02/11/2014 07:56 PM, Hugo Mills wrote:
-
->> $ sudo btrfs filesystem df /mnt/btrfs1/
->> Disk size:		 400.00GB
->> Disk unallocated:	 391.97GB
->> Disk allocation:
->>                         Allocated	Used
->>    Data, single:           2.01GB,         1.00GB
->>    System, DUP:            4.00MB          2.00MB
->>    System, single:         4.00MB          1.00MB
->>    Metadata, DUP:          2.00GB        750.00MB
->>    Metadata, single:       8.00MB          2.20MB
->>                            ------         -------
->>    Total:                  7.00GB          1.75GB
+On 02/12/2014 04:09 AM, Kostia Khlebopros wrote:
+> Any plans on having "brtfs fi df" report more precise values rather
+> then rounded off to the nearest hundredth of a unit. full
+> kilobytes(1024 bytes =1Kib) or in bytes would be nice> 
+> Current output:
 > 
->    Two minor nits here: please put a space between the number and the
-> units, and distinguish between e.g. MB (powers of 10) and MiB (powers
-> of 2).
-
-I will use the pretty_size_snprintf() function, which uses the powers 
-of 2 units, but unfortunately doesn't seems to have the space. 
-The space could be added with a dedicated patch.
-
+> # btrfs fi df /data
+> Data, single: total=1.37TiB, used=1.35TiB
+> System, DUP: total=8.00MiB, used=192.00KiB
+> System, single: total=4.00MiB, used=0.00
+> Metadata, DUP: total=3.00GiB, used=1.62GiB
+> Metadata, single: total=8.00MiB, used=0.00
 > 
->    Hugo.
+> Better would be:
 > 
+> # btrfs fi df /data
+> Data, single: total=14123412341 bytes, used=1342343 bytes
+> ...etc you know what I mean...
+> 
+
+My patches have a switch '-b' which set the units in byte. 
+
+$ sudo ./btrfs fi df /
+Disk size:		138.05GiB
+Disk allocated:		 25.04GiB
+Disk unallocated:	113.01GiB
+Used:			 21.36GiB
+Free (Estimated):	105.61GiB	(Max: 114.68GiB, min: 58.17GiB)
+Data to disk ratio:	     92 %
+
+$ sudo ./btrfs fi df -b /
+Disk size:		      148229656576
+Disk allocated:		       26881294336
+Disk unallocated:	      121348362240
+Used:			       22939594752
+Free (Estimated):	      113402084997	(Max: 123134189568, min: 62460008448)
+Data to disk ratio:	              92 %
+
+
+> I wish there was more you know.
+> 
+> Kind Regards,
+> 
+> Kostia
+
+BR
+G.Baroncelli
 
 
 -- 

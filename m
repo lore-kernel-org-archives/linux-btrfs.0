@@ -1,94 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:33621 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751492AbaBLRNQ convert rfc822-to-8bit (ORCPT
+Received: from mail-qa0-f44.google.com ([209.85.216.44]:62109 "EHLO
+	mail-qa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751492AbaBLRQj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Feb 2014 12:13:16 -0500
-Received: by mail-qc0-f174.google.com with SMTP id x13so15562477qcv.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2014 09:13:14 -0800 (PST)
+	Wed, 12 Feb 2014 12:16:39 -0500
+Received: by mail-qa0-f44.google.com with SMTP id w5so14169707qac.17
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2014 09:16:38 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <E588F10F-919E-405C-8120-7375A2A6885B@colorremedies.com>
-References: <CAJbEPe6COMz0Dmj9rSOjb0wCVu-e0OR_2d8irKxgSA3N4sBB+g@mail.gmail.com>
-	<E588F10F-919E-405C-8120-7375A2A6885B@colorremedies.com>
-Date: Wed, 12 Feb 2014 18:13:14 +0100
-Message-ID: <CAJbEPe4FFBemxf289aRn8M2DKH6sZYVi=fpST8Jp-fd6_ot0mQ@mail.gmail.com>
-Subject: Re: BTRFS partitioning scheme (was BTRFS with RAID1 cannot boot when
- removing drive)
+In-Reply-To: <pan$9c91a$c8fe6c36$f85dce0f$d0a92204@cox.net>
+References: <20140209224055.3175e70f@system>
+	<191C3349-9491-44B6-8289-C5B1EDF1F59E@colorremedies.com>
+	<20140211041527.57ef96c4@system>
+	<pan$e606d$929b6b8a$283bf1a2$38f7ec5@cox.net>
+	<CAJbEPe44PoBQkovMz=-w=A4DYYS2vAVoS+29z7J8Q+xaQrYGXQ@mail.gmail.com>
+	<pan$9c91a$c8fe6c36$f85dce0f$d0a92204@cox.net>
+Date: Wed, 12 Feb 2014 18:16:38 +0100
+Message-ID: <CAJbEPe6+3uH97z-oA-QCb-cCb_xDXb016YLP+gZM1wAdMk2KGw@mail.gmail.com>
+Subject: Re: BTRFS with RAID1 cannot boot when removing drive
 From: Saint Germain <saintger@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 February 2014 19:15, Chris Murphy <lists@colorremedies.com> wrote:
->>
->> To summarize, I think I have 3 options for partitioning (I am not
->> considering UEFI secure boot or swap):
->> 1) grub, BTRFS partition (i.e. full disk in BTRFS), /boot inside BTRFS subvolume
+On 11 February 2014 21:35, Duncan <1i5t5.duncan@cox.net> wrote:
+> Saint Germain posted on Tue, 11 Feb 2014 11:04:57 +0100 as excerpted:
 >
-> This doesn't seem like a good idea for a boot drive to be without partitions.
+>> The big problem I currently have is that based on your input, I hesitate
+>> a lot on my partitioning scheme: should I use a dedicated /boot
+>> partition or should I have one global BTRFS partition ?
+>> It is not very clear in the doc (a lof of people used a dedicated /boot
+>> because at that time, grub couldn't natively boot BTRFS it seems, but it
+>> has changed).
+>> Could you recommend a partitioning scheme for a simple RAID1 with 2
+>> identical hard drives (just for home computing, not business).
 >
+> FWIW... I'm planning to and have your previous message covering that
+> still marked unread to reply to later.  But "real life" has temporarily
+> been monopolizing my time so the last day or two I've only done
+> relatively short and quick replies.  That one will require a bit more
+> time to answer to my satisfaction.
 >
->> 2) grub, GPT partition, with (A) on sda1, and a BTRFS partition on
->> sda2, /boot inside BTRFS subvolume
->> 3) grub, GPT partition, with (A) on sda1, /boot (ext4) on sda2, and a
->> BTRFS on sda3
->>
->> (A) = BIOS Boot partition (1 MiB) or EFI System Partition (FAT32, 550MiB)
->>
->> I don't really see the point of having UEFI/ESP if I don't use other
->> proprietary operating system, so I think I will go with (A) = BIOS
->> Boot partition except if there is someting I have missed.
+> So I'm punting for the moment.  But FWIW I tend to be a reasonably heavy
+> partitioner (tho nowhere near what I used to be), so a lot of folks will
+> consider my setup somewhat extreme.  That's OK.  It's my computer, setup
+> for my purposes, not their computer for theirs, and it works very well
+> for me, so it's all good. =:^)
 >
-> You need to boot your system in UEFI and CSM-BIOS modes, and compare the dmesg for each. I'm finding it common the CSM limits power management, and relegates drives to IDE speeds rather than full SATA link speeds. Sometimes it's unavoidable to use the CSM if it has better overall behavior for your use case. I've found it to be lacking and have abandoned it. It's basically intended for booting Windows XP, right?
+> But hopefully I'll get back to that with a longer reply by the end of the
+> week.  If I don't, you can probably consider that monopoly lasting longer
+> than I thought, and it could be that I'll never get back to properly
+> reply.  But it's an interesting enough topic to me that I'll /probably/
+> get back, just not right ATM.
 >
 
-Ok based on your advices, here is what I have done so far to use UEFI
-(remeber that the objective is to have a clean and simple BTRFS RAID1
-install).
+No problem, I have started another thread where we discuss partitioning.
+It may be slightly off-topic, but the intention is really to have a
+partition BTRFS-friendly.
+For instance it seems that a dedicated /boot partition instead of a
+subvolume is not necessary (better to have the /boot in the RAID1).
+However I'm no expert.
 
-A) I start first with only one drive, I have gone with the following
-partition scheme (Debian wheezy, kernel 3.12, grub 2.00, GPT partition
-with parted):
-sda1 = 1MiB BIOS Boot partition (no FS, "set 1 bios_grub on" with
-parted to set the type)
-sda2 = 550 MiB EFI System Partition (FAT32, "toggle 2 boot" with
-parted to set the type),  mounted on /boot/efi
-sda3 = 1 TiB root partition (BTRFS), mounted on /
-sda4 = 6 GiB swap partition
-(that way I should be able to be compatible with both CSM or UEFI)
-
-B) normal Debian installation on sdas, activate the CSM on the
-motherboard and reboot.
-
-C) apt-get install grub-efi-amd64 and grub-install /dev/sda
-
-And the problems begin:
-1) grub-install doesn't give any error but using the --debug I can see
-that it is not using EFI.
-2) Ok I force with grub-install --target=x86_64-efi
---efi-directory=/boot/efi --bootloader-id=grub --recheck --debug
-/dev/sda
-3) This time something is generated in /boot/efi: /boot/efi/EFI/grub/grubx64.efi
-4) Copy the file /boot/efi/EFI/grub/grubx64.efi to
-/boot/efi/EFI/boot/bootx64.efi
-5) Reboot and disable the CSM on the motherboard
-6) No boot possible, I always go directly to the UEFI-BIOS
-
-I am currently stuck there. I read a lot of conflicting advises which
-doesn't work:
-  - use "modprobe efivars" and efibootmgr: not possible because I have
-not booted in EFI (chicken-egg problem)
-  - use update-grub or use grub-mkconfig (to generate
-/boot/efi/grub/grub.cfg): no results
-  - other exotic commands...
-So I will try to upgrade to grub 2.02beta (as recommender by Chris
-Murphy) but I am not sure that it will help. If someone has some
-Debian experience on this UEFI install, please don't hesitate to
-propose solutions !
-
-I will continue to document this "experience" (hope that it will be
-useful for others), and hope to get to the point where I can have a
-good system in BTRFS RAID1 mode.
-You have to be very motivated to get into this, It is really a challenge ! ;-)
+Thanks for your help.

@@ -1,74 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56565 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750890AbaBLNSA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Feb 2014 08:18:00 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WDZhN-0006Kr-AG
-	for linux-btrfs@vger.kernel.org; Wed, 12 Feb 2014 14:17:57 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2014 14:17:57 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2014 14:17:57 +0100
+Received: from magic.merlins.org ([209.81.13.136]:39921 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751065AbaBLNqB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Feb 2014 08:46:01 -0500
+Received: from c-24-9-134-12.hsd1.co.comcast.net ([24.9.134.12]:43706 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WDa8W-0002vF-JF by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2014 05:46:00 -0800
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@gandalfthegreat.merlins.org>)
+	id 1WDa8Y-0007N1-IJ
+	for linux-btrfs@vger.kernel.org; Wed, 12 Feb 2014 05:46:02 -0800
+Date: Wed, 12 Feb 2014 05:46:02 -0800
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs multiple mounts stacked on the same mount point
-Date: Wed, 12 Feb 2014 13:17:34 +0000 (UTC)
-Message-ID: <pan$2e9dc$83411375$89da7090$541a6478@cox.net>
-References: <52F9DCBA.1010002@oracle.com>
-	<pan$9211b$42bef7b0$dd1350ae$978558c5@cox.net>
-	<52FAEC7F.4050707@oracle.com>
-	<pan$783b9$6da610c9$6ead6d9b$966fb3d6@cox.net>
-	<52FB2490.1030207@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Bedup bug report
+Message-ID: <20140212134602.GW27097@merlins.org>
+References: <20140209051936.GF10027@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140209051936.GF10027@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Anand Jain posted on Wed, 12 Feb 2014 15:36:48 +0800 as excerpted:
+Does anyone know who the maintainer to send bug reports to, is?
 
->> BTW, another (general) reason over-mounts are sometimes used is to
->> deliberately obscure what's underneath.  It's worth noting that
->> anything with a file already open on the underlying filesystem still
->> has access to that file after something else is mounted over top, and
->> that fact is sometimes used to control access to certain
->> files/filesystems, by starting whatever it is that needs to access them
->> and letting them open the files they need, then over-mounting a
->> different filesystem, often empty, so no other applications can access
->> the under-mounted files.
+On Sat, Feb 08, 2014 at 09:19:36PM -0800, Marc MERLIN wrote:
+> kernel 3.12.7, python 2.7.6-5, debian testing/unstable, bedup installed as per
+> pip install --user bedup
 > 
->   Thanks. Makes sense theoretically. Any eg of real practical
-> application ? Any product in the market using it that way ?
-
-At least from here over-mount-to-prevent-access seems more like an admin 
-technique than something someone would ship in a product.  And yes, while 
-I don't know of any specific product using the technique, I've certainly 
-read of admins using the trick -- that's actually how I knew about it 
-myself.
-
->   looks btrfs-progs shouldn't depend on the mnt-point driven ioctls to
->   manage the FS. Now that's a set of challenges.
-
-I don't really see why not.  Why would one /need/ to issue ioctls to an 
-under-mounted filesystem that's not otherwise accessible (except to apps 
-with files on it opened before a different filesystem was over-mounted on 
-top), and why wouldn't the ordinary rules of umounting the over-mount in 
-ordered to access it if necessary, not apply?  In general, I think most 
-admins are used to the general limitation, and I doubt it would even 
-occur to most of them to try to (for example) run a balance or check the 
-free space on a filesystem they can't otherwise access, because that sort 
-of thing is in most cases simply not possible.
-
-And if for some reason one were to need such an arrangement, that's what 
-bind/move/shared-mounts are for.  (See the mount (8) manpage and $KERNDIR/
-Documentation/filesystems/sharedsubtree.txt.)
+> I tried installing the git version, but the error is the same:
+> 
+> Anyway, with the other bedup, I get:
+> gargamel:/mnt/dshelf2/backup# bedup show
+> Traceback (most recent call last):
+>   File "/usr/local/bin/bedup", line 9, in <module>
+>     load_entry_point('bedup==0.9.0', 'console_scripts', 'bedup')()
+>   File "/root/.local/lib/python2.7/site-packages/bedup/__main__.py", line 483, in script_main
+>     sys.exit(main(sys.argv))
+>   File "/root/.local/lib/python2.7/site-packages/bedup/__main__.py", line 472, in main
+>     return args.action(args)
+>   File "/root/.local/lib/python2.7/site-packages/bedup/__main__.py", line 70, in cmd_show_vols
+>     sess = get_session(args)
+>   File "/root/.local/lib/python2.7/site-packages/bedup/__main__.py", line 105, in get_session
+>     upgrade_schema(engine, database_exists)
+>   File "/root/.local/lib/python2.7/site-packages/bedup/migrations.py", line 38, in upgrade_schema
+>     context = MigrationContext.configure(engine.connect())
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/engine/base.py", line 1678, in connect
+>     return self._connection_cls(self, **kwargs)
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/engine/base.py", line 59, in __init__
+>     self.__connection = connection or engine.raw_connection()
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/engine/base.py", line 1747, in raw_connection
+>     return self.pool.unique_connection()
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 272, in unique_connection
+>     return _ConnectionFairy._checkout(self)
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 608, in _checkout
+>     fairy = _ConnectionRecord.checkout(pool)
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 425, in checkout
+>     rec = pool._do_get()
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 838, in _do_get
+>     c = self._create_connection()
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 277, in _create_connection
+>     return _ConnectionRecord(self)
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/pool.py", line 402, in __init__
+>     pool.dispatch.connect(self.connection, self)
+>   File "/root/.local/lib/python2.7/site-packages/sqlalchemy/event/attr.py", line 247, in __call__
+>     fn(*args, **kw)
+>   File "/root/.local/lib/python2.7/site-packages/bedup/__main__.py", line 89, in sql_setup
+>     assert val == ('wal',), val
+> AssertionError: (u'delete',)
+> 
+> gargamel:/mnt/dshelf2/backup# bedup dedup --db-path dedup --defrag .
+> also fails the same way
+> 
+> Last thing that happens is
+> open("/usr/lib/python2.7/lib-tk/_sqlite3module.so", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+> open("/usr/lib/python2.7/lib-tk/_sqlite3.py", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+> open("/usr/lib/python2.7/lib-tk/_sqlite3.pyc", O_RDONLY|O_LARGEFILE) = -1 ENOENT (No such file or directory)
+> stat64("/usr/lib/python2.7/lib-dynload/_sqlite3", 0xff921890) = -1 ENOENT (No such file or directory)
+> open("/usr/lib/python2.7/lib-dynload/_sqlite3.i386-linux-gnu.so", O_RDONLY|O_LARGEFILE) = 5
+> open("/usr/lib/python2.7/lib-dynload/_sqlite3.i386-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 6
+> open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 6
+> access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+> open("/usr/lib/libsqlite3.so.0", O_RDONLY|O_CLOEXEC) = 6
+> getcwd("/mnt/dshelf2/backup", 1024)     = 20
+> stat64("/mnt/dshelf2/backup/dedup", {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+> open("/mnt/dshelf2/backup/dedup", O_RDWR|O_CREAT|O_LARGEFILE, 0644) = 3
+> Traceback (most recent call last):
+>   File "/usr/local/bin/bedup", line 9, in <module>
+> open("/usr/local/bin/bedup", O_RDONLY|O_LARGEFILE) = 4
+>     load_entry_point('bedup==0.9.0', 'console_scripts', 'bedup')()
+>   File "/root/.local/lib/python2.7/site-packages/bedup-0.9.0-py2.7-linux-x86_64.egg/bedup/__main__.py", line 487, in script_main
+> (...)
+> 
+> Any suggestions?
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/  
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,103 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:42765 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752299AbaBMSXv (ORCPT
+Received: from mail-bk0-f43.google.com ([209.85.214.43]:45522 "EHLO
+	mail-bk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751185AbaBMThv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Feb 2014 13:23:51 -0500
-Date: Thu, 13 Feb 2014 18:23:27 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Jim Salter <jim@jrs-s.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-RAID(3 or 5/6/etc) like btrfs-RAID1?
-Message-ID: <20140213182327.GX6490@carfax.org.uk>
-References: <52FCEF46.3070306@jrs-s.net>
- <20140213162140.GW6490@carfax.org.uk>
- <52FCF383.9090304@jrs-s.net>
+	Thu, 13 Feb 2014 14:37:51 -0500
+Received: by mail-bk0-f43.google.com with SMTP id mx11so3200161bkb.16
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 11:37:50 -0800 (PST)
+Received: from system (e180191041.adsl.alicedsl.de. [85.180.191.41])
+        by mx.google.com with ESMTPSA id rf10sm2840545bkb.3.2014.02.13.11.37.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=SSLv3 cipher=RC4-SHA bits=128/128);
+        Thu, 13 Feb 2014 11:37:49 -0800 (PST)
+Date: Thu, 13 Feb 2014 20:37:47 +0100
+From: Saint Germain <saintger@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS partitioning scheme (was BTRFS with RAID1 cannot boot
+ when removing drive)
+Message-ID: <20140213203747.4e65e708@system>
+In-Reply-To: <15ABD3CE-BF67-42B5-9EF0-BE1823CB54CE@colorremedies.com>
+References: <CAJbEPe6COMz0Dmj9rSOjb0wCVu-e0OR_2d8irKxgSA3N4sBB+g@mail.gmail.com>
+	<E588F10F-919E-405C-8120-7375A2A6885B@colorremedies.com>
+	<CAJbEPe4FFBemxf289aRn8M2DKH6sZYVi=fpST8Jp-fd6_ot0mQ@mail.gmail.com>
+	<52FC8769.9030405@kingswood-consulting.co.uk>
+	<CAJbEPe5fMYNOLJ_A=fwu4-mxrXvCcZc2adOJSBRJd-X8vb=LWA@mail.gmail.com>
+	<15ABD3CE-BF67-42B5-9EF0-BE1823CB54CE@colorremedies.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="7fXEoLLey27Fs/d6"
-In-Reply-To: <52FCF383.9090304@jrs-s.net>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---7fXEoLLey27Fs/d6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Thu, Feb 13, 2014 at 11:32:03AM -0500, Jim Salter wrote:
-> That is FANTASTIC news.  Thank you for wielding the LART gently. =)
-
-   No LART necessary. :) Nobody knows everything, and it's not a
-particularly heavily-documented or written-about feature at the moment
-(mostly because it only exists in Chris's local git repo).
-
-> I do a fair amount of public speaking and writing about next-gen
-> filesystems (example: http://arstechnica.com/information-technology/2014/01/bitrot-and-atomic-cows-inside-next-gen-filesystems/)
-> and I will be VERY sure to talk about the upcoming divorce of stripe
-> size from array size in future presentations.  This makes me
-> positively giddy.
+On Thu, 13 Feb 2014 10:43:08 -0700, Chris Murphy
+<lists@colorremedies.com> wrote :
+> >>> sda3 = 1 TiB root partition (BTRFS), mounted on /
+> >>> sda4 = 6 GiB swap partition
+> >>> (that way I should be able to be compatible with both CSM or UEFI)
+> >>> 
+> >>> B) normal Debian installation on sdas, activate the CSM on the
+> >>> motherboard and reboot.
+> >>> 
+> >>> C) apt-get install grub-efi-amd64 and grub-install /dev/sda
+> >>> 
+> >>> And the problems begin:
+> >>> 1) grub-install doesn't give any error but using the --debug I
+> >>> can see that it is not using EFI.
+> >>> 2) Ok I force with grub-install --target=x86_64-efi
+> >>> --efi-directory=/boot/efi --bootloader-id=grub --recheck --debug
+> >>> /dev/sda
+> >>> 3) This time something is generated in /boot/efi:
+> >>> /boot/efi/EFI/grub/grubx64.efi
+> >>> 4) Copy the file /boot/efi/EFI/grub/grubx64.efi to
+> >>> /boot/efi/EFI/boot/bootx64.efi
+> >> 
+> >> 
+> >>                ^^^^ is EFI/boot/ correct here?
+> >> 
+> >> If you're lucky then your BIOS will tell what path it will try to
+> >> read for the boot code. For me that is /EFI/debian/grubx64.efi.
+> >> 
+> > 
+> > I followed the advices here (first result on Google with "grub uefi
+> > debian"): http://tanguy.ortolo.eu/blog/article51/debian-efi
+> > 
+> >>> 5) Reboot and disable the CSM on the motherboard
+> >>> 6) No boot possible, I always go directly to the UEFI-BIOS
+> >>> 
+> >>> I am currently stuck there. I read a lot of conflicting advises
+> >>> which doesn't work:
+> >>>   - use "modprobe efivars" and efibootmgr: not possible because I
+> >>> have not booted in EFI (chicken-egg problem)
+> >> 
+> >> 
+> >> Not exactly. Boot in EFI mode into your favourite installer rescue
+> >> mode, then chroot into the target filesystem and run efibootmgr
+> >> there.
+> >> 
+> > 
+> > In the end I managed to do it like this:
+> > 1) Make a USB stick with FAT32 partition
+> > 2) Install grub on it with:
+> > grub-install --target=x86_64-efi --efi-directory=/media/usb0
+> > --removable 3) Note on a paper the grub commands to start the
+> > kernel in /boot/grub/grub.cfg 3) Reboot, Disable CSM in the
+> > motherboard boot utility (BIOS?), Reboot with the USB stick
+> > connected 4) Normally it should have started on the USB stick grub
+> > command-line 5) Enter the necessary command to start the kernel (if
+> > you have some problem with video mode, use "insmod efi_gop")
+> > 6) Normally your operating system should start normally
+> > 7) Check that efibootmgr is installed and working (normally efivars
+> > should be loaded in the modules already)
+> > 8) grub-install --efi-directory=/boot/efi --recheck --debug
+> > (with the debug info you should see that it is using grub-efi and
+> > not grub-pc) 9) efibootmgr -c -d /dev/sda -p 2 -w -L "Debian
+> > (GRUB)" -l '\EFI\Debian\grubx64.efi'
+> > (replace -p 2 with yout correct ESP partition number)
+> > 10) Reboot and enjoy !
 > 
-> FWIW, after writing the above article I got contacted by a
-> proprietary storage vendor who wanted to tell me all about his
-> midmarket/enterprise product, and he was pretty audibly flummoxed
-> when I explained how btrfs-RAID1 distributes data and redundancy -
-> his product does something similar (to be fair, his product also
-> does a lot of other things btrfs doesn't inherently do, like
-> clustered storage and synchronous dedup), and he had no idea that
-> anything freely available did anything vaguely like it.
+> OK at least with GRUB 2.00 I never have to use any options with
+> grub-install when installing to a chrooted system. It also even
+> writes the proper entry into NVRAM for me, I don't have to use
+> efibootmgr.
 
-   That's quite entertaining for the bogglement factor. Although,
-again, see my comment above...
+Yes you are right, this is probably unnecessary (see below).
 
-   Hugo.
-
-> I have a feeling the storage world - even the relatively
-> well-informed part of it that's aware of ZFS - has little to no
-> inclination how gigantic of a splash btrfs is going to make when it
-> truly hits the mainstream.
 > 
-> >>This could be a pretty powerful setup IMO - if you implemented
-> >>something like this, you'd be able to arbitrarily define your
-> >>storage efficiency (percentage of parity blocks / data blocks) and
-> >>your fault-tolerance level (how many drives you can afford to lose
-> >>before failure) WITHOUT tying it directly to your underlying disks,
-> >>or necessarily needing to rebalance as you add more disks to the
-> >>array.  This would be a heck of a lot more flexible than ZFS'
-> >>approach of adding more immutable vdevs.
-> >>
-> >>Please feel free to tell me why I'm dumb for either 1. not realizing
-> >>the obvious flaw in this idea or 2. not realizing it's already being
-> >>worked on in exactly this fashion. =)
-> >    The latter. :)
+> Also I've never had single \ work with efibootmgr from shell. I have
+> to use \\. Try typing efibootmgr -v to see the actual entry you
+> created and whether it has the \ in the path.
 > 
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Nothing right in my left brain. Nothing left in ---         
-                             my right brain.                             
+Here is the output:
+BootCurrent: 0001
+Timeout: 1 seconds
+BootOrder: 0001,0000
+Boot0000* debian        HD(2,7d8,106430,5d012c09-b70d-4225-ae18-9831f997c493)File(\EFI\debian\grubx64.efi)
+Boot0001* Debian (GRUB) HD(2,7d8,106430,5d012c09-b70d-4225-ae18-9831f997c493)File(\EFI\Debian\grubx64.efi)
 
---7fXEoLLey27Fs/d6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Ah the joy of FAT32 and the case sensitivity !
+So it seems that grub-install automatically install the correct entry
+ and using efibootmgr was unnecessary.
+However it seems that single '\' works.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+> But one thing that explains why the UEFI bootloading stuff is
+> confusing for you is that every distro keeps their own grub patches.
+> So there is very possibly a lot of difference between the downstream
+> grub behaviors, and upstream.
+> 
 
-iQIVAwUBUv0Nn1heFHXiqx3kAQJpDBAAqOBzUWAPtpI/IR1VmrQb0/ykU9LPvxw/
-XirHB8e1nEraAxr9pLFVpzoG1r2xZBqfHYh8SmVbQWdThCQl6WcHKjWs8g2quCBd
-0TM2r/8D1O+ZaubCF2FQ+k37Zc2zSxcku3V7zD5fTD+L13cEdK8QHk+6/YwEj8tf
-BuV2U+sY05dXx9z//CtBiTGLQAVMdYPmvrDr5mhSYmo5yysVjhh2GKNApmsVrsnj
-eu5IOU1YRLYnOcY6hL7Rk2Uhg5q7S9yu56qglmYrgS0AmalujxNBPZBYw2ZjVAcn
-hEuY+t+zJ/T2cMgD2U40TVtZyFyGIFai9cgoCXjSWYPqAscsshWh8kmlU1i7CuNb
-fxgT90gzRvMcgs0M07rUkLk4tZIsSg3C8/OueqBzrTa1BWl5o3jcsfP8WNwlCY1V
-4BD/QjCDf9jhSheVWnBoQhFn1hcgAn+TDIX2hKE9xHcmRdGGG4SHU2ggxtuJvpZ7
-4NGHHeMvxAVF00ZzGKjg0aiffeqwOwb6q2M3Nyd/CzW9oEHeTKC0JXUOdptoFqiC
-Q8HTCWs9M7kt8/d34T3TzrAUcVPUM3hJtbO48A20p2yV4GnRI1iqF6n9HaRejT3J
-Mo90PSw6vJ5uzELEkei2XkWbqRMReDzWP0a7GYLizCOo2EGxMw/pKDxXOKaOLOJ9
-txcTZ1zFVBU=
-=P2yA
------END PGP SIGNATURE-----
+Understood. That is why I took the step to describe what I did.
+Perhaps it will be useful for others (most info on the topic was
+not for Debian...).
 
---7fXEoLLey27Fs/d6--
+Thanks again for your insights !

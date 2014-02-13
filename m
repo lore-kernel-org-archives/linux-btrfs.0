@@ -1,63 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:41419 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753017AbaBMTtF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Feb 2014 14:49:05 -0500
-Message-ID: <52FD21B4.4050502@libero.it>
-Date: Thu, 13 Feb 2014 20:49:08 +0100
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Roman Mamedov <rm@romanrm.net>
-CC: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:52862 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750892AbaBMUWr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Feb 2014 15:22:47 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WE2o1-0002MC-3M
+	for linux-btrfs@vger.kernel.org; Thu, 13 Feb 2014 21:22:45 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 21:22:45 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 21:22:45 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH 5/8] Add command btrfs filesystem disk-usage
-In-Reply-To: <20140214012810.26297146@natsu>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Thu, 13 Feb 2014 20:22:18 +0000 (UTC)
+Message-ID: <pan$166a9$744f4965$bbb246f5$8c607ae6@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <52FD1AD6.50500@libero.it>
  <20140214012810.26297146@natsu>
+ <52FD21B4.4050502@libero.it>
 
-Hi Roman
+Goffredo Baroncelli posted on Thu, 13 Feb 2014 20:49:08 +0100 as
+excerpted:
 
-On 02/13/2014 08:28 PM, Roman Mamedov wrote:
-> On Thu, 13 Feb 2014 20:19:50 +0100
-> Goffredo Baroncelli <kreijack@libero.it> wrote:
+> Thanks for the comments, however I don't like du not usage; but you are
+> right when you don't like "disk-usage". What about "btrfs filesystem
+> chunk-usage" ? The short form would be
 > 
-[...]
->> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
->> index fc85eef..d4cab63 100644
->> --- a/cmds-filesystem.c
->> +++ b/cmds-filesystem.c
->> @@ -798,6 +798,9 @@ const struct cmd_group filesystem_cmd_group = {
->>  		{ "balance", cmd_balance, NULL, &balance_cmd_group, 1 },
->>  		{ "resize", cmd_resize, cmd_resize_usage, NULL, 0 },
->>  		{ "label", cmd_label, cmd_label_usage, NULL, 0 },
->> +		{ "disk-usage", cmd_filesystem_disk_usage,
->> +			cmd_filesystem_disk_usage_usage, NULL, 0 },
->> +
+> 	btrfs fi chunk
 > 
-> Same here, I'd suggest "du" or "usage".
-> As currently in the patch it's not shorthand-friendly, you basically propose
-> that people wishing a shorter invocation use it as "btrfs fi di" or "btrfs fi
-> disk", which seems awkward and not intuitive.
+> which is coherent with the data displayed
 
-Thanks for the comments, however I don't like du not usage; but you are right 
-when you don't like "disk-usage". What about "btrfs filesystem chunk-usage" ? The short form would be 
+That makes much more sense from a different perspective as well.  "Disk" 
+sounds so 20th-century spinning rust..., and at least to me, "du" isn't 
+as intuitive or commonly used as "df", so while "df" seems natural to me, 
+while I understand where "du" comes from, it still makes me go "huh?" as 
+I wouldn't expect to see it in the btrfs context.
 
-	btrfs fi chunk
-
-which is coherent with the data displayed
-
-Regards
-Goffredo
-
-P.S.
-Please the next time, cut the email lines which are not relevant to your
-replay
-
+So btrfs filesystem chunk(-usage), please. =:^)
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

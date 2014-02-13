@@ -1,60 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from outrelay08.libero.it ([212.52.84.112]:48598 "EHLO
 	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751806AbaBMTT5 (ORCPT
+	with ESMTP id S1751537AbaBMTUI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Feb 2014 14:19:57 -0500
+	Thu, 13 Feb 2014 14:20:08 -0500
 Received: from venice.bhome (151.28.65.181) by outrelay08.libero.it (8.6.033) (authenticated as kreijack@libero.it)
-        id 52EA6A190310324C for linux-btrfs@vger.kernel.org; Thu, 13 Feb 2014 20:19:57 +0100
-Message-ID: <52FD1AE2.8000001@libero.it>
-Date: Thu, 13 Feb 2014 20:20:02 +0100
+        id 52EA6A19031033F9 for linux-btrfs@vger.kernel.org; Thu, 13 Feb 2014 20:20:07 +0100
+Message-ID: <52FD1AEC.1020700@libero.it>
+Date: Thu, 13 Feb 2014 20:20:12 +0100
 From: Goffredo Baroncelli <kreijack@libero.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/8] Create entry in man page for btrfs filesystem disk-usage
+Subject: [PATCH 7/8] Add btrfs device disk-usage command
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <52FD1A72.5060307@libero.it>
 
+
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- man/btrfs.8.in | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ cmds-device.c        |   3 ++
+ cmds-fi-disk_usage.c | 136 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-fi-disk_usage.h |   3 ++
+ 3 files changed, 142 insertions(+)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 4acf16d..4b7e771 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -35,6 +35,9 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP [\fI<device>\fP|\fI<mount_point>\fP] [\fI<newlabel>\fP]
- .PP
-+\fBbtrfs\fP \fBfilesystem filesystem disk-usage [-t][-b]\fP\fI <path> 
-+[path..]\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem df\fP\fI [-b] \fIpath [path..]\fR\fP
- .PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
-@@ -341,6 +344,17 @@ the same starting disk cylinder as before.
- \fBfilesystem label\fP [\fI<dev>\fP|\fI<mount_point>\fP] [\fInewlabel\fP]\fP
- Show or update the label of a filesystem. \fI[<device>|<mountpoint>]\fR is used
- to identify the filesystem. 
-+.TP
-+\fBfilesystem disk-usage\fP [-t][-b] \fIpath [path..]\fR
+diff --git a/cmds-device.c b/cmds-device.c
+index bc4a8dc..f25dbfa 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -28,6 +28,7 @@
+ #include "ctree.h"
+ #include "ioctl.h"
+ #include "utils.h"
++#include "cmds-fi-disk_usage.h"
+ 
+ #include "commands.h"
+ 
+@@ -401,6 +402,8 @@ const struct cmd_group device_cmd_group = {
+ 		{ "scan", cmd_scan_dev, cmd_scan_dev_usage, NULL, 0 },
+ 		{ "ready", cmd_ready_dev, cmd_ready_dev_usage, NULL, 0 },
+ 		{ "stats", cmd_dev_stats, cmd_dev_stats_usage, NULL, 0 },
++		{ "disk-usage", cmd_device_disk_usage,
++			cmd_device_disk_usage_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
+ 	}
+ };
+diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
+index 16b3ab2..e4eb72b 100644
+--- a/cmds-fi-disk_usage.c
++++ b/cmds-fi-disk_usage.c
+@@ -942,3 +942,139 @@ int cmd_filesystem_disk_usage(int argc, char **argv)
+ 
+ 	return 0;
+ }
 +
-+Show in which disk the chunks are allocated.
++static void print_disk_chunks(int fd,
++				u64 devid,
++				u64 total_size,
++				struct chunk_info *chunks_info_ptr,
++				int chunks_info_count,
++				int mode)
++{
++	int i;
++	u64 allocated = 0;
 +
-+\fB-b\fP Set byte as unit
++	for (i = 0 ; i < chunks_info_count ; i++) {
++		const char *description;
++		const char *r_mode;
++		u64 flags;
++		u64 size;
 +
-+\fB-t\fP Show data in tabular format
++		if (chunks_info_ptr[i].devid != devid)
++			continue;
 +
-+.TP
++		flags = chunks_info_ptr[i].type;
 +
- If a \fInewlabel\fR optional argument is passed, the label is changed. The
- following constraints exist for a label:
- .IP
++		description = group_type_str(flags);
++		r_mode = group_profile_str(flags);
++		size = calc_chunk_size(chunks_info_ptr+i);
++		printf("   %s,%s:%*s%10s\n",
++			description,
++			r_mode,
++			(int)(20 - strlen(description) - strlen(r_mode)), "",
++			df_pretty_sizes(size, mode));
++
++		allocated += size;
++
++	}
++	printf("   Unallocated: %*s%10s\n",
++		(int)(20 - strlen("Unallocated")), "",
++		df_pretty_sizes(total_size - allocated, mode));
++
++}
++
++static int _cmd_device_disk_usage(int fd, char *path, int mode)
++{
++	int i;
++	int ret = 0;
++	int info_count = 0;
++	struct chunk_info *info_ptr = 0;
++	struct disk_info *disks_info_ptr = 0;
++	int disks_info_count = 0;
++
++	if (load_chunk_info(fd, &info_ptr, &info_count) ||
++	    load_disks_info(fd, &disks_info_ptr, &disks_info_count)) {
++		ret = -1;
++		goto exit;
++	}
++
++	for (i = 0 ; i < disks_info_count ; i++) {
++		printf("%s\t%10s\n", disks_info_ptr[i].path,
++			df_pretty_sizes(disks_info_ptr[i].size, mode));
++
++		print_disk_chunks(fd, disks_info_ptr[i].devid,
++				disks_info_ptr[i].size,
++				info_ptr, info_count,
++				mode);
++		printf("\n");
++
++	}
++
++
++exit:
++
++	if (disks_info_ptr)
++		free(disks_info_ptr);
++	if (info_ptr)
++		free(info_ptr);
++
++	return ret;
++}
++
++const char * const cmd_device_disk_usage_usage[] = {
++	"btrfs device disk-usage [-b] <path> [<path>..]",
++	"Show which chunks are in a device.",
++	"",
++	"-b\tSet byte as unit",
++	NULL
++};
++
++int cmd_device_disk_usage(int argc, char **argv)
++{
++
++	int	flags = DF_HUMAN_UNIT;
++	int	i, more_than_one = 0;
++
++	optind = 1;
++	while (1) {
++		char	c = getopt(argc, argv, "b");
++
++		if (c < 0)
++			break;
++
++		switch (c) {
++		case 'b':
++			flags &= ~DF_HUMAN_UNIT;
++			break;
++		default:
++			usage(cmd_device_disk_usage_usage);
++		}
++	}
++
++	if (check_argc_min(argc - optind, 1)) {
++		usage(cmd_device_disk_usage_usage);
++		return 21;
++	}
++
++	for (i = optind; i < argc ; i++) {
++		int r, fd;
++		DIR	*dirstream = NULL;
++		if (more_than_one)
++			printf("\n");
++
++		fd = open_file_or_dir(argv[i], &dirstream);
++		if (fd < 0) {
++			fprintf(stderr, "ERROR: can't access to '%s'\n",
++				argv[1]);
++			return 12;
++		}
++		r = _cmd_device_disk_usage(fd, argv[i], flags);
++		close_file_or_dir(fd, dirstream);
++
++		if (r)
++			return r;
++		more_than_one = 1;
++
++	}
++
++	return 0;
++}
+diff --git a/cmds-fi-disk_usage.h b/cmds-fi-disk_usage.h
+index c7459b1..c315004 100644
+--- a/cmds-fi-disk_usage.h
++++ b/cmds-fi-disk_usage.h
+@@ -25,4 +25,7 @@ int cmd_filesystem_df(int argc, char **argv);
+ extern const char * const cmd_filesystem_disk_usage_usage[];
+ int cmd_filesystem_disk_usage(int argc, char **argv);
+ 
++extern const char * const cmd_device_disk_usage_usage[];
++int cmd_device_disk_usage(int argc, char **argv);
++
+ #endif
 -- 
 1.8.5.3
 

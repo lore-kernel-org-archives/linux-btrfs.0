@@ -1,53 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52862 "EHLO plane.gmane.org"
+Received: from luka.romanrm.net ([213.163.64.74]:40557 "EHLO luka.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750892AbaBMUWr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Feb 2014 15:22:47 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WE2o1-0002MC-3M
-	for linux-btrfs@vger.kernel.org; Thu, 13 Feb 2014 21:22:45 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 21:22:45 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 21:22:45 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+	id S1751517AbaBMVAs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Feb 2014 16:00:48 -0500
+Date: Fri, 14 Feb 2014 03:00:45 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: kreijack@inwind.it
+Cc: kreijack@libero.it, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 5/8] Add command btrfs filesystem disk-usage
-Date: Thu, 13 Feb 2014 20:22:18 +0000 (UTC)
-Message-ID: <pan$166a9$744f4965$bbb246f5$8c607ae6@cox.net>
+Message-ID: <20140214030045.415e21da@natsu>
+In-Reply-To: <52FD21B4.4050502@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/BpMJ2jnhZM=+Lt0C6Sj//Zo"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <52FD1AD6.50500@libero.it>
  <20140214012810.26297146@natsu>
  <52FD21B4.4050502@libero.it>
 
-Goffredo Baroncelli posted on Thu, 13 Feb 2014 20:49:08 +0100 as
-excerpted:
+--Sig_/BpMJ2jnhZM=+Lt0C6Sj//Zo
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> Thanks for the comments, however I don't like du not usage; but you are
-> right when you don't like "disk-usage". What about "btrfs filesystem
-> chunk-usage" ? The short form would be
-> 
-> 	btrfs fi chunk
-> 
-> which is coherent with the data displayed
+On Thu, 13 Feb 2014 20:49:08 +0100
+Goffredo Baroncelli <kreijack@libero.it> wrote:
 
-That makes much more sense from a different perspective as well.  "Disk" 
-sounds so 20th-century spinning rust..., and at least to me, "du" isn't 
-as intuitive or commonly used as "df", so while "df" seems natural to me, 
-while I understand where "du" comes from, it still makes me go "huh?" as 
-I wouldn't expect to see it in the btrfs context.
+> Thanks for the comments, however I don't like du not usage; but you are r=
+ight=20
+> when you don't like "disk-usage". What about "btrfs filesystem chunk-usag=
+e" ?
 
-So btrfs filesystem chunk(-usage), please. =:^)
+Personally I don't see the point of being super-pedantic here, i.e. "look t=
+his
+is not just filesystem usage, this is filesystem CHUNK usage"... Consistency
+of having a matching "dev usage" and "fi usage" would have been nicer.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--=20
+With respect,
+Roman
 
+--Sig_/BpMJ2jnhZM=+Lt0C6Sj//Zo
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlL9Mn0ACgkQTLKSvz+PZwjSkwCfVkoIz64y+J4EZ7zgHSPrPZ+2
+CJUAoIkAeosqRPv61auTuy/BkaDkJuS6
+=nDod
+-----END PGP SIGNATURE-----
+
+--Sig_/BpMJ2jnhZM=+Lt0C6Sj//Zo--

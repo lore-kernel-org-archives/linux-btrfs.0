@@ -1,60 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:43397 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751491AbaBNGQE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Feb 2014 01:16:04 -0500
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] xfstests: btrfs/005: log test result to right path
-Date: Fri, 14 Feb 2014 14:14:22 +0800
-Message-Id: <1392358462-2574-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:58562 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752172AbaBNQj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Feb 2014 11:39:26 -0500
+Date: Fri, 14 Feb 2014 17:39:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Eric Sandeen <sandeen@sandeen.net>
+Cc: Koen De Wit <koen.de.wit@oracle.com>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] xfstests: test for atime-related mount options
+Message-ID: <20140214163925.GW16073@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1392305016-7424-1-git-send-email-koen.de.wit@oracle.com>
+ <52FCF60F.6030703@sandeen.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52FCF60F.6030703@sandeen.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should log test results to $reqres.full not $req.full.
+On Thu, Feb 13, 2014 at 10:42:55AM -0600, Eric Sandeen wrote:
+> > +cat /proc/mounts | grep "$SCRATCH_MNT" | grep relatime >> $seqres.full
+> > +[ $? -ne 0 ] && echo "The relatime mount option should be the default."
+> 
+> Ok, I guess "relatime" in /proc/mounts is from core vfs code and
+> should be there for the foreseeable future, so seems ok.
+> 
+> But - relatime was added in v2.6.20, and made default in 2.6.30.  So
+> testing older kernels may not go as expected; it'd probably be best to
+> catch situations where relatime isn't available (< 2.6.20) or not
+> default (< 2.6.30), by explicitly mounting with relatime, and skipping
+> relatime/strictatime tests if that fails?
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- tests/btrfs/005 | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
-
-diff --git a/tests/btrfs/005 b/tests/btrfs/005
-index c364e11..7639635 100755
---- a/tests/btrfs/005
-+++ b/tests/btrfs/005
-@@ -77,14 +77,14 @@ _btrfs_online_defrag()
- 	fi
- 
- 	if [ "$str" != "" ]; then
--		$BTRFS_UTIL_PROG filesystem defragment $str $SCRATCH_MNT/tmp_file >> $seq.full 2>&1
-+		$BTRFS_UTIL_PROG filesystem defragment $str $SCRATCH_MNT/tmp_file >> $seqres.full 2>&1
- 	else
- 		if [ "$1" = "1" ];then
--			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_file >> $seq.full 2>&1
-+			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_file >> $seqres.full 2>&1
- 		elif [ "$1" = "2" ];then
--			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_dir >> $seq.full 2>&1
-+			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT/tmp_dir >> $seqres.full 2>&1
- 		elif [ "$1" = "3" ];then
--			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT >> $seq.full 2>&1
-+			$BTRFS_UTIL_PROG filesystem defragment $SCRATCH_MNT >> $seqres.full 2>&1
- 		fi
- 	fi
- 	ret_val=$?
-@@ -134,9 +134,10 @@ _rundefrag()
- # real QA test starts here
- _supported_fs btrfs
- _supported_os Linux
--
--## We require scratch so that we'll have free contiguous space
- _require_scratch
-+
-+rm -f $seqres.full
-+
- _scratch_mkfs >/dev/null 2>&1
- _scratch_mount
- _require_defrag
--- 
-1.8.3.1
-
+Is there some consensus what's the lowest kernel version to be supported
+by xfstests? 2.6.32 is the lowest base for kernels in use today, so
+worrying about anything older does not seem necessary.

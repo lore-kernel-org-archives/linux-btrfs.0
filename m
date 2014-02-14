@@ -1,118 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f176.google.com ([74.125.82.176]:40239 "EHLO
-	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751710AbaBIXpb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2014 18:45:31 -0500
-Received: by mail-we0-f176.google.com with SMTP id q58so3683764wes.21
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2014 15:45:30 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: faster/more efficient insertion of file extent items
-Date: Sun,  9 Feb 2014 23:45:12 +0000
-Message-Id: <1391989512-31797-1-git-send-email-fdmanana@gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:31521 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751855AbaBNSnx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Feb 2014 13:43:53 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <bfields@fieldses.org>, <ebiederm@xmission.com>
+Subject: [PATCH] Btrfs: unset DCACHE_DISCONNECTED when mounting default subvol
+Date: Fri, 14 Feb 2014 13:43:48 -0500
+Message-ID: <1392403428-4593-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an extension to my previous commit titled:
+A user was running into errors from an NFS export of a subvolume that had a
+default subvol set.  When we mount a default subvol we will use d_obtain_alias()
+to find an existing dentry for the subvolume in the case that the root subvol
+has already been mounted, or a dummy one is allocated in the case that the root
+subvol has not already been mounted.  This allows us to connect the dentry later
+on if we wander into the path.  However if we don't ever wander into the path we
+will keep DCACHE_DISCONNECTED set for a long time, which angers NFS.  It doesn't
+appear to cause any problems but it is annoying nonetheless, so simply unset
+DCACHE_DISCONNECTED in the get_default_root case and switch btrfs_lookup() to
+use d_materialise_unique() instead which will make everything play nicely
+together and reconnect stuff if we wander into the defaul subvol path from a
+different way.  With this patch I'm no longer getting the NFS errors when
+exporting a volume that has been mounted with a default subvol set.  Thanks,
 
-  "Btrfs: faster file extent item replace operations"
-  (hash 1acae57b161ef1282f565ef907f72aeed0eb71d9)
-
-Instead of inserting the new file extent item if we deleted existing
-file extent items covering our target file range, also allow to insert
-the new file extent item if we didn't find any existing items to delete
-and replace_extent != 0, since in this case our caller would do another
-tree search to insert the new file extent item anyway, therefore just
-combine the two tree searches into a single one, saving cpu time, reducing
-lock contention and reducing btree node/leaf COW operations.
-
-This covers the case where applications keep doing tail append writes to
-files, which for example is the case of Apache CouchDB (its database and
-view index files are always open with O_APPEND).
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+cc: bfields@fieldses.org
+cc: ebiederm@xmission.com
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/file.c |   52 ++++++++++++++++++++++++++++++----------------------
- 1 file changed, 30 insertions(+), 22 deletions(-)
+ fs/btrfs/inode.c | 2 +-
+ fs/btrfs/super.c | 9 ++++++++-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 0165b86..006af2f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -720,7 +720,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 	if (drop_cache)
- 		btrfs_drop_extent_cache(inode, start, end - 1, 0);
- 
--	if (start >= BTRFS_I(inode)->disk_i_size)
-+	if (start >= BTRFS_I(inode)->disk_i_size && !replace_extent)
- 		modify_tree = 0;
- 
- 	while (1) {
-@@ -938,34 +938,42 @@ next_slot:
- 		 * Set path->slots[0] to first slot, so that after the delete
- 		 * if items are move off from our leaf to its immediate left or
- 		 * right neighbor leafs, we end up with a correct and adjusted
--		 * path->slots[0] for our insertion.
-+		 * path->slots[0] for our insertion (if replace_extent != 0).
- 		 */
- 		path->slots[0] = del_slot;
- 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
- 		if (ret)
- 			btrfs_abort_transaction(trans, root, ret);
-+	}
- 
--		leaf = path->nodes[0];
--		/*
--		 * leaf eb has flag EXTENT_BUFFER_STALE if it was deleted (that
--		 * is, its contents got pushed to its neighbors), in which case
--		 * it means path->locks[0] == 0
--		 */
--		if (!ret && replace_extent && leafs_visited == 1 &&
--		    path->locks[0] &&
--		    btrfs_leaf_free_space(root, leaf) >=
--		    sizeof(struct btrfs_item) + extent_item_size) {
--
--			key.objectid = ino;
--			key.type = BTRFS_EXTENT_DATA_KEY;
--			key.offset = start;
--			setup_items_for_insert(root, path, &key,
--					       &extent_item_size,
--					       extent_item_size,
--					       sizeof(struct btrfs_item) +
--					       extent_item_size, 1);
--			*key_inserted = 1;
-+	leaf = path->nodes[0];
-+	/*
-+	 * If btrfs_del_items() was called, it might have deleted a leaf, in
-+	 * which case it unlocked our path, so check path->locks[0] matches a
-+	 * write lock.
-+	 */
-+	if (!ret && replace_extent && leafs_visited == 1 &&
-+	    (path->locks[0] == BTRFS_WRITE_LOCK_BLOCKING ||
-+	     path->locks[0] == BTRFS_WRITE_LOCK) &&
-+	    btrfs_leaf_free_space(root, leaf) >=
-+	    sizeof(struct btrfs_item) + extent_item_size) {
-+
-+		key.objectid = ino;
-+		key.type = BTRFS_EXTENT_DATA_KEY;
-+		key.offset = start;
-+		if (!del_nr && path->slots[0] < btrfs_header_nritems(leaf)) {
-+			struct btrfs_key slot_key;
-+
-+			btrfs_item_key_to_cpu(leaf, &slot_key, path->slots[0]);
-+			if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
-+				path->slots[0]++;
- 		}
-+		setup_items_for_insert(root, path, &key,
-+				       &extent_item_size,
-+				       extent_item_size,
-+				       sizeof(struct btrfs_item) +
-+				       extent_item_size, 1);
-+		*key_inserted = 1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 197edee..8dba152 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5157,7 +5157,7 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+ 			return ERR_CAST(inode);
  	}
  
- 	if (!replace_extent || !(*key_inserted))
+-	return d_splice_alias(inode, dentry);
++	return d_materialise_unique(dentry, inode);
+ }
+ 
+ unsigned char btrfs_filetype_table[] = {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 147ca1d..dc0a315 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -855,6 +855,7 @@ static struct dentry *get_default_root(struct super_block *sb,
+ 	struct btrfs_path *path;
+ 	struct btrfs_key location;
+ 	struct inode *inode;
++	struct dentry *dentry;
+ 	u64 dir_id;
+ 	int new = 0;
+ 
+@@ -925,7 +926,13 @@ setup_root:
+ 		return dget(sb->s_root);
+ 	}
+ 
+-	return d_obtain_alias(inode);
++	dentry = d_obtain_alias(inode);
++	if (!IS_ERR(dentry)) {
++		spin_lock(&dentry->d_lock);
++		dentry->d_flags &= ~DCACHE_DISCONNECTED;
++		spin_unlock(&dentry->d_lock);
++	}
++	return dentry;
+ }
+ 
+ static int btrfs_fill_super(struct super_block *sb,
 -- 
-1.7.9.5
+1.8.3.1
 

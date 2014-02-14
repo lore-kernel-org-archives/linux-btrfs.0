@@ -1,58 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:49926 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751516AbaBNDm6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Feb 2014 22:42:58 -0500
-Received: by mail-ie0-f178.google.com with SMTP id rl12so3810802iec.37
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 19:42:56 -0800 (PST)
-Message-ID: <52FD90B2.2040004@gmail.com>
-Date: Thu, 13 Feb 2014 22:42:42 -0500
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Brendan Hide <brendan@swiftspirit.co.za>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Issue with btrfs balance
-References: <52F83A69.8080503@gmail.com> <52F8D70B.1090201@swiftspirit.co.za>
-In-Reply-To: <52F8D70B.1090201@swiftspirit.co.za>
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36349 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751630AbaBNEsJ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Feb 2014 23:48:09 -0500
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: errors 400, nbytes wrong, was: Help repairing corrupt btrfs -- btrfsck --repair doesn't change anything
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAKCAbMjTHxCQ_rHa2+jV6eEGAGLhYeTWf-9a9y9gp6knzw-xcg@mail.gmail.com>
+Date: Thu, 13 Feb 2014 21:48:05 -0700
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <0CB1F05D-28F2-4497-A5F9-F9F84FA4712B@colorremedies.com>
+References: <CAKCAbMjTHxCQ_rHa2+jV6eEGAGLhYeTWf-9a9y9gp6knzw-xcg@mail.gmail.com>
+To: Zack Weinberg <zackw@panix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+On Jan 9, 2014, at 3:47 PM, Zack Weinberg <zackw@panix.com> wrote:
 
-On 02/10/2014 08:41 AM, Brendan Hide wrote:
-> On 2014/02/10 04:33 AM, Austin S Hemmelgarn wrote:
->> <snip>
->> Apparently, trying to use -mconvert=dup or -sconvert=dup on a
->> multi-device filesystem using one of the RAID profiles for metadata
->> fails with a statement to look at the kernel log, which doesn't show
->> anything at all about the failure.
-> ^ If this is the case then it is definitely a bug. Can you provide some
-> version info? Specifically kernel, btrfs-tools, and Distro.
->> <snip> it appears
->> that the kernel stops you from converting to a dup profile for metadata
->> in this case because it thinks that such a profile doesn't work on
->> multiple devices, despite the fact that you can take a single device
->> filesystem, and a device, and it will still work fine even without
->> converting the metadata/system profiles.
-> I believe dup used to work on multiple devices but the facility was
-> removed. In the standard case it doesn't make sense to use dup with
-> multiple devices: It uses the same amount of diskspace but is more
-> vulnerable than the RAID1 alternative.
->> <snip> Ideally, this
->> should be changed to allow converting to dup so that when converting a
->> multi-device filesystem to single-device, you never have to have
->> metadata or system chunks use a single profile.
-> This is a good use-case for having the facility. I'm thinking that, if
-> it is brought back in, the only caveat is that appropriate warnings
-> should be put in place to indicate that it is inappropriate.
+> I have a btrfs partition with what *sounds* like minor damage; btrfsck
+> --repair prints
+
+For what it's worth, repair occasionally makes things worse so it's better to just run 'btrfs check' and post the results and get some advice before resorting to --repair.
+
 > 
-> My guess on how you'd like to migrate from raid1/raid1 to single/dup,
-> assuming sda and sdb:
-> btrfs balance start -dconvert=single -mconvert=dup /
-> btrfs device delete /dev/sdb /
-> 
-Do you happen to know which git repository and branch is preferred to
-base patches on?  I'm getting ready to write one to fix this, and would
-like to make it as easy as possible for the developers to merge.
+> | enabling repair mode
+> | Checking filesystem on /dev/sda
+> | UUID: ec93d2c2-7937-40f8-aaa6-
+> c20c9775d93a
+> | checking extents
+> | checking free space cache
+> | cache and super generation don't match, space cache will be invalidated
+> | checking fs roots
+> | root 258 inode 4493802 errors 400, nbytes wrong
+> | root 258 inode 4509858 errors 400, nbytes wrong
+> | root 258 inode 4510014 errors 400, nbytes wrong
+> | root 258 inode 4838894 errors 400, nbytes wrong
+> | root 258 inode 4838895 errors 400, nbytes wrong
+> | found 41852229430 bytes used err is 1
+> | total csum bytes: 619630328
+> | total tree bytes: 3216027648
+> | total fs tree bytes: 2342981632
+> | total extent tree bytes: 135536640
+> | btree space waste bytes: 767795634
+> | file data blocks allocated: 1744289230848
+> |  referenced 631766474752
+> | Btrfs v3.12
+
+I think this is benign, but I'm not sure. I have three Btrfs file systems and one of them also has these same kinds of errors. In some cases mounting with clear_cache option and leaving the system alone to rebuild the space cache will fix it. In my case it's not.
+
+I also get only the normal messages when mounting this Btrfs volume, no errors. And no apparent problems. So the btrfs check is a bit confusing that it says there are errors but then apparently doesn't fix them.
+
+# btrfs check /dev/sdc
+Checking filesystem on /dev/sdc
+UUID: e7cd9159-9c4e-4ddd-9887-85758dbc97af
+checking extents
+checking free space cache
+checking fs roots
+root 256 inode 37895 errors 400, nbytes wrong
+root 266 inode 37895 errors 400, nbytes wrong
+found 1201615306 bytes used err is 1
+total csum bytes: 4344024
+total tree bytes: 328122368
+total fs tree bytes: 306774016
+total extent tree bytes: 15695872
+btree space waste bytes: 61398268
+file data blocks allocated: 9117638656
+ referenced 9929928704
+Btrfs v3.12
+
+The file system was created with kernel 3.11.10 running, and has variably had 3.12.x, 3.13.x, and 3.14-rc2 running and the results are the same. I'm not sure when these errors first started as I don't often run btrfs check, but it's quite a young file system, maybe only two weeks old. There have been some unclean shutdowns, with the only reported mount errors being about unlinked orphans but those messages didn't occur again on subsequent mounts.
+
+In any case, I'm confused also if there's a real problem or not. I guess confusion about the state of a file system itself isn't good. But I figure it's probably not a serious error or there'd be mount error messages, and would maybe only mount ro.
+
+Chris Murphy

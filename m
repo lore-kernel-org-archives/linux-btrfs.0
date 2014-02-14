@@ -1,110 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f170.google.com ([209.85.216.170]:56703 "EHLO
-	mail-qc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752487AbaBNOdL (ORCPT
+Received: from mail-yk0-f171.google.com ([209.85.160.171]:40517 "EHLO
+	mail-yk0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751242AbaBNPGq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Feb 2014 09:33:11 -0500
-Received: by mail-qc0-f170.google.com with SMTP id e9so20266529qcy.15
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Feb 2014 06:33:10 -0800 (PST)
+	Fri, 14 Feb 2014 10:06:46 -0500
+Received: by mail-yk0-f171.google.com with SMTP id q9so23481116ykb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Feb 2014 07:06:45 -0800 (PST)
+Message-ID: <52FE2F14.4040707@gmail.com>
+Date: Fri, 14 Feb 2014 06:58:28 -0800
+From: Daniel Lee <longinus00@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20140211033059.34bd0ef7@system>
-References: <20140209224055.3175e70f@system>
-	<pan$c13e9$73e2c595$53adb8c8$58509a35@cox.net>
-	<20140211033059.34bd0ef7@system>
-Date: Fri, 14 Feb 2014 15:33:10 +0100
-Message-ID: <CAJbEPe6-J=0n_qOmZ06NEOha-z7Xe_WwQkDx-3OnNWbzKr+H=g@mail.gmail.com>
-Subject: Re: BTRFS with RAID1 cannot boot when removing drive
-From: Saint Germain <saintger@gmail.com>
-To: linux-btrfs@vger.kernel.org
+To: Axelle <aafortinet@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Recovering from hard disk failure in a pool
+References: <CANKzOHBR6oYRrfDKtS-qh3JZ_LZTmUFwDtaAb7+N+A4MOTe-cg@mail.gmail.com>	<20140214105817.GA6490@carfax.org.uk> <CANKzOHCaBDuVxu7=VvshzdkwttGNS9D6rNqNmvJNNM1qsAXcyA@mail.gmail.com>
+In-Reply-To: <CANKzOHCaBDuVxu7=VvshzdkwttGNS9D6rNqNmvJNNM1qsAXcyA@mail.gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 February 2014 03:30, Saint Germain <saintger@gmail.com> wrote:
->> > I am experimenting with BTRFS and RAID1 on my Debian Wheezy (with
->> > backported kernel 3.12-0.bpo.1-amd64) using a a motherboard with
->> > UEFI.
+On 02/14/2014 03:04 AM, Axelle wrote:
+> Hi Hugo,
+>
+> Thanks for your answer.
+> Unfortunately, I had also tried
+>
+> sudo mount -o degraded /dev/sdc1 /samples
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
+>        missing codepage or helper program, or other error
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail  or so
+>
+> and dmesg says:
+> [ 1177.695773] btrfs: open_ctree failed
+> [ 1247.448766] device fsid 545e95c6-d347-4a8c-8a49-38b9f9cb9add devid
+> 2 transid 31105 /dev/sdc1
+> [ 1247.449700] device fsid 545e95c6-d347-4a8c-8a49-38b9f9cb9add devid
+> 1 transid 31105 /dev/sdc6
+> [ 1247.458794] device fsid 545e95c6-d347-4a8c-8a49-38b9f9cb9add devid
+> 2 transid 31105 /dev/sdc1
+> [ 1247.459601] device fsid 545e95c6-d347-4a8c-8a49-38b9f9cb9add devid
+> 1 transid 31105 /dev/sdc6
+> [ 4013.363254] device fsid 545e95c6-d347-4a8c-8a49-38b9f9cb9add devid
+> 2 transid 31105 /dev/sdc1
+> [ 4013.408280] btrfs: allowing degraded mounts
+> [ 4013.555764] btrfs: bdev (null) errs: wr 0, rd 14, flush 0, corrupt 0, gen 0
+> [ 4015.600424] Btrfs: too many missing devices, writeable mount is not allowed
+> [ 4015.630841] btrfs: open_ctree failed
+Did the crashed /dev/sdb have more than 1 partitions in your raid1
+filesystem?
+>
+> Yes, I know, I'll probably be losing a lot of data, but it's not "too
+> much" my concern because I had a backup (sooo happy about that :D). If
+> I can manage to recover a little more on the btrfs volume it's bonus,
+> but in the event I do not, I'll be using my backup.
+>
+> So, how do I fix my volume? I guess there would be a solution apart
+> from scratching/deleting everything and starting again...
+>
+>
+> Regards,
+> Axelle
+>
+>
+>
+> On Fri, Feb 14, 2014 at 11:58 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> On Fri, Feb 14, 2014 at 11:35:56AM +0100, Axelle wrote:
+>>> Hi,
+>>> I've just encountered a hard disk crash in one of my btrfs pools.
+>>>
+>>> sudo btrfs filesystem show
+>>> failed to open /dev/sr0: No medium found
+>>> Label: none  uuid: 545e95c6-d347-4a8c-8a49-38b9f9cb9add
+>>>         Total devices 3 FS bytes used 112.70GB
+>>>         devid    1 size 100.61GB used 89.26GB path /dev/sdc6
+>>>         devid    2 size 93.13GB used 84.00GB path /dev/sdc1
+>>>         *** Some devices missing
+>>>
+>>> The device which is missing is /dev/sdb. I have replaced it with a new
+>>> hard disk. How do I add it back to the volume and fix the device
+>>> missing?
+>>> The pool is expected to mount to /samples (it is not mounted yet).
+>>>
+>>> I tried this - which fails:
+>>> sudo btrfs device add /dev/sdb /samples
+>>> ERROR: error adding the device '/dev/sdb' - Inappropriate ioctl for device
+>>>
+>>> Why isn't this working?
+>>    Because it's not mounted. :)
 >>
->> > I have installed Debian with the following partition on the first
->> > hard drive (no BTRFS subsystem):
->> > /dev/sda1: for / (BTRFS)
->> > /dev/sda2: for /home (BTRFS)
->> > /dev/sda3: for swap
->> >
->> > Then I added another drive for a RAID1 configuration (with btrfs
->> > balance) and I installed grub on the second hard drive with
->> > "grub-install /dev/sdb".
+>>> I also tried this:
+>>> sudo mount -o recovery /dev/sdc1 /samples
+>>> mount: wrong fs type, bad option, bad superblock on /dev/sdc1,
+>>>        missing codepage or helper program, or other error
+>>>        In some cases useful info is found in syslog - try
+>>>        dmesg | tail  or so
+>>> same with /dev/sdc6
+>>    Close, but what you want here is:
 >>
->> You should be able to mount a two-device btrfs raid1 filesystem with
->> only a single device with the degraded mount option, tho I believe
->> current kernels refuse a read-write mount in that case, so you'll
->> have read-only access until you btrfs device add a second device, so
->> it can do normal raid1 mode once again.
+>> mount -o degraded /dev/sdc1 /samples
 >>
->> Meanwhile, I don't believe it's on the wiki, but it's worth noting my
->> experience with btrfs raid1 mode in my pre-deployment tests.
->> Actually, with the (I believe) mandatory read-only mount if raid1 is
->> degraded below two devices, this problem's going to be harder to run
->> into than it was in my testing several kernels ago, but here's what I
->> found:
+>> not "recovery". That will tell the FS that there's a missing disk, and
+>> it should mount without complaining. If your data is not RAID-1 or
+>> RAID-10, then you will almost certainly have lost some data.
 >>
->> But as I said, if btrfs only allows read-only mounts of filesystems
->> without enough devices to properly complete the raidlevel, that
->> shouldn't be as big an issue these days, since it should be more
->> difficult or impossible to get the two devices separately mounted
->> writable in the first place, with the consequence that the differing
->> copies issue will be difficult or impossible to trigger in the first
->> place. =:^)
+>>    At that point, since you've removed the dead disk, you can do:
 >>
+>> btrfs device delete missing /samples
+>>
+>> which forcibly removes the record of the missing device.
+>>
+>>    Then you can add the new device:
+>>
+>> btrfs device add /dev/sdb /samples
+>>
+>>    And finally balance to repair the RAID:
+>>
+>> btrfs balance start /samples
+>>
+>>    It's worth noting that even if you have RAID-1 data and metadata,
+>> losing /dev/sdc in your current configuration is likely to cause
+>> severe data loss -- probably making the whole FS unrecoverable. This
+>> is because the FS sees /dev/sdc1 and /dev/sdc6 as independent devices,
+>> and will happily put both copies of a piece of RAID-1 data (or
+>> metadata) on /dev/sdc -- one on each of sdc1 and sdc6. I therefore
+>> wouldn't recommend running like that for very long.
+>>
+>>    Hugo.
+>>
+>> --
+>> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>>            --- All hope abandon,  Ye who press Enter here. ---
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Hello,
-
-With your advices and Chris ones, I have now a (clean ?) partition to
-start experimenting with RAID1 (and which boot correctly in UEFI
-mode):
-sda1 = BIOS Boot partition
-sda2 = EFI System Partition
-sda3 = BTFS partition
-sda4 = swap partition
-For the moment I haven't created subvolumes (for "/" and for "/home"
-for instance) to keep things simple.
-
-The idea is then to create a RAID1 with a sdb drive (duplicate sda
-partitioning, add/balance/convert sdb3 + grub-install on sdb, add sdb
-swap UUID in /etc/fstab), shutdown and remove sda to check the
-procedure to replace it.
-
-I read the last thread on the subject "lost with degraded RAID1", but
-would like to really confirm what would be the current approved
-procedure and if it will be valid for future BTRFS version (especially
-about the read-only mount).
-
-So what should I do from there ?
-Here are a few questions:
-
-1) Boot in degraded mode: currently with my kernel
-(3.12-0.bpo.1-amd64, from Debian wheezy-backports) it seems that I can
-mount in read-write mode.
-However for future kernel, it seems that I will be only able to mount
-read-only ? See here:
-http://www.spinics.net/lists/linux-btrfs/msg20164.html
-https://bugzilla.kernel.org/show_bug.cgi?id=60594
-
-2) If I am able to mount read-write, is this the correct procedure:
-  a) place a new drive in another physical location sdc (I don't think
-I can use the same sda physical location ?)
-  b) boot in degraded mode on sdb
-  c) use the 'replace' command to replace sda by sdc
-  d) perhaps a 'balance' is necessary ?
-
-3) Can I use also the above procedure if I am only allowed to mount read-only ?
-
-4) If I want to use my system without RAID1 support (dangerous I
-know), after booting in degraded mode with read-write, can I convert
-back sdb from RAID1 to RAID0 in a safe way ?
-(btrfs balance start -dconvert=raid0 -mconvert=raid0 /)
-
-5) Perhaps a recovery procedure which includes booting on a different
-rescue disk would be more appropriate ?
-
-Thanks again,

@@ -1,183 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:34815 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753398AbaBOPgz (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:48717 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753689AbaBOW3S (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Feb 2014 10:36:55 -0500
-Received: by mail-wi0-f179.google.com with SMTP id hn9so1253255wib.12
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Feb 2014 07:36:54 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add regression test for btrfs incremental send
-Date: Sat, 15 Feb 2014 15:36:13 +0000
-Message-Id: <1392478573-4513-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1392408522-764-1-git-send-email-fdmanana@gmail.com>
-References: <1392408522-764-1-git-send-email-fdmanana@gmail.com>
+	Sat, 15 Feb 2014 17:29:18 -0500
+Date: Sun, 16 Feb 2014 09:29:15 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Eric Sandeen <sandeen@sandeen.net>, dsterba@suse.cz,
+        Koen De Wit <koen.de.wit@oracle.com>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] xfstests: test for atime-related mount options
+Message-ID: <20140215222915.GU13647@dastard>
+References: <1392305016-7424-1-git-send-email-koen.de.wit@oracle.com>
+ <52FCF60F.6030703@sandeen.net>
+ <20140214163925.GW16073@twin.jikos.cz>
+ <52FE472C.8070503@sandeen.net>
+ <20140214222418.GT13997@dastard>
+ <52FEAB6B.10107@redhat.com>
+ <20140215013931.GT13647@dastard>
+ <52FED8B0.6040009@redhat.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52FED8B0.6040009@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test for a btrfs incremental send issue where we end up sending a
-wrong section of data from a file extent if the corresponding file
-extent is compressed and the respective file extent item has a non
-zero data offset.
+On Fri, Feb 14, 2014 at 09:02:08PM -0600, Eric Sandeen wrote:
+> On 2/14/14, 7:39 PM, Dave Chinner wrote:
+> > On Fri, Feb 14, 2014 at 05:48:59PM -0600, Eric Sandeen wrote:
+> >> On 2/14/14, 4:24 PM, Dave Chinner wrote:
+> >>> On Fri, Feb 14, 2014 at 10:41:16AM -0600, Eric Sandeen wrote:
+> >>>> On 2/14/14, 10:39 AM, David Sterba wrote:
+> >>>>> On Thu, Feb 13, 2014 at 10:42:55AM -0600, Eric Sandeen wrote:
+> >>>>>>> +cat /proc/mounts | grep "$SCRATCH_MNT" | grep relatime >> $seqres.full
+> >>>>>>> +[ $? -ne 0 ] && echo "The relatime mount option should be the default."
+> >>>>>>
+> >>>>>> Ok, I guess "relatime" in /proc/mounts is from core vfs code and
+> >>>>>> should be there for the foreseeable future, so seems ok.
+> >>>>>>
+> >>>>>> But - relatime was added in v2.6.20, and made default in 2.6.30.  So
+> >>>>>> testing older kernels may not go as expected; it'd probably be best to
+> >>>>>> catch situations where relatime isn't available (< 2.6.20) or not
+> >>>>>> default (< 2.6.30), by explicitly mounting with relatime, and skipping
+> >>>>>> relatime/strictatime tests if that fails?
+> >>>>>
+> >>>>> Is there some consensus what's the lowest kernel version to be supported
+> >>>>> by xfstests? 2.6.32 is the lowest base for kernels in use today, so
+> >>>>> worrying about anything older does not seem necessary.
+> >>>>>
+> >>>>
+> >>>> I don't know that it's been discussed - selfishly, I know our QE uses
+> >>>> xfstests on RHEL5, which is 2.6.18-based.
+> >>>
+> >>> Sure, but they can just add the test to a "rhel5-expunged" file and
+> >>> they don't have to care about tests that won't work on RHEL 5 or
+> >>> other older kernels. Or to send patches to add "_requires_relatime"
+> >>> so that it automatically does the right thing for older kernels.
+> >>
+> >> sure but some of this test is still valid on a kernel w/o relatime.
+> >> And since it's the default, "relatime" might disappear from /proc/mounts
+> >> some day anyway, so explicitly mounting with the option & failing
+> >> if that fails might be good future-proofind in any case.
+> >>
+> >> *shrug*
+> >>
+> >> It was just a request, not a demand.  :)  Koen, you can do with
+> >> it whatever you like.  Reviews aren't ultimatums.  :)
+> >>
+> >> If xfstests upstream is only targeted at the current kernel, that's
+> >> fine, but maye we should make that a little more explicit.
+> > 
+> > That's not what I meant. ;)
+> > 
+> > Really, all I'm saying is that we can't expect people who are
+> > writing tests that work on current kernels to know what is necessary
+> > to make tests work on 7 year old distros that don't support a
+> > feature that has been in mainline for 5 years. Hence that shouldn't
+> > be a barrier to having a test committed as we have mechanisms for
+> > distro QE to handle these sorts of issues...
+> 
+> Sure, that's perfectly fair.
+> 
+> I wasn't really thinking of RHEL5 when I made my first comment,
+> just general portability across kernels.  dsterba suggested that
+> 2.6.32 is the oldest kernel used, and I pointed out that we do
+> still use 2.6.18.  :)
+> 
+> Anyway, for general portability across releases, perhaps rather than:
+> 
+> +cat /proc/mounts | grep "$SCRATCH_MNT" | grep relatime >> $seqres.full
+> +[ $? -ne 0 ] && echo "The relatime mount option should be the default."
+> 
+> which would fail the test, it should just [notrun] if relatime
+> isn't there, for any reason, on any kernel, if relatime is not
+> default as expected for the test framework.  i.e.
+> 
+> +[ $? -ne 0 ] && _notrun "The relatime mount option is not the default."
 
-Fixed by the following linux kernel btrfs patch:
+I disagree - the test doesn't need to care what the default mount
+option is - it's a relatively silly thing to test because it doesn't
+determine whether the behaviour of the option is correct or not.
+Especially as the test is checking the behaviour of specific atime
+mount options so it should just specify each one it is testing and
+ignoring what the default is. IOWs, the default atime behaviour just
+doesn't matter for the purpose of the test....
 
-   Btrfs: use right clone root offset for compressed extents
+What the test actually cares about is this:
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+_require_relatime()
+{
+	_scratch_mkfs > /dev/null 2>&1
+	_mount -t $FSTYP -o relatime $SCRATCH_DEV $SCRATCH_MNT || \
+		_notrun "relatime not supported by the current kernel"
+}
 
-V2: Made the test more reliable. Now it doesn't depend anymore of btrfs'
-    hole punch implementation leaving hole file extent items when we punch
-    beyond the file's current size.
+Cheers,
 
- tests/btrfs/040     |  115 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/040.out |    1 +
- tests/btrfs/group   |    1 +
- 3 files changed, 117 insertions(+)
- create mode 100755 tests/btrfs/040
- create mode 100644 tests/btrfs/040.out
-
-diff --git a/tests/btrfs/040 b/tests/btrfs/040
-new file mode 100755
-index 0000000..d6b37bf
---- /dev/null
-+++ b/tests/btrfs/040
-@@ -0,0 +1,115 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/040
-+#
-+# Test for a btrfs incremental send issue where we end up sending a
-+# wrong section of data from a file extent if the corresponding file
-+# extent is compressed and the respective file extent item has a non
-+# zero data offset.
-+#
-+# Fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: use right clone root offset for compressed extents
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=`mktemp -d`
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    rm -fr $tmp
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_need_to_be_root
-+
-+FSSUM_PROG=$here/src/fssum
-+[ -x $FSSUM_PROG ] || _notrun "fssum not built"
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount "-o compress-force=lzo"
-+
-+run_check $XFS_IO_PROG -f -c "truncate 118811" $SCRATCH_MNT/foo
-+run_check $XFS_IO_PROG -c "pwrite -S 0x0d -b 39987 92267 39987" \
-+	$SCRATCH_MNT/foo
-+
-+run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/mysnap1
-+
-+run_check $XFS_IO_PROG -c "pwrite -S 0x3e -b 80000 200000 80000" \
-+	$SCRATCH_MNT/foo
-+run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+run_check $XFS_IO_PROG -c "pwrite -S 0xdc -b 10000 250000 10000" \
-+	$SCRATCH_MNT/foo
-+run_check $XFS_IO_PROG -c "pwrite -S 0xff -b 10000 300000 10000" \
-+	$SCRATCH_MNT/foo
-+
-+# will be used for incremental send to be able to issue clone operations
-+run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/clones_snap
-+
-+run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/mysnap2
-+
-+run_check $FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/mysnap2/mysnap1 \
-+	-x $SCRATCH_MNT/mysnap2/clones_snap $SCRATCH_MNT/mysnap2
-+run_check $FSSUM_PROG -A -f -w $tmp/clones.fssum $SCRATCH_MNT/clones_snap \
-+	-x $SCRATCH_MNT/clones_snap/mysnap1 -x $SCRATCH_MNT/clones_snap/mysnap2
-+
-+run_check $BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
-+run_check $BTRFS_UTIL_PROG send $SCRATCH_MNT/clones_snap -f $tmp/clones.snap
-+run_check $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 \
-+	-c $SCRATCH_MNT/clones_snap $SCRATCH_MNT/mysnap2 -f $tmp/2.snap
-+
-+_scratch_unmount
-+_check_btrfs_filesystem $SCRATCH_DEV
-+
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
-+run_check $FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/mysnap1 2>> $seqres.full
-+
-+run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/clones.snap
-+run_check $FSSUM_PROG -r $tmp/clones.fssum $SCRATCH_MNT/clones_snap 2>> $seqres.full
-+
-+run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
-+run_check $FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/mysnap2 2>> $seqres.full
-+
-+_scratch_unmount
-+_check_btrfs_filesystem $SCRATCH_DEV
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/040.out b/tests/btrfs/040.out
-new file mode 100644
-index 0000000..7740549
---- /dev/null
-+++ b/tests/btrfs/040.out
-@@ -0,0 +1 @@
-+QA output created by 040
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 2ca2225..a687634 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -38,3 +38,4 @@
- 033 auto quick
- 034 auto quick
- 036 auto quick
-+040 auto quick
+Dave.
 -- 
-1.7.9.5
-
+Dave Chinner
+david@fromorbit.com

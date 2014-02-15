@@ -1,72 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:50223 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751059AbaBOCBl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Feb 2014 21:01:41 -0500
-From: Russell Coker <russell@coker.com.au>
-To: dsterba@suse.cz
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: user creation/deletion of snapshots permissions bug
-Date: Sat, 15 Feb 2014 13:01:33 +1100
-Message-ID: <2965402.xRhQxFUr69@russell.coker.com.au>
-In-Reply-To: <20140214172627.GY16073@twin.jikos.cz>
-References: <2524068.SeylZtQnKR@russell.coker.com.au> <20140214172627.GY16073@twin.jikos.cz>
+Received: from datenkhaos.de ([81.89.99.198]:39226 "EHLO datenkhaos.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753476AbaBORmw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Feb 2014 12:42:52 -0500
+Date: Sat, 15 Feb 2014 18:42:49 +0100
+From: Johannes Hirte <johannes.hirte@datenkhaos.de>
+To: Josef Bacik <jbacik@fb.com>
+Cc: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: throttle delayed refs better
+Message-ID: <20140215184249.271bf02c@datenkhaos.de>
+In-Reply-To: <52FE6E9F.4010906@fb.com>
+References: <1390500472-15144-1-git-send-email-jbacik@fb.com>
+	<20140203192811.72866921@datenkhaos.de>
+	<52F00538.3010505@fb.com>
+	<20140203235334.791312d1@datenkhaos.de>
+	<52F0F566.1090206@fb.com>
+	<20140205091428.076fa15c@datenkhaos.de>
+	<52F25D7B.90807@fb.com>
+	<20140205183406.47023d24@datenkhaos.de>
+	<52F28A69.8050804@fb.com>
+	<20140205203023.535d6f96@datenkhaos.de>
+	<52F292C7.7030701@fb.com>
+	<20140205224250.7876dd16@datenkhaos.de>
+	<52F2B151.70307@fb.com>
+	<20140205235732.04263a51@datenkhaos.de>
+	<52F3FC72.3020603@fb.com>
+	<20140214202526.3199f6cc@datenkhaos.de>
+	<52FE6E9F.4010906@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 14 Feb 2014 18:26:27 David Sterba wrote:
-> On Fri, Feb 07, 2014 at 03:41:09PM +1100, Russell Coker wrote:
-> > $ /sbin/btrfs subvol create /tmp/test
-> > Create subvolume '/tmp/test'
-> > $ /sbin/btrfs subvol delete /tmp/test
-> > Delete subvolume '/tmp/test'
-> > ERROR: cannot delete '/tmp/test' - Operation not permitted
+On Fri, 14 Feb 2014 14:29:35 -0500
+Josef Bacik <jbacik@fb.com> wrote:
+
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> 
+> 
+> On 02/14/2014 02:25 PM, Johannes Hirte wrote:
+> > On Thu, 6 Feb 2014 16:19:46 -0500 Josef Bacik <jbacik@fb.com>
+> > wrote:
 > > 
-> > The above is when running Debian kernel 3.12 based on Linux upstream
-> > 3.12.8. I believe that the BTRFS kernel code should do a capabilities
-> > check for CAP_SYS_ADMIN (which is used for mount/umount among many other
-> > things) before creating a snapshot.  Currently it appears that the only
-> > access control is write access to the parent directory.
+> >> Ok so I thought I reproduced the problem but I just reproduced a 
+> >> different problem.  Please undo any changes you've made and
+> >> apply this patch and reproduce and then provide me with any debug
+> >> output that gets spit out.  I'm sending this via thunderbird with
+> >> 6 different extensions to make sure it comes out right so if it
+> >> doesn't work let me know and I'll just paste it somewhere.
+> >> Thanks,
+> > 
+> > Sorry for the long delay. Was to busy last week.
+> > 
 > 
-> This is going to be partially fixed in 3.14 and the patch backported to
-> older stable trees
+> Ok perfect this is fixed by
 > 
-> http://www.spinics.net/lists/linux-btrfs/msg30815.html
-
-Great, thanks for that information.
-
-> the user has to own the snapshot source, or be capable to do so. The
-> requirement of admin capabilities to delete a subvolume is still there,
-> but I guess it can go away under same checks (ie. owner or capable).
+> [PATCH] Btrfs: don't loop forever if we can't run because of the tree
+> mod log
 > 
-> The admin capability requirement to create a subvolume/snapshot seems
-> too restrictive. Although a subvolume is not as lightweight as a
-> directory, it allows some convenience to do "reflink" copy of a deep
-> directory structure in one go, followed by small changes (eg. git trees).
+> and it went into -rc2 iirc, so give that a whirl and make sure it
+> fixes your problem.  Thanks,
 
-If you have hostile local users then a script to create a large number of 
-subvolumes or snapshots is going to be really annoying as long as there's no 
-tool to automatically delete them.  Something conceptually equivalent to rm -
-rf but for subvols would be good.
+Yes, seems to be fixed now. I wasn't able to reproduce it anymore.
 
-> > There is some possibility of debate about the access control needed for
-> > creating a subvol.  I want to use capabilities set by SE Linux policy to
-> > prevent unwanted actions by hostile root processes and I think that such
-> > use of capabilities (which is used by more than just SE Linux) should be
-> > supported.  I don't think that there is any downside to such checks.
-> I agree, making this tunable whom to allow to manipulate with subvolumes
-> is a good thing. However there's no separate operation regarding
-> subvolumes (like mkdir/rmdir), so this needs to add them so SElinux and
-> the like can hook into there.
-
-Are you suggesting that we have an option to determine whether a capability is 
-needed to create a subvol or that we have a separate hook?
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+regards,
+  Johannes

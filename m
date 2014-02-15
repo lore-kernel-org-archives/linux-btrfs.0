@@ -1,66 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:25466 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751822AbaBNT3l (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:50223 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751059AbaBOCBl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Feb 2014 14:29:41 -0500
-Message-ID: <52FE6E9F.4010906@fb.com>
-Date: Fri, 14 Feb 2014 14:29:35 -0500
-From: Josef Bacik <jbacik@fb.com>
+	Fri, 14 Feb 2014 21:01:41 -0500
+From: Russell Coker <russell@coker.com.au>
+To: dsterba@suse.cz
+Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: user creation/deletion of snapshots permissions bug
+Date: Sat, 15 Feb 2014 13:01:33 +1100
+Message-ID: <2965402.xRhQxFUr69@russell.coker.com.au>
+In-Reply-To: <20140214172627.GY16073@twin.jikos.cz>
+References: <2524068.SeylZtQnKR@russell.coker.com.au> <20140214172627.GY16073@twin.jikos.cz>
 MIME-Version: 1.0
-To: Johannes Hirte <johannes.hirte@datenkhaos.de>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: throttle delayed refs better
-References: <1390500472-15144-1-git-send-email-jbacik@fb.com>	<20140203192811.72866921@datenkhaos.de>	<52F00538.3010505@fb.com>	<20140203235334.791312d1@datenkhaos.de>	<52F0F566.1090206@fb.com>	<20140205091428.076fa15c@datenkhaos.de>	<52F25D7B.90807@fb.com>	<20140205183406.47023d24@datenkhaos.de>	<52F28A69.8050804@fb.com>	<20140205203023.535d6f96@datenkhaos.de>	<52F292C7.7030701@fb.com>	<20140205224250.7876dd16@datenkhaos.de>	<52F2B151.70307@fb.com>	<20140205235732.04263a51@datenkhaos.de>	<52F3FC72.3020603@fb.com> <20140214202526.3199f6cc@datenkhaos.de>
-In-Reply-To: <20140214202526.3199f6cc@datenkhaos.de>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-
-
-On 02/14/2014 02:25 PM, Johannes Hirte wrote:
-> On Thu, 6 Feb 2014 16:19:46 -0500 Josef Bacik <jbacik@fb.com>
-> wrote:
+On Fri, 14 Feb 2014 18:26:27 David Sterba wrote:
+> On Fri, Feb 07, 2014 at 03:41:09PM +1100, Russell Coker wrote:
+> > $ /sbin/btrfs subvol create /tmp/test
+> > Create subvolume '/tmp/test'
+> > $ /sbin/btrfs subvol delete /tmp/test
+> > Delete subvolume '/tmp/test'
+> > ERROR: cannot delete '/tmp/test' - Operation not permitted
+> > 
+> > The above is when running Debian kernel 3.12 based on Linux upstream
+> > 3.12.8. I believe that the BTRFS kernel code should do a capabilities
+> > check for CAP_SYS_ADMIN (which is used for mount/umount among many other
+> > things) before creating a snapshot.  Currently it appears that the only
+> > access control is write access to the parent directory.
 > 
->> Ok so I thought I reproduced the problem but I just reproduced a 
->> different problem.  Please undo any changes you've made and
->> apply this patch and reproduce and then provide me with any debug
->> output that gets spit out.  I'm sending this via thunderbird with
->> 6 different extensions to make sure it comes out right so if it
->> doesn't work let me know and I'll just paste it somewhere.
->> Thanks,
+> This is going to be partially fixed in 3.14 and the patch backported to
+> older stable trees
 > 
-> Sorry for the long delay. Was to busy last week.
+> http://www.spinics.net/lists/linux-btrfs/msg30815.html
+
+Great, thanks for that information.
+
+> the user has to own the snapshot source, or be capable to do so. The
+> requirement of admin capabilities to delete a subvolume is still there,
+> but I guess it can go away under same checks (ie. owner or capable).
 > 
+> The admin capability requirement to create a subvolume/snapshot seems
+> too restrictive. Although a subvolume is not as lightweight as a
+> directory, it allows some convenience to do "reflink" copy of a deep
+> directory structure in one go, followed by small changes (eg. git trees).
 
-Ok perfect this is fixed by
+If you have hostile local users then a script to create a large number of 
+subvolumes or snapshots is going to be really annoying as long as there's no 
+tool to automatically delete them.  Something conceptually equivalent to rm -
+rf but for subvols would be good.
 
-[PATCH] Btrfs: don't loop forever if we can't run because of the tree
-mod log
+> > There is some possibility of debate about the access control needed for
+> > creating a subvol.  I want to use capabilities set by SE Linux policy to
+> > prevent unwanted actions by hostile root processes and I think that such
+> > use of capabilities (which is used by more than just SE Linux) should be
+> > supported.  I don't think that there is any downside to such checks.
+> I agree, making this tunable whom to allow to manipulate with subvolumes
+> is a good thing. However there's no separate operation regarding
+> subvolumes (like mkdir/rmdir), so this needs to add them so SElinux and
+> the like can hook into there.
 
-and it went into -rc2 iirc, so give that a whirl and make sure it
-fixes your problem.  Thanks,
+Are you suggesting that we have an option to determine whether a capability is 
+needed to create a subvol or that we have a separate hook?
 
-Josef
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 
-iQIcBAEBAgAGBQJS/m6fAAoJEANb+wAKly3B73IP/052xDlBavgP5GTMhwnn2+yA
-fY862NUlwQbb+5MlMi1DseG0lBp1/j0M8XkMq/F0btZSrAJcem+mZPSfeHHbYoxG
-4kO5pjXQY3ha1Wj8Lc30HqF2hGGIIfr9zOyNq1d7t/w2wXXi84VkwRJkBlZWHROy
-RjoK2eKv94MJtMnL4FRxew4Pkvg2y+kqnZeaL6DL84fno6wPIqf09RXwy6i5AZMD
-AuOpbs5HFkQC2tb/C1ZvWZibDSXeI/nvQPDFMaFPtD4vRLT1KdpxceNErNtMGDTK
-D6YmD+XYdFkg9kNPvgeRQOPyhcdEPWvUI5mWC6lRmQu/CK+7Qf5HPoHbHr+vZB1m
-IwvO34bzUVDLAHkr9kCP4+QAz+GDm7LuhvFcc2uhaZqlLYZzTszG/HqXCNBx86+f
-Y8RjJvSmU+j23bQlvso1FsHUP5d0ihUaEtU+FvG0mCtFMb3gOOqTusEEH0k2x0rD
-SR12DCyR9nV/lSPXEtso+8Mtrkjarw76ZV7IJnZoAxOlHsK3vvuO1xNdJGxG45aV
-k+hLuoXjuQtULydkkGPgQzfzd7s9Ol2NuvhezFjCF/0nC44UWtS4LcA1W41Xcy2M
-3FeuKdWsBucvHwGAc/GSAS8U6oKvCAIUeFTD3Ui2OcXBDiMQYI9jPzGoBmyCnUVQ
-gBiCLWxGejAMN8z2qfCZ
-=7BA7
------END PGP SIGNATURE-----

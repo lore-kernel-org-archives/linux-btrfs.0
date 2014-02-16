@@ -1,55 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:61904 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751742AbaBPNK2 (ORCPT
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:41722 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751911AbaBPNnp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 08:10:28 -0500
-Message-ID: <5300B95F.3040306@fb.com>
-Date: Sun, 16 Feb 2014 08:13:03 -0500
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Content-Type: text/plain; charset="ISO-8859-1"
+	Sun, 16 Feb 2014 08:43:45 -0500
+Received: by mail-wi0-f170.google.com with SMTP id hi5so1640514wib.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 05:43:44 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: incremental send, fix invalid path after dir rename
+Date: Sun, 16 Feb 2014 13:43:11 +0000
+Message-Id: <1392558191-14475-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+This fixes yet one more case not caught by the commit titled:
 
-We have a small collection of fixes in my for-linus branch:
+   Btrfs: fix infinite path build loops in incremental send
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+In this case, even before the initial full send, we have a directory
+which is a child of a directory with a higher inode number. Then we
+perform the initial send, and after we rename both the child and the
+parent, without moving them around. After doing these 2 renames, an
+incremental send sent a rename instruction for the child directory
+which contained an invalid "from" path (referenced the parent's old
+name, not the new one), which made the btrfs receive command fail.
 
-The big thing that stands out is a revert of a new ioctl.  Users haven't
-shipped yet in btrfs-progs, and Dave Sterba found a better way to export
-the information.
+Steps to reproduce:
 
-Anand Jain (1) commits (+8/-2):
-    btrfs: fix null pointer deference at btrfs_sysfs_add_one+0x105
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ mkdir -p /mnt/btrfs/a/b
+    $ mkdir /mnt/btrfs/d
+    $ mkdir /mnt/btrfs/a/b/c
+    $ mv /mnt/btrfs/d /mnt/btrfs/a/b/c
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
+    $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
+    $ mv /mnt/btrfs/a/b/c /mnt/btrfs/a/b/x
+    $ mv /mnt/btrfs/a/b/x/d /mnt/btrfs/a/b/x/y
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
+    $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
 
-Liu Bo (1) commits (+0/-1):
-    Btrfs: fix a lockdep warning when cleaning up aborted transaction
+    $ umout /mnt/btrfs
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ btrfs receive /mnt/btrfs -f /tmp/base.send
+    $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
 
-Filipe David Borba Manana (1) commits (+10/-0):
-    Btrfs: use right clone root offset for compressed extents
+The second btrfs receive command failed with:
+  "ERROR: rename a/b/c/d -> a/b/x/y failed. No such file or directory"
 
-Mitch Harder (1) commits (+1/-1):
-    Btrfs: fix max_inline mount option
+A test case for xfstests follows.
 
-Chris Mason (1) commits (+0/-17):
-    Revert "btrfs: add ioctl to export size of global metadata reservation"
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |   41 ++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 34 insertions(+), 7 deletions(-)
 
-Josef Bacik (1) commits (+9/-2):
-    Btrfs: unset DCACHE_DISCONNECTED when mounting default subvol
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index b6d416c..7dbed58 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2847,19 +2847,48 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ {
+ 	struct fs_path *from_path = NULL;
+ 	struct fs_path *to_path = NULL;
++	struct fs_path *name = NULL;
+ 	u64 orig_progress = sctx->send_progress;
+ 	struct recorded_ref *cur;
++	u64 parent_ino, parent_gen;
+ 	int ret;
+ 
++	name = fs_path_alloc();
+ 	from_path = fs_path_alloc();
+-	if (!from_path)
+-		return -ENOMEM;
++	if (!name || !from_path) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 
+-	sctx->send_progress = pm->ino;
+-	ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
++	ret = del_waiting_dir_move(sctx, pm->ino);
++	ASSERT(ret == 0);
++
++	ret = get_first_ref(sctx->parent_root, pm->ino,
++			    &parent_ino, &parent_gen, name);
+ 	if (ret < 0)
+ 		goto out;
+ 
++	if (parent_ino == sctx->cur_ino) {
++		/* child only renamed, not moved */
++		ASSERT(parent_gen == sctx->cur_inode_gen);
++		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen,
++				   from_path);
++		if (ret < 0)
++			goto out;
++		ret = fs_path_add_path(from_path, name);
++		if (ret < 0)
++			goto out;
++	} else {
++		/* child moved and maybe renamed too */
++		sctx->send_progress = pm->ino;
++		ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
++		if (ret < 0)
++			goto out;
++	}
++
++	fs_path_free(name);
++	name = NULL;
++
+ 	to_path = fs_path_alloc();
+ 	if (!to_path) {
+ 		ret = -ENOMEM;
+@@ -2867,9 +2896,6 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	}
+ 
+ 	sctx->send_progress = sctx->cur_ino + 1;
+-	ret = del_waiting_dir_move(sctx, pm->ino);
+-	ASSERT(ret == 0);
+-
+ 	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
+ 	if (ret < 0)
+ 		goto out;
+@@ -2893,6 +2919,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	}
+ 
+ out:
++	fs_path_free(name);
+ 	fs_path_free(from_path);
+ 	fs_path_free(to_path);
+ 	sctx->send_progress = orig_progress;
+-- 
+1.7.9.5
 
-Total: (6) commits (+28/-23)
-
- fs/btrfs/disk-io.c         |  1 -
- fs/btrfs/inode.c           |  2 +-
- fs/btrfs/ioctl.c           | 16 ----------------
- fs/btrfs/send.c            | 10 ++++++++++
- fs/btrfs/super.c           | 11 +++++++++--
- fs/btrfs/sysfs.c           | 10 ++++++++--
- include/uapi/linux/btrfs.h |  1 -
- 7 files changed, 28 insertions(+), 23 deletions(-)

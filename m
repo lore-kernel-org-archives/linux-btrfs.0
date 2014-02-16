@@ -1,55 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.jrs-s.net ([173.230.137.22]:59804 "EHLO mail.jrs-s.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753408AbaBPUoj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 15:44:39 -0500
-Message-ID: <53012334.3070300@jrs-s.net>
-Date: Sun, 16 Feb 2014 15:44:36 -0500
-From: Jim Salter <jim@jrs-s.net>
-MIME-Version: 1.0
-To: GEO <1g2e3o4@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS send: exclude directories
-References: <11335246.MGjIN0NiaF@linuxpc>
-In-Reply-To: <11335246.MGjIN0NiaF@linuxpc>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-we0-f169.google.com ([74.125.82.169]:41163 "EHLO
+	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752822AbaBPVCN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Feb 2014 16:02:13 -0500
+Received: by mail-we0-f169.google.com with SMTP id t61so10221080wes.14
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 13:02:12 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: send, don't send rmdir for same target multiple times
+Date: Sun, 16 Feb 2014 21:01:39 +0000
+Message-Id: <1392584499-10256-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Simplest way to do it is to make the directories that you don't want to 
-replicate be separate subvolumes. I do this to keep from replicating 
-copies of snapshot directories.
+When doing an incremental send, if we delete a directory that has N > 1
+hardlinks for the same file and that file has the highest inode number
+inside the directory contents, an incremental send would send N times an
+rmdir operation against the directory. This made the btrfs receive command
+fail on the second rmdir instruction, as the target directory didn't exist
+anymore.
 
-Example:
+Steps to reproduce the issue:
 
-mv /home/GEO/.cache /home/GEO/.cache.tmp
-btrfs sub create /home/GEO/.cache
-cp -a --reflink=always /home/GEO/.cache.tmp/ /home/GEO/.cache/
-cp -a --reflink=always /home/GEO/.cache.tmp/.* /home/GEO/.cache/
-rm -rf /home/GEO/.cache.tmp
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ mkdir -p /mnt/btrfs/a/b/c
+    $ echo 'ola mundo' > /mnt/btrfs/a/b/c/foo.txt
+    $ ln /mnt/btrfs/a/b/c/foo.txt /mnt/btrfs/a/b/c/bar.txt
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
+    $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
+    $ rm -f /mnt/btrfs/a/b/c/foo.txt
+    $ rm -f /mnt/btrfs/a/b/c/bar.txt
+    $ rmdir /mnt/btrfs/a/b/c
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
+    $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
 
-You could also just mv the files instead of first doing cp and then 
-rm'ing them, but if you have many gigs of files, the cp --reflink=always 
-will be a win - currently (at least, last I checked) mv across 
-subvolumes would actually do a full copy, whereas a cp --reflink=always 
-will just create new pointers to the blocks in the appropriate place 
-(thereby completing instantaneously).
+    $ umount /mnt/btrfs
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ btrfs receive /mnt/btrfs -f /tmp/base.send
+    $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
 
-Anyway, once .cache (or whatever) is a subvolume instead of a directory, 
-it will no longer get replicated with your btrfs send command of its 
-parent directory.
+The second btrfs receive command failed with:
 
-On 02/16/2014 03:07 PM, GEO wrote:
-> Hi,
->
-> I have been experimenting with btrfs send/receive for incremental backups, but
-> could not figure out how to exclude certain directories from
-> subvolumes/snapshots. For example, I want to backup my data in home, but I am
-> not interested in backing up hidden directories like .cache too.
-> Is it currently possible to achieve something like that?
->
-> Thanks for the great work!
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+    ERROR: rmdir o259-6-0 failed. No such file or directory
+
+A test case for xfstests follows.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index cb9502a..cdfd435 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3085,6 +3085,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 	u64 ow_gen;
+ 	int did_overwrite = 0;
+ 	int is_orphan = 0;
++	u64 last_dir_ino_rm = 0;
+ 
+ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 
+@@ -3349,7 +3350,8 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 			ret = send_utimes(sctx, cur->dir, cur->dir_gen);
+ 			if (ret < 0)
+ 				goto out;
+-		} else if (ret == inode_state_did_delete) {
++		} else if (ret == inode_state_did_delete &&
++			   cur->dir != last_dir_ino_rm) {
+ 			ret = can_rmdir(sctx, cur->dir, sctx->cur_ino);
+ 			if (ret < 0)
+ 				goto out;
+@@ -3361,6 +3363,7 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 				ret = send_rmdir(sctx, valid_path);
+ 				if (ret < 0)
+ 					goto out;
++				last_dir_ino_rm = cur->dir;
+ 			}
+ 		}
+ 	}
+-- 
+1.7.9.5
 

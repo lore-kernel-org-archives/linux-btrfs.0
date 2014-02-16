@@ -1,24 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f181.google.com ([209.85.128.181]:56654 "EHLO
-	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753300AbaBPUco (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 15:32:44 -0500
-Received: by mail-ve0-f181.google.com with SMTP id cz12so11192677veb.40
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 12:32:44 -0800 (PST)
+Received: from mail.jrs-s.net ([173.230.137.22]:59804 "EHLO mail.jrs-s.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753408AbaBPUoj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Feb 2014 15:44:39 -0500
+Message-ID: <53012334.3070300@jrs-s.net>
+Date: Sun, 16 Feb 2014 15:44:36 -0500
+From: Jim Salter <jim@jrs-s.net>
 MIME-Version: 1.0
-In-Reply-To: <11335246.MGjIN0NiaF@linuxpc>
-References: <11335246.MGjIN0NiaF@linuxpc>
-Date: Sun, 16 Feb 2014 20:32:43 +0000
-Message-ID: <CALOYprUfUvDiODcM1Hcen9tQVACmZid2ymZXdjuxd09QDyQirA@mail.gmail.com>
+To: GEO <1g2e3o4@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS send: exclude directories
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <11335246.MGjIN0NiaF@linuxpc>
+In-Reply-To: <11335246.MGjIN0NiaF@linuxpc>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16 February 2014 20:07, GEO <1g2e3o4@gmail.com> wrote:
+Simplest way to do it is to make the directories that you don't want to 
+replicate be separate subvolumes. I do this to keep from replicating 
+copies of snapshot directories.
+
+Example:
+
+mv /home/GEO/.cache /home/GEO/.cache.tmp
+btrfs sub create /home/GEO/.cache
+cp -a --reflink=always /home/GEO/.cache.tmp/ /home/GEO/.cache/
+cp -a --reflink=always /home/GEO/.cache.tmp/.* /home/GEO/.cache/
+rm -rf /home/GEO/.cache.tmp
+
+You could also just mv the files instead of first doing cp and then 
+rm'ing them, but if you have many gigs of files, the cp --reflink=always 
+will be a win - currently (at least, last I checked) mv across 
+subvolumes would actually do a full copy, whereas a cp --reflink=always 
+will just create new pointers to the blocks in the appropriate place 
+(thereby completing instantaneously).
+
+Anyway, once .cache (or whatever) is a subvolume instead of a directory, 
+it will no longer get replicated with your btrfs send command of its 
+parent directory.
+
+On 02/16/2014 03:07 PM, GEO wrote:
 > Hi,
 >
 > I have been experimenting with btrfs send/receive for incremental backups, but
@@ -33,19 +53,3 @@ On 16 February 2014 20:07, GEO <1g2e3o4@gmail.com> wrote:
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Hi,
-
-You could create a read-write snapshot, remove the directories that
-you're not interested in, then create a read-only snapshot of that to
-send, then remove the read-write snapshot.
-
-Note that I've not tested this myself, so I can't guarantee that it
-will work. (It makes sense in my head though!)
-
-Cheers,
-
-
-WorMzy
-
-(apologies if you receive this twice, I just noticed that gmail
-doesn't reply to this mailing list, it replies to the person directly)

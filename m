@@ -1,254 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:33927 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753838AbaBOUa5 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:33459 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752368AbaBPOX7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Feb 2014 15:30:57 -0500
-Date: Sat, 15 Feb 2014 20:30:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Fix 32/64-bit problem with
- BTRFS_SET_RECEIVED_SUBVOL ioctl
-Message-ID: <20140215203033.GE3351@carfax.org.uk>
-References: <1388944527-16041-1-git-send-email-hugo@carfax.org.uk>
- <20140105182611.GA15634@carfax.org.uk>
- <20140106085044.GB15634@carfax.org.uk>
- <CAOcd+r2v7v9Gee_bp_uEY=7cJj6NWsa8ORx5PzCeyASwtLDpsQ@mail.gmail.com>
+	Sun, 16 Feb 2014 09:23:59 -0500
+Date: Sun, 16 Feb 2014 06:23:53 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, jbacik@fb.com
+Message-ID: <20140216142352.GN27097@merlins.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="CGDBiGfvSTbxKZlW"
-In-Reply-To: <CAOcd+r2v7v9Gee_bp_uEY=7cJj6NWsa8ORx5PzCeyASwtLDpsQ@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1392558191-14475-1-git-send-email-fdmanana@gmail.com>
+ <20140214015426.GH27097@merlins.org>
+Subject: Re: How to recover from failing btrfs send | btrfs receive?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Fillipe, I see you have another fix for btrfs send (attached below), 
+as ell as your other patch on Jan 21st (neither are in my 3.12.7).
 
---CGDBiGfvSTbxKZlW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+>From my error below, 
+> ERROR: rmdir o1845158-142-0 failed. No such file or directory
+can you tell if I'm having a different problem than the two patches
+you sent?
 
-On Sat, Feb 15, 2014 at 09:42:30PM +0200, Alex Lyakas wrote:
-> Hello Hugo,
+More generally, could you hint how I can tell what this 
+ rmdir o1845158-142-0
+refers to, considering that it looks like a made up filename by btrfs
+send/receive?
+
+I'm happy to go to 3.13.3 and apply both patches if you think it'll
+help.
+
+Thanks,
+Marc
+
+On Wed, Feb 12, 2014 at 06:22:07AM -0800, Marc MERLIN wrote:
+> So, I've veen running this for a few weeks, and soon should have
+> something half decent to share for others to use.
 > 
-> Is this issue specific to the receive ioctl?
-
-   Yes. Everything else I've tried has worked perfectly on that test
-system. The issue is not pointer size (which is, I think, your
-thunking idea below), but structure alignment.
-
-> Because what you are describing applies to any user-kernel ioctl-based
-> interface, when you compile the user-space as 32-bit, which the kernel
-> space has been compiled as 64-bit. For that purpose, I believe, there
-> exists the "compat_ioctl" callback. It's implementation should do
-> "thunking", i.e., treat the user-space structure as if it were
-> compiled for 32-bit, and unpack it properly.
+> Unfortunately, one of my backups is now failing like so:
 > 
-> Today, however, btrfs supplies the same callback both for
-> "unlocked_ioctl" and "compat_ioctl". So we should see the same problem
-> with all ioctls, if I am not missing anything.
+> btrfs send -p "$src_snap" "$src_newsnap" | btrfs receive "$dest_pool/"
+> + btrfs send -p /mnt/btrfs_pool1/home_ro.20140209_12:00:01 home_ro.20140212_05:37:49
+> + btrfs receive /mnt/btrfs_pool2//
+> At subvol home_ro.20140212_05:37:49
+> At snapshot home_ro.20140212_05:37:49
+> ERROR: rmdir o1845158-142-0 failed. No such file or directory
+> 
+> This looks like it got in an unfinished state it can't recover from.
+> 
+> This was with kernel 3.12.7.
+> 
+> Can I self fix this somehow, I know I can use rsync to make both sides
+> the sames, but incremental send/receive will not work anymore after
+> that, correct?
+> 
+> Except, not really. Now I'm confused.
+> legolas:/mnt/btrfs_pool1# rsync -avSH --delete --dry-run  /mnt/btrfs_pool1/home_ro.20140209_12:00:01/. /mnt/btrfs_pool2/home_ro.20140209_12\:00\:01/.
+> sending incremental file list
+> ./
+> 
+> sent 116867233 bytes  received 265427 bytes  92194.14 bytes/sec
+> total size is 129135042766  speedup is 1102.47 (DRY RUN)
+> legolas:/mnt/btrfs_pool1# 
+> 
+> (I know I start the entire backup over from scratch, but for obvious
+> reasons, restarting an entire backup from scratch each time I get an
+> error isn't great since it could take hours or days to backup that much
+> data)
+> 
+> Suggestions welcome :)
+> 
+> Thanks,
+> Marc
 
-   As far as I can see, the other ioctls are using structures which
-end up being aligned to 8-byte boundaries regardless of the bitness of
-the compiler target. Also, we don't tend to pass pointers in the btrfs
-ioctls, so we don't have that problem.
+On Sun, Feb 16, 2014 at 01:43:11PM +0000, Filipe David Borba Manana wrote:
+> This fixes yet one more case not caught by the commit titled:
+> 
+>    Btrfs: fix infinite path build loops in incremental send
+> 
+> In this case, even before the initial full send, we have a directory
+> which is a child of a directory with a higher inode number. Then we
+> perform the initial send, and after we rename both the child and the
+> parent, without moving them around. After doing these 2 renames, an
+> incremental send sent a rename instruction for the child directory
+> which contained an invalid "from" path (referenced the parent's old
+> name, not the new one), which made the btrfs receive command fail.
+> 
+> Steps to reproduce:
+> 
+>     $ mkfs.btrfs -f /dev/sdb3
+>     $ mount /dev/sdb3 /mnt/btrfs
+>     $ mkdir -p /mnt/btrfs/a/b
+>     $ mkdir /mnt/btrfs/d
+>     $ mkdir /mnt/btrfs/a/b/c
+>     $ mv /mnt/btrfs/d /mnt/btrfs/a/b/c
+>     $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
+>     $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
+>     $ mv /mnt/btrfs/a/b/c /mnt/btrfs/a/b/x
+>     $ mv /mnt/btrfs/a/b/x/d /mnt/btrfs/a/b/x/y
+>     $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
+>     $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
+> 
+>     $ umout /mnt/btrfs
+>     $ mkfs.btrfs -f /dev/sdb3
+>     $ mount /dev/sdb3 /mnt/btrfs
+>     $ btrfs receive /mnt/btrfs -f /tmp/base.send
+>     $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
+> 
+> The second btrfs receive command failed with:
+>   "ERROR: rename a/b/c/d -> a/b/x/y failed. No such file or directory"
+> 
+> A test case for xfstests follows.
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>  fs/btrfs/send.c |   41 ++++++++++++++++++++++++++++++++++-------
+>  1 file changed, 34 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index b6d416c..7dbed58 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -2847,19 +2847,48 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>  {
+>  	struct fs_path *from_path = NULL;
+>  	struct fs_path *to_path = NULL;
+> +	struct fs_path *name = NULL;
+>  	u64 orig_progress = sctx->send_progress;
+>  	struct recorded_ref *cur;
+> +	u64 parent_ino, parent_gen;
+>  	int ret;
+>  
+> +	name = fs_path_alloc();
+>  	from_path = fs_path_alloc();
+> -	if (!from_path)
+> -		return -ENOMEM;
+> +	if (!name || !from_path) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+>  
+> -	sctx->send_progress = pm->ino;
+> -	ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
+> +	ret = del_waiting_dir_move(sctx, pm->ino);
+> +	ASSERT(ret == 0);
+> +
+> +	ret = get_first_ref(sctx->parent_root, pm->ino,
+> +			    &parent_ino, &parent_gen, name);
+>  	if (ret < 0)
+>  		goto out;
+>  
+> +	if (parent_ino == sctx->cur_ino) {
+> +		/* child only renamed, not moved */
+> +		ASSERT(parent_gen == sctx->cur_inode_gen);
+> +		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen,
+> +				   from_path);
+> +		if (ret < 0)
+> +			goto out;
+> +		ret = fs_path_add_path(from_path, name);
+> +		if (ret < 0)
+> +			goto out;
+> +	} else {
+> +		/* child moved and maybe renamed too */
+> +		sctx->send_progress = pm->ino;
+> +		ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +
+> +	fs_path_free(name);
+> +	name = NULL;
+> +
+>  	to_path = fs_path_alloc();
+>  	if (!to_path) {
+>  		ret = -ENOMEM;
+> @@ -2867,9 +2896,6 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>  	}
+>  
+>  	sctx->send_progress = sctx->cur_ino + 1;
+> -	ret = del_waiting_dir_move(sctx, pm->ino);
+> -	ASSERT(ret == 0);
+> -
+>  	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
+>  	if (ret < 0)
+>  		goto out;
+> @@ -2893,6 +2919,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>  	}
+>  
+>  out:
+> +	fs_path_free(name);
+>  	fs_path_free(from_path);
+>  	fs_path_free(to_path);
+>  	sctx->send_progress = orig_progress;
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-   Hugo.
-
-> On Mon, Jan 6, 2014 at 10:50 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > On Sun, Jan 05, 2014 at 06:26:11PM +0000, Hugo Mills wrote:
-> >> On Sun, Jan 05, 2014 at 05:55:27PM +0000, Hugo Mills wrote:
-> >> > The structure for BTRFS_SET_RECEIVED_IOCTL packs differently on 32-bit
-> >> > and 64-bit systems. This means that it is impossible to use btrfs
-> >> > receive on a system with a 64-bit kernel and 32-bit userspace, because
-> >> > the structure size (and hence the ioctl number) is different.
-> >> >
-> >> > This patch adds a compatibility structure and ioctl to deal with the
-> >> > above case.
-> >>
-> >>    Oops, forgot to mention -- this has been compile tested, but not
-> >> actually run yet. The machine in question is several miles away and is
-> >> a production machine (it's my work desktop, and I can't afford much
-> >> downtime on it).
-> >
-> >    ... And it doesn't even compile properly, now I come to build a
-> > .deb. I'm still interested in comments about the general approach, but
-> > the specific patch is a load of balls.
-> >
-> >    Hugo.
-> >
-> >>    Hugo.
-> >>
-> >> > Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
-> >> > ---
-> >> >  fs/btrfs/ioctl.c | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
-> >> >  1 file changed, 87 insertions(+), 8 deletions(-)
-> >> >
-> >> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> >> > index 21da576..e186439 100644
-> >> > --- a/fs/btrfs/ioctl.c
-> >> > +++ b/fs/btrfs/ioctl.c
-> >> > @@ -57,6 +57,32 @@
-> >> >  #include "send.h"
-> >> >  #include "dev-replace.h"
-> >> >
-> >> > +#ifdef CONFIG_64BIT
-> >> > +/* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
-> >> > + * structures are incorrect, as the timespec structure from userspace
-> >> > + * is 4 bytes too small. We define these alternatives here to teach
-> >> > + * the kernel about the 32-bit struct packing.
-> >> > + */
-> >> > +struct btrfs_ioctl_timespec {
-> >> > +   __u64 sec;
-> >> > +   __u32 nsec;
-> >> > +} ((__packed__));
-> >> > +
-> >> > +struct btrfs_ioctl_received_subvol_args {
-> >> > +   char    uuid[BTRFS_UUID_SIZE];  /* in */
-> >> > +   __u64   stransid;               /* in */
-> >> > +   __u64   rtransid;               /* out */
-> >> > +   struct btrfs_ioctl_timespec stime; /* in */
-> >> > +   struct btrfs_ioctl_timespec rtime; /* out */
-> >> > +   __u64   flags;                  /* in */
-> >> > +   __u64   reserved[16];           /* in */
-> >> > +} ((__packed__));
-> >> > +#endif
-> >> > +
-> >> > +#define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
-> >> > +                           struct btrfs_ioctl_received_subvol_args_32)
-> >> > +
-> >> > +
-> >> >  static int btrfs_clone(struct inode *src, struct inode *inode,
-> >> >                    u64 off, u64 olen, u64 olen_aligned, u64 destoff);
-> >> >
-> >> > @@ -4313,10 +4339,69 @@ static long btrfs_ioctl_quota_rescan_wait(struct file *file, void __user *arg)
-> >> >     return btrfs_qgroup_wait_for_completion(root->fs_info);
-> >> >  }
-> >> >
-> >> > +#ifdef CONFIG_64BIT
-> >> > +static long btrfs_ioctl_set_received_subvol_32(struct file *file,
-> >> > +                                           void __user *arg)
-> >> > +{
-> >> > +   struct btrfs_ioctl_received_subvol_args_32 *args32 = NULL;
-> >> > +   struct btrfs_ioctl_received_subvol_args *args64 = NULL;
-> >> > +   int ret = 0;
-> >> > +
-> >> > +   args32 = memdup_user(arg, sizeof(*args32));
-> >> > +   if (IS_ERR(args32)) {
-> >> > +           ret = PTR_ERR(args32);
-> >> > +           args32 = NULL;
-> >> > +           goto out;
-> >> > +   }
-> >> > +
-> >> > +   args64 = malloc(sizeof(*args64));
-> >> > +   if (IS_ERR(args64)) {
-> >> > +           ret = PTR_ERR(args64);
-> >> > +           args64 = NULL;
-> >> > +           goto out;
-> >> > +   }
-> >> > +
-> >> > +   memcpy(args64->uuid, args32->uuid, BTRFS_UUID_SIZE);
-> >> > +   args64->stransid = args32->stransid;
-> >> > +   args64->rtransid = args32->rtransid;
-> >> > +   args64->stime.sec = args32->stime.sec;
-> >> > +   args64->stime.nsec = args32->stime.nsec;
-> >> > +   args64->rtime.sec = args32->rtime.sec;
-> >> > +   args64->rtime.nsec = args32->rtime.nsec;
-> >> > +   args64->flags = args32->flags;
-> >> > +
-> >> > +   ret = _btrfs_ioctl_set_received_subvol(file, args64);
-> >> > +
-> >> > +out:
-> >> > +   kfree(args32);
-> >> > +   kfree(args64);
-> >> > +   return ret;
-> >> > +}
-> >> > +#endif
-> >> > +
-> >> >  static long btrfs_ioctl_set_received_subvol(struct file *file,
-> >> >                                         void __user *arg)
-> >> >  {
-> >> >     struct btrfs_ioctl_received_subvol_args *sa = NULL;
-> >> > +   int ret = 0;
-> >> > +
-> >> > +   sa = memdup_user(arg, sizeof(*sa));
-> >> > +   if (IS_ERR(sa)) {
-> >> > +           ret = PTR_ERR(sa);
-> >> > +           sa = NULL;
-> >> > +           goto out;
-> >> > +   }
-> >> > +
-> >> > +   ret = _btrfs_ioctl_set_received_subvol(file, sa);
-> >> > +
-> >> > +out:
-> >> > +   kfree(sa);
-> >> > +   return ret;
-> >> > +}
-> >> > +
-> >> > +static long _btrfs_ioctl_set_received_subvol(struct file *file,
-> >> > +                                       struct btrfs_ioctl_received_subvol_args *sa)
-> >> > +{
-> >> >     struct inode *inode = file_inode(file);
-> >> >     struct btrfs_root *root = BTRFS_I(inode)->root;
-> >> >     struct btrfs_root_item *root_item = &root->root_item;
-> >> > @@ -4346,13 +4431,6 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
-> >> >             goto out;
-> >> >     }
-> >> >
-> >> > -   sa = memdup_user(arg, sizeof(*sa));
-> >> > -   if (IS_ERR(sa)) {
-> >> > -           ret = PTR_ERR(sa);
-> >> > -           sa = NULL;
-> >> > -           goto out;
-> >> > -   }
-> >> > -
-> >> >     /*
-> >> >      * 1 - root item
-> >> >      * 2 - uuid items (received uuid + subvol uuid)
-> >> > @@ -4411,7 +4489,6 @@ static long btrfs_ioctl_set_received_subvol(struct file *file,
-> >> >             ret = -EFAULT;
-> >> >
-> >> >  out:
-> >> > -   kfree(sa);
-> >> >     up_write(&root->fs_info->subvol_sem);
-> >> >     mnt_drop_write_file(file);
-> >> >     return ret;
-> >> > @@ -4572,6 +4649,8 @@ long btrfs_ioctl(struct file *file, unsigned int
-> >> >             return btrfs_ioctl_balance_progress(root, argp);
-> >> >     case BTRFS_IOC_SET_RECEIVED_SUBVOL:
-> >> >             return btrfs_ioctl_set_received_subvol(file, argp);
-> >> > +   case BTRFS_IOC_SET_RECEIVED_SUBVOL_32:
-> >> > +           return btrfs_ioctl_set_received_subvol_32(file, argp);
-> >> >     case BTRFS_IOC_SEND:
-> >> >             return btrfs_ioctl_send(file, argp);
-> >> >     case BTRFS_IOC_GET_DEV_STATS:
-> >>
-> >
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-        --- That's not rain,  that's a lake with slots in it. ---        
-
---CGDBiGfvSTbxKZlW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBUv/OaVheFHXiqx3kAQKQbw//YHYpfYPNBnxsepnpto6HmanNfqfNwv0E
-2fCqAL/oFXl/MhKtxv8Nwq+DxdFemXHk+dlf/ykQgVVmikyj2ycPkPcihWAvoFhb
-i5vpyLwp2YZ+cttlrKDfvSF6J6zq7fOvMAnBCegCaHWWG6YFCDtgOj/EMU21A+3K
-f/xiSUvzkW6AKWjZCOf44/okrSe2w3W2WpKStG5NHV2xt1ERcsOrLO0wumx3Vf7I
-cNSdBFzLLs0omkV6GPqm6Lu0NCLXMHcg16dK6a7pv90aikgttrl21uZ64dv2cAvq
-WuoS1jyZJEmTkqL09ImXmV13+q7OsJJvuNhNGvk0Lb06SRfufgDu/G8AEDxvJGkY
-xerKV2mrWSfS+mwzWQY1J9ayZK2P0SQ65jhVcNfHrPR80xTjhWsKQvWj5a+7naNo
-lp+vvO3lQcV8Xqt9YfhGw5Tn5cz8u7IejJ8orS3l+c8gMz86EPVuSPbQzt9fu481
-x7noK7oucfrvNZb83DiPSZIcdyf40bheYg0qw+l+IpWV7MXwsGXgb5qVAIj1k9mb
-SQxQhl+oSDs3u4JbWubeI5K8s55HCDVSws9/xbNEDfzExQDzbQUgmXfkcsVkOHqZ
-4CHfIkCk8YAYISaXV/2rW/0kGkHp74l2m3beMMmJbkfJ7MVUYViVovyLnsVG7gPS
-9Fy7PErt2fo=
-=yVrc
------END PGP SIGNATURE-----
-
---CGDBiGfvSTbxKZlW--
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

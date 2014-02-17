@@ -1,69 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:57079 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752410AbaBQAXD (ORCPT
+Received: from mail-we0-f169.google.com ([74.125.82.169]:32772 "EHLO
+	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751622AbaBQAYV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 19:23:03 -0500
-Received: by mail-wi0-f173.google.com with SMTP id hn9so1890558wib.12
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 16:23:01 -0800 (PST)
+	Sun, 16 Feb 2014 19:24:21 -0500
+Received: by mail-we0-f169.google.com with SMTP id t61so10282391wes.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 16:24:20 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add test for btrfs incremental send after dir renames
-Date: Mon, 17 Feb 2014 00:22:32 +0000
-Message-Id: <1392596552-6566-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1392558260-14546-1-git-send-email-fdmanana@gmail.com>
-References: <1392558260-14546-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add test for btrfs send issuing duplicated rmdir ops
+Date: Mon, 17 Feb 2014 00:23:56 +0000
+Message-Id: <1392596636-6624-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1392584574-10317-1-git-send-email-fdmanana@gmail.com>
+References: <1392584574-10317-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for a btrfs incremental send issue related to renaming of
-directories. If at the time of the initial send we have a directory that is
-a child of a directory with a higher inode number, and then later after the
-initial full send we rename both the child and parent directories, but
-without moving any of them, a subsequent incremental send would produce a
-rename instruction for the child directory that pointed to an invalid path.
-This made the btrfs receive operation fail.
+Regression test for btrfs incremental send issue where an rmdir
+instruction was sent multiple times for the same target directory.
+The number of times depended on the number of hardlinks against
+the same inode inside the target directory. That inode must have
+had the highest number of all the inodes that were children of the
+directory. This made the btrfs receive command fail immediately once
+it received the second rmdir instruction.
 
 This issue is fixed by the following linux kernel btrfs patch:
 
-   Btrfs: incremental send, fix invalid path after dir rename
+   Btrfs: send, don't send rmdir for same target multiple times
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
-V2: Updated test comments with correct inode numbers (their relatives differences
-    was correct, only the absolute values were not for some of them). Make use
-    of the new _run_btrfs_util_prog() function.
+V2: Make use of the new _run_btrfs_util_prog() function.
 
- tests/btrfs/041     |  131 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/041.out |    1 +
+ tests/btrfs/042     |  124 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/042.out |    1 +
  tests/btrfs/group   |    1 +
- 3 files changed, 133 insertions(+)
- create mode 100755 tests/btrfs/041
- create mode 100644 tests/btrfs/041.out
+ 3 files changed, 126 insertions(+)
+ create mode 100755 tests/btrfs/042
+ create mode 100644 tests/btrfs/042.out
 
-diff --git a/tests/btrfs/041 b/tests/btrfs/041
+diff --git a/tests/btrfs/042 b/tests/btrfs/042
 new file mode 100755
-index 0000000..5ebe6ca
+index 0000000..1e40755
 --- /dev/null
-+++ b/tests/btrfs/041
-@@ -0,0 +1,131 @@
++++ b/tests/btrfs/042
+@@ -0,0 +1,124 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/041
++# FS QA Test No. btrfs/042
 +#
-+# Regression test for a btrfs incremental send issue related to renaming of
-+# directories. If at the time of the initial send we have a directory that is
-+# a child of a directory with a higher inode number, and then later after the
-+# initial full send we rename both the child and parent directories, but
-+# without moving any of them, a subsequent incremental send would produce a
-+# rename instruction for the child directory that pointed to an invalid path.
-+# This made the btrfs receive operation fail.
++# Regression test for btrfs incremental send issue where an rmdir
++# instruction was sent multiple times for the same target directory.
++# The number of times depended on the number of hardlinks against
++# the same inode inside the target directory. That inode must have
++# had the highest number of all the inodes that were children of the
++# directory. This made the btrfs receive command fail immediately once
++# it received the second rmdir instruction.
 +#
 +# This issue is fixed by the following linux kernel btrfs patch:
 +#
-+#   Btrfs: incremental send, fix invalid path after dir rename
++#   Btrfs: send, don't send rmdir for same target multiple times
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -115,44 +113,37 @@ index 0000000..5ebe6ca
 +_scratch_mkfs >/dev/null 2>&1
 +_scratch_mount
 +
-+mkdir -p $SCRATCH_MNT/a/b
-+mkdir $SCRATCH_MNT/d
-+mkdir $SCRATCH_MNT/a/b/c
-+mv $SCRATCH_MNT/d $SCRATCH_MNT/a/b/c
-+mkdir $SCRATCH_MNT/e
-+mkdir -p $SCRATCH_MNT/a/b/f/g
-+mv $SCRATCH_MNT/e $SCRATCH_MNT/a/b/f/g
++mkdir -p $SCRATCH_MNT/a/b/c
++echo 'hello world' > $SCRATCH_MNT/a/b/c/hel.txt
++echo 'ola mundo' > $SCRATCH_MNT/a/b/c/foo.txt
++ln $SCRATCH_MNT/a/b/c/foo.txt $SCRATCH_MNT/a/b/c/bar.txt
++ln $SCRATCH_MNT/a/b/c/foo.txt $SCRATCH_MNT/a/b/baz.txt
 +
 +# Filesystem looks like:
 +#
-+# .                      (ino 256)
-+# |-- a                  (ino 257)
-+#     |-- b              (ino 258)
-+#         |-- c          (ino 260)
-+#         |   |-- d      (ino 259)
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#         |-- c/           (ino 259)
++#         |   |-- hel.txt  (ino 260)
++#         |   |-- foo.txt  (ino 261)
++#         |   |-- bar.txt  (ino 261)
 +#         |
-+#         |-- f          (ino 262)
-+#             |-- g      (ino 263)
-+#                 |-- e  (ino 261)
++#         |-- baz.txt      (ino 261)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+mv $SCRATCH_MNT/a/b/c $SCRATCH_MNT/a/b/x
-+mv $SCRATCH_MNT/a/b/x/d $SCRATCH_MNT/a/b/x/y
-+mv $SCRATCH_MNT/a/b/f $SCRATCH_MNT/a/b/w
-+mv $SCRATCH_MNT/a/b/w/g/e $SCRATCH_MNT/a/b/w/g/z
++rm -f $SCRATCH_MNT/a/b/c/foo.txt
++rm -f $SCRATCH_MNT/a/b/c/bar.txt
++rm -f $SCRATCH_MNT/a/b/c/hel.txt
++rmdir $SCRATCH_MNT/a/b/c
 +
 +# Filesystem now looks like:
 +#
-+# .                      (ino 256)
-+# |-- a                  (ino 257)
-+#     |-- b              (ino 258)
-+#         |-- x          (ino 260)
-+#         |   |-- y      (ino 259)
-+#         |
-+#         |-- w          (ino 262)
-+#             |-- g      (ino 263)
-+#                 |-- z  (ino 261)
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#         |-- baz.txt      (ino 261)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
@@ -181,22 +172,22 @@ index 0000000..5ebe6ca
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/041.out b/tests/btrfs/041.out
+diff --git a/tests/btrfs/042.out b/tests/btrfs/042.out
 new file mode 100644
-index 0000000..309876c
+index 0000000..b403295
 --- /dev/null
-+++ b/tests/btrfs/041.out
++++ b/tests/btrfs/042.out
 @@ -0,0 +1 @@
-+QA output created by 041
++QA output created by 042
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a687634..09e309c 100644
+index 09e309c..72279d5 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -39,3 +39,4 @@
- 034 auto quick
+@@ -40,3 +40,4 @@
  036 auto quick
  040 auto quick
-+041 auto quick
+ 041 auto quick
++042 auto quick
 -- 
 1.7.9.5
 

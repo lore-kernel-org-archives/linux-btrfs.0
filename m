@@ -1,76 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:41034 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752922AbaBLVMQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Feb 2014 16:12:16 -0500
-Message-ID: <52FBE3A3.6040205@libero.it>
-Date: Wed, 12 Feb 2014 22:12:03 +0100
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Kostia Khlebopros <kkhlebopros@netgear.com>,
-        Sandy McArthur <sandymac@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC: Josef Bacik <jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:44913 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750958AbaBQRIW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Feb 2014 12:08:22 -0500
+Date: Mon, 17 Feb 2014 18:08:20 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: cwillu <cwillu@cwillu.com>, Hugo Mills <hugo@carfax.org.uk>,
+        "lin >> linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: What to do about df and btrfs fi df
-References: <52F9014F.6070901@fb.com> <CAPs0BigohtKrGW9MKGZzPrc_rUxkHDhtS-XcL-TzxEQgE-qZ4Q@mail.gmail.com> <C4D5B07324A04D4784C9F6D0FB2B0C336FFA9CA2@PERSES.netgear.com>
-In-Reply-To: <C4D5B07324A04D4784C9F6D0FB2B0C336FFA9CA2@PERSES.netgear.com>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20140217170820.GM16073@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52F9014F.6070901@fb.com>
+ <20140210170606.GK6490@carfax.org.uk>
+ <CAE5mzvgFLfQoaNx1eWB2z_kJW-pe1bFY_3LxDMV9XbtKApo=xw@mail.gmail.com>
+ <52F91A4A.4080807@fb.com>
+ <CAE5mzvhc0FCL81=ajAFyzHK6L1vP2uuQrjf6UfMX-vDxH+-pKQ@mail.gmail.com>
+ <52F91D53.5060902@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52F91D53.5060902@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Kostia,
-
-On 02/12/2014 04:09 AM, Kostia Khlebopros wrote:
-> Any plans on having "brtfs fi df" report more precise values rather
-> then rounded off to the nearest hundredth of a unit. full
-> kilobytes(1024 bytes =1Kib) or in bytes would be nice> 
-> Current output:
+On Mon, Feb 10, 2014 at 01:41:23PM -0500, Josef Bacik wrote:
 > 
-> # btrfs fi df /data
-> Data, single: total=1.37TiB, used=1.35TiB
-> System, DUP: total=8.00MiB, used=192.00KiB
-> System, single: total=4.00MiB, used=0.00
-> Metadata, DUP: total=3.00GiB, used=1.62GiB
-> Metadata, single: total=8.00MiB, used=0.00
 > 
-> Better would be:
+> On 02/10/2014 01:36 PM, cwillu wrote:
+> >IMO, used should definitely include metadata, especially given that we
+> >inline small files.
+> >
+> >I can convince myself both that this implies that we should roll it
+> >into b_avail, and that we should go the other way and only report the
+> >actual used number for metadata as well, so I might just plead
+> >insanity here.
+> >
 > 
-> # btrfs fi df /data
-> Data, single: total=14123412341 bytes, used=1342343 bytes
-> ...etc you know what I mean...
+> I could be convinced to do this.  So we have
 > 
+> total: (total disk bytes) / (raid multiplier)
+> used: (total used in data block groups) +
+> 	(total used in metadata block groups)
+> avail: total - (total used in data block groups +
+> 		total metadata block groups)
 
-My patches have a switch '-b' which set the units in byte. 
+The size of global block reserve should be IMO subtracted from 'avail',
+this reports the space as free, but is in fact not.
 
-$ sudo ./btrfs fi df /
-Disk size:		138.05GiB
-Disk allocated:		 25.04GiB
-Disk unallocated:	113.01GiB
-Used:			 21.36GiB
-Free (Estimated):	105.61GiB	(Max: 114.68GiB, min: 58.17GiB)
-Data to disk ratio:	     92 %
-
-$ sudo ./btrfs fi df -b /
-Disk size:		      148229656576
-Disk allocated:		       26881294336
-Disk unallocated:	      121348362240
-Used:			       22939594752
-Free (Estimated):	      113402084997	(Max: 123134189568, min: 62460008448)
-Data to disk ratio:	              92 %
-
-
-> I wish there was more you know.
-> 
-> Kind Regards,
-> 
-> Kostia
-
-BR
-G.Baroncelli
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+The "used" amount of the global reserve might be included into
+filesystem 'used', but I've observed the global reserve used for short
+periods of time under some heavy stress, I'm convinced it needs to be
+accounted in the df report.

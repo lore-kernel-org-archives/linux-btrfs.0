@@ -1,54 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39755 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750833AbaBQFcg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Feb 2014 00:32:36 -0500
-Date: Sun, 16 Feb 2014 21:32:32 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Hugo Mills <hugo@carfax.org.uk>, Josef Bacik <jbacik@fb.com>
-Message-ID: <20140217053232.GQ27097@merlins.org>
-References: <1392558191-14475-1-git-send-email-fdmanana@gmail.com>
- <20140214015426.GH27097@merlins.org>
- <20140216142352.GN27097@merlins.org>
- <CAL3q7H5JY=1WdG0vtNqPcHmwvPXdgznOqU9J9M3ctKgzVZQqAA@mail.gmail.com>
- <20140216172315.GC2117@merlins.org>
- <CAL3q7H7uuaTjH7RWW-Q73E7zpc5=bpHP4nCrK3JkOsXaAj08Jw@mail.gmail.com>
+Received: from mout.web.de ([212.227.17.11]:55342 "EHLO mout.web.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751074AbaBQJl7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Feb 2014 04:41:59 -0500
+Received: from frosties.localnet ([149.172.224.32]) by smtp.web.de (mrweb103)
+ with ESMTPSA (Nemesis) id 0LkyEb-1WpDpA2xAz-00aot8 for
+ <linux-btrfs@vger.kernel.org>; Mon, 17 Feb 2014 10:41:57 +0100
+Date: Mon, 17 Feb 2014 10:41:56 +0100
+From: Goswin von Brederlow <goswin-v-b@web.de>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfsck does not fix
+Message-ID: <20140217094156.GA32531@frosties>
+References: <6210673.6TYUkLGl6b@merkaba>
+ <52DED1C2.60103@friedels.name>
+ <52F6A955.5020808@friedels.name>
+ <A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com>
+ <52F73E2B.9080103@friedels.name>
+ <837FAEE6-9A8E-4A88-AEDF-B9B2B3C3B618@colorremedies.com>
+ <82A12D91-416E-4B2F-80ED-23ACFD466633@colorremedies.com>
+ <53010EF9.60805@friedels.name>
+ <21AD6EBC-FDDA-4BDE-B0B4-D6A8BBAD58F0@colorremedies.com>
+ <pan$475be$cb0c1165$a3d91acc$c206709@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7uuaTjH7RWW-Q73E7zpc5=bpHP4nCrK3JkOsXaAj08Jw@mail.gmail.com>
-Subject: Re: How to recover from failing btrfs send | btrfs receive?
+In-Reply-To: <pan$475be$cb0c1165$a3d91acc$c206709@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 16, 2014 at 09:08:57PM +0000, Filipe David Manana wrote:
-> I'll see if I come up with other ways of getting into that issue.
+On Mon, Feb 17, 2014 at 03:20:58AM +0000, Duncan wrote:
+> Chris Murphy posted on Sun, 16 Feb 2014 12:54:44 -0700 as excerpted:
+> > Also, 10 hours to balance two disks at 2.3TB seems like a long time. I'm
+> > not sure if that's expected.
+> 
+> FWIW, I think you may not realize how big 2.3 TiB is, and/or how slow 
+> spinning rust can be when dealing with TiBs of potentially fragmented 
+> data...
+> 
+> 2.3TiB * 1024GiB/TiB * 1024 MiB/GiB / 10 hours / 60 min/hr / 60 sec/min =
+> 
+> 66.99... real close to 67 MiB/sec
+> 
+> Since it's multiple TiB we're talking and only two devices, that's almost 
+> certainly spinning rust, not SSD, and on spinning rust, 67 MiB/sec really 
+> isn't /that/ bad, especially if the filesystem wasn't new and had been 
+> reasonably used, thus likely had some fragmentation to deal with.
 
-If you're collecting them, I found another bug, although it might not
-matter to most: if I put my laptop in S3 sleep during a send/receive, it
-reliably breaks the copy (this is disk to disk, not disk to network).
+Don't forget that that is 67MiB/s reading data and 67MiB/s writing
+data giving a total of 134MiB/s. 
 
-Not a problem for a server, but on a laptop, if you happen to have a
-background backup from disk1 to disk2 and you put the laptop to sleep,
-it will break the backup in a way that's not recoverable and you need to
-start back up from scratch.
+Still, on a good system each disk should have about that speed so it's
+about 50% of theoretical maximum. Which is quite good given that the
+disks will need to seek between every read and write. In comparison
+moving data with LVM gets only about half that speed and that doesn't
+even have the overhead of a filesystem to deal with.
 
-btrfs send | btrfs receive gives:
-Create a readonly snapshot of 'home' in './home_ro.20140216_21:03:53'
-At subvol home_ro.20140216_21:03:53
-At subvol home_ro.20140216_21:03:53
-
-ERROR: crc32 mismatch in command.
-Error line 137 with status 234
-
-If that helps, I can reproduce at will.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+MfG
+	Goswin

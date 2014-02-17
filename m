@@ -1,72 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:27575 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753141AbaBMDUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Feb 2014 22:20:18 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1D3K49f002790
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2014 11:20:13 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs-progs: fix fsck leaks on error returns
-Date: Thu, 13 Feb 2014 11:16:38 +0800
-Message-Id: <1392261398-6197-4-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1392261398-6197-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1392261398-6197-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46971 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753031AbaBQSlM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Feb 2014 13:41:12 -0500
+Date: Mon, 17 Feb 2014 19:41:10 +0100
+From: David Sterba <dsterba@suse.cz>
+To: kreijack@inwind.it
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Kostia Khlebopros <kkhlebopros@netgear.com>
+Subject: Re: [PATCH][BTRFS-PROGS][v4] Enhance btrfs fi df
+Message-ID: <20140217184110.GN16073@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52FD1A72.5060307@libero.it>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <52FD1A72.5060307@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add close_ctree()s before the "returns" on errors after open_ctree()
+On Thu, Feb 13, 2014 at 08:18:10PM +0100, Goffredo Baroncelli wrote:
+> This is the 4th attempt of my patches related to show how the data
+> are stored in a btrfs filesystem. I rebased all the patches on the v3.13
+> btrfs-progs. 
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- cmds-check.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 2911af0..81f65a3 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6460,6 +6460,7 @@ int cmd_check(int argc, char **argv)
- 	    !extent_buffer_uptodate(info->dev_root->node) ||
- 	    !extent_buffer_uptodate(info->chunk_root->node)) {
- 		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
-+		close_ctree(info->fs_root);
- 		return -EIO;
- 	}
- 
-@@ -6467,11 +6468,14 @@ int cmd_check(int argc, char **argv)
- 	if (init_extent_tree) {
- 		printf("Creating a new extent tree\n");
- 		ret = reinit_extent_tree(info);
--		if (ret)
-+		if (ret) {
-+			close_ctree(root);
- 			return ret;
-+		}
- 	}
- 	if (!extent_buffer_uptodate(info->extent_root->node)) {
- 		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
-+		close_ctree(root);
- 		return -EIO;
- 	}
- 
-@@ -6483,12 +6487,14 @@ int cmd_check(int argc, char **argv)
- 		trans = btrfs_start_transaction(info->csum_root, 1);
- 		if (IS_ERR(trans)) {
- 			fprintf(stderr, "Error starting transaction\n");
-+			close_ctree(root);
- 			return PTR_ERR(trans);
- 		}
- 
- 		ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
- 		if (ret) {
- 			fprintf(stderr, "crc root initialization failed\n");
-+			close_ctree(root);
- 			return -EIO;
- 		}
- 
--- 
-1.8.1.4
-
+FYI, I've added this series as-is into the -next part of the integration
+branch so we have something to test, let the review and comments phase
+continue.

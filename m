@@ -1,89 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f169.google.com ([74.125.82.169]:41163 "EHLO
-	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752822AbaBPVCN (ORCPT
+Received: from mail-la0-f43.google.com ([209.85.215.43]:49236 "EHLO
+	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751833AbaBQHnH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 16:02:13 -0500
-Received: by mail-we0-f169.google.com with SMTP id t61so10221080wes.14
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 13:02:12 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: send, don't send rmdir for same target multiple times
-Date: Sun, 16 Feb 2014 21:01:39 +0000
-Message-Id: <1392584499-10256-1-git-send-email-fdmanana@gmail.com>
+	Mon, 17 Feb 2014 02:43:07 -0500
+Received: by mail-la0-f43.google.com with SMTP id pv20so11159522lab.30
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 23:43:04 -0800 (PST)
+Received: from mail-lb0-x230.google.com (mail-lb0-x230.google.com [2a00:1450:4010:c04::230])
+        by mx.google.com with ESMTPSA id e1sm24217473laa.8.2014.02.16.23.43.03
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sun, 16 Feb 2014 23:43:03 -0800 (PST)
+Received: by mail-lb0-f176.google.com with SMTP id w7so10966965lbi.35
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 23:43:03 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20140216135808.GA1491@frosties>
+References: <20140216135808.GA1491@frosties>
+From: Dan van der Ster <dan@vanderster.com>
+Date: Mon, 17 Feb 2014 08:42:23 +0100
+Message-ID: <CABZ+qqmbU3gR-FeR4tpok-QcUgVyCL5Vq5ygrmM4CEqf=PTXcw@mail.gmail.com>
+Subject: Re: ENOSPC with 270GiB free
+To: Goswin von Brederlow <goswin-v-b@web.de>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing an incremental send, if we delete a directory that has N > 1
-hardlinks for the same file and that file has the highest inode number
-inside the directory contents, an incremental send would send N times an
-rmdir operation against the directory. This made the btrfs receive command
-fail on the second rmdir instruction, as the target directory didn't exist
-anymore.
+Did you already try this?? [1]:
 
-Steps to reproduce the issue:
+   btrfs fi balance start -dusage=5 /mnt/nas3
 
-    $ mkfs.btrfs -f /dev/sdb3
-    $ mount /dev/sdb3 /mnt/btrfs
-    $ mkdir -p /mnt/btrfs/a/b/c
-    $ echo 'ola mundo' > /mnt/btrfs/a/b/c/foo.txt
-    $ ln /mnt/btrfs/a/b/c/foo.txt /mnt/btrfs/a/b/c/bar.txt
-    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
-    $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
-    $ rm -f /mnt/btrfs/a/b/c/foo.txt
-    $ rm -f /mnt/btrfs/a/b/c/bar.txt
-    $ rmdir /mnt/btrfs/a/b/c
-    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
-    $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
+Cheers, dan
 
-    $ umount /mnt/btrfs
-    $ mkfs.btrfs -f /dev/sdb3
-    $ mount /dev/sdb3 /mnt/btrfs
-    $ btrfs receive /mnt/btrfs -f /tmp/base.send
-    $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
+[1] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_get_.22No_space_left_on_device.22_errors.2C_but_df_says_I.27ve_got_lots_of_space
 
-The second btrfs receive command failed with:
-
-    ERROR: rmdir o259-6-0 failed. No such file or directory
-
-A test case for xfstests follows.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/send.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index cb9502a..cdfd435 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3085,6 +3085,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 	u64 ow_gen;
- 	int did_overwrite = 0;
- 	int is_orphan = 0;
-+	u64 last_dir_ino_rm = 0;
- 
- verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 
-@@ -3349,7 +3350,8 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 			ret = send_utimes(sctx, cur->dir, cur->dir_gen);
- 			if (ret < 0)
- 				goto out;
--		} else if (ret == inode_state_did_delete) {
-+		} else if (ret == inode_state_did_delete &&
-+			   cur->dir != last_dir_ino_rm) {
- 			ret = can_rmdir(sctx, cur->dir, sctx->cur_ino);
- 			if (ret < 0)
- 				goto out;
-@@ -3361,6 +3363,7 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 				ret = send_rmdir(sctx, valid_path);
- 				if (ret < 0)
- 					goto out;
-+				last_dir_ino_rm = cur->dir;
- 			}
- 		}
- 	}
--- 
-1.7.9.5
-
+On Sun, Feb 16, 2014 at 2:58 PM, Goswin von Brederlow <goswin-v-b@web.de> wrote:
+> Hi,
+>
+> I'm getting a ENOSPC error from btrfs despite there still being plenty
+> of space left:
+>
+> % df -m /mnt/nas3
+> Filesystem         1M-blocks     Used Available Use% Mounted on
+> /dev/mapper/nas3-a  19077220 18805132    270773  99% /mnt/nas3
+>
+> % btrfs fi show
+> Label: none  uuid: 4b18f84e-2499-41ca-81ff-fe1783c11491
+>         Total devices 1 FS bytes used 17.91TiB
+>         devid    1 size 18.19TiB used 17.94TiB path /dev/mapper/nas3-a
+>
+> Btrfs v3.12
+>
+> % btrfs fi df
+> Data, single: total=17.89TiB, used=17.88TiB
+> System, DUP: total=32.00MiB, used=1.92MiB
+> Metadata, DUP: total=25.50GiB, used=24.89GiB
+>
+> As you can see there are still 270GiB free and plenty of block groups
+> free on the device too.
+>
+> So why isn't btrfs allocating a new block group to store more data?
+>
+> MfG
+>         Goswin
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

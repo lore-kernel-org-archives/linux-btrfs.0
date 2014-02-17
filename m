@@ -1,82 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f182.google.com ([74.125.82.182]:36657 "EHLO
-	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751197AbaBQAVK (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:57079 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752410AbaBQAXD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 19:21:10 -0500
-Received: by mail-we0-f182.google.com with SMTP id u57so10303342wes.27
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 16:21:08 -0800 (PST)
+	Sun, 16 Feb 2014 19:23:03 -0500
+Received: by mail-wi0-f173.google.com with SMTP id hn9so1890558wib.12
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 16:23:01 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] xfstests: add regression test for btrfs incremental send
-Date: Mon, 17 Feb 2014 00:20:38 +0000
-Message-Id: <1392596438-6509-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1392408522-764-1-git-send-email-fdmanana@gmail.com>
-References: <1392408522-764-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add test for btrfs incremental send after dir renames
+Date: Mon, 17 Feb 2014 00:22:32 +0000
+Message-Id: <1392596552-6566-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1392558260-14546-1-git-send-email-fdmanana@gmail.com>
+References: <1392558260-14546-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test for a btrfs incremental send issue where we end up sending a
-wrong section of data from a file extent if the corresponding file
-extent is compressed and the respective file extent item has a non
-zero data offset.
+Regression test for a btrfs incremental send issue related to renaming of
+directories. If at the time of the initial send we have a directory that is
+a child of a directory with a higher inode number, and then later after the
+initial full send we rename both the child and parent directories, but
+without moving any of them, a subsequent incremental send would produce a
+rename instruction for the child directory that pointed to an invalid path.
+This made the btrfs receive operation fail.
 
-Fixed by the following linux kernel btrfs patch:
+This issue is fixed by the following linux kernel btrfs patch:
 
-   Btrfs: use right clone root offset for compressed extents
+   Btrfs: incremental send, fix invalid path after dir rename
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
-V2: Made the test more reliable. Now it doesn't depend anymore of btrfs'
-    hole punch implementation leaving hole file extent items when we punch
-    beyond the file's current size.
-V3: Filter xfs_io output and make less use of the run_check function, as
-    suggested by Dave Chinner.
+V2: Updated test comments with correct inode numbers (their relatives differences
+    was correct, only the absolute values were not for some of them). Make use
+    of the new _run_btrfs_util_prog() function.
 
- common/rc           |    5 +++
- tests/btrfs/040     |  119 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/040.out |    9 ++++
+ tests/btrfs/041     |  131 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/041.out |    1 +
  tests/btrfs/group   |    1 +
- 4 files changed, 134 insertions(+)
- create mode 100755 tests/btrfs/040
- create mode 100644 tests/btrfs/040.out
+ 3 files changed, 133 insertions(+)
+ create mode 100755 tests/btrfs/041
+ create mode 100644 tests/btrfs/041.out
 
-diff --git a/common/rc b/common/rc
-index e91568b..27be009 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2207,6 +2207,11 @@ run_check()
- 	"$@" >> $seqres.full 2>&1 || _fail "failed: '$@'"
- }
- 
-+_run_btrfs_util_prog()
-+{
-+	run_check $BTRFS_UTIL_PROG $*
-+}
-+
- init_rc()
- {
- 	if [ "$iam" == new ]
-diff --git a/tests/btrfs/040 b/tests/btrfs/040
+diff --git a/tests/btrfs/041 b/tests/btrfs/041
 new file mode 100755
-index 0000000..9037782
+index 0000000..5ebe6ca
 --- /dev/null
-+++ b/tests/btrfs/040
-@@ -0,0 +1,119 @@
++++ b/tests/btrfs/041
+@@ -0,0 +1,131 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/040
++# FS QA Test No. btrfs/041
 +#
-+# Test for a btrfs incremental send issue where we end up sending a
-+# wrong section of data from a file extent if the corresponding file
-+# extent is compressed and the respective file extent item has a non
-+# zero data offset.
++# Regression test for a btrfs incremental send issue related to renaming of
++# directories. If at the time of the initial send we have a directory that is
++# a child of a directory with a higher inode number, and then later after the
++# initial full send we rename both the child and parent directories, but
++# without moving any of them, a subsequent incremental send would produce a
++# rename instruction for the child directory that pointed to an invalid path.
++# This made the btrfs receive operation fail.
 +#
-+# Fixed by the following linux kernel btrfs patch:
++# This issue is fixed by the following linux kernel btrfs patch:
 +#
-+#   Btrfs: use right clone root offset for compressed extents
++#   Btrfs: incremental send, fix invalid path after dir rename
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -126,44 +113,56 @@ index 0000000..9037782
 +rm -f $seqres.full
 +
 +_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount "-o compress-force=lzo"
++_scratch_mount
 +
-+$XFS_IO_PROG -f -c "truncate 118811" $SCRATCH_MNT/foo
-+$XFS_IO_PROG -c "pwrite -S 0x0d -b 39987 92267 39987" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
++mkdir -p $SCRATCH_MNT/a/b
++mkdir $SCRATCH_MNT/d
++mkdir $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/d $SCRATCH_MNT/a/b/c
++mkdir $SCRATCH_MNT/e
++mkdir -p $SCRATCH_MNT/a/b/f/g
++mv $SCRATCH_MNT/e $SCRATCH_MNT/a/b/f/g
 +
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/mysnap1
++# Filesystem looks like:
++#
++# .                      (ino 256)
++# |-- a                  (ino 257)
++#     |-- b              (ino 258)
++#         |-- c          (ino 260)
++#         |   |-- d      (ino 259)
++#         |
++#         |-- f          (ino 262)
++#             |-- g      (ino 263)
++#                 |-- e  (ino 261)
 +
-+$XFS_IO_PROG -c "pwrite -S 0x3e -b 80000 200000 80000" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+# Sync to avoid btrfs merging file extent items, which would make the test
-+# succeed when it should fail.
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++mv $SCRATCH_MNT/a/b/c $SCRATCH_MNT/a/b/x
++mv $SCRATCH_MNT/a/b/x/d $SCRATCH_MNT/a/b/x/y
++mv $SCRATCH_MNT/a/b/f $SCRATCH_MNT/a/b/w
++mv $SCRATCH_MNT/a/b/w/g/e $SCRATCH_MNT/a/b/w/g/z
 +
-+$XFS_IO_PROG -c "pwrite -S 0xdc -b 10000 250000 10000" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
-+$XFS_IO_PROG -c "pwrite -S 0xff -b 10000 300000 10000" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
++# Filesystem now looks like:
++#
++# .                      (ino 256)
++# |-- a                  (ino 257)
++#     |-- b              (ino 258)
++#         |-- x          (ino 260)
++#         |   |-- y      (ino 259)
++#         |
++#         |-- w          (ino 262)
++#             |-- g      (ino 263)
++#                 |-- z  (ino 261)
 +
-+# will be used for incremental send to be able to issue clone operations
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/clones_snap
-+
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-+	$SCRATCH_MNT/mysnap2
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
 +run_check $FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/mysnap1
 +run_check $FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/mysnap2/mysnap1 \
-+	-x $SCRATCH_MNT/mysnap2/clones_snap $SCRATCH_MNT/mysnap2
-+run_check $FSSUM_PROG -A -f -w $tmp/clones.fssum $SCRATCH_MNT/clones_snap \
-+	-x $SCRATCH_MNT/clones_snap/mysnap1 -x $SCRATCH_MNT/clones_snap/mysnap2
++	$SCRATCH_MNT/mysnap2
 +
 +_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
-+_run_btrfs_util_prog send $SCRATCH_MNT/clones_snap -f $tmp/clones.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 \
-+	-c $SCRATCH_MNT/clones_snap $SCRATCH_MNT/mysnap2 -f $tmp/2.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $tmp/2.snap
 +
 +_scratch_unmount
 +_check_btrfs_filesystem $SCRATCH_DEV
@@ -174,9 +173,6 @@ index 0000000..9037782
 +_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/1.snap
 +run_check $FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/mysnap1 2>> $seqres.full
 +
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/clones.snap
-+run_check $FSSUM_PROG -r $tmp/clones.fssum $SCRATCH_MNT/clones_snap 2>> $seqres.full
-+
 +_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/2.snap
 +run_check $FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/mysnap2 2>> $seqres.full
 +
@@ -185,30 +181,22 @@ index 0000000..9037782
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/040.out b/tests/btrfs/040.out
+diff --git a/tests/btrfs/041.out b/tests/btrfs/041.out
 new file mode 100644
-index 0000000..cc77aed
+index 0000000..309876c
 --- /dev/null
-+++ b/tests/btrfs/040.out
-@@ -0,0 +1,9 @@
-+QA output created by 040
-+wrote 39987/39987 bytes at offset 92267
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 80000/80000 bytes at offset 200000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 10000/10000 bytes at offset 250000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 10000/10000 bytes at offset 300000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++++ b/tests/btrfs/041.out
+@@ -0,0 +1 @@
++QA output created by 041
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 2ca2225..a687634 100644
+index a687634..09e309c 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -38,3 +38,4 @@
- 033 auto quick
+@@ -39,3 +39,4 @@
  034 auto quick
  036 auto quick
-+040 auto quick
+ 040 auto quick
++041 auto quick
 -- 
 1.7.9.5
 

@@ -1,86 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:32140 "EHLO
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:18155 "EHLO
 	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753857AbaBQBoY (ORCPT
+	by vger.kernel.org with ESMTP id S1752721AbaBQB6D (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 20:44:24 -0500
-Date: Mon, 17 Feb 2014 12:44:16 +1100
+	Sun, 16 Feb 2014 20:58:03 -0500
+Date: Mon, 17 Feb 2014 12:57:57 +1100
 From: Dave Chinner <david@fromorbit.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: add regression test for btrfs incremental send
-Message-ID: <20140217014416.GB13997@dastard>
-References: <1392408522-764-1-git-send-email-fdmanana@gmail.com>
- <1392596438-6509-1-git-send-email-fdmanana@gmail.com>
- <20140217011929.GA13997@dastard>
- <CAL3q7H4JLbMS+JL4h4du60S1vKFtvceP-Mx-e=0v4nTBwjkATA@mail.gmail.com>
+To: Koen De Wit <koen.de.wit@oracle.com>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] xfstests: Btrfs: add test for large metadata blocks
+Message-ID: <20140217015757.GC13997@dastard>
+References: <1392068362-14049-1-git-send-email-koen.de.wit@oracle.com>
+ <20140210220400.GV13647@dastard>
+ <52FA7374.2000209@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H4JLbMS+JL4h4du60S1vKFtvceP-Mx-e=0v4nTBwjkATA@mail.gmail.com>
+In-Reply-To: <52FA7374.2000209@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 17, 2014 at 01:36:02AM +0000, Filipe David Manana wrote:
-> On Monday, February 17, 2014, Dave Chinner <david@fromorbit.com> wrote:
+On Tue, Feb 11, 2014 at 08:01:08PM +0100, Koen De Wit wrote:
+> On 02/10/2014 11:04 PM, Dave Chinner wrote:
+> >On Mon, Feb 10, 2014 at 10:39:22PM +0100, Koen De Wit wrote:
+> >>+
+> >>+_test_illegal_leafsize() {
+> >>+        _scratch_mkfs -l $1 >>$seqres.full 2>&1
+> >>+        [ $? -ne 0 ] || _fail "'$1' is an illegal value for the" \
+> >>+                "leafsize option, mkfs should have failed."
+> >>+}
+> >You just re-implemented run_check....
 > 
-> > On Mon, Feb 17, 2014 at 12:20:38AM +0000, Filipe David Borba Manana wrote:
-> > > Test for a btrfs incremental send issue where we end up sending a
-> > > wrong section of data from a file extent if the corresponding file
-> > > extent is compressed and the respective file extent item has a non
-> > > zero data offset.
-> > >
-> > > Fixed by the following linux kernel btrfs patch:
-> > >
-> > >    Btrfs: use right clone root offset for compressed extents
-> > >
-> > > Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com<javascript:;>
-> > >
-> > > ---
-> > >
-> > > V2: Made the test more reliable. Now it doesn't depend anymore of btrfs'
-> > >     hole punch implementation leaving hole file extent items when we
-> > punch
-> > >     beyond the file's current size.
-> > > V3: Filter xfs_io output and make less use of the run_check function, as
-> > >     suggested by Dave Chinner.
-> >
-> > Awesome. Thanks for the quick turn around.
-> >
-> > >  common/rc           |    5 +++
-> > >  tests/btrfs/040     |  119
-> > +++++++++++++++++++++++++++++++++++++++++++++++++++
-> > >  tests/btrfs/040.out |    9 ++++
-> > >  tests/btrfs/group   |    1 +
-> > >  4 files changed, 134 insertions(+)
-> > >  create mode 100755 tests/btrfs/040
-> > >  create mode 100644 tests/btrfs/040.out
-> > >
-> > > diff --git a/common/rc b/common/rc
-> > > index e91568b..27be009 100644
-> > > --- a/common/rc
-> > > +++ b/common/rc
-> > > @@ -2207,6 +2207,11 @@ run_check()
-> > >       "$@" >> $seqres.full 2>&1 || _fail "failed: '$@'"
-> > >  }
-> > >
-> > > +_run_btrfs_util_prog()
-> > > +{
-> > > +     run_check $BTRFS_UTIL_PROG $*
-> > > +}
-> >
-> > Can you do a cleanup of all the other btrfs tests that can use this?
+> I believe I didn't :
 > 
+>    run_check()
+>    {
+>             echo "# $@" >> $seqres.full 2>&1
+>             "$@" >> $seqres.full 2>&1 || _fail "failed: '$@'"
+>    }
 > 
-> Ok. I just did that for all the test cases not yet merged, as you probably
-> noticed already.
+> run_check() takes an arbitrary command and executes it,
+> _test_illegal_leafsize() takes a leafsize as parameter and tries
+> mkfs.btrfs with that leafsize. run_check() makes the test fail if
+> the return code is not zero, _test_illegal_leafsize() does the
+> opposite.
 
-Yes, I did ;)
+Which points out the madness of trying to determine pass/fail by
+return codes. See how easy it is to get wrong when reading the
+test code?
 
-> For the ones already in the repository, I'll see if I can do it soon this
-> coming week.
+So, this tends to point towards writing a proper mkfs filter for
+btrfs that anonymizes the output so that the golden output can do
+the checking without having to care about return values. That's what
+we do for XFS (see _filter_mkfs), and i'd suggest that this is the
+correct thing to do for btrfs as well. Then you can stop having to
+check the return value of mkfs.btrfs....
 
-Great! Thanks for doing this.
+i.e. factor _filter_mkfs into _filter_mkfs_xfs() and
+_filter_mkfs_btrfs() and implement the necessary filtering in
+_filter_mkfs_btrfs.
+
+Yes, it's a bit of a pain to do in the first place, but once the
+filter is in place it will capture any future unintended
+modifications to mkfs output and make people modifying mkfs.btrfs
+think about what they are actually doing when they break the filter.
+Indeed, we've been modifying the output of mkfs.xfs for years (every
+new feature changes the mkfs output) and we've been able to do in a
+way that doesn't break the filtering.....
 
 Cheers,
 

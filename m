@@ -1,216 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:40099 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750712AbaBZAoM (ORCPT
+Received: from mail-we0-f178.google.com ([74.125.82.178]:38644 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755533AbaBRPr2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 19:44:12 -0500
-Received: by mail-wi0-f173.google.com with SMTP id bs8so5259491wib.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:44:11 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] xfstests: add test for btrfs-progs restore feature
-Date: Wed, 26 Feb 2014 00:44:04 +0000
-Message-Id: <1393375444-3760-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1393352816-26065-1-git-send-email-fdmanana@gmail.com>
-References: <1393352816-26065-1-git-send-email-fdmanana@gmail.com>
+	Tue, 18 Feb 2014 10:47:28 -0500
+Received: by mail-we0-f178.google.com with SMTP id q59so11910559wes.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 07:47:27 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20121218135242.GC2403@localhost.localdomain>
+References: <1355363557-2962-1-git-send-email-bo.li.liu@oracle.com>
+	<20121218135242.GC2403@localhost.localdomain>
+Date: Tue, 18 Feb 2014 17:47:26 +0200
+Message-ID: <CAOcd+r2q6+RU_8k_m8=7wr5cjBZ3hLXr1QZCmvWB1hLZyRfoZQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix a deadlock on chunk mutex
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: jbacik@fb.com
+Cc: Liu Bo <bo.li.liu@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a regression test to verify that the restore feature of btrfs-progs
-is able to correctly recover files that have compressed extents, specially when
-the respective file extent items have a non-zero data offset field.
+Hello Josef,
 
-This issue is fixed by the following btrfs-progs patch:
+On Tue, Dec 18, 2012 at 3:52 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> On Wed, Dec 12, 2012 at 06:52:37PM -0700, Liu Bo wrote:
+>> An user reported that he has hit an annoying deadlock while playing with
+>> ceph based on btrfs.
+>>
+>> Current updating device tree requires space from METADATA chunk,
+>> so we -may- need to do a recursive chunk allocation when adding/updating
+>> dev extent, that is where the deadlock comes from.
+>>
+>> If we use SYSTEM metadata to update device tree, we can avoid the recursive
+>> stuff.
+>>
+>
+> This is going to cause us to allocate much more system chunks than we used to
+> which could land us in trouble.  Instead let's just keep us from re-entering if
+> we're already allocating a chunk.  We do the chunk allocation when we don't have
+> enough space for a cluster, but we'll likely have plenty of space to make an
+> allocation.  Can you give this patch a try Jim and see if it fixes your problem?
+> Thanks,
+>
+> Josef
+>
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index e152809..59df5e7 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3564,6 +3564,10 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>         int wait_for_alloc = 0;
+>         int ret = 0;
+>
+> +       /* Don't re-enter if we're already allocating a chunk */
+> +       if (trans->allocating_chunk)
+> +               return -ENOSPC;
+> +
+>         space_info = __find_space_info(extent_root->fs_info, flags);
+>         if (!space_info) {
+>                 ret = update_space_info(extent_root->fs_info, flags,
+> @@ -3606,6 +3610,8 @@ again:
+>                 goto again;
+>         }
+>
+> +       trans->allocating_chunk = true;
+> +
+>         /*
+>          * If we have mixed data/metadata chunks we want to make sure we keep
+>          * allocating mixed chunks instead of individual chunks.
+> @@ -3632,6 +3638,7 @@ again:
+>         check_system_chunk(trans, extent_root, flags);
+>
+>         ret = btrfs_alloc_chunk(trans, extent_root, flags);
+> +       trans->allocating_chunk = false;
+>         if (ret < 0 && ret != -ENOSPC)
+>                 goto out;
+>
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index e6509b9..47ad8be 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -388,6 +388,7 @@ again:
+>         h->qgroup_reserved = qgroup_reserved;
+>         h->delayed_ref_elem.seq = 0;
+>         h->type = type;
+> +       h->allocating_chunk = false;
+>         INIT_LIST_HEAD(&h->qgroup_ref_list);
+>         INIT_LIST_HEAD(&h->new_bgs);
+>
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 0e8aa1e..69700f7 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -68,6 +68,7 @@ struct btrfs_trans_handle {
+>         struct btrfs_block_rsv *orig_rsv;
+>         short aborted;
+>         short adding_csums;
+> +       bool allocating_chunk;
+>         enum btrfs_trans_type type;
+>         /*
+>          * this root is only needed to validate that the root passed to
 
-    Btrfs-progs: fix restore dealing with compressed extents
+I hit this problem in a following scenario:
+- a data chunk allocation is triggered, and locks chunk_mutex
+- the same thread now also wants to allocate a metadata chunk, so it
+recursively calls do_chunk_alloc, but cannot lock the chunk_mutex =>
+deadlock
+- btrfs has only one metadata chunk, the one that was initially
+allocated by mkfs, it has:
+total_bytes=8388608
+bytes_used=8130560
+bytes_pinned=77824
+bytes_reserved=180224
+so bytes_used + bytes_pinned + bytes_reserved == total_bytes
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+Your patch would have returned ENOSPC and avoid the deadlock, but
+there would be a failure to allocate a tree block for metadata. So the
+transaction would have probably aborted.
 
-V2: Fixed title of btrfs-progs patch in the comment and commit message.
-V3: Make use of TEST_DIR instead of /tmp, defined $here=`pwd` and better
-    comments about the conditions necessary to make the test fail. As
-    suggested by Dave Chinner.
+How such situation should be handled?
 
- tests/btrfs/043     |  109 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/043.out |   40 +++++++++++++++++++
- tests/btrfs/group   |    1 +
- 3 files changed, 150 insertions(+)
- create mode 100755 tests/btrfs/043
- create mode 100644 tests/btrfs/043.out
+Idea1:
+- lock chunk mutex,
+- if we are allocating a data chunk, check whether the metadata space
+is below some threshold. If yes, go and allocate a metadata chunk
+first and then only a data chunk.
 
-diff --git a/tests/btrfs/043 b/tests/btrfs/043
-new file mode 100755
-index 0000000..07eea75
---- /dev/null
-+++ b/tests/btrfs/043
-@@ -0,0 +1,109 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/043
-+#
-+# Test that btrfs-progs' restore command is able to correctly recover files
-+# that have compressed extents, specially when the respective file extent
-+# items have a non-zero data offset field.
-+#
-+# This issue is fixed by the following btrfs-progs patch:
-+#
-+#    Btrfs-progs: fix restore of files with compressed extents
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    rm -fr $tmp
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_need_to_be_root
-+
-+rm -f $seqres.full
-+
-+test_btrfs_restore()
-+{
-+	if [ -z $1 ]
-+	then
-+		OPTIONS=""
-+	else
-+		OPTIONS="-o compress-force=$1"
-+	fi
-+	_scratch_mkfs >/dev/null 2>&1
-+	_scratch_mount $OPTIONS
-+
-+	# Create first file extent item, then fsync to make sure the next write
-+	# won't end up in the same file extent item, so that we have 2 distinct
-+	# file extent items.
-+	$XFS_IO_PROG -f -c "pwrite -S 0xff -b 100000 0 100000" -c "fsync" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+	# This creates a second file extent item.
-+	$XFS_IO_PROG -c "pwrite -S 0xaa -b 100000 100000 100000" -c "fsync" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+	# Now do a few writes that will cause the first extent item to be split,
-+	# with some of the new smaller file extent items getting a data offset
-+	# field different from 0.
-+	$XFS_IO_PROG -c "pwrite -S 0x1e -b 2 10000 2" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+	$XFS_IO_PROG -c "pwrite -S 0xd0 -b 11 33000 11" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+	$XFS_IO_PROG -c "pwrite -S 0xbc -b 100 99000 100" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+
-+	md5sum $SCRATCH_MNT/foo | _filter_scratch
-+
-+	_scratch_unmount
-+
-+	rm -fr $TEST_DIR/foo
-+	# Now that the fs is unmounted, call btrfs restore to read the file
-+	# from disk and save it in the test directory. It used to incorrectly
-+	# read compressed file extents that have a non-zero data offset field,
-+	# resulting either in decompression failure or reading a wrong section
-+	# of the extent.
-+	_run_btrfs_util_prog restore $SCRATCH_DEV $TEST_DIR
-+	md5sum $TEST_DIR/foo | cut -d ' ' -f 1
-+}
-+
-+echo "Testing restore of file compressed with lzo"
-+test_btrfs_restore "lzo"
-+echo "Testing restore of file compressed with zlib"
-+test_btrfs_restore "zlib"
-+echo "Testing restore of file without any compression"
-+test_btrfs_restore
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/043.out b/tests/btrfs/043.out
-new file mode 100644
-index 0000000..d22e4ce
---- /dev/null
-+++ b/tests/btrfs/043.out
-@@ -0,0 +1,40 @@
-+QA output created by 043
-+Testing restore of file compressed with lzo
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
-+Testing restore of file compressed with zlib
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
-+Testing restore of file without any compression
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1037761..fabe3b5 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -45,3 +45,4 @@
- 040 auto quick
- 041 auto quick
- 042 auto quick
-+043 auto quick
--- 
-1.7.9.5
+Idea2:
+- check if we are the same thread that already locked the chunk mutex.
+If yes, allow recursive call but don't attempt to lock/unlock the
+chunk_mutex this time
 
+Or some other way?
+
+Thanks!
+Alex.
+
+
+
+
+
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

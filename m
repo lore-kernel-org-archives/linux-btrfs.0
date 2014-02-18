@@ -1,51 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42456 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754609AbaBQWOj convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Feb 2014 17:14:39 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: btrfs "possible irq lock inversion dependency detected"
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140217200951.GB20312@optiplex>
-Date: Mon, 17 Feb 2014 15:14:34 -0700
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, Dave Jones <davej@redhat.com>,
-        trinity@vger.kernel.org, linux-kernel@vger.kernel.org
-Message-Id: <4F3CC8F0-C37E-4448-AF65-796E643A301B@colorremedies.com>
-References: <20140217200951.GB20312@optiplex>
-To: Tommi Rantala <tt.rantala@gmail.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6746 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755688AbaBRN6S (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Feb 2014 08:58:18 -0500
+Message-ID: <530366F2.2010009@fb.com>
+Date: Tue, 18 Feb 2014 08:58:10 -0500
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Goswin von Brederlow <goswin-v-b@web.de>, <linux-btrfs@vger.kernel.org>
+Subject: Re: ENOSPC with 270GiB free
+References: <20140216135808.GA1491@frosties>
+In-Reply-To: <20140216135808.GA1491@frosties>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-On Feb 17, 2014, at 1:09 PM, Tommi Rantala <tt.rantala@gmail.com> wrote:
-
-> Hello,
+On 02/16/2014 08:58 AM, Goswin von Brederlow wrote:
+> Hi,
 > 
-> Saw this while fuzzing the kernel with Trinity.
+> I'm getting a ENOSPC error from btrfs despite there still being
+> plenty of space left:
 > 
-> Tommi
+> % df -m /mnt/nas3 Filesystem         1M-blocks     Used Available
+> Use% Mounted on /dev/mapper/nas3-a  19077220 18805132    270773
+> 99% /mnt/nas3
+> 
+> % btrfs fi show Label: none  uuid:
+> 4b18f84e-2499-41ca-81ff-fe1783c11491 Total devices 1 FS bytes used
+> 17.91TiB devid    1 size 18.19TiB used 17.94TiB path
+> /dev/mapper/nas3-a
+> 
+> Btrfs v3.12
+> 
+> % btrfs fi df Data, single: total=17.89TiB, used=17.88TiB System,
+> DUP: total=32.00MiB, used=1.92MiB Metadata, DUP: total=25.50GiB,
+> used=24.89GiB
+> 
+> As you can see there are still 270GiB free and plenty of block
+> groups free on the device too.
+> 
+> So why isn't btrfs allocating a new block group to store more
+> data?
 > 
 > 
-> [  396.136048] =========================================================
-> [  396.136048] [ INFO: possible irq lock inversion dependency detected ]
-> [  396.136048] 3.14.0-rc3 #1 Not tainted
-> [  396.136048] ---------------------------------------------------------
-> [  396.136048] kswapd0/1482 just changed the state of lock:
-> [  396.136048]  (&delayed_node->mutex){+.+.-.}, at: [<ffffffff8147b83b>] __btrfs_release_delayed_node+0x4b/0x1e0
-> [  396.136048] but this lock took another, RECLAIM_FS-unsafe lock in the past:
-> [  396.136048]  (&found->groups_sem){+++++.}
 
-Looks like this is the same thing previously report on Btrfs list with 3.14.0-rc1 here:
-https://bugzilla.redhat.com/show_bug.cgi?id=1062439
+What kernel?  Can you give btrfs-next a try?  Mount with -o
+enospc_debug and when you get enospc send the dmesg.  Thanks,
 
-Which points to this:
-https://bugzilla.redhat.com/show_bug.cgi?id=1062833#c24
+Josef
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-Which points to this patch:
-http://marc.info/?l=linux-netdev&m=139233546723342&q=raw
-
-
-Chris Murphy
+iQIcBAEBAgAGBQJTA2bsAAoJEANb+wAKly3BLB4P/0W5RCk9YZQ+WJcDs8/g82Be
+G5oWx+0N2eYKIttCWxrvXlx2mpVP5mWimzYqs+V7SvaVgbm3KlwuID9JQpuOQ1lH
+ihnxr48kdwNa8J159oEU7oVRJ84D1b0D21MZzIKU9YoNoDHTQQsELe4aojniKMIY
+4RFh/8qWjMm2BGKW4jZwKzIHoF9rt+kU7Lhfm9XOi0OCut8FlFSjSwsiaN8NFJAf
+DFtkgfZTRJUxiq3dXn7m6yzspS3L5atAfd862UbFDrA7EcYIZnc+zw9/hUxX8JwP
+N3espmJQ03DRn8LLoOZtBMZ+NUnRgoOd33k1z9jeB7RnqN165vSQaYibUw6Zk+Vh
+qADBAy+f8aHtBF8yNIuwqEXH9D5fXlfgYUnWW/YBiw6+dbguxb4CKIzkdh67paah
+zvpLrXkZd95taqXFkaj0PZydwSVkSIbrPuNllRku02Bz8XxPjE0rlW+wCr2uHI2y
+Ne2jpGdCClJCfLTZC8SsHaLeYktvEVBnQ6ZOriU+Rl1hzvi+ieG7leRHIa1K7VED
+669zuZ4QfYvdU7lnXzTuC36NmmaSC4wrLaYTPAytU4OLB5dIby9nyF+25t60hq5n
+pb2R5tn7heH9928aVktFMTuAWUBTI7B1O1ZGB/cTcYKduYXOD9Y5ljEalA7HhUpb
+PwuiepAP1uBkiBPQDYH1
+=tCLT
+-----END PGP SIGNATURE-----

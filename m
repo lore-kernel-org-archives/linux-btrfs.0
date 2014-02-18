@@ -1,79 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.web.de ([212.227.15.14]:65328 "EHLO mout.web.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754030AbaBRIkV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Feb 2014 03:40:21 -0500
-Received: from frosties.localnet ([149.172.224.32]) by smtp.web.de (mrweb003)
- with ESMTPSA (Nemesis) id 0Lheu9-1X1xSc2b4r-00mqi1 for
- <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 09:40:19 +0100
-Date: Tue, 18 Feb 2014 09:40:18 +0100
-From: Goswin von Brederlow <goswin-v-b@web.de>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: Eric Sandeen <sandeen@redhat.com>, btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: know mount location with in FS
-Message-ID: <20140218084017.GB19265@frosties>
-References: <5300D31E.6000600@oracle.com>
- <5302453B.8000509@redhat.com>
- <5302CE3E.6010800@oracle.com>
+Received: from mailout.artfiles.de ([80.252.97.80]:47573 "EHLO
+	mailout.artfiles.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755744AbaBROAh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Feb 2014 09:00:37 -0500
+Received: from [178.13.125.3] (helo=fuckup.localnet)
+	auth=Wolfgang_Mader@brain-frog.de
+	by mailout.artfiles.de with esmtpsa (TLS1.0:DHE_RSA_AES_256_CBC_SHA1:256)
+	(Exim 4.80.1)
+	id 1WFkaV-00070s-ME
+	for linux-btrfs@vger.kernel.org; Tue, 18 Feb 2014 14:19:51 +0100
+From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+To: BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Read i/o errs and disk replacement
+Date: Tue, 18 Feb 2014 14:19:47 +0100
+Message-ID: <8051054.BLVnDBVVi7@fuckup>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5302CE3E.6010800@oracle.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 18, 2014 at 11:06:38AM +0800, Anand Jain wrote:
-> 
-> >For what reason?
-> >
-> >Remember that a single block device can be mounted in multiple places
-> > (or bind-mounted, etc), so there is not even necessarily a single
-> > answer to that question.
-> >
-> >-Eric
-> 
->  Yes indeed. (the attempt is should we be able to maintain all
->  the mount points as a list saved/updated under per fs_devices. ?)
-> 
->  some of the exported symbols at fs/namei.c looks closely
->  related to the purpose here, but it didn't help unless
->  I missed something.
-> 
->  any comment is helpful..
-> 
->  The reason:
->     First of all btrfs-progs has used "scan-all-disks" very
->     liberally which isn't a scalable design (imagine a data
->     center with 1000's of LUN).
->     Even a simple check_mounted() does scan-all-disks (when
->     total_disk >1), that isn't necessary if the kernel could
->     let it know.
->     Scan for btrfs has expensive steps of reading each super-block,
->     and the effect is, in general most of the btrfs-progs commands
->     are very very slow when things like scrub is running.
->     check_mounted() fails when seeding is used (since
->     /proc/self/mounts would show disk with lowest devid and in
->     most common scenario it will be a seed disk. (which has
->     different FSID from the actual disk in question). and
->     Further most severe problem is some btrfs-progs threads has been
->     scan-all-disks more than once during the thread's life time.
->     So a total revamp of this design has become an immediate need.
-> 
->     What I am planning is
->        - btrfs-progs to init btrfs-disk-list once per required thread
->          (mostly use BTRFS_IOC_GET_DEVS, which would dump anything
->          and everything about the btrfs devices)
->        - the btrfs-disk-list is obtained from kernel first, and will
->          fill with the remaining disks which kernel isn't aware of.
->        - If the step one also provides the mount point(s) from the
->          kernel that would complete the loop with what end user
->          would want to know.
-> 
-> 
-> Thanks, Anand
+Hi all,
 
-What about mountpoints outside the current filesystem namespace or
-ones that should be shortened to the filesystem namespace (e.g. in a
-chroot the leading dirs need to be cut)?
+well, I hit the first incidence where I really have to work with my btrfs 
+setup. To get things straight I want to double-check here to not screw things 
+up right from the start. We are talking about a home server. There is no time 
+or user pressure involved, and there are backups, too.
 
-MfG
-	Goswin
+
+Software
+-------------
+Linux 3.13.3
+Btrfs v3.12
+
+
+Hardware
+---------------
+5 1T hard drives configured to be a raid 10 for both data and metadata
+    Data, RAID10: total=282.00GiB, used=273.33GiB
+    System, RAID10: total=64.00MiB, used=36.00KiB
+    Metadata, RAID10: total=1.00GiB, used=660.48MiB
+
+
+Error
+--------
+This is not btrfs' fault but due to an hd error. I saw in the system logs
+    btrfs: bdev /dev/sdb errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
+and a subsequent check on btrfs showed
+    [/dev/sdb].write_io_errs   0
+    [/dev/sdb].read_io_errs    2
+    [/dev/sdb].flush_io_errs   0
+    [/dev/sdb].corruption_errs 0
+    [/dev/sdb].generation_errs 0
+
+So, I have a read error on sdb.
+
+
+Questions
+---------------
+1)
+Do I have to take action immediately (shutdown the system, umount the file 
+system)? Can I even ignore the error? Unfortunately, I can not access SMART 
+information through the sata interface of the enclosure which hosts the hds.
+
+2)
+I only can replace the disk, not add a new one and than swap over. There is no 
+space left in the disk enclosure I am using. I also can not guarantee that if 
+I remove sdb and start the system up again that all the other disks are named 
+the same as they are now, and that the newly added disk will be names sdb 
+again. Is this an issue?
+
+3)
+I know that btrfs can handle disks of different sizes. Is there a downside if I 
+go for a 3T disk and add it to the 1T disks? Is there e.g. more stuff saved on 
+the 3T disk, and if this ones fails I lose redundancy? Is a soft transition to 
+3T where I replace every dying 1T disk with a 3T disk advisable?
+
+
+Proposed solution for the current issue
+--------------------------------------------------------------
+1)
+Delete the faulted drive using
+    btrfs device delete /dev/sdb /path/to/pool
+2)
+Format the new disk with btrfs
+    mkfs.btrfs
+3)
+Add the new disk to the filesystem using
+    btrfs device add /dev/newdiskname /path/to/pool
+4)
+Balance the file system
+    btrfs fs balance /path/to/pool
+
+Is this the proper way to deal with the situation?
+
+
+Thank you for your advice.
+Best,
+Wolfgang

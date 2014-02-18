@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56169 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:60123 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751151AbaBRWpi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Feb 2014 17:45:38 -0500
+	id S1752579AbaBRWyq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Feb 2014 17:54:46 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WFtQ0-0002bQ-0U
-	for linux-btrfs@vger.kernel.org; Tue, 18 Feb 2014 23:45:36 +0100
+	id 1WFtYr-0000KE-4l
+	for linux-btrfs@vger.kernel.org; Tue, 18 Feb 2014 23:54:45 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 23:45:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 23:54:45 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 23:45:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Feb 2014 23:54:45 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Read i/o errs and disk replacement
-Date: Tue, 18 Feb 2014 22:45:11 +0000 (UTC)
-Message-ID: <pan$c1dcd$ac5efec2$1a07a461$61630cbf@cox.net>
+Date: Tue, 18 Feb 2014 22:54:18 +0000 (UTC)
+Message-ID: <pan$7318b$591fdc9$be7ce577$8412a779@cox.net>
 References: <8051054.BLVnDBVVi7@fuckup>
 	<4122CB7E-0AF1-4808-9FF6-91E875D6E1E9@colorremedies.com>
-	<116064537.O3CH7laqNI@fuckup>
-	<6B9DC823-92CF-4ECC-979F-C512072DF883@colorremedies.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Tue, 18 Feb 2014 15:02:51 -0700 as excerpted:
+Chris Murphy posted on Tue, 18 Feb 2014 11:48:49 -0700 as excerpted:
 
->  Also, what model drives are being used? If they are
-> consumer drives, they almost certainly have long error recoveries over
-> 30 minutes.
+>> This is not btrfs' fault but due to an hd error. I saw in the system
+>> logs
+>>    btrfs: bdev /dev/sdb errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
+>> and a subsequent check on btrfs showed
+>>    [/dev/sdb].write_io_errs   0 [/dev/sdb].read_io_errs    2
+>>    [/dev/sdb].flush_io_errs   0 [/dev/sdb].corruption_errs 0
+>>    [/dev/sdb].generation_errs 0
+>> 
+>> So, I have a read error on sdb.
+>>
 
-FWIW, that should be 30 seconds, not 30 minutes (OUCH!).  The below 
-context sort of makes that clear for those good enough at reading between 
-the lines, thus the suggestion to change the kernel timeout to 121 
-seconds, but just in case...
+It's worth noting that those errors don't reset automatically at boot or 
+whatever.  The idea is to give a sysadmin some idea how many errors have 
+happened in the filesystem's lifetime or since the last manual reset.  So 
+as long as the number of errors isn't increasing at each boot, it's 
+probably a historical and long since corrected error.
 
-> And if the drive is trying to honor the read request for
-> more than 30 seconds, the default SCSI block layer will time out and
-> produce messages like what we see here. So you probably need to change
-> the SCSI block layer timeout. To set the command timer to something else
-> use:
-> 
-> echo <value> /sys/block/<device>/device/timeout
-> 
-> Where value is e.g. 121 since many consumer drives time out at 120
-> seconds this means the kernel will wait 121 seconds before starting its
-> error handling (which includes resetting the drive and then the bus).
+
+btrfs device stats -z
+
+can be used to reset to zero if desired.  See the btrfs (8) manpage.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

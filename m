@@ -1,279 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([174.143.236.118]:44640 "EHLO fieldses.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752302AbaBRU3J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Feb 2014 15:29:09 -0500
-From: "J. Bruce Fields" <bfields@redhat.com>
-To: linux-fsdevel@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>,
-        "Eric W. Biederman" <ebiederm@xmission.com>,
-        "J. Bruce Fields" <bfields@redhat.com>
-Subject: [PATCH 9/9] dcache: rename DCACHE_DISCONNECTED -> DCACHE_CONNECTING
-Date: Tue, 18 Feb 2014 15:29:05 -0500
-Message-Id: <1392755345-12830-9-git-send-email-bfields@redhat.com>
-In-Reply-To: <1392755345-12830-1-git-send-email-bfields@redhat.com>
-References: <20140218202652.GA12374@fieldses.org>
- <1392755345-12830-1-git-send-email-bfields@redhat.com>
+Received: from out01.mta.xmission.com ([166.70.13.231]:37002 "EHLO
+	out01.mta.xmission.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752010AbaBRVcN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Feb 2014 16:32:13 -0500
+From: ebiederm@xmission.com (Eric W. Biederman)
+To: "J. Bruce Fields" <bfields@fieldses.org>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <1392403428-4593-1-git-send-email-jbacik@fb.com>
+	<20140214220525.GB3506@fieldses.org> <8761ohnoew.fsf@xmission.com>
+	<20140215024524.GA6660@fieldses.org>
+	<20140218202652.GA12374@fieldses.org>
+Date: Tue, 18 Feb 2014 13:32:04 -0800
+In-Reply-To: <20140218202652.GA12374@fieldses.org> (J. Bruce Fields's message
+	of "Tue, 18 Feb 2014 15:26:52 -0500")
+Message-ID: <8738jgrtt7.fsf@xmission.com>
+MIME-Version: 1.0
+Content-Type: text/plain
+Subject: Re: [PATCH] Btrfs: unset DCACHE_DISCONNECTED when mounting default subvol
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: "J. Bruce Fields" <bfields@redhat.com>
+"J. Bruce Fields" <bfields@fieldses.org> writes:
 
-The DCACHE_DISCONNECTED flag was intended *only* to mark dentries which
-were looked up by filehandle and are currently in the process of being
-hooked up to the rest of dcache.
+> On Fri, Feb 14, 2014 at 09:45:24PM -0500, J. Bruce Fields wrote:
+>> On Fri, Feb 14, 2014 at 05:40:55PM -0800, Eric W. Biederman wrote:
+>> > "J. Bruce Fields" <bfields@fieldses.org> writes:
+>> > 
+>> > > On Fri, Feb 14, 2014 at 01:43:48PM -0500, Josef Bacik wrote:
+>> > >> A user was running into errors from an NFS export of a subvolume that had a
+>> > >> default subvol set.  When we mount a default subvol we will use d_obtain_alias()
+>> > >> to find an existing dentry for the subvolume in the case that the root subvol
+>> > >> has already been mounted, or a dummy one is allocated in the case that the root
+>> > >> subvol has not already been mounted.  This allows us to connect the dentry later
+>> > >> on if we wander into the path.  However if we don't ever wander into the path we
+>> > >> will keep DCACHE_DISCONNECTED set for a long time, which angers NFS.  It doesn't
+>> > >> appear to cause any problems but it is annoying nonetheless, so simply unset
+>> > >> DCACHE_DISCONNECTED in the get_default_root case and switch btrfs_lookup() to
+>> > >> use d_materialise_unique() instead which will make everything play nicely
+>> > >> together and reconnect stuff if we wander into the defaul subvol path from a
+>> > >> different way.  With this patch I'm no longer getting the NFS errors when
+>> > >> exporting a volume that has been mounted with a default subvol set.  Thanks,
+>> > >
+>> > > Looks obviously correct, but based on a quick grep, there are four
+>> > > d_obtain_alias callers outside export methods:
+>> > >
+>> > > 	- btrfs/super.c:get_default_root()
+>> > > 	- fs/ceph/super.c:open_root_dentry()
+>> > > 	- fs/nfs/getroot.c:nfs_get_root()
+>> > > 	- fs/nilfs2/super.c:nilfs_get_root_dentry()
+>> > >
+>> > > It'd be nice to give them a common d_obtain_alias variant instead of
+>> > > making them all clear this by hand.
+>> > 
+>> > I am in favor of one small fix at a time, so that progress is made and
+>> > fixing something just for btrfs seems reasonable for the short term.
+>> > 
+>> > > Of those nilfs2 also uses d_splice_alias.  I think that problem would
+>> > > best be solved by fixing d_splice_alias not to require a
+>> > > DCACHE_DISCONNECTED dentry; IS_ROOT() on its own should be fine.
+>> > 
+>> > You mean by renaming d_splice_alias d_materialise_unique?
+>> > 
+>> > Or is there a useful distinction you see that should be preserved
+>> > between the two methods?
+>> > 
+>> > Right now my inclination is that everyone should just use
+>> > d_materialise_unique and we should kill d_splice_alias.
+>> 
+>> Probably.  One remaining distinction:
+>> 
+>> 	- In the local filesystem case if you discover a directory is
+>> 	  already aliased elsewhere, you have a corrupted filesystem and
+>> 	  want to error out the lookup.  (Didn't you propose a patch to
+>> 	  do something like that before?)
+>> 	- In the distributed filesystem this is perfectly normal and we
+>> 	  want to do our best to fix up our local cache to represent
+>> 	  remote reality.
+>
+> The following keeps the d_splice_alias/d_materialise_unique distinction
+> and (hopefully) fixes Josef's bug, and does a little cleanup (including
+> your suggested DISCONNECTED->CONNECTING rename).
+>
+> Any better idea for the naming of d_materialise_unique?
+>
+> I also didn't try to merge the implementations--the merged
+> d_splice_alias/d_materialise_unique was a little uglier than I expected.
+> I'll keep messing around with it though.
 
-Over time people have also confused it with IS_ROOT, using it to mark
-directories that are permanently "disconnected" just because for example
-they're the root of some filesystem.
+Your patchset sounds good I am going to aim for reading them through and
+reviewing them soonish.
 
-Perhaps a different name would have helped. (Thanks to Eric Biederman
-for the suggestion of DCACHE_CONNECTING.)
-
-Signed-off-by: J. Bruce Fields <bfields@redhat.com>
----
- Documentation/filesystems/nfs/Exporting     |  4 ++--
- drivers/staging/lustre/lustre/llite/namei.c |  4 ++--
- fs/dcache.c                                 |  8 ++++----
- fs/exportfs/expfs.c                         | 16 ++++++++--------
- fs/fat/namei_vfat.c                         |  4 ++--
- fs/nfsd/nfsfh.c                             |  4 ++--
- fs/ocfs2/dcache.c                           |  2 +-
- fs/ocfs2/namei.c                            |  2 +-
- include/linux/dcache.h                      |  4 ++--
- 9 files changed, 24 insertions(+), 24 deletions(-)
-
-diff --git a/Documentation/filesystems/nfs/Exporting b/Documentation/filesystems/nfs/Exporting
-index 9b7de5b..6d3b272 100644
---- a/Documentation/filesystems/nfs/Exporting
-+++ b/Documentation/filesystems/nfs/Exporting
-@@ -52,7 +52,7 @@ the dcache that are not needed for normal filesystem access.
- 
- To implement these features, the dcache has:
- 
--a/ A dentry flag DCACHE_DISCONNECTED which is set on
-+a/ A dentry flag DCACHE_CONNECTING which is set on
-    any dentry that might not be part of the proper prefix.
-    This is set when anonymous dentries are created, and cleared when a
-    dentry is noticed to be a child of a dentry which is in the proper
-@@ -69,7 +69,7 @@ c/ Helper routines to allocate anonymous dentries, and to help attach
-     d_obtain_alias(inode) will return a dentry for the given inode.
-       If the inode already has a dentry, one of those is returned.
-       If it doesn't, a new anonymous (IS_ROOT and
--        DCACHE_DISCONNECTED) dentry is allocated and attached.
-+        DCACHE_CONNECTING) dentry is allocated and attached.
-       In the case of a directory, care is taken that only one dentry
-       can ever be attached.
-     d_splice_alias(inode, dentry) or d_materialise_unique(dentry, inode)
-diff --git a/drivers/staging/lustre/lustre/llite/namei.c b/drivers/staging/lustre/lustre/llite/namei.c
-index fc8d264..f271111 100644
---- a/drivers/staging/lustre/lustre/llite/namei.c
-+++ b/drivers/staging/lustre/lustre/llite/namei.c
-@@ -368,7 +368,7 @@ static struct dentry *ll_find_alias(struct inode *inode, struct dentry *dentry)
- 		LASSERT(alias != dentry);
- 
- 		spin_lock(&alias->d_lock);
--		if (alias->d_flags & DCACHE_DISCONNECTED)
-+		if (alias->d_flags & DCACHE_CONNECTING)
- 			/* LASSERT(last_discon == NULL); LU-405, bz 20055 */
- 			discon_alias = alias;
- 		else if (alias->d_parent == dentry->d_parent	     &&
-@@ -395,7 +395,7 @@ static struct dentry *ll_find_alias(struct inode *inode, struct dentry *dentry)
- 
- /*
-  * Similar to d_splice_alias(), but lustre treats invalid alias
-- * similar to DCACHE_DISCONNECTED, and tries to use it anyway.
-+ * similar to DCACHE_CONNECTING, and tries to use it anyway.
-  */
- struct dentry *ll_splice_alias(struct inode *inode, struct dentry *de)
- {
-diff --git a/fs/dcache.c b/fs/dcache.c
-index 448ef98..0d5e1a5 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -726,7 +726,7 @@ EXPORT_SYMBOL(dget_parent);
-  * it can be unhashed only if it has no children, or if it is the root
-  * of a filesystem.
-  *
-- * If the inode has an IS_ROOT, DCACHE_DISCONNECTED alias, then prefer
-+ * If the inode has an IS_ROOT, DCACHE_CONNECTING alias, then prefer
-  * any other hashed alias over that one.
-  */
- static struct dentry *__d_find_alias(struct inode *inode)
-@@ -739,7 +739,7 @@ again:
- 		spin_lock(&alias->d_lock);
-  		if (S_ISDIR(inode->i_mode) || !d_unhashed(alias)) {
- 			if (IS_ROOT(alias) &&
--			    (alias->d_flags & DCACHE_DISCONNECTED)) {
-+			    (alias->d_flags & DCACHE_CONNECTING)) {
- 				discon_alias = alias;
- 			} else {
- 				__dget_dlock(alias);
-@@ -1860,7 +1860,7 @@ struct dentry *__d_obtain_alias(struct inode *inode, int disconnected)
- 	add_flags = d_flags_for_inode(inode);
- 
- 	if (disconnected)
--		add_flags |= DCACHE_DISCONNECTED;
-+		add_flags |= DCACHE_CONNECTING;
- 
- 	spin_lock(&tmp->d_lock);
- 	tmp->d_inode = inode;
-@@ -1883,7 +1883,7 @@ struct dentry *__d_obtain_alias(struct inode *inode, int disconnected)
- }
- 
- /**
-- * d_obtain_alias - find or allocate a DISCONNECTED dentry for a given inode
-+ * d_obtain_alias - find or allocate a CONNECTING dentry for a given inode
-  * @inode: inode to allocate the dentry for
-  *
-  * Obtain a dentry for an inode resulting from NFS filehandle conversion or
-diff --git a/fs/exportfs/expfs.c b/fs/exportfs/expfs.c
-index 48a359d..50c6973 100644
---- a/fs/exportfs/expfs.c
-+++ b/fs/exportfs/expfs.c
-@@ -72,7 +72,7 @@ find_acceptable_alias(struct dentry *result,
- static bool dentry_connected(struct dentry *dentry)
- {
- 	dget(dentry);
--	while (dentry->d_flags & DCACHE_DISCONNECTED) {
-+	while (dentry->d_flags & DCACHE_CONNECTING) {
- 		struct dentry *parent = dget_parent(dentry);
- 
- 		dput(dentry);
-@@ -89,13 +89,13 @@ static bool dentry_connected(struct dentry *dentry)
- static void clear_disconnected(struct dentry *dentry)
- {
- 	dget(dentry);
--	while (dentry->d_flags & DCACHE_DISCONNECTED) {
-+	while (dentry->d_flags & DCACHE_CONNECTING) {
- 		struct dentry *parent = dget_parent(dentry);
- 
- 		WARN_ON_ONCE(IS_ROOT(dentry));
- 
- 		spin_lock(&dentry->d_lock);
--		dentry->d_flags &= ~DCACHE_DISCONNECTED;
-+		dentry->d_flags &= ~DCACHE_CONNECTING;
- 		spin_unlock(&dentry->d_lock);
- 
- 		dput(dentry);
-@@ -187,12 +187,12 @@ out_reconnected:
- /*
-  * Make sure target_dir is fully connected to the dentry tree.
-  *
-- * On successful return, DCACHE_DISCONNECTED will be cleared on
-+ * On successful return, DCACHE_CONNECTING will be cleared on
-  * target_dir, and target_dir->d_parent->...->d_parent will reach the
-  * root of the filesystem.
-  *
-- * Whenever DCACHE_DISCONNECTED is unset, target_dir is fully connected.
-- * But the converse is not true: target_dir may have DCACHE_DISCONNECTED
-+ * Whenever DCACHE_CONNECTING is unset, target_dir is fully connected.
-+ * But the converse is not true: target_dir may have DCACHE_CONNECTING
-  * set but already be connected.  In that case we'll verify the
-  * connection to root and then clear the flag.
-  *
-@@ -208,7 +208,7 @@ reconnect_path(struct vfsmount *mnt, struct dentry *target_dir, char *nbuf)
- 
- 	dentry = dget(target_dir);
- 
--	while (dentry->d_flags & DCACHE_DISCONNECTED) {
-+	while (dentry->d_flags & DCACHE_CONNECTING) {
- 		BUG_ON(dentry == mnt->mnt_sb->s_root);
- 
- 		if (IS_ROOT(dentry))
-@@ -437,7 +437,7 @@ struct dentry *exportfs_decode_fh(struct vfsmount *mnt, struct fid *fid,
- 		 * to ensure our dentry is connected all the way up to the
- 		 * filesystem root.
- 		 */
--		if (result->d_flags & DCACHE_DISCONNECTED) {
-+		if (result->d_flags & DCACHE_CONNECTING) {
- 			err = reconnect_path(mnt, result, nbuf);
- 			if (err)
- 				goto err_result;
-diff --git a/fs/fat/namei_vfat.c b/fs/fat/namei_vfat.c
-index 6df8d3d..3e450fc 100644
---- a/fs/fat/namei_vfat.c
-+++ b/fs/fat/namei_vfat.c
-@@ -705,7 +705,7 @@ static int vfat_find(struct inode *dir, struct qstr *qname,
-  */
- static int vfat_d_anon_disconn(struct dentry *dentry)
- {
--	return IS_ROOT(dentry) && (dentry->d_flags & DCACHE_DISCONNECTED);
-+	return IS_ROOT(dentry) && (dentry->d_flags & DCACHE_CONNECTING);
- }
- 
- static struct dentry *vfat_lookup(struct inode *dir, struct dentry *dentry,
-@@ -738,7 +738,7 @@ static struct dentry *vfat_lookup(struct inode *dir, struct dentry *dentry,
- 	alias = d_find_alias(inode);
- 	if (alias && !vfat_d_anon_disconn(alias)) {
- 		/*
--		 * This inode has non anonymous-DCACHE_DISCONNECTED
-+		 * This inode has non anonymous-DCACHE_CONNECTING
- 		 * dentry. This means, the user did ->lookup() by an
- 		 * another name (longname vs 8.3 alias of it) in past.
- 		 *
-diff --git a/fs/nfsd/nfsfh.c b/fs/nfsd/nfsfh.c
-index 3c37b16..0bc18ae 100644
---- a/fs/nfsd/nfsfh.c
-+++ b/fs/nfsd/nfsfh.c
-@@ -252,8 +252,8 @@ static __be32 nfsd_set_fh_dentry(struct svc_rqst *rqstp, struct svc_fh *fhp)
- 	}
- 
- 	if (S_ISDIR(dentry->d_inode->i_mode) &&
--			(dentry->d_flags & DCACHE_DISCONNECTED)) {
--		printk("nfsd: find_fh_dentry returned a DISCONNECTED directory: %pd2\n",
-+			(dentry->d_flags & DCACHE_CONNECTING)) {
-+		printk("nfsd: find_fh_dentry returned a CONNECTING directory: %pd2\n",
- 				dentry);
- 	}
- 
-diff --git a/fs/ocfs2/dcache.c b/fs/ocfs2/dcache.c
-index 0d3a97d..3e954a1 100644
---- a/fs/ocfs2/dcache.c
-+++ b/fs/ocfs2/dcache.c
-@@ -455,7 +455,7 @@ static void ocfs2_dentry_iput(struct dentry *dentry, struct inode *inode)
- 		 * No dentry lock is ok if we're disconnected or
- 		 * unhashed.
- 		 */
--		if (!(dentry->d_flags & DCACHE_DISCONNECTED) &&
-+		if (!(dentry->d_flags & DCACHE_CONNECTING) &&
- 		    !d_unhashed(dentry)) {
- 			unsigned long long ino = 0ULL;
- 			if (inode)
-diff --git a/fs/ocfs2/namei.c b/fs/ocfs2/namei.c
-index f4d609b..a753ae5 100644
---- a/fs/ocfs2/namei.c
-+++ b/fs/ocfs2/namei.c
-@@ -149,7 +149,7 @@ bail_add:
- 
- 	if (inode) {
- 		/*
--		 * If d_splice_alias() finds a DCACHE_DISCONNECTED
-+		 * If d_splice_alias() finds a DCACHE_CONNECTING
- 		 * dentry, it will d_move() it on top of ourse. The
- 		 * return value will indicate this however, so in
- 		 * those cases, we switch them around for the locking
-diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index 2973aab..9f22329 100644
---- a/include/linux/dcache.h
-+++ b/include/linux/dcache.h
-@@ -177,14 +177,14 @@ struct dentry_operations {
- #define DCACHE_OP_DELETE		0x00000008
- #define DCACHE_OP_PRUNE			0x00000010
- 
--#define	DCACHE_DISCONNECTED		0x00000020
-+#define	DCACHE_CONNECTING		0x00000020
-      /* This dentry is possibly not currently connected to the dcache tree, in
-       * which case its parent will either be itself, or will have this flag as
-       * well.  nfsd will not use a dentry with this bit set, but will first
-       * endeavour to clear the bit either by discovering that it is connected,
-       * or by performing lookup operations.   Any filesystem which supports
-       * nfsd_operations MUST have a lookup function which, if it finds a
--      * directory inode with a DCACHE_DISCONNECTED dentry, will d_move that
-+      * directory inode with a DCACHE_CONNECTING dentry, will d_move that
-       * dentry into place and return that dentry rather than the passed one,
-       * typically using d_splice_alias. */
- 
--- 
-1.8.5.3
+Eric
 

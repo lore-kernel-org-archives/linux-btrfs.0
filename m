@@ -1,89 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([174.143.236.118]:59859 "EHLO fieldses.org"
+Received: from fieldses.org ([174.143.236.118]:44624 "EHLO fieldses.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751660AbaBRU0y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Feb 2014 15:26:54 -0500
-Date: Tue, 18 Feb 2014 15:26:52 -0500
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: unset DCACHE_DISCONNECTED when mounting default
- subvol
-Message-ID: <20140218202652.GA12374@fieldses.org>
-References: <1392403428-4593-1-git-send-email-jbacik@fb.com>
- <20140214220525.GB3506@fieldses.org>
- <8761ohnoew.fsf@xmission.com>
- <20140215024524.GA6660@fieldses.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140215024524.GA6660@fieldses.org>
+	id S1751355AbaBRU3I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Feb 2014 15:29:08 -0500
+From: "J. Bruce Fields" <bfields@redhat.com>
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
+        "J. Bruce Fields" <bfields@redhat.com>
+Subject: [PATCH 3/9] dcache: d_splice_alias mustn't create directory aliases
+Date: Tue, 18 Feb 2014 15:28:59 -0500
+Message-Id: <1392755345-12830-3-git-send-email-bfields@redhat.com>
+In-Reply-To: <1392755345-12830-1-git-send-email-bfields@redhat.com>
+References: <20140218202652.GA12374@fieldses.org>
+ <1392755345-12830-1-git-send-email-bfields@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 14, 2014 at 09:45:24PM -0500, J. Bruce Fields wrote:
-> On Fri, Feb 14, 2014 at 05:40:55PM -0800, Eric W. Biederman wrote:
-> > "J. Bruce Fields" <bfields@fieldses.org> writes:
-> > 
-> > > On Fri, Feb 14, 2014 at 01:43:48PM -0500, Josef Bacik wrote:
-> > >> A user was running into errors from an NFS export of a subvolume that had a
-> > >> default subvol set.  When we mount a default subvol we will use d_obtain_alias()
-> > >> to find an existing dentry for the subvolume in the case that the root subvol
-> > >> has already been mounted, or a dummy one is allocated in the case that the root
-> > >> subvol has not already been mounted.  This allows us to connect the dentry later
-> > >> on if we wander into the path.  However if we don't ever wander into the path we
-> > >> will keep DCACHE_DISCONNECTED set for a long time, which angers NFS.  It doesn't
-> > >> appear to cause any problems but it is annoying nonetheless, so simply unset
-> > >> DCACHE_DISCONNECTED in the get_default_root case and switch btrfs_lookup() to
-> > >> use d_materialise_unique() instead which will make everything play nicely
-> > >> together and reconnect stuff if we wander into the defaul subvol path from a
-> > >> different way.  With this patch I'm no longer getting the NFS errors when
-> > >> exporting a volume that has been mounted with a default subvol set.  Thanks,
-> > >
-> > > Looks obviously correct, but based on a quick grep, there are four
-> > > d_obtain_alias callers outside export methods:
-> > >
-> > > 	- btrfs/super.c:get_default_root()
-> > > 	- fs/ceph/super.c:open_root_dentry()
-> > > 	- fs/nfs/getroot.c:nfs_get_root()
-> > > 	- fs/nilfs2/super.c:nilfs_get_root_dentry()
-> > >
-> > > It'd be nice to give them a common d_obtain_alias variant instead of
-> > > making them all clear this by hand.
-> > 
-> > I am in favor of one small fix at a time, so that progress is made and
-> > fixing something just for btrfs seems reasonable for the short term.
-> > 
-> > > Of those nilfs2 also uses d_splice_alias.  I think that problem would
-> > > best be solved by fixing d_splice_alias not to require a
-> > > DCACHE_DISCONNECTED dentry; IS_ROOT() on its own should be fine.
-> > 
-> > You mean by renaming d_splice_alias d_materialise_unique?
-> > 
-> > Or is there a useful distinction you see that should be preserved
-> > between the two methods?
-> > 
-> > Right now my inclination is that everyone should just use
-> > d_materialise_unique and we should kill d_splice_alias.
-> 
-> Probably.  One remaining distinction:
-> 
-> 	- In the local filesystem case if you discover a directory is
-> 	  already aliased elsewhere, you have a corrupted filesystem and
-> 	  want to error out the lookup.  (Didn't you propose a patch to
-> 	  do something like that before?)
-> 	- In the distributed filesystem this is perfectly normal and we
-> 	  want to do our best to fix up our local cache to represent
-> 	  remote reality.
+From: "J. Bruce Fields" <bfields@redhat.com>
 
-The following keeps the d_splice_alias/d_materialise_unique distinction
-and (hopefully) fixes Josef's bug, and does a little cleanup (including
-your suggested DISCONNECTED->CONNECTING rename).
+Currently if d_splice_alias finds a directory with an alias that is not
+IS_ROOT or not DCACHE_DISCONNECTED, it creates a duplicate directory.
 
-Any better idea for the naming of d_materialise_unique?
+Duplicate directory dentries are unacceptable; it is better just to
+error out.
 
-I also didn't try to merge the implementations--the merged
-d_splice_alias/d_materialise_unique was a little uglier than I expected.
-I'll keep messing around with it though.
+(In the case of a local filesystem the most likely case is filesystem
+corruption: for example, perhaps two directories point to the same child
+directory, and the other parent has already been found and cached.)
 
---b.
+Signed-off-by: J. Bruce Fields <bfields@redhat.com>
+---
+ fs/dcache.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/fs/dcache.c b/fs/dcache.c
+index fd50e52..4550227 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2672,6 +2672,9 @@ static void __d_materialise_dentry(struct dentry *dentry, struct dentry *anon)
+  * DCACHE_DISCONNECTED), then d_move that in place of the given dentry
+  * and return it, else simply d_add the inode to the dentry and return NULL.
+  *
++ * If a non-IS_ROOT directory is found, the filesystem is corrupt, and
++ * we should error out: directories can't have multiple aliases.
++ *
+  * This is needed in the lookup routine of any filesystem that is exportable
+  * (via knfsd) so that we can build dcache paths to directories effectively.
+  *
+@@ -2692,9 +2695,13 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
+ 
+ 	if (inode && S_ISDIR(inode->i_mode)) {
+ 		spin_lock(&inode->i_lock);
+-		new = __d_find_alias(inode, 1);
++		new = __d_find_any_alias(inode);
+ 		if (new) {
+-			BUG_ON(!(new->d_flags & DCACHE_DISCONNECTED));
++			if (!IS_ROOT(new) || !(new->d_flags & DCACHE_DISCONNECTED)) {
++				spin_unlock(&inode->i_lock);
++				dput(new);
++				return ERR_PTR(-EIO);
++			}
+ 			write_seqlock(&rename_lock);
+ 			__d_materialise_dentry(dentry, new);
+ 			write_sequnlock(&rename_lock);
+-- 
+1.8.5.3
+

@@ -1,120 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52568 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753936AbaBRHO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Feb 2014 02:14:56 -0500
-Message-ID: <53030400.7010607@cn.fujitsu.com>
-Date: Tue, 18 Feb 2014 14:56:00 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] xfstests/btrfs: add qgroup rescan stress test
-References: <1392261539-28903-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140218064659.GA28666@dastard>
-In-Reply-To: <20140218064659.GA28666@dastard>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:38000 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753881AbaBSOd1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 09:33:27 -0500
+Received: by mail-wi0-f179.google.com with SMTP id bs8so622790wib.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 06:33:26 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs send issuing premature rmdir operations
+Date: Wed, 19 Feb 2014 14:32:32 +0000
+Message-Id: <1392820352-8550-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/18/2014 02:46 PM, Dave Chinner wrote:
-> On Thu, Feb 13, 2014 at 11:18:57AM +0800, Wang Shilong wrote:
->> Test flow is to run fsstress after triggering quota rescan.
->> the ruler is simple, we just remove all files and directories,
->> sync filesystem and see if qgroup's ref and excl are nodesize.
->>
->> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->> ---
->>   tests/btrfs/038     | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/038.out |  3 +++
->>   tests/btrfs/group   |  1 +
->>   3 files changed, 79 insertions(+)
->>   create mode 100644 tests/btrfs/038
->>   create mode 100644 tests/btrfs/038.out
->>
->> diff --git a/tests/btrfs/038 b/tests/btrfs/038
->> new file mode 100644
->> index 0000000..f6bd872
->> --- /dev/null
->> +++ b/tests/btrfs/038
->> @@ -0,0 +1,75 @@
->> +#! /bin/bash
->> +# FSQA Test No. btrfs/038
->> +#
->> +# Quota rescan stress test, we run fsstress and quota rescan concurrently
->> +#
->> +#-----------------------------------------------------------------------
->> +# Copyright (C) 2014 Fujitsu.  All rights reserved.
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#
->> +#-----------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1
->> +
->> +_cleanup()
->> +{
->> +       rm -f $tmp.*
->> +}
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +
->> +# real QA test starts here
->> +_need_to_be_root
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +_require_scratch
->> +
->> +rm -f $seqres.full
->> +
->> +run_check _scratch_mkfs "-b 2g --nodesize 4096"
->> +run_check _scratch_mount
->> +
->> +# -w ensures that the only ops are ones which cause write I/O
->> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
->> +		$FSSTRESS_AVOID >&/dev/null
->> +
->> +run_check $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT \
->> +       $SCRATCH_MNT/snap1 >>$seqres.full 2>&1
->> +
->> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
->> +       $FSSTRESS_AVOID >&/dev/null
->> +
->> +run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
->> +run_check $BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT
-> "run_check considered harmful."
->
-> http://oss.sgi.com/archives/xfs/2014-02/msg00482.html
->
-> Once I've committed Filipe's run_btrfs_util_prog, can you update
-> this series to remove all the unnecessary run_check calls and
-> repost? Thanks!
-No problem. ^_^
+Regression test for btrfs incremental send issue where a rmdir instruction
+is sent against an orphan directory inode which is not empty yet, causing
+btrfs receive to fail when it attempts to remove the directory.
 
-Thanks,
-Wang
->
-> Cheers,
->
-> Dave.
+This issue is fixed by the following linux kernel btrfs patch:
+
+   Btrfs: fix send attempting to rmdir non-empty directories
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ tests/btrfs/041     |  153 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/041.out |    1 +
+ tests/btrfs/group   |    1 +
+ 3 files changed, 155 insertions(+)
+ create mode 100755 tests/btrfs/041
+ create mode 100644 tests/btrfs/041.out
+
+diff --git a/tests/btrfs/041 b/tests/btrfs/041
+new file mode 100755
+index 0000000..9de9326
+--- /dev/null
++++ b/tests/btrfs/041
+@@ -0,0 +1,153 @@
++#! /bin/bash
++# FS QA Test No. btrfs/041
++#
++# Regression test for btrfs incremental send issue where a rmdir instruction
++# is sent against an orphan directory inode which is not empty yet, causing
++# btrfs receive to fail when it attempts to remove the directory.
++#
++# This issue is fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: fix send attempting to rmdir non-empty directories
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=`mktemp -d`
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++FSSUM_PROG=$here/src/fssum
++[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++
++rm -f $seqres.full
++
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++mkdir -p $SCRATCH_MNT/a/b
++mkdir $SCRATCH_MNT/0
++mkdir $SCRATCH_MNT/1
++mkdir $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/0 $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/1 $SCRATCH_MNT/a/b/c
++echo 'ola mundo' > $SCRATCH_MNT/a/b/c/foo.txt
++mkdir $SCRATCH_MNT/a/b/c/x
++mkdir $SCRATCH_MNT/a/b/c/x2
++mkdir $SCRATCH_MNT/a/b/y
++mkdir $SCRATCH_MNT/a/b/z
++mkdir -p $SCRATCH_MNT/a/b/d1/d2/d3
++mkdir $SCRATCH_MNT/a/b/d4
++
++# Filesystem looks like:
++#
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#         |-- c/           (ino 261)
++#         |   |-- foo.txt  (ino 262)
++#         |   |-- 0/       (ino 259)
++#         |   |-- 1/       (ino 260)
++#         |   |-- x/       (ino 263)
++#         |   |-- x2/      (ino 264)
++#         |
++#         |-- y/           (ino 265)
++#         |-- z/           (ino 266)
++#         |-- d1/          (ino 267)
++#         |   |-- d2/      (ino 268)
++#         |       |-- d3/  (ino 269)
++#         |
++#         |-- d4/          (ino 270)
++
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++
++rm -f $SCRATCH_MNT/a/b/c/foo.txt
++mv $SCRATCH_MNT/a/b/y $SCRATCH_MNT/a/b/YY
++mv $SCRATCH_MNT/a/b/z $SCRATCH_MNT/a
++mv $SCRATCH_MNT/a/b/c/x $SCRATCH_MNT/a/b/YY
++mv $SCRATCH_MNT/a/b/c/0 $SCRATCH_MNT/a/b/YY/00
++mv $SCRATCH_MNT/a/b/c/x2 $SCRATCH_MNT/a/z/X_2
++mv $SCRATCH_MNT/a/b/c/1 $SCRATCH_MNT/a/z/X_2
++rmdir $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/a/b/d4 $SCRATCH_MNT/a/d44
++mv $SCRATCH_MNT/a/b/d1/d2 $SCRATCH_MNT/a/d44
++rmdir $SCRATCH_MNT/a/b/d1
++
++# Filesystem now looks like:
++#
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#     |   |-- YY/          (ino 265)
++#     |        |-- x/      (ino 263)
++#     |        |-- 00/     (ino 259)
++#     |
++#     |-- z/               (ino 266)
++#     |   |-- X_2/         (ino 264)
++#     |        |-- 1/      (ino 260)
++#     |
++#     |-- d44/             (ino 270)
++#          |-- d2/         (ino 268)
++#              |-- d3/     (ino 269)
++
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++
++run_check $FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/mysnap2/mysnap1 \
++	$SCRATCH_MNT/mysnap2
++
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $tmp/2.snap
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/1.snap
++run_check $FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/mysnap1 2>> $seqres.full
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/2.snap
++run_check $FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/mysnap2 2>> $seqres.full
++
++_scratch_unmount
++_check_btrfs_filesystem $SCRATCH_DEV
++
++status=0
++exit
+diff --git a/tests/btrfs/041.out b/tests/btrfs/041.out
+new file mode 100644
+index 0000000..309876c
+--- /dev/null
++++ b/tests/btrfs/041.out
+@@ -0,0 +1 @@
++QA output created by 041
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f5452b5..fd0193c 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -43,3 +43,4 @@
+ 038 auto quick
+ 039 auto quick
+ 040 auto quick
++041 auto quick
+-- 
+1.7.9.5
 

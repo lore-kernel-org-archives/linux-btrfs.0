@@ -1,60 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30195 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751157AbaBZFkp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 00:40:45 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1Q5ebLM012431
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 13:40:37 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Remove the get_fslist error message.
-Date: Wed, 26 Feb 2014 13:41:38 +0800
-Message-Id: <1393393298-25652-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.163]:13750 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751966AbaBSOq7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 09:46:59 -0500
+Message-ID: <5304C3DF.90002@giantdisaster.de>
+Date: Wed, 19 Feb 2014 15:46:55 +0100
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+MIME-Version: 1.0
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] Btrfs-progs: new helper to parse string to u64 for
+ btrfs
+References: <1392808674-21656-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1392808674-21656-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1392808674-21656-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When calling get_fslist on a kernel doesn't support
-BTRFS_IOC_GET_FSLIST, an error message will output but the codes will
-continue using the old way to scan mounted fs.
+On Wed, 19 Feb 2014 19:17:51 +0800, Wang Shilong wrote:
+> There are many places that need parse string to u64 for btrfs commands,
+> in fact, we do such things *too casually*, using atoi/atol/atoll..is not
+> right at all, and even we don't check whether it is a valid string.
+> 
+> Let's do everything more gracefully, we introduce a new helper
+> btrfs_strtoull() which will do all the necessary checks.If we fail to
+> parse string to u64, we will output message and exit directly, this is
+> something like what usage() is doing. It is ok to not return erro to
+> it's caller, because this function should be called when parsing arg
+> (just like usage!)
+> 
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+>  utils.c | 19 +++++++++++++++++++
+>  utils.h |  1 +
+>  2 files changed, 20 insertions(+)
+> 
+> diff --git a/utils.c b/utils.c
+> index 97e23d5..0698d8d 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -1520,6 +1520,25 @@ scan_again:
+>  	return 0;
+>  }
+>  
+> +u64 btrfs_strtoull(char *str, int base)
+> +{
+> +	u64 value;
+> +	char *ptr_parse_end = NULL;
+> +	char *ptr_str_end = str + strlen(str);
+> +
+> +	value = strtoull(str, &ptr_parse_end, base);
+> +	if (ptr_parse_end != ptr_str_end) {
+> +		fprintf(stderr, "ERROR: %s is not an invalid unsigned long long integer.\n",
 
-Since the error message will fail xfstest/btrfs/006 testcase and there
-is a fallback way, the message should not be printed.
+"not invalid" :)
 
-Also other error message in get_fslist is not needed since the functions
-in utils.c should not print any thing and caller will handle the error.
-This patch just remove the unneeded perror messages.
+> +				str);
+> +		exit(1);
+> +	}
+> +	if (value == ULONG_MAX) {
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- utils.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ULLONG_MAX or {errno = 0; value = strtoull(...); if (errno == ERANGE)...}
 
-diff --git a/utils.c b/utils.c
-index 33b3ddc..364c191 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2209,10 +2209,8 @@ int get_fslist(struct btrfs_ioctl_fslist **out_fslist, u64 *out_count)
- 
- 	fd = open("/dev/btrfs-control", O_RDWR);
- 	e = errno;
--	if (fd < 0) {
--		perror("failed to open /dev/btrfs-control");
-+	if (fd < 0)
- 		return -e;
--	}
- 
- 	/* space to hold 512 fsids, doesn't matter if small
- 	 * it would fail and return count so then we try again
-@@ -2238,8 +2236,6 @@ again:
- 		free(fsargs);
- 		goto again;
- 	} else if (ret < 0) {
--		printf("ERROR: scan_fsid ioctl failed - %s\n",
--			strerror(e));
- 		ret = -e;
- 		goto out;
- 	}
--- 
-1.9.0
+
+> +		fprintf(stderr, "ERROR: %s is out of range.\n", str);
+> +		exit(1);
+> +	}
+
+base = 0 is best BTW since it is able to read hex and octal numbers as
+well. I'd remove the base parameter to btrfs_strtoull() and always use 0.
 

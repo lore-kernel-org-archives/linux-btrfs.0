@@ -1,49 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:45122 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751164AbaBQDtU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Feb 2014 22:49:20 -0500
-Received: by mail-pd0-f169.google.com with SMTP id v10so14390840pde.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2014 19:49:20 -0800 (PST)
-From: Sachin Kamat <sachin.kamat@linaro.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:63340 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751299AbaBSMAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 07:00:07 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1JBQFlG026060
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 19:26:32 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, sachin.kamat@linaro.org
-Subject: [PATCH Resend] btrfs: Use PTR_ERR_OR_ZERO
-Date: Mon, 17 Feb 2014 09:13:57 +0530
-Message-Id: <1392608637-24756-1-git-send-email-sachin.kamat@linaro.org>
+Subject: [PATCH 3/4] Btrfs: cancel scrub on transaction abortion
+Date: Wed, 19 Feb 2014 19:24:18 +0800
+Message-Id: <1392809059-22319-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1392809059-22319-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1392809059-22319-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-PTR_RET is deprecated. Use PTR_ERR_OR_ZERO instead. While at it
-also include missing err.h header.
+If we fail to commit transaction, we'd better
+cancel scrub operations.
 
-Signed-off-by: Sachin Kamat <sachin.kamat@linaro.org>
+Suggested-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/root-tree.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 1389b69059de..38bb47e7d6b1 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -16,6 +16,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 84da666..79a4186 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1580,6 +1580,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
  
-+#include <linux/err.h>
- #include <linux/uuid.h>
- #include "ctree.h"
- #include "transaction.h"
-@@ -271,7 +272,7 @@ int btrfs_find_orphan_roots(struct btrfs_root *tree_root)
- 		key.offset++;
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
++	btrfs_scrub_cancel(root->fs_info);
  
- 		root = btrfs_read_fs_root(tree_root, &root_key);
--		err = PTR_RET(root);
-+		err = PTR_ERR_OR_ZERO(root);
- 		if (err && err != -ENOENT) {
- 			break;
- 		} else if (err == -ENOENT) {
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ }
 -- 
-1.7.9.5
+1.8.3.1
 

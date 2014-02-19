@@ -1,53 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:61030 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753407AbaBSNIF (ORCPT
+Received: from mail-ea0-f193.google.com ([209.85.215.193]:56222 "EHLO
+	mail-ea0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752542AbaBSNqF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 08:08:05 -0500
-Received: from [131.220.3.232] (hocheck.informatik.uni-bonn.de [131.220.3.232])
-	by postfix.iai.uni-bonn.de (Postfix) with ESMTP id 8CBDE5C404
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 13:59:19 +0100 (MET)
-	(envelope-from ochmann@informatik.uni-bonn.de)
-	(envelope-to linux-btrfs@vger.kernel.org) (1)
-	(internal use: ta=1, tu=1, te=1, am=P, au=ochmann)
-Message-ID: <5304AA69.5020800@informatik.uni-bonn.de>
-Date: Wed, 19 Feb 2014 13:58:17 +0100
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-MIME-Version: 1.0
+	Wed, 19 Feb 2014 08:46:05 -0500
+Received: by mail-ea0-f193.google.com with SMTP id f15so187852eak.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 05:46:02 -0800 (PST)
+Received: from linuxpc.localnet (194-118-189-56.adsl.highway.telekom.at. [194.118.189.56])
+        by mx.google.com with ESMTPSA id x2sm928321eeo.8.2014.02.19.05.46.01
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 19 Feb 2014 05:46:01 -0800 (PST)
+From: GEO <1g2e3o4@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Meaning of "no_csum" field when scrubbing with -R option
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Incremental backup over writable snapshot
+Date: Wed, 19 Feb 2014 14:45:57 +0100
+Message-ID: <17860756.QfG9CfNMqv@linuxpc>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone,
+Hi,
 
-I have a question: What exactly does the value for "no_csum" mean when 
-doing a scrub with the -R option? Example output:
+As suggested in another thread, I would like to know the reliability of the 
+following backup scheme:
+
+Suppose I have a subvolume of my homedirectory  called @home. 
+
+Now I am interested in making incremental backups of data in home I am 
+interested in, but not everything, so I create a normal snapshot of @home 
+called @home-w and delete the files/folders I am not interested in backing up. 
+After that I create a readonly snapshot of @home-w called @home-r, that I sent 
+to my target volume with btrfs send. 
+
+After that is done, I do regular backups, by always going over the writeable 
+snapshot where I remove always the same directories I am not interested and 
+send the difference to the target volume with  btrfs send -p @home-r @home-r-1| 
+btrfs receive /path/of/target/volume. 
+
+I do not like the idea of making subvolumes of all directories I am not 
+interested in backing up.
+
+So what I would like to know now is the following: Could there be drawbacks of 
+doing this resp. could I further optimize my backup strategy, as I experienced 
+it takes a while for deleting large files in the writeable snapshot (What does 
+it write there?)
+
+Could my method somehow lead to inefficiency in terms of the disk space used at 
+the target volume (I mean, could the deleting cause a change, so that more is 
+actually transferred as change, than in reality is?)?
+
+One last question would be: Is there a quick way I could verify the local read 
+only snapshot used last time is the same as the one synced to the target 
+volume last time?
 
 
- > sudo btrfs scrub start -BR /
-
-scrub done for ...
-   ...
-   csum_errors: 0
-   verify_errors: 0
-   no_csum: 70517
-   csum_discards: 87381
-   super_errors: 0
-   ...
-
-
-In the btrfs header, I found the following comment for the "no_csum" 
-field of the btrfs_scrub_progress struct:
-
-
-"# of 4k data block for which no csum is present, probably the result of 
-data written with nodatasum"
-
-
-So my question is, why does scrub show a high (i.e. non-zero) value for 
-no_csum? I never enabled nodatasum or a similar option.
-
-Best regards
-Sebastian
+Thank you for your support and the great work!

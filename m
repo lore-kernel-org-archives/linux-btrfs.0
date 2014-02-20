@@ -1,34 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57957 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58635 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751882AbaBTRbQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 12:31:16 -0500
-Date: Thu, 20 Feb 2014 18:31:12 +0100
+	id S1752351AbaBTSJA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 13:09:00 -0500
+Date: Thu, 20 Feb 2014 19:08:57 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: Chris Murphy <chris@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/8] Add command btrfs filesystem disk-usage
-Message-ID: <20140220173112.GV16073@twin.jikos.cz>
+To: kreijack@inwind.it
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Kostia Khlebopros <kkhlebopros@netgear.com>
+Subject: Re: [PATCH][BTRFS-PROGS][v4] Enhance btrfs fi df
+Message-ID: <20140220180857.GW16073@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <52FD1AD6.50500@libero.it>
- <20140214012810.26297146@natsu>
- <52FD21B4.4050502@libero.it>
- <20140214030045.415e21da@natsu>
- <52FE58EF.1060901@libero.it>
- <20140215001110.76d8226f@natsu>
- <52FE602D.7060109@libero.it>
- <20140214183400.GA3351@carfax.org.uk>
- <08C5C865-03F9-413A-873A-995393E1FABD@colorremedies.com>
- <53025073.80709@inwind.it>
+References: <52FD1A72.5060307@libero.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53025073.80709@inwind.it>
+In-Reply-To: <52FD1A72.5060307@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 17, 2014 at 07:09:55PM +0100, Goffredo Baroncelli wrote:
-> I have to agree with Chris: looking at the output of "btrfs fi disk-usage"
+On Thu, Feb 13, 2014 at 08:18:10PM +0100, Goffredo Baroncelli wrote:
+> space (if the next chunk are allocated as SINGLE) or the minimum one (
+> if the next chunks are allocated as DUP/RAID1/RAID10).
+> 
+> The other two commands show the chunks in the disks.
+> 
+> $ sudo btrfs filesystem disk-usage /mnt/btrfs1/
+> Data,Single: Size:8.00MB, Used:0.00
+>    /dev/vdb	    8.00MB
+
+The information about per-device usage can be enhanced and there's
+enough space to print that:
+
+* allocated in chunks (the number above)
+* actually used (simiar to what 'btrfs fi show' prints as 'used')
+
+I don't see a reason why it would not fit here, nor any other place
+where this can be obtained.
+
+There is the cumulative number of 'Used' for all devices, but I'd like
+to see it per-device as well.
+
+> or in tabular format
 > 
 > $ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
 >          Data   Data    Metadata Metadata System System             
@@ -40,14 +53,86 @@ On Mon, Feb 17, 2014 at 07:09:55PM +0100, Goffredo Baroncelli wrote:
 > /dev/vde      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
 >          ====== ======= ======== ======== ====== ======= ===========
 > Total    8.00MB  2.00GB   8.00MB   3.00GB 4.00MB 12.00MB    391.97GB
-> Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB   
+> Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB            
 > 
-> it is hard to tell that this can be named "filesystem usage". I think that 
-> "details" or "examine" is a better name.
-> 
-> Regarding "btrfs device usage", it seems to me more coherent. But as 
-> reported before consistency also matters, so now I am inclined to use
-> "detail" (or examine) also for "btrfs device"
+> These are the most complete output, where it is possible to know which
+> disk a chunk uses and the usage of every chunk.
 
-I'm for 'btrfs filesystem usage' and 'btrfs device usage', IMHO
-intuitive, easy to type and remember.
+Though not per-device, similar to the above, but the tabular output is
+limited compared to the sequential output. Not sure what to do here.
+
+> Finally the last command shows which chunks a disk hosts:
+> 
+> $ sudo ./btrfs device disk-usage /mnt/btrfs1/
+> /dev/vdb	  100.00GB
+>    Data,Single:              8.00MB
+>    Data,RAID6:               1.00GB
+>    Metadata,Single:          8.00MB
+>    Metadata,RAID5:           1.00GB
+>    System,Single:            4.00MB
+>    System,RAID5:             4.00MB
+>    Unallocated:             97.98GB
+> 
+> /dev/vdc	  100.00GB
+>    Data,RAID6:               1.00GB
+>    Metadata,RAID5:           1.00GB
+>    System,RAID5:             4.00MB
+>    Unallocated:             98.00GB
+> 
+> /dev/vdd	  100.00GB
+>    Data,RAID6:               1.00GB
+>    Metadata,RAID5:           1.00GB
+>    System,RAID5:             4.00MB
+>    Unallocated:             98.00GB
+> 
+> /dev/vde	  100.00GB
+>    Data,RAID6:               1.00GB
+>    Metadata,RAID5:           1.00GB
+>    System,RAID5:             4.00MB
+>    Unallocated:             98.00GB
+
+> More or less are the same information above, only grouped by disk.
+
+Ie. it's only a variant of the 'filesystem usage' where it is grouped by
+blockgroup type.
+
+Why doesn't 'btrfs device usage' take a device instead of the whole
+filesystem? This seems counterintuitive. It should be possible to
+ask for a device by it or path.
+
+Also, I'd like to see all useful information about the device:
+
+* id, path, uuid, ... whatever
+* physical device size
+* size visible by the filesystem
+* space allocated in chunks
+* space actually used
+
+> Unfortunately I don't have any information about the chunk usage per disk basis.
+
+And I'm missing it. Is it a fundamental problem or just not addressed in
+this patchset?
+
+> Finally I have to point out that the command btrfs fi df previous didn't require 
+> the root capability, now with my patches it is required, because I need 
+> to know some info about the chunks so I need to use the 
+> "BTRFS_IOC_TREE_SEARCH".
+> 
+> I think that there are the following possibilities:
+> 1) accept this regresssion
+> 2) remove the command "btrfs fi df" and leave only "btrfs fi disk-usage" and
+>    "btrfs dev disk-usage"
+> 3) adding a new ioctl which could be used without root capability. Of course
+>    this ioctl would return only a subset of the BTRFS_IOC_TREE_SEARCH info
+> 
+> I think that the 3) would be the "long term" solution. I am not happy about
+> the 1), so as "short term solution" I think that we should go with the 2).
+> What do you think ?
+
+No sorry, 1) is not acceptable. We can live with this limitation only
+during development so we're not blocked by some new ioctl development.
+
+No for 2), 'fi df' is useful as and widely used in existing scripts.
+
+Yes for 3), we may also export the information through the existing
+ioctls if possible (eg. IOC_FS_INFO).

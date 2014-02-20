@@ -1,46 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57860 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752935AbaBTCwu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 21:52:50 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K2qdxd013316
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 10:52:44 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/4] btrfs-progs: fix wrong error msg for exec btrfsck as non-root
-Date: Thu, 20 Feb 2014 10:49:05 +0800
-Message-Id: <1392864546-545-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:18963 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753943AbaBTOty (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 09:49:54 -0500
+Date: Thu, 20 Feb 2014 16:44:30 +0200
+From: Rakesh Pandit <rakesh@tuxera.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: don't remove BTRFS_BLOCK_GROUP_DUP in chunk type
+Message-ID: <20140220144428.GA31816@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When exec btrfsck as non-root user on a disk, btrfsck will always
-warn that "No such file or directory", despite that a directory
-(e.g. /dev/vboxusb)actually exists. We just have no permission.
-In this case, return the -errno set by the opendir call in
-btrfs_scan_one_dir rather than blindly return -ENOENT.
+During restoring of image (-r using btrfs-image) we zero out RAID
+profile in chunk type but forget to save BTRFS_BLOCK_GROUP_DUP if
+present. This results in some false messages being printed by btrfsck.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+$  ./mkfs.btrfs /dev/sdb2 -f
+$  ./btrfs-image /dev/sdb2 btrfs_image_output
+$  ./btrfs-image -r btrfs_image_output disk-image
+$  ./btrfsck disk-image
+Checking filesystem on disk-image
+UUID: e644be2d-7701-4bd4-8804-7487f560d2a7
+checking extents
+Chunk[256, 228, 20971520]: length(8388608), offset(20971520), type(2) mismatch with block group[20971520, 192, 8388608]: offset(8388608), objectid(20971520), flags(34)
+Chunk[256, 228, 29360128]: length(1073741824), offset(29360128), type(4) mismatch with block group[29360128, 192, 1073741824]: offset(1073741824), objectid(29360128), flags(36)
+Block group[20971520, 8388608] (flags = 34) didn't find the relative chunk.
+Block group[29360128, 1073741824] (flags = 36) didn't find the relative chunk.
+
+Even though ./btrfsck on /dev/sdb2 seemed fine. This is due to type
+mismatch above and type mismatch occured because we zero'ed out
+BTRFS_BLOCK_GROUP_DUP while handling chunk trees.
+
+Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- utils.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ btrfs-image.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index 1878abc..12ed2f4 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1114,7 +1114,7 @@ again:
- 	dirp = opendir(dirname);
- 	if (!dirp) {
- 		fprintf(stderr, "Unable to open %s for scanning\n", dirname);
--		ret = -ENOENT;
-+		ret = -errno;
- 		goto fail;
- 	}
- 	while(1) {
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 7bcfc06..2be54a7 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -1521,7 +1521,8 @@ static int fixup_chunk_tree_block(struct mdrestore_struct *mdres,
+ 			type = btrfs_stack_chunk_type(&chunk);
+ 			type &= (BTRFS_BLOCK_GROUP_DATA |
+ 				 BTRFS_BLOCK_GROUP_SYSTEM |
+-				 BTRFS_BLOCK_GROUP_METADATA);
++				 BTRFS_BLOCK_GROUP_METADATA |
++				 BTRFS_BLOCK_GROUP_DUP);
+ 			btrfs_set_stack_chunk_type(&chunk, type);
+ 
+ 			btrfs_set_stack_chunk_num_stripes(&chunk, 1);
 -- 
-1.8.1.4
+1.8.3.1
 

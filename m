@@ -1,94 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:34417 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752519AbaBTMjt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 07:39:49 -0500
-Message-ID: <5305F72F.9050109@cn.fujitsu.com>
-Date: Thu, 20 Feb 2014 20:38:07 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from mail-ee0-f52.google.com ([74.125.83.52]:44220 "EHLO
+	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754586AbaBTNUV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 08:20:21 -0500
+Received: by mail-ee0-f52.google.com with SMTP id c41so77448eek.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 05:20:19 -0800 (PST)
+From: GEO <1g2e3o4@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Incremental backup over writable snapshot
+Date: Thu, 20 Feb 2014 14:20:16 +0100
+Message-ID: <2091546.7UkK3HMHjX@linuxpc>
+In-Reply-To: <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com>
+References: <17860756.QfG9CfNMqv@linuxpc> <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com>
 MIME-Version: 1.0
-To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-CC: linux-btrfs@vger.kernel.org, Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Meaning of \"no_csum\" field when scrubbing with -R option
-References: <5305DE1E.8080302@cn.fujitsu.com> <5305E63B.4000405@informatik.uni-bonn.de>
-In-Reply-To: <5305E63B.4000405@informatik.uni-bonn.de>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/20/2014 07:25 PM, Sebastian Ochmann wrote:
-> Hello,
->
->>     Sebastian Ochmann posted on Wed, 19 Feb 2014 13:58:17 +0100 as 
->> excerpted:
->>
->>
->>         So my question is, why does scrub show a high (i.e. non-zero) 
->> value for
->>         no_csum? I never enabled nodatasum or a similar option.
->>
->> Did you enable nodatacow option? if  nodatacow option is enabled,
->> data checksums will be also disabled at the same time.
-[SNIP]
+@Kai Krakow: I accept your opinion and thank you for your answer.
+However I have special reasons doing so. I could name you a few use cases. 
+For example I do not need to backup search indexes as they mess up over time, 
+so I simple recreate the cache in case of a new install. 
+I know most of the settings I set and I know exactly what missing directories 
+break what in case of deletion, because I have tried so various times.
 
-So i have found why we have such strange things from debugging, you can 
-have a try as the
-following steps:
+This is not supposed to be a system backup, or a "home" backup, but a backup 
+of my data (documents, videos etc.). 
+I know hidden directories contain mails etc. but I know exactly where my mails 
+are (most of them imap anyway) and I would include them in the backup. 
 
-# mkfs.btrfs -f /dev/sda9
-# mount /dev/sda9 /mnt
-# btrfs scrub start -BR /mnt
+So I am looking for a different use case.
 
-scrub done for 02dd3326-959f-4602-9baa-aa9ed99ac2e5
-     scrub started at Thu Feb 20 20:31:46 2014 and finished after 0 seconds
-     data_extents_scrubbed: 1
-     tree_extents_scrubbed: 16
-     data_bytes_scrubbed: 65536
-     tree_bytes_scrubbed: 262144
-     read_errors: 0
-     csum_errors: 0
-     verify_errors: 0
-     no_csum: 16 ---------------------->not equal 0 for a newly mkfs.
-     csum_discards: 0
-     super_errors: 0
-     malloc_errors: 0
-     uncorrectable_errors: 0
-     unverified_errors: 0
-     corrected_errors: 0
-     last_physical: 467140608
+Anyway, I know most of you won't like my idea, but my question was, if I do 
+everything right (and do not delete the wrong stuff out of stupidity), if the 
+result would be as reliable as doing your approach, so please consider that as 
+a technical question, even if you strongly dislike the idea.
 
-# btrfs-debug-tree /dev/sda9
+So my initial question would remain: does the deleting of some stuff change the 
+whole snapshot in a way, that the increment step would be screwed, which means 
+I would back up blocks, that are not new. 
+I do not have the expertise to check out the code and answer my question 
+myself, so I would like to hear the opinion of the devs whether my way should 
+work in theory or not, regardless of the fact that the use case has not been 
+tested and is not recommended. 
 
-By debuging tree, we found there is a EXTENT_ITEM in extent tree for newly
-mkfs filesystem which we have written anything yet.
-
-  item 2 key (12582912 EXTENT_ITEM 65536) itemoff 16182 itemsize 53
-                 extent refs 1 gen 5 flags 1
-                 extent data backref root 1 objectid 256 offset 0 count 1
-item 3 key (12582912 BLOCK_GROUP_ITEM 8388608) itemoff 16158 itemsize 24
-
-At the same time, Let's see Csum tree debug output:
-
-checksum tree key (CSUM_TREE ROOT_ITEM 0)
-leaf 29425664 items 0 free space 16283 generation 4 owner 7
-fs uuid 02dd3326-959f-4602-9baa-aa9ed99ac2e5
-
-So there is not corresponding checksum item for that DATA extent item..
-This can explain why scrub output no_sum count!
-
-For reasons, It may be reserved data space without checksum for other 
-purpose!
-So if this is true, i don't think this is harm for common users unless 
-it is designed
-unexpectedly!
-
-Thanks,
-Wang
->
->
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
+Thank you very much for your opinions.

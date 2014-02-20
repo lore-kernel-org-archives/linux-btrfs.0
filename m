@@ -1,38 +1,234 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:52163 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751353AbaBTL0y (ORCPT
+Received: from mail-bk0-f44.google.com ([209.85.214.44]:52239 "EHLO
+	mail-bk0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752882AbaBTMAZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 06:26:54 -0500
-Message-ID: <5305E63B.4000405@informatik.uni-bonn.de>
-Date: Thu, 20 Feb 2014 12:25:47 +0100
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+	Thu, 20 Feb 2014 07:00:25 -0500
+Received: by mail-bk0-f44.google.com with SMTP id r7so592753bkg.17
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 04:00:23 -0800 (PST)
 MIME-Version: 1.0
-To: wangsl.fnst@cn.fujitsu.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Meaning of \"no_csum\" field when scrubbing with -R option
-References: <5305DE1E.8080302@cn.fujitsu.com>
-In-Reply-To: <5305DE1E.8080302@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1391613454-30622-1-git-send-email-dsterba@suse.cz>
+References: <1391613454-30622-1-git-send-email-dsterba@suse.cz>
+Date: Thu, 20 Feb 2014 12:00:23 +0000
+Message-ID: <CAL3q7H47h8v-gE_U+4tFSAfTtyjQhFH6NR9oZxuLA_HjEMw1Fg@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: send: lower memory requirements in common case
+From: Filipe David Manana <fdmanana@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
->     Sebastian Ochmann posted on Wed, 19 Feb 2014 13:58:17 +0100 as excerpted:
+On Wed, Feb 5, 2014 at 3:17 PM, David Sterba <dsterba@suse.cz> wrote:
+> The fs_path structure uses an inline buffer and falls back to a chain of
+> allocations, but vmalloc is not necessary because PATH_MAX fits into
+> PAGE_SIZE.
 >
+> The size of fs_path has been reduced to 256 bytes from PAGE_SIZE,
+> usually 4k. Experimental measurements show that most paths on a single
+> filesystem do not exceed 200 bytes, and these get stored into the inline
+> buffer directly, which is now 230 bytes. Longer paths are kmalloced when
+> needed.
 >
->         So my question is, why does scrub show a high (i.e. non-zero) value for
->         no_csum? I never enabled nodatasum or a similar option.
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+> v2:
+> - intel build test reports that krealloc should not reuse the buffer for return
+>   value, though it's not a problem in our case, a failed allocation leads to
+>   immediate return, let's use a temporary variable to keep the check happy
 >
-> Did you enable nodatacow option? if  nodatacow option is enabled,
-> data checksums will be also disabled at the same time.
+>  fs/btrfs/send.c |  106 +++++++++++++++++++-----------------------------------
+>  1 files changed, 37 insertions(+), 69 deletions(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 1f09c74e1c1f..dd0b02adb1e6 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -57,7 +57,12 @@ struct fs_path {
+>                         unsigned short reversed:1;
+>                         char inline_buf[];
+>                 };
+> -               char pad[PAGE_SIZE];
+> +               /*
+> +                * Average path length does not exceed 200 bytes, we'll have
+> +                * better packing in the slab and higher chance to satisfy
+> +                * a allocation later during send.
+> +                */
+> +               char pad[256];
+>         };
+>  };
+>  #define FS_PATH_INLINE_SIZE \
+> @@ -262,12 +267,8 @@ static void fs_path_free(struct fs_path *p)
+>  {
+>         if (!p)
+>                 return;
+> -       if (p->buf != p->inline_buf) {
+> -               if (is_vmalloc_addr(p->buf))
+> -                       vfree(p->buf);
+> -               else
+> -                       kfree(p->buf);
+> -       }
+> +       if (p->buf != p->inline_buf)
+> +               kfree(p->buf);
+>         kfree(p);
+>  }
+>
+> @@ -287,40 +288,31 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+>         if (p->buf_len >= len)
+>                 return 0;
+>
+> -       path_len = p->end - p->start;
+> -       old_buf_len = p->buf_len;
+> -       len = PAGE_ALIGN(len);
+> -
+> +       /*
+> +        * First time the inline_buf does not suffice
+> +        */
+>         if (p->buf == p->inline_buf) {
+> -               tmp_buf = kmalloc(len, GFP_NOFS | __GFP_NOWARN);
+> -               if (!tmp_buf) {
+> -                       tmp_buf = vmalloc(len);
+> -                       if (!tmp_buf)
+> -                               return -ENOMEM;
+> -               }
+> -               memcpy(tmp_buf, p->buf, p->buf_len);
+> -               p->buf = tmp_buf;
+> -               p->buf_len = len;
+> +               p->buf = kmalloc(len, GFP_NOFS);
+> +               if (!p->buf)
+> +                       return -ENOMEM;
+> +               /*
+> +                * The real size of the buffer is bigger, this will let the
+> +                * fast path happen most of the time
+> +                */
+> +               p->buf_len = ksize(p->buf);
+>         } else {
+> -               if (is_vmalloc_addr(p->buf)) {
+> -                       tmp_buf = vmalloc(len);
+> -                       if (!tmp_buf)
+> -                               return -ENOMEM;
+> -                       memcpy(tmp_buf, p->buf, p->buf_len);
+> -                       vfree(p->buf);
+> -               } else {
+> -                       tmp_buf = krealloc(p->buf, len, GFP_NOFS);
+> -                       if (!tmp_buf) {
+> -                               tmp_buf = vmalloc(len);
+> -                               if (!tmp_buf)
+> -                                       return -ENOMEM;
+> -                               memcpy(tmp_buf, p->buf, p->buf_len);
+> -                               kfree(p->buf);
+> -                       }
+> -               }
+> -               p->buf = tmp_buf;
+> -               p->buf_len = len;
+> +               char *tmp;
+> +
+> +               tmp = krealloc(p->buf, len, GFP_NOFS);
+> +               if (!tmp)
+> +                       return -ENOMEM;
+> +               p->buf = tmp;
+> +               p->buf_len = ksize(p->buf);
+>         }
+> +
+> +       path_len = p->end - p->start;
+> +       old_buf_len = p->buf_len;
 
-No, never, not even on single files. Some additional info: The 
-filesystem is only a few weeks old (even though I see similar results on 
-an older filesystem as well), it's my root filesystem, and as mount 
-options I use "rw,noatime,ssd,discard,space_cache" (it's on a SSD). 
-Kernel version is 3.12.9.
+Hi Dave,
 
-Best regards,
-Sebastian
+I think this is not correct here. old_buf_len doesn't get assigned the
+old buffer's length but instead the new length. So this assignment
+should be before the if-then-else that allocates/reallocates the path
+buffer, just like it was done previously before this change.
+
+Or is there anything I missed here?
+
+thanks
+
+> +
+>         if (p->reversed) {
+>                 tmp_buf = p->buf + old_buf_len - path_len - 1;
+>                 p->end = p->buf + p->buf_len - 1;
+> @@ -911,9 +903,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+>         struct btrfs_dir_item *di;
+>         struct btrfs_key di_key;
+>         char *buf = NULL;
+> -       char *buf2 = NULL;
+> -       int buf_len;
+> -       int buf_virtual = 0;
+> +       const int buf_len = PATH_MAX;
+>         u32 name_len;
+>         u32 data_len;
+>         u32 cur;
+> @@ -923,7 +913,6 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+>         int num;
+>         u8 type;
+>
+> -       buf_len = PAGE_SIZE;
+>         buf = kmalloc(buf_len, GFP_NOFS);
+>         if (!buf) {
+>                 ret = -ENOMEM;
+> @@ -945,30 +934,12 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+>                 type = btrfs_dir_type(eb, di);
+>                 btrfs_dir_item_key_to_cpu(eb, di, &di_key);
+>
+> +               /*
+> +                * Path too long
+> +                */
+>                 if (name_len + data_len > buf_len) {
+> -                       buf_len = PAGE_ALIGN(name_len + data_len);
+> -                       if (buf_virtual) {
+> -                               buf2 = vmalloc(buf_len);
+> -                               if (!buf2) {
+> -                                       ret = -ENOMEM;
+> -                                       goto out;
+> -                               }
+> -                               vfree(buf);
+> -                       } else {
+> -                               buf2 = krealloc(buf, buf_len, GFP_NOFS);
+> -                               if (!buf2) {
+> -                                       buf2 = vmalloc(buf_len);
+> -                                       if (!buf2) {
+> -                                               ret = -ENOMEM;
+> -                                               goto out;
+> -                                       }
+> -                                       kfree(buf);
+> -                                       buf_virtual = 1;
+> -                               }
+> -                       }
+> -
+> -                       buf = buf2;
+> -                       buf2 = NULL;
+> +                       ret = -ENAMETOOLONG;
+> +                       goto out;
+>                 }
+>
+>                 read_extent_buffer(eb, buf, (unsigned long)(di + 1),
+> @@ -991,10 +962,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+>         }
+>
+>  out:
+> -       if (buf_virtual)
+> -               vfree(buf);
+> -       else
+> -               kfree(buf);
+> +       kfree(buf);
+>         return ret;
+>  }
+>
+> --
+> 1.7.9
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

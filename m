@@ -1,35 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57643 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754049AbaBTROd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 12:14:33 -0500
-Date: Thu, 20 Feb 2014 18:14:31 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/4] Btrfs-progs: new helper to parse string to u64
- for btrfs
-Message-ID: <20140220171431.GU16073@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1392863391-20492-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1392863391-20492-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:8995 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752456AbaBTCwo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 21:52:44 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K2qdxc013316
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 10:52:42 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs-progs: fix segment fault when exec btrfs-debug-tree as non-root
+Date: Thu, 20 Feb 2014 10:49:04 +0800
+Message-Id: <1392864546-545-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 20, 2014 at 10:29:51AM +0800, Wang Shilong wrote:
-> There are many places that need parse string to u64 for btrfs commands,
-> in fact, we do such things *too casually*, using atoi/atol/atoll..is not
-> right at all, and even we don't check whether it is a valid string.
-> 
-> Let's do everything more gracefully, we introduce a new helper
-> arg_strtou64() which will do all the necessary checks.If we fail to
-> parse string to u64, we will output message and exit directly, this is
-> something like what usage() is doing. It is ok to not return erro to
-> it's caller, because this function should be called when parsing arg
-> (just like usage!)
-> 
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+When exec btrfs-debug-tree as non-root user, we get a segment fault.
+Because the btrfs_scan_block_devices return a success 0 when we fail
+to open a device. Now we just return the errno if this case happens.
 
-This version looks good to me, thanks.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ utils.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/utils.c b/utils.c
+index 97e23d5..1878abc 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1517,7 +1517,8 @@ scan_again:
+ 		scans++;
+ 		goto scan_again;
+ 	}
+-	return 0;
++
++	return errno ? -errno : 0;
+ }
+ 
+ u64 parse_size(char *s)
+-- 
+1.8.1.4
+

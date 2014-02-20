@@ -1,38 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44329 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751638AbaBTDum (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 22:50:42 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WGKek-0001td-Hj
-	for linux-btrfs@vger.kernel.org; Thu, 20 Feb 2014 04:50:38 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 04:50:38 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 04:50:38 +0100
+Received: from cn.fujitsu.com ([222.73.24.84]:31455 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751830AbaBTKHf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 05:07:35 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1KA7XQa011821
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 18:07:33 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Incremental backup over writable snapshot
-Date: Thu, 20 Feb 2014 04:31:22 +0100
-Message-ID: <ah9gta-aap.ln1@hurikhan77.spdns.de>
-References: <17860756.QfG9CfNMqv@linuxpc> <2285169.jbztTl7OC0@linuxpc> <880EBF41-577C-4791-B022-DECE2960748F@colorremedies.com> <16991840.tqyQc6bZHr@linuxpc> <1985F36E-E720-415C-8BCD-9D7D2847C5DF@colorremedies.com> <99gfta-695.ln1@hurikhan77.spdns.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Subject: [PATCH 1/9] Btrfs: use ACCESS_ONCE to prevent the optimize accesses to ->last_trans_log_full_commit
+Date: Thu, 20 Feb 2014 18:08:51 +0800
+Message-Id: <1392890939-19044-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow <hurikhan77+btrfs@gmail.com> schrieb:
+->last_trans_log_full_commit may be changed by the other tasks without lock,
+so we need prevent the compiler from the optimize access just like
+	tmp = fs_info->last_trans_log_full_commit
+	if (tmp == ...)
+		...
 
-> Most of these directories aren't
-> changing anyways most of the time and thus won't occupy disk space only
-> once in the backup.
+	<do something>
 
-Of course "won't" should've read "would"... ;-)
+	if (tmp == ...)
+		...
 
+In fact, we need get the new value of ->last_trans_log_full_commit during
+the second access. Fix it by ACCESS_ONCE().
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/tree-log.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7c449c6..5a4e10b 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2375,14 +2375,14 @@ static int wait_log_commit(struct btrfs_trans_handle *trans,
+ 				&wait, TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
+ 
+-		if (root->fs_info->last_trans_log_full_commit !=
++		if (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) !=
+ 		    trans->transid && root->log_transid < transid + 2 &&
+ 		    atomic_read(&root->log_commit[index]))
+ 			schedule();
+ 
+ 		finish_wait(&root->log_commit_wait[index], &wait);
+ 		mutex_lock(&root->log_mutex);
+-	} while (root->fs_info->last_trans_log_full_commit !=
++	} while (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) !=
+ 		 trans->transid && root->log_transid < transid + 2 &&
+ 		 atomic_read(&root->log_commit[index]));
+ 	return 0;
+@@ -2392,12 +2392,12 @@ static void wait_for_writer(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_root *root)
+ {
+ 	DEFINE_WAIT(wait);
+-	while (root->fs_info->last_trans_log_full_commit !=
++	while (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) !=
+ 	       trans->transid && atomic_read(&root->log_writers)) {
+ 		prepare_to_wait(&root->log_writer_wait,
+ 				&wait, TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
+-		if (root->fs_info->last_trans_log_full_commit !=
++		if (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) !=
+ 		    trans->transid && atomic_read(&root->log_writers))
+ 			schedule();
+ 		mutex_lock(&root->log_mutex);
+@@ -2456,7 +2456,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	/* bail out if we need to do a full commit */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) ==
++	    trans->transid) {
+ 		ret = -EAGAIN;
+ 		btrfs_free_logged_extents(log, log_transid);
+ 		mutex_unlock(&root->log_mutex);
+@@ -2515,7 +2516,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 			mutex_unlock(&log_root_tree->log_mutex);
+ 			goto out;
+ 		}
+-		root->fs_info->last_trans_log_full_commit = trans->transid;
++		ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) =
++								trans->transid;
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+ 		btrfs_free_logged_extents(log, log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+@@ -2547,7 +2549,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * now that we've moved on to the tree of log tree roots,
+ 	 * check the full commit flag again
+ 	 */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) ==
++	    trans->transid) {
+ 		blk_finish_plug(&plug);
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+ 		btrfs_free_logged_extents(log, log_transid);
 -- 
-Replies to list only preferred.
+1.8.1.4
 

@@ -1,100 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:37804 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:54666 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752456AbaBTCqs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 21:46:48 -0500
+	id S1752506AbaBTCwp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 21:52:45 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K2kfHg012838
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 10:46:43 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K2qdnB013317
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 10:52:41 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/4] Btrfs-progs: new helper to parse string to u64 for btrfs
-Date: Thu, 20 Feb 2014 10:29:51 +0800
-Message-Id: <1392863391-20492-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/4] btrfs-progs: judge the return value of check_mounted more accurately
+Date: Thu, 20 Feb 2014 10:49:03 +0800
+Message-Id: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are many places that need parse string to u64 for btrfs commands,
-in fact, we do such things *too casually*, using atoi/atol/atoll..is not
-right at all, and even we don't check whether it is a valid string.
+For btrfs-convert, btrfstune, btrfs rescue, they report "device busy"
+when given a device that does not actually exist e.g.
 
-Let's do everything more gracefully, we introduce a new helper
-arg_strtou64() which will do all the necessary checks.If we fail to
-parse string to u64, we will output message and exit directly, this is
-something like what usage() is doing. It is ok to not return erro to
-it's caller, because this function should be called when parsing arg
-(just like usage!)
+	# btrfstune -x abcdefg (this device does not exist)
+	$ ...device busy...
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+We deal with this case by add "ret < 0" error check when
+judging the return value of check_mounted.
+
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
-Changelog v2->v3:
-        1.make output more clear addressed by Eric.
-	2.use a more nature way to check whether we have passed a
-	  valid numeric value.(pointed by Christian Robert!)
+ btrfs-convert.c |  7 ++++++-
+ btrfstune.c     |  7 ++++++-
+ cmds-rescue.c   | 14 +++++++++++---
+ 3 files changed, 23 insertions(+), 5 deletions(-)
 
-The next three patches can be applied cleanly, so i don't resend them.
----
- utils.c | 34 ++++++++++++++++++++++++++++++++++
- utils.h |  1 +
- 2 files changed, 35 insertions(+)
-
-diff --git a/utils.c b/utils.c
-index 97e23d5..31092b3 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1520,6 +1520,40 @@ scan_again:
- 	return 0;
- }
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 1b66de7..a8b2c51 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2729,7 +2729,12 @@ int main(int argc, char *argv[])
+ 	}
  
-+/*
-+ * This function should be only used when parsing
-+ * command arg, it won't return error to it's
-+ * caller and rather exit directly just like usage().
-+ */
-+u64 arg_strtou64(const char *str)
-+{
-+	u64 value;
-+	char *ptr_parse_end = NULL;
-+
-+	/*
-+	 * if we pass a negative number to strtoull,
-+	 * it will return an unexpected number to us,
-+	 * so let's do the check ourselves firstly.
-+	 */
-+	if (str[0] == '-') {
-+		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
-+			str);
-+		exit(1);
-+	}
-+
-+	value = strtoull(str, &ptr_parse_end, 0);
-+	if (ptr_parse_end && *ptr_parse_end != '\0') {
-+		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
-+			str);
-+		exit(1);
-+	}
-+	if (value == ULLONG_MAX) {
-+		fprintf(stderr, "ERROR: %s is too large.\n", str);
-+		exit(1);
-+	}
-+	return value;
-+}
-+
- u64 parse_size(char *s)
- {
- 	int i;
-diff --git a/utils.h b/utils.h
-index 04b8c45..a201085 100644
---- a/utils.h
-+++ b/utils.h
-@@ -71,6 +71,7 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
- int get_mountpt(char *dev, char *mntpt, size_t size);
- int btrfs_scan_block_devices(int run_ioctl);
- u64 parse_size(char *s);
-+u64 arg_strtou64(const char *str);
- int open_file_or_dir(const char *fname, DIR **dirstream);
- void close_file_or_dir(int fd, DIR *dirstream);
- int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	file = argv[optind];
+-	if (check_mounted(file)) {
++	ret = check_mounted(file);
++	if (ret < 0) {
++		fprintf(stderr, "Could not check mount status: %s\n",
++			strerror(-ret));
++		return 1;
++	} else if (ret) {
+ 		fprintf(stderr, "%s is mounted\n", file);
+ 		return 1;
+ 	}
+diff --git a/btrfstune.c b/btrfstune.c
+index da82f36..2e623f3 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -151,7 +151,12 @@ int main(int argc, char *argv[])
+ 		return 1;
+ 	}
+ 
+-	if (check_mounted(device)) {
++	ret = check_mounted(device);
++	if (ret < 0) {
++		fprintf(stderr, "Could not check mount status: %s\n",
++			strerror(-ret));
++		return 1;
++	} else if (ret) {
+ 		fprintf(stderr, "%s is mounted\n", device);
+ 		return 1;
+ 	}
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index e18eb98..f20a206 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -80,9 +80,13 @@ int cmd_chunk_recover(int argc, char *argv[])
+ 	file = argv[optind];
+ 
+ 	ret = check_mounted(file);
+-	if (ret) {
++	if (ret < 0) {
++		fprintf(stderr, "Could not check mount status: %s\n",
++			strerror(-ret));
++		return 1;
++	} else if (ret) {
+ 		fprintf(stderr, "the device is busy\n");
+-		return ret;
++		return 1;
+ 	}
+ 
+ 	ret = btrfs_recover_chunk_tree(file, verbose, yes);
+@@ -133,7 +137,11 @@ int cmd_super_recover(int argc, char **argv)
+ 
+ 	dname = argv[optind];
+ 	ret = check_mounted(dname);
+-	if (ret) {
++	if (ret < 0) {
++		fprintf(stderr, "Could not check mount status: %s\n",
++			strerror(-ret));
++		return 1;
++	} else if (ret) {
+ 		fprintf(stderr, "the device is busy\n");
+ 		return 1;
+ 	}
 -- 
-1.8.3.1
+1.8.1.4
 

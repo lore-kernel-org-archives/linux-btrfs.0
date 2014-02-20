@@ -1,35 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay07.libero.it ([212.52.84.111]:34848 "EHLO
-	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751448AbaBQUtA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Feb 2014 15:49:00 -0500
-Message-ID: <530275C5.2080803@inwind.it>
-Date: Mon, 17 Feb 2014 21:49:09 +0100
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mx1.redhat.com ([209.132.183.28]:30534 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752104AbaBTBkI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 20:40:08 -0500
+Message-ID: <53055CEB.5000808@redhat.com>
+Date: Wed, 19 Feb 2014 19:39:55 -0600
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Kostia Khlebopros <kkhlebopros@netgear.com>
-Subject: Re: [PATCH][BTRFS-PROGS][v4] Enhance btrfs fi df
-References: <52FD1A72.5060307@libero.it> <20140217184110.GN16073@twin.jikos.cz>
-In-Reply-To: <20140217184110.GN16073@twin.jikos.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/4] Btrfs-progs: new helper to parse string to u64
+ for btrfs
+References: <1392859852-15829-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1392859852-15829-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1392859852-15829-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/17/2014 07:41 PM, David Sterba wrote:
-> series as-is into the -next part of the integration
-> branch so we have something to test, let the review and comments phase
-> continue.
-Hi David,
+On 2/19/14, 7:30 PM, Wang Shilong wrote:
+> There are many places that need parse string to u64 for btrfs commands,
+> in fact, we do such things *too casually*, using atoi/atol/atoll..is not
+> right at all, and even we don't check whether it is a valid string.
+> 
+> Let's do everything more gracefully, we introduce a new helper
+> arg_strtou64() which will do all the necessary checks.If we fail to
+> parse string to u64, we will output message and exit directly, this is
+> something like what usage() is doing. It is ok to not return erro to
+> it's caller, because this function should be called when parsing arg
+> (just like usage!)
+> 
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+>  utils.c | 33 +++++++++++++++++++++++++++++++++
+>  utils.h |  1 +
+>  2 files changed, 34 insertions(+)
+> 
+> diff --git a/utils.c b/utils.c
+> index 97e23d5..d570967 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -1520,6 +1520,39 @@ scan_again:
+>  	return 0;
+>  }
+>  
+> +/*
+> + * This function should be only used when parsing
+> + * command arg, it won't return error to it's
+> + * caller and rather exit directly just like usage().
+> + */
+> +u64 arg_strtou64(const char *str)
+> +{
+> +	u64 value;
+> +	char *ptr_parse_end = NULL;
+> +	char *ptr_str_end = (char *)str + strlen(str);
+> +
+> +	/*
+> +	 * if we pass a negative number to strtoull,
+> +	 * it will return an unexpected number to us,
+> +	 * so let's do the check ourselves firstly.
+> +	 */
+> +	if (str[0] == '-') {
+> +		fprintf(stderr, "ERROR: %s may be negative value.\n", str);
 
-many thanks
+well, it _is_ a negative value right?  (vs. "may be")
 
-BR
-G.Baroncelli
+So perhaps:
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+fprintf(stderr, "ERROR: %s: negative value is invalid.\n", str);
+
+
+> +		exit(1);
+> +	}
+> +
+> +	value = strtoull(str, &ptr_parse_end, 0);
+> +	if (ptr_parse_end != ptr_str_end) {
+> +		fprintf(stderr, "ERROR: %s is not valid value.\n", str);
+
+maybe:
+
+fprintf(stderr, "ERROR: %s is not a valid numeric value.\n", str);
+
+Otherwise, this looks fine to me.  We'll see what the others on the thread
+think.  :)
+
+thanks,
+-Eric
+
+> +		exit(1);
+> +	}
+> +	if (value == ULLONG_MAX) {
+> +		fprintf(stderr, "ERROR: %s is too large.\n", str);
+> +		exit(1);
+> +	}
+> +	return value;
+> +}
+> +
+>  u64 parse_size(char *s)
+>  {
+>  	int i;
+> diff --git a/utils.h b/utils.h
+> index 04b8c45..a201085 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -71,6 +71,7 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
+>  int get_mountpt(char *dev, char *mntpt, size_t size);
+>  int btrfs_scan_block_devices(int run_ioctl);
+>  u64 parse_size(char *s);
+> +u64 arg_strtou64(const char *str);
+>  int open_file_or_dir(const char *fname, DIR **dirstream);
+>  void close_file_or_dir(int fd, DIR *dirstream);
+>  int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+> 
+

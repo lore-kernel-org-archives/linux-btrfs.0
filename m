@@ -1,273 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:40877 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:32122 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752181AbaBTBcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 20:32:50 -0500
+	id S1752869AbaBTBcw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Feb 2014 20:32:52 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K1Wg0a006794
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 09:32:45 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K1Wg0b006794
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 09:32:47 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/4] Btrfs-progs: switch to arg_strtou64() part2
-Date: Thu, 20 Feb 2014 09:30:51 +0800
-Message-Id: <1392859852-15829-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 4/4] Btrfs-progs: switch to arg_strtou64() part3
+Date: Thu, 20 Feb 2014 09:30:52 +0800
+Message-Id: <1392859852-15829-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
 In-Reply-To: <1392859852-15829-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 References: <1392859852-15829-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Switch to new helper arg_strtou64(), also check if user assign
+a valid super copy.
+
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- btrfs-corrupt-block.c | 45 +++++++++------------------------------------
- btrfs-debug-tree.c    |  2 +-
- btrfs-image.c         | 12 ++++++------
- btrfs-map-logical.c   | 26 ++++++--------------------
- cmds-inspect.c        |  8 ++++----
- 5 files changed, 26 insertions(+), 67 deletions(-)
+ btrfs-select-super.c | 12 +++++++++---
+ btrfs-show-super.c   | 10 +++++-----
+ btrfstune.c          |  4 ++--
+ cmds-check.c         | 14 ++++++++++----
+ cmds-replace.c       |  7 +------
+ cmds-subvolume.c     |  8 ++------
+ 6 files changed, 29 insertions(+), 26 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 10cae00..6ecbe47 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -36,7 +36,7 @@
- #define FIELD_BUF_LEN 80
- 
- struct extent_buffer *debug_corrupt_block(struct btrfs_root *root, u64 bytenr,
--				     u32 blocksize, int copy)
-+				     u32 blocksize, u64 copy)
+diff --git a/btrfs-select-super.c b/btrfs-select-super.c
+index 6a458b8..15e6921 100644
+--- a/btrfs-select-super.c
++++ b/btrfs-select-super.c
+@@ -43,7 +43,7 @@ int main(int ac, char **av)
  {
+ 	struct btrfs_root *root;
  	int ret;
- 	struct extent_buffer *eb;
-@@ -165,7 +165,7 @@ static int corrupt_keys_in_block(struct btrfs_root *root, u64 bytenr)
- }
+-	int num = 0;
++	u64 num = 0;
+ 	u64 bytenr = 0;
  
- static int corrupt_extent(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, u64 bytenr, int copy)
-+			  struct btrfs_root *root, u64 bytenr, u64 copy)
- {
- 	struct btrfs_key key;
- 	struct extent_buffer *leaf;
-@@ -792,7 +792,7 @@ int main(int ac, char **av)
- 	u64 logical = (u64)-1;
- 	int ret = 0;
- 	int option_index = 0;
--	int copy = 0;
-+	u64 copy = 0;
- 	u64 bytes = 4096;
- 	int extent_rec = 0;
- 	int extent_tree = 0;
-@@ -816,23 +816,13 @@ int main(int ac, char **av)
+ 	while(1) {
+@@ -53,8 +53,14 @@ int main(int ac, char **av)
  			break;
  		switch(c) {
- 			case 'l':
--				logical = atoll(optarg);
-+				logical = arg_strtou64(optarg);
- 				break;
- 			case 'c':
--				copy = atoi(optarg);
--				if (copy <= 0) {
--					fprintf(stderr,
--						"invalid copy number\n");
--					print_usage();
--				}
-+				copy = arg_strtou64(optarg);
- 				break;
- 			case 'b':
--				bytes = atoll(optarg);
--				if (bytes == 0) {
--					fprintf(stderr,
--						"invalid byte count\n");
--					print_usage();
--				}
-+				bytes = arg_strtou64(optarg);
- 				break;
- 			case 'e':
- 				extent_rec = 1;
-@@ -849,33 +839,16 @@ int main(int ac, char **av)
- 			case 'U':
- 				chunk_tree = 1;
- 			case 'i':
--				inode = atoll(optarg);
--				if (inode == 0) {
--					fprintf(stderr,
--						"invalid inode number\n");
--					print_usage();
--				}
-+				inode = arg_strtou64(optarg);
- 				break;
- 			case 'f':
- 				strncpy(field, optarg, FIELD_BUF_LEN);
- 				break;
- 			case 'x':
--				errno = 0;
--				file_extent = atoll(optarg);
--				if (errno) {
--					fprintf(stderr, "error converting "
--						"%d\n", errno);
--					print_usage();
--				}
-+				file_extent = arg_strtou64(optarg);
- 				break;
- 			case 'm':
--				errno = 0;
--				metadata_block = atoll(optarg);
--				if (errno) {
--					fprintf(stderr, "error converting "
--						"%d\n", errno);
--					print_usage();
--				}
-+				metadata_block = arg_strtou64(optarg);
- 				break;
- 			case 'K':
- 				ret = sscanf(optarg, "%llu,%u,%llu",
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index f37de9d..8ae7270 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -162,7 +162,7 @@ int main(int ac, char **av)
- 				root_backups = 1;
- 				break;
- 			case 'b':
--				block_only = atoll(optarg);
-+				block_only = arg_strtou64(optarg);
+ 			case 's':
+-				num = atol(optarg);
+-				bytenr = btrfs_sb_offset(num);
++				num = arg_strtou64(optarg);
++				if (num >= BTRFS_SUPER_MIRROR_MAX) {
++					fprintf(stderr,
++						"ERROR: super mirror should be less than: %d\n",
++						BTRFS_SUPER_MIRROR_MAX);
++					exit(1);
++				}
++				bytenr = btrfs_sb_offset(((int)num));
  				break;
  			default:
  				print_usage();
-diff --git a/btrfs-image.c b/btrfs-image.c
-index 1b2831a..1fc641f 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -2463,8 +2463,8 @@ int main(int argc, char *argv[])
- {
- 	char *source;
- 	char *target;
--	int num_threads = 0;
--	int compress_level = 0;
-+	u64 num_threads = 0;
-+	u64 compress_level = 0;
- 	int create = 1;
- 	int old_restore = 0;
- 	int walk_trees = 0;
-@@ -2483,13 +2483,13 @@ int main(int argc, char *argv[])
- 			create = 0;
- 			break;
- 		case 't':
--			num_threads = atoi(optarg);
--			if (num_threads <= 0 || num_threads > 32)
-+			num_threads = arg_strtou64(optarg);
-+			if (num_threads > 32)
- 				print_usage();
- 			break;
- 		case 'c':
--			compress_level = atoi(optarg);
--			if (compress_level < 0 || compress_level > 9)
-+			compress_level = arg_strtou64(optarg);
-+			if (compress_level > 9)
- 				print_usage();
- 			break;
- 		case 'o':
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index 51179a3..a907e4d 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -31,6 +31,7 @@
- #include "transaction.h"
- #include "list.h"
- #include "version.h"
-+#include "utils.h"
+diff --git a/btrfs-show-super.c b/btrfs-show-super.c
+index b87f16a..d4df0ac 100644
+--- a/btrfs-show-super.c
++++ b/btrfs-show-super.c
+@@ -59,17 +59,17 @@ int main(int argc, char **argv)
+ 	int all = 0;
+ 	char *filename;
+ 	int fd = -1;
+-	int arg, i;
++	int i;
++	u64 arg;
+ 	u64 sb_bytenr = btrfs_sb_offset(0);
  
- /* we write the mirror info to stdout unless they are dumping the data
-  * to stdout
-@@ -38,7 +39,7 @@
- static FILE *info_file;
- 
- static struct extent_buffer * debug_read_block(struct btrfs_root *root,
--		u64 bytenr, u32 blocksize, int copy)
-+		u64 bytenr, u32 blocksize, u64 copy)
- {
+ 	while ((opt = getopt(argc, argv, "ai:")) != -1) {
+ 		switch (opt) {
+ 		case 'i':
+-			arg = atoi(optarg);
+-
+-			if (arg < 0 || arg >= BTRFS_SUPER_MIRROR_MAX) {
++			arg = arg_strtou64(optarg);
++			if (arg >= BTRFS_SUPER_MIRROR_MAX) {
+ 				fprintf(stderr,
+-					"Illegal super_mirror %d\n",
++					"Illegal super_mirror %llu\n",
+ 					arg);
+ 				print_usage();
+ 				exit(1);
+diff --git a/btrfstune.c b/btrfstune.c
+index da82f36..855427f 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
+ 	int success = 0;
+ 	int extrefs_flag = 0;
+ 	int seeding_flag = 0;
+-	int seeding_value = 0;
++	u64 seeding_value = 0;
+ 	int skinny_flag = 0;
  	int ret;
- 	struct extent_buffer *eb;
-@@ -120,7 +121,7 @@ int main(int ac, char **av)
- 	u64 logical = 0;
- 	int ret = 0;
- 	int option_index = 0;
--	int copy = 0;
-+	u64 copy = 0;
- 	u64 bytes = 0;
- 	int out_fd = 0;
  
-@@ -132,28 +133,13 @@ int main(int ac, char **av)
- 			break;
+@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
  		switch(c) {
- 			case 'l':
--				logical = atoll(optarg);
--				if (logical == 0) {
--					fprintf(stderr,
--						"invalid extent number\n");
--					print_usage();
--				}
-+				logical = arg_strtou64(optarg);
- 				break;
- 			case 'c':
--				copy = atoi(optarg);
--				if (copy == 0) {
--					fprintf(stderr,
--						"invalid copy number\n");
--					print_usage();
--				}
-+				copy = arg_strtou64(optarg);
- 				break;
- 			case 'b':
--				bytes = atoll(optarg);
--				if (bytes == 0) {
--					fprintf(stderr,
--						"invalid byte count\n");
--					print_usage();
--				}
-+				bytes = arg_strtou64(optarg);
- 				break;
- 			case 'o':
- 				output_file = strdup(optarg);
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index f0c8e3d..cd9d2c6 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -120,7 +120,7 @@ static int cmd_inode_resolve(int argc, char **argv)
- 		return 1;
- 	}
- 
--	ret = __ino_to_path_fd(atoll(argv[optind]), fd, verbose,
-+	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd, verbose,
- 			       argv[optind+1]);
- 	close_file_or_dir(fd, dirstream);
- 	return !!ret;
-@@ -167,7 +167,7 @@ static int cmd_logical_resolve(int argc, char **argv)
- 			verbose = 1;
+ 		case 'S':
+ 			seeding_flag = 1;
+-			seeding_value = atoi(optarg);
++			seeding_value = arg_strtou64(optarg);
  			break;
- 		case 's':
--			size = atoll(optarg);
-+			size = arg_strtou64(optarg);
- 			break;
- 		default:
- 			usage(cmd_logical_resolve_usage);
-@@ -183,7 +183,7 @@ static int cmd_logical_resolve(int argc, char **argv)
- 		return 1;
+ 		case 'r':
+ 			extrefs_flag = 1;
+diff --git a/cmds-check.c b/cmds-check.c
+index 61c1815..a2afae6 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6388,7 +6388,7 @@ int cmd_check(int argc, char **argv)
+ 	u64 bytenr = 0;
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	int ret;
+-	int num;
++	u64 num;
+ 	int option_index = 0;
+ 	int init_csum_tree = 0;
+ 	int init_extent_tree = 0;
+@@ -6407,9 +6407,15 @@ int cmd_check(int argc, char **argv)
+ 				ctree_flags |= OPEN_CTREE_BACKUP_ROOT;
+ 				break;
+ 			case 's':
+-				num = atol(optarg);
+-				bytenr = btrfs_sb_offset(num);
+-				printf("using SB copy %d, bytenr %llu\n", num,
++				num = arg_strtou64(optarg);
++				if (num >= BTRFS_SUPER_MIRROR_MAX) {
++					fprintf(stderr,
++						"ERROR: super mirror should be less than: %d\n",
++						BTRFS_SUPER_MIRROR_MAX);
++					exit(1);
++				}
++				bytenr = btrfs_sb_offset(((int)num));
++				printf("using SB copy %llu, bytenr %llu\n", num,
+ 				       (unsigned long long)bytenr);
+ 				break;
+ 			case '?':
+diff --git a/cmds-replace.c b/cmds-replace.c
+index c683d6c..01ab77c 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -210,12 +210,7 @@ static int cmd_start_replace(int argc, char **argv)
+ 		struct btrfs_ioctl_fs_info_args fi_args;
+ 		struct btrfs_ioctl_dev_info_args *di_args = NULL;
  
- 	memset(inodes, 0, sizeof(*inodes));
--	loi.logical = atoll(argv[optind]);
-+	loi.logical = arg_strtou64(argv[optind]);
- 	loi.size = size;
- 	loi.inodes = (uintptr_t)inodes;
+-		if (atoi(srcdev) == 0) {
+-			fprintf(stderr, "Error: Failed to parse the numerical devid value '%s'\n",
+-				srcdev);
+-			goto leave_with_error;
+-		}
+-		start_args.start.srcdevid = (__u64)atoi(srcdev);
++		start_args.start.srcdevid = arg_strtou64(srcdev);
  
-@@ -283,7 +283,7 @@ static int cmd_subvolid_resolve(int argc, char **argv)
- 		goto out;
- 	}
+ 		ret = get_fs_info(path, &fi_args, &di_args);
+ 		if (ret) {
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 0bd76f2..5e821c7 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -820,11 +820,7 @@ static int cmd_subvol_set_default(int argc, char **argv)
+ 	subvolid = argv[1];
+ 	path = argv[2];
  
--	subvol_id = atoll(argv[1]);
-+	subvol_id = arg_strtou64(argv[1]);
- 	ret = btrfs_subvolid_resolve(fd, path, sizeof(path), subvol_id);
+-	objectid = (unsigned long long)strtoll(subvolid, NULL, 0);
+-	if (errno == ERANGE) {
+-		fprintf(stderr, "ERROR: invalid tree id (%s)\n", subvolid);
+-		return 1;
+-	}
++	objectid = arg_strtou64(subvolid);
  
- 	if (ret) {
+ 	fd = open_file_or_dir(path, &dirstream);
+ 	if (fd < 0) {
+@@ -861,7 +857,7 @@ static int cmd_find_new(int argc, char **argv)
+ 		usage(cmd_find_new_usage);
+ 
+ 	subvol = argv[1];
+-	last_gen = atoll(argv[2]);
++	last_gen = arg_strtou64(argv[2]);
+ 
+ 	ret = test_issubvolume(subvol);
+ 	if (ret < 0) {
 -- 
 1.8.3.1
 

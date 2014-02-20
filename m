@@ -1,49 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f52.google.com ([74.125.83.52]:44220 "EHLO
-	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754586AbaBTNUV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 08:20:21 -0500
-Received: by mail-ee0-f52.google.com with SMTP id c41so77448eek.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 05:20:19 -0800 (PST)
-From: GEO <1g2e3o4@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Incremental backup over writable snapshot
-Date: Thu, 20 Feb 2014 14:20:16 +0100
-Message-ID: <2091546.7UkK3HMHjX@linuxpc>
-In-Reply-To: <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com>
-References: <17860756.QfG9CfNMqv@linuxpc> <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com>
+Received: from mail.jrs-s.net ([173.230.137.22]:48798 "EHLO mail.jrs-s.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753802AbaBTQLH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 11:11:07 -0500
+Received: from [192.168.100.50] (cpe-024-088-095-145.sc.res.rr.com [24.88.95.145])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: jim@jrs-s.net)
+	by mail.jrs-s.net (Postfix) with ESMTPSA id 67A84D303
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 11:11:05 -0500 (EST)
+Message-ID: <53062918.8090909@jrs-s.net>
+Date: Thu, 20 Feb 2014 11:11:04 -0500
+From: Jim Salter <jim@jrs-s.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfs-raid10 - stripes or blocks?
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-@Kai Krakow: I accept your opinion and thank you for your answer.
-However I have special reasons doing so. I could name you a few use cases. 
-For example I do not need to backup search indexes as they mess up over time, 
-so I simple recreate the cache in case of a new install. 
-I know most of the settings I set and I know exactly what missing directories 
-break what in case of deletion, because I have tried so various times.
+Hi list -
 
-This is not supposed to be a system backup, or a "home" backup, but a backup 
-of my data (documents, videos etc.). 
-I know hidden directories contain mails etc. but I know exactly where my mails 
-are (most of them imap anyway) and I would include them in the backup. 
+Can anybody tell me whether btrfs-raid10 reads and writes a stripe at a 
+time, like traditional raid10, or whether it reads and writes individual 
+redundant blocks like btrfs-raid1, but just locks particular disks as 
+mirror pairs, and/or locks the order in which mirror pairs should be 
+written to in sequence?
 
-So I am looking for a different use case.
+It occurs to me that this might be an important distinction for 
+workloads with very high small random I/O - stripe reads and writes 
+being at a disadvantage to individual blocks being read and written, 
+when the requests are smaller than the stripe.
 
-Anyway, I know most of you won't like my idea, but my question was, if I do 
-everything right (and do not delete the wrong stuff out of stupidity), if the 
-result would be as reliable as doing your approach, so please consider that as 
-a technical question, even if you strongly dislike the idea.
-
-So my initial question would remain: does the deleting of some stuff change the 
-whole snapshot in a way, that the increment step would be screwed, which means 
-I would back up blocks, that are not new. 
-I do not have the expertise to check out the code and answer my question 
-myself, so I would like to hear the opinion of the devs whether my way should 
-work in theory or not, regardless of the fact that the use case has not been 
-tested and is not recommended. 
-
-Thank you very much for your opinions.
+Apologies again if this is a question that should have an obvious 
+answer, but as long as it took me to figure out that btrfs-raid1 is NOT 
+much like traditional raid1, it seemed worth asking.

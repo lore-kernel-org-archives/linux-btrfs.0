@@ -1,77 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3927 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751227AbaBTKCq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 05:02:46 -0500
-Message-ID: <1392890356.2929.6.camel@localhost.localdomain>
-Subject: Re: [PATCH 2/4] btrfs-progs: fix segment fault when exec
- btrfs-debug-tree as non-root
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Mike Fleetwood <mike.fleetwood@googlemail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Thu, 20 Feb 2014 17:59:16 +0800
-In-Reply-To: <CAMU1PDgNnvuw3cjx4-qfi4PxHiyswdSzjZdoDwv+uEJTvx1r4Q@mail.gmail.com>
-References: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1392864546-545-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <CAMU1PDgNnvuw3cjx4-qfi4PxHiyswdSzjZdoDwv+uEJTvx1r4Q@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx1.redhat.com ([209.132.183.28]:47594 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754596AbaBTQnu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 11:43:50 -0500
+Message-ID: <530630C0.20208@redhat.com>
+Date: Thu, 20 Feb 2014 10:43:44 -0600
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/4] Btrfs-progs: new helper to parse string to u64
+ for btrfs
+References: <1392859852-15829-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1392859852-15829-2-git-send-email-wangsl.fnst@cn.fujitsu.com> <53055CEB.5000808@redhat.com> <53055DA5.6080604@cn.fujitsu.com>
+In-Reply-To: <53055DA5.6080604@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-02-20 at 08:48 +0000, Mike Fleetwood wrote:
-> On 20 February 2014 02:49, Gui Hecheng <guihc.fnst@cn.fujitsu.com> wrote:
-> > When exec btrfs-debug-tree as non-root user, we get a segment fault.
-> > Because the btrfs_scan_block_devices return a success 0 when we fail
-> > to open a device. Now we just return the errno if this case happens.
-> >
-> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> > ---
-> >  utils.c | 3 ++-
-> >  1 file changed, 2 insertions(+), 1 deletion(-)
-> >
-> > diff --git a/utils.c b/utils.c
-> > index 97e23d5..1878abc 100644
-> > --- a/utils.c
-> > +++ b/utils.c
-> > @@ -1517,7 +1517,8 @@ scan_again:
-> >                 scans++;
-> >                 goto scan_again;
-> >         }
-> > -       return 0;
-> > +
-> > +       return errno ? -errno : 0;
-> >  }
-> >
-> >  u64 parse_size(char *s)
-> > --
-> > 1.8.1.4
-> 
-> Hi Gui,
-> 
-> This strikes me as not not right because errno is only documented as
-> being set when open() returns -1 on failure.  In the success case
-> errno is not set so you can't assume it will be 0.
-> 
-> I think the following might work:
-> 1) Initilase ret = 0 at the start of btrfs_scan_block_devices()
-> 2) In the open(fullpath, O_RDONLY) failure case set ret = fd
-> 3) return ret
-> 
-> Thanks,
-> Mike
-Hi Mike,
-Thanks for your comment, I think it is a reasonable way to fix the ret
-value problem.
-But I am sorry that my patch does not really address the segmentfault
-problem.
+On 2/19/14, 7:43 PM, Wang Shilong wrote:
+> On 02/20/2014 09:39 AM, Eric Sandeen wrote:
+>> On 2/19/14, 7:30 PM, Wang Shilong wrote:
 
-Please *ignore* this patch...
+...
 
--Gui
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> +    /*
+>>> +     * if we pass a negative number to strtoull,
+>>> +     * it will return an unexpected number to us,
+>>> +     * so let's do the check ourselves firstly.
+>>> +     */
+>>> +    if (str[0] == '-') {
+>>> +        fprintf(stderr, "ERROR: %s may be negative value.\n", str);
+>> well, it _is_ a negative value right?  (vs. "may be")
+>>
+>> So perhaps:
+>>
+>> fprintf(stderr, "ERROR: %s: negative value is invalid.\n", str);
+> I use "may be" because the following case:
+> 
+> -123xxxx, -abcd..... something like these, these string are invalid,
+> but they are not negative number...So i have not thought a better idea
+> to tell user what is wrong with input.:-)
+
+Ok; well, sorry for being nitpicky.  :)  But user error messages probably
+should be very clear and unambiguous; we may as well do this right.
+
+So what about this:
+
+Do strtoull first, and *if* it passes numeric parsing, but str[0] == '-',
+*then* say "ERROR: %s: negative value is invalid."
+
+-Eric
 
 

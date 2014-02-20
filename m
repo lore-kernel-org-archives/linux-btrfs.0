@@ -1,98 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39527 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754335AbaB0Cjx (ORCPT
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:35283 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750998AbaBTVPn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 21:39:53 -0500
-Date: Thu, 27 Feb 2014 10:39:45 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Jannis Achstetter <jannis_achstetter@web.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH v8 00/14] Online(inband) data deduplication
-Message-ID: <20140227023944.GA15138@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1388391175-29539-1-git-send-email-bo.li.liu@oracle.com>
- <loom.20140225T201641-262@post.gmane.org>
- <loom.20140226T211746-43@post.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <loom.20140226T211746-43@post.gmane.org>
+	Thu, 20 Feb 2014 16:15:43 -0500
+Received: by mail-wi0-f178.google.com with SMTP id cc10so152073wib.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 13:15:42 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: correctly determine if blocks are shared in btrfs_compare_trees
+Date: Thu, 20 Feb 2014 21:15:25 +0000
+Message-Id: <1392930925-5348-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jannis,
+Just comparing the pointers (logical disk addresses) of the btree nodes is
+not completely bullet proof, we have to check if their generation numbers
+match too.
 
-On Wed, Feb 26, 2014 at 08:20:01PM +0000, Jannis Achstetter wrote:
-> Jannis Achstetter <jannis_achstetter <at> web.de> writes: 
-> > I tried yout btrfs deduplication patches today (on top of 3.13.2-gentoo) and
-> > it seems that the deduplication works great (when copying the same or
-> > similar data to the file system, the used size reported by df -h grows less
-> > than the data that is copied to it on the second time).
-> > However, there are disturbing messages in the kernel log:
-> 
-> Me again :)
-> 
-> Today (PC rebooted), there are other messages in the log with traces like:
-> [  253.971188] BUG: scheduling while atomic: btrfs-transacti/5985/0x00000003
-> [  253.971194] Modules linked in: snd_aloop vboxnetflt(O) vboxnetadp(O)
-> vboxdrv(O) microcode
-> [  253.971208] CPU: 2 PID: 5985 Comm: btrfs-transacti Tainted: G        W  O
-> 3.13.2-gentoo #4
-> [  253.971212] Hardware name: MSI MS-7640/890FXA-GD70 (MS-7640)  , BIOS
-> V1.12 10/06/2011
-> [  253.971215]  ffff88022cf3b8a8 ffffffff81920b14 ffff880237c92b40
-> ffffffff8191c304
-> [  253.971221]  ffffffff81924bd5 ffff88022df7d750 ffff88022cf3bfd8
-> 0000000000012b40
-> [  253.971227]  0000000000012b40 ffff88022df7d750 ffff8800c2ff7aa8
-> 0000000000000020
-> [  253.971233] Call Trace:
-> [  253.971243]  [<ffffffff81920b14>] ? dump_stack+0x49/0x6a
-> [  253.971251]  [<ffffffff8191c304>] ? __schedule_bug+0x3e/0x4b
-> [  253.971258]  [<ffffffff81924bd5>] ? __schedule+0x7f5/0x8e0
-> [  253.971266]  [<ffffffff813d16c0>] ? submit_bio+0x60/0x130
-> [  253.971273]  [<ffffffff813497d3>] ? btrfs_map_bio+0x2d3/0x540
-> [  253.971280]  [<ffffffff810e6c8d>] ? ktime_get_ts+0x3d/0xd0
-> [  253.971287]  [<ffffffff81116c14>] ? delayacct_end+0x84/0xa0
-> [  253.971293]  [<ffffffff81140700>] ? filemap_fdatawait+0x20/0x20
-> [  253.971299]  [<ffffffff81924f43>] ? io_schedule+0x83/0xd0
-> [  253.971305]  [<ffffffff81140705>] ? sleep_on_page+0x5/0x10
-> [  253.971312]  [<ffffffff819252d4>] ? __wait_on_bit+0x54/0x80
-> [  253.971319]  [<ffffffff8114051f>] ? wait_on_page_bit+0x7f/0x90
-> [  253.971321]  [<ffffffff810d01b0>] ? autoremove_wake_function+0x30/0x30
-> [  253.971323]  [<ffffffff81341172>] ? read_extent_buffer_pages+0x2a2/0x2d0
-> [  253.971325]  [<ffffffff813172a0>] ? free_root_pointers+0x60/0x60
-> [  253.971327]  [<ffffffff81318e29>] ?
-> btree_read_extent_buffer_pages.constprop.53+0xa9/0x110
-> [  253.971330]  [<ffffffff813193ca>] ? read_tree_block+0x4a/0x80
-> [  253.971332]  [<ffffffff812fa657>] ? read_block_for_search.isra.32+0x177/0x3a0
-> [  253.971334]  [<ffffffff812f527a>] ? unlock_up+0x13a/0x160
-> [  253.971336]  [<ffffffff812fc980>] ? btrfs_search_slot+0x400/0x970
-> [  253.971338]  [<ffffffff8131531a>] ? btrfs_free_dedup_extent+0x7a/0x1c0
-> [  253.971340]  [<ffffffff813035e9>] ? extent_data_ref_offset.isra.30+0x79/0x110
-> [  253.971342]  [<ffffffff813061fc>] ? __btrfs_free_extent+0xa1c/0xc70
-> [  253.971344]  [<ffffffff8130aa3c>] ? run_clustered_refs+0x47c/0x1110
-> [  253.971347]  [<ffffffff813645ed>] ? find_ref_head+0x5d/0x90
-> [  253.971348]  [<ffffffff8130f388>] ? btrfs_run_delayed_refs+0xc8/0x510
-> [  253.971351]  [<ffffffff8131fe15>] ? btrfs_commit_transaction+0x55/0x990
-> [  253.971353]  [<ffffffff813207da>] ? start_transaction+0x8a/0x560
-> [  253.971355]  [<ffffffff8131bead>] ? transaction_kthread+0x19d/0x230
-> [  253.971357]  [<ffffffff8131bd10>] ? btrfs_cleanup_transaction+0x540/0x540
-> [  253.971360]  [<ffffffff810b4481>] ? kthread+0xc1/0xe0
-> [  253.971362]  [<ffffffff810b43c0>] ? kthread_create_on_node+0x190/0x190
-> [  253.971364]  [<ffffffff819286bc>] ? ret_from_fork+0x7c/0xb0
-> [  253.971366]  [<ffffffff810b43c0>] ? kthread_create_on_node+0x190/0x190
-> 
-> (More of them at http://bpaste.net/show/183075/ )
+It is guaranteed that a COW operation will result in a block with a different
+logical disk address than the original block's address, but over time we can
+reuse that former logical disk address.
 
-Yeah, I've also found this and fixed it locally :)
+For example, creating a 2Gb filesystem on a loop device, and having a script
+running in a loop always updating the access timestamp of a file, resulted in
+the same logical disk address being reused for the same fs btree block in about
+only 4 minutes.
 
-> 
-> One more question: Do I have to run "btrfs dedup on -b 128k /mnt/steamdir"
-> after every mount or is that info stored across mounts?
+This could make us skip entire subtrees when doing an incremental send (which
+is currently the only user of btrfs_compare_trees). However the odds of getting
+2 blocks at the same tree level, with the same logical disk address, equal first
+slot keys and different generations, should hopefully be very low.
 
-For now, yes, the default value is 8K, ie, we reset it on every mount.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-Thanks for the report!
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index cbd3a7d..88d1b1e 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -5376,6 +5376,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	int advance_right;
+ 	u64 left_blockptr;
+ 	u64 right_blockptr;
++	u64 left_gen;
++	u64 right_gen;
+ 	u64 left_start_ctransid;
+ 	u64 right_start_ctransid;
+ 	u64 ctransid;
+@@ -5640,7 +5642,14 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 				right_blockptr = btrfs_node_blockptr(
+ 						right_path->nodes[right_level],
+ 						right_path->slots[right_level]);
+-				if (left_blockptr == right_blockptr) {
++				left_gen = btrfs_node_ptr_generation(
++						left_path->nodes[left_level],
++						left_path->slots[left_level]);
++				right_gen = btrfs_node_ptr_generation(
++						right_path->nodes[right_level],
++						right_path->slots[right_level]);
++				if (left_blockptr == right_blockptr &&
++				    left_gen == right_gen) {
+ 					/*
+ 					 * As we're on a shared block, don't
+ 					 * allow to go deeper.
+-- 
+1.7.9.5
 
--liubo

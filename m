@@ -1,47 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57860 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752506AbaBTCws (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 21:52:48 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1K2qTLY013292
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 10:52:44 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs-progs: clean the unnecessary error msg of btrfs-file-show
-Date: Thu, 20 Feb 2014 10:49:06 +0800
-Message-Id: <1392864546-545-4-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1392864546-545-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57957 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751882AbaBTRbQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 12:31:16 -0500
+Date: Thu, 20 Feb 2014 18:31:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Chris Murphy <chris@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/8] Add command btrfs filesystem disk-usage
+Message-ID: <20140220173112.GV16073@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <52FD1AD6.50500@libero.it>
+ <20140214012810.26297146@natsu>
+ <52FD21B4.4050502@libero.it>
+ <20140214030045.415e21da@natsu>
+ <52FE58EF.1060901@libero.it>
+ <20140215001110.76d8226f@natsu>
+ <52FE602D.7060109@libero.it>
+ <20140214183400.GA3351@carfax.org.uk>
+ <08C5C865-03F9-413A-873A-995393E1FABD@colorremedies.com>
+ <53025073.80709@inwind.it>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53025073.80709@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the new version of btrfs-file-show fails, it will try to use the
-old version. But before that, an error msg of the failed ioctl
-shows up which causes xfstests case btrfs/006 to get a mismatch output.
-I think we can just remove the error msg since the btrfs-file-show
-still works with right outputs. Showing an error msg together with
-the right result is really awkward.
+On Mon, Feb 17, 2014 at 07:09:55PM +0100, Goffredo Baroncelli wrote:
+> I have to agree with Chris: looking at the output of "btrfs fi disk-usage"
+> 
+> $ sudo ./btrfs filesystem disk-usage -t /mnt/btrfs1/
+>          Data   Data    Metadata Metadata System System             
+>          Single RAID6   Single   RAID5    Single RAID5   Unallocated
+>                                                                     
+> /dev/vdb 8.00MB  1.00GB   8.00MB   1.00GB 4.00MB  4.00MB     97.98GB
+> /dev/vdc      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+> /dev/vdd      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+> /dev/vde      -  1.00GB        -   1.00GB      -  4.00MB     98.00GB
+>          ====== ======= ======== ======== ====== ======= ===========
+> Total    8.00MB  2.00GB   8.00MB   3.00GB 4.00MB 12.00MB    391.97GB
+> Used       0.00 11.25MB     0.00  36.00KB   0.00  4.00KB   
+> 
+> it is hard to tell that this can be named "filesystem usage". I think that 
+> "details" or "examine" is a better name.
+> 
+> Regarding "btrfs device usage", it seems to me more coherent. But as 
+> reported before consistency also matters, so now I am inclined to use
+> "detail" (or examine) also for "btrfs device"
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- utils.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/utils.c b/utils.c
-index 12ed2f4..9408885 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2206,8 +2206,6 @@ again:
- 		free(fsargs);
- 		goto again;
- 	} else if (ret < 0) {
--		printf("ERROR: scan_fsid ioctl failed - %s\n",
--			strerror(e));
- 		ret = -e;
- 		goto out;
- 	}
--- 
-1.8.1.4
-
+I'm for 'btrfs filesystem usage' and 'btrfs device usage', IMHO
+intuitive, easy to type and remember.

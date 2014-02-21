@@ -1,60 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45728 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751911AbaBTXWU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 18:22:20 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WGcwd-0004NB-K5
-	for linux-btrfs@vger.kernel.org; Fri, 21 Feb 2014 00:22:19 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 00:22:19 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 00:22:19 +0100
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:61372 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753971AbaBUABx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 19:01:53 -0500
+Received: by mail-wi0-f176.google.com with SMTP id hi5so270134wib.15
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 16:01:51 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Incremental backup over writable snapshot
-Date: Fri, 21 Feb 2014 00:04:38 +0100
-Message-ID: <69eita-cgn.ln1@hurikhan77.spdns.de>
-References: <17860756.QfG9CfNMqv@linuxpc> <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com> <2091546.7UkK3HMHjX@linuxpc>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix send issuing outdated paths for utimes, chown and chmod
+Date: Fri, 21 Feb 2014 00:01:32 +0000
+Message-Id: <1392940892-1660-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-GEO <1g2e3o4@gmail.com> schrieb:
+When doing an incremental send, if we had a directory pending a move/rename
+operation and none of its parents, except for the immediate parent, were
+pending a move/rename, after processing the directory's references, we would
+be issuing utimes, chown and chmod intructions against am outdated path - a
+path which matched the one in the parent root.
 
-> @Kai Krakow: I accept your opinion and thank you for your answer.
-> However I have special reasons doing so. I could name you a few use cases.
-> For example I do not need to backup search indexes as they mess up over
-> time, so I simple recreate the cache in case of a new install.
-> I know most of the settings I set and I know exactly what missing
-> directories break what in case of deletion, because I have tried so
-> various times.
+This change also simplifies a bit the code that deals with building a path
+for a directory which has a move/rename operation delayed.
 
-I tried to keep it neutral to help people not to try applying your special 
-case as an idea for their own backup which may have a total different 
-requirement.
+Steps to reproduce:
 
-> This is not supposed to be a system backup, or a "home" backup, but a
-> backup of my data (documents, videos etc.).
-> I know hidden directories contain mails etc. but I know exactly where my
-> mails are (most of them imap anyway) and I would include them in the
-> backup.
-> 
-> So I am looking for a different use case.
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ mkdir -p /mnt/btrfs/a/b/c/d/e
+    $ mkdir /mnt/btrfs/a/b/c/f
+    $ chmod 0777 /mnt/btrfs/a/b/c/d/e
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
+    $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
+    $ mv /mnt/btrfs/a/b/c/f /mnt/btrfs/a/b/f2
+    $ mv /mnt/btrfs/a/b/c/d/e /mnt/btrfs/a/b/f2/e2
+    $ mv /mnt/btrfs/a/b/c /mnt/btrfs/a/b/c2
+    $ mv /mnt/btrfs/a/b/c2/d /mnt/btrfs/a/b/c2/d2
+    $ chmod 0700 /mnt/btrfs/a/b/f2/e2
+    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
+    $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
 
-I may be wrong but it sounds like you approach the problem from the wrong 
-direction. If only selective data is important to you for backup: Why not 
-put your important data in a single subvolume and backup that? You could 
-install some compatibility symlinks to keep consistency with the well known 
-directory structure... This is how I usually handle such corner cases. A 
-small script like "recreate_symlinks.sh" which you also put into the backup 
-will help you in case of restoring.
+    $ umount /mnt/btrfs
+    $ mkfs.btrfs -f /dev/sdb3
+    $ mount /dev/sdb3 /mnt/btrfs
+    $ btrfs receive /mnt/btrfs -f /tmp/base.send
+    $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
 
+The second btrfs receive command failed with:
+
+    ERROR: chmod a/b/c/d/e failed. No such file or directory
+
+A test case for xfstests follows.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |   31 ++++++++++++-------------------
+ 1 file changed, 12 insertions(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 46c6b54..298e25d 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2000,7 +2000,6 @@ static void name_cache_free(struct send_ctx *sctx)
+  */
+ static int __get_cur_name_and_parent(struct send_ctx *sctx,
+ 				     u64 ino, u64 gen,
+-				     int skip_name_cache,
+ 				     u64 *parent_ino,
+ 				     u64 *parent_gen,
+ 				     struct fs_path *dest)
+@@ -2010,8 +2009,6 @@ static int __get_cur_name_and_parent(struct send_ctx *sctx,
+ 	struct btrfs_path *path = NULL;
+ 	struct name_cache_entry *nce = NULL;
+ 
+-	if (skip_name_cache)
+-		goto get_ref;
+ 	/*
+ 	 * First check if we already did a call to this function with the same
+ 	 * ino/gen. If yes, check if the cache entry is still up-to-date. If yes
+@@ -2056,12 +2053,11 @@ static int __get_cur_name_and_parent(struct send_ctx *sctx,
+ 		goto out_cache;
+ 	}
+ 
+-get_ref:
+ 	/*
+ 	 * Depending on whether the inode was already processed or not, use
+ 	 * send_root or parent_root for ref lookup.
+ 	 */
+-	if (ino < sctx->send_progress && !skip_name_cache)
++	if (ino < sctx->send_progress)
+ 		ret = get_first_ref(sctx->send_root, ino,
+ 				    parent_ino, parent_gen, dest);
+ 	else
+@@ -2085,8 +2081,6 @@ get_ref:
+ 			goto out;
+ 		ret = 1;
+ 	}
+-	if (skip_name_cache)
+-		goto out;
+ 
+ out_cache:
+ 	/*
+@@ -2154,7 +2148,6 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 	u64 parent_inode = 0;
+ 	u64 parent_gen = 0;
+ 	int stop = 0;
+-	int skip_name_cache = 0;
+ 
+ 	name = fs_path_alloc();
+ 	if (!name) {
+@@ -2162,9 +2155,6 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 		goto out;
+ 	}
+ 
+-	if (is_waiting_for_move(sctx, ino))
+-		skip_name_cache = 1;
+-
+ 	dest->reversed = 1;
+ 	fs_path_reset(dest);
+ 
+@@ -2179,16 +2169,19 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 			break;
+ 		}
+ 
+-		ret = __get_cur_name_and_parent(sctx, ino, gen, skip_name_cache,
+-				&parent_inode, &parent_gen, name);
++		if (is_waiting_for_move(sctx, ino)) {
++			ret = get_first_ref(sctx->parent_root, ino,
++					    &parent_inode, &parent_gen, name);
++		} else {
++			ret = __get_cur_name_and_parent(sctx, ino, gen,
++							&parent_inode,
++							&parent_gen, name);
++			if (ret)
++				stop = 1;
++		}
++
+ 		if (ret < 0)
+ 			goto out;
+-		if (ret)
+-			stop = 1;
+-
+-		if (!skip_name_cache &&
+-		    is_waiting_for_move(sctx, parent_inode))
+-			skip_name_cache = 1;
+ 
+ 		ret = fs_path_add_path(dest, name);
+ 		if (ret < 0)
 -- 
-Replies to list only preferred.
+1.7.9.5
 

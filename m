@@ -1,67 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f51.google.com ([209.85.219.51]:39430 "EHLO
-	mail-oa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932097AbaBUPVk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Feb 2014 10:21:40 -0500
-Received: by mail-oa0-f51.google.com with SMTP id i7so1052941oag.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 07:21:39 -0800 (PST)
-MIME-Version: 1.0
-Date: Fri, 21 Feb 2014 10:21:38 -0500
-Message-ID: <CAAVQaYCkxpp8vX8PnO3OLffSm_MMCt6N2qFT=5DWjseZmZ1xbA@mail.gmail.com>
-Subject: Hard drive hangs after excessive I/O
-From: Dave <dave@thekilempire.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:41990 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932264AbaBUQK1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Feb 2014 11:10:27 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WGsgA-00015x-1z
+	for linux-btrfs@vger.kernel.org; Fri, 21 Feb 2014 17:10:22 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 17:10:22 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 17:10:22 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Hard drive hangs after excessive I/O
+Date: Fri, 21 Feb 2014 16:09:56 +0000 (UTC)
+Message-ID: <pan$9db86$8cb7b8f1$9ed699ad$9da2e024@cox.net>
+References: <CAAVQaYCkxpp8vX8PnO3OLffSm_MMCt6N2qFT=5DWjseZmZ1xbA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm currently running kernel 3.13.3 with Chris's for-linus merged in
-(up to commit 93de4ba86480a9e0d1062cb1d535fa97fb81af48).  After about
-a day of heavy IO I'll start to see the following in my kernel log:
+Dave posted on Fri, 21 Feb 2014 10:21:38 -0500 as excerpted:
 
-[22223.454967] INFO: task qemu-system-x86:27673 blocked for more than
-120 seconds.
-[22223.454970]       Not tainted 3.13.3-2-dzk #1
-[22223.454972] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-disables this message.
-[22223.454974] qemu-system-x86 D ffff8804039d7800     0 27673      1 0x00000000
-[22223.454978]  ffff8800d1d6bda0 0000000000000082 ffff8800096aec00
-ffff8800d1d6bfd8
-[22223.454983]  0000000000014440 0000000000014440 ffff8800096aec00
-ffffffffa04aafa0
-[22223.454988]  000000000000018b ffff8802e8870000 0000000000003000
-0000000000001000
-[22223.454993] Call Trace:
-[22223.455015]  [<ffffffffa04aafa0>] ? btrfs_set_token_64+0x60/0xf0 [btrfs]
-[22223.455036]  [<ffffffffa04ae8fb>] ? release_extent_buffer+0x2b/0xd0 [btrfs]
-[22223.455041]  [<ffffffff8151d429>] schedule+0x29/0x70
-[22223.455061]  [<ffffffffa04ce282>] wait_log_commit.isra.18+0x102/0x130 [btrfs]
-[22223.455066]  [<ffffffff810a2bf0>] ? __wake_up_sync+0x20/0x20
-[22223.455085]  [<ffffffffa04d1465>] btrfs_sync_log+0x3e5/0x6b0 [btrfs]
-[22223.455091]  [<ffffffff811ba0a0>] ? dput+0x20/0x100
-[22223.455112]  [<ffffffffa04a4681>] btrfs_sync_file+0x2c1/0x2f0 [btrfs]
-[22223.455117]  [<ffffffff811d2541>] do_fsync+0x51/0x80
-[22223.455122]  [<ffffffff811d2823>] SyS_fdatasync+0x13/0x20
-[22223.455127]  [<ffffffff81528d6d>] system_call_fastpath+0x1a/0x1f
+> During this time, all IO totally freezes.  Atop reports no disk
+> activity, while my desktop is totally hung.  After a few minutes
+> everything comes back to life, only to freeze again after a few more
+> minutes.
+> 
+> A reboot clears everything up for a day or so but the problem invariably
+> comes back.  Can anybody shed some light on this?
+> 
+> PS, the above qemu process is accessing image files on a btrfs volume.
+>  These files were created as such:
+> touch winxp.img
+> chattr +C winxp.img
+> fallocate -l20G winxp.img
 
-During this time, all IO totally freezes.  Atop reports no disk
-activity, while my desktop is totally hung.  After a few minutes
-everything comes back to life, only to freeze again after a few more
-minutes.
+That procedure should indeed make those VM images properly NOCOW.
+Thanks for being so explicit. =:^)
 
-A reboot clears everything up for a day or so but the problem
-invariably comes back.  Can anybody shed some light on this?
+One other question:  Are you, or perhaps your distro via likely automated 
+script, doing any btrfs snapshotting of the VM-image containing btrfs 
+(sub)volume?
 
-PS, the above qemu process is accessing image files on a btrfs volume.
- These files were created as such:
-touch winxp.img
-chattr +C winxp.img
-fallocate -l20G winxp.img
+Because snapshotting on a an actively being rewritten NOCOW file is one 
+known exception to that NOCOW.  The snapshot takes a copy of the file at 
+that moment, and further writes to it must therefore be COWed -- tho only 
+the first time a block is written to after the snapshot, further writes 
+to the same block will remain in-place written until the next snapshot 
+freezes that in-place, triggering yet another COW on first write once 
+again.
 
-I'm actually quite pleased with VM performance on top of btrfs (until
-the above problem starts occurring).
+So depending on the presumably scripted snapshotting schedule and the 
+activity on the VM, fragmentation probably won't be as bad on a 
+snapshotted NOCOW image as on a standard COW image, but it will still 
+happen.
+
+So if you have a snapshotting script running on that subvolume, that 
+might be /part/ of it, tho to my knowledge that doesn't fully explain why 
+it'd be better for a day or so after a reboot, since the fragmentation 
+should be the same as before the reboot.
+
+If you're not doing snapshotting, given that the VMs should indeed be 
+NOCOW and as posted you've handled that correctly, I've no idea.  But 
+I'll certainly be following the thread, as this is one aspect I've been 
+particularly interested in. I don't have any specific personal 
+involvement in it at this point, but it's a general enough problem I very 
+well could in the future.
+
 -- 
--=[dave]=-
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Entropy isn't what it used to be.

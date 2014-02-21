@@ -1,43 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37103 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932070AbaBUR7W convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Feb 2014 12:59:22 -0500
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Hard drive hangs after excessive I/O
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAAVQaYDDsfuHu-Lfcjjta48YCP50vZmnGdFM67VQJefnnAfOAg@mail.gmail.com>
-Date: Fri, 21 Feb 2014 10:59:19 -0700
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <6A514E1D-EDD7-431D-BF23-9737EAE41DD3@colorremedies.com>
-References: <CAAVQaYCkxpp8vX8PnO3OLffSm_MMCt6N2qFT=5DWjseZmZ1xbA@mail.gmail.com> <pan$9db86$8cb7b8f1$9ed699ad$9da2e024@cox.net> <CAAVQaYDDsfuHu-Lfcjjta48YCP50vZmnGdFM67VQJefnnAfOAg@mail.gmail.com>
-To: Dave <dave@thekilempire.com>
+Received: from plane.gmane.org ([80.91.229.3]:59349 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752283AbaBUTGJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Feb 2014 14:06:09 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WGvQD-0004WC-HV
+	for linux-btrfs@vger.kernel.org; Fri, 21 Feb 2014 20:06:05 +0100
+Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 20:06:05 +0100
+Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 20:06:05 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Incremental backup over writable snapshot
+Date: Fri, 21 Feb 2014 19:56:07 +0100
+Message-ID: <73kkta-ad2.ln1@hurikhan77.spdns.de>
+References: <17860756.QfG9CfNMqv@linuxpc> <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com> <2285169.jbztTl7OC0@linuxpc> <2333267.X1am0Dsk8s@linuxpc>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+GEO <1g2e3o4@gmail.com> schrieb:
 
-On Feb 21, 2014, at 10:16 AM, Dave <dave@thekilempire.com> wrote:
+> First of all, I am sorry that I screw up the whole structure of the
+> discussion (I have not subscribed to the mailing list, and as Kai replied
+> to the mailing list only, I could not reply to his answer.)
 
-> On Fri, Feb 21, 2014 at 11:09 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->> One other question:  Are you, or perhaps your distro via likely automated
->> script, doing any btrfs snapshotting of the VM-image containing btrfs
->> (sub)volume?
+Umm... Try a NNTP gateway like gmane to follow the list in an NNTP news 
+reader of your choice. You can be semi-autosubscribed then without getting 
+email sent to your email inbox and without digests being sent. It's really 
+enjoyable.
+
+> Kai: Yeah, your point was neutral and I did never understand it otherwise.
+> Thank you for your answer!
+
+NP.
+
+> I already had idea of creating a subvolume called DATA in my home
+> directory, however I find that pretty annoying, as most applications will
+> open home by default.
+
+Well, I mentioned you may want to place symlinks into that data directory 
+for the well-known home directory locations like "music", "documents", etc. 
+It's a bit ugly but it should do the job well. You can make your data 
+directory hidden by naming it ".my-backup-data" or something, then point 
+symlinks into that for documents, music, etc. That way, the applications 
+still open your home fine, it is not cluttered with your data directory and 
+the symlinks will serve fine. It may not be what you prefer but it can be an 
+elegant solution. But there you go:
+
+> In fact I would find it more elegant to generally backup without making
+> changes to my file system structure in home.
 > 
-> I haven't done any snapshotting on this machine.
-> 
-> This problem is pretty easy to reproduce, I spawn about five new
-> virtual machines and begin installing Windows XP on them.  The host
-> machine obviously slows down quite a bit but the hard drive chatters
-> throughout the process.
-> 
-> The next day I wipe those five machines, spawn five new ones, and
-> begin the concurrent installations again.  This time I see the IO
-> spurts that I described in my first email; that is, drive thrashes for
-> a while, then hangs for a couple minutes…  repeat until host reboot.
+> I know that there other possibilities to do what I want, but I am asking
+> whether the initially described method would work reliably, given that the
+> user makes not a fundamental mistake himself.
+> I know it may sound stubborn but I am really interested if my method works
+> just as reliable as the other suggested methods.
 
-Five concurrent VMs for one spinning disk. It sounds like it's seeking to death. The trace shows fsync and datasync so the storage stack is maybe being compelled to write to disk a lot, and not take as much advantage of Btrfs delayed allocation. Is the VM drive a virtio device? What write caching is it configured for? While risky in the face of a crash, I've had much better results with unsafe caching.
+Given that there are no mistakes in your procedure to do the preparation 
+jobs for your backup, it should work perfectly reliable. I think, btrfs 
+send/receive still has some quirks handling corner cases - and those may 
+well be triggered by your idea of cleaning up the snapshot first, but 
+generally it should work (at least if btrfs send/receive work as intended, 
+there are no design decisions which would work against your use-case).
 
+> As I am not having the level required to check the code myself, I am
+> asking here, in the hope someone knowing the code could state if it should
+> work or not.
 
-Chris Murphy
+Putting potential bugs aside (btrfs is still experimental, btrfs 
+send/receive still has many corner-case quirks), it will work. But the 
+design of your process to prepare the backup will put a lot of unnessecary 
+work to your btrfs (in comparision to the alternatives already outlined 
+here), increasing fragmentation, meta-data allocation, and probably making 
+btrfs send/receive less efficient.
+
+So to conclude: Your approach will probably be a good test scenario for 
+btrfs send/receive and snapshots. But I really wouldn't try it without 
+having a known-to-work backup up your sleeve.
+
+-- 
+Replies to list only preferred.
+

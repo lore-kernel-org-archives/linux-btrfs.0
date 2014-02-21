@@ -1,90 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59349 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752283AbaBUTGJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Feb 2014 14:06:09 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WGvQD-0004WC-HV
-	for linux-btrfs@vger.kernel.org; Fri, 21 Feb 2014 20:06:05 +0100
-Received: from 37-4-166-128-dynip.superkabel.de ([37.4.166.128])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 20:06:05 +0100
-Received: from hurikhan77+btrfs by 37-4-166-128-dynip.superkabel.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 20:06:05 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Incremental backup over writable snapshot
-Date: Fri, 21 Feb 2014 19:56:07 +0100
-Message-ID: <73kkta-ad2.ln1@hurikhan77.spdns.de>
-References: <17860756.QfG9CfNMqv@linuxpc> <EEA604EA-983B-4F5F-88B5-4FD229FEC61F@colorremedies.com> <2285169.jbztTl7OC0@linuxpc> <2333267.X1am0Dsk8s@linuxpc>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from mail-ob0-f175.google.com ([209.85.214.175]:56963 "EHLO
+	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbaBUT1W (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Feb 2014 14:27:22 -0500
+Received: by mail-ob0-f175.google.com with SMTP id va2so1598986obc.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Feb 2014 11:27:21 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <6A514E1D-EDD7-431D-BF23-9737EAE41DD3@colorremedies.com>
+References: <CAAVQaYCkxpp8vX8PnO3OLffSm_MMCt6N2qFT=5DWjseZmZ1xbA@mail.gmail.com>
+	<pan$9db86$8cb7b8f1$9ed699ad$9da2e024@cox.net>
+	<CAAVQaYDDsfuHu-Lfcjjta48YCP50vZmnGdFM67VQJefnnAfOAg@mail.gmail.com>
+	<6A514E1D-EDD7-431D-BF23-9737EAE41DD3@colorremedies.com>
+Date: Fri, 21 Feb 2014 14:27:21 -0500
+Message-ID: <CAAVQaYBC6sd--Sr-eYmHuE4M-Kb2cm5e44ndSV=QDM5XGd__Eg@mail.gmail.com>
+Subject: Re: Hard drive hangs after excessive I/O
+From: Dave <dave@thekilempire.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-GEO <1g2e3o4@gmail.com> schrieb:
+On Fri, Feb 21, 2014 at 12:59 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> Five concurrent VMs for one spinning disk. It sounds like it's seeking to death.
 
-> First of all, I am sorry that I screw up the whole structure of the
-> discussion (I have not subscribed to the mailing list, and as Kai replied
-> to the mailing list only, I could not reply to his answer.)
+That's my reproducible test, not typical use.
 
-Umm... Try a NNTP gateway like gmane to follow the list in an NNTP news 
-reader of your choice. You can be semi-autosubscribed then without getting 
-email sent to your email inbox and without digests being sent. It's really 
-enjoyable.
+"Seeking to death" would indicate drive activity.  When the problem
+occurs, drive activity stops for minutes at a time.
 
-> Kai: Yeah, your point was neutral and I did never understand it otherwise.
-> Thank you for your answer!
+I suppose I shouldn't have even mentioned VMs because that seems to be
+muddying the discussion.  The problem persists after all the VMs are
+shut down.  For instance, right now I'm not running any VMs but I'm
+experiencing the problem (though I was performing the above test).  I
+can observe it by doing a local git clone of the linux kernel:
+git clone /usr/src/linux
 
-NP.
-
-> I already had idea of creating a subvolume called DATA in my home
-> directory, however I find that pretty annoying, as most applications will
-> open home by default.
-
-Well, I mentioned you may want to place symlinks into that data directory 
-for the well-known home directory locations like "music", "documents", etc. 
-It's a bit ugly but it should do the job well. You can make your data 
-directory hidden by naming it ".my-backup-data" or something, then point 
-symlinks into that for documents, music, etc. That way, the applications 
-still open your home fine, it is not cluttered with your data directory and 
-the symlinks will serve fine. It may not be what you prefer but it can be an 
-elegant solution. But there you go:
-
-> In fact I would find it more elegant to generally backup without making
-> changes to my file system structure in home.
-> 
-> I know that there other possibilities to do what I want, but I am asking
-> whether the initially described method would work reliably, given that the
-> user makes not a fundamental mistake himself.
-> I know it may sound stubborn but I am really interested if my method works
-> just as reliable as the other suggested methods.
-
-Given that there are no mistakes in your procedure to do the preparation 
-jobs for your backup, it should work perfectly reliable. I think, btrfs 
-send/receive still has some quirks handling corner cases - and those may 
-well be triggered by your idea of cleaning up the snapshot first, but 
-generally it should work (at least if btrfs send/receive work as intended, 
-there are no design decisions which would work against your use-case).
-
-> As I am not having the level required to check the code myself, I am
-> asking here, in the hope someone knowing the code could state if it should
-> work or not.
-
-Putting potential bugs aside (btrfs is still experimental, btrfs 
-send/receive still has many corner-case quirks), it will work. But the 
-design of your process to prepare the backup will put a lot of unnessecary 
-work to your btrfs (in comparision to the alternatives already outlined 
-here), increasing fragmentation, meta-data allocation, and probably making 
-btrfs send/receive less efficient.
-
-So to conclude: Your approach will probably be a good test scenario for 
-btrfs send/receive and snapshots. But I really wouldn't try it without 
-having a known-to-work backup up your sleeve.
-
+If I run this from a fresh boot, it causes the hard drive to chatter
+but doesn't cause IO to hang.  After running the above 5-VM test for a
+day, even after shutting down the VMs, my machine is still in this
+state that causes IO to periodically hang.
 -- 
-Replies to list only preferred.
+-=[dave]=-
 
+Entropy isn't what it used to be.

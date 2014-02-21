@@ -1,153 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:61372 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753971AbaBUABx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 19:01:53 -0500
-Received: by mail-wi0-f176.google.com with SMTP id hi5so270134wib.15
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 16:01:51 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix send issuing outdated paths for utimes, chown and chmod
-Date: Fri, 21 Feb 2014 00:01:32 +0000
-Message-Id: <1392940892-1660-1-git-send-email-fdmanana@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:25817 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752437AbaBUCcJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Feb 2014 21:32:09 -0500
+Message-ID: <5306BA41.1060700@cn.fujitsu.com>
+Date: Fri, 21 Feb 2014 10:30:25 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+CC: linux-btrfs@vger.kernel.org, Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Meaning of \"no_csum\" field when scrubbing with -R option
+References: <5305DE1E.8080302@cn.fujitsu.com> <5305E63B.4000405@informatik.uni-bonn.de> <5305F72F.9050109@cn.fujitsu.com>
+In-Reply-To: <5305F72F.9050109@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing an incremental send, if we had a directory pending a move/rename
-operation and none of its parents, except for the immediate parent, were
-pending a move/rename, after processing the directory's references, we would
-be issuing utimes, chown and chmod intructions against am outdated path - a
-path which matched the one in the parent root.
+On 02/20/2014 08:38 PM, Wang Shilong wrote:
+> On 02/20/2014 07:25 PM, Sebastian Ochmann wrote:
+>> Hello,
+>>
+>>>     Sebastian Ochmann posted on Wed, 19 Feb 2014 13:58:17 +0100 as 
+>>> excerpted:
+>>>
+>>>
+>>>         So my question is, why does scrub show a high (i.e. 
+>>> non-zero) value for
+>>>         no_csum? I never enabled nodatasum or a similar option.
+This should be related to btrfs free space cache, it is designed as 
+nocow without
+checksums.
 
-This change also simplifies a bit the code that deals with building a path
-for a directory which has a move/rename operation delayed.
-
-Steps to reproduce:
-
-    $ mkfs.btrfs -f /dev/sdb3
-    $ mount /dev/sdb3 /mnt/btrfs
-    $ mkdir -p /mnt/btrfs/a/b/c/d/e
-    $ mkdir /mnt/btrfs/a/b/c/f
-    $ chmod 0777 /mnt/btrfs/a/b/c/d/e
-    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap1
-    $ btrfs send /mnt/btrfs/snap1 -f /tmp/base.send
-    $ mv /mnt/btrfs/a/b/c/f /mnt/btrfs/a/b/f2
-    $ mv /mnt/btrfs/a/b/c/d/e /mnt/btrfs/a/b/f2/e2
-    $ mv /mnt/btrfs/a/b/c /mnt/btrfs/a/b/c2
-    $ mv /mnt/btrfs/a/b/c2/d /mnt/btrfs/a/b/c2/d2
-    $ chmod 0700 /mnt/btrfs/a/b/f2/e2
-    $ btrfs subvolume snapshot -r /mnt/btrfs /mnt/btrfs/snap2
-    $ btrfs send -p /mnt/btrfs/snap1 /mnt/btrfs/snap2 -f /tmp/incremental.send
-
-    $ umount /mnt/btrfs
-    $ mkfs.btrfs -f /dev/sdb3
-    $ mount /dev/sdb3 /mnt/btrfs
-    $ btrfs receive /mnt/btrfs -f /tmp/base.send
-    $ btrfs receive /mnt/btrfs -f /tmp/incremental.send
-
-The second btrfs receive command failed with:
-
-    ERROR: chmod a/b/c/d/e failed. No such file or directory
-
-A test case for xfstests follows.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/send.c |   31 ++++++++++++-------------------
- 1 file changed, 12 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 46c6b54..298e25d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2000,7 +2000,6 @@ static void name_cache_free(struct send_ctx *sctx)
-  */
- static int __get_cur_name_and_parent(struct send_ctx *sctx,
- 				     u64 ino, u64 gen,
--				     int skip_name_cache,
- 				     u64 *parent_ino,
- 				     u64 *parent_gen,
- 				     struct fs_path *dest)
-@@ -2010,8 +2009,6 @@ static int __get_cur_name_and_parent(struct send_ctx *sctx,
- 	struct btrfs_path *path = NULL;
- 	struct name_cache_entry *nce = NULL;
- 
--	if (skip_name_cache)
--		goto get_ref;
- 	/*
- 	 * First check if we already did a call to this function with the same
- 	 * ino/gen. If yes, check if the cache entry is still up-to-date. If yes
-@@ -2056,12 +2053,11 @@ static int __get_cur_name_and_parent(struct send_ctx *sctx,
- 		goto out_cache;
- 	}
- 
--get_ref:
- 	/*
- 	 * Depending on whether the inode was already processed or not, use
- 	 * send_root or parent_root for ref lookup.
- 	 */
--	if (ino < sctx->send_progress && !skip_name_cache)
-+	if (ino < sctx->send_progress)
- 		ret = get_first_ref(sctx->send_root, ino,
- 				    parent_ino, parent_gen, dest);
- 	else
-@@ -2085,8 +2081,6 @@ get_ref:
- 			goto out;
- 		ret = 1;
- 	}
--	if (skip_name_cache)
--		goto out;
- 
- out_cache:
- 	/*
-@@ -2154,7 +2148,6 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
- 	u64 parent_inode = 0;
- 	u64 parent_gen = 0;
- 	int stop = 0;
--	int skip_name_cache = 0;
- 
- 	name = fs_path_alloc();
- 	if (!name) {
-@@ -2162,9 +2155,6 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
- 		goto out;
- 	}
- 
--	if (is_waiting_for_move(sctx, ino))
--		skip_name_cache = 1;
--
- 	dest->reversed = 1;
- 	fs_path_reset(dest);
- 
-@@ -2179,16 +2169,19 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
- 			break;
- 		}
- 
--		ret = __get_cur_name_and_parent(sctx, ino, gen, skip_name_cache,
--				&parent_inode, &parent_gen, name);
-+		if (is_waiting_for_move(sctx, ino)) {
-+			ret = get_first_ref(sctx->parent_root, ino,
-+					    &parent_inode, &parent_gen, name);
-+		} else {
-+			ret = __get_cur_name_and_parent(sctx, ino, gen,
-+							&parent_inode,
-+							&parent_gen, name);
-+			if (ret)
-+				stop = 1;
-+		}
-+
- 		if (ret < 0)
- 			goto out;
--		if (ret)
--			stop = 1;
--
--		if (!skip_name_cache &&
--		    is_waiting_for_move(sctx, parent_inode))
--			skip_name_cache = 1;
- 
- 		ret = fs_path_add_path(dest, name);
- 		if (ret < 0)
--- 
-1.7.9.5
+Thanks,
+Wang
+>>>
+>>> Did you enable nodatacow option? if  nodatacow option is enabled,
+>>> data checksums will be also disabled at the same time.
+> [SNIP]
+>
+> So i have found why we have such strange things from debugging, you 
+> can have a try as the
+> following steps:
+>
+> # mkfs.btrfs -f /dev/sda9
+> # mount /dev/sda9 /mnt
+> # btrfs scrub start -BR /mnt
+>
+> scrub done for 02dd3326-959f-4602-9baa-aa9ed99ac2e5
+>     scrub started at Thu Feb 20 20:31:46 2014 and finished after 0 
+> seconds
+>     data_extents_scrubbed: 1
+>     tree_extents_scrubbed: 16
+>     data_bytes_scrubbed: 65536
+>     tree_bytes_scrubbed: 262144
+>     read_errors: 0
+>     csum_errors: 0
+>     verify_errors: 0
+>     no_csum: 16 ---------------------->not equal 0 for a newly mkfs.
+>     csum_discards: 0
+>     super_errors: 0
+>     malloc_errors: 0
+>     uncorrectable_errors: 0
+>     unverified_errors: 0
+>     corrected_errors: 0
+>     last_physical: 467140608
+>
+> # btrfs-debug-tree /dev/sda9
+>
+> By debuging tree, we found there is a EXTENT_ITEM in extent tree for 
+> newly
+> mkfs filesystem which we have written anything yet.
+>
+>  item 2 key (12582912 EXTENT_ITEM 65536) itemoff 16182 itemsize 53
+>                 extent refs 1 gen 5 flags 1
+>                 extent data backref root 1 objectid 256 offset 0 count 1
+> item 3 key (12582912 BLOCK_GROUP_ITEM 8388608) itemoff 16158 itemsize 24
+>
+> At the same time, Let's see Csum tree debug output:
+>
+> checksum tree key (CSUM_TREE ROOT_ITEM 0)
+> leaf 29425664 items 0 free space 16283 generation 4 owner 7
+> fs uuid 02dd3326-959f-4602-9baa-aa9ed99ac2e5
+>
+> So there is not corresponding checksum item for that DATA extent item..
+> This can explain why scrub output no_sum count!
+>
+> For reasons, It may be reserved data space without checksum for other 
+> purpose!
+> So if this is true, i don't think this is harm for common users unless 
+> it is designed
+> unexpectedly!
+>
+> Thanks,
+> Wang
+>>
+>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
+>>
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

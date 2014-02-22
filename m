@@ -1,103 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:4149 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:57570 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932371AbaBUPv5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Feb 2014 10:51:57 -0500
-Message-ID: <53077614.2050909@redhat.com>
-Date: Fri, 21 Feb 2014 09:51:48 -0600
-From: Eric Sandeen <sandeen@redhat.com>
+	id S1753074AbaBVAD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Feb 2014 19:03:58 -0500
+Date: Sat, 22 Feb 2014 01:03:56 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <jbacik@fb.com>
+Cc: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Kostia Khlebopros <kkhlebopros@netgear.com>
+Subject: Re: [PATCH][BTRFS-PROGS][v4] Enhance btrfs fi df
+Message-ID: <20140222000356.GN16073@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <52FD1A72.5060307@libero.it>
+ <20140220180857.GW16073@twin.jikos.cz>
+ <53064A42.7000703@fb.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/4] Btrfs-progs: new helper to parse string to u64
- for btrfs
-References: <1392962825-2967-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1392962825-2967-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53064A42.7000703@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/21/14, 12:07 AM, Wang Shilong wrote:
-> There are many places that need parse string to u64 for btrfs commands,
-> in fact, we do such things *too casually*, using atoi/atol/atoll..is not
-> right at all, and even we don't check whether it is a valid string.
+On Thu, Feb 20, 2014 at 01:32:34PM -0500, Josef Bacik wrote:
+> > Yes for 3), we may also export the information through the
+> > existing ioctls if possible (eg. IOC_FS_INFO).
+> > 
 > 
-> Let's do everything more gracefully, we introduce a new helper
-> arg_strtou64() which will do all the necessary checks.If we fail to
-> parse string to u64, we will output message and exit directly, this is
-> something like what usage() is doing. It is ok to not return erro to
-> it's caller, because this function should be called when parsing arg
-> (just like usage!)
-> 
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> For _right now_ I'd say just not do the raid56 stuff if we don't
+> notice any raid56 chunks from the normal load_space_info, and then if
+> there are raid56 we try and run the tree search ioctl and notice if we
+> get back EPERM or whatever you get when you don't have permissions.
+> Then just spit out as much information that you can about the fs with
+> a little note at the bottom that available calculation isn't 100% and
+> you need to run as root if you want that info.
 
-I like it, thanks.
+Works for me.
 
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+> Then what we could do is add another flag type for the existing
+> SPACE_INFO ioctl to spit out the information you need about the
+> raid5/6 chunks and then just test for those flags and make the
+> adjustment necessary.  This way we avoid adding yet another ioctl and
+> stuff will still work nicely for old kernels that don't have the
+> updated ioctl.  Thanks,
 
-> ---
-> v3->v4:
-> 	move prefix '-' check after strtoull call, which will
-> 	make negative output more precise to common users!(Thanks to Eric Sandeen)
-> ---
->  utils.c | 33 +++++++++++++++++++++++++++++++++
->  utils.h |  1 +
->  2 files changed, 34 insertions(+)
-> 
-> diff --git a/utils.c b/utils.c
-> index 97e23d5..9120877 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1520,6 +1520,39 @@ scan_again:
->  	return 0;
->  }
->  
-> +/*
-> + * This function should be only used when parsing
-> + * command arg, it won't return error to it's
-> + * caller and rather exit directly just like usage().
-> + */
-> +u64 arg_strtou64(const char *str)
-> +{
-> +	u64 value;
-> +	char *ptr_parse_end = NULL;
-> +
-> +	value = strtoull(str, &ptr_parse_end, 0);
-> +	if (ptr_parse_end && *ptr_parse_end != '\0') {
-> +		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
-> +			str);
-> +		exit(1);
-> +	}
-> +	/*
-> +	 * if we pass a negative number to strtoull,
-> +	 * it will return an unexpected number to us,
-> +	 * so let's do the check ourselves.
-> +	 */
-> +	if (str[0] == '-') {
-> +		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
-> +			str);
-> +		exit(1);
-> +	}
-> +	if (value == ULLONG_MAX) {
-> +		fprintf(stderr, "ERROR: %s is too large.\n", str);
-> +		exit(1);
-> +	}
-> +	return value;
-> +}
-> +
->  u64 parse_size(char *s)
->  {
->  	int i;
-> diff --git a/utils.h b/utils.h
-> index 04b8c45..a201085 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -71,6 +71,7 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
->  int get_mountpt(char *dev, char *mntpt, size_t size);
->  int btrfs_scan_block_devices(int run_ioctl);
->  u64 parse_size(char *s);
-> +u64 arg_strtou64(const char *str);
->  int open_file_or_dir(const char *fname, DIR **dirstream);
->  void close_file_or_dir(int fd, DIR *dirstream);
->  int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
-> 
-
+Agreed. Extending SPACE_INFO looks suitable for this.

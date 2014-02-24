@@ -1,72 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:35283 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750998AbaBTVPn (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45178 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751472AbaBXLYZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Feb 2014 16:15:43 -0500
-Received: by mail-wi0-f178.google.com with SMTP id cc10so152073wib.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Feb 2014 13:15:42 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+	Mon, 24 Feb 2014 06:24:25 -0500
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s1OBOOcp007295
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 11:24:24 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1OBONns009256
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 11:24:23 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1OBONI3009057
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 11:24:23 GMT
+Message-ID: <530B2BE4.5070906@oracle.com>
+Date: Mon, 24 Feb 2014 19:24:20 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: correctly determine if blocks are shared in btrfs_compare_trees
-Date: Thu, 20 Feb 2014 21:15:25 +0000
-Message-Id: <1392930925-5348-1-git-send-email-fdmanana@gmail.com>
+Subject: Re: [PATCH v2] btrfs-progs: there is devid 0 when replace is running
+References: <1391487810-21545-1-git-send-email-anand.jain@oracle.com> <1391502828-24481-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1391502828-24481-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just comparing the pointers (logical disk addresses) of the btree nodes is
-not completely bullet proof, we have to check if their generation numbers
-match too.
 
-It is guaranteed that a COW operation will result in a block with a different
-logical disk address than the original block's address, but over time we can
-reuse that former logical disk address.
 
-For example, creating a 2Gb filesystem on a loop device, and having a script
-running in a loop always updating the access timestamp of a file, resulted in
-the same logical disk address being reused for the same fs btree block in about
-only 4 minutes.
+kindly ignore this patch. Though it correct that we need to
+start from devid 0 to scan. But the individual scan is broken
+well before this patch. So to fix all together a patch bundle
+is sent to the mailing list including this
 
-This could make us skip entire subtrees when doing an incremental send (which
-is currently the only user of btrfs_compare_trees). However the odds of getting
-2 blocks at the same tree level, with the same logical disk address, equal first
-slot keys and different generations, should hopefully be very low.
+Thanks Anand
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/ctree.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index cbd3a7d..88d1b1e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5376,6 +5376,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 	int advance_right;
- 	u64 left_blockptr;
- 	u64 right_blockptr;
-+	u64 left_gen;
-+	u64 right_gen;
- 	u64 left_start_ctransid;
- 	u64 right_start_ctransid;
- 	u64 ctransid;
-@@ -5640,7 +5642,14 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 				right_blockptr = btrfs_node_blockptr(
- 						right_path->nodes[right_level],
- 						right_path->slots[right_level]);
--				if (left_blockptr == right_blockptr) {
-+				left_gen = btrfs_node_ptr_generation(
-+						left_path->nodes[left_level],
-+						left_path->slots[left_level]);
-+				right_gen = btrfs_node_ptr_generation(
-+						right_path->nodes[right_level],
-+						right_path->slots[right_level]);
-+				if (left_blockptr == right_blockptr &&
-+				    left_gen == right_gen) {
- 					/*
- 					 * As we're on a shared block, don't
- 					 * allow to go deeper.
--- 
-1.7.9.5
-
+On 02/04/14 04:33 PM, Anand Jain wrote:
+> During disk replacement a new disk is temporarily
+> added to the fs devlist with devid 0 and fs num_device is
+> incremented by 1. However when progs reads the devlist it
+> fail to obtain details of devid 0 because it doesn't query
+> devid 0 at all.
+>
+> reproducer:
+>
+>   btrfs rep start /dev/sdb /dev/sdf /btrfs
+>   btrfs fi show
+>   Label: none  uuid: f8fb9819-16c8-47b7-b62f-0ff90f8c56cd
+>          Total devices 3 FS bytes used 1.94GiB
+>          devid    1 size 1.10GiB used 1.10GiB path /dev/sdb
+>          devid    2 size 1.10GiB used 1.08GiB path /dev/sdc
+>          devid    0 size 0.00 used 0.00 path
+>
+>    this patch will make it proper by querying devid 0.
+>
+>   btrfs repl start /dev/sdb /dev/sdf /btrfs
+>   btrfs fi show /btrfs
+>   Label: none  uuid: f8fb9819-16c8-47b7-b62f-0ff90f8c56cd
+>          Total devices 3 FS bytes used 1.94GiB
+>          devid    0 size 1.10GiB used 1.10GiB path /dev/sdf
+>          devid    1 size 1.10GiB used 1.10GiB path /dev/sdb
+>          devid    2 size 1.10GiB used 1.08GiB path /dev/sdc
+>
+>   Its fine to query devid 0 when there is no replace
+>   activity as well, because we just skip the error ENODEV
+>
+>   btrfs fi show /btrfs
+>   Label: none  uuid: f8fb9819-16c8-47b7-b62f-0ff90f8c56cd
+>          Total devices 2 FS bytes used 1.94GiB
+>          devid    1 size 1.10GiB used 1.10GiB path /dev/sdf
+>          devid    2 size 1.10GiB used 1.08GiB path /dev/sdc
+> ---
+>
+>   v2: fix commit message
+>
+>   utils.c |    2 +-
+>   1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/utils.c b/utils.c
+> index de513b6..a045ffd 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -1696,7 +1696,7 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+>   		goto out;
+>   	}
+>
+> -	for (; i <= fi_args->max_id; ++i) {
+> +	for (i = 0; i <= fi_args->max_id; ++i) {
+>   		BUG_ON(ndevs >= fi_args->num_devices);
+>   		ret = get_device_info(fd, i, &di_args[ndevs]);
+>   		if (ret == -ENODEV)
+>

@@ -1,85 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:54773 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751693AbaBXMDt (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:56993 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752301AbaBXNhH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Feb 2014 07:03:49 -0500
-Received: by mail-wi0-f178.google.com with SMTP id cc10so2937276wib.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 04:03:48 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: more efficient split extent state insertion
-Date: Mon, 24 Feb 2014 12:03:42 +0000
-Message-Id: <1393243422-16454-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1392217553-10872-1-git-send-email-fdmanana@gmail.com>
-References: <1392217553-10872-1-git-send-email-fdmanana@gmail.com>
+	Mon, 24 Feb 2014 08:37:07 -0500
+Received: by mail-wi0-f181.google.com with SMTP id hi5so3045034wib.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 05:37:05 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20140220165743.GT16073@twin.jikos.cz>
+References: <5304D781.6020309@gmail.com>
+	<20140220165743.GT16073@twin.jikos.cz>
+Date: Mon, 24 Feb 2014 15:37:05 +0200
+Message-ID: <CAOi1vP9hEqBcDgY-zthijx37+_cowhoMQaTZyWG9OUqOQvJR2A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Allow forced conversion of metadata to dup profile
+ on multiple devices
+From: Ilya Dryomov <idryomov@gmail.com>
+To: David Sterba <dsterba@suse.cz>, Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        linux-btrfs@vger.kernel.org, Ilya Drymov <idryomov@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we split an extent state there's no need to start the rbtree search
-from the root node - we can start it from the original extent state node,
-since we would end up in its subtree if we do the search starting at the
-root node anyway.
+On Thu, Feb 20, 2014 at 6:57 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Wed, Feb 19, 2014 at 11:10:41AM -0500, Austin S Hemmelgarn wrote:
+>> Currently, btrfs balance start fails when trying to convert metadata or
+>> system chunks to dup profile on filesystems with multiple devices.  This
+>> requires that a conversion from a multi-device filesystem to a single
+>> device filesystem use the following methodology:
+>>     1. btrfs balance start -dconvert=single -mconvert=single \
+>>        -sconvert=single -f /
+>>     2. btrfs device delete / /dev/sdx
+>>     3. btrfs balance start -mconvert=dup -sconvert=dup /
+>> This results in a period of time (possibly very long if the devices are
+>> big) where you don't have the protection guarantees of multiple copies
+>> of metadata chunks.
+>>
+>> After applying this patch, one can instead use the following methodology
+>> for conversion from a multi-device filesystem to a single device
+>> filesystem:
+>>     1. btrfs balance start -dconvert=single -mconvert=dup \
+>>        -sconvert=dup -f /
+>>     2. btrfs device delete / /dev/sdx
+>> This greatly reduces the chances of the operation causing data loss due
+>> to a read error during the device delete.
+>>
+>> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+> Reviewed-by: David Sterba <dsterba@suse.cz>
+>
+> Sounds useful. The muliple devices + DUP is allowed setup when the
+> device is added, this patch only adds the 'delete' counterpart. The
+> imroved data loss protection during the process is a good thing.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+Hi,
 
-V2: Made the intention more clear, that it works only if the tree is not
-    empty (which is always the case when spliting extent states).
+Have you actually tried to queue it?  Unless I'm missing something, it won't
+compile, and on top of that, it seems to be corrupted too..
 
- fs/btrfs/extent_io.c |   13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+IIRC muliple devices + DUP is "allowed" only until the first balance, has that
+changed?
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fbe501d..eb465e9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -229,12 +229,14 @@ void free_extent_state(struct extent_state *state)
- 	}
- }
- 
--static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
-+static struct rb_node *tree_insert(struct rb_root *root,
-+				   struct rb_node *search_start,
-+				   u64 offset,
- 				   struct rb_node *node,
- 				   struct rb_node ***p_in,
- 				   struct rb_node **parent_in)
- {
--	struct rb_node **p = &root->rb_node;
-+	struct rb_node **p;
- 	struct rb_node *parent = NULL;
- 	struct tree_entry *entry;
- 
-@@ -244,6 +246,7 @@ static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
- 		goto do_insert;
- 	}
- 
-+	p = search_start ? &search_start : &root->rb_node;
- 	while (*p) {
- 		parent = *p;
- 		entry = rb_entry(parent, struct tree_entry, rb_node);
-@@ -430,7 +433,7 @@ static int insert_state(struct extent_io_tree *tree,
- 
- 	set_state_bits(tree, state, bits);
- 
--	node = tree_insert(&tree->state, end, &state->rb_node, p, parent);
-+	node = tree_insert(&tree->state, NULL, end, &state->rb_node, p, parent);
- 	if (node) {
- 		struct extent_state *found;
- 		found = rb_entry(node, struct extent_state, rb_node);
-@@ -477,8 +480,8 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
- 	prealloc->state = orig->state;
- 	orig->start = split;
- 
--	node = tree_insert(&tree->state, prealloc->end, &prealloc->rb_node,
--			   NULL, NULL);
-+	node = tree_insert(&tree->state, &orig->rb_node, prealloc->end,
-+			   &prealloc->rb_node, NULL, NULL);
- 	if (node) {
- 		free_extent_state(prealloc);
- 		return -EEXIST;
--- 
-1.7.9.5
+Thanks,
 
+                Ilya

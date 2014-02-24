@@ -1,30 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f170.google.com ([209.85.212.170]:36730 "EHLO
-	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750899AbaBXLyv (ORCPT
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:33160 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751480AbaBXLzd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Feb 2014 06:54:51 -0500
-Received: by mail-wi0-f170.google.com with SMTP id hi5so2904319wib.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 03:54:50 -0800 (PST)
+	Mon, 24 Feb 2014 06:55:33 -0500
+Received: by mail-wg0-f50.google.com with SMTP id z12so4500027wgg.17
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 03:55:32 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add test for btrfs send issuing premature rmdir operations
-Date: Mon, 24 Feb 2014 11:54:38 +0000
-Message-Id: <1393242878-16039-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1392820352-8550-1-git-send-email-fdmanana@gmail.com>
-References: <1392820352-8550-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add test btrfs/042 for btrfs incremental send
+Date: Mon, 24 Feb 2014 11:55:25 +0000
+Message-Id: <1393242925-16087-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1392940976-1790-1-git-send-email-fdmanana@gmail.com>
+References: <1392940976-1790-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for btrfs incremental send issue where a rmdir instruction
-is sent against an orphan directory inode which is not empty yet, causing
-btrfs receive to fail when it attempts to remove the directory.
+Regression test for a btrfs incremental send issue where invalid paths for
+utimes, chown and chmod operations were sent to the send stream, causing
+btrfs receive to fail.
+
+If a directory had a move/rename operation delayed, and none of its parent
+directories, except for the immediate one, had delayed move/rename operations,
+after processing the directory's references, the incremental send code would
+issue invalid paths for utimes, chown and chmod operations.
 
 This issue is fixed by the following linux kernel btrfs patch:
 
-   Btrfs: fix send attempting to rmdir non-empty directories
+   Btrfs: fix send issuing outdated paths for utimes, chown and chmod
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
@@ -32,29 +37,34 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 V2: Some cleanup as suggested by Dave Chinner. Use _check_scratch_fs() and
     removed redundant stderr redirection when calling fssum via run_check.
 
- tests/btrfs/041     |  152 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/041.out |    1 +
+ tests/btrfs/042     |  132 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/042.out |    1 +
  tests/btrfs/group   |    1 +
- 3 files changed, 154 insertions(+)
- create mode 100755 tests/btrfs/041
- create mode 100644 tests/btrfs/041.out
+ 3 files changed, 134 insertions(+)
+ create mode 100755 tests/btrfs/042
+ create mode 100644 tests/btrfs/042.out
 
-diff --git a/tests/btrfs/041 b/tests/btrfs/041
+diff --git a/tests/btrfs/042 b/tests/btrfs/042
 new file mode 100755
-index 0000000..bfc0e4b
+index 0000000..2bd5147
 --- /dev/null
-+++ b/tests/btrfs/041
-@@ -0,0 +1,152 @@
++++ b/tests/btrfs/042
+@@ -0,0 +1,132 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/041
++# FS QA Test No. btrfs/042
 +#
-+# Regression test for btrfs incremental send issue where a rmdir instruction
-+# is sent against an orphan directory inode which is not empty yet, causing
-+# btrfs receive to fail when it attempts to remove the directory.
++# Regression test for a btrfs incremental send issue where under certain
++# scenarios invalid paths for utimes, chown and chmod operations were sent
++# to the send stream, causing btrfs receive to fail.
++#
++# If a directory had a move/rename operation delayed, and none of its parent
++# directories, except for the immediate one, had delayed move/rename operations,
++# after processing the directory's references, the incremental send code would
++# issue invalid paths for utimes, chown and chmod operations.
 +#
 +# This issue is fixed by the following linux kernel btrfs patch:
 +#
-+#   Btrfs: fix send attempting to rmdir non-empty directories
++#   Btrfs: fix send issuing outdated paths for utimes, chown and chmod
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -106,70 +116,45 @@ index 0000000..bfc0e4b
 +_scratch_mkfs >/dev/null 2>&1
 +_scratch_mount
 +
-+mkdir -p $SCRATCH_MNT/a/b
-+mkdir $SCRATCH_MNT/0
-+mkdir $SCRATCH_MNT/1
-+mkdir $SCRATCH_MNT/a/b/c
-+mv $SCRATCH_MNT/0 $SCRATCH_MNT/a/b/c
-+mv $SCRATCH_MNT/1 $SCRATCH_MNT/a/b/c
-+echo 'ola mundo' > $SCRATCH_MNT/a/b/c/foo.txt
-+mkdir $SCRATCH_MNT/a/b/c/x
-+mkdir $SCRATCH_MNT/a/b/c/x2
-+mkdir $SCRATCH_MNT/a/b/y
-+mkdir $SCRATCH_MNT/a/b/z
-+mkdir -p $SCRATCH_MNT/a/b/d1/d2/d3
-+mkdir $SCRATCH_MNT/a/b/d4
++umask 0
++mkdir -p $SCRATCH_MNT/a/b/c/d/e
++mkdir $SCRATCH_MNT/a/b/c/f
++echo 'ola ' > $SCRATCH_MNT/a/b/c/d/e/file.txt
++chmod 0777 $SCRATCH_MNT/a/b/c/d/e
 +
 +# Filesystem looks like:
 +#
-+# .                        (ino 256)
-+# |-- a/                   (ino 257)
-+#     |-- b/               (ino 258)
-+#         |-- c/           (ino 261)
-+#         |   |-- foo.txt  (ino 262)
-+#         |   |-- 0/       (ino 259)
-+#         |   |-- 1/       (ino 260)
-+#         |   |-- x/       (ino 263)
-+#         |   |-- x2/      (ino 264)
-+#         |
-+#         |-- y/           (ino 265)
-+#         |-- z/           (ino 266)
-+#         |-- d1/          (ino 267)
-+#         |   |-- d2/      (ino 268)
-+#         |       |-- d3/  (ino 269)
-+#         |
-+#         |-- d4/          (ino 270)
++# .                                   (ino 256)
++# |-- a/                              (ino 257)
++#     |-- b/                          (ino 258)
++#         |-- c/                      (ino 259)
++#             |-- d/                  (ino 260)
++#             |   |-- e/              (ino 261)
++#             |       |-- file.txt    (ino 262)
++#             |
++#             |-- f/                  (ino 263)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
-+rm -f $SCRATCH_MNT/a/b/c/foo.txt
-+mv $SCRATCH_MNT/a/b/y $SCRATCH_MNT/a/b/YY
-+mv $SCRATCH_MNT/a/b/z $SCRATCH_MNT/a
-+mv $SCRATCH_MNT/a/b/c/x $SCRATCH_MNT/a/b/YY
-+mv $SCRATCH_MNT/a/b/c/0 $SCRATCH_MNT/a/b/YY/00
-+mv $SCRATCH_MNT/a/b/c/x2 $SCRATCH_MNT/a/z/X_2
-+mv $SCRATCH_MNT/a/b/c/1 $SCRATCH_MNT/a/z/X_2
-+rmdir $SCRATCH_MNT/a/b/c
-+mv $SCRATCH_MNT/a/b/d4 $SCRATCH_MNT/a/d44
-+mv $SCRATCH_MNT/a/b/d1/d2 $SCRATCH_MNT/a/d44
-+rmdir $SCRATCH_MNT/a/b/d1
++echo 'mundo' >> $SCRATCH_MNT/a/b/c/d/e/file.txt
++mv $SCRATCH_MNT/a/b/c/d/e/file.txt $SCRATCH_MNT/a/b/c/d/e/file2.txt
++mv $SCRATCH_MNT/a/b/c/f $SCRATCH_MNT/a/b/f2
++mv $SCRATCH_MNT/a/b/c/d/e $SCRATCH_MNT/a/b/f2/e2
++mv $SCRATCH_MNT/a/b/c $SCRATCH_MNT/a/b/c2
++mv $SCRATCH_MNT/a/b/c2/d $SCRATCH_MNT/a/b/c2/d2
++chmod 0700 $SCRATCH_MNT/a/b/f2/e2
 +
 +# Filesystem now looks like:
 +#
-+# .                        (ino 256)
-+# |-- a/                   (ino 257)
-+#     |-- b/               (ino 258)
-+#     |   |-- YY/          (ino 265)
-+#     |        |-- x/      (ino 263)
-+#     |        |-- 00/     (ino 259)
-+#     |
-+#     |-- z/               (ino 266)
-+#     |   |-- X_2/         (ino 264)
-+#     |        |-- 1/      (ino 260)
-+#     |
-+#     |-- d44/             (ino 270)
-+#          |-- d2/         (ino 268)
-+#              |-- d3/     (ino 269)
++# .                              (ino 256)
++# |-- a/                         (ino 257)
++#     |-- b/                     (ino 258)
++#         |-- c2/                (ino 259)
++#         |   |-- d2/            (ino 260)
++#         |
++#         |-- f2/                (ino 263)
++#             |-- e2             (ino 261)
++#                 |-- file2.txt  (ino 263)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +
@@ -197,22 +182,22 @@ index 0000000..bfc0e4b
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/041.out b/tests/btrfs/041.out
+diff --git a/tests/btrfs/042.out b/tests/btrfs/042.out
 new file mode 100644
-index 0000000..309876c
+index 0000000..b403295
 --- /dev/null
-+++ b/tests/btrfs/041.out
++++ b/tests/btrfs/042.out
 @@ -0,0 +1 @@
-+QA output created by 041
++QA output created by 042
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f5452b5..fd0193c 100644
+index fd0193c..1037761 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -43,3 +43,4 @@
- 038 auto quick
+@@ -44,3 +44,4 @@
  039 auto quick
  040 auto quick
-+041 auto quick
+ 041 auto quick
++042 auto quick
 -- 
 1.7.9.5
 

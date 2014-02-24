@@ -1,52 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41728 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752896AbaBXIpG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Feb 2014 03:45:06 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WHr9s-0007t2-0s
-	for linux-btrfs@vger.kernel.org; Mon, 24 Feb 2014 09:45:04 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 09:45:04 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 09:45:04 +0100
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:54773 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751693AbaBXMDt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Feb 2014 07:03:49 -0500
+Received: by mail-wi0-f178.google.com with SMTP id cc10so2937276wib.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Feb 2014 04:03:48 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs userland interface isn't 32/64bit clean (breaks lsattr
- and btrfs send)
-Date: Mon, 24 Feb 2014 08:43:44 +0000 (UTC)
-Message-ID: <pan$3f644$bd8e6a71$2603a9b4$2382ccea@cox.net>
-References: <20140224055103.GA15937@merlins.org>
-	<pan$78eb$fa967f30$1d30da9e$2510275d@cox.net>
-	<20140224082938.GF23877@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: more efficient split extent state insertion
+Date: Mon, 24 Feb 2014 12:03:42 +0000
+Message-Id: <1393243422-16454-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1392217553-10872-1-git-send-email-fdmanana@gmail.com>
+References: <1392217553-10872-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Mon, 24 Feb 2014 08:29:38 +0000 as excerpted:
+When we split an extent state there's no need to start the rbtree search
+from the root node - we can start it from the original extent state node,
+since we would end up in its subtree if we do the search starting at the
+root node anyway.
 
-> On Mon, Feb 24, 2014 at 06:32:14AM +0000, Duncan wrote:
->> 
->> This is a known issue.  There's patches in the pipeline for 32-bit
->> userspace on a 64-bit kernel, already.
-> 
->    If you mean my recent patch, that's only for receive. I've not
-> noticed any other issues on my 32/64 system, but I've not done much with
-> it either (with btrfs, it's only really used for btrfs receive --
-> everything else is ext4).
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
-Thanks.  Yes, I believe that's what I had in mind.  So apparently there's 
-more needed.  (I /think/ I might have seen at least one additional patch 
-float by for 32/64, but as it's out of my usage domain I'm not paying 
-/that/ much attention to it, so perhaps not.)
+V2: Made the intention more clear, that it works only if the tree is not
+    empty (which is always the case when spliting extent states).
 
+ fs/btrfs/extent_io.c |   13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fbe501d..eb465e9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -229,12 +229,14 @@ void free_extent_state(struct extent_state *state)
+ 	}
+ }
+ 
+-static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
++static struct rb_node *tree_insert(struct rb_root *root,
++				   struct rb_node *search_start,
++				   u64 offset,
+ 				   struct rb_node *node,
+ 				   struct rb_node ***p_in,
+ 				   struct rb_node **parent_in)
+ {
+-	struct rb_node **p = &root->rb_node;
++	struct rb_node **p;
+ 	struct rb_node *parent = NULL;
+ 	struct tree_entry *entry;
+ 
+@@ -244,6 +246,7 @@ static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
+ 		goto do_insert;
+ 	}
+ 
++	p = search_start ? &search_start : &root->rb_node;
+ 	while (*p) {
+ 		parent = *p;
+ 		entry = rb_entry(parent, struct tree_entry, rb_node);
+@@ -430,7 +433,7 @@ static int insert_state(struct extent_io_tree *tree,
+ 
+ 	set_state_bits(tree, state, bits);
+ 
+-	node = tree_insert(&tree->state, end, &state->rb_node, p, parent);
++	node = tree_insert(&tree->state, NULL, end, &state->rb_node, p, parent);
+ 	if (node) {
+ 		struct extent_state *found;
+ 		found = rb_entry(node, struct extent_state, rb_node);
+@@ -477,8 +480,8 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
+ 	prealloc->state = orig->state;
+ 	orig->start = split;
+ 
+-	node = tree_insert(&tree->state, prealloc->end, &prealloc->rb_node,
+-			   NULL, NULL);
++	node = tree_insert(&tree->state, &orig->rb_node, prealloc->end,
++			   &prealloc->rb_node, NULL, NULL);
+ 	if (node) {
+ 		free_extent_state(prealloc);
+ 		return -EEXIST;
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.9.5
 

@@ -1,205 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:59062 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750898AbaBYHmi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 02:42:38 -0500
-Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id B36763EE14C
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:37 +0900 (JST)
-Received: from smail (m3 [127.0.0.1])
-	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id A3FCC45DEB5
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:37 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.nic.fujitsu.com [10.0.50.93])
-	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 8CDEB45DD77
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:37 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 7AC0A1DB8038
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:37 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 20F411DB803B
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:37 +0900 (JST)
-Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id EB7D3584004
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:36 +0900 (JST)
-Received: from [127.0.0.1] (FMVDA2A041.g01.fujitsu.local [10.124.102.125])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id 98892584001
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 16:42:36 +0900 (JST)
-Message-ID: <530C4965.5020801@jp.fujitsu.com>
-Date: Tue, 25 Feb 2014 16:42:29 +0900
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-MIME-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:39303 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750999AbaBYLu4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 06:50:56 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1PBon6q016049
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 19:50:50 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Copyright string update
-Content-Type: text/plain; charset=ISO-2022-JP
+Subject: [PATCH 1/2] Btrfs-progs: fsck: avoid overwritting existed space when initting csum tree
+Date: Tue, 25 Feb 2014 19:48:56 +0800
+Message-Id: <1393328937-26171-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix corporate name for copyright.
+Steps to reproduce:
+ # mkfs.btrfs -f /dev/sda9
+ # btrfs check /dev/sda9 --init-extent-tree --init-csum-tree
+ # btrfs check /dev/sda9
 
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+During reinitting extent tree, we will pin all metadata blocks to
+avoid overwritting existing metadata space. However, those space will
+be unpinned after committing transaction.
+
+If we try to reinit csum tree after reiniting extent tree, we may
+overwrite existing space. Fix this problem by making reinit extent tree
+and csum tree in same transaction.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- btrfs-list.h               |    2 +-
- btrfsck.h                  |    2 +-
- chunk-recover.c            |    2 +-
- man/btrfs-convert.8.in     |    2 +-
- man/btrfs-debug-tree.8.in  |    2 +-
- man/btrfs-find-root.8.in   |    2 +-
- man/btrfs-map-logical.8.in |    2 +-
- man/btrfs-show-super.8.in  |    2 +-
- man/btrfs-zero-log.8.in    |    2 +-
- man/btrfstune.8.in         |    2 +-
- math.h                     |    2 +-
- super-recover.c            |    2 +-
- 12 files changed, 12 insertions(+), 12 deletions(-)
+ cmds-check.c | 74 ++++++++++++++++++++++++++----------------------------------
+ 1 file changed, 32 insertions(+), 42 deletions(-)
 
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 724e973..8ead9da 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -1,5 +1,5 @@
- /*
-- * Copyright (C) 2012 Fujitsu.  All rights reserved.
-+ * Copyright (C) 2012 FUJITSU LIMITED.  All rights reserved.
-  *
-  * This program is free software; you can redistribute it and/or
-  * modify it under the terms of the GNU General Public
-diff --git a/btrfsck.h b/btrfsck.h
-index f73c605..356c767 100644
---- a/btrfsck.h
-+++ b/btrfsck.h
-@@ -1,5 +1,5 @@
- /*
-- * Copyright (C) 2013 Fujitsu.  All rights reserved.
-+ * Copyright (C) 2013 FUJITSU LIMITED.  All rights reserved.
-  * Written by Miao Xie <miaox@cn.fujitsu.com>
-  *
-  * This program is free software; you can redistribute it and/or
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 69f5854..a05e644 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1,5 +1,5 @@
- /*
-- * Copyright (C) 2013 Fujitsu.  All rights reserved.
-+ * Copyright (C) 2013 FUJITSU LIMITED.  All rights reserved.
-  *
-  * This program is free software; you can redistribute it and/or
-  * modify it under the terms of the GNU General Public
-diff --git a/man/btrfs-convert.8.in b/man/btrfs-convert.8.in
-index 9d4c642..85cfa61 100644
---- a/man/btrfs-convert.8.in
-+++ b/man/btrfs-convert.8.in
-@@ -24,7 +24,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+diff --git a/cmds-check.c b/cmds-check.c
+index 253569f..4cdeac8 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6179,9 +6179,9 @@ out:
+ 	return ret;
+ }
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfs-debug-tree.8.in b/man/btrfs-debug-tree.8.in
-index 9b0420b..eed7097 100644
---- a/man/btrfs-debug-tree.8.in
-+++ b/man/btrfs-debug-tree.8.in
-@@ -27,7 +27,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+-static int reinit_extent_tree(struct btrfs_fs_info *fs_info)
++static int reinit_extent_tree(struct btrfs_trans_handle *trans,
++			      struct btrfs_fs_info *fs_info)
+ {
+-	struct btrfs_trans_handle *trans;
+ 	u64 start = 0;
+ 	int ret;
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
-index 398aa41..c1f48a0 100644
---- a/man/btrfs-find-root.8.in
-+++ b/man/btrfs-find-root.8.in
-@@ -22,7 +22,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+@@ -6200,12 +6200,6 @@ static int reinit_extent_tree(struct btrfs_fs_info *fs_info)
+ 		return -EINVAL;
+ 	}
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfs-map-logical.8.in b/man/btrfs-map-logical.8.in
-index d50ac96..a253051 100644
---- a/man/btrfs-map-logical.8.in
-+++ b/man/btrfs-map-logical.8.in
-@@ -25,7 +25,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+-	trans = btrfs_start_transaction(fs_info->extent_root, 1);
+-	if (IS_ERR(trans)) {
+-		fprintf(stderr, "Error starting transaction\n");
+-		return PTR_ERR(trans);
+-	}
+-
+ 	/*
+ 	 * first we need to walk all of the trees except the extent tree and pin
+ 	 * down the bytes that are in use so we don't overwrite any existing
+@@ -6268,11 +6262,7 @@ static int reinit_extent_tree(struct btrfs_fs_info *fs_info)
+ 		btrfs_extent_post_op(trans, fs_info->extent_root);
+ 	}
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
-index ad04a42..3fe8bde 100644
---- a/man/btrfs-show-super.8.in
-+++ b/man/btrfs-show-super.8.in
-@@ -22,7 +22,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+-	/*
+-	 * Ok now we commit and run the normal fsck, which will add extent
+-	 * entries for all of the items it finds.
+-	 */
+-	return btrfs_commit_transaction(trans, fs_info->extent_root);
++	return 0;
+ }
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfs-zero-log.8.in b/man/btrfs-zero-log.8.in
-index 80aaa9a..0ccfb0e 100644
---- a/man/btrfs-zero-log.8.in
-+++ b/man/btrfs-zero-log.8.in
-@@ -15,7 +15,7 @@ Other exit code means some problems happened.
- Written by Shilong Wang and Wenruo Qu.
+ static int recow_extent_buffer(struct btrfs_root *root, struct extent_buffer *eb)
+@@ -6475,47 +6465,47 @@ int cmd_check(int argc, char **argv)
+ 		goto close_out;
+ 	}
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/man/btrfstune.8.in b/man/btrfstune.8.in
-index 0313324..c7fff9a 100644
---- a/man/btrfstune.8.in
-+++ b/man/btrfstune.8.in
-@@ -23,7 +23,7 @@ If any problems happened, 1 will be returned.
- Written by Shilong Wang and Wenruo Qu.
+-	if (init_extent_tree) {
+-		printf("Creating a new extent tree\n");
+-		ret = reinit_extent_tree(info);
+-		if (ret)
+-			goto close_out;
+-	}
+-	if (!extent_buffer_uptodate(info->extent_root->node)) {
+-		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
+-		ret = -EIO;
+-		goto close_out;
+-	}
+-
+-	fprintf(stderr, "checking extents\n");
+-	if (init_csum_tree) {
++	if (init_extent_tree || init_csum_tree) {
+ 		struct btrfs_trans_handle *trans;
  
- .SH COPYRIGHT
--Copyright \(co 2013 Fujitsu, Inc.
-+Copyright \(co 2013 FUJITSU LIMITED.
- License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
- .br
- This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
-diff --git a/math.h b/math.h
-index 482dba3..0c16104 100644
---- a/math.h
-+++ b/math.h
-@@ -1,6 +1,6 @@
+-		fprintf(stderr, "Reinit crc root\n");
+-		trans = btrfs_start_transaction(info->csum_root, 1);
++		trans = btrfs_start_transaction(info->extent_root, 0);
+ 		if (IS_ERR(trans)) {
+ 			fprintf(stderr, "Error starting transaction\n");
+ 			ret = PTR_ERR(trans);
+ 			goto close_out;
+ 		}
  
- /*
-- * Copyright (C) 2012 Fujitsu.  All rights reserved.
-+ * Copyright (C) 2012 FUJITSU LIMITED.  All rights reserved.
-  * Written by Miao Xie <miaox@cn.fujitsu.com>
-  *
-  * This program is free software; you can redistribute it and/or
-diff --git a/super-recover.c b/super-recover.c
-index a6271a2..cd6ba37 100644
---- a/super-recover.c
-+++ b/super-recover.c
-@@ -1,5 +1,5 @@
- /*
-- * Copyright (C) 2013 Fujitsu.  All rights reserved.
-+ * Copyright (C) 2013 FUJITSU LIMITED.  All rights reserved.
-  *
-  * This program is free software; you can redistribute it and/or
-  * modify it under the terms of the GNU General Public
+-		ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
+-		if (ret) {
+-			fprintf(stderr, "crc root initialization failed\n");
+-			ret = -EIO;
+-			goto close_out;
++		if (init_extent_tree) {
++			printf("Creating a new extent tree\n");
++			ret = reinit_extent_tree(trans, info);
++			if (ret)
++				goto close_out;
+ 		}
+ 
+-		ret = btrfs_commit_transaction(trans, info->csum_root);
+-		if (ret)
+-			exit(1);
+-
+-		ret = check_chunks_and_extents(root);
++		if (init_csum_tree) {
++			fprintf(stderr, "Reinit crc root\n");
++			ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
++			if (ret) {
++				fprintf(stderr, "crc root initialization failed\n");
++				ret = -EIO;
++				goto close_out;
++			}
++		}
++		/*
++		 * Ok now we commit and run the normal fsck, which will add
++		 * extent entries for all of the items it finds.
++		 */
++		ret = btrfs_commit_transaction(trans, info->extent_root);
+ 		if (ret)
+-			fprintf(stderr,
+-				"Errors found in extent allocation tree or chunk allocation\n");
+-		goto out;
++			goto close_out;
++	}
++	if (!extent_buffer_uptodate(info->extent_root->node)) {
++		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
++		ret = -EIO;
++		goto close_out;
+ 	}
++
++	fprintf(stderr, "checking extents\n");
+ 	ret = check_chunks_and_extents(root);
+ 	if (ret)
+ 		fprintf(stderr, "Errors found in extent allocation tree or chunk allocation\n");
 -- 
-1.7.1
+1.9.0
 

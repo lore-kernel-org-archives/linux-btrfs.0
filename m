@@ -1,63 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:9111 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753141AbaBXXfY (ORCPT
+Received: from szxga01-in.huawei.com ([119.145.14.64]:23987 "EHLO
+	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752700AbaBYCIc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Feb 2014 18:35:24 -0500
-Date: Tue, 25 Feb 2014 10:35:20 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] xfstests: add function _require_fssum()
-Message-ID: <20140224233520.GT13647@dastard>
-References: <1393242983-16149-1-git-send-email-fdmanana@gmail.com>
- <20140224122310.GO4317@dastard>
- <CAL3q7H5tfnb+uqa-ru5YNcok1n8PQxxai7UfkH-YgCdts84Tew@mail.gmail.com>
- <20140224222216.GP4317@dastard>
- <CAL3q7H7N3VVrfoVvNx_4wPsP38FO=sLNCBC-VJ2Tsz4NLqh39A@mail.gmail.com>
+	Mon, 24 Feb 2014 21:08:32 -0500
+Message-ID: <530BFB0C.7080602@huawei.com>
+Date: Tue, 25 Feb 2014 10:08:12 +0800
+From: ZhangZhen <zhenzhang.zhang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7N3VVrfoVvNx_4wPsP38FO=sLNCBC-VJ2Tsz4NLqh39A@mail.gmail.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH for xfstests] xfstests: fix to make tests/btrfs/013 really
+ work
+References: <530AF3E3.9060202@huawei.com> <530B2418.20905@huawei.com> <530B26C9.9060606@cn.fujitsu.com>
+In-Reply-To: <530B26C9.9060606@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 24, 2014 at 11:08:27PM +0000, Filipe David Manana wrote:
-> On Mon, Feb 24, 2014 at 10:22 PM, Dave Chinner <david@fromorbit.com> wrote:
-> > On Mon, Feb 24, 2014 at 01:22:36PM +0000, Filipe David Manana wrote:
-> >> On Mon, Feb 24, 2014 at 12:23 PM, Dave Chinner <david@fromorbit.com> wrote:
-> >> >> diff --git a/tests/btrfs/007 b/tests/btrfs/007
-> >> >> index 5df9ccb..5430613 100755
-> >> >> --- a/tests/btrfs/007
-> >> >> +++ b/tests/btrfs/007
-> >> >> @@ -31,7 +31,6 @@ seq=`basename $0`
-> >> >>  seqres=$RESULT_DIR/$seq
-> >> >>  echo "QA output created by $seq"
-> >> >>
-> >> >> -here=`pwd`
-> >> >>  tmp=`mktemp -d`
-> >> >>  status=1
-> >> >
-> >> > Yeah, redefining $here is a bad thing to do :/
-> >
-> > Right, my mistake. It needs to be defined for the entire test, not
-> > in a requires function. Hence I think we should just export it from
-> > check....
+Hi Wang,
+Thank you for reviewing my patch.
+
+I ran the test using btrfs progs v0.19(OpenSuse 12.3) previously and got a fail situation.
+I verified v3.12 this morning and it work well as you mentioned.
+
+Althouth the new version doesn't have this problem, I think it would be better to fix this.
+I'll fix the titile and resend it.
+
+On 2014/2/24 19:02, Wang Shilong wrote:
+> Hi Zhang,
 > 
-> Hum, ok. So the decision is to let the tests explicitly define the
-> variable "here", and not export "here" from the main check script.
+> On 02/24/2014 06:51 PM, ZhangZhen wrote:
+>> The test 013 couldn't work because here lacked "start".
+>> This patch fix it.
+>>
+>> Signed-off-by: Zhang Zhen<zhenzhang.zhang@huawei.com>
+>> ---
+>>   tests/btrfs/013 | 2 +-
+>>   1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/tests/btrfs/013 b/tests/btrfs/013
+>> index 7620fcc..fb81663 100644
+>> --- a/tests/btrfs/013
+>> +++ b/tests/btrfs/013
+>> @@ -72,7 +72,7 @@ _check_csum_error()
+>>   }
+>>   $XFS_IO_PROG -f -c "falloc 0 1M" -c "pwrite 16k 8k" -c "fsync" \
+>>       $SCRATCH_MNT/foo > $seqres.full 2>&1
+>> -$BTRFS_UTIL_PROG filesystem balance $SCRATCH_MNT >> $seqres.full 2>&1 || \
+>> +$BTRFS_UTIL_PROG filesystem balance start $SCRATCH_MNT >> $seqres.full 2>&1 || \
+>>       _fail "balance failed"
+> Due to historical reasons, we have 'btrfs file balance <>'.. Until now, it is also
+> ok to run 'btrfs file balance <mnt>', and it has equal effect as 'btrfs filesystem balance start'.
+> 
+> Anyway, using latest 'btrfs file balance start <mnt>' is better than previous codes..but patch's
+> title is not right any more...
+> 
+> BTW,Dave Chinner previously pointed out that we need a cleanup, url can be seen:
+> 
+> http://oss.sgi.com/archives/xfs/2014-02/msg00482.html
+> 
+> Thanks,
+> Wang
+>>   _scratch_unmount
+>>   _scratch_mount
+> 
+> 
+> 
 
-Well, that's the status quo right now.
 
-What I'm suggesting is that we should just export it from check and
-get rid of it from each test as a separate cleanup. i.e. It always
-needs to be set to the same value (i.e. the root of the xfstests
-tree) so there is no reason why it should not be set up once in a
-central location.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com

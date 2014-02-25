@@ -1,45 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57542 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753413AbaBYSde convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 13:33:34 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:54279 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WIMov-0047so-Vo
-	for linux-btrfs@vger.kernel.org; Tue, 25 Feb 2014 11:33:34 -0700
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: VM nocow, should VM software set +C by default?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <530CD898.6090401@jrs-s.net>
-Date: Tue, 25 Feb 2014 11:33:34 -0700
-Message-Id: <630BA589-DD50-4C7C-9E95-610662BD66B9@colorremedies.com>
-References: <A2EE3F12-97D9-46CD-8360-ACCFF71F149B@colorremedies.com> <530C5F65.6020607@internetionals.nl> <4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com> <530CD898.6090401@jrs-s.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-bk0-f43.google.com ([209.85.214.43]:47265 "EHLO
+	mail-bk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753369AbaBYSjI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 13:39:08 -0500
+Received: by mail-bk0-f43.google.com with SMTP id v15so371609bkz.16
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 10:39:07 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <6bb080ca89f018139b4cb6d515f93a2f23ed9b46.1393352970.git.dsterba@suse.cz>
+References: <cover.1393352970.git.dsterba@suse.cz>
+	<6bb080ca89f018139b4cb6d515f93a2f23ed9b46.1393352970.git.dsterba@suse.cz>
+Date: Tue, 25 Feb 2014 18:39:06 +0000
+Message-ID: <CAL3q7H6_mR9+cDR-sBF1ASmQNJct1KXgW3j-koUQ9sZ63_dqZQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: send: fix old buffer length in fs_path_ensure_buf
+From: Filipe David Manana <fdmanana@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Feb 25, 2014 at 6:32 PM, David Sterba <dsterba@suse.cz> wrote:
+> In "btrfs: send: lower memory requirements in common case" the code to
+> save the old_buf_len was incorrectly moved to a wrong place and broke
+> the original logic.
+>
+> Reported-by: Filipe David Manana <fdmanana@gmail.com>
+> Signed-off-by: David Sterba <dsterba@suse.cz>
 
-On Feb 25, 2014, at 10:53 AM, Jim Salter <jim@jrs-s.net> wrote:
-> IME, IMO, the potential performance problems with COW and db/vm do /exist/ but they're way, WAY overstated, and unlikely to rear their heads at all in the majority of use-cases.
+Reviewed-by: Filipe David Manana <fdmanana@gmail.com>
 
-Right. Unfortunately I'm only aware of such anecdotes, including my own, that performance is OK or not OK. The specifics of the configuration need to be described. So what information do we need to ask users who are having such problems, before we ask them to use +C?
+Thanks David.
+
+> ---
+>  fs/btrfs/send.c |    6 +++---
+>  1 files changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index b6d416ce6b3b..613f4bc93571 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -288,6 +288,9 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+>         if (p->buf_len >= len)
+>                 return 0;
+>
+> +       path_len = p->end - p->start;
+> +       old_buf_len = p->buf_len;
+> +
+>         /*
+>          * First time the inline_buf does not suffice
+>          */
+> @@ -310,9 +313,6 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+>                 p->buf_len = ksize(p->buf);
+>         }
+>
+> -       path_len = p->end - p->start;
+> -       old_buf_len = p->buf_len;
+> -
+>         if (p->reversed) {
+>                 tmp_buf = p->buf + old_buf_len - path_len - 1;
+>                 p->end = p->buf + p->buf_len - 1;
+> --
+> 1.7.9
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-On Feb 25, 2014, at 11:01 AM, Roman Mamedov <rm@romanrm.net> wrote:
 
-> Insisting that every program now has to include a workaround for a
-> filesystem-specific gimmick does not seem to be a nice design decision
-> long-term.
+-- 
+Filipe David Manana,
 
-
-I have tepid agreement that +C is a short term work around, and ideally neither application developers nor users would need to do anything special to use VM images on Btrfs.
-
-But in that case I'd still like to better understand what configurations are causing real performance problems to occur for some people when they don't use +C. Is this simply needing to implement a better or best practice rather than use of +C? So I guess more configuration information is needed to see what combination of attributes is inducing these reported  problems.
-
-I've had a qcow2 image with more than 30,000 extents and didn't notice a performance drop. So I don't know that number of extents is the problem. Maybe it's how they're arranged on disk and what's causing the problem is excessive seeking on HDD? Or does this problem sometimes also still happen on SSD?
-
-Chris Murphy
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,51 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.jrs-s.net ([173.230.137.22]:46920 "EHLO mail.jrs-s.net"
+Received: from luka.romanrm.net ([213.163.64.74]:36350 "EHLO luka.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753720AbaBYRvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 12:51:03 -0500
-Message-ID: <530CD898.6090401@jrs-s.net>
-Date: Tue, 25 Feb 2014 12:53:28 -0500
-From: Jim Salter <jim@jrs-s.net>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	id S1752422AbaBYSBI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 13:01:08 -0500
+Date: Wed, 26 Feb 2014 00:01:05 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: VM nocow, should VM software set +C by default?
-References: <A2EE3F12-97D9-46CD-8360-ACCFF71F149B@colorremedies.com> <530C5F65.6020607@internetionals.nl> <4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com>
+Message-ID: <20140226000105.44b842e2@natsu>
 In-Reply-To: <4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+References: <A2EE3F12-97D9-46CD-8360-ACCFF71F149B@colorremedies.com>
+	<530C5F65.6020607@internetionals.nl>
+	<4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/Pf=ycr+AyHwKXxyQOb+0Obw"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Put me in on Team Justin on this particular issue.  I get and grant that 
-in some use cases you might get pathological behavior out of DB or VM 
-binaries which aren't set NODATACOW, but in my own use - including 
-several near-terabyte-size VM images being used by ten+ people all day 
-long for their primary work - I haven't personally observed any 
-pathological behavior, and I *don't* have NODATACOW set.
+--Sig_/Pf=ycr+AyHwKXxyQOb+0Obw
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I would prefer to have the benefits of COW being turned on unless and 
-until I categorically NEED to disable it in order to avoid pathological 
-performance issues.
+On Tue, 25 Feb 2014 10:44:36 -0700
+Chris Murphy <lists@colorremedies.com> wrote:
 
-Also note that ZFS doesn't even *have* a NODATACOW option, is generally 
-less performant than btrfs in general in my experience, and yet I've 
-been running 100-ish VMs - not toys, actual 
-depended-on-by-lots-of-people-daily-workhorses - in .qcow2-on-ZFS format 
-for years now without issue.
+> the VM managing application needs to set +C on image files
 
-IME, IMO, the potential performance problems with COW and db/vm do 
-/exist/ but they're way, WAY overstated, and unlikely to rear their 
-heads at all in the majority of use-cases.
+It's a slippery slope, why not instigate that every program from now on has
+to set +C on its user files? Or where do we stop, probably the browser shou=
+ld
+also set +C on its user profile and cache files? How about the mail client =
+for
+the mail index? The torrent program on all temporary downloads?.. MySQL and
+Postgres on all their databases?...
 
+Insisting that every program now has to include a workaround for a
+filesystem-specific gimmick does not seem to be a nice design decision
+long-term.
 
-On 02/25/2014 12:44 PM, Chris Murphy wrote:
-> On Feb 25, 2014, at 2:16 AM, Justin Ossevoort <justin@internetionals.nl> wrote:
->
->> I think in principle: No.
->>
->> It is something that should be documented as advise in the VM software documentation. But things like storage management is the domain of the distribution or systems administrator.
-> No, that's a recipe for users having a chaotic experience. Either the VM managing application needs to set +C on image files, or the file system needs to be optimized for this use case. Consider the Gnome Boxes user. They're not in a good position to do this themselves, and each distro doing this causes fragmented experience. It's better if the application developer (Gnome Boxes, VMM) or possibly libvirt to set +C on VM images; or as a general purpose file system for it to be optimized for this use case.
->
-> Either way it leaves the end user out of what amounts to esoteric configuration.
->
+--=20
+With respect,
+Roman
 
+--Sig_/Pf=ycr+AyHwKXxyQOb+0Obw
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlMM2mEACgkQTLKSvz+PZwhLXACffQP1vLeh94WxKgtVMcB1U9EM
+G+4An2keIptxZ7ulXowrcKF/W97f/LU0
+=bekQ
+-----END PGP SIGNATURE-----
+
+--Sig_/Pf=ycr+AyHwKXxyQOb+0Obw--

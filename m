@@ -1,193 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:33207 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753115AbaBYOPY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 09:15:24 -0500
-Received: by mail-wg0-f52.google.com with SMTP id k14so442373wgh.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 06:15:23 -0800 (PST)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 2/2] Btrfs: more efficient btrfs_drop_extent_cache
-Date: Tue, 25 Feb 2014 14:15:13 +0000
-Message-Id: <1393337713-5991-2-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1393337713-5991-1-git-send-email-fdmanana@gmail.com>
-References: <1393337713-5991-1-git-send-email-fdmanana@gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:59609 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752960AbaBYRog convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 12:44:36 -0500
+Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:54096 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WIM3X-003gc7-HE
+	for linux-btrfs@vger.kernel.org; Tue, 25 Feb 2014 10:44:35 -0700
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: VM nocow, should VM software set +C by default?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <530C5F65.6020607@internetionals.nl>
+Date: Tue, 25 Feb 2014 10:44:36 -0700
+Message-Id: <4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com>
+References: <A2EE3F12-97D9-46CD-8360-ACCFF71F149B@colorremedies.com> <530C5F65.6020607@internetionals.nl>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While droping extent map structures from the extent cache that cover our
-target range, we would remove each extent map structure from the red black
-tree and then add either 1 or 2 new extent map structures if the former
-extent map covered sections outside our target range.
 
-This change simply attempts to replace the existing extent map structure
-with a new one that covers the subsection we're not interested in, instead
-of doing a red black remove operation followed by an insertion operation.
+On Feb 25, 2014, at 2:16 AM, Justin Ossevoort <justin@internetionals.nl> wrote:
 
-The number of elements in an inode's extent map tree can get very high for large
-files under random writes. For example, while running the following test:
+> I think in principle: No.
+> 
+> It is something that should be documented as advise in the VM software documentation. But things like storage management is the domain of the distribution or systems administrator.
 
-    sysbench --test=fileio --file-num=1 --file-total-size=10G \
-        --file-test-mode=rndrw --num-threads=32 --file-block-size=32768 \
-        --max-requests=500000 --file-rw-ratio=2 [prepare|run]
+No, that's a recipe for users having a chaotic experience. Either the VM managing application needs to set +C on image files, or the file system needs to be optimized for this use case. Consider the Gnome Boxes user. They're not in a good position to do this themselves, and each distro doing this causes fragmented experience. It's better if the application developer (Gnome Boxes, VMM) or possibly libvirt to set +C on VM images; or as a general purpose file system for it to be optimized for this use case.
 
-I captured the following histogram capturing the number of extent_map items
-in the red black tree while that test was running:
+Either way it leaves the end user out of what amounts to esoteric configuration.
 
-    Count: 122462
-    Range:  1.000 - 172231.000; Mean: 96415.831; Median: 101855.000; Stddev: 49700.981
-    Percentiles:  90th: 160120.000; 95th: 166335.000; 99th: 171070.000
-       1.000 -    5.231:   452 |
-       5.231 -  187.392:    87 |
-     187.392 -  585.911:   206 |
-     585.911 - 1827.438:   623 |
-    1827.438 - 5695.245:  1962 #
-    5695.245 - 17744.861:  6204 ####
-   17744.861 - 55283.764: 21115 ############
-   55283.764 - 172231.000: 91813 #####################################################
 
-Benchmark:
+> There might be a situation where the VM software can directly use a btrfs filesystem for it's storage engines where it could be sensible to add such a thing, but in that case it's already directly managing it's subvolumes and can turn nodatacow on/off when appropriate.
 
-    sysbench --test=fileio --file-num=1 --file-total-size=10G --file-test-mode=rndwr \
-        --num-threads=64 --file-block-size=32768 --max-requests=0 --max-time=60 \
-        --file-io-mode=sync --file-fsync-freq=0 [prepare|run]
+I don't expect VM's to use subvolumes directly, instead of image files (qcow2, raw, vmdk, etc) for a while, and also I'm not sure if there's enough separation between VMs, or VM and host sharing what is really one file system. If there's any possibility a misbehaving VM could corrupt the file system and not merely its own tree, then it's unlikely a best practice.
 
-Before this change: 122.1Mb/sec
-After this change:  125.07Mb/sec
-(averages of 5 test runs)
 
-Test machine: quad core intel i5-3570K, 32Gb of ram, SSD
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/extent_map.c |   39 ++++++++++++++++++++++++++++++---------
- fs/btrfs/extent_map.h |    4 ++++
- fs/btrfs/file.c       |   16 +++++++++++-----
- 3 files changed, 45 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 64d08f9..1874aee 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -318,6 +318,20 @@ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
- 		try_merge_map(tree, em);
- }
- 
-+static inline void setup_extent_mapping(struct extent_map_tree *tree,
-+					struct extent_map *em,
-+					int modified)
-+{
-+	atomic_inc(&em->refs);
-+	em->mod_start = em->start;
-+	em->mod_len = em->len;
-+
-+	if (modified)
-+		list_move(&em->list, &tree->modified_extents);
-+	else
-+		try_merge_map(tree, em);
-+}
-+
- /**
-  * add_extent_mapping - add new extent map to the extent tree
-  * @tree:	tree to insert new map in
-@@ -337,15 +351,7 @@ int add_extent_mapping(struct extent_map_tree *tree,
- 	if (ret)
- 		goto out;
- 
--	atomic_inc(&em->refs);
--
--	em->mod_start = em->start;
--	em->mod_len = em->len;
--
--	if (modified)
--		list_move(&em->list, &tree->modified_extents);
--	else
--		try_merge_map(tree, em);
-+	setup_extent_mapping(tree, em, modified);
- out:
- 	return ret;
- }
-@@ -432,3 +438,18 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 	RB_CLEAR_NODE(&em->rb_node);
- 	return ret;
- }
-+
-+void replace_extent_mapping(struct extent_map_tree *tree,
-+			    struct extent_map *cur,
-+			    struct extent_map *new,
-+			    int modified)
-+{
-+	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &cur->flags));
-+	ASSERT(extent_map_in_tree(cur));
-+	if (!test_bit(EXTENT_FLAG_LOGGING, &cur->flags))
-+		list_del_init(&cur->list);
-+	rb_replace_node(&cur->rb_node, &new->rb_node, &tree->map);
-+	RB_CLEAR_NODE(&cur->rb_node);
-+
-+	setup_extent_mapping(tree, new, modified);
-+}
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index f0a645a..e7fd8a5 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -68,6 +68,10 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
- int add_extent_mapping(struct extent_map_tree *tree,
- 		       struct extent_map *em, int modified);
- int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
-+void replace_extent_mapping(struct extent_map_tree *tree,
-+			    struct extent_map *cur,
-+			    struct extent_map *new,
-+			    int modified);
- 
- struct extent_map *alloc_extent_map(void);
- void free_extent_map(struct extent_map *em);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 006af2f..70c9295 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -591,7 +591,6 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
- 		clear_bit(EXTENT_FLAG_LOGGING, &flags);
- 		modified = !list_empty(&em->list);
--		remove_extent_mapping(em_tree, em);
- 		if (no_splits)
- 			goto next;
- 
-@@ -622,8 +621,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 			split->bdev = em->bdev;
- 			split->flags = flags;
- 			split->compress_type = em->compress_type;
--			ret = add_extent_mapping(em_tree, split, modified);
--			BUG_ON(ret); /* Logic error */
-+			replace_extent_mapping(em_tree, em, split, modified);
- 			free_extent_map(split);
- 			split = split2;
- 			split2 = NULL;
-@@ -661,12 +659,20 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 				split->orig_block_len = 0;
- 			}
- 
--			ret = add_extent_mapping(em_tree, split, modified);
--			BUG_ON(ret); /* Logic error */
-+			if (extent_map_in_tree(em)) {
-+				replace_extent_mapping(em_tree, em, split,
-+						       modified);
-+			} else {
-+				ret = add_extent_mapping(em_tree, split,
-+							 modified);
-+				ASSERT(ret == 0); /* Logic error */
-+			}
- 			free_extent_map(split);
- 			split = NULL;
- 		}
- next:
-+		if (extent_map_in_tree(em))
-+			remove_extent_mapping(em_tree, em);
- 		write_unlock(&em_tree->lock);
- 
- 		/* once for us */
--- 
-1.7.9.5
+Chris Murphy
 

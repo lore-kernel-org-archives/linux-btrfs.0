@@ -1,281 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f171.google.com ([74.125.82.171]:62343 "EHLO
-	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752227AbaBYNqb (ORCPT
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:43713 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752660AbaBYS1H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 08:46:31 -0500
-Received: by mail-we0-f171.google.com with SMTP id u56so411254wes.30
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 05:46:30 -0800 (PST)
+	Tue, 25 Feb 2014 13:27:07 -0500
+Received: by mail-wg0-f42.google.com with SMTP id x13so746089wgg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 10:27:06 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
-Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org,
+Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add function _require_fssum()
-Date: Tue, 25 Feb 2014 13:46:20 +0000
-Message-Id: <1393335980-446-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1393242983-16149-1-git-send-email-fdmanana@gmail.com>
-References: <1393242983-16149-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs-progs restore feature
+Date: Tue, 25 Feb 2014 18:26:56 +0000
+Message-Id: <1393352816-26065-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To avoid repeating detection of fssum presence in many btrfs tests, as
-suggested by Dave Chinner.
+This is a regression test to verify that the restore feature of btrfs-progs
+is able to correctly recover files that have compressed extents, specially when
+the respective file extent items have a non-zero data offset field.
 
-Also exported the variable "here" from the main control script, to avoid
-repeating its declaration in every single testcase file. Also removed the
-declaration of "here" from btrfs test cases that require the fssum program
-only. Removing it from all other test cases will be a separate change.
+This issue is fixed by the following btrfs-progs patch:
+
+    Btrfs-progs: fix restore dealing with compressed extents
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+ tests/btrfs/043     |  105 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/043.out |   40 ++++++++++++++++++++
+ tests/btrfs/group   |    1 +
+ 3 files changed, 146 insertions(+)
+ create mode 100755 tests/btrfs/043
+ create mode 100644 tests/btrfs/043.out
 
-V2: Exported the variable "here" from the main control file, as suggested by
-    Dave Chinner. Like this we avoid declaring it again in the new function
-    and in many other places.
-
- check           |    2 +-
- common/rc       |    6 ++++++
- tests/btrfs/007 |    5 +----
- tests/btrfs/016 |    5 +----
- tests/btrfs/030 |    5 +----
- tests/btrfs/038 |    5 +----
- tests/btrfs/039 |    5 +----
- tests/btrfs/040 |    5 +----
- tests/btrfs/041 |    5 +----
- tests/btrfs/042 |    5 +----
- 10 files changed, 15 insertions(+), 33 deletions(-)
- mode change 100644 => 100755 tests/btrfs/016
-
-diff --git a/check b/check
-index 268417c..b619f6d 100755
---- a/check
-+++ b/check
-@@ -32,7 +32,7 @@ diff="diff -u"
- showme=false
- have_test_arg=false
- randomize=false
--here=`pwd`
-+export here=`pwd`
- xfile=""
- 
- # start the initialisation work now
-diff --git a/common/rc b/common/rc
-index 5df504c..0f50f49 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2144,6 +2144,12 @@ _require_cp_reflink()
-                _notrun "This test requires a cp with --reflink support."
- }
- 
-+_require_fssum()
+diff --git a/tests/btrfs/043 b/tests/btrfs/043
+new file mode 100755
+index 0000000..7a15aeb
+--- /dev/null
++++ b/tests/btrfs/043
+@@ -0,0 +1,105 @@
++#! /bin/bash
++# FS QA Test No. btrfs/043
++#
++# Test that btrfs-progs' restore command is able to correctly recover files
++# that have compressed extents, specially when the respective file extent
++# items have a non-zero data offset field.
++#
++# This issue is fixed by the following btrfs-progs patch:
++#
++#    Btrfs-progs: fix restore dealing with compressed extents
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
 +{
-+	FSSUM_PROG=$here/src/fssum
-+	[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++    rm -fr $tmp
 +}
 +
- # Given 2 files, verify that they have the same mapping but different
- # inodes - i.e. an undisturbed reflink
- # Silent if so, make noise if not
-diff --git a/tests/btrfs/007 b/tests/btrfs/007
-index 5df9ccb..5430613 100755
---- a/tests/btrfs/007
-+++ b/tests/btrfs/007
-@@ -31,7 +31,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1
- 
-@@ -52,11 +51,9 @@ _need_to_be_root
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _require_seek_data_hole
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- workout()
-diff --git a/tests/btrfs/016 b/tests/btrfs/016
-old mode 100644
-new mode 100755
-index 6faead1..d04c21a
---- a/tests/btrfs/016
-+++ b/tests/btrfs/016
-@@ -26,7 +26,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- tmp_dir=send_temp_$seq
- 
-@@ -51,9 +50,7 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
--
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
-+_require_fssum
- 
- _scratch_mkfs > /dev/null 2>&1
- 
-diff --git a/tests/btrfs/030 b/tests/btrfs/030
-index a9f5fb4..a76a410 100755
---- a/tests/btrfs/030
-+++ b/tests/btrfs/030
-@@ -36,7 +36,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -54,11 +53,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
-diff --git a/tests/btrfs/038 b/tests/btrfs/038
-index 8893696..4941d3e 100755
---- a/tests/btrfs/038
-+++ b/tests/btrfs/038
-@@ -32,7 +32,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -50,11 +49,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
-diff --git a/tests/btrfs/039 b/tests/btrfs/039
-index 41e09be..758b23c 100755
---- a/tests/btrfs/039
-+++ b/tests/btrfs/039
-@@ -35,7 +35,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -53,11 +52,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
-diff --git a/tests/btrfs/040 b/tests/btrfs/040
-index 77c4a84..dfd495c 100755
---- a/tests/btrfs/040
-+++ b/tests/btrfs/040
-@@ -35,7 +35,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -53,11 +52,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
-diff --git a/tests/btrfs/041 b/tests/btrfs/041
-index bfc0e4b..a960001 100755
---- a/tests/btrfs/041
-+++ b/tests/btrfs/041
-@@ -31,7 +31,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -49,11 +48,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
-diff --git a/tests/btrfs/042 b/tests/btrfs/042
-index 2bd5147..9aa8967 100755
---- a/tests/btrfs/042
-+++ b/tests/btrfs/042
-@@ -36,7 +36,6 @@ seq=`basename $0`
- seqres=$RESULT_DIR/$seq
- echo "QA output created by $seq"
- 
--here=`pwd`
- tmp=`mktemp -d`
- status=1	# failure is the default!
- trap "_cleanup; exit \$status" 0 1 2 3 15
-@@ -54,11 +53,9 @@ _cleanup()
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch
-+_require_fssum
- _need_to_be_root
- 
--FSSUM_PROG=$here/src/fssum
--[ -x $FSSUM_PROG ] || _notrun "fssum not built"
--
- rm -f $seqres.full
- 
- _scratch_mkfs >/dev/null 2>&1
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++rm -f $seqres.full
++
++test_btrfs_restore()
++{
++	if [ -z $1 ]
++	then
++		OPTIONS=""
++	else
++		OPTIONS="-o compress-force=$1"
++	fi
++	_scratch_mkfs >/dev/null 2>&1
++	_scratch_mount $OPTIONS
++
++	$XFS_IO_PROG -f -c "pwrite -S 0xff -b 100000 0 100000" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++
++	# Ensure a single file extent item is persisted.
++	_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++	$XFS_IO_PROG -c "pwrite -S 0xaa -b 100000 100000 100000" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++
++	# Now ensure a second one is created (and not merged with previous one).
++	_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
++
++	# Make the extent item be split into several ones, each with a data
++	# offset field != 0
++	$XFS_IO_PROG -c "pwrite -S 0x1e -b 2 10000 2" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	$XFS_IO_PROG -c "pwrite -S 0xd0 -b 11 33000 11" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	$XFS_IO_PROG -c "pwrite -S 0xbc -b 100 99000 100" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++
++	md5sum $SCRATCH_MNT/foo | _filter_scratch
++
++	_scratch_unmount
++	_check_scratch_fs
++
++	_run_btrfs_util_prog restore $SCRATCH_DEV $tmp
++	md5sum $tmp/foo | cut -d ' ' -f 1
++}
++
++mkdir $tmp
++echo "Testing restore of file compressed with lzo"
++test_btrfs_restore "lzo"
++echo "Testing restore of file compressed with zlib"
++test_btrfs_restore "zlib"
++echo "Testing restore of file without any compression"
++test_btrfs_restore
++
++status=0
++exit
+diff --git a/tests/btrfs/043.out b/tests/btrfs/043.out
+new file mode 100644
+index 0000000..d22e4ce
+--- /dev/null
++++ b/tests/btrfs/043.out
+@@ -0,0 +1,40 @@
++QA output created by 043
++Testing restore of file compressed with lzo
++wrote 100000/100000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100000/100000 bytes at offset 100000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 2/2 bytes at offset 10000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 11/11 bytes at offset 33000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100/100 bytes at offset 99000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
++67edd038aaa42adb5a1aa78f2eb1d2b6
++Testing restore of file compressed with zlib
++wrote 100000/100000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100000/100000 bytes at offset 100000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 2/2 bytes at offset 10000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 11/11 bytes at offset 33000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100/100 bytes at offset 99000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
++67edd038aaa42adb5a1aa78f2eb1d2b6
++Testing restore of file without any compression
++wrote 100000/100000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100000/100000 bytes at offset 100000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 2/2 bytes at offset 10000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 11/11 bytes at offset 33000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 100/100 bytes at offset 99000
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
++67edd038aaa42adb5a1aa78f2eb1d2b6
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 1037761..fabe3b5 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -45,3 +45,4 @@
+ 040 auto quick
+ 041 auto quick
+ 042 auto quick
++043 auto quick
 -- 
 1.7.9.5
 

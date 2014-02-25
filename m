@@ -1,203 +1,281 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga03-in.huawei.com ([119.145.14.66]:26133 "EHLO
-	szxga03-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750708AbaBYFsX (ORCPT
+Received: from mail-we0-f171.google.com ([74.125.82.171]:62343 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752227AbaBYNqb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 00:48:23 -0500
-Message-ID: <530C2E91.9050707@huawei.com>
-Date: Tue, 25 Feb 2014 13:48:01 +0800
-From: ZhangZhen <zhenzhang.zhang@huawei.com>
-MIME-Version: 1.0
-To: <david@fromorbit.com>
-CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: [PATCH] xfstests: cleanup tests btrfs/004,007,022 and 025
-References: <1393335609-21114-1-git-send-email-zhenzhang.zhang@huawei.com>
-In-Reply-To: <1393335609-21114-1-git-send-email-zhenzhang.zhang@huawei.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+	Tue, 25 Feb 2014 08:46:31 -0500
+Received: by mail-we0-f171.google.com with SMTP id u56so411254wes.30
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 05:46:30 -0800 (PST)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: xfs@oss.sgi.com
+Cc: david@fromorbit.com, linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add function _require_fssum()
+Date: Tue, 25 Feb 2014 13:46:20 +0000
+Message-Id: <1393335980-446-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1393242983-16149-1-git-send-email-fdmanana@gmail.com>
+References: <1393242983-16149-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As recently suggested by Dave Chinner, make use of the new function
-named _run_btrfs_util_prog() to run the btrfs util program.
-Filipe David Borba Manana have cleaned up  btrfs/030 and btrfs/034.
-I have done the same for the rest ones.
+To avoid repeating detection of fssum presence in many btrfs tests, as
+suggested by Dave Chinner.
 
-Signed-off-by: Zhang Zhen <zhenzhang.zhang@huawei.com>
+Also exported the variable "here" from the main control script, to avoid
+repeating its declaration in every single testcase file. Also removed the
+declaration of "here" from btrfs test cases that require the fssum program
+only. Removing it from all other test cases will be a separate change.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- tests/btrfs/004 |  2 +-
- tests/btrfs/007 |  6 +++---
- tests/btrfs/022 | 24 ++++++++++++------------
- tests/btrfs/025 | 20 ++++++++++----------
- 4 files changed, 26 insertions(+), 26 deletions(-)
 
-diff --git a/tests/btrfs/004 b/tests/btrfs/004
-index 14da9f1..135f804 100755
---- a/tests/btrfs/004
-+++ b/tests/btrfs/004
-@@ -182,7 +182,7 @@ workout()
- 	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p $procs -n 2000 \
- 		$FSSTRESS_AVOID
+V2: Exported the variable "here" from the main control file, as suggested by
+    Dave Chinner. Like this we avoid declaring it again in the new function
+    and in many other places.
 
--	run_check $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT \
-+	_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
- 		$SCRATCH_MNT/$snap_name
+ check           |    2 +-
+ common/rc       |    6 ++++++
+ tests/btrfs/007 |    5 +----
+ tests/btrfs/016 |    5 +----
+ tests/btrfs/030 |    5 +----
+ tests/btrfs/038 |    5 +----
+ tests/btrfs/039 |    5 +----
+ tests/btrfs/040 |    5 +----
+ tests/btrfs/041 |    5 +----
+ tests/btrfs/042 |    5 +----
+ 10 files changed, 15 insertions(+), 33 deletions(-)
+ mode change 100644 => 100755 tests/btrfs/016
 
- 	run_check umount $SCRATCH_DEV >/dev/null 2>&1
+diff --git a/check b/check
+index 268417c..b619f6d 100755
+--- a/check
++++ b/check
+@@ -32,7 +32,7 @@ diff="diff -u"
+ showme=false
+ have_test_arg=false
+ randomize=false
+-here=`pwd`
++export here=`pwd`
+ xfile=""
+ 
+ # start the initialisation work now
+diff --git a/common/rc b/common/rc
+index 5df504c..0f50f49 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2144,6 +2144,12 @@ _require_cp_reflink()
+                _notrun "This test requires a cp with --reflink support."
+ }
+ 
++_require_fssum()
++{
++	FSSUM_PROG=$here/src/fssum
++	[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++}
++
+ # Given 2 files, verify that they have the same mapping but different
+ # inodes - i.e. an undisturbed reflink
+ # Silent if so, make noise if not
 diff --git a/tests/btrfs/007 b/tests/btrfs/007
-index 5df9ccb..f022130 100755
+index 5df9ccb..5430613 100755
 --- a/tests/btrfs/007
 +++ b/tests/btrfs/007
-@@ -74,7 +74,7 @@ workout()
- 	run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n $ops $FSSTRESS_AVOID -x \
- 		"$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/base"
-
--	run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/incr
-+	_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/incr
-
- 	echo "# $BTRFS_UTIL_PROG send $SCRATCH_MNT/base > $tmp/base.snap" \
- 		>> $seqres.full
-@@ -97,10 +97,10 @@ workout()
- 		|| _fail "size=$fsz mkfs failed"
- 	run_check _scratch_mount "-o noatime"
-
--	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/base.snap
-+	_run_btrfs_util_prog receive $SCRATCH_MNT < $tmp/base.snap
- 	run_check $FSSUM_PROG -r $tmp/base.fssum $SCRATCH_MNT/base
-
--	run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT < $tmp/incr.snap
-+	_run_btrfs_util_prog receive $SCRATCH_MNT < $tmp/incr.snap
- 	run_check $FSSUM_PROG -r $tmp/incr.fssum $SCRATCH_MNT/incr
- }
-
-diff --git a/tests/btrfs/022 b/tests/btrfs/022
-index ab256a3..16e1ead 100755
---- a/tests/btrfs/022
-+++ b/tests/btrfs/022
-@@ -49,15 +49,15 @@ rm -f $seqres.full
- # Test to make sure we can actually turn it on and it makes sense
- _basic_test()
- {
--	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
--	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
-+	_run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
-+	_run_btrfs_util_prog quota enable $SCRATCH_MNT/a
- 	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
- 	$BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid >> \
- 		$seqres.full 2>&1
- 	[ $? -eq 0 ] || _fail "couldn't find our subvols quota group"
- 	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
- 		$FSSTRESS_AVOID
--	run_check $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT/a \
-+	_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT/a \
- 		$SCRATCH_MNT/b
-
- 	# the shared values of both the original subvol and snapshot should
-@@ -75,8 +75,8 @@ _basic_test()
- _rescan_test()
- {
- 	# first with a blank subvol
--	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
--	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT/a
-+	_run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
-+	_run_btrfs_util_prog quota enable $SCRATCH_MNT/a
- 	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
- 	run_check $FSSTRESS_PROG -d $SCRATCH_MNT/a -w -p 1 -n 2000 \
- 		$FSSTRESS_AVOID
-@@ -85,7 +85,7 @@ _rescan_test()
- 	echo $output >> $seqres.full
- 	refer=$(echo $output | awk '{ print $2 }')
- 	excl=$(echo $output | awk '{ print $3 }')
--	run_check $BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT
-+	_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
- 	output=$($BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | grep $subvolid)
- 	echo $output >> $seqres.full
- 	[ $refer -eq $(echo $output | awk '{ print $2 }') ] || \
-@@ -97,10 +97,10 @@ _rescan_test()
- #basic exceed limit testing
- _limit_test_exceed()
- {
--	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
--	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
-+	_run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
-+	_run_btrfs_util_prog quota enable $SCRATCH_MNT
- 	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
--	run_check $BTRFS_UTIL_PROG qgroup limit 5M 0/$subvolid $SCRATCH_MNT
-+	_run_btrfs_util_prog qgroup limit 5M 0/$subvolid $SCRATCH_MNT
- 	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=10M count=1 >> \
- 		$seqres.full 2>&1
- 	[ $? -ne 0 ] || _fail "quota should have limited us"
-@@ -109,10 +109,10 @@ _limit_test_exceed()
- #basic noexceed limit testing
- _limit_test_noexceed()
- {
--	run_check $BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a
--	run_check $BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
-+	_run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
-+	_run_btrfs_util_prog quota enable $SCRATCH_MNT
- 	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
--	run_check $BTRFS_UTIL_PROG qgroup limit 5M 0/$subvolid $SCRATCH_MNT
-+	_run_btrfs_util_prog qgroup limit 5M 0/$subvolid $SCRATCH_MNT
- 	dd if=/dev/urandom of=$SCRATCH_MNT/a/file bs=4M count=1 >> \
- 		$seqres.full 2>&1
- 	[ $? -eq 0 ] || _fail "should have been allowed to write"
-diff --git a/tests/btrfs/025 b/tests/btrfs/025
-index 01b1f86..76ec2dd 100755
---- a/tests/btrfs/025
-+++ b/tests/btrfs/025
-@@ -55,25 +55,25 @@ _scratch_mkfs >/dev/null 2>&1
- _scratch_mount
-
- run_check $XFS_IO_PROG -f -c "truncate 819200" $SCRATCH_MNT/foo
--run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-
- run_check $XFS_IO_PROG -c "falloc -k 819200 667648" $SCRATCH_MNT/foo
--run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-
- run_check $XFS_IO_PROG -c "pwrite 1482752 2978" $SCRATCH_MNT/foo
--run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-
--run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-     $SCRATCH_MNT/mysnap1
-
- run_check $XFS_IO_PROG -c "truncate 883305" $SCRATCH_MNT/foo
--run_check $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
-
--run_check $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT \
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-     $SCRATCH_MNT/mysnap2
-
--run_check $BTRFS_UTIL_PROG send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
--run_check $BTRFS_UTIL_PROG send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-     -f $tmp/2.snap 2>&1
-
- md5sum $SCRATCH_MNT/foo | _filter_scratch
-@@ -85,10 +85,10 @@ _check_btrfs_filesystem $SCRATCH_DEV
+@@ -31,7 +31,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1
+ 
+@@ -52,11 +51,9 @@ _need_to_be_root
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _require_seek_data_hole
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ workout()
+diff --git a/tests/btrfs/016 b/tests/btrfs/016
+old mode 100644
+new mode 100755
+index 6faead1..d04c21a
+--- a/tests/btrfs/016
++++ b/tests/btrfs/016
+@@ -26,7 +26,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ tmp_dir=send_temp_$seq
+ 
+@@ -51,9 +50,7 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+-
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
++_require_fssum
+ 
+ _scratch_mkfs > /dev/null 2>&1
+ 
+diff --git a/tests/btrfs/030 b/tests/btrfs/030
+index a9f5fb4..a76a410 100755
+--- a/tests/btrfs/030
++++ b/tests/btrfs/030
+@@ -36,7 +36,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -54,11 +53,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
  _scratch_mkfs >/dev/null 2>&1
- _scratch_mount
-
--run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/1.snap
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/1.snap
- md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
-
--run_check $BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $tmp/2.snap
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/2.snap
- md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-
- _scratch_unmount
+diff --git a/tests/btrfs/038 b/tests/btrfs/038
+index 8893696..4941d3e 100755
+--- a/tests/btrfs/038
++++ b/tests/btrfs/038
+@@ -32,7 +32,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -50,11 +49,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ _scratch_mkfs >/dev/null 2>&1
+diff --git a/tests/btrfs/039 b/tests/btrfs/039
+index 41e09be..758b23c 100755
+--- a/tests/btrfs/039
++++ b/tests/btrfs/039
+@@ -35,7 +35,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -53,11 +52,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ _scratch_mkfs >/dev/null 2>&1
+diff --git a/tests/btrfs/040 b/tests/btrfs/040
+index 77c4a84..dfd495c 100755
+--- a/tests/btrfs/040
++++ b/tests/btrfs/040
+@@ -35,7 +35,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -53,11 +52,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ _scratch_mkfs >/dev/null 2>&1
+diff --git a/tests/btrfs/041 b/tests/btrfs/041
+index bfc0e4b..a960001 100755
+--- a/tests/btrfs/041
++++ b/tests/btrfs/041
+@@ -31,7 +31,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -49,11 +48,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ _scratch_mkfs >/dev/null 2>&1
+diff --git a/tests/btrfs/042 b/tests/btrfs/042
+index 2bd5147..9aa8967 100755
+--- a/tests/btrfs/042
++++ b/tests/btrfs/042
+@@ -36,7 +36,6 @@ seq=`basename $0`
+ seqres=$RESULT_DIR/$seq
+ echo "QA output created by $seq"
+ 
+-here=`pwd`
+ tmp=`mktemp -d`
+ status=1	# failure is the default!
+ trap "_cleanup; exit \$status" 0 1 2 3 15
+@@ -54,11 +53,9 @@ _cleanup()
+ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
++_require_fssum
+ _need_to_be_root
+ 
+-FSSUM_PROG=$here/src/fssum
+-[ -x $FSSUM_PROG ] || _notrun "fssum not built"
+-
+ rm -f $seqres.full
+ 
+ _scratch_mkfs >/dev/null 2>&1
 -- 
-1.8.1.4
-
-
-.
-
-
-
+1.7.9.5
 

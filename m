@@ -1,46 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57570 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753074AbaBVAD6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Feb 2014 19:03:58 -0500
-Date: Sat, 22 Feb 2014 01:03:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <jbacik@fb.com>
-Cc: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Hugo Mills <hugo@carfax.org.uk>,
-        Kostia Khlebopros <kkhlebopros@netgear.com>
-Subject: Re: [PATCH][BTRFS-PROGS][v4] Enhance btrfs fi df
-Message-ID: <20140222000356.GN16073@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <52FD1A72.5060307@libero.it>
- <20140220180857.GW16073@twin.jikos.cz>
- <53064A42.7000703@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53064A42.7000703@fb.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:39303 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752039AbaBYLu7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 06:50:59 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1PBon6r016049
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 19:50:51 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] Btrfs-progs: use bitfield instead of integer for some variants in fs_info
+Date: Tue, 25 Feb 2014 19:48:57 +0800
+Message-Id: <1393328937-26171-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1393328937-26171-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1393328937-26171-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 20, 2014 at 01:32:34PM -0500, Josef Bacik wrote:
-> > Yes for 3), we may also export the information through the
-> > existing ioctls if possible (eg. IOC_FS_INFO).
-> > 
-> 
-> For _right now_ I'd say just not do the raid56 stuff if we don't
-> notice any raid56 chunks from the normal load_space_info, and then if
-> there are raid56 we try and run the tree search ioctl and notice if we
-> get back EPERM or whatever you get when you don't have permissions.
-> Then just spit out as much information that you can about the fs with
-> a little note at the bottom that available calculation isn't 100% and
-> you need to run as root if you want that info.
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ ctree.h | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-Works for me.
+diff --git a/ctree.h b/ctree.h
+index 3cc3477..9b461af 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -984,9 +984,11 @@ struct btrfs_fs_info {
+ 	struct btrfs_fs_devices *fs_devices;
+ 	struct list_head space_info;
+ 	int system_allocs;
+-	int readonly;
+-	int on_restoring;
+-	int is_chunk_recover;
++
++	unsigned int readonly:1;
++	unsigned int on_restoring:1;
++	unsigned int is_chunk_recover:1;
++
+ 	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				u64 bytenr, u64 num_bytes, u64 parent,
+-- 
+1.9.0
 
-> Then what we could do is add another flag type for the existing
-> SPACE_INFO ioctl to spit out the information you need about the
-> raid5/6 chunks and then just test for those flags and make the
-> adjustment necessary.  This way we avoid adding yet another ioctl and
-> stuff will still work nicely for old kernels that don't have the
-> updated ioctl.  Thanks,
-
-Agreed. Extending SPACE_INFO looks suitable for this.

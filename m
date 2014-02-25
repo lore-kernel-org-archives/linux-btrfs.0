@@ -1,160 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:37362 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752966AbaBYOPW (ORCPT
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:33207 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753115AbaBYOPY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 09:15:22 -0500
-Received: by mail-wg0-f48.google.com with SMTP id b13so455099wgh.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 06:15:20 -0800 (PST)
+	Tue, 25 Feb 2014 09:15:24 -0500
+Received: by mail-wg0-f52.google.com with SMTP id k14so442373wgh.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2014 06:15:23 -0800 (PST)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 1/2] Btrfs: remove unneeded field / smaller extent_map structure
-Date: Tue, 25 Feb 2014 14:15:12 +0000
-Message-Id: <1393337713-5991-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH 2/2] Btrfs: more efficient btrfs_drop_extent_cache
+Date: Tue, 25 Feb 2014 14:15:13 +0000
+Message-Id: <1393337713-5991-2-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1393337713-5991-1-git-send-email-fdmanana@gmail.com>
+References: <1393337713-5991-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't need to have an unsigned int field in the extent_map struct
-to tell us whether the extent map is in the inode's extent_map tree or
-not. We can use the rb_node struct field and the RB_CLEAR_NODE and
-RB_EMPTY_NODE macros to achieve the same task.
+While droping extent map structures from the extent cache that cover our
+target range, we would remove each extent map structure from the red black
+tree and then add either 1 or 2 new extent map structures if the former
+extent map covered sections outside our target range.
 
-This reduces sizeof(struct extent_map) from 152 bytes to 144 bytes (on a
-64 bits system).
+This change simply attempts to replace the existing extent map structure
+with a new one that covers the subsection we're not interested in, instead
+of doing a red black remove operation followed by an insertion operation.
+
+The number of elements in an inode's extent map tree can get very high for large
+files under random writes. For example, while running the following test:
+
+    sysbench --test=fileio --file-num=1 --file-total-size=10G \
+        --file-test-mode=rndrw --num-threads=32 --file-block-size=32768 \
+        --max-requests=500000 --file-rw-ratio=2 [prepare|run]
+
+I captured the following histogram capturing the number of extent_map items
+in the red black tree while that test was running:
+
+    Count: 122462
+    Range:  1.000 - 172231.000; Mean: 96415.831; Median: 101855.000; Stddev: 49700.981
+    Percentiles:  90th: 160120.000; 95th: 166335.000; 99th: 171070.000
+       1.000 -    5.231:   452 |
+       5.231 -  187.392:    87 |
+     187.392 -  585.911:   206 |
+     585.911 - 1827.438:   623 |
+    1827.438 - 5695.245:  1962 #
+    5695.245 - 17744.861:  6204 ####
+   17744.861 - 55283.764: 21115 ############
+   55283.764 - 172231.000: 91813 #####################################################
+
+Benchmark:
+
+    sysbench --test=fileio --file-num=1 --file-total-size=10G --file-test-mode=rndwr \
+        --num-threads=64 --file-block-size=32768 --max-requests=0 --max-time=60 \
+        --file-io-mode=sync --file-fsync-freq=0 [prepare|run]
+
+Before this change: 122.1Mb/sec
+After this change:  125.07Mb/sec
+(averages of 5 test runs)
+
+Test machine: quad core intel i5-3570K, 32Gb of ram, SSD
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/extent_io.c  |    2 +-
- fs/btrfs/extent_map.c |   17 ++++++-----------
- fs/btrfs/extent_map.h |    6 +++++-
- 3 files changed, 12 insertions(+), 13 deletions(-)
+ fs/btrfs/extent_map.c |   39 ++++++++++++++++++++++++++++++---------
+ fs/btrfs/extent_map.h |    4 ++++
+ fs/btrfs/file.c       |   16 +++++++++++-----
+ 3 files changed, 45 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eb465e9..fd78c84 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2766,7 +2766,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
- 
- 	if (em_cached && *em_cached) {
- 		em = *em_cached;
--		if (em->in_tree && start >= em->start &&
-+		if (extent_map_in_tree(em) && start >= em->start &&
- 		    start < extent_map_end(em)) {
- 			atomic_inc(&em->refs);
- 			return em;
 diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 996ad56b..64d08f9 100644
+index 64d08f9..1874aee 100644
 --- a/fs/btrfs/extent_map.c
 +++ b/fs/btrfs/extent_map.c
-@@ -51,7 +51,7 @@ struct extent_map *alloc_extent_map(void)
- 	em = kmem_cache_zalloc(extent_map_cache, GFP_NOFS);
- 	if (!em)
- 		return NULL;
--	em->in_tree = 0;
-+	RB_CLEAR_NODE(&em->rb_node);
- 	em->flags = 0;
- 	em->compress_type = BTRFS_COMPRESS_NONE;
- 	em->generation = 0;
-@@ -73,7 +73,7 @@ void free_extent_map(struct extent_map *em)
- 		return;
- 	WARN_ON(atomic_read(&em->refs) == 0);
- 	if (atomic_dec_and_test(&em->refs)) {
--		WARN_ON(em->in_tree);
-+		WARN_ON(extent_map_in_tree(em));
- 		WARN_ON(!list_empty(&em->list));
- 		kmem_cache_free(extent_map_cache, em);
- 	}
-@@ -99,8 +99,6 @@ static int tree_insert(struct rb_root *root, struct extent_map *em)
- 		parent = *p;
- 		entry = rb_entry(parent, struct extent_map, rb_node);
- 
--		WARN_ON(!entry->in_tree);
--
- 		if (em->start < entry->start)
- 			p = &(*p)->rb_left;
- 		else if (em->start >= extent_map_end(entry))
-@@ -128,7 +126,6 @@ static int tree_insert(struct rb_root *root, struct extent_map *em)
- 		if (end > entry->start && em->start < extent_map_end(entry))
- 			return -EEXIST;
- 
--	em->in_tree = 1;
- 	rb_link_node(&em->rb_node, orig_parent, p);
- 	rb_insert_color(&em->rb_node, root);
- 	return 0;
-@@ -153,8 +150,6 @@ static struct rb_node *__tree_search(struct rb_root *root, u64 offset,
- 		prev = n;
- 		prev_entry = entry;
- 
--		WARN_ON(!entry->in_tree);
--
- 		if (offset < entry->start)
- 			n = n->rb_left;
- 		else if (offset >= extent_map_end(entry))
-@@ -240,12 +235,12 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 			em->len += merge->len;
- 			em->block_len += merge->block_len;
- 			em->block_start = merge->block_start;
--			merge->in_tree = 0;
- 			em->mod_len = (em->mod_len + em->mod_start) - merge->mod_start;
- 			em->mod_start = merge->mod_start;
- 			em->generation = max(em->generation, merge->generation);
- 
- 			rb_erase(&merge->rb_node, &tree->map);
-+			RB_CLEAR_NODE(&merge->rb_node);
- 			free_extent_map(merge);
- 		}
- 	}
-@@ -257,7 +252,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
- 		em->len += merge->len;
- 		em->block_len += merge->block_len;
- 		rb_erase(&merge->rb_node, &tree->map);
--		merge->in_tree = 0;
-+		RB_CLEAR_NODE(&merge->rb_node);
- 		em->mod_len = (merge->mod_start + merge->mod_len) - em->mod_start;
- 		em->generation = max(em->generation, merge->generation);
- 		free_extent_map(merge);
-@@ -319,7 +314,7 @@ out:
- void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
- {
- 	clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
--	if (em->in_tree)
-+	if (extent_map_in_tree(em))
+@@ -318,6 +318,20 @@ void clear_em_logging(struct extent_map_tree *tree, struct extent_map *em)
  		try_merge_map(tree, em);
  }
  
-@@ -434,6 +429,6 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 	rb_erase(&em->rb_node, &tree->map);
- 	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
- 		list_del_init(&em->list);
--	em->in_tree = 0;
-+	RB_CLEAR_NODE(&em->rb_node);
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 93fba71..f0a645a 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -33,7 +33,6 @@ struct extent_map {
- 	unsigned long flags;
- 	struct block_device *bdev;
- 	atomic_t refs;
--	unsigned int in_tree;
- 	unsigned int compress_type;
- 	struct list_head list;
- };
-@@ -44,6 +43,11 @@ struct extent_map_tree {
- 	rwlock_t lock;
- };
- 
-+static inline int extent_map_in_tree(const struct extent_map *em)
++static inline void setup_extent_mapping(struct extent_map_tree *tree,
++					struct extent_map *em,
++					int modified)
 +{
-+	return !RB_EMPTY_NODE(&em->rb_node);
++	atomic_inc(&em->refs);
++	em->mod_start = em->start;
++	em->mod_len = em->len;
++
++	if (modified)
++		list_move(&em->list, &tree->modified_extents);
++	else
++		try_merge_map(tree, em);
 +}
 +
- static inline u64 extent_map_end(struct extent_map *em)
- {
- 	if (em->start + em->len < em->start)
+ /**
+  * add_extent_mapping - add new extent map to the extent tree
+  * @tree:	tree to insert new map in
+@@ -337,15 +351,7 @@ int add_extent_mapping(struct extent_map_tree *tree,
+ 	if (ret)
+ 		goto out;
+ 
+-	atomic_inc(&em->refs);
+-
+-	em->mod_start = em->start;
+-	em->mod_len = em->len;
+-
+-	if (modified)
+-		list_move(&em->list, &tree->modified_extents);
+-	else
+-		try_merge_map(tree, em);
++	setup_extent_mapping(tree, em, modified);
+ out:
+ 	return ret;
+ }
+@@ -432,3 +438,18 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
+ 	RB_CLEAR_NODE(&em->rb_node);
+ 	return ret;
+ }
++
++void replace_extent_mapping(struct extent_map_tree *tree,
++			    struct extent_map *cur,
++			    struct extent_map *new,
++			    int modified)
++{
++	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &cur->flags));
++	ASSERT(extent_map_in_tree(cur));
++	if (!test_bit(EXTENT_FLAG_LOGGING, &cur->flags))
++		list_del_init(&cur->list);
++	rb_replace_node(&cur->rb_node, &new->rb_node, &tree->map);
++	RB_CLEAR_NODE(&cur->rb_node);
++
++	setup_extent_mapping(tree, new, modified);
++}
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index f0a645a..e7fd8a5 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -68,6 +68,10 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
+ int add_extent_mapping(struct extent_map_tree *tree,
+ 		       struct extent_map *em, int modified);
+ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
++void replace_extent_mapping(struct extent_map_tree *tree,
++			    struct extent_map *cur,
++			    struct extent_map *new,
++			    int modified);
+ 
+ struct extent_map *alloc_extent_map(void);
+ void free_extent_map(struct extent_map *em);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 006af2f..70c9295 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -591,7 +591,6 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
+ 		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
+ 		clear_bit(EXTENT_FLAG_LOGGING, &flags);
+ 		modified = !list_empty(&em->list);
+-		remove_extent_mapping(em_tree, em);
+ 		if (no_splits)
+ 			goto next;
+ 
+@@ -622,8 +621,7 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
+ 			split->bdev = em->bdev;
+ 			split->flags = flags;
+ 			split->compress_type = em->compress_type;
+-			ret = add_extent_mapping(em_tree, split, modified);
+-			BUG_ON(ret); /* Logic error */
++			replace_extent_mapping(em_tree, em, split, modified);
+ 			free_extent_map(split);
+ 			split = split2;
+ 			split2 = NULL;
+@@ -661,12 +659,20 @@ void btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
+ 				split->orig_block_len = 0;
+ 			}
+ 
+-			ret = add_extent_mapping(em_tree, split, modified);
+-			BUG_ON(ret); /* Logic error */
++			if (extent_map_in_tree(em)) {
++				replace_extent_mapping(em_tree, em, split,
++						       modified);
++			} else {
++				ret = add_extent_mapping(em_tree, split,
++							 modified);
++				ASSERT(ret == 0); /* Logic error */
++			}
+ 			free_extent_map(split);
+ 			split = NULL;
+ 		}
+ next:
++		if (extent_map_in_tree(em))
++			remove_extent_mapping(em_tree, em);
+ 		write_unlock(&em_tree->lock);
+ 
+ 		/* once for us */
 -- 
 1.7.9.5
 

@@ -1,58 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39169 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751685AbaBZDEI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Feb 2014 22:04:08 -0500
-Message-ID: <530D599F.6090500@oracle.com>
-Date: Wed, 26 Feb 2014 11:03:59 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:20471 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751635AbaBZDkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 22:40:24 -0500
+Message-ID: <530D61B6.7040106@cn.fujitsu.com>
+Date: Wed, 26 Feb 2014 11:38:30 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz
+To: Marc MERLIN <marc@merlins.org>
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: introduce BTRFS_IOC_GET_DEVS
-References: <1393242525-18587-1-git-send-email-Anand.Jain@oracle.com> <1393242525-18587-2-git-send-email-Anand.Jain@oracle.com> <20140225175133.GB16073@twin.jikos.cz>
-In-Reply-To: <20140225175133.GB16073@twin.jikos.cz>
+Subject: Re: 3.14.0rc3: btrfs send ioctl failed with -5: Input/output error
+References: <20140225063652.GD3521@merlins.org> <530C4B37.9000402@cn.fujitsu.com> <20140225173022.GF3521@merlins.org>
+In-Reply-To: <20140225173022.GF3521@merlins.org>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Marc,
 
-
-On 26/02/2014 01:51, David Sterba wrote:
-> On Mon, Feb 24, 2014 at 07:48:45PM +0800, Anand Jain wrote:
->> The user land progs needs   a simple way to see
->> the raw list of disks and its parameters as seen
->> by the btrfs kernel.
->> As of now btrfs-devlist uses this ioctl.
+On 02/26/2014 01:30 AM, Marc MERLIN wrote:
+> On Tue, Feb 25, 2014 at 03:50:15PM +0800, Wang Shilong wrote:
+>> Hi Marc,
+>>
+>> This seems a regression which has been fixed by the following
+>> commit(only pushed into btrfs-next):
+>>
+>> https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=1334bebe71bebbca47b3b92f25511ea980fdeab8
+> I'll revert this, thanks.
 >
-> As discussed before together with Hugo, the ioctl could exist parallel
-> to sysfs export of the device data. From that point it's easier to
-> maintain and update a set of sysfs files than an ioctl. The way you
-> suggest it right now lacks future-proof extensibility and backward
-> compatibility handling.
+> Mmmh, but I just found another problem I didn't have before upgrading to 3.14.0-rc3
+> (on my laptop this time):
+What is your previous version, give a double check whether the following 
+commit exists:
+
+Btrfs: remove transaction from btrfs send(commitid: 41ce9970)
+
+This regression should exist in 3.14 Sine chris firstly pull big btrfs 
+request for Linux 3.14.
 >
-> The userspace code is said to be a small and debug program, the sysfs
-> would IMHO satsify it needs as well, so I suggest not to continue on the
-> ioctl approach.
+> + btrfs send -p /mnt/btrfs_pool1/var_ro.20140224_14:01:54 var_ro.20140225_09:27:57
+> + btrfs receive /mnt/btrfs_pool2//
+> At subvol var_ro.20140225_09:27:57
+> At snapshot var_ro.20140225_09:27:57
+> ERROR: send ioctl failed with -5: Input/output error
+> ERROR: unexpected EOF in stream.
+Did dmesg output the same things like before?
 
+Hm, we can esaily trigger that regression if there is snapshot and send 
+running concurrently.
+(balance/scrub ...device operations can also trigger send failure.)
 
-  sysfs interface has its advantage, but please lets not clutter
-  it with the debug info as it just don't belong there. And one
-  should be care full enough not to introduce regressions [1]
-  when writing sysfs interfaces (sysfs has to be "managed"
-  VS debug-friendly memory-dump/ioctl-dump).
+Thanks,
+Wang
+>
+> Is it another different regression?
+>
+> Currently it's only happening on one of my subvolumes. The other ones
+> are still syncing ok.
+>
+> Thanks,
+> Marc
 
-  Next, btrfs-kernel device management isn't just ready
-  fully[2] so that sysfs interface can be developed as
-  of now. It better wait.
-
-[1]
-    https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg31432.html
-    http://comments.gmane.org/gmane.comp.file-systems.btrfs/31915
-
-[2] btrfs-kernel has no idea when disk disappears.
-     To get this done we appear to need more enhancements
-     related to the usage of kobjects with in kernel.
-
-Thanks, Anand

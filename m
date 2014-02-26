@@ -1,179 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f179.google.com ([209.85.220.179]:57715 "EHLO
-	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751617AbaBZX03 (ORCPT
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:49847 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754237AbaBZXk1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 18:26:29 -0500
-Received: by mail-vc0-f179.google.com with SMTP id lh14so1739639vcb.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 15:26:29 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1391029564-24160-1-git-send-email-fdmanana@gmail.com>
-References: <1391029564-24160-1-git-send-email-fdmanana@gmail.com>
-Date: Wed, 26 Feb 2014 23:26:28 +0000
-Message-ID: <CALOYprW7Y2FW31EbpmDb5EidMPO8JakvZV8a_5_vur3uBCgpMA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: use btrfs_crc32c everywhere instead of libcrc32c
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: Filipe David Borba Manana <fdmanana@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+	Wed, 26 Feb 2014 18:40:27 -0500
+Received: by mail-pa0-f42.google.com with SMTP id kl14so1679193pab.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 15:40:27 -0800 (PST)
+From: Kent Overstreet <kmo@daterainc.com>
+To: axboe@kernel.dk
+Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Kent Overstreet <kmo@daterainc.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>, Chris Mason <clm@fb.com>,
+        linux-btrfs@vger.kernel.org, Steve French <sfrench@samba.org>,
+        linux-cifs@vger.kernel.org, Miklos Szeredi <miklos@szeredi.hu>,
+        fuse-devel@lists.sourceforge.net, Sage Weil <sage@inktank.com>,
+        ceph-devel@vger.kernel.org
+Subject: [PATCH 9/9] iov_iter: Kill written arg to iov_iter_init()
+Date: Wed, 26 Feb 2014 15:39:57 -0800
+Message-Id: <1393457997-17618-10-git-send-email-kmo@daterainc.com>
+In-Reply-To: <1393457997-17618-1-git-send-email-kmo@daterainc.com>
+References: <1393457997-17618-1-git-send-email-kmo@daterainc.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29 January 2014 21:06, Filipe David Borba Manana <fdmanana@gmail.com> wrote:
-> After the commit titled "Btrfs: fix btrfs boot when compiled as built-in",
-> LIBCRC32C requirement was removed from btrfs' Kconfig. This made it not
-> possible to build a kernel with btrfs enabled (either as module or built-in)
-> if libcrc32c is not enabled as well. So just replace all uses of libcrc32c
-> with the equivalent function in btrfs hash.h - btrfs_crc32c.
->
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> ---
->  fs/btrfs/check-integrity.c |    4 ++--
->  fs/btrfs/disk-io.c         |    4 ++--
->  fs/btrfs/send.c            |    4 ++--
->  3 files changed, 6 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-> index 160fb50..39bfd56 100644
-> --- a/fs/btrfs/check-integrity.c
-> +++ b/fs/btrfs/check-integrity.c
-> @@ -92,11 +92,11 @@
->  #include <linux/slab.h>
->  #include <linux/buffer_head.h>
->  #include <linux/mutex.h>
-> -#include <linux/crc32c.h>
->  #include <linux/genhd.h>
->  #include <linux/blkdev.h>
->  #include "ctree.h"
->  #include "disk-io.h"
-> +#include "hash.h"
->  #include "transaction.h"
->  #include "extent_io.h"
->  #include "volumes.h"
-> @@ -1823,7 +1823,7 @@ static int btrfsic_test_for_metadata(struct btrfsic_state *state,
->                 size_t sublen = i ? PAGE_CACHE_SIZE :
->                                     (PAGE_CACHE_SIZE - BTRFS_CSUM_SIZE);
->
-> -               crc = crc32c(crc, data, sublen);
-> +               crc = btrfs_crc32c(crc, data, sublen);
->         }
->         btrfs_csum_final(crc, csum);
->         if (memcmp(csum, h->csum, state->csum_size))
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7619147..3903bd3 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -26,7 +26,6 @@
->  #include <linux/workqueue.h>
->  #include <linux/kthread.h>
->  #include <linux/freezer.h>
-> -#include <linux/crc32c.h>
->  #include <linux/slab.h>
->  #include <linux/migrate.h>
->  #include <linux/ratelimit.h>
-> @@ -35,6 +34,7 @@
->  #include <asm/unaligned.h>
->  #include "ctree.h"
->  #include "disk-io.h"
-> +#include "hash.h"
->  #include "transaction.h"
->  #include "btrfs_inode.h"
->  #include "volumes.h"
-> @@ -244,7 +244,7 @@ out:
->
->  u32 btrfs_csum_data(char *data, u32 seed, size_t len)
->  {
-> -       return crc32c(seed, data, len);
-> +       return btrfs_crc32c(seed, data, len);
->  }
->
->  void btrfs_csum_final(u32 crc, char *result)
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 04c07ed..31b76d0 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -24,12 +24,12 @@
->  #include <linux/xattr.h>
->  #include <linux/posix_acl_xattr.h>
->  #include <linux/radix-tree.h>
-> -#include <linux/crc32c.h>
->  #include <linux/vmalloc.h>
->  #include <linux/string.h>
->
->  #include "send.h"
->  #include "backref.h"
-> +#include "hash.h"
->  #include "locking.h"
->  #include "disk-io.h"
->  #include "btrfs_inode.h"
-> @@ -620,7 +620,7 @@ static int send_cmd(struct send_ctx *sctx)
->         hdr->len = cpu_to_le32(sctx->send_size - sizeof(*hdr));
->         hdr->crc = 0;
->
-> -       crc = crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
-> +       crc = btrfs_crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
->         hdr->crc = cpu_to_le32(crc);
->
->         ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
-> --
-> 1.7.9.5
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This gets rid of a usually needless call to iov_iter_advance().
 
-Hi,
+Signed-off-by: Kent Overstreet <kmo@daterainc.com>
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>
+Cc: Jens Axboe <axboe@kernel.dk>
+Cc: Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Cc: Steve French <sfrench@samba.org>
+Cc: linux-cifs@vger.kernel.org
+Cc: Miklos Szeredi <miklos@szeredi.hu>
+Cc: fuse-devel@lists.sourceforge.net
+Cc: Sage Weil <sage@inktank.com>
+Cc: ceph-devel@vger.kernel.org
+---
+ fs/btrfs/file.c     |  8 +++++---
+ fs/ceph/file.c      |  7 ++++---
+ fs/cifs/file.c      |  4 ++--
+ fs/fuse/file.c      | 11 ++++++-----
+ include/linux/uio.h |  9 +++------
+ mm/filemap.c        |  4 +++-
+ 6 files changed, 23 insertions(+), 20 deletions(-)
 
-Ever since this patch was committed (git ref
-0b947aff1599afbbd2ec07ada87b05af0f94cf10), the btrfs module
-(presumably intentionally) no longer depends on the crc32c module.
-However, this means that this module is not pulled in during initrd
-creation (at least using mkinitcpio on Arch Linux), and as a result,
-the btrfs module cannot be loaded. Instead modprobe complains with:
-"Unknown symbol in module, or unknown parameter (see dmesg)".
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0165b8672f..18b2e127e8 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1652,8 +1652,9 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+ 		return written;
+ 
+ 	pos += written;
+-	count -= written;
+-	iov_iter_init(&i, iov, nr_segs, count, written);
++	iov_iter_init(&i, iov, nr_segs, count);
++	iov_iter_advance(&i, written);
++
+ 	written_buffered = __btrfs_buffered_write(file, &i, pos);
+ 	if (written_buffered < 0) {
+ 		err = written_buffered;
+@@ -1768,7 +1769,8 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	} else {
+ 		struct iov_iter i;
+ 
+-		iov_iter_init(&i, iov, nr_segs, count, num_written);
++		iov_iter_init(&i, iov, nr_segs, count + num_written);
++		iov_iter_advance(&i, num_written);
+ 
+ 		num_written = __btrfs_buffered_write(file, &i, pos);
+ 		if (num_written > 0)
+diff --git a/fs/ceph/file.c b/fs/ceph/file.c
+index dfd2ce3419..163ae0fe20 100644
+--- a/fs/ceph/file.c
++++ b/fs/ceph/file.c
+@@ -580,7 +580,7 @@ ceph_sync_direct_write(struct kiocb *iocb, const struct iovec *iov,
+ 		CEPH_OSD_FLAG_ONDISK |
+ 		CEPH_OSD_FLAG_WRITE;
+ 
+-	iov_iter_init(&i, iov, nr_segs, count, 0);
++	iov_iter_init(&i, iov, nr_segs, count);
+ 
+ 	while (iov_iter_count(&i) > 0) {
+ 		void __user *data = i.iov->iov_base + i.iov_offset;
+@@ -701,7 +701,7 @@ static ssize_t ceph_sync_write(struct kiocb *iocb, const struct iovec *iov,
+ 		CEPH_OSD_FLAG_WRITE |
+ 		CEPH_OSD_FLAG_ACK;
+ 
+-	iov_iter_init(&i, iov, nr_segs, count, 0);
++	iov_iter_init(&i, iov, nr_segs, count);
+ 
+ 	while ((len = iov_iter_count(&i)) > 0) {
+ 		size_t left;
+@@ -834,7 +834,8 @@ again:
+ 				goto out;
+ 		}
+ 
+-		iov_iter_init(&i, iov, nr_segs, len, read);
++		iov_iter_init(&i, iov, nr_segs, len);
++		iov_iter_advance(&i, read);
+ 
+ 		/* hmm, this isn't really async... */
+ 		ret = ceph_sync_read(iocb, &i, &checkeof);
+diff --git a/fs/cifs/file.c b/fs/cifs/file.c
+index 755584684f..8a03eeb95e 100644
+--- a/fs/cifs/file.c
++++ b/fs/cifs/file.c
+@@ -2424,7 +2424,7 @@ cifs_iovec_write(struct file *file, const struct iovec *iov,
+ 	else
+ 		pid = current->tgid;
+ 
+-	iov_iter_init(&it, iov, nr_segs, len, 0);
++	iov_iter_init(&it, iov, nr_segs, len);
+ 	do {
+ 		size_t save_len;
+ 
+@@ -2729,7 +2729,7 @@ cifs_readdata_to_iov(struct cifs_readdata *rdata, const struct iovec *iov,
+ 	unsigned int i;
+ 
+ 	/* set up iov_iter and advance to the correct offset */
+-	iov_iter_init(&ii, iov, nr_segs, iov_length(iov, nr_segs), 0);
++	iov_iter_init(&ii, iov, nr_segs, iov_length(iov, nr_segs));
+ 	iov_iter_advance(&ii, pos);
+ 
+ 	*copied = 0;
+diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+index b4c9a14e70..67542da685 100644
+--- a/fs/fuse/file.c
++++ b/fs/fuse/file.c
+@@ -1152,9 +1152,10 @@ static ssize_t fuse_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
+ 			goto out;
+ 
+ 		pos += written;
+-		count -= written;
+ 
+-		iov_iter_init(&i, iov, nr_segs, count, written);
++		iov_iter_init(&i, iov, nr_segs, count);
++		iov_iter_advance(&i, written);
++
+ 		written_buffered = fuse_perform_write(file, mapping, &i, pos);
+ 		if (written_buffered < 0) {
+ 			err = written_buffered;
+@@ -1174,7 +1175,7 @@ static ssize_t fuse_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
+ 		written += written_buffered;
+ 		iocb->ki_pos = pos + written_buffered;
+ 	} else {
+-		iov_iter_init(&i, iov, nr_segs, count, 0);
++		iov_iter_init(&i, iov, nr_segs, count);
+ 		written = fuse_perform_write(file, mapping, &i, pos);
+ 		if (written >= 0)
+ 			iocb->ki_pos = pos + written;
+@@ -1300,7 +1301,7 @@ ssize_t fuse_direct_io(struct fuse_io_priv *io, const struct iovec *iov,
+ 	struct fuse_req *req;
+ 	struct iov_iter ii;
+ 
+-	iov_iter_init(&ii, iov, nr_segs, count, 0);
++	iov_iter_init(&ii, iov, nr_segs, count);
+ 
+ 	if (io->async)
+ 		req = fuse_get_req_for_background(fc, fuse_iter_npages(&ii));
+@@ -2188,7 +2189,7 @@ static int fuse_ioctl_copy_user(struct page **pages, struct iovec *iov,
+ 	if (!bytes)
+ 		return 0;
+ 
+-	iov_iter_init(&ii, iov, nr_segs, bytes, 0);
++	iov_iter_init(&ii, iov, nr_segs, bytes);
+ 
+ 	while (iov_iter_count(&ii)) {
+ 		struct page *page = pages[page_idx++];
+diff --git a/include/linux/uio.h b/include/linux/uio.h
+index 2b99e0d2a1..d653feeeb1 100644
+--- a/include/linux/uio.h
++++ b/include/linux/uio.h
+@@ -67,16 +67,13 @@ size_t iov_iter_copy_from_user(struct page *page,
+ void iov_iter_advance(struct iov_iter *i, size_t bytes);
+ int iov_iter_fault_in_readable(struct iov_iter *i, size_t bytes);
+ 
+-static inline void iov_iter_init(struct iov_iter *i,
+-			const struct iovec *iov, unsigned long nr_segs,
+-			size_t count, size_t written)
++static inline void iov_iter_init(struct iov_iter *i, const struct iovec *iov,
++				 unsigned long nr_segs, size_t count)
+ {
+ 	i->iov = iov;
+ 	i->nr_segs = nr_segs;
+ 	i->iov_offset = 0;
+-	i->count = count + written;
+-
+-	iov_iter_advance(i, written);
++	i->count = count;
+ }
+ 
+ static inline size_t iov_iter_count(struct iov_iter *i)
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 8e509b3225..e756a0cf21 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -2385,7 +2385,9 @@ generic_file_buffered_write(struct kiocb *iocb, const struct iovec *iov,
+ 	ssize_t status;
+ 	struct iov_iter i;
+ 
+-	iov_iter_init(&i, iov, nr_segs, count, written);
++	iov_iter_init(&i, iov, nr_segs, count + written);
++	iov_iter_advance(&i, written);
++
+ 	status = generic_perform_write(file, &i, pos);
+ 
+ 	if (likely(status >= 0)) {
+-- 
+1.9.0
 
-Unfortunately there is no accompanying message in dmesg, so I can't
-provide much more information. However, I have bisected the commit to
-confirm that this problem was introduced by this patch. The following
-is a grep of btrfs module's dependencies before and after this was
-committed:
-
-$ grep btrfs pkg/lib/modules/3.13.0-ARCH-00150-g8101c8d/modules.dep
-kernel/fs/btrfs/btrfs.ko: kernel/lib/raid6/raid6_pq.ko
-kernel/lib/libcrc32c.ko kernel/crypto/xor.ko
-
-$ grep btrfs pkg/lib/modules/3.13.0-ARCH-00151-g0b947af/modules.dep
-kernel/fs/btrfs/btrfs.ko: kernel/lib/raid6/raid6_pq.ko kernel/crypto/xor.ko
-
-As you can see, the dependency on kernel/lib/libcrc32c.ko was removed.
-
-However, if crc32c.ko is manually added to the initrd, the btrfs
-module loads fine, which suggests that it should still be a
-dependency. If it shouldn't be a dependency any more, then something
-is wrong somewhere, but I don't understand enough about kernel modules
-to find out why right now. :(
-
-I hope that this information is enough to help you discover the
-problem. I've tried adding back in the linux/crc32c.h include
-statements in the affected files, but this hasn't changed the
-situation, so I guess a full revert would be necessary. Unfortunately
-I have to sleep now, so I can't do any further investigation tonight.
-I'll try to find time tomorrow to investigate further.
-
-Please let me know if any parts of this message don't make sense, or
-require further investigation.
-
-Also, apologies for the late reporting of this problem, I was
-previously explicitly including the crc32c module it my initrd, I was
-only made aware of the problem after another mainline kernel Arch user
-pointed the problem out here:
-https://aur.archlinux.org/packages/linux-mainline/
-
-Also, apologies if this has already been reported. I searched the
-mailing list, but couldn't find anything.
-
-Cheers,
-
-
-WorMzy

@@ -1,69 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42541 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751122AbaBZFnh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 00:43:37 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WIXHL-00063X-Sy
-	for linux-btrfs@vger.kernel.org; Wed, 26 Feb 2014 06:43:36 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 06:43:35 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 06:43:35 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: VM nocow, should VM software set +C by default?
-Date: Wed, 26 Feb 2014 05:43:11 +0000 (UTC)
-Message-ID: <pan$4f13b$4e4a556c$b18c9a89$9c0c3ab3@cox.net>
-References: <A2EE3F12-97D9-46CD-8360-ACCFF71F149B@colorremedies.com>
-	<530C5F65.6020607@internetionals.nl>
-	<4C05BCCD-ED77-4D8D-B9C7-47CB6D1B4ACC@colorremedies.com>
-	<530CD898.6090401@jrs-s.net>
-	<630BA589-DD50-4C7C-9E95-610662BD66B9@colorremedies.com>
-Mime-Version: 1.0
+Received: from mail-ie0-f181.google.com ([209.85.223.181]:36625 "EHLO
+	mail-ie0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751155AbaBZOXU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Feb 2014 09:23:20 -0500
+Received: by mail-ie0-f181.google.com with SMTP id lx4so681096iec.40
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 06:23:20 -0800 (PST)
+Received: from [10.0.1.18] (user-0cdvcvs.cable.mindspring.com. [24.223.179.252])
+        by mx.google.com with ESMTPSA id gd5sm191940igd.5.2014.02.26.06.23.18
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 26 Feb 2014 06:23:19 -0800 (PST)
+Message-ID: <530DF8D5.7010808@gmail.com>
+Date: Wed, 26 Feb 2014 09:23:17 -0500
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Allow forced conversion of metadata to dup profile
+ on, multiple devices
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Tue, 25 Feb 2014 11:33:34 -0700 as excerpted:
+Currently, btrfs balance start fails when trying to convert metadata or
+system chunks to dup profile on filesystems with multiple devices.  This
+requires that a conversion from a multi-device filesystem to a single
+device filesystem use the following methodology:
+    1. btrfs balance start -dconvert=single -mconvert=single \
+       -sconvert=single -f /
+    2. btrfs device delete / /dev/sdx
+    3. btrfs balance start -mconvert=dup -sconvert=dup /
+This results in a period of time (possibly very long if the devices are
+big) where you don't have the protection guarantees of multiple copies
+of metadata chunks.
 
-> I've had a qcow2 image with more than 30,000 extents and didn't notice a
-> performance drop. So I don't know that number of extents is the problem.
-> Maybe it's how they're arranged on disk and what's causing the problem
-> is excessive seeking on HDD? Or does this problem sometimes also still
-> happen on SSD?
+After applying this patch, one can instead use the following methodology
+for conversion from a multi-device filesystem to a single device
+filesystem:
+    1. btrfs balance start -dconvert=single -mconvert=dup \
+       -sconvert=dup -f /
+    2. btrfs device delete / /dev/sdx
+This greatly reduces the chances of the operation causing data loss due
+to a read error during the device delete.
 
-SSDs are interesting beasts.
+Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+---
+ fs/btrfs/volumes.c | 21 +++++++++++++++++----
+ 1 file changed, 17 insertions(+), 4 deletions(-)
 
-1) Seek-times aren't an issue, so that disappears, BUT...
-
-2) SSDs still have IOPS ratings/limits.  Typically these are in the 
-(high) tens of thousands per second range, so a single file at 30K 
-extents isn't likely to be terribly significant.  However, 300K extents 
-could be, and several VMs @ 30K each, and/or mixed in with other traffic, 
-likely also fragmented due simply to the number of VM image fragments...
-
-3) There's also the read vs. write vs. erase-block size thing to think 
-about, and how that can affect not reads, but writes.  As long as there's 
-sufficient overprovisioning it shouldn't be a real problem, but fill the 
-SSD more than about 2/3 full (as a significant number of non-
-professionally managed systems likely will) and all those extra fragments 
-being written is going to trigger erase-block garbage collection cycles 
-more frequently, and that could massively up the latency jitter on a 
-reasonably frequent basis.
-
-#2 and 3 are a big part of the reason I still enable the autodefrag mount 
-option here, even tho I'm on SSD and my use-case doesn't have a lot of 
-huge internal-write files to worry about, plus I'm only about 50 percent 
-partitioned on the SSDs so they have LOTS of room to do their wear-
-leveling, etc. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 07629e9..38a9522 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3152,10 +3152,8 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		num_devices--;
+ 	}
+ 	btrfs_dev_replace_unlock(&fs_info->dev_replace);
+-	allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE;
+-	if (num_devices == 1)
+-		allowed |= BTRFS_BLOCK_GROUP_DUP;
+-	else if (num_devices > 1)
++	allowed = BTRFS_AVAIL_ALLOC_BIT_SINGLE | BTRFS_BLOCK_GROUP_DUP;
++	if (num_devices > 1)
+ 		allowed |= (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1);
+ 	if (num_devices > 2)
+ 		allowed |= BTRFS_BLOCK_GROUP_RAID5;
+@@ -3221,6 +3219,21 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 				goto out;
+ 			}
+ 		}
++		if (((bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
++		    (bctl->sys.target & ~BTRFS_BLOCK_GROUP_DUP) ||
++		    (bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
++		    (bctl->meta.target & ~BTRFS_BLOCK_GROUP_DUP)) &&
++		    (num_devs > 1)) {
++			if (bctl->flags & BTRFS_BALANCE_FORCE) {
++				btrfs_info(fs_info, "force conversion of metadata "
++					   "to dup profile on multiple devices");
++			} else {
++				btrfs_err(fs_info, "balance will reduce metadata "
++					  "integrity, use force if you want this");
++				ret = -EINVAL;
++				goto out;
++			}
++		}
+ 	} while (read_seqretry(&fs_info->profiles_lock, seq));
+ 
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {

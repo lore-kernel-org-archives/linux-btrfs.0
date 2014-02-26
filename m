@@ -1,86 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26392 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751048AbaBZH45 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 02:56:57 -0500
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s1Q7uusP008696
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 07:56:57 GMT
-Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s1Q7utJX010769
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 07:56:55 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s1Q7utEH014392
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 07:56:55 GMT
-Message-ID: <530D9E43.8070507@oracle.com>
-Date: Wed, 26 Feb 2014 15:56:51 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:10961 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750748AbaBZItw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Feb 2014 03:49:52 -0500
+Message-ID: <530DAB0C.2090707@cn.fujitsu.com>
+Date: Wed, 26 Feb 2014 16:51:24 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: total_devices vs num_devices
-References: <1393399365-8393-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1393399365-8393-1-git-send-email-Anand.Jain@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/9] Btrfs: stop joining the log transaction if sync log
+ fails
+References: <1392890939-19044-1-git-send-email-miaox@cn.fujitsu.com> <1392890939-19044-7-git-send-email-miaox@cn.fujitsu.com> <20140222002751.GP16073@twin.jikos.cz>
+In-Reply-To: <20140222002751.GP16073@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, 22 Feb 2014 01:27:51 +0100, David Sterba wrote:
+> On Thu, Feb 20, 2014 at 06:08:57PM +0800, Miao Xie wrote:
+>> --- a/fs/btrfs/tree-log.c
+>> +++ b/fs/btrfs/tree-log.c
+>> @@ -142,6 +142,12 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
+>>  
+>>  	mutex_lock(&root->log_mutex);
+>>  	if (root->log_root) {
+>> +		if (ACCESS_ONCE(root->fs_info->last_trans_log_full_commit) ==
+>> +		    trans->transid) {
+>> +			ret = -EAGAIN;
+>> +			goto out;
+>> +		}
+> 
+> So last_trans_log_full_commit needs special handling, but opencoding it
+> everywhere is no very clean. Documented set/get helpers would be much
+> better.
+> 
 
-(Ignore previous, this is not a final patch, but
-to seek comments). Thanks.
+Right, I'll update it in the next version.
 
-The intended usage of total_devices and num_devices
-should be recorded in the comments so that these
-two counters can be used correctly to match the
-original intentions.
-
-And there appears to be bugs due to missing clarity,
-the bugs are mainly in the fact that in the current
-code the num_devices does not count seed devices where
-as total_devices does, next, total_devices does not count
-the replacing devices where as num_devices does.
-
-In this situation the ioctl(BTRFS_IOC_DEVICES_READY)
-will fails when there is seed FS.
-The applications using ioctl(BTRFS_IOC_FS_INFO) and
-ioctl(BTRFS_IOC_DEV_INFO) in conjunction to allocate
-the slots will also be confused as former depend on
-the num_devices where as latter would match total_devices
-(except when replace is running).
-
-This patch will help have the clarity on usage
-of these two counter so that bugs related to this can
-be fixed.
-
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
-  fs/btrfs/volumes.h | 6 ++++++
-  1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 91b7596..99c71aa 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -121,12 +121,18 @@ struct btrfs_fs_devices {
-  	/* the device with this id has the most recent copy of the super */
-  	u64 latest_devid;
-  	u64 latest_trans;
-+	/* num_devices contains run time count of devices which are part
-+	 * of this FSID. (the FS devices + replacing devices + ?
-+	 */
-  	u64 num_devices;
-  	u64 open_devices;
-  	u64 rw_devices;
-  	u64 missing_devices;
-  	u64 total_rw_bytes;
-  	u64 num_can_discard;
-+	/* total_devices contains static recorded count of device which
-+	 * are part of this FSID. (the FS devices + seed devices + ?
-+	 */
-  	u64 total_devices;
-  	struct block_device *latest_bdev;
-
---
-1.8.5.3
+Thanks for your review.
+Miao

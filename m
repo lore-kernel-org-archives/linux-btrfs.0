@@ -1,62 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:53431 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752435AbaBZRQn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 12:16:43 -0500
-Date: Wed, 26 Feb 2014 09:16:42 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: 3.14.0rc3: did not find backref in send_root
-Message-ID: <20140226171642.GB640@merlins.org>
-References: <20140226074603.GA11372@merlins.org> <530D9D09.8070600@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <530D9D09.8070600@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:11365 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751399AbaBZCh4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Feb 2014 21:37:56 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1Q2bJuS002205
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 10:37:24 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Add test for btrfsck on "--init-csum/extent-tree"
+Date: Wed, 26 Feb 2014 10:32:58 +0800
+Message-Id: <1393381978-11709-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 26, 2014 at 03:51:37PM +0800, Wang Shilong wrote:
-> >I've applied your patch from
-> >https://git.kernel.org/cgit/linux/kernel/git/josef/btrfs-next.git/commit/?id=1334bebe71bebbca47b3b92f25511ea980fdeab8
+Before this patchset btrfsck with "--init-csum-tree --extent-tree" will
+corrupt the btrfs fs.
+This patch will add test case for the bug.
 
-I can confirm this fixed the btrfs send error on my server, thank you.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/fsck-tests.sh | 49 +++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 41 insertions(+), 8 deletions(-)
 
-> >At snapshot var_ro.20140225_23:28:47
-> >ERROR: send ioctl failed with -5: Input/output error
-> >ERROR: unexpected EOF in stream.
-> >[  216.534313] BTRFS info (device dm-0): csum failed ino 2326136 off 
-> >192512 csum 3851586574 expected csum 1402824092
-> >
-> >Then again, this seems to be my problem on the laptop:
-> >legolas:/mnt/btrfs_pool1# btrfs scrub status /mnt/btrfs_pool1
-> >scrub status for 4850ee22-bf32-4131-a841-02abdb4a5ba6
-> >	scrub started at Tue Feb 25 07:35:07 2014 and finished after 1945 
-> >	seconds
-> >	total bytes scrubbed: 451.64GiB with 2 errors
-> >	error details: csum=2
-> >	corrected errors: 0, uncorrectable errors: 2, unverified errors: 0
-> >
-> >Ok, so that's not a btrfs send problem.
-> >Just out of curiosity, how do I find out which inodes are compromized so
-> >that I can delete/restore them?
-> You can use command  "btrfs inspect-internal inode-resolve" which will 
-> print inode's
-> corresponding path with it's inode id.
-
-Yes, sorry, I wasn't clear. I know how to do this.
-What I meant is that btrfs scrub tells me there are 2 errors and does not
-tell me which inode/subvolume the error are in.
-
-Aah, but they were in syslog, I just hadn't found them until now :)
-
-Ok, I'm all good then.
-
-Thanks,
-Marc
+diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
+index 25c390d..03b0586 100644
+--- a/tests/fsck-tests.sh
++++ b/tests/fsck-tests.sh
+@@ -6,27 +6,60 @@
+ #
+ 
+ here=`pwd`
++log=fsck-tests-results.txt
++img=test.img
++mp=mount_point
+ 
+ _fail()
+ {
+-	echo "$*" | tee -a fsck-tests-results.txt
++	echo "$*" | tee -a $log
+ 	exit 1
+ }
+ 
+-rm -f fsck-tests-results.txt
++_clean()
++{
++	rm -f $log &> /dev/null
++	rm -f $img &> /dev/null
++	umount $mp &> /dev/null
++	rm -rf $mp &> /dev/null
++}
++
++_init()
++{
++	_clean
++	touch $img
++	truncate -s 5G $img
++	mkdir $mp
++}
++
++_init
+ 
+ for i in $(find $here/tests/fsck-tests -name '*.img')
+ do
+ 	echo "     [TEST]    $(basename $i)"
+-	echo "testing image $i" >> fsck-tests-results.txt
+-	$here/btrfs-image -r $i test.img >> fsck-tests-results.txt 2>&1 \
+-		|| _fail "restore failed"
+-	$here/btrfsck test.img >> fsck-test-results.txt 2>&1
++	echo "testing image $i" >> $log
++	$here/btrfs-image -r $i $img >> $log 2>&1 || _fail "restore failed"
++	$here/btrfsck $img >> $log 2>&1
+ 	[ $? -eq 0 ] && _fail "btrfsck should have detected corruption"
+ 
+-	$here/btrfsck --repair test.img >> fsck-test-results.txt 2>&1 || \
++	$here/btrfsck --repair $img >> $log 2>&1 || \
+ 		_fail "btrfsck should have repaired the image"
+ 
+-	$here/btrfsck test.img >> fsck-test-results.txt 2>&1 || \
++	$here/btrfsck $img >> $log 2>&1 || \
+ 		_fail "btrfsck did not correct corruption"
++
+ done
++
++if [[ $EUID -ne 0 ]]; then
++	echo "init extent csum tree test needs to be run by root"
++	_clean
++	exit 0
++fi
++echo "     [TEST]    init extent csum tree"
++$here/mkfs.btrfs $img -f >> $log 2>&1
++$here/btrfsck $img --init-extent-tree --init-csum-tree >> $log 2>&1
++# just test whether the mount will success, since extent/csum tree is cleared
++# it will never pass btrfsck, but it should be OK to be mounted.
++mount $img $mp -t btrfs >> $log 2>&1  || _fail "btrfsck corrupt the img"
++
++_clean
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+1.9.0
+

@@ -1,131 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:64050 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754141AbaBZXkV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Feb 2014 18:40:21 -0500
-Received: by mail-pd0-f178.google.com with SMTP id x10so1612979pdj.37
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2014 15:40:20 -0800 (PST)
-From: Kent Overstreet <kmo@daterainc.com>
-To: axboe@kernel.dk
-Cc: linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Kent Overstreet <kmo@daterainc.com>, Chris Mason <clm@fb.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/9] btrfs: generic_make_request() handles arbitrary size bios now
-Date: Wed, 26 Feb 2014 15:39:53 -0800
-Message-Id: <1393457997-17618-6-git-send-email-kmo@daterainc.com>
-In-Reply-To: <1393457997-17618-1-git-send-email-kmo@daterainc.com>
-References: <1393457997-17618-1-git-send-email-kmo@daterainc.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:14393 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754186AbaB0F4e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Feb 2014 00:56:34 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1R5uVRa006350
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2014 13:56:32 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/3] Btrfs: fix wrong lock range and write size in check_can_nocow()
+Date: Thu, 27 Feb 2014 13:58:04 +0800
+Message-Id: <1393480685-4320-2-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1393480685-4320-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1393480685-4320-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So there's no need for btrfs to break up bios for device limits anymore
+The write range may not be sector-aligned, for example:
 
-Signed-off-by: Kent Overstreet <kmo@daterainc.com>
-Cc: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org
+       |--------|--------|	<- write range, sector-unaligned, size: 2blocks
+  |--------|--------|--------|  <- correct lock range, size: 3blocks
+
+But according to the old code, we used the size of write range to calculate
+the lock range directly, not considered the offset, we would get a wrong lock
+range:
+
+       |--------|--------|	<- write range, sector-unaligned, size: 2blocks
+  |--------|--------|		<- wrong lock range, size: 2blocks
+
+And besides that, the old code also had the same problem when calculating
+the real write size. Correct them.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 73 ------------------------------------------------------
- 1 file changed, 73 deletions(-)
+ fs/btrfs/file.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bab0b84d8f..3ce1a8aed6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5395,34 +5395,6 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
- 				   &device->work);
- }
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0165b86..56f8a07 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1397,7 +1397,7 @@ static noinline int check_can_nocow(struct inode *inode, loff_t pos,
+ 	int ret;
  
--static int bio_size_ok(struct block_device *bdev, struct bio *bio,
--		       sector_t sector)
--{
--	struct bio_vec *prev;
--	struct request_queue *q = bdev_get_queue(bdev);
--	unsigned int max_sectors = queue_max_sectors(q);
--	struct bvec_merge_data bvm = {
--		.bi_bdev = bdev,
--		.bi_sector = sector,
--		.bi_rw = bio->bi_rw,
--	};
--
--	if (WARN_ON(bio->bi_vcnt == 0))
--		return 1;
--
--	prev = &bio->bi_io_vec[bio->bi_vcnt - 1];
--	if (bio_sectors(bio) > max_sectors)
--		return 0;
--
--	if (!q->merge_bvec_fn)
--		return 1;
--
--	bvm.bi_size = bio->bi_iter.bi_size - prev->bv_len;
--	if (q->merge_bvec_fn(q, &bvm, prev) < prev->bv_len)
--		return 0;
--	return 1;
--}
--
- static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
- 			      struct bio *bio, u64 physical, int dev_nr,
- 			      int rw, int async)
-@@ -5453,38 +5425,6 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
- 		btrfsic_submit_bio(rw, bio);
- }
+ 	lockstart = round_down(pos, root->sectorsize);
+-	lockend = lockstart + round_up(*write_bytes, root->sectorsize) - 1;
++	lockend = round_up(pos + *write_bytes, root->sectorsize) - 1;
  
--static int breakup_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
--			      struct bio *first_bio, struct btrfs_device *dev,
--			      int dev_nr, int rw, int async)
--{
--	struct bio_vec *bvec = first_bio->bi_io_vec;
--	struct bio *bio;
--	int nr_vecs = bio_get_nr_vecs(dev->bdev);
--	u64 physical = bbio->stripes[dev_nr].physical;
--
--again:
--	bio = btrfs_bio_alloc(dev->bdev, physical >> 9, nr_vecs, GFP_NOFS);
--	if (!bio)
--		return -ENOMEM;
--
--	while (bvec <= (first_bio->bi_io_vec + first_bio->bi_vcnt - 1)) {
--		if (bio_add_page(bio, bvec->bv_page, bvec->bv_len,
--				 bvec->bv_offset) < bvec->bv_len) {
--			u64 len = bio->bi_iter.bi_size;
--
--			atomic_inc(&bbio->stripes_pending);
--			submit_stripe_bio(root, bbio, bio, physical, dev_nr,
--					  rw, async);
--			physical += len;
--			goto again;
--		}
--		bvec++;
--	}
--
--	submit_stripe_bio(root, bbio, bio, physical, dev_nr, rw, async);
--	return 0;
--}
--
- static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
- {
- 	atomic_inc(&bbio->error);
-@@ -5553,19 +5493,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 			continue;
- 		}
+ 	while (1) {
+ 		lock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend);
+@@ -1420,7 +1420,8 @@ static noinline int check_can_nocow(struct inode *inode, loff_t pos,
+ 				 EXTENT_DIRTY | EXTENT_DELALLOC |
+ 				 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 0, 0,
+ 				 NULL, GFP_NOFS);
+-		*write_bytes = min_t(size_t, *write_bytes, num_bytes);
++		*write_bytes = min_t(size_t, *write_bytes ,
++				     num_bytes - pos + lockstart);
+ 	}
  
--		/*
--		 * Check and see if we're ok with this bio based on it's size
--		 * and offset with the given device.
--		 */
--		if (!bio_size_ok(dev->bdev, first_bio,
--				 bbio->stripes[dev_nr].physical >> 9)) {
--			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
--						 dev_nr, rw, async_submit);
--			BUG_ON(ret);
--			dev_nr++;
--			continue;
--		}
--
- 		if (dev_nr < total_devs - 1) {
- 			bio = btrfs_bio_clone(first_bio, GFP_NOFS);
- 			BUG_ON(!bio); /* -ENOMEM */
+ 	unlock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend);
 -- 
-1.9.0
+1.8.1.4
 

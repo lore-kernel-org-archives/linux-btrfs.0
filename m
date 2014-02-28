@@ -1,84 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f50.google.com ([209.85.160.50]:61648 "EHLO
-	mail-pb0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751342AbaB1HjD (ORCPT
+Received: from mail-pa0-f68.google.com ([209.85.220.68]:32904 "EHLO
+	mail-pa0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750701AbaB1Hqh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Feb 2014 02:39:03 -0500
-Received: by mail-pb0-f50.google.com with SMTP id md12so408062pbc.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2014 23:39:02 -0800 (PST)
+	Fri, 28 Feb 2014 02:46:37 -0500
+Received: by mail-pa0-f68.google.com with SMTP id kq14so202676pab.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2014 23:46:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <4CE569C8-14AE-4C71-A2CC-FF8DB455460A@colorremedies.com>
+In-Reply-To: <pan$49c16$7a7687d1$aadeeb14$c250e08e@cox.net>
 References: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com>
-	<519E70A2-FA6F-41A3-9639-2C2BB965975E@colorremedies.com>
-	<4CE569C8-14AE-4C71-A2CC-FF8DB455460A@colorremedies.com>
-Date: Fri, 28 Feb 2014 01:39:02 -0600
-Message-ID: <CAAmRLYxy_PDveh=iNg-s6Zoq1YJfAJeTZb+b6G6vuQWNFrMBVQ@mail.gmail.com>
+	<20140228103436.2dfd2669@natsu>
+	<pan$49c16$7a7687d1$aadeeb14$c250e08e@cox.net>
+Date: Fri, 28 Feb 2014 01:46:36 -0600
+Message-ID: <CAAmRLYxvX-MjPEnphu_0RQXs2ZHtGSxa01x2XzwD_TXKqHGovA@mail.gmail.com>
 Subject: Re: Help with space
 From: Justin Brown <otakujunction@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Apologies for the late reply, I'd assumed the issue was closed even
-given the unusual behavior.  My mount options are:
+Absolutely.  I'd like to know the answer to this, as 13 tera will take
+a considerable amount of time to back up anywhere, assuming I find a
+place.  I'm considering rebuilding a smaller raid with newer drives
+(it was originally built using 16 250 gig western digital drives, it's
+about eleven years old now, having been in use the entire time without
+failure, I'm considering replacing each 250 gig with a 3 tera
+alternative).  Unfortunately, between upgrading the host and building
+a new raid the expense isn't something I'm anticipating with
+pleasure...
 
-/dev/sdb1 on /var/lib/nobody/fs/ubfterra type btrfs
-(rw,noatime,nodatasum,nodatacow,noacl,space_cache,skip_balance)
-
-I only recently added nodatacow and skip_balance in an attempt to
-figure out where the missing space had gone.  I don't know what impact
-it might have if any on things.  I've got a full balance running at
-the moment which, after about a day or so, has managed to process 5%
-of the chunks it's considering (988 out of about 18396 chunks balanced
-(989 considered),  95% left).  The amount of free space has vacillated
-slightly, growing by about a gig to shrink back.  As far as objects in
-the file system missing, I've not seen any such.  I've a lot of files
-of various data types, the majority is encoded japanese animation.
-Since I actually play these files via samba from a htpc, particularly
-the more recent additions, I'd hazard to guess that if something were
-breaking I'd have tripped across it by now, the unusual used to free
-space delta being the exception.  My brother also uses this raid for
-data storage, he's something of a closet meteorologist and is
-fascinated by tornadoes.  He hasn't noticed any unusual behavior
-either.  I'm in the process of sourcing a 64 bit capable system in the
-hopes that will resolve the issue.  Neither of us are currently
-writing anything to the file system for fear of things breaking, but
-both have been reading from it without issue other than the noticeable
-impact in performance balance seems to be having.  Thanks for the
-help.
-
--Justin
-
-
-On Fri, Feb 28, 2014 at 12:26 AM, Chris Murphy <lists@colorremedies.com> wrote:
+On Fri, Feb 28, 2014 at 1:27 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Roman Mamedov posted on Fri, 28 Feb 2014 10:34:36 +0600 as excerpted:
 >
-> On Feb 27, 2014, at 11:13 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> But then as others mentioned it may be risky to use this FS on 32-bit at
+>> all, so I'd suggest trying anything else only after you reboot into a
+>> 64-bit kernel.
 >
->>
->> On Feb 27, 2014, at 11:19 AM, Justin Brown <otakujunction@gmail.com> wrote:
->>
->>> terra:/var/lib/nobody/fs/ubfterra # btrfs fi df .
->>> Data, single: total=17.58TiB, used=17.57TiB
->>> System, DUP: total=8.00MiB, used=1.93MiB
->>> System, single: total=4.00MiB, used=0.00
->>> Metadata, DUP: total=392.00GiB, used=33.50GiB
->>> Metadata, single: total=8.00MiB, used=0.00
->>
->> After glancing at this again, what I thought might be going on might not be going on. The fact it has 17+TB already used, not merely allocated, doesn't seem possible if there's a hard 16TB limit for Btrfs on 32-bit kernels.
->>
->> But then I don't know why du -h is reporting only 13T total used. And I'm unconvinced this is a balance issue either. Is anything obviously missing from the file system?
+> Based on what I've read on-list, btrfs is not arch-agnostic, with certain
+> on-disk sizes set to native kernel page size, etc, so a filesystem
+> created on one arch may well not work on another.
 >
-> What are your mount options? Maybe compression?
+> Question: Does this apply to x86/amd64?  Will a filesystem created/used
+> on 32-bit x86 even mount/work on 64-bit amd64/x86_64, or does upgrading
+> to 64-bit imply backing up (in this case) double-digit TiB of data to
+> something other than btrfs and testing it, doing a mkfs on the original
+> filesystem once in 64-bit mode, and restoring all that data from backup?
 >
-> Clearly du is calculating things differently. I'm getting:
+> If the existing 32-bit x86 btrfs can't be used on 64-bit amd64,
+> transferring all that data (assuming there's something big enough
+> available to transfer it to!) to backup and then restoring it is going to
+> hurt!
 >
-> du -sch = 4.2G
-> df -h    = 5.4G
-> btrfs df  = 4.7G data and 620MB metadata(total).
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
 >
-> I am using compress=lzo.
->
-> Chris Murphy
->
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

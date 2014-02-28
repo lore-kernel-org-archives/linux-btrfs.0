@@ -1,75 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from luka.romanrm.net ([213.163.64.74]:42028 "EHLO luka.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750942AbaB1Eeo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Feb 2014 23:34:44 -0500
-Date: Fri, 28 Feb 2014 10:34:36 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Justin Brown <otakujunction@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48635 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750746AbaB1FtZ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Feb 2014 00:49:25 -0500
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Help with space
-Message-ID: <20140228103436.2dfd2669@natsu>
-In-Reply-To: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com>
-References: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/j17P27lb20+yGo_IBO2w1aK"; protocol="application/pgp-signature"
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140228042132.GB13647@dastard>
+Date: Thu, 27 Feb 2014 22:49:20 -0700
+Cc: otakujunction@gmail.com, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <C5E96FD5-8D97-4B24-83D2-79BDCE32557D@colorremedies.com>
+References: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com> <DCDC90E8-4834-416A-AC00-B11FC9A66281@colorremedies.com> <82E08C64-154E-460E-A052-E60BC00D662C@colorremedies.com> <B2988EF9-46EB-4804-A024-EE3B3A9E8771@gmail.com> <819E17EB-E4C2-4BD7-8D55-8C8DF9B8573B@colorremedies.com> <20140228001250.GA13647@dastard> <C6A844E6-3258-4405-9024-282D1EBD06CB@colorremedies.com> <20140228042132.GB13647@dastard>
+To: Dave Chinner <david@fromorbit.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/j17P27lb20+yGo_IBO2w1aK
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-On Thu, 27 Feb 2014 12:19:05 -0600
-Justin Brown <otakujunction@gmail.com> wrote:
+On Feb 27, 2014, at 9:21 PM, Dave Chinner <david@fromorbit.com> wrote:
+>> 
+>> http://lists.centos.org/pipermail/centos/2011-April/109142.html
+> 
+> <sigh>
+> 
+> No, he didn't fill it with 16TB of data and then have it fail. He
+> made a new filesystem *larger* than 16TB and tried to mount it:
+> 
+> | On a CentOS 32-bit backup server with a 17TB LVM logical volume on
+> | EMC storage.  Worked great, until it rolled 16TB.  Then it quit
+> | working.  Altogether.  /var/log/messages told me that the
+> | filesystem was too large to be mounted. Had to re-image the VM as
+> | a 64-bit CentOS, and then re-attached the RDM's to the LUNs
+> | holding the PV's for the LV, and it mounted instantly, and we
+> | kept on trucking.
+> 
+> This just backs up what I told you originally - that XFS has always
+> refused to mount >16TB filesystems on 32 bit systems.
 
-> I've a 18 tera hardware raid 5 (areca ARC-1170 w/ 8 3 gig drives) in
+That isn't how I read that at all. It was a 17TB LV, working great (i.e. mounted) until it was filled with 16TB, then it quite working and could not subsequently be mounted until put on a 64-bit kernel.
 
-Do you sleep well at night knowing that if one disk fails, you end up with
-basically a RAID0 of 7x3TB disks? And that if 2nd one encounters unreadable
-sector during rebuild, you lost your data? RAID5 actually stopped working 5
-years ago, apparently you didn't get the memo. :)
-http://hardware.slashdot.org/story/08/10/21/2126252/why-raid-5-stops-workin=
-g-in-2009
+I don't see how it's "working great" if it's not mountable.
 
-> need of help.  Disk usage (du) shows 13 tera allocated yet strangely
-> enough df shows approx. 780 gigs are free.  It seems, somehow, btrfs
-> has eaten roughly 4 tera internally.  I've run a scrub and a balance
-> usage=3D5 with no success, in fact I lost about 20 gigs after the
 
-Did you run balance with "-dusage=3D5" or "-musage=3D5"? Or both?
-What is the output of the balance command?
 
-> terra:/var/lib/nobody/fs/ubfterra # btrfs fi df .
-> Data, single: total=3D17.58TiB, used=3D17.57TiB
-> System, DUP: total=3D8.00MiB, used=3D1.93MiB
-> System, single: total=3D4.00MiB, used=3D0.00
-> Metadata, DUP: total=3D392.00GiB, used=3D33.50GiB
-                       ^^^^^^^^^
+> 
+>>> I said that it was limited on XFS, not that the limit was a
+>>> result of a user making a filesystem too large and then finding
+>>> out it didn't work. Indeed, you can't do that on XFS - mkfs will
+>>> refuse to run on a block device it can't access the last block
+>>> on, and the kernel has the same "can I access the last block of
+>>> the filesystem" sanity checks that are run at mount and growfs
+>>> time.
+>> 
+>> Nope. What I reported on the XFS list, I had used mkfs.xfs while
+>> running 32bit kernel on a 20TB virtual disk. It did not fail to
+>> make the file system, it failed only to mount it.
+> 
+> You said no such thing. All you said was you couldn't mount a
+> filesystem > 16TB - you made no mention of how you made the fs, what
+> the block device was or any other details.
 
-If you'd use "-musage=3D5", I think this metadata reserve should have been
-shrunk, and you'd gain a lot more free space.
+All correct. It wasn't intended as a bug report, it seemed normal. What I reported = the mount failure.
 
-But then as others mentioned it may be risky to use this FS on 32-bit at al=
-l,
-so I'd suggest trying anything else only after you reboot into a 64-bit ker=
-nel.
+VBox 25TB VDI as a single block device, as well as 5x 5TB VDIs in an 20TB linear LV, as well as a 100TB virtual size LV using LVM thinp - all can be formatted with default mkfs.xfs with no complaints.
 
---=20
-With respect,
-Roman
+3.13.4-200.fc20.i686+PAE
+xfsprogs-3.1.11-2.fc20.i686
 
---Sig_/j17P27lb20+yGo_IBO2w1aK
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+> 
+>> It was the same
+>> booted virtual machine, I created the file system and immediately
+>> mounted it. If you want the specifics, I'll post on the XFS list
+>> with versions and reproduce steps.
+> 
+> Did you check to see whether the block device silently wrapped at
+> 16TB? There's a real good chance it did - but you might have got
+> lucky because mkfs.xfs uses direct IO and *maybe* that works
+> correctly on block devices on 32 bit systems. I wouldn't bet on it,
+> though, given it's something we don't support and therefore never
+> test….
 
-iEYEARECAAYFAlMQEdwACgkQTLKSvz+PZwhoUACcCV7vNWjuVCjMtTa91hcRcHrW
-xtIAniV+j6mf/j9gL3jowbOqqSB5Vp+T
-=6pKX
------END PGP SIGNATURE-----
+I did not check to see if any of the block devices silently wrapped, I don't know how to do that although I have a strace of the mkfs on the 100TB virtual LV here:
 
---Sig_/j17P27lb20+yGo_IBO2w1aK--
+https://dl.dropboxusercontent.com/u/3253801/mkfsxfs32bit100TBvLV.txt
+
+
+Chris Murphy

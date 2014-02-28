@@ -1,49 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:19874 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752928AbaB0P1C (ORCPT
+Received: from nbl-ex10-fe01.nebula.fi ([188.117.32.121]:13485 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752684AbaB1R1K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Feb 2014 10:27:02 -0500
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s1RFR08D017390
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2014 07:27:01 -0800
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1j9pwuuef0-3
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2014 07:27:00 -0800
-From: Josef Bacik <jbacik@fb.com>
+	Fri, 28 Feb 2014 12:27:10 -0500
+Date: Fri, 28 Feb 2014 19:27:06 +0200
+From: Rakesh Pandit <rakesh@tuxera.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: make sure to save mirror_num only if it is set
-Date: Thu, 27 Feb 2014 10:25:49 -0500
-Message-ID: <1393514749-28795-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH] Btrfs-progs: free path if we don't find root item
+Message-ID: <20140228172705.GA3536@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we are cycling through all of the mirrors trying to find the best one we need
-to make sure we set best_mirror to an actual mirror number and not 0.  Otherwise
-we could end up reading a mirror that wasn't the best and make everybody sad.
-Thanks,
+In btrfs_find_last_root before returning with -ENOENT (if root item is
+not found) free path and also remove btrfs_release_path before
+btrfs_free_path because btrfs_free_path anyway calls it.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ root-tree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index e840177..0bd1bb0 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -297,7 +297,7 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 			ignore = 1;
- 			continue;
- 		}
--		if (btrfs_header_generation(eb) > best_transid) {
-+		if (btrfs_header_generation(eb) > best_transid && mirror_num) {
- 			best_transid = btrfs_header_generation(eb);
- 			good_mirror = mirror_num;
- 		}
+diff --git a/root-tree.c b/root-tree.c
+index 858fe2f..f16f0ba 100644
+--- a/root-tree.c
++++ b/root-tree.c
+@@ -40,8 +40,10 @@ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid,
+ 	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto out;
+-	if (path->slots[0] == 0)
++	if (path->slots[0] == 0) {
++		btrfs_free_path(path);
+ 		return -ENOENT;
++	}
+ 
+ 	BUG_ON(ret == 0);
+ 	l = path->nodes[0];
+@@ -56,7 +58,6 @@ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid,
+ 	memcpy(key, &found_key, sizeof(found_key));
+ 	ret = 0;
+ out:
+-	btrfs_release_path(path);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+@@ -120,7 +121,6 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	write_extent_buffer(l, item, ptr, sizeof(*item));
+ 	btrfs_mark_buffer_dirty(path->nodes[0]);
+ out:
+-	btrfs_release_path(path);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
-1.8.3.1
+1.8.5.3
 

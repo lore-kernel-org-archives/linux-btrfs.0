@@ -1,69 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60781 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752715AbaB1A1u convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Feb 2014 19:27:50 -0500
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Help with space
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140228001250.GA13647@dastard>
-Date: Thu, 27 Feb 2014 17:27:48 -0700
-Cc: otakujunction@gmail.com, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <C6A844E6-3258-4405-9024-282D1EBD06CB@colorremedies.com>
-References: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com> <DCDC90E8-4834-416A-AC00-B11FC9A66281@colorremedies.com> <82E08C64-154E-460E-A052-E60BC00D662C@colorremedies.com> <B2988EF9-46EB-4804-A024-EE3B3A9E8771@gmail.com> <819E17EB-E4C2-4BD7-8D55-8C8DF9B8573B@colorremedies.com> <20140228001250.GA13647@dastard>
-To: Dave Chinner <david@fromorbit.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:62731 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751107AbaB1CpV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Feb 2014 21:45:21 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1S2jIIs017664
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Feb 2014 10:45:18 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v5 00/18] Replace btrfs_workers with kernel workqueue based btrfs_workqueue
+Date: Fri, 28 Feb 2014 10:46:01 +0800
+Message-Id: <1393555579-11271-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Add a new btrfs_workqueue_struct which use kernel workqueue to implement
+most of the original btrfs_workers, to replace btrfs_workers.
 
-On Feb 27, 2014, at 5:12 PM, Dave Chinner <david@fromorbit.com> wrote:
+With this patchset, redundant workqueue codes are replaced with kernel
+workqueue infrastructure, which not only reduces the code size but also the
+effort to maintain it.
 
-> On Thu, Feb 27, 2014 at 02:11:19PM -0700, Chris Murphy wrote:
->> 
->> On Feb 27, 2014, at 1:49 PM, otakujunction@gmail.com wrote:
->> 
->>> Yes it's an ancient 32 bit machine.  There must be a complex bug
->>> involved as the system, when originally mounted, claimed the
->>> correct free space and only as used over time did the
->>> discrepancy between used and free grow.  I'm afraid I chose
->>> btrfs because it appeared capable of breaking the 16 tera limit
->>> on a 32 bit system.  If this isn't the case then it's incredible
->>> that I've been using this file system for about a year without
->>> difficulty until now.
->> 
->> Yep, it's not a good bug. This happened some years ago on XFS too,
->> where people would use the file system for a long time and then at
->> 16TB+1byte written to the volume, kablewy! And then it wasn't
->> usable at all, until put on a 64-bit kernel.
->> 
->> http://oss.sgi.com/pipermail/xfs/2014-February/034588.html
-> 
-> Well, no, that's not what I said.
+The result(somewhat outdated though) from sysbench shows minor improvement on the following server:
+CPU: two-way Xeon X5660
+RAM: 4G 
+HDD: SAS HDD, 150G total, 100G partition for btrfs test
 
-What are you thinking I said you said? I wasn't quoting or paraphrasing anything you've said above. I had done a google search on this early and found some rather old threads where some people had this experience of making a large file system on a 32-bit kernel, and only after filling it beyond 16TB did they run into the problem. Here is one of them:
+Test result on default mount option:
+https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdENjajJTWFg5d1BWbExnYWFpMTJxeUE&usp=sharing
 
-http://lists.centos.org/pipermail/centos/2011-April/109142.html
+Test result on "-o compress" mount option:
+https://docs.google.com/spreadsheet/ccc?key=0AhpkL3ehzX3pdHdTTEJ6OW96SXJFaDR5enB1SzMzc0E&usp=sharing
 
+Changelog:
+v1->v2:
+  - Fix some workqueue flags.
+v2->v3:
+  - Add the thresholding mechanism to simulate the old behavior
+  - Convert all the btrfs_workers to btrfs_workrqueue_struct.
+  - Fix some potential deadlock when executed in IRQ handler.
+v3->v4:
+  - Change the ordered workqueue implement to fix the performance drop in 32K
+    multi thread random write.
+  - Change the high priority workqueue implement to get an independent high
+    workqueue without starving problem.
+  - Simplify the btrfs_alloc_workqueue parameters.
+  - Coding style cleanup.
+  - Remove the redundant "_struct" suffix.
+v4->v5:
+  - Fix a multithread free-and-use bug reported by Josef and David.
 
+Qu Wenruo (18):
+  btrfs: Cleanup the unused struct async_sched.
+  btrfs: Added btrfs_workqueue_struct implemented ordered execution
+    based on kernel workqueue
+  btrfs: Add high priority workqueue support for btrfs_workqueue_struct
+  btrfs: Add threshold workqueue based on kernel workqueue
+  btrfs: Replace fs_info->workers with btrfs_workqueue.
+  btrfs: Replace fs_info->delalloc_workers with btrfs_workqueue
+  btrfs: Replace fs_info->submit_workers with btrfs_workqueue.
+  btrfs: Replace fs_info->flush_workers with btrfs_workqueue.
+  btrfs: Replace fs_info->endio_* workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->rmw_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->cache_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->readahead_workers workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->fixup_workers workqueue with btrfs_workqueue.
+  btrfs: Replace fs_info->delayed_workers workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->qgroup_rescan_worker workqueue with
+    btrfs_workqueue.
+  btrfs: Replace fs_info->scrub_* workqueue with btrfs_workqueue.
+  btrfs: Cleanup the old btrfs_worker.
+  btrfs: Cleanup the "_struct" suffix in btrfs_workequeue
 
-> I said that it was limited on XFS,
-> not that the limit was a result of a user making a filesystem too
-> large and then finding out it didn't work. Indeed, you can't do that
-> on XFS - mkfs will refuse to run on a block device it can't access the
-> last block on, and the kernel has the same "can I access the last
-> block of the filesystem" sanity checks that are run at mount and
-> growfs time.
+ fs/btrfs/async-thread.c  | 830 ++++++++++++-----------------------------------
+ fs/btrfs/async-thread.h  | 119 ++-----
+ fs/btrfs/ctree.h         |  39 ++-
+ fs/btrfs/delayed-inode.c |   6 +-
+ fs/btrfs/disk-io.c       | 212 +++++-------
+ fs/btrfs/extent-tree.c   |   4 +-
+ fs/btrfs/inode.c         |  38 +--
+ fs/btrfs/ordered-data.c  |  11 +-
+ fs/btrfs/qgroup.c        |  15 +-
+ fs/btrfs/raid56.c        |  21 +-
+ fs/btrfs/reada.c         |   4 +-
+ fs/btrfs/scrub.c         |  70 ++--
+ fs/btrfs/super.c         |  36 +-
+ fs/btrfs/volumes.c       |  16 +-
+ 14 files changed, 446 insertions(+), 975 deletions(-)
 
-Nope. What I reported on the XFS list, I had used mkfs.xfs while running 32bit kernel on a 20TB virtual disk. It did not fail to make the file system, it failed only to mount it. It was the same booted virtual machine, I created the file system and immediately mounted it. If you want the specifics, I'll post on the XFS list with versions and reproduce steps.
-
-
-> 
-> IOWs, XFS has *never* allowed >16TB on 32 bit systems on Linux.
-
-OK that's fine, I've only reported what other people said they experienced, and it comes as no surprise they might have been confused. Although not knowing the size of one's file system would seem to be rare.
-
-
-Chris Murphy
+-- 
+1.9.0
 

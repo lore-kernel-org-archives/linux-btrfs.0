@@ -1,58 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:58193 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:5165 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751532AbaB1CpW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Feb 2014 21:45:22 -0500
+	id S1751660AbaB1CpY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Feb 2014 21:45:24 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1S2jIcR017665
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1S2jIIt017664
 	for <linux-btrfs@vger.kernel.org>; Fri, 28 Feb 2014 10:45:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 01/18] btrfs: Cleanup the unused struct async_sched.
-Date: Fri, 28 Feb 2014 10:46:02 +0800
-Message-Id: <1393555579-11271-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v5 03/18] btrfs: Add high priority workqueue support for btrfs_workqueue_struct
+Date: Fri, 28 Feb 2014 10:46:04 +0800
+Message-Id: <1393555579-11271-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1393555579-11271-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1393555579-11271-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The struct async_sched is not used by any codes and can be removed.
+Add high priority function to btrfs_workqueue.
+
+This is implemented by embedding a btrfs_workqueue into a
+btrfs_workqueue and use some helper functions to differ the normal
+priority wq and high priority wq.
+So the high priority wq is completely independent from the normal
+workqueue.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Josef Bacik <jbacik@fusionio.com>
 Tested-by: David Sterba <dsterba@suse.cz>
 ---
 Changelog:
 v1->v2:
-  None.
+  None
 v2->v3:
-  None.
+  None
 v3->v4:
-  None:
+  - Implement high priority workqueue independently.
+    Now high priority wq is implemented as a normal btrfs_workqueue,
+    with independent ordering/thresholding mechanism.
+    This fixed the problem that high priority wq and normal wq shared one
+    ordered wq.
 v4->v5:
   None
 ---
- fs/btrfs/volumes.c | 7 -------
- 1 file changed, 7 deletions(-)
+ fs/btrfs/async-thread.c | 91 ++++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/async-thread.h |  5 ++-
+ 2 files changed, 83 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 07629e9..82a63b1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5323,13 +5323,6 @@ static void btrfs_end_bio(struct bio *bio, int err)
- 	}
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 905de02..193c849 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -730,7 +730,7 @@ void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+ 	spin_unlock_irqrestore(&worker->lock, flags);
  }
  
--struct async_sched {
--	struct bio *bio;
--	int rw;
--	struct btrfs_fs_info *info;
--	struct btrfs_work work;
--};
--
- /*
-  * see run_scheduled_bios for a description of why bios are collected for
-  * async submit.
+-struct btrfs_workqueue_struct {
++struct __btrfs_workqueue_struct {
+ 	struct workqueue_struct *normal_wq;
+ 	/* List head pointing to ordered work list */
+ 	struct list_head ordered_list;
+@@ -739,6 +739,38 @@ struct btrfs_workqueue_struct {
+ 	spinlock_t list_lock;
+ };
+ 
++struct btrfs_workqueue_struct {
++	struct __btrfs_workqueue_struct *normal;
++	struct __btrfs_workqueue_struct *high;
++};
++
++static inline struct __btrfs_workqueue_struct
++*__btrfs_alloc_workqueue(char *name, int flags, int max_active)
++{
++	struct __btrfs_workqueue_struct *ret = kzalloc(sizeof(*ret), GFP_NOFS);
++
++	if (unlikely(!ret))
++		return NULL;
++
++	if (flags & WQ_HIGHPRI)
++		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
++						 max_active, "btrfs", name);
++	else
++		ret->normal_wq = alloc_workqueue("%s-%s", flags,
++						 max_active, "btrfs", name);
++	if (unlikely(!ret->normal_wq)) {
++		kfree(ret);
++		return NULL;
++	}
++
++	INIT_LIST_HEAD(&ret->ordered_list);
++	spin_lock_init(&ret->list_lock);
++	return ret;
++}
++
++static inline void
++__btrfs_destroy_workqueue(struct __btrfs_workqueue_struct *wq);
++
+ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 						     int flags,
+ 						     int max_active)
+@@ -748,19 +780,25 @@ struct btrfs_workqueue_struct *btrfs_alloc_workqueue(char *name,
+ 	if (unlikely(!ret))
+ 		return NULL;
+ 
+-	ret->normal_wq = alloc_workqueue("%s-%s", flags, max_active,
+-					 "btrfs", name);
+-	if (unlikely(!ret->normal_wq)) {
++	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
++					      max_active);
++	if (unlikely(!ret->normal)) {
+ 		kfree(ret);
+ 		return NULL;
+ 	}
+ 
+-	INIT_LIST_HEAD(&ret->ordered_list);
+-	spin_lock_init(&ret->list_lock);
++	if (flags & WQ_HIGHPRI) {
++		ret->high = __btrfs_alloc_workqueue(name, flags, max_active);
++		if (unlikely(!ret->high)) {
++			__btrfs_destroy_workqueue(ret->normal);
++			kfree(ret);
++			return NULL;
++		}
++	}
+ 	return ret;
+ }
+ 
+-static void run_ordered_work(struct btrfs_workqueue_struct *wq)
++static void run_ordered_work(struct __btrfs_workqueue_struct *wq)
+ {
+ 	struct list_head *list = &wq->ordered_list;
+ 	struct btrfs_work_struct *work;
+@@ -804,7 +842,7 @@ static void run_ordered_work(struct btrfs_workqueue_struct *wq)
+ static void normal_work_helper(struct work_struct *arg)
+ {
+ 	struct btrfs_work_struct *work;
+-	struct btrfs_workqueue_struct *wq;
++	struct __btrfs_workqueue_struct *wq;
+ 	int need_order = 0;
+ 
+ 	work = container_of(arg, struct btrfs_work_struct, normal_work);
+@@ -840,8 +878,8 @@ void btrfs_init_work(struct btrfs_work_struct *work,
+ 	work->flags = 0;
+ }
+ 
+-void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+-		      struct btrfs_work_struct *work)
++static inline void __btrfs_queue_work(struct __btrfs_workqueue_struct *wq,
++				      struct btrfs_work_struct *work)
+ {
+ 	unsigned long flags;
+ 
+@@ -854,13 +892,42 @@ void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+ 	queue_work(wq->normal_wq, &work->normal_work);
+ }
+ 
+-void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
++void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
++		      struct btrfs_work_struct *work)
++{
++	struct __btrfs_workqueue_struct *dest_wq;
++
++	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags) && wq->high)
++		dest_wq = wq->high;
++	else
++		dest_wq = wq->normal;
++	__btrfs_queue_work(dest_wq, work);
++}
++
++static inline void
++__btrfs_destroy_workqueue(struct __btrfs_workqueue_struct *wq)
+ {
+ 	destroy_workqueue(wq->normal_wq);
+ 	kfree(wq);
+ }
+ 
++void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq)
++{
++	if (!wq)
++		return;
++	if (wq->high)
++		__btrfs_destroy_workqueue(wq->high);
++	__btrfs_destroy_workqueue(wq->normal);
++}
++
+ void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max)
+ {
+-	workqueue_set_max_active(wq->normal_wq, max);
++	workqueue_set_max_active(wq->normal->normal_wq, max);
++	if (wq->high)
++		workqueue_set_max_active(wq->high->normal_wq, max);
++}
++
++void btrfs_set_work_high_priority(struct btrfs_work_struct *work)
++{
++	set_bit(WORK_HIGH_PRIO_BIT, &work->flags);
+ }
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 9d8da53..fce623c 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -121,6 +121,8 @@ void btrfs_requeue_work(struct btrfs_work *work);
+ void btrfs_set_work_high_prio(struct btrfs_work *work);
+ 
+ struct btrfs_workqueue_struct;
++/* Internal use only */
++struct __btrfs_workqueue_struct;
+ 
+ struct btrfs_work_struct {
+ 	void (*func)(struct btrfs_work_struct *arg);
+@@ -130,7 +132,7 @@ struct btrfs_work_struct {
+ 	/* Don't touch things below */
+ 	struct work_struct normal_work;
+ 	struct list_head ordered_list;
+-	struct btrfs_workqueue_struct *wq;
++	struct __btrfs_workqueue_struct *wq;
+ 	unsigned long flags;
+ };
+ 
+@@ -145,4 +147,5 @@ void btrfs_queue_work(struct btrfs_workqueue_struct *wq,
+ 		      struct btrfs_work_struct *work);
+ void btrfs_destroy_workqueue(struct btrfs_workqueue_struct *wq);
+ void btrfs_workqueue_set_max(struct btrfs_workqueue_struct *wq, int max);
++void btrfs_set_work_high_priority(struct btrfs_work_struct *work);
+ #endif
 -- 
 1.9.0
 

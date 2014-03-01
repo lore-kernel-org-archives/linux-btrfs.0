@@ -1,68 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59409 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752529AbaBSMOr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Feb 2014 07:14:47 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s1JBQ2uP026055
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2014 19:26:22 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from mout.gmx.net ([212.227.15.15]:56888 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751838AbaCABVo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Feb 2014 20:21:44 -0500
+Received: from [192.168.0.102] ([130.180.1.21]) by mail.gmx.com (mrgmx002)
+ with ESMTPSA (Nemesis) id 0MPlsg-1WFgk03jpS-004za8 for
+ <linux-btrfs@vger.kernel.org>; Sat, 01 Mar 2014 02:21:42 +0100
+Message-ID: <53113626.3060706@gmx.net>
+Date: Sat, 01 Mar 2014 02:21:42 +0100
+From: Marcel Partap <mpartap@gmx.net>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] Btrfs: wake up @scrub_pause_wait as much as we can
-Date: Wed, 19 Feb 2014 19:24:19 +0800
-Message-Id: <1392809059-22319-4-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1392809059-22319-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1392809059-22319-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: How to view transaction log chronologically, human-readable?
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-check if @scrubs_running=@scrubs_paused condition inside wait_event()
-is not an atomic operation which means we may inc/dec @scrub_running/
-paused at any time. Let's wake up @scrub_pause_wait as much as we can
-to let commit transaction blocked less.
+Dear BTFRS devs,
+I have a 1TB btrfs volume mounted read-only since two years because I
+deleted a bunch of files and didn't want to give up on them.
+Now with latest btrfs-find-root and btrfs restore --dry-run -t in a
+loop, I generated the full list of files contained in the last several
+hundred root trees. However, diffing these, I find the current one being
+the same until 94 root trees back, and the ones before contain earlier
+changes. Maybe by my own fault that is..whatever.
 
-An example below:
+Is there a way to just view the transaction history in a human-readable way?
 
-Thread1				Thread2
-|->scrub_blocked_if_needed()	|->scrub_pending_trans_workers_inc
-  |->increase @scrub_paused
-                                       |->increase @scrub_running
-  |->wake up scrub_pause_wait list
-                                       |->scrub blocked
-                                       |->increase @scrub_paused
-
-Thread3 is commiting transaction which is blocked at btrfs_scrub_pause().
-So after Thread2 increase @scrub_paused, we meet the condition
-@scrub_paused=@scrub_running, but transaction will be still blocked until
-another calling to wake up @scrub_pause_wait.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index f2f8803..682ec3fc 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -315,6 +315,16 @@ static void scrub_pending_trans_workers_inc(struct scrub_ctx *sctx)
- 	atomic_inc(&fs_info->scrubs_running);
- 	atomic_inc(&fs_info->scrubs_paused);
- 	mutex_unlock(&fs_info->scrub_lock);
-+
-+	/*
-+	 * check if @scrubs_running=@scrubs_paused condition
-+	 * inside wait_event() is not an atomic operation.
-+	 * which means we may inc/dec @scrub_running/paused
-+	 * at any time. Let's wake up @scrub_pause_wait as
-+	 * much as we can to let commit transaction blocked less.
-+	 */
-+	wake_up(&fs_info->scrub_pause_wait);
-+
- 	atomic_inc(&sctx->workers_pending);
- }
- 
--- 
-1.8.3.1
-
+#Regards

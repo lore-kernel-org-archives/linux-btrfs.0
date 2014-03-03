@@ -1,136 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:45011 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752385AbaCCFVt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Mar 2014 00:21:49 -0500
-Date: Sun, 2 Mar 2014 21:21:47 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from cn.fujitsu.com ([222.73.24.84]:27727 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752263AbaCCGwZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Mar 2014 01:52:25 -0500
+Message-ID: <53142639.3030600@cn.fujitsu.com>
+Date: Mon, 03 Mar 2014 14:50:33 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: 3.14.0-rc3 btrfs scrub is preventing my laptop from going to
  sleep
-Message-ID: <20140303052147.GB24835@merlins.org>
-References: <20140227190656.GA28338@merlins.org>
- <530FE3CE.70809@cn.fujitsu.com>
- <20140301050937.GD18300@merlins.org>
- <20140301152235.GA26926@merlins.org>
- <5313F45F.9090709@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="ew6BAiZeqk4r7MaW"
-In-Reply-To: <5313F45F.9090709@cn.fujitsu.com>
+References: <20140227190656.GA28338@merlins.org> <530FE3CE.70809@cn.fujitsu.com> <20140301050937.GD18300@merlins.org> <20140301152235.GA26926@merlins.org> <5313F45F.9090709@cn.fujitsu.com> <20140303052147.GB24835@merlins.org>
+In-Reply-To: <20140303052147.GB24835@merlins.org>
+Content-Type: multipart/mixed;
+ boundary="------------090601000501020500060306"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------090601000501020500060306
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 
---ew6BAiZeqk4r7MaW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On 03/03/2014 01:21 PM, Marc MERLIN wrote:
+> On Mon, Mar 03, 2014 at 11:17:51AM +0800, Wang Shilong wrote:
+>> Hi Marc,
+>>
+>> On 03/01/2014 11:22 PM, Marc MERLIN wrote:
+>>> On Fri, Feb 28, 2014 at 09:09:37PM -0800, Marc MERLIN wrote:
+>>>> On Fri, Feb 28, 2014 at 09:18:06AM +0800, Wang Shilong wrote:
+>>>>> Could you run the following command when scrub is blocked, we can know more
+>>>>> why scrub is blocked here.
+>>>>>
+>>>>> # echo w >  /proc/sysrq-trigger
+>>>>> # dmesg
+>>> Yes, there you go:
+>>>
+>>> (attached because it's too big for the list)
+>>>
+>>> http://marc.merlins.org/tmp/btrfs_nofreeze.txt
+>> Could you please try the following patch, and let's see if it helps:
+>>
+>> https://patchwork.kernel.org/patch/3680431/
+> I just applied your patch, along with the other btrfs send patch to
+> 3.14.0-rc5
+>
+> I didn't help with ACPI sleep. Do you have a laptop you can try this on?
+> It'll likely be faster than me doing this remotely :)
+>
+> Here's the log of failure:
+> http://marc.merlins.org/tmp/btrfs_nofreeze2.txt
 
-On Mon, Mar 03, 2014 at 11:17:51AM +0800, Wang Shilong wrote:
-> Hi Marc,
-> 
-> On 03/01/2014 11:22 PM, Marc MERLIN wrote:
-> >On Fri, Feb 28, 2014 at 09:09:37PM -0800, Marc MERLIN wrote:
-> >>On Fri, Feb 28, 2014 at 09:18:06AM +0800, Wang Shilong wrote:
-> >>>Could you run the following command when scrub is blocked, we can know more
-> >>>why scrub is blocked here.
-> >>>
-> >>># echo w >  /proc/sysrq-trigger
-> >>># dmesg
-> >Yes, there you go:
-> >
-> >(attached because it's too big for the list)
-> >
-> >http://marc.merlins.org/tmp/btrfs_nofreeze.txt
-> Could you please try the following patch, and let's see if it helps:
-> 
-> https://patchwork.kernel.org/patch/3680431/
+Unfortunately, i could not reproduce this problem here.
 
-I just applied your patch, along with the other btrfs send patch to
-3.14.0-rc5
+It should not be the problem that i addressed before, there is not 
+deadlock here.
+try the attached patch and hopely it could solve your problem.(I know 
+this is
+not polite:-) )
 
-I didn't help with ACPI sleep. Do you have a laptop you can try this on?
-It'll likely be faster than me doing this remotely :)
+If the attached patch could not solve your problem, i will find a laptop and
+try to reproduce myself.
 
-Here's the log of failure:
-http://marc.merlins.org/tmp/btrfs_nofreeze2.txt
- 
-> This patch addressed a deadlock for device replace, but i guess scrub
-> may also trigger this problem if there are errors related to the disk.
-
-Hope the log above helps.
- 
-> BTW, is there  some errors related to scrub device, something like:
-> 
-> # btrfs device stat <device>
-
-You mean this?
-legolas:~# btrfs scrub stat /dev/mapper/cryptroot 
-scrub status for 4850ee22-bf32-4131-a841-02abdb4a5ba6
-	scrub started at Sun Mar  2 20:52:21 2014, running for 1587 seconds
-	total bytes scrubbed: 298.96GiB with 1 errors
-	error details: csum=1
-	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
-
-Yes, I know I have an error that will flush when the older snapshots
-get rotated out.
-
-I wrote a fancy cronjob that captures syslog errors as the scrub happens
-and tells me which file(s) created the problem.
-
-Anyway, scrub is working fine and helping out, except for preventing S3
-sleep while it's running. If you can reproduce great, but if you need me
-to try more patches, let me know and I'll be happy to help, even with
-the delay.
+>   
+>> This patch addressed a deadlock for device replace, but i guess scrub
+>> may also trigger this problem if there are errors related to the disk.
+> Hope the log above helps.
+>   
+>> BTW, is there  some errors related to scrub device, something like:
+>>
+>> # btrfs device stat <device>
+> You mean this?
+> legolas:~# btrfs scrub stat /dev/mapper/cryptroot
+> scrub status for 4850ee22-bf32-4131-a841-02abdb4a5ba6
+> 	scrub started at Sun Mar  2 20:52:21 2014, running for 1587 seconds
+> 	total bytes scrubbed: 298.96GiB with 1 errors
+> 	error details: csum=1
+> 	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+BTW, I suppose you should use datacow option for btrfs, but here scrub 
+time is a little longer.
+(1578s for 300g).. Was your filesystem on pressure while running scrub.
 
 Thanks,
-Marc
+Wang
+>
+>   
+> Thanks,
+> Marc
+
+
+--------------090601000501020500060306
+Content-Transfer-Encoding: 7bit
+Content-Type: text/x-patch;
+ name="0001-Btrfs-add-schedule-points-for-scrub.patch"
+Content-Disposition: attachment;
+ filename="0001-Btrfs-add-schedule-points-for-scrub.patch"
+
+>From 7c0564d5604581dc0ed868de4dbb1ed8d8fbd55f Mon Sep 17 00:00:00 2001
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Date: Mon, 3 Mar 2014 14:34:07 +0800
+Subject: [PATCH] Btrfs: add schedule points for scrub
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/scrub.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 682ec3fc..0a00db0 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2064,6 +2064,7 @@ leave_nomem:
+ 			scrub_block_put(sblock);
+ 			return ret;
+ 		}
++		cond_resched();
+ 	}
+ 
+ 	if (force)
+@@ -2229,6 +2230,7 @@ behind_scrub_pages:
+ 		logical += l;
+ 		physical += l;
+ 		physical_for_dev_replace += l;
++		cond_resched();
+ 	}
+ 	return 0;
+ }
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
-
---ew6BAiZeqk4r7MaW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename=btrfs-scrub
-
-#! /bin/bash
-
-test -x /sbin/btrfs || exit 0
-
-export PATH=/usr/local/bin:$PATH
-
-# bash shortcut for `basename $0`
-PROG=${0##*/}
-lock=/var/run/$PROG
-
-# shlock (from inn) does the right thing and grabs a lock for a dead process
-# (it checks the PID in the lock file and if it's not there, it
-# updates the PID with the value given to -p)
-if ! shlock -p $$ -f $lock; then
-    echo "$lock held, quitting" >&2
-    exit
-fi
-
-if which on_ac_power >/dev/null 2>&1; then
-    ON_BATTERY=0
-    on_ac_power >/dev/null 2>&1 || ON_BATTERY=$?
-    if [ "$ON_BATTERY" -eq 1 ]; then
-	exit 0
-    fi
-fi
-
-for btrfs in $(grep btrfs /proc/mounts | awk '{ print $1 }' | sort -u)
-do
-    logger "Starting scrub of $btrfs"
-    tail -n 0 -f /var/log/syslog | grep "BTRFS: " | grep -Ev '(disk space caching is enabled|unlinked .* orphans|turning on discard|device label .* devid .* transid|enabling SSD mode|BTRFS: has skinny extents|BTRFS: device label)' &
-    /sbin/btrfs scrub start -Bd $btrfs
-    pkill -f 'tail -n 0 -f /var/log/syslog'
-    logger "Ended scrub of $btrfs"
-done
-
-rm $lock
+1.9.0
 
 
---ew6BAiZeqk4r7MaW--
+--------------090601000501020500060306--

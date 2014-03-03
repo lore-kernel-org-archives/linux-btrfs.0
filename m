@@ -1,51 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56200 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751452AbaCCDT4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 2 Mar 2014 22:19:56 -0500
-Message-ID: <5313F45F.9090709@cn.fujitsu.com>
-Date: Mon, 03 Mar 2014 11:17:51 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: 3.14.0-rc3 btrfs scrub is preventing my laptop from going to
- sleep
-References: <20140227190656.GA28338@merlins.org> <530FE3CE.70809@cn.fujitsu.com> <20140301050937.GD18300@merlins.org> <20140301152235.GA26926@merlins.org>
-In-Reply-To: <20140301152235.GA26926@merlins.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from userp1040.oracle.com ([156.151.31.81]:43442 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750800AbaCCEHL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Mar 2014 23:07:11 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s2347AKL027564
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 3 Mar 2014 04:07:11 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s23479I5025338
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 3 Mar 2014 04:07:10 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s23479WP025335
+	for <linux-btrfs@vger.kernel.org>; Mon, 3 Mar 2014 04:07:09 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: add readahead for send_write
+Date: Mon,  3 Mar 2014 12:07:02 +0800
+Message-Id: <1393819622-22074-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Marc,
+Btrfs send reads data from disk and then writes to a stream via pipe or
+a file via flush.
 
-On 03/01/2014 11:22 PM, Marc MERLIN wrote:
-> On Fri, Feb 28, 2014 at 09:09:37PM -0800, Marc MERLIN wrote:
->> On Fri, Feb 28, 2014 at 09:18:06AM +0800, Wang Shilong wrote:
->>> Could you run the following command when scrub is blocked, we can know more
->>> why scrub is blocked here.
->>>
->>> # echo w >  /proc/sysrq-trigger
->>> # dmesg
-> Yes, there you go:
->
-> (attached because it's too big for the list)
->
-> http://marc.merlins.org/tmp/btrfs_nofreeze.txt
-Could you please try the following patch, and let's see if it helps:
+Currently we're going to read each page at a time, so every page results
+in a disk read, which is not friendly to disks, esp. HDD.  Given that,
+the performance can be gained by adding readahead for those pages.
 
-https://patchwork.kernel.org/patch/3680431/
+Here is a quick test:
+$ btrfs subvolume create send
+$ xfs_io -f -c "pwrite 0 1G" send/foobar
+$ btrfs subvolume snap -r send ro
+$ time "btrfs send ro -f /dev/null"
 
-This patch addressed a deadlock for device replace, but i guess scrub 
-may also
-trigger this problem if there are errors related to the disk.
+           w/o             w
+real    1m37.527s       0m9.097s
+user    0m0.122s        0m0.086s
+sys     0m53.191s       0m12.857s
 
-BTW, is there  some errors related to scrub device, something like:
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/send.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-# btrfs device stat <device>
-
-Thanks,
-Wang
->
-> Marc
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 4f00446..6d198ef 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3966,6 +3966,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+ 	pgoff_t last_index;
+ 	unsigned pg_offset = offset & ~PAGE_CACHE_MASK;
+ 	ssize_t ret = 0;
++	struct file_ra_state *ra = NULL;
+ 
+ 	key.objectid = sctx->cur_ino;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+@@ -3985,6 +3986,15 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+ 		goto out;
+ 
+ 	last_index = (offset + len - 1) >> PAGE_CACHE_SHIFT;
++
++	/* initial readahead */
++	ra = kzalloc(sizeof(*ra), GFP_NOFS);
++	if (!ra)
++		goto out;
++
++	file_ra_state_init(ra, inode->i_mapping);
++	btrfs_force_ra(inode->i_mapping, ra, NULL, index, last_index-index + 1);
++
+ 	while (index <= last_index) {
+ 		unsigned cur_len = min_t(unsigned, len,
+ 					 PAGE_CACHE_SIZE - pg_offset);
+@@ -4016,6 +4026,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+ 		ret += cur_len;
+ 	}
+ out:
++	kfree(ra);
+ 	iput(inode);
+ 	return ret;
+ }
+-- 
+1.8.2.1
 

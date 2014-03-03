@@ -1,51 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu0-omc1-s23.blu0.hotmail.com ([65.55.116.34]:57171 "EHLO
-	blu0-omc1-s23.blu0.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753940AbaCCN7g convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Mar 2014 08:59:36 -0500
-Message-ID: <BLU0-SMTP2745244EE7D59BA5FBAB7A38B8F0@phx.gbl>
-Date: Mon, 3 Mar 2014 21:53:45 +0800
-From: gHcAgree <agree.ms@hotmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:47307 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753980AbaCCOZ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Mar 2014 09:25:29 -0500
+Date: Mon, 3 Mar 2014 15:25:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: add readahead for send_write
+Message-ID: <20140303142528.GC7004@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1393838683-25216-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: remove unused code in full_send_tree
-References: <1393853463-26215-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1393853463-26215-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1393838683-25216-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On 2014年03月03日 21:31, Liu Bo wrote:
-> It's unnecessary to update key's value, and remove it to keep code clean.
->
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->   fs/btrfs/send.c | 4 ----
->   1 file changed, 4 deletions(-)
->
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 3fe4d6e..a5f9626 100644
+On Mon, Mar 03, 2014 at 05:24:43PM +0800, Liu Bo wrote:
 > --- a/fs/btrfs/send.c
 > +++ b/fs/btrfs/send.c
-> @@ -5180,10 +5180,6 @@ static int full_send_tree(struct send_ctx *sctx)
->   		if (ret < 0)
->   			goto out;
->   
-> -		key.objectid = found_key.objectid;
-> -		key.type = found_key.type;
-> -		key.offset = found_key.offset + 1;
-> -
->   		ret = btrfs_next_item(send_root, path);
->   		if (ret < 0)
->   			goto out;
-Hi Liu and all,
-I think the statements may better be reserved. I noticed that there is 
-an "goto join_trans" above. I think we may hit it in the next round and 
-exec from the "join_trans" down, then these 3 assignments effect.
+> @@ -3972,6 +3972,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  	pgoff_t last_index;
+>  	unsigned pg_offset = offset & ~PAGE_CACHE_MASK;
+>  	ssize_t ret = 0;
+> +	struct file_ra_state *ra = NULL;
+>  
+>  	key.objectid = sctx->cur_ino;
+>  	key.type = BTRFS_INODE_ITEM_KEY;
+> @@ -3991,6 +3992,17 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  		goto out;
+>  
+>  	last_index = (offset + len - 1) >> PAGE_CACHE_SHIFT;
+> +
+> +	/* initial readahead */
+> +	ra = kzalloc(sizeof(*ra), GFP_NOFS);
+> +	if (!ra) {
+> +		ret = -ENOMEM;
 
-Sorry, I am not very sure whether this situation could happen, please 
-ignore me if I am making noise.
+This should not be a hard failure, it can continue without RA for this
+buffer. Besides, the RA buffer can be allocated at the beginning of send
+operation and pointer stored in the send context.
 
--H.A.
+> +		goto out;
+> +	}
+> +
+> +	file_ra_state_init(ra, inode->i_mapping);
+> +	btrfs_force_ra(inode->i_mapping, ra, NULL, index, last_index-index + 1);
+> +
+>  	while (index <= last_index) {
+>  		unsigned cur_len = min_t(unsigned, len,
+>  					 PAGE_CACHE_SIZE - pg_offset);
+> @@ -4022,6 +4034,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  		ret += cur_len;
+>  	}
+>  out:
+> +	kfree(ra);
+>  	iput(inode);
+>  	return ret;
+>  }
+> -- 
+> 1.8.1.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

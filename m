@@ -1,52 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48752 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54789 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752717AbaCCVC3 convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1754878AbaCCWfi convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Mar 2014 16:02:29 -0500
-Received: from c-50-183-15-223.hsd1.co.comcast.net ([50.183.15.223]:63027 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WKa0L-003yH5-Gs
-	for linux-btrfs@vger.kernel.org; Mon, 03 Mar 2014 14:02:29 -0700
-Content-Type: text/plain; charset=us-ascii
+	Mon, 3 Mar 2014 17:35:38 -0500
+Content-Type: text/plain; charset=US-ASCII
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: ENOSPC errors during raid1 rebalance
+Subject: Re: btrfsck does not fix
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <loom.20140303T214420-188@post.gmane.org>
-Date: Mon, 3 Mar 2014 14:02:28 -0700
-Message-Id: <484B2C3D-6BCF-4B31-BEB7-B917A49476AF@colorremedies.com>
-References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com> <pan$b5b02$85505b$f53ee629$e32b9776@cox.net> <loom.20140303T191959-983@post.gmane.org> <D35E6741-2350-4910-B785-5584F730EDA9@colorremedies.com> <loom.20140303T200845-874@post.gmane.org> <523E1747-8B25-48F8-8DAD-D40021F42DAC@colorremedies.com> <loom.20140303T214420-188@post.gmane.org>
-To: Btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <53137AD1.50504@friedels.name>
+Date: Mon, 3 Mar 2014 15:35:36 -0700
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Message-Id: <0548C4C7-1664-48F9-9DA3-DB1CC35DB9E6@colorremedies.com>
+References: <52C7127F.3060902@friedels.name>	<0FFB7595-0A34-424C-BFC5-CCF6098A7801@colorremedies.com>	<52D317CF.2070007@friedels.name> <6210673.6TYUkLGl6b@merkaba>	<52DED1C2.60103@friedels.name> <52F6A955.5020808@friedels.name>	<A0A6914C-DDA5-4904-83FA-B59AA420C9C6@colorremedies.com>	<52F73E2B.9080103@friedels.name>	<837FAEE6-9A8E-4A88-AEDF-B9B2B3C3B618@colorremedies.com>	<82A12D91-416E-4B2F-80ED-23ACFD466633@colorremedies.com>	<53010EF9.60805@friedels.name>	<21AD6EBC-FDDA-4BDE-B0B4-D6A8BBAD58F0@colorremedies.com> <pan$475be$cb0c1165$a3d91acc$c206709@cox.net> <5303D6C8.80103@friedels.name> <9583F3D2-78BB-40C3-A1CD-E2D8DE4CA89E@colorremedies.com> <53137AD1.50504@friedels.name>
+To: Hendrik Friedel <hendrik@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Mar 3, 2014, at 1:50 PM, Michael Russo <mike@papersolve.com> wrote:
+On Mar 2, 2014, at 11:39 AM, Hendrik Friedel <hendrik@friedels.name> wrote:
+> 
+> I am lacking space why I did the balance (to free one of the two discs).
+> So, unless the above helps, it seems, I need to buy another HDD?
 
-> Oh yeah, it was definitely a problem with either the drives 
-> or the external enclosure, which was converting USB to SATA 
-> and mirroring the drives internally (it was a WD MyBook 
-> Mirror Edition). There was a problem with one of the drives 
-> and I replaced it, but before I did it screwed up some 
-> data. I think one drive kept trying to do a retry on a read 
-> and somehow the logic decided to just give me a "nearby" 
-> sector to satisfy the read (I can't really figure out how else 
-> 10 seconds of a random but "nearby" in alphabetical order 
-> MP3 could get stuck into the middle of another MP3).   
+It might be worth finding large files to defragment. See the ENOSPC errors during raid1 rebalance thread. It sounds like it might be possible for some fragmented files to be stuck across multiple chunks, preventing conversion.
 
-If it's a persistent problem with a particular file, that has the same 10 seconds from some other song, it's actually been written to disk wrong. That's a misdirected write.
+Otherwise, I'd like to believe for anything semi-important you have a way to back it up, and if not well you probably need another HDD anyway. As they say, raid is not a backup.
 
-10 seconds of some other file playing translates into how many blocks of data roughly? That's probably a pretty big misdirect. So I don't know that this would be more likely a drive problem, or possibly memory or controller. I'd burn a memtest86+ run for a few days if you haven't done this recently to remove that as a factor.
+> 
+> Davids itegration-branch btrfsck tells me:
+> 
+> ./btrfsck /dev/sda1
+> Checking filesystem on /dev/sda1
+> UUID: 989306aa-d291-4752-8477-0baf94f8c42f
+> checking extents
+> checking free space cache
+> checking fs roots
+> root 256 inode 9579 errors 100, file extent discount
+> root 256 inode 9580 errors 100, file extent discount
+> root 256 inode 14258 errors 100, file extent discount
+> root 256 inode 14259 errors 100, file extent discount
+> root 14155 inode 9579 errors 100, file extent discount
+> root 14155 inode 9580 errors 100, file extent discount
+> root 14155 inode 14258 errors 100, file extent discount
+> root 14155 inode 14259 errors 100, file extent discount
+> root 14251 inode 9579 errors 100, file extent discount
+> root 14251 inode 9580 errors 100, file extent discount
 
-> So I removed the entire enclosure and put them inside 
-> my case and decided I never wanted it to happen again so I 
-> converted to btrfs. :)  Very happy it exists!
-
-
-The USB to SATA chipsets are all over the map quality wise, a lot of them suck. So this sounds like you've eliminated the controller as a factor going forward, by changing back to a direct SATA connection. That's a good idea.
-
+I don't know what this means, even whether it's a significant problem or just noise. 
 
 
 Chris Murphy

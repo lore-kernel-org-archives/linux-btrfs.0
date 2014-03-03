@@ -1,105 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f170.google.com ([209.85.216.170]:52622 "EHLO
-	mail-qc0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752070AbaCCSDu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Mar 2014 13:03:50 -0500
-Received: by mail-qc0-f170.google.com with SMTP id c9so4187953qcz.15
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Mar 2014 10:03:49 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: madthanu@gmail.com
-In-Reply-To: <5314BF28.5040209@fb.com>
-References: <CAJ6LpRpbKyETTOicfXjTXe15u0pqwe7rMkLcAUKrH1xyHOB1Vw@mail.gmail.com>
- <5314BF28.5040209@fb.com>
-From: thanumalayan mad <madthanu@gmail.com>
-Date: Mon, 3 Mar 2014 11:56:49 -0600
-Message-ID: <CAJ6LpRoe8mA2QPrKK3zmeFqF07Va2DLbCiQeyOuZ+HpCAZ4OCQ@mail.gmail.com>
-Subject: Re: Ordering of directory operations maintained across system crashes
- in Btrfs?
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:57358 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753922AbaCCSQ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Mar 2014 13:16:29 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WKXPg-0000Zc-7I
+	for linux-btrfs@vger.kernel.org; Mon, 03 Mar 2014 19:16:28 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Mar 2014 19:16:28 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Mar 2014 19:16:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ENOSPC errors during raid1 rebalance
+Date: Mon, 3 Mar 2014 18:16:01 +0000 (UTC)
+Message-ID: <pan$b5b02$85505b$f53ee629$e32b9776@cox.net>
+References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
+Mike Russo posted on Mon, 03 Mar 2014 17:23:43 +0000 as excerpted:
 
-Great, thanks. Any guesses whether other filesystems (disk-based) do
-things similar to the last two examples you pointed out? Saying "we
-think 3 normal filesystems reorder stuff" seems to motivate
-application developers to fix bugs ...
+> I'm trying to convert a disk from single (/dev/sdc1) to RAID1
+> (dev/sdd1), and the filesystem was previously ext4 but the conversion
+> seemed to go just fine, and I have no snapshots. System and metadata
+> convert, and almost all my data converts, but there are 70 stubborn GB
+> (14 blocks of 5GB each) that refuse to convert and I get ENOSPC errors
+> when trying to reallocate them.
 
-Also, just for more information, the sequence we observed was,
+While I created entirely new btrfs filesystems here and copied everything 
+over rather than converting so I've not had personal experience with the 
+conversion process...
 
-Thread A:
+The wiki[1] says[2] that while the conversion process uses the same data 
+blocks for both ext3/4 and btrfs, it duplicates the ext3/4 metadata, 
+creating a new btrfs copy (or two, for default metadata dup mode), 
+leaving the original ext3/4 copy untouched.  Btrfs modifications are then 
+done using standard btrfs COW (copy-on-write) methods, so the ext3/4 
+data, while originally shared, remains untouched as well.
 
-unlink(foo)
-rename(somefile X, somefile Y)
-fsync(somefile Z)
+That allows rollback if desired, but does tie up some some space with the 
+automatically created btrfs "snapshot" that contains the ext3/4 metadata 
+and untouched data.  While you say you have no snapshots, it's unclear 
+whether you mean none that you've created /since/ the conversion, but you 
+didn't delete that original snapshot so still have it, or whether you 
+deleted that automatically created btrfs snapshot of the old ext3/4 
+filesystem and simply didn't specifically mention it.
 
-The source and destination of the renamed file are unrelated to the
-fsync. But the rename happens in the fsync()'s transaction, while
-unlink() is delayed. I guess this has something to do with backrefs
-too.
+I'm guessing that it's the former, and that btrfs is refusing to balance/
+restripe that old ext3/4 snapshot albeit with a very confusing ENOSPC 
+error message, since it'd kill the old ext3/4 filesystem and you could no 
+longer rollback.
 
-Thanks,
-Thanu
+If that's the case, the page at [2] explains how you get rid of the old 
+ext3/4 snapshot once you're sure you won't be rolling back and thus no 
+longer need it.  With a bit of luck, that's all you need to do, and after 
+deleting that, you can finish your balance/restripe. =:^)
 
-On Mon, Mar 3, 2014 at 11:43 AM, Chris Mason <clm@fb.com> wrote:
-> On 02/25/2014 09:01 PM, thanumalayan mad wrote:
->>
->> Hi all,
->>
->> Slightly complicated question.
->>
->> Assume I do two directory operations in a Btrfs partition (such as an
->> unlink() and a rename()), one after the other, and a crash happens
->> after the rename(). Can Btrfs (the current version) send the second
->> operation to the disk first, so that after the crash, I observe the
->> effects of rename() but not the effects of the unlink()?
->>
->> I think I am observing Btrfs re-ordering an unlink() and a rename(),
->> and I just want to confirm that my observation is true. Also, if Btrfs
->> does send directory operations to disk out of order, is there some
->> limitation on this? Like, is this restricted to only unlink() and
->> rename()?
->>
->> I am looking at some (buggy) applications that use Btrfs, and this
->> behavior seems to affect them.
->
->
-> There isn't a single answer for this one.
->
-> You might have
->
-> Thread A:
->
-> ulink(foo);
-> rename(somefile, somefile2);
-> <crash>
->
-> This should always have the rename happen before or in the same transaction
-> as the rename.
->
-> Thread A:
->
-> ulink(dirA/foo);
-> rename(dirB/somefile, dirB/somefile2);
->
-> Here you're at the mercy of what is happening in dirB.  If someone fsyncs
-> that directory, it may hit the disk before the unlink.
->
-> Thread A:
->
-> ulink(foo);
-> rename(somefile, somefile2);
-> fsync(somefile);
->
-> This one is even fuzzier.  Backrefs allow us to do some file fsyncs without
-> touching the directory, making it possible the unlink will hit disk after
-> the fsync.
->
-> -chris
->
->
->
->
+If you've already btrfs subvol delete-ed the ext2_saved subvolume, or if 
+you hadn't but doing so doesn't solve the problem, well, I went for the 
+low-hanging-fruit solution but obviously that wasn't it. =:^(  Hopefully 
+someone else can help further.
+
+---
+[1] https://btrfs.wiki.kernel.org  Bookmark it! =:^)
+
+[2] https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

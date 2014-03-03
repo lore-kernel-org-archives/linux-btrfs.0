@@ -1,61 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:34384 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752105AbaCBK7h convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Mar 2014 05:59:37 -0500
-Received: from mfilter30-d.gandi.net (mfilter30-d.gandi.net [217.70.178.161])
-	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 39D6541C054
-	for <linux-btrfs@vger.kernel.org>; Sun,  2 Mar 2014 11:59:36 +0100 (CET)
-Received: from relay5-d.mail.gandi.net ([217.70.183.197])
-	by mfilter30-d.gandi.net (mfilter30-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id sxgN5zAysKgk for <linux-btrfs@vger.kernel.org>;
-	Sun,  2 Mar 2014 11:59:34 +0100 (CET)
-Received: from fnix.localnet (AMontpellier-256-1-52-154.w90-28.abo.wanadoo.fr [90.28.19.154])
-	(Authenticated sender: michel@bouissou.net)
-	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id CA4A541C056
-	for <linux-btrfs@vger.kernel.org>; Sun,  2 Mar 2014 11:59:34 +0100 (CET)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Is BTRFS "bedup" maintained ?
-Date: Sun, 02 Mar 2014 12:00:51 +0100
-Message-ID: <2507621.pWqlrcrh1e@fnix>
+Received: from cn.fujitsu.com ([222.73.24.84]:56200 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751452AbaCCDT4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 2 Mar 2014 22:19:56 -0500
+Message-ID: <5313F45F.9090709@cn.fujitsu.com>
+Date: Mon, 03 Mar 2014 11:17:51 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: 3.14.0-rc3 btrfs scrub is preventing my laptop from going to
+ sleep
+References: <20140227190656.GA28338@merlins.org> <530FE3CE.70809@cn.fujitsu.com> <20140301050937.GD18300@merlins.org> <20140301152235.GA26926@merlins.org>
+In-Reply-To: <20140301152235.GA26926@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi Marc,
 
-I tried to use "bedup" BTRFS offline deduplication tool on several BTRFS 
-machines, with mixed results :
+On 03/01/2014 11:22 PM, Marc MERLIN wrote:
+> On Fri, Feb 28, 2014 at 09:09:37PM -0800, Marc MERLIN wrote:
+>> On Fri, Feb 28, 2014 at 09:18:06AM +0800, Wang Shilong wrote:
+>>> Could you run the following command when scrub is blocked, we can know more
+>>> why scrub is blocked here.
+>>>
+>>> # echo w >  /proc/sysrq-trigger
+>>> # dmesg
+> Yes, there you go:
+>
+> (attached because it's too big for the list)
+>
+> http://marc.merlins.org/tmp/btrfs_nofreeze.txt
+Could you please try the following patch, and let's see if it helps:
 
-1/ Crashes with messages stating "programming error", sqlite objects must be 
-used inside of the thread that created them, blah-blah...
+https://patchwork.kernel.org/patch/3680431/
 
-2/ Crashes stating that some file/objects miss a "live" attribute (?)
+This patch addressed a deadlock for device replace, but i guess scrub 
+may also
+trigger this problem if there are errors related to the disk.
 
-3/ bedup eating all my system RAM, then swap over 7GB until the system trashes 
-itself.
+BTW, is there  some errors related to scrub device, something like:
 
-Wel, besides that and restarting over and over, I could deduplicate some files 
-and gain some noticeable space, but it looks extremely bugged and unreliable.
+# btrfs device stat <device>
 
-I tried to email the maintainer with details, twice, thru 2 different channels, 
-got no anwser...
-
-And it looks like the GIT has not evolved since August, 2013.
-
-So my questions are : 
-
-- Is "bedup" maintained or abandoned ?
-- Is it supposed to be usable ?
-- Should I use it ?
-- Is there a risk that it causes data loss or corruption ?
-
-TIA.
-
-Kind regards.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Thanks,
+Wang
+>
+> Marc
 

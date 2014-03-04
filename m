@@ -1,50 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35415 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755204AbaCDCuA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Mar 2014 21:50:00 -0500
-Date: Tue, 4 Mar 2014 10:49:52 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz
+Received: from cantor2.suse.de ([195.135.220.15]:37783 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756989AbaCDMb3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Mar 2014 07:31:29 -0500
+Date: Tue, 4 Mar 2014 13:31:27 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] Btrfs: add readahead for send_write
-Message-ID: <20140304024951.GB27809@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20140304123127.GG7004@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <1393838683-25216-1-git-send-email-bo.li.liu@oracle.com>
  <20140303142528.GC7004@twin.jikos.cz>
+ <20140304024951.GB27809@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140303142528.GC7004@twin.jikos.cz>
+In-Reply-To: <20140304024951.GB27809@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 03, 2014 at 03:25:28PM +0100, David Sterba wrote:
-> On Mon, Mar 03, 2014 at 05:24:43PM +0800, Liu Bo wrote:
-> > --- a/fs/btrfs/send.c
-> > +++ b/fs/btrfs/send.c
-> > @@ -3972,6 +3972,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
-> >  	pgoff_t last_index;
-> >  	unsigned pg_offset = offset & ~PAGE_CACHE_MASK;
-> >  	ssize_t ret = 0;
-> > +	struct file_ra_state *ra = NULL;
-> >  
-> >  	key.objectid = sctx->cur_ino;
-> >  	key.type = BTRFS_INODE_ITEM_KEY;
-> > @@ -3991,6 +3992,17 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
-> >  		goto out;
-> >  
-> >  	last_index = (offset + len - 1) >> PAGE_CACHE_SHIFT;
-> > +
-> > +	/* initial readahead */
-> > +	ra = kzalloc(sizeof(*ra), GFP_NOFS);
-> > +	if (!ra) {
-> > +		ret = -ENOMEM;
+On Tue, Mar 04, 2014 at 10:49:52AM +0800, Liu Bo wrote:
+> On Mon, Mar 03, 2014 at 03:25:28PM +0100, David Sterba wrote:
+> > This should not be a hard failure, it can continue without RA for this
+> > buffer. Besides, the RA buffer can be allocated at the beginning of send
+> > operation and pointer stored in the send context.
 > 
-> This should not be a hard failure, it can continue without RA for this
-> buffer. Besides, the RA buffer can be allocated at the beginning of send
-> operation and pointer stored in the send context.
+> Good point, I think we can fold this into 'struct send_ctx', do you agree?
 
-Good point, I think we can fold this into 'struct send_ctx', do you agree?
-
-Thanks,
--liubo
+Sure, size of send_ctx + readahead state will remain below 512.

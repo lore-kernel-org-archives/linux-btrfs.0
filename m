@@ -1,53 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37212 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754241AbaCDCSG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Mar 2014 21:18:06 -0500
-Date: Tue, 4 Mar 2014 10:17:56 +0800
+Received: from aserp1040.oracle.com ([141.146.126.69]:35415 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755204AbaCDCuA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Mar 2014 21:50:00 -0500
+Date: Tue, 4 Mar 2014 10:49:52 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: gHcAgree <agree.ms@hotmail.com>
+To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: remove unused code in full_send_tree
-Message-ID: <20140304021755.GA27809@localhost.localdomain>
+Subject: Re: [PATCH v2] Btrfs: add readahead for send_write
+Message-ID: <20140304024951.GB27809@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <1393853463-26215-1-git-send-email-bo.li.liu@oracle.com>
- <BLU0-SMTP2745244EE7D59BA5FBAB7A38B8F0@phx.gbl>
+References: <1393838683-25216-1-git-send-email-bo.li.liu@oracle.com>
+ <20140303142528.GC7004@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <BLU0-SMTP2745244EE7D59BA5FBAB7A38B8F0@phx.gbl>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140303142528.GC7004@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 03, 2014 at 09:53:45PM +0800, gHcAgree wrote:
+On Mon, Mar 03, 2014 at 03:25:28PM +0100, David Sterba wrote:
+> On Mon, Mar 03, 2014 at 05:24:43PM +0800, Liu Bo wrote:
+> > --- a/fs/btrfs/send.c
+> > +++ b/fs/btrfs/send.c
+> > @@ -3972,6 +3972,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+> >  	pgoff_t last_index;
+> >  	unsigned pg_offset = offset & ~PAGE_CACHE_MASK;
+> >  	ssize_t ret = 0;
+> > +	struct file_ra_state *ra = NULL;
+> >  
+> >  	key.objectid = sctx->cur_ino;
+> >  	key.type = BTRFS_INODE_ITEM_KEY;
+> > @@ -3991,6 +3992,17 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+> >  		goto out;
+> >  
+> >  	last_index = (offset + len - 1) >> PAGE_CACHE_SHIFT;
+> > +
+> > +	/* initial readahead */
+> > +	ra = kzalloc(sizeof(*ra), GFP_NOFS);
+> > +	if (!ra) {
+> > +		ret = -ENOMEM;
 > 
-> On 2014年03月03日 21:31, Liu Bo wrote:
-> >It's unnecessary to update key's value, and remove it to keep code clean.
-> >
-> >Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> >---
-> >  fs/btrfs/send.c | 4 ----
-> >  1 file changed, 4 deletions(-)
-> >
-> >diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> >index 3fe4d6e..a5f9626 100644
-> >--- a/fs/btrfs/send.c
-> >+++ b/fs/btrfs/send.c
-> >@@ -5180,10 +5180,6 @@ static int full_send_tree(struct send_ctx *sctx)
-> >  		if (ret < 0)
-> >  			goto out;
-> >-		key.objectid = found_key.objectid;
-> >-		key.type = found_key.type;
-> >-		key.offset = found_key.offset + 1;
-> >-
-> >  		ret = btrfs_next_item(send_root, path);
-> >  		if (ret < 0)
-> >  			goto out;
-> Hi Liu and all,
-> I think the statements may better be reserved. I noticed that there
-> is an "goto join_trans" above. I think we may hit it in the next
-> round and exec from the "join_trans" down, then these 3 assignments
-> effect.
+> This should not be a hard failure, it can continue without RA for this
+> buffer. Besides, the RA buffer can be allocated at the beginning of send
+> operation and pointer stored in the send context.
 
-Yeah, I think you're right, with btrfs-next, we should keep these assignments.
+Good point, I think we can fold this into 'struct send_ctx', do you agree?
 
+Thanks,
 -liubo

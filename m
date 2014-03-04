@@ -1,70 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40945 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757276AbaCDPTg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Mar 2014 10:19:36 -0500
-Message-ID: <5315EEF8.7030908@fb.com>
-Date: Tue, 4 Mar 2014 10:19:20 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH 5/5] Btrfs: fix broken free space cache after the
- system crashed
-References: <1389787258-10865-1-git-send-email-miaox@cn.fujitsu.com> <1389787258-10865-5-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1389787258-10865-5-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from plane.gmane.org ([80.91.229.3]:53588 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753758AbaCDPzu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Mar 2014 10:55:50 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WKrh5-0005H9-0F
+	for linux-btrfs@vger.kernel.org; Tue, 04 Mar 2014 16:55:47 +0100
+Received: from pool-96-232-101-151.nycmny.fios.verizon.net ([96.232.101.151])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Mar 2014 16:55:46 +0100
+Received: from mike by pool-96-232-101-151.nycmny.fios.verizon.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Mar 2014 16:55:46 +0100
+To: linux-btrfs@vger.kernel.org
+From: Michael Russo <mike@papersolve.com>
+Subject: Re: ENOSPC errors during raid1 rebalance
+Date: Tue, 4 Mar 2014 15:55:20 +0000 (UTC)
+Message-ID: <loom.20140304T164456-762@post.gmane.org>
+References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com> <20140303183911.GL13899@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hugo Mills <hugo <at> carfax.org.uk> writes:
 
-On 01/15/2014 07:00 AM, Miao Xie wrote:
-> When we mounted the filesystem after the crash, we got the
-> following message: BTRFS error (device xxx): block group 4315938816
-> has wrong amount of free space BTRFS error (device xxx): failed to
-> load free space cache for block group 4315938816
-> 
-> It is because we didn't update the metadata of the allocated space
-> until the file data was written into the disk. During this time,
-> there was no information about the allocated spaces in either the
-> extent tree nor the free space cache. when we wrote out the free
-> space cache at this time, those spaces were lost.
-> 
-> In ordered to fix this problem, I use a state tree for every block
-> group to record those allocated spaces. We record the information
-> when they are allocated, and clean up the information after the
-> metadata update. Besides that, we also introduce a read-write
-> semaphore to avoid the race between the allocation and the free
-> space cache write out.
-> 
-> Only data block groups had this problem, so the above change is
-> just for data space allocation.
+>    This is just a guess, but you might have some large (>1GB) 
+extents
+> in there that span across multiple chunks. I'd suggest running a 
+btrfs
+> defrag on any particularly big files and see if that helps the 
+situation.
 > 
 
-I didn't like this idea at first but I've come around to it.  The only
-thing is the data_rwsem thing, we don't need it as we are protected by
-the transaction being blocked when we do writeout, so nobody can data
-allocations during this time.  Thanks,
+Doing this is definitely helping, but I have to run the defrag multiple 
+times with different values for "-t". If I don't include -t the defrag 
+runs really quickly but doesn't seem to do anything.  Now I've gotten 
+it down to only 2 5GB segments that won't move.  I'm going to 
+extract the very big log generated when I run 
+"btrfs ba start -dconvert=raid1,soft /mymedia" 
+with enospc_debug and send it as a file, hopefully it will help.  
+The first couple lines are:
 
-Josef
+Mar  4 10:49:23 ossy kernel: [134922.806764] BTRFS info (device sdd1): 
+relocating block group 894460493824 flags 1
+Mar  4 10:49:32 ossy kernel: [134931.650504] BTRFS error (device sdd1): 
+allocation failed flags 17, wanted 1368420352
+Mar  4 10:49:32 ossy kernel: [134931.650507] BTRFS: space_info 1 has 
+113996488704 free, is not full
+Mar  4 10:49:32 ossy kernel: [134931.650509] BTRFS: space_info 
+total=1320702443520, used=1201311391744, pinned=0, 
+reserved=565596160, may_use=1368420352, readonly=4828966912
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-iQIcBAEBAgAGBQJTFe73AAoJEANb+wAKly3BMMMP/1yY3WBGzaz5oTyNRRSgnVvl
-sjk7WSN2A0mhrl6lQOBlTvhgFo3gDNAtIwJaJIfWxWXZfM5i1hXSViFIc5NND3lF
-Jm10oaCPiTaYM0S5jqj8oeSXFyb1ny+/D4C1OfC/eRVpu9juO3bFUZYcM1XMFUcI
-mJxXg9Mqi1C6TOocCIdQI7ijXgm8xEPauaQy71EJZmgSjjVAXFG9BHay26L2a3Yu
-XIlnjyHMcgIFZXGVHQ+45S2pwWVgVZBIHLcKFSDFy4aupq/+EAN15oxdeTLBG8hJ
-RFJh15wLQguawlirc7boPzEugSieixbbUjn6CZqikVZke1g1fjGvrTAjiacpTDxv
-jskrCPYaXYWKMqGjugsVSI8GSonuWmmVRBsg4k+52U9AYM8wapjL+RHzBXU1cBqu
-zfyqaJhBj7EOQIu2oQDT2ZF9E+XA8dLcrysasMS+CYmcmR1Bs1fzpP2W3DoOg68F
-YoYuXnaAvIkvUQSsPUNGPjCn+iGCq65ZwiwnwF93RN7zlFIQt12DSn7l/NKnT/p9
-1jvLkQ2MFmb6QD264mAOL5TULWyyB0AXsitIBJOMs0XWXZheLqqpv1clcaZacBFH
-P1yN51+d8DJmF0x0j1HacWi62WnGCh8GzR5ef5Pqi11/11xknbPugrzfFI9v1vR7
-STfhGs/0sg7oQWYgarOj
-=Y2df
------END PGP SIGNATURE-----
+
+

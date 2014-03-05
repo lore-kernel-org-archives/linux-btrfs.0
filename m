@@ -1,63 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:41940 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751879AbaCER0H convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Mar 2014 12:26:07 -0500
-Received: from mfilter13-d.gandi.net (mfilter13-d.gandi.net [217.70.178.141])
-	by relay4-d.mail.gandi.net (Postfix) with ESMTP id 29BDE172077
-	for <linux-btrfs@vger.kernel.org>; Wed,  5 Mar 2014 18:26:04 +0100 (CET)
-Received: from relay4-d.mail.gandi.net ([217.70.183.196])
-	by mfilter13-d.gandi.net (mfilter13-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id YCRYUgornZhK for <linux-btrfs@vger.kernel.org>;
-	Wed,  5 Mar 2014 18:26:02 +0100 (CET)
-Received: from tethys.localnet (AMontpellier-256-1-106-82.w90-28.abo.wanadoo.fr [90.28.161.82])
-	(Authenticated sender: michel@bouissou.net)
-	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 755771720AC
-	for <linux-btrfs@vger.kernel.org>; Wed,  5 Mar 2014 18:26:02 +0100 (CET)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [Repost] Is BTRFS "bedup" maintained ?
-Date: Wed, 05 Mar 2014 18:24:40 +0100
-Message-ID: <13941240.S910jBrBmq@tethys>
+Received: from magic.merlins.org ([209.81.13.136]:46091 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757199AbaCEUno (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Mar 2014 15:43:44 -0500
+Date: Wed, 5 Mar 2014 12:43:42 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [Repost] Is BTRFS "bedup" maintained ?
+Message-ID: <20140305204342.GT24237@merlins.org>
+References: <13941240.S910jBrBmq@tethys>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <13941240.S910jBrBmq@tethys>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Wed, Mar 05, 2014 at 06:24:40PM +0100, Swâmi Petaramesh wrote:
+> Hello,
+> 
+> (Not having received a single answer, I repost this...)
 
-(Not having received a single answer, I repost this...)
+I got your post, and posted myself about bedup not working at all for me,
+and got no answer either.
 
-I tried to use "bedup" BTRFS offline deduplication tool on several BTRFS 
-machines, with mixed results :
+As far as I can tell, it's entirely unmaintained and was likely just a proof
+of concept until the kernel can do it itself and that's not entirely
+finished from what I understand.
 
-1/ Crashes with messages stating "programming error", sqlite objects must be 
-used inside of the thread that created them, blah-blah...
+It's a bit disappointing, but hopefully it'll get fixed eventually.
 
-2/ Crashes stating that some file/objects miss a "live" attribute (?)
-
-3/ bedup eating all my system RAM, then swap over 7GB until the system trashes 
-itself.
-
-Wel, besides that and restarting over and over, I could deduplicate some files 
-and gain some noticeable space, but it looks extremely bugged and unreliable.
-
-I tried to email the maintainer with details, twice, thru 2 different channels, 
-got no anwser...
-
-And it looks like the GIT has not evolved since August, 2013.
-
-So my questions are : 
-
-- Is "bedup" maintained or abandoned ?
-- Is it supposed to be usable ?
-- Should I use it ?
-- Is there a risk that it causes data loss or corruption ?
-
-TIA.
-
-Kind regards.
-
+Marc
 -- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

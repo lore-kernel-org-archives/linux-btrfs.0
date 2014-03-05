@@ -1,66 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f193.google.com ([209.85.128.193]:46803 "EHLO
-	mail-ve0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758150AbaCDUnd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Mar 2014 15:43:33 -0500
-Received: by mail-ve0-f193.google.com with SMTP id oz11so23286veb.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Mar 2014 12:43:32 -0800 (PST)
+Received: from zixgateway01.papersolve.com ([71.125.1.135]:13954 "EHLO
+	sw-email.stardatecomputer.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756174AbaCEA1f convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Mar 2014 19:27:35 -0500
+Received: from sw-email.stardatecomputer.com (127.0.0.1) id h2pnne0171sv for <linux-btrfs@vger.kernel.org>; Tue, 4 Mar 2014 19:27:33 -0500 (envelope-from <mike@PaperSolve.com>)
+From: Mike Russo <mike@PaperSolve.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: ENOSPC errors during raid1 rebalance
+Date: Wed, 5 Mar 2014 00:27:32 +0000
+Message-ID: <DF16C10AFF7F394A8C8A09C9405478890BCC2C99@EXHOST.stardatecomputer.com>
+References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com>,<20140303183911.GL13899@carfax.org.uk>
+In-Reply-To: <20140303183911.GL13899@carfax.org.uk>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Date: Tue, 4 Mar 2014 15:43:32 -0500
-Message-ID: <CAJtFHUSDpVVZAJtRdgrTw3JiW-8k0kY0Qp6vck+dypNZxdLgsw@mail.gmail.com>
-Subject: Getting profile conversion to finish
-From: E V <eliventer@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm having difficulty getting a profile conversion from raid0 ->
-single to finish. Is there a way to tell the filesystem to stop all
-new allocations for the raid0 profile, before the full balance
-finishes? Otherwise I feel like I'm in a sisyphian push of blocks into
-higher block numbers.
+Chris Murphy <lists <at> colorremedies.com> writes:
 
-Since the profile conversion seems to fail frequently with ENOSPC even
-though space isn't an issue:
+> > How can I find out what file is on the block group that 
+> > it's having a problem with?
+> 
+> I think that's btrfs-debug-tree -b ? But don't hold me to that. 
+> I haven't done enough debugging to find files
+> from block numbers. Another that might be relevant is 
+> btrfs inspect-internal logical-resolve.
+> 
 
-$ (btrfs file show && btrfs file df /mirror && df -h /mirror)
-Label: isibackup  uuid: 550c0f77-8f75-40f3-a64e-42c87a0c8e8d
-        Total devices 3 FS bytes used 61.35TiB
-        devid    1 size 30.01TiB used 20.16TiB path /dev/sdb
-        devid    2 size 30.01TiB used 20.16TiB path /dev/sdc
-        devid    3 size 40.02TiB used 29.15TiB path /dev/sdd
+Nah, I don't think they're talking about the same thing. The messages I get in syslog for the 2 blocks are:
 
-Btrfs v3.12-dirty
-Data, RAID0: total=11.58TiB, used=11.57TiB
-Data, single: total=57.64TiB, used=49.68TiB
-System, RAID1: total=40.00MiB, used=7.06MiB
-System, single: total=4.00MiB, used=0.00
-Metadata, RAID1: total=134.00GiB, used=90.15GiB
-Metadata, single: total=8.00MiB, used=0.00
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb        101T   62T   38T  63% /mirror
+Mar  4 07:59:23 ossy kernel: [124731.175116] BTRFS info (device sdd1): relocating block group 894460493824 flags 1
+Mar  4 07:59:32 ossy kernel: [124739.613467] BTRFS error (device sdd1): allocation failed flags 17, wanted 1368420352
+Mar  4 07:59:32 ossy kernel: [124739.613473] BTRFS: space_info 1 has 105551204352 free, is not full
+Mar  4 07:59:32 ossy kernel: [124739.613476] BTRFS: space_info total=1312112508928, used=1201166741504, pinned=0, reserved=565596160, may_use=1368420352, readonly=4828966912
 
- I wrote a little script to try the profile conversion, and when it
-fails try a regular balance which always seems to work fine, ala:
+Mar  4 10:49:33 ossy kernel: [134932.248146] BTRFS info (device sdd1): relocating block group 846142111744 flags 1
+Mar  4 10:49:39 ossy kernel: [134938.440347] BTRFS error (device sdd1): allocation failed flags 17, wanted 1219825664
+Mar  4 10:49:39 ossy kernel: [134938.440353] BTRFS: space_info 1 has 116232978432 free, is not full
+Mar  4 10:49:39 ossy kernel: [134938.440356] BTRFS: space_info total=1322849927168, used=1201311391744, pinned=0, reserved=476590080, may_use=1224540160, readonly=4828966912
 
-e=550000000000000
-i=479300000000000
-step=100000000000
-btrfs balance start -dusage=0,vrange=0..$e /mirror
-while [ $i -lt $e ]
-do
-    h=$((i-step))
-    if ! btrfs balance start
--dprofiles=raid0,convert=single,vrange=0..$i /mirror
-    then
-        btrfs balance start -dvrange=$h..$i /mirror
-    fi
-    i=$((i+step))
-done
+But if I try to examine either of those block groups I get an error message that makes me think the 2 numbers are not really the same thing. 
 
-However while this is ongoing, new data written to the filesystem
-sometimes gets written to the raid0 profile. So making progress
-appears quite slow, maybe 0.5 TB a week from data raid0 -> data
-single. Thus the question can I tell it to stop allocating new raid0
-space some how, and only use single for new data?
+root@ossy:~# /usr/src/btrfs-progs/btrfs-debug-tree -b 894460493824 /dev/sdc1
+Check tree block failed, want=894460493824, have=7159859086769936959
+Check tree block failed, want=894460493824, have=7159859086769936959
+Check tree block failed, want=894460493824, have=7159859086769936959
+read block failed check_tree_block
+Check tree block failed, want=894460493824, have=7159859086769936959
+Check tree block failed, want=894460493824, have=7159859086769936959
+Check tree block failed, want=894460493824, have=7159859086769936959
+read block failed check_tree_block
+failed to read 894460493824
+
+Sigh. So I'm stuck at 10GB on single, but I don't know which 10GB it is. 
+
+root@ossy:~# /usr/src/btrfs-progs/btrfs fi df /mymedia
+Data, RAID1: total=1.21TiB, used=1.09TiB
+Data, single: total=10.00GiB, used=5.50GiB
+System, RAID1: total=32.00MiB, used=180.00KiB
+Metadata, RAID1: total=2.00GiB, used=1.45GiB
+
+If anyone knows why that allocation should fail (what is "flags 17"?), or how to force something more to happen, please reply. I'm sure this is due to the ext4 conversion, but that means the utility is making a btrfs filesystem that later can't be converted to another profile for some reason. 
+

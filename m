@@ -1,53 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f170.google.com ([209.85.128.170]:37997 "EHLO
-	mail-ve0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752392AbaCEVQn convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Mar 2014 16:16:43 -0500
-Received: by mail-ve0-f170.google.com with SMTP id pa12so1704187veb.29
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Mar 2014 13:16:42 -0800 (PST)
+Received: from cn.fujitsu.com ([59.151.112.132]:31859 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752886AbaCFDyn convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Mar 2014 22:54:43 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s263fCfJ011303
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 11:41:12 +0800
+From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs: Cleanup the btrfs_workqueue related function type
+Date: Thu, 6 Mar 2014 03:41:11 +0000
+Message-ID: <1394077339-5920-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 MIME-Version: 1.0
-In-Reply-To: <20140305204342.GT24237@merlins.org>
-References: <13941240.S910jBrBmq@tethys>
-	<20140305204342.GT24237@merlins.org>
-Date: Wed, 5 Mar 2014 15:16:42 -0600
-Message-ID: <CAE5mzvjm=Hz_FN6BBTKaApM-4pca4V6PrTojSVyg=E1WC7fFcQ@mail.gmail.com>
-Subject: Re: [Repost] Is BTRFS "bedup" maintained ?
-From: cwillu <cwillu@cwillu.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bedup was/is a third-party project, not sure if its developer follows this list.
+The new btrfs_workqueue still use open-coded function defition,
+this patch will change them into btrfs_func_t type which is much the
+same as kernel workqueue.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/async-thread.c |  6 +++---
+ fs/btrfs/async-thread.h | 20 +++++++++++---------
+ 2 files changed, 14 insertions(+), 12 deletions(-)
 
-Might be worth filing a bug or otherwise poking the author on
-https://github.com/g2p/bedup
-
-On Wed, Mar 5, 2014 at 2:43 PM, Marc MERLIN <marc@merlins.org> wrote:
-> On Wed, Mar 05, 2014 at 06:24:40PM +0100, Swāmi Petaramesh wrote:
->> Hello,
->>
->> (Not having received a single answer, I repost this...)
->
-> I got your post, and posted myself about bedup not working at all for me,
-> and got no answer either.
->
-> As far as I can tell, it's entirely unmaintained and was likely just a proof
-> of concept until the kernel can do it itself and that's not entirely
-> finished from what I understand.
->
-> It's a bit disappointing, but hopefully it'll get fixed eventually.
->
-> Marc
-> --
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index a709585..d8c07e5 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -255,9 +255,9 @@ static void normal_work_helper(struct work_struct *arg)
+ }
+ 
+ void btrfs_init_work(struct btrfs_work *work,
+-		     void (*func)(struct btrfs_work *),
+-		     void (*ordered_func)(struct btrfs_work *),
+-		     void (*ordered_free)(struct btrfs_work *))
++		     btrfs_func_t func,
++		     btrfs_func_t ordered_func,
++		     btrfs_func_t ordered_free)
+ {
+ 	work->func = func;
+ 	work->ordered_func = ordered_func;
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 08d7174..0a891cd 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -23,11 +23,13 @@
+ struct btrfs_workqueue;
+ /* Internal use only */
+ struct __btrfs_workqueue;
++struct btrfs_work;
++typedef void (*btrfs_func_t)(struct btrfs_work *arg);
+ 
+ struct btrfs_work {
+-	void (*func)(struct btrfs_work *arg);
+-	void (*ordered_func)(struct btrfs_work *arg);
+-	void (*ordered_free)(struct btrfs_work *arg);
++	btrfs_func_t func;
++	btrfs_func_t ordered_func;
++	btrfs_func_t ordered_free;
+ 
+ 	/* Don't touch things below */
+ 	struct work_struct normal_work;
+@@ -37,13 +39,13 @@ struct btrfs_work {
+ };
+ 
+ struct btrfs_workqueue *btrfs_alloc_workqueue(char *name,
+-						     int flags,
+-						     int max_active,
+-						     int thresh);
++					      int flags,
++					      int max_active,
++					      int thresh);
+ void btrfs_init_work(struct btrfs_work *work,
+-		     void (*func)(struct btrfs_work *),
+-		     void (*ordered_func)(struct btrfs_work *),
+-		     void (*ordered_free)(struct btrfs_work *));
++		     btrfs_func_t func,
++		     btrfs_func_t ordered_func,
++		     btrfs_func_t ordered_free);
+ void btrfs_queue_work(struct btrfs_workqueue *wq,
+ 		      struct btrfs_work *work);
+ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
+-- 
+1.9.0

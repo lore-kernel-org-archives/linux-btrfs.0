@@ -1,146 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33940 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:52580 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752550AbaCFDky (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Mar 2014 22:40:54 -0500
+	id S1751076AbaCFF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Mar 2014 00:56:00 -0500
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s263ep7x002083
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 11:40:52 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s265tv8W010090
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 13:55:58 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: make the device scan logic more clear
-Date: Thu, 6 Mar 2014 11:36:48 +0800
-Message-Id: <1394077008-3568-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1394077008-3568-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1394077008-3568-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/5] Btrfs-progs: fsck: deal with really corrupted extent tree
+Date: Thu, 6 Mar 2014 13:53:56 +0800
+Message-Id: <1394085240-23520-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1. Use long option to replace the original strcmp() to parse
-the "--all-devices".
-2. the "int ret" is defined in 2 places, just define it once
-and make the return pattern into "goto + single return".
+To reinit extent root, we need find a free extent, however,
+we may have a really corrupted extent tree, so we can't rely
+on existed extent tree to cache block group any more.
 
-This does not change the actual scan procedure and return values.
-Just make it clear, the original seems a little confusing.
+During test, we fail to reinit extent tree which is because we
+can not find a free extent so let's make block group cache ourselves
+firstly.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- cmds-device.c | 61 ++++++++++++++++++++++++++++++++++++++---------------------
- 1 file changed, 39 insertions(+), 22 deletions(-)
+ cmds-check.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 5009d9a..d79732f 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -188,51 +188,67 @@ static int cmd_rm_dev(int argc, char **argv)
- }
+diff --git a/cmds-check.c b/cmds-check.c
+index 98199ce..3cf59b6 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6030,11 +6030,13 @@ static int pin_metadata_blocks(struct btrfs_fs_info *fs_info)
  
- static const char * const cmd_scan_dev_usage[] = {
--	"btrfs device scan [<--all-devices>|<device> [<device>...]]",
-+	"btrfs device scan [options] [<device> [<device>...]]",
- 	"Scan devices for a btrfs filesystem",
-+	"-d|--all-devices    scan all devices under /dev",
- 	NULL
- };
- 
- static int cmd_scan_dev(int argc, char **argv)
+ static int reset_block_groups(struct btrfs_fs_info *fs_info)
  {
--	int	i, fd, e;
--	int	where = BTRFS_SCAN_LBLKID;
--	int	devstart = 1;
-+	int i, fd, e;
-+	int where = BTRFS_SCAN_LBLKID;
-+	int devstart = 1;
-+	int all = 0;
-+	int ret = 0;
++	struct btrfs_block_group_cache *cache;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_chunk *chunk;
+ 	struct btrfs_key key;
+ 	int ret;
++	u64 start;
  
--	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
--		if (check_argc_max(argc, 2))
-+	optind = 1;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -6085,8 +6087,19 @@ static int reset_block_groups(struct btrfs_fs_info *fs_info)
+ 				      btrfs_chunk_type(leaf, chunk),
+ 				      key.objectid, key.offset,
+ 				      btrfs_chunk_length(leaf, chunk));
++		set_extent_dirty(&fs_info->free_space_cache, key.offset,
++				 key.offset + btrfs_chunk_length(leaf, chunk),
++				 GFP_NOFS);
+ 		path->slots[0]++;
+ 	}
++	start = 0;
 +	while (1) {
-+		int long_index;
-+		static struct option long_options[] = {
-+			{ "all-devices", no_argument, NULL, 'd' },
-+			{ 0, 0, 0, 0 },
-+		};
-+		int c = getopt_long(argc, argv, "d", long_options,
-+				    &long_index);
-+		if (c < 0)
++		cache = btrfs_lookup_first_block_group(fs_info, start);
++		if (!cache)
 +			break;
-+		switch (c) {
-+		case 'd':
-+			where = BTRFS_SCAN_DEV;
-+			all = 1;
-+			break;
-+		default:
- 			usage(cmd_scan_dev_usage);
--
--		where = BTRFS_SCAN_DEV;
--		devstart += 1;
-+		}
- 	}
++		cache->cached = 1;
++		start = cache->key.objectid + cache->key.offset;
++	}
  
--	if(argc<=devstart){
--		int ret;
-+	if (all && check_argc_max(argc, 2))
-+		usage(cmd_scan_dev_usage);
-+
-+	if (all || argc == 1) {
- 		printf("Scanning for Btrfs filesystems\n");
- 		ret = scan_for_btrfs(where, BTRFS_UPDATE_KERNEL);
--		if (ret){
-+		if (ret)
- 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
--			return 1;
--		}
--		return 0;
-+		goto out;
- 	}
- 
- 	fd = open("/dev/btrfs-control", O_RDWR);
- 	if (fd < 0) {
- 		perror("failed to open /dev/btrfs-control");
--		return 1;
-+		ret = 1;
-+		goto out;
- 	}
- 
- 	for( i = devstart ; i < argc ; i++ ){
- 		struct btrfs_ioctl_vol_args args;
--		int ret;
- 
- 		if (!is_block_device(argv[i])) {
- 			fprintf(stderr,
- 				"ERROR: %s is not a block device\n", argv[i]);
--			close(fd);
--			return 1;
-+			ret = 1;
-+			goto close_out;
- 		}
- 		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
- 
-@@ -246,15 +262,16 @@ static int cmd_scan_dev(int argc, char **argv)
- 		e = errno;
- 
- 		if( ret < 0 ){
--			close(fd);
- 			fprintf(stderr, "ERROR: unable to scan the device '%s' - %s\n",
- 				argv[i], strerror(e));
--			return 1;
-+			goto close_out;
- 		}
- 	}
- 
-+close_out:
- 	close(fd);
--	return 0;
-+out:
-+	return !!ret;
- }
- 
- static const char * const cmd_ready_dev_usage[] = {
+ 	btrfs_free_path(path);
+ 	return 0;
 -- 
-1.8.1.4
+1.9.0
 

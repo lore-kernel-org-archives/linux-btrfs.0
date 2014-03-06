@@ -1,71 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49118 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753074AbaCFUhk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Mar 2014 15:37:40 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WLf2v-0001C2-AF
-	for linux-btrfs@vger.kernel.org; Thu, 06 Mar 2014 21:37:37 +0100
-Received: from 63.239.65.11 ([63.239.65.11])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 21:37:37 +0100
-Received: from ericsbinaryworld by 63.239.65.11 with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 21:37:37 +0100
-To: linux-btrfs@vger.kernel.org
-From: Eric Mesa <ericsbinaryworld@gmail.com>
+Received: from fw5a-delaine.wadns.net ([196.220.39.203]:61278 "EHLO
+	fw5a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751645AbaCFVSj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Mar 2014 16:18:39 -0500
+Message-ID: <5318E605.9060802@swiftspirit.co.za>
+Date: Thu, 06 Mar 2014 23:17:57 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Eric Mesa <ericsbinaryworld@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: Understanding btrfs and backups
-Date: Thu, 6 Mar 2014 20:37:11 +0000 (UTC)
-Message-ID: <loom.20140306T213713-609@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+References: <loom.20140306T202159-329@post.gmane.org>
+In-Reply-To: <loom.20140306T202159-329@post.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brian Wong wrote: a snapshot is different than a backup, with a snapshot
-you're still accessing a read-only version of the live filesystem.  i don't
-know the specifics of btrfs but if you take daily snapshots, you should be
-able to restore a single file from the five-days-ago snapshot by browsing
-that snapshot's directory tree and then copying the file to the live version
-of the filesystem, if that makes sense.
+On 2014/03/06 09:27 PM, Eric Mesa wrote:
+> Brian Wong wrote: a snapshot is different than a backup
+> [snip]
+>
+> ...
+>
+> Three hard drives: A, B, and C.
+>
+> Hard drives A and B - btrfs RAID-1 so that if one drive dies I can keep
+> using my system until the replacement for the raid arrives.
+>
+> Hard drive C - gets (hourly/daily/weekly/or some combination of the above)
+> snapshots from the RAID. (Starting with the initial state snapshot) Each
+> timepoint another snapshot is copied to hard drive C.
+>
+> [snip]...
+>
+> So if that's what I'm doing, do snapshots become a way to do backups?
+An important distinction for anyone joining the conversation is that 
+snapshots are *not* backups, in a similar way that you mentioned that 
+RAID is not a backup. If a hard drive implodes, its snapshots go with it.
 
-in the snapshot case the live filesystem serves the same function as the
-full backup would if you did full backups then incrementals.  the snapshots
-are the incrementals of the live filesystem, only going backwards in time
-whereas with backup you would take a full backup then go forward in time
-with incrementals.  the filesystem takes care of making sure every snapshot
-is complete.
+Snapshots can (and should) be used as part of a backup methodology - and 
+your example is almost exactly the same as previous good backup 
+examples. I think most of the time there's mention of an external 
+"backup server" keeping the backups, which is the only major difference 
+compared to the process you're looking at. Btrfs send/receive with 
+snapshots can make the process far more efficient compared to rsync. 
+Rsync doesn't have any record as to what information has changed so it 
+has to compare all the data (causing heavy I/O). Btrfs keeps a record 
+and can skip to the part of sending the data.
 
-in the snapshot case redundancy is then more important because you may not
-have a bunch of full backups (i.e. full copies) lying around.  so full
-backups still are useful.
+I do something similar to what you have described on my Archlinux 
+desktop - however I haven't updated my (very old) backup script to take 
+advantage of btrfs' send/receive functionality. I'm still using rsync. :-/
+/ and /home are on btrfs-raid1 on two smallish disks
+/mnt/btrfs-backup is on btrfs single/dup on a single larger disk
 
---
+See https://btrfs.wiki.kernel.org/index.php/Incremental_Backup for a 
+basic incremental methodology using btrfs send/receive
 
-OK, I THINK I understand things a bit better. So from the point of view of
-restoring a single file, that functionality is there. Excellent. And I guess
-you're saying that because the snapshots are diffs off the live system, that
-I'd need a backup of the live system - ie snapshots wouldn't be enough. But
-what if my first snapshot was a clone of the system at that point (as it
-seems from the article) And I back that up to a separate drive. Let me
-illustrate with what I plan to do exactly.
-
-Three hard drives: A, B, and C.
-
-Hard drives A and B - btrfs RAID-1 so that if one drive dies I can keep
-using my system until the replacement for the raid arrives.
-
-Hard drive C - gets (hourly/daily/weekly/or some combination of the above)
-snapshots from the RAID. (Starting with the initial state snapshot) Each
-timepoint another snapshot is copied to hard drive C. 
-
-So in the case of a file disappearing on me or being over-written or w/e - I
-reach into the directory of the snapshot that contains the file just as I
-would now with the backup. 
-
-So if that's what I'm doing, do snapshots become a way to do backups?
-
-Thanks
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

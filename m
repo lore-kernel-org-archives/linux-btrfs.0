@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36456 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:49118 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751469AbaCFT1s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Mar 2014 14:27:48 -0500
+	id S1753074AbaCFUhk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Mar 2014 15:37:40 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WLdxH-0005O1-HV
-	for linux-btrfs@vger.kernel.org; Thu, 06 Mar 2014 20:27:43 +0100
+	id 1WLf2v-0001C2-AF
+	for linux-btrfs@vger.kernel.org; Thu, 06 Mar 2014 21:37:37 +0100
 Received: from 63.239.65.11 ([63.239.65.11])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 20:27:43 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 21:37:37 +0100
 Received: from ericsbinaryworld by 63.239.65.11 with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 20:27:43 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Mar 2014 21:37:37 +0100
 To: linux-btrfs@vger.kernel.org
 From: Eric Mesa <ericsbinaryworld@gmail.com>
 Subject: Re: Understanding btrfs and backups
-Date: Thu, 6 Mar 2014 19:27:13 +0000 (UTC)
-Message-ID: <loom.20140306T202159-329@post.gmane.org>
+Date: Thu, 6 Mar 2014 20:37:11 +0000 (UTC)
+Message-ID: <loom.20140306T213713-609@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org

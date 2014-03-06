@@ -1,183 +1,349 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21043 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752714AbaCFET4 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Mar 2014 23:19:56 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s264JpJ7013118
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 12:19:52 +0800
-From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs: Add ftrace for btrfs_workqueue
-Date: Thu, 6 Mar 2014 04:19:50 +0000
-Message-ID: <1394079657-24937-2-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1394079657-24937-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1394079657-24937-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
-MIME-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:59847 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750714AbaCFFme (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Mar 2014 00:42:34 -0500
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s265eYDx008874
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 13:42:28 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: introduce btrfs_{start, end}_nocow_write() for each subvolume
+Date: Thu, 6 Mar 2014 13:38:19 +0800
+Message-Id: <1394084299-32010-1-git-send-email-miaox@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add ftrace for btrfs_workqueue for further workqueue tunning.
-This patch needs to applied after the workqueue replace patchset.
+If the snapshot creation happened after the nocow write but before the dirty
+data flush, we would fail to flush the dirty data because of no space.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+So we must keep track of when those nocow write operations start and when they
+end, if there are nocow writers, the snapshot creators must wait. In order
+to implement this function, I introduce btrfs_{start, end}_nocow_write(),
+which is similar to mnt_{want,drop}_write().
+
+These two functions are only used for nocow file write operations.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/async-thread.c      |  7 ++++
- include/trace/events/btrfs.h | 82 ++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 89 insertions(+)
+This patch is against the patchset:
+[PATCH 1/3] Btrfs: don't skip the page flush since the enospc is not brought by it
+[PATCH 2/3] Btrfs: fix wrong lock range and write size in check_can_nocow()
+[PATCH 3/3] Btrfs: fix preallocate vs double nocow write
+---
+ fs/btrfs/ctree.h       | 10 ++++++++++
+ fs/btrfs/disk-io.c     | 42 +++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/extent-tree.c | 35 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/file.c        | 21 +++++++++++++++++----
+ fs/btrfs/ioctl.c       | 35 ++++++++++++++++++++++++++++++-----
+ 5 files changed, 133 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index d8c07e5..00623dd 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -24,6 +24,7 @@
- #include <linux/freezer.h>
- #include <linux/workqueue.h>
- #include "async-thread.h"
-+#include "ctree.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 277f627..7e7cade 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1682,6 +1682,11 @@ struct btrfs_fs_info {
+ 	unsigned int update_uuid_tree_gen:1;
+ };
  
- #define WORK_DONE_BIT 0
- #define WORK_ORDER_DONE_BIT 1
-@@ -210,6 +211,7 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
- 		 */
- 		if (test_and_set_bit(WORK_ORDER_DONE_BIT, &work->flags))
++struct btrfs_subvolume_writers {
++	struct percpu_counter	counter;
++	wait_queue_head_t	wait;
++};
++
+ /*
+  * in ram representation of the tree.  extent_root is used for all allocations
+  * and for the extent tree extent_root root.
+@@ -1826,6 +1831,8 @@ struct btrfs_root {
+ 	 * manipulation with the read-only status via SUBVOL_SETFLAGS
+ 	 */
+ 	int send_in_progress;
++	struct btrfs_subvolume_writers *subv_writers;
++	atomic_t will_be_snapshoted;
+ };
+ 
+ struct btrfs_ioctl_defrag_range_args {
+@@ -3350,6 +3357,9 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
+ int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
+ 					 struct btrfs_fs_info *fs_info);
+ int __get_raid_index(u64 flags);
++
++int btrfs_start_nocow_write(struct btrfs_root *root);
++void btrfs_end_nocow_write(struct btrfs_root *root);
+ /* ctree.c */
+ int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+ 		     int level, int *slot);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index de6a48f..b8f6cbf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1152,6 +1152,32 @@ void clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	}
+ }
+ 
++static struct btrfs_subvolume_writers *btrfs_alloc_subvolume_writers(void)
++{
++	struct btrfs_subvolume_writers *writers;
++	int ret;
++
++	writers = kmalloc(sizeof(*writers), GFP_NOFS);
++	if (!writers)
++		return ERR_PTR(-ENOMEM);
++
++	ret = percpu_counter_init(&writers->counter, 0);
++	if (ret < 0) {
++		kfree(writers);
++		return ERR_PTR(ret);
++	}
++
++	init_waitqueue_head(&writers->wait);
++	return writers;
++}
++
++static void
++btrfs_free_subvolume_writers(struct btrfs_subvolume_writers *writers)
++{
++	percpu_counter_destroy(&writers->counter);
++	kfree(writers);
++}
++
+ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+ 			 u32 stripesize, struct btrfs_root *root,
+ 			 struct btrfs_fs_info *fs_info,
+@@ -1206,6 +1232,7 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+ 	atomic_set(&root->log_batch, 0);
+ 	atomic_set(&root->orphan_inodes, 0);
+ 	atomic_set(&root->refs, 1);
++	atomic_set(&root->will_be_snapshoted, 0);
+ 	root->log_transid = 0;
+ 	root->last_log_commit = 0;
+ 	if (fs_info)
+@@ -1501,6 +1528,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
+ int btrfs_init_fs_root(struct btrfs_root *root)
+ {
+ 	int ret;
++	struct btrfs_subvolume_writers *writers;
+ 
+ 	root->free_ino_ctl = kzalloc(sizeof(*root->free_ino_ctl), GFP_NOFS);
+ 	root->free_ino_pinned = kzalloc(sizeof(*root->free_ino_pinned),
+@@ -1510,6 +1538,13 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+ 		goto fail;
+ 	}
+ 
++	writers = btrfs_alloc_subvolume_writers();
++	if (IS_ERR(writers)) {
++		ret = PTR_ERR(writers);
++		goto fail;
++	}
++	root->subv_writers = writers;
++
+ 	btrfs_init_free_ino_ctl(root);
+ 	mutex_init(&root->fs_commit_mutex);
+ 	spin_lock_init(&root->cache_lock);
+@@ -1517,8 +1552,11 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+ 
+ 	ret = get_anon_bdev(&root->anon_dev);
+ 	if (ret)
+-		goto fail;
++		goto free_writers;
+ 	return 0;
++
++free_writers:
++	btrfs_free_subvolume_writers(root->subv_writers);
+ fail:
+ 	kfree(root->free_ino_ctl);
+ 	kfree(root->free_ino_pinned);
+@@ -3490,6 +3528,8 @@ static void free_fs_root(struct btrfs_root *root)
+ 	root->orphan_block_rsv = NULL;
+ 	if (root->anon_dev)
+ 		free_anon_bdev(root->anon_dev);
++	if (root->subv_writers)
++		btrfs_free_subvolume_writers(root->subv_writers);
+ 	free_extent_buffer(root->node);
+ 	free_extent_buffer(root->commit_root);
+ 	kfree(root->free_ino_ctl);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 32312e0..72ce54c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8938,3 +8938,38 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ 	range->len = trimmed;
+ 	return ret;
+ }
++
++/*
++ * btrfs_{start,end}_write() is similar to mnt_{want, drop}_write(),
++ * they are used to prevent the some tasks writing data into the page cache
++ * by nocow before the subvolume is snapshoted, but flush the data into
++ * the disk after the snapshot creation.
++ */
++void btrfs_end_nocow_write(struct btrfs_root *root)
++{
++	percpu_counter_dec(&root->subv_writers->counter);
++	/*
++	 * Make sure counter is updated before we wake up
++	 * waiters.
++	 */
++	smp_mb();
++	if (waitqueue_active(&root->subv_writers->wait))
++		wake_up(&root->subv_writers->wait);
++}
++
++int btrfs_start_nocow_write(struct btrfs_root *root)
++{
++	if (unlikely(atomic_read(&root->will_be_snapshoted)))
++		return 0;
++
++	percpu_counter_inc(&root->subv_writers->counter);
++	/*
++	 * Make sure counter is updated before we check for snapshot creation.
++	 */
++	smp_mb();
++	if (unlikely(atomic_read(&root->will_be_snapshoted))) {
++		btrfs_end_nocow_write(root);
++		return 0;
++	}
++	return 1;
++}
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 1654d68..c6745f1 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1396,6 +1396,10 @@ static noinline int check_can_nocow(struct inode *inode, loff_t pos,
+ 	u64 num_bytes;
+ 	int ret;
+ 
++	ret = btrfs_start_nocow_write(root);
++	if (!ret)
++		return -ENOSPC;
++
+ 	lockstart = round_down(pos, root->sectorsize);
+ 	lockend = round_up(pos + *write_bytes, root->sectorsize) - 1;
+ 
+@@ -1413,11 +1417,13 @@ static noinline int check_can_nocow(struct inode *inode, loff_t pos,
+ 
+ 	num_bytes = lockend - lockstart + 1;
+ 	ret = can_nocow_extent(inode, lockstart, &num_bytes, NULL, NULL, NULL);
+-	if (ret <= 0)
++	if (ret <= 0) {
+ 		ret = 0;
+-	else
++		btrfs_end_nocow_write(root);
++	} else {
+ 		*write_bytes = min_t(size_t, *write_bytes ,
+ 				     num_bytes - pos + lockstart);
++	}
+ 
+ 	unlock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend);
+ 
+@@ -1506,6 +1512,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 			if (!only_release_metadata)
+ 				btrfs_free_reserved_data_space(inode,
+ 							       reserve_bytes);
++			else
++				btrfs_end_nocow_write(root);
  			break;
-+		trace_btrfs_ordered_sched(work);
- 		spin_unlock_irqrestore(lock, flags);
- 		work->ordered_func(work);
+ 		}
  
-@@ -223,6 +225,7 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
- 		 * with the lock held though
- 		 */
- 		work->ordered_free(work);
-+		trace_btrfs_all_work_done(work);
+@@ -1594,6 +1602,9 @@ again:
+ 		}
+ 
+ 		release_bytes = 0;
++		if (only_release_metadata)
++			btrfs_end_nocow_write(root);
++
+ 		if (only_release_metadata && copied > 0) {
+ 			u64 lockstart = round_down(pos, root->sectorsize);
+ 			u64 lockend = lockstart +
+@@ -1620,10 +1631,12 @@ again:
+ 	kfree(pages);
+ 
+ 	if (release_bytes) {
+-		if (only_release_metadata)
++		if (only_release_metadata) {
++			btrfs_end_nocow_write(root);
+ 			btrfs_delalloc_release_metadata(inode, release_bytes);
+-		else
++		} else {
+ 			btrfs_delalloc_release_space(inode, release_bytes);
++		}
  	}
- 	spin_unlock_irqrestore(lock, flags);
- }
-@@ -246,12 +249,15 @@ static void normal_work_helper(struct work_struct *arg)
- 		need_order = 1;
- 	wq = work->wq;
  
-+	trace_btrfs_work_sched(work);
- 	thresh_exec_hook(wq);
- 	work->func(work);
- 	if (need_order) {
- 		set_bit(WORK_DONE_BIT, &work->flags);
- 		run_ordered_work(wq);
- 	}
-+	if (!need_order)
-+		trace_btrfs_all_work_done(work);
+ 	return num_written ? num_written : ret;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b7dc0f7..55967a0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -611,6 +611,23 @@ fail:
+ 	return ret;
  }
  
- void btrfs_init_work(struct btrfs_work *work,
-@@ -280,6 +286,7 @@ static inline void __btrfs_queue_work(struct __btrfs_workqueue *wq,
- 		spin_unlock_irqrestore(&wq->list_lock, flags);
- 	}
- 	queue_work(wq->normal_wq, &work->normal_work);
-+	trace_btrfs_work_queued(work);
++static void btrfs_wait_nocow_write(struct btrfs_root *root)
++{
++	s64 writers;
++	DEFINE_WAIT(wait);
++
++	do {
++		prepare_to_wait(&root->subv_writers->wait, &wait,
++				TASK_UNINTERRUPTIBLE);
++
++		writers = percpu_counter_sum(&root->subv_writers->counter);
++		if (writers)
++			schedule();
++
++		finish_wait(&root->subv_writers->wait, &wait);
++	} while (writers);
++}
++
+ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 			   struct dentry *dentry, char *name, int namelen,
+ 			   u64 *async_transid, bool readonly,
+@@ -624,15 +641,21 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (!root->ref_cows)
+ 		return -EINVAL;
+ 
++	atomic_inc(&root->will_be_snapshoted);
++	smp_mb__after_atomic_inc();
++	btrfs_wait_nocow_write(root);
++
+ 	ret = btrfs_start_delalloc_inodes(root, 0);
+ 	if (ret)
+-		return ret;
++		goto out;
+ 
+ 	btrfs_wait_ordered_extents(root, -1);
+ 
+ 	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
+-	if (!pending_snapshot)
+-		return -ENOMEM;
++	if (!pending_snapshot) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 
+ 	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
+ 			     BTRFS_BLOCK_RSV_TEMP);
+@@ -649,7 +672,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 					&pending_snapshot->qgroup_reserved,
+ 					false);
+ 	if (ret)
+-		goto out;
++		goto free;
+ 
+ 	pending_snapshot->dentry = dentry;
+ 	pending_snapshot->root = root;
+@@ -700,8 +723,10 @@ fail:
+ 	btrfs_subvolume_release_metadata(BTRFS_I(dir)->root,
+ 					 &pending_snapshot->block_rsv,
+ 					 pending_snapshot->qgroup_reserved);
+-out:
++free:
+ 	kfree(pending_snapshot);
++out:
++	atomic_dec(&root->will_be_snapshoted);
+ 	return ret;
  }
  
- void btrfs_queue_work(struct btrfs_workqueue *wq,
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 3176cdc..c346919 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -21,6 +21,7 @@ struct btrfs_block_group_cache;
- struct btrfs_free_cluster;
- struct map_lookup;
- struct extent_buffer;
-+struct btrfs_work;
- 
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
-@@ -982,6 +983,87 @@ TRACE_EVENT(free_extent_state,
- 		  (void *)__entry->ip)
- );
- 
-+DECLARE_EVENT_CLASS(btrfs__work,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work),
-+
-+	TP_STRUCT__entry(
-+		__field(	void *,	work			)
-+		__field(	void *, wq			)
-+		__field(	void *,	func			)
-+		__field(	void *,	ordered_func		)
-+		__field(	void *,	ordered_free		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->work		= work;
-+		__entry->wq		= work->wq;
-+		__entry->func		= work->func;
-+		__entry->ordered_func	= work->ordered_func;
-+		__entry->ordered_free	= work->ordered_free;
-+	),
-+
-+	TP_printk("work=%p, wq=%p, func=%p, ordered_func=%p, ordered_free=%p",
-+		  __entry->work, __entry->wq, __entry->func,
-+		  __entry->ordered_func, __entry->ordered_free)
-+);
-+
-+/* For situiations that the work is freed */
-+DECLARE_EVENT_CLASS(btrfs__work__done,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work),
-+
-+	TP_STRUCT__entry(
-+		__field(	void *,	work			)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->work		= work;
-+	),
-+
-+	TP_printk("work->%p", __entry->work)
-+);
-+
-+DEFINE_EVENT(btrfs__work, btrfs_work_queued,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work)
-+);
-+
-+DEFINE_EVENT(btrfs__work, btrfs_work_sched,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work)
-+);
-+
-+DEFINE_EVENT(btrfs__work, btrfs_normal_work_done,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work)
-+);
-+
-+DEFINE_EVENT(btrfs__work__done, btrfs_all_work_done,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work)
-+);
-+
-+DEFINE_EVENT(btrfs__work, btrfs_ordered_sched,
-+
-+	TP_PROTO(struct btrfs_work *work),
-+
-+	TP_ARGS(work)
-+);
-+
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
 -- 
-1.9.0
+1.8.1.4
+

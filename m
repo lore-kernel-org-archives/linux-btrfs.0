@@ -1,83 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63587 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752892AbaCGSFr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Mar 2014 13:05:47 -0500
-Message-ID: <531A0A75.6000506@fb.com>
-Date: Fri, 7 Mar 2014 13:05:41 -0500
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Allow forced conversion of metadata to dup profile
- on, multiple devices
-References: <530DF8D5.7010808@gmail.com>
-In-Reply-To: <530DF8D5.7010808@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from aserp1040.oracle.com ([141.146.126.69]:37630 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751065AbaCGXmW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 18:42:22 -0500
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s27NgLsw019865
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:21 GMT
+Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27NgKca010993
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:20 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27NgKHs017743
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:20 GMT
+From: Guangyu Sun <guangyu.sun@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: koen.de.wit@oracle.com
+Subject: [PATCH] Btrfs: return EPERM when deleting a default subvolume
+Date: Fri,  7 Mar 2014 15:41:46 -0800
+Message-Id: <1394235706-24780-1-git-send-email-guangyu.sun@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+The error message is confusing:
 
-On 02/26/2014 09:23 AM, Austin S Hemmelgarn wrote:
-> Currently, btrfs balance start fails when trying to convert
-> metadata or system chunks to dup profile on filesystems with
-> multiple devices.  This requires that a conversion from a
-> multi-device filesystem to a single device filesystem use the
-> following methodology: 1. btrfs balance start -dconvert=single
-> -mconvert=single \ -sconvert=single -f / 2. btrfs device delete /
-> /dev/sdx 3. btrfs balance start -mconvert=dup -sconvert=dup / This
-> results in a period of time (possibly very long if the devices are 
-> big) where you don't have the protection guarantees of multiple
-> copies of metadata chunks.
-> 
-> After applying this patch, one can instead use the following
-> methodology for conversion from a multi-device filesystem to a
-> single device filesystem: 1. btrfs balance start -dconvert=single
-> -mconvert=dup \ -sconvert=dup -f / 2. btrfs device delete /
-> /dev/sdx This greatly reduces the chances of the operation causing
-> data loss due to a read error during the device delete.
-> 
-> Signed-off-by: Austin S. Hemmelgarn <ahferroin7@gmail.com> ---
+ # btrfs sub delete /mnt/mysub/
+ Delete subvolume '/mnt/mysub'
+ ERROR: cannot delete '/mnt/mysub' - Directory not empty
 
-Fails to build, wait for me to push an updated btrfs-next and rebase
-and resubmit
+The error message does not make sense to me: It's not about deleting a
+directory but it's a subvolume, and it doesn't matter if the subvolume is
+empty or not.
 
-fs/btrfs/volumes.c: In function ‘btrfs_balance’:
-fs/btrfs/volumes.c:3223:55: warning: suggest parentheses around ‘&&’
-within ‘||’ [-Wparentheses]
-   if (((bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
-                                                       ^
-fs/btrfs/volumes.c:3227:8: error: ‘num_devs’ undeclared (first use in
-this function)
-       (num_devs > 1)) {
-        ^
-fs/btrfs/volumes.c:3227:8: note: each undeclared identifier is
-reported only once for each function it appears in
-make[1]: *** [fs/btrfs/volumes.o] Error 1
-make: *** [_module_fs/btrfs] Error 2
+Maybe EPERM or is more appropriate in this case, combined with an explanatory
+kernel log message. (e.g. "subvolume with ID 123 cannot be deleted because
+it is configured as default subvolume.")
 
-Thanks,
+Reported-by: Koen De Wit <koen.de.wit@oracle.com>
+Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
+---
+ fs/btrfs/ioctl.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Josef
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a6d8efa..c380854 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1797,7 +1797,10 @@ static noinline int may_destroy_subvol(struct btrfs_root *root)
+ 	if (di && !IS_ERR(di)) {
+ 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
+ 		if (key.objectid == root->root_key.objectid) {
+-			ret = -ENOTEMPTY;
++			ret = -EPERM;
++			printk(KERN_ERR "subvolume %llu cannot be deleted "
++			       "because it is configured as default "
++			       "subvolume.\n", key.objectid);
+ 			goto out;
+ 		}
+ 		btrfs_release_path(path);
+-- 
+1.7.9.5
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJTGgp0AAoJEANb+wAKly3BrkkQANOaAAk6LJ4VO86f9/N7Hkom
-Hf4FK5lQiMkzlLc8pz+RxHeIHSXScXdrVKPv8bIPoGwd171OIrMA1HZa/9iuez8z
-OInjO6Zwj6l/+N3/QckAJKkNmbInNH2wgdhUrFyUw+gDFvVnl1YGUcTwx6/udqTB
-kfsls2ivD7S9kfSXyaM4oxVMN+tZWpZtOs1TMpf7BDMIz92gr87VADKIocrlu5qh
-EZ2YyWGyIP87jz+7zzNPUQ00/BAgC1lPnbZf+ei0L1KQbDtjII3Rl1/rlg78Zdtb
-VQfYMBz0hpaOE+UNfVsClgDgMjAkphob7BXTrkzJaChOagJ5tIlSGZRUaHPt3qaz
-so1R/3BaPzlTdv7gPCpMg+nSYdNl0x3w5CauCB4EX3L8PtbxK9tQdFtKmpl5GNrZ
-gBADD+AAbyPoz4GO2lfQyIN6Hd5FA+drK6cErF/rY+dPlieyihdYfBWRU+nao9RY
-ju07FN2UHJaAlSh/K8ZLv4lZUULDObr/tOdg5M1h5piSL9H9jOHUdaLmRzSx+7hZ
-j96qRY9/W4L6avEQQLphGbgn3v+aOHcgxLS0MyO/fhXANah2z69PjpS5J7GOXGZ5
-UDGTneQIeRqueYms1yqpmZA0Ctwavq0TGoDvYsOlf/x7vucJE6a02qMRitUJbuvV
-6m+8a6PFRudGng7zQYef
-=KCPn
------END PGP SIGNATURE-----

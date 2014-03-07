@@ -1,44 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([80.100.93.5]:44931 "EHLO panda.humilis.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753603AbaCGPOS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Mar 2014 10:14:18 -0500
-Date: Fri, 7 Mar 2014 16:14:16 +0100
-From: Sander <sander@humilis.net>
-To: Eric Mesa <ericsbinaryworld@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Understanding btrfs and backups
-Message-ID: <20140307151416.GA29687@panda>
-Reply-To: sander@humilis.net
-References: <loom.20140306T191655-366@post.gmane.org>
- <pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>
- <loom.20140307T144540-512@post.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <loom.20140307T144540-512@post.gmane.org>
+Received: from userp1040.oracle.com ([156.151.31.81]:34638 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751935AbaCGPs7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 10:48:59 -0500
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s27Fmvwk016020
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:48:58 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27FmvaI010338
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:48:57 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27FmvXY005865
+	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:48:57 GMT
+From: Anand Jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3 v2 RFC] btrfs: total_devices vs num_devices
+Date: Fri,  7 Mar 2014 23:48:37 +0800
+Message-Id: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Eric Mesa wrote (ao):
-> Duncan - thanks for this comprehensive explanation. For a huge portion of
-> your reply...I was all wondering why you and others were saying snapshots
-> aren't backups. They certainly SEEMED like backups. But now I see that the
-> problem is one of precise terminology vs colloquialisms. In other words,
-> snapsshots are not backups in and of themselves. They are like Mac's Time
-> Machine. BUT if you take these snapshots and then put them on another media
-> - whether that's local or not - THEN you have backups. Am I right, or am I
-> still missing something subtle? 
+The intended usage of total_devices and num_devices
+should be recorded in the comments so that these
+two counters can be used correctly as originally
+intended.
 
-Snapshots are backups, but only protect you against a limited amount of
-disasters. Snapshots are very convenient to quickly go back in time for
-some or all files and directories. But if the filesystem or underlaying
-disk goes up in flames, the snapshots are toast as well. So you need
-additional backups, preferably not on the same hardware, for real
-protection against data loss.
+As of now there appears to be slight deviations/bugs
+from the original intention, the bugs are apparent
+that num_devices does not count seed devices where
+as total_devices does, but total_devices does not
+count the replacing devices where as num_devices does.
 
-The convenience of snapshots is that you can (almost) make them as often
-as you want, fully automated, with (almost) no impact on performance,
-without the need for extra hardware, and a restore is no more than a
-simple copy.
+So in this situation the ioctl(BTRFS_IOC_DEVICES_READY)
+will fails when there is seed FS. Next, applications
+using ioctl(BTRFS_IOC_FS_INFO) and ioctl(BTRFS_IOC_DEV_INFO)
+in conjunction to allocate the slots will also fail
+as former depend on the num_devices where as latter
+would match total_devices (except when replace is running).
 
-	Sander
+This patch will help have the clarity on usage
+of these two counter so that bugs related to this can
+be fixed.
+
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+---
+v2: edit commit
+
+ fs/btrfs/volumes.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 91b7596..99c71aa 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -121,12 +121,18 @@ struct btrfs_fs_devices {
+ 	/* the device with this id has the most recent copy of the super */
+ 	u64 latest_devid;
+ 	u64 latest_trans;
++	/* num_devices contains run time count of devices which are part
++	 * of this FSID. (the FS devices + replacing devices + ?
++	 */
+ 	u64 num_devices;
+ 	u64 open_devices;
+ 	u64 rw_devices;
+ 	u64 missing_devices;
+ 	u64 total_rw_bytes;
+ 	u64 num_can_discard;
++	/* total_devices contains static recorded count of device which
++	 * are part of this FSID. (the FS devices + seed devices + ?
++	 */
+ 	u64 total_devices;
+ 	struct block_device *latest_bdev;
+ 
+-- 
+1.8.5.3
+

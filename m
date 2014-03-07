@@ -1,86 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout.artfiles.de ([80.252.97.80]:56513 "EHLO
-	mailout.artfiles.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751266AbaCGKNz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 05:13:55 -0500
-Received: from [178.13.30.175] (helo=discus.localnet)
-	smtp-after-pop=wir@brain-frog.de
-	by mailout.artfiles.de with esmtps (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-	(Exim 4.80.1)
-	id 1WLrmq-0004sC-RI
-	for linux-btrfs@vger.kernel.org; Fri, 07 Mar 2014 11:13:53 +0100
-From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+Received: from plane.gmane.org ([80.91.229.3]:43038 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753058AbaCGKSn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Mar 2014 05:18:43 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WLrrV-0007Mi-GK
+	for linux-btrfs@vger.kernel.org; Fri, 07 Mar 2014 11:18:41 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 11:18:41 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 11:18:41 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Understanding btrfs and backups
-Date: Fri, 07 Mar 2014 11:13:51 +0100
-Message-ID: <2875521.9HaU3OuHLy@discus>
-In-Reply-To: <pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>
-References: <loom.20140306T191655-366@post.gmane.org> <pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ENOSPC errors during raid1 rebalance
+Date: Fri, 7 Mar 2014 10:18:17 +0000 (UTC)
+Message-ID: <pan$1c266$c782ec3d$ca8afa67$2f440bea@cox.net>
+References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com>
+	<20140303183911.GL13899@carfax.org.uk>
+	<DF16C10AFF7F394A8C8A09C9405478890BCC2C99@EXHOST.stardatecomputer.com>
+	<73124688-5EDF-4DB5-AC9E-9F365397DD28@colorremedies.com>
+	<loom.20140305T190503-404@post.gmane.org>
+	<pan$23ceb$3bedfe62$bfb976de$e16d8fde@cox.net>
+	<loom.20140307T021006-737@post.gmane.org>
+	<20140307080213.GC6318@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan, thank you for this comprehensive post. Really helpful as always!
+Hugo Mills posted on Fri, 07 Mar 2014 08:02:13 +0000 as excerpted:
 
-[...]
-
-> As for restoring, since a snapshot is a copy of the filesystem as it
-> existed at that point, and the method btrfs exposes for accessing them is
-> to mount that specific snapshot, to restore an individual file from a
-> snapshot, you simply mount the snapshot you want somewhere and copy the
-> file as it existed in that snapshot over top of your current version
-> (which will have presumably already been mounted elsewhere, before you
-> mounted the snapshot to retrieve the file from), then unmount the
-> snapshot and go about your day. =:^)
-
-Please, how do I list mounted snapshots only?
-
-[...]
-
+> On Fri, Mar 07, 2014 at 01:13:53AM +0000, Michael Russo wrote:
+>> Duncan <1i5t5.duncan <at> cox.net> writes:
+>> 
+>> > But if you're not using compression, /that/ can't explain it...
+>> > 
+>> > 
+>> Ha! Well while that was an interesting discussion of fragmentation, I
+>> am only using the default mount options here and so no compression.
 > 
-> Since a snapshot is an image of the filesystem as it was at that
-> particular point in time, and btrfs by nature copies blocks elsewhere
-> when they are modified, all (well, not "all" as there's metadata like
-> file owner, permissions and group, too, but that's handled the same way)
-> the snapshot does is map what blocks composed each file at the time the
-> snapshot was taken.
-
-Is it correct, that e.g. ownership is recorded separately from the data 
-itself, so if I would change the owner of all my files, the respective 
-snapshot would only store the old owner information?
-
-[...]
-
+>    I _think_ the problem here is that there may have been some extents
+> created during the conversion which were over 1 GiB in size (or at least
+> which run across two or more chunks). This causes problems, because
+> there's nowhere that they can be written to by the balance --
+> which preserves extents -- because none of the allocation units (chunks)
+> are big enough.
 > 
-> The first time you do this, there's no existing copy at the other end, so
-> btrfs send sends a full copy and btrfs receive writes it out.  After
-> that, the receive side has a snapshot identical to the one created on the
-> send side and further btrfs send/receives to the same set simply
-> duplicate the differences between the reference and the new snapshot from
-> the send end to the receive end.  As with local snapshots, old ones can
-> be deleted on both the send and receive ends, as long as at least one
-> common reference snapshot is maintained on both ends, so diffs taken
-> against the send side reference can be applied to an appropriately
-> identical receive side reference, thereby updating the receive side to
-> match the new read-only snapshot on the send side.
+>    The defrag operation, by its nature, _doesn't_ preserve extents,
+> and thus can act to break up the large extents, making it possible to
+> balance the chunks that the offending extents live on.
 
-Is the receiving side a complete file system in its own right? If so, I only 
-need to maintain one common reference in order to apply the received snapshot, 
-right. If I would in any way get the send and receive side out of sync, such 
-that they do not share a common reference any more, only the send/receive 
-would fail, but I still would have the complete filesystem on the receiving 
-side, and could copy it all over (cp, rscync) to the send side in case of a 
-disaster on the send side. Is this correct?
+Now /that/ would explain the issue, or at least all I've read of it from 
+here.  Nice job! =:^)
 
-Thank you!
-Best,
-Wolfgang
+Obviously >1 GB files break/fragment on 1-gig data-chunk lines when 
+(re)written on btrfs, since that's the biggest allocation unit btrfs has, 
+and at least once the filesystem has been (near) full once, btrfs is 
+extremely unlikely to be able to place those gig-chunks contiguously, 
+thus triggering the issue.
+
+Meanwhile, the move-to-tmpfs-and-back should indeed break up those >1-gig 
+blocks too, since the that would force a rewrite and thus a reallocation, 
+which would then follow btrfs 1-gig-chunk rules.
 
 -- 
-Wolfgang Mader
-Wolfgang.Mader@fdm.uni-freiburg.de
-Telefon: +49 (761) 203-7710
-Institute of Physics
-Hermann-Herder Str. 3, 79104 Freiburg, Germany
-Office: 207
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,87 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f52.google.com ([209.85.214.52]:41294 "EHLO
-	mail-bk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752818AbaCGQOr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 11:14:47 -0500
-Received: by mail-bk0-f52.google.com with SMTP id my13so967185bkb.39
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 08:14:46 -0800 (PST)
-Received: from [192.168.7.7] (a207.net131.okay.pl. [85.28.131.207])
-        by mx.google.com with ESMTPSA id ey13sm3106316bkb.11.2014.03.07.08.14.45
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Fri, 07 Mar 2014 08:14:46 -0800 (PST)
-Message-ID: <5319F075.7050903@gmail.com>
-Date: Fri, 07 Mar 2014 17:14:45 +0100
-From: KC <impactoria@googlemail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:24607 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752144AbaCGXyk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Mar 2014 18:54:40 -0500
+Message-ID: <531A5C33.9090003@fb.com>
+Date: Fri, 7 Mar 2014 18:54:27 -0500
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Problems on previously perfect setup
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 4/9] Btrfs: use bitfield instead of integer data type
+ for the some variants in btrfs_root
+References: <1392890939-19044-1-git-send-email-miaox@cn.fujitsu.com> <1392890939-19044-4-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1392890939-19044-4-git-send-email-miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Recently (a week or so back) I started having those problems on my BTRFS 
-system
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
--------------
-I. My setup:
--------------
-SSD
-/boot           ext2    defaults        0       2
-/  btrfs rw,noatime,compress=lzo,ssd,space_cache,autodefrag 0 0 (there 
-is a /home subvolume mounted automatically)
+On 02/20/2014 05:08 AM, Miao Xie wrote:
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com> --- fs/btrfs/ctree.c
+> | 25 ++++++++++++++----------- fs/btrfs/ctree.h       | 39
+> +++++++++++++++++++++------------------ fs/btrfs/disk-io.c     | 33
+> +++++++++++++++------------------ fs/btrfs/extent-tree.c |  6
+> +++--- fs/btrfs/file.c        |  4 +++- fs/btrfs/inode.c       | 29
+> ++++++++++++++++++----------- fs/btrfs/ioctl.c       |  4 ++-- 
+> fs/btrfs/relocation.c  | 17 +++++++++-------- fs/btrfs/root-tree.c
+> |  2 +- fs/btrfs/transaction.c | 33
+> +++++++++++++++++---------------- fs/btrfs/tree-defrag.c |  2 +- 
+> fs/btrfs/tree-log.c    |  9 +++++---- 12 files changed, 109
+> insertions(+), 94 deletions(-)
+> 
 
-HDD
-/mnt/Disk_D  btrfs rw,noatime,compress=zlib,autodefrag,nofail 0 0
-(I disconnected it, but it changed nothing)
+This patch causes xfstests to lock up the box.  I could reproduce by
+running
 
+./check generic/070 generic/074 generic/075
 
---------------------------
-II. My problems:
---------------------------
-- 1 - . During random boots (seems to be a 50/50 chance) the system 
-won't boot, because it get's stuck on
+in a loop.  It blows up at 075 and usually happens right away, but
+sometimes doesn't blow up until the second go around.  I'm dropping it
+for now.  Thanks,
 
-[ OK ] Mounted Configuration File system
-[ *** ] (1 of 13) A start job is running for dev-disk-by\.....
+Josef
 
-It will slowly cycle from 1 to 13, then come back to 1 to cycle again, 
-and again, and after three times, I get this:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-Timed out waiting for device dev-disk-by\...
-Dependency failed for /boot
-Dependency failed for Local File System
-
-The computer freezes and I have to shut it down by holding the power 
-button for several seconds.
-
-
-
-- 2 - . My successful boot times extended considerably. I am using an 
-automatic login and X start without any DM. Before, I could hardly see 
-the login command line because it was so quickly covered by started 
-OpenBox session. Now it lingers several seconds while the disk LED is 
-working hard.
-
-
-
-- 3 - . For the first 10-15 seeocnds after getting into OpenBox the 
-heaviest processes displayed by Conky are several instances of kworker. 
-Also, it might be an impression, but I feel like the starting almost 
-every program became sluggish.
-
-
---------------------------
-III. Recent changes to the system:
---------------------------
-Perhaps they could indicate potential suspects:
-
-- upgraded kernel (now 3.13.5-2)
-- upgraded btrfs tools (always using latest David Sterba's unstable 
-'integration' branch)
-- did "btrfs balance /" because it had write erros due to no space even 
-though there was like 30GB free. After doing it, no space problem went away
-
-
-
-Does anyone have any idea what could be happening?
+iQIcBAEBAgAGBQJTGlwuAAoJEANb+wAKly3BrE4P+wY0BhYvT1PjMBu6nFSZFxSd
+5an4GGW5aoRrQ3G0wZkEpWPJK34exLvuzzaNxHH9FSesz27l1bnibNTUy7BzI7Mv
+tj92Dxmckpcvl+z3QI+CcPkI6NpVzBNETRxBpRVtkqxWKioEhk4oOwvctBqbqaI1
+lEOxylu6/09k2BjjeehJFLjzhVzq9taTUt7ETAaBaJLsPFdD9/E8S1EO/uJyabSo
+yGSWSHEnXUMjRCaXZ1bZJKDowTZ10wviU4rDPyFi99h4h1m6FZe5jNStHojNcNkc
+Qt1xv3s2bkuz7yAC9/yJuz4HFiWtiyRHD609vBiIBO93hLCFi5Xc4jXtSRVVC+Xx
+891gfD0c8/SVJpviTOFnxewozmIgudcC4y3i2AglRI+IXEkNRr66G6v/H0uZEN+n
+lhiNTLQ+/Kd+mxUA7Y3To86Hnb55TqX7G8AL2zdFKBb1LJLBCazcEQZkDDraG2MW
+x77H38VvKyQ+pBgv/lZFnKHadPkveFrGJUYCx49SOHAvWDoDVcIx2liayR8WYBMA
+reRT6Vd+sH4xkgVXXNhrFcDFsnbJp1R9LkHuk4HW56QASaMcLqwZ/RmwL/3ldX0c
+17IyUZkXZx79rbzBwL8EmU9Gb+oDkNeu8nXIzVnBERDBQbDQqSThaLeiPfuJNPjU
+mGmvLKc/fXNN3RofWrSx
+=N9yr
+-----END PGP SIGNATURE-----

@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13113 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752116AbaCGQAY (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:31080 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753765AbaCGSAm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Mar 2014 11:00:24 -0500
-Message-ID: <5319ED0A.4040500@fb.com>
-Date: Fri, 7 Mar 2014 11:00:10 -0500
+	Fri, 7 Mar 2014 13:00:42 -0500
+Message-ID: <531A0944.1020607@fb.com>
+Date: Fri, 7 Mar 2014 13:00:36 -0500
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/3] Btrfs: don't skip the page flush since the enospc
- is not brought by it
-References: <1393480685-4320-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1393480685-4320-1-git-send-email-miaox@cn.fujitsu.com>
+To: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2 v2] Btrfs: rename waiting_dir_move
+References: <1393487254-17978-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1393487254-17978-1-git-send-email-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,40 +19,16 @@ List-ID: <linux-btrfs.vger.kernel.org>
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 02/27/2014 12:58 AM, Miao Xie wrote:
-> As we know, btrfs flushes the continuous pages as many as
-> possible, but if all the free spaces are small, we will allocate
-> the spaces by several times, and if there is something wrong with
-> the space reservation, it is very likely that some allocations
-> succeed and the others fail. But the current code doesn't take this
-> case into account, and set the error flag for the pages though
-> their spaces are allocated successfully. It introduces a problem
-> that we can not umount the fs after the above problem happens
-> because we need wait for the flush of those pages whose spaces are
-> allocated. This patch fixes the above problem, and makes the btrfs
-> developers happy when they investigate the problem of the space
-> reservation.
+On 02/27/2014 02:47 AM, Liu Bo wrote:
+> This is a preparation work, rename waiting_dir_move to
+> send_dir_node. We'd like to share waiting_dir_move structure in new
+> did_create_dir() code.
 > 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com> --- 
-> fs/btrfs/extent_io.c | 15 +++++++++++++-- 1 file changed, 13
-> insertions(+), 2 deletions(-)
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com> --- v2: fix wrong
+> patch name.
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c index
-> fbe501d..97595ea 100644 --- a/fs/btrfs/extent_io.c +++
-> b/fs/btrfs/extent_io.c @@ -3198,8 +3198,19 @@ static int
-> __extent_writepage(struct page *page, struct writeback_control
-> *wbc, &nr_written); /* File system has been set read-only */ if
-> (ret) { -				SetPageError(page); -				goto done; +				/* +				 *
-> Private2 means we allocate the space +				 * for this page
-> successfully, and enospc +				 * error doesn't set the fs to be
-> R/O, so +				 * we can write out the page and needn't +				 * set
-> error flag for this page. If so, we +				 * can prevent the umount
-> task from being +				 * blocked. +				 */ +				if (!(ret == -ENOSPC
-> && PagePrivate2(page))) { +					SetPageError(page); +					goto
-> done; +				}
-
-So now we just ignore ret == -ENOSPC, we still need to return this
-back to the caller.  Thanks,
+This isn't applying cleanly, rebase once I push out btrfs-next today
+and resend.  Thanks,
 
 Josef
 
@@ -61,17 +36,17 @@ Josef
 Version: GnuPG v1
 Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-iQIcBAEBAgAGBQJTGez/AAoJEANb+wAKly3B9z4QAJ7VWrt7yfW+IpjzVGViPrmb
-S/Q+nuUEZjFk9huKePz33MaT76gWZlrFM6ZgfSLIEP3gPDaQIz+mrCmDBDSnD0uT
-ZJypte70l74Rfmp0gBHs+kv9VQPQkeDE17PMGCJBHnqvm/P45PgYU81nWAMhh3uQ
-Khsu5TDW7Tddi8FHyuD9a8TBdMlZfRLDOvWCTY/9OUPpRhaOhL8RBffw6iKfnq/t
-M32nGEbZGH1y/kWWc39JNKlUwzW0m0oclznPKp0wXo+lMFmHwl76TGgBl0tvLyAs
-VGhv101dH0b7vuQOerXSajVjBGFUqovIW3lDPwf4aU4XWSSebbXxeaYiEs5YMFU4
-ivzXEMpYBHEteSW9TzJ0Th+D60LhG2vApsG10Ewj7xEblCjcaO8mej6L0j7citw0
-WtNiSACyvIlw4zCWT3699UJlmIJ2fsrxEb5SKfE5QFpOXshhSciA8YZJyuX2EBVE
-je/rUMhTLCqkuY4zKZLzJiqRhNGQQbWZn4+SmRxpg5RsuxzIZzZcWiEEfucdhB6w
-7fKhtMBcY4rUzszG2otEbQaPLNvUa/u04448/gsYhvwy9II0WSkLbe3LF0IS1Z6o
-DM0vUE3FAI80EL/fwyg2VvyxOOSYSE9feoX5ClJOZ5qJamdSqLI9PND04lMz6Dp0
-+UUKtPx2wn6CnqO3vBeH
-=94MT
+iQIcBAEBAgAGBQJTGglEAAoJEANb+wAKly3Bm9YP+wSnaq7jN0pQT8UVORFE2BVI
+rTKGWfSnJQtEAUx3sF0xCp6dCQlkG+BBPHmK3W1yGovtHQrkR0rkGufx0aLzqD2m
+xpV7qQKa9rAQjK5Xsx0K0vDETqYFzEIGv+bv1Q6jFVKoEBVSSdWDPZoSLkVZ9T0Q
+aoYUvC/xd4fkp6ikb11vL+3c7WysWaDpSTflZdEFgrd5PgE+r1CoxmTs5NMCxhIK
+V6GEu/l3yKK2/95CNAfhkkeRXyV2NVxf/AzM0Jay7+zyCUBM4u2B7BAuC7ZlCxG2
+kUhqTw4TkFUIW6mW/sszKWJM9bjDLyq7bYzmJ08yFeiiS0Pvr9NaYxkNc55HUve0
+ZLnrICzAJbjQV0f01+Tn5G2/jKX6PEeGRcyWJ1RgEFBRDPh5AMsbHeme3JKWkikZ
+xxtT3gvZMlASm1CFtepoFQiBwtd8KR7VJIS9VAhO7VGyvWu3+DSvGe8di+OKvjIh
+kBnx7mgfmQChIe4Ccem3iJsNPkR/e9vpoZalBSGTnBGNiztDc64Ht3Xh+YN034n1
+4zw6XjYoKo+NJ/8pz2auKjWtZdC3AUSEkaU3koB4U1+uyQJAqDfki8j0Trye5ehn
+TemIj6kSfOvuuiCaGCqYwJJYG5r0UXALRwpGtiMk+SGzUklbjmg8q1LKKJiagV8K
+yVTNyMKP8Qldlsw1bAPm
+=Nkos
 -----END PGP SIGNATURE-----

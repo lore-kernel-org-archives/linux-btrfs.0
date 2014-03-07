@@ -1,71 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34673 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753232AbaCGPtD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 10:49:03 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s27Fn1Oj016316
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:49:02 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27Fn1On006035
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:49:01 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27Fn1GR010509
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 15:49:01 GMT
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mail-bk0-f52.google.com ([209.85.214.52]:41294 "EHLO
+	mail-bk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752818AbaCGQOr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 11:14:47 -0500
+Received: by mail-bk0-f52.google.com with SMTP id my13so967185bkb.39
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 08:14:46 -0800 (PST)
+Received: from [192.168.7.7] (a207.net131.okay.pl. [85.28.131.207])
+        by mx.google.com with ESMTPSA id ey13sm3106316bkb.11.2014.03.07.08.14.45
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Fri, 07 Mar 2014 08:14:46 -0800 (PST)
+Message-ID: <5319F075.7050903@gmail.com>
+Date: Fri, 07 Mar 2014 17:14:45 +0100
+From: KC <impactoria@googlemail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3 RFC] btrfs: show_devname should not consider seed disk
-Date: Fri,  7 Mar 2014 23:48:39 +0800
-Message-Id: <1394207319-13252-3-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
-References: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
+Subject: Problems on previously perfect setup
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-most of the user level scripts uses /proc/self/mounts for the
-disk-path to mount-point to fsid mapping. But when seed disk is
-present which generally has lowest devid, the /proc/self/mounts
-would show the seed disk, but seed disk has different fsid from
-the actual fsid that's mounted. Due to this miss match these
-scripts fails to work. One such example is btrfs-porgs
-check_mounted_where().
+Recently (a week or so back) I started having those problems on my BTRFS 
+system
 
-The solution here is not to loop into the seed disks, but still
-return the lowest devid under the given mount point.
+-------------
+I. My setup:
+-------------
+SSD
+/boot           ext2    defaults        0       2
+/  btrfs rw,noatime,compress=lzo,ssd,space_cache,autodefrag 0 0 (there 
+is a /home subvolume mounted automatically)
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/super.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+HDD
+/mnt/Disk_D  btrfs rw,noatime,compress=zlib,autodefrag,nofail 0 0
+(I disconnected it, but it changed nothing)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f3c0247..c023ffa 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1892,15 +1892,12 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	cur_devices = fs_info->fs_devices;
--	while (cur_devices) {
--		head = &cur_devices->devices;
--		list_for_each_entry(dev, head, dev_list) {
--			if (dev->missing)
--				continue;
--			if (!first_dev || dev->devid < first_dev->devid)
--				first_dev = dev;
--		}
--		cur_devices = cur_devices->seed;
-+	head = &cur_devices->devices;
-+	list_for_each_entry(dev, head, dev_list) {
-+		if (dev->missing)
-+			continue;
-+		if (!first_dev || dev->devid < first_dev->devid)
-+			first_dev = dev;
- 	}
- 
- 	if (first_dev) {
--- 
-1.8.5.3
 
+--------------------------
+II. My problems:
+--------------------------
+- 1 - . During random boots (seems to be a 50/50 chance) the system 
+won't boot, because it get's stuck on
+
+[ OK ] Mounted Configuration File system
+[ *** ] (1 of 13) A start job is running for dev-disk-by\.....
+
+It will slowly cycle from 1 to 13, then come back to 1 to cycle again, 
+and again, and after three times, I get this:
+
+Timed out waiting for device dev-disk-by\...
+Dependency failed for /boot
+Dependency failed for Local File System
+
+The computer freezes and I have to shut it down by holding the power 
+button for several seconds.
+
+
+
+- 2 - . My successful boot times extended considerably. I am using an 
+automatic login and X start without any DM. Before, I could hardly see 
+the login command line because it was so quickly covered by started 
+OpenBox session. Now it lingers several seconds while the disk LED is 
+working hard.
+
+
+
+- 3 - . For the first 10-15 seeocnds after getting into OpenBox the 
+heaviest processes displayed by Conky are several instances of kworker. 
+Also, it might be an impression, but I feel like the starting almost 
+every program became sluggish.
+
+
+--------------------------
+III. Recent changes to the system:
+--------------------------
+Perhaps they could indicate potential suspects:
+
+- upgraded kernel (now 3.13.5-2)
+- upgraded btrfs tools (always using latest David Sterba's unstable 
+'integration' branch)
+- did "btrfs balance /" because it had write erros due to no space even 
+though there was like 30GB free. After doing it, no space problem went away
+
+
+
+Does anyone have any idea what could be happening?

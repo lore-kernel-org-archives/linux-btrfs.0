@@ -1,49 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:6448 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:58829 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751451AbaCGAZv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Mar 2014 19:25:51 -0500
-Date: Thu, 6 Mar 2014 16:25:49 -0800
-From: Zach Brown <zab@redhat.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix deadlock with nested trans handles
-Message-ID: <20140307002549.GC16439@lenny.home.zabbo.net>
-References: <1394150467-5990-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
+	id S1750924AbaCGBOV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Mar 2014 20:14:21 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WLjMh-0002Id-8R
+	for linux-btrfs@vger.kernel.org; Fri, 07 Mar 2014 02:14:19 +0100
+Received: from pool-96-232-101-151.nycmny.fios.verizon.net ([96.232.101.151])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 02:14:19 +0100
+Received: from mike by pool-96-232-101-151.nycmny.fios.verizon.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Mar 2014 02:14:19 +0100
+To: linux-btrfs@vger.kernel.org
+From: Michael Russo <mike@papersolve.com>
+Subject: Re: ENOSPC errors during raid1 rebalance
+Date: Fri, 7 Mar 2014 01:13:53 +0000 (UTC)
+Message-ID: <loom.20140307T021006-737@post.gmane.org>
+References: <DF16C10AFF7F394A8C8A09C9405478890BCBE534@EXHOST.stardatecomputer.com> <20140303183911.GL13899@carfax.org.uk> <DF16C10AFF7F394A8C8A09C9405478890BCC2C99@EXHOST.stardatecomputer.com> <73124688-5EDF-4DB5-AC9E-9F365397DD28@colorremedies.com> <loom.20140305T190503-404@post.gmane.org> <pan$23ceb$3bedfe62$bfb976de$e16d8fde@cox.net>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1394150467-5990-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 06, 2014 at 07:01:07PM -0500, Josef Bacik wrote:
-> Zach found this deadlock that would happen like this
+Duncan <1i5t5.duncan <at> cox.net> writes:
+
+> But if you're not using compression, /that/ can't explain it...
 > 
-> btrfs_end_transaction <- reduce trans->use_count to 0
->   btrfs_run_delayed_refs
->     btrfs_cow_block
->       find_free_extent
-> 	btrfs_start_transaction <- increase trans->use_count to 1
->           allocate chunk
-> 	btrfs_end_transaction <- decrease trans->use_count to 0
-> 	  btrfs_run_delayed_refs
-> 	    lock tree block we are cowing above ^^
 
-Indeed, I stumbled across this while trying to reproduce reported
-problems with iozone.  This deadlock would consistently hit during
-random 1k reads in a 2gig file.
+Ha! Well while that was an interesting discussion of fragmentation,
+I am only using the default mount options here and so no compression. 
+The only reason I'm really even looking at the fragmentation 
+issue is because running the defragment (with varying sizes of
+"-t" which I'm not sure why that's even necessary) seemed
+to force btrfs to move segments around and let me rebalance
+more block groups.  I don't even care if the files are defragged,
+I just want them all in the RAID1 profile.  Hopefully if I move
+each file out to some other FS like /dev/shm and then back
+it will work, I just gotta hack a script together to do so.
 
-> We need to only decrease trans->use_count if it is above 1, otherwise leave it
-> alone.  This will make nested trans be the only ones who decrease their added
-> ref, and will let us get rid of the trans->use_count++ hack if we have to commit
-> the transaction.  Thanks,
-
-And this fixes it.  It's run through a few times successfully.
-
-> cc: stable@vger.kernel.org
-> Reported-by: Zach Brown <zab@redhat.com>
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-
-Tested-by: Zach Brown <zab@redhat.com>
-
-- z

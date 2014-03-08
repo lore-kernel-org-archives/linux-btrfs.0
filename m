@@ -1,32 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54019 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751676AbaCHVxx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Mar 2014 16:53:53 -0500
-Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
-	by frost.carfax.org.uk with esmtp (Exim 4.80)
-	(envelope-from <hrm@carfax.org.uk>)
-	id 1WMPBn-0007Gq-BA
-	for linux-btrfs@vger.kernel.org; Sat, 08 Mar 2014 21:53:52 +0000
-Received: from hrm by ruthven.carfax.org.uk with local (Exim 4.82)
-	(envelope-from <hrm@carfax.org.uk>)
-	id 1WMPBm-0003I3-UI
-	for linux-btrfs@vger.kernel.org; Sat, 08 Mar 2014 21:53:50 +0000
-Date: Sat, 8 Mar 2014 21:53:50 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: send/receive locking
-Message-ID: <20140308215350.GE6318@carfax.org.uk>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:45777 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751130AbaCHVz5 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Mar 2014 16:55:57 -0500
+From: Josef Bacik <jbacik@fb.com>
+To: Hugo Mills <hugo@carfax.org.uk>
+CC: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: send/receive locking
+Date: Sat, 8 Mar 2014 21:55:50 +0000
+Message-ID: <usnory0eq5h626p5eaeeh4ki.1394315749442@email.android.com>
+References: <20140308215350.GE6318@carfax.org.uk>
+In-Reply-To: <20140308215350.GE6318@carfax.org.uk>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="brEuL7wsLY8+TuWz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hey Hugo will you try the danger branch on btrfs-next, Wang changed the locking a bit.  Thanks,
 
---brEuL7wsLY8+TuWz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Josef
+
+Hugo Mills <hugo@carfax.org.uk> wrote:
+
 
    Is there anything that can be done about the issues of btrfs send
 blocking? I've been writing a backup script (slowly), and several
@@ -46,32 +42,8 @@ likely to be a simple(ish) solution?
 
    Hugo.
 
--- 
+--
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Well, you don't get to be a kernel hacker simply by looking ---   
-                    good in Speedos. -- Rusty Russell                    
-
---brEuL7wsLY8+TuWz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBUxuRblheFHXiqx3kAQIDLQ//T0kyWkuGHuhRaGZmZArqP3ALNPtF0TdQ
-7GDM2xIB47YE4M7sTzUJ8BSUn7Y9hOJzHzpIhO6salM+YatOE7R7zChCfHjCW9CR
-vrUhRCCQnhkC1p6KEmiZ8oIyKNOhdHTRdE6lBkD+SF7BsP5wVlE0iHlBSUcLOqou
-YhlKKc3DKGsxhzFG58MO9i7QgOPJgiXMwlE+N9LOyoYMypPsKH6hjdF09qiCW7Nj
-a7fSSj9TJmPDMC4MAdpZ1Sf71BQAbroHbdyfHoA6nM77Wa2kIMyxGXZaLIAD+I0b
-xLUZLOT9PAfoXRM/pET2YGcq+2OFhewC66obS8PU+0ODhiAVzHVmkk8nOa9q3Kzx
-rCSGhTjnrGVcPrGRfdYnqDXp5Xqu2TQrTCQoWk2kVoGW6yMxQ9TaHisqmqYhqxuQ
-zezj23hi6FySdXacSsHyBgiqKvdNpIa1WGOlxs1U9u7nOFmeeHa1LHu15yl0xFMY
-C/TuOrx4WNDTN9eKEbH+7OK1FXYZWL+/VR1jcVTVbbaE3vjFdzigCaT2p3qPLVbK
-ULfbl+HPUmvffpbNN+Lp8ONWDHUKIVJDGz90syzPQGHJ1GLlgdv/2oWeF1pVeLfj
-JMLtIVbuqGLxE37dtfMPynEdk15xp2CsJYvX3JNz/0ntqM9kxOAyr2itk1ReHrBH
-RWcEVClcx90=
-=YIi2
------END PGP SIGNATURE-----
-
---brEuL7wsLY8+TuWz--
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or https://urldefense.proofpoint.com/v1/url?u=http://www.carfax.org.uk/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=DpjVPUDw%2BBOF8It3j6uqicc%2Fa8ToXNmi%2FzBNxek3pv8%3D%0A&s=b4f6d6e5bbee25bad639a60b61a95c5813d89a00a979388dea429adfb3902498
+   --- Well, you don't get to be a kernel hacker simply by looking ---
+                    good in Speedos. -- Rusty Russell

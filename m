@@ -1,88 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:59024 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750761AbaCIKBU convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 06:01:20 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org, impactoria@googlemail.com
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:45754 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750761AbaCIKY3 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 06:24:29 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Massive BTRFS performance degradation
-Date: Sun, 09 Mar 2014 11:01:17 +0100
-Message-ID: <3438733.p6vCjojJlH@merkaba>
-In-Reply-To: <1553599.dDs6U900Vh@tethys>
-References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys>
+Date: Sun, 09 Mar 2014 11:23:29 +0100
+Message-ID: <1756989.4ep0Vdupld@tethys>
+In-Reply-To: <3438733.p6vCjojJlH@merkaba>
+References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys> <3438733.p6vCjojJlH@merkaba>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 9. März 2014, 09:17:24 schrieb Swâmi Petaramesh:
-> Le dimanche 9 mars 2014 08:48:20 KC a écrit :
-> > I am experiencing massive performance degradation on my BTRFS root
-> > partition on SSD.
-> 
-> BTW, is BTRFS still a SSD-killer ? It had this reputation a while ago, and
-> I'm not sure if this still is the case, but I don't dare (yet) converting
-> to BTRFS one of my laptops that has a SSD...
+Le dimanche 9 mars 2014 11:01:17 vous avez écrit :
+> This ThinkPad T520 has been with BTRFS since installation of the Debian
+> sid system on it with Kernel 2.6.39 or even 2.6.38 (where Sandybridge
+> graphics didn´t work so well as today yet).
+>
+> So that much to any FUD about BTRFS and SSDs.
 
-I never heard about this reputation and luckily the Intel SSD 320 didn´t
-either. Its almost three years old by now:
+Wow !
 
-SMART Attributes Data Structure revision number: 5
-Vendor Specific SMART Attributes with Thresholds:
-ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
-  3 Spin_Up_Time            0x0020   100   100   000    Old_age   Offline      -       0
-  4 Start_Stop_Count        0x0030   100   100   000    Old_age   Offline      -       0
-  5 Reallocated_Sector_Ct   0x0032   100   100   000    Old_age   Always       -       0
-  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       9171
- 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       2603
-170 Reserve_Block_Count     0x0033   100   100   010    Pre-fail  Always       -       0
-171 Program_Fail_Count      0x0032   100   100   000    Old_age   Always       -       0
-172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
-183 Runtime_Bad_Block       0x0030   100   100   000    Old_age   Offline      -       1
-184 End-to-End_Error        0x0032   100   100   090    Old_age   Always       -       0
-187 Reported_Uncorrect      0x0032   100   100   000    Old_age   Always       -       0
-192 Unsafe_Shutdown_Count   0x0032   100   100   000    Old_age   Always       -       225
-199 UDMA_CRC_Error_Count    0x0030   100   100   000    Old_age   Offline      -       0
-225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       393645
-226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2204244
-227 Workld_Host_Reads_Perc  0x0032   100   100   000    Old_age   Always       -       49
-228 Workload_Minutes        0x0032   100   100   000    Old_age   Always       -       13145477
-232 Available_Reservd_Space 0x0033   100   100   010    Pre-fail  Always       -       0
-233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
-241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       393645
-242 Host_Reads_32MiB        0x0032   100   100   000    Old_age   Always       -       1002465
+Thanks for this very interesting info. Would you tell me if you use any of the 
+SSD optimisation mount options: discard, ssd or ssd_spread ?
 
+Myself I've been moving back and forth between BTRFS / ZFS ans ext4 over the 
+past 2-3 years, each time giving a chance to BTRFS, then typically 3-4 months 
+later switching back to either ext4 or ZFS after having either lost all of my 
+data, or seen the filesystem slow down to the point it becomes unusable, beyond 
+defragmentation or removing snapshots or whatever...
 
-Media wearout indicator basically says the SSD considers itself to be
-"new". Value is the same 100 as it was as it was new. The raw value tough
-raised for the first time. On 2013-10-12 is was:
+So my yo-yo-game is kind of "Is BTRFS now ready for use ?... Let's give it a 
+chance... OMFG... Lost everything, unusable system... Never want to hear about 
+BTRFS anymore... Wel... Maybe will come back next year... etc"
 
-233 Media_Wearout_Indicator 0x0032   100   100   000    Old_age   Always       -       0
+I've been used to consider for 3 years that :
 
-For more about this indicator read in Intel PDF about it.
+- Next kernel release will have a truly excellent and mature BTRFS support.
 
+- Current kernel release has correct BTRFS support - but most mainline distros 
+don't have it yet, maybe in 6 months ?
 
-There are some Erase fails that happened I think in the first year of
-SSD life, but that 169 raw value so far never raised gain.
+- Previous kernel release (the one that all current distros come with) have a 
+completely broke BTRFS support...
 
+#LOL
 
-There have been 393645 * 32 MiB = 12,01 TiB of writes. The SSD itself is
-specified to be usable for at least 5 years with 20 TB of host writes each
-day. That is about 7,3 TB or 7,1 TiB. I assumed TB in the Intel
-specification document, if its TiB, its then its 7,3 TiB.
+Well I hope it's quite not the case anymore for I just installed my neighbour, 
+old lady's system with a Linux Mint 16 (kernel 3.11) on BTRFS with skinny 
+extents...
 
-Anyway with conversative 7 TiB a year or 21 TiB in three years of which
-only 12 TiB are used up, I am quite confident that this SSD could last
-longer than 5 years.
+But for myself running ArchLinux in kernel 3.13, I still find out that :
 
-This ThinkPad T520 has been with BTRFS since installation of the Debian
-sid system on it with Kernel 2.6.39 or even 2.6.38 (where Sandybridge
-graphics didn´t work so well as today yet).
+- "btrfs send" causes my kernel to BUG :-/ (the wiki says it's working 
+stuff...)
+- btrfs-defrag.sgh hangs because of some glitch with "filefrag".
+- bedup crashes badly and looks completely unmaintained as far as I can tell 
+and nobody seems to care.
 
-So that much to any FUD about BTRFS and SSDs.
+Soooo weeelllll... Looks like readiness for prime time is still ahead of us...
 
-Thanks,
+(But still my 2 main systems are now BTRFS, including my main storage machine 
+running BTRFS RAID-1, so I hope it can be reliable, at least...)
+
+Kind regards.
+
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

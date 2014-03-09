@@ -1,64 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37630 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751065AbaCGXmW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Mar 2014 18:42:22 -0500
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s27NgLsw019865
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:21 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27NgKca010993
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:20 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s27NgKHs017743
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Mar 2014 23:42:20 GMT
-From: Guangyu Sun <guangyu.sun@oracle.com>
+Received: from mail-ea0-f176.google.com ([209.85.215.176]:60103 "EHLO
+	mail-ea0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752278AbaCIHsX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 03:48:23 -0400
+Received: by mail-ea0-f176.google.com with SMTP id o10so3093176eaj.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Mar 2014 23:48:22 -0800 (PST)
+Received: from [192.168.7.7] (a207.net131.okay.pl. [85.28.131.207])
+        by mx.google.com with ESMTPSA id l42sm29047848eew.19.2014.03.08.23.48.21
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 08 Mar 2014 23:48:21 -0800 (PST)
+Message-ID: <531C1CC4.701@gmail.com>
+Date: Sun, 09 Mar 2014 08:48:20 +0100
+From: KC <impactoria@googlemail.com>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: koen.de.wit@oracle.com
-Subject: [PATCH] Btrfs: return EPERM when deleting a default subvolume
-Date: Fri,  7 Mar 2014 15:41:46 -0800
-Message-Id: <1394235706-24780-1-git-send-email-guangyu.sun@oracle.com>
+Subject: Massive BTRFS performance degradation
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The error message is confusing:
+I am experiencing massive performance degradation on my BTRFS root 
+partition on SSD. Except for regular daily updates, nothing changed in 
+the system. The mount point remained the same:
 
- # btrfs sub delete /mnt/mysub/
- Delete subvolume '/mnt/mysub'
- ERROR: cannot delete '/mnt/mysub' - Directory not empty
+/  btrfs rw,noatime,compress=lzo,ssd,space_cache,autodefrag 0 0
 
-The error message does not make sense to me: It's not about deleting a
-directory but it's a subvolume, and it doesn't matter if the subvolume is
-empty or not.
+but the performance dropped to less than 8% of norm.
 
-Maybe EPERM or is more appropriate in this case, combined with an explanatory
-kernel log message. (e.g. "subvolume with ID 123 cannot be deleted because
-it is configured as default subvolume.")
 
-Reported-by: Koen De Wit <koen.de.wit@oracle.com>
-Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
----
- fs/btrfs/ioctl.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+Before:
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a6d8efa..c380854 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1797,7 +1797,10 @@ static noinline int may_destroy_subvol(struct btrfs_root *root)
- 	if (di && !IS_ERR(di)) {
- 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
- 		if (key.objectid == root->root_key.objectid) {
--			ret = -ENOTEMPTY;
-+			ret = -EPERM;
-+			printk(KERN_ERR "subvolume %llu cannot be deleted "
-+			       "because it is configured as default "
-+			       "subvolume.\n", key.objectid);
- 			goto out;
- 		}
- 		btrfs_release_path(path);
--- 
-1.7.9.5
+# dd if=tempfile of=/dev/null bs=1M count=1024
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 1.57307 s, 683 MB/s
 
+Now:
+
+# dd if=tempfile of=/dev/null bs=1M count=1024
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 26.4373 s, 40.6 MB/s
+
+
+I created a new btrfs partition on the SSD with the same mount options 
+and it is not being affected:
+
+# dd if=/mnt/er/tempfile of=/dev/null bs=1M count=1024
+1024+0 records in
+1024+0 records out
+1073741824 bytes (1.1 GB) copied, 1.57634 s, 681 MB/s
+
+
+I also did
+btrfs filesystem balance start /
+wit no effect.
+
+I tried changing mount options - still no effect.
+
+I'd appreciate some suggestions.

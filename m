@@ -1,58 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga01.intel.com ([192.55.52.88]:5216 "EHLO mga01.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752257AbaCJXZz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 19:25:55 -0400
-Message-ID: <531E4A02.5010404@linux.intel.com>
-Date: Mon, 10 Mar 2014 16:25:54 -0700
-From: Saul Wold <sgw@linux.intel.com>
+Received: from tango.0pointer.de ([85.214.72.216]:49271 "EHLO
+	tango.0pointer.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753224AbaCJXpv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Mar 2014 19:45:51 -0400
+Date: Tue, 11 Mar 2014 00:45:47 +0100
+From: Lennart Poettering <lennart@poettering.net>
+To: kreijack@inwind.it
+Cc: systemd-devel@lists.freedesktop.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [systemd-devel] [HEADS-UP] Discoverable Partitions Spec
+Message-ID: <20140310234547.GA31229@tango.0pointer.de>
+References: <20140307182603.GA22874@tango.0pointer.de>
+ <531E059B.1010509@libero.it>
+ <20140310200228.GA18268@tango.0pointer.de>
+ <531E3F10.3000908@libero.it>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Building a brtfs filesystem < 70M?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <531E3F10.3000908@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 10.03.14 23:39, Goffredo Baroncelli (kreijack@libero.it) wrote:
 
-Hi There
+> > Well, the name is property of the admin really. There needs to be a way
+> > how the admin can label his subvolumes, with a potentially localized
+> > name. This makes it unsuitable for our purpose, we cannot just take
+> > possession of this and leave the admin with nothing.
+> 
+> Instead of the name we can use the xattr to store these information.
 
-There seems to be an issue if we try to build a btrfs based FS that is 
-less than 70M, we get the following assertion failure:
+Ah, using xattrs for this is indeed an option. That way we should be able
+attach any kind of information we like to a subvolume.
 
-mkfs.btrfs: extent-tree.c:2682: btrfs_reserve_extent: Assertion `!(ret)' 
-failed.
+Hmm, I figure though that there is no way currently to read xattrs off a
+subvolume without first mounting them individually? Having to mount all
+subvolumes before we can make sense of them and mount them to the right
+place certainly sounds less than ideal...
 
-I tried to do a search on this and did not find anything obvious.
+> > On GPT there are also gpt partition labels and partition types. The
+> > former are property of the admin, he can place there whatever he wants,
+> > in whatever language he chooses... The latter however is how we make
+> > sense of it on a semantical level.
+> > 
+> >> Or in another way we could group the different systems in subdirectories:
+> >>
+> >> @home		-> home of all the systems
+> >> @srv		-> srv  of all the systems
+> >> fedora/@	-> root of a fedora system
+> >> fedora/@etc	-> etc of the fedora system
+> >> fedora2/@	-> root of a fedora2 system
+> >> fedora2/@etc	-> etc of the fedora2 system
+> > 
+> > I am pretty sure automatic discovery of mount points should not cover
+> > the usecase where people install multiple distributions into the same
+> > btrfs volume. THe automatic logic should cover the simple cases only,
+> > and it sounds way over the top to support installing multiple OSes into
+> > the same btrfs... I mean, people can do that, if they want to, they just
+> > have to write a proper fstab, which I think is not too much too ask...
+> 
+> In your specification, you referred the use case of "container" (via
+> nspawn / libvrt-lxc). which have to boot "a disk image". Why you don't
+> mind to use a container on a btrfs snapshot ? I think that it will be
+> reasonable to have different containers on a snapshots of the same
+> filesystem-tree.
 
-Further, if I do build a 70M image, it will not mount until I get to I 
-increase  the about 100M!
+Hmm, dunno, you might have a point there...
 
-# mount -o loop -v rootfs.btrfs mnt
-mount: wrong fs type, bad option, bad superblock on /dev/loop0,
-        missing codepage or helper program, or other error
-
-        In some cases useful info is found in syslog - try
-        dmesg | tail or so.
-
-I can provide a small rootfs (~4M) example if needed
-
-Builds and mounts correct:
-mkfs.btrfs -b 104857600 -r rootfs rootfs.btrfs
-
-Builds, but does not mount:
-mkfs.btrfs -b 73400320 -r rootfs rootfs.btrfs
-
-Does not build, gives the above assertion error:
-mkfs.btrfs -b 10889216 -r rootfs rootfs.btrfs
-
-
-Thanks
-
+Lennart
 
 -- 
-     Sau!
-
-Saul Wold
-Yocto Component Wrangler @ Intel
-Yocto Project / Poky Build System
-
+Lennart Poettering, Red Hat

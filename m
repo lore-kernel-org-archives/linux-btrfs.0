@@ -1,88 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37787 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750905AbaCJB7B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 21:59:01 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s2A1x0DZ027540
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:59:00 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2A1wxJL015093
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:58:59 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2A1wwQ7025371
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:58:58 GMT
-Message-ID: <531D1C58.90406@oracle.com>
-Date: Mon, 10 Mar 2014 09:58:48 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:18101 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752637AbaCJCQC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 22:16:02 -0400
+From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
+To: =?utf-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel BUG: btrfs send - Incremental backup
+Date: Mon, 10 Mar 2014 02:16:01 +0000
+Message-ID: <531D20A3.1030204@cn.fujitsu.com>
+References: <2853810.EcqZt5vpol@tethys>
+In-Reply-To: <2853810.EcqZt5vpol@tethys>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3 v2 RFC] btrfs: total_devices vs num_devices
-References: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, 8 Mar 2014 08:35:17 +0100, SwÃ¢mi Petaramesh wrote:
+> Hi there,
+>
+> I tried to perform an incremental backup as described in
+> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup  between 2 external
+> USB drives,
+>
+> The 1st "btrfs send foo/snap1 | btrfs receive bar" went well, although it took
+> 5-6 times the time the same workload takes in ZFS.
+>
+> Then "btrfs send -v -p foo/snap1 foo/snap2 | btrfs receive bar" crashed on me.
+>
+> After a reboot and retry, I get a KERNEL BUG again :
+>
+>
+> # uname -a
+> Linux tethys 3.13.5-1-ARCH #1 SMP PREEMPT Sun Feb 23 00:25:24 CET 2014 x86_64
+> GNU/Linux
+>
+> btrfs send -v -p foo/snap1 foo/snap2 | btrfs receive bar
+>
+>
+> mars 08 08:22:01 tethys kernel: ------------[ cut here ]------------
+> mars 08 08:22:01 tethys kernel: kernel BUG at fs/btrfs/send.c:4398!
+> mars 08 08:22:02 tethys kernel: invalid opcode: 0000 [#1] PREEMPT SMP
+> mars 08 08:22:02 tethys kernel: Modules linked in: usb_storage md5 fuse ecb
+> ecryptfs encrypted_keys hmac trusted tpm ctr ccm intel_rapl
+> x86_pkg_temp_thermal rts5139(C)
+> mars 08 08:22:02 tethys kernel:  usbhid hid sr_mod cdrom sd_mod atkbd libps2
+> crct10dif_pclmul crct10dif_common crc32_pclmul ahci crc32c_intel
+> ghash_clmulni_intel libahc
+> mars 08 08:22:02 tethys kernel: CPU: 0 PID: 2432 Comm: btrfs Tainted: P
+> C O 3.13.5-1-ARCH #1
+> mars 08 08:22:02 tethys kernel: Hardware name: TOSHIBA SATELLITE L735/Base
+> Board Product Name, BIOS 2.50 06/26/2012
+> mars 08 08:22:02 tethys kernel: task: ffff880041724800 ti: ffff88003b84a000
+> task.ti: ffff88003b84a000
+> mars 08 08:22:02 tethys kernel: RIP: 0010:[<ffffffffa0363ba5>]  [<ffffffffa0363ba5>]
+> changed_cb+0x9e5/0x9f0 [btrfs]
+> mars 08 08:22:02 tethys kernel: RSP: 0018:ffff88003b84bb48  EFLAGS: 00010283
+> mars 08 08:22:02 tethys kernel: RAX: 00000000000579d5 RBX: ffff88013279ea00 RCX:
+> 0000000000000060
+> mars 08 08:22:02 tethys kernel: RDX: ffff88003b84bc65 RSI: 00000000000579cd RDI:
+> ffff88013279ea00
+> mars 08 08:22:02 tethys kernel: RBP: ffff88003b84bbe0 R08: ffff88003b84bc65 R09:
+> 0000000000000002
+> mars 08 08:22:02 tethys kernel: R10: ffff88005981a900 R11: 0000000000000000 R12:
+> 0000000000000002
+> mars 08 08:22:02 tethys kernel: R13: ffff88003b84bc65 R14: ffff88007c628800 R15:
+> 0000000000002ad1
+> mars 08 08:22:02 tethys kernel: FS:  00007fceade62880(0000)
+> GS:ffff88014f400000(0000) knlGS:0000000000000000
+> mars 08 08:22:02 tethys kernel: CS:  0010 DS: 0000 ES: 0000 CR0:
+> 0000000080050033
+> mars 08 08:22:02 tethys kernel: CR2: 00007fb4cc8c8000 CR3: 0000000041a99000
+> CR4: 00000000000407f0
+> mars 08 08:22:02 tethys kernel: Stack:
+> mars 08 08:22:02 tethys kernel:  ffff88003b84bb88 ffffffffa03206ec 00000000000008ca
+> ffff88005981a900
+> mars 08 08:22:02 tethys kernel:  0000000000000000 ffff88005981a900
+> ffff88005981a870 0000000000000000
+> mars 08 08:22:02 tethys kernel:  ffff88003b84bbe0 ffffffffa03161e9 ffff88003b84bc76
+> ffff88003b84bbe0
+> mars 08 08:22:02 tethys kernel: Call Trace:
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa03206ec>] ?
+> read_extent_buffer+0xbc/0x110 [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa03161e9>] ?
+> btrfs_get_token_32+0x59/0xe0 [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa0320e81>] ?
+> memcmp_extent_buffer+0xc1/0x120 [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa02e1b10>]
+> btrfs_compare_trees+0x790/0x970 [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa03631c0>] ?
+> finish_inode_if_needed+0x4e0/0x4e0 [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa0364568>] btrfs_ioctl_send+0x8a8/0xc80
+> [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffffa0332afe>] btrfs_ioctl+0xfee/0x27a0
+> [btrfs]
+> mars 08 08:22:02 tethys kernel:  [<ffffffff81096bc8>] ? __enqueue_entity+0x78/0x80
+> mars 08 08:22:02 tethys kernel:  [<ffffffff8109c6cb>] ? enqueue_entity+0x29b/0xa10
+> mars 08 08:22:02 tethys kernel:  [<ffffffff8109cf47>] ?
+> enqueue_task_fair+0x107/0x540
+> mars 08 08:22:02 tethys kernel:  [<ffffffff8108f45a>] ? enqueue_task+0x3a/0x60
+> mars 08 08:22:02 tethys kernel:  [<ffffffff810902c5>] ?
+> check_preempt_curr+0x75/0xa0
+> mars 08 08:22:02 tethys kernel:  [<ffffffff811b5fe0>] do_vfs_ioctl+0x2e0/0x4c0
+> mars 08 08:22:02 tethys kernel:  [<ffffffff81060d0f>] ? do_fork+0x12f/0x320
+> mars 08 08:22:02 tethys kernel:  [<ffffffff811b6241>] SyS_ioctl+0x81/0xa0
+> mars 08 08:22:02 tethys kernel:  [<ffffffff8152142d>]
+> system_call_fastpath+0x1a/0x1f
+> mars 08 08:22:02 tethys kernel: Code: 48 8d 75 b6 45 31 c0 b9 01 00 00 00 4c
+> 89 e2 4c 89 f7 e8 2f eb f7 ff 85 c0 0f 89 77 ff ff ff e9 a0 fd ff ff 31 c0 e9 99 fd
+> ff ff <
+> mars 08 08:22:02 tethys kernel: RIP  [<ffffffffa0363ba5>] changed_cb+0x9e5/0x9f0
+> [btrfs]
+> mars 08 08:22:02 tethys kernel:  RSP <ffff88003b84bb48>
+> mars 08 08:22:02 tethys kernel: ---[ end trace 718b3fc11b4d9241 ]---
+>
+>
+> HTH, TIA.
+>
+Hi,
 
-  Any comments on this set of patches ?
+Does the filesystem pass the btrfsck?
+If not, would you please try btrfsck first?
 
-Thanks, Anand
-
-
-On 07/03/2014 23:48, Anand Jain wrote:
-> The intended usage of total_devices and num_devices
-> should be recorded in the comments so that these
-> two counters can be used correctly as originally
-> intended.
->
-> As of now there appears to be slight deviations/bugs
-> from the original intention, the bugs are apparent
-> that num_devices does not count seed devices where
-> as total_devices does, but total_devices does not
-> count the replacing devices where as num_devices does.
->
-> So in this situation the ioctl(BTRFS_IOC_DEVICES_READY)
-> will fails when there is seed FS. Next, applications
-> using ioctl(BTRFS_IOC_FS_INFO) and ioctl(BTRFS_IOC_DEV_INFO)
-> in conjunction to allocate the slots will also fail
-> as former depend on the num_devices where as latter
-> would match total_devices (except when replace is running).
->
-> This patch will help have the clarity on usage
-> of these two counter so that bugs related to this can
-> be fixed.
->
-> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-> ---
-> v2: edit commit
->
->   fs/btrfs/volumes.h | 6 ++++++
->   1 file changed, 6 insertions(+)
->
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 91b7596..99c71aa 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -121,12 +121,18 @@ struct btrfs_fs_devices {
->   	/* the device with this id has the most recent copy of the super */
->   	u64 latest_devid;
->   	u64 latest_trans;
-> +	/* num_devices contains run time count of devices which are part
-> +	 * of this FSID. (the FS devices + replacing devices + ?
-> +	 */
->   	u64 num_devices;
->   	u64 open_devices;
->   	u64 rw_devices;
->   	u64 missing_devices;
->   	u64 total_rw_bytes;
->   	u64 num_can_discard;
-> +	/* total_devices contains static recorded count of device which
-> +	 * are part of this FSID. (the FS devices + seed devices + ?
-> +	 */
->   	u64 total_devices;
->   	struct block_device *latest_bdev;
->
->
+Thanks.
+Quÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

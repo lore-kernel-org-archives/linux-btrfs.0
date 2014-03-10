@@ -1,224 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [173.234.39.99] ([173.234.39.99]:54940 "EHLO
-	mail.mystoragebox.com" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1751914AbaCIUuZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 16:50:25 -0400
-Received: from cpe-67-240-76-244.nycap.res.rr.com ([67.240.76.244] helo=[192.168.5.80])
-	by mail.mystoragebox.com with esmtpsa (TLS1.0:DHE_RSA_AES_128_CBC_SHA1:128)
-	(Exim 4.80)
-	(envelope-from <markm-lists@intellasoft.net>)
-	id 1WMkfL-00023p-Jo
-	for linux-btrfs@vger.kernel.org; Sun, 09 Mar 2014 16:49:47 -0400
-Message-ID: <531CD3EB.1090401@intellasoft.net>
-Date: Sun, 09 Mar 2014 16:49:47 -0400
-From: Mark Murawski <markm-lists@intellasoft.net>
+Received: from cn.fujitsu.com ([222.73.24.84]:45116 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751239AbaCJBOy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 9 Mar 2014 21:14:54 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2A1Ejpo022535
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 09:14:46 +0800
+Message-ID: <531D126F.7070300@cn.fujitsu.com>
+Date: Mon, 10 Mar 2014 09:16:31 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Task Hang
-References: <5315E105.3000003@intellasoft.net> <5315EA04.5010303@fb.com> <5318A6C5.8040309@intellasoft.net>
-In-Reply-To: <5318A6C5.8040309@intellasoft.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/9] Btrfs: use bitfield instead of integer data type
+ for the some variants in btrfs_root
+References: <1392890939-19044-1-git-send-email-miaox@cn.fujitsu.com> <1392890939-19044-4-git-send-email-miaox@cn.fujitsu.com> <531A5D88.1020308@fb.com>
+In-Reply-To: <531A5D88.1020308@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Soooo... was this a help to anyone?
+On Fri, 7 Mar 2014 19:00:08 -0500, Josef Bacik wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 02/20/2014 05:08 AM, Miao Xie wrote:
+>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com> --- fs/btrfs/ctree.c
+>> | 25 ++++++++++++++----------- fs/btrfs/ctree.h       | 39
+>> +++++++++++++++++++++------------------ fs/btrfs/disk-io.c     | 33
+>> +++++++++++++++------------------ fs/btrfs/extent-tree.c |  6
+>> +++--- fs/btrfs/file.c        |  4 +++- fs/btrfs/inode.c       | 29
+>> ++++++++++++++++++----------- fs/btrfs/ioctl.c       |  4 ++-- 
+>> fs/btrfs/relocation.c  | 17 +++++++++-------- fs/btrfs/root-tree.c
+>> |  2 +- fs/btrfs/transaction.c | 33
+>> +++++++++++++++++---------------- fs/btrfs/tree-defrag.c |  2 +- 
+>> fs/btrfs/tree-log.c    |  9 +++++---- 12 files changed, 109
+>> insertions(+), 94 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c index
+>> cbd3a7d..9067d79 100644 --- a/fs/btrfs/ctree.c +++
+>> b/fs/btrfs/ctree.c @@ -224,7 +224,8 @@ static struct extent_buffer
+>> *btrfs_read_lock_root_node(struct btrfs_root *root) static void
+>> add_root_to_dirty_list(struct btrfs_root *root) { 
+>> spin_lock(&root->fs_info->trans_lock); -	if (root->track_dirty &&
+>> list_empty(&root->dirty_list)) { +	if
+>> (test_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state) && +
+>> list_empty(&root->dirty_list)) { list_add(&root->dirty_list, 
+>> &root->fs_info->dirty_cowonly_roots); } @@ -246,9 +247,10 @@ int
+>> btrfs_copy_root(struct btrfs_trans_handle *trans, int level; struct
+>> btrfs_disk_key disk_key;
+>>
+>> -	WARN_ON(root->ref_cows && trans->transid != -
+>> root->fs_info->running_transaction->transid); -
+>> WARN_ON(root->ref_cows && trans->transid != root->last_trans); +
+>> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
+>> trans->transid != root->fs_info->running_transaction->transid); +
+>> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
+>> trans->transid != root->last_trans);
+>>
+>> level = btrfs_header_level(buf); if (level == 0) @@ -997,14 +999,14
+>> @@ int btrfs_block_can_be_shared(struct btrfs_root *root, *
+>> snapshot and the block was not allocated by tree relocation, * we
+>> know the block is not shared. */ -	if (root->ref_cows && +	if
+>> (test_bit(BTRFS_ROOT_REF_COWS, &root->state) && buf != root->node
+>> && buf != root->commit_root && (btrfs_header_generation(buf) <= 
+>> btrfs_root_last_snapshot(&root->root_item) || 
+>> btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC))) return 1; #ifdef
+>> BTRFS_COMPAT_EXTENT_TREE_V0 -	if (root->ref_cows && +	if
+>> (test_bit(BTRFS_ROOT_REF_COWS, &root->state) && 
+>> btrfs_header_backref_rev(buf) < BTRFS_MIXED_BACKREF_REV) return 1; 
+>> #endif @@ -1146,9 +1148,10 @@ static noinline int
+>> __btrfs_cow_block(struct btrfs_trans_handle *trans,
+>>
+>> btrfs_assert_tree_locked(buf);
+>>
+>> -	WARN_ON(root->ref_cows && trans->transid != -
+>> root->fs_info->running_transaction->transid); -
+>> WARN_ON(root->ref_cows && trans->transid != root->last_trans); +
+>> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
+>> trans->transid != root->fs_info->running_transaction->transid); +
+>> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
+>> trans->transid != root->last_trans);
+>>
+>> level = btrfs_header_level(buf);
+>>
+>> @@ -1193,7 +1196,7 @@ static noinline int __btrfs_cow_block(struct
+>> btrfs_trans_handle *trans, return ret; }
+>>
+>> -	if (root->ref_cows) { +	if (test_bit(BTRFS_ROOT_REF_COWS,
+>> &root->state)) { ret = btrfs_reloc_cow_block(trans, root, buf,
+>> cow); if (ret) return ret; @@ -1556,7 +1559,7 @@ static inline int
+>> should_cow_block(struct btrfs_trans_handle *trans, 
+>> !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) && 
+>> !(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID && 
+>> btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)) && -
+>> !root->force_cow) +	    !test_bit(BTRFS_ROOT_REF_COWS,
+>> &root->state))
+> 
+> This may or may not be the problem.  Thanks,
 
+You are right. I will update it in the next version.
 
-On 03/06/14 11:48, Mark Murawski wrote:
-> Not the same problem, but I do have a lockup with another situation.
->
-> I tried adding some new devices... but accidentally screwed up the
-> syntax (not sure if this had anything to do with the lockup)
->
-> btrfs device add / /dev/sdb
-> probe of / failed, cannot detect existing filesystem.
-> Use the -f option to force overwrite.
->
-> office-backup {~} root# btrfs device add /dev/sdb /dev/sdd
-> ERROR: error adding the device '/dev/sdb' - Inappropriate ioctl for device
->
->
-> D  1772 [btrfs-transacti]
-> D  6530 [btrfs-submit-2]
-> D  7301 /usr/bin/perl /usr/share/backuppc/bin/BackupPC_link demo3
-> D  7471 fdisk /dev/sdb
-> D  7523 [btrfs-submit-2]
-> D  7526 -bash
-> D  7527 -bash
-> D 28611 /usr/bin/perl /usr/share/backuppc/bin/BackupPC_trashClean
->
-> Attached is output from w to sysrq
->
->
->
-> On 03/04/2014 09:58 AM, Josef Bacik wrote:
->> -----BEGIN PGP SIGNED MESSAGE-----
->> Hash: SHA1
->>
->> On 03/04/2014 09:19 AM, Mark Murawski wrote:
->>> I have btrfs as the fs for a backuppc box.  updatedb was running at
->>> the same time as a massive rsync.
->>>
->>> Mar  4 08:31:00 office-backup kernel: INFO: task
->>> updatedb.mlocat:903 blocked for more than 120 seconds. Mar  4
->>> 08:31:00 office-backup kernel:      Not tainted 3.13.2 #3 Mar  4
->>> 08:31:00 office-backup kernel: "echo 0 >
->>> /proc/sys/kernel/hung_task_timeout_secs" disables this message. Mar
->>> 4 08:31:00 office-backup kernel: updatedb.mlocat D
->>> 0000000000000000 0   903    899 0x00000000 Mar  4 08:31:00
->>> office-backup kernel: ffff88007cad6270 0000000000000086
->>> ffff88007c0ee900 0000000000004000 Mar  4 08:31:00 office-backup
->>> kernel: ffff88005a705fd8 ffff88007cad6270 000000541a6be000
->>> ffff88007b9ac000 Mar  4 08:31:00 office-backup kernel:
->>> ffff88001ad2ef68 ffff880001f97000 ffff8800452d4480
->>> ffffffff812c3e5c Mar  4 08:31:00 office-backup kernel: Call Trace:
->>> Mar  4 08:31:00 office-backup kernel: [<ffffffff812c3e5c>] ?
->>> btrfs_map_bio+0x4ac/0x5a0 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff812b79c0>] ? repair_io_failure+0x210/0x210 Mar  4
->>> 08:31:00 office-backup kernel: [<ffffffff810d9a40>] ?
->>> __lock_page+0x70/0x70 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff817b8177>] ? io_schedule+0x87/0xd0 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff810d9a49>] ?
->>> sleep_on_page+0x9/0x10 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff817b8742>] ? __wait_on_bit+0x52/0x80 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff81294d21>] ?
->>> btree_submit_bio_hook+0xe1/0x110 Mar  4 08:31:00 office-backup
->>> kernel: [<ffffffff810d9cc3>] ? wait_on_page_bit+0x73/0x80 Mar  4
->>> 08:31:00 office-backup kernel: [<ffffffff8109bdc0>] ?
->>> wake_atomic_t_function+0x30/0x30 Mar  4 08:31:00 office-backup
->>> kernel: [<ffffffff812bb2ba>] ?
->>> read_extent_buffer_pages+0x2aa/0x2e0 Mar  4 08:31:00 office-backup
->>> kernel: [<ffffffff810da355>] ? add_to_page_cache_lru+0x25/0x40 Mar
->>> 4 08:31:00 office-backup kernel: [<ffffffff81344b21>] ?
->>> radix_tree_insert+0x91/0x250 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff81292a10>] ? verify_parent_transid+0x170/0x170 Mar  4
->>> 08:31:00 office-backup kernel: [<ffffffff812949a9>] ?
->>> btree_read_extent_buffer_pages.constprop.126+0xa9/0x110 Mar  4
->>> 08:31:00 office-backup kernel: [<ffffffff81294f23>] ?
->>> read_tree_block+0x33/0x60 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff812775dc>] ? read_block_for_search.isra.45+0x18c/0x3b0
->>> Mar  4 08:31:00 office-backup kernel: [<ffffffff81276d47>] ?
->>> comp_keys+0x27/0x30 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff81279c8c>] ? btrfs_search_slot+0x41c/0x920 Mar  4
->>> 08:31:00 office-backup kernel: [<ffffffff812b1641>] ?
->>> btrfs_get_token_16+0x61/0xf0 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff812919f5>] ? btrfs_lookup_inode+0x25/0xa0 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff81113ef0>] ?
->>> kmem_cache_alloc+0xc0/0xe0 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff812a6313>] ? btrfs_iget+0x103/0x520 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff8128eb1f>] ?
->>> btrfs_lookup_dir_item+0x9f/0xd0 Mar  4 08:31:00 office-backup
->>> kernel: [<ffffffff812a843b>] ? btrfs_lookup_dentry+0x3db/0x4c0 Mar
->>> 4 08:31:00 office-backup kernel: [<ffffffff812a8529>] ?
->>> btrfs_lookup+0x9/0x20 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff81120624>] ? lookup_real+0x14/0x50 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff811211f2>] ?
->>> __lookup_hash+0x32/0x50 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff81121b38>] ? lookup_slow+0x48/0xc0 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff81123a91>] ?
->>> path_lookupat+0x711/0x760 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff81123b0f>] ? filename_lookup+0x2f/0xd0 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff81121d77>] ?
->>> getname_flags+0xb7/0x190 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff811269ee>] ? user_path_at_empty+0x5e/0xb0 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff8111bd6d>] ?
->>> cp_new_stat+0x10d/0x120 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff8111bef1>] ? vfs_fstatat+0x41/0x90 Mar  4 08:31:00
->>> office-backup kernel: [<ffffffff8111c0c2>] ?
->>> SyS_newlstat+0x12/0x30 Mar  4 08:31:00 office-backup kernel:
->>> [<ffffffff817bb7a2>] ? system_call_fastpath+0x16/0x1b Mar  4
->>> 08:55:01 office-backup kernel: INFO: task updatedb.mlocat:903
->>> blocked for more than 120 seconds. Mar  4 08:55:01 office-backup
->>> kernel:      Not tainted 3.13.2 #3 Mar  4 08:55:01 office-backup
->>> kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables
->>> this message. Mar  4 08:55:01 office-backup kernel: updatedb.mlocat
->>> D 0000000000000000 0   903    899 0x00000000 Mar  4 08:55:01
->>> office-backup kernel: ffff88007cad6270 0000000000000086
->>> ffff88007bb020d0 0000000000004000 Mar  4 08:55:01 office-backup
->>> kernel: ffff88005a705fd8 ffff88007cad6270 00000055b6aee000
->>> ffff88007b9ac000 Mar  4 08:55:01 office-backup kernel:
->>> ffff8800048282e8 ffff880076f80000 ffff8800272a09c0
->>> ffffffff812c3e5c Mar  4 08:55:01 office-backup kernel: Call Trace:
->>> Mar  4 08:55:01 office-backup kernel: [<ffffffff812c3e5c>] ?
->>> btrfs_map_bio+0x4ac/0x5a0 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff812b79c0>] ? repair_io_failure+0x210/0x210 Mar  4
->>> 08:55:01 office-backup kernel: [<ffffffff810d9a40>] ?
->>> __lock_page+0x70/0x70 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff817b8177>] ? io_schedule+0x87/0xd0 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff810d9a49>] ?
->>> sleep_on_page+0x9/0x10 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff817b8742>] ? __wait_on_bit+0x52/0x80 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff81294d21>] ?
->>> btree_submit_bio_hook+0xe1/0x110 Mar  4 08:55:01 office-backup
->>> kernel: [<ffffffff810d9cc3>] ? wait_on_page_bit+0x73/0x80 Mar  4
->>> 08:55:01 office-backup kernel: [<ffffffff8109bdc0>] ?
->>> wake_atomic_t_function+0x30/0x30 Mar  4 08:55:01 office-backup
->>> kernel: [<ffffffff812bb2ba>] ?
->>> read_extent_buffer_pages+0x2aa/0x2e0 Mar  4 08:55:01 office-backup
->>> kernel: [<ffffffff810da355>] ? add_to_page_cache_lru+0x25/0x40 Mar
->>> 4 08:55:01 office-backup kernel: [<ffffffff81292a10>] ?
->>> verify_parent_transid+0x170/0x170 Mar  4 08:55:01 office-backup
->>> kernel: [<ffffffff812949a9>] ?
->>> btree_read_extent_buffer_pages.constprop.126+0xa9/0x110 Mar  4
->>> 08:55:01 office-backup kernel: [<ffffffff81294f23>] ?
->>> read_tree_block+0x33/0x60 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff812775dc>] ? read_block_for_search.isra.45+0x18c/0x3b0
->>> Mar  4 08:55:01 office-backup kernel: [<ffffffff81276d47>] ?
->>> comp_keys+0x27/0x30 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff81279c8c>] ? btrfs_search_slot+0x41c/0x920 Mar  4
->>> 08:55:01 office-backup kernel: [<ffffffff812b1641>] ?
->>> btrfs_get_token_16+0x61/0xf0 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff812919f5>] ? btrfs_lookup_inode+0x25/0xa0 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff81113ef0>] ?
->>> kmem_cache_alloc+0xc0/0xe0 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff812a6313>] ? btrfs_iget+0x103/0x520 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff8128eb1f>] ?
->>> btrfs_lookup_dir_item+0x9f/0xd0 Mar  4 08:55:01 office-backup
->>> kernel: [<ffffffff812a843b>] ? btrfs_lookup_dentry+0x3db/0x4c0 Mar
->>> 4 08:55:01 office-backup kernel: [<ffffffff812a8529>] ?
->>> btrfs_lookup+0x9/0x20 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff81120624>] ? lookup_real+0x14/0x50 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff811211f2>] ?
->>> __lookup_hash+0x32/0x50 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff81121b38>] ? lookup_slow+0x48/0xc0 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff81123a91>] ?
->>> path_lookupat+0x711/0x760 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff81123b0f>] ? filename_lookup+0x2f/0xd0 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff81121d77>] ?
->>> getname_flags+0xb7/0x190 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff811269ee>] ? user_path_at_empty+0x5e/0xb0 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff8111bd6d>] ?
->>> cp_new_stat+0x10d/0x120 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff8111bef1>] ? vfs_fstatat+0x41/0x90 Mar  4 08:55:01
->>> office-backup kernel: [<ffffffff8111c0c2>] ?
->>> SyS_newlstat+0x12/0x30 Mar  4 08:55:01 office-backup kernel:
->>> [<ffffffff817bb7a2>] ? system_call_fastpath+0x16/0x1b
->>>
->> When this happens again do
->>
->> echo w > /proc/sysrq-trigger
->>
->> and then capture dmesg.  Thanks,
->>
->> Josef
->>
->> -----BEGIN PGP SIGNATURE-----
->> Version: GnuPG v1
->> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
->>
->> iQIcBAEBAgAGBQJTFen4AAoJEANb+wAKly3Ba6IP/1msfu3BEPbr4WmX85WHcdL1
->> MM+WHuDKCgt8hJwqiGZP3qjv+smjzDMMBeyRToAlm2f7MA9shmgE4gvwb1nMQQoG
->> xfp7ZKPHAypRuYjiq1kmHanQf/vcv4iTCMba0PTBtg2VhMKxH9j9Cdp8/6nqrtRT
->> QpZXh/1n8MLNBuaYkQ+SXGwqMT3Cgt2zC+NI2YuMtWJNvKpoqsF2IoFCcB8Uy7uX
->> gG3zDeRyxJESVDMRGmzQOhNI+GW/vZ7EPSK8tjfqWwJJ0ilPhW+iAX7iqZPFr5iU
->> WhpuQabw75bOcmEp06sk7RXz6EdLhuyTk1zeSZHmgFd9eqaAanfx93mdIk2VM/yC
->> 7kOXrjq4k0QYSEvj11acB5pRB4WBwmELRpWmBa9Gqg31JTj4uScmkI4Gau9TKpwN
->> qzx+xdNVdUE+W8vtdlvhL+UxEguqMrTLrvMS8wT2npgmylN9QT2jcVmeo+jdCm88
->> 7XI2fP6sP2d7QHhkGpH9bTJouBpH8Rfb2Erow1B+q67DBIHT6x9/RApIiczldX3D
->> N6/vkbL4Ype8mp4oFUo5Tk0D9sTwAtxRoSDzYpD49u8AwLuloC42ielG85kctaBR
->> GUhRpEurGY/w0vNlRzJBmkZGvEpq6IWSJaRe9eiMivCh8wsGAGdSf2Jtgg9q4oMS
->> hMZI04MgEEfMs+6pwfeR
->> =7EiY
->> -----END PGP SIGNATURE-----
->
+Thanks
+Miao
+
+> 
+> Josef
+> 
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1
+> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+> 
+> iQIcBAEBAgAGBQJTGl2IAAoJEANb+wAKly3Br0EQAKWfEahMQ1ZV9jkgSYF/9c6r
+> ytoH2/Y3u7HYeeqf+Z/j2lkMyvAaWQ9EQCkWSUyCqoU7RPXHEROSCQ11UCk8qYXh
+> fhV2r3plOWIZ/KDHFvqPTN5FTg97OLvDalyvOR6UP/Ws6Z4Ycm0ePm7kb+25iK9u
+> N+PkiqHoQqUVw8Z2EEJ2SN/82SyNnuPDG2RkDD9xW8el5fBplAPgUox8W8Z+ubIo
+> FPiSNv4euly2Zco+Vs3NDFb2tqQBPyAVzE2IC4Nyq1Hci/vyC9k8YfIcCJnsP0Dk
+> 10mVDhSSStWLuqt2L7fUV8nOTyjKT1gBNgoz/eMBeOzWLDbRKD2hpS6wpkw/6/iQ
+> /ff9Spikw7a87epYo4dxft32aQsDIu6JfgFPggL+VkXyn114MK4U5z7KNOPQUSBq
+> neFOVELgN1L75TI9v9/p1qKGeZ47vV1lvd6GP717SDF0yv9wgvHR0Ma47KSaLq79
+> WlwzmqXDYJYdOedKGQky6GZ7EFji5DDlazx7h1pQTN5rEdiQJTEFxrxtMOKzAttF
+> 3EL9wxVAi2ggD2EYWWsk+SJNJxgU59bxTR9ZiOH+tj29+gFcGUpRsXMsj4KampK1
+> j0a0BSLj+1yUlLcT8qem05aJk720zxy4UBiZGcRP7qySlrOTwU5Xtk0BXXyfUXLg
+> guOgjR0pj494irbM53RT
+> =H5nB
+> -----END PGP SIGNATURE-----
+> 
 

@@ -1,63 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:9042 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753157AbaCJPvF (ORCPT
+Received: from outrelay06.libero.it ([212.52.84.110]:54894 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752605AbaCJSdQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 11:51:05 -0400
-Message-ID: <531DDF4E.3090600@fb.com>
-Date: Mon, 10 Mar 2014 11:50:38 -0400
-From: Josef Bacik <jbacik@fb.com>
+	Mon, 10 Mar 2014 14:33:16 -0400
+Message-ID: <531E059B.1010509@libero.it>
+Date: Mon, 10 Mar 2014 19:34:03 +0100
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Shilong Wang <wangshilong1991@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs-progs: fsck: disable --init-extent-tree option
- when using snapshots
-References: <1394447961-27981-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <CAP9B-Qm8p5zPBDpvEwwOHGUxpRqHkBCsNGk21+8qaoYkhx44zA@mail.gmail.com>
-In-Reply-To: <CAP9B-Qm8p5zPBDpvEwwOHGUxpRqHkBCsNGk21+8qaoYkhx44zA@mail.gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: systemd-devel@lists.freedesktop.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [systemd-devel] [HEADS-UP] Discoverable Partitions Spec
+References: <20140307182603.GA22874@tango.0pointer.de>
+In-Reply-To: <20140307182603.GA22874@tango.0pointer.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On 03/07/2014 07:26 PM, Lennart Poettering wrote:
+> Heya!
+> 
+> Since yesterday systemd in git can now discover root, /home, /srv and
+> swap partitions automatically based on GPT type GUIDs, thus making
+> /etc/fstab unnecessary for simple setups.
+> 
+> I have now put together something like a spec describing the logic
+> behind that, and what it is good for:
 
-On 03/10/2014 08:12 AM, Shilong Wang wrote:
-> Hi Josef,
-> 
-> As i haven't thought any better ideas to rebuild extent tree which
-> contains extent that owns 'FULL BACKREF' flag.
-> 
-> Considering an extent's refs can be equal or more than 1 if this
-> extent has *FULL BACKREF* flag, so we could not make sure an
-> extent's flag by only searching fs/file tree any more.
-> 
-> So until now, i just disable this option if snapshots exists,
-> please correct me if i miss something here. Or you have any better
-> ideas to solve this problem.~_~
-> 
+> http://www.freedesktop.org/wiki/Specifications/DiscoverablePartitionsSpec/
 > 
 
-I thought the fsck stuff rebuilds full backref refs properly, does it
-not?  If it doesn't we need to fix that, however I'm fine with
-disabling the option if snapshots exist for the time being.  Thanks,
+Form the FAQ:
+<CITE>
+[...] What about automatic mounting of btrfs subvolumes to /var, /home and so on?
 
-Josef
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+Doing a similar automatic discovery of btrfs subvolumes and mounting them automatically to the appropriate places is certainly desirable. We are waiting for the btrfs designers to add a per-subvolume type UUID to their disk format to make this possible. [...]
+</CITE>
 
-iQIcBAEBAgAGBQJTHd9NAAoJEANb+wAKly3BYCYP/0iTaaa7w0SnfXtgjoVyX+nT
-+e0Pa46zeKzpTujotCDb9E/2PBesCAvA4Psog3rkfsqJ2nXN9cERN4E6/JG4nAHh
-Hv4KPo+w+tCkC4U2wSoDivYrVk9G5SH25ewkgW6iheSYNIlm+PLbOQz9DzGjCFDp
-51J9tG5E010siOyhlLCyGj8ZTj+gXuoQVWKCS8dOpCLMrbYYjMDXa562hqWaLoS/
-t3eSfP7Tnnpl43NiMZI4fWrzmlFa5lba5iJmG59FeyiseRH4Zrhee4St1L1xDL5A
-/6f3tJJT7DJjRRJFv0nJAOvOPyFaK8bMaYmOQJg6VrhcyPKM3BxBVEab3HrmQ7jt
-LCMWobpIcM7e5BugmbTGGsFymhv05SQgvYGzpzRVXdsSzqubuqTcXwloNU5RyyFF
-sXT9IiW9wAibHe7mDN7V6nfo1bVfHsjvSVi1rqz4/zFOWyh8oqxfEhxUJIWhfFsn
-j0WJevvqKnjBJujyyuQpL13tzh69qei0AHOEme3R46BSRMnyuacy/WOeyo4VXPcn
-0GIeWbngAIWF/quhoQGkvofRMlPgftiDge8uz9pbm3IEKeiP9dQ/HvKsIHMKjnKW
-3dEBvMV/CSUQNek4VjO1ALefTRZQvJVL8Wxdij4W+djJw/uVX7fOhuqdkqyfM3FY
-CKSB3HUSUtDCammsvgQA
-=OT98
------END PGP SIGNATURE-----
+Instead of relying on the subvolume UUID, why not relying to the subvolume name: it would be more simple and flexible to manage them.
+
+For example supposing to use '@' as prefix for a subvolume name:
+
+@ 	-> root filesystem
+@etc	-> etc
+@home 	-> home
+[...]
+
+If you want multiple OS on the same filesystem we can use the following convention
+
+@home		-> home of all the systems
+@srv		-> srv  of all the systems
+@fedora_	-> root of a fedora system
+@fedora_etc	-> etc of the fedora system
+@fedora2_	-> root of a fedora2 system
+@fedora2_etc	-> etc of the fedora2 system
+
+Or in another way we could group the different systems in subdirectories:
+
+@home		-> home of all the systems
+@srv		-> srv  of all the systems
+fedora/@	-> root of a fedora system
+fedora/@etc	-> etc of the fedora system
+fedora2/@	-> root of a fedora2 system
+fedora2/@etc	-> etc of the fedora2 system
+
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

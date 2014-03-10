@@ -1,77 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:46685 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752258AbaCJIbI convert rfc822-to-8bit (ORCPT
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:46274 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753059AbaCJMMm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 04:31:08 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel BUG: btrfs send - Incremental backup
-Date: Mon, 10 Mar 2014 09:30:12 +0100
-Message-ID: <1550249.xHHhKzo2qK@tethys>
-In-Reply-To: <531D6B3B.6030804@cn.fujitsu.com>
-References: <2853810.EcqZt5vpol@tethys> <1975990.QvfbKRKJvK@tethys> <531D6B3B.6030804@cn.fujitsu.com>
+	Mon, 10 Mar 2014 08:12:42 -0400
+Received: by mail-qc0-f174.google.com with SMTP id x13so7298791qcv.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 05:12:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <1394447961-27981-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1394447961-27981-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Date: Mon, 10 Mar 2014 20:12:41 +0800
+Message-ID: <CAP9B-Qm8p5zPBDpvEwwOHGUxpRqHkBCsNGk21+8qaoYkhx44zA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs-progs: fsck: disable --init-extent-tree option when
+ using snapshots
+From: Shilong Wang <wangshilong1991@gmail.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le lundi 10 mars 2014 07:34:18 quwenruo@cn.fujitsu.com a écrit :
-> 
-> Better check it offline, since online check may not comprehensive than 
-> offline check.
+Hi Josef,
 
-Here you are. Tested from an Ubuntu 13.10 live USB, kernel 3.11 and btrfs-
-utils 0.20 - this machine usually runs Arch with kernel 3.13 and btrfs-utils 
-3.12...
+As i haven't thought any better ideas to rebuild extent tree which contains
+extent that owns 'FULL BACKREF' flag.
 
-# btrfsck /dev/VG1/TETHYS
-Checking filesystem on /dev/VG1/TETHYS
-UUID: 9a1ca6f4-1c1b-4a62-a84b-b388066084dc
-checking extents
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-found 226049665697 bytes used err is 0
-total csum bytes: 528376452
-total tree bytes: 1692942336
-total fs tree bytes: 997363712
-total extent tree bytes: 100626432
-btree space waste bytes: 287750314
-file data blocks allocated: 704903720960
- referenced 691788443648
-Btrfs v0.20-rc1
+Considering an extent's refs can be equal or more than 1 if this extent has
+*FULL BACKREF* flag, so we could not make sure an extent's flag by only
+searching fs/file tree any more.
 
-(Exited normally with return code = 0)
+So until now, i just disable this option if snapshots exists, please correct me
+if i miss something here. Or you have any better ideas to solve this problem.~_~
 
 
-Other info you might find relevant (from running system)
-
-# btrfs fi sh
-Label: TETHYS  uuid: 9a1ca6f4-1c1b-4a62-a84b-b388066084dc
-        Total devices 1 FS bytes used 546.38GiB
-        devid    1 size 845.00GiB used 755.04GiB path /dev/dm-3
-
-Label: BOOT  uuid: 6a16d133-4b99-47b2-876f-148a8266f58f
-        Total devices 1 FS bytes used 68.03MiB
-        devid    1 size 1.00GiB used 236.00MiB path /dev/dm-0
-
-Btrfs v3.12
-
-
-# btrfs fi df /
-Data, single: total=744.01GiB, used=544.80GiB
-System, DUP: total=8.00MiB, used=88.00KiB
-System, single: total=4.00MiB, used=0.00
-Metadata, DUP: total=5.50GiB, used=1.57GiB
-Metadata, single: total=8.00MiB, used=0.00
-
-
-Kind regards.
-
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+Thanks,
+Wang
+2014-03-10 18:39 GMT+08:00 Wang Shilong <wangsl.fnst@cn.fujitsu.com>:
+> We haven't supported to rebuild extent tree if there are any *FULL BACKREF*
+> with broken filesystem, disable this option when detecting snapshots.
+>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 62 insertions(+)
+>
+> diff --git a/cmds-check.c b/cmds-check.c
+> index d1cafe1..ddee897 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -6143,6 +6143,56 @@ static int reset_block_groups(struct btrfs_fs_info *fs_info)
+>         return 0;
+>  }
+>
+> +static int is_snapshot_exist(struct btrfs_fs_info *fs_info)
+> +{
+> +       struct btrfs_root *root = fs_info->tree_root;
+> +       struct btrfs_path *path;
+> +       struct extent_buffer *leaf;
+> +       struct btrfs_key key;
+> +       int ret;
+> +       int found = 0;
+> +
+> +       path = btrfs_alloc_path();
+> +       if (!path)
+> +               return -ENOMEM;
+> +
+> +       key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+> +       key.type = BTRFS_ROOT_ITEM_KEY;
+> +       key.offset = 0;
+> +
+> +       ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +       if (ret < 0)
+> +               goto out;
+> +
+> +       while (1) {
+> +               if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
+> +                       ret = btrfs_next_leaf(root, path);
+> +                       if (ret)
+> +                               goto out;
+> +               }
+> +               leaf = path->nodes[0];
+> +               btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+> +
+> +               if (key.type != BTRFS_ROOT_ITEM_KEY ||
+> +                   key.objectid < BTRFS_FIRST_FREE_OBJECTID) {
+> +                       path->slots[0]++;
+> +                       continue;
+> +               }
+> +               if (key.offset > 0) {
+> +                       found = 1;
+> +                       break;
+> +               }
+> +               path->slots[0]++;
+> +       }
+> +out:
+> +       btrfs_free_path(path);
+> +       if (found)
+> +               return 1;
+> +       else if (ret >= 0)
+> +               return 0;
+> +       return ret;
+> +}
+> +
+>  static int reset_balance(struct btrfs_trans_handle *trans,
+>                          struct btrfs_fs_info *fs_info)
+>  {
+> @@ -6537,6 +6587,18 @@ int cmd_check(int argc, char **argv)
+>                 ret = -EIO;
+>                 goto close_out;
+>         }
+> +       if (init_extent_tree) {
+> +               ret = is_snapshot_exist(info);
+> +               if (ret < 0) {
+> +                       fprintf(stderr, "ERROR: fail to check if there are snapshots in btrfs filesystem\n");
+> +                       ret = 1;
+> +                       goto close_out;
+> +               } else if (ret) {
+> +                       fprintf(stderr, "Snapshots detected, unable to rebuild extent tree for such case.\n");
+> +                       ret = 1;
+> +                       goto close_out;
+> +               }
+> +       }
+>
+>         if (init_extent_tree || init_csum_tree) {
+>                 struct btrfs_trans_handle *trans;
+> --
+> 1.9.0
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

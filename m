@@ -1,67 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:59963 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752771AbaCKNlE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Mar 2014 09:41:04 -0400
-Received: by mail-wi0-f181.google.com with SMTP id bs8so890110wib.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Mar 2014 06:41:03 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:52208 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752851AbaCJDqb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 9 Mar 2014 23:46:31 -0400
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com,
-        Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v4] xfstests: add test for btrfs-progs restore feature
-Date: Tue, 11 Mar 2014 13:40:39 +0000
-Message-Id: <1394545239-7060-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1393352816-26065-1-git-send-email-fdmanana@gmail.com>
-References: <1393352816-26065-1-git-send-email-fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/3] xfstests/btrfs: add qgroup rescan stress test
+Date: Mon, 10 Mar 2014 11:44:09 +0800
+Message-Id: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a regression test to verify that the restore feature of btrfs-progs
-is able to correctly recover files that have compressed extents, specially when
-the respective file extent items have a non-zero data offset field.
+Test flow is to run fsstress after triggering quota rescan.
+the ruler is simple, we just remove all files and directories,
+sync filesystem and see if qgroup's ref and excl are nodesize.
 
-This issue is fixed by the following btrfs-progs patch:
-
-    Btrfs-progs: fix restore dealing with compressed extents
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
+v1->v2:
+	switch into new helper _run_btrfs_util_prog()
+---
+ tests/btrfs/041     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/041.out |  3 +++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 80 insertions(+)
+ create mode 100644 tests/btrfs/041
+ create mode 100644 tests/btrfs/041.out
 
-V2: Fixed title of btrfs-progs patch in the comment and commit message.
-V3: Make use of TEST_DIR instead of /tmp, defined $here=`pwd` and better
-    comments about the conditions necessary to make the test fail. As
-    suggested by Dave Chinner.
-V4: Use a dedicated directory to place the restore files, as suggested by
-    Josef.
-
- tests/btrfs/043     |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/043.out |   40 ++++++++++++++++++
- tests/btrfs/group   |    1 +
- 3 files changed, 154 insertions(+)
- create mode 100755 tests/btrfs/043
- create mode 100644 tests/btrfs/043.out
-
-diff --git a/tests/btrfs/043 b/tests/btrfs/043
-new file mode 100755
-index 0000000..d0a7152
+diff --git a/tests/btrfs/041 b/tests/btrfs/041
+new file mode 100644
+index 0000000..92bd080
 --- /dev/null
-+++ b/tests/btrfs/043
-@@ -0,0 +1,113 @@
++++ b/tests/btrfs/041
+@@ -0,0 +1,76 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/043
++# FSQA Test No. btrfs/041
 +#
-+# Test that btrfs-progs' restore command is able to correctly recover files
-+# that have compressed extents, specially when the respective file extent
-+# items have a non-zero data offset field.
-+#
-+# This issue is fixed by the following btrfs-progs patch:
-+#
-+#    Btrfs-progs: fix restore of files with compressed extents
++# Quota rescan stress test, we run fsstress and quota rescan concurrently
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++# Copyright (C) 2014 Fujitsu.  All rights reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -75,6 +54,7 @@ index 0000000..d0a7152
 +# You should have received a copy of the GNU General Public License
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
 +#-----------------------------------------------------------------------
 +#
 +
@@ -84,139 +64,70 @@ index 0000000..d0a7152
 +
 +here=`pwd`
 +tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+restore_dir=$TEST_DIR/btrfs-test-$seq
++status=1
 +
 +_cleanup()
 +{
-+	rm -fr $tmp
-+	rm -fr $restore_dir
++	cd /
++	rm -f $tmp.*
 +}
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
 +
 +# real QA test starts here
++_need_to_be_root
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_need_to_be_root
 +
 +rm -f $seqres.full
-+mkdir $restore_dir
 +
-+test_btrfs_restore()
-+{
-+	if [ -z $1 ]
-+	then
-+		OPTIONS=""
-+	else
-+		OPTIONS="-o compress-force=$1"
-+	fi
-+	_scratch_mkfs >/dev/null 2>&1
-+	_scratch_mount $OPTIONS
++run_check _scratch_mkfs "-b 1g --nodesize 4096"
++run_check _scratch_mount
 +
-+	# Create first file extent item, then fsync to make sure the next write
-+	# won't end up in the same file extent item, so that we have 2 distinct
-+	# file extent items.
-+	$XFS_IO_PROG -f -c "pwrite -S 0xff -b 100000 0 100000" -c "fsync" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
++# -w ensures that the only ops are ones which cause write I/O
++run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
++		$FSSTRESS_AVOID >&/dev/null
 +
-+	# This creates a second file extent item.
-+	$XFS_IO_PROG -c "pwrite -S 0xaa -b 100000 100000 100000" -c "fsync" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
++_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
++       $SCRATCH_MNT/snap1 >>$seqres.full 2>&1
 +
-+	# Now do a few writes that will cause the first extent item to be split,
-+	# with some of the new smaller file extent items getting a data offset
-+	# field different from 0.
-+	$XFS_IO_PROG -c "pwrite -S 0x1e -b 2 10000 2" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+	$XFS_IO_PROG -c "pwrite -S 0xd0 -b 11 33000 11" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+	$XFS_IO_PROG -c "pwrite -S 0xbc -b 100 99000 100" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
++run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
++       $FSSTRESS_AVOID >&/dev/null
 +
-+	md5sum $SCRATCH_MNT/foo | _filter_scratch
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
 +
-+	_scratch_unmount
++#ignore removing subvolume errors
++rm -rf $SCRATCH_MNT/* >& /dev/null
 +
-+	rm -f $restore_dir/foo
-+	# Now that the fs is unmounted, call btrfs restore to read the file
-+	# from disk and save it in the test directory. It used to incorrectly
-+	# read compressed file extents that have a non-zero data offset field,
-+	# resulting either in decompression failure or reading a wrong section
-+	# of the extent.
-+	_run_btrfs_util_prog restore $SCRATCH_DEV $restore_dir
-+	md5sum $restore_dir/foo | cut -d ' ' -f 1
-+}
-+
-+echo "Testing restore of file compressed with lzo"
-+test_btrfs_restore "lzo"
-+echo "Testing restore of file compressed with zlib"
-+test_btrfs_restore "zlib"
-+echo "Testing restore of file without any compression"
-+test_btrfs_restore
++_run_btrfs_util_prog filesystem sync $SCRATCH_MNT >> $seqres.full 2>&1
++_run_btrfs_util_prog qgroup show $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
++	| $AWK_PROG '{print $1" "$2" "$3 }'
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/043.out b/tests/btrfs/043.out
+diff --git a/tests/btrfs/041.out b/tests/btrfs/041.out
 new file mode 100644
-index 0000000..d22e4ce
+index 0000000..fb59896
 --- /dev/null
-+++ b/tests/btrfs/043.out
-@@ -0,0 +1,40 @@
-+QA output created by 043
-+Testing restore of file compressed with lzo
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
-+Testing restore of file compressed with zlib
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
-+Testing restore of file without any compression
-+wrote 100000/100000 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100000/100000 bytes at offset 100000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2/2 bytes at offset 10000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 11/11 bytes at offset 33000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 100/100 bytes at offset 99000
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+67edd038aaa42adb5a1aa78f2eb1d2b6  SCRATCH_MNT/foo
-+67edd038aaa42adb5a1aa78f2eb1d2b6
++++ b/tests/btrfs/041.out
+@@ -0,0 +1,3 @@
++QA output created by 041
++0/5 4096 4096
++0/258 4096 4096
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1037761..fabe3b5 100644
+index f5452b5..fd0193c 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -45,3 +45,4 @@
+@@ -43,3 +43,4 @@
+ 038 auto quick
+ 039 auto quick
  040 auto quick
- 041 auto quick
- 042 auto quick
-+043 auto quick
++041 auto quick
 -- 
-1.7.9.5
+1.9.0
 

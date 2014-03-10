@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:8330 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751417AbaCGSWZ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10050 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754361AbaCJT4c (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Mar 2014 13:22:25 -0500
-Message-ID: <531A0E5B.108@fb.com>
-Date: Fri, 7 Mar 2014 13:22:19 -0500
+	Mon, 10 Mar 2014 15:56:32 -0400
+Message-ID: <531E18E9.5050206@fb.com>
+Date: Mon, 10 Mar 2014 15:56:25 -0400
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
 To: Filipe David Borba Manana <fdmanana@gmail.com>, <xfs@oss.sgi.com>
 CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] xfstests: add test for btrfs send issuing premature
- rmdir operations
-References: <1392820352-8550-1-git-send-email-fdmanana@gmail.com> <1393242878-16039-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1393242878-16039-1-git-send-email-fdmanana@gmail.com>
+Subject: Re: [PATCH v2] xfstests: add test btrfs/042 for btrfs incremental
+ send
+References: <1392940976-1790-1-git-send-email-fdmanana@gmail.com> <1393242925-16087-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1393242925-16087-1-git-send-email-fdmanana@gmail.com>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,40 +21,47 @@ List-ID: <linux-btrfs.vger.kernel.org>
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 02/24/2014 06:54 AM, Filipe David Borba Manana wrote:
-> Regression test for btrfs incremental send issue where a rmdir
-> instruction is sent against an orphan directory inode which is not
-> empty yet, causing btrfs receive to fail when it attempts to remove
-> the directory.
+On 02/24/2014 06:55 AM, Filipe David Borba Manana wrote:
+> Regression test for a btrfs incremental send issue where invalid
+> paths for utimes, chown and chmod operations were sent to the send
+> stream, causing btrfs receive to fail.
+> 
+> If a directory had a move/rename operation delayed, and none of its
+> parent directories, except for the immediate one, had delayed
+> move/rename operations, after processing the directory's
+> references, the incremental send code would issue invalid paths for
+> utimes, chown and chmod operations.
 > 
 > This issue is fixed by the following linux kernel btrfs patch:
 > 
-> Btrfs: fix send attempting to rmdir non-empty directories
+> Btrfs: fix send issuing outdated paths for utimes, chown and chmod
 > 
 > Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com> ---
+> 
 
-Looks good to me,
+Worked as expected, thanks
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 
 Thanks,
 
 Josef
+
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-iQIcBAEBAgAGBQJTGg5bAAoJEANb+wAKly3BFtMQAMDITxFeFKRw5o5g88NUJT+n
-/AQp584QUb+sBhJnyYVET98S47R4C9d7jAu8fUxUJd2FaZ0UPR+rl/LnpdYXy8oJ
-29A2tvbSiOZGQp+kWlGpLqKmmEj/3R/0QZwTrB1jsxKwVsH+OGK1fazOwhkahloL
-8R6xBtcvMzkBFEQ08T0dmodDaWKPp8dgztcScrVt+RGkePPVoKE9X4hwTwAl8muk
-nPv9TvRULOs2emvxuTnEVqZfou0HcOTuKWXAOXN2peXBe324SjfQ0JmAMjtG1Ukw
-nAs5wu8eII1k9/rjGLarNhpuSuMaM5tth0tIb2ebYwxwpYpY6o4eNN2RR6vWlCEz
-vULou68VKdOG6/c6uO6cXuI8zOwScWuYyYFXFLTFpAhjdKwY1HaCwSanvnamdYy8
-kNITDGkYSqs0Abj9wzQDcJcTrjpHDDe/3olb5LMJjrdTneMyDVXc+Ym+FbBhmQUX
-d7vC+a7sRVWwN4xGoqxDgZZQLpGBEO60FhA5kIO9lgis2LdG8SXE0ch4sQuWZ8iC
-S9Aw46dssmiY+d3BkugCOPW/7IlID/obLGUF+CWcWMkxSMbwaPn6RfNJmW+9k+rv
-fkUVj+U75pBtnuwW3LxV7gUq8HwTz8G1fh+96o41yKXpayBQUoIA47AHCUZtP9Fi
-RemqwFmZxhi7ztZYfni2
-=8Kl8
+iQIcBAEBAgAGBQJTHhjpAAoJEANb+wAKly3Bh9gQANDHrCRfOb0Xwp0EKFreXyL0
+6CysWgSsZqUusillUPMNzwu/fY8fKH6ZWU2Q3f1ysx3KH+2cLZqEqdVaG7S5Q6rA
+BWpSTwsEDrzshKFOVLCJfVeZdMglgcYkKFyHC+0mym+JG81ksQl9tiSfTo5vXQV4
+PuZ5zg9b9FWBCquEnQ7vpyxyVA/h9hc8YDyuKadeN60fYhzxdHIR/3FPqrh+UeCc
+XSbMRupNdPCtMVc/mADMfOhiUVQTpsSz+iL3+lVG7lbVp8hAio6DspFETvKyzcUV
+S8l7LkknMX1ylFRV/wc5RBVU1MrFih3qn1GOmT/rAMipXM2q5n7CQ4NaVBbYaMRO
+AuyPhygQqH1k3FnMBQGIai37StAmhSPlYMDwWSETP3Uw6V0kENWLyPG02U6uM2cI
+wBWg86/EUNmt5zC9YTbehuD12Jyb3rv3JyhzNeoNhyJv5o1a7bKvV8Uc1NcVu1ng
+fGSO+RWlhqxyoXCwSa5Zor3j3nYUN8pxDk9M/wppTb211oKnYC2xAcGThly4eU7L
+rwRrx7f7lG6Ep6R5Y9NAfEqHQftjML3R4Tc+RJ/MgpON4RDEaFX5l2tWOKior/Ss
+yAg5vAVejFAbiVs8ueYTN+k5GAiFu7Zsrx/7uohVzMyI2qrxj5ZkxbFYY/fffLZV
+LcmEQsMTKiGmV3fXJzyj
+=vgY8
 -----END PGP SIGNATURE-----

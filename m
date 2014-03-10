@@ -1,129 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:45116 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751239AbaCJBOy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Mar 2014 21:14:54 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2A1Ejpo022535
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 09:14:46 +0800
-Message-ID: <531D126F.7070300@cn.fujitsu.com>
-Date: Mon, 10 Mar 2014 09:16:31 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from aserp1040.oracle.com ([141.146.126.69]:37787 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750905AbaCJB7B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Mar 2014 21:59:01 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s2A1x0DZ027540
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:59:00 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2A1wxJL015093
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:58:59 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2A1wwQ7025371
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 01:58:58 GMT
+Message-ID: <531D1C58.90406@oracle.com>
+Date: Mon, 10 Mar 2014 09:58:48 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/9] Btrfs: use bitfield instead of integer data type
- for the some variants in btrfs_root
-References: <1392890939-19044-1-git-send-email-miaox@cn.fujitsu.com> <1392890939-19044-4-git-send-email-miaox@cn.fujitsu.com> <531A5D88.1020308@fb.com>
-In-Reply-To: <531A5D88.1020308@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3 v2 RFC] btrfs: total_devices vs num_devices
+References: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 7 Mar 2014 19:00:08 -0500, Josef Bacik wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> On 02/20/2014 05:08 AM, Miao Xie wrote:
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com> --- fs/btrfs/ctree.c
->> | 25 ++++++++++++++----------- fs/btrfs/ctree.h       | 39
->> +++++++++++++++++++++------------------ fs/btrfs/disk-io.c     | 33
->> +++++++++++++++------------------ fs/btrfs/extent-tree.c |  6
->> +++--- fs/btrfs/file.c        |  4 +++- fs/btrfs/inode.c       | 29
->> ++++++++++++++++++----------- fs/btrfs/ioctl.c       |  4 ++-- 
->> fs/btrfs/relocation.c  | 17 +++++++++-------- fs/btrfs/root-tree.c
->> |  2 +- fs/btrfs/transaction.c | 33
->> +++++++++++++++++---------------- fs/btrfs/tree-defrag.c |  2 +- 
->> fs/btrfs/tree-log.c    |  9 +++++---- 12 files changed, 109
->> insertions(+), 94 deletions(-)
->>
->> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c index
->> cbd3a7d..9067d79 100644 --- a/fs/btrfs/ctree.c +++
->> b/fs/btrfs/ctree.c @@ -224,7 +224,8 @@ static struct extent_buffer
->> *btrfs_read_lock_root_node(struct btrfs_root *root) static void
->> add_root_to_dirty_list(struct btrfs_root *root) { 
->> spin_lock(&root->fs_info->trans_lock); -	if (root->track_dirty &&
->> list_empty(&root->dirty_list)) { +	if
->> (test_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state) && +
->> list_empty(&root->dirty_list)) { list_add(&root->dirty_list, 
->> &root->fs_info->dirty_cowonly_roots); } @@ -246,9 +247,10 @@ int
->> btrfs_copy_root(struct btrfs_trans_handle *trans, int level; struct
->> btrfs_disk_key disk_key;
->>
->> -	WARN_ON(root->ref_cows && trans->transid != -
->> root->fs_info->running_transaction->transid); -
->> WARN_ON(root->ref_cows && trans->transid != root->last_trans); +
->> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
->> trans->transid != root->fs_info->running_transaction->transid); +
->> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
->> trans->transid != root->last_trans);
->>
->> level = btrfs_header_level(buf); if (level == 0) @@ -997,14 +999,14
->> @@ int btrfs_block_can_be_shared(struct btrfs_root *root, *
->> snapshot and the block was not allocated by tree relocation, * we
->> know the block is not shared. */ -	if (root->ref_cows && +	if
->> (test_bit(BTRFS_ROOT_REF_COWS, &root->state) && buf != root->node
->> && buf != root->commit_root && (btrfs_header_generation(buf) <= 
->> btrfs_root_last_snapshot(&root->root_item) || 
->> btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC))) return 1; #ifdef
->> BTRFS_COMPAT_EXTENT_TREE_V0 -	if (root->ref_cows && +	if
->> (test_bit(BTRFS_ROOT_REF_COWS, &root->state) && 
->> btrfs_header_backref_rev(buf) < BTRFS_MIXED_BACKREF_REV) return 1; 
->> #endif @@ -1146,9 +1148,10 @@ static noinline int
->> __btrfs_cow_block(struct btrfs_trans_handle *trans,
->>
->> btrfs_assert_tree_locked(buf);
->>
->> -	WARN_ON(root->ref_cows && trans->transid != -
->> root->fs_info->running_transaction->transid); -
->> WARN_ON(root->ref_cows && trans->transid != root->last_trans); +
->> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
->> trans->transid != root->fs_info->running_transaction->transid); +
->> WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) && +
->> trans->transid != root->last_trans);
->>
->> level = btrfs_header_level(buf);
->>
->> @@ -1193,7 +1196,7 @@ static noinline int __btrfs_cow_block(struct
->> btrfs_trans_handle *trans, return ret; }
->>
->> -	if (root->ref_cows) { +	if (test_bit(BTRFS_ROOT_REF_COWS,
->> &root->state)) { ret = btrfs_reloc_cow_block(trans, root, buf,
->> cow); if (ret) return ret; @@ -1556,7 +1559,7 @@ static inline int
->> should_cow_block(struct btrfs_trans_handle *trans, 
->> !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) && 
->> !(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID && 
->> btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)) && -
->> !root->force_cow) +	    !test_bit(BTRFS_ROOT_REF_COWS,
->> &root->state))
-> 
-> This may or may not be the problem.  Thanks,
 
-You are right. I will update it in the next version.
+  Any comments on this set of patches ?
 
-Thanks
-Miao
+Thanks, Anand
 
-> 
-> Josef
-> 
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1
-> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-> 
-> iQIcBAEBAgAGBQJTGl2IAAoJEANb+wAKly3Br0EQAKWfEahMQ1ZV9jkgSYF/9c6r
-> ytoH2/Y3u7HYeeqf+Z/j2lkMyvAaWQ9EQCkWSUyCqoU7RPXHEROSCQ11UCk8qYXh
-> fhV2r3plOWIZ/KDHFvqPTN5FTg97OLvDalyvOR6UP/Ws6Z4Ycm0ePm7kb+25iK9u
-> N+PkiqHoQqUVw8Z2EEJ2SN/82SyNnuPDG2RkDD9xW8el5fBplAPgUox8W8Z+ubIo
-> FPiSNv4euly2Zco+Vs3NDFb2tqQBPyAVzE2IC4Nyq1Hci/vyC9k8YfIcCJnsP0Dk
-> 10mVDhSSStWLuqt2L7fUV8nOTyjKT1gBNgoz/eMBeOzWLDbRKD2hpS6wpkw/6/iQ
-> /ff9Spikw7a87epYo4dxft32aQsDIu6JfgFPggL+VkXyn114MK4U5z7KNOPQUSBq
-> neFOVELgN1L75TI9v9/p1qKGeZ47vV1lvd6GP717SDF0yv9wgvHR0Ma47KSaLq79
-> WlwzmqXDYJYdOedKGQky6GZ7EFji5DDlazx7h1pQTN5rEdiQJTEFxrxtMOKzAttF
-> 3EL9wxVAi2ggD2EYWWsk+SJNJxgU59bxTR9ZiOH+tj29+gFcGUpRsXMsj4KampK1
-> j0a0BSLj+1yUlLcT8qem05aJk720zxy4UBiZGcRP7qySlrOTwU5Xtk0BXXyfUXLg
-> guOgjR0pj494irbM53RT
-> =H5nB
-> -----END PGP SIGNATURE-----
-> 
 
+On 07/03/2014 23:48, Anand Jain wrote:
+> The intended usage of total_devices and num_devices
+> should be recorded in the comments so that these
+> two counters can be used correctly as originally
+> intended.
+>
+> As of now there appears to be slight deviations/bugs
+> from the original intention, the bugs are apparent
+> that num_devices does not count seed devices where
+> as total_devices does, but total_devices does not
+> count the replacing devices where as num_devices does.
+>
+> So in this situation the ioctl(BTRFS_IOC_DEVICES_READY)
+> will fails when there is seed FS. Next, applications
+> using ioctl(BTRFS_IOC_FS_INFO) and ioctl(BTRFS_IOC_DEV_INFO)
+> in conjunction to allocate the slots will also fail
+> as former depend on the num_devices where as latter
+> would match total_devices (except when replace is running).
+>
+> This patch will help have the clarity on usage
+> of these two counter so that bugs related to this can
+> be fixed.
+>
+> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+> ---
+> v2: edit commit
+>
+>   fs/btrfs/volumes.h | 6 ++++++
+>   1 file changed, 6 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 91b7596..99c71aa 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -121,12 +121,18 @@ struct btrfs_fs_devices {
+>   	/* the device with this id has the most recent copy of the super */
+>   	u64 latest_devid;
+>   	u64 latest_trans;
+> +	/* num_devices contains run time count of devices which are part
+> +	 * of this FSID. (the FS devices + replacing devices + ?
+> +	 */
+>   	u64 num_devices;
+>   	u64 open_devices;
+>   	u64 rw_devices;
+>   	u64 missing_devices;
+>   	u64 total_rw_bytes;
+>   	u64 num_can_discard;
+> +	/* total_devices contains static recorded count of device which
+> +	 * are part of this FSID. (the FS devices + seed devices + ?
+> +	 */
+>   	u64 total_devices;
+>   	struct block_device *latest_bdev;
+>
+>

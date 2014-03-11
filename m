@@ -1,89 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21298 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755025AbaCKRNV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Mar 2014 13:13:21 -0400
-Message-ID: <531F4419.8010109@fb.com>
-Date: Tue, 11 Mar 2014 13:12:57 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from mx1.redhat.com ([209.132.183.28]:40842 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751718AbaCKTIM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Mar 2014 15:08:12 -0400
+Message-ID: <531F5F12.4080009@redhat.com>
+Date: Tue, 11 Mar 2014 14:08:02 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel BUG: btrfs send - Incremental backup
-References: <2853810.EcqZt5vpol@tethys>
-In-Reply-To: <2853810.EcqZt5vpol@tethys>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: Avi Miller <avi.miller@oracle.com>, Lists <lists@benjamindsmith.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Testing BTRFS
+References: <loom.20140306T191655-366@post.gmane.org>	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>	<loom.20140307T144540-512@post.gmane.org> <pan$72cea$1961f20d$d4386bc$889c1510@cox.net> <531E5B44.6030502@benjamindsmith.com> <DFAE9B5E-2C12-4215-B4CA-016CBD4575EC@oracle.com>
+In-Reply-To: <DFAE9B5E-2C12-4215-B4CA-016CBD4575EC@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 03/08/2014 02:35 AM, Swâmi Petaramesh wrote:
-> Hi there,
+On 3/10/14, 8:02 PM, Avi Miller wrote:
 > 
-> I tried to perform an incremental backup as described in 
-> https://urldefense.proofpoint.com/v1/url?u=https://btrfs.wiki.kernel.org/index.php/Incremental_Backup&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=b7nDm4ij%2BOl6zWwvbxbx%2BbfpaygHhTjGu8dUoBmQj8E%3D%0A&s=550780a62cfd5275891e088623e3d05c78f828ee008ef9b1cb99957ee3752a5d
-> between 2 external USB drives,
+> On 11 Mar 2014, at 11:39 am, Lists <lists@benjamindsmith.com> wrote:
 > 
-> The 1st "btrfs send foo/snap1 | btrfs receive bar" went well,
-> although it took 5-6 times the time the same workload takes in
-> ZFS.
+>> Is there a "recommended way" to do this? Is it anywhere as easy as
+>> ZFSonLinux yum install?
 > 
-> Then "btrfs send -v -p foo/snap1 foo/snap2 | btrfs receive bar"
-> crashed on me.
+> Oracle Linux 6 with the Unbreakable Enterprise Kernel Release 2 or
+> Release 3 has production-ready btrfs support. You can even convert
+> your existing CentOS6 boxes across to Oracle Linux 6 in-place without
+> reinstalling:
 > 
-> After a reboot and retry, I get a KERNEL BUG again :
-> 
-> 
+> http://linux.oracle.com/switch/centos/
 
-Well that's odd, I can't think of how this would happen.  Can pull
-down btrfs-next and run that and verify you still hit the BUG_ON?  If
-you do please apply this patch and re-run and reply with the dmesg.
+If we're plugging distros... I can also tell you that you can install
+upcoming RHEL7 on btrfs if you like, and it has a very up-to-date
+btrfs codebase.  Of course Fedora and other "non-enterprise" distros
+have btrfs support as well.
 
-http://paste.fedoraproject.org/84393/55775013
+But we're keeping it "tech preview" in RHEL7 for now, because in our
+testing, it does not yet reach the level of reliability that we
+wish to provide to our customers.
 
-This will spit out something like this
+Indeed, testing 3.8.13-26.2.1.el6uek.x86_64 (which is, I believe,
+the kernel which Avi referred to) via xfstests, I saw
+failures on btrfs/009 and btrfs/022; then the box deadlocked
+on btrfs/024.  I rebooted & resumed, then deadlocked on btrfs/030.
+Rebooted and resumed again, then panicked on btrfs/035.  At that
+point I stopped.
 
-cur_ino=<NUMBER>, cmp_key objectid=<OTHER NUMBER>
+Ben, the best advice I have for you is to test *your* workload
+on btrfs with whatever qualification tests you have, and see how
+things fare.  If you want to know the current state of btrfs,
+test the upstream code as best you can; if you hope to deploy
+on a distribution with a longer support window, test on that
+distribution.
 
-then I need you to unmount your fs and run
+But I agree with Josef that for now, the fixes and changes are
+still flying fast & furious, and except in limited use cases,
+btrfs is not yet ready for general commercial deployment.
 
-btrfs-debug-tree /dev/whatever > blah.txt
-
-You have about 1.5 gig of metadata so that is going to take a while.
-Once that is done you want to go through blah.txt and look for
-
-item <number> key (<OTHER NUMBER FROM ABOVE> EXTENT_DATA <number>)
-
-You need to find all of these entries and copy them down, an example
-output looks like this
-
-item 1 key (286 EXTENT_DATA 577536) itemoff 3889 itemsize 53
-        extent data disk byte 12763136 nr 4096
-        extent data offset 0 nr 4096 ram 4096
-        extent compression 0
-
-That is what I'm looking for, you will have multiple of these.  Thanks,
-
-Josef
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJTH0P+AAoJEANb+wAKly3BA+8QAMuccHP7+IIQ62g9WRRgOuBh
-Mz/XG+lxpGwbHSwwp7MZPGO10Ee9rJiIJJp/VgHSyNcb/6VHB7HtU1ijifcBFaGj
-NkgdTTVHRHl/z17wv2cuiRfCZKOyzXtNvRYGY+lhEfITxeGklUSjwMdCBtG73XqK
-gWU3f9hvBjbTtN8Q7RD0O/TRNyrcUK5sEGtfJGM/a0U+avlZpE+Vu89g716BUi5L
-F2I5OFRtkVj9WpZLzT6e3PM/5hc0Rg0kgd54fnJoTD34GyNCyqCo1GRhON4DG+ew
-NCedZI3aY+/yK9iiaAfcdDpm9332xiVfrJt9tq7EJus/EVyHoDGCUbdN4D2JV+TM
-8xapBtcRfy4KExORVtxOpsaamx/xPz53mngN9AH+9mLRO0OZ9xYN5SrN7FCSi/ja
-dhdCSR2ndEXmsy3MvcaK0g+d2DntL4uliHb3S6GUlAsDaJuiKoINa4no/FmISc62
-uVEbc/cJD0KUKFlUGEcEKst3ja6ecOKFqvutII3t73R7c0N1cvf0yU4WJCTv44CZ
-iClBqTI/d23Du6VZpN9hcGSvFap5HiZDO+YCLA/+o5mqMJ2bG8pNQ2cXRzJlSpCN
-7zZLAo8Xz0C734F6/SxnoFb+fZATQOz6VX40ZbgL1x931s/jaTJ35c0ZrlBcNSJY
-Y8HYBWVEOlXCUkbap7XT
-=hcwz
------END PGP SIGNATURE-----
+-Eric

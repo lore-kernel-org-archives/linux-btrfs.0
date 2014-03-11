@@ -1,24 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:50102 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753234AbaCKAQ4 (ORCPT
+Received: from locke.effortlessis.com ([208.53.66.14]:40580 "EHLO
+	locke.effortlessis.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751945AbaCKAs0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 20:16:56 -0400
-Received: by mail-ig0-f171.google.com with SMTP id hl1so9818606igb.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 17:16:56 -0700 (PDT)
+	Mon, 10 Mar 2014 20:48:26 -0400
+Received: from tesla.schoolpathways.com (173-166-236-97-sacramento.hfc.comcastbusiness.net [173.166.236.97])
+	by locke.effortlessis.com (Postfix) with ESMTPSA id 288F344907
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Mar 2014 00:39:33 +0000 (UTC)
+Message-ID: <531E5B44.6030502@benjamindsmith.com>
+Date: Mon, 10 Mar 2014 17:39:32 -0700
+From: Lists <lists@benjamindsmith.com>
 MIME-Version: 1.0
-In-Reply-To: <531E4A02.5010404@linux.intel.com>
-References: <531E4A02.5010404@linux.intel.com>
-Date: Mon, 10 Mar 2014 18:16:56 -0600
-Message-ID: <CAE5mzvjmTFBM1Bpshsu8rfHNssnPAFZw+BompecoGG2GRnVwzg@mail.gmail.com>
-Subject: Re: Building a brtfs filesystem < 70M?
-From: cwillu <cwillu@cwillu.com>
-To: Saul Wold <sgw@linux.intel.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Testing BTRFS
+References: <loom.20140306T191655-366@post.gmane.org>	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>	<loom.20140307T144540-512@post.gmane.org> <pan$72cea$1961f20d$d4386bc$889c1510@cox.net>
+In-Reply-To: <pan$72cea$1961f20d$d4386bc$889c1510@cox.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Have you tried the -M option to mkfs.btrfs?  I'm not sure if we select
-it automatically (or if we do, whether you have recent enough tools to
-have that).
+I'd like to begin testing BTRFS. We'd probably begin roll out in 6 
+months to a year if testing goes well.
+
+We're currently using CentOS6/64 everywhere, are aware of BTRFS being a 
+"Technology preview" in RHEL 7beta and would like to begin testing 
+production-level load testing. We generate about 10 GB of distinct data 
+daily that is stored redundantly by default on a combination of ZFS and 
+Ext4.
+
+Is there a "recommended way" to do this? Is it anywhere as easy as 
+ZFSonLinux yum install?
+
+-Ben

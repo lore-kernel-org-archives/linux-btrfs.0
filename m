@@ -1,139 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:22386 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753084AbaCKHzV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Mar 2014 03:55:21 -0400
-Message-ID: <1394524290.15173.12.camel@localhost.localdomain>
-Subject: Re: Building a brtfs filesystem < 70M?
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Saul Wold <sgw@linux.intel.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Tue, 11 Mar 2014 15:51:30 +0800
-In-Reply-To: <531EB000.3060907@linux.intel.com>
-References: <531E4A02.5010404@linux.intel.com>
-	 <1394505491.6207.4.camel@localhost.localdomain>
-	 <531E8004.2030704@linux.intel.com>
-	 <1394516855.13388.4.camel@localhost.localdomain>
-	 <531EB000.3060907@linux.intel.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17811 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751718AbaCKNdv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Mar 2014 09:33:51 -0400
+Message-ID: <531F10B7.8010309@fb.com>
+Date: Tue, 11 Mar 2014 09:33:43 -0400
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Lists <lists@benjamindsmith.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: Testing BTRFS
+References: <loom.20140306T191655-366@post.gmane.org>	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>	<loom.20140307T144540-512@post.gmane.org> <pan$72cea$1961f20d$d4386bc$889c1510@cox.net> <531E5B44.6030502@benjamindsmith.com>
+In-Reply-To: <531E5B44.6030502@benjamindsmith.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-03-10 at 23:41 -0700, Saul Wold wrote:
-> On 03/10/2014 10:47 PM, Gui Hecheng wrote:
-> > On Mon, 2014-03-10 at 20:16 -0700, Saul Wold wrote:
-> >> On 03/10/2014 07:38 PM, Gui Hecheng wrote:
-> >>> On Mon, 2014-03-10 at 16:25 -0700, Saul Wold wrote:
-> >>>> Hi There
-> >>>>
-> >>>> There seems to be an issue if we try to build a btrfs based FS that is
-> >>>> less than 70M, we get the following assertion failure:
-> >>>>
-> >>>> mkfs.btrfs: extent-tree.c:2682: btrfs_reserve_extent: Assertion `!(ret)'
-> >>>> failed.
-> >>>>
-> >>>> I tried to do a search on this and did not find anything obvious.
-> >>>>
-> >>>> Further, if I do build a 70M image, it will not mount until I get to I
-> >>>> increase  the about 100M!
-> >>>>
-> >>>> # mount -o loop -v rootfs.btrfs mnt
-> >>>> mount: wrong fs type, bad option, bad superblock on /dev/loop0,
-> >>>>           missing codepage or helper program, or other error
-> >>>>
-> >>>>           In some cases useful info is found in syslog - try
-> >>>>           dmesg | tail or so.
-> >>>>
-> >>>> I can provide a small rootfs (~4M) example if needed
-> >>>>
-> >>>> Builds and mounts correct:
-> >>>> mkfs.btrfs -b 104857600 -r rootfs rootfs.btrfs
-> >>>>
-> >>>> Builds, but does not mount:
-> >>>> mkfs.btrfs -b 73400320 -r rootfs rootfs.btrfs
-> >>>>
-> >>>> Does not build, gives the above assertion error:
-> >>>> mkfs.btrfs -b 10889216 -r rootfs rootfs.btrfs
-> >>>>
-> >>>>
-> >>>> Thanks
-> >>>>
-> >>> Hi Saul,
-> >>> Sorry, I'm not able to reproduce your problem...
-> >>> Are you running the latest btrfs-progs from david's branch?
-> >>>
-> >> Yes, I am building it from git using master I think, git hash:
-> >> 8cae1840afb3ea44dcc298f32983e577480dfee4
-> >>
-> >> I tried both with and without the -M as cwillu suggested, still no joy,
-> >> I can send some the rootfs I am using to see if is's something specific.
-> >>
-> >> Here's the full failure:
-> >>
-> >> $ tmp/sysroots/x86_64-linux/usr/bin/mkfs.btrfs -M -b 10889216 -r
-> >> tmp/work/qemux86_64-poky-linux/core-image-minimal/1.0-r0/rootfs rootfs.btrfs
-> >> SMALL VOLUME: forcing mixed metadata/data groups
-> >> SMALL VOLUME: forcing mixed metadata/data groups
-> >>
-> >> WARNING! - Btrfs v3.12-dirty IS EXPERIMENTAL
-> >> WARNING! - see http://btrfs.wiki.kernel.org before using
-> >>
-> >> Turning ON incompat feature 'mixed-bg': mixed data and metadata block groups
-> >> Turning ON incompat feature 'extref': increased hardlink limit per file
-> >> to 65536
-> >> Created a data/metadata chunk of size 8388608
-> >> fs created label (null) on rootfs.btrfs
-> >> 	nodesize 4096 leafsize 4096 sectorsize 4096 size 180.00MiB
-> >> Btrfs v3.12-dirty
-> >> scandir for
-> >> tmp/work/qemux86_64-poky-linux/core-image-minimal/1.0-r0/rootfs failed:
-> >> No such file or directory
-> >> unable to traverse_directory
-> >> Making image is aborted.
-> >> mkfs.btrfs: mkfs.c:1592: main: Assertion `!(ret)' failed.
-> >> Aborted (core dumped)
-> >>
-> >>
-> >> Thanks for the help!
-> >>
-> >> Sau!
-> >>
-> > I think the output really tells us the problem: the mkfs '-r' option
-> > requires a 'directory' as an arg.
-> > But still it should not abort with 'core dumped', I would be glad to
-> > make it more friendly.
-> >
-> Yes, the 
-> "tmp/work/qemux86_64-poky-linux/core-image-minimal/1.0-r0/rootfs" is a 
-> directory containing a rootfs, we use this with genext2fs with no 
-> issues.  As I said, I can provide you with a tarball of this directory 
-> if you wish to try and reproduce this issue.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+On 03/10/2014 08:39 PM, Lists wrote:
+> I'd like to begin testing BTRFS. We'd probably begin roll out in 6 
+> months to a year if testing goes well.
 > 
-> Sau!
+> We're currently using CentOS6/64 everywhere, are aware of BTRFS
+> being a "Technology preview" in RHEL 7beta and would like to begin
+> testing production-level load testing. We generate about 10 GB of
+> distinct data daily that is stored redundantly by default on a
+> combination of ZFS and Ext4.
 > 
-Acturally, I notised that u'v present 2 different BUG_ON()
-	1. extent-tree.c:2682:btrfs_reserve_extent
-	2. mkfs.c:1592:main
+> Is there a "recommended way" to do this? Is it anywhere as easy as 
+> ZFSonLinux yum install?
+> 
+> 
 
-The 'full failure' u showed is for the 2nd, not the 1st. 
+There is way too much churn for any "enterprise" distro to be able to
+keep up with bugfixes and stuff.  You are best off rolling your own
+kernel based on the stable series if you want to think about using
+btrfs in production.  Thanks,
 
-o For the 1st, it is really a space related thing.
-o For the 2nd, the 'errno' of the scandir() won't lie,
-please check whether arg for '-r' is 'valid'.
+Josef
 
-For the ~4M rootfs... I will be glad for your kind offer~
-Please send it to me.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
--Gui
-
-> > -Gui
-> >>
-> >>> Thanks,
-> >>> Gui
-> >>>
-> >>>
-> >
-> >
-
-
+iQIcBAEBAgAGBQJTHxCtAAoJEANb+wAKly3BdJ8QAK5hYoNtJT/UEkpKakpNoXfV
+q6lg2NVPT6EeHzcMhTRS+VTOJ/bjvfwX0qDxRkjvo73F+nkQYcrO78cEMvPqtwTq
+HKxrGMibCtt5PlzzcbKqSc1VGIDFEkD2z7fr5y2n4V+E5x0EPCFxU6VOjXgqXyEZ
+8tKW24oxLAwbWBvyiaKrB/gWm47Aw6p2pVWgWrqMjMFUaNQBoisAU+1Ezn0Xjg6w
+4wazfGqUkUZ3pMcZr5IMQ9X+p+FUid7JWcdNwPjIsPMQhP7mkIK0Mq8eDu6ijVv2
+nI52pZuYaZs3+7OlkEoHRssnAwIWUwUq9UQwRjl4WK8FrpgdyYe0n2zlZIWGinvF
+qZRMmB5PtM+SYT9Wt5OPAgZxb/ivc9Vz7ACG4edNSBqZ1D7+52aazT4JY0fqWGGU
+8vapdKUmyXPQT9MphvHUEqnJtA/K9ek8Frt+f304KCcl/0IEESAoo3InlS7Hw45D
+ANEO4ZCwaUp/WjhqvwuvhYrqn8ENsbCm31RYAvAGEOoROzwXEnbl/Nv4DaKa+Q7b
+I6uSpyS60cNA2wmKm3wzFGpvSkP8PMzA1zSepK/yJ9p3PxUdxUpY1OqYc8y7gqOf
++ACNUuNMbNwAhMb9udEZzuBZojX3/vVPlqOWLPYDr3fVCrDIwuSKtloao+czkrpo
+sxJbe80q3rqtw+p0pStO
+=n1mD
+-----END PGP SIGNATURE-----

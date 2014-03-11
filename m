@@ -1,71 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42452 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753577AbaCJXQA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 19:16:00 -0400
-Date: Tue, 11 Mar 2014 00:15:58 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Guangyu Sun <guangyu.sun@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, koen.de.wit@oracle.com
-Subject: Re: [PATCH] Btrfs: return EPERM when deleting a default subvolume
-Message-ID: <20140310231558.GU7004@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1394235706-24780-1-git-send-email-guangyu.sun@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1394235706-24780-1-git-send-email-guangyu.sun@oracle.com>
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:53157 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754015AbaCKN43 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Mar 2014 09:56:29 -0400
+Received: by mail-wg0-f47.google.com with SMTP id x12so10026727wgg.18
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Mar 2014 06:56:28 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 1/2] Btrfs: less fs tree lock contention when using autodefrag
+Date: Tue, 11 Mar 2014 13:56:14 +0000
+Message-Id: <1394546175-7370-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 07, 2014 at 03:41:46PM -0800, Guangyu Sun wrote:
-> The error message is confusing:
-> 
->  # btrfs sub delete /mnt/mysub/
->  Delete subvolume '/mnt/mysub'
->  ERROR: cannot delete '/mnt/mysub' - Directory not empty
-> 
-> The error message does not make sense to me: It's not about deleting a
-> directory but it's a subvolume, and it doesn't matter if the subvolume is
-> empty or not.
-> 
-> Maybe EPERM or is more appropriate in this case, combined with an explanatory
-> kernel log message. (e.g. "subvolume with ID 123 cannot be deleted because
-> it is configured as default subvolume.")
+When finding new extents during an autodefrag, don't do so many fs tree
+lookups to find an extent with a size smaller then the target treshold.
+Instead, after each fs tree forward search immediately unlock upper
+levels and process the entire leaf while holding a read lock on the leaf,
+since our leaf processing is very fast.
+This reduces lock contention, allowing for higher concurrency when other
+tasks want to write/update items related to other inodes in the fs tree,
+as we're not holding read locks on upper tree levels while processing the
+leaf and we do less tree searches.
 
-Agreed, EPERM is better.
+Test:
 
-> Reported-by: Koen De Wit <koen.de.wit@oracle.com>
-> Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
-> ---
->  fs/btrfs/ioctl.c |    5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index a6d8efa..c380854 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1797,7 +1797,10 @@ static noinline int may_destroy_subvol(struct btrfs_root *root)
->  	if (di && !IS_ERR(di)) {
->  		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
->  		if (key.objectid == root->root_key.objectid) {
-> -			ret = -ENOTEMPTY;
-> +			ret = -EPERM;
-> +			printk(KERN_ERR "subvolume %llu cannot be deleted "
+    sysbench --test=fileio --file-num=512 --file-total-size=16G \
+       --file-test-mode=rndrw --num-threads=32 --file-block-size=32768 \
+       --file-rw-ratio=3 --file-io-mode=sync --max-time=1800 \
+       --max-requests=10000000000 [prepare|run]
 
-Please use btrfs_err instead of bare printk. The message seems a bit
-long to me, how about
+(fileystem mounted with -o autodefrag, averages of 5 runs)
 
-"deleting default subvolume %llu is not allowed"
+Before this change: 58.852Mb/sec throughtput, read 77.589Gb, written 25.863Gb
+After this change:  62.683Mb/sec throughtput, read 82.111Gb, written 27.37Gb
 
-> +			       "because it is configured as default "
-> +			       "subvolume.\n", key.objectid);
->  			goto out;
->  		}
->  		btrfs_release_path(path);
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Test machine: quad core intel i5-3570K, 32Gb of RAM, SSD.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ioctl.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e174770..5239470 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -941,6 +941,8 @@ static int find_new_extents(struct btrfs_root *root,
+ 		ret = btrfs_search_forward(root, &min_key, path, newer_than);
+ 		if (ret != 0)
+ 			goto none;
++		btrfs_unlock_up_safe(path, 1);
++process_slot:
+ 		if (min_key.objectid != ino)
+ 			goto none;
+ 		if (min_key.type != BTRFS_EXTENT_DATA_KEY)
+@@ -959,6 +961,12 @@ static int find_new_extents(struct btrfs_root *root,
+ 			return 0;
+ 		}
+ 
++		path->slots[0]++;
++		if (path->slots[0] < btrfs_header_nritems(leaf)) {
++			btrfs_item_key_to_cpu(leaf, &min_key, path->slots[0]);
++			goto process_slot;
++		}
++
+ 		if (min_key.offset == (u64)-1)
+ 			goto none;
+ 
+-- 
+1.7.9.5
+

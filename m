@@ -1,99 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29550 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752954AbaCJTtO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 15:49:14 -0400
-Message-ID: <531E171B.8090204@fb.com>
-Date: Mon, 10 Mar 2014 15:48:43 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:36082 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752311AbaCKBVu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Mar 2014 21:21:50 -0400
+Message-ID: <531E64AB.60204@cn.fujitsu.com>
+Date: Tue, 11 Mar 2014 09:19:39 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, <xfs@oss.sgi.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 3/3] xfstests/btrfs: add stress test for btrfs quota
- operations
-References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1394423051-17356-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1394423051-17356-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: Josef Bacik <jbacik@fb.com>
+CC: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/3] xfstests/btrfs: add qgroup rescan stress test
+References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <531E15EA.9020903@fb.com>
+In-Reply-To: <531E15EA.9020903@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 03/09/2014 11:44 PM, Wang Shilong wrote:
-> So this is a stress test for btrfs quota operations. it can also 
-> detect the following commit fixed problem:
-> 
-> 4082bd3d73(Btrfs: fix oops when writting dirty qgroups to disk)
-> 
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com> --- 
-> v1->v2: switch into new helper _run_btrfs_util_prog() --- 
-> tests/btrfs/043     | 76
-> +++++++++++++++++++++++++++++++++++++++++++++++++++++ 
-> tests/btrfs/043.out |  2 ++ tests/btrfs/group   |  1 + 3 files
-> changed, 79 insertions(+) create mode 100755 tests/btrfs/043 create
-> mode 100644 tests/btrfs/043.out
-> 
-> diff --git a/tests/btrfs/043 b/tests/btrfs/043 new file mode
-> 100755 index 0000000..d6c4bf3 --- /dev/null +++ b/tests/btrfs/043 
-> @@ -0,0 +1,76 @@ +#! /bin/bash +# FS QA Test No. 043 +# +#
-> stresstest for btrfs quota operations. we run fsstress and quota +#
-> operations concurrently. +# 
-> +#-----------------------------------------------------------------------
+On 03/11/2014 03:43 AM, Josef Bacik wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
 >
-> 
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-> +# +# This program is free software; you can redistribute it
-> and/or +# modify it under the terms of the GNU General Public
-> License as +# published by the Free Software Foundation. +# +# This
-> program is distributed in the hope that it would be useful, +# but
-> WITHOUT ANY WARRANTY; without even the implied warranty of +#
-> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the +#
-> GNU General Public License for more details. +# +# You should have
-> received a copy of the GNU General Public License +# along with
-> this program; if not, write the Free Software Foundation, +# Inc.,
-> 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA 
-> +#-----------------------------------------------------------------------
+> On 03/09/2014 11:44 PM, Wang Shilong wrote:
+>> Test flow is to run fsstress after triggering quota rescan. the
+>> ruler is simple, we just remove all files and directories, sync
+>> filesystem and see if qgroup's ref and excl are nodesize.
+>>
+>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com> ---
+>> v1->v2: switch into new helper _run_btrfs_util_prog() ---
+>> tests/btrfs/041     | 76
+>> +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>> tests/btrfs/041.out |  3 +++ tests/btrfs/group   |  1 + 3 files
+>> changed, 80 insertions(+) create mode 100644 tests/btrfs/041 create
+>> mode 100644 tests/btrfs/041.out
+>>
+> So this doesn't pass for me but it's not because we're broken, it's
+> because the test is broken.  What you should do is run sync after you
+> do the rm, and then capture the output of btrfs qgroup show, and then
+> do the rescan and redo qgroup show and make sure the numbers match.  I
+> did this in my qgroup test, you can look there as an example.  Thanks,
+Let's take a look at my test flows:
+
+step1: write some random data to fs tree and then create a snapshot of 
+fs tree.
+
+step2: also try to write some random data to newly created snapshot.
+
+step3: enable quota and wait quota rescan finished.(btrfs quota rescan -w)
+
+step4: remove all files and sync btrfs filesystem.
+
+So i did a simple test that if we don't create snapshot here, i get 
+qgroup accounting
+right here, so i think it is realted to qgroup accounting that differs 
+'refer' and 'excl'.
+
+Thanks,
+Wang
 >
-> 
-+#
-> + +seq=`basename $0` +seqres=$RESULT_DIR/$seq +echo "QA output
-> created by $seq" + +here=`pwd` +tmp=/tmp/$$ +status=1	# failure is
-> the default! +trap "_cleanup; exit \$status" 0 1 2 3 15 + 
-> +_cleanup() +{ +	cd / +	rm -f $tmp.* +} + +# get standard
-> environment, filters and checks +. ./common/rc +. ./common/filter 
-> + +_supported_fs btrfs +_supported_os Linux +_require_scratch + +rm
-> -f $seqres.full + +_quota_enabled_background() +{ +	i=1 +	while [
-> $i -le 5 ] +	do +		_run_btrfs_util_prog quota enable $SCRATCH_MNT +
-> _run_btrfs_util_prog quota disable $SCRATCH_MNT +		i=$(($i+1)) +
-> sleep 1 +	done +} + +MKFS_SIZE=$((1024 * 1024 * 1024)) +run_check
-> _scratch_mkfs_sized $MKFS_SIZE +run_check _scratch_mount + 
-> +_quota_enabled_background & +run_check $FSSTRESS_PROG -d
-> $SCRATCH_MNT -w -p 5 -n 1000 \ +	$FSSTRESS_AVOID + +run_check
-> _scratch_unmount +_check_scratch_fs +
+> Josef
+>
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1
+> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+>
+> iQIcBAEBAgAGBQJTHhXkAAoJEANb+wAKly3BQI8QAIEFXMPrFEJxj9uKuwnBZSSC
+> r4g7pHyac82EJA3T/jx+KIzH3aeUz0r1mEg8sYXXACAW5BZguyhe1LR0rU2ZBDaP
+> 9ilgWwCVm3d3EhiDmZJDCZueB7IXqE4/GX6D1zyF9OxVNk3Ng9gOY0/3G7Rb52FI
+> UTT/UhA8f3mFHQq4DbOebfacu8wbMH9rjHucxgin63UQLx9J9k+3lv5Y7AHihSrX
+> 3ly+B9+wqu9zl8gQGhxyvdayWeka6Hr43lkniaOehuW118WjjwIivE/CbTkla/3f
+> P3hoJSbUiqlCPONKkfGExYsIny0y9I3igMnLqs58RLeyd4+iSF1O4wFyFGn6hnDy
+> sazS8mz4V3PqnfHAj0D3scSYVyYvcrHcUU5WGs+0JiyExfQPFSrbybfwncIgbBg6
+> +63iqd7qHwwjClSVNckFurU4B+lj1aVyyk/S1/Z2jN/9s3nrM3/WAR3cqJGIuNyT
+> RPT9mzmkc1OICO0+dvwHMol894CCVh9b0iQ6e2NBWYmEfv3BIj9tZNjUZ/ySJdQC
+> h2f00uLovRPazI/X/gKVraHj13Go3giL5LCIbnUso/B18iA2V3qyyXGPMBTB1Rws
+> wzaxlXsC8cZsMUgFkg7z6Q1Kc9hyUj4AF3Vg/qZze4F216LLAOa9Bni5CxKOVytk
+> MPlXItpXYAEX8orapQdO
+> =/ZGH
+> -----END PGP SIGNATURE-----
+>
 
-You should probably be doing something to make sure the background
-quota stuff exits properly before your script exits, my fio box can
-run the fsstress in way less than 5 seconds.  Thanks,
-
-Josef
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQIcBAEBAgAGBQJTHhcbAAoJEANb+wAKly3B5Y0P/3z2IPMHDb95QwtmK0Ehsy8G
-meD44ew0yy8f4hMED5VAnHeKEctRfNierXz+pJAKlxvREzbNKIlnTSDLgwYxMCeO
-OQruW1Dp6W4WtSNltF8YfIVZqhLksHpkoW7zYrSr+qCZeQsNal61rjqQ2cydWb4u
-nCnICJa/KkLT84MW4WrZU+S2RJE7kvfqQoZkXND4rH2Nw9hAaAnF6bK4+ZfvKwni
-uDrBl3vdrQWIps304zIGaYxpnheIskeVdEG2AtL/KsCpCuSI/m/yjFsU8w/yTJ64
-g4Kbd9l3sTNSfErujeBZ9brEpVRwslUzSnw0u5g5PNABRYsTcnyh+tkelCIMH8MI
-2StpONvNXLQeaL2N378/syV4oWvAez6qUtFVFHTCfjKlugxn92juJXQKaS98K4Un
-V1+CrJ6cH2bGLjOKVnDsIf8aY77hSuP6Qn/wNMcZvO10ajlpRhFS9FYy12jyoC7M
-1aSLX+6R9pk+MvCwFAS+9w2hYTj5ksDhVZWXIwPxK9rQE/NYitNrv+y6QzcF0xhi
-udgTPl5XDdtiDWcDabMHEr6ky5gbnz6oiLcRy4V/XHbr9ymInaiB7fhBJ0DOX78m
-I19DBe/QIPCGBwFcgKHmadZAudihory6UzMaMkFlzbt4AVjBEYujS7U4LDhFN0lx
-UYXoSJdzjA2OZWhUXfdL
-=jTbe
------END PGP SIGNATURE-----

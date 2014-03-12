@@ -1,72 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga11.intel.com ([192.55.52.93]:50013 "EHLO mga11.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756181AbaCLBn3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Mar 2014 21:43:29 -0400
-Message-ID: <531FBBBD.9000109@linux.intel.com>
-Date: Tue, 11 Mar 2014 18:43:25 -0700
-From: Saul Wold <sgw@linux.intel.com>
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:49603 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756528AbaCLIVN convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Mar 2014 04:21:13 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel BUG: btrfs send - Incremental backup
+Date: Wed, 12 Mar 2014 09:20:09 +0100
+Message-ID: <1534308.rS2sq7rkIX@tethys>
+In-Reply-To: <531F4419.8010109@fb.com>
+References: <2853810.EcqZt5vpol@tethys> <531F4419.8010109@fb.com>
 MIME-Version: 1.0
-To: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>,
-        Zach Brown <zab@zabbo.net>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dg77.kim@samsung.com" <dg77.kim@samsung.com>
-Subject: Re: Building a brtfs filesystem < 70M?
-References: <531E4A02.5010404@linux.intel.com> <20140311163700.GQ2069@lenny.home.zabbo.net> <531FB42C.5000101@cn.fujitsu.com>
-In-Reply-To: <531FB42C.5000101@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/11/2014 06:10 PM, quwenruo@cn.fujitsu.com wrote:
-> On Tue, 11 Mar 2014 09:37:00 -0700, Zach Brown wrote:
->>> There seems to be an issue if we try to build a btrfs based FS that
->>> is less than 70M, we get the following assertion failure:
->>>
->>> mkfs.btrfs: extent-tree.c:2682: btrfs_reserve_extent: Assertion
->>> `!(ret)' failed.
->>> mkfs.btrfs -b 104857600 -r rootfs rootfs.btrfs
->> Honestly, the path of least resistance is probably to avoid the -r
->> option all together.  As you've found, it's not reliable.
->>
->> I'd take the time to roll the infrastrcture to populate the image by
->> writing to a mounted image with the kernel code.
->>
->> - z
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> I although agree with the mount + cp(kernel) way to populate the filesystem.
-> Also I think the implement of "-r" should be somewhat like mount+cp
-> other than the current way,
-> since the userland implement is noticeably slow than kernel way.
->
-> Cc:Donggeun Kim
-> I also wonder why "-r" option is needed, since IMO the "-r" options is
-> only needed
-> if the filesystem is full readonly and must be populated on
-> initialization like squashfs.
-> And since btrfs is a filesystem that can be read and write,
-> the "-r" option is not somewhat needed.
->
-> So I prefer to remove the "-r" option.
->
-Please dont remove the -r option, as you point out above it's used from 
-userland.  The Yocto Project / OE-Core uses this option to build a put a 
-rootfs into a filesystem image in userland without requiring root 
-permissions, we use something call pseudo (it a smarter version of 
-fakeroot) to lay down a root filesytem.
+Hi Josef,
 
-The patch from Gui worked well for our purposes, we are no longer 
-failing to build the filesystem image.
+I'm afraid I will not have the time to perform the kernel compilations and 
+tests you request in the coming days. I'm sorry but I will really be 120% 
+overloaded already...
 
-Thanks
+Kind regards.
 
-Sau!
+Le mardi 11 mars 2014 13:12:57 Josef Bacik a écrit :
+> Well that's odd, I can't think of how this would happen.  Can pull
+> down btrfs-next and run that and verify you still hit the BUG_ON?  If
+> you do please apply this patch and re-run and reply with the dmesg.
+> 
+> http://paste.fedoraproject.org/84393/55775013
+> 
+> This will spit out something like this
+> 
+> cur_ino=<NUMBER>, cmp_key objectid=<OTHER NUMBER>
+> 
+> then I need you to unmount your fs and run
+> 
+> btrfs-debug-tree /dev/whatever > blah.txt
+> 
+> You have about 1.5 gig of metadata so that is going to take a while.
+> Once that is done you want to go through blah.txt and look for
+> 
+> item <number> key (<OTHER NUMBER FROM ABOVE> EXTENT_DATA <number>)
+> 
+> You need to find all of these entries and copy them down, an example
+> output looks like this
+> 
+> item 1 key (286 EXTENT_DATA 577536) itemoff 3889 itemsize 53
+>         extent data disk byte 12763136 nr 4096
+>         extent data offset 0 nr 4096 ram 4096
+>         extent compression 0
+> 
+> That is what I'm looking for, you will have multiple of these.  Thanks,
+> 
+> Josef
 
->
-> Thanks
-> Qu
->
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

@@ -1,298 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42624 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751564AbaCXX6i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 19:58:38 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A8A7BACCF
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 23:58:37 +0000 (UTC)
-Message-ID: <5330C6AA.7010508@suse.com>
-Date: Mon, 24 Mar 2014 19:58:34 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: Arvin Schnell <aschnell@suse.de>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: allow use of subvolume id to create snapshots
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from e28smtp02.in.ibm.com ([122.248.162.2]:58973 "EHLO
+	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753980AbaCLOVD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Mar 2014 10:21:03 -0400
+Received: from /spool/local
+	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 12 Mar 2014 19:51:01 +0530
+Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id D614A3940048
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 19:50:59 +0530 (IST)
+Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
+	by d28relay01.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s2CEKr8461276248
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 19:50:53 +0530
+Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
+	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s2CEKxP2008462
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 19:50:59 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        aneesh.kumar@linux.vnet.ibm.com
+Subject: [PATCH 0/6 EARLY RFC] Btrfs: Get rid of whole page I/O.
+Date: Wed, 12 Mar 2014 19:50:27 +0530
+Message-Id: <1394634033-2528-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch uses the new BTRFS_SUBVOL_CREATE_SUBVOLID flag to create snapshots
-by subvolume ID.
+This patchset describes a possible solution to solve whole page I/O issue
+present in Btrfs. Currently whole page I/O is being performed because
+bio_vec->[bv_len, bv_offset] can be modified by the Block I/O layer and hence
+cannot be used by Btrfs's endio functions to operate on the original file
+offset range that the bio was intended for. 
 
-usage: btrfs subvolume snapshot [-r] [-q <qgroupid>] -s <subvolid> <dest>/<name>
+This patch is a precursor to get subpagesize-blocksize Btrfs feature to work
+correctly as it would be required to do non-whole page I/O.
 
-Since we don't have a name for the source snapshot, the complete path to
-the destination must be specified.
+The patchset makes use of patches posted earlier by Chandra Seetharaman
+(http://article.gmane.org/gmane.comp.file-systems.btrfs/30737). I believe that
+getting non whole page I/O to work properly is the first issue to tackle
+before working on the review comments posted for Chandra's patches. Please
+correct me if my assumption is incorrect.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- cmds-subvolume.c |  101 +++++++++++++++++++++++++++++++++++++++++--------------
- ioctl.h          |    6 ++-
- man/btrfs.8.in   |   31 +++++++++++++++-
- 3 files changed, 110 insertions(+), 28 deletions(-)
+The patchset has been tested with only a handful of trivial I/O tests i.e. I/O
+on different kinds of files (e.g. files with holes, etc). The tests were run
+on 2k and 4k blocksized instances of Btrfs code (on x86_64) that has initial
+support for mounting a 2k blocksized Btrfs filesystem. The corresponding git
+trees can be found at
+https://github.com/chandanr/btrfs-progs/tree/subpagesize-blocksize and
+https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize
 
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -14,6 +14,7 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+#define _GNU_SOURCE
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
-@@ -576,6 +577,7 @@ out:
- static const char * const cmd_snapshot_usage[] = {
- 	"btrfs subvolume snapshot [-r] <source> <dest>|[<dest>/]<name>",
- 	"btrfs subvolume snapshot [-r] [-i <qgroupid>] <source> <dest>|[<dest>/]<name>",
-+	"btrfs subvolume snapshot [-r] [-i <qgroupid>] -s <subvolid> <dest>/<name>",
- 	"Create a snapshot of the subvolume",
- 	"Create a writable/readonly snapshot of the subvolume <source> with",
- 	"the name <name> in the <dest> directory.  If only <dest> is given,",
-@@ -584,12 +586,27 @@ static const char * const cmd_snapshot_u
- 	"-r             create a readonly snapshot",
- 	"-i <qgroupid>  add the newly created snapshot to a qgroup. This",
- 	"               option can be given multiple times.",
-+	"-s <subvolid>  create a snapshot using the subvolume id. This",
-+	"               is useful for snapshotting subvolumes outside",
-+	"               of the mounted namespace.",
- 	NULL
- };
- 
-+static int get_subvolid(const char *str, u64 *subvolid)
-+{
-+	char *p;
-+	errno = 0;
-+	*subvolid = strtoull(optarg, &p, 10);
-+	if (errno || *p != '\0') {
-+		fprintf(stderr, "ERROR: invalid subvolume id '%s'\n", optarg);
-+		return -EINVAL;
-+	}
-+	return 0;
-+}
-+
- static int cmd_snapshot(int argc, char **argv)
- {
--	char	*subvol, *dst;
-+	char	*subvol = NULL, *dst;
- 	int	res, retval;
- 	int	fd = -1, fddst = -1;
- 	int	len, readonly = 0;
-@@ -597,6 +614,9 @@ static int cmd_snapshot(int argc, char *
- 	char	*dupdir = NULL;
- 	char	*newname;
- 	char	*dstdir;
-+	u64	subvolid = 0;
-+	char	*subvol_descr = NULL;
-+	int	nargs = 2;
- 	struct btrfs_ioctl_vol_args_v2	args;
- 	struct btrfs_qgroup_inherit *inherit = NULL;
- 	DIR *dirstream1 = NULL, *dirstream2 = NULL;
-@@ -604,7 +624,7 @@ static int cmd_snapshot(int argc, char *
- 	optind = 1;
- 	memset(&args, 0, sizeof(args));
- 	while (1) {
--		int c = getopt(argc, argv, "c:i:r");
-+		int c = getopt(argc, argv, "c:i:rs:");
- 		if (c < 0)
- 			break;
- 
-@@ -633,27 +653,39 @@ static int cmd_snapshot(int argc, char *
- 				goto out;
- 			}
- 			break;
-+		case 's':
-+			res = get_subvolid(optarg, &subvolid);
-+			if (res) {
-+				retval = res;
-+				goto out;
-+			}
-+			nargs = 1;
-+			break;
- 		default:
- 			usage(cmd_snapshot_usage);
- 		}
- 	}
- 
--	if (check_argc_exact(argc - optind, 2))
-+	if (check_argc_exact(argc - optind, nargs))
- 		usage(cmd_snapshot_usage);
- 
--	subvol = argv[optind];
--	dst = argv[optind + 1];
-+	if (nargs == 2) {
-+		subvol = argv[optind];
-+		dst = argv[optind + 1];
- 
--	retval = 1;	/* failure */
--	res = test_issubvolume(subvol);
--	if (res < 0) {
--		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
--		goto out;
--	}
--	if (!res) {
--		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
--		goto out;
--	}
-+		retval = 1;	/* failure */
-+		res = test_issubvolume(subvol);
-+		if (res < 0) {
-+			fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
-+			goto out;
-+		}
-+		if (!res) {
-+			fprintf(stderr, "ERROR: '%s' is not a subvolume\n",
-+				subvol);
-+			goto out;
-+		}
-+	} else
-+		dst = argv[optind];
- 
- 	res = test_isdir(dst);
- 	if (res == 0) {
-@@ -662,6 +694,13 @@ static int cmd_snapshot(int argc, char *
- 	}
- 
- 	if (res > 0) {
-+		if (!subvol) {
-+			retval = 1;
-+			fprintf(stderr,
-+				"ERROR: '%s' exists and must not when snapshotting by specifying subvolid.\n",
-+				dst);
-+			goto out;
-+		}
- 		dupname = strdup(subvol);
- 		newname = basename(dupname);
- 		dstdir = dst;
-@@ -692,22 +731,34 @@ static int cmd_snapshot(int argc, char *
- 		goto out;
- 	}
- 
--	fd = open_file_or_dir(subvol, &dirstream2);
--	if (fd < 0) {
--		fprintf(stderr, "ERROR: can't access '%s'\n", dstdir);
-+	if (subvol) {
-+		fd = open_file_or_dir(subvol, &dirstream2);
-+		if (fd < 0) {
-+			fprintf(stderr, "ERROR: can't access '%s'\n", dstdir);
-+			goto out;
-+		}
-+		args.fd = fd;
-+		res = asprintf(&subvol_descr, "'%s'", subvol);
-+	} else {
-+		args.subvolid = subvolid;
-+		args.flags |= BTRFS_SUBVOL_CREATE_SUBVOLID;
-+		res = asprintf(&subvol_descr, "subvolume id %llu", subvolid);
-+	}
-+	if (res < 0) {
-+		fprintf(stderr, "ERROR: can't allocate memory\n");
-+		retval = 1;
- 		goto out;
- 	}
- 
- 	if (readonly) {
- 		args.flags |= BTRFS_SUBVOL_RDONLY;
--		printf("Create a readonly snapshot of '%s' in '%s/%s'\n",
--		       subvol, dstdir, newname);
-+		printf("Create a readonly snapshot of %s in '%s/%s'\n",
-+		       subvol_descr, dstdir, newname);
- 	} else {
--		printf("Create a snapshot of '%s' in '%s/%s'\n",
--		       subvol, dstdir, newname);
-+		printf("Create a snapshot of %s in '%s/%s'\n",
-+		       subvol_descr, dstdir, newname);
- 	}
- 
--	args.fd = fd;
- 	if (inherit) {
- 		args.flags |= BTRFS_SUBVOL_QGROUP_INHERIT;
- 		args.size = qgroup_inherit_size(inherit);
-@@ -727,7 +778,9 @@ static int cmd_snapshot(int argc, char *
- 
- out:
- 	close_file_or_dir(fddst, dirstream1);
--	close_file_or_dir(fd, dirstream2);
-+	if (subvol)
-+		close_file_or_dir(fd, dirstream2);
-+	free(subvol_descr);
- 	free(inherit);
- 	free(dupname);
- 	free(dupdir);
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -41,6 +41,7 @@ struct btrfs_ioctl_vol_args {
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
- #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
-+#define BTRFS_SUBVOL_CREATE_SUBVOLID	(1ULL << 3)
- 
- #define BTRFS_QGROUP_INHERIT_SET_LIMITS	(1ULL << 0)
- 
-@@ -69,7 +70,10 @@ struct btrfs_ioctl_qgroup_limit_args {
- #define BTRFS_SUBVOL_NAME_MAX 4039
- 
- struct btrfs_ioctl_vol_args_v2 {
--	__s64 fd;
-+	union {
-+		__s64 fd;
-+		__u64 subvolid;
-+	};
- 	__u64 transid;
- 	__u64 flags;
- 	union {
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -12,7 +12,9 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume list\fP [\fIoptions\fP] [-G [+|-]\fIvalue\fP] [-C [+|-]\fIvalue\fP] [--sort=rootid,gen,ogen,path] \fI<path>\fP
- .PP
--\fBbtrfs\fP \fBsubvolume snapshot\fP [-r] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
-+\fBbtrfs\fP \fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
-+.PP
-+\fBbtrfs\fP \fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI-s <subvolid>\fP \fI<dest>/<name>\fP
- .PP
- \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
- .PP
-@@ -242,12 +244,35 @@ for \fB--sort\fP you can combine some it
- .RE
- .TP
- 
--\fBsubvolume snapshot\fP [-r] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
-+\fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
- Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
- name \fI<name>\fR in the \fI<dest>\fR directory.
- If only \fI<dest>\fR is given, the subvolume will be named the basename of \fI<source>\fR.
- If \fI<source>\fR is not a subvolume, \fBbtrfs\fR returns an error.
--If \fI-r\fR is given, the snapshot will be readonly.
-+.RS
-+
-+\fIOptions\fP
-+.IP \fB-r\fP 5
-+The newly created snapshot will be readonly.
-+.IP "\fB-i\fP \fI<qgroupid>\fR" 5
-+Add the newly created subvolume to a qgroup. This option can be given multiple
-+times.
-+.RE
-+.TP
-+
-+\fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI-s <subvolid>\fP \fI<dest>\fP/\fI<name>\fP
-+Create a writable/readonly snapshot of the subvolume \fI<subvolid>\fR with the
-+name \fI<name>\fR in the \fI<dest>\fR directory.
-+If \fI<subvolid>\fR does not refer to a subvolume, \fBbtrfs\fR returns an error.
-+.RS
-+
-+\fIOptions\fP
-+.IP \fB-r\fP 5
-+The newly created snapshot will be readonly.
-+.IP "\fB-i\fP \fI<qgroupid>\fR" 5
-+Add the newly created subvolume to a qgroup. This option can be given multiple
-+times.
-+.RE
- .TP
- 
- \fBsubvolume get-default\fR\fI <path>\fR
+The modified code is limited in feature i.e. the following are its known
+limitations,
+1. xfstests suite has not been executed.
+2. Direct I/O has not been tested. 
+3. Compression does not work with 2k blocksize filesystem instance.
+4. fallocate does not work with 2k blocksize.
+5. Data checksum does not work for 2k blocksize. Hence filesystem should be
+   mounted by passing the nodatasum option.
+6. Performance implications are unknown.
+
+Chandan Rajendra (4):
+  Btrfs: subpagesize-blocksize: Get rid of whole page reads.
+  Btrfs: subpagesize-blocksize: Get rid of whole page writes.
+  Btrfs: subpagesize-blocksize: Work with extents aligned to blocksize.
+  Btrfs: subpagesize-blocksize: Hardcode MAX_EXTENT_BUFFERS_PER_PAGE to 2.
+
+Chandra Seetharaman (2):
+  Btrfs: subpagesize-blocksize: Define extent_buffer_head
+  Btrfs: subpagesize-blocksize: Allow mounting filesystems where sectorsize != PAGE_SIZE
+
+ fs/btrfs/backref.c           |   2 +-
+ fs/btrfs/ctree.c             |   2 +-
+ fs/btrfs/ctree.h             |   6 +-
+ fs/btrfs/disk-io.c           | 117 ++++----
+ fs/btrfs/extent-tree.c       |   6 +-
+ fs/btrfs/extent_io.c         | 623 ++++++++++++++++++++++++++++---------------
+ fs/btrfs/extent_io.h         |  60 ++++-
+ fs/btrfs/file.c              |  13 +-
+ fs/btrfs/volumes.c           |   2 +-
+ fs/btrfs/volumes.h           |   3 +
+ include/trace/events/btrfs.h |   2 +-
+ 11 files changed, 554 insertions(+), 282 deletions(-)
 
 -- 
-Jeff Mahoney
-SUSE Labs
+1.8.3.1
+

@@ -1,62 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:49603 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756528AbaCLIVN convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Mar 2014 04:21:13 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel BUG: btrfs send - Incremental backup
-Date: Wed, 12 Mar 2014 09:20:09 +0100
-Message-ID: <1534308.rS2sq7rkIX@tethys>
-In-Reply-To: <531F4419.8010109@fb.com>
-References: <2853810.EcqZt5vpol@tethys> <531F4419.8010109@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from cantor2.suse.de ([195.135.220.15]:43583 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753964AbaCLLPJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Mar 2014 07:15:09 -0400
+Date: Wed, 12 Mar 2014 12:15:07 +0100
+From: David Disseldorp <ddiss@suse.de>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: Avi Miller <avi.miller@oracle.com>, Lists <lists@benjamindsmith.com>,
+        linux-btrfs@vger.kernel.org
+Subject: xfstests btrfs/035 (was Re: Testing BTRFS)
+Message-ID: <20140312121507.1f4e7f9b@plati.site>
+In-Reply-To: <531F5F12.4080009@redhat.com>
+References: <loom.20140306T191655-366@post.gmane.org>
+	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>
+	<loom.20140307T144540-512@post.gmane.org>
+	<pan$72cea$1961f20d$d4386bc$889c1510@cox.net>
+	<531E5B44.6030502@benjamindsmith.com>
+	<DFAE9B5E-2C12-4215-B4CA-016CBD4575EC@oracle.com>
+	<531F5F12.4080009@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+Hi Eric,
 
-I'm afraid I will not have the time to perform the kernel compilations and 
-tests you request in the coming days. I'm sorry but I will really be 120% 
-overloaded already...
+On Tue, 11 Mar 2014 14:08:02 -0500, Eric Sandeen wrote:
 
-Kind regards.
+> Indeed, testing 3.8.13-26.2.1.el6uek.x86_64 (which is, I believe,
+> the kernel which Avi referred to) via xfstests, I saw
+> failures on btrfs/009 and btrfs/022; then the box deadlocked
+> on btrfs/024.  I rebooted & resumed, then deadlocked on btrfs/030.
+> Rebooted and resumed again, then panicked on btrfs/035.  At that
+> point I stopped.
 
-Le mardi 11 mars 2014 13:12:57 Josef Bacik a écrit :
-> Well that's odd, I can't think of how this would happen.  Can pull
-> down btrfs-next and run that and verify you still hit the BUG_ON?  If
-> you do please apply this patch and re-run and reply with the dmesg.
-> 
-> http://paste.fedoraproject.org/84393/55775013
-> 
-> This will spit out something like this
-> 
-> cur_ino=<NUMBER>, cmp_key objectid=<OTHER NUMBER>
-> 
-> then I need you to unmount your fs and run
-> 
-> btrfs-debug-tree /dev/whatever > blah.txt
-> 
-> You have about 1.5 gig of metadata so that is going to take a while.
-> Once that is done you want to go through blah.txt and look for
-> 
-> item <number> key (<OTHER NUMBER FROM ABOVE> EXTENT_DATA <number>)
-> 
-> You need to find all of these entries and copy them down, an example
-> output looks like this
-> 
-> item 1 key (286 EXTENT_DATA 577536) itemoff 3889 itemsize 53
->         extent data disk byte 12763136 nr 4096
->         extent data offset 0 nr 4096 ram 4096
->         extent compression 0
-> 
-> That is what I'm looking for, you will have multiple of these.  Thanks,
-> 
-> Josef
+FWIW, Liu Bo recently proposed a fix for the btrfs/035 BUG_ON():
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/33327
 
+Cheers, David

@@ -1,45 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56788 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:40607 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756283AbaCLHy6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Mar 2014 03:54:58 -0400
+	id S1756595AbaCLIAF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Mar 2014 04:00:05 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WNe08-0000NR-HP
-	for linux-btrfs@vger.kernel.org; Wed, 12 Mar 2014 08:54:56 +0100
+	id 1WNe56-0004Ca-4I
+	for linux-btrfs@vger.kernel.org; Wed, 12 Mar 2014 09:00:04 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 08:54:56 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 09:00:04 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 08:54:56 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Mar 2014 09:00:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: warn at fs/btrfs/extent-tree.c:5748
- __btrfs_free_extent+0x9ce/0xa20
-Date: Wed, 12 Mar 2014 07:54:30 +0000 (UTC)
-Message-ID: <pan$160f2$a0461d09$c8460df4$fac5305e@cox.net>
-References: <alpine.DEB.2.00.1403111642350.5511@cobra.newdream.net>
+Subject: Re: [PATCH v2] Btrfs: return EPERM when deleting a default
+ subvolume
+Date: Wed, 12 Mar 2014 07:58:08 +0000 (UTC)
+Message-ID: <pan$71e16$d5576176$5a9b4320$313b7a7f@cox.net>
+References: <1394562258-17024-1-git-send-email-guangyu.sun@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sage Weil posted on Tue, 11 Mar 2014 16:44:40 -0700 as excerpted:
+Guangyu Sun posted on Tue, 11 Mar 2014 11:24:18 -0700 as excerpted:
 
-> Is this something you guys have seen before?  This is from v3.13-rc2.
-> 
-> [49432.777445] CPU: 3 PID: 26411 Comm: ceph-osd
-> Tainted: GF         I  3.14.0-rc5-ceph-00016-gf31a96a #
+> The error message does not make sense to me: [snip]
 
-v3.13-rc2?
-
-1) That's a bit old as there's actually several 3.13 stable releases now.
-
-2) It doesn't appear correct anyway, since the trace reports 3.14-rc5+
-
-(Meanwhile, I'm not a dev so no comment on the root question.)
+The subject says v2, which explains why I was getting deja vu reading the 
+description, but there's no listing of what changed from v1, as is 
+customary when a revision is posted.  See pretty much any other patch 
+with multiple revisions.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

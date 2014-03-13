@@ -1,82 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:59212 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753504AbaCMWEf convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 18:04:35 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59370 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WODju-000gj9-QJ
-	for linux-btrfs@vger.kernel.org; Thu, 13 Mar 2014 16:04:34 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Incremental backup for a raid1
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <5491122.Fap633Kp83@fuchsia>
-Date: Thu, 13 Mar 2014 16:04:33 -0600
-Message-Id: <0AD708D8-5380-465E-8119-DD6FDD1BF1BA@colorremedies.com>
-References: <1564384.fRV1HUkfCq@fuchsia> <20140313192832.GE6151@carfax.org.uk> <53220BA7.1060702@gmail.com> <5491122.Fap633Kp83@fuchsia>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from dehost.average.org ([88.198.2.197]:34629 "EHLO
+	dehost.average.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754152AbaCMWtG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Mar 2014 18:49:06 -0400
+Received: from [IPv6:2001:470:1f09:520:a60:6eff:fe69:494] (unknown [IPv6:2001:470:1f09:520:a60:6eff:fe69:494])
+	by dehost.average.org (Postfix) with ESMTPSA id 9625F3A8BC3
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 02:39:06 +0400 (MSK)
+Message-ID: <53223380.3000308@average.org>
+Date: Fri, 14 Mar 2014 02:38:56 +0400
+From: Eugene Crosser <crosser@average.org>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: Re: ENOSPC errors during raid1 rebalance
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="7fpS87anFx4UiXoeGufmuLPoooC09GstL"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--7fpS87anFx4UiXoeGufmuLPoooC09GstL
+Content-Type: text/plain; charset=KOI8-R
+Content-Transfer-Encoding: quoted-printable
 
-On Mar 13, 2014, at 3:14 PM, Michael Schuerig <michael.lists@schuerig.de> wrote:
+Hello,
 
-> On Thursday 13 March 2014 14:48:55 Andrew Skretvedt wrote:
->> On 2014-Mar-13 14:28, Hugo Mills wrote:
->>> On Thu, Mar 13, 2014 at 08:12:44PM +0100, Michael Schuerig wrote:
->>>> My backup use case is different from the what has been recently
->>>> discussed in another thread. I'm trying to guard against hardware
->>>> failure and other causes of destruction.
->>>> 
->>>> I have a btrfs raid1 filesystem spread over two disks. I want to
->>>> backup this filesystem regularly and efficiently to an external
->>>> disk (same model as the ones in the raid) in such a way that
->>>> 
->>>> * when one disk in the raid fails, I can substitute the backup and
->>>> rebalancing from the surviving disk to the substitute only applies
->>>> the missing changes.
->>>> 
->>>> * when the entire raid fails, I can re-build a new one from the
->>>> backup.
->>>> 
->>>> The filesystem is mounted at its root and has several nested
->>>> subvolumes and snapshots (in a .snapshots subdir on each subvol).
-> [...]
-> 
->> I'm new; btrfs noob; completely unqualified to write intelligently on
->> this topic, nevertheless:
->> I understand your setup to be btrfs RAID1 with /dev/A /dev/B, and a
->> backup device someplace /dev/C
->> 
->> Could you, at the time you wanted to backup the filesystem:
->> 1) in the filesystem, break RAID1: /dev/A /dev/B <-- remove /dev/B
->> 2) reestablish RAID1 to the backup device: /dev/A /dev/C <-- added
->> 3) balance to effect the backup (i.e. rebuilding the RAID1 onto
->> /dev/C) 4) break/reconnect the original devices: remove /dev/C;
->> re-add /dev/B to the fs
-> 
-> I've thought of this but don't dare try it without approval from the 
-> experts. At any rate, for being practical, this approach hinges on an 
-> ability to rebuild the raid1 incrementally. That is, the rebuild would 
-> have to start from what already is present on disk B (or C, when it is 
-> re-added). Starting from an effectively blank disk each time would be 
-> prohibitive.
-> 
-> Even if this would work, I'd much prefer keeping the original raid1 
-> intact and to only temporarily add another mirror: "lazy mirroring", to 
-> give the thing a name.
+I want to report that I have the same problem as Michael Russo, except in=
+ my
+case there is definitely *a lot* of free space.
 
-At best this seems fragile, but I don't think it works and is an edge case from the start. This is what send/receive is for.
+I had ext4 on a 1Tb LVM mirror. The filesystem was 96% full, with many mu=
+lti-Gb
+files. I successfully converted it into btrfs, removed ext2_saved subvolu=
+me, but
+did *not* defragment or balance.
 
-In the btrfs replace scenario, the missing device is removed from the volume. It's like a divorce. Missing device 2 is replaced by a different physical device also called device 2. If you then removed 2b and readd (formerly replaced) device 2a, what happens? I don't know, I'm pretty sure the volume knows this is not device 2b as it should be, and won't accept formerly replaced device 2a. But it's an edge case to do this because you've said "device replace". So lexicon wise, I wouldn't even want this to work, we'd need a different command even if not different logic.
+Then I added two fresh 4Tb disks to the filesystem, and tried to convert =
+it to
+raid1. My plan was to then delete the original LVM disk and have all my d=
+ata
+migrated to the new 4Tb disks under btrfs mirror.
 
-In the btfs device add case, you now have a three disk raid1 which is a whole different beast. Since this isn't n-way raid1, each disk is not stand alone. You're only assured data survives a one disk failure meaning you must have two drives. You've just increased your risk by doing this, not reduced it. It further proposes running an (ostensibly) production workflow with an always degraded volume, mounted with -o degraded, on an on-going basis. So it's three strikes.  It's not n-way, you have no uptime if you lose one of two disks onsite, you's have to go get the offsite/onshelf disk to keep working. Plus that offsite disk isn't stand alone, so why even have it offsite? This is a fail.
+But balancing cannot complete with the same symptoms:
 
-So the btrfs replace scenario might work but it seems like a bad idea. And overall it's a use case for which send/receive was designed anyway so why not just use that?
+[...]
+[12746.391828] block group has cluster?: no
+[12746.391830] 0 blocks of free space at or bigger than bytes is
+[12747.420098] btrfs: 35 enospc errors during balance
 
-Chris Murphy
+root@pccross:~# btrfs fi sh
+Label: 'export'  uuid: 02f39e9d-9115-4a79-9015-a3a9decb87cf
+	Total devices 3 FS bytes used 798.15GB
+	devid    3 size 3.64TB used 855.03GB path /dev/sdd1
+	devid    2 size 3.64TB used 855.00GB path /dev/sdc1
+	devid    1 size 891.51GB used 175.48GB path /dev/md5
 
+Btrfs v0.20-rc1
+
+root@pccross:~# btrfs fi df /export
+Data, RAID1: total=3D849.00GB, used=3D650.25GB
+Data: total=3D175.48GB, used=3D145.64GB
+System: total=3D32.00MB, used=3D136.00KB
+Metadata, RAID1: total=3D6.00GB, used=3D2.21GB
+
+root@pccross:~# uname -a
+Linux pccross 3.13.0-17-generic #37-Ubuntu SMP Mon Mar 10 21:44:01 UTC 20=
+14
+x86_64 x86_64 x86_64 GNU/Linux
+
+Attempt "btrfs device delete" fails with the same "no space" diagnostic.
+
+I am running defragmentation on all files bigger than 1Gb now, and see wh=
+at
+happens. If that does not help, is there any other advice? I can collect
+debugging data if needed.
+
+Thanks,
+
+Eugene
+
+
+--7fpS87anFx4UiXoeGufmuLPoooC09GstL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iQEVAwUBUyIzhzy8vXtX5W5FAQL02Af9E7+U9PEjLKMi3smOdK+KqzvLUT8NBLfp
+dGo/GHH55DFjipEKcayWmzQr9a7z68wGd0KrGJkfamklipqjal4Hn+ZNnIUacIVf
+B7YVUBWrIPzPZJFILKtnF7Us+TizQEha1BFBz2x8oJjySBktRw4EP+uIR+5LG8oN
+CcdyMMd/OMfk0agjaYPXSBBm89Oqyb55mEEiO0UaFylBpHk1eFcXxe2sliyi5SZ6
+4OS+aMsCJX0MM6OEEH7j7cxoAP56W8YDayz/dhHARMeemuAFp8tJDflntx1AjiAX
+f3fb07CYkFE/RaddwI71TZ8414CIB51p0E9DDbAnUNkTKQVY46AOaQ==
+=3WFF
+-----END PGP SIGNATURE-----
+
+--7fpS87anFx4UiXoeGufmuLPoooC09GstL--

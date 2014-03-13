@@ -1,121 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:52580 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:3901 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751124AbaCFF4D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Mar 2014 00:56:03 -0500
+	id S1750921AbaCMFJ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Mar 2014 01:09:29 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s265tv8Z010090
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 13:56:00 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2D56Gxr003962
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2014 13:09:26 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] Btrfs-progs: fsck: handle case that we can not lookup extent info
-Date: Thu, 6 Mar 2014 13:54:00 +0800
-Message-Id: <1394085240-23520-5-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1394085240-23520-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1394085240-23520-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: fix bug on mkfs with relative path specified
+Date: Thu, 13 Mar 2014 13:01:30 +0800
+Message-Id: <1394686891-23271-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Previously, --init-extent-tree works just because btrfs_lookup_extent_info()
-blindly return 0, and this make it work if there are not any *FULL BACKREF*
-mode in broken filesystem.
+The bug accurs when exec:
+	# mkfs.btrfs -r <a relative path> <device>
+	(note: the path should be 'valid' correspond to your `pwd`)
+error msg:
+	$ scandir for <a relative path> failed: No such file...
 
-It is just a coincidence that --init-extent-tree option works, let's
-do it in the right way firstly.
+o Replace strdup() with realpath() to get the correct scan path.
+o fix memory leaks and adopt the "single return + goto out" pattern
 
-For now, we have not supported to rebuild extent tree if there are
-any *FULL BACKREF* mode which means if there are snapshots with broken
-filesystem, avoid using --init-extent-tree option now.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Reported-by: Saul Wold <sgw@linux.intel.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- cmds-check.c  | 36 ++++++++++++++++++++++++++----------
- extent-tree.c |  2 +-
- 2 files changed, 27 insertions(+), 11 deletions(-)
+change log
+	v1->v2: 1. add check for realpath() return value
+		2. fix memory leaks for dir_entry
+		3. adopt "single return + goto out" pattern
+---
+ mkfs.c | 23 +++++++++++++++++------
+ 1 file changed, 17 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index ae611d1..d1cafe1 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -52,6 +52,7 @@ static LIST_HEAD(duplicate_extents);
- static LIST_HEAD(delete_items);
- static int repair = 0;
- static int no_holes = 0;
-+static int init_extent_tree = 0;
- 
- struct extent_backref {
- 	struct list_head list;
-@@ -3915,11 +3916,19 @@ static int run_next_block(struct btrfs_trans_handle *trans,
- 
- 	nritems = btrfs_header_nritems(buf);
- 
--	ret = btrfs_lookup_extent_info(NULL, root, bytenr,
-+	/*
-+	 * FIXME, this only works only if we don't have any full
-+	 * backref mode.
-+	 */
-+	if (!init_extent_tree) {
-+		ret = btrfs_lookup_extent_info(NULL, root, bytenr,
- 				       btrfs_header_level(buf), 1, NULL,
- 				       &flags);
--	if (ret < 0)
--		flags = BTRFS_BLOCK_FLAG_FULL_BACKREF;
-+		if (ret < 0)
-+			flags = 0;
-+	} else {
-+		flags = 0;
+diff --git a/mkfs.c b/mkfs.c
+index 2dc90c2..d7049c9 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -756,6 +756,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	ino_t parent_inum, cur_inum;
+ 	ino_t highest_inum = 0;
+ 	char *parent_dir_name;
++	char real_path[PATH_MAX];
+ 	struct btrfs_path path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key root_dir_key;
+@@ -764,7 +765,12 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	/* Add list for source directory */
+ 	dir_entry = malloc(sizeof(struct directory_name_entry));
+ 	dir_entry->dir_name = dir_name;
+-	dir_entry->path = strdup(dir_name);
++	dir_entry->path = realpath(dir_name, real_path);
++	if (!dir_entry->path) {
++		fprintf(stderr, "get directory real path error\n");
++		ret = -1;
++		goto fail_no_dir;
 +	}
  
- 	if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 		parent = bytenr;
-@@ -5102,12 +5111,20 @@ static int fixup_extent_refs(struct btrfs_trans_handle *trans,
- 	int allocated = 0;
- 	u64 flags = 0;
+ 	parent_inum = highest_inum + BTRFS_FIRST_FREE_OBJECTID;
+ 	dir_entry->inum = parent_inum;
+@@ -778,7 +784,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_lookup_inode(trans, root, &path, &root_dir_key, 1);
+ 	if (ret) {
+ 		fprintf(stderr, "root dir lookup error\n");
+-		return -1;
++		goto fail_no_dir;
+ 	}
  
--	/* remember our flags for recreating the extent */
--	ret = btrfs_lookup_extent_info(NULL, info->extent_root, rec->start,
--				       rec->max_size, rec->metadata, NULL,
--				       &flags);
--	if (ret < 0)
--		flags = BTRFS_BLOCK_FLAG_FULL_BACKREF;
-+	/*
-+	 * remember our flags for recreating the extent.
-+	 * FIXME, if we have cleared extent tree, we can not
-+	 * lookup extent info in extent tree.
-+	 */
-+	if (!init_extent_tree) {
-+		ret = btrfs_lookup_extent_info(NULL, info->extent_root,
-+					rec->start, rec->max_size,
-+					rec->metadata, NULL, &flags);
-+		if (ret < 0)
-+			flags = 0;
-+	} else {
-+		flags = 0;
-+	}
+ 	leaf = path.nodes[0];
+@@ -802,6 +808,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 		if (chdir(parent_dir_entry->path)) {
+ 			fprintf(stderr, "chdir error for %s\n",
+ 				parent_dir_name);
++			ret = -1;
+ 			goto fail_no_files;
+ 		}
  
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -6438,7 +6455,6 @@ int cmd_check(int argc, char **argv)
- 	u64 num;
- 	int option_index = 0;
- 	int init_csum_tree = 0;
--	int init_extent_tree = 0;
- 	enum btrfs_open_ctree_flags ctree_flags =
- 		OPEN_CTREE_PARTIAL | OPEN_CTREE_EXCLUSIVE;
+@@ -811,6 +818,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 		{
+ 			fprintf(stderr, "scandir for %s failed: %s\n",
+ 				parent_dir_name, strerror (errno));
++			ret = -1;
+ 			goto fail;
+ 		}
  
-diff --git a/extent-tree.c b/extent-tree.c
-index 7860d1d..7979457 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1560,7 +1560,7 @@ again:
- 		*flags = extent_flags;
- out:
- 	btrfs_free_path(path);
+@@ -820,6 +828,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 			if (lstat(cur_file->d_name, &st) == -1) {
+ 				fprintf(stderr, "lstat failed for file %s\n",
+ 					cur_file->d_name);
++				ret = -1;
+ 				goto fail;
+ 			}
+ 
+@@ -876,20 +885,22 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		free_namelist(files, count);
+-		free(parent_dir_entry->path);
+ 		free(parent_dir_entry);
+ 
+ 		index_cnt = 2;
+ 
+ 	} while (!list_empty(&dir_head->list));
+ 
 -	return 0;
-+	return ret;
++out:
++	return !!ret;
+ fail:
+ 	free_namelist(files, count);
+ fail_no_files:
+-	free(parent_dir_entry->path);
+ 	free(parent_dir_entry);
+-	return -1;
++	goto out;
++fail_no_dir:
++	free(dir_entry);
++	goto out;
  }
  
- int btrfs_set_block_flags(struct btrfs_trans_handle *trans,
+ static int open_target(char *output_name)
 -- 
-1.9.0
+1.8.1.4
 

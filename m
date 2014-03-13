@@ -1,29 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from locke.effortlessis.com ([208.53.66.14]:35156 "EHLO
-	locke.effortlessis.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754166AbaCMSKz (ORCPT
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.220]:30900 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752216AbaCMTTJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 14:10:55 -0400
-Message-ID: <5321F4A7.8080003@benjamindsmith.com>
-Date: Thu, 13 Mar 2014 11:10:47 -0700
-From: Lists <lists@benjamindsmith.com>
+	Thu, 13 Mar 2014 15:19:09 -0400
+Received: from fuchsia.localnet (p5DE8FFB9.dip0.t-ipconnect.de [93.232.255.185])
+	by smtp.strato.de (RZmta 32.27 DYNA|AUTH)
+	with ESMTPSA id R076e3q2DJCi4RI
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(Client did not present a certificate)
+	for <linux-btrfs@vger.kernel.org>;
+	Thu, 13 Mar 2014 20:12:44 +0100 (CET)
+From: Michael Schuerig <michael.lists@schuerig.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Incremental backup for a raid1
+Date: Thu, 13 Mar 2014 20:12:44 +0100
+Message-ID: <1564384.fRV1HUkfCq@fuchsia>
 MIME-Version: 1.0
-To: Avi Miller <avi.miller@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Testing BTRFS
-References: <loom.20140306T191655-366@post.gmane.org>	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>	<loom.20140307T144540-512@post.gmane.org> <pan$72cea$1961f20d$d4386bc$889c1510@cox.net> <531E5B44.6030502@benjamindsmith.com> <DFAE9B5E-2C12-4215-B4CA-016CBD4575EC@oracle.com>
-In-Reply-To: <DFAE9B5E-2C12-4215-B4CA-016CBD4575EC@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/10/2014 06:02 PM, Avi Miller wrote:
-> Oracle Linux 6 with the Unbreakable Enterprise Kernel Release 2 or Release 3 has production-ready btrfs support. You can even convert your existing CentOS6 boxes across to Oracle Linux 6 in-place without reinstalling:
->
-> http://linux.oracle.com/switch/centos/
->
-> Oracle also now provides all errata, including security and bug fixes for free athttp://public-yum.oracle.com  and our kernel source code can be found athttps://oss.oracle.com/git/
 
-Is there any issue with BTRFS and 32 bit O/S like with ZFS?
+My backup use case is different from the what has been recently 
+discussed in another thread. I'm trying to guard against hardware 
+failure and other causes of destruction.
 
--Ben
+I have a btrfs raid1 filesystem spread over two disks. I want to backup 
+this filesystem regularly and efficiently to an external disk (same 
+model as the ones in the raid) in such a way that
+
+* when one disk in the raid fails, I can substitute the backup and 
+rebalancing from the surviving disk to the substitute only applies the 
+missing changes.
+
+* when the entire raid fails, I can re-build a new one from the backup.
+
+The filesystem is mounted at its root and has several nested subvolumes 
+and snapshots (in a .snapshots subdir on each subvol).
+
+Is it possible to do what I'm looking for?
+
+Michael
+
+-- 
+Michael Schuerig
+mailto:michael@schuerig.de
+http://www.schuerig.de/michael/
+

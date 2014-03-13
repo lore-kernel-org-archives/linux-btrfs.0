@@ -1,131 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:47241 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750754AbaCMF1j (ORCPT
+Received: from mail-we0-f178.google.com ([74.125.82.178]:45028 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753652AbaCMMKU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 01:27:39 -0400
-Date: Thu, 13 Mar 2014 16:27:32 +1100
-From: Dave Chinner <david@fromorbit.com>
+	Thu, 13 Mar 2014 08:10:20 -0400
+Received: by mail-we0-f178.google.com with SMTP id u56so762292wes.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2014 05:10:19 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests: master branch updated to 3948694
-Message-ID: <20140313052732.GG6851@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH RESEND] xfstests: add test for btrfs send issuing premature rmdir operations
+Date: Thu, 13 Mar 2014 12:09:53 +0000
+Message-Id: <1394712593-9212-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi folks,
+Regression test for btrfs incremental send issue where a rmdir instruction
+is sent against an orphan directory inode which is not empty yet, causing
+btrfs receive to fail when it attempts to remove the directory.
 
-The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
-just been updated. Patches often get missed, so please check if your
-outstanding patches were in this update. If they have not been in
-this update, please resubmit them to xfs@oss.sgi.com so they can be
-picked up in the next update. I know I skipped a couple of posted
-tests because they hadn't obviously been reviewed and I didn't know
-what the status of them was, so reposts (and reviews!) would be
-appreciated.
+This issue is fixed by the following linux kernel btrfs patch:
 
-The new head of the master branch is commit:
+    Btrfs: fix send attempting to rmdir non-empty directories
 
-3948694 xfs/300: fix golden output
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+---
 
-New Commits:
+Resending since Dave Chinner asked to do it for any patches he might have
+missed in his last merge.
 
-Dave Chinner (5):
-      [763b46f] xfs/033: add golden output for CRC enabled filesystems
-      [97a665b] xfs/189: noattr2 invalid for CRC enabled filesystems
-      [84edd7a] generic/003: ensure time changes between stat calls
-      [4a74700] xfs/217: prevent enospc failures on small test devices
-      [b50473c] xfs/167: need at least 10GB of scratch space to run
+ tests/btrfs/043     |  149 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/043.out |    1 +
+ tests/btrfs/group   |    1 +
+ 3 files changed, 151 insertions(+)
+ create mode 100644 tests/btrfs/043
+ create mode 100644 tests/btrfs/043.out
 
-Dmitry Monakhov (2):
-      [3365817] fsstress: add verifiable logging mode
-      [33e02a8] generic/280: use waidpid instead of ugly sleep
-
-Eric Sandeen (2):
-      [9642986] aio-dio: fix error msg in aio-dio-subblock-eof-read.c
-      [3948694] xfs/300: fix golden output
-
-Filipe David Borba Manana (2):
-      [2dd0dbe] btrfs: add function _require_fssum()
-      [5f1cd20] btrfs: add test for btrfs-progs restore feature
-
-Jie Liu (1):
-      [5f6be5c] shared/051: add filter to match the golden output for large acls
-
-Lukas Czerner (8):
-      [212f48f] common: Create single function for testing xfs_io commands
-      [9589e15] common: create _test_block_boundaries in common/punch
-      [613cb30] generic/008: Add test for fallocate zero range at block boundary
-      [2dc43e0] build: Move fallocate include into global.h
-      [2d2d853] fsstress: Add fallocate zero range operation
-      [4544179] fsstress: translate flags in fiemap_f
-      [f074613] fsx: Add fallocate zero range operation
-      [4d46e47] ext4/001: Add ext4 specific test for fallocate zero range
-
-Wang Shilong (1):
-      [8acf172] btrfs: add basic functional test for btrfs quota groups
-
-ZhangZhen (1):
-      [f7f9492] btrfs: cleanup tests 004, 007, 022 and 025
-
-
-Code Diffstat:
-
- check                                           |   2 +-
- common/attr                                     |  10 +
- common/filter                                   |   3 +
- common/punch                                    | 106 ++++++
- common/rc                                       |  78 +++--
- configure.ac                                    |   3 +-
- ltp/fsstress.c                                  | 222 ++++++++----
- ltp/fsx.c                                       | 146 +++++---
- src/aio-dio-regress/aio-dio-subblock-eof-read.c |   4 +-
- src/global.h                                    |  25 ++
- tests/btrfs/004                                 |   2 +-
- tests/btrfs/007                                 |  11 +-
- tests/btrfs/016                                 |   5 +-
- tests/btrfs/022                                 |  24 +-
- tests/btrfs/025                                 |  20 +-
- tests/btrfs/030                                 |   5 +-
- tests/btrfs/038                                 |   5 +-
- tests/btrfs/039                                 |   5 +-
- tests/btrfs/040                                 |   5 +-
- tests/btrfs/041                                 | 113 +++++++
- tests/btrfs/041.out                             |  40 +++
- tests/btrfs/042                                 |  95 ++++++
- tests/btrfs/042.out                             |   2 +
- tests/btrfs/group                               |   2 +
- tests/ext4/001                                  |  64 ++++
- tests/ext4/001.out                              | 337 ++++++++++++++++++
- tests/ext4/group                                |   1 +
- tests/generic/003                               | 110 +++---
- tests/generic/008                               |  57 ++++
- tests/generic/008.out                           | 433 ++++++++++++++++++++++++
- tests/generic/280                               |   3 +-
- tests/generic/group                             |   1 +
- tests/shared/051                                |  10 +-
- tests/shared/051.out                            |   2 +-
- tests/xfs/033                                   |  10 +-
- tests/xfs/033.crc.out.linux                     | 197 +++++++++++
- tests/xfs/167                                   |   6 +
- tests/xfs/189                                   |   2 +
- tests/xfs/217                                   |   4 +
- tests/xfs/290                                   |  40 +--
- tests/xfs/290.out                               |  13 +-
- tests/xfs/300.out                               |   2 +-
- 42 files changed, 1930 insertions(+), 295 deletions(-)
- mode change 100644 => 100755 tests/btrfs/016
- create mode 100755 tests/btrfs/041
- create mode 100644 tests/btrfs/041.out
- create mode 100755 tests/btrfs/042
- create mode 100644 tests/btrfs/042.out
- create mode 100755 tests/ext4/001
- create mode 100644 tests/ext4/001.out
- create mode 100755 tests/generic/008
- create mode 100644 tests/generic/008.out
- create mode 100644 tests/xfs/033.crc.out.linux
+diff --git a/tests/btrfs/043 b/tests/btrfs/043
+new file mode 100644
+index 0000000..b1fef96
+--- /dev/null
++++ b/tests/btrfs/043
+@@ -0,0 +1,149 @@
++#! /bin/bash
++# FS QA Test No. btrfs/043
++#
++# Regression test for btrfs incremental send issue where a rmdir instruction
++# is sent against an orphan directory inode which is not empty yet, causing
++# btrfs receive to fail when it attempts to remove the directory.
++#
++# This issue is fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: fix send attempting to rmdir non-empty directories
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=`mktemp -d`
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_fssum
++_need_to_be_root
++
++rm -f $seqres.full
++
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++mkdir -p $SCRATCH_MNT/a/b
++mkdir $SCRATCH_MNT/0
++mkdir $SCRATCH_MNT/1
++mkdir $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/0 $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/1 $SCRATCH_MNT/a/b/c
++echo 'ola mundo' > $SCRATCH_MNT/a/b/c/foo.txt
++mkdir $SCRATCH_MNT/a/b/c/x
++mkdir $SCRATCH_MNT/a/b/c/x2
++mkdir $SCRATCH_MNT/a/b/y
++mkdir $SCRATCH_MNT/a/b/z
++mkdir -p $SCRATCH_MNT/a/b/d1/d2/d3
++mkdir $SCRATCH_MNT/a/b/d4
++
++# Filesystem looks like:
++#
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#         |-- c/           (ino 261)
++#         |   |-- foo.txt  (ino 262)
++#         |   |-- 0/       (ino 259)
++#         |   |-- 1/       (ino 260)
++#         |   |-- x/       (ino 263)
++#         |   |-- x2/      (ino 264)
++#         |
++#         |-- y/           (ino 265)
++#         |-- z/           (ino 266)
++#         |-- d1/          (ino 267)
++#         |   |-- d2/      (ino 268)
++#         |       |-- d3/  (ino 269)
++#         |
++#         |-- d4/          (ino 270)
++
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++
++rm -f $SCRATCH_MNT/a/b/c/foo.txt
++mv $SCRATCH_MNT/a/b/y $SCRATCH_MNT/a/b/YY
++mv $SCRATCH_MNT/a/b/z $SCRATCH_MNT/a
++mv $SCRATCH_MNT/a/b/c/x $SCRATCH_MNT/a/b/YY
++mv $SCRATCH_MNT/a/b/c/0 $SCRATCH_MNT/a/b/YY/00
++mv $SCRATCH_MNT/a/b/c/x2 $SCRATCH_MNT/a/z/X_2
++mv $SCRATCH_MNT/a/b/c/1 $SCRATCH_MNT/a/z/X_2
++rmdir $SCRATCH_MNT/a/b/c
++mv $SCRATCH_MNT/a/b/d4 $SCRATCH_MNT/a/d44
++mv $SCRATCH_MNT/a/b/d1/d2 $SCRATCH_MNT/a/d44
++rmdir $SCRATCH_MNT/a/b/d1
++
++# Filesystem now looks like:
++#
++# .                        (ino 256)
++# |-- a/                   (ino 257)
++#     |-- b/               (ino 258)
++#     |   |-- YY/          (ino 265)
++#     |        |-- x/      (ino 263)
++#     |        |-- 00/     (ino 259)
++#     |
++#     |-- z/               (ino 266)
++#     |   |-- X_2/         (ino 264)
++#     |        |-- 1/      (ino 260)
++#     |
++#     |-- d44/             (ino 270)
++#          |-- d2/         (ino 268)
++#              |-- d3/     (ino 269)
++
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++
++run_check $FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/mysnap2/mysnap1 \
++	$SCRATCH_MNT/mysnap2
++
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $tmp/1.snap
++_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++	-f $tmp/2.snap
++
++_check_scratch_fs
++
++_scratch_unmount
++_scratch_mkfs >/dev/null 2>&1
++_scratch_mount
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/1.snap
++run_check $FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/mysnap1
++
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $tmp/2.snap
++run_check $FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/mysnap2
++
++_check_scratch_fs
++
++status=0
++exit
+diff --git a/tests/btrfs/043.out b/tests/btrfs/043.out
+new file mode 100644
+index 0000000..7851fbe
+--- /dev/null
++++ b/tests/btrfs/043.out
+@@ -0,0 +1 @@
++QA output created by 043
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 1037761..fabe3b5 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -45,3 +45,4 @@
+ 040 auto quick
+ 041 auto quick
+ 042 auto quick
++043 auto quick
 -- 
-Dave Chinner
-david@fromorbit.com
+1.7.10.4
+

@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw12b.wadns.net ([196.220.39.31]:43467 "EHLO fw12a.wadns.net"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751020AbaCLXeq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Mar 2014 19:34:46 -0400
-Message-ID: <5320EC45.70803@swiftspirit.co.za>
-Date: Thu, 13 Mar 2014 01:22:45 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+Received: from csamuel.org ([74.50.50.137]:33641 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753579AbaCMIS1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Mar 2014 04:18:27 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id DD03241730
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2014 19:18:26 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 05174-06 for <linux-btrfs@vger.kernel.org>;
+ Thu, 13 Mar 2014 19:18:26 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 784AA4172E
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2014 19:18:26 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Understanding btrfs and backups
+Date: Thu, 13 Mar 2014 19:18:20 +1100
+Message-ID: <4639532.QLl0DFI5n2@quad>
+In-Reply-To: <pan$4cd4c$ec8dd4e1$f6cb92a9$89c62709@cox.net>
+References: <loom.20140306T191655-366@post.gmane.org> <1959641.msLoxygPan@quad> <pan$4cd4c$ec8dd4e1$f6cb92a9$89c62709@cox.net>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>, kreijack@inwind.it
-CC: Chris Mason <clm@fb.com>, systemd-devel@lists.freedesktop.org,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [systemd-devel] [HEADS-UP] Discoverable Partitions Spec
-References: <20140307182603.GA22874@tango.0pointer.de> <531E059B.1010509@libero.it> <20140310200228.GA18268@tango.0pointer.de> <531E3F10.3000908@libero.it> <20140310234547.GA31229@tango.0pointer.de> <53209868.5090506@fb.com> <5320B18C.9050400@inwind.it> <F34652FB-331F-4BA7-A2D9-35C3DE7B770D@colorremedies.com>
-In-Reply-To: <F34652FB-331F-4BA7-A2D9-35C3DE7B770D@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; boundary="nextPart1421919.cVgk4mBVcd"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/03/12 09:31 PM, Chris Murphy wrote:
-> On Mar 12, 2014, at 1:12 PM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
->> On 03/12/2014 06:24 PM, Chris Mason wrote:
-> Your suggestion also sounds like it places snapshots outside of their parent subvolume? If so it mitigates a possible security concern if the snapshot contains (old) binaries with vulnerabilities. I asked about how to go about assessing this on the Fedora security list:
-> https://lists.fedoraproject.org/pipermail/security/2014-February/001748.html
->
-> There aren't many replies but the consensus is that it's a legitimate concern, so either the snapshots shouldn't be persistently available (which is typical with e.g. snapper, and also yum-plugin-fs-snapshot), and/or when the subvolume containing snapshots is mounted, it's done with either mount option noexec or nosuid (no consensus on which one, although Gnome Shell uses nosuid by default when automounting removable media).
-This is exactly the same result if following the previously-recommended 
-subvolume layout given on the Arch wiki. It seems this wiki advice has 
-"disappeared" so I can't give a link for it ...
 
-My apologies if the rest of my mail is off-topic.
+--nextPart1421919.cVgk4mBVcd
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-Though not specifically for rollback, my snapshots prior to btrfs {send 
-| , receive} backup is done via temporary mountpoint. Until two days ago 
-I was still using rsync to a secondary btrfs volume and the __snapshots 
-folder had been sitting empty for about a year. The performance 
-difference with send|receive is magnitudes apart: A daily backup to the 
-secondary disk now takes between 30 and 40 seconds whereas it took 20 to 
-30 minutes with rsync.
+On Sun, 9 Mar 2014 03:30:44 PM Duncan wrote:
 
-Here are my current subvolumes:
-__active
-__active/home
-__active/usr
-__active/var
-__snapshots/__2014-03-12-23h00m01s+0200
-__snapshots/_home_2014-03-12-23h00m01s+0200
-__snapshots/_usr_2014-03-12-23h00m01s+0200
-__snapshots/_var_2014-03-12-23h00m01s+0200
+> While I realize that was in reference to the "up in flames" comment a=
+nd=20
+> presumably if there's a need to worry about that, offsite backup /is/=
+ of=20
+> some value, for some people, offsite backup really isn't that valuabl=
+e.
 
-I hadn't thought of noexec or nosuid. On a single-user system you don't 
-really expect that type of incursion. I will put up my work after I've 
-properly automated cleanup.
+Actually I missed that comment altogether, it was really just an illust=
+ration=20
+of why people should think about it - and then come to a decision about=
+=20
+whether or not it makes sense for them.
 
-The only minor gripe I have with the temporary mount is that I feel it 
-should be possible to perform snapshots and use send|receive without the 
-requirement of having the subvolumes be "visible" in userspace.
+In your case maybe not, but for me (and my wife) it certainly does.
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+All the best,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+
+--nextPart1421919.cVgk4mBVcd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUyFpzI1yjaOTJg85AQKQMgf9EMa6BqwvwQdfXu4B6h90WwXAegeiGVTe
+Lq57jsl0ZhCkAs6+y1IZcd4qF8gk8QxlQdFWpWuj7m8NWqu+ttdEBViJ5yHBRMj7
+ljP+EkfSgipWI7zgXaqc4UDEFvLK2ltisxHJIBtL9HMOFKeTW6Zq0Dm2VYSfXCre
+R3vwiC4Eq004tM8XDPi3wPqb6uE6f+BRXktiRjoZOE8QJLbhg2ftuzfnRVdrgfc/
+k9F/8ahte+5vNpMUzaB6cvvjDiymtZe6e1m2lnhdkF+E611KE3vtQy3mbWOEZ7qz
+hJGxduudIaPJa7E3Zb6NevyxNzTMpBpSH2juWbQzHEXvRIzFpWG9yg==
+=wG3S
+-----END PGP SIGNATURE-----
+
+--nextPart1421919.cVgk4mBVcd--
 

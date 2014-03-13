@@ -1,136 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47493 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752372AbaCKBwV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 21:52:21 -0400
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/3] xfstests/btrfs: add stress test for btrfs quota operations
-Date: Tue, 11 Mar 2014 09:42:35 +0800
-Message-Id: <1394502155-12763-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:18451 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753063AbaCMDMl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Mar 2014 23:12:41 -0400
+Date: Thu, 13 Mar 2014 14:12:17 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 3/3] xfstests/btrfs: add stress test for btrfs quota
+ operations
+Message-ID: <20140313031217.GC4263@dastard>
+References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <1394423051-17356-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <531E171B.8090204@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <531E171B.8090204@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So this is a stress test for btrfs quota operations. it can also
-detect the following commit fixed problem:
+On Mon, Mar 10, 2014 at 03:48:43PM -0400, Josef Bacik wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 03/09/2014 11:44 PM, Wang Shilong wrote:
+> > So this is a stress test for btrfs quota operations. it can also 
+> > detect the following commit fixed problem:
+> > 
+> > 4082bd3d73(Btrfs: fix oops when writting dirty qgroups to disk)
+> > 
+> > Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com> --- 
+> > v1->v2: switch into new helper _run_btrfs_util_prog() --- 
+> > tests/btrfs/043     | 76
+> > +++++++++++++++++++++++++++++++++++++++++++++++++++++ 
+> > tests/btrfs/043.out |  2 ++ tests/btrfs/group   |  1 + 3 files
+> > changed, 79 insertions(+) create mode 100755 tests/btrfs/043 create
+> > mode 100644 tests/btrfs/043.out
+> > 
+> > diff --git a/tests/btrfs/043 b/tests/btrfs/043 new file mode
+> > 100755 index 0000000..d6c4bf3 --- /dev/null +++ b/tests/btrfs/043 
+> > @@ -0,0 +1,76 @@ +#! /bin/bash +# FS QA Test No. 043 +# +#
+> > stresstest for btrfs quota operations. we run fsstress and quota +#
+> > operations concurrently. +# 
+> > +#-----------------------------------------------------------------------
+> >
+> > 
+> +# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
+> > +# +# This program is free software; you can redistribute it
+> > and/or +# modify it under the terms of the GNU General Public
+> > License as +# published by the Free Software Foundation. +# +# This
+> > program is distributed in the hope that it would be useful, +# but
+> > WITHOUT ANY WARRANTY; without even the implied warranty of +#
+> > MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the +#
+> > GNU General Public License for more details. +# +# You should have
+> > received a copy of the GNU General Public License +# along with
+> > this program; if not, write the Free Software Foundation, +# Inc.,
+> > 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA 
+> > +#-----------------------------------------------------------------------
+> >
+> > 
+> +#
+> > + +seq=`basename $0` +seqres=$RESULT_DIR/$seq +echo "QA output
+> > created by $seq" + +here=`pwd` +tmp=/tmp/$$ +status=1	# failure is
+> > the default! +trap "_cleanup; exit \$status" 0 1 2 3 15 + 
+> > +_cleanup() +{ +	cd / +	rm -f $tmp.* +} + +# get standard
+> > environment, filters and checks +. ./common/rc +. ./common/filter 
+> > + +_supported_fs btrfs +_supported_os Linux +_require_scratch + +rm
+> > -f $seqres.full + +_quota_enabled_background() +{ +	i=1 +	while [
+> > $i -le 5 ] +	do +		_run_btrfs_util_prog quota enable $SCRATCH_MNT +
+> > _run_btrfs_util_prog quota disable $SCRATCH_MNT +		i=$(($i+1)) +
+> > sleep 1 +	done +} + +MKFS_SIZE=$((1024 * 1024 * 1024)) +run_check
+> > _scratch_mkfs_sized $MKFS_SIZE +run_check _scratch_mount + 
+> > +_quota_enabled_background & +run_check $FSSTRESS_PROG -d
+> > $SCRATCH_MNT -w -p 5 -n 1000 \ +	$FSSTRESS_AVOID + +run_check
+> > _scratch_unmount +_check_scratch_fs +
+> 
+> You should probably be doing something to make sure the background
+> quota stuff exits properly before your script exits, my fio box can
+> run the fsstress in way less than 5 seconds.  Thanks,
 
-4082bd3d73(Btrfs: fix oops when writting dirty qgroups to disk)
+josef - you might want to have a look at what your mailer is doing
+to quoted email ad fix it... ;)
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
-v2->v3:
-	wait background thread finished before umounting.(Thanks to Josef)
-v1->v2:
-	switch into new helper _run_btrfs_util_prog().(Pointed by Dave Chinner)
----
- tests/btrfs/043     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/043.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 80 insertions(+)
- create mode 100644 tests/btrfs/043
- create mode 100644 tests/btrfs/043.out
+Cheers,
 
-diff --git a/tests/btrfs/043 b/tests/btrfs/043
-new file mode 100644
-index 0000000..fe38e3e
---- /dev/null
-+++ b/tests/btrfs/043
-@@ -0,0 +1,77 @@
-+#! /bin/bash
-+# FS QA Test No. 043
-+#
-+# stresstest for btrfs quota operations. we run fsstress and quota
-+# operations concurrently.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_quota_enabled_background()
-+{
-+	i=1
-+	while [ $i -le 5 ]
-+	do
-+		_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+		_run_btrfs_util_prog quota disable $SCRATCH_MNT
-+		i=$(($i+1))
-+		sleep 1
-+	done
-+}
-+
-+MKFS_SIZE=$((1024 * 1024 * 1024))
-+run_check _scratch_mkfs_sized $MKFS_SIZE
-+run_check _scratch_mount
-+
-+_quota_enabled_background &
-+run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
-+	$FSSTRESS_AVOID
-+
-+wait
-+run_check _scratch_unmount
-+_check_scratch_fs
-+
-+# success, all done
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/043.out b/tests/btrfs/043.out
-new file mode 100644
-index 0000000..f90f0a5
---- /dev/null
-+++ b/tests/btrfs/043.out
-@@ -0,0 +1,2 @@
-+QA output created by 043
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 1037761..fabe3b5 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -45,3 +45,4 @@
- 040 auto quick
- 041 auto quick
- 042 auto quick
-+043 auto quick
+Dave.
 -- 
-1.9.0
-
+Dave Chinner
+david@fromorbit.com

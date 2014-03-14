@@ -1,104 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:44624 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755481AbaCNIkZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 04:40:25 -0400
-Date: Fri, 14 Mar 2014 08:40:20 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove transaction from send
-Message-ID: <20140314084020.GG6151@carfax.org.uk>
-References: <1394739733-500-1-git-send-email-jbacik@fb.com>
- <20140313221628.GF6151@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="z9ECzHErBrwFF8sy"
-In-Reply-To: <20140313221628.GF6151@carfax.org.uk>
+Received: from plane.gmane.org ([80.91.229.3]:43482 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753644AbaCNMIX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 08:08:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WOQuU-0002An-Fn
+	for linux-btrfs@vger.kernel.org; Fri, 14 Mar 2014 13:08:22 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 13:08:22 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 13:08:22 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: discard synchronous on most SSDs?
+Date: Fri, 14 Mar 2014 12:07:54 +0000 (UTC)
+Message-ID: <pan$667da$c4955705$c59674a0$a844850c@cox.net>
+References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys>
+	<3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys>
+	<20140309113350.GH6318@carfax.org.uk> <20140314021159.GQ18959@merlins.org>
+	<C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
+	<20140314051750.GY6143@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Thu, 13 Mar 2014 22:17:50 -0700 as excerpted:
 
---z9ECzHErBrwFF8sy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Thu, Mar 13, 2014 at 10:16:28PM +0000, Hugo Mills wrote:
-> On Thu, Mar 13, 2014 at 03:42:13PM -0400, Josef Bacik wrote:
-> > Lets try this again.  We can deadlock the box if we send on a box and try to
-> > write onto the same fs with the app that is trying to listen to the send pipe.
-> > This is because the writer could get stuck waiting for a transaction commit
-> > which is being blocked by the send.  So fix this by making sure looking at the
-> > commit roots is always going to be consistent.  We do this by keeping track of
-> > which roots need to have their commit roots swapped during commit, and then
-> > taking the commit_root_sem and swapping them all at once.  Then make sure we
-> > take a read lock on the commit_root_sem in cases where we search the commit root
-> > to make sure we're always looking at a consistent view of the commit roots.
-> > Previously we had problems with this because we would swap a fs tree commit root
-> > and then swap the extent tree commit root independently which would cause the
-> > backref walking code to screw up sometimes.  With this patch we no longer
-> > deadlock and pass all the weird send/receive corner cases.  Thanks,
+> On Thu, Mar 13, 2014 at 09:39:02PM -0600, Chris Murphy wrote:
+>> 
+>> On Mar 13, 2014, at 8:11 PM, Marc MERLIN <marc@merlins.org> wrote:
+>> 
+>> > On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
+>> >> discard is, except on the very latest hardware, a synchronous
+>> >> command (it's a limitation of the SATA standard), and therefore
+>> >> results in very very poor performance.
+>> > 
+>> > Interesting. How do I know if a given SSD will hang on discard?
+>> > Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
+>> 
+>> smartctl -a or -x will tell you what SATA revision is in place. The
+>> queued trim support is in SATA Rev 3.1. I'm not certain if this
+>> requires only the drive to support that revision level, or both
+>> controller and drive.
 > 
->    There's something still going on here. I managed to get about twice
-> as far through my test as I had before, but I again got an "unexpected
-> EOF in stream", with btrfs send returning 1. As before, I have this in
-> syslog:
-> 
-> Mar 13 22:09:12 s_src@amelia kernel: BTRFS error (device sda2): did not find backref in send_root. inode=1786631, offset=825257984, disk_byte=36504023040 found extent=36504023040\x0a
-> 
->    So, on the evidence of one data point (I'll have another one when I
-> wake up tomorrow morning), this has made the problem harder to trigger
-> but it's still possible.
+> I'm not sure I'm seeing this, which field is that?
 
-   Data point two has arrived, and it's gone boom at about the same
-point. The first failed at:
-2014-03-13 22:09:11,749    INFO Read 7247356514 bytes total
-and the second at:
-2014-03-14 03:53:46,990    INFO Read 7247357071 bytes total
-at approximately 1h45 into the process. The boot and home subvols have
-been OK, and have been backing up happily all this time, but both are
-smaller than the (~10 GiB) root subvol.
+> ATA Version is:   8
+> ATA Standard is:  ATA-8-ACS revision 4c
 
-   I can add a load of data to /home and see if the problem happens
-with a larger send size, or if it's just the process writing to a
-subvol that has the snapshot being sent that causes it.
+Your drive didn't report it, but here, I have SATA fields as well, in 
+addition to the ATA fields:
 
-   The interesting thing here is that the error seems to be fairly
-reliably in the same place (more or less). Before this patch, I was
-seeing lockups (or EOF, with the earlier version of this patch) at
-approximately 3.6-3.8 GB. Now it looks like it's going to be 7.2 GB.
+Here's the fields from my Corsair Neutron SSDs:
 
-   At least it's not locking up any more, just dying noisily (which is
-marginally preferable).
+ATA Version is:   ATA8-ACS (minor revision not indicated)
+SATA Version is:  SATA 2.5, 6.0 Gb/s
 
-   Hugo.
+Here's the fields from my Seagate 500-gig 2.5-inch spinning rust:
+
+ATA Version is:   ATA8-ACS T13/1699-D revision 4
+SATA Version is:  SATA 2.6, 3.0 Gb/s
+
+(More about that below.)
+
+Smartctl version here is 6.2 2013-07-26 r3841, according to the output. 
+(I'm running gentoo/~amd64 FWIW so it's a local-build). You snipped that 
+bit of your output so I can't compare.
+
+But it may also depend on whether smartctl auto-detected and used the ATA 
+or the SCSI (or something else) command set and how your devices are 
+actually connected, plus BIOS settings, etc.  See the manpage 
+documentation for the -d TYPE (--device=TYPE) option and the ATA/SCSI/SAT 
+discussion rather further down the manpage for more.
+
+Here I have direct SATA connections with the BIOS set to AHCI mode and am 
+thus using the kernel's AHCI drivers, since that's the most common SATA 
+chipset standard these days, thus increasing portability given my 
+monolithic kernel build.
+
+smartctl's -d test reports an original guess of scsi, changed to sat 
+after detection.
+
+Of course connection via USB bridge or the like complicates things 
+considerably.
+
+
+Meanwhile, SATA 2.5, 6 Gb/s on the SSDs, SATA 2.6, 3 Gb/s on the spinning 
+rust?  WTF?  The SSDs have SATA 2.5 but 6 Gb/s while the spinning rust 
+has a later 2.6 but only 3 Gb/s (tho of course on a mechanical drive the 
+bus speed won't be the bottleneck)?  Now I'm confused.
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Hail and greetings.  We are a flat-pack invasion force from ---   
-                     Planet Ikea. We come in pieces.                     
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---z9ECzHErBrwFF8sy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBUyLAdFheFHXiqx3kAQJd8hAAnPhQ9EJPpSvn0M4g3wxl1eyHYozlvOPF
-mj831IvLP4/3okgXmUJWYsDrLALFyoCU+stJHyyx7XefINQhZ+053MxhdRlr/vgG
-R4hAlhGbdf0g2AQOf5tMfWQEVju6eyw+2inbl+Xe4aTxND7bMzP6CfAZOIQCh2Im
-ELdV6m2EPeRJptMFxo3ioYmHqjW0FqSrf3eZ1+F/zHKjENiayyGyA6h0A/BESq5/
-gMaLxG6CTUuBYJr53XpP7nBzJefZvaxqjFnTBhFDm0lwXVxxQpJ1QCQ4xa3bLIL0
-N6HvDzortzawh6sxFBdWB8Fzt3DT8toSDiWXRzqzKp9BXOKAur3vHgyOteR9SH5b
-MLHr7EUc2dnGGT5ch18FyYEJjkgBozN5BG2Qkjylx1FNZm6kTIhHH7x0B7w8/iOm
-umEkA9eJGgIrJY9zsDRXLmG9UF1EhrSLf47Q3iex/f50Vr7/BbYGk53Hy4bi4Z6e
-KtqZUvsLIGdqWFCxGMWh5j1U6UIrwBZ1OJtIw3lbHspfSt0yLueBo3NmDy56QgR0
-NchbGrpHsLWJ8fa4980os7OGYk703hjb6LgIZbzEna2CUV2UswXzkf35Nfw1/L87
-YYZ4qQYxAC9CRXYexs/9ouZKvtRw/c4Su1I4pK9KQkDUd6/JdNuXEXUOgoYlS/O4
-CpJe19Eey6g=
-=8pgB
------END PGP SIGNATURE-----
-
---z9ECzHErBrwFF8sy--

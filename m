@@ -1,45 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:33496 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754719AbaCNOoj (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36345 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754809AbaCNP1T (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 10:44:39 -0400
-Message-ID: <532315D0.7090805@fb.com>
-Date: Fri, 14 Mar 2014 10:44:32 -0400
+	Fri, 14 Mar 2014 11:27:19 -0400
+Message-ID: <53231FC8.6040100@fb.com>
+Date: Fri, 14 Mar 2014 11:27:04 -0400
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: remove transaction from send
-References: <1394739733-500-1-git-send-email-jbacik@fb.com> <892DD229-24DA-439C-B431-2761E51A9937@gmail.com>
-In-Reply-To: <892DD229-24DA-439C-B431-2761E51A9937@gmail.com>
+To: Sage Weil <sage@inktank.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: warn at fs/btrfs/extent-tree.c:5748 __btrfs_free_extent+0x9ce/0xa20
+References: <alpine.DEB.2.00.1403111642350.5511@cobra.newdream.net>
+In-Reply-To: <alpine.DEB.2.00.1403111642350.5511@cobra.newdream.net>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/14/2014 09:13 AM, Wang Shilong wrote:
->> Lets try this again.  We can deadlock the box if we send on a box and try to
->> write onto the same fs with the app that is trying to listen to the send pipe.
->> This is because the writer could get stuck waiting for a transaction commit
->> which is being blocked by the send.  So fix this by making sure looking at the
->> commit roots is always going to be consistent.  We do this by keeping track of
->> which roots need to have their commit roots swapped during commit, and then
->> taking the commit_root_sem and swapping them all at once.  Then make sure we
->> take a read lock on the commit_root_sem in cases where we search the commit root
->> to make sure we're always looking at a consistent view of the commit roots.
->> Previously we had problems with this because we would swap a fs tree commit root
->> and then swap the extent tree commit root independently which would cause the
->> backref walking code to screw up sometimes.  With this patch we no longer
->> deadlock and pass all the weird send/receive corner cases.  Thanks,
+On 03/11/2014 07:44 PM, Sage Weil wrote:
+> Hey,
 > 
-> Now btrfs send are alway searching commit root! Your codes only seems to protect backref codes,
-> it reduce transaction blocked but make it not safe as we have discussed before.
+> Is this something you guys have seen before?  This is from v3.13-rc2.
 > 
->
+> kernel: [49432.696440] WARNING: CPU: 3 PID: 26411 at /srv/autobuild-ceph/gitbuilder.git/build/fs/btrfs/extent-tree.c:5748 __btrfs_free_extent+0x9ce/0xa20 [btrfs]()
+> kernel: [49432.710128] Modules linked in: arc4(F) md4(F) nls_utf8(F) cifs(F) ufs(F) qnx4(F) hfsplus(F) hfs(F) minix(F) ntfs(F) msdos(F) jfs(F) xfs(F) reiserfs(F) ext2(F) kvm_intel(F) kvm(F) ib_iser(F) rdma_cm(F) ib_cm(F) iw_cm(F) ib_sa(F) ib_mad(F) ib_core(F) ib_addr(F) iscsi_tcp(F) libiscsi_tcp(F) libiscsi(F) psmouse(F) ipmi_si(F) serio_raw(F) gpio_ich(F) joydev(F) dcdbas(F) i7core_edac(F) edac_core(F) ipmi_msghandler(F) mac_hid(F) acpi_power_meter(F) lpc_ich(F) tpm_tis(F) nfsd(F) nfs_acl(F) auth_rpcgss(F) scsi_transport_iscsi(F) nfs(F) fscache(F) lockd(F) lp(F) sunrpc(F) parport(F) hid_generic(F) usbhid(F) hid(F) btrfs(F) raid6_pq(F) mptsas(F) ixgbe(F) mptscsih(F) dca(F) mptbase(F) ptp(F) pps_core(F) scsi_transport_sas(F) xor(F) mdio(F) bnx2(F) libcrc32c(F)
+> kernel: [49432.777445] CPU: 3 PID: 26411 Comm: ceph-osd Tainted: GF         I  3.14.0-rc5-ceph-00016-gf31a96a #1
+> kernel: [49432.786704] Hardware name: Dell Inc. PowerEdge R410/01V648, BIOS 1.6.3 02/07/2011
+> kernel: [49432.794223]  0000000000001674 ffff8800bf1cbac8 ffffffff816e4840 ffff88022726ef90
+> kernel: [49432.801700]  0000000000000000 ffff8800bf1cbb08 ffffffff810524ac a800000000b07e50
+> kernel: [49432.809176]  ffff880094e74120 0000000000000000 00000000b07c9000 0000000000000000
+> kernel: [49432.816653] Call Trace:
+> kernel: [49432.819119]  [<ffffffff816e4840>] dump_stack+0x46/0x58
+> kernel: [49432.825384]  [<ffffffff810524ac>] warn_slowpath_common+0x8c/0xc0
+> kernel: [49432.831413]  [<ffffffff810524fa>] warn_slowpath_null+0x1a/0x20
+> kernel: [49432.837284]  [<ffffffffa010b4be>] __btrfs_free_extent+0x9ce/0xa20 [btrfs]
+> kernel: [49432.844108]  [<ffffffffa01110b8>] __btrfs_run_delayed_refs+0x428/0x11e0 [btrfs]
+> kernel: [49432.851465]  [<ffffffffa0109458>] ? block_rsv_release_bytes+0x108/0x190 [btrfs]
+> kernel: [49432.858823]  [<ffffffffa0114066>] btrfs_run_delayed_refs+0x76/0x2a0 [btrfs]
+> kernel: [49432.865869]  [<ffffffffa01251ff>] __btrfs_end_transaction+0x26f/0x370 [btrfs]
+> kernel: [49432.873044]  [<ffffffffa0125330>] btrfs_end_transaction+0x10/0x20 [btrfs]
+> kernel: [49432.879872]  [<ffffffffa01327de>] btrfs_link+0x13e/0x1d0 [btrfs]
+> kernel: [49432.885903]  [<ffffffff811b7571>] vfs_link+0x1b1/0x270
+> kernel: [49432.891060]  [<ffffffff811b8120>] SyS_linkat+0x210/0x2d0
+> kernel: [49432.896394]  [<ffffffff811b81fe>] SyS_link+0x1e/0x20
+> kernel: [49432.901380]  [<ffffffff816f7cd6>] system_call_fastpath+0x1a/0x1f
+> 
+> The full dump is at
+> 
+> 	https://urldefense.proofpoint.com/v1/url?u=http://tracker.ceph.com/issues/7688&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=5Q0Wl4GGvXb3sw11Xy%2FYQnZbcMlzHHsbegI1uoQnEbE%3D%0A&s=f85b1094d776c10386c681a8a7b31e49f0621bf51829b6e7153095f2335a01c0
+> 	https://urldefense.proofpoint.com/v1/url?u=http://tracker.ceph.com/attachments/download/1141/kern.log.gz&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=5Q0Wl4GGvXb3sw11Xy%2FYQnZbcMlzHHsbegI1uoQnEbE%3D%0A&s=dff103270aba751a919e566182a4d9482041f972ac72cb12435814ae75cacf14
+> 
 
-I was trying to remember why we didn't like this solution before but I
-couldn't come up with anything.  Apparently I haven't completely fixed
-the problem yet so stay tuned for what I do next ;).  Thanks,
+Filipe's looking at this Sage, you said it happend on v3.13-rc2 but the
+kernel line says 3.14.0-rc5, have you had it happen in both places?  Thanks,
 
 Josef
 

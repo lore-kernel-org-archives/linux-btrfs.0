@@ -1,81 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56702 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752030AbaCNVn7 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 17:43:59 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: discard synchronous on most SSDs?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140314051750.GY6143@merlins.org>
-Date: Fri, 14 Mar 2014 15:44:01 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <0505738E-9D6B-49C7-9BEC-27C6F1C7139D@colorremedies.com>
-References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys> <3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys> <20140309113350.GH6318@carfax.org.uk> <20140314021159.GQ18959@merlins.org> <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com> <20140314051750.GY6143@merlins.org>
-To: Marc MERLIN <marc@merlins.org>
+Received: from frost.carfax.org.uk ([85.119.82.111]:50345 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756416AbaCNWoK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 18:44:10 -0400
+Date: Fri, 14 Mar 2014 22:44:04 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: remove transaction from send
+Message-ID: <20140314224404.GJ6151@carfax.org.uk>
+References: <1394739733-500-1-git-send-email-jbacik@fb.com>
+ <20140313221628.GF6151@carfax.org.uk>
+ <53234FAA.5060204@fb.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="6J7GEvtanOfV9oXA"
+In-Reply-To: <53234FAA.5060204@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Mar 13, 2014, at 11:17 PM, Marc MERLIN <marc@merlins.org> wrote:
+--6J7GEvtanOfV9oXA
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> On Thu, Mar 13, 2014 at 09:39:02PM -0600, Chris Murphy wrote:
->> 
->> On Mar 13, 2014, at 8:11 PM, Marc MERLIN <marc@merlins.org> wrote:
->> 
->>> On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
->>>> discard is, except on the very latest hardware, a synchronous command
->>>> (it's a limitation of the SATA standard), and therefore results in
->>>> very very poor performance.
->>> 
->>> Interesting. How do I know if a given SSD will hang on discard?
->>> Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
->> 
->> smartctl -a or -x will tell you what SATA revision is in place. The queued trim support is in SATA Rev 3.1. I'm not certain if this requires only the drive to support that revision level, or both controller and drive.
+On Fri, Mar 14, 2014 at 02:51:22PM -0400, Josef Bacik wrote:
+> On 03/13/2014 06:16 PM, Hugo Mills wrote:
+> >On Thu, Mar 13, 2014 at 03:42:13PM -0400, Josef Bacik wrote:
+> >>Lets try this again.  We can deadlock the box if we send on a box and try to
+> >>write onto the same fs with the app that is trying to listen to the send pipe.
+> >>This is because the writer could get stuck waiting for a transaction commit
+> >>which is being blocked by the send.  So fix this by making sure looking at the
+> >>commit roots is always going to be consistent.  We do this by keeping track of
+> >>which roots need to have their commit roots swapped during commit, and then
+> >>taking the commit_root_sem and swapping them all at once.  Then make sure we
+> >>take a read lock on the commit_root_sem in cases where we search the commit root
+> >>to make sure we're always looking at a consistent view of the commit roots.
+> >>Previously we had problems with this because we would swap a fs tree commit root
+> >>and then swap the extent tree commit root independently which would cause the
+> >>backref walking code to screw up sometimes.  With this patch we no longer
+> >>deadlock and pass all the weird send/receive corner cases.  Thanks,
+> >
+> >    There's something still going on here. I managed to get about twice
+> >as far through my test as I had before, but I again got an "unexpected
+> >EOF in stream", with btrfs send returning 1. As before, I have this in
+> >syslog:
+> >
+> >Mar 13 22:09:12 s_src@amelia kernel: BTRFS error (device sda2): did not find backref in send_root. inode=1786631, offset=825257984, disk_byte=36504023040 found extent=36504023040\x0a
+> >
 > 
-> I'm not sure I'm seeing this, which field is that?
+> I just noticed that the offset you have there is freaking gigantic,
+> like 700mb, which is way larger than what an extent should be.  Here
+> is a newer debug patch, just chuck the old on and put this instead
+> and re-run
 > 
-> === START OF INFORMATION SECTION ===
-> Device Model:     Samsung SSD 840 EVO 1TB
-> Serial Number:    S1D9NEAD934600N
-> LU WWN Device Id: 5 002538 85009a8ff
-> Firmware Version: EXT0BB0Q
-> User Capacity:    1,000,204,886,016 bytes [1.00 TB]
-> Sector Size:      512 bytes logical/physical
-> Device is:        Not in smartctl database [for details use: -P showall]
-> ATA Version is:   8
-> ATA Standard is:  ATA-8-ACS revision 4c
-> Local Time is:    Thu Mar 13 22:15:14 2014 PDT
-> SMART support is: Available - device has SMART capability.
-> SMART support is: Enabled
+> http://paste.fedoraproject.org/85486/39482301
 
+   That last run, with the above patch, failed again, at approximately
+the same place again. The only output in dmesg is:
 
-After ATA Version for me.
+[ 6488.168469] BTRFS error (device sda2): did not find backref in send_root. inode=1786631, offset=825257984, disk_byte=36504023040 found extent=36504023040, len=1294336
 
-$ smartctl -a /dev/disk0
-smartctl 6.1 2013-03-16 r3800 [x86_64-apple-darwin12.3.0] (local build)
-Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+as before. Definitely no kernel WARN, no backtraces.
 
-=== START OF INFORMATION SECTION ===
-Model Family:     Samsung based SSDs
-Device Model:     SAMSUNG SSD 830 Series
-Serial Number:    S0Z4NEAC933856
-LU WWN Device Id: 5 002538 043584d30
-Firmware Version: CXM03B1Q
-User Capacity:    256,060,514,304 bytes [256 GB]
-Sector Size:      512 bytes logical/physical
-Rotation Rate:    Solid State Device
-Device is:        In smartctl database [for details use: -P show]
-ATA Version is:   ACS-2 T13/2015-D revision 2
-SATA Version is:  SATA 3.0, 6.0 Gb/s (current: 6.0 Gb/s)
-Local Time is:    Fri Mar 14 15:37:07 2014 MDT
-SMART support is: Available - device has SMART capability.
-SMART support is: Enabled
+   Hugo.
 
-The Samsung hardware by and large is fairly well behaved with discard in my experience. But it does really depend a lot on the workload. I'd notice occasional random freezes for a couple of seconds when I had it enabled in OS X (totally different animal from the kernel up), nothing severe. But it was annoying enough I disabled it, and the problem went away. Apple doesn't enable trim by default on non-Apple SSD's still, so the idea that "everyone else" is doing this isn't true. The Windows implementation is rather complex, and also isn't always used contrary to what's been reported (on the everybody panic or get mad NOW type web sites).
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+            --- You're never alone with a rubber duck... ---             
 
-If you want to be conservative about it, I'd say just manually run fstrim when the system is idle. Do that once a week or two. Chron job it if you want.
+--6J7GEvtanOfV9oXA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-Chris Murphy
+iQIVAwUBUyOGNFheFHXiqx3kAQJsSQ//RhaRQWUAqiIIms2JlKZFF5wC0wRb52pj
+K1JzTHATw7VoxRln1Hghu+fAjQiETTccBWEkyR5w1uThynVXxZvBQBfCiZY4frlt
+RFOex/A720qObCDIZybgkyYxECcfJzMHeWunMk0VGZGYjO7tTTDi8D4xY1m8s7Bd
+NSaFQ90FSE5HhTyxFnGI+Bz4IbAhOMGfCWiy6HqPlx7/I2GeBiYzcLdMNUC3Rwjy
+SWhNxiaYeujBemtjk1rj64ImYcbE32ebK6j5oCfaxmoHT/VbU1Ikmr1q3qKCfb/H
+LfAQ3B9M+lW++UWcxjzJdfjkJOWRbyehz2ScK6+24kHuHxL75sOxf+ei3TsWdDQ6
+LMRDBcfPEMG9hVqq7JJ5736ArO4cVJ8fzJEFt2+9pYy4T+yfilMtewoZUa7Jv28/
+XUDDyjf0WPYw0QOIYxkAz0hs1+HdYj0kuf4fIeiYAJZoG7o1uhx2AmFSaPXgb7Sm
+DE5OipfHIPn5y30dePyl62Pij7Ics2nTAme87mmatBHtCi6B2/86kN8RD6dNtqfk
+MCC2PXgv9lxLM38yu6ZdI3B8RwLkwCWc5DiwN/KrS8ZQBMx7DK7LIrmjHXdT+GRJ
+Uo8+8673Ef2M0cV3PgOUtAFE3kVGG+/5aCfA0c1TmsJUachheTJyjBW50z2lR+HG
+ochvE/3JaNg=
+=uXwZ
+-----END PGP SIGNATURE-----
+
+--6J7GEvtanOfV9oXA--

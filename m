@@ -1,51 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:3901 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751092AbaCMFJb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 01:09:31 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2D56Gxs003962
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Mar 2014 13:09:27 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: skip erroneous free before initialization
-Date: Thu, 13 Mar 2014 13:01:31 +0800
-Message-Id: <1394686891-23271-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1394686891-23271-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1394686891-23271-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:22287 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754593AbaCND2g convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Mar 2014 23:28:36 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2E3SBq1013853
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 11:28:11 +0800
+From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs-progs: Fix a memleak in btrfs_scan_one_device.
+Date: Fri, 14 Mar 2014 03:28:11 +0000
+Message-ID: <1394767760-19929-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the list is not initialized, don't try to free it.
-Otherwise it will cause segmentfault.
+Valgrind reports memleak in btrfs_scan_one_device() about allocating
+btrfs_device but on btrfs_close_devices() they are not reclaimed.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Although not a bug since after btrfs_close_devices() btrfs will exit so
+memory will be reclaimed by system anyway, it's better to fix it anyway.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- mkfs.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ cmds-filesystem.c |  6 ++++++
+ volumes.c         | 13 ++++++++++---
+ 2 files changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index d7049c9..df22c3a 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -965,7 +965,7 @@ static int make_image(char *source_dir, struct btrfs_root *root, int out_fd)
- 	ret = lstat(source_dir, &root_st);
- 	if (ret) {
- 		fprintf(stderr, "unable to lstat the %s\n", source_dir);
--		goto fail;
-+		goto out;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index f02e871..c9e27fc 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -651,6 +651,12 @@ devs_only:
+ 	if (search && !found)
+ 		ret = 1;
+ 
++	while (!list_empty(all_uuids)) {
++		fs_devices = list_entry(all_uuids->next,
++					struct btrfs_fs_devices, list);
++		list_del(&fs_devices->list);
++		btrfs_close_devices(fs_devices);
++	}
+ out:
+ 	printf("%s\n", BTRFS_BUILD_VERSION);
+ 	free_seen_fsid();
+diff --git a/volumes.c b/volumes.c
+index 8c45851..77ffd32 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -160,11 +160,12 @@ static int device_list_add(const char *path,
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_fs_devices *seed_devices;
+-	struct list_head *cur;
+ 	struct btrfs_device *device;
++
+ again:
+-	list_for_each(cur, &fs_devices->devices) {
+-		device = list_entry(cur, struct btrfs_device, dev_list);
++	while (!list_empty(&fs_devices->devices)) {
++		device = list_entry(fs_devices->devices.next,
++				    struct btrfs_device, dev_list);
+ 		if (device->fd != -1) {
+ 			fsync(device->fd);
+ 			if (posix_fadvise(device->fd, 0, 0, POSIX_FADV_DONTNEED))
+@@ -173,6 +174,11 @@ again:
+ 			device->fd = -1;
+ 		}
+ 		device->writeable = 0;
++		list_del(&device->dev_list);
++		/* free the memory */
++		free(device->name);
++		free(device->label);
++		free(device);
  	}
  
- 	INIT_LIST_HEAD(&dir_head.list);
-@@ -987,6 +987,7 @@ fail:
- 		list_del(&dir_entry->list);
- 		free(dir_entry);
+ 	seed_devices = fs_devices->seed;
+@@ -182,6 +188,7 @@ again:
+ 		goto again;
  	}
-+out:
- 	fprintf(stderr, "Making image is aborted.\n");
- 	return -1;
+ 
++	free(fs_devices);
+ 	return 0;
  }
+ 
 -- 
-1.8.1.4
-
+1.9.0

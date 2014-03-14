@@ -1,102 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43482 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753644AbaCNMIX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 08:08:23 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WOQuU-0002An-Fn
-	for linux-btrfs@vger.kernel.org; Fri, 14 Mar 2014 13:08:22 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 13:08:22 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 13:08:22 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: discard synchronous on most SSDs?
-Date: Fri, 14 Mar 2014 12:07:54 +0000 (UTC)
-Message-ID: <pan$667da$c4955705$c59674a0$a844850c@cox.net>
-References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys>
-	<3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys>
-	<20140309113350.GH6318@carfax.org.uk> <20140314021159.GQ18959@merlins.org>
-	<C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
-	<20140314051750.GY6143@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([222.73.24.84]:60329 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753620AbaCNMco (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 08:32:44 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2EC6FD6023862
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 20:06:16 +0800
+Message-ID: <5322F03F.50703@cn.fujitsu.com>
+Date: Fri, 14 Mar 2014 20:04:15 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fb.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix joining same transaction handle more than
+ twice
+References: <1394687987-22715-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <5321BB2C.5000202@fb.com>
+In-Reply-To: <5321BB2C.5000202@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Thu, 13 Mar 2014 22:17:50 -0700 as excerpted:
+On 03/13/2014 10:05 PM, Josef Bacik wrote:
+> On 03/13/2014 01:19 AM, Wang Shilong wrote:
+>> We hit something like the following function call flows:
+>>
+>> |->run_delalloc_range()
+>>   |->btrfs_join_transaction()
+>>     |->cow_file_range()
+>>       |->btrfs_join_transaction()
+>>         |->find_free_extent()
+>>           |->btrfs_join_transaction()
+>>
+>> Trace infomation can be seen as:
+>>
+>> [ 7411.127040] ------------[ cut here ]------------
+>> [ 7411.127060] WARNING: CPU: 0 PID: 11557 at fs/btrfs/transaction.c:383 start_transaction+0x561/0x580 [btrfs]()
+>> [ 7411.127079] CPU: 0 PID: 11557 Comm: kworker/u8:9 Tainted: G           O 3.13.0+ #4
+>> [ 7411.127080] Hardware name: LENOVO QiTianM4350/ , BIOS F1KT52AUS 05/24/2013
+>> [ 7411.127085] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-5)
+>> [ 7411.127092] Call Trace:
+>> [ 7411.127097]  [<ffffffff815b87b0>] dump_stack+0x45/0x56
+>> [ 7411.127101]  [<ffffffff81051ffd>] warn_slowpath_common+0x7d/0xa0
+>> [ 7411.127102]  [<ffffffff810520da>] warn_slowpath_null+0x1a/0x20
+>> [ 7411.127109]  [<ffffffffa0444fb1>] start_transaction+0x561/0x580 [btrfs]
+>> [ 7411.127115]  [<ffffffffa0445027>] btrfs_join_transaction+0x17/0x20 [btrfs]
+>> [ 7411.127120]  [<ffffffffa0431c91>] find_free_extent+0xa21/0xb50 [btrfs]
+>> [ 7411.127126]  [<ffffffffa0431f68>] btrfs_reserve_extent+0xa8/0x1a0 [btrfs]
+>> [ 7411.127131]  [<ffffffffa04322ce>] btrfs_alloc_free_block+0xee/0x440 [btrfs]
+>> [ 7411.127137]  [<ffffffffa043bd6e>] ? btree_set_page_dirty+0xe/0x10 [btrfs]
+>> [ 7411.127142]  [<ffffffffa041da51>] __btrfs_cow_block+0x121/0x530 [btrfs]
+>> [ 7411.127146]  [<ffffffffa041dfff>] btrfs_cow_block+0x11f/0x1c0 [btrfs]
+>> [ 7411.127151]  [<ffffffffa0421b74>] btrfs_search_slot+0x1d4/0x9c0 [btrfs]
+>> [ 7411.127157]  [<ffffffffa0438567>] btrfs_lookup_file_extent+0x37/0x40 [btrfs]
+>> [ 7411.127163]  [<ffffffffa0456bfc>] __btrfs_drop_extents+0x16c/0xd90 [btrfs]
+>> [ 7411.127169]  [<ffffffffa0444ae3>] ? start_transaction+0x93/0x580 [btrfs]
+>> [ 7411.127171]  [<ffffffff811663e2>] ? kmem_cache_alloc+0x132/0x140
+>> [ 7411.127176]  [<ffffffffa041cd9a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+>> [ 7411.127182]  [<ffffffffa044aa61>] cow_file_range_inline+0x181/0x2e0 [btrfs]
+>> [ 7411.127187]  [<ffffffffa044aead>] cow_file_range+0x2ed/0x440 [btrfs]
+>> [ 7411.127194]  [<ffffffffa0464d7f>] ? free_extent_buffer+0x4f/0xb0 [btrfs]
+>> [ 7411.127200]  [<ffffffffa044b38f>] run_delalloc_nocow+0x38f/0xa60 [btrfs]
+>> [ 7411.127207]  [<ffffffffa0461600>] ? test_range_bit+0x30/0x180 [btrfs]
+>> [ 7411.127212]  [<ffffffffa044bd48>] run_delalloc_range+0x2e8/0x350 [btrfs]
+>> [ 7411.127219]  [<ffffffffa04618f9>] ? find_lock_delalloc_range+0x1a9/0x1e0 [btrfs]
+>> [ 7411.127222]  [<ffffffff812a1e71>] ? blk_queue_bio+0x2c1/0x330
+>> [ 7411.127228]  [<ffffffffa0462ad4>] __extent_writepage+0x2f4/0x760 [btrfs]
+>>
+>> Here we fix it by avoiding joining transaction again if we have held
+>> a transaction handle when allocating chunk in find_free_extent().
+>>
+>>
+> So I just put that warning there to see if we were ever embedding 3
+> joins at a time, not because it was an actual problem, I'd say just kill
+> the warning.  Thanks,
+We need keep @orgin_rsv and restore it when ending transaction. So we'd 
+better
+not embed more than 2 joins now.
 
-> On Thu, Mar 13, 2014 at 09:39:02PM -0600, Chris Murphy wrote:
->> 
->> On Mar 13, 2014, at 8:11 PM, Marc MERLIN <marc@merlins.org> wrote:
->> 
->> > On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
->> >> discard is, except on the very latest hardware, a synchronous
->> >> command (it's a limitation of the SATA standard), and therefore
->> >> results in very very poor performance.
->> > 
->> > Interesting. How do I know if a given SSD will hang on discard?
->> > Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
->> 
->> smartctl -a or -x will tell you what SATA revision is in place. The
->> queued trim support is in SATA Rev 3.1. I'm not certain if this
->> requires only the drive to support that revision level, or both
->> controller and drive.
-> 
-> I'm not sure I'm seeing this, which field is that?
-
-> ATA Version is:   8
-> ATA Standard is:  ATA-8-ACS revision 4c
-
-Your drive didn't report it, but here, I have SATA fields as well, in 
-addition to the ATA fields:
-
-Here's the fields from my Corsair Neutron SSDs:
-
-ATA Version is:   ATA8-ACS (minor revision not indicated)
-SATA Version is:  SATA 2.5, 6.0 Gb/s
-
-Here's the fields from my Seagate 500-gig 2.5-inch spinning rust:
-
-ATA Version is:   ATA8-ACS T13/1699-D revision 4
-SATA Version is:  SATA 2.6, 3.0 Gb/s
-
-(More about that below.)
-
-Smartctl version here is 6.2 2013-07-26 r3841, according to the output. 
-(I'm running gentoo/~amd64 FWIW so it's a local-build). You snipped that 
-bit of your output so I can't compare.
-
-But it may also depend on whether smartctl auto-detected and used the ATA 
-or the SCSI (or something else) command set and how your devices are 
-actually connected, plus BIOS settings, etc.  See the manpage 
-documentation for the -d TYPE (--device=TYPE) option and the ATA/SCSI/SAT 
-discussion rather further down the manpage for more.
-
-Here I have direct SATA connections with the BIOS set to AHCI mode and am 
-thus using the kernel's AHCI drivers, since that's the most common SATA 
-chipset standard these days, thus increasing portability given my 
-monolithic kernel build.
-
-smartctl's -d test reports an original guess of scsi, changed to sat 
-after detection.
-
-Of course connection via USB bridge or the like complicates things 
-considerably.
-
-
-Meanwhile, SATA 2.5, 6 Gb/s on the SSDs, SATA 2.6, 3 Gb/s on the spinning 
-rust?  WTF?  The SSDs have SATA 2.5 but 6 Gb/s while the spinning rust 
-has a later 2.6 but only 3 Gb/s (tho of course on a mechanical drive the 
-bus speed won't be the bottleneck)?  Now I'm confused.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Thanks,
+Wang
+>
+> Josef
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

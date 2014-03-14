@@ -1,61 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:44961 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753563AbaCNCMD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 22:12:03 -0400
-Date: Thu, 13 Mar 2014 19:11:59 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>,
-        Martin Steigerwald <Martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:51646 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753786AbaCNDjE convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Mar 2014 23:39:04 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:61142 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WOIxb-003Vua-EP
+	for linux-btrfs@vger.kernel.org; Thu, 13 Mar 2014 21:39:03 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: discard synchronous on most SSDs?
-Message-ID: <20140314021159.GQ18959@merlins.org>
-References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys> <3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys> <20140309113350.GH6318@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="45Z9DzgjV8m4Oswq"
-In-Reply-To: <20140309113350.GH6318@carfax.org.uk>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140314021159.GQ18959@merlins.org>
+Date: Thu, 13 Mar 2014 21:39:02 -0600
+Message-Id: <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
+References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys> <3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys> <20140309113350.GH6318@carfax.org.uk> <20140314021159.GQ18959@merlins.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---45Z9DzgjV8m4Oswq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Mar 13, 2014, at 8:11 PM, Marc MERLIN <marc@merlins.org> wrote:
 
-On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
-> discard is, except on the very latest hardware, a synchronous command
-> (it's a limitation of the SATA standard), and therefore results in
-> very very poor performance.
+> On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
+>> discard is, except on the very latest hardware, a synchronous command
+>> (it's a limitation of the SATA standard), and therefore results in
+>> very very poor performance.
+> 
+> Interesting. How do I know if a given SSD will hang on discard?
+> Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
 
-Interesting. How do I know if a given SSD will hang on discard?
-Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
+smartctl -a or -x will tell you what SATA revision is in place. The queued trim support is in SATA Rev 3.1. I'm not certain if this requires only the drive to support that revision level, or both controller and drive.
 
-Thanks
-Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
-
---45Z9DzgjV8m4Oswq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQCVAwUBUyJlb34xUKZ2O+kBAQKPbgQAusAYg8v1FXtgWhWmeKMUnpdLpSNxf6pv
-bU5ucrZQLzx7MPoeKYgdTL4ilZLhiI96zXwTjfo6004FJrA3Qy0CZfmo6iygS7n3
-tjg/nD4X2Yk1wmD/3GF65a6MNLotCS1NNPl9g9KCQY3sra0j5z32yfNLQZQ506QM
-m3p8TPll/As=
-=Gumt
------END PGP SIGNATURE-----
-
---45Z9DzgjV8m4Oswq--
+Chris Murphy

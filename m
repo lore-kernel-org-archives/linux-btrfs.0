@@ -1,90 +1,674 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60329 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753620AbaCNMco (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 08:32:44 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2EC6FD6023862
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 20:06:16 +0800
-Message-ID: <5322F03F.50703@cn.fujitsu.com>
-Date: Fri, 14 Mar 2014 20:04:15 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
+Received: from mail-pd0-f179.google.com ([209.85.192.179]:49434 "EHLO
+	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753741AbaCNNN1 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 09:13:27 -0400
+Received: by mail-pd0-f179.google.com with SMTP id w10so2510613pde.24
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 06:13:26 -0700 (PDT)
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
+Subject: Re: [PATCH] Btrfs: remove transaction from send
+From: Wang Shilong <wangshilong1991@gmail.com>
+In-Reply-To: <1394739733-500-1-git-send-email-jbacik@fb.com>
+Date: Fri, 14 Mar 2014 21:13:29 +0800
+Cc: <linux-btrfs@vger.kernel.org>
+Message-Id: <892DD229-24DA-439C-B431-2761E51A9937@gmail.com>
+References: <1394739733-500-1-git-send-email-jbacik@fb.com>
 To: Josef Bacik <jbacik@fb.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix joining same transaction handle more than
- twice
-References: <1394687987-22715-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <5321BB2C.5000202@fb.com>
-In-Reply-To: <5321BB2C.5000202@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/13/2014 10:05 PM, Josef Bacik wrote:
-> On 03/13/2014 01:19 AM, Wang Shilong wrote:
->> We hit something like the following function call flows:
->>
->> |->run_delalloc_range()
->>   |->btrfs_join_transaction()
->>     |->cow_file_range()
->>       |->btrfs_join_transaction()
->>         |->find_free_extent()
->>           |->btrfs_join_transaction()
->>
->> Trace infomation can be seen as:
->>
->> [ 7411.127040] ------------[ cut here ]------------
->> [ 7411.127060] WARNING: CPU: 0 PID: 11557 at fs/btrfs/transaction.c:383 start_transaction+0x561/0x580 [btrfs]()
->> [ 7411.127079] CPU: 0 PID: 11557 Comm: kworker/u8:9 Tainted: G           O 3.13.0+ #4
->> [ 7411.127080] Hardware name: LENOVO QiTianM4350/ , BIOS F1KT52AUS 05/24/2013
->> [ 7411.127085] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-5)
->> [ 7411.127092] Call Trace:
->> [ 7411.127097]  [<ffffffff815b87b0>] dump_stack+0x45/0x56
->> [ 7411.127101]  [<ffffffff81051ffd>] warn_slowpath_common+0x7d/0xa0
->> [ 7411.127102]  [<ffffffff810520da>] warn_slowpath_null+0x1a/0x20
->> [ 7411.127109]  [<ffffffffa0444fb1>] start_transaction+0x561/0x580 [btrfs]
->> [ 7411.127115]  [<ffffffffa0445027>] btrfs_join_transaction+0x17/0x20 [btrfs]
->> [ 7411.127120]  [<ffffffffa0431c91>] find_free_extent+0xa21/0xb50 [btrfs]
->> [ 7411.127126]  [<ffffffffa0431f68>] btrfs_reserve_extent+0xa8/0x1a0 [btrfs]
->> [ 7411.127131]  [<ffffffffa04322ce>] btrfs_alloc_free_block+0xee/0x440 [btrfs]
->> [ 7411.127137]  [<ffffffffa043bd6e>] ? btree_set_page_dirty+0xe/0x10 [btrfs]
->> [ 7411.127142]  [<ffffffffa041da51>] __btrfs_cow_block+0x121/0x530 [btrfs]
->> [ 7411.127146]  [<ffffffffa041dfff>] btrfs_cow_block+0x11f/0x1c0 [btrfs]
->> [ 7411.127151]  [<ffffffffa0421b74>] btrfs_search_slot+0x1d4/0x9c0 [btrfs]
->> [ 7411.127157]  [<ffffffffa0438567>] btrfs_lookup_file_extent+0x37/0x40 [btrfs]
->> [ 7411.127163]  [<ffffffffa0456bfc>] __btrfs_drop_extents+0x16c/0xd90 [btrfs]
->> [ 7411.127169]  [<ffffffffa0444ae3>] ? start_transaction+0x93/0x580 [btrfs]
->> [ 7411.127171]  [<ffffffff811663e2>] ? kmem_cache_alloc+0x132/0x140
->> [ 7411.127176]  [<ffffffffa041cd9a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
->> [ 7411.127182]  [<ffffffffa044aa61>] cow_file_range_inline+0x181/0x2e0 [btrfs]
->> [ 7411.127187]  [<ffffffffa044aead>] cow_file_range+0x2ed/0x440 [btrfs]
->> [ 7411.127194]  [<ffffffffa0464d7f>] ? free_extent_buffer+0x4f/0xb0 [btrfs]
->> [ 7411.127200]  [<ffffffffa044b38f>] run_delalloc_nocow+0x38f/0xa60 [btrfs]
->> [ 7411.127207]  [<ffffffffa0461600>] ? test_range_bit+0x30/0x180 [btrfs]
->> [ 7411.127212]  [<ffffffffa044bd48>] run_delalloc_range+0x2e8/0x350 [btrfs]
->> [ 7411.127219]  [<ffffffffa04618f9>] ? find_lock_delalloc_range+0x1a9/0x1e0 [btrfs]
->> [ 7411.127222]  [<ffffffff812a1e71>] ? blk_queue_bio+0x2c1/0x330
->> [ 7411.127228]  [<ffffffffa0462ad4>] __extent_writepage+0x2f4/0x760 [btrfs]
->>
->> Here we fix it by avoiding joining transaction again if we have held
->> a transaction handle when allocating chunk in find_free_extent().
->>
->>
-> So I just put that warning there to see if we were ever embedding 3
-> joins at a time, not because it was an actual problem, I'd say just kill
-> the warning.  Thanks,
-We need keep @orgin_rsv and restore it when ending transaction. So we'd 
-better
-not embed more than 2 joins now.
+> Lets try this again.  We can deadlock the box if we send on a box and try to
+> write onto the same fs with the app that is trying to listen to the send pipe.
+> This is because the writer could get stuck waiting for a transaction commit
+> which is being blocked by the send.  So fix this by making sure looking at the
+> commit roots is always going to be consistent.  We do this by keeping track of
+> which roots need to have their commit roots swapped during commit, and then
+> taking the commit_root_sem and swapping them all at once.  Then make sure we
+> take a read lock on the commit_root_sem in cases where we search the commit root
+> to make sure we're always looking at a consistent view of the commit roots.
+> Previously we had problems with this because we would swap a fs tree commit root
+> and then swap the extent tree commit root independently which would cause the
+> backref walking code to screw up sometimes.  With this patch we no longer
+> deadlock and pass all the weird send/receive corner cases.  Thanks,
 
-Thanks,
-Wang
->
-> Josef
->
+Now btrfs send are alway searching commit root! Your codes only seems to protect backref codes,
+it reduce transaction blocked but make it not safe as we have discussed before.
+
+-Wang
+> 
+> Reportedy-by: Hugo Mills <hugo@carfax.org.uk>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+> fs/btrfs/backref.c     | 33 +++++++++++++++----
+> fs/btrfs/ctree.c       | 88 --------------------------------------------------
+> fs/btrfs/ctree.h       |  3 +-
+> fs/btrfs/disk-io.c     |  3 +-
+> fs/btrfs/extent-tree.c | 20 ++++++------
+> fs/btrfs/inode-map.c   | 14 ++++----
+> fs/btrfs/send.c        | 57 ++------------------------------
+> fs/btrfs/transaction.c | 45 ++++++++++++++++----------
+> fs/btrfs/transaction.h |  1 +
+> 9 files changed, 77 insertions(+), 187 deletions(-)
+> 
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 860f4f2..0be0e94 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -329,7 +329,10 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+> 		goto out;
+> 	}
+> 
+> -	root_level = btrfs_old_root_level(root, time_seq);
+> +	if (path->search_commit_root)
+> +		root_level = btrfs_header_level(root->commit_root);
+> +	else
+> +		root_level = btrfs_old_root_level(root, time_seq);
+> 
+> 	if (root_level + 1 == level) {
+> 		srcu_read_unlock(&fs_info->subvol_srcu, index);
+> @@ -1092,9 +1095,9 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
+>  *
+>  * returns 0 on success, < 0 on error.
+>  */
+> -int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+> -				struct btrfs_fs_info *fs_info, u64 bytenr,
+> -				u64 time_seq, struct ulist **roots)
+> +static int __btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+> +				  struct btrfs_fs_info *fs_info, u64 bytenr,
+> +				  u64 time_seq, struct ulist **roots)
+> {
+> 	struct ulist *tmp;
+> 	struct ulist_node *node = NULL;
+> @@ -1130,6 +1133,20 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+> 	return 0;
+> }
+> 
+> +int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+> +			 struct btrfs_fs_info *fs_info, u64 bytenr,
+> +			 u64 time_seq, struct ulist **roots)
+> +{
+> +	int ret;
+> +
+> +	if (!trans)
+> +		down_read(&fs_info->commit_root_sem);
+> +	ret = __btrfs_find_all_roots(trans, fs_info, bytenr, time_seq, roots);
+> +	if (!trans)
+> +		up_read(&fs_info->commit_root_sem);
+> +	return ret;
+> +}
+> +
+> /*
+>  * this makes the path point to (inum INODE_ITEM ioff)
+>  */
+> @@ -1509,6 +1526,8 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+> 		if (IS_ERR(trans))
+> 			return PTR_ERR(trans);
+> 		btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+> +	} else {
+> +		down_read(&fs_info->commit_root_sem);
+> 	}
+> 
+> 	ret = btrfs_find_all_leafs(trans, fs_info, extent_item_objectid,
+> @@ -1519,8 +1538,8 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+> 
+> 	ULIST_ITER_INIT(&ref_uiter);
+> 	while (!ret && (ref_node = ulist_next(refs, &ref_uiter))) {
+> -		ret = btrfs_find_all_roots(trans, fs_info, ref_node->val,
+> -					   tree_mod_seq_elem.seq, &roots);
+> +		ret = __btrfs_find_all_roots(trans, fs_info, ref_node->val,
+> +					     tree_mod_seq_elem.seq, &roots);
+> 		if (ret)
+> 			break;
+> 		ULIST_ITER_INIT(&root_uiter);
+> @@ -1542,6 +1561,8 @@ out:
+> 	if (!search_commit_root) {
+> 		btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+> 		btrfs_end_transaction(trans, fs_info->extent_root);
+> +	} else {
+> +		up_read(&fs_info->commit_root_sem);
+> 	}
+> 
+> 	return ret;
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 88d1b1e..9d89c16 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -5360,7 +5360,6 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+> {
+> 	int ret;
+> 	int cmp;
+> -	struct btrfs_trans_handle *trans = NULL;
+> 	struct btrfs_path *left_path = NULL;
+> 	struct btrfs_path *right_path = NULL;
+> 	struct btrfs_key left_key;
+> @@ -5378,9 +5377,6 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+> 	u64 right_blockptr;
+> 	u64 left_gen;
+> 	u64 right_gen;
+> -	u64 left_start_ctransid;
+> -	u64 right_start_ctransid;
+> -	u64 ctransid;
+> 
+> 	left_path = btrfs_alloc_path();
+> 	if (!left_path) {
+> @@ -5404,21 +5400,6 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+> 	right_path->search_commit_root = 1;
+> 	right_path->skip_locking = 1;
+> 
+> -	spin_lock(&left_root->root_item_lock);
+> -	left_start_ctransid = btrfs_root_ctransid(&left_root->root_item);
+> -	spin_unlock(&left_root->root_item_lock);
+> -
+> -	spin_lock(&right_root->root_item_lock);
+> -	right_start_ctransid = btrfs_root_ctransid(&right_root->root_item);
+> -	spin_unlock(&right_root->root_item_lock);
+> -
+> -	trans = btrfs_join_transaction(left_root);
+> -	if (IS_ERR(trans)) {
+> -		ret = PTR_ERR(trans);
+> -		trans = NULL;
+> -		goto out;
+> -	}
+> -
+> 	/*
+> 	 * Strategy: Go to the first items of both trees. Then do
+> 	 *
+> @@ -5482,67 +5463,6 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+> 	advance_left = advance_right = 0;
+> 
+> 	while (1) {
+> -		/*
+> -		 * We need to make sure the transaction does not get committed
+> -		 * while we do anything on commit roots. This means, we need to
+> -		 * join and leave transactions for every item that we process.
+> -		 */
+> -		if (trans && btrfs_should_end_transaction(trans, left_root)) {
+> -			btrfs_release_path(left_path);
+> -			btrfs_release_path(right_path);
+> -
+> -			ret = btrfs_end_transaction(trans, left_root);
+> -			trans = NULL;
+> -			if (ret < 0)
+> -				goto out;
+> -		}
+> -		/* now rejoin the transaction */
+> -		if (!trans) {
+> -			trans = btrfs_join_transaction(left_root);
+> -			if (IS_ERR(trans)) {
+> -				ret = PTR_ERR(trans);
+> -				trans = NULL;
+> -				goto out;
+> -			}
+> -
+> -			spin_lock(&left_root->root_item_lock);
+> -			ctransid = btrfs_root_ctransid(&left_root->root_item);
+> -			spin_unlock(&left_root->root_item_lock);
+> -			if (ctransid != left_start_ctransid)
+> -				left_start_ctransid = 0;
+> -
+> -			spin_lock(&right_root->root_item_lock);
+> -			ctransid = btrfs_root_ctransid(&right_root->root_item);
+> -			spin_unlock(&right_root->root_item_lock);
+> -			if (ctransid != right_start_ctransid)
+> -				right_start_ctransid = 0;
+> -
+> -			if (!left_start_ctransid || !right_start_ctransid) {
+> -				WARN(1, KERN_WARNING
+> -					"BTRFS: btrfs_compare_tree detected "
+> -					"a change in one of the trees while "
+> -					"iterating. This is probably a "
+> -					"bug.\n");
+> -				ret = -EIO;
+> -				goto out;
+> -			}
+> -
+> -			/*
+> -			 * the commit root may have changed, so start again
+> -			 * where we stopped
+> -			 */
+> -			left_path->lowest_level = left_level;
+> -			right_path->lowest_level = right_level;
+> -			ret = btrfs_search_slot(NULL, left_root,
+> -					&left_key, left_path, 0, 0);
+> -			if (ret < 0)
+> -				goto out;
+> -			ret = btrfs_search_slot(NULL, right_root,
+> -					&right_key, right_path, 0, 0);
+> -			if (ret < 0)
+> -				goto out;
+> -		}
+> -
+> 		if (advance_left && !left_end_reached) {
+> 			ret = tree_advance(left_root, left_path, &left_level,
+> 					left_root_level,
+> @@ -5672,14 +5592,6 @@ out:
+> 	btrfs_free_path(left_path);
+> 	btrfs_free_path(right_path);
+> 	kfree(tmp_buf);
+> -
+> -	if (trans) {
+> -		if (!ret)
+> -			ret = btrfs_end_transaction(trans, left_root);
+> -		else
+> -			btrfs_end_transaction(trans, left_root);
+> -	}
+> -
+> 	return ret;
+> }
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 2a9d32e..4253ab2 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1440,7 +1440,7 @@ struct btrfs_fs_info {
+> 	 */
+> 	struct mutex ordered_extent_flush_mutex;
+> 
+> -	struct rw_semaphore extent_commit_sem;
+> +	struct rw_semaphore commit_root_sem;
+> 
+> 	struct rw_semaphore cleanup_work_sem;
+> 
+> @@ -1711,7 +1711,6 @@ struct btrfs_root {
+> 	struct btrfs_block_rsv *block_rsv;
+> 
+> 	/* free ino cache stuff */
+> -	struct mutex fs_commit_mutex;
+> 	struct btrfs_free_space_ctl *free_ino_ctl;
+> 	enum btrfs_caching_type cached;
+> 	spinlock_t cache_lock;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index d9698fd..a152a96 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1549,7 +1549,6 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+> 	root->subv_writers = writers;
+> 
+> 	btrfs_init_free_ino_ctl(root);
+> -	mutex_init(&root->fs_commit_mutex);
+> 	spin_lock_init(&root->cache_lock);
+> 	init_waitqueue_head(&root->cache_wait);
+> 
+> @@ -2327,7 +2326,7 @@ int open_ctree(struct super_block *sb,
+> 	mutex_init(&fs_info->transaction_kthread_mutex);
+> 	mutex_init(&fs_info->cleaner_mutex);
+> 	mutex_init(&fs_info->volume_mutex);
+> -	init_rwsem(&fs_info->extent_commit_sem);
+> +	init_rwsem(&fs_info->commit_root_sem);
+> 	init_rwsem(&fs_info->cleanup_work_sem);
+> 	init_rwsem(&fs_info->subvol_sem);
+> 	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index c6b6a6e..696f0b6 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -419,7 +419,7 @@ static noinline void caching_thread(struct btrfs_work *work)
+> again:
+> 	mutex_lock(&caching_ctl->mutex);
+> 	/* need to make sure the commit_root doesn't disappear */
+> -	down_read(&fs_info->extent_commit_sem);
+> +	down_read(&fs_info->commit_root_sem);
+> 
+> next:
+> 	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
+> @@ -443,10 +443,10 @@ next:
+> 				break;
+> 
+> 			if (need_resched() ||
+> -			    rwsem_is_contended(&fs_info->extent_commit_sem)) {
+> +			    rwsem_is_contended(&fs_info->commit_root_sem)) {
+> 				caching_ctl->progress = last;
+> 				btrfs_release_path(path);
+> -				up_read(&fs_info->extent_commit_sem);
+> +				up_read(&fs_info->commit_root_sem);
+> 				mutex_unlock(&caching_ctl->mutex);
+> 				cond_resched();
+> 				goto again;
+> @@ -513,7 +513,7 @@ next:
+> 
+> err:
+> 	btrfs_free_path(path);
+> -	up_read(&fs_info->extent_commit_sem);
+> +	up_read(&fs_info->commit_root_sem);
+> 
+> 	free_excluded_extents(extent_root, block_group);
+> 
+> @@ -633,10 +633,10 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+> 		return 0;
+> 	}
+> 
+> -	down_write(&fs_info->extent_commit_sem);
+> +	down_write(&fs_info->commit_root_sem);
+> 	atomic_inc(&caching_ctl->count);
+> 	list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+> -	up_write(&fs_info->extent_commit_sem);
+> +	up_write(&fs_info->commit_root_sem);
+> 
+> 	btrfs_get_block_group(cache);
+> 
+> @@ -5470,7 +5470,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+> 	struct btrfs_block_group_cache *cache;
+> 	struct btrfs_space_info *space_info;
+> 
+> -	down_write(&fs_info->extent_commit_sem);
+> +	down_write(&fs_info->commit_root_sem);
+> 
+> 	list_for_each_entry_safe(caching_ctl, next,
+> 				 &fs_info->caching_block_groups, list) {
+> @@ -5489,7 +5489,7 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+> 	else
+> 		fs_info->pinned_extents = &fs_info->freed_extents[0];
+> 
+> -	up_write(&fs_info->extent_commit_sem);
+> +	up_write(&fs_info->commit_root_sem);
+> 
+> 	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
+> 		percpu_counter_set(&space_info->total_bytes_pinned, 0);
+> @@ -8255,14 +8255,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+> 	struct btrfs_caching_control *caching_ctl;
+> 	struct rb_node *n;
+> 
+> -	down_write(&info->extent_commit_sem);
+> +	down_write(&info->commit_root_sem);
+> 	while (!list_empty(&info->caching_block_groups)) {
+> 		caching_ctl = list_entry(info->caching_block_groups.next,
+> 					 struct btrfs_caching_control, list);
+> 		list_del(&caching_ctl->list);
+> 		put_caching_control(caching_ctl);
+> 	}
+> -	up_write(&info->extent_commit_sem);
+> +	up_write(&info->commit_root_sem);
+> 
+> 	spin_lock(&info->block_group_cache_lock);
+> 	while ((n = rb_last(&info->block_group_cache_tree)) != NULL) {
+> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+> index ab485e5..cc8ca19 100644
+> --- a/fs/btrfs/inode-map.c
+> +++ b/fs/btrfs/inode-map.c
+> @@ -55,7 +55,7 @@ static int caching_kthread(void *data)
+> 	key.type = BTRFS_INODE_ITEM_KEY;
+> again:
+> 	/* need to make sure the commit_root doesn't disappear */
+> -	mutex_lock(&root->fs_commit_mutex);
+> +	down_read(&fs_info->commit_root_sem);
+> 
+> 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> 	if (ret < 0)
+> @@ -88,7 +88,7 @@ again:
+> 				btrfs_item_key_to_cpu(leaf, &key, 0);
+> 				btrfs_release_path(path);
+> 				root->cache_progress = last;
+> -				mutex_unlock(&root->fs_commit_mutex);
+> +				up_read(&fs_info->commit_root_sem);
+> 				schedule_timeout(1);
+> 				goto again;
+> 			} else
+> @@ -127,7 +127,7 @@ next:
+> 	btrfs_unpin_free_ino(root);
+> out:
+> 	wake_up(&root->cache_wait);
+> -	mutex_unlock(&root->fs_commit_mutex);
+> +	up_read(&fs_info->commit_root_sem);
+> 
+> 	btrfs_free_path(path);
+> 
+> @@ -223,11 +223,11 @@ again:
+> 		 * or the caching work is done.
+> 		 */
+> 
+> -		mutex_lock(&root->fs_commit_mutex);
+> +		down_write(&root->fs_info->commit_root_sem);
+> 		spin_lock(&root->cache_lock);
+> 		if (root->cached == BTRFS_CACHE_FINISHED) {
+> 			spin_unlock(&root->cache_lock);
+> -			mutex_unlock(&root->fs_commit_mutex);
+> +			up_write(&root->fs_info->commit_root_sem);
+> 			goto again;
+> 		}
+> 		spin_unlock(&root->cache_lock);
+> @@ -240,7 +240,7 @@ again:
+> 		else
+> 			__btrfs_add_free_space(pinned, objectid, 1);
+> 
+> -		mutex_unlock(&root->fs_commit_mutex);
+> +		up_write(&root->fs_info->commit_root_sem);
+> 	}
+> }
+> 
+> @@ -250,7 +250,7 @@ again:
+>  * and others will just be dropped, because the commit root we were
+>  * searching has changed.
+>  *
+> - * Must be called with root->fs_commit_mutex held
+> + * Must be called with root->fs_info->commit_root_sem held
+>  */
+> void btrfs_unpin_free_ino(struct btrfs_root *root)
+> {
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 6463691..0148999 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -1268,8 +1268,10 @@ static int find_extent_clone(struct send_ctx *sctx,
+> 	}
+> 	logical = disk_byte + btrfs_file_extent_offset(eb, fi);
+> 
+> +	down_read(&sctx->send_root->fs_info->commit_root_sem);
+> 	ret = extent_from_logical(sctx->send_root->fs_info, disk_byte, tmp_path,
+> 				  &found_key, &flags);
+> +	up_read(&sctx->send_root->fs_info->commit_root_sem);
+> 	btrfs_release_path(tmp_path);
+> 
+> 	if (ret < 0)
+> @@ -5311,57 +5313,21 @@ out:
+> static int full_send_tree(struct send_ctx *sctx)
+> {
+> 	int ret;
+> -	struct btrfs_trans_handle *trans = NULL;
+> 	struct btrfs_root *send_root = sctx->send_root;
+> 	struct btrfs_key key;
+> 	struct btrfs_key found_key;
+> 	struct btrfs_path *path;
+> 	struct extent_buffer *eb;
+> 	int slot;
+> -	u64 start_ctransid;
+> -	u64 ctransid;
+> 
+> 	path = alloc_path_for_send();
+> 	if (!path)
+> 		return -ENOMEM;
+> 
+> -	spin_lock(&send_root->root_item_lock);
+> -	start_ctransid = btrfs_root_ctransid(&send_root->root_item);
+> -	spin_unlock(&send_root->root_item_lock);
+> -
+> 	key.objectid = BTRFS_FIRST_FREE_OBJECTID;
+> 	key.type = BTRFS_INODE_ITEM_KEY;
+> 	key.offset = 0;
+> 
+> -join_trans:
+> -	/*
+> -	 * We need to make sure the transaction does not get committed
+> -	 * while we do anything on commit roots. Join a transaction to prevent
+> -	 * this.
+> -	 */
+> -	trans = btrfs_join_transaction(send_root);
+> -	if (IS_ERR(trans)) {
+> -		ret = PTR_ERR(trans);
+> -		trans = NULL;
+> -		goto out;
+> -	}
+> -
+> -	/*
+> -	 * Make sure the tree has not changed after re-joining. We detect this
+> -	 * by comparing start_ctransid and ctransid. They should always match.
+> -	 */
+> -	spin_lock(&send_root->root_item_lock);
+> -	ctransid = btrfs_root_ctransid(&send_root->root_item);
+> -	spin_unlock(&send_root->root_item_lock);
+> -
+> -	if (ctransid != start_ctransid) {
+> -		WARN(1, KERN_WARNING "BTRFS: the root that you're trying to "
+> -				     "send was modified in between. This is "
+> -				     "probably a bug.\n");
+> -		ret = -EIO;
+> -		goto out;
+> -	}
+> -
+> 	ret = btrfs_search_slot_for_read(send_root, &key, path, 1, 0);
+> 	if (ret < 0)
+> 		goto out;
+> @@ -5369,19 +5335,6 @@ join_trans:
+> 		goto out_finish;
+> 
+> 	while (1) {
+> -		/*
+> -		 * When someone want to commit while we iterate, end the
+> -		 * joined transaction and rejoin.
+> -		 */
+> -		if (btrfs_should_end_transaction(trans, send_root)) {
+> -			ret = btrfs_end_transaction(trans, send_root);
+> -			trans = NULL;
+> -			if (ret < 0)
+> -				goto out;
+> -			btrfs_release_path(path);
+> -			goto join_trans;
+> -		}
+> -
+> 		eb = path->nodes[0];
+> 		slot = path->slots[0];
+> 		btrfs_item_key_to_cpu(eb, &found_key, slot);
+> @@ -5409,12 +5362,6 @@ out_finish:
+> 
+> out:
+> 	btrfs_free_path(path);
+> -	if (trans) {
+> -		if (!ret)
+> -			ret = btrfs_end_transaction(trans, send_root);
+> -		else
+> -			btrfs_end_transaction(trans, send_root);
+> -	}
+> 	return ret;
+> }
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index a999b85..ab8e6fd 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -75,10 +75,21 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
+> 	}
+> }
+> 
+> -static noinline void switch_commit_root(struct btrfs_root *root)
+> +static noinline void switch_commit_roots(struct btrfs_transaction *trans,
+> +					 struct btrfs_fs_info *fs_info)
+> {
+> -	free_extent_buffer(root->commit_root);
+> -	root->commit_root = btrfs_root_node(root);
+> +	struct btrfs_root *root, *tmp;
+> +
+> +	down_write(&fs_info->commit_root_sem);
+> +	list_for_each_entry_safe(root, tmp, &trans->switch_commits,
+> +				 dirty_list) {
+> +		list_del_init(&root->dirty_list);
+> +		free_extent_buffer(root->commit_root);
+> +		root->commit_root = btrfs_root_node(root);
+> +		if (is_fstree(root->objectid))
+> +			btrfs_unpin_free_ino(root);
+> +	}
+> +	up_write(&fs_info->commit_root_sem);
+> }
+> 
+> static inline void extwriter_counter_inc(struct btrfs_transaction *trans,
+> @@ -208,6 +219,7 @@ loop:
+> 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+> 	INIT_LIST_HEAD(&cur_trans->ordered_operations);
+> 	INIT_LIST_HEAD(&cur_trans->pending_chunks);
+> +	INIT_LIST_HEAD(&cur_trans->switch_commits);
+> 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+> 	extent_io_tree_init(&cur_trans->dirty_pages,
+> 			     fs_info->btree_inode->i_mapping);
+> @@ -925,9 +937,6 @@ static int update_cowonly_root(struct btrfs_trans_handle *trans,
+> 			return ret;
+> 	}
+> 
+> -	if (root != root->fs_info->extent_root)
+> -		switch_commit_root(root);
+> -
+> 	return 0;
+> }
+> 
+> @@ -983,15 +992,16 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+> 		list_del_init(next);
+> 		root = list_entry(next, struct btrfs_root, dirty_list);
+> 
+> +		if (root != fs_info->extent_root)
+> +			list_add_tail(&root->dirty_list,
+> +				      &trans->transaction->switch_commits);
+> 		ret = update_cowonly_root(trans, root);
+> 		if (ret)
+> 			return ret;
+> 	}
+> 
+> -	down_write(&fs_info->extent_commit_sem);
+> -	switch_commit_root(fs_info->extent_root);
+> -	up_write(&fs_info->extent_commit_sem);
+> -
+> +	list_add_tail(&fs_info->extent_root->dirty_list,
+> +		      &trans->transaction->switch_commits);
+> 	btrfs_after_dev_replace_commit(fs_info);
+> 
+> 	return 0;
+> @@ -1048,11 +1058,8 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans,
+> 			smp_wmb();
+> 
+> 			if (root->commit_root != root->node) {
+> -				mutex_lock(&root->fs_commit_mutex);
+> -				switch_commit_root(root);
+> -				btrfs_unpin_free_ino(root);
+> -				mutex_unlock(&root->fs_commit_mutex);
+> -
+> +				list_add_tail(&root->dirty_list,
+> +					&trans->transaction->switch_commits);
+> 				btrfs_set_root_node(&root->root_item,
+> 						    root->node);
+> 			}
+> @@ -1863,11 +1870,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+> 
+> 	btrfs_set_root_node(&root->fs_info->tree_root->root_item,
+> 			    root->fs_info->tree_root->node);
+> -	switch_commit_root(root->fs_info->tree_root);
+> +	list_add_tail(&root->fs_info->tree_root->dirty_list,
+> +		      &cur_trans->switch_commits);
+> 
+> 	btrfs_set_root_node(&root->fs_info->chunk_root->root_item,
+> 			    root->fs_info->chunk_root->node);
+> -	switch_commit_root(root->fs_info->chunk_root);
+> +	list_add_tail(&root->fs_info->chunk_root->dirty_list,
+> +		      &cur_trans->switch_commits);
+> +
+> +	switch_commit_roots(cur_trans, root->fs_info);
+> 
+> 	assert_qgroups_uptodate(trans);
+> 	update_super_roots(root);
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 6ac037e..aa014fe 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -57,6 +57,7 @@ struct btrfs_transaction {
+> 	struct list_head pending_snapshots;
+> 	struct list_head ordered_operations;
+> 	struct list_head pending_chunks;
+> +	struct list_head switch_commits;
+> 	struct btrfs_delayed_ref_root delayed_refs;
+> 	int aborted;
+> };
+> -- 
+> 1.8.3.1
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
 

@@ -1,38 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:51646 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753786AbaCNDjE convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 23:39:04 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:61142 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WOIxb-003Vua-EP
-	for linux-btrfs@vger.kernel.org; Thu, 13 Mar 2014 21:39:03 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: discard synchronous on most SSDs?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140314021159.GQ18959@merlins.org>
-Date: Thu, 13 Mar 2014 21:39:02 -0600
-Message-Id: <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
-References: <531C1CC4.701@gmail.com> <1553599.dDs6U900Vh@tethys> <3438733.p6vCjojJlH@merkaba> <1756989.4ep0Vdupld@tethys> <20140309113350.GH6318@carfax.org.uk> <20140314021159.GQ18959@merlins.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:50770 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751830AbaCNEyv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 00:54:51 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WOK8w-0001y2-JU
+	for linux-btrfs@vger.kernel.org; Fri, 14 Mar 2014 05:54:50 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 05:54:50 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 05:54:50 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 3.14.0-rc3: btrfs send/receive blocks btrfs IO on other devices
+ (near deadlocks)
+Date: Fri, 14 Mar 2014 04:54:25 +0000 (UTC)
+Message-ID: <pan$6f587$1aabe17f$e8f110d4$4b096c0c@cox.net>
+References: <20140312151808.GE16865@merlins.org>
+	<20140314014813.GP18959@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Thu, 13 Mar 2014 18:48:13 -0700 as excerpted:
 
-On Mar 13, 2014, at 8:11 PM, Marc MERLIN <marc@merlins.org> wrote:
+> Are others seeing some btrfs operations on filesystem/diskA
+> hang/deadlock other btrfs operations on filesystem/diskB ?
 
-> On Sun, Mar 09, 2014 at 11:33:50AM +0000, Hugo Mills wrote:
->> discard is, except on the very latest hardware, a synchronous command
->> (it's a limitation of the SATA standard), and therefore results in
->> very very poor performance.
-> 
-> Interesting. How do I know if a given SSD will hang on discard?
-> Is a Samsung EVO 840 1TB SSD latest hardware enough, or not? :)
+Well, if the filesystem in filesystem/diskA and filesystem/diskB is the 
+same (multi-device) filesystem, as the above definitely implies...  Tho 
+based on the context I don't believe that's what you actually meant.
 
-smartctl -a or -x will tell you what SATA revision is in place. The queued trim support is in SATA Rev 3.1. I'm not certain if this requires only the drive to support that revision level, or both controller and drive.
+Meanwhile, send/receive is intensely focused in bug-finding/fixing mode 
+ATM.  The basic concept is there, but to this point it has definitely 
+been more development/testing-reliability (as befitted btrfs overall 
+state, with the eat-your-babies kconfig option warning only recently 
+toned down to what I'd call semi-stable) than enterprise-reliability.  
+Hopefully by the time they're done with all this bug-stomping it'll be 
+rather closer to the latter.
 
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

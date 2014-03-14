@@ -1,43 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22287 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754801AbaCND2h convert rfc822-to-8bit (ORCPT
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:64356 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755659AbaCNXtt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Mar 2014 23:28:37 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2E3SBNi013854
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 11:28:11 +0800
-From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs-progs: Fix a memleak in btrfs_scan_lblkid().
-Date: Fri, 14 Mar 2014 03:28:11 +0000
-Message-ID: <1394767760-19929-2-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1394767760-19929-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1394767760-19929-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="iso-2022-jp"
+	Fri, 14 Mar 2014 19:49:49 -0400
+Date: Sat, 15 Mar 2014 01:49:45 +0200
+From: Rakesh Pandit <rakesh@tuxera.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: scrub: don't call unlock if pthread_mutex_lock
+ fails
+Message-ID: <20140314234943.GA28451@localhost.localdomain>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_scan_lblkid(), blkid_get_cache() is called but cache not freed.
-This patch adds blkid_put_cache() to free it.
+If pthread_mutex_lock fails (rare but fix it anyway), don't call
+pthread_mutex_unlock on mutex.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- utils.c | 1 +
- 1 file changed, 1 insertion(+)
+ cmds-scrub.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/utils.c b/utils.c
-index 93cf9ac..b809bc5 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2067,6 +2067,7 @@ int btrfs_scan_lblkid(int update_kernel)
- 			btrfs_register_one_device(path);
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 128537b..ca11fb5 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -776,7 +776,7 @@ static int scrub_write_progress(pthread_mutex_t *m, const char *fsid,
+ 	ret = pthread_mutex_lock(m);
+ 	if (ret) {
+ 		err = -ret;
+-		goto out;
++		goto fail;
  	}
- 	blkid_dev_iterate_end(iter);
-+	blkid_put_cache(cache);
- 	return 0;
- }
  
+ 	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
+@@ -808,6 +808,7 @@ out:
+ 	if (ret && !err)
+ 		err = -ret;
+ 
++fail:
+ 	ret = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old);
+ 	if (ret && !err)
+ 		err = -ret;
 -- 
-1.9.0
+1.8.5.3
+

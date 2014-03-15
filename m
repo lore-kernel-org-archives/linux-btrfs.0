@@ -1,82 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57340 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:37611 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755573AbaCOJi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 05:38:29 -0400
+	id S1752483AbaCOL0x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 07:26:53 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WOl2x-0007Dp-Af
-	for linux-btrfs@vger.kernel.org; Sat, 15 Mar 2014 10:38:27 +0100
-Received: from p5b005b90.dip0.t-ipconnect.de ([91.0.91.144])
+	id 1WOmjr-0004Mp-IP
+	for linux-btrfs@vger.kernel.org; Sat, 15 Mar 2014 12:26:51 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 10:38:27 +0100
-Received: from holger.hoffstaette by p5b005b90.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 12:26:51 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 10:38:27 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 12:26:51 +0100
 To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: discard synchronous on most SSDs?
-Date: Sat, 15 Mar 2014 09:38:01 +0000 (UTC)
-Message-ID: <pan.2014.03.15.09.38.15@googlemail.com>
-References: <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
-	<20140314051750.GY6143@merlins.org>
-	<pan$667da$c4955705$c59674a0$a844850c@cox.net> <531C1CC4.701@gmail.com>
-	<C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
-	<20140314051750.GY6143@merlins.org> <5289248.oqpgSKG6td@quad>
-	<20140314192605.GD6143@merlins.org> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
-	<pan.2014.03.14.20.46.24@googlemail.com>
-	<20140315042116.GK6143@merlins.org>
+Date: Sat, 15 Mar 2014 11:26:27 +0000 (UTC)
+Message-ID: <pan$86f37$20eb1911$444fa726$8400b046@cox.net>
+References: <1756989.4ep0Vdupld@tethys>
+	<yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <4448214.x9oPWjPhdL@quad>
+	<1566234.HjNzCBAKa5@quad>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 14 Mar 2014 21:21:16 -0700, Marc MERLIN wrote:
+Chris Samuel posted on Sat, 15 Mar 2014 17:48:56 +1100 as excerpted:
 
-> On Fri, Mar 14, 2014 at 08:46:09PM +0000, Holger Hoffstätte wrote:
->> On Fri, 14 Mar 2014 15:57:41 -0400, Martin K. Petersen wrote:
->> 
->> > So right now I'm afraid we don't have a good way for a user to
->> > determine whether a device supports queued trims or not.
->> 
->> Mount with discard, unpack kernel tree, sync, rm -rf tree.
->> If it takes several seconds, you have sync discard, no?
+> $ sudo smartctl --identify /dev/sdb | fgrep 'Trim bit in DATA SET
+> MANAGEMENT'
+>  169      0          1   Trim bit in DATA SET MANAGEMENT command
+>  supported
+> $
 > 
-> Mmmh, interesting point.
-> 
-> legolas:/usr/src# time rm -rf linux-3.14-rc5 real	0m1.584s user	
-0m0.008s
-> sys	0m1.524s
-> 
-> I remounted my FS with remount,nodiscard, and the time was the same.
-> 
->> This changed somewhere around kernel 3.8.x; before that it used to be
->> acceptably fast. Since then I only do batch trims, daily (server) or
->> weekly (laptop).
-> 
-> I'm never really timed this before. Is it supposed to be faster than
-> 1.5s on a fast SSD?
+> If that command returns nothing then it's not reported as supported (and
+> I've tested that).  You can get the same info with hdparm -I.
 
-No, ~1s + noise is OK and seems normal, depending on filesystem and
-phase of the moon. To contrast here is the output from my laptop,
-which has an old but still-going-strong Intel G2 with ext4:
+> My puzzle now is that I have two SSD drives that report supporting NCQ
+> TRIM (one confirmed via product info) but report only supporting SATA
+> 3.0 not 3.1.
 
-$smartctl -i /dev/sda | grep ATA
-ATA Version is:   ATA/ATAPI-7 T13/1532D revision 1
-SATA Version is:  SATA 2.6, 3.0 Gb/s
+My SATA 2.5 SSDs reported earlier, report support for it too, so it's 
+apparently not SATA 3.1 limited.  (Note that I'm simply grepping word 
+169, in the command below.  Since word 169 is trim support...)
 
-without dicard:
-rm -rf linux-3.12.14  0.05s user 1.28s system 98% cpu 1.364 total
+sudo smartctl --identify /dev/sda | grep '^ 169'
+ 169      -     0x0001   Data Set Management support
+ 169      0          1   Trim bit in DATA SET MANAGEMENT command supported
 
-remounted with discard & after an initial manual fstrim:
-rm -rf linux-3.12.14  1.90s user 0.02s system 2% cpu 1:07.45 total
+Either that or that feature bit simply indicates trim support, not NCQ 
+trim support.
 
-I think these numbers speak for themselves. :)
+But it can be noted that if SATA 3.1 requires trim to be NCQ if its 
+supported at all (spinning rust would thus get a pass), then claiming 3.1 
+support as well as trim support should be the equivalent of claiming NCQ 
+trim support, likely with no indicator of whether that trim support is NCQ 
+or not, pre-3.1.
 
-It's really good to know that SATA 3.1 apparently fixed this.
+... Which would mean that my SATA 2.5 and your SATA 3.0 drives are simply 
+indicating trim support, not specifically NCQ trim support.
 
-cheers
-Holger
+I guess you'd have to check the SATA 2.5 and 3.0 specs to find that out.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,71 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37611 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752483AbaCOL0x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 07:26:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WOmjr-0004Mp-IP
-	for linux-btrfs@vger.kernel.org; Sat, 15 Mar 2014 12:26:51 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 12:26:51 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 12:26:51 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: discard synchronous on most SSDs?
-Date: Sat, 15 Mar 2014 11:26:27 +0000 (UTC)
-Message-ID: <pan$86f37$20eb1911$444fa726$8400b046@cox.net>
-References: <1756989.4ep0Vdupld@tethys>
-	<yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <4448214.x9oPWjPhdL@quad>
-	<1566234.HjNzCBAKa5@quad>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from frost.carfax.org.uk ([85.119.82.111]:54038 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752163AbaCON1U (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 09:27:20 -0400
+Date: Sat, 15 Mar 2014 13:27:16 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: remove transaction from send
+Message-ID: <20140315132716.GL6151@carfax.org.uk>
+References: <1394739733-500-1-git-send-email-jbacik@fb.com>
+ <20140313221628.GF6151@carfax.org.uk>
+ <53234FAA.5060204@fb.com>
+ <20140314224404.GJ6151@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="2EnvhqpWJq810sZn"
+In-Reply-To: <20140314224404.GJ6151@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Samuel posted on Sat, 15 Mar 2014 17:48:56 +1100 as excerpted:
 
-> $ sudo smartctl --identify /dev/sdb | fgrep 'Trim bit in DATA SET
-> MANAGEMENT'
->  169      0          1   Trim bit in DATA SET MANAGEMENT command
->  supported
-> $
+--2EnvhqpWJq810sZn
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Mar 14, 2014 at 10:44:04PM +0000, Hugo Mills wrote:
+> On Fri, Mar 14, 2014 at 02:51:22PM -0400, Josef Bacik wrote:
+> > On 03/13/2014 06:16 PM, Hugo Mills wrote:
+> > >On Thu, Mar 13, 2014 at 03:42:13PM -0400, Josef Bacik wrote:
+> > >>Lets try this again.  We can deadlock the box if we send on a box and try to
+> > >>write onto the same fs with the app that is trying to listen to the send pipe.
+> > >>This is because the writer could get stuck waiting for a transaction commit
+> > >>which is being blocked by the send.  So fix this by making sure looking at the
+> > >>commit roots is always going to be consistent.  We do this by keeping track of
+> > >>which roots need to have their commit roots swapped during commit, and then
+> > >>taking the commit_root_sem and swapping them all at once.  Then make sure we
+> > >>take a read lock on the commit_root_sem in cases where we search the commit root
+> > >>to make sure we're always looking at a consistent view of the commit roots.
+> > >>Previously we had problems with this because we would swap a fs tree commit root
+> > >>and then swap the extent tree commit root independently which would cause the
+> > >>backref walking code to screw up sometimes.  With this patch we no longer
+> > >>deadlock and pass all the weird send/receive corner cases.  Thanks,
+> > >
+> > >    There's something still going on here. I managed to get about twice
+> > >as far through my test as I had before, but I again got an "unexpected
+> > >EOF in stream", with btrfs send returning 1. As before, I have this in
+> > >syslog:
+> > >
+> > >Mar 13 22:09:12 s_src@amelia kernel: BTRFS error (device sda2): did not find backref in send_root. inode=1786631, offset=825257984, disk_byte=36504023040 found extent=36504023040\x0a
+> > >
+> > 
+> > I just noticed that the offset you have there is freaking gigantic,
+> > like 700mb, which is way larger than what an extent should be.  Here
+> > is a newer debug patch, just chuck the old on and put this instead
+> > and re-run
+> > 
+> > http://paste.fedoraproject.org/85486/39482301
 > 
-> If that command returns nothing then it's not reported as supported (and
-> I've tested that).  You can get the same info with hdparm -I.
+>    That last run, with the above patch, failed again, at approximately
+> the same place again. The only output in dmesg is:
+> 
+> [ 6488.168469] BTRFS error (device sda2): did not find backref in send_root. inode=1786631, offset=825257984, disk_byte=36504023040 found extent=36504023040, len=1294336
 
-> My puzzle now is that I have two SSD drives that report supporting NCQ
-> TRIM (one confirmed via product info) but report only supporting SATA
-> 3.0 not 3.1.
+root@amelia:~# btrfs insp ino 1786631 /
+//srv/vm/armand.img
+root@amelia:~# ls -l /srv/vm/armand.img 
+-rw-rw-r-- 1 root kvm 4000000000 Jan 30 08:11 /srv/vm/armand.img
+root@amelia:~# filefrag /srv/vm/armand.img
+/srv/vm/armand.img: 17436 extents found
 
-My SATA 2.5 SSDs reported earlier, report support for it too, so it's 
-apparently not SATA 3.1 limited.  (Note that I'm simply grepping word 
-169, in the command below.  Since word 169 is trim support...)
+   This is a VM image, not currently operational. It probably has
+sparse extents in it somewhere.
 
-sudo smartctl --identify /dev/sda | grep '^ 169'
- 169      -     0x0001   Data Set Management support
- 169      0          1   Trim bit in DATA SET MANAGEMENT command supported
+   The full filefrag -ev output is at [1], but the offset it's
+complaining about is 825257984 = 201479 4k blocks:
 
-Either that or that feature bit simply indicates trim support, not NCQ 
-trim support.
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+17200:   201478..  201478:    7220724..   7220724:      1:    8923002:
+17201:   201479..  201481:    8912386..   8912388:      3:    7220725:
+17202:   201482..  201482:    8923002..   8923002:      1:    8912389:
 
-But it can be noted that if SATA 3.1 requires trim to be NCQ if its 
-supported at all (spinning rust would thus get a pass), then claiming 3.1 
-support as well as trim support should be the equivalent of claiming NCQ 
-trim support, likely with no indicator of whether that trim support is NCQ 
-or not, pre-3.1.
+   This seems unexceptional.
 
-... Which would mean that my SATA 2.5 and your SATA 3.0 drives are simply 
-indicating trim support, not specifically NCQ trim support.
+   Hugo.
 
-I guess you'd have to check the SATA 2.5 and 3.0 specs to find that out.
+[1] http://carfax.org.uk/files/temp/filefrag.txt
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+            --- "Can I offer you anything? Tea? Seedcake? ---            
+                         Glass of Amontillado?"                          
 
+--2EnvhqpWJq810sZn
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUyRVNFheFHXiqx3kAQJT4hAAs+IriIrBMwbmuzh4U8HYkNRLQJP2b+ZA
+HbH/CTxc1V64lzSAf/Q/zW3HMVk9lgD11e3AikNYbE+Hecaaf48WwKlu2gSIVq1e
+3PNjNXbuudu7p8sbbyqEJOw3/DtKIrEb2GVsrDOt78pTt5NAfAwtRMrCoh7VfS3g
+DXa28g5wpL4TuxRpC/pe3i81cnLbtvLMpK95BOVcO3xQZMEegoPWHxAZBcNCpDSV
+uHSceFV0YTfXBPKXhXbbeUNBC68gVxemowgrt7ha2/xLaxCJH4P9w/Co0D6s4a4l
+NkhhFBmWq3O5cUBAXTtEmyv/Uokq8/kw+rbtzXunev2IHpOCfK5pmvs+ujjLIBFd
+Sq1tSClFBh760lvaeqJ3Ir5eutqlwpBI90YhKs6MFxPCmq6tChVXMqOezDC3TVja
+aGWPTfw7f5fGSKWS1Sfklmi8AUEtIueYwK33Ld6N5KQ1SliPLfWwjQhGIeWClfzT
+mWegh4/9iZaDuY2kqYyVIXIAWCFJR08q5h7Jp3E1g5SnHwMHfz4hFQDxvYBYdxiv
++f0e1225Mmt3zGDCuJwzwCkFYeISVj5ekAvAB/iDDAlOu/eGOPkAA2VX3GvMz3vd
+keCxmf8y7fNKEd5xAAp0xXJ0N3o8WH8bzLr6hOP/mayAimO1dlzje9LPGaRxC1+g
+q90i8qkJ0xU=
+=2gvy
+-----END PGP SIGNATURE-----
+
+--2EnvhqpWJq810sZn--

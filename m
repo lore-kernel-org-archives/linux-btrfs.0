@@ -1,59 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:60020 "EHLO csamuel.org"
+Received: from csamuel.org ([74.50.50.137]:39796 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750715AbaCOFZM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 01:25:12 -0400
+	id S1750756AbaCOGtE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 02:49:04 -0400
 Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 05808D47F1
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 16:25:12 +1100 (EST)
+	by csamuel.org (Postfix) with ESMTP id E456ED47F1
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 17:49:02 +1100 (EST)
 Received: from csamuel.org ([127.0.0.1])
  by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 23159-09 for <linux-btrfs@vger.kernel.org>;
- Sat, 15 Mar 2014 16:25:11 +1100 (EST)
+ id 23847-03 for <linux-btrfs@vger.kernel.org>;
+ Sat, 15 Mar 2014 17:49:02 +1100 (EST)
 Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 9D34AD47F0
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 16:25:11 +1100 (EST)
+	by csamuel.org (Postfix) with ESMTPSA id 7CD80D47F0
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 17:49:02 +1100 (EST)
 From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
 Subject: Re: discard synchronous on most SSDs?
-Date: Sat, 15 Mar 2014 16:25:05 +1100
-Message-ID: <4448214.x9oPWjPhdL@quad>
-In-Reply-To: <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
-References: <1756989.4ep0Vdupld@tethys> <20140314192605.GD6143@merlins.org> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
+Date: Sat, 15 Mar 2014 17:48:56 +1100
+Message-ID: <1566234.HjNzCBAKa5@quad>
+In-Reply-To: <4448214.x9oPWjPhdL@quad>
+References: <1756989.4ep0Vdupld@tethys> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <4448214.x9oPWjPhdL@quad>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart14688730.P4QsmHScsx"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart30329158.UQJpz1ujyR"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart14688730.P4QsmHScsx
+--nextPart30329158.UQJpz1ujyR
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 
-On Fri, 14 Mar 2014 03:57:41 PM Martin K. Petersen wrote:
+On Sat, 15 Mar 2014 04:25:05 PM Chris Samuel wrote:
 
-> The fact that the drive reports compliance with a certain version of
-> SATA does not in any way imply that it implements all commands define=
-d
-> in that specification.
+> I wonder if it would be possible to use that knowledge to extend the=20=
 
-It looks like drives that do support it can be detected with the kernel=
- helper=20
-function ata_fpdma_dsm_supported() defined in include/linux/libata.h.
+> smartctl's --identify functionality to report this?
 
-I wonder if it would be possible to use that knowledge to extend the=20=
+After reading the SATA 3.1 spec I believe that smartctl *can* indicate =
+if a=20
+drive claims to support SATA 3.1 NCQ TRIM, thus:
 
-smartctl's --identify functionality to report this?
+$ sudo smartctl --identify /dev/sdb | fgrep 'Trim bit in DATA SET MANAG=
+EMENT'
+ 169      0          1   Trim bit in DATA SET MANAGEMENT command suppor=
+ted=20
+$
 
-Not even all drives that implement it do so correctly, the kernel has a=
-=20
-blacklist of drives that don't and currently lists just two:
+If that command returns nothing then it's not reported as supported (an=
+d I've=20
+tested that).  You can get the same info with hdparm -I.
 
-       /* devices that don't properly handle queued TRIM commands */
-       { "Micron_M500*",=B7      =B7       NULL,=B7  ATA_HORKAGE_NO_NCQ=
-_TRIM, },
-       { "Crucial_CT???M500SSD*",=B7     NULL,=B7  ATA_HORKAGE_NO_NCQ_T=
-RIM, },
+Of course, as Martin said, that doesn't necessarily mean the kernel is =
+using=20
+that reported ability.
+
+My puzzle now is that I have two SSD drives that report supporting NCQ =
+TRIM=20
+(one confirmed via product info) but report only supporting SATA 3.0 no=
+t 3.1.
 
 cheers,
 Chris
@@ -61,7 +65,7 @@ Chris
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
 
---nextPart14688730.P4QsmHScsx
+--nextPart30329158.UQJpz1ujyR
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 Content-Transfer-Encoding: 7Bit
@@ -69,14 +73,14 @@ Content-Transfer-Encoding: 7Bit
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.14 (GNU/Linux)
 
-iQEVAwUAUyPkMY1yjaOTJg85AQIoegf8Dm+69eHv6XSHT7GY3GdCMKNuonRTBFx3
-LNqRGWoNGCBA114PiKUxNyDAFXVizybPkEaoOxyZoAlixGBxLjgskQ5o9TvI1LQ+
-R1dZnogCkAswqggoTQAjKETwDE8QQXBT6Rm3aVdpEarUzw6qHiDu8E7m5k4fKoYe
-TSgh9Q4l00WbEr2slGUp/Z71AiCbgOj4Bel2O3V0u2gZM1RuPtDL843Ew6EInWaf
-IYXmWBkCc4kvBH4OJrxduc9l4IOf4Vapu3YORnB467Yz28kSm4OEHd7hUPT3Zj42
-Fw6jQj4keb7nvYXJIV2EPEJOf37CnbQsW/vWw9sNS+5xbl5445aQbA==
-=kJtw
+iQEVAwUAUyP32I1yjaOTJg85AQLWkAf/ZRinrYwI20UYClAyBskLLHDxZpibXwL8
+BQuo1CHL9MUfHtrR0zUbQVm9UxKIgr3eEFuG6etixXsaIysiqdJgznyPipmiG/q1
+gojoGQxr/FdPPYFWYpLmxbsQW9HTGbfFmwMuujTy87guuaANDVylDdoONDk8x9kd
+k99RJdqy+Hs0ob/Vqdcp8Lwln77ghBU1nvhFm9ow6YTb94FCkiZypMO3LaO7+DLO
+DPXej7wudN75j5ndT+mQglwi2BzG8x8lVBSgrvGVvDpV2jZXMEZXDJayzbrYb3bZ
+kx1AruMN9Cc25Bd735LtQNa3hFRBVH1ddoq/jHLLQpL9N8HjaHU8Eg==
+=Bg8Z
 -----END PGP SIGNATURE-----
 
---nextPart14688730.P4QsmHScsx--
+--nextPart30329158.UQJpz1ujyR--
 

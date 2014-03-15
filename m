@@ -1,86 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:39796 "EHLO csamuel.org"
+Received: from plane.gmane.org ([80.91.229.3]:57340 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750756AbaCOGtE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 02:49:04 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id E456ED47F1
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 17:49:02 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 23847-03 for <linux-btrfs@vger.kernel.org>;
- Sat, 15 Mar 2014 17:49:02 +1100 (EST)
-Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
-	by csamuel.org (Postfix) with ESMTPSA id 7CD80D47F0
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 17:49:02 +1100 (EST)
-From: Chris Samuel <chris@csamuel.org>
+	id S1755573AbaCOJi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 05:38:29 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WOl2x-0007Dp-Af
+	for linux-btrfs@vger.kernel.org; Sat, 15 Mar 2014 10:38:27 +0100
+Received: from p5b005b90.dip0.t-ipconnect.de ([91.0.91.144])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 10:38:27 +0100
+Received: from holger.hoffstaette by p5b005b90.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 10:38:27 +0100
 To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
 Subject: Re: discard synchronous on most SSDs?
-Date: Sat, 15 Mar 2014 17:48:56 +1100
-Message-ID: <1566234.HjNzCBAKa5@quad>
-In-Reply-To: <4448214.x9oPWjPhdL@quad>
-References: <1756989.4ep0Vdupld@tethys> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <4448214.x9oPWjPhdL@quad>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart30329158.UQJpz1ujyR"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Date: Sat, 15 Mar 2014 09:38:01 +0000 (UTC)
+Message-ID: <pan.2014.03.15.09.38.15@googlemail.com>
+References: <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
+	<20140314051750.GY6143@merlins.org>
+	<pan$667da$c4955705$c59674a0$a844850c@cox.net> <531C1CC4.701@gmail.com>
+	<C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com>
+	<20140314051750.GY6143@merlins.org> <5289248.oqpgSKG6td@quad>
+	<20140314192605.GD6143@merlins.org> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
+	<pan.2014.03.14.20.46.24@googlemail.com>
+	<20140315042116.GK6143@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, 14 Mar 2014 21:21:16 -0700, Marc MERLIN wrote:
 
---nextPart30329158.UQJpz1ujyR
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+> On Fri, Mar 14, 2014 at 08:46:09PM +0000, Holger Hoffstätte wrote:
+>> On Fri, 14 Mar 2014 15:57:41 -0400, Martin K. Petersen wrote:
+>> 
+>> > So right now I'm afraid we don't have a good way for a user to
+>> > determine whether a device supports queued trims or not.
+>> 
+>> Mount with discard, unpack kernel tree, sync, rm -rf tree.
+>> If it takes several seconds, you have sync discard, no?
+> 
+> Mmmh, interesting point.
+> 
+> legolas:/usr/src# time rm -rf linux-3.14-rc5 real	0m1.584s user	
+0m0.008s
+> sys	0m1.524s
+> 
+> I remounted my FS with remount,nodiscard, and the time was the same.
+> 
+>> This changed somewhere around kernel 3.8.x; before that it used to be
+>> acceptably fast. Since then I only do batch trims, daily (server) or
+>> weekly (laptop).
+> 
+> I'm never really timed this before. Is it supposed to be faster than
+> 1.5s on a fast SSD?
 
-On Sat, 15 Mar 2014 04:25:05 PM Chris Samuel wrote:
+No, ~1s + noise is OK and seems normal, depending on filesystem and
+phase of the moon. To contrast here is the output from my laptop,
+which has an old but still-going-strong Intel G2 with ext4:
 
-> I wonder if it would be possible to use that knowledge to extend the=20=
+$smartctl -i /dev/sda | grep ATA
+ATA Version is:   ATA/ATAPI-7 T13/1532D revision 1
+SATA Version is:  SATA 2.6, 3.0 Gb/s
 
-> smartctl's --identify functionality to report this?
+without dicard:
+rm -rf linux-3.12.14  0.05s user 1.28s system 98% cpu 1.364 total
 
-After reading the SATA 3.1 spec I believe that smartctl *can* indicate =
-if a=20
-drive claims to support SATA 3.1 NCQ TRIM, thus:
+remounted with discard & after an initial manual fstrim:
+rm -rf linux-3.12.14  1.90s user 0.02s system 2% cpu 1:07.45 total
 
-$ sudo smartctl --identify /dev/sdb | fgrep 'Trim bit in DATA SET MANAG=
-EMENT'
- 169      0          1   Trim bit in DATA SET MANAGEMENT command suppor=
-ted=20
-$
+I think these numbers speak for themselves. :)
 
-If that command returns nothing then it's not reported as supported (an=
-d I've=20
-tested that).  You can get the same info with hdparm -I.
+It's really good to know that SATA 3.1 apparently fixed this.
 
-Of course, as Martin said, that doesn't necessarily mean the kernel is =
-using=20
-that reported ability.
-
-My puzzle now is that I have two SSD drives that report supporting NCQ =
-TRIM=20
-(one confirmed via product info) but report only supporting SATA 3.0 no=
-t 3.1.
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-
---nextPart30329158.UQJpz1ujyR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQEVAwUAUyP32I1yjaOTJg85AQLWkAf/ZRinrYwI20UYClAyBskLLHDxZpibXwL8
-BQuo1CHL9MUfHtrR0zUbQVm9UxKIgr3eEFuG6etixXsaIysiqdJgznyPipmiG/q1
-gojoGQxr/FdPPYFWYpLmxbsQW9HTGbfFmwMuujTy87guuaANDVylDdoONDk8x9kd
-k99RJdqy+Hs0ob/Vqdcp8Lwln77ghBU1nvhFm9ow6YTb94FCkiZypMO3LaO7+DLO
-DPXej7wudN75j5ndT+mQglwi2BzG8x8lVBSgrvGVvDpV2jZXMEZXDJayzbrYb3bZ
-kx1AruMN9Cc25Bd735LtQNa3hFRBVH1ddoq/jHLLQpL9N8HjaHU8Eg==
-=Bg8Z
------END PGP SIGNATURE-----
-
---nextPart30329158.UQJpz1ujyR--
+cheers
+Holger
 

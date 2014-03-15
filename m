@@ -1,49 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:64356 "EHLO
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:54157 "EHLO
 	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755659AbaCNXtt (ORCPT
+	with ESMTP id S1752864AbaCOLqT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 19:49:49 -0400
-Date: Sat, 15 Mar 2014 01:49:45 +0200
+	Sat, 15 Mar 2014 07:46:19 -0400
+Date: Sat, 15 Mar 2014 13:46:15 +0200
 From: Rakesh Pandit <rakesh@tuxera.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: scrub: don't call unlock if pthread_mutex_lock
- fails
-Message-ID: <20140314234943.GA28451@localhost.localdomain>
+Subject: [PATCH] Btrfs-progs: return with -ENOMEM if malloc fails
+Message-ID: <20140315114613.GA8420@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If pthread_mutex_lock fails (rare but fix it anyway), don't call
-pthread_mutex_unlock on mutex.
+Prevent segfault if memory allocation fails for sargs in get_df
+(cmds-filesystem.c).
 
 Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- cmds-scrub.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ cmds-filesystem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 128537b..ca11fb5 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -776,7 +776,7 @@ static int scrub_write_progress(pthread_mutex_t *m, const char *fsid,
- 	ret = pthread_mutex_lock(m);
- 	if (ret) {
- 		err = -ret;
--		goto out;
-+		goto fail;
- 	}
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index c9e27fc..7eb6e9d 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -146,7 +146,7 @@ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
+ 	sargs = malloc(sizeof(struct btrfs_ioctl_space_args) +
+ 			(count * sizeof(struct btrfs_ioctl_space_info)));
+ 	if (!sargs)
+-		ret = -ENOMEM;
++		return -ENOMEM;
  
- 	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
-@@ -808,6 +808,7 @@ out:
- 	if (ret && !err)
- 		err = -ret;
- 
-+fail:
- 	ret = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old);
- 	if (ret && !err)
- 		err = -ret;
+ 	sargs->space_slots = count;
+ 	sargs->total_spaces = 0;
 -- 
 1.8.5.3
 

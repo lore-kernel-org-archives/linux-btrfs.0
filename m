@@ -1,60 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f181.google.com ([209.85.220.181]:35677 "EHLO
-	mail-vc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755341AbaCNWk0 (ORCPT
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.162]:50357 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752732AbaCOLfe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 18:40:26 -0400
-Received: by mail-vc0-f181.google.com with SMTP id id10so3487896vcb.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Mar 2014 15:40:25 -0700 (PDT)
+	Sat, 15 Mar 2014 07:35:34 -0400
+Received: from fuchsia.localnet (p5DE8D06B.dip0.t-ipconnect.de [93.232.208.107])
+	by smtp.strato.de (RZmta 32.27 DYNA|AUTH)
+	with ESMTPSA id f06362q2FBZUQIS
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(Client did not present a certificate)
+	for <linux-btrfs@vger.kernel.org>;
+	Sat, 15 Mar 2014 12:35:30 +0100 (CET)
+From: Michael Schuerig <michael.lists@schuerig.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Incremental backup for a raid1
+Date: Sat, 15 Mar 2014 12:35:30 +0100
+Message-ID: <1789445.UA8sCrE2Cn@fuchsia>
+In-Reply-To: <53224D57.8020308@chinilu.com>
+References: <1564384.fRV1HUkfCq@fuchsia> <2106363.nA97oxn4hn@fuchsia> <53224D57.8020308@chinilu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAGfcS_ktoasT-esMTcLbF+o_-4KTirZghtJ5+o4goZDTY4DW0A@mail.gmail.com>
-References: <1394150467-5990-1-git-send-email-jbacik@fb.com>
-	<20140307002549.GC16439@lenny.home.zabbo.net>
-	<CAGfcS_nPkVR3Z8JHi=g1QFdvqqYBeVSATjyi+4qfyWTs_5_tDQ@mail.gmail.com>
-	<53207C4B.6020000@fb.com>
-	<CAGfcS_ktoasT-esMTcLbF+o_-4KTirZghtJ5+o4goZDTY4DW0A@mail.gmail.com>
-Date: Fri, 14 Mar 2014 18:40:25 -0400
-Message-ID: <CAGfcS_=AZLFtnQfKaoDtnJB9n_PrKsNkhcQFM+g--SCwV+43Fg@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix deadlock with nested trans handles
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Zach Brown <zab@redhat.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 12, 2014 at 12:34 PM, Rich Freeman
-<r-btrfs@thefreemanclan.net> wrote:
-> On Wed, Mar 12, 2014 at 11:24 AM, Josef Bacik <jbacik@fb.com> wrote:
->> On 03/12/2014 08:56 AM, Rich Freeman wrote:
->>>
->>>  After a number of reboots the system became stable, presumably
->>> whatever race condition btrfs was hitting followed a favorable
->>> path.
->>>
->>> I do have a 2GB btrfs-image pre-dating my application of this
->>> patch that was causing the issue last week.
->>>
->>
->> Uhm wow that's pretty epic.  I will talk to chris and figure out how
->> we want to deal with that and send you a patch shortly.  Thanks,
->
-> A tiny bit more background.
+On Thursday 13 March 2014 17:29:11 George Mitchell wrote:
+> I currently use rsync to a separate drive to maintain a 
+> backup copy, but it is not integrated into the array like n-way would 
+> be, and is definitely not a perfect solution.
 
-And some more background.  I had more reboots over the next two days
-at the same time each day, just after my crontab successfully
-completed.  One of the last thing it does is runs the snapper cleanups
-which delete a bunch of snapshots.  During a reboot I checked and
-there were a bunch of deleted snapshots, which disappeared over the
-next 30-60 seconds before the panic, and then they would re-appear on
-the next reboot.
+Could you explain how you're using rsync? I was just about to copy a 
+btrfs filesystem to another disk. That filesystem has several subvolumes 
+and about 100 snapshots overall. Owing to COW, this amounts to about 
+1.2TB. However, I reckon that rsync doesn't know anything about COW and 
+accordingly would blow up my data immensely on the destination disk.
 
-I disabled the snapper cron job and this morning had no issues at all.
- One day isn't much to establish a trend, but I suspect that this is
-the cause.  Obviously getting rid of snapshots would be desirable at
-some point, but I can wait for a patch.  Snapper would be deleting
-about 48 snapshots at the same time, since I create them hourly and
-the cleanup occurs daily on two different subvolumes on the same
-filesystem.
+How do I copy a btrfs filesystem preserving its complete contents? How 
+do I update such a copy?
 
-Rich
+Yes, I want to keep the subvolume layout of the original and I want to 
+copy all snapshots. I don't think send/receive is the answer, but it's 
+likey I don't understand it well enough. I'm concerned, that a 
+send/receive-based approach is not robust against mishaps.
+
+Consider: I want to incrementally back-up a filesystem to two external 
+disks. For this I'd have to for each subvolume keep a snapshot 
+corresponding to its state on the backup disk. If I make any mistake in 
+managing these snapshots, I can't update the external backup anymore.
+
+Also, I don't understand whether send/receive would allow me to 
+copy/update a subvolume *including* its snapshots.
+
+Things have become a little more complicated than I had hoped for, but 
+I've only been using btrfs for a couple of weeks.
+
+Michael
+
+-- 
+Michael Schuerig
+mailto:michael@schuerig.de
+http://www.schuerig.de/michael/
+

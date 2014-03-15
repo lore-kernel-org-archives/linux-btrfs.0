@@ -1,51 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57066 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750704AbaCOEVR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 00:21:17 -0400
-Date: Fri, 14 Mar 2014 21:21:16 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from csamuel.org ([74.50.50.137]:60020 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750715AbaCOFZM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 01:25:12 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 05808D47F1
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 16:25:12 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 23159-09 for <linux-btrfs@vger.kernel.org>;
+ Sat, 15 Mar 2014 16:25:11 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 9D34AD47F0
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 16:25:11 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: discard synchronous on most SSDs?
-Message-ID: <20140315042116.GK6143@merlins.org>
-References: <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com> <20140314051750.GY6143@merlins.org> <pan$667da$c4955705$c59674a0$a844850c@cox.net> <531C1CC4.701@gmail.com> <C13A2AFA-A9F0-4219-879C-F1C15ADC63A9@colorremedies.com> <20140314051750.GY6143@merlins.org> <5289248.oqpgSKG6td@quad> <20140314192605.GD6143@merlins.org> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <pan.2014.03.14.20.46.24@googlemail.com>
+Date: Sat, 15 Mar 2014 16:25:05 +1100
+Message-ID: <4448214.x9oPWjPhdL@quad>
+In-Reply-To: <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
+References: <1756989.4ep0Vdupld@tethys> <20140314192605.GD6143@merlins.org> <yq1bnx8y2mi.fsf@sermon.lab.mkp.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <pan.2014.03.14.20.46.24@googlemail.com>
+Content-Type: multipart/signed; boundary="nextPart14688730.P4QsmHScsx"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 14, 2014 at 08:46:09PM +0000, Holger Hoffstätte wrote:
-> On Fri, 14 Mar 2014 15:57:41 -0400, Martin K. Petersen wrote:
-> 
-> > So right now I'm afraid we don't have a good way for a user to determine
-> > whether a device supports queued trims or not.
-> 
-> Mount with discard, unpack kernel tree, sync, rm -rf tree.
-> If it takes several seconds, you have sync discard, no?
 
-Mmmh, interesting point.
+--nextPart14688730.P4QsmHScsx
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
-legolas:/usr/src# time rm -rf linux-3.14-rc5
-real	0m1.584s
-user	0m0.008s
-sys	0m1.524s
+On Fri, 14 Mar 2014 03:57:41 PM Martin K. Petersen wrote:
 
-I remounted my FS with remount,nodiscard, and the time was the same.
+> The fact that the drive reports compliance with a certain version of
+> SATA does not in any way imply that it implements all commands define=
+d
+> in that specification.
 
-> This changed somewhere around kernel 3.8.x; before that it used to be 
-> acceptably fast. Since then I only do batch trims, daily (server) or 
-> weekly (laptop).
+It looks like drives that do support it can be detected with the kernel=
+ helper=20
+function ata_fpdma_dsm_supported() defined in include/linux/libata.h.
 
-I'm never really timed this before. Is it supposed to be faster than 1.5s on
-a fast SSD?
+I wonder if it would be possible to use that knowledge to extend the=20=
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+smartctl's --identify functionality to report this?
+
+Not even all drives that implement it do so correctly, the kernel has a=
+=20
+blacklist of drives that don't and currently lists just two:
+
+       /* devices that don't properly handle queued TRIM commands */
+       { "Micron_M500*",=B7      =B7       NULL,=B7  ATA_HORKAGE_NO_NCQ=
+_TRIM, },
+       { "Crucial_CT???M500SSD*",=B7     NULL,=B7  ATA_HORKAGE_NO_NCQ_T=
+RIM, },
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+
+--nextPart14688730.P4QsmHScsx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUyPkMY1yjaOTJg85AQIoegf8Dm+69eHv6XSHT7GY3GdCMKNuonRTBFx3
+LNqRGWoNGCBA114PiKUxNyDAFXVizybPkEaoOxyZoAlixGBxLjgskQ5o9TvI1LQ+
+R1dZnogCkAswqggoTQAjKETwDE8QQXBT6Rm3aVdpEarUzw6qHiDu8E7m5k4fKoYe
+TSgh9Q4l00WbEr2slGUp/Z71AiCbgOj4Bel2O3V0u2gZM1RuPtDL843Ew6EInWaf
+IYXmWBkCc4kvBH4OJrxduc9l4IOf4Vapu3YORnB467Yz28kSm4OEHd7hUPT3Zj42
+Fw6jQj4keb7nvYXJIV2EPEJOf37CnbQsW/vWw9sNS+5xbl5445aQbA==
+=kJtw
+-----END PGP SIGNATURE-----
+
+--nextPart14688730.P4QsmHScsx--
+

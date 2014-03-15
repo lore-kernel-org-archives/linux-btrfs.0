@@ -1,173 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49284 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754050AbaCOAMY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Mar 2014 20:12:24 -0400
-Message-ID: <53239AE0.8030306@oracle.com>
-Date: Fri, 14 Mar 2014 20:12:16 -0400
-From: Sasha Levin <sasha.levin@oracle.com>
+Received: from csamuel.org ([74.50.50.137]:45488 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750707AbaCOEGd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 00:06:33 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id B3CAED480A
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 15:06:32 +1100 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 22358-10 for <linux-btrfs@vger.kernel.org>;
+ Sat, 15 Mar 2014 15:06:32 +1100 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPSA id 557BDD4806
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Mar 2014 15:06:32 +1100 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: discard synchronous on most SSDs?
+Date: Sat, 15 Mar 2014 15:06:25 +1100
+Message-ID: <1908923.tvpl1fFKJ5@quad>
+In-Reply-To: <5289248.oqpgSKG6td@quad>
+References: <531C1CC4.701@gmail.com> <20140314051750.GY6143@merlins.org> <5289248.oqpgSKG6td@quad>
 MIME-Version: 1.0
-To: clm@fb.com, jbacik@fb.com
-CC: linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
-Subject: btrfs: lock inversion between delayed_node->mutex and found->groups_sem
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; boundary="nextPart39859021.pc7ydWa81R"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
 
-While fuzzing with trinity inside a KVM tools guest running the latest -next
-kernel I've stumbled on the following:
+--nextPart39859021.pc7ydWa81R
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-[  788.451695] =========================================================
-[  788.452455] [ INFO: possible irq lock inversion dependency detected ]
-[  788.453020] 3.14.0-rc6-next-20140313-sasha-00010-gb8c1db1-dirty #217 Tainted: G        W
-[  788.453827] ---------------------------------------------------------
-[  788.454371] kswapd3/4199 just changed the state of lock:
-[  788.454902]  (&delayed_node->mutex){+.+.-.}, at: __btrfs_release_delayed_node+0x4f/0x140 (fs/btrfs/delayed-inode.c:263)
-[  788.455890] but this lock took another, RECLAIM_FS-unsafe lock in the past:
-[  788.456543]  (&found->groups_sem){+++++.}
+On Fri, 14 Mar 2014 06:33:24 PM Chris Samuel wrote:
 
-and interrupts could create inverse lock ordering between them.
+> I *think* you want smartctl -i instead, and look for the field that s=
+ays=20
+> something like:
+>=20
+> ATA Version is:   ATA8-ACS, ACS-2 T13/2015-D revision 3
 
-[  788.457491]
-[  788.457491] other info that might help us debug this:
-[  788.458115]  Possible interrupt unsafe locking scenario:
-[  788.458115]
-[  788.458756]        CPU0                    CPU1
-[  788.459188]        ----                    ----
-[  788.459625]   lock(&found->groups_sem);
-[  788.460041]                                local_irq_disable();
-[  788.460041]                                lock(&delayed_node->mutex);
-[  788.460041]                                lock(&found->groups_sem);
-[  788.460041]   <Interrupt>
-[  788.460041]     lock(&delayed_node->mutex);
-[  788.460041]
-[  788.460041]  *** DEADLOCK ***
-[  788.460041]
-[  788.460041] 2 locks held by kswapd3/4199:
-[  788.460041]  #0:  (shrinker_rwsem){++++..}, at: shrink_slab+0x3f/0x160 (mm/vmscan.c:360)
-[  788.460041]  #1:  (&type->s_umount_key#108){.+.+..}, at: grab_super_passive+0x56/0x90 (fs/super.c:361)
-[  788.460041]
-[  788.460041] the shortest dependencies between 2nd lock and 1st lock:
-[  788.460041]  -> (&found->groups_sem){+++++.} ops: 46 {
-[  788.460041]     HARDIRQ-ON-W at:
-[  788.460041]                       mark_irqflags+0xf0/0x170 (kernel/locking/lockdep.c:2800)
-[  788.460041]                       __lock_acquire+0x2de/0x5a0 (kernel/locking/lockdep.c:3138)
-[  788.460041]                       lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]                       down_write+0x5c/0xc0 (arch/x86/include/asm/rwsem.h:130 kernel/locking/rwsem.c:50)
-[  788.460041]                       __link_block_group+0x45/0x110 (fs/btrfs/extent-tree.c:8348)
-[  788.460041]                       btrfs_read_block_groups+0x3ae/0x700 (fs/btrfs/extent-tree.c:8533)
-[  788.460041]                       open_ctree+0x1abf/0x2210 (fs/btrfs/disk-io.c:2749)
-[  788.460041]                       btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                       btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                       mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                       vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                       do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)[  788.460041]                       do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                       SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                       tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]     HARDIRQ-ON-R at:
-[  788.460041]                       mark_irqflags+0xbc/0x170 (kernel/locking/lockdep.c:2792)
-[  788.460041]                       __lock_acquire+0x2de/0x5a0 (kernel/locking/lockdep.c:3138)
-[  788.460041]                       lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]                       down_read+0x4c/0xa0 (arch/x86/include/asm/rwsem.h:83 kernel/locking/rwsem.c:23)
-[  788.460041]                       btrfs_calc_num_tolerated_disk_barrier_failures+0x2a7/0x3a0 (fs/btrfs/disk-io.c:3309)
-[  788.460041]                       open_ctree+0x1af7/0x2210 (fs/btrfs/disk-io.c:2755)
-[  788.460041]                       btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                       btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                       mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                       vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                       do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)
-[  788.460041]                       do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                       SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                       tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]     SOFTIRQ-ON-W at:
-[  788.460041]                       mark_irqflags+0x110/0x170 (kernel/locking/lockdep.c:2804)
-[  788.460041]                       __lock_acquire+0x2de/0x5a0 (kernel/locking/lockdep.c:3138)
-[  788.460041]                       lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]                       down_write+0x5c/0xc0 (arch/x86/include/asm/rwsem.h:130 kernel/locking/rwsem.c:50)
-[  788.460041]                       __link_block_group+0x45/0x110 (fs/btrfs/extent-tree.c:8348)
-[  788.460041]                       btrfs_read_block_groups+0x3ae/0x700 (fs/btrfs/extent-tree.c:8533)
-[  788.460041]                       open_ctree+0x1abf/0x2210 (fs/btrfs/disk-io.c:2749)
-[  788.460041]                       btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                       btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                       mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                       vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                       do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)
-[  788.460041]                       do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                       SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                       tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]     SOFTIRQ-ON-R at:
-[  788.460041]                       mark_irqflags+0x110/0x170 (kernel/locking/lockdep.c:2804)
-[  788.460041]                       __lock_acquire+0x2de/0x5a0 (kernel/locking/lockdep.c:3138)
-[  788.460041]                       lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]                       down_read+0x4c/0xa0 (arch/x86/include/asm/rwsem.h:83 kernel/locking/rwsem.c:23)
-[  788.460041]                       btrfs_calc_num_tolerated_disk_barrier_failures+0x2a7/0x3a0 (fs/btrfs/disk-io.c:3309)
-[  788.460041]                       open_ctree+0x1af7/0x2210 (fs/btrfs/disk-io.c:2755)
-[  788.460041]                       btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                       btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                       mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                       vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                       do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)
-[  788.460041]                       do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                       SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                       tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]     RECLAIM_FS-ON-W at:
-[  788.460041]                          mark_held_locks+0x6c/0x90 (kernel/locking/lockdep.c:2523)
-[  788.460041]                          lockdep_trace_alloc+0xfd/0x140 (kernel/locking/lockdep.c:2745 kernel/locking/lockdep.c:2760)
-[  788.460041]                          __kmalloc_track_caller+0x80/0x350 (mm/slub.c:965 mm/slub.c:2402 mm/slub.c:2475 mm/slub.c:3851)
-[  788.460041]                          kvasprintf+0x5b/0x90 (lib/kasprintf.c:24)
-[  788.460041]                          kobject_set_name_vargs+0x23/0x70 (lib/kobject.c:266)
-[  788.460041]                          kobject_add_varg+0x25/0x60 (lib/kobject.c:348)
-[  788.460041]                          kobject_add+0x70/0x80 (lib/kobject.c:403)
-[  788.460041]                          __link_block_group+0xad/0x110 (fs/btrfs/extent-tree.c:8355)
-[  788.460041]                          btrfs_read_block_groups+0x3ae/0x700 (fs/btrfs/extent-tree.c:8533)
-[  788.460041]                          open_ctree+0x1abf/0x2210 (fs/btrfs/disk-io.c:2749)
-[  788.460041]                          btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                          btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                          mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                          vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                          do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)
-[  788.460041]                          do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                          SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                          tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]     INITIAL USE at:
-[  788.460041]                      __lock_acquire+0x301/0x5a0 (kernel/locking/lockdep.c:3142)
-[  788.460041]                      lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]                      down_write+0x5c/0xc0 (arch/x86/include/asm/rwsem.h:130 kernel/locking/rwsem.c:50)
-[  788.460041]                      __link_block_group+0x45/0x110 (fs/btrfs/extent-tree.c:8348)
-[  788.460041]                      btrfs_read_block_groups+0x3ae/0x700 (fs/btrfs/extent-tree.c:8533)
-[  788.460041]                      open_ctree+0x1abf/0x2210 (fs/btrfs/disk-io.c:2749)
-[  788.460041]                      btrfs_fill_super+0x81/0x140 (fs/btrfs/super.c:958)
-[  788.460041]                      btrfs_mount+0x26a/0x300 (fs/btrfs/super.c:1295)
-[  788.460041]                      mount_fs+0x8d/0x1a0 (fs/super.c:1091)
-[  788.460041]                      vfs_kern_mount+0x79/0x150 (fs/namespace.c:813)
-[  788.460041]                      do_new_mount+0xcd/0x1c0 (fs/namespace.c:2068)
-[  788.460041]                      do_mount+0x15d/0x210 (fs/namespace.c:2392)
-[  788.460041]                      SyS_mount+0x9d/0xe0 (fs/namespace.c:2589 fs/namespace.c:2560)
-[  788.460041]                      tracesys+0xdd/0xe2 (arch/x86/kernel/entry_64.S:749)
-[  788.460041]   }
-[  788.460041]   ... key      at: __key.59054+0x0/0x8 (??:0)
-[  788.460041]   ... acquired at:
-[  788.460041]    validate_chain+0x6c5/0x7b0 (kernel/locking/lockdep.c:1945 kernel/locking/lockdep.c:2131)
-[  788.460041]    __lock_acquire+0x4cd/0x5a0 (kernel/locking/lockdep.c:3182)
-[  788.460041]    lock_acquire+0x182/0x1d0 (arch/x86/include/asm/current.h:14 kernel/locking/lockdep.c:3602)
-[  788.460041]    down_read+0x4c/0xa0 (arch/x86/include/asm/rwsem.h:83 kernel/locking/rwsem.c:23)
-[  788.460041]    find_free_extent+0x391/0xbf0 (fs/btrfs/extent-tree.c:6235)
-[  788.460041]    btrfs_reserve_extent+0x7a/0x130 (fs/btrfs/extent-tree.c:6609)
-[  788.460041]    btrfs_alloc_free_block+0x94/0x260 (fs/btrfs/extent-tree.c:7003)
-[  788.460041]    __btrfs_cow_block+0x14a/0x4c0 (fs/btrfs/ctree.c:1168)
-[  788.460041]    btrfs_cow_block+0x159/0x2b0 (fs/btrfs/ctree.c:1600)
-[  788.460041]    btrfs_search_slot+0x33c/0x740 (fs/btrfs/ctree.c:2837)
-[  788.460041]    btrfs_lookup_inode+0x2f/0xa0 (fs/btrfs/inode-item.c:423)
-[  788.460041]    __btrfs_update_delayed_inode+0x61/0x240 (fs/btrfs/delayed-inode.c:1051)
-[  788.460041]    __btrfs_run_delayed_items+0x123/0x1f0 (fs/btrfs/delayed-inode.c:1126 fs/btrfs/delayed-inode.c:1145 fs/btrfs/delayed-inode.c:1180)
-[  788.460041]    btrfs_run_delayed_items+0x13/0x20 (fs/btrfs/delayed-inode.c:1206)
-[  788.460041]    btrfs_flush_all_pending_stuffs+0x24/0x80 (fs/btrfs/transaction.c:1594)
-[  788.460041]    btrfs_commit_transaction+0x25b/0x9f0 (fs/btrfs/transaction.c:1728)
-[  788.460041]    transaction_kthread+0x133/0x250 (fs/btrfs/disk-io.c:1768)
+Late night, cut and pasted the wrong line of output, mine says:
+
+SATA Version is:  SATA 3.0, 6.0 Gb/s (current: 6.0 Gb/s)
+
+Of course that's what the drive is reporting it supports, I'm not sure =
+whether=20
+that's the result of what has been negotiated between the controller an=
+d drive=20
+or purely what the drive supports.
+
+To get more information from smartctl you can use the --identify=3Dwb o=
+ption=20
+instead of -i and that should give you a lot more detail about what the=
+n=20
+drives claims to (and not to) support.   On the version in Kubuntu 13.1=
+0=20
+(6.1+svn3812-1) it only reports 3 things regarding TRIM for my drives.
+
+chris@quad:/tmp$ sudo smartctl --identify=3Dwb -d sat /dev/sdb | egrep =
+=2Di 'trim|
+discard'
+  69     14          1   Deterministic data after trim supported
+  69      5          0   Trimmed LBA range(s) returning zeroed data sup=
+ported
+ 169      0          1   Trim bit in DATA SET MANAGEMENT command suppor=
+ted
+
+I'm currently doing a git clone of their SVN repo to see if there's any=
+ new=20
+functionality that will gather any more information.
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
 
-Thanks,
-Sasha
+--nextPart39859021.pc7ydWa81R
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEVAwUAUyPRwY1yjaOTJg85AQLIpQf9FX20+cqAWuhbbsI7MhL/lZJJs9//ydhO
+9VGyhinsjeMFqTei4LgT9wvWFZ2rxA6VZv4LmsQ3ABkclLjk1YMHxJOjwAgtTuXv
+HHLFk5I6GjNdZ94K9ybe9cOcSKuyBzoqJ4bpktUhfmzD0unNRaiM062V9/kcFBB5
+SU2xHGcaLE+YGvfZN/+1ODd9JJYrcEsd2QzEdQ0hVr4nrAdA8jo0/QOJSCoHkhWj
+VmrvQms/vjyLbCHm6WyNCLRG3H3uRGRja9sy9buatNNJk6reZmoSosgpslMHVFb/
+8rU4KD/OGp+oPYKJlLdLvsqY55JQ9cMaJG4dW1jqweMCWswLzOzFEg==
+=4F0x
+-----END PGP SIGNATURE-----
+
+--nextPart39859021.pc7ydWa81R--
+

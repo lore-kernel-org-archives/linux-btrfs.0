@@ -1,67 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56301 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751951AbaCFDkl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Mar 2014 22:40:41 -0500
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s263eXPE002066
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Mar 2014 11:40:36 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs-progs: cleanup dead return after usage() for fi-disk_usage
-Date: Thu, 6 Mar 2014 11:36:46 +0800
-Message-Id: <1394077008-3568-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:28914 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754883AbaCOA3i (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Mar 2014 20:29:38 -0400
+Date: Sat, 15 Mar 2014 02:29:33 +0200
+From: Rakesh Pandit <rakesh@tuxera.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs-progs: scrub: don't call unlock if
+ pthread_mutex_lock fails
+Message-ID: <20140315002933.GA29539@localhost.localdomain>
+References: <20140314234943.GA28451@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20140314234943.GA28451@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The usage() calls exit() internally, so remove the return after it.
+Hi,
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- cmds-fi-disk_usage.c | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+Forgot to mention the reason for change. If accepted this can be
+included in commit message:
 
-diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
-index e4eb72b..a3b06be 100644
---- a/cmds-fi-disk_usage.c
-+++ b/cmds-fi-disk_usage.c
-@@ -494,10 +494,8 @@ int cmd_filesystem_df(int argc, char **argv)
- 		}
- 	}
- 
--	if (check_argc_min(argc - optind, 1)) {
-+	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_filesystem_df_usage);
--		return 21;
--	}
- 
- 	for (i = optind; i < argc ; i++) {
- 		int r, fd;
-@@ -914,10 +912,8 @@ int cmd_filesystem_disk_usage(int argc, char **argv)
- 		}
- 	}
- 
--	if (check_argc_min(argc - optind, 1)) {
-+	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_filesystem_disk_usage_usage);
--		return 21;
--	}
- 
- 	for (i = optind; i < argc ; i++) {
- 		int r, fd;
-@@ -1050,10 +1046,8 @@ int cmd_device_disk_usage(int argc, char **argv)
- 		}
- 	}
- 
--	if (check_argc_min(argc - optind, 1)) {
-+	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_device_disk_usage_usage);
--		return 21;
--	}
- 
- 	for (i = optind; i < argc ; i++) {
- 		int r, fd;
--- 
-1.8.1.4
+On Sat, Mar 15, 2014 at 01:49:45AM +0200, Rakesh Pandit wrote:
+> If pthread_mutex_lock fails (rare but fix it anyway), don't call
+> pthread_mutex_unlock on mutex.
+>
 
+Rationale being that if pthread_mutex_lock fails pthread_mutex_unlock
+will always fail and overwrite actual error value in err.
+ 
+> Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
+
+regards,

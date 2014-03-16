@@ -1,33 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:40924 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755790AbaCPXML convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Mar 2014 19:12:11 -0400
+Received: from magic.merlins.org ([209.81.13.136]:46123 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932124AbaCPXRk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Mar 2014 19:17:40 -0400
+Date: Sun, 16 Mar 2014 16:17:29 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20140316231729.GA29149@merlins.org>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: How to handle a RAID5 arrawy with a failing drive? 
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <F8E88232-C43A-4BFD-B2A6-411576299531@colorremedies.com>
-Date: Sun, 16 Mar 2014 17:12:10 -0600
-Message-Id: <C66D07BC-E0E7-4F3D-8ACD-C3E9E575C629@colorremedies.com>
-To: Btrfs <linux-btrfs@vger.kernel.org>, Marc MERLIN <marc@merlins.org>
+In-Reply-To: <C66D07BC-E0E7-4F3D-8ACD-C3E9E575C629@colorremedies.com>
+Subject: Re: How to handle a RAID5 arrawy with a failing drive?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <20140316222026.GU16946@merlins.org>
  <F8E88232-C43A-4BFD-B2A6-411576299531@colorremedies.com>
+ <C66D07BC-E0E7-4F3D-8ACD-C3E9E575C629@colorremedies.com>
 
+On Sun, Mar 16, 2014 at 05:12:10PM -0600, Chris Murphy wrote:
+> 
+> On Mar 16, 2014, at 4:55 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> > Then use btrfs replace start.
+> 
+> Looks like in 3.14rc6 replace isn't yet supported. I get "dev_replace cannot yet handle RAID5/RAID6".
+> 
+> When I do:
+> btrfs device add <new> <mp>
+> 
+> The command hangs, no kernel messages.
 
-On Mar 16, 2014, at 4:55 PM, Chris Murphy <lists@colorremedies.com> wrote:
+Ok, that's kind of what I thought.
+So, for now, with raid5:
+- btrfs seems to handle a drive not working 
+- you say I can mount with the drive missing in degraded mode (I haven't
+  tried that, I will)
+- but no matter how I remove the faulty drive, there is no rebuild on a
+  new drive procedure that works yet
 
-> Then use btrfs replace start.
+Correct?
 
-Looks like in 3.14rc6 replace isn't yet supported. I get "dev_replace cannot yet handle RAID5/RAID6".
-
-When I do:
-btrfs device add <new> <mp>
-
-The command hangs, no kernel messages.
-
-Chris Murphy
-
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

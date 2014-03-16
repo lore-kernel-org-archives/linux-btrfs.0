@@ -1,107 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f177.google.com ([74.125.82.177]:48831 "EHLO
-	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932865AbaCQMGp (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:45512 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932076AbaCPWUg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Mar 2014 08:06:45 -0400
-Received: by mail-we0-f177.google.com with SMTP id u57so4385189wes.22
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 05:06:44 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+	Sun, 16 Mar 2014 18:20:36 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:42187 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WPJPw-0003JQ-NK by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sun, 16 Mar 2014 15:20:35 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1WPJPu-0005yu-8g
+	for linux-btrfs@vger.kernel.org; Sun, 16 Mar 2014 15:20:26 -0700
+Date: Sun, 16 Mar 2014 15:20:26 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
-Date: Mon, 17 Mar 2014 12:04:07 +0000
-Message-Id: <1395057847-3591-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1395022528-27225-1-git-send-email-fdmanana@gmail.com>
-References: <1395022528-27225-1-git-send-email-fdmanana@gmail.com>
+Message-ID: <20140316222026.GU16946@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Subject: How to handle a RAID5 arrawy with a failing drive? 
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For an incremental send, fix the process of determining whether the directory
-inode we're currently processing needs to have its move/rename operation delayed.
+I just created this array:
+polgara:/mnt/btrfs_backupcopy# btrfs fi show
+Label: backupcopy  uuid: 7d8e1197-69e4-40d8-8d86-278d275af896
+        Total devices 10 FS bytes used 220.32GiB
+        devid    1 size 465.76GiB used 25.42GiB path /dev/dm-0
+        devid    2 size 465.76GiB used 25.40GiB path /dev/dm-1
+        devid    3 size 465.75GiB used 25.40GiB path /dev/mapper/crypt_sde1
+        devid    4 size 465.76GiB used 25.40GiB path /dev/dm-3
+        devid    5 size 465.76GiB used 25.40GiB path /dev/dm-4
+        devid    6 size 465.76GiB used 25.40GiB path /dev/dm-5
+        devid    7 size 465.76GiB used 25.40GiB path /dev/dm-6
+        devid    8 size 465.76GiB used 25.40GiB path /dev/mapper/crypt_sdj1
+        devid    9 size 465.76GiB used 25.40GiB path /dev/dm-9
+        devid    10 size 465.76GiB used 25.40GiB path /dev/dm-8
 
-We were ignoring the fact that if the inode's new immediate ancestor has a higher
-inode number than ours but wasn't renamed/moved, we might still need to delay our
-move/rename, because some other ancestor directory higher in the hierarchy might
-have an inode number higher than ours *and* was renamed/moved too - in this case
-we have to wait for rename/move of that ancestor to happen before our current
-directory's rename/move operation.
+And clearly it has issues with one of the drives.
 
-Steps to reproduce this issue:
+I have a copy that is still going on to it.
 
-      $ mkfs.btrfs -f /dev/sdd
-      $ mount /dev/sdd /mnt
+Last I tried to boot a raid5 btrfs array with a drive missing, that didn't work at all.
 
-      $ mkdir -p /mnt/a/x1/x2
-      $ mkdir /mnt/a/Z
-      $ mkdir -p /mnt/a/x1/x2/x3/x4/x5
+Since this array is still running, what are my options?
+I can't tell btrfs to replace drive sde1 with a new drive I plugged in
+because the code doesn't exist, correct?
+If I yank, sde1 and reboot, the array will not come back up from what I understand,
+or is that incorrect?
+Do rebuilds work at all with a missing drive to a spare drive?
 
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-      $ btrfs send /mnt/snap1 -f /tmp/base.send
+This is with 3.14.0-rc5.
 
-      $ mv /mnt/a/x1/x2/x3 /mnt/a/Z/X33
-      $ mv /mnt/a/x1/x2 /mnt/a/Z/X33/x4/x5/X22
+Do I have other options?
+(data is not important at all, I just want to learn how to deal with such a case
+with the current code)
 
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-      $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+[59532.543415] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2444, flush 0, corrupt 0, gen 0
+[59547.654888] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2445, flush 0, corrupt 0, gen 0
+[59547.655755] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2446, flush 0, corrupt 0, gen 0
+[59552.096038] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2447, flush 0, corrupt 0, gen 0
+[59552.096613] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2448, flush 0, corrupt 0, gen 0
+[59557.124736] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2449, flush 0, corrupt 0, gen 0
+[59557.125569] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 162, rd 2450, flush 0, corrupt 0, gen 0
+[59572.694548] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59572.695757] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 163, rd 2450, flush 0, corrupt 0, gen 0
+[59572.696295] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59572.696976] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 164, rd 2450, flush 0, corrupt 0, gen 0
+[59572.697693] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59572.698397] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2450, flush 0, corrupt 0, gen 0
+[59586.844083] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2451, flush 0, corrupt 0, gen 0
+[59586.844614] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2452, flush 0, corrupt 0, gen 0
+[59587.087696] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2453, flush 0, corrupt 0, gen 0
+[59587.088378] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2454, flush 0, corrupt 0, gen 0
+[59587.188784] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2455, flush 0, corrupt 0, gen 0
+[59587.189280] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2456, flush 0, corrupt 0, gen 0
+[59587.189737] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 165, rd 2457, flush 0, corrupt 0, gen 0
+[59612.829235] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59612.829871] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 166, rd 2457, flush 0, corrupt 0, gen 0
+[59612.830767] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59612.831397] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 167, rd 2457, flush 0, corrupt 0, gen 0
+[59612.832220] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59612.832848] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 168, rd 2457, flush 0, corrupt 0, gen 0
+[59648.014743] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59648.015221] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 169, rd 2457, flush 0, corrupt 0, gen 0
+[59648.015694] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+[59648.016154] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 170, rd 2457, flush 0, corrupt 0, gen 0
+[59648.017249] BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
 
-The incremental send caused the kernel code to enter an infinite loop when
-building the path string for directory Z after its references are processed.
+By the way, I found this very amusing:
+polgara:/mnt/btrfs_backupcopy# smartctl -i /dev/sde
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.14.0-rc5-amd64-i915-preempt-20140216c] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
 
-A test case for xfstests follows.
+=== START OF INFORMATION SECTION ===
+Vendor:               /14:0:0:
+Product:              0
+User Capacity:        600,332,565,813,390,450 bytes [600 PB]
+Logical block size:   774843950 bytes
+Physical block size:  1549687900 bytes
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+I have a 600PB drive for sale, please make me offers :)
 
-V2: Added missing error handling and fixed typo in commit message.
-
- fs/btrfs/send.c |   33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d869079..db47fff 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3242,6 +3242,39 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	}
- 	ret = 0;
- 
-+	/*
-+	 * Ok, our new most direct ancestor has a higher inode number but
-+	 * wasn't moved/renamed. So maybe some of the new ancestors higher in
-+	 * the hierarchy have an higher inode number too *and* were renamed
-+	 * or moved - in this case we need to wait for the ancestor's rename
-+	 * or move operation before we can do the move/rename for the current
-+	 * inode.
-+	 */
-+	while (ret == 0 && parent_ino_after > sctx->cur_ino) {
-+		ino = parent_ino_after;
-+		fs_path_reset(path_before);
-+		fs_path_reset(path_after);
-+
-+		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
-+				    NULL, path_after);
-+		if (ret < 0)
-+			goto out;
-+		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
-+				    NULL, path_before);
-+		if (ret == -ENOENT) {
-+			ret = 0;
-+			break;
-+		} else if (ret < 0) {
-+			goto out;
-+		}
-+
-+		len1 = fs_path_len(path_before);
-+		len2 = fs_path_len(path_after);
-+		if (parent_ino_before != parent_ino_after || len1 != len2 ||
-+		    memcmp(path_before->start, path_after->start, len1))
-+			ret = 1;
-+	}
-+
- out:
- 	fs_path_free(path_before);
- 	fs_path_free(path_after);
+Thanks,
+Marc
 -- 
-1.7.10.4
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

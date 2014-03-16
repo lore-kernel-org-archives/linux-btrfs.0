@@ -1,45 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:40146 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756186AbaCOWsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 18:48:46 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 6F23BCD271
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Mar 2014 09:48:46 +1100 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 29676-05 for <linux-btrfs@vger.kernel.org>;
- Sun, 16 Mar 2014 09:48:46 +1100 (EST)
-Received: from [IPv6:2001:44b8:41dd:d500:6a5d:43ff:fe40:f7e] (2001-44b8-41dd-d500-6a5d-43ff-fe40-0f7e.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:6a5d:43ff:fe40:f7e])
-	by csamuel.org (Postfix) with ESMTPSA id AAF65CD26F
-	for <linux-btrfs@vger.kernel.org>; Sun, 16 Mar 2014 09:48:45 +1100 (EST)
-Message-ID: <5324D8CA.1080407@csamuel.org>
-Date: Sun, 16 Mar 2014 09:48:42 +1100
-From: Chris Samuel <chris@csamuel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:37421 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750715AbaCPAlT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Mar 2014 20:41:19 -0400
+From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] btrfs: Cleanup the btrfs_workqueue related function
+ type
+Date: Sun, 16 Mar 2014 00:41:17 +0000
+Message-ID: <5324F370.4080303@cn.fujitsu.com>
+References: <1394079657-24937-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20140314143903.GE32719@twin.jikos.cz>
+In-Reply-To: <20140314143903.GE32719@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: discard synchronous on most SSDs?
-References: <1756989.4ep0Vdupld@tethys>	<yq1bnx8y2mi.fsf@sermon.lab.mkp.net> <4448214.x9oPWjPhdL@quad>	<1566234.HjNzCBAKa5@quad> <pan$86f37$20eb1911$444fa726$8400b046@cox.net>
-In-Reply-To: <pan$86f37$20eb1911$444fa726$8400b046@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 15/03/14 22:26, Duncan wrote:
+On Fri, 14 Mar 2014 15:39:03 +0100, David Sterba wrote:
+> On Thu, Mar 06, 2014 at 04:19:50AM +0000, quwenruo@cn.fujitsu.com wrote:
+>> @@ -23,11 +23,13 @@
+>>   struct btrfs_workqueue;
+>>   /* Internal use only */
+>>   struct __btrfs_workqueue;
+>> +struct btrfs_work;
+>> +typedef void (*btrfs_func_t)(struct btrfs_work *arg);
+> I don't see what's wrong with the non-typedef type, CodingStyle
+> discourages from using typedefs in general (Chapter 5).
+>
+> The name btrfs_func_t is a generic, if you really need to use a typedef
+> here, please change it to something closer to the workqueues, eg.
+> btrfs_work_func_t.
+>
+btrfs_func_t is just following the work_func_t naming style,
+for btrfs it's only used to reduce the length of prototype definition.
 
-> Either that or that feature bit simply indicates trim support, not NCQ
-> trim support.
+Since btrfs_func_t is only used in btrfs, this patch can be ignored.
 
-You're quite right, I outsmarted myself by noticing at the fact that the 
-kernel tests for ATA_LOG_NCQ_SEND_RECV_DSM_TRIM and unsets that for 
-drives that don't support NCQ DSM TRIM and then seeing DSM TRIM in the 
-SATA 3.1 spec and inferred they were the same thing.
-
-Looking closer at the kernel code that tests for what trim to use with 
-ATA_LOG_NCQ_SEND_RECV_DSM_TRIM it falls back to ATA_DSM_TRIM if it can't 
-do the NCQ version.
-
-Mea culpa!
-
--- 
-  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Thanks
+Quÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

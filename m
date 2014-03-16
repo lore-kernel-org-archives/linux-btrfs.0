@@ -1,97 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:56371 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754253AbaCPUht (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Mar 2014 16:37:49 -0400
-Received: by mail-wg0-f51.google.com with SMTP id k14so3822810wgh.34
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Mar 2014 13:37:48 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: fix incremental send's decision to delay a dir move/rename
-Date: Sun, 16 Mar 2014 20:37:26 +0000
-Message-Id: <1395002246-3840-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1394983430-20440-1-git-send-email-fdmanana@gmail.com>
-References: <1394983430-20440-1-git-send-email-fdmanana@gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45984 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754780AbaCPXxn convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 16 Mar 2014 19:53:43 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:60719 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WPKsB-001TCO-2s
+	for linux-btrfs@vger.kernel.org; Sun, 16 Mar 2014 17:53:43 -0600
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: [bug] hang when using btrfs device add on degraded raid5 volume
+Message-Id: <E1C17BAC-24CC-4767-8158-9092B2AD3C25@colorremedies.com>
+Date: Sun, 16 Mar 2014 17:53:42 -0600
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's possible to change the parent/child relationship between directories
-in such a way that if a child directory has a higher inode number than
-its parent, it doesn't necessarily means the child rename/move operation
-can be performed immediately. The parent migth have its own rename/move
-operation delayed, therefore in this case the child needs to have its
-rename/move operation delayed too, and be performed after its new parent's
-rename/move.
+I'm not sure if this is a bug or expected at this point.
 
-Steps to reproduce the issue:
+Create and populate 3x 8TB virtual devices
+Boot kernel 3.13.6-200.fc20.x86_64
+btrfs-progs v3.12
+mkfs.btrfs -d raid5 -m raid1 /dev/sd[bcd]
+mount /mnt
+cp -a <source> /mnt/
+umount /mnt
+poweroff
 
-      $ umount /mnt
-      $ mkfs.btrfs -f /dev/sdd
-      $ mount /dev/sdd /mnt
+In VM, remove sdd virtual disk and replace with blank image (which becomes sdd).
+Boot kernel 3.14.0-0.rc6.git0.1.fc21.x86_64
+btrfs replace start 3 /dev/sdd /mnt
+"dev_replace cannot yet handle RAID5/RAID6"
+btrfs device add /dev/sdd /mnt
+*hang*
 
-      $ mkdir /mnt/A
-      $ mkdir /mnt/B
-      $ mkdir /mnt/C
-      $ mv /mnt/C /mnt/A
-      $ mv /mnt/B /mnt/A/C
-      $ mkdir /mnt/A/C/D
+ps reports D+ status for btrfs process.
 
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-      $ btrfs send /mnt/snap1 -f /tmp/base.send
 
-      $ mv /mnt/A/C/D /mnt/A/D2
-      $ mv /mnt/A/C/B /mnt/A/D2/B2
-      $ mv /mnt/A/C /mnt/A/D2/B2/C2
+During the btrfs device add D+ hanged state with 3.14.0-0.rc6.git0.1.fc21.x86_64.
 
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-      $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+sysrq t
 
-The incremental send caused the kernel code to enter an infinite loop when
-building the path string for directory C after its references are processed.
+[ 1235.585226] btrfs           D ffff88009d914640     0   598    508 0x00000084
+[ 1235.585226]  ffff88009ecf99b8 0000000000000086 ffff880094935f00 ffff88009ecf9fd8
+[ 1235.585226]  0000000000014640 0000000000014640 ffff880094935f00 ffff88009d914f40
+[ 1235.585226]  ffff88009e44a0e8 0000000000000002 ffffffff81173ce0 ffff88009ecf9a30
+[ 1235.585226] Call Trace:
+[ 1235.585226]  [<ffffffff81173ce0>] ? wait_on_page_read+0x60/0x60
+[ 1235.585226]  [<ffffffff816f1d0d>] io_schedule+0x9d/0x140
+[ 1235.585226]  [<ffffffff81173cee>] sleep_on_page+0xe/0x20
+[ 1235.585226]  [<ffffffff816f20c2>] __wait_on_bit+0x62/0x90
+[ 1235.585226]  [<ffffffff81173a69>] wait_on_page_bit+0x89/0xb0
+[ 1235.585226]  [<ffffffff810d2050>] ? autoremove_wake_function+0x40/0x40
+[ 1235.585226]  [<ffffffff81173b99>] filemap_fdatawait_range+0x109/0x1c0
+[ 1235.585226]  [<ffffffffa00d1f77>] btrfs_wait_marked_extents+0x97/0x100 [btrfs]
+[ 1235.585226]  [<ffffffffa00d204b>] btrfs_write_and_wait_transaction+0x6b/0xb0 [btrfs]
+[ 1235.585226]  [<ffffffffa00d2833>] btrfs_commit_transaction+0x683/0x9a0 [btrfs]
+[ 1235.585226]  [<ffffffffa00fedf6>] btrfs_init_new_device+0xa36/0xec0 [btrfs]
+[ 1235.585226]  [<ffffffff81176003>] ? filemap_fault+0xa3/0x420
+[ 1235.585226]  [<ffffffff811cecbe>] ? __kmalloc_track_caller+0xae/0x240
+[ 1235.585226]  [<ffffffffa01077a9>] ? btrfs_ioctl+0xac9/0x2b80 [btrfs]
+[ 1235.585226]  [<ffffffffa01077cb>] btrfs_ioctl+0xaeb/0x2b80 [btrfs]
+[ 1235.585226]  [<ffffffff811a2255>] ? handle_mm_fault+0x4a5/0xef0
+[ 1235.585226]  [<ffffffff810bf506>] ? try_to_wake_up+0x1e6/0x290
+[ 1235.585226]  [<ffffffff816f8bdc>] ? __do_page_fault+0x20c/0x550
+[ 1235.585226]  [<ffffffff81224241>] ? __blkdev_put+0x141/0x1a0
+[ 1235.585226]  [<ffffffff811fc790>] do_vfs_ioctl+0x2e0/0x4a0
+[ 1235.585226]  [<ffffffff811fc9f1>] SyS_ioctl+0xa1/0xc0
+[ 1235.585226]  [<ffffffff816fe129>] system_call_fastpath+0x16/0x1b
 
-The necessary conditions here are that C has an inode number higher than both
-A and B, and B as an higher inode number higher than A, and D has the highest
-inode number, that is:
-    inode_number(A) < inode_number(B) < inode_number(C) < inode_number(D)
 
-The same issue could happen if after the first snapshot there's any number
-of intermediary parent directories between A2 and B2, and between B2 and C2.
+sysrq w (partial)
 
-A test case for xfstests follows, covering this simple case and more advanced
-ones, with files and hard links created inside the directories.
+[ 1210.545670] SysRq : Show Blocked State
+[ 1210.545834]   task                        PC stack   pid father
+[ 1210.546010] btrfs           D ffff88009d914640     0   598    508 0x00000084
+[ 1210.546119]  ffff88009ecf99b8 0000000000000086 ffff880094935f00 ffff88009ecf9fd8
+[ 1210.546119]  0000000000014640 0000000000014640 ffff880094935f00 ffff88009d914f40
+[ 1210.546119]  ffff88009e44a0e8 0000000000000002 ffffffff81173ce0 ffff88009ecf9a30
+[ 1210.546119] Call Trace:
+[ 1210.546119]  [<ffffffff81173ce0>] ? wait_on_page_read+0x60/0x60
+[ 1210.546119]  [<ffffffff816f1d0d>] io_schedule+0x9d/0x140
+[ 1210.546119]  [<ffffffff81173cee>] sleep_on_page+0xe/0x20
+[ 1210.546119]  [<ffffffff816f20c2>] __wait_on_bit+0x62/0x90
+[ 1210.546119]  [<ffffffff81173a69>] wait_on_page_bit+0x89/0xb0
+[ 1210.546119]  [<ffffffff810d2050>] ? autoremove_wake_function+0x40/0x40
+[ 1210.546119]  [<ffffffff81173b99>] filemap_fdatawait_range+0x109/0x1c0
+[ 1210.546119]  [<ffffffffa00d1f77>] btrfs_wait_marked_extents+0x97/0x100 [btrfs]
+[ 1210.546119]  [<ffffffffa00d204b>] btrfs_write_and_wait_transaction+0x6b/0xb0 [btrfs]
+[ 1210.546119]  [<ffffffffa00d2833>] btrfs_commit_transaction+0x683/0x9a0 [btrfs]
+[ 1210.546119]  [<ffffffffa00fedf6>] btrfs_init_new_device+0xa36/0xec0 [btrfs]
+[ 1210.546119]  [<ffffffff81176003>] ? filemap_fault+0xa3/0x420
+[ 1210.546119]  [<ffffffff811cecbe>] ? __kmalloc_track_caller+0xae/0x240
+[ 1210.546119]  [<ffffffffa01077a9>] ? btrfs_ioctl+0xac9/0x2b80 [btrfs]
+[ 1210.546119]  [<ffffffffa01077cb>] btrfs_ioctl+0xaeb/0x2b80 [btrfs]
+[ 1210.546119]  [<ffffffff811a2255>] ? handle_mm_fault+0x4a5/0xef0
+[ 1210.546119]  [<ffffffff810bf506>] ? try_to_wake_up+0x1e6/0x290
+[ 1210.546119]  [<ffffffff816f8bdc>] ? __do_page_fault+0x20c/0x550
+[ 1210.546119]  [<ffffffff81224241>] ? __blkdev_put+0x141/0x1a0
+[ 1210.546119]  [<ffffffff811fc790>] do_vfs_ioctl+0x2e0/0x4a0
+[ 1210.546119]  [<ffffffff811fc9f1>] SyS_ioctl+0xa1/0xc0
+[ 1210.546119]  [<ffffffff816fe129>] system_call_fastpath+0x16/0x1b
+[ 1210.546119] Sched Debug Version: v0.11, 3.14.0-0.rc6.git0.1.fc21.x86_64 #1
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
 
-V2: Right version of the patch. Previously sent came from the wrong vm.
-V3: The condition needed to check already existed, so just moved it to the
-    top, instead of adding it again.
+Bug report includes full dmesg.
+https://bugzilla.kernel.org/show_bug.cgi?id=72221
 
- fs/btrfs/send.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6463691..d869079 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3184,12 +3184,12 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	struct fs_path *path_after = NULL;
- 	int len1, len2;
- 
--	if (parent_ref->dir <= sctx->cur_ino)
--		return 0;
--
- 	if (is_waiting_for_move(sctx, ino))
- 		return 1;
- 
-+	if (parent_ref->dir <= sctx->cur_ino)
-+		return 0;
-+
- 	ret = get_inode_info(sctx->parent_root, ino, NULL, &old_gen,
- 			     NULL, NULL, NULL, NULL);
- 	if (ret == -ENOENT)
--- 
-1.7.10.4
-
+Chris Murphy

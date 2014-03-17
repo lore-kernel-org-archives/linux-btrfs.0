@@ -1,89 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46275 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932767AbaCQL6W (ORCPT
+Received: from mail-qa0-f48.google.com ([209.85.216.48]:54036 "EHLO
+	mail-qa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932767AbaCQMVH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Mar 2014 07:58:22 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s2HBwLGV007193
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:58:21 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s2HBwK1U021897
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:58:20 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2HBwKZu022695
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:58:20 GMT
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: all super blocks of the replaced disk must be scratched
-Date: Mon, 17 Mar 2014 19:58:06 +0800
-Message-Id: <1395057486-4341-1-git-send-email-Anand.Jain@oracle.com>
+	Mon, 17 Mar 2014 08:21:07 -0400
+Received: by mail-qa0-f48.google.com with SMTP id m5so5120553qaj.21
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 05:21:05 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <532313D5.5080702@fb.com>
+References: <1394447961-27981-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	<CAP9B-Qm8p5zPBDpvEwwOHGUxpRqHkBCsNGk21+8qaoYkhx44zA@mail.gmail.com>
+	<531DDF4E.3090600@fb.com>
+	<531E657A.2000803@cn.fujitsu.com>
+	<9BB6AEEF-1B52-449E-BB89-B3619EE968EB@gmail.com>
+	<532313D5.5080702@fb.com>
+Date: Mon, 17 Mar 2014 20:21:05 +0800
+Message-ID: <CAP9B-Q=71BAfoJhq2N0sDHkoF=TorvrvA=axD473+ZaqdXAWpw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs-progs: fsck: disable --init-extent-tree option when
+ using snapshots
+From: Shilong Wang <wangshilong1991@gmail.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In a normal scenario when sys-admin replaces a disk, the
-expeted is btrfs will release the disk completely.
+Hi Josef,
 
-However the below test case gives a wrong impression that
-replaced disk is still is in use.
+Thanks for your information ^_^, i have just finished codes and it passed
+my simple test and i will do more tests about rebuilding extent tree
+with snapshots before
+i send out patches.
 
-$ btrfs rep start /dev/sde /dev/sdg4 /btrfs
-$ mkfs.btrfs /dev/sde
-/dev/sde appears to contain an existing filesystem (btrfs).
-Error: Use the -f option to force overwrite.
+Thanks,
+Wang
 
----
- fs/btrfs/volumes.c | 33 +++++++++++++++++++++++++--------
- 1 file changed, 25 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3c44800..06717a5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6286,16 +6286,33 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
- {
- 	struct buffer_head *bh;
- 	struct btrfs_super_block *disk_super;
-+	int i;
-+	u64 bytenr;
- 
--	bh = btrfs_read_dev_super(device->bdev);
--	if (!bh)
--		return -EINVAL;
--	disk_super = (struct btrfs_super_block *)bh->b_data;
-+	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-+		bytenr = btrfs_sb_offset(i);
-+		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
-+				i_size_read(device->bdev->bd_inode))
-+			break;
- 
--	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--	set_buffer_dirty(bh);
--	sync_dirty_buffer(bh);
--	brelse(bh);
-+		bh = __bread(device->bdev, bytenr / 4096,
-+					BTRFS_SUPER_INFO_SIZE);
-+		if (!bh)
-+			continue;
-+
-+		disk_super = (struct btrfs_super_block *)bh->b_data;
-+		if (btrfs_super_bytenr(disk_super) != bytenr ||
-+				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
-+			brelse(bh);
-+			continue;
-+		}
-+
-+		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
-+
-+		set_buffer_dirty(bh);
-+		sync_dirty_buffer(bh);
-+		brelse(bh);
-+	}
- 
- 	return 0;
- }
--- 
-1.8.5.3
-
+2014-03-14 22:36 GMT+08:00 Josef Bacik <jbacik@fb.com>:
+> On 03/14/2014 09:36 AM, Wang Shilong wrote:
+>> Hi Josef,
+>>
+>> Just ping this again.
+>>
+>> Did you have any good ideas to rebuild extent tree if broken
+>> filesystem is filled with snapshots.?
+>>
+>> I was working on this recently, i was blocked that i can not verify
+>> if an extent is *FULL BACKREF* mode or not. As a *FULL BACKREF*
+>> extent's refs can be 1 and more than 1..
+>>
+>> I am willing to test  codes or have a try if you could give me some
+>> advice etc.
+>>
+>
+> Full backrefs aren't too hard.  Basically all you have to do is walk
+> down the fs tree and keep track of btrfs_header_owner(eb) for
+> everything we walk into.  If btrfs_header_owner(eb) == root->objectid
+> for the tree we are walking down then we need a ye olde normal backref
+> for this block.  If btrfs_header_owner(eb) != root->objectid we _may_
+> need a full backref, it depends on who owns the parent block.  The
+> following may be incomplete, I'm kind of sick
+>
+> 1) We walk down the original tree, every eb we encounter has
+> btrfs_header_owner(eb) == root->objectid.  We add normal references
+> for this root (BTRFS_TREE_BLOCK_REF_KEY) for this root.  World peace
+> is achieved.
+>
+> 2) We walk down the snapshotted tree.  Say we didn't change anything
+> at all, it was just a clean snapshot and then boom.  So the
+> btrfs_header_owner(root->node) == root->objectid, so normal backref.
+> We walk down to the next level, where btrfs_header_owner(eb) !=
+> root->objectid, but the level above did, so we add normal refs for all
+> of these blocks.  We go down the next level, now our
+> btrfs_header_owner(parent) != root->objectid and
+> btrfs_header_owner(eb) != root->objectid.  This is where we need to
+> now go back and see if btrfs_header_owner(eb) currently has a ref on
+> eb.  If it does we are done, move on to the next block in this same
+> level, we don't have to go further down.
+>
+> 3) Harder case, we snapshotted and then changed things in the original
+> root.  Do the same thing as in step 2, but now we get down to
+> btrfs_header_level(eb) != root->objectid && btrfs_header_level(parent)
+> != root->objectid.  We lookup the references we have for eb and notice
+> that btrfs_header_owner(eb) no longer refers to eb.  So now we must
+> set FULL_BACKREF on this extent reference and add a
+> SHARED_BLOCK_REF_KEY for this eb using the parent->start as the
+> offset.  And we need to keep walking down and doing the same thing
+> until we either hit level 0 or btrfs_header_owner(eb) has a ref on the
+> block.
+>
+> 4) Not really a whole special case, just something to keep in mind, if
+> btrfs_header_owner(parent) == root->objectid but
+> btrfs_header_owner(eb) != root->objectid that means we have a normal
+> TREE_BLOCK_REF on eb, it's only when the parent doesn't match our
+> current root that it's a problem.
+>
+>
+> Does that make sense?  Thanks,
+>
+> Josef

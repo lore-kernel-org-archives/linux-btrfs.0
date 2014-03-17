@@ -1,298 +1,220 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38798 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933103AbaCQNFs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Mar 2014 09:05:48 -0400
-Date: Mon, 17 Mar 2014 14:05:46 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Sasha Levin <sasha.levin@oracle.com>
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: Re: btrfs: lock inversion between delayed_node->mutex and
- found->groups_sem
-Message-ID: <20140317130546.GE29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <53239AE0.8030306@oracle.com>
+Received: from magic.merlins.org ([209.81.13.136]:55480 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751826AbaCQQNJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Mar 2014 12:13:09 -0400
+Date: Mon, 17 Mar 2014 09:13:07 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: How to handle a RAID5 arrawy with a failing drive?
+Message-ID: <20140317161307.GJ6143@merlins.org>
+References: <F8E88232-C43A-4BFD-B2A6-411576299531@colorremedies.com> <C66D07BC-E0E7-4F3D-8ACD-C3E9E575C629@colorremedies.com> <20140316231729.GA29149@merlins.org> <85AE52FE-5191-49AF-98A9-380F224A5DA1@colorremedies.com> <20140317005145.GZ16946@merlins.org> <99A46301-9C0E-43F0-8415-E23B86FDB5E2@colorremedies.com> <20140317011752.GV6143@merlins.org> <3592E609-7145-4F1A-8B16-EEF3C736D191@colorremedies.com> <20140317034451.GW6143@merlins.org> <B593C5F2-5CE0-428C-97FB-A75AB0B11254@colorremedies.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53239AE0.8030306@oracle.com>
+In-Reply-To: <B593C5F2-5CE0-428C-97FB-A75AB0B11254@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 14, 2014 at 08:12:16PM -0400, Sasha Levin wrote:
-> While fuzzing with trinity inside a KVM tools guest running the latest -next
-> kernel I've stumbled on the following:
+On Sun, Mar 16, 2014 at 11:12:43PM -0600, Chris Murphy wrote:
 > 
-> [  788.458756]        CPU0                    CPU1
-> [  788.459188]        ----                    ----
-> [  788.459625]   lock(&found->groups_sem);
-> [  788.460041]                                local_irq_disable();
-> [  788.460041]                                lock(&delayed_node->mutex);
-> [  788.460041]                                lock(&found->groups_sem);
-> [  788.460041]   <Interrupt>
-> [  788.460041]     lock(&delayed_node->mutex);
-> [  788.460041]
-> [  788.460041]  *** DEADLOCK ***
-> [  788.460041]
-> [  788.460041] 2 locks held by kswapd3/4199:
+> On Mar 16, 2014, at 9:44 PM, Marc MERLIN <marc@merlins.org> wrote:
+> 
+> > On Sun, Mar 16, 2014 at 08:56:35PM -0600, Chris Murphy wrote:
+> > 
+> >>> If I add a device, isn't it going to grow my raid to make it bigger instead
+> >>> of trying to replace the bad device?
+> >> 
+> >> Yes if it's successful. No if it fails which is the problem I'm having.
+> > 
+> > That's where I don't follow you.
+> > You just agreed that it will grow my raid.
+> > So right now it's 4.5TB with 10 drives, if I add one drive, it will grow to
+> > 5TB with 11 drives.
+> > How does that help?
+> 
+> If you swap the faulty drive for a good drive, I'm thinking then you'll be able to device delete the bad device, which ought to be "missing" at that point; or if that fails you should be able to do a balance, and then be able to device delete the faulty drive.
+> 
+> The problem I'm having is that when I detach one device out of a 3 device raid5, btrfs fi show doesn't list it as missing. It's listed without the /dev/sdd designation it had when attached, but now it's just blank.
 
-I've once (3.14-rc5) seen the same warning also caused by xfstests/generic/224
+Ok, I tried unmounting and remounting degraded this morning:
 
-2 locks held by 224/31203:
- #0:  (shrinker_rwsem){++++..}, at: [<ffffffff8113be6d>] shrink_slab+0x3d/0x110
- #1:  (&type->s_umount_key#32){++++++}, at: [<ffffffff8117cd84>] grab_super_passive+0x44/0x90
+polgara:~# mount -v -t btrfs -o compress=zlib,space_cache,noatime,degraded LABEL=backupcopy /mnt/btrfs_backupcopy
+Mar 17 08:57:35 polgara kernel: [123824.344085] BTRFS: device label backupcopy devid 9 transid 3837 /dev/mapper/crypt_sdk1
+Mar 17 08:57:35 polgara kernel: [123824.454641] BTRFS info (device dm-9): allowing degraded mounts
+Mar 17 08:57:35 polgara kernel: [123824.454978] BTRFS info (device dm-9): disk space caching is enabled
+Mar 17 08:57:35 polgara kernel: [123824.497437] BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 3888, rd 321927975, flush 0, corrupt 0, gen
+0
+/dev/mapper/crypt_sdk1 on /mnt/btrfs_backupcopy type btrfs (rw,noatime,compress=zlib,space_cache,degraded)
 
-the shortest dependencies between 2nd lock and 1st lock:
- -> (&found->groups_sem){+++++.} ops: 405561 {
-    HARDIRQ-ON-W at:
-                      [<ffffffff810af476>] __lock_acquire+0x7f6/0x1fb0
-                      [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                      [<ffffffff81a01d3c>] down_write+0x5c/0xc0
-                      [<ffffffffa001f6a6>] __link_block_group+0x46/0x130 [btrfs]
-                      [<ffffffffa0023411>] btrfs_read_block_groups+0x341/0x690 [btrfs]
-                      [<ffffffffa0031c50>] open_ctree+0x1880/0x2310 [btrfs]
-                      [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                      [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                      [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                      [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                      [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                      [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-    HARDIRQ-ON-R at:
-                      [<ffffffff810af265>] __lock_acquire+0x5e5/0x1fb0
-                      [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                      [<ffffffff81a01c8c>] down_read+0x4c/0xa0
-                      [<ffffffffa002da32>] btrfs_calc_num_tolerated_disk_barrier_failures+0x142/0x240 [btrfs]
-                      [<ffffffffa0031c6e>] open_ctree+0x189e/0x2310 [btrfs]
-                      [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                      [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                      [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                      [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                      [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                      [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-    SOFTIRQ-ON-W at:
-                      [<ffffffff810af4aa>] __lock_acquire+0x82a/0x1fb0
-                      [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                      [<ffffffff81a01d3c>] down_write+0x5c/0xc0
-                      [<ffffffffa001f6a6>] __link_block_group+0x46/0x130 [btrfs]
-                      [<ffffffffa0023411>] btrfs_read_block_groups+0x341/0x690 [btrfs]
-                      [<ffffffffa0031c50>] open_ctree+0x1880/0x2310 [btrfs]
-                      [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                      [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                      [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                      [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                      [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                      [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-    SOFTIRQ-ON-R at:
-                      [<ffffffff810af4aa>] __lock_acquire+0x82a/0x1fb0
-                      [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                      [<ffffffff81a01c8c>] down_read+0x4c/0xa0
-                      [<ffffffffa002da32>] btrfs_calc_num_tolerated_disk_barrier_failures+0x142/0x240 [btrfs]
-                      [<ffffffffa0031c6e>] open_ctree+0x189e/0x2310 [btrfs]
-                      [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                      [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                      [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                      [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                      [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                      [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-    RECLAIM_FS-ON-W at:
-                         [<ffffffff810b1c6c>] mark_held_locks+0x8c/0x170
-                         [<ffffffff810b249a>] lockdep_trace_alloc+0x8a/0xd0
-                         [<ffffffff8116f807>] __kmalloc_track_caller+0x47/0x210
-                         [<ffffffff813cdefb>] kvasprintf+0x5b/0x90
-                         [<ffffffff813c166a>] kobject_set_name_vargs+0x2a/0x70
-                         [<ffffffff813c1ffa>] kobject_add+0x5a/0xb0
-                         [<ffffffffa001f75d>] __link_block_group+0xfd/0x130 [btrfs]
-                         [<ffffffffa0023411>] btrfs_read_block_groups+0x341/0x690 [btrfs]
-                         [<ffffffffa0031c50>] open_ctree+0x1880/0x2310 [btrfs]
-                         [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                         [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                         [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                         [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                         [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                         [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-    INITIAL USE at:
-                     [<ffffffff810aefd4>] __lock_acquire+0x354/0x1fb0
-                     [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                     [<ffffffff81a01d3c>] down_write+0x5c/0xc0
-                     [<ffffffffa001f6a6>] __link_block_group+0x46/0x130 [btrfs]
-                     [<ffffffffa0023411>] btrfs_read_block_groups+0x341/0x690 [btrfs]
-                     [<ffffffffa0031c50>] open_ctree+0x1880/0x2310 [btrfs]
-                     [<ffffffffa00065db>] btrfs_mount+0x55b/0x860 [btrfs]
-                     [<ffffffff8117d6f0>] mount_fs+0x20/0xe0
-                     [<ffffffff81199ab6>] vfs_kern_mount+0x76/0x160
-                     [<ffffffff8119c25d>] do_mount+0x31d/0x970
-                     [<ffffffff8119cc30>] SyS_mount+0x90/0xe0
-                     [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-  }
-  ... key      at: [<ffffffffa00d06e0>] __key.40139+0x0/0xfffffffffffe2920 [btrfs]
-  ... acquired at:
-   [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-   [<ffffffff81a01c8c>] down_read+0x4c/0xa0
-   [<ffffffffa001ff78>] find_free_extent+0x7e8/0xbe0 [btrfs]
-   [<ffffffffa0020434>] btrfs_reserve_extent+0xa4/0x130 [btrfs]
-   [<ffffffffa0021903>] btrfs_alloc_free_block+0x103/0x4c0 [btrfs]
-   [<ffffffffa000beb4>] __btrfs_cow_block+0x124/0x550 [btrfs]
-   [<ffffffffa000c4ab>] btrfs_cow_block+0x12b/0x1e0 [btrfs]
-   [<ffffffffa0010429>] btrfs_search_slot+0x1d9/0xa00 [btrfs]
-   [<ffffffffa00123de>] btrfs_insert_empty_items+0x7e/0xe0 [btrfs]
-   [<ffffffffa008a7a4>] btrfs_insert_delayed_items+0x84/0x460 [btrfs]
-   [<ffffffffa008b299>] __btrfs_run_delayed_items+0xd9/0x1f0 [btrfs]
-   [<ffffffffa008b7a3>] btrfs_run_delayed_items+0x13/0x20 [btrfs]
-   [<ffffffffa0034e6e>] btrfs_commit_transaction+0x3ae/0xa30 [btrfs]
-   [<ffffffffa006ae72>] btrfs_mksubvol+0x3a2/0x3b0 [btrfs]
-   [<ffffffffa006b036>] btrfs_ioctl_snap_create_transid+0x1b6/0x1c0 [btrfs]
-   [<ffffffffa006b1be>] btrfs_ioctl_snap_create_v2+0xfe/0x140 [btrfs]
-   [<ffffffffa006d1d2>] btrfs_ioctl+0x652/0x1940 [btrfs]
-   [<ffffffff8118c0a1>] do_vfs_ioctl+0x91/0x560
-   [<ffffffff8118c5c7>] SyS_ioctl+0x57/0x90
-   [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
+What's confusing is that mounting in degraded mode shows all devices:
+polgara:~# btrfs fi show
+Label: backupcopy  uuid: 7d8e1197-69e4-40d8-8d86-278d275af896
+        Total devices 10 FS bytes used 376.27GiB
+        devid    1 size 465.76GiB used 42.42GiB path /dev/dm-0
+        devid    2 size 465.76GiB used 42.40GiB path /dev/dm-1
+        devid    3 size 465.75GiB used 42.40GiB path /dev/mapper/crypt_sde1 << this is missing
+        devid    4 size 465.76GiB used 42.40GiB path /dev/dm-3
+        devid    5 size 465.76GiB used 42.40GiB path /dev/dm-4
+        devid    6 size 465.76GiB used 42.40GiB path /dev/dm-5
+        devid    7 size 465.76GiB used 42.40GiB path /dev/dm-6
+        devid    8 size 465.76GiB used 42.40GiB path /dev/mapper/crypt_sdj1
+        devid    9 size 465.76GiB used 42.40GiB path /dev/mapper/crypt_sdk1
+        devid    10 size 465.76GiB used 42.40GiB path /dev/dm-8
 
--> (&delayed_node->mutex){+.+.-.} ops: 8191147 {
-   HARDIRQ-ON-W at:
-                    [<ffffffff810af476>] __lock_acquire+0x7f6/0x1fb0
-                    [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                    [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
-                    [<ffffffffa008c5c9>] btrfs_delayed_update_inode+0x49/0x670 [btrfs]
-                    [<ffffffffa003b76a>] btrfs_update_inode+0x6a/0x100 [btrfs]
-                    [<ffffffffa0043e8e>] btrfs_create+0x16e/0x220 [btrfs]
-                    [<ffffffff81188979>] vfs_create+0x89/0xc0
-                    [<ffffffff81189144>] do_last+0x794/0xd50
-                    [<ffffffff811897c7>] path_openat+0xc7/0x620
-                    [<ffffffff8118a1da>] do_filp_open+0x4a/0xa0
-                    [<ffffffff8117883e>] do_sys_open+0x11e/0x230
-                    [<ffffffff8117896e>] SyS_open+0x1e/0x20
-                    [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-   SOFTIRQ-ON-W at:
-                    [<ffffffff810af4aa>] __lock_acquire+0x82a/0x1fb0
-                    [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                    [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
-                    [<ffffffffa008c5c9>] btrfs_delayed_update_inode+0x49/0x670 [btrfs]
-                    [<ffffffffa003b76a>] btrfs_update_inode+0x6a/0x100 [btrfs]
-                    [<ffffffffa0043e8e>] btrfs_create+0x16e/0x220 [btrfs]
-                    [<ffffffff81188979>] vfs_create+0x89/0xc0
-                    [<ffffffff81189144>] do_last+0x794/0xd50
-                    [<ffffffff811897c7>] path_openat+0xc7/0x620
-                    [<ffffffff8118a1da>] do_filp_open+0x4a/0xa0
-                    [<ffffffff8117883e>] do_sys_open+0x11e/0x230
-                    [<ffffffff8117896e>] SyS_open+0x1e/0x20
-                    [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
-   IN-RECLAIM_FS-W at:
-                       [<ffffffff810af2ec>] __lock_acquire+0x66c/0x1fb0
-                       [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                       [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
-                       [<ffffffffa0089dff>] __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
-                       [<ffffffffa008bac4>] btrfs_remove_delayed_node+0x24/0x30 [btrfs]
-                       [<ffffffffa0040c97>] btrfs_evict_inode+0x2a7/0x550 [btrfs]
-                       [<ffffffff81195188>] evict+0xb8/0x1c0
-                       [<ffffffff811952df>] dispose_list+0x4f/0x60
-                       [<ffffffff811963dc>] prune_icache_sb+0x4c/0x60
-                       [<ffffffff8117d006>] super_cache_scan+0x126/0x190
-                       [<ffffffff8113a1fe>] shrink_slab_node+0x14e/0x2c0
-                       [<ffffffff8113bea8>] shrink_slab+0x78/0x110
-                       [<ffffffff8113f1bd>] do_try_to_free_pages+0x24d/0x410
-                       [<ffffffff8113f554>] try_to_free_pages+0xe4/0x190
-                       [<ffffffff8113235b>] __alloc_pages_nodemask+0x68b/0xa60
-                       [<ffffffff8116edac>] cache_alloc_refill+0x40c/0x7b0
-                       [<ffffffff8116e98f>] kmem_cache_alloc+0x1ef/0x200
-                       [<ffffffff8105efae>] copy_process+0x13e/0x1910
-                       [<ffffffff810608a5>] do_fork+0x65/0x300
-                       [<ffffffff81060bc6>] SyS_clone+0x16/0x20
-                       [<ffffffff81a0cdb9>] stub_clone+0x69/0x90
-   INITIAL USE at:
-                   [<ffffffff810aefd4>] __lock_acquire+0x354/0x1fb0
-                   [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-                   [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
-                   [<ffffffffa008c5c9>] btrfs_delayed_update_inode+0x49/0x670 [btrfs]
-                   [<ffffffffa003b76a>] btrfs_update_inode+0x6a/0x100 [btrfs]
-                   [<ffffffffa0043e8e>] btrfs_create+0x16e/0x220 [btrfs]
-                   [<ffffffff81188979>] vfs_create+0x89/0xc0
-                   [<ffffffff81189144>] do_last+0x794/0xd50
-                   [<ffffffff811897c7>] path_openat+0xc7/0x620
-                   [<ffffffff8118a1da>] do_filp_open+0x4a/0xa0
-                   [<ffffffff8117883e>] do_sys_open+0x11e/0x230
-                   [<ffffffff8117896e>] SyS_open+0x1e/0x20
-                   [<ffffffff81a0ca92>] system_call_fastpath+0x16/0x1b
- }
- ... key      at: [<ffffffffa00d4648>] __key.35416+0x0/0xfffffffffffde9b8 [btrfs]
- ... acquired at:
-   [<ffffffff810add8a>] check_usage_forwards+0xaa/0x120
-   [<ffffffff810ae9f9>] mark_lock+0x1a9/0x430
-   [<ffffffff810af2ec>] __lock_acquire+0x66c/0x1fb0
-   [<ffffffff810b12e2>] lock_acquire+0x92/0x120
-   [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
-   [<ffffffffa0089dff>] __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
-   [<ffffffffa008bac4>] btrfs_remove_delayed_node+0x24/0x30 [btrfs]
-   [<ffffffffa0040c97>] btrfs_evict_inode+0x2a7/0x550 [btrfs]
-   [<ffffffff81195188>] evict+0xb8/0x1c0
-   [<ffffffff811952df>] dispose_list+0x4f/0x60
-   [<ffffffff811963dc>] prune_icache_sb+0x4c/0x60
-   [<ffffffff8117d006>] super_cache_scan+0x126/0x190
-   [<ffffffff8113a1fe>] shrink_slab_node+0x14e/0x2c0
-   [<ffffffff8113bea8>] shrink_slab+0x78/0x110
-   [<ffffffff8113f1bd>] do_try_to_free_pages+0x24d/0x410
-   [<ffffffff8113f554>] try_to_free_pages+0xe4/0x190
-   [<ffffffff8113235b>] __alloc_pages_nodemask+0x68b/0xa60
-   [<ffffffff8116edac>] cache_alloc_refill+0x40c/0x7b0
-   [<ffffffff8116e98f>] kmem_cache_alloc+0x1ef/0x200
-   [<ffffffff8105efae>] copy_process+0x13e/0x1910
-   [<ffffffff810608a5>] do_fork+0x65/0x300
-   [<ffffffff81060bc6>] SyS_clone+0x16/0x20
-   [<ffffffff81a0cdb9>] stub_clone+0x69/0x90
+Ok, so mount in degraded mode works.
 
-
-stack backtrace:
-CPU: 1 PID: 31203 Comm: 224 Tainted: G        W    3.14.0-rc5-default #121
-Hardware name: Intel Corporation Santa Rosa platform/Matanzas, BIOS TSRSCRB1.86C.0047.B00.0610170821 10/17/06
- ffffffff82c37220 ffff88003faa9460 ffffffff819fd463 0000000000000002
- ffffffff82c37220 ffff88003faa94b0 ffffffff810adc97 ffff88003faa9500
- ffffffff81f16ba4 ffff88003faa94cc ffff88003faa5730 ffff88003faa94c0
+Adding a new device failed though:
+polgara:~# btrfs device add /dev/mapper/crypt_sdm1 /mnt/btrfs_backupcopy
+BTRFS: bad tree block start 852309604880683448 156237824
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 1963 at fs/btrfs/super.c:257 __btrfs_abort_transaction+0x50/0x100()
+BTRFS: Transaction aborted (error -5)
+Modules linked in: xts gf128mul ipt_MASQUERADE ipt_REJECT xt_tcpudp xt_conntrack xt_LOG iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_mangle ip6table_filter ip6_tables iptable_filter ip_tables ebtable_nat ebtables x_tables cpufreq_userspace cpufreq_powersave cpufreq_conservative cpufreq_stats ppdev rfcomm bnep autofs4 binfmt_misc uinput nfsd auth_rpcgss nfs_acl nfs lockd fscache sunrpc fuse dm_crypt dm_mod configs parport_pc lp parport input_polldev loop firewire_sbp2 firewire_core crc_itu_t ecryptfs btusb bluetooth 6lowpan_iphc rfkill usbkbd usbmouse joydev hid_generic usbhid hid iTCO_wdt iTCO_vendor_support gpio_ich coretemp kvm_intel kvm microcode snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel snd_hda_codec pcspkr snd_hwdep i2c_i801 snd_pcm_oss snd_mixer_oss lpc_ich snd_pcm snd_seq_midi snd_seq_midi_event sg sr_mod cdrom snd_rawmidi snd_seq snd_seq_device snd_timer atl1 mii mvsas snd nouveau libsas scsi_transport_
+soundcore ttm ehci_pci asus_atk0110 floppy uhci_hcd ehci_hcd usbcore acpi_cpufreq usb_common processor evdev
+CPU: 0 PID: 1963 Comm: btrfs Tainted: G        W    3.14.0-rc5-amd64-i915-preempt-20140216c #1
+Hardware name: System manufacturer P5KC/P5KC, BIOS 0502    05/24/2007
+ 0000000000000000 ffff88004b5c9988 ffffffff816090b3 ffff88004b5c99d0
+ ffff88004b5c99c0 ffffffff81050025 ffffffff8120913a 00000000fffffffb
+ ffff8800144d5800 ffff88007bd3ba00 ffffffff81839280 ffff88004b5c9a20
 Call Trace:
- [<ffffffff819fd463>] dump_stack+0x51/0x6e
- [<ffffffff810adc97>] print_irq_inversion_bug+0x1c7/0x210
- [<ffffffff810add8a>] check_usage_forwards+0xaa/0x120
- [<ffffffff810adce0>] ? print_irq_inversion_bug+0x210/0x210
- [<ffffffff810ae9f9>] mark_lock+0x1a9/0x430
- [<ffffffff810af2ec>] __lock_acquire+0x66c/0x1fb0
- [<ffffffff810adce0>] ? print_irq_inversion_bug+0x210/0x210
- [<ffffffff810ae4cf>] ? check_irq_usage+0x9f/0xf0
- [<ffffffff810b002b>] ? __lock_acquire+0x13ab/0x1fb0
- [<ffffffff810ab11d>] ? trace_hardirqs_off+0xd/0x10
- [<ffffffffa0089dff>] ? __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
- [<ffffffff810b12e2>] lock_acquire+0x92/0x120
- [<ffffffffa0089dff>] ? __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
- [<ffffffff81a00c4e>] mutex_lock_nested+0x6e/0x3a0
- [<ffffffffa0089dff>] ? __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
- [<ffffffff8109a138>] ? sched_clock_cpu+0xa8/0xd0
- [<ffffffffa0089dff>] ? __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
- [<ffffffff810ab62d>] ? lock_release_holdtime+0x3d/0x1c0
- [<ffffffffa0089dff>] __btrfs_release_delayed_node+0x4f/0x220 [btrfs]
- [<ffffffffa008bac4>] btrfs_remove_delayed_node+0x24/0x30 [btrfs]
- [<ffffffffa0040c97>] btrfs_evict_inode+0x2a7/0x550 [btrfs]
- [<ffffffff81a03c6b>] ? _raw_spin_unlock+0x2b/0x40
- [<ffffffff81195188>] evict+0xb8/0x1c0
- [<ffffffff81195ed0>] ? insert_inode_locked+0x1a0/0x1a0
- [<ffffffff811952df>] dispose_list+0x4f/0x60
- [<ffffffff811963dc>] prune_icache_sb+0x4c/0x60
- [<ffffffff8117d006>] super_cache_scan+0x126/0x190
- [<ffffffff8113a1fe>] shrink_slab_node+0x14e/0x2c0
- [<ffffffff8109a176>] ? local_clock+0x16/0x30
- [<ffffffff8113bea8>] shrink_slab+0x78/0x110
- [<ffffffff8113f1bd>] do_try_to_free_pages+0x24d/0x410
- [<ffffffff8113f554>] try_to_free_pages+0xe4/0x190
- [<ffffffff8113235b>] __alloc_pages_nodemask+0x68b/0xa60
- [<ffffffff8116ed6e>] ? cache_alloc_refill+0x3ce/0x7b0
- [<ffffffff8116edac>] cache_alloc_refill+0x40c/0x7b0
- [<ffffffff8105efae>] ? copy_process+0x13e/0x1910
- [<ffffffff8116e98f>] kmem_cache_alloc+0x1ef/0x200
- [<ffffffff8105efae>] copy_process+0x13e/0x1910
- [<ffffffff8109a138>] ? sched_clock_cpu+0xa8/0xd0
- [<ffffffff8109a176>] ? local_clock+0x16/0x30
- [<ffffffff810ab62d>] ? lock_release_holdtime+0x3d/0x1c0
- [<ffffffff810b0fc5>] ? lock_release_non_nested+0x395/0x3e0
- [<ffffffff8114fd86>] ? might_fault+0x66/0xc0
- [<ffffffff810608a5>] do_fork+0x65/0x300
- [<ffffffff8114fd86>] ? might_fault+0x66/0xc0
- [<ffffffff81a0cab7>] ? sysret_check+0x1b/0x56
- [<ffffffff81060bc6>] SyS_clone+0x16/0x20
- [<ffffffff81a0cdb9>] stub_clone+0x69/0x90
- [<ffffffff81a0ca92>] ? system_call_fastpath+0x16/0x1b
+ [<ffffffff816090b3>] dump_stack+0x4e/0x7a
+ [<ffffffff81050025>] warn_slowpath_common+0x7f/0x98
+ [<ffffffff8120913a>] ? __btrfs_abort_transaction+0x50/0x100
+ [<ffffffff8105008a>] warn_slowpath_fmt+0x4c/0x4e
+ [<ffffffff8120913a>] __btrfs_abort_transaction+0x50/0x100
+ [<ffffffff81216fed>] __btrfs_free_extent+0x6ce/0x712
+ [<ffffffff8121bc89>] __btrfs_run_delayed_refs+0x939/0xbdf
+ [<ffffffff8121dac8>] btrfs_run_delayed_refs+0x81/0x18f
+ [<ffffffff8122aeb2>] btrfs_commit_transaction+0xeb/0x849
+ [<ffffffff8124e777>] btrfs_init_new_device+0x9a1/0xc00
+ [<ffffffff8114069b>] ? ____cache_alloc+0x1c/0x29b
+ [<ffffffff81129d3e>] ? mem_cgroup_end_update_page_stat+0x17/0x26
+ [<ffffffff8125570f>] ? btrfs_ioctl+0x989/0x24b1
+ [<ffffffff81141096>] ? __kmalloc_track_caller+0x130/0x144
+ [<ffffffff8125570f>] ? btrfs_ioctl+0x989/0x24b1
+ [<ffffffff81255730>] btrfs_ioctl+0x9aa/0x24b1
+ [<ffffffff81611e15>] ? __do_page_fault+0x330/0x3df
+ [<ffffffff8116da43>] ? mntput_no_expire+0x33/0x12b
+ [<ffffffff81163b16>] do_vfs_ioctl+0x3d2/0x41d
+ [<ffffffff8115676b>] ? ____fput+0xe/0x10
+ [<ffffffff8106973a>] ? task_work_run+0x87/0x98
+ [<ffffffff81163bb8>] SyS_ioctl+0x57/0x82
+ [<ffffffff81611ed2>] ? do_page_fault+0xe/0x10
+ [<ffffffff816154ad>] system_call_fastpath+0x1a/0x1f
+---[ end trace 7d08b9b7f2f17b38 ]---
+BTRFS: error (device dm-9) in __btrfs_free_extent:5755: errno=-5 IO failure
+BTRFS info (device dm-9): forced readonly
+ERROR: error adding the device '/dev/mapper/crypt_sdm1' - Input/output error
+polgara:~# Mar 17 09:07:14 polgara kernel: [124403.240880] BTRFS: error (device dm-9) in btrfs_run_delayed_refs:2713: errno=-5 IO failure
+
+Mmmh, dm-9 is another device, although it seems to work:
+polgara:~# dd if=/dev/dm-9 of=/dev/null bs=1M
+^C1255+0 records in
+1254+0 records out
+1314914304 bytes (1.3 GB) copied, 15.169 s, 86.7 MB/s
+
+polgara:~# btrfs device stats /dev/dm-9
+[/dev/mapper/crypt_sdk1].write_io_errs   0
+[/dev/mapper/crypt_sdk1].read_io_errs    0
+[/dev/mapper/crypt_sdk1].flush_io_errs   0
+[/dev/mapper/crypt_sdk1].corruption_errs 0
+[/dev/mapper/crypt_sdk1].generation_errs 0
+
+
+I also started getting errors on my device after hours of use last night (pasted below).
+Not sure if I really have a 2nd device problem or not:
+
+/dev/mapper/crypt_sde1 is dm-2,
+
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+quiet_error: 123 callbacks suppressed
+Buffer I/O error on device dm-2, logical block 16
+Buffer I/O error on device dm-2, logical block 16384
+Buffer I/O error on device dm-2, logical block 67108864
+Buffer I/O error on device dm-2, logical block 16
+Buffer I/O error on device dm-2, logical block 16384
+Buffer I/O error on device dm-2, logical block 67108864
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+BTRFS: lost page write due to I/O error on /dev/mapper/crypt_sde1
+Buffer I/O error on device dm-2, logical block 0
+Buffer I/O error on device dm-2, logical block 1
+Buffer I/O error on device dm-2, logical block 2
+Buffer I/O error on device dm-2, logical block 3
+Buffer I/O error on device dm-2, logical block 0
+Buffer I/O error on device dm-2, logical block 122095101
+Buffer I/O error on device dm-2, logical block 122095101
+Buffer I/O error on device dm-2, logical block 0
+Buffer I/O error on device dm-2, logical block 0
+btrfs_dev_stat_print_on_error: 366 callbacks suppressed
+btrfs_dev_stat_print_on_error: 346 callbacks suppressed
+btrfs_dev_stat_print_on_error: 606 callbacks suppressed
+btrfs_dev_stat_print_on_error: 276 callbacks suppressed
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+btrfs_dev_stat_print_on_error: 11469 callbacks suppressed
+btree_readpage_end_io_hook: 31227 callbacks suppressed
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+BTRFS: bad tree block start 16817792799093053571 2701656064
+
+eventually it turned into:
+BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 3891, rd 321927996, flush 0, corrupt 0, gen 0
+BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 3891, rd 321927997, flush 0, corrupt 0, gen 0
+BTRFS: bad tree block start 17271740454546054736 1265680384
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 10414 at fs/btrfs/super.c:257 __btrfs_abort_transaction+0x50/0x100()
+BTRFS: Transaction aborted (error -5)
+Modules linked in: xts gf128mul ipt_MASQUERADE ipt_REJECT xt_tcpudp xt_conntrack xt_LOG iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_mangle ip6table_filter ip6_tables iptable_filter ip_tables ebtable_nat ebtables x_tables cpufreq_userspace cpufreq_powersave cpufreq_conservative cpufreq_stats ppdev rfcomm bnep autofs4 binfmt_misc uinput nfsd auth_rpcgss nfs_acl nfs lockd fscache sunrpc fuse dm_crypt dm_mod configs parport_pc lp parport input_polldev loop firewire_sbp2 firewire_core crc_itu_t ecryptfs btusb bluetooth 6lowpan_iphc rfkill usbkbd usbmouse joydev hid_generic usbhid hid iTCO_wdt iTCO_vendor_support gpio_ich coretemp kvm_intel kvm microcode snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel snd_hda_codec pcspkr snd_hwdep i2c_i801 snd_pcm_oss snd_mixer_oss lpc_ich snd_pcm snd_seq_midi snd_seq_midi_event sg sr_mod cdrom snd_rawmidi snd_seq snd_seq_device snd_timer atl1 mii mvsas snd nouveau libsas scsi_transport_
+soundcore ttm ehci_pci asus_atk0110 floppy uhci_hcd ehci_hcd usbcore acpi_cpufreq usb_common processor evdev
+CPU: 1 PID: 10414 Comm: btrfs-transacti Not tainted 3.14.0-rc5-amd64-i915-preempt-20140216c #1
+Hardware name: System manufacturer P5KC/P5KC, BIOS 0502    05/24/2007
+ 0000000000000000 ffff88004ae4fb30 ffffffff816090b3 ffff88004ae4fb78
+ ffff88004ae4fb68 ffffffff81050025 ffffffff8120913a 00000000fffffffb
+ ffff88004f2e7800 ffff8800603804c0 ffffffff81839280 ffff88004ae4fbc8
+Call Trace:
+ [<ffffffff816090b3>] dump_stack+0x4e/0x7a
+ [<ffffffff81050025>] warn_slowpath_common+0x7f/0x98
+ [<ffffffff8120913a>] ? __btrfs_abort_transaction+0x50/0x100
+ [<ffffffff8105008a>] warn_slowpath_fmt+0x4c/0x4e
+ [<ffffffff8120913a>] __btrfs_abort_transaction+0x50/0x100
+ [<ffffffff81216fed>] __btrfs_free_extent+0x6ce/0x712
+ [<ffffffff8121bc89>] __btrfs_run_delayed_refs+0x939/0xbdf
+ [<ffffffff8121dac8>] btrfs_run_delayed_refs+0x81/0x18f
+ [<ffffffff8122ae40>] btrfs_commit_transaction+0x79/0x849
+ [<ffffffff812277ca>] transaction_kthread+0xf8/0x1ab
+ [<ffffffff812276d2>] ? btrfs_cleanup_transaction+0x43f/0x43f
+ [<ffffffff8106bc56>] kthread+0xae/0xb6
+ [<ffffffff8106bba8>] ? __kthread_parkme+0x61/0x61
+ [<ffffffff816153fc>] ret_from_fork+0x7c/0xb0
+ [<ffffffff8106bba8>] ? __kthread_parkme+0x61/0x61
+---[ end trace 7d08b9b7f2f17b35 ]---
+BTRFS: error (device dm-9) in __btrfs_free_extent:5755: errno=-5 IO failure
+BTRFS info (device dm-9): forced readonly
+BTRFS: error (device dm-9) in btrfs_run_delayed_refs:2713: errno=-5 IO failure
+------------[ cut here ]------------
+
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

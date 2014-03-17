@@ -1,108 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40645 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755036AbaCRKzh (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:46562 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932767AbaCQL7P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Mar 2014 06:55:37 -0400
-Date: Tue, 18 Mar 2014 18:55:13 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        David Disseldorp <ddiss@suse.de>
-Subject: Re: [PATCH] Btrfs: fix a crash of clone with inline extents's split
-Message-ID: <20140318105511.GA6163@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1394448967-14128-1-git-send-email-bo.li.liu@oracle.com>
- <20140317144131.GF29256@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140317144131.GF29256@twin.jikos.cz>
+	Mon, 17 Mar 2014 07:59:15 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s2HBxEcM008088
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:59:15 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s2HBxEJ2012694
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:59:14 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s2HBxDKe023452
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 11:59:14 GMT
+From: Anand Jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: avoid implicit scan for backup SB
+Date: Mon, 17 Mar 2014 19:59:01 +0800
+Message-Id: <1395057541-4426-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 17, 2014 at 03:41:31PM +0100, David Sterba wrote:
-> On Mon, Mar 10, 2014 at 06:56:07PM +0800, Liu Bo wrote:
-> > xfstests's btrfs/035 triggers a BUG_ON, which we use to detect the split
-> > of inline extents in __btrfs_drop_extents().
-> > 
-> > For inline extents, we cannot duplicate another EXTENT_DATA item, because
-> > it breaks the rule of inline extents, that is, 'start offset' needs to be 0.
-> > 
-> > We have set limitations for the source inode's compressed inline extents,
-> > because it needs to decompress and recompress.  Now the destination inode's
-> > inline extents also need similar limitations.
-> 
-> The limitation (by lack of implementation, not by design) of compressed
-> inline extents is there, but it's impossible to reach. The inline
-> extents are never longer than the 'inline limit' (the ~3916 size), so
-> the comment is more a note to the future.
-> 
-> You're adding another limitation to avoid a crash, but I don't agree
-> that EINVAL is right here, due to the fact that it's lack of
-> implementation, not a real error.
-> 
-> There are enough EINVAL's that verify correcntess of the input
-> parameters and it's not always clear which one fails. The EOPNOTSUPP
-> errocode is close to the true reason of the failure, but it could be
-> misinterpreted as if the whole clone operation is not supported, so it's
-> not all correct but IMO better than EINVAL.
+When a disk containing btrfs is overwritten with other FS, ext4
+for example it doesn't overwrite 2nd and 3rd copy of the btrfs SB.
+And btrfs_read_dev_super() would look for backup SB when primary
+SB isn't found. This causes the problem as in the reproducer below.
 
-Yep, I was hesitating on these two errors while making the patch, but I
-prefer EINVAL rather than EOPNOTSUPP because of the reason you've stated.
+In kernel we avoid this by _not_ reading backup SB implicitly,
+this patch would port the same to btrfs-progs.
 
-I think it'd be good to add one more btrfs_printk message to clarify what's
-happening here, agree?
+reproducer:
+mkfs.btrfs /dev/sde
+mkfs.ext4 /dev/sde
+mount /dev/sde /ext4
+btrfs-convert /dev/sde (is successful (bug))
 
-> 
-> The most common case of 'cp --reflink' is not affected by this.
-> 
-> > 
-> > With this, xfstests btrfs/035 doesn't run into panic.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> >  fs/btrfs/file.c  | 15 ++++++++++++---
-> >  fs/btrfs/ioctl.c | 10 ++++++----
-> >  2 files changed, 18 insertions(+), 7 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index 0165b86..2c34a04 100644
-> > --- a/fs/btrfs/ioctl.c
-> > +++ b/fs/btrfs/ioctl.c
-> > @@ -3090,8 +3090,9 @@ process_slot:
-> >  							 new_key.offset + datal,
-> >  							 1);
-> >  				if (ret) {
-> > -					btrfs_abort_transaction(trans, root,
-> > -								ret);
-> > +					if (ret != -EINVAL)
-> > +						btrfs_abort_transaction(trans,
-> > +								root, ret);
-> 
-> The error comes from __btrfs_drop_extents and all callers would need to
-> be updated (or at least reviewed) with the 'ret != ...' check as well,
-> because it changes the semantics. And I'm not sure if to the right
-> direction.
+with this patch
+::
+btrfs-convert /dev/sde
+/dev/sde is mounted
 
-Good point, Dave, actually I missed this part before, just checked for
-callers of __btrfs_drop_extents() and btrfs_drop_extents(), luckily EINVAL is
-not a special one at these places, the error is just returned to upper callers.
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+---
+ disk-io.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-> 
-> >  					btrfs_end_transaction(trans, root);
-> >  					goto out;
-> >  				}
-> > @@ -3175,8 +3176,9 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
-> >  	 *   decompress into destination's address_space (the file offset
-> >  	 *   may change, so source mapping won't do), then recompress (or
-> >  	 *   otherwise reinsert) a subrange.
-> 
-> > -	 * - allow ranges within the same file to be cloned (provided
-> > -	 *   they don't overlap)?
-> 
-> True, but unrelated.
+diff --git a/disk-io.c b/disk-io.c
+index 0bd1bb0..19b95a7 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1206,7 +1206,14 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
+ 		return 0;
+ 	}
+ 
+-	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++	/*
++	* we would like to check all the supers, but that would make
++	* a btrfs mount succeed after a mkfs from a different FS.
++	* So, we need to add a special mount option to scan for
++	* later supers, using BTRFS_SUPER_MIRROR_MAX instead
++	*/
++
++	for (i = 0; i < 1; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+ 		ret = pread64(fd, &buf, sizeof(buf), bytenr);
+ 		if (ret < sizeof(buf))
+-- 
+1.8.5.3
 
-yep, that's right, will clean it up.
-
-Thanks for the comments!
-
--liubo

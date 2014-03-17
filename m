@@ -1,54 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60163 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756997AbaCQRia convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Mar 2014 13:38:30 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: How to handle a RAID5 arrawy with a failing drive? 
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140317161307.GJ6143@merlins.org>
-Date: Mon, 17 Mar 2014 11:38:27 -0600
-Cc: Btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <788CE3D5-5E1F-48D0-A1A9-4E7DD320BED7@colorremedies.com>
-References: <F8E88232-C43A-4BFD-B2A6-411576299531@colorremedies.com> <C66D07BC-E0E7-4F3D-8ACD-C3E9E575C629@colorremedies.com> <20140316231729.GA29149@merlins.org> <85AE52FE-5191-49AF-98A9-380F224A5DA1@colorremedies.com> <20140317005145.GZ16946@merlins.org> <99A46301-9C0E-43F0-8415-E23B86FDB5E2@colorremedies.com> <20140317011752.GV6143@merlins.org> <3592E609-7145-4F1A-8B16-EEF3C736D191@colorremedies.com> <20140317034451.GW6143@merlins.org> <B593C5F2-5CE0-428C-97FB-A75AB0B11254@colorremedies.com> <20140317161307.GJ6143@merlins.org>
-To: Marc MERLIN <marc@merlins.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48959 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751781AbaCQUeY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Mar 2014 16:34:24 -0400
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s2HKVJsq003778
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 13:34:23 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1jny3khsuj-3
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Mar 2014 13:34:23 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: take into account total references when doing backref lookup
+Date: Mon, 17 Mar 2014 16:34:02 -0400
+Message-ID: <1395088442-6468-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I added an optimization for large files where we would stop searching for
+backrefs once we had looked at the number of references we currently had for
+this extent.  This works great most of the time, but for snapshots that point to
+this extent and has changes in the original root this assumption falls on it
+face.  So keep track of any shared refs that point at the bytenr and add their
+count to any ref that is going to need indirect references looked up.  Then use
+this count as the upper limit for searching through an inode for a bytenr.  With
+this patch we can now find offsets deep in heavily fragmented extents.  Thanks,
 
-On Mar 17, 2014, at 10:13 AM, Marc MERLIN <marc@merlins.org> wrote:
-> 
-> What's confusing is that mounting in degraded mode shows all devices:
-> polgara:~# btrfs fi show
-> Label: backupcopy  uuid: 7d8e1197-69e4-40d8-8d86-278d275af896
->        Total devices 10 FS bytes used 376.27GiB
->        devid    1 size 465.76GiB used 42.42GiB path /dev/dm-0
->        devid    2 size 465.76GiB used 42.40GiB path /dev/dm-1
->        devid    3 size 465.75GiB used 42.40GiB path /dev/mapper/crypt_sde1 << this is missing
->        devid    4 size 465.76GiB used 42.40GiB path /dev/dm-3
->        devid    5 size 465.76GiB used 42.40GiB path /dev/dm-4
->        devid    6 size 465.76GiB used 42.40GiB path /dev/dm-5
->        devid    7 size 465.76GiB used 42.40GiB path /dev/dm-6
->        devid    8 size 465.76GiB used 42.40GiB path /dev/mapper/crypt_sdj1
->        devid    9 size 465.76GiB used 42.40GiB path /dev/mapper/crypt_sdk1
->        devid    10 size 465.76GiB used 42.40GiB path /dev/dm-8
+Reportedy-by: Hugo Mills <hugo@carfax.org.uk>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/backref.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-/dev/mapper/crypt_sde1 is completely unavailable, as in not listed by lsblk? If it's not connected and not listed by lsblk yet it's listed by btrfs fi show that's a bug.
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 0be0e94..4a56d83 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -127,6 +127,7 @@ struct __prelim_ref {
+ 	struct extent_inode_elem *inode_list;
+ 	u64 parent;
+ 	u64 wanted_disk_byte;
++	u64 total_possible_refs;
+ };
+ 
+ static struct kmem_cache *btrfs_prelim_ref_cache;
+@@ -213,6 +214,7 @@ static int __add_prelim_ref(struct list_head *head, u64 root_id,
+ 	ref->count = count;
+ 	ref->parent = parent;
+ 	ref->wanted_disk_byte = wanted_disk_byte;
++	ref->total_possible_refs = count;
+ 	list_add_tail(&ref->list, head);
+ 
+ 	return 0;
+@@ -249,7 +251,7 @@ static int add_all_parents(struct btrfs_root *root, struct btrfs_path *path,
+ 	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0]))
+ 		ret = btrfs_next_old_leaf(root, path, time_seq);
+ 
+-	while (!ret && count < ref->count) {
++	while (!ret && count < ref->total_possible_refs) {
+ 		eb = path->nodes[0];
+ 		slot = path->slots[0];
+ 
+@@ -521,19 +523,16 @@ static void __merge_refs(struct list_head *head, int mode)
+ 		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
+ 		     pos2 = n2, n2 = pos2->next) {
+ 			struct __prelim_ref *ref2;
+-			struct __prelim_ref *xchg;
+ 			struct extent_inode_elem *eie;
+ 
+ 			ref2 = list_entry(pos2, struct __prelim_ref, list);
+ 
+ 			if (mode == 1) {
++				if (!ref1->parent && ref2->parent)
++					ref1->total_possible_refs +=
++						ref2->count;
+ 				if (!ref_for_same_block(ref1, ref2))
+ 					continue;
+-				if (!ref1->parent && ref2->parent) {
+-					xchg = ref1;
+-					ref1 = ref2;
+-					ref2 = xchg;
+-				}
+ 			} else {
+ 				if (ref1->parent != ref2->parent)
+ 					continue;
+@@ -547,6 +546,7 @@ static void __merge_refs(struct list_head *head, int mode)
+ 			else
+ 				ref1->inode_list = ref2->inode_list;
+ 			ref1->count += ref2->count;
++			ref1->total_possible_refs += ref2->count;
+ 
+ 			list_del(&ref2->list);
+ 			kmem_cache_free(btrfs_prelim_ref_cache, ref2);
+-- 
+1.8.3.1
 
-> 
-> eventually it turned into:
-> BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 3891, rd 321927996, flush 0, corrupt 0, gen 0
-> BTRFS: bdev /dev/mapper/crypt_sde1 errs: wr 3891, rd 321927997, flush 0, corrupt 0, gen 0
-[snip]
-> BTRFS: error (device dm-9) in __btrfs_free_extent:5755: errno=-5 IO failure
-> BTRFS info (device dm-9): forced readonly
-> BTRFS: error (device dm-9) in btrfs_run_delayed_refs:2713: errno=-5 IO failure
-
-I think it's a lost cause at this point. Your setup is substantially more complicated than my simple setup, and I can't even get the simple setup to recover from an idealized single device raid5 failure. The only apparent way out is to mount degraded, backup, and then start over.
-
-In your case it looks like at least two devices are reporting, or Btrfs thinks they're reporting, I/O errors. Whether this is the physical drive itself, or if it's some other layer (it looks like these are dmcrypt logical block devices).
-
-
-Chris Murphy

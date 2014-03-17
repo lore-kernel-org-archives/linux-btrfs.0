@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:49111 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932194AbaCQDox (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Mar 2014 23:44:53 -0400
-Date: Sun, 16 Mar 2014 20:44:51 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: How to handle a RAID5 arrawy with a failing drive?
-Message-ID: <20140317034451.GW6143@merlins.org>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:46392 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750941AbaCQFMp convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Mar 2014 01:12:45 -0400
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3592E609-7145-4F1A-8B16-EEF3C736D191@colorremedies.com>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: How to handle a RAID5 arrawy with a failing drive? 
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140317034451.GW6143@merlins.org>
+Date: Sun, 16 Mar 2014 23:12:43 -0600
+Cc: Btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <B593C5F2-5CE0-428C-97FB-A75AB0B11254@colorremedies.com>
+To: Marc MERLIN <marc@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <20140316222026.GU16946@merlins.org>
@@ -24,78 +24,60 @@ References: <20140316222026.GU16946@merlins.org>
  <99A46301-9C0E-43F0-8415-E23B86FDB5E2@colorremedies.com>
  <20140317011752.GV6143@merlins.org>
  <3592E609-7145-4F1A-8B16-EEF3C736D191@colorremedies.com>
+ <20140317034451.GW6143@merlins.org>
 
-On Sun, Mar 16, 2014 at 08:56:35PM -0600, Chris Murphy wrote:
-> >>> polgara:/mnt/btrfs_backupcopy# btrfs device delete /dev/mapper/crypt_sde1 `pwd`
-> >>> ERROR: error removing the device '/dev/mapper/crypt_sde1' - Invalid argument
-> >> 
-> >> You didn't specify a mount point, is the reason for that error. But also, since you're already effectively degraded with 1 disk you can't remove a 2nd without causing array collapse. You have to add a new device first *and* you have to "rebuild" with balance. Then presumably we can remove the device. But I'm stuck adding so I can't test anything else.
-> > 
-> > You missed the `pwd` :)
+
+On Mar 16, 2014, at 9:44 PM, Marc MERLIN <marc@merlins.org> wrote:
+
+> On Sun, Mar 16, 2014 at 08:56:35PM -0600, Chris Murphy wrote:
 > 
-> I just don't know what it means, it's not a reference to mount point I'm familiar with.
-
-Try echo `pwd` and you'll understand :)
- 
-> > I'm trying to remove the drive that is causing issues, that doesn't make
-> > things worse, does it?
+>>> If I add a device, isn't it going to grow my raid to make it bigger instead
+>>> of trying to replace the bad device?
+>> 
+>> Yes if it's successful. No if it fails which is the problem I'm having.
 > 
-> I don't think you can force a Btrfs volume to go degraded with a device delete command right now, just like there isn't a command to make it go missing or faulty, like md raid.
-> > Does btrtfs not know that device is the bad one even thouth it's spamming my
-> > logs continuously about it?
+> That's where I don't follow you.
+> You just agreed that it will grow my raid.
+> So right now it's 4.5TB with 10 drives, if I add one drive, it will grow to
+> 5TB with 11 drives.
+> How does that help?
+
+If you swap the faulty drive for a good drive, I'm thinking then you'll be able to device delete the bad device, which ought to be "missing" at that point; or if that fails you should be able to do a balance, and then be able to device delete the faulty drive.
+
+The problem I'm having is that when I detach one device out of a 3 device raid5, btrfs fi show doesn't list it as missing. It's listed without the /dev/sdd designation it had when attached, but now it's just blank.
+
+
+> Why would btrfs allow me to remove the faulty device since it does not let
+> you remove a device from a running raid. If I grow it to a bigger raid, it
+> still won't let me remove the device, will it?
+
+Maybe not, but it seems like it ought to let you balance, which should only be across available devices at which point you should be able to device delete the bad one. That's assuming you've physically detached the faulty device from the start though.
+
 > 
-> With raid5, you're always at the minimum number of devices to be normally mounted. Removing one immediately makes it degraded which I don't think it's going to permit. At least, I get an error when I do it even without a device giving me fits.
-
-Ok, I understand that.
-
-> > If I add a device, isn't it going to grow my raid to make it bigger instead
-> > of trying to replace the bad device?
+>>> In swraid5, if I add a device, it will grow the raid, unless the array is
+>>> running in degraded mode.
+>>> However, I can't see if btrfs tools know it's in degraded mode or not.
+>> 
+>> Only once the device is missing, apparently, and then mounted -o degraded.
 > 
-> Yes if it's successful. No if it fails which is the problem I'm having.
+> Dully noted.
+> If you agree that adding an 11th drive to my array will not help, I'll
+> unmount the filesystem, remount it in degraded mode with 9 drives and try to
+> add the new 11th drive.
 
-That's where I don't follow you.
-You just agreed that it will grow my raid.
-So right now it's 4.5TB with 10 drives, if I add one drive, it will grow to
-5TB with 11 drives.
-How does that help?
-Why would btrfs allow me to remove the faulty device since it does not let
-you remove a device from a running raid. If I grow it to a bigger raid, it
-still won't let me remove the device, will it?
- 
-> > In swraid5, if I add a device, it will grow the raid, unless the array is
-> > running in degraded mode.
-> > However, I can't see if btrfs tools know it's in degraded mode or not.
+That's the only option I see at the moment in any case, other than blowing it all away and starting from scratch. What I don't know is whether you will be able to 'btrfs device delete' what ought to now be a missing device, since you have enough drives added to proceed with that deletion; or if you'll have to balance first. And I don't even know if the balance will work and then let you device delete if it's a dead end at this point.
+
 > 
-> Only once the device is missing, apparently, and then mounted -o degraded.
- 
-Dully noted.
-If you agree that adding an 11th drive to my array will not help, I'll
-unmount the filesystem, remount it in degraded mode with 9 drives and try to
-add the new 11th drive.
-
-> > If you are sure adding a device won't grow my raid, I'll give it a shot.
+>>> If you are sure adding a device won't grow my raid, I'll give it a shot.
+>> 
+>> No I'm not sure. And yes I suspect it will make it bigger. But so far a.) replace isn't supported yet; and b.) delete causes the volume to go below the minimum required for normal operation which it won't allow; which leaves c.) add a device but I'm getting a hang. So I'm stuck at this point.
 > 
-> No I'm not sure. And yes I suspect it will make it bigger. But so far a.) replace isn't supported yet; and b.) delete causes the volume to go below the minimum required for normal operation which it won't allow; which leaves c.) add a device but I'm getting a hang. So I'm stuck at this point.
+> Right. So I think we also agree that adding a device to the running
+> filesystem is not what I want to do since it'll grow it and do nothing to
+> let me remove he faulty one. 
 
-Right. So I think we also agree that adding a device to the running
-filesystem is not what I want to do since it'll grow it and do nothing to
-let me remove he faulty one. 
+The grow is entirely beside the point. You definitely can't btrfs replace, or btrfs device delete, so what else is there but try btrfs device add, or obliterate it and start over?
 
-> > I'll add the new device first after you confirm that there is no chance
-> > it'll try to grow the filesystem :)
-> 
-> I confirm nothing since I can't proceed with a device add.
 
-Fair enough.
+Chris Murphy
 
-So unless someone tells me otherwise, I will unmount the filesystem, remount
-it in degraded mode, and then try to add the 11th drive when the 10th one is
-missing.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  

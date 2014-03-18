@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f46.google.com ([74.125.82.46]:48497 "EHLO
-	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932141AbaCQCRL (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:54398 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756973AbaCRR5d (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Mar 2014 22:17:11 -0400
-Received: by mail-wg0-f46.google.com with SMTP id b13so4100458wgh.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Mar 2014 19:17:10 -0700 (PDT)
+	Tue, 18 Mar 2014 13:57:33 -0400
+Received: by mail-wi0-f181.google.com with SMTP id hm4so4067535wib.14
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 10:57:32 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add test for btrfs send regarding directory moves/renames
-Date: Mon, 17 Mar 2014 02:16:16 +0000
-Message-Id: <1395022576-17367-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] xfstests: add test for btrfs send regarding directory moves/renames
+Date: Tue, 18 Mar 2014 17:57:24 +0000
+Message-Id: <1395165444-24772-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1394983466-20497-1-git-send-email-fdmanana@gmail.com>
 References: <1394983466-20497-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -39,20 +39,21 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
 V2: Added more tests.
+V3: Added more tests for more complex cases.
 
- tests/btrfs/045     |  177 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/045     |  214 +++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/045.out |    1 +
  tests/btrfs/group   |    1 +
- 3 files changed, 179 insertions(+)
+ 3 files changed, 216 insertions(+)
  create mode 100755 tests/btrfs/045
  create mode 100644 tests/btrfs/045.out
 
 diff --git a/tests/btrfs/045 b/tests/btrfs/045
 new file mode 100755
-index 0000000..ee91240
+index 0000000..85201e3
 --- /dev/null
 +++ b/tests/btrfs/045
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,214 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/045
 +#
@@ -120,6 +121,7 @@ index 0000000..ee91240
 +_scratch_mkfs >/dev/null 2>&1
 +_scratch_mount
 +
++# case 1), mentioned above
 +mkdir -p $SCRATCH_MNT/a/b
 +mkdir $SCRATCH_MNT/a/c
 +mkdir $SCRATCH_MNT/a/b/d
@@ -131,34 +133,53 @@ index 0000000..ee91240
 +mv $SCRATCH_MNT/a/b $SCRATCH_MNT/a/c/b2
 +touch $SCRATCH_MNT/a/c/b2/d/file5
 +
++# case 2), mentioned above
 +mkdir -p $SCRATCH_MNT/a/x1/x2
 +mkdir $SCRATCH_MNT/a/Z
 +mkdir -p $SCRATCH_MNT/a/x1/x2/x3/x4/x5
++
++# case 2) again, but a more complex scenario
++mkdir -p $SCRATCH_MNT/_a/_b/_c/_d
++mkdir $SCRATCH_MNT/_a/_b/_c/_d/_e
++mkdir $SCRATCH_MNT/_a/_b/_c/_d/_f
++mv $SCRATCH_MNT/_a/_b/_c/_d/_e $SCRATCH_MNT/_a/_b/_c/_d/_f/_E2
++mkdir $SCRATCH_MNT/_a/_b/_c/_g
++mv $SCRATCH_MNT/_a/_b/_c/_d $SCRATCH_MNT/_a/_b/_D2
 +
 +# Filesystem looks like:
 +#
 +# .                               (ino 256)
 +# |-- a/                          (ino 257)
-+#     |-- c/                      (ino 259)
-+#     |   |-- b2/                 (ino 258)
-+#     |       |-- d/              (ino 260)
-+#     |       |   |-- file3       (ino 261)
-+#     |       |   |-- file5       (ino 264)
-+#     |       |
-+#     |       |-- file2           (ino 262)
-+#     |       |-- file4           (ino 261)
-+#     |       |-- f/              (ino 263)
-+#     |
-+#     |-- x1/                     (ino 265)
-+#     |   |-- x2/                 (ino 266)
-+#     |       |-- x3/             (ino 268)
-+#     |           |-- x4/         (ino 269)
-+#     |               |-- x5/     (ino 270)
-+#     |
-+#     |-- Z/                      (ino 267)
++# |   |-- c/                      (ino 259)
++# |   |   |-- b2/                 (ino 258)
++# |   |       |-- d/              (ino 260)
++# |   |       |   |-- file3       (ino 261)
++# |   |       |   |-- file5       (ino 264)
++# |   |       |
++# |   |       |-- file2           (ino 262)
++# |   |       |-- file4           (ino 261)
++# |   |       |-- f/              (ino 263)
++# |   |
++# |   |-- x1/                     (ino 265)
++# |   |   |-- x2/                 (ino 266)
++# |   |       |-- x3/             (ino 268)
++# |   |           |-- x4/         (ino 269)
++# |   |               |-- x5/     (ino 270)
++# |   |
++# |   |-- Z/                      (ino 267)
++# |
++# |-- _a/                         (ino 271)
++#      |-- _b/                    (ino 272)
++#           |-- _c/               (ino 273)
++#           |    |-- _g/          (ino 277)
++#           |
++#           |-- _D2/              (ino 274)
++#                |-- _f/          (ino 276)
++#                     |-- _E2/    (ino 275)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
++# case 1), mentioned above
 +ln $SCRATCH_MNT/a/c/b2/file4 $SCRATCH_MNT/a/c/b2/f/file6
 +mv $SCRATCH_MNT/a/c/b2/d/file5 $SCRATCH_MNT/a/c/file7
 +touch $SCRATCH_MNT/a/c/b2/d/file8
@@ -171,37 +192,54 @@ index 0000000..ee91240
 +touch $SCRATCH_MNT/a/f2/b3/c3/file11
 +mv $SCRATCH_MNT/a $SCRATCH_MNT/a2
 +
++# case 2), mentioned above
 +mv $SCRATCH_MNT/a2/x1/x2/x3 $SCRATCH_MNT/a2/Z/X33
 +mv $SCRATCH_MNT/a2/x1/x2 $SCRATCH_MNT/a2/Z/X33/x4/x5/X22
 +
++# case 2) again, but a more complex scenario
++mkdir $SCRATCH_MNT/_a/_o
++mv $SCRATCH_MNT/_a/_b/_c/_g $SCRATCH_MNT/_a/_b/_D2/_f/_G2
++mv $SCRATCH_MNT/_a/_b/_D2 $SCRATCH_MNT/_a/_b/_dd
++mv $SCRATCH_MNT/_a/_b/_c $SCRATCH_MNT/_a/_C2
++mv $SCRATCH_MNT/_a/_b/_dd/_f $SCRATCH_MNT/_a/_o/_FF
++mv $SCRATCH_MNT/_a/_b $SCRATCH_MNT/_a/_o/_FF/_E2/_BB
++
 +# Filesystem now looks like:
 +#
-+# .                               (ino 256)
-+# |-- a2/                         (ino 257)
-+#     |
-+#     |-- f2/                     (ino 263)
-+#     |   |-- file6               (ino 261)
-+#     |   |-- b3/                 (ino 258)
-+#     |       |-- d/              (ino 260)
-+#     |       |   |-- file3       (ino 261)
-+#     |       |   |-- file8       (ino 270)
-+#     |       |
-+#     |       |-- file2           (ino 262)
-+#     |       |-- file4           (ino 261)
-+#     |       |-- file9           (ino 271)
-+#     |       |-- file10          (ino 271)
-+#     |       |
-+#     |       |-- c3/             (ino 259)
-+#     |           |-- file7       (ino 264)
-+#     |           |-- file11      (ino 272)
-+#     |
-+#     |-- x1/                     (ino 265)
-+#     |-- Z/                      (ino 267)
-+#         |-- X33/                (ino 268)
-+#              |-- x4/            (ino 269)
-+#                  |-- x5/        (ino 270)
-+#                      |-- X22/   (ino 266)
-+#
++# .                                 (ino 256)
++# |-- a2/                           (ino 257)
++# |   |-- f2/                       (ino 263)
++# |   |   |-- file6                 (ino 261)
++# |   |   |-- b3/                   (ino 258)
++# |   |       |-- d/                (ino 260)
++# |   |       |   |-- file3         (ino 261)
++# |   |       |   |-- file8         (ino 278)
++# |   |       |
++# |   |       |-- file2             (ino 262)
++# |   |       |-- file4             (ino 261)
++# |   |       |-- file9             (ino 279)
++# |   |       |-- file10            (ino 279)
++# |   |       |
++# |   |       |-- c3/               (ino 259)
++# |   |           |-- file7         (ino 264)
++# |   |           |-- file11        (ino 280)
++# |   |
++# |   |-- x1/                       (ino 265)
++# |   |-- Z/                        (ino 267)
++# |       |-- X33/                  (ino 268)
++# |            |-- x4/              (ino 269)
++# |                |-- x5/          (ino 270)
++# |                    |-- X22/     (ino 266)
++# |
++# |-- _a/                           (ino 271)
++#      |-- _o/                      (ino 281)
++#      |    |-- _FF/                (ino 276)
++#      |         |-- _E2/           (ino 275)
++#      |         |    |-- _BB/      (ino 272)
++#      |         |         |-- dd/  (ino 274)
++#      |         |
++#      |         |-- G2/            (ino 277)
++#      |-- C2/                      (ino 273)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +

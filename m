@@ -1,77 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42537 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753668AbaCRJCk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Mar 2014 05:02:40 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WPpus-0003XW-Ty
-	for linux-btrfs@vger.kernel.org; Tue, 18 Mar 2014 10:02:34 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 10:02:34 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 10:02:34 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: How to handle a RAID5 arrawy with a failing drive?
-Date: Tue, 18 Mar 2014 09:02:07 +0000 (UTC)
-Message-ID: <pan$2239d$446ec5c7$d67506b7$f25a7c65@cox.net>
-References: <1394983430-20440-1-git-send-email-fdmanana@gmail.com>
-	<1395002246-3840-1-git-send-email-fdmanana@gmail.com>
-	<20140316222026.GU16946@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:64588 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754064AbaCRNr1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Mar 2014 09:47:27 -0400
+Received: by mail-qc0-f174.google.com with SMTP id c9so1800455qcz.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 06:47:27 -0700 (PDT)
+From: Ben Gamari <bgamari.foss@gmail.com>
+To: Ajesh js <coolajeshjs@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Please help me to contribute to btrfs project
+In-Reply-To: <CA+nQTon3WcD_gdcFyhDwXt=Y7kBu4DZ78YD2=-G+1z8yA2fCQg@mail.gmail.com>
+References: <CA+nQTon3WcD_gdcFyhDwXt=Y7kBu4DZ78YD2=-G+1z8yA2fCQg@mail.gmail.com>
+Date: Tue, 18 Mar 2014 09:47:23 -0400
+Message-ID: <87wqfrr53o.fsf@gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha1; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Sun, 16 Mar 2014 15:20:26 -0700 as excerpted:
+--=-=-=
+Content-Type: text/plain
 
-> Do I have other options?
-> (data is not important at all, I just want to learn how to deal with
-> such a case with the current code)
+Ajesh js <coolajeshjs@gmail.com> writes:
 
-First just a note that you hijacked Mr Manana's patch thread.  Replying 
-to a post and changing the topic (the usual cause of such hijacks) does 
-NOT change the thread, as the References and In-Reply-To headers still 
-includes the Message-IDs from the original thread, and that's what good 
-clients thread by since the subject line isn't a reliable means of 
-threading.  To start a NEW thread, don't reply to an existing thread, 
-compose a NEW message, starting a NEW thread. =:^)
+> Hi,
+>
+> I have used the btrfs filesystem in one of my projects and I have
+> added a small feature to it. I feel that the same feature will be
+> useful for others too. Hence I would like to contribute the same to
+> open source.
+>
+Excellent!
 
-Back on topic...
+> If everything works fine and this feature is not already added by
+> somebody else, this will be my first contribution to the opensource &
+> I am excited to join the huge family of opensource :)
+>
+> Please help me with a precise steps to do the same.
+>
+In general the way to contribute is to send a patch for review. You
+should have a look at the code style guidelines[1] and patch submission
+guidelines[2] in the kernel tree. For nontrivial changes the patch
+should be accompanied by a cover letter describing the change and the
+motivations for any non-obvious design decisions.
 
-Since you don't have to worry about the data I'd suggest blowing it away 
-and starting over.  Btrfs raid5/6 code is known to be incomplete at this 
-point, to work in normal mode and write everything out, but with 
-incomplete recovery code.  So I'd treat it like the raid-0 mode it 
-effectively is, and consider it lost if a device drops.
+It is possible that your change is acceptable as-is. More likely,
+however, is that there will be some discussion and requests for
+changes. Eventually the review process will produce a merge-worthy
+patch. The first step, however, is sending something concrete for
+community review.
 
-There *IS* a post from an earlier thread where someone mentioned a 
-recovery under some specific circumstance that worked for him, but I'd 
-consider that the exception not the norm since the code is known to be 
-incomplete and I think he just got lucky and didn't hit the particular 
-missing code in his specific case.  Certainly you could try to go back 
-and see what he did and under what conditions, and that might actually be 
-worth doing if you had valuable data you'd be losing otherwise, but since 
-you don't, while of course it's up to you, I'd not bother were it me.
+Cheers,
 
-Which I haven't.  My use-case wouldn't be looking at raid5/6 (or raid0) 
-anyway, but even if it were, I'd not touch the current code unless it 
-/was/ just for something I'd consider risking on a raid0.  Other than 
-pure testing, the /only/ case I'd consider btrfs raid5/6 for right now, 
-would be something that I'd consider raid0 riskable currently, but with 
-the bonus of it upgrading "for free" to raid5/6 when the code is complete 
-without any further effort on my part, since it's actually being written 
-as raid5/6 ATM, the recovery simply can't be relied upon as raid5/6, so 
-in recovery terms you're effectively running raid0 until it can be.  
-Other than that and for /pure/ testing, I just don't see the point of 
-even thinking about raid5/6 at this point.
+- Ben
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+[1] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/CodingStyle
+[2] https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/Documentation/SubmittingPatches
+
+
+--=-=-=
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
+
+iQEcBAEBAgAGBQJTKE5rAAoJEErkyLZmeNiD7MIH/RE/B9YOzAdnipbxlVONMWMk
+r1sUBjFFUuAUgqiGYVZZsre/x1mfpax8ttV2trfAwFPXjd/xxF5nYO4ZC7iUyNhw
+IaLrW9gR7JvuR4uf7ZXrat0uybCCkeObFDPuO9AzsrPGLj4Jg7zmb49u4MOthtHD
+BaWI/wK5ECiM8ploj/awfp0/a31YDk6278sMnNCREapZbbUTCkJXaGjkB/abeNAW
+rqHP7EWAJOlJUVo6riU3ymSs7s5F+U2x4/9m/hxsxTp8yoLn+pTlEIk3dBS2O4qe
++dhSuxhWLTR0v5KN/Dx0khiM+9L0OY0sgvNqrTTZIJRXEmlKogdnxQW8wIpXSCQ=
+=kO1M
+-----END PGP SIGNATURE-----
+--=-=-=--

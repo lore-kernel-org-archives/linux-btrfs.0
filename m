@@ -1,41 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:31418 "EHLO
-	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755075AbaCOMWl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Mar 2014 08:22:41 -0400
-Date: Sat, 15 Mar 2014 14:22:37 +0200
-From: Rakesh Pandit <rakesh@tuxera.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fsck: fix memory leak and unnecessary call to
- free
-Message-ID: <20140315122235.GA9023@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from cn.fujitsu.com ([222.73.24.84]:16503 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751553AbaCRMFB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Mar 2014 08:05:01 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2IC4u1r001918
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 20:04:57 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/6] Btrfs-progs: fsck: don't free @seen cache until we finish searching
+Date: Tue, 18 Mar 2014 20:02:42 +0800
+Message-Id: <1395144167-775-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Free already allocated memory to item1_data if malloc fails for
-item2_data in swap_values. Seems to be a typo from commit 70749a77.
+@seen cache is used to avoid iterating same block more than once, and
+we can not free them until we have finished searching.
 
-Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ cmds-check.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index d1cafe1..60708d0 100644
+index d1cafe1..c0b7f8c 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -2380,7 +2380,7 @@ static int swap_values(struct btrfs_root *root, struct btrfs_path *path,
- 			return -ENOMEM;
- 		item2_data = malloc(item2_size);
- 		if (!item2_data) {
--			free(item2_data);
-+			free(item1_data);
- 			return -ENOMEM;
- 		}
+@@ -3892,12 +3892,6 @@ static int run_next_block(struct btrfs_trans_handle *trans,
+ 		remove_cache_extent(nodes, cache);
+ 		free(cache);
+ 	}
+-	cache = lookup_cache_extent(seen, bytenr, size);
+-	if (cache) {
+-		remove_cache_extent(seen, cache);
+-		free(cache);
+-	}
+-
+ 	cache = lookup_cache_extent(extent_cache, bytenr, size);
+ 	if (cache) {
+ 		struct extent_record *rec;
+@@ -5914,6 +5908,7 @@ out:
+ 	free_device_cache_tree(&dev_cache);
+ 	free_block_group_tree(&block_group_cache);
+ 	free_device_extent_tree(&dev_extent_cache);
++	free_extent_cache_tree(&seen);
+ 	return ret;
+ }
  
 -- 
-1.8.5.3
+1.9.0
 

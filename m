@@ -1,46 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp03.in.ibm.com ([122.248.162.3]:34483 "EHLO
-	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965238AbaCSQuh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Mar 2014 12:50:37 -0400
-Received: from /spool/local
-	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 19 Mar 2014 22:20:35 +0530
-Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 2394BE0058
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2014 22:24:27 +0530 (IST)
-Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
-	by d28relay02.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s2JGoTDx4325860
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2014 22:20:29 +0530
-Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
-	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s2JGoWoS007792
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2014 22:20:33 +0530
-From: chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: bo.li.liu@oracle.com
+Received: from cantor2.suse.de ([195.135.220.15]:36822 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750835AbaCSSlJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Mar 2014 14:41:09 -0400
+Date: Wed, 19 Mar 2014 19:41:07 +0100
+From: David Sterba <dsterba@suse.cz>
+To: chandan <chandan@linux.vnet.ibm.com>
 Cc: linux-btrfs@vger.kernel.org, aneesh.kumar@linux.vnet.ibm.com
-Subject: Re: [PATCH 1/6] Btrfs: subpagesize-blocksize: Get rid of whole page reads.
-Date: Wed, 19 Mar 2014 22:20:31 +0630
-Message-ID: <2116637.vUjb1dxbY0@localhost.localdomain>
-In-Reply-To: <20140319073734.GC21531@localhost.localdomain>
-References: <1394634033-2528-1-git-send-email-chandan@linux.vnet.ibm.com> <1394634033-2528-2-git-send-email-chandan@linux.vnet.ibm.com> <20140319073734.GC21531@localhost.localdomain>
+Subject: Re: [PATCH 0/6 EARLY RFC] Btrfs: Get rid of whole page I/O.
+Message-ID: <20140319184107.GJ29256@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1394634033-2528-1-git-send-email-chandan@linux.vnet.ibm.com>
+ <20140317145555.GG29256@twin.jikos.cz>
+ <1785327.CGV06aaKrn@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1785327.CGV06aaKrn@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> These should be put in front of "struct bio bio",
-> otherwise, it might lead to errors, according to bioset_create()'s comments,
-> 
-> ----------------------------------------------------------------------
-> "Note that the bio must be embedded at the END of that structure always,    
-> or things will break badly."
-> ----------------------------------------------------------------------
-> 
+On Tue, Mar 18, 2014 at 01:48:00PM +0630, chandan wrote:
+> The earlier patchset posted by Chandra Seethraman was to get 4k
+> blocksize to work with ppc64's 64k PAGE_SIZE.
 
-Thank you for pointing that out. I will fix it.
+Are we talking about metadata block sizes or data block sizes?
 
-Thanks,
-chandan
+> The root node of "tree root" tree has 1957 bytes being written by
+> make_btrfs() (in btrfs-progs).  Hence I chose to do 2k blocksize for
+> the initial subpagesize-blocksize work. So with this patchset the
+> supported blocksizes would be in the range 2k-64k.
 
+So it's metadata blocks, and in this case 2k looks like the only
+allowed size that's smaller than 4k, and thus can demonstrage sub-page
+size allocations. I'm not sure if this is limiting for potential future
+extensions of metadata structures that could be larger.
+
+2k is ok for testing purposes, but I think a 4k-page machine will hardly
+use a smaller page size. The more that 16k metadata blocks are now
+default.

@@ -1,208 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:36017 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965054AbaCSOVE (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:46598 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965431AbaCSPkc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Mar 2014 10:21:04 -0400
-Received: by mail-wi0-f174.google.com with SMTP id d1so5087396wiv.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Mar 2014 07:21:02 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v4] Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
-Date: Wed, 19 Mar 2014 14:20:54 +0000
-Message-Id: <1395238854-15733-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1395022528-27225-1-git-send-email-fdmanana@gmail.com>
-References: <1395022528-27225-1-git-send-email-fdmanana@gmail.com>
+	Wed, 19 Mar 2014 11:40:32 -0400
+Date: Wed, 19 Mar 2014 08:40:31 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: How to handle a RAID5 arrawy with a failing drive? -> raid5 mostly works, just no rebuilds
+Message-ID: <20140319154031.GP6143@merlins.org>
+References: <1394983430-20440-1-git-send-email-fdmanana@gmail.com> <1395002246-3840-1-git-send-email-fdmanana@gmail.com> <20140316222026.GU16946@merlins.org> <pan$2239d$446ec5c7$d67506b7$f25a7c65@cox.net> <20140319060902.GM6143@merlins.org> <CD1D8CED-8BC2-4C16-AE9E-0C47DC954CFA@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CD1D8CED-8BC2-4C16-AE9E-0C47DC954CFA@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For an incremental send, fix the process of determining whether the directory
-inode we're currently processing needs to have its move/rename operation delayed.
-
-We were ignoring the fact that if the inode's new immediate ancestor has a higher
-inode number than ours but wasn't renamed/moved, we might still need to delay our
-move/rename, because some other ancestor directory higher in the hierarchy might
-have an inode number higher than ours *and* was renamed/moved too - in this case
-we have to wait for rename/move of that ancestor to happen before our current
-directory's rename/move operation.
-
-Simple steps to reproduce this issue:
-
-      $ mkfs.btrfs -f /dev/sdd
-      $ mount /dev/sdd /mnt
-
-      $ mkdir -p /mnt/a/x1/x2
-      $ mkdir /mnt/a/Z
-      $ mkdir -p /mnt/a/x1/x2/x3/x4/x5
-
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-      $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-      $ mv /mnt/a/x1/x2/x3 /mnt/a/Z/X33
-      $ mv /mnt/a/x1/x2 /mnt/a/Z/X33/x4/x5/X22
-
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-      $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-The incremental send caused the kernel code to enter an infinite loop when
-building the path string for directory Z after its references are processed.
-
-A more complex scenario:
-
-      $ mkfs.btrfs -f /dev/sdd
-      $ mount /dev/sdd /mnt
-
-      $ mkdir -p /mnt/a/b/c/d
-      $ mkdir /mnt/a/b/c/d/e
-      $ mkdir /mnt/a/b/c/d/f
-      $ mv /mnt/a/b/c/d/e /mnt/a/b/c/d/f/E2
-      $ mkdir /mmt/a/b/c/g
-      $ mv /mnt/a/b/c/d /mnt/a/b/D2
-
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-      $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-      $ mkdir /mnt/a/o
-      $ mv /mnt/a/b/c/g /mnt/a/b/D2/f/G2
-      $ mv /mnt/a/b/D2 /mnt/a/b/dd
-      $ mv /mnt/a/b/c /mnt/a/C2
-      $ mv /mnt/a/b/dd/f /mnt/a/o/FF
-      $ mv /mnt/a/b /mnt/a/o/FF/E2/BB
-
-      $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-      $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-A test case for xfstests follows.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
-
-V2: Added missing error handling and fixed typo in commit message.
-V3: Updated the algorithm to deal with more complex cases, hopefully all
-    cases are nailed down now.
-V4: Pass the right generation number to add_pending_dir_move.
-
- fs/btrfs/send.c |   71 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 66 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d869079..b27b3e1 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2916,7 +2916,10 @@ static void free_waiting_dir_move(struct send_ctx *sctx,
- 	kfree(dm);
- }
+On Wed, Mar 19, 2014 at 12:32:55AM -0600, Chris Murphy wrote:
+> 
+> On Mar 19, 2014, at 12:09 AM, Marc MERLIN <marc@merlins.org> wrote:
+> > 
+> > 7) you can remove a drive from an array, add files, and then if you plug
+> >   the drive in, it apparently gets auto sucked in back in the array.
+> > There is no rebuild that happens, you now have an inconsistent array where
+> > one drive is not at the same level than the other ones (I lost all files I added 
+> > after the drive was removed when I added the drive back).
+> 
+> Seems worthy of a dedicated bug report and keeping an eye on in the future, not good.
  
--static int add_pending_dir_move(struct send_ctx *sctx, u64 parent_ino)
-+static int add_pending_dir_move(struct send_ctx *sctx,
-+				u64 ino,
-+				u64 ino_gen,
-+				u64 parent_ino)
- {
- 	struct rb_node **p = &sctx->pending_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -2929,8 +2932,8 @@ static int add_pending_dir_move(struct send_ctx *sctx, u64 parent_ino)
- 	if (!pm)
- 		return -ENOMEM;
- 	pm->parent_ino = parent_ino;
--	pm->ino = sctx->cur_ino;
--	pm->gen = sctx->cur_inode_gen;
-+	pm->ino = ino;
-+	pm->gen = ino_gen;
- 	INIT_LIST_HEAD(&pm->list);
- 	INIT_LIST_HEAD(&pm->update_refs);
- 	RB_CLEAR_NODE(&pm->node);
-@@ -3183,6 +3186,8 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	struct fs_path *path_before = NULL;
- 	struct fs_path *path_after = NULL;
- 	int len1, len2;
-+	int register_upper_dirs;
-+	u64 gen;
+Since it's not supposed to be working, I didn't file a bug, but I figured
+it'd be good for people to know about it in the meantime.
+
+> >> polgara:/mnt/btrfs_backupcopy# btrfs device add -f /dev/mapper/crypt_sdm1 /mnt/btrfs_backupcopy/
+> >> polgara:/mnt/btrfs_backupcopy# df -h .
+> >> Filesystem              Size  Used Avail Use% Mounted on
+> >> /dev/mapper/crypt_sdb1  4.6T  3.0M  4.6T   1% /mnt/btrfs_backupcopy
+> > 
+> > Oh look it's bigger now. We need to manual rebalance to use the new drive:
+> 
+> You don't have to. As soon as you add the additional drive, newly allocated chunks will stripe across all available drives. e.g. 1 GB allocations striped across 3x drives, if I add a 4th drive, initially any additional writes are only to the first three drives but once a new data chunk is allocated it gets striped across 4 drives.
  
- 	if (is_waiting_for_move(sctx, ino))
- 		return 1;
-@@ -3225,7 +3230,7 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	}
- 
- 	ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
--			    NULL, path_after);
-+			    &gen, path_after);
- 	if (ret == -ENOENT) {
- 		ret = 0;
- 		goto out;
-@@ -3242,6 +3247,60 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	}
- 	ret = 0;
- 
-+	/*
-+	 * Ok, our new most direct ancestor has a higher inode number but
-+	 * wasn't moved/renamed. So maybe some of the new ancestors higher in
-+	 * the hierarchy have an higher inode number too *and* were renamed
-+	 * or moved - in this case we need to wait for the ancestor's rename
-+	 * or move operation before we can do the move/rename for the current
-+	 * inode.
-+	 */
-+	register_upper_dirs = 0;
-+	ino = parent_ino_after;
-+again:
-+	while ((ret == 0 || register_upper_dirs) && ino > sctx->cur_ino) {
-+		u64 parent_gen;
-+
-+		fs_path_reset(path_before);
-+		fs_path_reset(path_after);
-+
-+		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
-+				    &parent_gen, path_after);
-+		if (ret < 0)
-+			goto out;
-+		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
-+				    NULL, path_before);
-+		if (ret == -ENOENT) {
-+			ret = 0;
-+			break;
-+		} else if (ret < 0) {
-+			goto out;
-+		}
-+
-+		len1 = fs_path_len(path_before);
-+		len2 = fs_path_len(path_after);
-+		if (parent_ino_before != parent_ino_after || len1 != len2 ||
-+		    memcmp(path_before->start, path_after->start, len1)) {
-+			ret = 1;
-+			if (register_upper_dirs) {
-+				break;
-+			} else {
-+				register_upper_dirs = 1;
-+				ino = parent_ref->dir;
-+				gen = parent_ref->dir_gen;
-+				goto again;
-+			}
-+		} else if (register_upper_dirs) {
-+			ret = add_pending_dir_move(sctx, ino, gen,
-+						   parent_ino_after);
-+			if (ret < 0 && ret != -EEXIST)
-+				goto out;
-+		}
-+
-+		ino = parent_ino_after;
-+		gen = parent_gen;
-+	}
-+
- out:
- 	fs_path_free(path_before);
- 	fs_path_free(path_after);
-@@ -3407,7 +3466,9 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 					goto out;
- 				if (ret) {
- 					ret = add_pending_dir_move(sctx,
--								   cur->dir);
-+							   sctx->cur_ino,
-+							   sctx->cur_inode_gen,
-+							   cur->dir);
- 					*pending_move = 1;
- 				} else {
- 					ret = send_rename(sctx, valid_path,
+That's the thing though. If the bad device hadn't been forcibly removed, and
+apparently the only way to do this was to unmount, make the device node
+disappear, and remount in degraded mode, it looked to me like btrfs was
+still consideing that the drive was part of the array and trying to write to
+it.
+After adding a drive, I couldn't quite tell if it was striping over 11
+drive2 or 10, but it felt that at least at times, it was striping over 11
+drives with write failures on the missing drive.
+I can't prove it, but I'm thinking the new data I was writing was being
+striped in degraded mode.
+
+> Sure the whole thing isn't corrupt. But if anything written while degraded vanishes once the missing device is reattached, and you remount normally (non-degraded), that's data loss. Yikes!
+
+Yes, although it's limited, you apparently only lose new data that was added
+after you went into degraded mode and only if you add another drive where
+you write more data.
+In real life this shouldn't be too common, even if it is indeed a bug.
+
+Cheers,
+Marc
 -- 
-1.7.10.4
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

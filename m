@@ -1,91 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37582 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:33664 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750743AbaCTGTk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Mar 2014 02:19:40 -0400
+	id S1750870AbaCTHhb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Mar 2014 03:37:31 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WQWKG-0004MT-B7
-	for linux-btrfs@vger.kernel.org; Thu, 20 Mar 2014 07:19:36 +0100
+	id 1WQXXd-0007eH-So
+	for linux-btrfs@vger.kernel.org; Thu, 20 Mar 2014 08:37:29 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 07:19:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 08:37:29 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 07:19:36 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 08:37:29 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-rmw-2: page allocation failure: order:1, mode:0x8020
-Date: Thu, 20 Mar 2014 06:19:10 +0000 (UTC)
-Message-ID: <pan$abf66$faea9a06$c5ce02f4$1e7a0c96@cox.net>
-References: <20140320002007.GY18959@merlins.org> <CF4FB5F3.2116%clm@fb.com>
+Subject: Re: How to handle a RAID5 arrawy with a failing drive? -> raid5
+ mostly works, just no rebuilds
+Date: Thu, 20 Mar 2014 07:37:05 +0000 (UTC)
+Message-ID: <pan$cb2d8$ca7492f$8d528793$b5010601@cox.net>
+References: <1394983430-20440-1-git-send-email-fdmanana@gmail.com>
+	<1395002246-3840-1-git-send-email-fdmanana@gmail.com>
+	<20140316222026.GU16946@merlins.org>
+	<pan$2239d$446ec5c7$d67506b7$f25a7c65@cox.net>
+	<20140319060902.GM6143@merlins.org>
+	<CD1D8CED-8BC2-4C16-AE9E-0C47DC954CFA@colorremedies.com>
+	<20140319154031.GP6143@merlins.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason posted on Thu, 20 Mar 2014 01:01:35 +0000 as excerpted:
+Marc MERLIN posted on Wed, 19 Mar 2014 08:40:31 -0700 as excerpted:
 
-> Message-ID: <CF4FB5F3.2116%clm@fb.com>
-> Accept-Language: en-US
-> Content-Type: text/plain; charset=euc-kr
-> Content-Transfer-Encoding: base64
-> Content-Language: en-US
+> That's the thing though. If the bad device hadn't been forcibly removed,
+> and apparently the only way to do this was to unmount, make the device
+> node disappear, and remount in degraded mode, it looked to me like btrfs
+> was still consideing that the drive was part of the array and trying to
+> write to it.
+> After adding a drive, I couldn't quite tell if it was striping over 11
+> drive2 or 10, but it felt that at least at times, it was striping over
+> 11 drives with write failures on the missing drive.
+> I can't prove it, but I'm thinking the new data I was writing was being
+> striped in degraded mode.
 
->>> Sorry, I misspoke, you should bump /proc/sys/vm/min_free_kbytes.
->>> Honestly though, it©ös just a bug in the mvs driver.  Atomic 8K
->>> allocations are doomed to fail eventually.
+FWIW, there's at least two problems here, one a bug (or perhaps it'd more 
+accurately be described as an as yet incomplete feature) unrelated to 
+btrfs raid5/6 mode, the other the incomplete raid5/6 support.  Both are 
+known issues, however.
 
-> The process is a btrfs worker, and the IO was started by btrfs, but the
-> allocation failure is all inside the mvs driver.  There¡¯s even the
-> printk in there from mvs about the allocation failing.
+The incomplete raid5/6 is discussed well enough elsewhere including in 
+this thread as a whole, which leaves the other issue.
 
-> -chris
-> 
-> N§²æìržyúèØb²X¬¶Ç§vØ^)Þº{.nÇ+·¥{±nÚß²)íæèw*jg¬±š¶Ý¢
-j/êäz¹Þà2Þšè­Ú&¢)ß¡«a¶Úþø®G«éh®æj:+všwèÙ¥
+The other issue, not specifically raid5/6 mode related, is that 
+currently, in-kernel btrfs is basically oblivious to disappearing drives, 
+thus explaining some of the more complex bits of the behavior you 
+described.  Yes, the kernel has the device data and other layers know 
+when a device goes missing, but it's basically a case of the right hand 
+not knowing what the left hand is doing -- once setup on a set of 
+devices, in-kernel btrfs basically doesn't do anything with the device 
+information available to it, at least in terms of removing a device from 
+its listing when it goes missing.  (It does seem to transparently handle 
+a missing btrfs component device reappearing, arguably /too/ 
+transparently!)
 
+Basically all btrfs does is log errors when a component device 
+disappears.  It doesn't do anything with the disappeared device, and 
+really doesn't "know" it has disappeared at all, until an unmount and 
+(possibly degraded) remount, at which point it re-enumerates the devices 
+and again knows what's actually there... until a device disappears again.
 
-Chris, you might wish to take a look at this and/or have one of the FB 
-techs familiar with your mail transport layers (and/or your mail client, 
-and/or perhaps it's vger's list-serv bot) look at it.  That list-sig came 
-thru as garbage at least here, and your "it's" and "there's" appear to 
-have strange apostrophes as well.  As you can see I also included the 
-headers I think might be relevant, plus the Message-ID.
+There's actually patches being worked on to fix that situation as we 
+speak, and it's possible they're actually in btrfs-next already.  (I've 
+seen the patches and discussion go by on the list but haven't tracked 
+them to the extent that I know current status, other than that they're 
+not in mainline yet.)
 
-The problem wasn't a big one here, but if it starts corrupting patches or 
-something too...
+Meanwhile, counter-intuitively, btrfs-userspace is sometimes more aware 
+of current device status than btrfs-kernel is ATM, since parts of 
+userspace actually either get current status from the kernel, or trigger 
+a rescan in ordered to get it.  But even after a rescan updates what 
+userspace knows and thus what the kernel as a whole knows, btrfs-kernel 
+still doesn't actually use that new information available to it in the 
+same kernel that btrfs-userspace used to get it from!
 
-I'd guess it has something to do with that content-type charset=euc-kr in 
-the headers, which looks really strange combined with the accept-language 
-and content-language both being en-US.
-
-The other messages of yours (with an uncorrupted list sig) I checked had 
-a content-type charset=iso-8859-1 header, which seems to be most common 
-in English messages, anyway.  Why this one had euc-kr I don't know.
-
-However, it's also worth noting that the third-level quoting above, also 
-from you, has an "it's", and when I checked /that/ message, the 
-apostrophe was a super-script-1, as it was when quoted in Marc's reply, 
-but that got changed to the copyright symbol (plus something else) in 
-your quote, which at least as I'm posting the quote, is showing the same 
-way.
-
-Meanwhile, the apostrophe in the "there's" in your message's new content 
-(which is thus first-level quote in this message) is different, an i 
-followed by an over-line.  I'd /guess/ that's what actually triggered the 
-Korean (?) charset in your message, in ordered to handle that or perhaps 
-some other character I missed, while your other messages are iso-8859-1, 
-which thus changed the auto-inserted list-sig into garbage, since the 
-list-bot presumably inserted it as the usual iso-8859-1 while your 
-message claimed to be in eur-kr.
-
-(It'll be interesting to see if my message, with both quotes, looks the 
-same when I read it on the list via gmane, as it does when I send it, or 
-if it's further garbled, and if my charset gets set to something exotic 
-too.  FWIW, my client, which should be visible in my headers, is pan, via 
-gmane.org's list2news service.)
+Knowing that rather counterintuitive "little" inconsistency, that isn't 
+actually so little, goes quite a way toward explaining what otherwise 
+looks like illogical btrfs behavior -- how could kernel-btrfs not know 
+the status of its own devices?
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

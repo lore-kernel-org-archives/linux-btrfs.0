@@ -1,41 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58193 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933559AbaCTSV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Mar 2014 14:21:56 -0400
-Date: Thu, 20 Mar 2014 19:21:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: all super blocks of the replaced disk must be
- scratched
-Message-ID: <20140320182154.GM29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1395057486-4341-1-git-send-email-Anand.Jain@oracle.com>
+Received: from magic.merlins.org ([209.81.13.136]:58302 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759880AbaCTUTs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Mar 2014 16:19:48 -0400
+Date: Thu, 20 Mar 2014 13:19:43 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Jakub =?iso-8859-1?Q?Klinkovsk=FD?= <j.l.k@gmx.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: btrfs scrub process prevents system suspend
+Message-ID: <20140320201943.GD18959@merlins.org>
+References: <20140320152131.GA1172@asusntb.lan> <532B0999.3060605@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1395057486-4341-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <532B0999.3060605@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 17, 2014 at 07:58:06PM +0800, Anand Jain wrote:
-> In a normal scenario when sys-admin replaces a disk, the
-> expeted is btrfs will release the disk completely.
-> 
-> However the below test case gives a wrong impression that
-> replaced disk is still is in use.
-> 
-> $ btrfs rep start /dev/sde /dev/sdg4 /btrfs
-> $ mkfs.btrfs /dev/sde
-> /dev/sde appears to contain an existing filesystem (btrfs).
-> Error: Use the -f option to force overwrite.
+On Thu, Mar 20, 2014 at 11:30:33AM -0400, Josef Bacik wrote:
+> Yeah there's a way to make suspend run commands while it goes down, 
+> you'll want to make it do btrfs scrub cancel on your btrfs fses.  If you 
+> search the archives you'll see we've covered this recently and the guy 
+> posted the script he was using.  Thanks,
 
-(your signed-off is missing)
+I've started putting some of the recent stuff I've written and found out in
+blog posts so that google can index them more easily.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+This one has my btrfs scrub script and sec.conf to catch errors that btrfs
+reports to syslog that that most would miss:
+http://marc.merlins.org/perso/btrfs/post_2014-03-19_Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair.html
+(also explains the different data recovery strategy and why you don't really
+need fsck)
 
-I've noticed that btrfs_rm_device also cleans only the first superblock
-signature, so it should do the same.
+Then this one deals specifically with cancelling btrfs scrubs before going
+to sleep:
+http://marc.merlins.org/perso/btrfs/post_2014-03-20_Btrfs-Tips_-ACPI-S3-Sleep-aka-Suspend-And-Btrfs-Scrub.html
+My guess is that pause/resume might be enough, I just haven't spent the time
+on doing that yet.
 
-I can't think of any drawback where all the superblocks are scratched,
-should be safe.
+Cheers,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

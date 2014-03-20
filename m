@@ -1,57 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:53162 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750960AbaCTQh1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Mar 2014 12:37:27 -0400
-Date: Thu, 20 Mar 2014 17:37:24 +0100
-From: Jakub =?utf-8?Q?Klinkovsk=C3=BD?= <j.l.k@gmx.com>
-To: George Eleftheriou <eleftg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs scrub process prevents system suspend
-Message-ID: <20140320163724.GB1172@asusntb.lan>
-References: <20140320152131.GA1172@asusntb.lan>
- <CAPpBBdPtdOUe=4UhffszPAfYFpuTcn1PgjwCBqfW--tXBMqfZw@mail.gmail.com>
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:36403 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756777AbaCTSOe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Mar 2014 14:14:34 -0400
+Received: by mail-ig0-f173.google.com with SMTP id t19so15670870igi.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 11:14:34 -0700 (PDT)
+Received: from [10.80.50.89] (CPEbc14012ad2f3-CMbc14012ad2f0.cpe.net.cable.rogers.com. [99.238.119.135])
+        by mx.google.com with ESMTPSA id u1sm6082519igm.8.2014.03.20.11.14.33
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Thu, 20 Mar 2014 11:14:33 -0700 (PDT)
+Message-ID: <532B3009.6040608@gmail.com>
+Date: Thu, 20 Mar 2014 14:14:33 -0400
+From: Adam Khan <adam.s.khan@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="32u276st3Jlj2kUU"
-In-Reply-To: <CAPpBBdPtdOUe=4UhffszPAfYFpuTcn1PgjwCBqfW--tXBMqfZw@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Please advise on repair action
+References: <532931D9.60809@gmail.com>
+In-Reply-To: <532931D9.60809@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Does anyone know if my issue is btrfs related or if it is more likely hardware related:
+http://www.spinics.net/lists/linux-btrfs/msg30999.html
 
---32u276st3Jlj2kUU
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+My kernel is from Debian Jessie:
+3.13-1-amd64 #1 SMP Debian 3.13.5-1 (2014-03-04) x86_64 GNU/Linux
 
-On 20.03.14 at 16:31, George Eleftheriou wrote:
-> Hi,
->=20
-> I think this issue came up recently. You can read more about it here:
->=20
-> http://comments.gmane.org/gmane.comp.file-systems.btrfs/33106
+Thanks for any insight
 
-Thank you for the link and apologies for the noise.
-
---32u276st3Jlj2kUU
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTKxlEAAoJEMiJvVK88FbF2dMQAIdFvXqSdrifn1oV1gfcRxNv
-ojSAeD8p4XgFnxQMsVPpc12lbRXI8np21V1JKNaDqMrb28t8oUqrwrCkePpB+NiD
-h4LfctSwqrViDyhr9OVaXLyJ6k4x5K3kDqN1tW6rPzmstL3k+HeLtcFbAGdHVomZ
-MUJf3O8skm7ojezXPvwuHE7LKqwPLh+7JayyLG2ahmXFVd5Du8ghc0vkQbh3w56B
-aStou33ERMlkQgBatj4ry4zKRmq2o030x5YtEJkWWNnPNxqBiZNQJxK/hoZ1v3X8
-G6L6WWjdzeTM7kI8fZWXArHnG+MsSZV3YUg1oGWYNtQusIIn4cO/P9Xu57HUkf3k
-CovbixaDvjmWWe9dBVD8/eRIgXqDs94SlG88Ly8fsFSL4Ese2sq0DooEBQWrCRPz
-lAN7MhH9ADIkiHBwiVJAqXa1HBUDAdSICSVr6m1yWj9+/jIszd3W/ozzektpY11W
-W7PBX9Wv4Ka1GU6ld6vW322bbi7Q2bPqARvRFzb0ugbDr0mAjuoueKfjzSjhfHS2
-qam2hk3uqLtuF7Tb05xEwDfw7rC1S71xXv4Oc7+bv66w4USqbOAIpXU2wOb6ZiIA
-foqjYoc5kSZ4Wl2AGopQOjn9lOTZUAftgtDGaIv55C3T2yhoZ05V8Y2f0rx6BZyE
-+dcVBrF6SojnuJQnU5Yd
-=kQAm
------END PGP SIGNATURE-----
-
---32u276st3Jlj2kUU--
+On 19/03/14 01:57 AM, Adam Khan wrote:
+> Hello,
+> 
+> I have a simple btrfs located on a dm-crypt volume. I'm getting a general protection fault when I 
+> attempt to access a specific directory in Thunar file manager and in a Python program.
+> 
+> The trace is attached for Thunar.
+> 
+> btrfsck returns this:
+> 
+> Checking filesystem on /dev/mapper/xyz_crypt
+> UUID: ...
+> found 88316880601 bytes used err is 1
+> total csum bytes: 180423792
+> total tree bytes: 291459072
+> total fs tree bytes: 50192384
+> total extent tree bytes: 12898304
+> btree space waste bytes: 55087032
+> file data blocks allocated: 352826490880
+>  referenced 184697802752
+> Btrfs v3.12
+> 
+> How should I proceed to repair this fs?
+> 
+> Best regards,
+> 
+> Adam
+> 

@@ -1,74 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay6-d.mail.gandi.net ([217.70.183.198]:31195 "EHLO
-	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755407AbaCUKRH convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:38481 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760098AbaCUMpw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Mar 2014 06:17:07 -0400
-Date: Fri, 21 Mar 2014 11:17:01 +0100
-From: Xavier Bassery <xavier@bartica.org>
-To: Adam Khan <adam.s.khan@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Please advise on repair action
-Message-ID: <20140321111701.2502a307@renoir.lan>
-In-Reply-To: <532931D9.60809@gmail.com>
-References: <532931D9.60809@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	Fri, 21 Mar 2014 08:45:52 -0400
+Received: by mail-wi0-f174.google.com with SMTP id d1so452870wiv.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Mar 2014 05:45:50 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: send, account for orphan directories when building path strings
+Date: Fri, 21 Mar 2014 12:45:39 +0000
+Message-Id: <1395405939-8488-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2014-03-19 06:57, Adam Khan a écrit :
-> Hello,
-> 
-> I have a simple btrfs located on a dm-crypt volume. I'm getting a
-> general protection fault when I
-> attempt to access a specific directory in Thunar file manager and in a
-> Python program.
-> 
-> The trace is attached for Thunar.
+If we have directories with a pending move/rename operation, we must take into
+account any orphan directories that got created before executing the pending
+move/rename. Those orphan directories are directories with an inode number higher
+then the current send progress and that don't exist in the parent snapshot, they
+are created before current progress reaches their inode number, with a generated
+name of the form oN-M-I and at the root of the filesystem tree, and later when
+progress matches their inode number, moved/renamed to their final location.
 
-[  313.491347] general protection fault: 0000 [#1] SMP 
-...
-[  313.492376] RIP: 0010:[<ffffffff8127c66d>]  [<ffffffff8127c66d>] memcpy+0xd/0x110 ...
-[  313.492804] Call Trace:
-[  313.492836]  [<ffffffffa013f168>] ? read_extent_buffer+0xc8/0x120 [btrfs]
-[  313.492877]  [<ffffffffa0125064>] ? <btrfs_get_extent+0x8f4/0x950 [btrfs]
-...
-[  313.493293]  [<ffffffff811223ba>] ? ondemand_readahead+0x14a/0x280
+Reproducer:
 
-> 
-> btrfsck returns this:
-> 
-> Checking filesystem on /dev/mapper/xyz_crypt
-> UUID: ...
+          $ mkfs.btrfs -f /dev/sdd
+          $ mount /dev/sdd /mnt
 
-Here you've omitted the interesting part (preceding the next line).
-Weren't there lines looking like 
-"root 256 inode XXXX errors 400, nbytes wrong" ?
+          $ mkdir -p /mnt/a/b/c/d
+          $ mkdir /mnt/a/b/e
+          $ mv /mnt/a/b/c /mnt/a/b/e/CC
+          $ mkdir /mnt/a/b/e/CC/d/f
+	  $ mkdir /mnt/a/g
 
-> found 88316880601 bytes used err is 1
-> total csum bytes: 180423792
-> total tree bytes: 291459072
-> total fs tree bytes: 50192384
-> total extent tree bytes: 12898304
-> btree space waste bytes: 55087032
-> file data blocks allocated: 352826490880
->  referenced 184697802752
-> Btrfs v3.12
-> 
-> How should I proceed to repair this fs?
-> 
+          $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+          $ btrfs send /mnt/snap1 -f /tmp/base.send
 
-this seems to be the same issue as the one described in BZ 68411
-(https://bugzilla.kernel.org/show_bug.cgi?id=68411).
-If I'm correct, the run-time fix is "Btrfs: don't use ram_bytes for
-uncompressed inline items" as said in the bz.
-At the moment this fix is only in 3.14-xx but is expected to come to
-stable too.
-Also btrfs check is not yet able to repair this. You'll find a
-work-around given in the bug report that involves truncating and
-unlinking the problematic files.
+          $ mkdir /mnt/a/g/h
+	  $ mv /mnt/a/b/e /mnt/a/g/h/EE
+          $ mv /mnt/a/g/h/EE/CC/d /mnt/a/g/h/EE/DD
 
-Best regards,
-Xavier
+          $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+          $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+
+The second receive command failed with the following error:
+
+    ERROR: rename a/b/e/CC/d -> o264-7-0/EE/DD failed. No such file or directory
+
+A test case for xfstests follows soon.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |   27 +++++++--------------------
+ 1 file changed, 7 insertions(+), 20 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 143fed3..ab404ff 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3004,7 +3004,6 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	struct fs_path *from_path = NULL;
+ 	struct fs_path *to_path = NULL;
+ 	struct fs_path *name = NULL;
+-	u64 orig_progress = sctx->send_progress;
+ 	struct recorded_ref *cur;
+ 	u64 parent_ino, parent_gen;
+ 	struct waiting_dir_move *dm = NULL;
+@@ -3028,23 +3027,13 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	if (parent_ino == sctx->cur_ino) {
+-		/* child only renamed, not moved */
+-		ASSERT(parent_gen == sctx->cur_inode_gen);
+-		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen,
+-				   from_path);
+-		if (ret < 0)
+-			goto out;
+-		ret = fs_path_add_path(from_path, name);
+-		if (ret < 0)
+-			goto out;
+-	} else {
+-		/* child moved and maybe renamed too */
+-		sctx->send_progress = pm->ino;
+-		ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
+-		if (ret < 0)
+-			goto out;
+-	}
++	ret = get_cur_path(sctx, parent_ino, parent_gen,
++			   from_path);
++	if (ret < 0)
++		goto out;
++	ret = fs_path_add_path(from_path, name);
++	if (ret < 0)
++		goto out;
+ 
+ 	fs_path_free(name);
+ 	name = NULL;
+@@ -3055,7 +3044,6 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 		goto out;
+ 	}
+ 
+-	sctx->send_progress = sctx->cur_ino + 1;
+ 	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
+ 	if (ret < 0)
+ 		goto out;
+@@ -3113,7 +3101,6 @@ out:
+ 	fs_path_free(name);
+ 	fs_path_free(from_path);
+ 	fs_path_free(to_path);
+-	sctx->send_progress = orig_progress;
+ 
+ 	return ret;
+ }
+-- 
+1.7.10.4
 

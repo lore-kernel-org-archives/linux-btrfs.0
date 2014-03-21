@@ -1,63 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36251 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751252AbaCUHle (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Mar 2014 03:41:34 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WQu54-00056t-2o
-	for linux-btrfs@vger.kernel.org; Fri, 21 Mar 2014 08:41:30 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Mar 2014 08:41:30 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Mar 2014 08:41:30 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Understanding btrfs and backups => automatic snapshot script
-Date: Fri, 21 Mar 2014 07:41:04 +0000 (UTC)
-Message-ID: <pan$e0add$d78f54c4$93efba8b$c6411b82@cox.net>
-References: <loom.20140306T191655-366@post.gmane.org>
-	<pan$ee422$4703cdfd$58fec22b$1a891275@cox.net>
-	<20140317054224.GD6143@merlins.org> <20140321055733.GC28005@merlins.org>
-Mime-Version: 1.0
+Received: from relay6-d.mail.gandi.net ([217.70.183.198]:31195 "EHLO
+	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755407AbaCUKRH convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Mar 2014 06:17:07 -0400
+Date: Fri, 21 Mar 2014 11:17:01 +0100
+From: Xavier Bassery <xavier@bartica.org>
+To: Adam Khan <adam.s.khan@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Please advise on repair action
+Message-ID: <20140321111701.2502a307@renoir.lan>
+In-Reply-To: <532931D9.60809@gmail.com>
+References: <532931D9.60809@gmail.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Thu, 20 Mar 2014 22:57:33 -0700 as excerpted:
-
-> On Sun, Mar 16, 2014 at 10:42:24PM -0700, Marc MERLIN wrote:
->> On Thu, Mar 06, 2014 at 09:33:24PM +0000, Duncan wrote:
->> > However, best snapshot management practice does progressive snapshot
->> > thinning, so you never have more than a few hundred snapshots to
->> > manage at once.
->> 
->> I'm happy to share my script with others if that helps:
->> http://marc.merlins.org/linux/scripts/btrfs-snaps
+Le 2014-03-19 06:57, Adam Khan a écrit :
+> Hello,
 > 
-> Now added to
-> http://marc.merlins.org/perso/btrfs/post_2014-03-21_Btrfs-Tips_-How-To-
-Setup-Netapp-Style-Snapshots.html
+> I have a simple btrfs located on a dm-crypt volume. I'm getting a
+> general protection fault when I
+> attempt to access a specific directory in Thunar file manager and in a
+> Python program.
+> 
+> The trace is attached for Thunar.
 
-Hmm... I hadn't actually looked that closely at scripted snapshotting.  
-Now that I did, and see how easy it is to manage both snapshotting and 
-thinning, I just might.
+[  313.491347] general protection fault: 0000 [#1] SMP 
+...
+[  313.492376] RIP: 0010:[<ffffffff8127c66d>]  [<ffffffff8127c66d>] memcpy+0xd/0x110 ...
+[  313.492804] Call Trace:
+[  313.492836]  [<ffffffffa013f168>] ? read_extent_buffer+0xc8/0x120 [btrfs]
+[  313.492877]  [<ffffffffa0125064>] ? <btrfs_get_extent+0x8f4/0x950 [btrfs]
+...
+[  313.493293]  [<ffffffff811223ba>] ? ondemand_readahead+0x14a/0x280
 
-But I recently switched to systemd, including replacing my crons with 
-timer-unit scripts (which I setup like cron.hourly.d, daily.d, etc, but 
-didn't have but those two to worry about, so didn't setup weekly or 
-beyond).  I've not actually unmerged cron yet, but I probably will one of 
-these days.  Anyway, I might well find myself setting up weekly/quarterly/
-whatever too, with your script or something like it modified for systemd-
-timer usage.  It'd give me an excuse to practice my unit-file setup 
-skills some more. =:^)
+> 
+> btrfsck returns this:
+> 
+> Checking filesystem on /dev/mapper/xyz_crypt
+> UUID: ...
 
+Here you've omitted the interesting part (preceding the next line).
+Weren't there lines looking like 
+"root 256 inode XXXX errors 400, nbytes wrong" ?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> found 88316880601 bytes used err is 1
+> total csum bytes: 180423792
+> total tree bytes: 291459072
+> total fs tree bytes: 50192384
+> total extent tree bytes: 12898304
+> btree space waste bytes: 55087032
+> file data blocks allocated: 352826490880
+>  referenced 184697802752
+> Btrfs v3.12
+> 
+> How should I proceed to repair this fs?
+> 
+
+this seems to be the same issue as the one described in BZ 68411
+(https://bugzilla.kernel.org/show_bug.cgi?id=68411).
+If I'm correct, the run-time fix is "Btrfs: don't use ram_bytes for
+uncompressed inline items" as said in the bz.
+At the moment this fix is only in 3.14-xx but is expected to come to
+stable too.
+Also btrfs check is not yet able to repair this. You'll find a
+work-around given in the bug report that involves truncating and
+unlinking the problematic files.
+
+Best regards,
+Xavier
 

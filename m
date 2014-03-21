@@ -1,78 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:54398 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756973AbaCRR5d (ORCPT
+Received: from mail-we0-f169.google.com ([74.125.82.169]:46664 "EHLO
+	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760870AbaCUMuz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Mar 2014 13:57:33 -0400
-Received: by mail-wi0-f181.google.com with SMTP id hm4so4067535wib.14
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Mar 2014 10:57:32 -0700 (PDT)
+	Fri, 21 Mar 2014 08:50:55 -0400
+Received: by mail-we0-f169.google.com with SMTP id w62so1580871wes.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Mar 2014 05:50:54 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: xfs@oss.sgi.com
 Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] xfstests: add test for btrfs send regarding directory moves/renames
-Date: Tue, 18 Mar 2014 17:57:24 +0000
-Message-Id: <1395165444-24772-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v4] xfstests: add test for btrfs send regarding directory moves/renames
+Date: Fri, 21 Mar 2014 12:50:41 +0000
+Message-Id: <1395406241-8624-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1394983466-20497-1-git-send-email-fdmanana@gmail.com>
 References: <1394983466-20497-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for a btrfs incremental send issue where the kernel entered
-an infinite loop building a path string. This happened when either of the 2
-following cases happened:
+Regression test for a btrfs incremental send issue where the kernel failed
+to build paths strings. This resulted either in sending a wrong path string
+to the send stream or entering an infinite loop when building it.
+This happened in the following scenarios:
 
 1) A directory was made a child of another directory which has a lower inode
-   number and has a pending move/rename operation;
+   number and has a pending move/rename operation. This made the incremental
+   send code go into an infinite loop when building a path string;
 
 2) A directory was made a child of another directory which has a higher inode
    number, but the new parent wasn't moved nor renamed. Instead some other
    ancestor higher in the hierarchy, with an higher inode number too, was
-   moved/renamed too.
+   moved/renamed too. This made the incremental send code go into an infinite
+   loop when building a path string;
 
-This issue is fixed by the following linux kernel btrfs patch:
+3) An orphan directory is created and at least one of its non-immediate
+   descendent directories have a pending move/rename operation. This made
+   an incremental send issue to the send stream an invalid path string that
+   didn't account for the orphan ancestor directory.
+
+This issue is fixed by the following linux kernel btrfs patches:
 
    Btrfs: fix incremental send's decision to delay a dir move/rename
    Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
+   Btrfs: send, account for orphan directories when building path strings
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
 
 V2: Added more tests.
 V3: Added more tests for more complex cases.
+V4: Added more tests, related to case 3) mentioned above.
 
- tests/btrfs/045     |  214 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/045     |  254 +++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/045.out |    1 +
  tests/btrfs/group   |    1 +
- 3 files changed, 216 insertions(+)
+ 3 files changed, 256 insertions(+)
  create mode 100755 tests/btrfs/045
  create mode 100644 tests/btrfs/045.out
 
 diff --git a/tests/btrfs/045 b/tests/btrfs/045
 new file mode 100755
-index 0000000..85201e3
+index 0000000..d95c493
 --- /dev/null
 +++ b/tests/btrfs/045
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,254 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/045
 +#
-+# Regression test for a btrfs incremental send issue where the kernel entered
-+# an infinite loop building a path string. This happened when either of the
-+# 2 following cases happened:
++# Regression test for a btrfs incremental send issue where the kernel failed
++# to build paths strings. This resulted either in sending a wrong path string
++# to the send stream or entering an infinite loop when building it.
++# This happened in the following scenarios:
 +#
 +# 1) A directory was made a child of another directory which has a lower inode
-+#    number and has a pending move/rename operation;
++#    number and has a pending move/rename operation. This made the incremental
++#    send code go into an infinite loop when building a path string;
 +#
 +# 2) A directory was made a child of another directory which has a higher inode
 +#    number, but the new parent wasn't moved nor renamed. Instead some other
 +#    ancestor higher in the hierarchy, with an higher inode number too, was
-+#    moved/renamed too.
++#    moved/renamed too. This made the incremental send code go into an infinite
++#    loop when building a path string;
 +#
-+# This issue is fixed by the following linux kernel btrfs patch:
++# 3) An orphan directory is created and at least one of its non-immediate
++#    descendent directories have a pending move/rename operation. This made
++#    an incremental send issue to the send stream an invalid path string that
++#    didn't account for the orphan ancestor directory.
++#
++# This issue is fixed by the following linux kernel btrfs patches:
 +#
 +#   Btrfs: fix incremental send's decision to delay a dir move/rename
 +#   Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
++#   Btrfs: send, account for orphan directories when building path strings
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -146,6 +165,13 @@ index 0000000..85201e3
 +mkdir $SCRATCH_MNT/_a/_b/_c/_g
 +mv $SCRATCH_MNT/_a/_b/_c/_d $SCRATCH_MNT/_a/_b/_D2
 +
++# case 3), mentioned above
++mkdir -p $SCRATCH_MNT/za/zb/zc/zd
++mkdir $SCRATCH_MNT/za/zb/ze
++mv $SCRATCH_MNT/za/zb/zc $SCRATCH_MNT/za/zb/ze/zCC
++mkdir $SCRATCH_MNT/za/zb/ze/zCC/zd/zf
++mkdir $SCRATCH_MNT/za/zg
++
 +# Filesystem looks like:
 +#
 +# .                               (ino 256)
@@ -169,13 +195,22 @@ index 0000000..85201e3
 +# |   |-- Z/                      (ino 267)
 +# |
 +# |-- _a/                         (ino 271)
-+#      |-- _b/                    (ino 272)
-+#           |-- _c/               (ino 273)
-+#           |    |-- _g/          (ino 277)
-+#           |
-+#           |-- _D2/              (ino 274)
-+#                |-- _f/          (ino 276)
-+#                     |-- _E2/    (ino 275)
++# |    |-- _b/                    (ino 272)
++# |         |-- _c/               (ino 273)
++# |         |    |-- _g/          (ino 277)
++# |         |
++# |         |-- _D2/              (ino 274)
++# |              |-- _f/          (ino 276)
++# |                   |-- _E2/    (ino 275)
++# |
++# |-- za/                         (ino 278)
++#     |-- zb/                     (ino 279)
++#     |   |-- ze/                 (ino 282)
++#     |       |-- zCC/            (ino 280)
++#     |            |-- zd/        (ino 281)
++#     |                |-- zf/    (ino 283)
++#     |
++#     |-- zg/                     (ino 284)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 +
@@ -204,6 +239,12 @@ index 0000000..85201e3
 +mv $SCRATCH_MNT/_a/_b/_dd/_f $SCRATCH_MNT/_a/_o/_FF
 +mv $SCRATCH_MNT/_a/_b $SCRATCH_MNT/_a/_o/_FF/_E2/_BB
 +
++# case 3), mentioned above
++mkdir $SCRATCH_MNT/za/zg/zh
++mv $SCRATCH_MNT/za/zb/ze $SCRATCH_MNT/za/zg/zh/zEE
++mv $SCRATCH_MNT/za/zg/zh/zEE/zCC/zd $SCRATCH_MNT/za/zg/zh/zEE/zDD
++mv $SCRATCH_MNT/za/zg/zh/zEE/zDD/zf $SCRATCH_MNT/za/zg/zh/zEE/zDD/zFF
++
 +# Filesystem now looks like:
 +#
 +# .                                 (ino 256)
@@ -213,16 +254,16 @@ index 0000000..85201e3
 +# |   |   |-- b3/                   (ino 258)
 +# |   |       |-- d/                (ino 260)
 +# |   |       |   |-- file3         (ino 261)
-+# |   |       |   |-- file8         (ino 278)
++# |   |       |   |-- file8         (ino 285)
 +# |   |       |
 +# |   |       |-- file2             (ino 262)
 +# |   |       |-- file4             (ino 261)
-+# |   |       |-- file9             (ino 279)
-+# |   |       |-- file10            (ino 279)
++# |   |       |-- file9             (ino 286)
++# |   |       |-- file10            (ino 286)
 +# |   |       |
 +# |   |       |-- c3/               (ino 259)
 +# |   |           |-- file7         (ino 264)
-+# |   |           |-- file11        (ino 280)
++# |   |           |-- file11        (ino 287)
 +# |   |
 +# |   |-- x1/                       (ino 265)
 +# |   |-- Z/                        (ino 267)
@@ -232,14 +273,23 @@ index 0000000..85201e3
 +# |                    |-- X22/     (ino 266)
 +# |
 +# |-- _a/                           (ino 271)
-+#      |-- _o/                      (ino 281)
-+#      |    |-- _FF/                (ino 276)
-+#      |         |-- _E2/           (ino 275)
-+#      |         |    |-- _BB/      (ino 272)
-+#      |         |         |-- dd/  (ino 274)
-+#      |         |
-+#      |         |-- G2/            (ino 277)
-+#      |-- C2/                      (ino 273)
++# |    |-- _o/                      (ino 288)
++# |    |    |-- _FF/                (ino 276)
++# |    |         |-- _E2/           (ino 275)
++# |    |         |    |-- _BB/      (ino 272)
++# |    |         |         |-- dd/  (ino 274)
++# |    |         |
++# |    |         |-- G2/            (ino 277)
++# |    |-- C2/                      (ino 273)
++# |
++# |-- za/                           (ino 278)
++#     |-- zb/                       (ino 279)
++#     |-- zg/                       (ino 284)
++#         |-- zh/                   (ino 289)
++#             |-- zEE/              (ino 282)
++#                  |-- zCC/         (ino 280)
++#                  |-- zDD/         (ino 281)
++#                       |-- zFF/    (ino 283)
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 +

@@ -1,75 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.13]:59411 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751407AbaCVSNy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Mar 2014 14:13:54 -0400
-Message-ID: <532DD2DC.3030408@friedels.name>
-Date: Sat, 22 Mar 2014 19:13:48 +0100
-From: Hendrik Friedel <hendrik@friedels.name>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: free space inode generation (0) did not match free space cache generation
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:34111 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751325AbaCVTYS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 22 Mar 2014 15:24:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WRRWh-0004of-ED
+	for linux-btrfs@vger.kernel.org; Sat, 22 Mar 2014 20:24:15 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Mar 2014 20:24:15 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Mar 2014 20:24:15 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: free space inode generation (0) did not match free space cache
+ generation
+Date: Sat, 22 Mar 2014 19:23:48 +0000 (UTC)
+Message-ID: <pan$ed109$9aee6786$583238bb$64d8ada4@cox.net>
+References: <532DD2DC.3030408@friedels.name>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hendrik Friedel posted on Sat, 22 Mar 2014 19:13:48 +0100 as excerpted:
 
-I have a file-system on which I cannot write anymore (no space left on 
-device, which is not true
-root@homeserver:~/btrfs/integration/devel# df -h
-Dateisystem    Größe Benutzt Verf. Verw% Eingehängt auf
-/dev/sdd2        30G     24G  5,1G   83% /mnt/test1
-)
+> I have a file-system on which I cannot write anymore (no space left on
+> device, which is not true
 
-About the filesystem:
-root@homeserver:~/btrfs/integration/devel# ./btrfs fi show /mnt/test1
-Label: 'ROOT_BTRFS_RAID'  uuid: a2d5f2db-04ca-413a-aee1-cb754aa8fba5
-         Total devices 2 FS bytes used 11.84GiB
-         devid    1 size 14.85GiB used 14.67GiB path /dev/sde2
-         devid    2 size 14.65GiB used 14.65GiB path /dev/sdd2
-Btrfs this-will-become-v3.13-48-g57c3600
+> root@homeserver:~/btrfs/integration/devel# df -h
+> Dateisystem    GrÃ¶ÃŸe Benutzt Verf. Verw% EingehÃ¤ngt auf
+> /dev/sdd2        30G     24G  5,1G   83% /mnt/test1
 
+> root@homeserver:~/btrfs/integration/devel# ./btrfs fi show /mnt/test1
+> Label: 'ROOT_BTRFS_RAID'  uuid: a2d5f2db-04ca-413a-aee1-cb754aa8fba5
+>          Total devices 2 FS bytes used 11.84GiB
+>          devid    1 size 14.85GiB used 14.67GiB path /dev/sde2
+>          devid    2 size 14.65GiB used 14.65GiB path /dev/sdd2
+> Btrfs this-will-become-v3.13-48-g57c3600
 
-Check of the filesystem:
-root@homeserver:~/btrfs/integration/devel# umount /mnt/test1
-root@homeserver:~/btrfs/integration/devel# ./btrfsck /dev/sdd2
-Checking filesystem on /dev/sdd2
-UUID: a2d5f2db-04ca-413a-aee1-cb754aa8fba5
-checking extents
-checking free space cache
-free space inode generation (0) did not match free space cache 
-generation (41)
-free space inode generation (0) did not match free space cache 
-generation (7380)
-free space inode generation (0) did not match free space cache 
-generation (3081)
-checking fs roots
-checking csums
-checking root refs
-found 3680170466 bytes used err is 0
-total csum bytes: 10071956
-total tree bytes: 2398781440
-total fs tree bytes: 2308784128
-total extent tree bytes: 74203136
-btree space waste bytes: 372004575
-file data blocks allocated: 341759610880
-  referenced 75292241920
-Btrfs this-will-become-v3.13-48-g57c3600
+That's a FAQ and I just replied to a different thread with a detailed 
+explanation and procedure for fixing.  See
 
-Before the btrfsck I did a
-  mount -o clear_cache  /dev/sdd2 /mnt/test1/
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/33643
 
-which in fact reduced the number of error messages (did not match free 
-space cache generation) from more than ten to just three.
+It's linked there, but you'll also want to read up on the btrfs wiki, 
+particularly the free-space and balance sections of the FAQ, along with 
+the balance filters page.
 
-I do have a backup of the FS and in fact it would have been quicker just 
-whiping the disk and using the backup (just 16GB), than writing this 
-message.
-But:
-Is it of interest to look at fixing this for someone, so that the 
-development of btrfs can profit of this, or should I just whipe the disc?
+https://btrfs.wiki.kernel.org
 
-Greetings,
-Hendrik
+Bookmark it! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

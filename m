@@ -1,68 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f182.google.com ([209.85.220.182]:59980 "EHLO
-	mail-vc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759420AbaCUAAH (ORCPT
+Received: from moutng.kundenserver.de ([212.227.17.13]:59411 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751407AbaCVSNy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Mar 2014 20:00:07 -0400
-Received: by mail-vc0-f182.google.com with SMTP id ks9so1871434vcb.27
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Mar 2014 17:00:06 -0700 (PDT)
+	Sat, 22 Mar 2014 14:13:54 -0400
+Message-ID: <532DD2DC.3030408@friedels.name>
+Date: Sat, 22 Mar 2014 19:13:48 +0100
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-In-Reply-To: <532B7FEE.5090708@fb.com>
-References: <20131125214534.8160.40797@ret.masoncoding.com>
-	<CALOYprVH7pGuAR2OHvyGVfa9FKW-_5yMT-h=BAm_G8ejEOHboQ@mail.gmail.com>
-	<532B7FEE.5090708@fb.com>
-Date: Fri, 21 Mar 2014 00:00:06 +0000
-Message-ID: <CALOYprWEhUTEck-0KYEvJ7zRQ2UQkMhT8Mh4+FPXT6GWGUY9Yg@mail.gmail.com>
-Subject: Re: btrfs-progs tagged as v3.12
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: free space inode generation (0) did not match free space cache generation
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20 March 2014 23:55, Chris Mason <clm@fb.com> wrote:
-> On 03/20/2014 07:36 PM, WorMzy Tykashi wrote:
->>
->> On 25 November 2013 21:45, Chris Mason <chris.mason@fusionio.com> wrote:
->>>
->>> Hi everyone,
->>>
->>> I've tagged the current btrfs-progs repo as v3.12.  The new idea is that
->>> instead of making the poor distros pull from git, I'll be creating
->>> tagged releases at roughly the same pace as Linus cuts kernels.
->>>
->>> Given the volume of btrfs-progs patches, we should have enough new code
->>> and fixes to justify releases at least as often as the kernel.  Of
->>> course, if there are issues that need immediate attention, I'll tag a .y
->>> release (v3.12.1 for example).
->>>
->>> If the progs changes slow down, we might skip a version.  But tracking
->>> kernel version numbers makes it easier for me to line up bug reports,
->>> mostly because I already devote a fair number of brain cells to
->>> remembering how old each kernel is.
->>>
->>> Just let me know if there are any questions.
->>>
->>> -chris
->>
->>
->> Hi Chris,
->>
->> I don't know if there wasn't enough commits to justify a 3.13 release
->> (I noticed your integration branch stalled 7 weeks ago, so I assume
->> this is the case), but can we expect a 3.14 release shortly after
->> Linus tags the mainline kernel as such?
->>
->
-> Yes, I'm redoing the integration branch off of Dave's latest, and started
-> testing it earlier this week.  We'll definitely have a 3.14.
->
-> Thanks,
-> Chris
+Hello,
 
-That's excellent news, thanks for the quick reply!
+I have a file-system on which I cannot write anymore (no space left on 
+device, which is not true
+root@homeserver:~/btrfs/integration/devel# df -h
+Dateisystem    Größe Benutzt Verf. Verw% Eingehängt auf
+/dev/sdd2        30G     24G  5,1G   83% /mnt/test1
+)
 
-Cheers,
+About the filesystem:
+root@homeserver:~/btrfs/integration/devel# ./btrfs fi show /mnt/test1
+Label: 'ROOT_BTRFS_RAID'  uuid: a2d5f2db-04ca-413a-aee1-cb754aa8fba5
+         Total devices 2 FS bytes used 11.84GiB
+         devid    1 size 14.85GiB used 14.67GiB path /dev/sde2
+         devid    2 size 14.65GiB used 14.65GiB path /dev/sdd2
+Btrfs this-will-become-v3.13-48-g57c3600
 
 
-WorMzy
+Check of the filesystem:
+root@homeserver:~/btrfs/integration/devel# umount /mnt/test1
+root@homeserver:~/btrfs/integration/devel# ./btrfsck /dev/sdd2
+Checking filesystem on /dev/sdd2
+UUID: a2d5f2db-04ca-413a-aee1-cb754aa8fba5
+checking extents
+checking free space cache
+free space inode generation (0) did not match free space cache 
+generation (41)
+free space inode generation (0) did not match free space cache 
+generation (7380)
+free space inode generation (0) did not match free space cache 
+generation (3081)
+checking fs roots
+checking csums
+checking root refs
+found 3680170466 bytes used err is 0
+total csum bytes: 10071956
+total tree bytes: 2398781440
+total fs tree bytes: 2308784128
+total extent tree bytes: 74203136
+btree space waste bytes: 372004575
+file data blocks allocated: 341759610880
+  referenced 75292241920
+Btrfs this-will-become-v3.13-48-g57c3600
+
+Before the btrfsck I did a
+  mount -o clear_cache  /dev/sdd2 /mnt/test1/
+
+which in fact reduced the number of error messages (did not match free 
+space cache generation) from more than ten to just three.
+
+I do have a backup of the FS and in fact it would have been quicker just 
+whiping the disk and using the backup (just 16GB), than writing this 
+message.
+But:
+Is it of interest to look at fixing this for someone, so that the 
+development of btrfs can profit of this, or should I just whipe the disc?
+
+Greetings,
+Hendrik

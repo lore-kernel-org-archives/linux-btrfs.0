@@ -1,81 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f43.google.com ([209.85.192.43]:49274 "EHLO
-	mail-qg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752357AbaCWRl5 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:59955 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752429AbaCWRrf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Mar 2014 13:41:57 -0400
-Received: by mail-qg0-f43.google.com with SMTP id f51so13805321qge.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Mar 2014 10:41:57 -0700 (PDT)
+	Sun, 23 Mar 2014 13:47:35 -0400
+Date: Sun, 23 Mar 2014 17:47:32 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Vasiliy Tolstov <v.tolstov@selfip.ru>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: for Chris Mason ( iowatcher graphs)
+Message-ID: <20140323174732.GH25400@carfax.org.uk>
+References: <CACaajQt4CttMXrRuWsZSkiq4Eg5766XGKnYSHPUE8Dd84WFW3Q@mail.gmail.com>
 MIME-Version: 1.0
-From: Vasiliy Tolstov <v.tolstov@selfip.ru>
-Date: Sun, 23 Mar 2014 21:36:19 +0400
-Message-ID: <CACaajQt4CttMXrRuWsZSkiq4Eg5766XGKnYSHPUE8Dd84WFW3Q@mail.gmail.com>
-Subject: for Chris Mason ( iowatcher graphs)
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="G44BJl3Aq1QbV/QL"
+In-Reply-To: <CACaajQt4CttMXrRuWsZSkiq4Eg5766XGKnYSHPUE8Dd84WFW3Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello. Sorry for writing to btrfs mailing list, but personal mail
-reject my message.
-Saying "
-<chris.mason@fusionio.com>: host 10.101.1.19[10.101.1.19] said: 554 5.4.6 Hop
-    count exceeded - possible mail loop (in reply to end of DATA command)
 
-Final-Recipient: rfc822; chris.mason@fusionio.com
-Action: failed
-Status: 5.0.0
-Diagnostic-Code: X-Spam-&-Virus-Firewall; host 10.101.1.19[10.101.1.19] said:
-    554 5.4.6 Hop count exceeded - possible mail loop (in reply to end of DATA
-    command)
-"
-My question is:
-I'm try to see what happening when virtual machine write to
-disk and run blktrace from dom0 like this  blktrace -w 60 -d
-/dev/disk/vbd/21-920 -o - > test.trace
+--G44BJl3Aq1QbV/QL
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-/dev/disk/vbd/21-920 is the software raid contains 2 lv volumes , each
-lv volume created in big srp attached disk
+On Sun, Mar 23, 2014 at 09:36:19PM +0400, Vasiliy Tolstov wrote:
+> Hello. Sorry for writing to btrfs mailing list, but personal mail
+> reject my message.
+> Saying "
+> <chris.mason@fusionio.com>: host 10.101.1.19[10.101.1.19] said: 554 5.4.6 Hop
+>     count exceeded - possible mail loop (in reply to end of DATA command)
 
-Inside vm i try to do some work via fio:
-[global]
-rw=randread
-size=128m
-directory=/tmp
-ioengine=libaio
-iodepth=4
-invalidate=1
-direct=1
+   He's moved to Facebook now.
 
-[bgwriter]
-rw=randwrite
-iodepth=32
-
-[queryA]
-iodepth=1
-ioengine=mmap
-direct=0
-thinktime=3
-
-[queryB]
-iodepth=1
-ioengine=mmap
-direct=0
-thinktime=5
-
-[bgupdater]
-rw=randrw
-iodepth=16
-thinktime=40
-size=128m
-
-After that i try to get graph like iowatcher -t test.trace -o trace.svg
-But svg contains unreadable images. What i doing wrong and how can i fix that?
-svg looks like http://62.76.182.4/trace.svg
-
-Thank you for good tools !
+   Hugo.
 
 -- 
-Vasiliy Tolstov,
-e-mail: v.tolstov@selfip.ru
-jabber: vase@selfip.ru
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Unix: For controlling fungal diseases in crops. ---         
+
+--G44BJl3Aq1QbV/QL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUy8eNFheFHXiqx3kAQJQhg//U/oRRM69rWc2NvmD93L+fyZMdb+4zlEw
+4/zs5KGN7/5iWcHS2qaeX1pk+id4xV3xSOq07UVoEou6G3V4K9siTD7WlsYpN/3D
+EczrTnkpWA7WLMCG2hxu5WOny06VySJQtFn1oypiaYtY2bVO50n87OLMTTyBXT3m
+QzFX+HjgX7rJ+3TS9Jm+7UIG//QdDT+MFAbZImdysGe9gwB7W5OBibq4bDZLfZdK
+v8qFdO4YwAogGJwIg9a0nhy2VldW63tsU2jEF2ICRW0LjHUx0IIFzvmyEPh6f/Dx
+/tz6fC05lkUVK1e/AoM1cOgKruPr4cShR+TzNfxL7JWKgk6g0h1H7T5F4EwfHMIj
+0jJlIuIYVmh8cyiovLvZv+lwt182LOYO08323rm73R0/JROV1TP00DuNamQtgqpR
+mh2b8vn3QuCrZdRUEJyq0CNry7VAdZC0y7LMbzuJRvSdvz4koZCosNvFBuRnYcJd
+IuJrdZVfQ+DYQtSiKXL4BotmKmLVf4/HLcn1QHkSF16VAwg8JBFWLGyDp5TxjKVw
+jltlNNfHdOtwXh77ufw+13WaTfXjckRojqy+UOyEtfTTz62W81kfpkF98cDbCIXH
+Tk3omUu6Jngqx0m3P6yRUrNFn6rTLpbn6q7gtJtABcQfVAaYt8t/U6VFX0I8+f5D
+NjcYqIbp40E=
+=6UsX
+-----END PGP SIGNATURE-----
+
+--G44BJl3Aq1QbV/QL--

@@ -1,83 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:55886 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750913AbaCWPZ0 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:59424 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752292AbaCWQSr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Mar 2014 11:25:26 -0400
-Received: from svh-gw.merlins.org ([173.11.111.145]:38927 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1WRkGz-0000DB-Se by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Mar 2014 08:25:25 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <merlin@legolas.merlins.org>)
-	id 1WRkGz-0000Qe-2G
-	for linux-btrfs@vger.kernel.org; Sun, 23 Mar 2014 08:25:17 -0700
-Date: Sun, 23 Mar 2014 08:25:17 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <20140323152516.GJ12833@merlins.org>
+	Sun, 23 Mar 2014 12:18:47 -0400
+Date: Sun, 23 Mar 2014 16:18:43 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-tools missing "btrfs device delete devid=x path" ?
+Message-ID: <20140323161843.GD25400@carfax.org.uk>
+References: <20140323152516.GJ12833@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Subject: btrfs-tools missing "btrfs device delete devid=x path" ?
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="SO98HVl1bnMOfKZd"
+In-Reply-To: <20140323152516.GJ12833@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm still doing some testing so that I can write some howto.
 
-I got that far after a rebalance (mmmh, that took 2 days with little
-data, and unfortunately 5 deadlocks and reboots.
+--SO98HVl1bnMOfKZd
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-polgara:/mnt/btrfs_backupcopy# btrfs fi show
-Label: backupcopy  uuid: eed9b55c-1d5a-40bf-a032-1be6980648e1
-        Total devices 11 FS bytes used 114.35GiB
-        devid    1 size 465.76GiB used 32.14GiB path /dev/dm-0
-        devid    2 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdd1
-        devid    3 size 465.75GiB used 0.00 path  <----  drive is freed up now.
-        devid    4 size 465.76GiB used 32.14GiB path /dev/dm-2
-        devid    5 size 465.76GiB used 32.14GiB path /dev/dm-3
-        devid    6 size 465.76GiB used 32.14GiB path /dev/dm-4
-        devid    7 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdi1
-        devid    8 size 465.76GiB used 32.14GiB path /dev/dm-6
-        devid    9 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdk1
-        devid    10 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdl1
-        devid    11 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sde1
-Btrfs v3.12
+On Sun, Mar 23, 2014 at 08:25:17AM -0700, Marc MERLIN wrote:
+> I'm still doing some testing so that I can write some howto.
+> 
+> I got that far after a rebalance (mmmh, that took 2 days with little
+> data, and unfortunately 5 deadlocks and reboots.
+> 
+> polgara:/mnt/btrfs_backupcopy# btrfs fi show
+> Label: backupcopy  uuid: eed9b55c-1d5a-40bf-a032-1be6980648e1
+>         Total devices 11 FS bytes used 114.35GiB
+>         devid    1 size 465.76GiB used 32.14GiB path /dev/dm-0
+>         devid    2 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdd1
+>         devid    3 size 465.75GiB used 0.00 path  <----  drive is freed up now.
+>         devid    4 size 465.76GiB used 32.14GiB path /dev/dm-2
+>         devid    5 size 465.76GiB used 32.14GiB path /dev/dm-3
+>         devid    6 size 465.76GiB used 32.14GiB path /dev/dm-4
+>         devid    7 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdi1
+>         devid    8 size 465.76GiB used 32.14GiB path /dev/dm-6
+>         devid    9 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdk1
+>         devid    10 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sdl1
+>         devid    11 size 465.76GiB used 32.14GiB path /dev/mapper/crypt_sde1
+> Btrfs v3.12
+> 
+> What's the syntax for removing a drive that isn't there?
 
-What's the syntax for removing a drive that isn't there?
+   btrfs dev del missing /path
 
-I'm looking for something like
-polgara:/mnt/btrfs_backupcopy# btrfs device delete devid=3 .
-ERROR: error removing the device 'devid=3' - No such file or directory
+   Removes all the missing devices.
 
-Until I can remove it, not surprisingly, even though device 3 is now
-unused, I still need to mount degraded:
+   Hugo.
 
-polgara:~# mount -v -t btrfs -o compress=zlib,space_cache,noatime LABEL=backupcopy /mnt/btrfs_backupcopy
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/crypt_sde1,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
-
-[28865.527656] BTRFS: open devid=3 failed
-[29777.507022] BTRFS: device label backupcopy devid 11 transid 5137 /dev/mapper/crypt_sde1
-[29777.558874] BTRFS info (device dm-9): disk space caching is enabled
-[29777.566997] BTRFS: failed to read chunk tree on dm-9
-[29777.612041] BTRFS: open_ctree failed
-
-polgara:~# mount -v -t btrfs -o compress=zlib,space_cache,noatime,degraded LABEL=backupcopy /mnt/btrfs_backupcopy
-/dev/mapper/crypt_sde1 on /mnt/btrfs_backupcopy type btrfs (rw,noatime,compress=zlib,space_cache,degraded)
-polgara:~# 
-
-This works.
-
-I think if I get that last step working, I will have succcessfully removed a raid5
-drive, added a new drive, rebalanced existing data on it, and removed the old one.
-
-Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- Anyone using a computer to generate random numbers is, of ---    
+                       course,  in a state of sin.                       
+
+--SO98HVl1bnMOfKZd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBUy8JY1heFHXiqx3kAQIsRg//TsZS/WfR2fwhYZurMglKfGWFURRAcPQB
+nsoIQl21OzOCw5/OrcSYK+gjiTyn+9xlRLEpMdNLdTbqUhx/Mjsa1+bKomgc51m1
+JGEtTEC5+UcKkaZaFUikfWtgoM6ADi1wNipwa6oR5tAwRrf5zlrCyxWhcYvMDvUQ
+ONd//jpoUJIWrilLAxdZ/n2jOOjX6LLwbRte/J44T03OAE+jcJaJ+Nr1/2svX3Mo
+UY57efYxb16l8fLR94iG2kzKm3qcHYj+60UseIAjsIwbVQ2RyS9OHyZVvIAzOIhH
+eZo0smqLI0SKFBr4N3efXQfXkbaLm+S4SkTlOKgfj3XF4tkHTaf/osaWy/nih6Hx
+HcD5R77BGz3GEk536dH0ir43RyvF18efbloHJkRDstfk3jByVzTamc/IZxM65mzb
+Pvlsffpa6aN+BjKjGfu9VrmhhyMxDKYq8A9etbl3dLB+UiP75YAueHYnQ+4mKqqo
+xHJipqGGHuRqbkJxfd/oBK+uoZk7uUi0CmOQKy+M6QjIq64qx3HlC+RZVjiU8gD3
+Q7Z0N2nLhH4bs38KgFMHOyBNP3SqQ+9NcQdxmd5ExFiZGVkXFJ6IbALnljolBwhG
+MNCmhOlfN7WtwBOMW0ke0YpjLcK27X5T/koMxvg9Ct2kvJDHI5HprHzFWiKCPUFa
+SwLpzWM7UT8=
+=79jm
+-----END PGP SIGNATURE-----
+
+--SO98HVl1bnMOfKZd--

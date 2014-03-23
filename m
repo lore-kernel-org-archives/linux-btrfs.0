@@ -1,104 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:58180 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:58747 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750807AbaCWVUb (ORCPT
+	with ESMTP id S1751007AbaCWW5F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Mar 2014 17:20:31 -0400
-Date: Sun, 23 Mar 2014 14:20:30 -0700
+	Sun, 23 Mar 2014 18:57:05 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:40769 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WRrK5-0006hQ-UH by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sun, 23 Mar 2014 15:57:04 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1WRrK5-0004WJ-3s
+	for linux-btrfs@vger.kernel.org; Sun, 23 Mar 2014 15:56:57 -0700
+Date: Sun, 23 Mar 2014 15:56:57 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org,
-        Duncan <1i5t5.duncan@cox.net>
-Subject: Re: ERROR: error during balancing '.' - No space left on device
-Message-ID: <20140323212030.GB18293@merlins.org>
-References: <pan$a5998$152d4a82$370a3453$dc1d788e@cox.net> <20140323114712.GC25400@carfax.org.uk> <20140323162000.GK12833@merlins.org> <20140323162825.GF25400@carfax.org.uk> <20140323170314.GM12833@merlins.org> <20140323173409.GG25400@carfax.org.uk> <20140323191017.GB3732@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20140323225657.GA17039@merlins.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="LZvS9be/3tNcYl/X"
-In-Reply-To: <20140323191017.GB3732@merlins.org>
+Content-Type: text/plain; charset=us-ascii
+Subject: Btrfs and raid5 status with kernel 3.14, documentation, and howto
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Ok, thanks to the help I got from you, and my own experiments, I've
+written this:
+http://marc.merlins.org/perso/btrfs/post_2014-03-23_Btrfs-Raid5-Status.html
 
---LZvS9be/3tNcYl/X
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+If someone reminds me how to edit the btrfs wiki, I'm happy to copy that
+there, or give anyone permission to take part of all of what I wrote 
+and use it for any purpose.
 
-On Sun, Mar 23, 2014 at 12:10:17PM -0700, Marc MERLIN wrote:
-> On Sun, Mar 23, 2014 at 05:34:09PM +0000, Hugo Mills wrote:
-> >    xaba on IRC has just pointed out that it looks like you're running
-> > this on a mounted filesystem -- it needs to be unmounted for
-> > btrfs-image to work reliably.
-> =20
-> Sorry, I didn't realize that, although it makes sense. btrfs-image really
-> should fail though:
-> https://bugzilla.kernel.org/show_bug.cgi?id=3D72791
->=20
-> I got the image, but it's 1.5GB (1TB filesystem), but kernel bugzilla tim=
-es
-> out after 1% of upload (repeatedly)
-> Placeholder bug:
-> https://bugzilla.kernel.org/show_bug.cgi?id=3D72801
 
-Here is the image:
-http://marc.merlins.org/tmp/pool2.image
 
-After taking that image for you, I got the filesysetm to recover:
-legolas:/mnt/btrfs_pool2# for i in *weekly*; do btrfs subvolume delete $i;
-done
-Delete subvolume '/mnt/btrfs_pool2/home_weekly_20140309_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/home_weekly_20140316_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/root_weekly_20140309_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/root_weekly_20140316_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/tmp_weekly_20140309_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/tmp_weekly_20140316_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/usr_weekly_20140309_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/usr_weekly_20140316_00:06:01'
-Delete subvolume '/mnt/btrfs_pool2/var_weekly_20140309_00:06:01'
-^A Delete subvolume '/mnt/btrfs_pool2/var_weekly_20140316_00:06:01'
+The highlights are if you're coming from the mdadm raid5 world:
 
-legolas:/mnt/btrfs_pool2# btrfs fi df .
-Data, single: total=3D800.42GiB, used=3D636.91GiB
-System, DUP: total=3D8.00MiB, used=3D92.00KiB
-System, single: total=3D4.00MiB, used=3D0.00
-Metadata, DUP: total=3D10.00GiB, used=3D9.50GiB
-Metadata, single: total=3D8.00MiB, used=3D0.00
-legolas:/mnt/btrfs_pool2# btrfs balance start -v -dusage=3D0 /mnt/btrfs_poo=
-l2
+- btrfs does not yet seem to know that if you removed a drive from an
+  array and you plug it back in later, that drive is out of date. It
+  will auto-add an out of date drive back to an array and that will
+  likely cause data loss by hiding files you had but the old drive
+  didn't have. This means you should wipe a drive cleanly before you put
+  it back into an array it used to be part of
 
-Dumping filters: flags 0x1, state 0x0, force is off
-  DATA (flags 0x2): balancing, usage=3D0
-  Done, had to relocate 91 out of 823 chunks
+- btrfs does not deal well with a drive that is present but not
+  working. It does not know how to kick it from the array, nor can it
+  be removed (btrfs device delete) because this causes reading from
+  the drive that isn't working. This means btrfs will try to write to
+  the bad drive forever. The solution there is to umount the array,
+  remount it with the bad drive missing (it cannot be seen by btrfs,
+  or it'll get automounted/added), and then rebuild on a new drive or
+  rebuild/shrink the array to be one drive smaller (this is explained
+  below).
 
-legolas:/mnt/btrfs_pool2# btrfs fi df .
-Data, single: total=3D709.01GiB, used=3D603.85GiB
-System, DUP: total=3D8.00MiB, used=3D88.00KiB
-System, single: total=3D4.00MiB, used=3D0.00
-Metadata, DUP: total=3D10.00GiB, used=3D7.39GiB
-Metadata, single: total=3D8.00MiB, used=3D0.00
+- You can add and remove drives from an array and rebalance to
+  grow/shrink an array without umounting it. Note that is slow since it
+  forces rewriting of all data blocks, and this takes about 3H per 100GB
+  (or 30H per terabyte) with 10 drives on a dual core duo.
 
+- If you are missing a drive, btrfs will refuse to mount the array and
+  give an obscure error unless you mount with -o degraded
+
+- btrfs has no special rebuild procedure. Rebuilding is done by
+  rebalancing the array. You could actualy rebalance a degraded array to
+  a smaller array by rebuilding/balancing without adding a drive, or you
+  can add a drive, rebalance on it, and that will force a read/rewrite
+  of all data blocks, which will restripe them nicely.
+
+- btrfs replace does not work, but you can easily do btrfs device add,
+  and btrfs remove of the other drive, and this will do the same thing.
+
+- btrfs device add will not cause an auto rebalance. You could chose
+  not to rebalance existing data and only have new data be balanced
+  properly.
+
+- btrfs device delete will force all data from the deleted drive to be
+  rebalanced and the command completes when the drive has been freed up.
+
+- The magic command to delete an unused drive from an array while it is
+  missing from the system is btrfs device delete missing .
+
+- btrfs doesn't easily tell you that your array is in degraded mode (run
+  btrfs fi show, and it'll show a missing drive as well as how much of
+  your total data is still on it). This does means you can have an array
+  that is half degraded: half the files are striped over the current
+  drives because they were written after the drive was removed, or were
+  written by a rebalance that hasn't finished, while the other half of
+  your data could be in degraded mode.
+  You can see this by looking at the amount of data on each drive,
+  anything on drive 11 is properly striped 10 way, while anything on
+  drive 3 is in degraded mode:
+
+polgara:~# btrfs fi show
+Label: backupcopy  uuid: eed9b55c-1d5a-40bf-a032-1be6980648e1
+        Total devices 11 FS bytes used 564.54GiB
+        devid    1 size 465.76GiB used 63.14GiB path /dev/dm-0
+        devid    2 size 465.76GiB used 63.14GiB path /dev/dm-1
+        devid    3 size 465.75GiB used 30.00GiB path   <- this device is missing
+        devid    4 size 465.76GiB used 63.14GiB path /dev/dm-2
+        devid    5 size 465.76GiB used 63.14GiB path /dev/dm-3
+        devid    6 size 465.76GiB used 63.14GiB path /dev/dm-4
+        devid    7 size 465.76GiB used 63.14GiB path /dev/mapper/crypt_sdi1
+        devid    8 size 465.76GiB used 63.14GiB path /dev/mapper/crypt_sdj1
+        devid    9 size 465.76GiB used 63.14GiB path /dev/dm-7
+        devid    10 size 465.76GiB used 63.14GiB path /dev/dm-8
+        devid    11 size 465.76GiB used 33.14GiB path /dev/mapper/crypt_sde1 <- this device was added
+
+
+Hope this helps,
 Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
 Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
-
---LZvS9be/3tNcYl/X
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQCVAwUBUy9QHn4xUKZ2O+kBAQJ6RwP/SYILovA0v91jBgs5QpmYUi0w0SMe7TEG
-gnzBK3WMQtRKvQefQtDEFaTQgpdaFTtxFbDNiuU5cBZu4xY7pW1FIA8jo2MRS1Ev
-rWcOBHtEN5qUxnskqvf8xLE3ZC3Muj+q4EObbr2lO+GY3Otna/WR55xZpwC2Q+MS
-ogAcQIe9w0U=
-=fqe+
------END PGP SIGNATURE-----
-
---LZvS9be/3tNcYl/X--
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

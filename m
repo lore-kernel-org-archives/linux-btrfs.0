@@ -1,64 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:59955 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752429AbaCWRrf (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:57475 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752902AbaCWTWE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Mar 2014 13:47:35 -0400
-Date: Sun, 23 Mar 2014 17:47:32 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Vasiliy Tolstov <v.tolstov@selfip.ru>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: for Chris Mason ( iowatcher graphs)
-Message-ID: <20140323174732.GH25400@carfax.org.uk>
-References: <CACaajQt4CttMXrRuWsZSkiq4Eg5766XGKnYSHPUE8Dd84WFW3Q@mail.gmail.com>
+	Sun, 23 Mar 2014 15:22:04 -0400
+Date: Sun, 23 Mar 2014 12:22:02 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: How to handle a RAID5 arrawy with a failing drive? -> raid5 mostly works, just no rebuilds
+Message-ID: <20140323192202.GC3732@merlins.org>
+References: <1394983430-20440-1-git-send-email-fdmanana@gmail.com> <1395002246-3840-1-git-send-email-fdmanana@gmail.com> <20140316222026.GU16946@merlins.org> <pan$2239d$446ec5c7$d67506b7$f25a7c65@cox.net> <20140319060902.GM6143@merlins.org> <CD1D8CED-8BC2-4C16-AE9E-0C47DC954CFA@colorremedies.com> <20140319154031.GP6143@merlins.org> <EBE67530-BDC7-487C-826D-A0E65259BCBA@colorremedies.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="G44BJl3Aq1QbV/QL"
-In-Reply-To: <CACaajQt4CttMXrRuWsZSkiq4Eg5766XGKnYSHPUE8Dd84WFW3Q@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <EBE67530-BDC7-487C-826D-A0E65259BCBA@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Mar 19, 2014 at 10:53:33AM -0600, Chris Murphy wrote:
+> 
+> On Mar 19, 2014, at 9:40 AM, Marc MERLIN <marc@merlins.org> wrote:
+> > 
+> > After adding a drive, I couldn't quite tell if it was striping over 11
+> > drive2 or 10, but it felt that at least at times, it was striping over 11
+> > drives with write failures on the missing drive.
+> > I can't prove it, but I'm thinking the new data I was writing was being
+> > striped in degraded mode.
+> 
+> Well it does sound fragile after all to add a drive to a degraded array, especially when it's not expressly treating the faulty drive as faulty. I think iotop will show what block devices are being written to. And in a VM it's easy (albeit rudimentary) with sparse files, as you can see them grow.
+> 
+> > 
+> > Yes, although it's limited, you apparently only lose new data that was added
+> > after you went into degraded mode and only if you add another drive where
+> > you write more data.
+> > In real life this shouldn't be too common, even if it is indeed a bug.
+> 
+> It's entirely plausible a drive power/data cable becomes lose, runs for hours degraded before the wayward device is reseated. It'll be common enough. It's definitely not OK for all of that data in the interim to vanish just because the volume has resumed from degraded to normal. Two states of data, normal vs degraded, is scary. It sounds like totally silent data loss. So yeah if it's reproducible it's worthy of a separate bug.
 
---G44BJl3Aq1QbV/QL
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I just got around to filing that bug:
+https://bugzilla.kernel.org/show_bug.cgi?id=72811
 
-On Sun, Mar 23, 2014 at 09:36:19PM +0400, Vasiliy Tolstov wrote:
-> Hello. Sorry for writing to btrfs mailing list, but personal mail
-> reject my message.
-> Saying "
-> <chris.mason@fusionio.com>: host 10.101.1.19[10.101.1.19] said: 554 5.4.6 Hop
->     count exceeded - possible mail loop (in reply to end of DATA command)
+In other news, I was able to
+1) remove a drive
+2) mount degraded
+3) add a new drive
+4) rebalance (that took 2 days with little data, 4 deadlocks and reboots
+though)
+5) remove the missing drive from the filesystem
+6) remount the array without -o degraded
 
-   He's moved to Facebook now.
+Now, I'm testing
+1) add a new drive
+2 remove a working drive
+3) automatic rebalance from #2 should rebuild on the new drive automatically
 
-   Hugo.
-
+Marc
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Unix: For controlling fungal diseases in crops. ---         
-
---G44BJl3Aq1QbV/QL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBUy8eNFheFHXiqx3kAQJQhg//U/oRRM69rWc2NvmD93L+fyZMdb+4zlEw
-4/zs5KGN7/5iWcHS2qaeX1pk+id4xV3xSOq07UVoEou6G3V4K9siTD7WlsYpN/3D
-EczrTnkpWA7WLMCG2hxu5WOny06VySJQtFn1oypiaYtY2bVO50n87OLMTTyBXT3m
-QzFX+HjgX7rJ+3TS9Jm+7UIG//QdDT+MFAbZImdysGe9gwB7W5OBibq4bDZLfZdK
-v8qFdO4YwAogGJwIg9a0nhy2VldW63tsU2jEF2ICRW0LjHUx0IIFzvmyEPh6f/Dx
-/tz6fC05lkUVK1e/AoM1cOgKruPr4cShR+TzNfxL7JWKgk6g0h1H7T5F4EwfHMIj
-0jJlIuIYVmh8cyiovLvZv+lwt182LOYO08323rm73R0/JROV1TP00DuNamQtgqpR
-mh2b8vn3QuCrZdRUEJyq0CNry7VAdZC0y7LMbzuJRvSdvz4koZCosNvFBuRnYcJd
-IuJrdZVfQ+DYQtSiKXL4BotmKmLVf4/HLcn1QHkSF16VAwg8JBFWLGyDp5TxjKVw
-jltlNNfHdOtwXh77ufw+13WaTfXjckRojqy+UOyEtfTTz62W81kfpkF98cDbCIXH
-Tk3omUu6Jngqx0m3P6yRUrNFn6rTLpbn6q7gtJtABcQfVAaYt8t/U6VFX0I8+f5D
-NjcYqIbp40E=
-=6UsX
------END PGP SIGNATURE-----
-
---G44BJl3Aq1QbV/QL--
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

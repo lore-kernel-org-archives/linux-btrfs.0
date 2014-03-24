@@ -1,20 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53150 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42624 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751906AbaCYNhR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 09:37:17 -0400
+	id S1751564AbaCXX6i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Mar 2014 19:58:38 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 976E0AC86
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 13:37:16 +0000 (UTC)
-Message-ID: <53318689.8030605@suse.com>
-Date: Tue, 25 Mar 2014 09:37:13 -0400
+	by mx2.suse.de (Postfix) with ESMTP id A8A7BACCF
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 23:58:37 +0000 (UTC)
+Message-ID: <5330C6AA.7010508@suse.com>
+Date: Mon, 24 Mar 2014 19:58:34 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 CC: Arvin Schnell <aschnell@suse.de>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs-progs: allow use of subvolume id to create snapshots
-References: <5330C6AA.7010508@suse.com>
-In-Reply-To: <5330C6AA.7010508@suse.com>
+Subject: [PATCH] btrfs-progs: allow use of subvolume id to create snapshots
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -27,15 +25,12 @@ usage: btrfs subvolume snapshot [-r] [-q <qgroupid>] -s <subvolid> <dest>/<name>
 Since we don't have a name for the source snapshot, the complete path to
 the destination must be specified.
 
-A previous version of this patch missed an error printing case and would print
-(null) instead of the subvolume id on error.
-
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- cmds-subvolume.c |  105 +++++++++++++++++++++++++++++++++++++++++--------------
+ cmds-subvolume.c |  101 +++++++++++++++++++++++++++++++++++++++++--------------
  ioctl.h          |    6 ++-
- man/btrfs.8.in   |   31 ++++++++++++++--
- 3 files changed, 112 insertions(+), 30 deletions(-)
+ man/btrfs.8.in   |   31 +++++++++++++++-
+ 3 files changed, 110 insertions(+), 28 deletions(-)
 
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
@@ -213,17 +208,6 @@ Signed-off-by: Jeff Mahoney <jeffm@suse.com>
  	if (inherit) {
  		args.flags |= BTRFS_SUBVOL_QGROUP_INHERIT;
  		args.size = qgroup_inherit_size(inherit);
-@@ -718,8 +769,8 @@ static int cmd_snapshot(int argc, char *
- 	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
- 
- 	if (res < 0) {
--		fprintf( stderr, "ERROR: cannot snapshot '%s' - %s\n",
--			subvol, strerror(errno));
-+		fprintf( stderr, "ERROR: cannot snapshot %s - %s\n",
-+			subvol_descr, strerror(errno));
- 		goto out;
- 	}
- 
 @@ -727,7 +778,9 @@ static int cmd_snapshot(int argc, char *
  
  out:
@@ -308,3 +292,7 @@ Signed-off-by: Jeff Mahoney <jeffm@suse.com>
  .TP
  
  \fBsubvolume get-default\fR\fI <path>\fR
+
+-- 
+Jeff Mahoney
+SUSE Labs

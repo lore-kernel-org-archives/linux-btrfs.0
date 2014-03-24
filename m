@@ -1,63 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51829 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:54950 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753541AbaCXSvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 14:51:24 -0400
+	id S1753506AbaCXTRY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Mar 2014 15:17:24 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WS9xy-0005bq-T2
-	for linux-btrfs@vger.kernel.org; Mon, 24 Mar 2014 19:51:22 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+	id 1WSAN7-0003I3-SG
+	for linux-btrfs@vger.kernel.org; Mon, 24 Mar 2014 20:17:21 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 19:51:22 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 20:17:21 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 19:51:22 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 20:17:21 +0100
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Improve btrfs man page
-Date: Mon, 24 Mar 2014 18:50:50 +0000 (UTC)
-Message-ID: <pan$83baa$4fa193c7$def231f6$e0d4bf9e@cox.net>
-References: <1395607101.4607.0.camel@spike.sunnydale.homeip.net>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Btrfs and raid5 status with kernel 3.14, documentation, and howto
+Date: Mon, 24 Mar 2014 19:17:12 +0000
+Message-ID: <lgq0b9$e5r$1@ger.gmane.org>
+References: <20140323225657.GA17039@merlins.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20140323225657.GA17039@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Per Nystrom posted on Sun, 23 Mar 2014 13:38:21 -0700 as excerpted:
-
-> I am going through the process of replacing a bad drive in a RAID 1
-> mirror.  The filesystem wouldn't mount because of the missing device,
-> and the btrfs man pages were not helpful in resolving it.  Specifically,
-> it would have been very useful to me if this part of the wiki were
-> included somewhere:
+On 23/03/14 22:56, Marc MERLIN wrote:
+> Ok, thanks to the help I got from you, and my own experiments, I've
+> written this:
+> http://marc.merlins.org/perso/btrfs/post_2014-03-23_Btrfs-Raid5-Status.html
 > 
-> https://btrfs.wiki.kernel.org/index.php/
-Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+> If someone reminds me how to edit the btrfs wiki, I'm happy to copy that
+> there, or give anyone permission to take part of all of what I wrote 
+> and use it for any purpose.
 > 
-> There is no mention in the man pages of the -o degraded mount option,
-> which is needed to even manipulate the filesystem; nor is there any
-> mention of the special option "missing" for device delete.
 > 
-> I'm sure I'm not the only one who would turn to man btrfs first when
-> facing a failed drive.
+> 
+> The highlights are if you're coming from the mdadm raid5 world:
+[---]
+> 
+> Hope this helps,
+> Marc
 
-Of course traditionally, mount options are covered in the mount manpage.  
-But btrfs is new enough I guess it's not in that manpage yet, which has 
-frustrated me too, since that's intuitively where I look.
+Thanks for the very good summary.
 
-The mount-manpage alternatives are either the wiki, or the
-Documentation/filesystems/btrfs.txt file in the kernel sources.
+So... In very brief summary, btrfs raid5 is very much a work in progress.
 
-But you're absolutely correct about btrfs device delete missing.  Btrfs 
-device delete is of course in the btrfs manpage, but the one-sentence 
-description lacks any hint that "missing" can be used if the device 
-simply isn't there any longer.  Fleshing that out a bit beyond the single 
-sentence would definitely be useful!
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Question: Is the raid5 going to be seamlessly part of the
+error-correcting raids whereby raid5, raid6,
+raid-with-n-redundant-drives are all coded as one configurable raid?
+
+Also (second question): What happened to the raid naming scheme that
+better described the btrfs-style of raid by explicitly numbering the
+number of devices used for mirroring, striping, and error-correction?
+
+
+Thanks,
+Martin
+
 

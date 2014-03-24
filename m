@@ -1,49 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40469 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:40547 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750969AbaCXVwl (ORCPT
+	with ESMTP id S1751191AbaCXWEK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 17:52:41 -0400
-Date: Mon, 24 Mar 2014 14:52:39 -0700
+	Mon, 24 Mar 2014 18:04:10 -0400
+Date: Mon, 24 Mar 2014 15:04:09 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Martin <m_btrfs@ml1.co.uk>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs and raid5 status with kernel 3.14, documentation, and howto
-Message-ID: <20140324215239.GC11533@merlins.org>
-References: <20140323225657.GA17039@merlins.org> <lgq0b9$e5r$1@ger.gmane.org>
+Subject: Re: btrfs-tools missing "btrfs device delete devid=x path" ?
+Message-ID: <20140324220409.GD11533@merlins.org>
+References: <20140323152516.GJ12833@merlins.org> <20140323161843.GD25400@carfax.org.uk> <20140323162506.GL12833@merlins.org> <pan$5c9a9$34404310$3c11d99a$22bd163f@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <lgq0b9$e5r$1@ger.gmane.org>
+In-Reply-To: <pan$5c9a9$34404310$3c11d99a$22bd163f@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 24, 2014 at 07:17:12PM +0000, Martin wrote:
-> Thanks for the very good summary.
+On Mon, Mar 24, 2014 at 06:38:30PM +0000, Duncan wrote:
+> Marc MERLIN posted on Sun, 23 Mar 2014 09:25:06 -0700 as excerpted:
 > 
-> So... In very brief summary, btrfs raid5 is very much a work in progress.
+> > On Sun, Mar 23, 2014 at 04:18:43PM +0000, Hugo Mills wrote:
+> >> On Sun, Mar 23, 2014 at 08:25:17AM -0700, Marc MERLIN wrote:
+> >>> 
+> >>> What's the syntax for removing a drive that isn't there?
+> >> 
+> >>    btrfs dev del missing /path
+> >> 
+> >>    Removes all the missing devices.
+> > 
+> > Aaah, this worked, thank you.
+> > This isn't documented in the 3.12 man page, but I'm guessing it'll be in
+> > the upcoming 3.14.
+> > 
+> > I'll document this in the raid5 page I'm currently writing.
+> 
+> It's on the wiki as I remembered, covered on the multiple devices page.
+> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Removing_devices
 
-If you know how to use it, which I didn't know do now, it's technically very
-usable as is. The corner cases are in having a failing drive which you can't
-hot remove because you can't write to it.
-It's unfortunate that you can't just "kill" a drive without umounting,
-making the drive disappear so that btrfs can't see it (dmsetup remove
-cryptname for me, so it's easy to do remotely), and remounting in degraded
-mode.
+So, I did read the entire wiki, but it's been a while, and either some
+things got added since then, or some I just didn't remember because I didn't
+need them at the time.
+The problem, and we've talked about this before (my plea to make btrfsck put
+a "--really-I-read-the-wiki-and-want-this" :) option as well as minimal
+instructions in its usage that tell the unsuspecting user it's not what
+they're looking for, here too, I carefully re-read the man page for btrfs
+and this wasn't mentioned in it, or at least in my copy.
+Out of sync docs happens, but I'm hopeful that the man page and tools --help
+info can be the canonical place for info, even if they can point to a wiki
+link since the average admin will always fail back to --help/--usage and the
+man page first before looking for a missing option in a wiki somewhere else.
  
-> Question: Is the raid5 going to be seamlessly part of the
-> error-correcting raids whereby raid5, raid6,
-> raid-with-n-redundant-drives are all coded as one configurable raid?
-
-I'm not sure I parse your question. As far as btrfs is concerned you can
-switch from non raid to raid5 to raid6 by adding a drive and rebalancing
-which effectively reads and re-writes all the blocks in the new format.
-
-> Also (second question): What happened to the raid naming scheme that
-> better described the btrfs-style of raid by explicitly numbering the
-> number of devices used for mirroring, striping, and error-correction?
-
-btrfs fi show kind of tells you that if you know how to read it (I didn't
-initially). What's missing for you?
+Does that sound reasonable?
 
 Marc
 -- 

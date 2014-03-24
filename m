@@ -1,115 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:58747 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751007AbaCWW5F (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:22976 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750881AbaCXB0Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Mar 2014 18:57:05 -0400
-Received: from svh-gw.merlins.org ([173.11.111.145]:40769 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1WRrK5-0006hQ-UH by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Sun, 23 Mar 2014 15:57:04 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <merlin@legolas.merlins.org>)
-	id 1WRrK5-0004WJ-3s
-	for linux-btrfs@vger.kernel.org; Sun, 23 Mar 2014 15:56:57 -0700
-Date: Sun, 23 Mar 2014 15:56:57 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <20140323225657.GA17039@merlins.org>
+	Sun, 23 Mar 2014 21:26:24 -0400
+Message-ID: <532F89B7.3030104@oracle.com>
+Date: Sun, 23 Mar 2014 21:26:15 -0400
+From: Sasha Levin <sasha.levin@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Subject: Btrfs and raid5 status with kernel 3.14, documentation, and howto
+To: Chris Mason <clm@fb.com>, jbacik@fb.com
+CC: linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
+        Dave Jones <davej@redhat.com>
+Subject: btrfs: kernel BUG at fs/btrfs/extent_io.c:676!
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, thanks to the help I got from you, and my own experiments, I've
-written this:
-http://marc.merlins.org/perso/btrfs/post_2014-03-23_Btrfs-Raid5-Status.html
+Hi all,
 
-If someone reminds me how to edit the btrfs wiki, I'm happy to copy that
-there, or give anyone permission to take part of all of what I wrote 
-and use it for any purpose.
+While fuzzing with trinity inside KVM tools guest running latest -next kernel
+I've stumbled on the following spew.
 
+This is a result of a failed allocation in alloc_extent_state_atomic() which
+triggers a BUG_ON when the return value is NULL. It's a bit weird that it
+BUGs on failed allocations, since it's obviously not a critical failure.
 
-
-The highlights are if you're coming from the mdadm raid5 world:
-
-- btrfs does not yet seem to know that if you removed a drive from an
-  array and you plug it back in later, that drive is out of date. It
-  will auto-add an out of date drive back to an array and that will
-  likely cause data loss by hiding files you had but the old drive
-  didn't have. This means you should wipe a drive cleanly before you put
-  it back into an array it used to be part of
-
-- btrfs does not deal well with a drive that is present but not
-  working. It does not know how to kick it from the array, nor can it
-  be removed (btrfs device delete) because this causes reading from
-  the drive that isn't working. This means btrfs will try to write to
-  the bad drive forever. The solution there is to umount the array,
-  remount it with the bad drive missing (it cannot be seen by btrfs,
-  or it'll get automounted/added), and then rebuild on a new drive or
-  rebuild/shrink the array to be one drive smaller (this is explained
-  below).
-
-- You can add and remove drives from an array and rebalance to
-  grow/shrink an array without umounting it. Note that is slow since it
-  forces rewriting of all data blocks, and this takes about 3H per 100GB
-  (or 30H per terabyte) with 10 drives on a dual core duo.
-
-- If you are missing a drive, btrfs will refuse to mount the array and
-  give an obscure error unless you mount with -o degraded
-
-- btrfs has no special rebuild procedure. Rebuilding is done by
-  rebalancing the array. You could actualy rebalance a degraded array to
-  a smaller array by rebuilding/balancing without adding a drive, or you
-  can add a drive, rebalance on it, and that will force a read/rewrite
-  of all data blocks, which will restripe them nicely.
-
-- btrfs replace does not work, but you can easily do btrfs device add,
-  and btrfs remove of the other drive, and this will do the same thing.
-
-- btrfs device add will not cause an auto rebalance. You could chose
-  not to rebalance existing data and only have new data be balanced
-  properly.
-
-- btrfs device delete will force all data from the deleted drive to be
-  rebalanced and the command completes when the drive has been freed up.
-
-- The magic command to delete an unused drive from an array while it is
-  missing from the system is btrfs device delete missing .
-
-- btrfs doesn't easily tell you that your array is in degraded mode (run
-  btrfs fi show, and it'll show a missing drive as well as how much of
-  your total data is still on it). This does means you can have an array
-  that is half degraded: half the files are striped over the current
-  drives because they were written after the drive was removed, or were
-  written by a rebalance that hasn't finished, while the other half of
-  your data could be in degraded mode.
-  You can see this by looking at the amount of data on each drive,
-  anything on drive 11 is properly striped 10 way, while anything on
-  drive 3 is in degraded mode:
-
-polgara:~# btrfs fi show
-Label: backupcopy  uuid: eed9b55c-1d5a-40bf-a032-1be6980648e1
-        Total devices 11 FS bytes used 564.54GiB
-        devid    1 size 465.76GiB used 63.14GiB path /dev/dm-0
-        devid    2 size 465.76GiB used 63.14GiB path /dev/dm-1
-        devid    3 size 465.75GiB used 30.00GiB path   <- this device is missing
-        devid    4 size 465.76GiB used 63.14GiB path /dev/dm-2
-        devid    5 size 465.76GiB used 63.14GiB path /dev/dm-3
-        devid    6 size 465.76GiB used 63.14GiB path /dev/dm-4
-        devid    7 size 465.76GiB used 63.14GiB path /dev/mapper/crypt_sdi1
-        devid    8 size 465.76GiB used 63.14GiB path /dev/mapper/crypt_sdj1
-        devid    9 size 465.76GiB used 63.14GiB path /dev/dm-7
-        devid    10 size 465.76GiB used 63.14GiB path /dev/dm-8
-        devid    11 size 465.76GiB used 33.14GiB path /dev/mapper/crypt_sde1 <- this device was added
+[  447.705167] kernel BUG at fs/btrfs/extent_io.c:676!
+[  447.706201] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[  447.707732] Dumping ftrace buffer:
+[  447.708473]    (ftrace buffer empty)
+[  447.709684] Modules linked in:
+[  447.710246] CPU: 17 PID: 4195 Comm: kswapd17 Tainted: G        W     3.14.0-rc7-next-20140321-sasha-00018-g0516fe6-dirty #265
+[  447.710253] task: ffff88066be9b000 ti: ffff88066be82000 task.ti: ffff88066be82000
+[  447.710253] RIP:  clear_extent_bit (fs/btrfs/extent_io.c:676)
+[  447.710253] RSP: 0000:ffff88066be83768  EFLAGS: 00010246
+[  447.710253] RAX: 0000000000000000 RBX: 0000000000d00fff RCX: 0000000000000006
+[  447.710253] RDX: 00000000000058e0 RSI: ffff88066be9bd60 RDI: 0000000000000286
+[  447.710253] RBP: ffff88066be837e8 R08: 0000000000000000 R09: 0000000000000000
+[  447.710253] R10: 0000000000000001 R11: 454a4e495f544c55 R12: 0000000001ffffff
+[  447.710253] R13: 0000000000000000 R14: ffff88007b89fd08 R15: 0000000000d00000
+[  447.710253] FS:  0000000000000000(0000) GS:ffff8804acc00000(0000) knlGS:0000000000000000
+[  447.710253] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  447.710253] CR2: 0000000002aec968 CR3: 0000000005e29000 CR4: 00000000000006a0
+[  447.710253] DR0: 0000000000698000 DR1: 0000000000698000 DR2: 0000000000000000
+[  447.710253] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000600
+[  447.710253] Stack:
+[  447.710253]  ffff88066be83788 ffffffff844fc4d5 0000000000000000 ffff8804ab4800e8
+[  447.710253]  0000000000000000 0000000000000001 ffff8804ab4800c8 fffffffffffffbf7
+[  447.710253]  ffff88066be837c8 0000000000000000 0000000000000006 ffffea0007aaf340
+[  447.710253] Call Trace:
+[  447.710253]  ? _raw_spin_unlock (arch/x86/include/asm/preempt.h:98 include/linux/spinlock_api_smp.h:152 kernel/locking/spinlock.c:183)
+[  447.710253]  try_release_extent_mapping (fs/btrfs/extent_io.c:3998 fs/btrfs/extent_io.c:4058)
+[  447.710253]  __btrfs_releasepage (fs/btrfs/inode.c:7521)
+[  447.710253]  btrfs_releasepage (fs/btrfs/inode.c:7534)
+[  447.710253]  try_to_release_page (mm/filemap.c:2984)
+[  447.710253]  invalidate_inode_page (mm/truncate.c:165 mm/truncate.c:215)
+[  447.710253]  invalidate_mapping_pages (mm/truncate.c:517)
+[  447.710253]  inode_lru_isolate (arch/x86/include/asm/current.h:14 include/linux/swap.h:33 fs/inode.c:724)
+[  447.710253]  ? insert_inode_locked (fs/inode.c:687)
+[  447.710253]  list_lru_walk_node (mm/list_lru.c:89)
+[  447.710253]  prune_icache_sb (fs/inode.c:759)
+[  447.710253]  super_cache_scan (fs/super.c:96)
+[  447.710253]  shrink_slab_node (mm/vmscan.c:306)
+[  447.710253]  shrink_slab (mm/vmscan.c:381)
+[  447.710253]  kswapd_shrink_zone (mm/vmscan.c:2909)
+[  447.710253]  kswapd (mm/vmscan.c:3090 mm/vmscan.c:3296)
+[  447.710253]  ? mem_cgroup_shrink_node_zone (mm/vmscan.c:3213)
+[  447.710253]  kthread (kernel/kthread.c:219)
+[  447.710253]  ? __tick_nohz_task_switch (arch/x86/include/asm/paravirt.h:809 kernel/time/tick-sched.c:272)
+[  447.710253]  ? kthread_create_on_node (kernel/kthread.c:185)
+[  447.710253]  ret_from_fork (arch/x86/kernel/entry_64.S:555)
+[  447.710253]  ? kthread_create_on_node (kernel/kthread.c:185)
+[  447.710253] Code: e9 a9 00 00 00 0f 1f 00 48 39 c3 0f 82 87 00 00 00 4c 39 e3 0f 83 7e 00 00 00 48 8b 7d a0 e8 45 ef ff ff 48 85 c0 49 89 c5 75 05 <0f> 0b 0f 1f 00 48 8b 7d b0 48 8d 4b 01 48 89 c2 4c 89 f6 e8 c5
+[  447.710253] RIP  clear_extent_bit (fs/btrfs/extent_io.c:676)
+[  447.710253]  RSP <ffff88066be83768>
 
 
-Hope this helps,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Thanks,
+Sasha

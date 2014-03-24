@@ -1,70 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53585 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751240AbaCXTTk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 15:19:40 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WSAPL-000637-J3
-	for linux-btrfs@vger.kernel.org; Mon, 24 Mar 2014 20:19:39 +0100
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 20:19:39 +0100
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 20:19:39 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Cannot add device "is mounted" for unmounted drive that used to
- be in raidset that is mounted
-Date: Mon, 24 Mar 2014 19:19:14 +0000 (UTC)
-Message-ID: <pan$22ecd$ee1c4b0f$48d0cc59$d02dd1ad@cox.net>
-References: <20140323180907.GA22171@merlins.org>
-	<20140323185816.GA3732@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from magic.merlins.org ([209.81.13.136]:40469 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750969AbaCXVwl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Mar 2014 17:52:41 -0400
+Date: Mon, 24 Mar 2014 14:52:39 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Martin <m_btrfs@ml1.co.uk>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs and raid5 status with kernel 3.14, documentation, and howto
+Message-ID: <20140324215239.GC11533@merlins.org>
+References: <20140323225657.GA17039@merlins.org> <lgq0b9$e5r$1@ger.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <lgq0b9$e5r$1@ger.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Sun, 23 Mar 2014 11:58:16 -0700 as excerpted:
-
-> On Sun, Mar 23, 2014 at 11:09:07AM -0700, Marc MERLIN wrote:
->> I found out that a drive that used to be part of a raid system that is
->> mounted and running without it, btrfs apparently decides that the drive
->> is part of the mounted raidset and in use.
->> As a result, I had to eventually dd 0's over it, btrfs device scan, and
->> finally I was able to use it again.
+On Mon, Mar 24, 2014 at 07:17:12PM +0000, Martin wrote:
+> Thanks for the very good summary.
 > 
-> I filed a bug for this, it's a bit more minor, but worth fixing
-> eventually https://bugzilla.kernel.org/show_bug.cgi?id=72771
+> So... In very brief summary, btrfs raid5 is very much a work in progress.
 
-The reason for this is the device-scanning that btrfs does, detecting 
-btrfs superblocks in ordered to assemble filesystems from multiple 
-devices, etc.
+If you know how to use it, which I didn't know do now, it's technically very
+usable as is. The corner cases are in having a failing drive which you can't
+hot remove because you can't write to it.
+It's unfortunate that you can't just "kill" a drive without umounting,
+making the drive disappear so that btrfs can't see it (dmsetup remove
+cryptname for me, so it's easy to do remotely), and remounting in degraded
+mode.
+ 
+> Question: Is the raid5 going to be seamlessly part of the
+> error-correcting raids whereby raid5, raid6,
+> raid-with-n-redundant-drives are all coded as one configurable raid?
 
-The canonical method for wiping such superblocks and thus avoiding btrfs 
-detecting it as a btrfs filesystem component is to use wipefs, part of 
-the util-linux package.  I think it's covered somewhere on the wiki; let 
-me see if I can find it...
+I'm not sure I parse your question. As far as btrfs is concerned you can
+switch from non raid to raid5 to raid6 by adding a drive and rebalancing
+which effectively reads and re-writes all the blocks in the new format.
 
-Yes.  See the problem-FAQ:
+> Also (second question): What happened to the raid naming scheme that
+> better described the btrfs-style of raid by explicitly numbering the
+> number of devices used for mirroring, striping, and error-correction?
 
-https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_to_clean_up_old_superblock_.3F
+btrfs fi show kind of tells you that if you know how to read it (I didn't
+initially). What's missing for you?
 
-As you'll note, however, it mentions the dd method as a workaround if 
-wipefs isn't available, but all you need to wipe is the 8-byte magic 
-string. =:^)  (Tho there's three superblocks and while wiping the first 
-is generally enough and is all wipefs does, you can wipe the others too 
-if you like as well.  There are also instructions for restoring the magic 
-string using dd, if it should be come necessary.)
-
-
-
-
-
+Marc
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

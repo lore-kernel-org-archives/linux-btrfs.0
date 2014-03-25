@@ -1,34 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f179.google.com ([209.85.220.179]:47735 "EHLO
-	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754684AbaCYTrq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 15:47:46 -0400
-Received: by mail-vc0-f179.google.com with SMTP id ij19so1191407vcb.24
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 12:47:45 -0700 (PDT)
-MIME-Version: 1.0
-Date: Tue, 25 Mar 2014 15:47:45 -0400
-Message-ID: <CAJtFHUQCJhkDJiUgkrtoPJ=pN3+ngvAD_yhwb=_Kh1kQP+4xKA@mail.gmail.com>
-Subject: Re: Bug in profile balance not present in normal balance
-From: E V <eliventer@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:41357 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754243AbaCYUZv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Mar 2014 16:25:51 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WSXuv-0004BZ-Ub
+	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 21:25:49 +0100
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 21:25:49 +0100
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 21:25:49 +0100
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Bug in profile balance not present in normal balance
+Date: Tue, 25 Mar 2014 20:25:24 +0000 (UTC)
+Message-ID: <pan$930e5$479ced6d$2ea1e491$5cdb108a@cox.net>
+References: <CAJtFHUQCJhkDJiUgkrtoPJ=pN3+ngvAD_yhwb=_Kh1kQP+4xKA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> What about unallocated space, that is, the difference between total space
-> and used space, per device, as reported by btrfs filesystem show?
+E V posted on Tue, 25 Mar 2014 15:47:45 -0400 as excerpted:
 
-File show gives:
-        Total devices 3 FS bytes used 60.22TiB
-        devid    1 size 30.01TiB used 17.61TiB path /dev/sdb
-        devid    2 size 30.01TiB used 17.63TiB path /dev/sdc
-        devid    3 size 40.02TiB used 27.48TiB path /dev/sdd
+> System, single: total=4.00MiB, used=0.00
 
-and the rest of btrfs df:
-Data, RAID0: total=8.79TiB, used=8.79TiB
-Data, single: total=53.68TiB, used=51.34TiB
-System, RAID1: total=40.00MiB, used=6.64MiB
-System, single: total=4.00MiB, used=0.00
+BTW, that and the corresponding Metadata, single: entries, both 
+used=0.00, are artifacts of the original mkfs.btrfs, and can be safely 
+removed via balance.  I've started doing that here right after first 
+mount of the filesystem, before I stick anything on it, but they can be 
+removed later as well.
 
-As far as I can tell space shouldn't be an issue at all.
+btrfs balance start -m,convert=raid1,soft <mountpoint>
+
+... should do it.  The soft avoids the already raid1 metadata, and 
+metadata normally implies system as well.  That does it for me, tho one 
+person said in ordered to get the single system chunk gone he had to use 
+-s,convert=raid1,soft -f (force) as well.  (I suspect that might be 
+because he did system first, separately, and force is needed as 
+confirmation for that, but not for doing metadata, which implies system 
+as well.  Force would also be necessary going the other way, 
+convert=single, since that reduces metadata/system redundancy.)
+
+It just bothers me to see those separate extra and unused entries every 
+time I do a btrfs filesystem df, and that gets rid of them, so I do it, 
+and after that my btrfs filesystem df's  are nice and tidy like the 
+should be! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

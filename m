@@ -1,57 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:40547 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:41589 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751191AbaCXWEK (ORCPT
+	with ESMTP id S1750875AbaCYA2g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 18:04:10 -0400
-Date: Mon, 24 Mar 2014 15:04:09 -0700
+	Mon, 24 Mar 2014 20:28:36 -0400
+Date: Mon, 24 Mar 2014 17:28:35 -0700
 From: Marc MERLIN <marc@merlins.org>
 To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-tools missing "btrfs device delete devid=x path" ?
-Message-ID: <20140324220409.GD11533@merlins.org>
-References: <20140323152516.GJ12833@merlins.org> <20140323161843.GD25400@carfax.org.uk> <20140323162506.GL12833@merlins.org> <pan$5c9a9$34404310$3c11d99a$22bd163f@cox.net>
+Subject: Re: Cannot add device "is mounted" for unmounted drive that used to be in raidset that is mounted
+Message-ID: <20140325002835.GE11533@merlins.org>
+References: <20140323180907.GA22171@merlins.org> <20140323185816.GA3732@merlins.org> <pan$22ecd$ee1c4b0f$48d0cc59$d02dd1ad@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$5c9a9$34404310$3c11d99a$22bd163f@cox.net>
+In-Reply-To: <pan$22ecd$ee1c4b0f$48d0cc59$d02dd1ad@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 24, 2014 at 06:38:30PM +0000, Duncan wrote:
-> Marc MERLIN posted on Sun, 23 Mar 2014 09:25:06 -0700 as excerpted:
+On Mon, Mar 24, 2014 at 07:19:14PM +0000, Duncan wrote:
+> Marc MERLIN posted on Sun, 23 Mar 2014 11:58:16 -0700 as excerpted:
 > 
-> > On Sun, Mar 23, 2014 at 04:18:43PM +0000, Hugo Mills wrote:
-> >> On Sun, Mar 23, 2014 at 08:25:17AM -0700, Marc MERLIN wrote:
-> >>> 
-> >>> What's the syntax for removing a drive that isn't there?
-> >> 
-> >>    btrfs dev del missing /path
-> >> 
-> >>    Removes all the missing devices.
+> > On Sun, Mar 23, 2014 at 11:09:07AM -0700, Marc MERLIN wrote:
+> >> I found out that a drive that used to be part of a raid system that is
+> >> mounted and running without it, btrfs apparently decides that the drive
+> >> is part of the mounted raidset and in use.
+> >> As a result, I had to eventually dd 0's over it, btrfs device scan, and
+> >> finally I was able to use it again.
 > > 
-> > Aaah, this worked, thank you.
-> > This isn't documented in the 3.12 man page, but I'm guessing it'll be in
-> > the upcoming 3.14.
-> > 
-> > I'll document this in the raid5 page I'm currently writing.
+> > I filed a bug for this, it's a bit more minor, but worth fixing
+> > eventually https://bugzilla.kernel.org/show_bug.cgi?id=72771
 > 
-> It's on the wiki as I remembered, covered on the multiple devices page.
-> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Removing_devices
+> The reason for this is the device-scanning that btrfs does, detecting 
+> btrfs superblocks in ordered to assemble filesystems from multiple 
+> devices, etc.
 
-So, I did read the entire wiki, but it's been a while, and either some
-things got added since then, or some I just didn't remember because I didn't
-need them at the time.
-The problem, and we've talked about this before (my plea to make btrfsck put
-a "--really-I-read-the-wiki-and-want-this" :) option as well as minimal
-instructions in its usage that tell the unsuspecting user it's not what
-they're looking for, here too, I carefully re-read the man page for btrfs
-and this wasn't mentioned in it, or at least in my copy.
-Out of sync docs happens, but I'm hopeful that the man page and tools --help
-info can be the canonical place for info, even if they can point to a wiki
-link since the average admin will always fail back to --help/--usage and the
-man page first before looking for a missing option in a wiki somewhere else.
- 
-Does that sound reasonable?
+Yep, and thanks for reminding me of wipefs.
+However this was still a bug to say that a device was mounted when it sure
+wasn't :)
+
+I'm ok using -f because I didn't use wipefs, but being told "no you can't
+reformat this because it's mounted", spending too long looking what in the
+kernel would make it think so, and then realizing the check is wrong, isn't
+as user friendly :)
 
 Marc
 -- 

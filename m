@@ -1,86 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33745 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:52270 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752779AbaCYPnI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 11:43:08 -0400
+	id S1751697AbaCYQxS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Mar 2014 12:53:18 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WSTVG-0003CO-8J
-	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 16:43:02 +0100
+	id 1WSUbE-0004Ft-1W
+	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 17:53:16 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 16:43:02 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 17:53:16 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 16:43:02 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 17:53:16 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Suggestion: Anti-fragmentation safety catch (RFC)
-Date: Tue, 25 Mar 2014 15:42:36 +0000 (UTC)
-Message-ID: <pan$ee4df$a16c7a6$74fe8395$12ca6150@cox.net>
-References: <lgq247$lgk$1@ger.gmane.org>
-	<pan$191e5$f5ca4422$3e26f4d9$15d09a73@cox.net>
-	<lgqk8i$j4p$1@ger.gmane.org>
+Subject: Re: "Asymmetric" RAID0
+Date: Tue, 25 Mar 2014 16:52:47 +0000 (UTC)
+Message-ID: <pan$c6bbb$e31857d7$d3530345$ba2c0e6e@cox.net>
+References: <CADef55oE1UQbmEnvXcXuYxEwdR=ktYsC2C+QzTjQWu7h5vA7NQ@mail.gmail.com>
+	<53312549.6040207@swiftspirit.co.za>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin posted on Tue, 25 Mar 2014 00:57:05 +0000 as excerpted:
+Brendan Hide posted on Tue, 25 Mar 2014 08:42:17 +0200 as excerpted:
 
-> https://btrfs.wiki.kernel.org/index.php/Mount_options
-
-> #### autodefrag (since [kernel] 3.0)
+> The "raid0" will always distribute data to each disk relatively equally.
+> There are exceptions of course. The way to have it better utilise the
+> diskspace is to use either "single" (which won't get the same
+> performance as raid0) or to add a third disk.
 > 
-> Will detect random writes into existing files and kick off background
-> defragging. It is well suited to bdb or sqlite databases, but not
-> virtualization images or big databases (yet). Once the developers make
-> sure it doesn't defrag files over and over again, they'll move this
-> toward the default.
-> ####
+> In any raided configuration, the largest disk won't be fully utilised
+> unless the other disks add up to be equal to or more than that largest
+> disk.
 > 
-> Looks like I might be a good test case :-)
-> 
-> 
-> What's the problem for big images or big databases? What is considered
-> "big"?
+> Play around with Hugo's disk usage calculator to get a better idea of
+> what the different configurations will do:
+> http://carfax.org.uk/btrfs-usage/
 
-"Big" is obviously relative and may depend to some extent on the physical 
-device backing the filesystem, particularly SSD vs. spinning rust, as 
-well as just how actively rewritten the file in question actually is.
+Agreed.  Adding...
 
-Based on my own experience and what I've seen posted from others, 
-autodefrag seems to work reasonably well into the lower hundreds of MiB, 
-while once we're talking "gigs", something like the NOCOW file attribute 
-tends to be a better solution.
+The wiki's multi-device page says this:
 
-Sizes of say half a gig to a gig are a gray area.  Autodefrag will 
-probably work well enough on them for fast media (SSD) or if the file re-
-writing requests aren't coming in /too/ fast, but on slower spinning rust 
-or where internal file data rewrites are coming fast, rewriting the 
-entire multi-hundred-megabyte file to defrag it every time an update of a 
-few bytes comes in will likely bottleneck the system, with an effect much 
-like the one you posted to start this thread: a load average increasing 
-into the hundreds due to IO-bottleneck with CPUs @ 100% wait, due to the 
-write-magnification effect as a full several hundred megabyte file gets 
-repeatedly rewritten for each update of a few bytes!
+"""""
+When you have drives with differing sizes and want to use the full 
+capacity of each drive, you have to use the single profile for the data 
+blocks, rather than raid0. 
+"""""
+https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
 
-Actually, if your use-case ends up being in or near that gray area, I'm 
-sure some specific tests and hard numbers would be appreciated!  Maybe 
-autodefrag is fine to 1.5 GiB or so, or perhaps the trouble starts at say 
-300 MiB for you as your system is slow enough and the incoming data 
-stream high enough you're bottlenecking at 300 MiB.  Or perhaps the half-
-gig to 1-gig range is right on.  Regardless, if you can get hard data on 
-it, please do share. =:^)
+Further explanation for this reply:
 
-Meanwhile, the NOCOW extended file-attribute (chattr +C) mentioned a 
-couple paragraphs up is recommended once the problem scales beyond what 
-autodefrag can handle. There are, however, a number of btrfs specific 
-peculiarities to the NOCOW situation that it can take some familiarity 
-with the topic to cleanly navigate.  That's out of scope for this post 
-and besides, there's quite a few other threads where it has been 
-discussed, so I'll punt on that discussion, for now.
+Each raidN mode has a minimum number of devices it can use.  For raid0 
+(and raid1), that's two devices, otherwise it's no longer raidN, but 
+single (or dup) mode.
+
+That's why btrfs won't be able to use ~500 gig of the larger device, 
+since when it fills up the smaller, there's no way to continue raid0 
+striping.
+
+If you added a third device the same size as the larger device (931 gig), 
+btrfs would stripe across three devices until it filled the smaller, then 
+across the two remaining devices.
+
+If, however, the third device was only ~ 500 gig, you'd have roughly the 
+same problem, as it would stripe three ways until the smallest was full, 
+then two ways until the second-smallest was full, again leaving the 
+remember unusable.
+
+Tho I don't see where the 20 gig number comes from, as the smaller device 
+still had 230-ish gigs unallocated, so you (OP not Brendan) should be 
+safe for 200 gig or so more allocation, which combined with the 200 that 
+would also be allocated on the larger drive, would be about 400 gig or so 
+of additional data, depending on how that unallocated space gets 
+allocated and whether you rebalance as the allocated space on the smaller 
+drive drops toward zero, to return any available allocated but not fully 
+used chunks to unallocated.
+
+As Brendan says, however, switching to single mode instead of raid0 
+should let you use all the space, tho with less performance, because that 
+doesn't require the striping.
+
+In theory at least, you /could/ even switch to single mode as you 
+approached full on the raid0, doing a rebalance-convert, but then 
+canceling it right away, before it has actually converted much to 
+single.  That /should/ leave most of the existing chunks (minus the few 
+converted before the balance-convert was canceled as raid0, while telling 
+the filesystem that new allocations should be single, not raid0.  But I'm 
+not sure if that would actually work in practice, as I'm not sure how 
+btrfs would do further data block allocations in that case.  Also, you'd 
+have to be careful while doing further balances so as not to disturb the 
+raid0/single ratio and push over the edge on the smaller device.  So 
+unless you decide to be the guinea pig, I'd suggest leaving that as "in 
+theory", but if you want to try it, I'm sure I'm not the only one who'd 
+be interested in your report of how it goes. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,62 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38497 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:33745 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751787AbaCYNAt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 09:00:49 -0400
+	id S1752779AbaCYPnI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Mar 2014 11:43:08 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WSQyG-0001G9-HL
-	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 14:00:48 +0100
+	id 1WSTVG-0003CO-8J
+	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 16:43:02 +0100
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 14:00:48 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 16:43:02 +0100
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 14:00:48 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 16:43:02 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: free space inode generation (0) did not match free space cache
- generation
-Date: Tue, 25 Mar 2014 13:00:21 +0000 (UTC)
-Message-ID: <pan$8258b$aea97c0c$211631c9$d306a8a9@cox.net>
-References: <532DF38B.40409@friedels.name> <532DFDAB.7000600@friedels.name>
-	<pan$b7ff$285d59f6$2419371$b3946ebe@cox.net>
-	<53309AF9.8090203@friedels.name>
+Subject: Re: Suggestion: Anti-fragmentation safety catch (RFC)
+Date: Tue, 25 Mar 2014 15:42:36 +0000 (UTC)
+Message-ID: <pan$ee4df$a16c7a6$74fe8395$12ca6150@cox.net>
+References: <lgq247$lgk$1@ger.gmane.org>
+	<pan$191e5$f5ca4422$3e26f4d9$15d09a73@cox.net>
+	<lgqk8i$j4p$1@ger.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hendrik Friedel posted on Mon, 24 Mar 2014 21:52:09 +0100 as excerpted:
+Martin posted on Tue, 25 Mar 2014 00:57:05 +0000 as excerpted:
 
->> But regardless of my experience with my own usage pattern, I suspect
->> that with reasonable monitoring, you'll eventually become familiar with
->> how fast the chunks are allocated and possibly with what sort of
->> actions beyond the obvious active moving stuff around on the filesystem
->> triggers those allocations, for your specific usage pattern, and can
->> then adapt as necessary.
+> https://btrfs.wiki.kernel.org/index.php/Mount_options
+
+> #### autodefrag (since [kernel] 3.0)
 > 
-> Yes, that's a workaround. But really, that makes one the slave to your
-> filesystem. That's not really acceptable, is it?
+> Will detect random writes into existing files and kick off background
+> defragging. It is well suited to bdb or sqlite databases, but not
+> virtualization images or big databases (yet). Once the developers make
+> sure it doesn't defrag files over and over again, they'll move this
+> toward the default.
+> ####
+> 
+> Looks like I might be a good test case :-)
+> 
+> 
+> What's the problem for big images or big databases? What is considered
+> "big"?
 
-Well, given the relative immaturity of btrfs as a filesystem at this 
-point in its lifetime, I think it's acceptable/tolerable.  However, for a 
-filesystem feted[1] to ultimately replace the ext* series as an assumed 
-Linux default, I'd definitely argue that the current situation should be 
-changed such that btrfs can automatically manage its own de-allocation at 
-some point, yes, and that said "some point" really needs to come before 
-that point at which btrfs can be considered an appropriate replacement 
-for ext2/3/4 as the assumed default Linux filesystem of the day.
+"Big" is obviously relative and may depend to some extent on the physical 
+device backing the filesystem, particularly SSD vs. spinning rust, as 
+well as just how actively rewritten the file in question actually is.
 
----
-[1] feted: celebrated, honored.  I had to look it up to be sure my 
-intuition on usage was correct, and indeed I had spelled it wrong 
-(fetted).  Yay for online wictionary and google-define! =:^)  Anyway, for 
-others who may not be familiar with the term, since I have the links open 
-ATM:
-http://en.wiktionary.org/wiki/feted
-https://www.google.com/search?q=define:feted
+Based on my own experience and what I've seen posted from others, 
+autodefrag seems to work reasonably well into the lower hundreds of MiB, 
+while once we're talking "gigs", something like the NOCOW file attribute 
+tends to be a better solution.
+
+Sizes of say half a gig to a gig are a gray area.  Autodefrag will 
+probably work well enough on them for fast media (SSD) or if the file re-
+writing requests aren't coming in /too/ fast, but on slower spinning rust 
+or where internal file data rewrites are coming fast, rewriting the 
+entire multi-hundred-megabyte file to defrag it every time an update of a 
+few bytes comes in will likely bottleneck the system, with an effect much 
+like the one you posted to start this thread: a load average increasing 
+into the hundreds due to IO-bottleneck with CPUs @ 100% wait, due to the 
+write-magnification effect as a full several hundred megabyte file gets 
+repeatedly rewritten for each update of a few bytes!
+
+Actually, if your use-case ends up being in or near that gray area, I'm 
+sure some specific tests and hard numbers would be appreciated!  Maybe 
+autodefrag is fine to 1.5 GiB or so, or perhaps the trouble starts at say 
+300 MiB for you as your system is slow enough and the incoming data 
+stream high enough you're bottlenecking at 300 MiB.  Or perhaps the half-
+gig to 1-gig range is right on.  Regardless, if you can get hard data on 
+it, please do share. =:^)
+
+Meanwhile, the NOCOW extended file-attribute (chattr +C) mentioned a 
+couple paragraphs up is recommended once the problem scales beyond what 
+autodefrag can handle. There are, however, a number of btrfs specific 
+peculiarities to the NOCOW situation that it can take some familiarity 
+with the topic to cleanly navigate.  That's out of scope for this post 
+and besides, there's quite a few other threads where it has been 
+discussed, so I'll punt on that discussion, for now.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

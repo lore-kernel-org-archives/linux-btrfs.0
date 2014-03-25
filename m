@@ -1,56 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw5a-delaine.wadns.net ([196.220.39.203]:36812 "EHLO
-	fw5a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751251AbaCYIFP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 04:05:15 -0400
-Message-ID: <533138A4.2010808@swiftspirit.co.za>
-Date: Tue, 25 Mar 2014 10:04:52 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
-MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, Martin <m_btrfs@ml1.co.uk>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs and raid5 status with kernel 3.14, documentation, and howto
-References: <20140323225657.GA17039@merlins.org> <lgq0b9$e5r$1@ger.gmane.org> <20140324215239.GC11533@merlins.org> <lgql40$lm5$1@ger.gmane.org> <20140325012916.GF11533@merlins.org>
-In-Reply-To: <20140325012916.GF11533@merlins.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37266 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752846AbaCYMOE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Mar 2014 08:14:04 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WSQF0-0004eg-1Z
+	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 13:14:02 +0100
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 13:14:02 +0100
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 13:14:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: How to debug very very slow file delete? (btrfs on md-raid5)
+Date: Tue, 25 Mar 2014 12:13:50 +0000
+Message-ID: <lgrrtf$el3$1@ger.gmane.org>
+References: <20140325014956.GG11533@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20140325014956.GG11533@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/03/14 03:29, Marc MERLIN wrote:
-> On Tue, Mar 25, 2014 at 01:11:43AM +0000, Martin wrote:
->> There's a big thread a short while ago about using parity across
->> n-devices where the parity is spread such that you can have 1, 2, and up
->> to 6 redundant devices. Well beyond just raid5 and raid6:
->>
->> http://lwn.net/Articles/579034/
->   
-> Aah, ok. I didn't understand you meant that. I know nothing about that, but
-> to be honest, raid6 feels like it's enough for me :)
+On 25/03/14 01:49, Marc MERLIN wrote:
+> I had a tree with some amount of thousand files (less than 1 million)
+> on top of md raid5.
+> 
+> It took 18H to rm it in 3 tries:
 
-There are a few of us who are very much looking forward to these 
-special/flexible RAID types - for example RAID15 (very good performance, 
-very high redundancy, less than 50% diskspace efficiency). The csp 
-notation will probably make it easier to develop the flexible raid types 
-and is very much required in order to better manage these more flexible 
-raid types.
 
-A typical RAID15 with 12 disks would in csp notation is written as:
-2c5s1p
+> Data, single: total=3.28TiB, used=2.70TiB
+> System, DUP: total=8.00MiB, used=384.00KiB
+> System, single: total=4.00MiB, used=0.00
+> Metadata, DUP: total=73.50GiB, used=62.46GiB
+> Metadata, single: total=8.00MiB, used=0.00
+> 
+> This is running from
+> md8 : active raid5 sdf1[6] sdb1[5] sda1[3] sde1[2] sdd1[1]
+>       7814045696 blocks super 1.2 level 5, 512k chunk, algorithm 2 [5/5] [UUUUU]
+>       bitmap: 0/15 pages [0KB], 65536KB chunk
+> 
+> The filesystem is pretty new, it shouldn't be fragmented much.
 
-And some would like to be able to use the exact same redundancy scheme 
-even with extra disks:
-2c5s1p on 16 disks (note, the example is not 2c7s1p, though that would 
-also be a valid scheme with 16 disks being the minimum number of disks 
-required)
 
-The last thread on this (I think) can be viewed here, 
-http://www.spinics.net/lists/linux-btrfs/msg23137.html where Hugo also 
-explains and lists the notation for the existing schemes.
+> The problem does not seem to be just rm though, du is taking way way too
+> long too. I started one, it's been running for 30mn now.
+> Interestingly, sending ^C to that du takes 15 seconds to respond, so it
+> seems that each system call is just slow.
+> 
+> I checked that btrfs scrub is not running.
+> What else can I check from here?
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+"noatime" set?
+
+What's your cpu hardware wait time?
+
+
+And is not *the 512kByte raid chunk* going to give you horrendous write
+amplification?! For example, rm updates a few bytes in one 4kByte
+metadata block and the system has to then do a read-modify-write on
+512kBytes...
+
+Also, the 64MByte chunk bit-intent map will add a lot of head seeks to
+anything you do on that raid. (The map would be better on a separate SSD
+or other separate drive.)
+
+So... That sort of setup is fine for archived data that is effectively
+read-only. You'll see poor performance for small writes/changes.
+
+
+Hope that helps,
+Martin
+
+
 

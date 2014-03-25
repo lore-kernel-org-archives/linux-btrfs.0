@@ -1,66 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35154 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751656AbaCYA5V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Mar 2014 20:57:21 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WSFg6-0003yF-56
-	for linux-btrfs@vger.kernel.org; Tue, 25 Mar 2014 01:57:18 +0100
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 01:57:18 +0100
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Mar 2014 01:57:18 +0100
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: Suggestion: Anti-fragmentation safety catch (RFC)
-Date: Tue, 25 Mar 2014 00:57:05 +0000
-Message-ID: <lgqk8i$j4p$1@ger.gmane.org>
-References: <lgq247$lgk$1@ger.gmane.org> <pan$191e5$f5ca4422$3e26f4d9$15d09a73@cox.net>
-Mime-Version: 1.0
+Received: from mail-ob0-f177.google.com ([209.85.214.177]:50563 "EHLO
+	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750830AbaCYFQF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Mar 2014 01:16:05 -0400
+Received: by mail-ob0-f177.google.com with SMTP id wo20so6815093obc.36
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Mar 2014 22:16:03 -0700 (PDT)
+MIME-Version: 1.0
+From: Slava Barinov <rayslava@gmail.com>
+Date: Tue, 25 Mar 2014 09:15:43 +0400
+Message-ID: <CADef55oE1UQbmEnvXcXuYxEwdR=ktYsC2C+QzTjQWu7h5vA7NQ@mail.gmail.com>
+Subject: "Asymmetric" RAID0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <pan$191e5$f5ca4422$3e26f4d9$15d09a73@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24/03/14 20:19, Duncan wrote:
-> Martin posted on Mon, 24 Mar 2014 19:47:34 +0000 as excerpted:
-> 
->> Possible fix:
->>
->> btrfs checks the ratio of filesize versus number of fragments and for a
->> bad ratio either: [...]
-> 
->> 3: Automatically defragments the file.
-> 
-> See the autodefrag mount option.
-> 
-> =:^)
+Hello,
 
-Thanks for that!
+ I've been using a single drive btrfs for some time and when free space
+ became too low I've added an additional drive and rebalanced FS with
+ RAID0 data and RAID1 System and Metadata storage.
 
-So...
+ Now I have the following configuration:
 
-https://btrfs.wiki.kernel.org/index.php/Mount_options
-####
-autodefrag (since [kernel] 3.0)
+# btrfs fi show /btr
+Label: none  uuid: f9d78880-10a7-439b-8ebd-14d815edbc19
+    Total devices 2 FS bytes used 415.45GiB
+    devid    1 size 931.51GiB used 222.03GiB path /dev/sdc
+    devid    2 size 431.51GiB used 222.03GiB path /dev/sdb
 
-Will detect random writes into existing files and kick off background
-defragging. It is well suited to bdb or sqlite databases, but not
-virtualization images or big databases (yet). Once the developers make
-sure it doesn't defrag files over and over again, they'll move this
-toward the default.
-####
+# btrfs fi df /btr
+Data, RAID0: total=424.00GiB, used=406.81GiB
+System, RAID1: total=32.00MiB, used=40.00KiB
+Metadata, RAID1: total=10.00GiB, used=8.64GiB
 
-Looks like I might be a good test case :-)
+# df -h
+Filesystem                               Size  Used Avail Use% Mounted on
+/dev/sdb                                 1.4T  424G  437G  50% /btr
 
+ I suppose I should trust to btrfs fi df, not df utility.
 
-What's the problem for big images or big databases? What is considered
-"big"?
+ So the main question is if such "asymmetric" RAID0 configuration
+ possible at all and why does btrfs ignore ~500 GB of free space on
+ /dev/sdc drive?
 
-Thanks,
-Martin
+ Also it's interesting what will happen when I add 20 GB more data to
+ my FS. Should I be prepared to usual btrfs low-space problems?
 
+Best regards,
+Slava Barinov.

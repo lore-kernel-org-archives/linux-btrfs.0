@@ -1,60 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50882 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753861AbaCZSTU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 14:19:20 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 205EEAC04
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Mar 2014 18:19:20 +0000 (UTC)
-Date: Wed, 26 Mar 2014 19:19:19 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: fix lockdep warning with reclaim lock inversion
-Message-ID: <20140326181919.GV29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5333184E.3090609@suse.com>
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.162]:58628 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756074AbaCZVLY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Mar 2014 17:11:24 -0400
+Received: from linux-z0zw.site (p508DFA95.dip0.t-ipconnect.de [80.141.250.149])
+	by smtp.strato.de (RZmta 32.31 DYNA|AUTH)
+	with ESMTPSA id t05620q2QL5GIHQ
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(Client did not present a certificate)
+	for <linux-btrfs@vger.kernel.org>;
+	Wed, 26 Mar 2014 22:05:16 +0100 (CET)
+Message-ID: <5333410F.3010000@hat-hill.de>
+Date: Wed, 26 Mar 2014 22:05:19 +0100
+From: Johannes Stemmler <jobus@hat-hill.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5333184E.3090609@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Inappropriate ioctl
+Content-Type: text/plain; charset=ISO-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 26, 2014 at 02:11:26PM -0400, Jeff Mahoney wrote:
-> When encountering memory pressure, testers have run into the following
-> lockdep warning. It was caused by __link_block_group calling kobject_add
-> with the groups_sem held. kobject_add calls kvasprintf with GFP_KERNEL,
-> which gets us into reclaim context. The kobject doesn't actually need
-> to be added under the lock -- it just needs to ensure that it's only
-> added for the first block group to be linked.
-> 
-> =========================================================
-> [ INFO: possible irq lock inversion dependency detected ]
-> 3.14.0-rc8-default #1 Not tainted
-> ---------------------------------------------------------
-> kswapd0/169 just changed the state of lock:
->  (&delayed_node->mutex){+.+.-.}, at: [<ffffffffa018baea>] __btrfs_release_delayed_node+0x3a/0x200 [btrfs]
-> but this lock took another, RECLAIM_FS-unsafe lock in the past:
->  (&found->groups_sem){+++++.}
-> 
-> and interrupts could create inverse lock ordering between them.
-> 
-> other info that might help us debug this:
->  Possible interrupt unsafe locking scenario:
->        CPU0                    CPU1
->        ----                    ----
->   lock(&found->groups_sem);
->                                local_irq_disable();
->                                lock(&delayed_node->mutex);
->                                lock(&found->groups_sem);
->   <Interrupt>
->     lock(&delayed_node->mutex);
-> 
->  *** DEADLOCK ***
-> 2 locks held by kswapd0/169:
->  #0:  (shrinker_rwsem){++++..}, at: [<ffffffff81159e8a>] shrink_slab+0x3a/0x160
->  #1:  (&type->s_umount_key#27){++++..}, at: [<ffffffff811bac6f>] grab_super_passive+0x3f/0x90
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Sorry for reporting this issue to you, but I have not found any helpful
+information elsewhere.
 
-For the record, fixes https://bugzilla.kernel.org/show_bug.cgi?id=72501
+I have installed a new opensuse-system 12.3 from scratch and selected an
+ext4-fs for /
+and btrfs for /home
+The installation works and the access to the /home btrfs works also.
+
+But the btrfs-progs doesn't.
+
+show works
+# btrfs filesystem show /dev/sda8
+Label: lx_home  uuid: 5a6857e3-b421-4a68-92f4-0c7e5f9fcb4c
+        Total devices 1 FS bytes used 74.40GiB
+        devid    1 size 262.63GiB used 77.04GiB path /dev/sda8
+
+df does not work
+# btrfs filesystem df /dev/sda8
+ERROR: couldn't get space info - Inappropriate ioctl for device
+ERROR: get_df failed Inappropriate ioctl for device
+
+#mount
+/dev/sda6 on / type ext4 (rw,relatime,data=ordered)
+/dev/sda8 on /home type btrfs (rw,relatime,ssd,space_cache)
+
+A reinstallation of the btrfs-progs did not help.
+Is the system bad packaged by opensuse or is my constellation forbidden?
+
+Best regards,
+Johannes Stemmler
+
+p.s. the btrfs is on a ssd-partition

@@ -1,102 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50167 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50725 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753759AbaCZR0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 13:26:40 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 3F064ACC6
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Mar 2014 17:26:39 +0000 (UTC)
+	id S1753085AbaCZSKz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Mar 2014 14:10:55 -0400
+Date: Wed, 26 Mar 2014 19:10:53 +0100
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: make device scan less noisy
-Date: Wed, 26 Mar 2014 18:26:36 +0100
-Message-Id: <1395854796-11028-1-git-send-email-dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: don't compress for a small write
+Message-ID: <20140326181053.GU29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Print the message only when the device is seen for the first time.
+On Mon, Mar 24, 2014 at 05:58:10PM +0800, Wang Shilong wrote:
+> To compress a small write(<=blocksize) dosen't save us
+> disk space at all, skip it can save us some compression time.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/volumes.c |   35 ++++++++++++++++++++++++-----------
- 1 files changed, 24 insertions(+), 11 deletions(-)
+The compressibility depends on the data, a block full of zeros can
+compress pretty well, so your patch is too limiting IMO.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bab0b84d8f80..d3694f347afb 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -447,6 +447,14 @@ static void pending_bios_fn(struct btrfs_work *work)
- 	run_scheduled_bios(device);
- }
- 
-+/*
-+ * Add new device to list of registered devices
-+ *
-+ * Returns:
-+ * 1   - first time device is seen
-+ * 0   - device already known
-+ * < 0 - error
-+ */
- static noinline int device_list_add(const char *path,
- 			   struct btrfs_super_block *disk_super,
- 			   u64 devid, struct btrfs_fs_devices **fs_devices_ret)
-@@ -454,6 +462,7 @@ static noinline int device_list_add(const char *path,
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct rcu_string *name;
-+	int ret = 0;
- 	u64 found_transid = btrfs_super_generation(disk_super);
- 
- 	fs_devices = find_fsid(disk_super->fsid);
-@@ -494,6 +503,7 @@ static noinline int device_list_add(const char *path,
- 		fs_devices->num_devices++;
- 		mutex_unlock(&fs_devices->device_list_mutex);
- 
-+		ret = 1;
- 		device->fs_devices = fs_devices;
- 	} else if (!device->name || strcmp(device->name->str, path)) {
- 		name = rcu_string_strdup(path, GFP_NOFS);
-@@ -512,7 +522,8 @@ static noinline int device_list_add(const char *path,
- 		fs_devices->latest_trans = found_transid;
- 	}
- 	*fs_devices_ret = fs_devices;
--	return 0;
-+
-+	return ret;
- }
- 
- static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
-@@ -909,17 +920,19 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	transid = btrfs_super_generation(disk_super);
- 	total_devices = btrfs_super_num_devices(disk_super);
- 
--	if (disk_super->label[0]) {
--		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
--			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
--		printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
--	} else {
--		printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
--	}
--
--	printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
--
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
-+	if (ret > 0) {
-+		if (disk_super->label[0]) {
-+			if (disk_super->label[BTRFS_LABEL_SIZE - 1])
-+				disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
-+			printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
-+		} else {
-+			printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
-+		}
-+
-+		printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
-+		ret = 0;
-+	}
- 	if (!ret && fs_devices_ret)
- 		(*fs_devices_ret)->total_devices = total_devices;
- 
--- 
-1.7.9
+> This patch can also fix wrong setting nocompression flag for
+> inode, say a case when @total_in is 4096, and then we get
+> @total_compressed 52,because we do aligment to page cache size
+> firstly, and then we get into conclusion @total_in=@total_compressed
+> thus we will clear this inode's compression flag.
 
+This is a bug but can be fixed without disabling compression of small
+blocks.
+
+I have a similar patch as part of the large compression update, the
+logic that decides if the small extent should be compressed or not
+depends on the compression algo and some typical data samples. for zlib
+it's around ~100 B and lzo at ~200 B. That's a boundary where compressed
+size == uncompressed, so there's no benefit, only additional overhead.

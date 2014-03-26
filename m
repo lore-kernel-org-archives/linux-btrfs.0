@@ -1,126 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe01.nebula.fi ([188.117.32.121]:42814 "EHLO
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:12778 "EHLO
 	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752394AbaCYOrM (ORCPT
+	with ESMTP id S1756065AbaCZTee (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Mar 2014 10:47:12 -0400
-Date: Tue, 25 Mar 2014 16:47:07 +0200
+	Wed, 26 Mar 2014 15:34:34 -0400
+Date: Wed, 26 Mar 2014 21:34:30 +0200
 From: Rakesh Pandit <rakesh@tuxera.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: scrub: disable thread cancelability during
- mutex locks
-Message-ID: <20140325144705.GA7499@hercules.tuxera.com>
+Subject: [PATCH] Btrfs-progs: chunk_recovery: fix mem leak and pthread_cancel
+ call
+Message-ID: <20140326193429.GA2947@hercules.tuxera.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-scrub_progress_cycle thread runs in asynchronous type but locks mutex
-while reading shared data. This patch disables cancelability for a
-brief time while locks are on so as to make sure they are unlocked
-before thread is canceled.
+Free memory if open call fails. Prevent pthread_cancel on threads
+which have already finished successfully. If all calls to
+pthread_create and pthread_join are successful, we mistakenly call
+pthread_cancel because cancel_from and cancel_to are both zero.
 
-scrub_write_progress gets called from scrub_progress_cycle in
-asynchronous thread but cancelability is disabled after mutex is
-locked. This patch moves the call to set cancelability type before
-mutex lock and makes corresponding changes to labels for error
-handling.
+Make POSIX.1-2001 happy by supplying a non-NULL second argument to
+pthread_setcanceltype.
 
 Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- cmds-scrub.c | 31 ++++++++++++++++++++++---------
- 1 file changed, 22 insertions(+), 9 deletions(-)
+ chunk-recover.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index d3bd148..4338a0b 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -773,31 +773,31 @@ static int scrub_write_progress(pthread_mutex_t *m, const char *fsid,
- 	int fd = -1;
- 	int old;
+diff --git a/chunk-recover.c b/chunk-recover.c
+index a05e644..613d715 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -745,8 +745,9 @@ static int scan_one_device(void *dev_scan_struct)
+ 	struct recover_control *rc = dev_scan->rc;
+ 	struct btrfs_device *device = dev_scan->dev;
+ 	int fd = dev_scan->fd;
++	int oldtype;
  
--	ret = pthread_mutex_lock(m);
-+	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
- 	if (ret) {
- 		err = -ret;
--		goto fail;
-+		goto out3;
- 	}
+-	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
++	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
+ 	if (ret)
+ 		return 1;
  
--	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
-+	ret = pthread_mutex_lock(m);
- 	if (ret) {
- 		err = -ret;
--		goto out;
-+		goto out2;
- 	}
- 
- 	fd = scrub_open_file_w(SCRUB_DATA_FILE, fsid, "tmp");
- 	if (fd < 0) {
- 		err = fd;
--		goto out;
-+		goto out1;
- 	}
- 	err = scrub_write_file(fd, fsid, data, n);
- 	if (err)
--		goto out;
-+		goto out1;
- 	err = scrub_rename_file(SCRUB_DATA_FILE, fsid, "tmp");
- 	if (err)
--		goto out;
-+		goto out1;
- 
--out:
-+out1:
- 	if (fd >= 0) {
- 		ret = close(fd);
- 		if (ret)
-@@ -808,11 +808,12 @@ out:
- 	if (ret && !err)
- 		err = -ret;
- 
--fail:
-+out2:
- 	ret = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old);
- 	if (ret && !err)
- 		err = -ret;
- 
-+out3:
- 	return err;
- }
- 
-@@ -944,6 +945,10 @@ static void *scrub_progress_cycle(void *ctx)
- 			 * result we got for the current write and go
- 			 * on. flag should be set on next cycle, then.
- 			 */
-+			perr = pthread_setcancelstate(
-+					PTHREAD_CANCEL_DISABLE, &old);
-+			if (perr)
-+				goto out;
- 			perr = pthread_mutex_lock(&sp_shared->progress_mutex);
- 			if (perr)
- 				goto out;
-@@ -952,12 +957,20 @@ static void *scrub_progress_cycle(void *ctx)
- 						&sp_shared->progress_mutex);
- 				if (perr)
- 					goto out;
-+				perr = pthread_setcancelstate(
-+						PTHREAD_CANCEL_ENABLE, &old);
-+				if (perr)
-+					goto out;
- 				memcpy(sp, sp_last, sizeof(*sp));
- 				continue;
- 			}
- 			perr = pthread_mutex_unlock(&sp_shared->progress_mutex);
- 			if (perr)
- 				goto out;
-+			perr = pthread_setcancelstate(
-+					PTHREAD_CANCEL_ENABLE, &old);
-+			if (perr)
-+				goto out;
- 			memcpy(sp, sp_shared, sizeof(*sp));
- 			memcpy(sp_last, sp_shared, sizeof(*sp));
+@@ -845,7 +846,8 @@ static int scan_devices(struct recover_control *rc)
+ 		if (fd < 0) {
+ 			fprintf(stderr, "Failed to open device %s\n",
+ 				dev->name);
+-			return -1;
++			ret = 1;
++			goto out2;
  		}
+ 		dev_scans[devidx].rc = rc;
+ 		dev_scans[devidx].dev = dev;
+@@ -856,7 +858,7 @@ static int scan_devices(struct recover_control *rc)
+ 		if (ret) {
+ 			cancel_from = 0;
+ 			cancel_to = devidx - 1;
+-			goto out;
++			goto out1;
+ 		}
+ 		devidx++;
+ 	}
+@@ -868,15 +870,16 @@ static int scan_devices(struct recover_control *rc)
+ 			ret = 1;
+ 			cancel_from = i + 1;
+ 			cancel_to = devnr - 1;
+-			break;
++			goto out1;
+ 		}
+ 		i++;
+ 	}
+-out:
+-	while (cancel_from <= cancel_to) {
++out1:
++	while (ret && (cancel_from <= cancel_to)) {
+ 		pthread_cancel(t_scans[cancel_from]);
+ 		cancel_from++;
+ 	}
++out2:
+ 	free(dev_scans);
+ 	free(t_scans);
+ 	free(t_rets);
 -- 
 1.8.5.3
 

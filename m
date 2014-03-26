@@ -1,159 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f175.google.com ([209.85.128.175]:34858 "EHLO
-	mail-ve0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756168AbaCZVrV (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:59933 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753861AbaCZWvC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 17:47:21 -0400
-Received: by mail-ve0-f175.google.com with SMTP id oz11so3070131veb.34
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Mar 2014 14:47:20 -0700 (PDT)
+	Wed, 26 Mar 2014 18:51:02 -0400
+Date: Wed, 26 Mar 2014 22:50:59 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Johannes Stemmler <jobus@hat-hill.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Inappropriate ioctl
+Message-ID: <20140326225059.GI7442@carfax.org.uk>
+References: <5333410F.3010000@hat-hill.de>
 MIME-Version: 1.0
-Date: Wed, 26 Mar 2014 22:47:19 +0100
-Message-ID: <CAG-aW06fHTKE9UFdT6DTbMgCNUWTJYk7H-VcvK6DGnFUwup78Q@mail.gmail.com>
-Subject: Some impossible benchmark results with LUKS - what am I missing?
-From: Matt <jackdachef@gmail.com>
-To: Evan Powell <epowell@zenoss.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="k9xkV0rc9XGsukaG"
+In-Reply-To: <5333410F.3010000@hat-hill.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->Hey folks,
 
->I have been experimenting with btrfs on a home NAS box, and have some benchmark \
->results that I don't believe. I'm hoping someone here has some insight on what I've \
->missed that would cause such a result.
+--k9xkV0rc9XGsukaG
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->The short version: I'm seeing roughly a 36% (on write) to 55% (on read) performance \
->*improvement* when using btrfs on LUKS containers over btrfs on raw disks. This \
->should not be the case!
+On Wed, Mar 26, 2014 at 10:05:19PM +0100, Johannes Stemmler wrote:
+> Sorry for reporting this issue to you, but I have not found any helpful
+> information elsewhere.
+> 
+> I have installed a new opensuse-system 12.3 from scratch and selected an
+> ext4-fs for /
+> and btrfs for /home
+> The installation works and the access to the /home btrfs works also.
+> 
+> But the btrfs-progs doesn't.
+> 
+> show works
+> # btrfs filesystem show /dev/sda8
+> Label: lx_home  uuid: 5a6857e3-b421-4a68-92f4-0c7e5f9fcb4c
+>         Total devices 1 FS bytes used 74.40GiB
+>         devid    1 size 262.63GiB used 77.04GiB path /dev/sda8
+> 
+> df does not work
+> # btrfs filesystem df /dev/sda8
 
->The test setup:
->My test file is a large file that I previously generated from /dev/urandom. I saw \
->similar results using /dev/zero as input, as well as a repeated copy of the whole \
->Ubuntu 14.04 ISO (i.e., real-ish data).
+   ^^^ this needs to be a location of the *mounted* filesystem, not a
+device. Most of the btrfs functions do this, although not all of them
+-- check the man pages, or the online help, which should state either
+<device> or <mountpoint>.
 
->My calculated MB/s numbers are based on the 'real' time in the output.
+   Hugo.
 
->Live-booted Ubuntu 14.04 (nightly from 3/11/14, kernel 3.13.5)
->4x 4TB WD Red drives in standard (no RAID) configuration
->i3-4130 CPU (has AES-NI for accelerated encryption)
->Default BTRFS options from the disk gui, always raid10.
+> ERROR: couldn't get space info - Inappropriate ioctl for device
+> ERROR: get_df failed Inappropriate ioctl for device
+> 
+> #mount
+> /dev/sda6 on / type ext4 (rw,relatime,data=ordered)
+> /dev/sda8 on /home type btrfs (rw,relatime,ssd,space_cache)
+> 
+> A reinstallation of the btrfs-progs did not help.
+> Is the system bad packaged by opensuse or is my constellation forbidden?
+> 
+> Best regards,
+> Johannes Stemmler
+> 
+> p.s. the btrfs is on a ssd-partition
 
->Tested configurations:
->Raw: btrfs raid10 on 4x raw drives
->Encrypted: btrfs raid10 on 4 separate LUKS containers on 4x raw drives (default LUKS \
->options)
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Well, you don't get to be a kernel hacker simply by looking ---   
+                    good in Speedos. -- Rusty Russell                    
 
+--k9xkV0rc9XGsukaG
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
->Read command: $ time sh -c "dd if=test.out of=/dev/null bs=4k"
->Raw:
->5120000+0 records in
->5120000+0 records out
->20971520000 bytes (21 GB) copied, 149.841 s, 140 MB/s
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
->real 2m29.849s
->user 0m2.764s
->sys 0m7.064s
+iQIVAwUBUzNZ01heFHXiqx3kAQIXuA/+O+vdYNY0Nv+LpWSRAUvabfhJBBwWRYR0
+3+7mdLSlp6HC4CEaCoxYdDRBt1JLfu/p15Et6LPPDoFsfIeKZSp3gcnqEhnc2WEm
+lCDHtTT2+9cr+/1Dl6LBiakP0Kxf+/97JfGI+V8V/vkhRW3KL02DMlhBO0h8Zqlq
+7Fma2o/2rWUw7pl22r06lbakSJZ6Dba+B1g1jUSozf2/G9SpwEA3+Qa2Pd2y5S4Z
+CIBAQ6bJkAgkg6aArCQ7kGQFJbTOiedhIBF9SK+lAbWTcgLM+cJrkYfQBweQ4Rda
+qa6EisL0N2DeiZUFeGs0DgDPRrQN4KuL1w0ryW3RGr/ex6PuUfbqgL+ZNQmWx8t8
+vMdNlCUkOA3wqKxBQH6aqRCerLN1TA8F8gwG0oihtZjKZBF2MCBljYzRpI6Ei6a6
+0YOocqbY4XI4ST47mwb1XXYTGK6bFG4WC4U3PelyUpRl5Yp/zl2K6EqUY4MCrGtQ
+PMuNMfe5neW9QHx/vJ6se7Osf5AONojSEPNUYUjMJN3/1WHmeErNoD/wbwe5YC1i
+3CsxtmDJUlRexZYM04Sh/8ut97NXwUC88Gr2CIiHQA5ETovxzjKlqlEceW6x/Kul
+Gy7p9zJS0UBRAHrr0nGnUrZpepn2NLjwAt3g/4O7MvNpIUkYKW0teiNnRaRHgTU3
+rt+T61DHM9g=
+=H3bk
+-----END PGP SIGNATURE-----
 
->= 133.467690809 MB/s
-
->Encrypted:
->$ time sh -c "dd if=test2.out of=/dev/null bs=4k"
->5120000+0 records in
->5120000+0 records out
->20971520000 bytes (21 GB) copied, 96.6127 s, 217 MB/s
-
->real 1m36.627s
->user 0m3.331s
->sys 0m9.518s
-
->= 206.981485506 MB/s
-
-
->Read+Write: $ time sh -c "dd if=test2.out of=test20grand.out bs=4k && sync"
->Raw:
->5120000+0 records in
->5120000+0 records out
->20971520000 bytes (21 GB) copied, 227.069 s, 92.4 MB/s
-
->real 3m49.701s
->user 0m2.854s
->sys 0m15.936s
-
->= 87.069712365 MB/s
-
->Encrypted:
->5120000+0 records in
->5120000+0 records out
->20971520000 bytes (21 GB) copied, 167.823 s, 125 MB/s
-
->real 2m48.784s
->user 0m2.955s
->sys 0m17.956s
-
->= 118.494644042 MB/s
-
-
->Any ideas what could explain this result?
-
->One coworker suggested that perhaps the LUKS container was returning from 'sync' \
->early, before actually finishing the write to disk. This would seem to violate the \
->assumptions of the 'sync' primitive, so I have my doubts.
-
->I'm also interested in learning how I can reliably benchmark the real cost of running \
->full-disk encryption under btrfs on my system.
-
->Thanks!
-
-
->Evan Powell | Technical Lead
->epowell@zenoss.com
-
-
-Hi Evan,
-
-just to be sure:
-
-did you do a
-
-echo 3 > /proc/sys/vm/drop_caches
-
-before *each* test ?
-
-also try reversing the order of tests like so:
-
-Encrypted
-RAW
-
-whether that makes a difference
-
-
-It would also be interesting to see the output of
-
-cryptsetup luksDump
-
-and
-
-Version:       *
-Cipher name:    *
-Cipher mode:    *
-Hash spec:        *
-
-
-
-
-Interesting find indeed ! Thanks for sharing the finding
-
-I'm currently using Btrfs on an encrypted system partition (without
-AES-NI supported hardware) and things already feel and are faster than
-with ext4
-
-we need to find out what this magic is =)
-
-
-Kind Regards
-
-
-Thanks
-
-Matt
+--k9xkV0rc9XGsukaG--

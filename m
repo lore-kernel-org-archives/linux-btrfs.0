@@ -1,40 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50725 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:50731 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753085AbaCZSKz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 14:10:55 -0400
-Date: Wed, 26 Mar 2014 19:10:53 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: don't compress for a small write
-Message-ID: <20140326181053.GU29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	id S1750911AbaCZSL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Mar 2014 14:11:29 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id E9182ABE5
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Mar 2014 18:11:28 +0000 (UTC)
+Message-ID: <5333184E.3090609@suse.com>
+Date: Wed, 26 Mar 2014 14:11:26 -0400
+From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: fix lockdep warning with reclaim lock inversion
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 24, 2014 at 05:58:10PM +0800, Wang Shilong wrote:
-> To compress a small write(<=blocksize) dosen't save us
-> disk space at all, skip it can save us some compression time.
+When encountering memory pressure, testers have run into the following
+lockdep warning. It was caused by __link_block_group calling kobject_add
+with the groups_sem held. kobject_add calls kvasprintf with GFP_KERNEL,
+which gets us into reclaim context. The kobject doesn't actually need
+to be added under the lock -- it just needs to ensure that it's only
+added for the first block group to be linked.
 
-The compressibility depends on the data, a block full of zeros can
-compress pretty well, so your patch is too limiting IMO.
+=========================================================
+[ INFO: possible irq lock inversion dependency detected ]
+3.14.0-rc8-default #1 Not tainted
+---------------------------------------------------------
+kswapd0/169 just changed the state of lock:
+ (&delayed_node->mutex){+.+.-.}, at: [<ffffffffa018baea>] __btrfs_release_delayed_node+0x3a/0x200 [btrfs]
+but this lock took another, RECLAIM_FS-unsafe lock in the past:
+ (&found->groups_sem){+++++.}
 
-> This patch can also fix wrong setting nocompression flag for
-> inode, say a case when @total_in is 4096, and then we get
-> @total_compressed 52,because we do aligment to page cache size
-> firstly, and then we get into conclusion @total_in=@total_compressed
-> thus we will clear this inode's compression flag.
+and interrupts could create inverse lock ordering between them.
 
-This is a bug but can be fixed without disabling compression of small
-blocks.
+other info that might help us debug this:
+ Possible interrupt unsafe locking scenario:
+       CPU0                    CPU1
+       ----                    ----
+  lock(&found->groups_sem);
+                               local_irq_disable();
+                               lock(&delayed_node->mutex);
+                               lock(&found->groups_sem);
+  <Interrupt>
+    lock(&delayed_node->mutex);
 
-I have a similar patch as part of the large compression update, the
-logic that decides if the small extent should be compressed or not
-depends on the compression algo and some typical data samples. for zlib
-it's around ~100 B and lzo at ~200 B. That's a boundary where compressed
-size == uncompressed, so there's no benefit, only additional overhead.
+ *** DEADLOCK ***
+2 locks held by kswapd0/169:
+ #0:  (shrinker_rwsem){++++..}, at: [<ffffffff81159e8a>] shrink_slab+0x3a/0x160
+ #1:  (&type->s_umount_key#27){++++..}, at: [<ffffffff811bac6f>] grab_super_passive+0x3f/0x90
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c |   10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8343,9 +8343,15 @@ static void __link_block_group(struct bt
+ 			       struct btrfs_block_group_cache *cache)
+ {
+ 	int index = get_block_group_index(cache);
++	bool first = false;
+ 
+ 	down_write(&space_info->groups_sem);
+-	if (list_empty(&space_info->block_groups[index])) {
++	if (list_empty(&space_info->block_groups[index]))
++		first = true;
++	list_add_tail(&cache->list, &space_info->block_groups[index]);
++	up_write(&space_info->groups_sem);
++
++	if (first) {
+ 		struct kobject *kobj = &space_info->block_group_kobjs[index];
+ 		int ret;
+ 
+@@ -8357,8 +8363,6 @@ static void __link_block_group(struct bt
+ 			kobject_put(&space_info->kobj);
+ 		}
+ 	}
+-	list_add_tail(&cache->list, &space_info->block_groups[index]);
+-	up_write(&space_info->groups_sem);
+ }
+ 
+ static struct btrfs_block_group_cache *
+
+
+-- 
+Jeff Mahoney
+SUSE Labs

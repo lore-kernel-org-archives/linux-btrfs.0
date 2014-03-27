@@ -1,208 +1,435 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relais.videotron.ca ([24.201.245.36]:25696 "EHLO
-	relais.videotron.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751821AbaC0DXw (ORCPT
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:33470 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754902AbaC0UP6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 23:23:52 -0400
-MIME-version: 1.0
-Content-type: text/plain; CHARSET=US-ASCII; format=flowed
-Received: from [192.168.2.90]
- (modemcable211.176-81-70.mc.videotron.ca [70.81.176.211])
- by VL-VM-MR005.ip.videotron.ca
- (Oracle Communications Messaging Exchange Server 7u4-22.01 64bit (built Apr 21
- 2011)) with ESMTPA id <0N3200DVDS3J1H50@VL-VM-MR005.ip.videotron.ca> for
- linux-btrfs@vger.kernel.org; Wed, 26 Mar 2014 23:23:43 -0400 (EDT)
-Message-id: <533399AF.4070802@polymtl.ca>
-Date: Wed, 26 Mar 2014 23:23:27 -0400
-From: Christian Robert <christian.robert@polymtl.ca>
-To: Evan Powell <epowell@zenoss.com>, Matt <jackdachef@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Some impossible benchmark results with LUKS - what am I missing?
-References: <15dcc559-9c13-467f-8fcf-2611d7f791ce@zimbra1.zenoss.com>
-In-reply-to: <15dcc559-9c13-467f-8fcf-2611d7f791ce@zimbra1.zenoss.com>
+	Thu, 27 Mar 2014 16:15:58 -0400
+Received: by mail-wi0-f172.google.com with SMTP id hi5so6394996wib.17
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 13:15:56 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: send, fix more issues related to directory renames
+Date: Thu, 27 Mar 2014 20:14:01 +0000
+Message-Id: <1395951241-13302-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Only thing I can see is Lurk is not passing the barrier (do that writes in sequence then ack) to the devices.
-so it act as a caching device (dangerous for btrfs point of view).
+This is a continuation of the previous changes titled:
 
-I'm *no* expert in that matter at all.
+   Btrfs: fix incremental send's decision to delay a dir move/rename
+   Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
 
-I may be wrong.
+There's a few more cases where a directory rename/move must be delayed which was
+previously overlooked. If our immediate ancestor has a lower inode number than
+ours and it doesn't have a delayed rename/move operation associated to it, it
+doesn't mean there isn't any non-direct ancestor of our current inode that needs
+to be renamed/moved before our current inode (i.e. with a higher inode number
+than ours).
 
-Xtian.
+So we can't stop the search if our immediate ancestor has a lower inode number than
+ours, we need to navigate the directory hierarchy upwards until we hit the root or:
 
-On 2014-03-26 21:56, Evan Powell wrote:
-> Order did not matter - I have run a few tests showing this same disparity in both orders.
->
-> I reran this evening using the drop_caches command you provided, no change in throughput results. The improvement I've seen has been present through multiple reboots so far, and clearing RAM using dd on different test files. Doesn't look like it's caching causing this, so I'm still stumped.
->
-> Output of cryptsetup luksDump is similar on all 4 devices:
->
-> Version:       	1
-> Cipher name:   	aes
-> Cipher mode:   	xts-plain64
-> Hash spec:     	sha1
-> Payload offset:	4102
-> MK bits:       	256
-> ...
-> (followed by different iterations and salts)
->
-> (Offtopic: migrating between encrypted and unencrypted drives is really painless on btrfs: rebalance to raid1, delete two devices, remove their encrypted volumes, readd the devices, remove and readd the 2 remaining encrypted disks without encryption, rebalance to raid10. All live, without losing data! This is awesome!)
->
-> Evan Powell | Technical Lead
-> epowell@zenoss.com
->
-> ----- Original Message -----
->
-> From: "Matt" <jackdachef@gmail.com>
-> To: "Evan Powell" <epowell@zenoss.com>
-> Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
-> Sent: Wednesday, March 26, 2014 4:47:19 PM
-> Subject: Some impossible benchmark results with LUKS - what am I missing?
->
->> Hey folks,
->
->> I have been experimenting with btrfs on a home NAS box, and have some benchmark \
->> results that I don't believe. I'm hoping someone here has some insight on what I've \
->> missed that would cause such a result.
->
->> The short version: I'm seeing roughly a 36% (on write) to 55% (on read) performance \
->> *improvement* when using btrfs on LUKS containers over btrfs on raw disks. This \
->> should not be the case!
->
->> The test setup:
->> My test file is a large file that I previously generated from /dev/urandom. I saw \
->> similar results using /dev/zero as input, as well as a repeated copy of the whole \
->> Ubuntu 14.04 ISO (i.e., real-ish data).
->
->> My calculated MB/s numbers are based on the 'real' time in the output.
->
->> Live-booted Ubuntu 14.04 (nightly from 3/11/14, kernel 3.13.5)
->> 4x 4TB WD Red drives in standard (no RAID) configuration
->> i3-4130 CPU (has AES-NI for accelerated encryption)
->> Default BTRFS options from the disk gui, always raid10.
->
->> Tested configurations:
->> Raw: btrfs raid10 on 4x raw drives
->> Encrypted: btrfs raid10 on 4 separate LUKS containers on 4x raw drives (default LUKS \
->> options)
->
->
->> Read command: $ time sh -c "dd if=test.out of=/dev/null bs=4k"
->> Raw:
->> 5120000+0 records in
->> 5120000+0 records out
->> 20971520000 bytes (21 GB) copied, 149.841 s, 140 MB/s
->
->> real 2m29.849s
->> user 0m2.764s
->> sys 0m7.064s
->
->> = 133.467690809 MB/s
->
->> Encrypted:
->> $ time sh -c "dd if=test2.out of=/dev/null bs=4k"
->> 5120000+0 records in
->> 5120000+0 records out
->> 20971520000 bytes (21 GB) copied, 96.6127 s, 217 MB/s
->
->> real 1m36.627s
->> user 0m3.331s
->> sys 0m9.518s
->
->> = 206.981485506 MB/s
->
->
->> Read+Write: $ time sh -c "dd if=test2.out of=test20grand.out bs=4k && sync"
->> Raw:
->> 5120000+0 records in
->> 5120000+0 records out
->> 20971520000 bytes (21 GB) copied, 227.069 s, 92.4 MB/s
->
->> real 3m49.701s
->> user 0m2.854s
->> sys 0m15.936s
->
->> = 87.069712365 MB/s
->
->> Encrypted:
->> 5120000+0 records in
->> 5120000+0 records out
->> 20971520000 bytes (21 GB) copied, 167.823 s, 125 MB/s
->
->> real 2m48.784s
->> user 0m2.955s
->> sys 0m17.956s
->
->> = 118.494644042 MB/s
->
->
->> Any ideas what could explain this result?
->
->> One coworker suggested that perhaps the LUKS container was returning from 'sync' \
->> early, before actually finishing the write to disk. This would seem to violate the \
->> assumptions of the 'sync' primitive, so I have my doubts.
->
->> I'm also interested in learning how I can reliably benchmark the real cost of running \
->> full-disk encryption under btrfs on my system.
->
->> Thanks!
->
->
->> Evan Powell | Technical Lead
->> epowell@zenoss.com
->
->
-> Hi Evan,
->
-> just to be sure:
->
-> did you do a
->
-> echo 3 > /proc/sys/vm/drop_caches
->
-> before *each* test ?
->
-> also try reversing the order of tests like so:
->
-> Encrypted
-> RAW
->
-> whether that makes a difference
->
->
-> It would also be interesting to see the output of
->
-> cryptsetup luksDump
->
-> and
->
-> Version: *
-> Cipher name: *
-> Cipher mode: *
-> Hash spec: *
->
->
->
->
-> Interesting find indeed ! Thanks for sharing the finding
->
-> I'm currently using Btrfs on an encrypted system partition (without
-> AES-NI supported hardware) and things already feel and are faster than
-> with ext4
->
-> we need to find out what this magic is =)
->
->
-> Kind Regards
->
->
-> Thanks
->
-> Matt
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+1) find an ancestor with an higher inode number that was renamed/moved in the send
+   root too (or already has a pending rename/move registered);
+2) find an ancestor that is a new directory (higher inode number than ours and
+   exists only in the send root).
+
+Reproducer for case 1)
+
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount /dev/sdd /mnt
+
+    $ mkdir -p /mnt/a/b
+    $ mkdir -p /mnt/a/c/d
+    $ mkdir /mnt/a/b/e
+    $ mkdir /mnt/a/c/d/f
+    $ mv /mnt/a/b /mnt/a/c/d/2b
+    $ mkdir /mnt/a/x
+    $ mkdir /mnt/a/y
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+    $ btrfs send /mnt/snap1 -f /tmp/base.send
+
+    $ mv /mnt/a/x /mnt/a/y
+    $ mv /mnt/a/c/d/2b/e /mnt/a/c/d/2b/2e
+    $ mv /mnt/a/c/d /mnt/a/h/2d
+    $ mv /mnt/a/c /mnt/a/h/2d/2b/2c
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+
+Simple reproducer for case 2)
+
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount /dev/sdd /mnt
+
+    $ mkdir -p /mnt/a/b
+    $ mkdir /mnt/a/c
+    $ mv /mnt/a/b /mnt/a/c/b2
+    $ mkdir /mnt/a/e
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+    $ btrfs send /mnt/snap1 -f /tmp/base.send
+
+    $ mv /mnt/a/c/b2 /mnt/a/e/b3
+    $ mkdir /mnt/a/e/b3/f
+    $ mkdir /mnt/a/h
+    $ mv /mnt/a/c /mnt/a/e/b3/f/c2
+    $ mv /mnt/a/e /mnt/a/h/e2
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+
+Another simple reproducer for case 2)
+
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount /dev/sdd /mnt
+
+    $ mkdir -p /mnt/a/b
+    $ mkdir /mnt/a/c
+    $ mkdir /mnt/a/b/d
+    $ mkdir /mnt/a/c/e
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+    $ btrfs send /mnt/snap1 -f /tmp/base.send
+
+    $ mkdir /mnt/a/b/d/f
+    $ mkdir /mnt/a/b/g
+    $ mv /mnt/a/c/e /mnt/a/b/g/e2
+    $ mv /mnt/a/c /mnt/a/b/d/f/c2
+    $ mv /mnt/a/b/d/f /mnt/a/b/g/e2/f2
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+
+More complex reproducer for case 2)
+
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount /dev/sdd /mnt
+
+    $ mkdir -p /mnt/a/b
+    $ mkdir -p /mnt/a/c/d
+    $ mkdir /mnt/a/b/e
+    $ mkdir /mnt/a/c/d/f
+    $ mv /mnt/a/b /mnt/a/c/d/2b
+    $ mkdir /mnt/a/x
+    $ mkdir /mnt/a/y
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
+    $ btrfs send /mnt/snap1 -f /tmp/base.send
+
+    $ mv /mnt/a/x /mnt/a/y
+    $ mv /mnt/a/c/d/2b/e /mnt/a/c/d/2b/2e
+    $ mv /mnt/a/c/d /mnt/a/h/2d
+    $ mv /mnt/a/c /mnt/a/h/2d/2b/2c
+
+    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
+    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
+
+For both cases the incremental send would enter an infinite loop when building
+path strings.
+
+While solving these cases, this change also re-implements the code to detect
+when directory moves/renames should be delayed. Instead of dealing with several
+specific cases separately, it's now more generic handling all cases with a simple
+detection algorithm and if when applying a delayed move/rename there's a path loop
+detected, it further delays the move/rename registering a new ancestor inode as
+the dependency inode (so our rename happens after that ancestor is renamed).
+
+Tests for these cases is being added to xfstests too.
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |  190 ++++++++++++++++++++++++++++---------------------------
+ 1 file changed, 96 insertions(+), 94 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 2952889..e2e422c 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2914,7 +2914,9 @@ static void free_waiting_dir_move(struct send_ctx *sctx,
+ static int add_pending_dir_move(struct send_ctx *sctx,
+ 				u64 ino,
+ 				u64 ino_gen,
+-				u64 parent_ino)
++				u64 parent_ino,
++				struct list_head *new_refs,
++				struct list_head *deleted_refs)
+ {
+ 	struct rb_node **p = &sctx->pending_dir_moves.rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -2946,12 +2948,12 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 		}
+ 	}
+ 
+-	list_for_each_entry(cur, &sctx->deleted_refs, list) {
++	list_for_each_entry(cur, deleted_refs, list) {
+ 		ret = dup_ref(cur, &pm->update_refs);
+ 		if (ret < 0)
+ 			goto out;
+ 	}
+-	list_for_each_entry(cur, &sctx->new_refs, list) {
++	list_for_each_entry(cur, new_refs, list) {
+ 		ret = dup_ref(cur, &pm->update_refs);
+ 		if (ret < 0)
+ 			goto out;
+@@ -2994,6 +2996,48 @@ static struct pending_dir_move *get_pending_dir_moves(struct send_ctx *sctx,
+ 	return NULL;
+ }
+ 
++static int path_loop(struct send_ctx *sctx, struct fs_path *name,
++		     u64 ino, u64 gen, u64 *ancestor_ino)
++{
++	int ret = 0;
++	u64 parent_inode = 0;
++	u64 parent_gen = 0;
++	u64 start_ino = ino;
++
++	*ancestor_ino = 0;
++	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
++		fs_path_reset(name);
++
++		if (is_waiting_for_rm(sctx, ino))
++			break;
++		if (is_waiting_for_move(sctx, ino)) {
++			if (*ancestor_ino == 0)
++				*ancestor_ino = ino;
++			ret = get_first_ref(sctx->parent_root, ino,
++					    &parent_inode, &parent_gen, name);
++		} else {
++			ret = __get_cur_name_and_parent(sctx, ino, gen,
++							&parent_inode,
++							&parent_gen, name);
++			if (ret > 0) {
++				ret = 0;
++				break;
++			}
++		}
++		if (ret < 0)
++			break;
++		if (parent_inode == start_ino) {
++			ret = 1;
++			if (*ancestor_ino == 0)
++				*ancestor_ino = ino;
++			break;
++		}
++		ino = parent_inode;
++		gen = parent_gen;
++	}
++	return ret;
++}
++
+ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ {
+ 	struct fs_path *from_path = NULL;
+@@ -3005,6 +3049,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	struct waiting_dir_move *dm = NULL;
+ 	u64 rmdir_ino = 0;
+ 	int ret;
++	u64 ancestor = 0;
+ 
+ 	name = fs_path_alloc();
+ 	from_path = fs_path_alloc();
+@@ -3031,11 +3076,25 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	sctx->send_progress = sctx->cur_ino + 1;
++	ret = path_loop(sctx, name, pm->ino, pm->gen, &ancestor);
++	if (ret) {
++		LIST_HEAD(deleted_refs);
++		ASSERT(ancestor > BTRFS_FIRST_FREE_OBJECTID);
++		ret = add_pending_dir_move(sctx, pm->ino, pm->gen, ancestor,
++					   &pm->update_refs, &deleted_refs);
++		if (ret < 0)
++			goto out;
++		if (rmdir_ino) {
++			dm = get_waiting_dir_move(sctx, pm->ino);
++			ASSERT(dm);
++			dm->rmdir_ino = rmdir_ino;
++		}
++		goto out;
++	}
+ 	fs_path_reset(name);
+ 	to_path = name;
+ 	name = NULL;
+-
+-	sctx->send_progress = sctx->cur_ino + 1;
+ 	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
+ 	if (ret < 0)
+ 		goto out;
+@@ -3159,127 +3218,74 @@ out:
+ static int wait_for_parent_move(struct send_ctx *sctx,
+ 				struct recorded_ref *parent_ref)
+ {
+-	int ret;
++	int ret = 0;
+ 	u64 ino = parent_ref->dir;
+ 	u64 parent_ino_before, parent_ino_after;
+-	u64 old_gen;
+ 	struct fs_path *path_before = NULL;
+ 	struct fs_path *path_after = NULL;
+ 	int len1, len2;
+-	int register_upper_dirs;
+-	u64 gen;
+-
+-	if (is_waiting_for_move(sctx, ino))
+-		return 1;
+-
+-	if (parent_ref->dir <= sctx->cur_ino)
+-		return 0;
+-
+-	ret = get_inode_info(sctx->parent_root, ino, NULL, &old_gen,
+-			     NULL, NULL, NULL, NULL);
+-	if (ret == -ENOENT)
+-		return 0;
+-	else if (ret < 0)
+-		return ret;
+-
+-	if (parent_ref->dir_gen != old_gen)
+-		return 0;
+-
+-	path_before = fs_path_alloc();
+-	if (!path_before)
+-		return -ENOMEM;
+-
+-	ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
+-			    NULL, path_before);
+-	if (ret == -ENOENT) {
+-		ret = 0;
+-		goto out;
+-	} else if (ret < 0) {
+-		goto out;
+-	}
+ 
+ 	path_after = fs_path_alloc();
+-	if (!path_after) {
++	path_before = fs_path_alloc();
++	if (!path_after || !path_before) {
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+ 
+-	ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
+-			    &gen, path_after);
+-	if (ret == -ENOENT) {
+-		ret = 0;
+-		goto out;
+-	} else if (ret < 0) {
+-		goto out;
+-	}
+-
+-	len1 = fs_path_len(path_before);
+-	len2 = fs_path_len(path_after);
+-	if (parent_ino_before != parent_ino_after || len1 != len2 ||
+-	     memcmp(path_before->start, path_after->start, len1)) {
+-		ret = 1;
+-		goto out;
+-	}
+-	ret = 0;
+-
+ 	/*
+-	 * Ok, our new most direct ancestor has a higher inode number but
+-	 * wasn't moved/renamed. So maybe some of the new ancestors higher in
+-	 * the hierarchy have an higher inode number too *and* were renamed
+-	 * or moved - in this case we need to wait for the ancestor's rename
+-	 * or move operation before we can do the move/rename for the current
+-	 * inode.
++	 * Our current directory inode may not yet be renamed/moved because some
++	 * ancestor (immediate or not) has to be renamed/moved first. So find if
++	 * such ancestor exists and make sure our own rename/move happens after
++	 * that ancestor is processed.
+ 	 */
+-	register_upper_dirs = 0;
+-	ino = parent_ino_after;
+-again:
+-	while ((ret == 0 || register_upper_dirs) && ino > sctx->cur_ino) {
+-		u64 parent_gen;
++	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
++		if (is_waiting_for_move(sctx, ino)) {
++			ret = 1;
++			break;
++		}
+ 
+ 		fs_path_reset(path_before);
+ 		fs_path_reset(path_after);
+ 
+ 		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
+-				    &parent_gen, path_after);
++				    NULL, path_after);
+ 		if (ret < 0)
+ 			goto out;
+ 		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
+ 				    NULL, path_before);
+-		if (ret == -ENOENT) {
+-			ret = 0;
+-			break;
+-		} else if (ret < 0) {
++		if (ret < 0 && ret != -ENOENT) {
+ 			goto out;
++		} else if (ret == -ENOENT) {
++			ret = 1;
++			break;
+ 		}
+ 
+ 		len1 = fs_path_len(path_before);
+ 		len2 = fs_path_len(path_after);
+-		if (parent_ino_before != parent_ino_after || len1 != len2 ||
+-		    memcmp(path_before->start, path_after->start, len1)) {
++		if (ino > sctx->cur_ino &&
++		    (parent_ino_before != parent_ino_after || len1 != len2 ||
++		     memcmp(path_before->start, path_after->start, len1))) {
+ 			ret = 1;
+-			if (register_upper_dirs) {
+-				break;
+-			} else {
+-				register_upper_dirs = 1;
+-				ino = parent_ref->dir;
+-				gen = parent_ref->dir_gen;
+-				goto again;
+-			}
+-		} else if (register_upper_dirs) {
+-			ret = add_pending_dir_move(sctx, ino, gen,
+-						   parent_ino_after);
+-			if (ret < 0 && ret != -EEXIST)
+-				goto out;
++			break;
+ 		}
+-
+ 		ino = parent_ino_after;
+-		gen = parent_gen;
+ 	}
+ 
+ out:
+ 	fs_path_free(path_before);
+ 	fs_path_free(path_after);
+ 
++	if (ret == 1) {
++		ret = add_pending_dir_move(sctx,
++					   sctx->cur_ino,
++					   sctx->cur_inode_gen,
++					   ino,
++					   &sctx->new_refs,
++					   &sctx->deleted_refs);
++		if (!ret)
++			ret = 1;
++	}
++
+ 	return ret;
+ }
+ 
+@@ -3440,10 +3446,6 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 				if (ret < 0)
+ 					goto out;
+ 				if (ret) {
+-					ret = add_pending_dir_move(sctx,
+-							   sctx->cur_ino,
+-							   sctx->cur_inode_gen,
+-							   cur->dir);
+ 					*pending_move = 1;
+ 				} else {
+ 					ret = send_rename(sctx, valid_path,
+-- 
+1.7.10.4
+

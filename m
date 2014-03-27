@@ -1,76 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:47785 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752136AbaC0CzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 22:55:17 -0400
+	id S1752114AbaC0CzP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Mar 2014 22:55:15 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2R2tBvo021461
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 10:55:12 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2R2tBvn021461
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 10:55:11 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: update manpage for btrfs resize support size unit t/p/e
-Date: Thu, 27 Mar 2014 10:51:13 +0800
-Message-Id: <1395888673-28433-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1395888673-28433-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1395888673-28433-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: add btrfs resize unit t/p/e support
+Date: Thu, 27 Mar 2014 10:51:12 +0800
+Message-Id: <1395888673-28433-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs resize now support size unit parse of k/m/g/t/p/e in kernel space,
-adopt the changes in userspace manpage.
+For Btrfs with 16E fs size support, resize by unit t/p/e is desired.
+The request comes from redhat bugzilla:
+https://bugzilla.redhat.com/show_bug.cgi?id=1058608.
+
+Originally,
+	# btrfs resize -1T <path> 	: prompt 'invalid argument'
+while,
+	# btrfs resize -1024G <path>	: will work
+
+We add t/p/e support by replacing lib/cmdline.c:memparse
+with btrfs_memparse. The btrfs_memparse copies memparse's code
+and add unit t/p/e parsing.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- cmds-filesystem.c | 2 +-
- man/btrfs.8.in    | 7 ++++---
- 2 files changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/ioctl.c | 45 +++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 43 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 7eb6e9d..a400315 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -922,7 +922,7 @@ static int cmd_defrag(int argc, char **argv)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e174770..357b706 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1448,6 +1448,47 @@ out_ra:
+ 	return ret;
  }
  
- static const char * const cmd_resize_usage[] = {
--	"btrfs filesystem resize [devid:][+/-]<newsize>[gkm]|[devid:]max <path>",
-+	"btrfs filesystem resize [devid:][+/-]<newsize>[kKmMgGtTpPeE]|[devid:]max <path>",
- 	"Resize a filesystem",
- 	"If 'max' is passed, the filesystem will occupy all available space",
- 	"on the device 'devid'.",
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 7fbde82..76c9d4d 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -31,7 +31,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem defragment\fP [\fIoptions\fP] \fI<file>\fP|\fI<dir>\fP [\fI<file>\fP|\fI<dir>...\fP]\fP
- .PP
--\fBbtrfs\fP \fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fP
-+\fBbtrfs\fP \fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[kKmMgGtTpPeE]|[\fIdevid\fP:]\fImax <path>\fP
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP [\fI<device>\fP|\fI<mount_point>\fP] [\fI<newlabel>\fP]
- .PP
-@@ -343,7 +343,7 @@ copies with \fBcp --reflink\fP.
- .\"
- .\" Some wording are extracted by the resize2fs man page
- .\"
--\fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fR
-+\fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[kKmMgGtTpPeE]|[\fIdevid\fP:]\fImax <path>\fR
- Resize a filesystem identified by \fI<path>\fR for the underlying device
- \fIdevid\fR.  The \fIdevid\fR can be found with \fBbtrfs filesystem show\fR and
- defaults to 1 if not specified.
-@@ -352,7 +352,8 @@ If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
- by the quantity \fI<size>\fR.
- If no units are specified, the unit of the \fI<size>\fR parameter defaults to
- bytes. Optionally, the size parameter may be suffixed by one of the following
--units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
-+units designators: 'K', 'M', 'G', 'T', 'P', 'E', kilobytes, megabytes, gigabytes,
-+terabytes, petabytes, exabytes
- respectively.
- 
- If 'max' is passed, the filesystem will occupy all available space on the
++/*
++ * The memparse only supports k/m/g suffixes
++ * For Btrfs with 16E fs size support, t/p/e support is desired
++ * This function copies the memparse and adds t/p/e suffixes parsing
++ */
++static int btrfs_memparse(const char *ptr, u64 *retval)
++{
++	int ret = 0;
++	char *endptr;	/* local pointer to end of parsed string */
++
++	*retval = simple_strtoull(ptr, &endptr, 0);
++	if (*(endptr + 1) != '\0')
++		return -EINVAL;
++
++	switch (*endptr) {
++	case 'E':
++	case 'e':
++		*retval <<= 10;
++	case 'P':
++	case 'p':
++		*retval <<= 10;
++	case 'T':
++	case 't':
++		*retval <<= 10;
++	case 'G':
++	case 'g':
++		*retval <<= 10;
++	case 'M':
++	case 'm':
++		*retval <<= 10;
++	case 'K':
++	case 'k':
++		*retval <<= 10;
++		break;
++	default:
++		ret = -EINVAL;
++	}
++
++	return ret;
++}
++
+ static noinline int btrfs_ioctl_resize(struct file *file,
+ 					void __user *arg)
+ {
+@@ -1526,8 +1567,8 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 			mod = 1;
+ 			sizestr++;
+ 		}
+-		new_size = memparse(sizestr, NULL);
+-		if (new_size == 0) {
++		ret = btrfs_memparse(sizestr, &new_size);
++		if (ret < 0 || new_size == 0) {
+ 			ret = -EINVAL;
+ 			goto out_free;
+ 		}
 -- 
 1.8.1.4
 

@@ -1,87 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:12778 "EHLO
-	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756065AbaCZTee (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 15:34:34 -0400
-Date: Wed, 26 Mar 2014 21:34:30 +0200
-From: Rakesh Pandit <rakesh@tuxera.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: chunk_recovery: fix mem leak and pthread_cancel
- call
-Message-ID: <20140326193429.GA2947@hercules.tuxera.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from cantor2.suse.de ([195.135.220.15]:40763 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755466AbaC0PTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Mar 2014 11:19:39 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 6944DAC86
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 15:19:38 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: make device discard process interruptible
+Date: Thu, 27 Mar 2014 16:19:37 +0100
+Message-Id: <1395933577-32330-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Free memory if open call fails. Prevent pthread_cancel on threads
-which have already finished successfully. If all calls to
-pthread_create and pthread_join are successful, we mistakenly call
-pthread_cancel because cancel_from and cancel_to are both zero.
+The ioctl for the whole range is not interruptible, which can be
+annoying when the discard is not wanted but user forgets to use the -K
+option.
 
-Make POSIX.1-2001 happy by supplying a non-NULL second argument to
-pthread_setcanceltype.
-
-Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- chunk-recover.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+ utils.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index a05e644..613d715 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -745,8 +745,9 @@ static int scan_one_device(void *dev_scan_struct)
- 	struct recover_control *rc = dev_scan->rc;
- 	struct btrfs_device *device = dev_scan->dev;
- 	int fd = dev_scan->fd;
-+	int oldtype;
+diff --git a/utils.c b/utils.c
+index 013d74f9a0cd..3e9c527a492c 100644
+--- a/utils.c
++++ b/utils.c
+@@ -52,8 +52,10 @@
+ #define BLKDISCARD	_IO(0x12,119)
+ #endif
  
--	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
- 	if (ret)
- 		return 1;
+-static int
+-discard_blocks(int fd, u64 start, u64 len)
++/*
++ * Discard the given range in one go
++ */
++static int discard_range(int fd, u64 start, u64 len)
+ {
+ 	u64 range[2] = { start, len };
  
-@@ -845,7 +846,8 @@ static int scan_devices(struct recover_control *rc)
- 		if (fd < 0) {
- 			fprintf(stderr, "Failed to open device %s\n",
- 				dev->name);
--			return -1;
-+			ret = 1;
-+			goto out2;
- 		}
- 		dev_scans[devidx].rc = rc;
- 		dev_scans[devidx].dev = dev;
-@@ -856,7 +858,7 @@ static int scan_devices(struct recover_control *rc)
- 		if (ret) {
- 			cancel_from = 0;
- 			cancel_to = devidx - 1;
--			goto out;
-+			goto out1;
- 		}
- 		devidx++;
- 	}
-@@ -868,15 +870,16 @@ static int scan_devices(struct recover_control *rc)
- 			ret = 1;
- 			cancel_from = i + 1;
- 			cancel_to = devnr - 1;
--			break;
-+			goto out1;
- 		}
- 		i++;
- 	}
--out:
--	while (cancel_from <= cancel_to) {
-+out1:
-+	while (ret && (cancel_from <= cancel_to)) {
- 		pthread_cancel(t_scans[cancel_from]);
- 		cancel_from++;
- 	}
-+out2:
- 	free(dev_scans);
- 	free(t_scans);
- 	free(t_rets);
+@@ -62,6 +64,26 @@ discard_blocks(int fd, u64 start, u64 len)
+ 	return 0;
+ }
+ 
++/*
++ * Discard blocks in the given range in 1G chunks, the process is interruptible
++ */
++static int discard_blocks(int fd, u64 start, u64 len)
++{
++	while (len > 0) {
++		/* 1G granularity */
++		u64 chunk_size = min_t(u64, len, 1*1024*1024*1024);
++		int ret;
++
++		ret = discard_range(fd, start, chunk_size);
++		if (ret)
++			return ret;
++		len -= chunk_size;
++		start += chunk_size;
++	}
++
++	return 0;
++}
++
+ static u64 reference_root_table[] = {
+ 	[1] =	BTRFS_ROOT_TREE_OBJECTID,
+ 	[2] =	BTRFS_EXTENT_TREE_OBJECTID,
 -- 
-1.8.5.3
+1.9.0
 

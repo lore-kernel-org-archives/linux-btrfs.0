@@ -1,185 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.zenoss.com ([74.63.38.26]:51514 "EHLO zimbra1.zenoss.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751995AbaC0B4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Mar 2014 21:56:20 -0400
-Date: Wed, 26 Mar 2014 21:56:16 -0400 (EDT)
-From: Evan Powell <epowell@zenoss.com>
-To: Matt <jackdachef@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Some impossible benchmark results with LUKS - what am I missing?
-Message-ID: <15dcc559-9c13-467f-8fcf-2611d7f791ce@zimbra1.zenoss.com>
-In-Reply-To: <CAG-aW06fHTKE9UFdT6DTbMgCNUWTJYk7H-VcvK6DGnFUwup78Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Received: from cn.fujitsu.com ([59.151.112.132]:49453 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752098AbaC0CwE convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Mar 2014 22:52:04 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s2R2px81008047
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 10:51:59 +0800
+From: "quwenruo@cn.fujitsu.com" <quwenruo@cn.fujitsu.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Change the expanding write sequence to fix snapshot
+ related bug.
+Date: Thu, 27 Mar 2014 02:51:58 +0000
+Message-ID: <1395888786-11736-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Order did not matter - I have run a few tests showing this same disparity in both orders. 
+When testing fsstress with snapshot making background, some snapshot
+following problem.
 
-I reran this evening using the drop_caches command you provided, no change in throughput results. The improvement I've seen has been present through multiple reboots so far, and clearing RAM using dd on different test files. Doesn't look like it's caching causing this, so I'm still stumped.
+Snapshot 270:
+inode 323: size 0
 
-Output of cryptsetup luksDump is similar on all 4 devices:
+Snapshot 271:
+inode 323: size 349145
+|-------Hole---|---------Empty gap-------|-------Hole-----|
+0	    122880			172032	      349145
 
-Version:       	1
-Cipher name:   	aes
-Cipher mode:   	xts-plain64
-Hash spec:     	sha1
-Payload offset:	4102
-MK bits:       	256
-...
-(followed by different iterations and salts)
+Snapshot 272:
+inode 323: size 349145
+|-------Hole---|------------Data---------|-------Hole-----|
+0	    122880			172032	      349145
 
-(Offtopic: migrating between encrypted and unencrypted drives is really painless on btrfs: rebalance to raid1, delete two devices, remove their encrypted volumes, readd the devices, remove and readd the 2 remaining encrypted disks without encryption, rebalance to raid10. All live, without losing data! This is awesome!)
+The fsstress operation on inode 323 is the following:
+write: 		offset 	126832 	len 43124
+truncate: 	size 	349145
 
-Evan Powell | Technical Lead 
-epowell@zenoss.com 
+Since the write with offset is consist of 2 operations:
+1. punch hole
+2. write data
+Hole punching is faster than data write, so hole punching in write
+and truncate is done first and then buffered write, so the snapshot 271 got
+empty gap, which will not pass btrfsck.
 
------ Original Message ----- 
+To fix the bug, this patch will change the write sequence which will
+first punch a hole covering the write end if a hole is needed.
 
-From: "Matt" <jackdachef@gmail.com> 
-To: "Evan Powell" <epowell@zenoss.com> 
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org> 
-Sent: Wednesday, March 26, 2014 4:47:19 PM 
-Subject: Some impossible benchmark results with LUKS - what am I missing? 
+Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/file.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
->Hey folks, 
-
->I have been experimenting with btrfs on a home NAS box, and have some benchmark \ 
->results that I don't believe. I'm hoping someone here has some insight on what I've \ 
->missed that would cause such a result. 
-
->The short version: I'm seeing roughly a 36% (on write) to 55% (on read) performance \ 
->*improvement* when using btrfs on LUKS containers over btrfs on raw disks. This \ 
->should not be the case! 
-
->The test setup: 
->My test file is a large file that I previously generated from /dev/urandom. I saw \ 
->similar results using /dev/zero as input, as well as a repeated copy of the whole \ 
->Ubuntu 14.04 ISO (i.e., real-ish data). 
-
->My calculated MB/s numbers are based on the 'real' time in the output. 
-
->Live-booted Ubuntu 14.04 (nightly from 3/11/14, kernel 3.13.5) 
->4x 4TB WD Red drives in standard (no RAID) configuration 
->i3-4130 CPU (has AES-NI for accelerated encryption) 
->Default BTRFS options from the disk gui, always raid10. 
-
->Tested configurations: 
->Raw: btrfs raid10 on 4x raw drives 
->Encrypted: btrfs raid10 on 4 separate LUKS containers on 4x raw drives (default LUKS \ 
->options) 
-
-
->Read command: $ time sh -c "dd if=test.out of=/dev/null bs=4k" 
->Raw: 
->5120000+0 records in 
->5120000+0 records out 
->20971520000 bytes (21 GB) copied, 149.841 s, 140 MB/s 
-
->real 2m29.849s 
->user 0m2.764s 
->sys 0m7.064s 
-
->= 133.467690809 MB/s 
-
->Encrypted: 
->$ time sh -c "dd if=test2.out of=/dev/null bs=4k" 
->5120000+0 records in 
->5120000+0 records out 
->20971520000 bytes (21 GB) copied, 96.6127 s, 217 MB/s 
-
->real 1m36.627s 
->user 0m3.331s 
->sys 0m9.518s 
-
->= 206.981485506 MB/s 
-
-
->Read+Write: $ time sh -c "dd if=test2.out of=test20grand.out bs=4k && sync" 
->Raw: 
->5120000+0 records in 
->5120000+0 records out 
->20971520000 bytes (21 GB) copied, 227.069 s, 92.4 MB/s 
-
->real 3m49.701s 
->user 0m2.854s 
->sys 0m15.936s 
-
->= 87.069712365 MB/s 
-
->Encrypted: 
->5120000+0 records in 
->5120000+0 records out 
->20971520000 bytes (21 GB) copied, 167.823 s, 125 MB/s 
-
->real 2m48.784s 
->user 0m2.955s 
->sys 0m17.956s 
-
->= 118.494644042 MB/s 
-
-
->Any ideas what could explain this result? 
-
->One coworker suggested that perhaps the LUKS container was returning from 'sync' \ 
->early, before actually finishing the write to disk. This would seem to violate the \ 
->assumptions of the 'sync' primitive, so I have my doubts. 
-
->I'm also interested in learning how I can reliably benchmark the real cost of running \ 
->full-disk encryption under btrfs on my system. 
-
->Thanks! 
-
-
->Evan Powell | Technical Lead 
->epowell@zenoss.com 
-
-
-Hi Evan, 
-
-just to be sure: 
-
-did you do a 
-
-echo 3 > /proc/sys/vm/drop_caches 
-
-before *each* test ? 
-
-also try reversing the order of tests like so: 
-
-Encrypted 
-RAW 
-
-whether that makes a difference 
-
-
-It would also be interesting to see the output of 
-
-cryptsetup luksDump 
-
-and 
-
-Version: * 
-Cipher name: * 
-Cipher mode: * 
-Hash spec: * 
-
-
-
-
-Interesting find indeed ! Thanks for sharing the finding 
-
-I'm currently using Btrfs on an encrypted system partition (without 
-AES-NI supported hardware) and things already feel and are faster than 
-with ext4 
-
-we need to find out what this magic is =) 
-
-
-Kind Regards 
-
-
-Thanks 
-
-Matt 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b2143b8..f53f592 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1718,6 +1718,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	loff_t *ppos = &iocb->ki_pos;
+ 	u64 start_pos;
++	u64 end_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+ 	size_t count, ocount;
+@@ -1772,7 +1773,9 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 
+ 	start_pos = round_down(pos, root->sectorsize);
+ 	if (start_pos > i_size_read(inode)) {
+-		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
++		/* Expand hole size to cover write data, preventing empty gap */
++		end_pos = round_up(pos + iov->iov_len, root->sectorsize);
++		err = btrfs_cont_expand(inode, i_size_read(inode), end_pos);
+ 		if (err) {
+ 			mutex_unlock(&inode->i_mutex);
+ 			goto out;
+-- 
+1.9.1

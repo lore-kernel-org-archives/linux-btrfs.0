@@ -1,435 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:33470 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754902AbaC0UP6 (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:44187 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755681AbaC0URX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Mar 2014 16:15:58 -0400
-Received: by mail-wi0-f172.google.com with SMTP id hi5so6394996wib.17
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 13:15:56 -0700 (PDT)
+	Thu, 27 Mar 2014 16:17:23 -0400
+Received: by mail-wi0-f171.google.com with SMTP id q5so431633wiv.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Mar 2014 13:17:22 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: send, fix more issues related to directory renames
-Date: Thu, 27 Mar 2014 20:14:01 +0000
-Message-Id: <1395951241-13302-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: send, don't crash if we attempt to build a too long path
+Date: Thu, 27 Mar 2014 20:17:12 +0000
+Message-Id: <1395951432-14230-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a continuation of the previous changes titled:
+There were recently fixed issues where an incremental send would enter
+an infinite loop when building a path string, which made it krealloc the
+path buffer over and over. This eventually lead to a kernel crash because
+we track the buffer's size in a 15 bits unsigned integer and eventually we
+ended up assigning it 32768 (returned by ksize) which made
+it get a value of 0. We then use this size to compute an offset into our
+buffer which falls outside its range (by 1 byte to the left) when the size
+is 0, which would make the memmove operation crash with the following trace:
 
-   Btrfs: fix incremental send's decision to delay a dir move/rename
-   Btrfs: part 2, fix incremental send's decision to delay a dir move/rename
+[ 8541.781613] BUG: unable to handle kernel paging request at ffff88009069c000
+[ 8541.781618] IP: [<ffffffff8136cf91>] memmove+0x81/0x1a0
+[ 8541.781623] PGD 2a2b067 PUD 21fb01067 PMD 21fa7d067 PTE 800000009069c060
+[ 8541.781626] Oops: 0002 [#1] SMP DEBUG_PAGEALLOC
+[ 8541.781628] Modules linked in: btrfs raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc psmouse serio_raw parport i2c_piix4 pcspkr evbug e1000 floppy [last unloaded: btrfs]
+[ 8541.781641] CPU: 3 PID: 28970 Comm: btrfs Not tainted 3.13.0-fdm-btrfs-next-24+ #1
+[ 8541.781642] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+[ 8541.781643] task: ffff88020967c920 ti: ffff880091246000 task.ti: ffff880091246000
+[ 8541.781644] RIP: 0010:[<ffffffff8136cf91>]  [<ffffffff8136cf91>] memmove+0x81/0x1a0
+[ 8541.781647] RSP: 0018:ffff8800912477c0  EFLAGS: 00010206
+[ 8541.781647] RAX: ffff88009069c000 RBX: ffff8800caed46d8 RCX: 0000000000000800
+[ 8541.781648] RDX: 0000000000004000 RSI: ffff8800906a0000 RDI: ffff88009069c000
+[ 8541.781649] RBP: ffff8800912477e8 R08: 0000000000000001 R09: 0000000000000000
+[ 8541.781650] R10: ffff88009069fff8 R11: 6b6b6b6b6b6b6b6b R12: 0000000000000000
+[ 8541.781651] R13: 0000000000004000 R14: 0000000000000113 R15: 0000000000000000
+[ 8541.781652] FS:  00007fb6c960e800(0000) GS:ffff880216400000(0000) knlGS:0000000000000000
+[ 8541.781653] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 8541.781656] CR2: ffff88009069c000 CR3: 00000000cce87000 CR4: 00000000000006e0
+[ 8541.781660] Stack:
+[ 8541.781660]  ffffffffa02dbfd3 ffffea0007a54300 ffff8800caed46d8 ffff880091247830
+[ 8541.781663]  0000000000000003 ffff880091247818 ffffffffa02dc316 000c000000000000
+[ 8541.781665]  ffff8800caed5918 ffff8800caed5918 0000000000000003 ffff880091247848
+[ 8541.781667] Call Trace:
+[ 8541.781679]  [<ffffffffa02dbfd3>] ? fs_path_ensure_buf+0xf3/0x110 [btrfs]
+[ 8541.781687]  [<ffffffffa02dc316>] fs_path_prepare_for_add+0x46/0xc0 [btrfs]
+[ 8541.781694]  [<ffffffffa02dc418>] fs_path_add_path+0x28/0x50 [btrfs]
+[ 8541.781701]  [<ffffffffa02de5a3>] get_cur_path+0x1f3/0x5a0 [btrfs]
+(...)
 
-There's a few more cases where a directory rename/move must be delayed which was
-previously overlooked. If our immediate ancestor has a lower inode number than
-ours and it doesn't have a delayed rename/move operation associated to it, it
-doesn't mean there isn't any non-direct ancestor of our current inode that needs
-to be renamed/moved before our current inode (i.e. with a higher inode number
-than ours).
-
-So we can't stop the search if our immediate ancestor has a lower inode number than
-ours, we need to navigate the directory hierarchy upwards until we hit the root or:
-
-1) find an ancestor with an higher inode number that was renamed/moved in the send
-   root too (or already has a pending rename/move registered);
-2) find an ancestor that is a new directory (higher inode number than ours and
-   exists only in the send root).
-
-Reproducer for case 1)
-
-    $ mkfs.btrfs -f /dev/sdd
-    $ mount /dev/sdd /mnt
-
-    $ mkdir -p /mnt/a/b
-    $ mkdir -p /mnt/a/c/d
-    $ mkdir /mnt/a/b/e
-    $ mkdir /mnt/a/c/d/f
-    $ mv /mnt/a/b /mnt/a/c/d/2b
-    $ mkdir /mnt/a/x
-    $ mkdir /mnt/a/y
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-    $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-    $ mv /mnt/a/x /mnt/a/y
-    $ mv /mnt/a/c/d/2b/e /mnt/a/c/d/2b/2e
-    $ mv /mnt/a/c/d /mnt/a/h/2d
-    $ mv /mnt/a/c /mnt/a/h/2d/2b/2c
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-Simple reproducer for case 2)
-
-    $ mkfs.btrfs -f /dev/sdd
-    $ mount /dev/sdd /mnt
-
-    $ mkdir -p /mnt/a/b
-    $ mkdir /mnt/a/c
-    $ mv /mnt/a/b /mnt/a/c/b2
-    $ mkdir /mnt/a/e
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-    $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-    $ mv /mnt/a/c/b2 /mnt/a/e/b3
-    $ mkdir /mnt/a/e/b3/f
-    $ mkdir /mnt/a/h
-    $ mv /mnt/a/c /mnt/a/e/b3/f/c2
-    $ mv /mnt/a/e /mnt/a/h/e2
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-Another simple reproducer for case 2)
-
-    $ mkfs.btrfs -f /dev/sdd
-    $ mount /dev/sdd /mnt
-
-    $ mkdir -p /mnt/a/b
-    $ mkdir /mnt/a/c
-    $ mkdir /mnt/a/b/d
-    $ mkdir /mnt/a/c/e
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-    $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-    $ mkdir /mnt/a/b/d/f
-    $ mkdir /mnt/a/b/g
-    $ mv /mnt/a/c/e /mnt/a/b/g/e2
-    $ mv /mnt/a/c /mnt/a/b/d/f/c2
-    $ mv /mnt/a/b/d/f /mnt/a/b/g/e2/f2
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-More complex reproducer for case 2)
-
-    $ mkfs.btrfs -f /dev/sdd
-    $ mount /dev/sdd /mnt
-
-    $ mkdir -p /mnt/a/b
-    $ mkdir -p /mnt/a/c/d
-    $ mkdir /mnt/a/b/e
-    $ mkdir /mnt/a/c/d/f
-    $ mv /mnt/a/b /mnt/a/c/d/2b
-    $ mkdir /mnt/a/x
-    $ mkdir /mnt/a/y
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap1
-    $ btrfs send /mnt/snap1 -f /tmp/base.send
-
-    $ mv /mnt/a/x /mnt/a/y
-    $ mv /mnt/a/c/d/2b/e /mnt/a/c/d/2b/2e
-    $ mv /mnt/a/c/d /mnt/a/h/2d
-    $ mv /mnt/a/c /mnt/a/h/2d/2b/2c
-
-    $ btrfs subvolume snapshot -r /mnt /mnt/snap2
-    $ btrfs send -p /mnt/snap1 /mnt/snap2 -f /tmp/incremental.send
-
-For both cases the incremental send would enter an infinite loop when building
-path strings.
-
-While solving these cases, this change also re-implements the code to detect
-when directory moves/renames should be delayed. Instead of dealing with several
-specific cases separately, it's now more generic handling all cases with a simple
-detection algorithm and if when applying a delayed move/rename there's a path loop
-detected, it further delays the move/rename registering a new ancestor inode as
-the dependency inode (so our rename happens after that ancestor is renamed).
-
-Tests for these cases is being added to xfstests too.
+Since we can't have path strings larger than PATH_MAX, just return with an
+ENAMETOOLONG error, which is likely caused by infinite path build loops due
+to changes in directory hierarchy. This is better then crashing the kernel
+and requiring a system reboot.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/send.c |  190 ++++++++++++++++++++++++++++---------------------------
- 1 file changed, 96 insertions(+), 94 deletions(-)
+ fs/btrfs/send.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 2952889..e2e422c 100644
+index e2e422c..41a4a45 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -2914,7 +2914,9 @@ static void free_waiting_dir_move(struct send_ctx *sctx,
- static int add_pending_dir_move(struct send_ctx *sctx,
- 				u64 ino,
- 				u64 ino_gen,
--				u64 parent_ino)
-+				u64 parent_ino,
-+				struct list_head *new_refs,
-+				struct list_head *deleted_refs)
- {
- 	struct rb_node **p = &sctx->pending_dir_moves.rb_node;
- 	struct rb_node *parent = NULL;
-@@ -2946,12 +2948,12 @@ static int add_pending_dir_move(struct send_ctx *sctx,
- 		}
- 	}
+@@ -349,6 +349,9 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+ 	if (p->buf_len >= len)
+ 		return 0;
  
--	list_for_each_entry(cur, &sctx->deleted_refs, list) {
-+	list_for_each_entry(cur, deleted_refs, list) {
- 		ret = dup_ref(cur, &pm->update_refs);
- 		if (ret < 0)
- 			goto out;
- 	}
--	list_for_each_entry(cur, &sctx->new_refs, list) {
-+	list_for_each_entry(cur, new_refs, list) {
- 		ret = dup_ref(cur, &pm->update_refs);
- 		if (ret < 0)
- 			goto out;
-@@ -2994,6 +2996,48 @@ static struct pending_dir_move *get_pending_dir_moves(struct send_ctx *sctx,
- 	return NULL;
- }
++	if (unlikely(len > PATH_MAX))
++		return -ENAMETOOLONG;
++
+ 	path_len = p->end - p->start;
+ 	old_buf_len = p->buf_len;
  
-+static int path_loop(struct send_ctx *sctx, struct fs_path *name,
-+		     u64 ino, u64 gen, u64 *ancestor_ino)
-+{
-+	int ret = 0;
-+	u64 parent_inode = 0;
-+	u64 parent_gen = 0;
+@@ -2140,6 +2143,7 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 	u64 parent_inode = 0;
+ 	u64 parent_gen = 0;
+ 	int stop = 0;
 +	u64 start_ino = ino;
-+
-+	*ancestor_ino = 0;
-+	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
-+		fs_path_reset(name);
-+
-+		if (is_waiting_for_rm(sctx, ino))
-+			break;
-+		if (is_waiting_for_move(sctx, ino)) {
-+			if (*ancestor_ino == 0)
-+				*ancestor_ino = ino;
-+			ret = get_first_ref(sctx->parent_root, ino,
-+					    &parent_inode, &parent_gen, name);
-+		} else {
-+			ret = __get_cur_name_and_parent(sctx, ino, gen,
-+							&parent_inode,
-+							&parent_gen, name);
-+			if (ret > 0) {
-+				ret = 0;
-+				break;
-+			}
-+		}
-+		if (ret < 0)
-+			break;
-+		if (parent_inode == start_ino) {
-+			ret = 1;
-+			if (*ancestor_ino == 0)
-+				*ancestor_ino = ino;
-+			break;
-+		}
-+		ino = parent_inode;
-+		gen = parent_gen;
-+	}
-+	return ret;
-+}
-+
- static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- {
- 	struct fs_path *from_path = NULL;
-@@ -3005,6 +3049,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 	struct waiting_dir_move *dm = NULL;
- 	u64 rmdir_ino = 0;
- 	int ret;
-+	u64 ancestor = 0;
  
  	name = fs_path_alloc();
- 	from_path = fs_path_alloc();
-@@ -3031,11 +3076,25 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 	if (ret < 0)
- 		goto out;
- 
-+	sctx->send_progress = sctx->cur_ino + 1;
-+	ret = path_loop(sctx, name, pm->ino, pm->gen, &ancestor);
-+	if (ret) {
-+		LIST_HEAD(deleted_refs);
-+		ASSERT(ancestor > BTRFS_FIRST_FREE_OBJECTID);
-+		ret = add_pending_dir_move(sctx, pm->ino, pm->gen, ancestor,
-+					   &pm->update_refs, &deleted_refs);
-+		if (ret < 0)
-+			goto out;
-+		if (rmdir_ino) {
-+			dm = get_waiting_dir_move(sctx, pm->ino);
-+			ASSERT(dm);
-+			dm->rmdir_ino = rmdir_ino;
-+		}
-+		goto out;
-+	}
- 	fs_path_reset(name);
- 	to_path = name;
- 	name = NULL;
--
--	sctx->send_progress = sctx->cur_ino + 1;
- 	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
- 	if (ret < 0)
- 		goto out;
-@@ -3159,127 +3218,74 @@ out:
- static int wait_for_parent_move(struct send_ctx *sctx,
- 				struct recorded_ref *parent_ref)
- {
--	int ret;
-+	int ret = 0;
- 	u64 ino = parent_ref->dir;
- 	u64 parent_ino_before, parent_ino_after;
--	u64 old_gen;
- 	struct fs_path *path_before = NULL;
- 	struct fs_path *path_after = NULL;
- 	int len1, len2;
--	int register_upper_dirs;
--	u64 gen;
--
--	if (is_waiting_for_move(sctx, ino))
--		return 1;
--
--	if (parent_ref->dir <= sctx->cur_ino)
--		return 0;
--
--	ret = get_inode_info(sctx->parent_root, ino, NULL, &old_gen,
--			     NULL, NULL, NULL, NULL);
--	if (ret == -ENOENT)
--		return 0;
--	else if (ret < 0)
--		return ret;
--
--	if (parent_ref->dir_gen != old_gen)
--		return 0;
--
--	path_before = fs_path_alloc();
--	if (!path_before)
--		return -ENOMEM;
--
--	ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
--			    NULL, path_before);
--	if (ret == -ENOENT) {
--		ret = 0;
--		goto out;
--	} else if (ret < 0) {
--		goto out;
--	}
- 
- 	path_after = fs_path_alloc();
--	if (!path_after) {
-+	path_before = fs_path_alloc();
-+	if (!path_after || !path_before) {
- 		ret = -ENOMEM;
- 		goto out;
- 	}
- 
--	ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
--			    &gen, path_after);
--	if (ret == -ENOENT) {
--		ret = 0;
--		goto out;
--	} else if (ret < 0) {
--		goto out;
--	}
--
--	len1 = fs_path_len(path_before);
--	len2 = fs_path_len(path_after);
--	if (parent_ino_before != parent_ino_after || len1 != len2 ||
--	     memcmp(path_before->start, path_after->start, len1)) {
--		ret = 1;
--		goto out;
--	}
--	ret = 0;
--
- 	/*
--	 * Ok, our new most direct ancestor has a higher inode number but
--	 * wasn't moved/renamed. So maybe some of the new ancestors higher in
--	 * the hierarchy have an higher inode number too *and* were renamed
--	 * or moved - in this case we need to wait for the ancestor's rename
--	 * or move operation before we can do the move/rename for the current
--	 * inode.
-+	 * Our current directory inode may not yet be renamed/moved because some
-+	 * ancestor (immediate or not) has to be renamed/moved first. So find if
-+	 * such ancestor exists and make sure our own rename/move happens after
-+	 * that ancestor is processed.
- 	 */
--	register_upper_dirs = 0;
--	ino = parent_ino_after;
--again:
--	while ((ret == 0 || register_upper_dirs) && ino > sctx->cur_ino) {
--		u64 parent_gen;
-+	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
-+		if (is_waiting_for_move(sctx, ino)) {
-+			ret = 1;
-+			break;
-+		}
- 
- 		fs_path_reset(path_before);
- 		fs_path_reset(path_after);
- 
- 		ret = get_first_ref(sctx->send_root, ino, &parent_ino_after,
--				    &parent_gen, path_after);
-+				    NULL, path_after);
- 		if (ret < 0)
- 			goto out;
- 		ret = get_first_ref(sctx->parent_root, ino, &parent_ino_before,
- 				    NULL, path_before);
--		if (ret == -ENOENT) {
--			ret = 0;
--			break;
--		} else if (ret < 0) {
-+		if (ret < 0 && ret != -ENOENT) {
- 			goto out;
-+		} else if (ret == -ENOENT) {
-+			ret = 1;
-+			break;
- 		}
- 
- 		len1 = fs_path_len(path_before);
- 		len2 = fs_path_len(path_after);
--		if (parent_ino_before != parent_ino_after || len1 != len2 ||
--		    memcmp(path_before->start, path_after->start, len1)) {
-+		if (ino > sctx->cur_ino &&
-+		    (parent_ino_before != parent_ino_after || len1 != len2 ||
-+		     memcmp(path_before->start, path_after->start, len1))) {
- 			ret = 1;
--			if (register_upper_dirs) {
--				break;
--			} else {
--				register_upper_dirs = 1;
--				ino = parent_ref->dir;
--				gen = parent_ref->dir_gen;
--				goto again;
--			}
--		} else if (register_upper_dirs) {
--			ret = add_pending_dir_move(sctx, ino, gen,
--						   parent_ino_after);
--			if (ret < 0 && ret != -EEXIST)
--				goto out;
-+			break;
- 		}
--
- 		ino = parent_ino_after;
--		gen = parent_gen;
- 	}
- 
- out:
- 	fs_path_free(path_before);
- 	fs_path_free(path_after);
- 
-+	if (ret == 1) {
-+		ret = add_pending_dir_move(sctx,
-+					   sctx->cur_ino,
-+					   sctx->cur_inode_gen,
-+					   ino,
-+					   &sctx->new_refs,
-+					   &sctx->deleted_refs);
-+		if (!ret)
-+			ret = 1;
-+	}
-+
+ 	if (!name) {
+@@ -2187,6 +2191,12 @@ out:
+ 	fs_path_free(name);
+ 	if (!ret)
+ 		fs_path_unreverse(dest);
++	else if (unlikely(ret == -ENAMETOOLONG))
++		btrfs_warn(sctx->send_root->fs_info,
++			   "Possible path build loop in send operation, inode %llu, send root %llu, parent root %llu",
++			   start_ino, sctx->send_root->root_key.objectid,
++			   sctx->parent_root ?
++			   sctx->parent_root->root_key.objectid : 0);
  	return ret;
  }
  
-@@ -3440,10 +3446,6 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
- 				if (ret < 0)
- 					goto out;
- 				if (ret) {
--					ret = add_pending_dir_move(sctx,
--							   sctx->cur_ino,
--							   sctx->cur_inode_gen,
--							   cur->dir);
- 					*pending_move = 1;
- 				} else {
- 					ret = send_rename(sctx, valid_path,
 -- 
 1.7.10.4
 

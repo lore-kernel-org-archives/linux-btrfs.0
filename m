@@ -1,39 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46644 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751431AbaC1Xr6 convert rfc822-to-8bit (ORCPT
+Received: from mail.automatix.de ([213.131.255.221]:33038 "EHLO
+	mail.automatix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751711AbaC2Q2J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Mar 2014 19:47:58 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 7.2 \(1874\))
-Subject: Re: RHEL/CentOS or Debian for stable deployment
-From: Avi Miller <avi.miller@oracle.com>
-In-Reply-To: <533607E1.8060202@benjamindsmith.com>
-Date: Sat, 29 Mar 2014 10:47:53 +1100
-Cc: =?windows-1252?Q?Johan_Kr=F6ckel?= <johan.kroeckel@gmail.com>,
+	Sat, 29 Mar 2014 12:28:09 -0400
+Message-ID: <5336F2D9.4090602@automatix.de>
+Date: Sat, 29 Mar 2014 17:20:41 +0100
+From: Juergen Sauer <juergen.sauer@automatix.de>
+MIME-Version: 1.0
+To: =?UTF-8?B?Sm9oYW4gS3LDtmNrZWw=?= <johan.kroeckel@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <9E7F7A76-9D7D-4410-AD88-2BD95C56A80D@oracle.com>
-References: <CABgvyo_b19P2QPzszv6Vxc2iHOceP-ndCp1oUzO6Hc=Z4CiJ=A@mail.gmail.com> <CF9CC748-3700-4D4F-AB96-03F27EA9C32B@oracle.com> <533607E1.8060202@benjamindsmith.com>
-To: Lists <lists@benjamindsmith.com>
+Subject: Re: RHEL/CentOS or Debian for stable deployment
+References: <CABgvyo_b19P2QPzszv6Vxc2iHOceP-ndCp1oUzO6Hc=Z4CiJ=A@mail.gmail.com>
+In-Reply-To: <CABgvyo_b19P2QPzszv6Vxc2iHOceP-ndCp1oUzO6Hc=Z4CiJ=A@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-On 29 Mar 2014, at 10:38 am, Lists <lists@benjamindsmith.com> wrote:
-
-> On 03/28/2014 02:42 PM, Avi Miller wrote:
->> Have you considered Oracle Linux? We are continually backporting btrfs fixes and enhancements to our Unbreakable Enterprise Kernel releases. On Oracle Linux 6, you would run the UEK Release 3, which is based on 3.8 mainline with upstream fixes. We also provide all security and bug fix errata for free viahttp://public-yum.oracle.com, so you don�t need to buy support to run Oracle Linux at keep up-to-date.
+Am 28.03.2014 13:29, schrieb Johan Kröckel:
+> Hello,
+> I am not sure whether this is the correct list, but I will try...
+> I am on the way to deploy new server and already am using
+> btrfs-volumes. At this point not for root, but in case a stable setup
+> is possible, this would be cool, too.
 > 
-> Can't remember asking if btrfs is supported on 32 bit kernels?
+> I don't want to use vanilla kernel because I like it when someone else
+> is watching security issues for me.
+> So the question is:
+> Which source for the kernel binaries would you use, to get stable
+> btrfs support together with mentioned service?
+> I am asking, because I don't know how Red Hat and Debian (Backports
+> channel) are dealing with backporting new btrfs code to their
+> distributed kernels.
 
-We support btrfs on our 32-bit UEK Release 2 (labelled 2.6.39 but it�s actually 3.0 under the hood. Yay userspace issues). However, our latest UEK Release 3 (3.8 both labelled and under-the-hood) is only built for 64-bit and is highly recommended for production btrfs usage. We are no longer back porting mainline fixes into UEK Release 2 because the code has just moved on too far for it to be feasible.
+None is really usable for development,  IMHO.
 
-So, while there is a 32-bit kernel with btrfs support, our recommendation is to use the 64-bit kernel on x86_64 hardware for the best experience.
+For Development we prefer "Arch Linux", it somewhat more "Bare Linux",
+mostly all packages made from unpatched and unmodified "vanilla" sources.
 
---
-Oracle <http://www.oracle.com>
-Avi Miller | Product Management Director | +61 (3) 8616 3496
-Oracle Linux and Virtualization
-417 St Kilda Road, Melbourne, Victoria 3004 Australia
+Debian and CentOS are for Development mucht "to matrue", or harder
+spoken, much too old.
+If a product is ready for deployment, the other Debian / Ubuntu / SuSE /
+Fedora / RedHat / CentOS got the Level of the system, which Arch had on
+start time of development.
 
+Then we enter package stage and depoy the product to the "stable"
+Distributions.
+
+On stable Setup/Server we prefer Debian or Ubuntu.
+
+The Enterprise Distributions (aka. RHEL, SELS, CentOS) are looking to us
+sometimes like "software achrchelogy ...
+
+
+mit freundlichen Grüßen
+Jürgen Sauer
+- -- 
+Jürgen Sauer - automatiX GmbH,
++49-4209-4699, juergen.sauer@automatix.de
+Geschäftsführer: Jürgen Sauer,
+Gerichtstand: Amtsgericht Walsrode • HRB 120986
+Ust-Id: DE191468481 • St.Nr.: 36/211/08000
+GPG Public Key zur Signaturprüfung:
+http://www.automatix.de/juergen_sauer_publickey.gpg
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iEYEARECAAYFAlM28tkACgkQW7UKI9EqarH/UgCeM/rQ2wKUjXC0az3UuCaSCW0O
+ceMAoLGBXtYoqN5gi1CWvG7RHQbyF/r0
+=4gue
+-----END PGP SIGNATURE-----

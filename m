@@ -1,96 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:63537 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752754AbaC1VQE (ORCPT
+Received: from mail-pd0-f182.google.com ([209.85.192.182]:62405 "EHLO
+	mail-pd0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751864AbaC2XZa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Mar 2014 17:16:04 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s2SLEmmS023199
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Mar 2014 14:16:04 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1jw7bw9x3n-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Mar 2014 14:16:04 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: hold the commit_root_sem when getting the commit root during send
-Date: Fri, 28 Mar 2014 17:16:01 -0400
-Message-ID: <1396041361-7082-1-git-send-email-jbacik@fb.com>
+	Sat, 29 Mar 2014 19:25:30 -0400
+Received: by mail-pd0-f182.google.com with SMTP id y10so6334367pdj.41
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2014 16:25:30 -0700 (PDT)
+Received: from localhost.localdomain ([72.235.164.16])
+        by mx.google.com with ESMTPSA id pv4sm33753648pbb.55.2014.03.29.16.25.28
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sat, 29 Mar 2014 16:25:29 -0700 (PDT)
+Message-ID: <53375669.4070605@hawaii.edu>
+Date: Sat, 29 Mar 2014 13:25:29 -1000
+From: jon <jmoroney@hawaii.edu>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: Potential rebalance bug plus some questions
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We currently rely too heavily on roots being read-only to save us from just
-accessing root->commit_root.  We can easily balance blocks out from underneath a
-read only root, so to save us from getting screwed make sure we only access
-root->commit_root under the commit root sem.  Thanks,
+Hi all,
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/ctree.c | 6 ++++++
- fs/btrfs/ctree.h | 1 +
- fs/btrfs/send.c  | 1 +
- 3 files changed, 8 insertions(+)
+First off I've got a couple of questions that I posed over on the 
+fedoraforum
+http://www.forums.fedoraforum.org/showthread.php?t=298142
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 71bbafe..0e9569c 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2769,9 +2769,13 @@ again:
- 		 * the commit roots are read only
- 		 * so we always do read locks
- 		 */
-+		if (p->need_commit_sem)
-+			down_read(&root->fs_info->commit_root_sem);
- 		b = root->commit_root;
- 		extent_buffer_get(b);
- 		level = btrfs_header_level(b);
-+		if (p->need_commit_sem)
-+			up_read(&root->fs_info->commit_root_sem);
- 		if (!p->skip_locking)
- 			btrfs_tree_read_lock(b);
- 	} else {
-@@ -5436,6 +5440,7 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 	 *   the right if possible or go up and right.
- 	 */
- 
-+	down_read(&left_root->fs_info->commit_root_sem);
- 	left_level = btrfs_header_level(left_root->commit_root);
- 	left_root_level = left_level;
- 	left_path->nodes[left_level] = left_root->commit_root;
-@@ -5445,6 +5450,7 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
- 	right_root_level = right_level;
- 	right_path->nodes[right_level] = right_root->commit_root;
- 	extent_buffer_get(right_path->nodes[right_level]);
-+	up_read(&left_root->fs_info->commit_root_sem);
- 
- 	if (left_level == 0)
- 		btrfs_item_key_to_cpu(left_path->nodes[left_level],
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2277006..453d859 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -609,6 +609,7 @@ struct btrfs_path {
- 	unsigned int skip_locking:1;
- 	unsigned int leave_spinning:1;
- 	unsigned int search_commit_root:1;
-+	unsigned int need_commit_sem:1;
- };
- 
- /*
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6f035ee..7e7552c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -493,6 +493,7 @@ static struct btrfs_path *alloc_path_for_send(void)
- 		return NULL;
- 	path->search_commit_root = 1;
- 	path->skip_locking = 1;
-+	path->need_commit_sem = 1;
- 	return path;
- }
- 
--- 
-1.8.3.1
+"I'm in the process of building a btrfs storage server (mostly for 
+evaluation) and I'm trying to understand the COW system. As I understand 
+it no data is over written when file X is changed ot file Y is created, 
+but what happens when you get to the end of your disk?
+Say you write files X1, X2, ... Xn which fills up your disk. You then 
+delete X1 through Xn-1, does the disk space actually free up? How does 
+this affect the 30 second snapshot mechanism and all the roll back stuff?
 
+Second, the raid functionality works at the filesystem block level 
+rather than the device block level. Ok cool, so "raid 1" is creating two 
+copies of every block and sticking each copy on a different device 
+instead of block mirroring over multipul devices. So you can have a 
+"raid 1" in 3, 5, or n disks. If I understand that correctly then you 
+should be able to lose a single disk out of a raid 1 and still have all 
+your data where lossing two disks may kill off data. Is that right? Is 
+there a good rundown on "raid" levels in btrfs somewhere?"
+
+If anyone could field those I would be very thankful. Second, I've got a 
+centOS 6 box with the current epel kernel and btrfs progs (3.12) on 
+which I'm playing with the raid1 setup. Using four disks, I created an 
+array
+mkfs.btrfs -d raid1 -m raid1 /dev/sd[b-e]
+mounted via uuid and rebooted. At this point all was well
+Next I simulated a disk failure by pulling the power on the disk sdb and 
+I was still able to get at my data. Great.
+Plugged sdb back in and it came up as /dev/sdg, ok whatever. Next I did 
+a rebalance of the array which is what I *think* killed it. The 
+rebalance went on, I saw many I/O errors, but I dismissed them as they 
+were all about sdb.
+After the rebalance I removed /dev/sdb from the pool, added /dev/sdg and 
+rebooted.
+On the reboot the pool failed to mount at all. dmesg showed something 
+like "btrfs open_ctree failure" (sorry, don't have access to the box atm).
+
+So tl;dr I think there may be an issue with the balance command when a 
+disk is offline.
+
+Jon

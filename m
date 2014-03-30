@@ -1,43 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59504 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751095AbaCaVRB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Mar 2014 17:17:01 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WUjZi-0000C5-RK
-	for linux-btrfs@vger.kernel.org; Mon, 31 Mar 2014 23:16:58 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 23:16:58 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 23:16:58 +0200
+Received: from mail-ee0-f47.google.com ([74.125.83.47]:56971 "EHLO
+	mail-ee0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751570AbaC3J6R (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Mar 2014 05:58:17 -0400
+Received: by mail-ee0-f47.google.com with SMTP id b15so5527176eek.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 30 Mar 2014 02:58:16 -0700 (PDT)
+Received: from linuxpc.localnet (188-22-82-140.adsl.highway.telekom.at. [188.22.82.140])
+        by mx.google.com with ESMTPSA id x45sm24667490eeu.23.2014.03.30.02.58.15
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sun, 30 Mar 2014 02:58:15 -0700 (PDT)
+From: GEO <1g2e3o4@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [Help] Errors found in extent allocation tree or chunk
- allocation
-Date: Mon, 31 Mar 2014 21:16:49 +0000 (UTC)
-Message-ID: <pan$b01c7$4544c957$810839fd$58ae84bc@cox.net>
-References: <ac786c9023364c699d8212b42da536f2-mfwitten@gmail.com>
-	<pan$6d267$8b0a867f$c580cca9$4eb55f7b@cox.net>
-	<20b782af1cb448c39cce358cd6d37e8c-mfwitten@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Backup: Compare sent snapshots
+Date: Sun, 30 Mar 2014 10:58:13 +0200
+Message-ID: <8465933.4bvG1Xk5zJ@linuxpc>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Witten posted on Mon, 31 Mar 2014 20:33:39 +0000 as excerpted:
+Hi,
 
-> I apologize if that ASCII art fails to render properly on your end.
+I am doing backups regularly following the scheme of 
+https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
 
-FWIW I make a point of configuring monospace fonts as default for 
-internet message (Mail and news) bodies, precisely so I CAN properly view 
-ascii-art.  So it came thru very nicely here. =:^)
+It states we keep a local reference of the read only snapshot we sent to the 
+backup drive, which I understand.
+But now I have a question:  When I do a read only snapshot of home, send the 
+difference to the backup drive, keep it until the next incremental step, send 
+the difference to the backup drive, remove the old read only snapshot and so 
+on...
+I wonder what happens if the read only snapshot I keep as a local reference 
+got corrupted somehow. 
+Then maybe too much difference would be sent which would not be dramatic, or 
+too less, which would be. 
+Is there a quick way I could compare the last sent snapshot to the local one, 
+to make sure the local reference is still the same?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Apart from that, imagine I somehow lost the local reference (e.g. delete it by 
+mistake), would there still be a way to sync the difference to the last sent 
+snapshot on the backup device?
+
+
 

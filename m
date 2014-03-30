@@ -1,67 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f182.google.com ([209.85.192.182]:62405 "EHLO
-	mail-pd0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751864AbaC2XZa (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:40226 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752554AbaC3A2j (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Mar 2014 19:25:30 -0400
-Received: by mail-pd0-f182.google.com with SMTP id y10so6334367pdj.41
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2014 16:25:30 -0700 (PDT)
-Received: from localhost.localdomain ([72.235.164.16])
-        by mx.google.com with ESMTPSA id pv4sm33753648pbb.55.2014.03.29.16.25.28
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Sat, 29 Mar 2014 16:25:29 -0700 (PDT)
-Message-ID: <53375669.4070605@hawaii.edu>
-Date: Sat, 29 Mar 2014 13:25:29 -1000
-From: jon <jmoroney@hawaii.edu>
-MIME-Version: 1.0
+	Sat, 29 Mar 2014 20:28:39 -0400
+Received: from 24-182-54-115.dhcp.crcy.nv.charter.com ([24.182.54.115]:40228 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WU3c7-00027D-Fr by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Mar 2014 17:28:39 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1WU3c5-0002Qa-Nl
+	for linux-btrfs@vger.kernel.org; Sat, 29 Mar 2014 17:28:37 -0700
+Date: Sat, 29 Mar 2014 17:28:37 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Potential rebalance bug plus some questions
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Btrfs file content missmatch incrementally sending subvolumes
+ containing systemd journal files
+Message-ID: <20140330002837.GQ22552@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+I had someone asking me about this bug:
+Btrfs file content missmatch incrementally sending subvolumes containing systemd journal files
+https://bugzilla.kernel.org/show_bug.cgi?id=66941
 
-First off I've got a couple of questions that I posed over on the 
-fedoraforum
-http://www.forums.fedoraforum.org/showthread.php?t=298142
+Specifically:
+Just to note, I have also this issue with other files:
+jkarlson/.config/chromium/Default/Archived History
+jkarlson/.local/share/Trash/files/wheezy-x86_64.img
+jkarlson/.local/share/evolution/addressbook/system/log.0000000001
+jkarlson/.local/storage/vm-images/wheezy-x86_32.img
+jkarlson/.local/storage/vm-images/wheezy-x86_64.img
+jkarlson/.local/storage/vm-images/windows-2008-server.img
 
-"I'm in the process of building a btrfs storage server (mostly for 
-evaluation) and I'm trying to understand the COW system. As I understand 
-it no data is over written when file X is changed ot file Y is created, 
-but what happens when you get to the end of your disk?
-Say you write files X1, X2, ... Xn which fills up your disk. You then 
-delete X1 through Xn-1, does the disk space actually free up? How does 
-this affect the 30 second snapshot mechanism and all the roll back stuff?
+This is a bit worrisome since it affects sqlite3 too apparently
+(firefox/chrome).
 
-Second, the raid functionality works at the filesystem block level 
-rather than the device block level. Ok cool, so "raid 1" is creating two 
-copies of every block and sticking each copy on a different device 
-instead of block mirroring over multipul devices. So you can have a 
-"raid 1" in 3, 5, or n disks. If I understand that correctly then you 
-should be able to lose a single disk out of a raid 1 and still have all 
-your data where lossing two disks may kill off data. Is that right? Is 
-there a good rundown on "raid" levels in btrfs somewhere?"
+Do others know the status of this?
 
-If anyone could field those I would be very thankful. Second, I've got a 
-centOS 6 box with the current epel kernel and btrfs progs (3.12) on 
-which I'm playing with the raid1 setup. Using four disks, I created an 
-array
-mkfs.btrfs -d raid1 -m raid1 /dev/sd[b-e]
-mounted via uuid and rebooted. At this point all was well
-Next I simulated a disk failure by pulling the power on the disk sdb and 
-I was still able to get at my data. Great.
-Plugged sdb back in and it came up as /dev/sdg, ok whatever. Next I did 
-a rebalance of the array which is what I *think* killed it. The 
-rebalance went on, I saw many I/O errors, but I dismissed them as they 
-were all about sdb.
-After the rebalance I removed /dev/sdb from the pool, added /dev/sdg and 
-rebooted.
-On the reboot the pool failed to mount at all. dmesg showed something 
-like "btrfs open_ctree failure" (sorry, don't have access to the box atm).
-
-So tl;dr I think there may be an issue with the balance command when a 
-disk is offline.
-
-Jon
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

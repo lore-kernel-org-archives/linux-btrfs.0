@@ -1,45 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42794 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751310AbaCaMbi (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:53223 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753184AbaCaMw1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Mar 2014 08:31:38 -0400
-Message-ID: <5339602B.2070207@fb.com>
-Date: Mon, 31 Mar 2014 08:31:39 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Btrfs: don't compress for a small write
-References: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+	Mon, 31 Mar 2014 08:52:27 -0400
+Received: by mail-wi0-f179.google.com with SMTP id z2so1477218wiv.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 05:52:26 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: send, build path string only once in send_hole
+Date: Mon, 31 Mar 2014 14:52:14 +0100
+Message-Id: <1396273934-15888-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There's no point building the path string in each iteration of the
+send_hole loop, as it produces always the same string.
 
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/send.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-On 03/24/2014 05:58 AM, Wang Shilong wrote:
-> To compress a small write(<=blocksize) dosen't save us
-> disk space at all, skip it can save us some compression time.
->
-> This patch can also fix wrong setting nocompression flag for
-> inode, say a case when @total_in is 4096, and then we get
-> @total_compressed 52,because we do aligment to page cache size
-> firstly, and then we get into conclusion @total_in=@total_compressed
-> thus we will clear this inode's compression flag.
->
-> An exception comes from inserting inline extent failure but we
-> still have @total_compressed < @total_in,so we will still reset
-> inode's flag, this is ok, because we don't have good compression
-> effect.
->
-
-So your check for start > 0 || end + 1 < disk_i_size means we're only 
-skipping compression for a small file range that isn't in an inline 
-extent.   Could you please update the patch description and comments in 
-the code to reflect this?
-
-Thanks!
-
--chris
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 281ab2c..c81e0d9 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4410,6 +4410,9 @@ static int send_hole(struct send_ctx *sctx, u64 end)
+ 	p = fs_path_alloc();
+ 	if (!p)
+ 		return -ENOMEM;
++	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
++	if (ret < 0)
++		goto tlv_put_failure;
+ 	memset(sctx->read_buf, 0, BTRFS_SEND_READ_SIZE);
+ 	while (offset < end) {
+ 		len = min_t(u64, end - offset, BTRFS_SEND_READ_SIZE);
+@@ -4417,9 +4420,6 @@ static int send_hole(struct send_ctx *sctx, u64 end)
+ 		ret = begin_cmd(sctx, BTRFS_SEND_C_WRITE);
+ 		if (ret < 0)
+ 			break;
+-		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
+-		if (ret < 0)
+-			break;
+ 		TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+ 		TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+ 		TLV_PUT(sctx, BTRFS_SEND_A_DATA, sctx->read_buf, len);
+-- 
+1.7.10.4
 

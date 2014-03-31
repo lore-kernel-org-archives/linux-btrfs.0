@@ -1,42 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw6a-delilah.wadns.net ([196.220.39.210]:14502 "EHLO
-	fw6a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751982AbaCaLRl (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42794 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751310AbaCaMbi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Mar 2014 07:17:41 -0400
-Message-ID: <53394EC0.8020007@swiftspirit.co.za>
-Date: Mon, 31 Mar 2014 13:17:20 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+	Mon, 31 Mar 2014 08:31:38 -0400
+Message-ID: <5339602B.2070207@fb.com>
+Date: Mon, 31 Mar 2014 08:31:39 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-kernel@vger.kernel.org
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] lib: add size unit t/p/e to memparse
-References: <1396260185-14109-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1396260185-14109-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] Btrfs: don't compress for a small write
+References: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 31/03/14 12:03, Gui Hecheng wrote:
-> - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
-> - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
-> - *	1073741824).  If the number is suffixed with K, M, or G, then
-> + *	potentially suffixed with
-> + *	%K (for kilobytes, or 1024 bytes),
-> + *	%M (for megabytes, or 1048576 bytes),
-> + *	%G (for gigabytes, or 1073741824),
-> + *	%T (for terabytes, or 1099511627776),
-> + *	%P (for petabytes, or 1125899906842624 bytes),
-> + *	%E (for exabytes, or 1152921504606846976 bytes).
 
-My apologies, I should have noticed this in your earlier mail. This 
-could be updated to specifically refer to the "bi"nary prefixes rather 
-than the old SI-conflicting names:
-kibibyte, mebibyte, gibibyte, tebibyte, pebibyte, and exbibyte
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+On 03/24/2014 05:58 AM, Wang Shilong wrote:
+> To compress a small write(<=blocksize) dosen't save us
+> disk space at all, skip it can save us some compression time.
+>
+> This patch can also fix wrong setting nocompression flag for
+> inode, say a case when @total_in is 4096, and then we get
+> @total_compressed 52,because we do aligment to page cache size
+> firstly, and then we get into conclusion @total_in=@total_compressed
+> thus we will clear this inode's compression flag.
+>
+> An exception comes from inserting inline extent failure but we
+> still have @total_compressed < @total_in,so we will still reset
+> inode's flag, this is ok, because we don't have good compression
+> effect.
+>
+
+So your check for start > 0 || end + 1 < disk_i_size means we're only 
+skipping compression for a small file range that isn't in an inline 
+extent.   Could you please update the patch description and comments in 
+the code to reflect this?
+
+Thanks!
+
+-chris
 

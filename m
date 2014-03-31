@@ -1,65 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f177.google.com ([209.85.214.177]:64098 "EHLO
-	mail-ob0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753035AbaCJQBT (ORCPT
+Received: from mail-yh0-f45.google.com ([209.85.213.45]:51975 "EHLO
+	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751061AbaCaWvc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Mar 2014 12:01:19 -0400
-Received: by mail-ob0-f177.google.com with SMTP id wo20so6805950obc.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Mar 2014 09:01:18 -0700 (PDT)
+	Mon, 31 Mar 2014 18:51:32 -0400
+Received: by mail-yh0-f45.google.com with SMTP id a41so8267140yho.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 15:51:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <531DDF7E.305@fb.com>
-References: <1392608637-24756-1-git-send-email-sachin.kamat@linaro.org>
-	<CAK9yfHyz66Zt5ZdKy1LYfE1skh-Z5Qx9p6y5Agg1EtKzof0jYg@mail.gmail.com>
-	<531DDF7E.305@fb.com>
-Date: Mon, 10 Mar 2014 21:31:18 +0530
-Message-ID: <CAK9yfHw0Xi4WXbJ24JqfSOzZ8=3hRP6X+niTvbbb9sz6vVjtvg@mail.gmail.com>
-Subject: Re: [PATCH Resend] btrfs: Use PTR_ERR_OR_ZERO
-From: Sachin Kamat <sachin.kamat@linaro.org>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, clm <clm@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <pan$b01c7$4544c957$810839fd$58ae84bc@cox.net>
+References: <ac786c9023364c699d8212b42da536f2-mfwitten@gmail.com>
+ <pan$6d267$8b0a867f$c580cca9$4eb55f7b@cox.net> <20b782af1cb448c39cce358cd6d37e8c-mfwitten@gmail.com>
+ <pan$b01c7$4544c957$810839fd$58ae84bc@cox.net>
+From: Michael Witten <mfwitten@gmail.com>
+Date: Mon, 31 Mar 2014 22:51:01 +0000
+Message-ID: <CAMOZ1Bs8LS_0mYYrsMLZsPwN4rL0a=UpdMc=dE8K5P_g7YK3VA@mail.gmail.com>
+Subject: Re: [Help] Errors found in extent allocation tree or chunk allocation
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10 March 2014 21:21, Josef Bacik <jbacik@fb.com> wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 03/10/2014 11:25 AM, Sachin Kamat wrote:
->> On 17 February 2014 09:13, Sachin Kamat <sachin.kamat@linaro.org>
->> wrote:
->>> PTR_RET is deprecated. Use PTR_ERR_OR_ZERO instead. While at it
->>> also include missing err.h header.
->>>
->>> Signed-off-by: Sachin Kamat <sachin.kamat@linaro.org> ---
->>> fs/btrfs/root-tree.c |    3 ++- 1 file changed, 2 insertions(+),
->>> 1 deletion(-)
->>>
->>> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c index
->>> 1389b69059de..38bb47e7d6b1 100644 --- a/fs/btrfs/root-tree.c +++
->>> b/fs/btrfs/root-tree.c @@ -16,6 +16,7 @@ * Boston, MA
->>> 021110-1307, USA. */
->>>
->>> +#include <linux/err.h> #include <linux/uuid.h> #include
->>> "ctree.h" #include "transaction.h" @@ -271,7 +272,7 @@ int
->>> btrfs_find_orphan_roots(struct btrfs_root *tree_root)
->>> key.offset++;
->>>
->>> root = btrfs_read_fs_root(tree_root, &root_key); -
->>> err = PTR_RET(root); +               err =
->>> PTR_ERR_OR_ZERO(root); if (err && err != -ENOENT) { break; } else
->>> if (err == -ENOENT) { -- 1.7.9.5
->>>
->>
->> Ping..
->>
->
-> It's in my current batch, I'm just tracking down problems with other
-> patches in this batch, it should be pushed out in the next day or two.
+On Mon, Mar 31, 2014 at 9:16 PM, Duncan wrote:
 
-Thanks Josef.
+> FWIW I make a point of configuring monospace fonts as default for
+> internet message (Mail and news) bodies, precisely so I CAN properly view
+> ascii-art.  So it came thru very nicely here. =:^)
 
 
--- 
-With warm regards,
-Sachin
+That's good to know; unfortunately, you can never be too sure these days.

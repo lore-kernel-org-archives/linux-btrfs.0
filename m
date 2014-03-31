@@ -1,60 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f47.google.com ([209.85.192.47]:64146 "EHLO
-	mail-qg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753313AbaCaMxI (ORCPT
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:52109 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752918AbaCaMxd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Mar 2014 08:53:08 -0400
-Received: by mail-qg0-f47.google.com with SMTP id 63so7295336qgz.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 05:53:07 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <5339602B.2070207@fb.com>
-References: <1395655091-5318-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-	<5339602B.2070207@fb.com>
-Date: Mon, 31 Mar 2014 20:53:05 +0800
-Message-ID: <CAP9B-Qk+t3Sm80PvB8h0sa1zg0H1j=9ghdiQss6jFk2sRgJ15g@mail.gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs: don't compress for a small write
-From: Shilong Wang <wangshilong1991@gmail.com>
-To: Chris Mason <clm@fb.com>
-Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Mon, 31 Mar 2014 08:53:33 -0400
+Received: by mail-wi0-f169.google.com with SMTP id hm4so3098198wib.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Mar 2014 05:53:32 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: more efficient io tree navigation on wait_extent_bit
+Date: Mon, 31 Mar 2014 14:53:25 +0100
+Message-Id: <1396274005-16360-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-03-31 20:31 GMT+08:00 Chris Mason <clm@fb.com>:
->
->
-> On 03/24/2014 05:58 AM, Wang Shilong wrote:
->>
->> To compress a small write(<=blocksize) dosen't save us
->> disk space at all, skip it can save us some compression time.
->>
->> This patch can also fix wrong setting nocompression flag for
->> inode, say a case when @total_in is 4096, and then we get
->> @total_compressed 52,because we do aligment to page cache size
->> firstly, and then we get into conclusion @total_in=@total_compressed
->> thus we will clear this inode's compression flag.
->>
->> An exception comes from inserting inline extent failure but we
->> still have @total_compressed < @total_in,so we will still reset
->> inode's flag, this is ok, because we don't have good compression
->> effect.
->>
->
-> So your check for start > 0 || end + 1 < disk_i_size means we're only
-> skipping compression for a small file range that isn't in an inline extent.
-> Could you please update the patch description and comments in the code to
-> reflect this?
+If we don't reschedule use rb_next to find the next extent state
+instead of a full tree search, which is more efficient and safe
+since we didn't release the io tree's lock.
 
-No problem, i will update this patch.~_~
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/extent_io.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
->
-> Thanks!
->
-> -chris
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fd78c84..50a3321 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -749,6 +749,7 @@ again:
+ 		 * our range starts
+ 		 */
+ 		node = tree_search(tree, start);
++process_node:
+ 		if (!node)
+ 			break;
+ 
+@@ -769,7 +770,10 @@ again:
+ 		if (start > end)
+ 			break;
+ 
+-		cond_resched_lock(&tree->lock);
++		if (!cond_resched_lock(&tree->lock)) {
++			node = rb_next(node);
++			goto process_node;
++		}
+ 	}
+ out:
+ 	spin_unlock(&tree->lock);
+-- 
+1.7.10.4
+

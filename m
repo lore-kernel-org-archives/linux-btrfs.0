@@ -1,180 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:37187 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752064AbaC3VDJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Mar 2014 17:03:09 -0400
-Received: by mail-wg0-f47.google.com with SMTP id x12so5030594wgg.18
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Mar 2014 14:03:07 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: send, fix data corruption due to incorrect hole detection
-Date: Sun, 30 Mar 2014 23:02:53 +0100
-Message-Id: <1396216973-19436-1-git-send-email-fdmanana@gmail.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:53730 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753514AbaCaKHc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Mar 2014 06:07:32 -0400
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] lib: add size unit t/p/e to memparse
+Date: Mon, 31 Mar 2014 18:03:05 +0800
+Message-Id: <1396260185-14109-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-During an incremental send, when we finish processing an inode (corresponding to
-a regular file) we would assume the gap between the end of the last processed file
-extent and the file's size corresponded to a file hole, and therefore incorrectly
-send a bunch of zero bytes to overwrite that region in the file.
+For modern filesystems such as btrfs, t/p/e size level operations
+are common.
+add size unit t/p/e parsing to memparse
 
-This affects only kernel 3.14.
-
-Reproducer:
-
-    mkfs.btrfs -f /dev/sdc
-    mount /dev/sdc /mnt
-
-    xfs_io -f -c "falloc -k 0 268435456" /mnt/foo
-
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap0
-
-    xfs_io -c "pwrite -S 0x01 -b 9216 16190218 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x02 -b 1121 198720104 1121" /mnt/foo
-    xfs_io -c "pwrite -S 0x05 -b 9216 107887439 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x06 -b 9216 225520207 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x07 -b 67584 102138300 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x08 -b 7000 94897484 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x09 -b 113664 245083212 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x10 -b 123 17937788 123" /mnt/foo
-    xfs_io -c "pwrite -S 0x11 -b 39936 229573311 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x12 -b 67584 174792222 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x13 -b 9216 249253213 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x16 -b 67584 150046083 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x17 -b 39936 118246040 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x18 -b 67584 215965442 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x19 -b 33792 97096725 33792" /mnt/foo
-    xfs_io -c "pwrite -S 0x20 -b 125952 166300596 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0x21 -b 123 1078957 123" /mnt/foo
-    xfs_io -c "pwrite -S 0x25 -b 9216 212044492 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x26 -b 7000 265037146 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x27 -b 42757 215922685 42757" /mnt/foo
-    xfs_io -c "pwrite -S 0x28 -b 7000 69865411 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x29 -b 67584 67948958 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x30 -b 39936 266967019 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x31 -b 1121 19582453 1121" /mnt/foo
-    xfs_io -c "pwrite -S 0x32 -b 17408 257710255 17408" /mnt/foo
-    xfs_io -c "pwrite -S 0x33 -b 39936 3895518 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x34 -b 125952 12045847 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0x35 -b 17408 19156379 17408" /mnt/foo
-    xfs_io -c "pwrite -S 0x36 -b 39936 50160066 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x37 -b 113664 9549793 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x38 -b 105472 94391506 105472" /mnt/foo
-    xfs_io -c "pwrite -S 0x39 -b 23552 143632863 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x40 -b 39936 241283845 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x41 -b 113664 199937606 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x42 -b 67584 67380093 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x43 -b 67584 26793129 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x44 -b 39936 14421913 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x45 -b 123 253097405 123" /mnt/foo
-    xfs_io -c "pwrite -S 0x46 -b 1121 128233424 1121" /mnt/foo
-    xfs_io -c "pwrite -S 0x47 -b 105472 91577959 105472" /mnt/foo
-    xfs_io -c "pwrite -S 0x48 -b 1121 7245381 1121" /mnt/foo
-    xfs_io -c "pwrite -S 0x49 -b 113664 182414694 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x50 -b 9216 32750608 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x51 -b 67584 266546049 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x52 -b 67584 87969398 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x53 -b 9216 260848797 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x54 -b 39936 119461243 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x55 -b 7000 200178693 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x56 -b 9216 243316029 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x57 -b 7000 209658229 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x58 -b 101376 179745192 101376" /mnt/foo
-    xfs_io -c "pwrite -S 0x59 -b 9216 64012300 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x60 -b 125952 181705139 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0x61 -b 23552 235737348 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x62 -b 113664 106021355 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x63 -b 67584 135753552 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x64 -b 23552 95730888 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x65 -b 11 17311415 11" /mnt/foo
-    xfs_io -c "pwrite -S 0x66 -b 33792 120695553 33792" /mnt/foo
-    xfs_io -c "pwrite -S 0x67 -b 9216 17164631 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x68 -b 9216 136065853 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x69 -b 67584 37752198 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x70 -b 101376 189717473 101376" /mnt/foo
-    xfs_io -c "pwrite -S 0x71 -b 7000 227463698 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x72 -b 9216 12655137 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0x73 -b 7000 7488866 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x74 -b 113664 87813649 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x75 -b 33792 25802183 33792" /mnt/foo
-    xfs_io -c "pwrite -S 0x76 -b 39936 93524024 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x77 -b 33792 113336388 33792" /mnt/foo
-    xfs_io -c "pwrite -S 0x78 -b 105472 184955320 105472" /mnt/foo
-    xfs_io -c "pwrite -S 0x79 -b 101376 225691598 101376" /mnt/foo
-    xfs_io -c "pwrite -S 0x80 -b 23552 77023155 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x81 -b 11 201888192 11" /mnt/foo
-    xfs_io -c "pwrite -S 0x82 -b 11 115332492 11" /mnt/foo
-    xfs_io -c "pwrite -S 0x83 -b 67584 230278015 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x84 -b 11 120589073 11" /mnt/foo
-    xfs_io -c "pwrite -S 0x85 -b 125952 202207819 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0x86 -b 113664 86672080 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x87 -b 17408 208459603 17408" /mnt/foo
-    xfs_io -c "pwrite -S 0x88 -b 7000 73372211 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x89 -b 7000 42252122 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0x90 -b 23552 46784881 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x91 -b 101376 63172351 101376" /mnt/foo
-    xfs_io -c "pwrite -S 0x92 -b 23552 59341931 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x93 -b 39936 239599283 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0x94 -b 67584 175643105 67584" /mnt/foo
-    xfs_io -c "pwrite -S 0x97 -b 23552 105534880 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0x98 -b 113664 8236844 113664" /mnt/foo
-    xfs_io -c "pwrite -S 0x99 -b 125952 144489686 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0xa0 -b 7000 73273112 7000" /mnt/foo
-    xfs_io -c "pwrite -S 0xa1 -b 125952 194580243 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0xa2 -b 123 56296779 123" /mnt/foo
-    xfs_io -c "pwrite -S 0xa3 -b 11 233066845 11" /mnt/foo
-    xfs_io -c "pwrite -S 0xa4 -b 39936 197727090 39936" /mnt/foo
-    xfs_io -c "pwrite -S 0xa5 -b 101376 53579812 101376" /mnt/foo
-    xfs_io -c "pwrite -S 0xa6 -b 9216 85669738 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0xa7 -b 125952 21266322 125952" /mnt/foo
-    xfs_io -c "pwrite -S 0xa8 -b 23552 125726568 23552" /mnt/foo
-    xfs_io -c "pwrite -S 0xa9 -b 9216 18423680 9216" /mnt/foo
-    xfs_io -c "pwrite -S 0xb0 -b 1121 165901483 1121" /mnt/foo
-
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap1
-
-    xfs_io -c "pwrite -S 0xff -b 10 16190218 10" /mnt/foo
-
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap2
-
-    md5sum /mnt/foo          # returns 79e53f1466bfc09fd82b450689e6119e
-    md5sum /mnt/mysnap2/foo  # returns 79e53f1466bfc09fd82b450689e6119e too
-
-    btrfs send /mnt/mysnap1 -f /tmp/1.snap
-    btrfs send -p /mnt/mysnap1 /mnt/mysnap2 -f /tmp/2.snap
-
-    mkfs.btrfs -f /dev/sdc
-    mount /dev/sdc /mnt
-
-    btrfs receive /mnt -f /tmp/1.snap
-    btrfs receive /mnt -f /tmp/2.snap
-
-    md5sum /mnt/mysnap2/foo  # returns 2bb414c5155767cedccd7063e51beabd !!
-
-A testcase for xfstests follows soon too.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/send.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ lib/cmdline.c | 23 +++++++++++++++++++----
+ 1 file changed, 19 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 41a4a45..281ab2c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4960,7 +4960,9 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index eb67911..20a55b0 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -119,11 +119,17 @@ char *get_options(const char *str, int nints, int *ints)
+  *	@retptr: (output) Optional pointer to next char after parse completes
+  *
+  *	Parses a string into a number.  The number stored at @ptr is
+- *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+- *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+- *	1073741824).  If the number is suffixed with K, M, or G, then
++ *	potentially suffixed with
++ *	%K (for kilobytes, or 1024 bytes),
++ *	%M (for megabytes, or 1048576 bytes),
++ *	%G (for gigabytes, or 1073741824),
++ *	%T (for terabytes, or 1099511627776),
++ *	%P (for petabytes, or 1125899906842624 bytes),
++ *	%E (for exabytes, or 1152921504606846976 bytes).
++ *	If the number is suffixed with K, M, G, T, P, E, then
+  *	the return value is the number multiplied by one kilobyte, one
+- *	megabyte, or one gigabyte, respectively.
++ *	megabyte, one gigabyte, one terabyte, one petabyte, one exabyte,
++ *	respectively.
+  */
  
- 	if (S_ISREG(sctx->cur_inode_mode)) {
- 		if (need_send_hole(sctx)) {
--			if (sctx->cur_inode_last_extent == (u64)-1) {
-+			if (sctx->cur_inode_last_extent == (u64)-1 ||
-+			    sctx->cur_inode_last_extent <
-+			    sctx->cur_inode_size) {
- 				ret = get_last_extent(sctx, (u64)-1);
- 				if (ret)
- 					goto out;
+ unsigned long long memparse(const char *ptr, char **retptr)
+@@ -133,6 +139,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+ 	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+ 
+ 	switch (*endptr) {
++	case 'E':
++	case 'e':
++		ret <<= 10;
++	case 'P':
++	case 'p':
++		ret <<= 10;
++	case 'T':
++	case 't':
++		ret <<= 10;
+ 	case 'G':
+ 	case 'g':
+ 		ret <<= 10;
 -- 
-1.7.10.4
+1.8.1.4
 

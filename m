@@ -1,123 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:26611 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751666AbaD1BAU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 21:00:20 -0400
-Date: Mon, 28 Apr 2014 11:00:15 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: xfs@oss.sgi.com
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests: master branch updated to ce0aa2b
-Message-ID: <20140428010015.GL15995@dastard>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="WBsA/oQW3eTA3LlM"
+Received: from cn.fujitsu.com ([222.73.24.84]:16892 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750946AbaDABRr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Mar 2014 21:17:47 -0400
+Message-ID: <1396314824.20427.1.camel@localhost.localdomain>
+Subject: Re: [PATCH] lib: add size unit t/p/e to memparse
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Date: Tue, 01 Apr 2014 09:13:44 +0800
+In-Reply-To: <53394EC0.8020007@swiftspirit.co.za>
+References: <1396260185-14109-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <53394EC0.8020007@swiftspirit.co.za>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 2014-03-31 at 13:17 +0200, Brendan Hide wrote:
+> On 31/03/14 12:03, Gui Hecheng wrote:
+> > - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+> > - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+> > - *	1073741824).  If the number is suffixed with K, M, or G, then
+> > + *	potentially suffixed with
+> > + *	%K (for kilobytes, or 1024 bytes),
+> > + *	%M (for megabytes, or 1048576 bytes),
+> > + *	%G (for gigabytes, or 1073741824),
+> > + *	%T (for terabytes, or 1099511627776),
+> > + *	%P (for petabytes, or 1125899906842624 bytes),
+> > + *	%E (for exabytes, or 1152921504606846976 bytes).
+> 
+> My apologies, I should have noticed this in your earlier mail. This 
+> could be updated to specifically refer to the "bi"nary prefixes rather 
+> than the old SI-conflicting names:
+> kibibyte, mebibyte, gibibyte, tebibyte, pebibyte, and exbibyte
+Yes, indeed, I will send a V2.
 
---WBsA/oQW3eTA3LlM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hi folks,
-
-The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
-just been updated. Patches often get missed, so please check if your
-outstanding patches were in this update. If they have not been in
-this update, please resubmit them to xfs@oss.sgi.com so they can be
-picked up in the next update.
-
-The new head of the master branch is commit:
-
-ce0aa2b common: Use _require_xfs_io_command() instead of helpers
-
-New Commits:
-
-Dave Chinner (6):
-      [31a50c7] generic/204: tweak reserve pool size
-      [ca93123] generic: cleanup space after test in TESTDIR
-      [9d7807d] xfs: remove dmapi tests from the auto group
-      [03227f9] filter: xfs_repair emits new corruption messagse
-      [a12a56f] shared/051: remove ACL count subtest
-      [a841a6d] generic: introduce new large ACL test
-
-Lukas Czerner (1):
-      [ce0aa2b] common: Use _require_xfs_io_command() instead of helpers
+Thanks!
+-Gui
 
 
-Code Diffstat:
-
- common/attr           |  31 ++++++++++++
- common/defrag         |   2 +-
- common/rc             |  41 ---------------
- common/repair         |   3 ++
- tests/btrfs/026       |   2 +-
- tests/btrfs/027       |   2 +-
- tests/btrfs/028       |   2 +-
- tests/btrfs/047       |   2 +-
- tests/ext4/001        |   2 +-
- tests/ext4/002        |   2 +-
- tests/generic/009     |   2 +-
- tests/generic/012     |   8 +--
- tests/generic/016     |   8 +--
- tests/generic/017     |   4 +-
- tests/generic/021     |   8 +--
- tests/generic/022     |   8 +--
- tests/generic/026     | 132 ++++++++++++++++++++++++++++++++++++++++++++++=
-++
- tests/generic/026.out |   9 ++++
- tests/generic/070     |   1 +
- tests/generic/204     |   2 -
- tests/generic/213     |   2 +-
- tests/generic/214     |   2 +-
- tests/generic/223     |   2 +-
- tests/generic/228     |   2 +-
- tests/generic/255     |   6 +--
- tests/generic/256     |   2 +-
- tests/generic/274     |   2 +-
- tests/generic/300     |   4 +-
- tests/generic/311     |   2 +-
- tests/generic/312     |   2 +-
- tests/generic/316     |   4 +-
- tests/generic/group   |   1 +
- tests/shared/051      |  45 -----------------
- tests/shared/051.out  | 135 ----------------------------------------------=
-----
- tests/shared/298      |   2 +-
- tests/xfs/252         |   4 +-
- tests/xfs/290         |   2 +-
- tests/xfs/292         |   2 +
- tests/xfs/group       |  50 +++++++++----------
- 39 files changed, 249 insertions(+), 293 deletions(-)
- create mode 100644 tests/generic/026
- create mode 100644 tests/generic/026.out
---=20
-Dave Chinner
-david@fromorbit.com
-
---WBsA/oQW3eTA3LlM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTXagfAAoJEK3oKUf0dfodi9AP/iWS0robDYMnjkzFaSfYadSa
-pQUL0K1j1Pq9lZXLwpVOSHVQp863QWCU6LefPN4u0e8sMVKuqmRgdKNb8aMIGdNr
-oxTPPsWIZdoUQCGMUTG3rtre9uATtSJwtJMp43JeSCVzuU3D1D2UHC1MOZvfE3aH
-B2JG2qF6j9q5IIxzJbAJqz/miAhOk8YrGYpHxkNNJ/w7OdZMBPxfxkmpub9xzYwo
-e3c+okmEcBOkNW6COy008gZcmaBFhmptlNBsu67rXCS9S7K19Nh9gyygTgI3iwbW
-9JaBEm8pjd9GzroP/Vbw4SKyOmeYqrztzWCwVXZc2i5SvONau1QcI0i21eHY2DbT
-ATsCbAD88ASjr9HhM3ZdG9VjniHOIDPdwkDBk9thc9Aqnj8UPVLIdssKf9LLDPFk
-hc0Sb8EucSk2yTILcW6W2FKE5NAz47twkr0xDRU+wc6hlqa4yXqRIcn/u24cwEek
-Lti0mZ6jR+Yjou2hdIk+8yO5mNM13ZWJpuDsbPhc0kHqgul9RwmF9Nf/IhCfIXMP
-E2yOuA990MBUY7bXFgLs7DWimxGJ/EC4kKSnlH610u6FbjD278FNt79gmR9jTghT
-/jRSV4pARvKCGcLl76tPqDgzJSzeBW4SWgduHufUIqIZPbKfncNfDVubBdXQz1cu
-OVtkKF8F4zAlVWqAB6DV
-=rKnH
------END PGP SIGNATURE-----
-
---WBsA/oQW3eTA3LlM--

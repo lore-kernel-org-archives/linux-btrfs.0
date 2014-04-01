@@ -1,59 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay07.libero.it ([212.52.84.111]:60978 "EHLO
-	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752186AbaD3Rf1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Apr 2014 13:35:27 -0400
-Received: from venice.bhome (151.29.84.244) by outrelay07.libero.it (8.6.033) (authenticated as kreijack@libero.it)
-        id 535FA3830064E4B6 for linux-btrfs@vger.kernel.org; Wed, 30 Apr 2014 19:35:25 +0200
-Message-ID: <536134F8.2000908@libero.it>
-Date: Wed, 30 Apr 2014 19:38:00 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from cn.fujitsu.com ([59.151.112.132]:10173 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751057AbaDAKFS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Apr 2014 06:05:18 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s31A5Al3012582
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Apr 2014 18:05:10 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: update manpage for btrfs resize support size unit t/p/e
+Date: Tue, 1 Apr 2014 18:01:10 +0800
+Message-ID: <1396346470-2832-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/14] btrfs-progs: Print more info about device sizes
-References: <cover.1398786620.git.dsterba@suse.cz> <cfc78e5581e0142caf9a5fe049213c8e5de90efa.1398786620.git.dsterba@suse.cz> <CAMU1PDj3CwYJgiGG27cR+XgZvRFLxY8sAQocRavi8oT9-2Kz+Q@mail.gmail.com> <5360E0EF.8030109@libero.it> <20140430121140.GI5988@twin.jikos.cz> <5360FB26.9090009@kingswood-consulting.co.uk> <20140430133715.GA7571@yadt.co.uk>
-In-Reply-To: <20140430133715.GA7571@yadt.co.uk>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/30/2014 03:37 PM, David Taylor wrote:
-> On Wed, 30 Apr 2014, Frank Kingswood wrote:
->> On 30/04/14 13:11, David Sterba wrote:
->>> On Wed, Apr 30, 2014 at 01:39:27PM +0200, Goffredo Baroncelli wrote:
->>>>
->>>> I found a bit unclear the "FS occupied" terms.
->>>
->>> We're running out of terms to describe and distinguish the space that
->>> the filesystem uses.
->>>
->>> 'occupied' seemed like a good choice to me, though it may be not obvious
->>
->> The space that the filesystem uses in total seems to me is called the
->> "size". It has nothing to do with utilization.
->>
->> /dev/sda6, ID: 2
->>     Device size:            10.00GiB
->>     Filesystem size:         5.00GiB
-> 
-> FS size was what I was about to suggest, before I saw your reply.
+btrfs resize now support size unit parse of k/m/g/t/p/e in kernel space,
+adopt the changes in userspace manpage.
 
-Pay attention that this value is not the Filesystem size, 
-but to the maximum space the of THE DEVICE the filesystem is allowed to use.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+changelog
+	v1->v2: replace kilobyte with kibibyte, and others
+---
+ cmds-filesystem.c | 3 ++-
+ man/btrfs.8.in    | 9 +++++----
+ 2 files changed, 7 insertions(+), 5 deletions(-)
 
-The filesystem size (the space available or the sum of the space available and
-the one occupied) is based on this value but it should be very different (think
-about a RAID 1 on three device of different sizes....)
-
-> 
-> It makes more sense to me than 'Occupied' and seems cleaner than
-> 'Resized To'.  It sort of mirrors how LVM describes PV / VG / LV
-> sizes, too.
-> 
-
-
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 7eb6e9d..b81768b 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -922,10 +922,11 @@ static int cmd_defrag(int argc, char **argv)
+ }
+ 
+ static const char * const cmd_resize_usage[] = {
+-	"btrfs filesystem resize [devid:][+/-]<newsize>[gkm]|[devid:]max <path>",
++	"btrfs filesystem resize [devid:][+/-]<newsize>[kKmMgGtTpPeE]|[devid:]max <path>",
+ 	"Resize a filesystem",
+ 	"If 'max' is passed, the filesystem will occupy all available space",
+ 	"on the device 'devid'.",
++	"[kK] means KiB, which denotes 1KiB = 1024B, 1MiB = 1024KiB, etc.",
+ 	NULL
+ };
+ 
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 7fbde82..9fad64a 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -31,7 +31,7 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBfilesystem defragment\fP [\fIoptions\fP] \fI<file>\fP|\fI<dir>\fP [\fI<file>\fP|\fI<dir>...\fP]\fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fP
++\fBbtrfs\fP \fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[kKmMgGtTpPeE]|[\fIdevid\fP:]\fImax <path>\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem label\fP [\fI<device>\fP|\fI<mount_point>\fP] [\fI<newlabel>\fP]
+ .PP
+@@ -343,7 +343,7 @@ copies with \fBcp --reflink\fP.
+ .\"
+ .\" Some wording are extracted by the resize2fs man page
+ .\"
+-\fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fR
++\fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[kKmMgGtTpPeE]|[\fIdevid\fP:]\fImax <path>\fR
+ Resize a filesystem identified by \fI<path>\fR for the underlying device
+ \fIdevid\fR.  The \fIdevid\fR can be found with \fBbtrfs filesystem show\fR and
+ defaults to 1 if not specified.
+@@ -352,8 +352,9 @@ If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
+ by the quantity \fI<size>\fR.
+ If no units are specified, the unit of the \fI<size>\fR parameter defaults to
+ bytes. Optionally, the size parameter may be suffixed by one of the following
+-units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
+-respectively.
++units designators: 'K', 'M', 'G', 'T', 'P', 'E', kibibytes, mebibytes, gibibytes,
++tebibytes, pebibytes, exbibytes respectively.
++K means KiB, which denotes 1KiB = 1024B, 1MiB = 1024KiB, etc..
+ 
+ If 'max' is passed, the filesystem will occupy all available space on the
+ device \fIdevid\fR.
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+1.8.1.4
+

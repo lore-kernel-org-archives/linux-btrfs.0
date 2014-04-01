@@ -1,42 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:16892 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750946AbaDABRr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Mar 2014 21:17:47 -0400
-Message-ID: <1396314824.20427.1.camel@localhost.localdomain>
-Subject: Re: [PATCH] lib: add size unit t/p/e to memparse
+Received: from cn.fujitsu.com ([59.151.112.132]:58202 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751089AbaDAKBi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Apr 2014 06:01:38 -0400
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Brendan Hide <brendan@swiftspirit.co.za>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Date: Tue, 01 Apr 2014 09:13:44 +0800
-In-Reply-To: <53394EC0.8020007@swiftspirit.co.za>
-References: <1396260185-14109-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <53394EC0.8020007@swiftspirit.co.za>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+To: <linux-kernel@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2] lib: add size unit t/p/e to memparse
+Date: Tue, 1 Apr 2014 17:57:31 +0800
+Message-ID: <1396346251-2506-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-03-31 at 13:17 +0200, Brendan Hide wrote:
-> On 31/03/14 12:03, Gui Hecheng wrote:
-> > - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
-> > - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
-> > - *	1073741824).  If the number is suffixed with K, M, or G, then
-> > + *	potentially suffixed with
-> > + *	%K (for kilobytes, or 1024 bytes),
-> > + *	%M (for megabytes, or 1048576 bytes),
-> > + *	%G (for gigabytes, or 1073741824),
-> > + *	%T (for terabytes, or 1099511627776),
-> > + *	%P (for petabytes, or 1125899906842624 bytes),
-> > + *	%E (for exabytes, or 1152921504606846976 bytes).
-> 
-> My apologies, I should have noticed this in your earlier mail. This 
-> could be updated to specifically refer to the "bi"nary prefixes rather 
-> than the old SI-conflicting names:
-> kibibyte, mebibyte, gibibyte, tebibyte, pebibyte, and exbibyte
-Yes, indeed, I will send a V2.
+For modern filesystems such as btrfs, t/p/e size level operations
+are common.
+add size unit t/p/e parsing to memparse
 
-Thanks!
--Gui
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+changelog
+	v1->v2: replace kilobyte with kibibyte, and others
+---
+ lib/cmdline.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index eb67911..7cf5cb8 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -119,11 +119,17 @@ char *get_options(const char *str, int nints, int *ints)
+  *	@retptr: (output) Optional pointer to next char after parse completes
+  *
+  *	Parses a string into a number.  The number stored at @ptr is
+- *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+- *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+- *	1073741824).  If the number is suffixed with K, M, or G, then
+- *	the return value is the number multiplied by one kilobyte, one
+- *	megabyte, or one gigabyte, respectively.
++ *	potentially suffixed with
++ *	%K (for kibibytes, or 1024 bytes),
++ *	%M (for mebibytes, or 1048576 bytes),
++ *	%G (for gibibytes, or 1073741824),
++ *	%T (for tebibytes, or 1099511627776),
++ *	%P (for pebibytes, or 1125899906842624 bytes),
++ *	%E (for exbibytes, or 1152921504606846976 bytes).
++ *	If the number is suffixed with K, M, G, T, P, E, then
++ *	the return value is the number multiplied by one kibibyte, one
++ *	mebibyte, one gibibyte, one tebibyte, one pebibyte, one exbibyte,
++ *	respectively.
+  */
+ 
+ unsigned long long memparse(const char *ptr, char **retptr)
+@@ -133,6 +139,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+ 	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+ 
+ 	switch (*endptr) {
++	case 'E':
++	case 'e':
++		ret <<= 10;
++	case 'P':
++	case 'p':
++		ret <<= 10;
++	case 'T':
++	case 't':
++		ret <<= 10;
+ 	case 'G':
+ 	case 'g':
+ 		ret <<= 10;
+-- 
+1.8.1.4
 

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11878 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:16608 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758211AbaDBI3L (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:29:11 -0400
+	with ESMTP id S1758212AbaDBI3N (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:29:13 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328SxNr015004
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:59 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328T06c015007
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:29:00 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 26/27] btrfs-progs: Convert man page for mkfs.btrfs.
-Date: Wed, 2 Apr 2014 16:29:37 +0800
-Message-ID: <1396427378-10487-27-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 27/27] btrfs-progs: Switch to the new asciidoc Documentation.
+Date: Wed, 2 Apr 2014 16:29:38 +0800
+Message-ID: <1396427378-10487-28-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,167 +18,1554 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert man page for mkfs.btrfs.
+Since all man page are converted to the new asciidoc, the old man page
+can be removed.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile       |   2 +-
- Documentation/mkfs.btrfs.txt | 133 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 134 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/mkfs.btrfs.txt
+ Makefile                   |   4 +-
+ man/Makefile               |  31 --
+ man/btrfs-convert.8.in     |  33 --
+ man/btrfs-debug-tree.8.in  |  35 --
+ man/btrfs-find-root.8.in   |  30 --
+ man/btrfs-image.8.in       |  55 ---
+ man/btrfs-map-logical.8.in |  33 --
+ man/btrfs-show-super.8.in  |  30 --
+ man/btrfs-zero-log.8.in    |  23 --
+ man/btrfs.8.in             | 932 ---------------------------------------------
+ man/btrfsck.8.in           |  29 --
+ man/btrfstune.8.in         |  31 --
+ man/fsck.btrfs.8.in        |  47 ---
+ man/mkfs.btrfs.8.in        | 105 -----
+ 14 files changed, 2 insertions(+), 1416 deletions(-)
+ delete mode 100644 man/Makefile
+ delete mode 100644 man/btrfs-convert.8.in
+ delete mode 100644 man/btrfs-debug-tree.8.in
+ delete mode 100644 man/btrfs-find-root.8.in
+ delete mode 100644 man/btrfs-image.8.in
+ delete mode 100644 man/btrfs-map-logical.8.in
+ delete mode 100644 man/btrfs-show-super.8.in
+ delete mode 100644 man/btrfs-zero-log.8.in
+ delete mode 100644 man/btrfs.8.in
+ delete mode 100644 man/btrfsck.8.in
+ delete mode 100644 man/btrfstune.8.in
+ delete mode 100644 man/fsck.btrfs.8.in
+ delete mode 100644 man/mkfs.btrfs.8.in
 
-diff --git a/Documentation/Makefile b/Documentation/Makefile
-index 4100ddd..97a775a 100644
---- a/Documentation/Makefile
-+++ b/Documentation/Makefile
-@@ -13,7 +13,7 @@ MAN8_TXT += btrfs-show-super.txt
- MAN8_TXT += btrfstune.txt
- MAN8_TXT += btrfs-zero-log.txt
- MAN8_TXT += fsck.btrfs.txt
--#MAN8_TXT += mkfs.btrfs.txt
-+MAN8_TXT += mkfs.btrfs.txt
+diff --git a/Makefile b/Makefile
+index 636cbf0..70eaf57 100644
+--- a/Makefile
++++ b/Makefile
+@@ -56,7 +56,7 @@ btrfs_convert_libs = -lext2fs -lcom_err
+ btrfs_image_libs = -lpthread
+ btrfs_fragment_libs = -lgd -lpng -ljpeg -lfreetype
  
- # Sub commands for btrfs
- MAN8_TXT += btrfs-subvolume.txt
-diff --git a/Documentation/mkfs.btrfs.txt b/Documentation/mkfs.btrfs.txt
-new file mode 100644
-index 0000000..bafe065
---- /dev/null
-+++ b/Documentation/mkfs.btrfs.txt
-@@ -0,0 +1,133 @@
-+mkfs.btrfs(8)
-+=============
-+
-+NAME
-+----
-+mkfs.btrfs - create a btrfs filesystem
-+
-+SYNOPSIS
-+--------
-+'mkfs.btrfs'
-+$$[-A|--alloc-start <alloc-start>]$$
-+$$[-b|--byte-count <byte-count>]$$
-+$$[-d|--data <data-profile>]$$
-+$$[-f|--force]$$
-+$$[-n|--nodesize <nodesize>]$$
-+$$[-l|--leafsize <leafsize>]$$
-+$$[-L|--label <label>]$$
-+$$[-m|--metadata <metadata profile>]$$
-+$$[-M|--mixed]$$
-+$$[-s|--sectorsize <sectorsize>]$$
-+$$[-r|--rootdir <rootdir>]$$
-+$$[-K|--nodiscard]$$
-+$$[-O|--features <feature1>[<,feature2...>]]$$
-+$$[-h]$$
-+$$[-V|--version]$$
-+$$<device> [<device>...]$$
-+
-+DESCRIPTION
-+-----------
-+'mkfs.btrfs'
-+is used to create a btrfs filesystem (usually in a disk partition, or an array
-+of disk partitions).
-+
-+<device>
-+is the special file corresponding to the device (e.g /dev/sdXX ).
-+If multiple devices are specified, btrfs is created
-+spanning across the specified  devices.
-+
-+OPTIONS
-+-------
-+-A|--alloc-start <offset>::
-+Specify the offset from the start of the device to start the btrfs filesystem. The default value is zero, or the start of the device.
-+
-+-b|--byte-count <size>::
-+Specify the size of the resultant filesystem. If this option is not used,
-+mkfs.btrfs uses all the available storage for the filesystem.
-+
-+-d|--data <type>::
-+Specify how the data must be spanned across the devices specified. Valid
-+values are 'raid0', 'raid1', 'raid5', 'raid6', 'raid10' or 'single'.
-+
-+-f|--force::
-+Force overwrite when an existing filesystem is detected on the device.
-+By default, mkfs.btrfs will not write to the device if it suspects that 
-+there is a filesystem or partition table on the device already.
-+
-+-n|--nodesize <size>
-++
-+-l|--leafsize <size>::
-+Specify the nodesize, the tree block size in which btrfs stores
-+data. The default value is 16KB (16384) or the page size, whichever is
-+bigger. Must be a multiple of the sectorsize, but not larger than
-+65536. Leafsize always equals nodesize and the options are aliases.
-+
-+-L|--label <name>::
-+Specify a label for the filesystem.
-++
-+NOTE: <name> should be less than 256 characters.
-+
-+
-+-m|--metadata <profile>::
-+Specify how metadata must be spanned across the devices specified. Valid
-+values are 'raid0', 'raid1', 'raid5', 'raid6', 'raid10', 'single' or 'dup'.
-++
-+Single device
-+will have dup set by default except in the case of SSDs which will default to
-+single. This is because SSDs can remap blocks internally so duplicate blocks
-+could end up in the same erase block which negates the benefits of doing
-+metadata duplication.
-+
-+-M|--mixed::
-+Mix data and metadata chunks together for more efficient space 
-+utilization.  This feature incurs a performance penalty in
-+larger filesystems.  It is recommended for use with filesystems
-+of 1 GiB or smaller.
-+
-+-s|--sectorsize <size>::
-+Specify the sectorsize, the minimum data block allocation unit.
-++
-+The default
-+value is the page size. If the sectorsize differs from the page size, the
-+created filesystem may not be mountable by current kernel. Therefore it is not
-+recommended to use this option unless you are going to mount it on a system
-+with the appropriate page size.
-+
-+-r|--rootdir <rootdir>::
-+Specify a directory to copy into the newly created btrfs filesystem.
-++
-+NOTE: '-r' option is done completely in userland, and don't need root
-+privilege to mount the filesystem.
-+
-+-K|--nodiscard::
-+Do not perform whole device TRIM operation by default.
-+
-+-O|--features <feature1>[,<feature2>...]::
-+A list of filesystem features turned on at mkfs time. Not all features are
-+supported by old kernels.
-++
-+To see all features run::::
-+mkfs.btrfs -O list-all
-+
-+-V|--version::
-+Print the 'mkfs.btrfs' version and exit.
-+
-+-h::
-+Print help.
-+
-+UNIT
-+----
-+As default the unit is the byte, however it is possible to append a suffix
-+to the arguments like 'k' for KBytes, 'm' for MBytes...
-+
-+AVAILABILITY
-+------------
-+'btrfs' is part of btrfs-progs. Btrfs filesystem is currently under heavy
-+development,
-+and not suitable for any uses other than benchmarking and review.
-+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
-+further details.
-+
-+SEE ALSO
-+--------
-+`btrfsck`(8)
+-SUBDIRS = man
++SUBDIRS = Documentation
+ BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
+ INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
+ CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
+@@ -221,7 +221,7 @@ send-test: $(objects) $(libs) send-test.o
+ 	$(Q)$(CC) $(CFLAGS) -o send-test $(objects) send-test.o $(LDFLAGS) $(LIBS) -lpthread
+ 
+ manpages:
+-	$(Q)$(MAKE) $(MAKEOPTS) -C man
++	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation
+ 
+ clean: $(CLEANDIRS)
+ 	@echo "Cleaning"
+diff --git a/man/Makefile b/man/Makefile
+deleted file mode 100644
+index 552c9f7..0000000
+--- a/man/Makefile
++++ /dev/null
+@@ -1,31 +0,0 @@
+-GZIPCMD=gzip
+-INSTALL= install
+-
+-prefix ?= /usr/local
+-bindir = $(prefix)/bin
+-mandir = $(prefix)/man
+-man8dir = $(mandir)/man8
+-
+-# clear out all suffixes
+-.SUFFIXES:
+-# list only those we use
+-.SUFFIXES: .in .gz
+-
+-MANPAGES = mkfs.btrfs.8.gz btrfsck.8.gz btrfs-image.8.gz btrfs.8.gz \
+-	   btrfs-debug-tree.8.gz btrfs-show-super.8.gz btrfs-find-root.8.gz \
+-	   btrfs-convert.8.gz btrfstune.8.gz btrfs-zero-log.8.gz btrfs-map-logical.8.gz \
+-	   fsck.btrfs.8.gz
+-INFILES = ${MANPAGES:.in=.gz}
+-
+-all: $(MANPAGES)
+-
+-.in.gz :
+-	@echo "    [MAN]    $@"
+-	$(Q)$(GZIPCMD) -n -c $< > $@
+-
+-clean :
+-	$(Q)rm -f $(MANPAGES)
+-
+-install: $(MANPAGES)
+-	$(INSTALL) -m755 -d $(DESTDIR)$(man8dir)
+-	$(INSTALL) -m 644 $(MANPAGES) $(DESTDIR)$(man8dir)
+diff --git a/man/btrfs-convert.8.in b/man/btrfs-convert.8.in
+deleted file mode 100644
+index 85cfa61..0000000
+--- a/man/btrfs-convert.8.in
++++ /dev/null
+@@ -1,33 +0,0 @@
+-.TH BTRFS-CONVERT 8
+-.SH NAME
+-btrfs-convert \- convert ext2/3/4 to btrfs.
+-.SH SYNOPSIS
+-.B btrfs-convert [\fIoptions\fP] \fI<dev>\fP
+-.SH DESCRIPTION
+-\fBbtrfs-convert\fP is used to convert existed ext2/3/4 to btrfs filesystem, and the original filesystem image is accessible as from separate subvolume named ext2_subvol as file image.
+-
+-\fIOptions\fP
+-.IP "\fB-d\fP" 5
+-disable data checksum.
+-.IP "\fB-i\fP" 5
+-ignore xattrs and ACLs.
+-.IP "\fB-n\fP" 5
+-disable packing of small files.
+-.IP "\fB-r\fP" 5
+-roll back to ext2fs.
+-
+-.SH EXIT CODE
+-\fBbtrfs-convert\fP will return 0 if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-debug-tree.8.in b/man/btrfs-debug-tree.8.in
+deleted file mode 100644
+index eed7097..0000000
+--- a/man/btrfs-debug-tree.8.in
++++ /dev/null
+@@ -1,35 +0,0 @@
+-.TH BTRFS-DEBUG-TREE 8
+-.SH NAME
+-btrfs-debug-tree \- dump Btrfs filesystem metadata into stdout.
+-.SH SYNOPSIS
+-.B btrfs-debug-tree [\fIoptions\fP] \fI<device>\fP
+-.SH DESCRIPTION
+-\fBbtrfs-debug-tree\fP is used to dump the whole tree of the given device.
+-This is maybe useful for analyzing filesystem state or inconsistence and has
+-a positive educational effect on understanding the internal structure.
+-\fIdevice\fP is the device file where the filesystem is stored.
+-
+-\fIOptions\fP
+-.IP "\fB-e\fP" 5
+-print detailed extents info.
+-.IP "\fB-d\fP" 5
+-print info of btrfs device and root tree dirs only.
+-.IP "\fB-r\fP" 5
+-print info of roots only.
+-.IP "\fB-b \fI<block_num>\fP" 5
+-print info of the specified block only.
+-
+-.SH EXIT CODE
+-\fBbtrfs-debug-tree\fP will return 0 if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-find-root.8.in b/man/btrfs-find-root.8.in
+deleted file mode 100644
+index c1f48a0..0000000
+--- a/man/btrfs-find-root.8.in
++++ /dev/null
+@@ -1,30 +0,0 @@
+-.TH BTRFS-FIND-ROOT 8
+-.SH NAME
+-btrfs-find-root \- filter to find btrfs root.
+-.SH SYNOPSIS
+-.B btrfs-find-root [\fIoptions\fP] \fI<dev>\fP
+-.SH DESCRIPTION
+-\fBbtrfs-find-root\fP is used to find the satisfied root, you can filter by root tree's objectid, generation, level.
+-
+-\fIOptions\fP
+-.IP "\fB-g \fI<generation>\fP" 5
+-filter root tree by it's original transaction id, tree root's generation in default.
+-.IP "\fB-o \fI<objectid>\fP" 5
+-filter root tree by it's objectid,tree root's objectid in default.
+-.IP "\fB-l \fI<level>\fP" 5
+-filter root tree by B-+ tree's level, level 0 in default.
+-
+-.SH EXIT CODE
+-\fBbtrfs-find-root\fP will return 0 if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-image.8.in b/man/btrfs-image.8.in
+deleted file mode 100644
+index 3f51f3f..0000000
+--- a/man/btrfs-image.8.in
++++ /dev/null
+@@ -1,55 +0,0 @@
+-.TH BTRFS-IMAGE 8
+-.SH NAME
+-btrfs-image \- create/restore an image of the filesystem
+-.SH SYNOPSIS
+-.B btrfs-image
+-[options] \fIsource\fP \fItarget\fP
+-.SH DESCRIPTION
+-.B btrfs-image
+-is used to create an image of a btrfs filesystem. All data will be zeroed,
+-but metadata and the like is preserved.
+-.I source
+-is the special file corresponding to the device containing a btrfs filesystem.
+-(e.g \fI/dev/sdXX\fP).
+-.I target
+-is the image file that btrfs-image creates. When used with \fB-r\fP option,
+-\fBbtrfs-image\fP restores the image file from source into target.
+-.SH OPTIONS
+-.TP
+-\fB\-r\fP
+-Restore metadump image. By default, this fixes super's chunk tree, by
+-using 1 stripe pointing to primary device, so that file system can be
+-restored by running tree log reply if possible. To restore without
+-changing number of stripes in chunk tree check \fB-o\fP option.
+-.TP
+-\fB\-c\fR \fIvalue\fP
+-compression level (0 ~ 9).
+-.TP
+-\fB\-t\fR \fIvalue\fP
+-number of threads (1 ~ 32) to be used to process the image dump or restore.
+-.TP
+-\fB\-o\fP
+-use the old restore method, this does not fixup the chunk tree so the restored
+-file system will not be able to be mounted.
+-.TP
+-\fB\-s\fP
+-Sanitize the file names when generating the image. One \fB-s\fP means just
+-generate random garbage, which means that the directory indexes won't match up
+-since the hashes won't match with the garbage filenames. Using \fB-ss\fP will
+-calculate a collision for the filename so that the hashes match, and if it
+-can't calculate a collision then it will just generate garbage.  The collision
+-calculator is very time and CPU intensive so only use it if you are having
+-problems with your file system tree and need to have it mostly working.
+-.TP
+-\fB\-w\fP
+-Walk all the trees manually and copy any blocks that are referenced. Use this
+-option if your extent tree is corrupted to make sure that all of the metadata is
+-captured.
+-.SH AVAILABILITY
+-.B btrfs-image
+-is part of btrfs-progs. Btrfs is currently under heavy development,
+-and not suitable for any uses other than benchmarking and review.
+-Please refer to the btrfs wiki
+-http://btrfs.wiki.kernel.org for further details.
+-.SH SEE ALSO
+-.BR btrfsck (8), mkfs.btrfs (8)
+diff --git a/man/btrfs-map-logical.8.in b/man/btrfs-map-logical.8.in
+deleted file mode 100644
+index a253051..0000000
+--- a/man/btrfs-map-logical.8.in
++++ /dev/null
+@@ -1,33 +0,0 @@
+-.TH BTRFS-MAP-LOGICAL 8
+-.SH NAME
+-btrfs-map-logical \- map btrfs logical extent to physical extent
+-.SH SYNOPSIS
+-.B btrfs-map-logical [\fIoptions\fP] \fI<device>\fP
+-.SH DESCRIPTION
+-\fBbtrfs-map-logical\fP can be used to find out what the physical offsets are
+-on the mirrors, the result is dumped into stdout in default.
+-
+-\fIOptions\fP
+-.IP "\fB-l|--logical \fI<logical_num>\fP" 5
+-Logical extent to map.
+-.IP "\fB-c|--copy \fI<copy>\fP" 5
+-Copy of the extent to read(usually 1 or 2).
+-.IP "\fB-o|--output \fI<filename>\fP" 5
+-Output file to hold the extent.
+-.IP "\fB-b|--bytes \fI<bytes>\fP" 5
+-Number of bytes to read.
+-
+-.SH EXIT CODE
+-\fBbtrfs-map-logical\fP will return 0 if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
+deleted file mode 100644
+index 3fe8bde..0000000
+--- a/man/btrfs-show-super.8.in
++++ /dev/null
+@@ -1,30 +0,0 @@
+-.TH BTRFS-SHOW-SUPER 8
+-.SH NAME
+-btrfs-show-super \- show btrfs superblock information stored in devices
+-.SH SYNOPSIS
+-.B btrfs-show-super [\fIoptions\fP] \fI<dev>\fP [\fI<dev>...\fP]
+-.SH DESCRIPTION
+-\fBbtrfs-show-super\fP is used to print the information of superblock,
+-you can specify which mirror to print out. In default, every device's
+-first superblock will be printed out.
+-
+-\fIOptions\fP
+-.IP "\fB-a\fP" 5
+-print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
+-.IP "\fB-i \fI<super_mirror>\fP" 5
+-specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2. if several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
+-
+-.SH EXIT CODE
+-\fBbtrfs-show-super\fR will return 0 exit code if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs-zero-log.8.in b/man/btrfs-zero-log.8.in
+deleted file mode 100644
+index 0ccfb0e..0000000
+--- a/man/btrfs-zero-log.8.in
++++ /dev/null
+@@ -1,23 +0,0 @@
+-.TH BTRFS-ZERO-LOG 8
+-.SH NAME
+-btrfs-zero-log \- clear out log tree.
+-.SH SYNOPSIS
+-.B btrfs-zero-log \fI <dev>\fP
+-.SH DESCRIPTION
+-\fBbtrfs-zero-log\fP will remove the log tree if log tree is corrupt, which will allow you to mount the filesystem again. The common case where this
+-happens has been fixed a long time ago, so it is unlikely that you will see this particular problem.
+-
+-.SH EXIT CODE
+-\fBbtrfs-zero-log\fR will return 0 exit code if no error happened.
+-Other exit code means some problems happened.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+deleted file mode 100644
+index 2b36b26..0000000
+--- a/man/btrfs.8.in
++++ /dev/null
+@@ -1,932 +0,0 @@
+-.TH BTRFS 8 "" "btrfs" "btrfs"
+-.\"
+-.\" Man page written by Goffredo Baroncelli <kreijack@inwind.it> (Feb 2010)
+-.\" Modified by Qu Wenruo <quwenruo@cn.fujitsu.com> (Jun 2013)
+-.\"
+-.SH NAME
+-btrfs \- control a btrfs filesystem
+-.SH SYNOPSIS
+-\fBbtrfs\fP \fBsubvolume create\fP [-i \fI<qgroupid>\fP] [\fI<dest>\fP/]\fI<name>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume delete\fP [\fIoptions\fP] \fI<subvolume>\fP [\fI<subvolume>...\fP]
+-.PP
+-\fBbtrfs\fP \fBsubvolume list\fP [\fIoptions\fP] [-G [+|-]\fIvalue\fP] [-C [+|-]\fIvalue\fP] [--sort=rootid,gen,ogen,path] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI-s <subvolid>\fP \fI<dest>/<name>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <lastgen>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBfilesystem df\fP\fI [-b] \fIpath [path..]\fR\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem show\fP [\fI--mounted\fP|\fI--all-devices\fP|\fI<path>\fP|\fI<uuid>\fP|\fI<device>\fP|\fI<lable>\fP]\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem defragment\fP [\fIoptions\fP] \fI<file>\fP|\fI<dir>\fP [\fI<file>\fP|\fI<dir>...\fP]\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem label\fP [\fI<device>\fP|\fI<mount_point>\fP] [\fI<newlabel>\fP]
+-.PP
+-\fBbtrfs\fP \fBfilesystem disk-usage [-tb]\fP\fI <path> 
+-[path..]\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance\fP\fI <path> \fP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance start\fP [\fIoptions\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance pause\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance cancel\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance resume\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fB[filesystem] balance status\fP [-v] \fI<path>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBdevice add\fP [-Kf] \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBdevice delete\fP \fI<device>\fP [\fI<device>...\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBdevice scan\fP [(\fI-d\fP|\fI--all-devices\fP)|\fI<device>\fP [\fI<device>...\fP]]
+-.PP
+-\fBbtrfs\fP \fBdevice disk-usage\fP\fI [-b] <path> [<path>...] \fP
+-.PP
+-\fBbtrfs\fP \fBdevice ready\fP\fI <device>\fP
+-.PP
+-\fBbtrfs\fP \fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-.PP
+-\fBbtrfs\fP \fBscrub start\fP [-BdqrRf] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub resume\fP [-BdqrR] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-.PP
+-\fBbtrfs\fP \fBcheck\fP [\fIoptions\fP] \fI<device>\fP
+-.PP
+-\fBbtrfs\fP \fBrescue chunk-recover\fP [\fIoptions\fP] \fI<device>\fP
+-.PP
+-\fBbtrfs\fP \fBrescue super-recover\fP [\fIoptions\fP] \fI<device>\fP
+-.PP
+-\fBbtrfs\fP \fBrestore\fP [\fIoptions\fP] \fI<device>\fP \fI<path>\fP | -l \fI<device>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBinspect-internal inode-resolve\fP [-v] \fI<inode>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBinspect-internal logical-resolve\fP [-Pv] [-s \fI<size>\fP] \fI<logical>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBinspect-internal subvolid-resolve\fP \fI<subvolid>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBinspect-internal rootid\fP \fI<path>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBsend\fP [-ve] [-p \fI<parent>\fP] [-c \fI<clone-src>\fP] [-f \fI<outfile>\fP] \fI<subvol>\fP [\fI<subvol>\fP...]
+-.PP
+-\fBbtrfs\fP \fBreceive\fP [-ve] [-f \fI<infile>\fP] \fI<mount>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBquota enable\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fBquota disable\fP\fI <path>\fP
+-.PP
+-\fBbtrfs\fP \fBquota rescan\fP [-sw] \fI<path>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBqgroup assign\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBqgroup remove\fP \fI<src>\fP \fI<dst>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBqgroup create\fP \fI<qgroupid>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBqgroup destroy\fP \fI<qgroupid>\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBqgroup show\fP [\fIoptions\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBqgroup limit\fP [\fIoptions\fP] \fI<size>\fP|\fBnone\fP [\fI<qgroupid>\fP] \fI<path>\fP
+-.PP
+-.PP
+-\fBbtrfs\fP \fBreplace start\fP [-Bfr] \fI<srcdev>\fP|\fI<devid> <targetdev> <mount_point>\fP
+-.PP
+-\fBbtrfs\fP \fBreplace status\fP [-1] \fI<mount_point>\fP
+-.PP
+-\fBbtrfs\fP \fBreplace cancel\fP \fI<mount_point>\fP
+-.PP
+-\fBbtrfs\fP \fBdedup enable <path> \fP\fI\fP
+-.PP
+-\fBbtrfs\fP \fBdedup disable <path> \fP\fI\fP
+-.PP
+-\fBbtrfs\fP \fBdedup on [-b|--bs size] <path> \fP\fI\fP
+-.PP
+-\fBbtrfs\fP \fBdedup off <path> \fP\fI\fP
+-.PP
+-\fBbtrfs\fP \fBhelp|\-\-help \fP
+-.PP
+-\fBbtrfs\fP \fB<command> \-\-help \fP
+-.PP
+-.SH DESCRIPTION
+-.B btrfs
+-is used to control the filesystem and the files and directories stored. It is
+-the tool to create or destroy a snapshot or a subvolume for the
+-filesystem, to defrag a file or a directory, flush the data to the disk,
+-to resize the filesystem, to scan the device.
+-
+-It is possible to abbreviate the commands unless the commands are ambiguous.
+-For example: it is possible to run
+-.I btrfs sub snaps
+-instead of
+-.I btrfs subvolume snapshot.
+-But
+-.I btrfs file s
+-is not allowed, because
+-.I file s
+-may be interpreted both as
+-.I filesystem show
+-and as
+-.I filesystem sync.
+-In this case
+-.I btrfs
+-returns filesystem sync
+-If a command is terminated by
+-.I --help
+-, the detailed help is showed. If the passed command matches more commands,
+-detailed help of all the matched commands is showed. For example
+-.I btrfs dev --help
+-shows the help of all
+-.I device*
+-commands.
+-
+-.SH COMMANDS
+-.TP
+-
+-\fBsubvolume create\fP [-i \fI<qgroupid>\fP] [\fI<dest>\fP/]\fI<name>\fP
+-Create a subvolume \fI<name>\fR in \fI<dest>\fR.
+-If \fI<dest>\fR is not given subvolume \fI<name>\fR will be created in the
+-current directory.
+-.RS
+-
+-\fIOptions\fP
+-.IP "\fB-i\fP \fI<qgroupid>\fR" 5
+-Add the newly created subvolume to a qgroup. This option can be given multiple
+-times.
+-.RE
+-.TP
+-
+-\fBsubvolume delete\fR [\fIoptions\fP] \fI<subvolume>\fP [\fI<subvolume>...\fP]\fR
+-Delete the subvolume(s) from the filesystem. If \fI<subvolume>\fR is not a
+-subvolume, \fBbtrfs\fR returns an error but continues if there are more arguments
+-to process.
+-
+-The corresponding directory is removed instantly but the data blocks are
+-removed later.  The deletion does not involve full commit by default due to
+-performance reasons (as a consequence, the subvolume may appear again after a
+-crash).  Use one of the --commit options to wait until the operation is safely
+-stored on the media.
+-.RS
+-
+-\fIOptions\fP
+-.IP "\fB-c|--commit-after\fP" 5
+-wait for transaction commit at the end of the operation
+-.IP "\fB-C|--commit-each\fP" 5
+-wait for transaction commit after deleting each subvolume
+-.RE
+-.TP
+-
+-\fBsubvolume list\fR [\fIoptions\fP] [-G [+|-]\fIvalue\fP] [-C [+|-]\fIvalue\fP] [--sort=rootid,gen,ogen,path] \fI<path>\fR
+-
+-List the subvolumes present in the filesystem \fI<path>\fR. For every
+-subvolume the following information is shown by default.
+-ID \fI<ID>\fP top level \fI<ID>\fP path \fI<path>\fP
+-where path is the relative path of the subvolume to the \fItop level\fR
+-subvolume.
+-
+-The subvolume's ID may be used by the \fBsubvolume set-default\fR command, or
+-at mount time via the \fIsubvolid=\fR option.
+-If \fI-p\fR is given, then \fIparent <ID>\fR is added to the output between ID
+-and top level. The parent's ID may be used at mount time via the
+-\fIsubvolrootid=\fR option.
+-.RS
+-
+-\fIOptions\fP
+-.IP "\fB-p\fP" 5
+-print parent ID.
+-.IP "\fB-a\fP" 5
+-print all the subvolumes in the filesystem and distinguish between
+-absolute and relative path with respect to the given \fI<path>\fP.
+-.IP "\fB-c\fP" 5
+-print the ogeneration of the subvolume, aliases: ogen or origin generation.
+-.IP "\fB-g\fP" 5
+-print the generation of the subvolume.
+-.IP "\fB-o\fP" 5
+-print only subvolumes bellow specified <path>.
+-.IP "\fB-u\fP" 5
+-print the UUID of the subvolume.
+-.IP "\fB-q\fP" 5
+-print the parent uuid of subvolumes (and snapshots).
+-.IP "\fB-t\fP" 5
+-print the result as a table.
+-.IP "\fB-s\fP" 5
+-only snapshot subvolumes in the filesystem will be listed.
+-.IP "\fB-r\fP" 5
+-only readonly subvolumes in the filesystem will be listed.
+-.IP "\fB-G [+|-]\fIvalue\fP\fP" 5
+-list subvolumes in the filesystem that its generation is
+->=, <= or = \fIvalue\fP. '+' means >= \fIvalue\fP, '-' means <= \fIvalue\fP, If there is
+-neither '+' nor '-', it means = \fIvalue\fP.
+-.IP "\fB-C [+|-]\fIvalue\fP" 5
+-list subvolumes in the filesystem that its ogeneration is
+->=, <= or = \fIvalue\fP. The usage is the same to '-g' option.
+-.IP "\fB--sort=rootid,gen,ogen,path\fP" 5
+-list subvolumes in order by specified items.
+-you can add '+' or '-' in front of each items, '+' means ascending, '-'
+-means descending. The default is ascending.
+-
+-for \fB--sort\fP you can combine some items together by ',', just like
+-\f--sort=+ogen,-gen,path,rootid\fR.
+-.RE
+-.TP
+-
+-\fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI<source>\fP \fI<dest>\fP|[\fI<dest>\fP/]\fI<name>\fP
+-Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
+-name \fI<name>\fR in the \fI<dest>\fR directory.
+-If only \fI<dest>\fR is given, the subvolume will be named the basename of \fI<source>\fR.
+-If \fI<source>\fR is not a subvolume, \fBbtrfs\fR returns an error.
+-.RS
+-
+-\fIOptions\fP
+-.IP \fB-r\fP 5
+-The newly created snapshot will be readonly.
+-.IP "\fB-i\fP \fI<qgroupid>\fR" 5
+-Add the newly created subvolume to a qgroup. This option can be given multiple
+-times.
+-.RE
+-.TP
+-
+-\fBsubvolume snapshot\fP [-r] [-i qgroupid] \fI-s <subvolid>\fP \fI<dest>\fP/\fI<name>\fP
+-Create a writable/readonly snapshot of the subvolume \fI<subvolid>\fR with the
+-name \fI<name>\fR in the \fI<dest>\fR directory.
+-If \fI<subvolid>\fR does not refer to a subvolume, \fBbtrfs\fR returns an error.
+-.RS
+-
+-\fIOptions\fP
+-.IP \fB-r\fP 5
+-The newly created snapshot will be readonly.
+-.IP "\fB-i\fP \fI<qgroupid>\fR" 5
+-Add the newly created subvolume to a qgroup. This option can be given multiple
+-times.
+-.RE
+-.TP
+-
+-\fBsubvolume get-default\fR\fI <path>\fR
+-Get the default subvolume of the filesystem \fI<path>\fR. The output format
+-is similar to \fBsubvolume list\fR command.
+-.TP
+-
+-\fBsubvolume set-default\fR\fI <id> <path>\fR
+-Set the subvolume of the filesystem \fI<path>\fR which is mounted as
+-\fIdefault\fR. The subvolume is identified by \fI<id>\fR, which
+-is returned by the \fBsubvolume list\fR command.
+-.TP
+-
+-\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+-List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
+-.TP
+-
+-\fBsubvolume show\fR\fI <path>\fR
+-Show information of a given subvolume in the \fI<path>\fR.
+-.TP
+-
+-\fBfilesystem df\fP [-b] \fIpath [path..]\fR
+-
+-Show space usage information for a mount point.
+-
+-\fB-b\fP Set byte as unit
+-
+-The command \fBbtrfs filesystem df\fP is used to query how many space on the 
+-disk(s) are used and an estimation of the free
+-space of the filesystem.
+-The output of the command \fBbtrfs filesystem df\fP shows:
+-
+-.RS
+-.IP \fBDisk\ size\fP
+-the total size of the disks which compose the filesystem.
+-
+-.IP \fBDisk\ allocated\fP
+-the size of the area of the disks used by the chunks.
+-
+-.IP \fBDisk\ unallocated\fP 
+-the size of the area of the disks which is free (i.e.
+-the differences of the values above).
+-
+-.IP \fBUsed\fP
+-the portion of the logical space used by the file and metadata.
+-
+-.IP \fBFree\ (estimated)\fP
+-the estimated free space available: i.e. how many space can be used
+-by the user. The evaluation 
+-cannot be rigorous because it depends by the allocation policy (DUP, Single,
+-RAID1...) of the metadata and data chunks. If every chunk is stored as
+-"Single" the sum of the \fBfree (estimated)\fP space and the \fBused\fP 
+-space  is equal to the \fBdisk size\fP.
+-Otherwise if all the chunk are mirrored (raid1 or raid10) or duplicated
+-the sum of the \fBfree (estimated)\fP space and the \fBused\fP space is
+-half of the \fBdisk size\fP. Normally the \fBfree (estimated)\fP is between
+-these two limits.
+-
+-.IP \fBData\ to\ disk\ ratio\fP
+-the ratio betwen the \fBlogical size\fP (i.e. the space available by
+-the chunks) and the \fBdisk allocated\fP (by the chunks). Normally it is 
+-lower than 100% because the metadata is duplicated for security reasons.
+-If all the data and metadata are duplicated (or have a profile like RAID1)
+-the \fBData\ to\ disk\ ratio\fP could be 50%.
+-.RE
+-.TP
+-
+-\fBfilesystem show\fR [\fI--mounted\fP|\fI--all-devices\fP|\fI<path>\fP|\fI<uuid>\fP|\fI<device>\fP|\fI<lable>\fP]\fR
+-Show the btrfs filesystem with some additional info. If no option or
+-\fIPATH\fP|\fIUUID\fP|\fIDEVICE\fP|\fILABEL\fP
+-is passed, \fBbtrfs\fR shows information of all the btrfs filesystem both mounted
+-and unmounted.
+-If \fB--mounted\fP is passed, it would probe btrfs kernel to list mounted btrfs filesystem(s);
+-If \fB--all-devices\fP is passed, all the devices under /dev are scanned;
+-otherwise the devices list is extracted from the /proc/partitions file.
+-.TP
+-
+-\fBfilesystem sync\fR\fI <path> \fR
+-Force a sync for the filesystem identified by \fI<path>\fR.
+-.TP
+-
+-\fBfilesystem defragment\fP [\fIoptions\fP] \fI<file>\fP|\fI<dir>\fP [\fI<file>\fP|\fI<dir>...\fP]\fP
+-Defragment file data and/or directory metadata. If \fB-r\fP is passed, 
+-files in \fIdir\fR will be defragmented recursively.
+-
+-
+-The start position and the number of bytes to defragment can be specified by
+-\fIstart\fR and \fIlen\fR. Any extent bigger than threshold will be
+-considered already defragged. Use 0 to take the kernel default, and use 1 to
+-say every single extent must be rewritten. You can also turn on compression in
+-defragment operations.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-v\fP" 5
+-be verbose
+-.IP "\fB-c\fP" 5
+-compress file contents while defragmenting
+-.IP "\fB-r\fP" 5
+-defragment files recursively
+-.IP "\fB-f\fP" 5
+-flush filesystem after defragmenting
+-.IP "\fB-s \fIstart\fP\fP" 5
+-defragment only from byte \fIstart\fR onward
+-.IP "\fB-l \fIlen\fP\fP" 5
+-defragment only up to \fIlen\fR bytes
+-.IP "\fB-t \fIsize\fP\fP" 5
+-defragment only files at least \fIsize\fR bytes big
+-
+-For \fBstart\fP, \fBlen\fP, \fBsize\fP it is possible to append a suffix
+-like \fBk\fP for 1 KBytes, \fBm\fP for 1 MBytes...
+-
+-NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data,
+-don't use it if you use snapshots, have de-duplicated your data or made
+-copies with \fBcp --reflink\fP.
+-.RE
+-.TP
+-
+-.\"
+-.\" Some wording are extracted by the resize2fs man page
+-.\"
+-\fBfilesystem resize\fP [\fIdevid\fP:][+/\-]\fI<size>\fP[gkm]|[\fIdevid\fP:]\fImax <path>\fR
+-Resize a filesystem identified by \fI<path>\fR for the underlying device
+-\fIdevid\fR.  The \fIdevid\fR can be found with \fBbtrfs filesystem show\fR and
+-defaults to 1 if not specified.
+-The \fI<size>\fR parameter specifies the new size of the filesystem.
+-If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
+-by the quantity \fI<size>\fR.
+-If no units are specified, the unit of the \fI<size>\fR parameter defaults to
+-bytes. Optionally, the size parameter may be suffixed by one of the following
+-units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
+-respectively.
+-
+-If 'max' is passed, the filesystem will occupy all available space on the
+-device \fIdevid\fR.
+-
+-The \fBresize\fR command \fBdoes not\fR manipulate the size of underlying
+-partition.  If you wish to enlarge/reduce a filesystem, you must make sure you
+-can expand the partition before enlarging the filesystem and shrink the
+-partition after reducing the size of the filesystem.  This can done using
+-\fBfdisk(8)\fR or \fBparted(8)\fR to delete the existing partition and recreate
+-it with the new desired size.  When recreating the partition make sure to use
+-the same starting disk cylinder as before.
+-.TP
+-
+-\fBfilesystem label\fP [\fI<dev>\fP|\fI<mount_point>\fP] [\fInewlabel\fP]\fP
+-Show or update the label of a filesystem. \fI[<device>|<mountpoint>]\fR is used
+-to identify the filesystem. 
+-
+-If a \fInewlabel\fR optional argument is passed, the label is changed. The
+-following constraints exist for a label:
+-.IP
+-- the maximum allowable length shall be less than 256 chars
+-.TP
+-\fBfilesystem disk-usage\fP [-tb] \fIpath [path..]\fR
+-
+-Show in which disk the chunks are allocated.
+-
+-\fB-b\fP Set byte as unit
+-
+-\fB-t\fP Show data in tabular format
+-
+-.TP
+-
+-\fB[filesystem] balance \fI<path>\fR
+-Blanace chunks across the devices
+-
+-\fBbtrfs balance \fI<path>\fR is deprecated,
+-please use \fBbtrfs balance start\fR command instead.
+-
+-.TP
+-\fB[filesystem] balance start\fR [\fIoptions\fP] \fI<path>\fR
+-Balance chunks across the devices
+-Balance and/or convert (change allocation profile of) chunks that
+-passed all \fIfilters\fR in a comma-separated list of filters for a
+-particular chunk type.
+-If filter list is not given balance all chunks of that type.
+-In case none of the \fI-d\fR, \fI-m\fR or \fI-s\fR options is
+-given balance all chunks in a filesystem.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-d[\fIfilters\fP]\fR" 5
+-act on data chunks
+-.IP "\fB-m[\fIfilters\fP]\fR" 5
+-act on metadata chunks
+-.IP "\fB-s[\fIfilters\fP]\fR" 5
+-act on system chunks (only under -f)
+-.IP "\fB-v\fP" 5
+-be verbose
+-.IP "\fB-f\fP" 5
+-force reducing of metadata integrity
+-.RE
+-.TP
+-
+-\fB[filesystem] balance pause\fR\fI <path>\fR
+-Pause running balance.
+-
+-.RE
+-.TP
+-
+-\fB[filesystem] balance cancel\fR\fI <path>\fR
+-Cancel running or paused balance.
+-.TP
+-
+-\fB[filesystem] balance resume\fR\fI <path>\fR
+-Resume interrupted balance.
+-.TP
+-
+-\fB[filesystem] balance status\fR [-v] \fI<path>\fR
+-Show status of running or paused balance.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-v\fP" 5
+-be verbose
+-.RE
+-.TP
+-
+-\fBdevice add\fR [-Kf] \fI<dev> \fP[\fI<dev>...\fP] \fI<path>\fR
+-Add device(s) to the filesystem identified by \fI<path>\fR.
+-If applicable, a whole device discard (TRIM) operation is performed.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-K|--nodiscard\fP" 5
+-do not perform discard by default
+-.IP "\fB-f|--force\fP" 5
+-force overwrite of existing filesystem on the given disk(s)
+-.RE
+-.TP
+-
+-\fBdevice delete\fR\fI <dev> \fP[\fI<dev>...\fP] \fI<path>\fR
+-Remove device(s) from a filesystem identified by \fI<path>\fR.
+-.TP
+-
+-\fBdevice scan\fR [(--all-devices|-d)|\fI<device> \fP[\fI<device>...\fP]]\fR
+-If one or more devices are passed, these are scanned for a btrfs filesystem. 
+-If no devices are passed, \fBbtrfs\fR uses block devices containing btrfs
+-filesystem as listed by blkid.
+-Finally, if \fB--all-devices\fP or \fB-d\fP is passed, all the devices under /dev are 
+-scanned.
+-.TP
+-
+-\fBdevice disk-usage\fR\fI [-b] <path> [<path>..]\fR
+-Show which chunks are in a device.
+-
+-\fB-b\fP set byte as unit.
+-.TP
+-
+-\fBdevice ready\fR \fI<device>\fR
+-Check device to see if it has all of it's devices in cache for mounting.
+-.TP
+-
+-\fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
+-Read and print the device IO stats for all devices of the filesystem
+-identified by \fI<path>\fR or for a single \fI<device>\fR.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-z\fP" 5
+-Reset stats to zero after reading them.
+-.RE
+-.TP
+-
+-\fBscrub start\fP [-BdqrRf] [-c \fIioprio_class\fP -n \fIioprio_classdata\fP] {\fI<path>\fP|\fI<device>\fP}
+-Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
+-a single \fI<device>\fR. Without options, scrub is started as a background
+-process. Progress can be obtained with the \fBscrub status\fR command. Scrubbing
+-involves reading all data from all disks and verifying checksums. Errors are
+-corrected along the way if possible.
+-.IP
+-The default IO priority of scrub is the idle class. The priority can be configured similar to the
+-.BR ionice (1)
+-syntax.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-B\fP" 5
+-Do not background and print scrub statistics when finished.
+-.IP "\fB-d\fP" 5
+-Print separate statistics for each device of the filesystem (-B only).
+-.IP "\fB-q\fP" 5
+-Quiet. Omit error messages and statistics.
+-.IP "\fB-r\fP" 5
+-Read only mode. Do not attempt to correct anything.
+-.IP "\fB-R\fP" 5
+-Raw print mode. Print full data instead of summary.
+-.IP "\fB-c \fIioprio_class\fP" 5
+-Set IO priority class (see
+-.BR ionice (1)
+-manpage).
+-.IP "\fB-n \fIioprio_classdata\fP" 5
+-Set IO priority classdata (see
+-.BR ionice (1)
+-manpage).
+-.IP "\fB-f\fP" 5
+-force to check whether scrub has started or resumed in userspace.
+-this is useful when scrub stat record file is damaged.
+-.RE
+-.TP
+-
+-\fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+-If a scrub is running on the filesystem identified by \fI<path>\fR, cancel it.
+-Progress is saved in the scrub progress file and scrubbing can be resumed later
+-using the \fBscrub resume\fR command.
+-If a \fI<device>\fR is given, the corresponding filesystem is found and
+-\fBscrub cancel\fP behaves as if it was called on that filesystem.
+-.TP
+-
+-\fBscrub resume\fP [-BdqrR] [-c ioprio_class -n ioprio_classdata] {\fI<path>\fP|\fI<device>\fP}
+-Resume a canceled or interrupted scrub cycle on the filesystem identified by
+-\fI<path>\fR or on a given \fI<device>\fR. Does not start a new scrub if the
+-last scrub finished successfully.
+-.RS
+-
+-\fIOptions\fR
+-.TP
+-see \fBscrub start\fP.
+-.RE
+-.TP
+-
+-\fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
+-Show status of a running scrub for the filesystem identified by \fI<path>\fR or
+-for the specified \fI<device>\fR.
+-If no scrub is running, show statistics of the last finished or canceled scrub
+-for that filesystem or device.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-d\fP" 5
+-Print separate statistics for each device of the filesystem.
+-.RE
+-.TP
+-
+-\fBcheck\fR [\fIoptions\fP] <device>\fR
+-Check an unmounted btrfs filesystem.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-s|--support \fI<superblock>\fP\fR" 5
+-use this superblock copy.
+-.IP "\fB--repair\fP" 5
+-try to repair the filesystem.
+-.IP "\fB--init-csum-tree\fP" 5
+-create a new CRC tree.
+-.IP "\fB--init-extent-tree\fP" 5
+-create a new extent tree.
+-.RE
+-.TP
+-
+-\fBrescue chunk-recover\fR [\fIoptions\fP] <device>\fR
+-Recover the chunk tree by scanning the devices one by one.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-y\fP" 5
+-assume an answer of 'yes' to all questions.
+-.IP "\fB-v\fP" 5
+-verbose mode.
+-.IP "\fB-h\fP" 5
+-help.
+-.RE
+-.TP
+-
+-\fBrescue super-recover\fR [\fIoptions\fP] <device>\fR
+-Recover bad superblocks from good copies.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-y\fP" 5
+-assume an answer of 'yes' to all questions.
+-.IP "\fB-v\fP" 5
+-verbose mode.
+-.RE
+-.TP
+-
+-\fBrestore\fR [\fIoptions\fP] \fI<device>\fR \fI<path>\fR | -l \fI<device>\fP
+-Try to restore files from a damaged filesystem(unmounted) to given \fI<path>\fR or list  tree roots.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-s\fP" 5
+-get snapshots.
+-.IP "\fB-x\fP" 5
+-get extended attributes.
+-.IP "\fB-v\fP" 5
+-verbose.
+-.IP "\fB-i\fP" 5
+-ignore errors.
+-.IP "\fB-o\fP" 5
+-overwrite.
+-.IP "\fB-t \fI<location>\fP\fP" 5
+-tree location.
+-.IP "\fB-f \fI<offset>\fP\fP" 5
+-filesystem location.
+-.IP "\fB-u \fI<block>\fP\fP" 5
+-super mirror.
+-.IP "\fB-r \fI<rootid>\fP\fP" 5
+-root objectid.
+-.IP "\fB-d\fP" 5
+-find dir.
+-.IP "\fB-l\fP" 5
+-list tree roots.
+-.RE
+-.TP
+-
+-\fBinspect-internal inode-resolve\fP [-v] \fI<inode>\fP \fI<path>\fP
+-Resolves an <inode> in subvolume <path> to all filesystem paths.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-v\fP" 5
+-verbose mode. print count of returned paths and ioctl() return value
+-.RE
+-.TP
+-
+-\fBinspect-internal logical-resolve\fP [-Pv] [-s bufsize] \fI<logical>\fP \fI<path>\fP
+-Resolves a <logical> address in the filesystem mounted at <path> to all inodes.
+-By default, each inode is then resolved to a file system path (similar to the
+-\fBinode-resolve\fP subcommand).
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-P\fP" 5
+-skip the path resolving and print the inodes instead
+-.IP "\fB-v\fP" 5
+-verbose mode. print count of returned paths and all ioctl() return values
+-.IP "\fB-s \fI<bufsize>\fP" 5
+-set inode container's size. This is used to increase inode container's size in case it is
+-not enough to read all the resolved results. The max value one can set is 64k.
+-.RE
+-.TP
+-
+-\fBinspect-internal subvolid-resolve\fP \fI<subvolid> <path>\fP
+-Get file system paths for the given subvolume ID.
+-.TP
+-
+-\fBinspect-internal rootid\fP \fI<path>\fP
+-For a given file or directory, return the containing tree root id. For a
+-subvolume return it's own tree id.
+-
+-The result is undefined for the so-called empty subvolumes (identified by inode number 2).
+-.TP
+-
+-\fBsend\fP [-ve] [-p \fI<parent>\fP] [-c \fI<clone-src>\fP] [-f \fI<outfile>\fP] \fI<subvol>\fP [\fI<subvol>...\fP]
+-Send the subvolume(s) to stdout.
+-Sends the subvolume(s) specified by \fI<subvol>\fR to stdout.
+-By default, this will send the whole subvolume. To do an incremental
+-send, use '\fI-p <parent>\fR'. If you want to allow btrfs to clone from
+-any additional local snapshots, use '\fI-c <clone-src>\fR' (multiple times
+-where applicable). You must not specify clone sources unless you
+-guarantee that these snapshots are exactly in the same state on both
+-sides, the sender and the receiver. It is allowed to omit the '\fI-p <parent>\fR'
+-option when '\fI-c <clone-src>\fR' options are given, in
+-which case '\fBbtrfs send\fP' will determine a suitable parent among the
+-clone sources itself.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-v\fP" 5
+-Enable verbose debug output. Each occurrence of this option increases the
+-verbose level more.
+-.IP "\fB-e\fP" 5
+-If sending multiple subvols at once, use the new format and omit the <end cmd> between the subvols.
+-.IP "\fB-p \fI<parent>\fP" 5
+-Send an incremental stream from \fI<parent>\fR to \fI<subvol>\fR.
+-.IP "\fB-c \fI<clone-src>\fP" 5
+-Use this snapshot as a clone source for an incremental send (multiple allowed).
+-.IP "\fB-f \fI<outfile>\fP" 5
+-Output is normally written to stdout. To write to a file, use this option.
+-An alternative would be to use pipes.
+-.RE
+-.TP
+-
+-\fBreceive\fP [-ve] [-f \fI<infile>\fR] \fI<mount>\fR
+-Receive subvolumes from stdin.
+-Receives one or more subvolumes that were previously
+-sent with btrfs send. The received subvolumes are stored
+-into \fI<mount>\fP.
+-btrfs receive will fail with the following case:
+-
+-1.a receiving subvolume already exists.
+-
+-2.a previously received subvolume was changed after it was received.
+-
+-3.default subvolume is changed or you don't mount btrfs filesystem with
+-fs tree.
+-
+-After receiving a subvolume, it is immediately set to read only.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-v\fP" 5
+-Enable verbose debug output. Each occurrence of this option increases the
+-verbose level more.
+-.IP "\fB-f \fI<infile>\fR" 5
+-By default, btrfs receive uses stdin to receive the subvolumes.
+-Use this option to specify a file to use instead.
+-.IP "\fB-e\fP" 5
+-Terminate after receiving an <end cmd> in the data stream.
+-Without this option, the receiver terminates only if an error is recognized or on EOF.
+-.RE
+-.TP
+-
+-\fBquota enable\fR \fI<path>\fR
+-Enable subvolume quota support for a filesystem.
+-.TP
+-
+-\fBquota disable\fR \fI<path>\fR
+-Disable subvolume quota support for a filesystem.
+-.TP
+-
+-\fBquota rescan\fR [-s] \fI<path>\fR
+-Trash all qgroup numbers and scan the metadata again with the current config.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-s\fP" 5
+-show status of a running rescan operation.
+-.IP "\fB-w\fP" 5
+-wait for rescan operation to finish(can be already in progress).
+-.RE
+-.TP
+-
+-\fBqgroup assign\fP \fI<src> <dst> <path>\fP
+-Enable subvolume qgroup support for a filesystem.
+-.TP
+-
+-\fBqgroup remove\fP \fI<src> <dst> <path>\fP
+-Remove a subvol from a quota group.
+-.TP
+-
+-\fBqgroup create\fP \fI<qgroupid> <path>\fP
+-Create a subvolume quota group.
+-.TP
+-
+-\fBqgroup destroy\fP \fI<qgroupid> <path>\fP
+-Destroy a subvolume quota group.
+-.TP
+-
+-\fBqgroup show\fP [\fIoptions\fP] \fI<path>\fP
+-Show all subvolume quota groups.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-p\fP" 5
+-print parent qgroup id.
+-.IP "\fB-c\fP" 5
+-print child qgroup id.
+-.IP "\fB-r\fP" 5
+-print max referenced size of qgroup.
+-.IP "\fB-e\fP" 5
+-print max exclusive size of qgroup.
+-.IP "\fB-F\fP" 5
+-list all qgroups which impact the given path(include ancestral qgroups)
+-.IP "\fB-f\fP" 5
+-list all qgroups which impact the given path(exclude ancestral qgroups)
+-.IP "\fB--sort=ATTR\fP" 5
+-list qgroups in order of ATTR.
+-ATTR can be one or more of \fBqgroupid\fP,\fBrfer\fP,\fBexcl\fP,\fBmax_rfer\fP,\fBmax_excl\fP.
+-If multiple ATTRs is given, use comma to seperate.
+-.RE
+-.TP
+-
+-\fBqgroup limit\fP [\fIoptions\fP] \fI<size>\fP|\fBnone\fP [\fI<qgroupid>\fP] \fI<path>\fP
+-Limit the size of a subvolume quota group.
+-.TP
+-
+-\fBreplace start\fR [-Bfr] \fI<srcdev>\fP|\fI<devid> <targetdev> <path>\fR
+-Replace device of a btrfs filesystem.
+-On a live filesystem, duplicate the data to the target device which
+-is currently stored on the source device. If the source device is not
+-available anymore, or if the \fB-r\fR option is set, the data is built
+-only using the RAID redundancy mechanisms. After completion of the
+-operation, the source device is removed from the filesystem.
+-If the \fI<srcdev>\fR is a numerical value, it is assumed to be the device id
+-of the filesystem which is mounted at mount_point, otherwise is is
+-the path to the source device. If the source device is disconnected,
+-from the system, you have to use the \fIdevid\fR parameter format.
+-The \fI<targetdev>\fP needs to be same size or larger than the \fI<srcdev>\fR.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-r\fP" 5
+-only read from \fI<srcdev>\fR if no other zero-defect mirror exists (enable
+-this if your drive has lots of read errors, the access would be very slow)
+-.IP "\fB-f\fP" 5
+-force using and overwriting \fI<targetdev>\fR even if it looks like
+-containing a valid btrfs filesystem. A valid filesystem is
+-assumed if a btrfs superblock is found which contains a
+-correct checksum. Devices which are currently mounted are
+-never allowed to be used as the \fI<targetdev>\fR
+-.IP "\fB-B\fP" 5
+-do not background
+-.RE
+-.TP
+-
+-\fBreplace status\fR [-1] \fI<mount_point>\fR
+-Print status and progress information of a running device replace operation.
+-.RS
+-
+-\fIOptions\fR
+-.IP "\fB-1\fP" 5
+-print once instead of print continuously until the replace
+-operation finishes (or is canceled)
+-.RE
+-.TP
+-
+-\fBreplace cancel\fR \fI<mount_point>\fR
+-Cancel a running device replace operation.
+-.TP
+-
+-\fBbtrfs dedup enable\fP \fI<path>\fP
+-Enable data deduplication support for a filesystem.
+-.TP
+-
+-\fBbtrfs dedup disable\fP \fI<path>\fP
+-Disable data deduplication support for a filesystem.
+-.TP
+-
+-\fBbtrfs dedup on [-b|--bs size]\fP \fI<path>\fP
+-Switch on data deduplication or change the dedup blocksize.
+-.TP
+-
+-\fBbtrfs dedup off\fP \fI<path>\fP
+-Switch off data deduplication.
+-.RE
+-
+-.SH EXIT STATUS
+-\fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
+-case of failure.
+-
+-.SH AVAILABILITY
+-.B btrfs
+-is part of btrfs-progs. Btrfs filesystem is currently under heavy development,
+-and not suitable for any uses other than benchmarking and review.
+-Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
+-further details.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8),
+-.BR ionice (1)
+diff --git a/man/btrfsck.8.in b/man/btrfsck.8.in
+deleted file mode 100644
+index bf65e3c..0000000
+--- a/man/btrfsck.8.in
++++ /dev/null
+@@ -1,29 +0,0 @@
+-.TH BTRFSCK 8
+-.SH NAME
+-btrfsck \- check and repair of a Btrfs filesystem
+-.SH SYNOPSIS
+-.B btrfsck [\fIoptions\fP] \fI<device>\fP
+-.SH DESCRIPTION
+-\fBbtrfsck\fP is used to check and optionally repair of a Btrfs filesystem. Now, it can only be run on an unmounted FS. Considering it is not well-tested
+-in real-life situations yet. if you have a broken Btrfs filesystem, btrfsck may not repair but cause aditional damages. \fI<device>\fP is the device file
+-where the filesystem is stored.
+-
+-\fIOptions\fP
+-.IP "\fB-s,--super \fI<superblock>\fP" 5
+-specify which superblock copy that you want to use.
+-.IP "\fB--repair\fP" 5
+-try to repair the filesystem.
+-.IP "\fB--init-csum-tree\fP" 5
+-create a new CRC tree.
+-.IP "\fB--init-extent-tree\fP" 5
+-create a new extent tree.
+-
+-.SH EXIT CODE
+-\fBbtrfsck\fR will return 0 exit code if no error happened.
+-Other exit code means some problems happened.
+-
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8),
+-.BR btrfs (8)
+diff --git a/man/btrfstune.8.in b/man/btrfstune.8.in
+deleted file mode 100644
+index c7fff9a..0000000
+--- a/man/btrfstune.8.in
++++ /dev/null
+@@ -1,31 +0,0 @@
+-.TH BTRFSTUNE 8
+-.SH NAME
+-btrfstune \- tune various filesystem parameters.
+-.SH SYNOPSIS
+-.B btrfstune [\fIoptions\fP] \fI<device>\fP
+-.SH DESCRIPTION
+-\fBbtrfstune\fP is used to tune various filesystem parameters,you can
+-enable/disable some extended features for btrfs.
+-
+-\fIOptions\fP
+-.IP "\fB-S \fI<value>\fP" 5
+-updates the seeding value, it forces a fs readonly so that you can use it to build other filesystems.
+-.IP "\fB-r\fP" 5
+-enable extended inode refs.
+-.IP "\fB-x\fP" 5
+-enable skinny metadata extent refs.
+-
+-.SH EXIT CODE
+-\fBbtrfstune\fP will return 0 if no error happened.
+-If any problems happened, 1 will be returned.
+-
+-.SH AUTHOR
+-Written by Shilong Wang and Wenruo Qu.
+-
+-.SH COPYRIGHT
+-Copyright \(co 2013 FUJITSU LIMITED.
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-.br
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/fsck.btrfs.8.in b/man/fsck.btrfs.8.in
+deleted file mode 100644
+index eb21c89..0000000
+--- a/man/fsck.btrfs.8.in
++++ /dev/null
+@@ -1,47 +0,0 @@
+-.TH fsck.btrfs 8
+-.SH NAME
+-fsck.btrfs \- do nothing, successfully
+-.SH SYNOPSIS
+-.B fsck.btrfs
+-[\fB-aApy\fP]
+-[\fBdevice...\fP]
+-.SH DESCRIPTION
+-.B fsck.btrfs
+-is a type of utility that should exist for any filesystem and is
+-called during system setup when the corresponding
+-.BR /etc/fstab
+-entries contain non-zero value for
+-.BR fs_passno
+-, see
+-.BR fstab(5)
+-for more.
+-.PP
+-Traditional filesystems need to run their respective fsck utility in case the
+-filesystem was not unmounted cleanly and the log needs to be replayed before
+-mount. This is not needed for BTRFS. You should set fs_passno to 0.
+-.PP
+-If you wish to check the consistency of a BTRFS filesystem or repair a damaged
+-filesystem, see
+-.BR btrfs(8)
+-subcommand 'check'. By default the filesystem
+-consistency is checked, the repair mode is enabled via --repair option (use
+-with care!).
+-.SH OPTIONS
+-The options detect if \fBfsck.btrfs\fP is executed in non-interactive mode and exits
+-with success, otherwise prints a message about \fBbtrfs check\fP.
+-.SH EXIT CODE
+-There are two possible exit code returned:
+-.RS
+-.IP 0 5
+-No errors
+-.IP 8 5
+-Operational error, eg. device does not exist
+-.RE
+-.
+-.SH FILES
+-.IR /etc/fstab .
+-.SH SEE ALSO
+-.BR btrfs (8),
+-.BR fsck (8),
+-.BR fstab (5),
+-.\" btrfsck is intentionally left out
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+deleted file mode 100644
+index dabeb62..0000000
+--- a/man/mkfs.btrfs.8.in
++++ /dev/null
+@@ -1,105 +0,0 @@
+-.TH MKFS.BTRFS 8
+-.SH NAME
+-mkfs.btrfs \- create a btrfs filesystem
+-.SH SYNOPSIS
+-.B mkfs.btrfs
+-[ \fB\-A\fP\fI alloc-start\fP ]
+-[ \fB\-b\fP\fI byte-count\fP ]
+-[ \fB\-d\fP\fI data-profile\fP ]
+-[ \fB\-f\fP ]
+-[ \fB\-n\fP\fI nodesize\fP ]
+-[ \fB\-l\fP\fI leafsize\fP ]
+-[ \fB\-L\fP\fI label\fP ]
+-[ \fB\-m\fP\fI metadata profile\fP ]
+-[ \fB\-M\fP\fI mixed data+metadata\fP ]
+-[ \fB\-s\fP\fI sectorsize\fP ]
+-[ \fB\-r\fP\fI rootdir\fP ]
+-[ \fB\-K\fP ]
+-[ \fB\-O\fP\fI feature1,feature2,...\fP ]
+-[ \fB\-h\fP ]
+-[ \fB\-V\fP ]
+-\fI device\fP [ \fIdevice ...\fP ]
+-.SH DESCRIPTION
+-.B mkfs.btrfs
+-is used to create a btrfs filesystem (usually in a disk partition, or an array
+-of disk partitions).
+-.I device
+-is the special file corresponding to the device (e.g \fI/dev/sdXX\fP ).
+-If multiple \fI devices \fP are specified, btrfs is created
+-spanning across the specified \fI devices\fP.
+-.SH OPTIONS
+-.TP
+-\fB\-A\fR, \fB\-\-alloc\-start \fIoffset\fR
+-Specify the offset from the start of the device to start the btrfs filesystem. The default value is zero, or the start of the device.
+-.TP
+-\fB\-b\fR, \fB\-\-byte\-count \fIsize\fR
+-Specify the size of the resultant filesystem. If this option is not used,
+-mkfs.btrfs uses all the available storage for the filesystem.
+-.TP
+-\fB\-d\fR, \fB\-\-data \fItype\fR
+-Specify how the data must be spanned across the devices specified. Valid
+-values are raid0, raid1, raid5, raid6, raid10 or single.
+-.TP
+-\fB\-f\fR, \fB\-\-force\fR
+-Force overwrite when an existing filesystem is detected on the device.
+-By default, mkfs.btrfs will not write to the device if it suspects that 
+-there is a filesystem or partition table on the device already.
+-.TP
+-\fB\-n\fR, \fB\-\-nodesize \fIsize\fR
+-\fB\-l\fR, \fB\-\-leafsize \fIsize\fR
+-Specify the nodesize, the tree block size in which btrfs stores
+-data. The default value is 16KB (16384) or the page size, whichever is
+-bigger. Must be a multiple of the sectorsize, but not larger than
+-65536. Leafsize always equals nodesize and the options are aliases.
+-.TP
+-\fB\-L\fR, \fB\-\-label \fIname\fR
+-Specify a label for the filesystem.
+-.TP
+-\fB\-m\fR, \fB\-\-metadata \fIprofile\fR
+-Specify how metadata must be spanned across the devices specified. Valid
+-values are raid0, raid1, raid5, raid6, raid10, single or dup.  Single device
+-will have dup set by default except in the case of SSDs which will default to
+-single. This is because SSDs can remap blocks internally so duplicate blocks
+-could end up in the same erase block which negates the benefits of doing
+-metadata duplication.
+-.TP
+-\fB\-M\fR, \fB\-\-mixed\fR
+-Mix data and metadata chunks together for more efficient space 
+-utilization.  This feature incurs a performance penalty in
+-larger filesystems.  It is recommended for use with filesystems
+-of 1 GiB or smaller.
+-.TP
+-\fB\-s\fR, \fB\-\-sectorsize \fIsize\fR
+-Specify the sectorsize, the minimum data block allocation unit. The default
+-value is the page size. If the sectorsize differs from the page size, the
+-created filesystem may not be mountable by current kernel. Therefore it is not
+-recommended to use this option unless you are going to mount it on a system
+-with the appropriate page size.
+-.TP
+-\fB\-r\fR, \fB\-\-rootdir \fIrootdir\fR
+-Specify a directory to copy into the newly created fs.
+-.TP
+-\fB\-K\fR, \fB\-\-nodiscard \fR
+-Do not perform whole device TRIM operation by default.
+-.TP
+-\fB\-O\fR, \fB\-\-features \fIfeature1,feature2,...\fR
+-A list of filesystem features turned on at mkfs time. Not all features are
+-supported by old kernels.
+-
+-To see all run
+-
+-\fBmkfs.btrfs -O list-all\fR
+-.TP
+-\fB\-V\fR, \fB\-\-version\fR
+-Print the \fBmkfs.btrfs\fP version and exit.
+-.SH UNIT
+-As default the unit is the byte, however it is possible to append a suffix
+-to the arguments like \fBk\fP for KBytes, \fBm\fP for MBytes...
+-.SH AVAILABILITY
+-.B mkfs.btrfs
+-is part of btrfs-progs. Btrfs is currently under heavy development,
+-and not suitable for any uses other than benchmarking and review.
+-Please refer to the btrfs wiki
+-http://btrfs.wiki.kernel.org for further details.
+-.SH SEE ALSO
+-.BR btrfsck (8)
 -- 
 1.9.1
 

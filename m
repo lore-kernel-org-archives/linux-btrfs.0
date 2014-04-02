@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19444 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:21720 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758067AbaDBJmk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 05:42:40 -0400
+	with ESMTP id S1758047AbaDBJrT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 05:47:19 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, wangsl.fnst@cn.fujitsu.com
-Subject: [PATCH RFC] Btrfs: device_list_add() should not update list when mounted
-Date: Wed,  2 Apr 2014 17:43:33 +0800
-Message-Id: <1396431813-24177-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RFC v2] Btrfs: device_list_add() should not update list when mounted
+Date: Wed,  2 Apr 2014 17:48:21 +0800
+Message-Id: <1396432101-24276-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1396431813-24177-1-git-send-email-anand.jain@oracle.com>
+References: <1396431813-24177-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -40,22 +42,18 @@ reproducer 2:
 disappear a disk then replace (RAID1) the disappeared disk
 and then make the disappeared disk to reappear.
 
-----
  mkfs.btrfs -f -m raid1 -d raid1 /dev/sdc /dev/sdd
  mount /dev/sdc /btrfs
  dd if=/dev/zero of=/btrfs/tf1 count=1
  btrfs fi sync /btrfs
----
 
 devmgt[1] will help to attach or detach a disk easily
 
---
  devmgt show
  devmgt detach /dev/sdc
---
 
 btrfs sill unaware of device missing (but thats not the point)
---
+
  btrfs fi show -m
 Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
         Total devices 2 FS bytes used 32.00KiB
@@ -67,11 +65,9 @@ Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
         Total devices 2 FS bytes used 32.00KiB
         devid    1 size 958.94MiB used 115.88MiB path /dev/sde
         devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
---
 
 so far good. now missing /dev/sdc comes-back.
 
----
  devmgt attach host2
 
 btrfs fi show -m shows sdc
@@ -79,7 +75,6 @@ Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120^M
         Total devices 2 FS bytes used 32.00KiB^M
         devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <- Wrong.
         devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
----
 
 this is wrong it should be sde. this happened because when
 disk comes back device_list_add() is called which would invariably
@@ -98,6 +93,9 @@ viz device del, device add, replace, device scan, replace missing.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+
+v1->v2: remove '---' in commit messages which conflict with git am
+
  fs/btrfs/volumes.c |   25 ++++++++++++++++++++++++-
  1 files changed, 24 insertions(+), 1 deletions(-)
 

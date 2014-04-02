@@ -1,77 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35343 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51203 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754271AbaDBAzh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Apr 2014 20:55:37 -0400
-Message-ID: <533B5F75.3090304@cn.fujitsu.com>
-Date: Wed, 2 Apr 2014 08:53:09 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	with ESMTP id S1758054AbaDBI7B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:59:01 -0400
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-kernel@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <1i5t5.duncan@cox.net>,
+        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] lib: add size unit t/p/e to memparse
+Date: Wed, 2 Apr 2014 16:54:37 +0800
+Message-ID: <1396428877-24089-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Michael Witten <mfwitten@gmail.com>
-CC: Shilong Wang <wangshilong1991@gmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [Help] Errors found in extent allocation tree or chunk allocation
-References: <ac786c9023364c699d8212b42da536f2-mfwitten@gmail.com>            <CAP9B-Qmy4NgzRPpApM+Pn7tjhu6Z-cBtz99kgC+2rYu9+o9PCQ@mail.gmail.com> <5a201e76eb0545a290305d2e62bfcd28-mfwitten@gmail.com>
-In-Reply-To: <5a201e76eb0545a290305d2e62bfcd28-mfwitten@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Michael,
+For modern filesystems such as btrfs, t/p/e size level operations
+are common.
+add size unit t/p/e parsing to memparse
 
-On 04/02/2014 03:26 AM, Michael Witten wrote:
-> On Tue, 1 Apr 2014 07:15:47 +0800, Shilong Wang wrote:
->
->> hello, recently, i was working on btrfsck repair. i post some
->> patches to make btrfsck to rebuild extent tree with snapshots.
->> you can pull code from david latest branch and have a try with
->> btrfsck --init-extent-tree.
-> Fortunately, the `btrfs balance' command solved the issue for me:
->
->    http://mid.gmane.org/<8e4932bb29f743419660da1846c2363b-mfwitten@gmail.com>
->
-> However, I did notice `--init-extent-tree' when trying to figure
-> out what I might do to fix my troubles; however, I was uncertain
-> about exactly what it would do.
->
-> According to `man btrfsck':
->
->    --init-csum-tree
->         create a new CRC tree.
->
->    --init-extent-tree
->         create a new extent tree.
->
-> These sound potentially destructive, so I was afraid to use them;
-> what exactly does it mean to create a new tree? After your email,
-> I assume each action creates a new tree that is populated from the
-> data in the corresponding old tree.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+changelog
+	v1->v2: replace kilobyte with kibibyte, and others
+	v2->v3: add missing unit "bytes" in comment
+---
+ lib/cmdline.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
-We may have a totally broken Extent tree, then you could not even
-mount your filesystem anymore.
-
-'--init-extent-tree' will recreate a new tree and then re-insert 
-everything according to other fs/file tree.
-
->
-> Also, you wrote:
->
->> rebuild extent tree with snapshots
-> Do you mean to say that your patches handle the previously unhandled
-> case in which both of the following are true?
-
-Previouly, '--init-extent-tree' did not handle it properly if there is 
-snapshots in the filesystem.
-
-Thanks,
-Wang
->
->    * There are snapshots in the file system.
->    * The extent tree needs to be rebuilt.
->
-> Thanks!
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index eb67911..511b9be 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -119,11 +119,17 @@ char *get_options(const char *str, int nints, int *ints)
+  *	@retptr: (output) Optional pointer to next char after parse completes
+  *
+  *	Parses a string into a number.  The number stored at @ptr is
+- *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+- *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+- *	1073741824).  If the number is suffixed with K, M, or G, then
+- *	the return value is the number multiplied by one kilobyte, one
+- *	megabyte, or one gigabyte, respectively.
++ *	potentially suffixed with
++ *	%K (for kibibytes, or 1024 bytes),
++ *	%M (for mebibytes, or 1048576 bytes),
++ *	%G (for gibibytes, or 1073741824 bytes),
++ *	%T (for tebibytes, or 1099511627776 bytes),
++ *	%P (for pebibytes, or 1125899906842624 bytes),
++ *	%E (for exbibytes, or 1152921504606846976 bytes).
++ *	If the number is suffixed with K, M, G, T, P, E, then
++ *	the return value is the number multiplied by one kibibyte, one
++ *	mebibyte, one gibibyte, one tebibyte, one pebibyte, one exbibyte,
++ *	respectively.
+  */
+ 
+ unsigned long long memparse(const char *ptr, char **retptr)
+@@ -133,6 +139,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+ 	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+ 
+ 	switch (*endptr) {
++	case 'E':
++	case 'e':
++		ret <<= 10;
++	case 'P':
++	case 'p':
++		ret <<= 10;
++	case 'T':
++	case 't':
++		ret <<= 10;
+ 	case 'G':
+ 	case 'g':
+ 		ret <<= 10;
+-- 
+1.8.1.4
 

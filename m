@@ -1,59 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39318 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758407AbaDBLzz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 07:55:55 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s32Btrfx025494
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 19:55:53 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix unlock in __start_delalloc_inodes()
-Date: Wed, 2 Apr 2014 19:53:32 +0800
-Message-ID: <1396439612-6076-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46276 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932648AbaDBQrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Apr 2014 12:47:10 -0400
+Date: Wed, 2 Apr 2014 18:47:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josh Boyer <jwboyer@fedoraproject.org>
+Cc: Chris Mason <clm@fb.com>, jbacik@fb.com,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>
+Subject: Re: Btrfs lockdep with 3.15 merge window v3.14-751-g683b6c6f82a6
+Message-ID: <20140402164709.GI29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CA+5PVA787+k0TVFUuo6PxNWMwffWDKixmt2C+E4_9szUJatYkw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CA+5PVA787+k0TVFUuo6PxNWMwffWDKixmt2C+E4_9szUJatYkw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fix a regression caused by the following patch:
-Btrfs: don't flush all delalloc inodes when we doesn't get s_umount lock
+On Tue, Apr 01, 2014 at 06:23:11PM -0400, Josh Boyer wrote:
+> Below is a lockdep spew I have on a local VM running Linus' tree as of
+> this afternoon.  The specific git commit is v3.14-751-g683b6c6f82a6.
 
-break while loop will make us call @spin_unlock() without
-calling @spin_lock() before, fix it.
+> [  295.349016]        CPU0                    CPU1
+> [  295.349016]        ----                    ----
+> [  295.349016]   lock(&found->groups_sem);
+> [  295.349016]                                local_irq_disable();
+> [  295.349016]                                lock(&delayed_node->mutex);
+> [  295.349016]                                lock(&found->groups_sem);
+> [  295.349016]   <Interrupt>
+> [  295.349016]     lock(&delayed_node->mutex);
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5cb3075..f1e5297 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8481,19 +8481,20 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
- 			else
- 				iput(inode);
- 			ret = -ENOMEM;
--			break;
-+			goto out;
- 		}
- 		list_add_tail(&work->list, &works);
- 		btrfs_queue_work(root->fs_info->flush_workers,
- 				 &work->work);
- 		ret++;
- 		if (nr != -1 && ret >= nr)
--			break;
-+			goto out;
- 		cond_resched();
- 		spin_lock(&root->delalloc_lock);
- 	}
- 	spin_unlock(&root->delalloc_lock);
- 
-+out:
- 	list_for_each_entry_safe(work, next, &works, list) {
- 		list_del_init(&work->list);
- 		btrfs_wait_and_free_delalloc_work(work);
--- 
-1.9.0
-
+Fixed by https://patchwork.kernel.org/patch/3894781/

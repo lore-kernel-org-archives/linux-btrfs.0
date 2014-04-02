@@ -1,63 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:9621 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932324AbaDBSAX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Apr 2014 14:00:23 -0400
-Message-ID: <533C5031.7090600@fb.com>
-Date: Wed, 2 Apr 2014 14:00:17 -0400
-From: Chris Mason <clm@fb.com>
+Received: from mail-oa0-f44.google.com ([209.85.219.44]:44132 "EHLO
+	mail-oa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932993AbaDBTfd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 15:35:33 -0400
 MIME-Version: 1.0
-To: Justin Maggard <jmaggard10@gmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Space cache degradation
-References: <CAKgsxVSJEug-R-OT3Z2TF5JFf-AU+hw4MaPOnupDV2CZBBLU7A@mail.gmail.com>
-In-Reply-To: <CAKgsxVSJEug-R-OT3Z2TF5JFf-AU+hw4MaPOnupDV2CZBBLU7A@mail.gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+In-Reply-To: <CA+5PVA4G9NtixrwN3H+e2jmj=oLHZO2JfERqm70ama+zh_DUWw@mail.gmail.com>
+References: <CA+5PVA787+k0TVFUuo6PxNWMwffWDKixmt2C+E4_9szUJatYkw@mail.gmail.com>
+	<20140402164709.GI29256@twin.jikos.cz>
+	<CA+5PVA4G9NtixrwN3H+e2jmj=oLHZO2JfERqm70ama+zh_DUWw@mail.gmail.com>
+Date: Wed, 2 Apr 2014 15:35:33 -0400
+Message-ID: <CA+5PVA5H_03YmiC-atypY34QsNTN_3a6iTbFKhgihc-bCEWfvw@mail.gmail.com>
+Subject: Re: Btrfs lockdep with 3.15 merge window v3.14-751-g683b6c6f82a6
+From: Josh Boyer <jwboyer@fedoraproject.org>
+To: dsterba@suse.cz
+Cc: Chris Mason <clm@fb.com>, jbacik@fb.com,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "Linux-Kernel@Vger. Kernel. Org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 04/02/2014 01:54 PM, Justin Maggard wrote:
-> I've found that, after using some btrfs filesystems for some time,
-> that the first large write after a reboot takes a very long time.  So
-> I went to work trying out different test cases to simplify
-> reproduction of the issue, and I've got it down to just these steps:
+On Wed, Apr 2, 2014 at 12:56 PM, Josh Boyer <jwboyer@fedoraproject.org> wrote:
+> On Wed, Apr 2, 2014 at 12:47 PM, David Sterba <dsterba@suse.cz> wrote:
+>> On Tue, Apr 01, 2014 at 06:23:11PM -0400, Josh Boyer wrote:
+>>> Below is a lockdep spew I have on a local VM running Linus' tree as of
+>>> this afternoon.  The specific git commit is v3.14-751-g683b6c6f82a6.
+>>
+>>> [  295.349016]        CPU0                    CPU1
+>>> [  295.349016]        ----                    ----
+>>> [  295.349016]   lock(&found->groups_sem);
+>>> [  295.349016]                                local_irq_disable();
+>>> [  295.349016]                                lock(&delayed_node->mutex);
+>>> [  295.349016]                                lock(&found->groups_sem);
+>>> [  295.349016]   <Interrupt>
+>>> [  295.349016]     lock(&delayed_node->mutex);
+>>
+>> Fixed by https://patchwork.kernel.org/patch/3894781/
 >
-> 1) mkfs.btrfs on a large-ish device.  I used a 14TB MD RAID5 device.
-> 2) Fill it up a bit over half-way with ~5MB files.  In my test I made
-> 30 copies of a 266GB data set consisting of 52,356 files and 20,268
-> folders.
-> 3) umount
-> 4) mount
-> 5) time fallocate -l 2G /mount/point/2G.dat
-> real 3m9.412s
-> user 0m0.002s
-> sys 0m2.939s
->
-> By comparison, if I don't use space cache things go much better:
-> # umount
-> # mount -o nospace_cache
-> # time fallocate -l 2G /mount/point/2G.dat
-> real 0m15.982s
-> user 0m0.002s
-> sys 0m0.103s
->
-> If I use the clear_cache mount option, that also resolves the slowness.
->
-> Is this a known issue?  For me it's 100% reproducible, on various
-> kernel versions including 3.14-rc8.  Is there anything I should
-> provide to help debug?
->
+> Thanks for the pointer!  I'll grab that and give it a shot on my VM.
 
-Neat, not a known issue.  What's probably happening is that without 
-space cache on, you're jumping out into unused space while it 
-regenerates the space cache.  Once the caching thread is done caching 
-all the free space, you should go slowly again.
+FWIW, this does seem to make the issue go away in my VM after testing
+it for a while.  Thanks again for the pointer.
 
-I'll try to reproduce.
-
--chris
-
-
-
+josh

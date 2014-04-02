@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46879 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932263AbaDBRNB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Apr 2014 13:13:01 -0400
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-lb0-f182.google.com ([209.85.217.182]:60898 "EHLO
+	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932541AbaDBRyZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 13:54:25 -0400
+Received: by mail-lb0-f182.google.com with SMTP id n15so442156lbi.41
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Apr 2014 10:54:24 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 2 Apr 2014 10:54:24 -0700
+Message-ID: <CAKgsxVSJEug-R-OT3Z2TF5JFf-AU+hw4MaPOnupDV2CZBBLU7A@mail.gmail.com>
+Subject: Space cache degradation
+From: Justin Maggard <jmaggard10@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>,
-        Dulshani Gunawardhana <dulshani.gunawardhana89@gmail.com>,
-        <stable@vger.kernel.org>
-Subject: [PATCH] btrfs: fix reversed warning condition in btrfs_delayed_inode_reserve_metadata
-Date: Wed,  2 Apr 2014 19:13:00 +0200
-Message-Id: <1396458780-10923-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit fae7f21cece9a4c181 ("btrfs: Use WARN_ON()'s return value in place of
-WARN_ON(1)") cleaned up WARN_ON usage and in one place reversed the condition
-that led to loads of warnings that were not supposed to occur.
+I've found that, after using some btrfs filesystems for some time,
+that the first large write after a reboot takes a very long time.  So
+I went to work trying out different test cases to simplify
+reproduction of the issue, and I've got it down to just these steps:
 
-WARN_ON will trigger because it sees 'ret' though in the previous code
-did not reach the WARN_ON below. The correct pattern is
+1) mkfs.btrfs on a large-ish device.  I used a 14TB MD RAID5 device.
+2) Fill it up a bit over half-way with ~5MB files.  In my test I made
+30 copies of a 266GB data set consisting of 52,356 files and 20,268
+folders.
+3) umount
+4) mount
+5) time fallocate -l 2G /mount/point/2G.dat
+real 3m9.412s
+user 0m0.002s
+sys 0m2.939s
 
--       if (condition)
-+       if (WARN_ON(condition))
+By comparison, if I don't use space cache things go much better:
+# umount
+# mount -o nospace_cache
+# time fallocate -l 2G /mount/point/2G.dat
+real 0m15.982s
+user 0m0.002s
+sys 0m0.103s
 
-CC: Dulshani Gunawardhana <dulshani.gunawardhana89@gmail.com>
-CC: <stable@vger.kernel.org> # 3.13
-Reported-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/delayed-inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+If I use the clear_cache mount option, that also resolves the slowness.
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 451b00c86f6c..098af20abd88 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -649,7 +649,7 @@ static int btrfs_delayed_inode_reserve_metadata(
- 			goto out;
- 
- 		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
--		if (!WARN_ON(ret))
-+		if (WARN_ON(!ret))
- 			goto out;
- 
- 		/*
--- 
-1.9.0
+Is this a known issue?  For me it's 100% reproducible, on various
+kernel versions including 3.14-rc8.  Is there anything I should
+provide to help debug?
 
+-Justin

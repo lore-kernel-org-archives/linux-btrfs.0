@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16608 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:65370 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758189AbaDBI3B (ORCPT
+	with ESMTP id S1758162AbaDBI3B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:29:01 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328Shx3014947
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:43 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328Sieq014950
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:44 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 12/27] btrfs-progs: Convert man page for btrfs-quota.
-Date: Wed, 2 Apr 2014 16:29:23 +0800
-Message-ID: <1396427378-10487-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 13/27] btrfs-progs: Convert and enhance the man page of btrfs-qgroup.
+Date: Wed, 2 Apr 2014 16:29:24 +0800
+Message-ID: <1396427378-10487-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,78 +18,131 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert man page for btrfs-quota.
+Convert and enhance the man page of btrfs-qgroup.
+
+The original man page for btrfs-qgroup subcommand is almost useless for
+new user(like me), so adds more information on it.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile        |  2 +-
- Documentation/btrfs-quota.txt | 59 +++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 60 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/btrfs-quota.txt
+ Documentation/Makefile         |   1 +
+ Documentation/btrfs-qgroup.txt | 110 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 111 insertions(+)
+ create mode 100644 Documentation/btrfs-qgroup.txt
 
 diff --git a/Documentation/Makefile b/Documentation/Makefile
-index 2af4d40..645a8e4 100644
+index 645a8e4..84a4859 100644
 --- a/Documentation/Makefile
 +++ b/Documentation/Makefile
-@@ -26,7 +26,7 @@ MAN8_TXT += btrfs-rescue.txt
- MAN8_TXT += btrfs-inspect-internal.txt
+@@ -27,6 +27,7 @@ MAN8_TXT += btrfs-inspect-internal.txt
  MAN8_TXT += btrfs-send.txt
  MAN8_TXT += btrfs-receive.txt
--#MAN8_TXT += btrfs-quota.txt
-+MAN8_TXT += btrfs-quota.txt
+ MAN8_TXT += btrfs-quota.txt
++MAN8_TXT += btrfs-qgroup.txt
  #MAN8_TXT += btrfs-replace.txt
  #MAN8_TXT += btrfs-dedup.txt
  
-diff --git a/Documentation/btrfs-quota.txt b/Documentation/btrfs-quota.txt
+diff --git a/Documentation/btrfs-qgroup.txt b/Documentation/btrfs-qgroup.txt
 new file mode 100644
-index 0000000..82f2f49
+index 0000000..d054423
 --- /dev/null
-+++ b/Documentation/btrfs-quota.txt
-@@ -0,0 +1,59 @@
-+btrfs-quota(8)
-+==============
++++ b/Documentation/btrfs-qgroup.txt
+@@ -0,0 +1,110 @@
++btrfs-qgroup(8)
++===============
 +
 +NAME
 +----
-+btrfs-quota - control the quota of a btrfs filesystem
++btrfs-qgroup - control the quota group of a btrfs filesystem
 +
 +SYNOPSIS
 +--------
-+'btrfs quota' <subcommand> <args>
++'btrfs qgroup' <subcommand> <args>
 +
 +DESCRIPTION
 +-----------
-+'btrfs quota' is used to enable/disable or rescan subvolume quota of a btrfs
-+filesystem.
++'btrfs qgroup' is used to control quota group(qgroup) of a btrfs filesystem.
 +
-+For setting quota or other quota operations on a btrfs filesystem, please see
-+`btrfs-qgroup`(8) for details.
++NOTE: To use qgroup, it needs to enable quota first using 'btrfs quota'
++command.
 +
-+WARNING: Quota and qgroup in btrfs filesystem is not stable and impacts
-+performance in mainline kernel yet(v3.14 so far).
++WARNING: Qgroup is not stable yet and will impact performance in current mainline
++kernel(v3.14 so far).
++
++QGROUP
++------
++Quota group or qgroup in btrfs has its hierarchy like subvolume.
++One subvolume/snapshot can reach its quota limits if it consumes all the quota
++assigned to it or any of the parent qgroup(s).
++
++Also for snapshot, it consumes no quota initially since all its data
++shares with its parent, so only modification in snapshot consumes quota.
++
++Every subvolume/snapshot will have its own qgroup with id '0/<subvolume id>'
++upon creating, but can be later destroyed by 'btrfs qgroup destroy' command.
++
++NOTE: If the qgroup of a subvolume is destroyed, quota about the subvolume
++will not be functional until qgroup '0/<subvolume id>' is created again.
 +
 +SUBCOMMAND
 +----------
-+'enable' <path>::
-+Enable subvolume quota support for a filesystem.
++'assign' <src> <dst> <path>::
++Assign qgroup <src> as the child qgroup of <dst> in the btrfs filesystem
++identified by <path>.
 +
++'remove' <src> <dst> <path>::
++Remove the relationship between child qgroup <src> and parent qgroup <dst> in
++the btrfs filesystem identified by <path>.
 +
-+'disable' <path>::
-+Disable subvolume quota support for a filesystem.
++'create' <qgroupid> <path>::
++Create a subvolume quota group.
+++
++For the '0/<subvolume id>' qgroup, a qgroup can be created even before the
++subvolume created.
 +
-+'rescan' [-s] <path>::
-+Trash all qgroup numbers and scan the metadata again with the current config.
++'destroy' <qgroupid> <path>::
++Destroy a qgroup.
+++
++If a qgroup is no isolated,which means it is a parent or child qgroup, it
++can't be destroyed.
++
++'show' [options] <path>::
++Show all qgroups in the btrfs filesystem identified by <path>.
 ++
 +`Options`
 ++
-+-s::::
-+show status of a running rescan operation.
-+-w::::
-+wait for rescan operation to finish(can be already in progress).
++-p::::
++print parent qgroup id.
++-c::::
++print child qgroup id.
++-r::::
++print max referenced size of qgroup.
++-e::::
++print max exclusive size of qgroup.
++-F::::
++list all qgroups which impact the given path(include ancestral qgroups)
++-f::::
++list all qgroups which impact the given path(exclude ancestral qgroups)
++--sort=[\+/-]ATTR[,[+/-]ATTR]...::::
++list qgroups in order of ATTR.
+++
++ATTR can be one or more of qgroupid,rfer,excl,max_rfer,max_excl.
+++
++Prefix \'+' means ascending order and \'-' means descending order of ATTR.
++If no prefix is given, use ascending order by default.
+++
++If multiple ATTRs is given, use comma to separate.
++
++'limit' [options] <size>|none [<qgroupid>] <path>::
++Limit the size of a qgroup to <size> or no limit in the btrfs filesystem
++identified by <path>.
+++
++If <qgroupid> is not given, qgroup of the subvolume identified by <path>
++is used if possible.
 +
 +EXIT STATUS
 +-----------
-+'btrfs quota' returns a zero exist status if it succeeds. Non zero is
++'btrfs qgroup' returns a zero exist status if it succeeds. Non zero is
 +returned in case of failure.
 +
 +AVAILABILITY
@@ -104,7 +157,7 @@ index 0000000..82f2f49
 +--------
 +`mkfs.btrfs`(8),
 +`btrfs-subvolume`(8),
-+`btrfs-qgroup`(8)
++`btrfs-quota`(8),
 -- 
 1.9.1
 

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11878 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:16608 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758018AbaDBI2u (ORCPT
+	with ESMTP id S1758024AbaDBI2u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:28:50 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328SYnE014911
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:34 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328SZCI014914
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:35 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 02/27] btrfs-progs: Convert man page for btrfs-subvolume
-Date: Wed, 2 Apr 2014 16:29:13 +0800
-Message-ID: <1396427378-10487-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 03/27] btrfs-progs: Convert man page for filesystem subcommand.
+Date: Wed, 2 Apr 2014 16:29:14 +0800
+Message-ID: <1396427378-10487-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,190 +18,184 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert man page for btrfs-subvolume.
+Convert man page for filesystem subcommand.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile            |   2 +-
- Documentation/btrfs-subvolume.txt | 172 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 173 insertions(+), 1 deletion(-)
- create mode 100644 Documentation/btrfs-subvolume.txt
+ Documentation/Makefile             |   2 +-
+ Documentation/btrfs-filesystem.txt | 163 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 164 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/btrfs-filesystem.txt
 
 diff --git a/Documentation/Makefile b/Documentation/Makefile
-index bf38617..15c1679 100644
+index 15c1679..1fa2b35 100644
 --- a/Documentation/Makefile
 +++ b/Documentation/Makefile
-@@ -16,7 +16,7 @@ MAN8_TXT += btrfs.txt
- #MAN8_TXT += mkfs.btrfs.txt
+@@ -17,7 +17,7 @@ MAN8_TXT += btrfs.txt
  
  # Sub commands for btrfs
--#MAN8_TXT += btrfs-subvolume.txt
-+MAN8_TXT += btrfs-subvolume.txt
- #MAN8_TXT += btrfs-filesystem.txt
+ MAN8_TXT += btrfs-subvolume.txt
+-#MAN8_TXT += btrfs-filesystem.txt
++MAN8_TXT += btrfs-filesystem.txt
  #MAN8_TXT += btrfs-balance.txt
  #MAN8_TXT += btrfs-device.txt
-diff --git a/Documentation/btrfs-subvolume.txt b/Documentation/btrfs-subvolume.txt
+ #MAN8_TXT += btrfs-scrub.txt
+diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
 new file mode 100644
-index 0000000..7f32dbd
+index 0000000..de9b3f3
 --- /dev/null
-+++ b/Documentation/btrfs-subvolume.txt
-@@ -0,0 +1,172 @@
-+btrfs-subvolume(8)
-+==================
++++ b/Documentation/btrfs-filesystem.txt
+@@ -0,0 +1,163 @@
++btrfs-filesystem(8)
++===================
 +
 +NAME
 +----
-+btrfs-subvolume - control btrfs subvolume(s)
++btrfs-filesystem - control btrfs filesystem
 +
 +SYNOPSIS
 +--------
-+'btrfs subvolume' <subcommand> [<args>]
++'btrfs filesystem' <subcommand> <args>
 +
 +DESCRIPTION
 +-----------
-+'btrfs subvolume' is used to control the filesystem to create/delete/list/show
-+subvolumes and snapshots.
-+
-+SUBVOLUME AND SNAPSHOT
-+----------------------
-+A subvolume in btrfs is not like an LVM logical volume, which is quite
-+independent from each other, a btrfs subvolume has its hierarchy and relations
-+between other subvolumes.
-+
-+A subvolume in btrfs can be accessed in two ways.
-+
-+1. From the parent subvolume +
-+When accessing from the parent subvolume, the subvolume can be used just
-+like a directory. It can have child subvolumes and its own files/directories.
-+
-+2. Separate mounted filesystem +
-+When `mount`(8) using 'subvol' or 'subvolid' mount option, one can access
-+files/directories/subvolumes inside it, but nothing in parent subvolumes.
-+
-+Also every btrfs filesystem has a default subvolume as its initially top-level
-+subvolume, whose subvolume id is 5(FS_TREE).
-+
-+A btrfs snapshot is much like a subvolume, but shares its data(and metadata)
-+with other subvolume/snapshot. Due to the capabilities of COW, modifications
-+inside a snapshot will only show in a snapshot but not in its source subvolume.
-+
-+Although in btrfs, subvolumes/snapshots are treated as directories, only
-+subvolume/snapshot can be the source of a snapshot, snapshot can not be made
-+from normal directories.
++'btrfs filesystem' is used to do the filesystem level control jobs, including
++all the regular filesystem operations like setting/getting label,
++resizing, defragment.
 +
 +SUBCOMMAND
-+-----------
-+'create' [-i <qgroupid>] [<dest>]<name>::
-+Create a subvolume <name> in <dest>.
++----------
++'df' [-b] path [<path>...]::
++Show space usage information for a mount point.
 ++
-+If <dest> is not given, subvolume <name> will be created in the currently
-+directory.
++If '-b' is given, then byte is used as unit. Default unit will be
++human-readable unit such as KiB/MiB/GiB.
 ++
-+`Options`
-++
-+-i <qgroupid>::::
-+Add the newly created subvolume to a qgroup. This option can be given multiple
-+times.
++The command 'btrfs filesystem df' is used to query how many space on the 
++disk(s) are used and an estimation of the free
++space of the filesystem.
++The output of the command 'btrfs filesystem df' shows:
 +
-+'delete' [options] <subvolume> [<subvolume>...]::
-+Delete the subvolume(s) from the filesystem.
-++
-+If <subvolume> is not a subvolume, btrfs returns an error but continues if
-+there are more arguments to process.
-++
-+The corresponding directory is removed instantly but the data blocks are
-+removed later.  The deletion does not involve full commit by default due to
-+performance reasons (as a consequence, the subvolume may appear again after a
-+crash).  Use one of the '--commit' options to wait until the operation is safely
-+stored on the media.
-++
-+`Options`
-++
-+-c|--commit-after::::
-+wait for transaction commit at the end of the operation
-++
-+-C|--commit-each::::
-+wait for transaction commit after delet each subvolume
++`Disk size`::::
++the total size of the disks which compose the filesystem.
 +
-+'list' [options] [-G [\+|-] values] [-C [+|-]value] [--sort=rootid,gen,ogen,path] <path>::
-+List the subvolumes present in the filesystem <path>.
++`Disk allocated`::::
++the size of the area of the disks used by the chunks.
++
++`Disk unallocated`::::
++the size of the area of the disks which is free (i.e.
++the differences of the values above).
++
++`Used`::::
++the portion of the logical space used by the file and metadata.
++
++`Free (estimated)`::::
++the estimated free space available: i.e. how many space can be used
++by the user. The evaluation cannot be rigorous because it depends by the
++allocation policy (DUP, Single, RAID1...) of the metadata and data chunks. +
++If every chunk is stored as "Single" the sum of the free (estimated) space
++and the used space  is equal to the disk size.
++Otherwise if all the chunk are mirrored (raid1 or raid10) or duplicated
++the sum of the free (estimated) space and the used space is
++half of the disk size. Normally the free (estimated) is between
++these two limits.
++
++`Data to disk ratio`::::
++the ratio betwen the logical size (i.e. the space available by
++the chunks) and the disk allocated (by the chunks). Normally it is 
++lower than 100% because the metadata is duplicated for security reasons.
++If all the data and metadata are duplicated (or have a profile like RAID1)
++the Data to disk ratio could be 50%.
++
++'show' [--mounted|--all-devices|<path>|<uuid>|<device>|<lable>]::
++Show the btrfs filesystem with some additional info.
 ++
-+For every subvolume the following information is shown by default. +
-+ID <ID> top level <ID> path <path> +
-+where path is the relative path of the subvolume to the top level subvolume.
-+The subvolume's ID may be used by the subvolume set-default command,
-+or at mount time via the subvolid= option.
-+If `-p` is given, then parent <ID> is added to the output between ID
-+and top level. The parent's ID may be used at mount time via the
-+`subvolrootid=` option.
++If no option nor <path>|<uuid>|<device>|<lable> is passed, btrfs shows
++information of all the btrfs filesystem both mounted and unmounted.
++If '--mounted' is passed, it would probe btrfs kernel to list mounted btrfs
++filesystem(s);
++If '--all-devices' is passed, all the devices under /dev are scanned;
++otherwise the devices list is extracted from the /proc/partitions file.
++
++'sync' <path>::
++Force a sync for the filesystem identified by <path>.
++
++'defragment' [options] <file>|<dir> [<file>|<dir>...]::
++Defragment file data and/or directory metadata *online*.
+++
++If '-r' is passed, files in dir will be defragmented recursively.
++The start position and the number of bytes to defragment can be specified by
++start and len using '-s' and '-l' options below.
++Any extent bigger than threshold given by '-t' option, will be considered
++already defragged.
++Use 0 to take the kernel default, and use 1 to
++say every single extent must be rewritten.
++You can also turn on compression in defragment operations.
 ++
 +`Options`
 ++
-+-p::::
-+print parent ID.
-+-a::::
-+print all the subvolumes in the filesystem and distinguish between
-+absolute and relative path with respect to the given <path>.
++-v::::
++be verbose
 +-c::::
-+print the ogeneration of the subvolume, aliases: ogen or origin generation.
-+-g::::
-+print the generation of the subvolume.
-+-o::::
-+print only subvolumes bellow specified <path>.
-+-u::::
-+print the UUID of the subvolume.
-+-q::::
-+print the parent uuid of subvolumes (and snapshots).
-+-t::::
-+print the result as a table.
-+-s::::
-+only snapshot subvolumes in the filesystem will be listed.
++compress file contents while defragmenting
 +-r::::
-+only readonly subvolumes in the filesystem will be listed.
-+-G [+|-]value::::
-+list subvolumes in the filesystem that its generation is
-+>=, \<= or = value. \'\+' means >= value, \'-' means \<= value, If there is
-+neither \'+' nor \'-', it means = value.
-+-C [+|-]value::::
-+list subvolumes in the filesystem that its ogeneration is
-+>=, \<= or = value. The usage is the same to '-g' option.
-+--sort=rootid,gen,ogen,path::::
-+list subvolumes in order by specified items.
-+you can add \'\+' or \'-' in front of each items, \'+' means ascending,
-+\'-' means descending. The default is ascending.
++defragment files recursively
++-f::::
++flush filesystem after defragmenting
++-s <start>::::
++defragment only from byte <start> onward
++-l <len>::::
++defragment only up to <len> bytes
++-t <size>::::
++defragment only files at least <size> bytes big
 ++
-+for --sort you can combine some items together by \',', just like
-+-sort=+ogen,-gen,path,rootid.
-+
-+'snapshot' [-r] <source> <dest>|[<dest>/]<name>::
-+Create a writable/readonly snapshot of the subvolume <source> with the
-+name <name> in the <dest> directory.
++For <start>, <len>, <size> it is possible to append a suffix
++like 'k' for 1 KBytes, 'm' for 1 MBytes...
 ++
-+If only <dest> is given, the subvolume will be named the basename of <source>.
-+If <source> is not a subvolume, btrfs returns an error.
-+If '-r' is given, the snapshot will be readonly.
++WARNING: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data,
++don't use it if you use snapshots, have de-duplicated your data or made
++copies with `cp --reflink`.
 +
-+'get-default' <path>::
-+Get the default subvolume of the filesystem <path>.
++// Some wording are extracted by the resize2fs man page
++'resize' [devid:][+/-]<size>[gkm]|[devid:]max <path>::
++Resize a filesystem identified by <path> for the underlying device
++devid *online*. +
++The devid can be found with 'btrfs filesystem show' and
++defaults to 1 if not specified.
++The <size> parameter specifies the new size of the filesystem.
++If the prefix + or - is present the size is increased or decreased
++by the quantity <size>.
++If no units are specified, the unit of the <size> parameter defaults to
++bytes. Optionally, the size parameter may be suffixed by one of the following
++units designators: \'K\', \'M', or \'G', kilobytes, megabytes, or gigabytes,
++respectively.
 ++
-+The output format is similar to 'subvolume list' command.
-+
-+'set-default' <id> <path>::
-+Set the subvolume of the filesystem <path> which is mounted as
-+default.
++If \'max' is passed, the filesystem will occupy all available space on the
++device devid.
 ++
-+The subvolume is identified by <id>, which is returned by the 'subvolume list'
-+command.
++The resize command does not manipulate the size of underlying
++partition.  If you wish to enlarge/reduce a filesystem, you must make sure you
++can expand the partition before enlarging the filesystem and shrink the
++partition after reducing the size of the filesystem.  This can done using
++`fdisk`(8) or `parted`(8) to delete the existing partition and recreate
++it with the new desired size.  When recreating the partition make sure to use
++the same starting disk cylinder as before.
 +
-+'find-new' <subvolume> <last_gen>::
-+List the recently modified files in a subvolume, after <last_gen> ID.
++'label' [<dev>|<mount_point>] [newlabel]::
++Show or update the label of a filesystem.
+++
++[<device>|<mountpoint>] is used to identify the filesystem. 
++If a newlabel optional argument is passed, the label is changed.
++NOTE: the maximum allowable length shall be less than 256 chars
 +
-+'show' <path>::
-+Show information of a given subvolume in the <path>.
++'disk-usage' [-tb] path [path...]::
++Show in which disk the chunks are allocated. +
++If '-b' is given,  set byte as unit;
++If '-t' is given, show data in tabular format.
 +
 +EXIT STATUS
 +-----------
-+'btrfs subvolume' returns a zero exist status if it succeeds. Non zero is
++'btrfs filesystem' returns a zero exist status if it succeeds. Non zero is
 +returned in case of failure.
 +
 +AVAILABILITY
@@ -215,9 +209,6 @@ index 0000000..7f32dbd
 +SEE ALSO
 +--------
 +`mkfs.btrfs`(8),
-+`btrfs-subvolume`(8),
-+`btrfs-quota`(8),
-+`btrfs-qgroup`(8),
 -- 
 1.9.1
 

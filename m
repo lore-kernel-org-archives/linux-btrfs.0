@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:65370 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:11878 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758162AbaDBI3B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:29:01 -0400
+	with ESMTP id S1758192AbaDBI3C (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 04:29:02 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328Sieq014950
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:44 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s328Sj4b014953
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Apr 2014 16:28:45 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 13/27] btrfs-progs: Convert and enhance the man page of btrfs-qgroup.
-Date: Wed, 2 Apr 2014 16:29:24 +0800
-Message-ID: <1396427378-10487-14-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 14/27] btrfs-progs: Convert man page for btrfs-replace.
+Date: Wed, 2 Apr 2014 16:29:25 +0800
+Message-ID: <1396427378-10487-15-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,131 +18,97 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert and enhance the man page of btrfs-qgroup.
-
-The original man page for btrfs-qgroup subcommand is almost useless for
-new user(like me), so adds more information on it.
+Convert man page for btrfs-replace.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile         |   1 +
- Documentation/btrfs-qgroup.txt | 110 +++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 111 insertions(+)
- create mode 100644 Documentation/btrfs-qgroup.txt
+ Documentation/Makefile          |  2 +-
+ Documentation/btrfs-replace.txt | 76 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 77 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/btrfs-replace.txt
 
 diff --git a/Documentation/Makefile b/Documentation/Makefile
-index 645a8e4..84a4859 100644
+index 84a4859..a4f7ef0 100644
 --- a/Documentation/Makefile
 +++ b/Documentation/Makefile
-@@ -27,6 +27,7 @@ MAN8_TXT += btrfs-inspect-internal.txt
- MAN8_TXT += btrfs-send.txt
+@@ -28,7 +28,7 @@ MAN8_TXT += btrfs-send.txt
  MAN8_TXT += btrfs-receive.txt
  MAN8_TXT += btrfs-quota.txt
-+MAN8_TXT += btrfs-qgroup.txt
- #MAN8_TXT += btrfs-replace.txt
+ MAN8_TXT += btrfs-qgroup.txt
+-#MAN8_TXT += btrfs-replace.txt
++MAN8_TXT += btrfs-replace.txt
  #MAN8_TXT += btrfs-dedup.txt
  
-diff --git a/Documentation/btrfs-qgroup.txt b/Documentation/btrfs-qgroup.txt
+ MAN_TXT = $(MAN8_TXT)
+diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
 new file mode 100644
-index 0000000..d054423
+index 0000000..8c5dcc4
 --- /dev/null
-+++ b/Documentation/btrfs-qgroup.txt
-@@ -0,0 +1,110 @@
-+btrfs-qgroup(8)
++++ b/Documentation/btrfs-replace.txt
+@@ -0,0 +1,76 @@
++btrfs-replace(8)
 +===============
 +
 +NAME
 +----
-+btrfs-qgroup - control the quota group of a btrfs filesystem
++btrfs-replace - replace devices managed by btrfs with other device.
 +
 +SYNOPSIS
 +--------
-+'btrfs qgroup' <subcommand> <args>
++'btrfs replace' <subcommand> <args>
 +
 +DESCRIPTION
 +-----------
-+'btrfs qgroup' is used to control quota group(qgroup) of a btrfs filesystem.
-+
-+NOTE: To use qgroup, it needs to enable quota first using 'btrfs quota'
-+command.
-+
-+WARNING: Qgroup is not stable yet and will impact performance in current mainline
-+kernel(v3.14 so far).
-+
-+QGROUP
-+------
-+Quota group or qgroup in btrfs has its hierarchy like subvolume.
-+One subvolume/snapshot can reach its quota limits if it consumes all the quota
-+assigned to it or any of the parent qgroup(s).
-+
-+Also for snapshot, it consumes no quota initially since all its data
-+shares with its parent, so only modification in snapshot consumes quota.
-+
-+Every subvolume/snapshot will have its own qgroup with id '0/<subvolume id>'
-+upon creating, but can be later destroyed by 'btrfs qgroup destroy' command.
-+
-+NOTE: If the qgroup of a subvolume is destroyed, quota about the subvolume
-+will not be functional until qgroup '0/<subvolume id>' is created again.
++'btrfs replace' is used to replace btrfs managed devices with other device.
 +
 +SUBCOMMAND
 +----------
-+'assign' <src> <dst> <path>::
-+Assign qgroup <src> as the child qgroup of <dst> in the btrfs filesystem
-+identified by <path>.
-+
-+'remove' <src> <dst> <path>::
-+Remove the relationship between child qgroup <src> and parent qgroup <dst> in
-+the btrfs filesystem identified by <path>.
-+
-+'create' <qgroupid> <path>::
-+Create a subvolume quota group.
++'start' [-Bfr] <srcdev>|<devid> <targetdev> <path>::
++Replace device of a btrfs filesystem.
 ++
-+For the '0/<subvolume id>' qgroup, a qgroup can be created even before the
-+subvolume created.
-+
-+'destroy' <qgroupid> <path>::
-+Destroy a qgroup.
-++
-+If a qgroup is no isolated,which means it is a parent or child qgroup, it
-+can't be destroyed.
-+
-+'show' [options] <path>::
-+Show all qgroups in the btrfs filesystem identified by <path>.
++On a live filesystem, duplicate the data to the target device which
++is currently stored on the source device.
++If the source device is not available anymore, or if the -r option is set,
++the data is built only using the RAID redundancy mechanisms.
++After completion of the operation, the source device is removed from the
++filesystem.
++If the <srcdev> is a numerical value, it is assumed to be the device id
++of the filesystem which is mounted at <path>, otherwise is is
++the path to the source device. If the source device is disconnected,
++from the system, you have to use the devid parameter format.
++The <targetdev> needs to be same size or larger than the <srcdev>.
 ++
 +`Options`
 ++
-+-p::::
-+print parent qgroup id.
-+-c::::
-+print child qgroup id.
 +-r::::
-+print max referenced size of qgroup.
-+-e::::
-+print max exclusive size of qgroup.
-+-F::::
-+list all qgroups which impact the given path(include ancestral qgroups)
++only read from <srcdev> if no other zero-defect mirror exists.
++(enable this if your drive has lots of read errors, the access would be very
++slow)
 +-f::::
-+list all qgroups which impact the given path(exclude ancestral qgroups)
-+--sort=[\+/-]ATTR[,[+/-]ATTR]...::::
-+list qgroups in order of ATTR.
++force using and overwriting <targetdev> even if it looks like
++containing a valid btrfs filesystem.
 ++
-+ATTR can be one or more of qgroupid,rfer,excl,max_rfer,max_excl.
-++
-+Prefix \'+' means ascending order and \'-' means descending order of ATTR.
-+If no prefix is given, use ascending order by default.
-++
-+If multiple ATTRs is given, use comma to separate.
++A valid filesystem is assumed if a btrfs superblock is found which contains a
++correct checksum. Devices which are currently mounted are
++never allowed to be used as the <targetdev>.
++-B::::
++no background replace.
 +
-+'limit' [options] <size>|none [<qgroupid>] <path>::
-+Limit the size of a qgroup to <size> or no limit in the btrfs filesystem
-+identified by <path>.
++'status' [-1] <mount_point>::
++Print status and progress information of a running device replace operation.
 ++
-+If <qgroupid> is not given, qgroup of the subvolume identified by <path>
-+is used if possible.
++`Options`
+++
++-1::::
++print once instead of print continuously until the replace
++operation finishes (or is canceled)
++
++'cancel' <mount_point>::
++Cancel a running device replace operation.
 +
 +EXIT STATUS
 +-----------
-+'btrfs qgroup' returns a zero exist status if it succeeds. Non zero is
++'btrfs replace' returns a zero exist status if it succeeds. Non zero is
 +returned in case of failure.
 +
 +AVAILABILITY
@@ -156,8 +122,6 @@ index 0000000..d054423
 +SEE ALSO
 +--------
 +`mkfs.btrfs`(8),
-+`btrfs-subvolume`(8),
-+`btrfs-quota`(8),
 -- 
 1.9.1
 

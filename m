@@ -1,47 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43101 "EHLO plane.gmane.org"
+Received: from cantor2.suse.de ([195.135.220.15]:42690 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752285AbaDCNqm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Apr 2014 09:46:42 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WVgnU-0000Du-Ua
-	for linux-btrfs@vger.kernel.org; Thu, 03 Apr 2014 14:31:08 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Apr 2014 14:31:08 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Apr 2014 14:31:08 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [Help] Errors found in extent allocation tree or chunk
- allocation
-Date: Wed, 2 Apr 2014 07:27:24 +0000 (UTC)
-Message-ID: <pan$a7acf$9977ad03$78352907$e25802e4@cox.net>
-References: <ac786c9023364c699d8212b42da536f2-mfwitten@gmail.com>
-	<pan$6d267$8b0a867f$c580cca9$4eb55f7b@cox.net>
-	<20b782af1cb448c39cce358cd6d37e8c-mfwitten@gmail.com>
-	<8e4932bb29f743419660da1846c2363b-mfwitten@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1753061AbaDCRpV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Apr 2014 13:45:21 -0400
+Date: Thu, 3 Apr 2014 19:45:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: harald@redhat.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: allow mounting btrfs subvolumes with different
+ ro/rw options
+Message-ID: <20140403174519.GP29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1384857365-7719-1-git-send-email-harald@redhat.com>
+ <20131119143532.5312.44372@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20131119143532.5312.44372@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Witten posted on Tue, 01 Apr 2014 19:05:16 +0000 as excerpted:
-
-> The `btrfs balance' completed successfully without error, and DID solve
-> my issues; it "relocated" every chunk, after which `btrfsck'
-> ran smoothly.
+On Tue, Nov 19, 2013 at 09:35:32AM -0500, Chris Mason wrote:
+> Quoting harald@redhat.com (2013-11-19 05:36:05)
+> > From: Harald Hoyer <harald@redhat.com>
+> > 
+> [ create new vfsmounts with different states ]
 > 
-> Thanks for the advice! You've put me at ease, and you've saved me a lot
-> of time and energy.
+> Thanks for resending Harald.  I'll give this a shot and see if I can
+> find any problems with it.
 
-Very good! =:^)  Thanks for the fix-report.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Is this patch queued for 3.15? Thanks.

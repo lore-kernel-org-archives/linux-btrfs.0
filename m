@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17637 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932321AbaDCBtj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Apr 2014 21:49:39 -0400
-Date: Thu, 3 Apr 2014 09:49:24 +0800
+Received: from aserp1040.oracle.com ([141.146.126.69]:48332 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161980AbaDCFeg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Apr 2014 01:34:36 -0400
+Date: Thu, 3 Apr 2014 13:34:23 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: David Sterba <dsterba@suse.cz>
 Cc: linux-btrfs@vger.kernel.org,
@@ -11,7 +11,7 @@ Cc: linux-btrfs@vger.kernel.org,
         stable@vger.kernel.org
 Subject: Re: [PATCH] btrfs: fix reversed warning condition in
  btrfs_delayed_inode_reserve_metadata
-Message-ID: <20140403014923.GA11484@localhost.localdomain>
+Message-ID: <20140403053421.GB11484@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
 References: <1396458780-10923-1-git-send-email-dsterba@suse.cz>
 MIME-Version: 1.0
@@ -31,9 +31,6 @@ On Wed, Apr 02, 2014 at 07:13:00PM +0200, David Sterba wrote:
 > -       if (condition)
 > +       if (WARN_ON(condition))
 > 
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
 > CC: Dulshani Gunawardhana <dulshani.gunawardhana89@gmail.com>
 > CC: <stable@vger.kernel.org> # 3.13
 > Reported-by: Liu Bo <bo.li.liu@oracle.com>
@@ -53,13 +50,9 @@ Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 > -		if (!WARN_ON(ret))
 > +		if (WARN_ON(!ret))
 >  			goto out;
->  
->  		/*
-> -- 
-> 1.9.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Oh sorry, I'd have to get my Reviewed-by back and give a NACK instead.
+
+With this patch, (ret = 0) triggers the WARNING, which is not right.
+
 -liubo

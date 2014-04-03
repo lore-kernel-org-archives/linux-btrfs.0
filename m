@@ -1,45 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47172 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:54744 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932619AbaDBR3V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Apr 2014 13:29:21 -0400
-Date: Wed, 2 Apr 2014 19:29:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+	id S1753537AbaDCUdv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Apr 2014 16:33:51 -0400
+Date: Thu, 3 Apr 2014 13:33:47 -0700
+From: Zach Brown <zab@redhat.com>
+To: Chris Mason <clm@fb.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 00/27] Replace the old man page with asciidoc and man
  page for each btrfs subcommand.
-Message-ID: <20140402172920.GK29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Message-ID: <20140403203347.GD24290@lenny.home.zabbo.net>
 References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <533C0F7A.7010004@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <533C0F7A.7010004@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 02, 2014 at 04:29:11PM +0800, Qu Wenruo wrote:
-> Convert the old btrfs man pages to new asciidoc and split the huge
-> btrfs man page into subcommand man page.
-
-Excellent!
-
-> The asciidoc style and Makefile things are mostly simplified from git
-> Documentation, which only supports man page output and remove html output,
-> since html output is somewhat overkilled for btrfs.
-
-Well, I've been thinking about automatically pushing the man pages to
-wiki, with asciidoc it would be much easier, the formatting capabilities
-are better than what *roff provides.
-
-> 1) More human-readable raw documentations.
->   The roff grammar is not so easy to read, especially mixed with a lot
->   of special words.
+On Wed, Apr 02, 2014 at 09:24:10AM -0400, Chris Mason wrote:
+> On 04/02/2014 04:29 AM, Qu Wenruo wrote:
+> >Convert the old btrfs man pages to new asciidoc and split the huge
+> >btrfs man page into subcommand man page.
+> >
+> >The asciidoc style and Makefile things are mostly simplified from git
+> >Documentation, which only supports man page output and remove html output,
+> >since html output is somewhat overkilled for btrfs.
 > 
-> 2) Easier to modify man page.
->   The old huge btrfs man page makes it hard to maintain.
->   It's common that some one adds some new options, but only modifies
->   the detailed options but not the 'SYNOPSIS' section.
+> Thanks for doing this.  I've never liked roff, but I'll give people
+> on the list a chance to complain before taking this one.
 
-I hope both points will encourage more people to contribute to the
-documentation.
+Moving to asciidoc is definitely the right thing to do.  Dave's also
+been moving the xfs docs in this direction.
+
+http://oss.sgi.com/cgi-bin/gitweb.cgi?p=xfs/xfs-documentation.git;a=summary
+
+- z

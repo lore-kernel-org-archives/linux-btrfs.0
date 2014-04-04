@@ -1,69 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:36503 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752986AbaDDQcI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Apr 2014 12:32:08 -0400
-Date: Fri, 4 Apr 2014 18:32:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] Btrfs: send, add calculate data size flag to allow
- for progress estimation
-Message-ID: <20140404163207.GY29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
- <20140404155346.GX29256@twin.jikos.cz>
- <CAL3q7H5V1OjW8nerpCuNUB+8FhjPV+4hXPQf81QBtU3PQypgjQ@mail.gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:16640 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752837AbaDDVPd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 17:15:33 -0400
+Message-ID: <533F20EB.2040500@oracle.com>
+Date: Fri, 04 Apr 2014 17:15:23 -0400
+From: Sasha Levin <sasha.levin@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5V1OjW8nerpCuNUB+8FhjPV+4hXPQf81QBtU3PQypgjQ@mail.gmail.com>
+To: Jeff Mahoney <jeffm@suse.com>, dsterba@suse.cz, clm@fb.com, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+Subject: Re: btrfs: lock inversion between delayed_node->mutex and found->groups_sem
+References: <53239AE0.8030306@oracle.com> <20140317130546.GE29256@twin.jikos.cz> <533307ED.8030700@suse.com>
+In-Reply-To: <533307ED.8030700@suse.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 04, 2014 at 05:01:41PM +0100, Filipe David Manana wrote:
-> >>   * Send a clone command to user space.
-> >>   */
-> >> --- a/fs/btrfs/send.h
-> >> +++ b/fs/btrfs/send.h
-> >> @@ -87,6 +87,7 @@ enum btrfs_send_cmd {
-> >>
-> >>       BTRFS_SEND_C_END,
-> >>       BTRFS_SEND_C_UPDATE_EXTENT,
-> >> +     BTRFS_SEND_C_TOTAL_DATA_SIZE,
-> >
-> > Though it is a simple modification, it changes the existing send
-> > protocol.
-> >
-> > The unpatched receiver would fail (it has a lower value of
-> > __BTRFS_SEND_C_MAX), so it could work even without revving the protocol.
-> > But, it's not the cleanest way.
-> 
-> Same problem happened when BTRFS_SEND_C_UPDATE_EXTENT was added.
+On 03/26/2014 01:01 PM, Jeff Mahoney wrote:
+> On 3/17/14, 9:05 AM, David Sterba wrote:
+>>> On Fri, Mar 14, 2014 at 08:12:16PM -0400, Sasha Levin wrote:
+>>>>> While fuzzing with trinity inside a KVM tools guest running the latest -next kernel I've stumbled on the following:
+>>>>> 
+>>>>> [  788.458756]        CPU0                    CPU1 [  788.459188] ----                    ---- [  788.459625] lock(&found->groups_sem); [  788.460041] local_irq_disable(); [  788.460041] lock(&delayed_node->mutex); [  788.460041] lock(&found->groups_sem); [  788.460041]   <Interrupt> [ 788.460041]     lock(&delayed_node->mutex); [  788.460041] [ 788.460041]  *** DEADLOCK *** [  788.460041] [  788.460041] 2 locks held by kswapd3/4199:
+>>> 
+>>> I've once (3.14-rc5) seen the same warning also caused by xfstests/generic/224
+> I think this is from my sysfs patches. We call kobject_add while holding the group_sem. kobject_add ultimately allocates with GFP_KERNEL, so it can enter reclaim. This particular case isn't dangerous, but it could hit while hot-adding a device. The fix should be pretty simple.
 
-That's a good example why objecting from the beginning is wise, because
-it will backfire later. You can blame me that I did not object back
-then, but was involved in the patch reviews.
+Is that fix available anywhere? I'm still seeing the issue in -next.
 
-> Since it's a command that's only sent if a new special flag is
-> supplied, I don't think it's that bad.
 
-Yeah it's not that bad and I don't want to stand in the way of a good
-enhancement. The flag makes it better wrt backward compatibility.
-
-> > There's a number of defficiencies found in v1 protocol, see
-> > https://btrfs.wiki.kernel.org/index.php/Design_notes_on_Send/Receive#Send_stream_v2_draft
-> >
-> > I would rather see a proper v2 revision instead of relying on the fact
-> > that current implementation will deal with the change.
-> 
-> Right, by 2020 we'll have v2 fully specified and maybe implemented :)
-
-I saw that coming :)
-
-We're not waiting for a full v2 spec, but someone who implements what's
-been collected so far. And because it also includes implementing the
-versioning infrastructure, it's not that attractive compared to adding
-one more TLV command.
-
-So, if others thing this is ok for v1, proceed.
+Thanks,
+Sasha

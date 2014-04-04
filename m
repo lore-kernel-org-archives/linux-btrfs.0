@@ -1,64 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34635 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:35737 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753521AbaDDO4K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Apr 2014 10:56:10 -0400
-Message-ID: <533EC80C.50300@suse.com>
-Date: Fri, 04 Apr 2014 10:56:12 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+	id S1753021AbaDDPxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Apr 2014 11:53:47 -0400
+Date: Fri, 4 Apr 2014 17:53:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] Btrfs: send, add calculate data size flag to allow
+ for progress estimation
+Message-ID: <20140404155346.GX29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-CC: Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH 3/4][RFC] btrfs: export global block reserve size as space_info
-References: <cover.1391779611.git.dsterba@suse.cz> <21dfbfe3b1361092ad1dc286f636c1fff4a2a4f6.1391779611.git.dsterba@suse.cz> <52F90677.90107@fb.com>
-In-Reply-To: <52F90677.90107@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Fri, Apr 04, 2014 at 04:20:41PM +0100, Filipe David Borba Manana wrote:
+> @@ -4307,6 +4348,22 @@ out:
+>  	return num_read;
+>  }
+>  
+> +static int send_total_data_size(struct send_ctx *sctx, u64 data_size)
+> +{
+> +	int ret;
+> +
+> +	ret = begin_cmd(sctx, BTRFS_SEND_C_TOTAL_DATA_SIZE);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, data_size);
+> +	ret = send_cmd(sctx);
+> +
+> +tlv_put_failure:
+> +out:
+> +	return ret;
+> +}
+> +
+>  /*
+>   * Send a clone command to user space.
+>   */
+> --- a/fs/btrfs/send.h
+> +++ b/fs/btrfs/send.h
+> @@ -87,6 +87,7 @@ enum btrfs_send_cmd {
+>  
+>  	BTRFS_SEND_C_END,
+>  	BTRFS_SEND_C_UPDATE_EXTENT,
+> +	BTRFS_SEND_C_TOTAL_DATA_SIZE,
 
-On 2/10/14, 12:03 PM, Chris Mason wrote:
-> On 02/07/2014 08:34 AM, David Sterba wrote:
->> Introduce a block group type bit for a global reserve and fill
->> the space info for SPACE_INFO ioctl. This should replace the
->> newly added ioctl (01e219e8069516cdb98594d417b8bb8d906ed30d) to
->> get just the 'size' part of the global reserve, while the actual
->> usage can be now visible in the 'btrfs fi df' output during
->> ENOSPC stress.
->> 
->> The unpatched userspace tools will show the blockgroup as
->> 'unknown'.
->> 
-> 
-> This wasn't in my rc2 pull because I wanted to sync up with Jeff on
-> it. I like the idea of combining this into SPACE_INFO, any
-> objections?
+Though it is a simple modification, it changes the existing send
+protocol.
 
-Sorry, was on vacation when this went by and just got the ping. Yeah,
-I have no objections here.
+The unpatched receiver would fail (it has a lower value of
+__BTRFS_SEND_C_MAX), so it could work even without revving the protocol.
+But, it's not the cleanest way.
 
-- -Jeff
+There's a number of defficiencies found in v1 protocol, see
+https://btrfs.wiki.kernel.org/index.php/Design_notes_on_Send/Receive#Send_stream_v2_draft
 
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.22 (Darwin)
+I would rather see a proper v2 revision instead of relying on the fact
+that current implementation will deal with the change.
 
-iQIcBAEBAgAGBQJTPsgMAAoJEB57S2MheeWyf1EP/158KhPm7KoT9EGeNUwv4+nb
-Ex2z9hIbTduJ6rT9IG+n0vbV2Ka9IuWJDvYdoLLMIN1SFXOJdNo88MIf6aSTbHfb
-WWqJJ1nMB/DnDMt1bXp6cZSGyzQuSXvI/u97Pgy3gzMpmjuzXy37c7JkFCABM352
-G2IF+bZiHqa6X+eTxSjlimDKvIBOPGw/hOIvegRmqyqDMNIy5dwzDQIsytUuqsgQ
-rl+fAt+R+VNdSe2ZEjn+FwviOpPrgR8TQL5Qycaoviqzd6apBtutlcJpfEIqCP8m
-4guZ7bC/VjsUdJj1cxSYZe+Eh0dEas2T5qjH5DW5uyTmsKJAA3VM4lTaxITvQ0Y8
-URxCQGSfAc0IUudpz+nCbLdwhUYtV/yfpA8i3Fnewyu8Jazvup0dxALo56RDu4Kf
-j7K3kwTFlfB7D9/S10SbsWK3j/NR3qJu1DicG1Wy18Acl3oZvCgB4qGIaxh1vcsV
-NZfkt+/5V+Mb0ocKEjdudO/sS0XNBJowMxmWOCZz6vGyKQTAWA+VYmZxJ/rKiOoG
-O/YYmJ2VuzWI8KPFrhNny12UJ9AsyZLhDw4Sbr7iEDI/l/mtrL6WsK/krhMHKDdJ
-wf4TWtM0CPyZS8ym6f2cgSdmvecaZ3AuK1Hd19DeMZnly6bwZV2TkNSXbfB+oAZO
-HL7ZLY8oHLj4brTHFOIH
-=fiJ0
------END PGP SIGNATURE-----
+>  	__BTRFS_SEND_C_MAX,
+>  };
+>  #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)

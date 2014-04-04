@@ -1,214 +1,277 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f170.google.com ([209.85.212.170]:43557 "EHLO
-	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756051AbaDPS6W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 14:58:22 -0400
-Received: by mail-wi0-f170.google.com with SMTP id bs8so1747796wib.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 11:58:21 -0700 (PDT)
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:38395 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753204AbaDDOV1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 10:21:27 -0400
+Received: by mail-wi0-f181.google.com with SMTP id hm4so1364172wib.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Apr 2014 07:21:26 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 3/4 v3] Btrfs-progs: send, implement fallocate command callback
-Date: Wed, 16 Apr 2014 20:58:14 +0100
-Message-Id: <1397678294-6248-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1397580051-26643-3-git-send-email-fdmanana@gmail.com>
-References: <1397580051-26643-3-git-send-email-fdmanana@gmail.com>
+Subject: [RFC PATCH] Btrfs-progs: send, calculate and report progress based on the new flag
+Date: Fri,  4 Apr 2014 16:21:01 +0100
+Message-Id: <1396624861-1408-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The fallocate send stream command, added in stream version 2, is used to
-pre-allocate space for files and punch file holes. This change implements
-the callback for that new command, using the fallocate function from the
-standard C library to carry out the specified action (allocate file space
-or punch a file hole).
+This is a followup to the kernel patch titled:
+
+    Btrfs: send, add calculate data size flag to allow for progress estimation
+
+This makes the btrfs send and receive commands aware of the new send flag,
+named BTRFS_SEND_C_TOTAL_DATA_SIZE, which tells us the amount of file data
+that is new between the parent and send snapshots/roots. As this command
+immediately follows the commands to start a snapshot/subvolume, it can be
+used to report and compute progress, by keeping a counter that is incremented
+with the data length of each write or clone command that is received from
+the stream.
+
+Example:
+
+    $ btrfs send -o /mnt/sdd/base | btrfs receive /mnt/sdc
+    At subvol /mnt/sdd/base
+    At subvol base
+    About to receive 9211507211 bytes
+    Subvolume/snapshot /mnt/sdc//base, progress  24.73%, 2278015008 bytes received (9211507211 total bytes)
+
+    $ btrfs send -o -p /mnt/sdd/base /mnt/sdd/incr | btrfs receive /mnt/sdc
+    At subvol /mnt/sdd/incr
+    At snapshot incr
+    About to receive 9211747739 bytes
+    Subvolume/snapshot /mnt/sdc//incr, progress  63.42%, 5843024211 bytes received (9211747739 total bytes)
+
+At the moment progress is only reported by btrfs-receive, but it is possible and simple
+to do it for btrfs-send too, so that we can get progress report when not piping btrfs-send
+output to btrfs-receive (directly to a file).
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+ cmds-receive.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-send.c    | 14 ++++++++++++--
+ ioctl.h        |  7 +++++++
+ send-stream.c  |  4 ++++
+ send-stream.h  |  1 +
+ send.h         |  1 +
+ 6 files changed, 74 insertions(+), 2 deletions(-)
 
-V2: Use the new send ioctl flag BTRFS_SEND_FLAG_SUPPORT_FALLOCATE if the user
-    asks for it (-a command line option), which will make the kernel generate
-    a version 2 send stream, so that old clients aren't affected.
-V3: Rebased on new patchset (new version of patch 2/4).
-
- Documentation/btrfs-send.txt |  3 +++
- cmds-receive.c               | 38 ++++++++++++++++++++++++++++++++++++++
- cmds-send.c                  | 12 ++++++++++--
- send-stream.c                | 13 +++++++++++++
- send-stream.h                |  2 ++
- 5 files changed, 66 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/btrfs-send.txt b/Documentation/btrfs-send.txt
-index a37d63c..6893b90 100644
---- a/Documentation/btrfs-send.txt
-+++ b/Documentation/btrfs-send.txt
-@@ -43,6 +43,9 @@ An alternative would be to use pipes.
- -s::
- Obtain the total data size for each subvolume or snapshot to send. This demands additional
- processing (mostly IO bound) but is useful for the receive command to report progress.
-+-a::
-+Use fallocate to pre-allocate file extents and to punch file holes, instead of writing zeroes
-+to files.
- 
- EXIT STATUS
- -----------
 diff --git a/cmds-receive.c b/cmds-receive.c
-index 4cbf276..908f968 100644
+index d6cd3da..5de24c3 100644
 --- a/cmds-receive.c
 +++ b/cmds-receive.c
-@@ -41,6 +41,7 @@
- #include <sys/types.h>
- #include <sys/xattr.h>
- #include <uuid/uuid.h>
-+#include <linux/falloc.h>
+@@ -71,6 +71,11 @@ struct btrfs_receive
+ 	struct subvol_uuid_search sus;
  
- #include "ctree.h"
- #include "ioctl.h"
-@@ -887,6 +888,42 @@ out:
+ 	int honor_end_cmd;
++
++	/* For the subvolume/snapshot we're currently receiving. */
++	u64 total_data_size;
++	u64 bytes_received;
++	float progress;
+ };
+ 
+ static int finish_subvol(struct btrfs_receive *r)
+@@ -156,6 +161,9 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 
+ 	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
++	r->total_data_size = 0;
++	r->bytes_received = 0;
++	r->progress = 0.0;
+ 
+ 	if (strlen(r->dest_dir_path) == 0)
+ 		r->cur_subvol->path = strdup(path);
+@@ -205,6 +213,9 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 
+ 	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
++	r->total_data_size = 0;
++	r->bytes_received = 0;
++	r->progress = 0.0;
+ 
+ 	if (strlen(r->dest_dir_path) == 0)
+ 		r->cur_subvol->path = strdup(path);
+@@ -287,6 +298,41 @@ out:
  	return ret;
  }
  
-+static int process_fallocate(const char *path, u32 flags, u64 offset,
-+			     u64 len, void *user)
++static int process_total_data_size(u64 size, void *user)
 +{
 +	struct btrfs_receive *r = user;
-+	char *full_path = path_cat(r->full_subvol_path, path);
-+	int mode = 0;
-+	int ret;
 +
-+	if (flags & BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE)
-+		mode |= FALLOC_FL_KEEP_SIZE;
-+	if (flags & BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE)
-+		mode |= FALLOC_FL_PUNCH_HOLE;
++	r->total_data_size = size;
 +
-+	if (g_verbose >= 2)
-+		fprintf(stderr,
-+			"fallocate %s - flags %u, offset %llu, len %llu\n",
-+			path, flags, offset, len);
++	fprintf(stdout, "About to receive %llu bytes\n", size);
 +
-+	ret = open_inode_for_write(r, full_path);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = fallocate(r->write_fd, mode, offset, len);
-+	if (ret) {
-+		ret = -errno;
-+		fprintf(stderr,
-+			"ERROR: fallocate against %s failed. %s\n",
-+			path, strerror(-ret));
-+		goto out;
-+	}
-+	update_progress(r, len);
-+
-+out:
-+	free(full_path);
-+	return ret;
++	return 0;
 +}
++
++static void update_progress(struct btrfs_receive *r, u64 bytes)
++{
++	float new_progress;
++
++	if (r->total_data_size == 0)
++		return;
++
++	r->bytes_received += bytes;
++	new_progress = ((float)r->bytes_received / r->total_data_size) * 100.0;
++
++	if ((int)(new_progress * 100) > (int)(r->progress * 100) ||
++	    r->bytes_received == r->total_data_size)
++		fprintf(stdout,
++			"%sSubvolume/snapshot %s, progress %6.2f%%, %llu bytes received (%llu total bytes)%s",
++			(g_verbose ? "" : "\r"),
++			r->full_subvol_path, new_progress,
++			r->bytes_received, r->total_data_size,
++			(g_verbose ? "\n" : ""));
++	if (r->bytes_received == r->total_data_size)
++		fprintf(stdout, "\n");
++
++	r->progress = new_progress;
++}
++
+ static int process_mkfile(const char *path, void *user)
+ {
+ 	int ret;
+@@ -562,6 +608,7 @@ static int process_write(const char *path, const void *data, u64 offset,
+ 		}
+ 		pos += w;
+ 	}
++	update_progress(r, len);
  
- static struct btrfs_send_ops send_ops = {
- 	.subvol = process_subvol,
-@@ -910,6 +947,7 @@ static struct btrfs_send_ops send_ops = {
+ out:
+ 	free(full_path);
+@@ -638,6 +685,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
+ 				path, strerror(-ret));
+ 		goto out;
+ 	}
++	update_progress(r, len);
+ 
+ out:
+ 	if (si) {
+@@ -819,6 +867,7 @@ static struct btrfs_send_ops send_ops = {
+ 	.chmod = process_chmod,
  	.chown = process_chown,
  	.utimes = process_utimes,
- 	.total_data_size = process_total_data_size,
-+	.fallocate = process_fallocate,
++	.total_data_size = process_total_data_size
  };
  
  static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd)
 diff --git a/cmds-send.c b/cmds-send.c
-index 6f2d7c1..7203956 100644
+index dcb6607..e207ed3 100644
 --- a/cmds-send.c
 +++ b/cmds-send.c
-@@ -46,6 +46,7 @@
+@@ -45,6 +45,7 @@
+ #include "send-utils.h"
  
  static int g_verbose = 0;
- static int g_total_data_size = 0;
-+static int g_fallocate = 0;
++static int get_total_data_size = 0;
  
  struct btrfs_send {
  	int send_fd;
 @@ -284,6 +285,8 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
+ 		io_send.flags |= BTRFS_SEND_FLAG_OMIT_STREAM_HEADER;
+ 	if (!is_last_subvol)
  		io_send.flags |= BTRFS_SEND_FLAG_OMIT_END_CMD;
- 	if (g_total_data_size)
- 		io_send.flags |= BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE;
-+	if (g_fallocate)
-+		io_send.flags |= BTRFS_SEND_FLAG_SUPPORT_FALLOCATE;
++	if (get_total_data_size)
++		io_send.flags |= BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE;
  	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
  	if (ret) {
  		ret = -errno;
-@@ -427,7 +430,7 @@ int cmd_send(int argc, char **argv)
+@@ -429,7 +432,7 @@ int cmd_send(int argc, char **argv)
  	memset(&send, 0, sizeof(send));
  	send.dump_fd = fileno(stdout);
  
--	while ((c = getopt(argc, argv, "vesc:f:i:p:")) != -1) {
-+	while ((c = getopt(argc, argv, "vesac:f:i:p:")) != -1) {
+-	while ((c = getopt(argc, argv, "vec:f:i:p:")) != -1) {
++	while ((c = getopt(argc, argv, "veoc:f:i:p:")) != -1) {
  		switch (c) {
  		case 'v':
  			g_verbose++;
-@@ -517,6 +520,9 @@ int cmd_send(int argc, char **argv)
- 		case 's':
- 			g_total_data_size = 1;
- 			break;
-+		case 'a':
-+			g_fallocate = 1;
+@@ -516,6 +519,9 @@ int cmd_send(int argc, char **argv)
+ 				"ERROR: -i was removed, use -c instead\n");
+ 			ret = 1;
+ 			goto out;
++		case 'o':
++			get_total_data_size = 1;
 +			break;
  		case '?':
  		default:
  			fprintf(stderr, "ERROR: send args invalid.\n");
-@@ -679,7 +685,7 @@ out:
+@@ -678,7 +684,7 @@ out:
  }
  
  const char * const cmd_send_usage[] = {
--	"btrfs send [-ves] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
-+	"btrfs send [-vesa] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
+-	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
++	"btrfs send [-veo] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
  	"Send the subvolume(s) to stdout.",
  	"Sends the subvolume(s) specified by <subvol> to stdout.",
  	"By default, this will send the whole subvolume. To do an incremental",
-@@ -707,5 +713,7 @@ const char * const cmd_send_usage[] = {
- 	"                 snapshot to send. This demands additional processing",
- 	"                 (mostly IO bound) but is useful for the receive ",
- 	"                 command to report progress.",
-+	"-a               Use fallocate to pre-allocate file extents and to",
-+	"                 punch file holes, instead of writing zeroes to files.",
+@@ -702,5 +708,9 @@ const char * const cmd_send_usage[] = {
+ 	"-f <outfile>     Output is normally written to stdout. To write to",
+ 	"                 a file, use this option. An alternative would be to",
+ 	"                 use pipes.",
++	"-o               Obtain the total data size for each subvolume or ",
++	"                 snapshot to send. This demands additional processing",
++	"                 (mostly IO bound) but is useful for the receive ",
++	"                 command to report progress.",
  	NULL
  };
+diff --git a/ioctl.h b/ioctl.h
+index 402317f..cc36661 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -388,6 +388,13 @@ struct btrfs_ioctl_received_subvol_args {
+  */
+ #define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
+ 
++/*
++ * The total amount of data the receiver will get in write and clone commands.
++ * This can be used by the receiver to compute progress, at the expense of some
++ * initial metadata scan performed by the sender (kernel).
++ */
++#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
++
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
+ 	__u64 clone_sources_count;	/* in */
 diff --git a/send-stream.c b/send-stream.c
-index 474d012..f117533 100644
+index 88e18e2..474d012 100644
 --- a/send-stream.c
 +++ b/send-stream.c
-@@ -425,6 +425,19 @@ static int read_and_process_cmd(struct btrfs_send_stream *s)
+@@ -421,6 +421,10 @@ static int read_and_process_cmd(struct btrfs_send_stream *s)
  		TLV_GET_U64(s, BTRFS_SEND_A_SIZE, &tmp);
- 		ret = s->ops->total_data_size(tmp, s->user);
+ 		ret = s->ops->update_extent(path, offset, tmp, s->user);
  		break;
-+	case BTRFS_SEND_C_FALLOCATE:
-+		{
-+			u32 flags;
-+			u64 len;
-+
-+			TLV_GET_STRING(s, BTRFS_SEND_A_PATH, &path);
-+			TLV_GET_U32(s, BTRFS_SEND_A_FALLOCATE_FLAGS, &flags);
-+			TLV_GET_U64(s, BTRFS_SEND_A_FILE_OFFSET, &offset);
-+			TLV_GET_U64(s, BTRFS_SEND_A_SIZE, &len);
-+			ret = s->ops->fallocate(path, flags, offset, len,
-+						s->user);
-+		}
++	case BTRFS_SEND_C_TOTAL_DATA_SIZE:
++		TLV_GET_U64(s, BTRFS_SEND_A_SIZE, &tmp);
++		ret = s->ops->total_data_size(tmp, s->user);
 +		break;
  	case BTRFS_SEND_C_END:
  		ret = 1;
  		break;
 diff --git a/send-stream.h b/send-stream.h
-index 3a653a9..479e40c 100644
+index 17bc669..3a653a9 100644
 --- a/send-stream.h
 +++ b/send-stream.h
-@@ -55,6 +55,8 @@ struct btrfs_send_ops {
+@@ -54,6 +54,7 @@ struct btrfs_send_ops {
+ 		      struct timespec *mt, struct timespec *ct,
  		      void *user);
  	int (*update_extent)(const char *path, u64 offset, u64 len, void *user);
- 	int (*total_data_size)(u64 size, void *user);
-+	int (*fallocate)(const char *path, u32 flags, u64 offset,
-+			 u64 len, void *user);
++	int (*total_data_size)(u64 size, void *user);
  };
  
  int btrfs_read_and_process_send_stream(int fd,
+diff --git a/send.h b/send.h
+index e8da785..943b0b6 100644
+--- a/send.h
++++ b/send.h
+@@ -91,6 +91,7 @@ enum btrfs_send_cmd {
+ 
+ 	BTRFS_SEND_C_END,
+ 	BTRFS_SEND_C_UPDATE_EXTENT,
++	BTRFS_SEND_C_TOTAL_DATA_SIZE,
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
 -- 
 1.9.1
 

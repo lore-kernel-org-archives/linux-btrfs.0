@@ -1,48 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:56204 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752748AbaDDMsJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 08:48:09 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Fri, 04 Apr 2014 14:48:09 +0200
-Message-ID: <1847185.lRc2jIirHz@fnix>
-In-Reply-To: <533EA686.5030909@gmail.com>
-References: <2692878.dRG1K49eOP@fnix> <533EA686.5030909@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:60648 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752503AbaDDNfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Apr 2014 09:35:37 -0400
+Date: Fri, 4 Apr 2014 15:35:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.cz,
+        wangsl.fnst@cn.fujitsu.com
+Subject: Re: [PATCH RFC v2] Btrfs: device_list_add() should not update list
+ when mounted
+Message-ID: <20140404133536.GT29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1396431813-24177-1-git-send-email-anand.jain@oracle.com>
+ <1396432101-24276-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1396432101-24276-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le vendredi 4 avril 2014 08:33:10 Austin S Hemmelgarn a écrit :
-> > However I'm still concerned with chronic BTRFS dreadful performance and
-> > still  find that BRTFS degrades much over time even with periodic defrag
-> > and "best practices" etc.
+On Wed, Apr 02, 2014 at 05:48:21PM +0800, Anand Jain wrote:
+> Device list add shouldn't update the list when FS is mounted,
+> unless the whole loop w.r.t to bringing back the missing disk
+> is completed. (That is making it to be part of the group profile
+> and the code for this isn't there yet).
 > 
-> I keep hearing this from people, but i personally don't see this to be
-> the case at all.  I'm pretty sure the 'big' performance degradation that
-> people are seeing is due to how they are using snapshots, not a result
-> using BTRFS itself (I don't use them for anything other than ensuring a
-> stable system image for rsync and/or tar based backups).
+> As as of now (without this patch) when device is scanned with
+> missing disk, it would update in the device list but the disk
+> is left unused, it won't be opened by the btrfs and won't be
+> part of the btrfs group profile operation.
+> 
+> reproducer 1:
+>  mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
+>  modprobe -r btrfs
+>  mount -o degraded /dev/sdb /btrfs
+>  btrfs dev scan /dev/sdc
+> 
+>  use btrfs-devlist (or any of your method) to know that
+>  /dev/sdc isn't actually part of the above FS, (though now
+>  the missing disk path is updated in the btrfs_fs_devices)
+>  whats more btrfs kernel didn't open it all.
 
-Maybe I was wrong to suppose that if a feature exists, it is supposed to be 
-usable... I have used ZFS for years, and on ZFS having *hundreds* of snapshots 
-of any given FS have exactly zero impact on performance...
+Up to now, it works as expected. A device is permanently opened only via
+mount, 'dev scan' lets the kernel module know about the device, but does
+not keep it open.
 
-With BTRFS, some time ago I tried to use SuSE "snapper" that passes its time 
-doing and releasing snapshots, but it soon made my systems unusable...
+>  And so mkfs.ext4 can be successfully be created on /dev/sdc,
+>  whereas it fails on /dev/sdb
 
-Now, I only keep 2-3 manually made snapshots just for keeping a "stable and OK 
-archive of my machine in a known state" just in case...
+This should not matter, the device /dev/sdc is not opened, one could
+overwrite the block device without restrictions. Besides this passes
+because mkfs.ext4 does not check the device for existing filesystems.
+Try other mkfs':
 
-But if even this has a noticeable negative impact on BTRFS performance, then 
-what the hell are BTRFS snapshots good at ??
+# mkfs.btrfs /dev/sda14
+/dev/sda14 appears to contain an existing filesystem (btrfs).
+Error: Use the -f option to force overwrite.
 
-Kind regards.
+# mkfs.xfs /dev/sda14
+mkfs.xfs: /dev/sda14 appears to contain an existing filesystem (btrfs).
+mkfs.xfs: Use the -f option to force overwrite.
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+> reproducer 2:
+> disappear a disk then replace (RAID1) the disappeared disk
+> and then make the disappeared disk to reappear.
+> 
+>  mkfs.btrfs -f -m raid1 -d raid1 /dev/sdc /dev/sdd
+>  mount /dev/sdc /btrfs
+>  dd if=/dev/zero of=/btrfs/tf1 count=1
+>  btrfs fi sync /btrfs
+> 
+> devmgt[1] will help to attach or detach a disk easily
+> 
+>  devmgt show
+>  devmgt detach /dev/sdc
+> 
+> btrfs sill unaware of device missing (but thats not the point)
 
+Because it prints the device state cached in memory, there's no
+validation step, and no way as of now to tell btrfs the device is gone.
 
+>  btrfs fi show -m
+> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+>         Total devices 2 FS bytes used 32.00KiB
+>         devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <--
+>         devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+> 
+>  btrfs rep start -f 1 /dev/sde /btrfs
+> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+>         Total devices 2 FS bytes used 32.00KiB
+>         devid    1 size 958.94MiB used 115.88MiB path /dev/sde
+>         devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+> 
+> so far good. now missing /dev/sdc comes-back.
+> 
+>  devmgt attach host2
+> 
+> btrfs fi show -m shows sdc
+> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120^M
+>         Total devices 2 FS bytes used 32.00KiB^M
+>         devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <- Wrong.
+>         devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+> 
+> this is wrong it should be sde.
+
+Agreed, this is a problem.
+
+> this happened because when
+> disk comes back device_list_add() is called which would invariably
+> replace the existing disk with the given disk with the same fsid/devid.
+> But the actual IO is still going to sde not to sdc.
+
+Yes, because it's the 'sde' device that has been open and used, so it's
+possible that 'btrfs fi show' wrongly identifies the device. 
+
+> Further when we start fresh with (modprobe -r btrfs)
+> unless it is carefully managed using btrfs dev scan <dev>
+> it may pair with wrong disk (there will be a new patch
+> to fix this).
+
+IOW, there are more than one devices with the same fsid/id. The same as
+if we do 'dd'. This is a known problem, and you demonstrated another way
+how to get to it.
+
+IIRC, theres' no way for the kernel module to know which of the devices
+with same fsid/id is the one desired to mount. The workaround is "don't
+do that".

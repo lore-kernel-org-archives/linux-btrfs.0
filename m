@@ -1,83 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f178.google.com ([209.85.223.178]:63749 "EHLO
-	mail-ie0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752109AbaDDMdE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 08:33:04 -0400
-Received: by mail-ie0-f178.google.com with SMTP id lx4so3274505iec.37
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Apr 2014 05:33:04 -0700 (PDT)
-Message-ID: <533EA686.5030909@gmail.com>
-Date: Fri, 04 Apr 2014 08:33:10 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:59529 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752224AbaDDMj1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Apr 2014 08:39:27 -0400
+Date: Fri, 4 Apr 2014 14:39:25 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, zab@redhat.com
+Subject: Re: [PATCH 1/2 v2] btrfs: btrfs_rm_device() should zero mirror SB as
+ well
+Message-ID: <20140404123925.GS29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS setup advice for laptop performance ?
-References: <2692878.dRG1K49eOP@fnix>
-In-Reply-To: <2692878.dRG1K49eOP@fnix>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-04-04 04:02, Swâmi Petaramesh wrote:
-> Hi,
+On Mon, Mar 31, 2014 at 10:13:56PM +0800, Anand Jain wrote:
+> From: Anand Jain <anand.jain@oracle.com>
 > 
-> I'm going to receive a new small laptop with a 500 GB 5400 RPM mechanical 
-> "ole' rust"  HD, and I plan ton install BTRFS on it.
+> This fix will ensure all SB copies on the disk is zeroed
+> when the disk is intentionally removed. This helps to
+> better manage disks in the user land.
 > 
-> It will have a kernel 3.13 for now, until 3.14 gets released.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > 
-> However I'm still concerned with chronic BTRFS dreadful performance and still 
-> find that BRTFS degrades much over time even with periodic defrag and "best 
-> practices" etc.
-I keep hearing this from people, but i personally don't see this to be
-the case at all.  I'm pretty sure the 'big' performance degradation that
-people are seeing is due to how they are using snapshots, not a result
-using BTRFS itself (I don't use them for anything other than ensuring a
-stable system image for rsync and/or tar based backups).
+> btrfs: don't double brelse on device rm
 > 
-> So I'd like to start with the best possible options and have a few questions :
+> Device removal currently causes bdev removal to try to double free a bh
+> in the bdev:
 > 
-> - Is it still recommended to mkfs with a nodesize or leafsize different 
-> (bigger) than the default ? I wouldn't like to lose too much disk space anyway 
-> (1/2 nodesize per file on average ?), as it will be limited...
-This depends on many things, the average size of the files on the disk
-is the biggest factor.  In general you should get the best disk
-utilization by setting nodesize so that a majority of the files are less
-than the leafsize minus 256 bytes, and all but a few are smaller than
-two times the leafsize minus 256 bytes.  However, if you want to really
-benefit from the data compression, you should just use the smallest
-leaf/nodesize for your system (which is what mkfs defaults to), as data
-that gets as BTRFS stores files whose size is at least (roughly) 256
-bytes less than the leafsize inline with the metadata, and doesn't
-compress such files.
+> [   55.714833] WARNING: at fs/buffer.c:1160 __brelse+0x36/0x40()
+> [   55.714833] VFS: brelse: Trying to free free buffer
 > 
-> - Is it recommended to alter the FS to have "skinny extents" ? I've done this 
-> on all of my BTRFS machines without problem, still the kernel spits a notice 
-> at mount time, and I'm worrying kind of "Why is the kernel warning me I have 
-> skinny extents ? Is it bad ? Is it something I should avoid ?"
-I think that the primary reason for the warning is that it is backward
-incompatible, older kernels can't mount filesystems using it.
+> Commit 7e3d9ebb1 added a double release of the bh for a device being
+> removed when all the supers don't fit in the device.  In that case it
+> releases the bh assuming that it's going to read a new one, finds that
+> it won't read, and goes to a label that releases the bh again.
 > 
-> - Are there other optimization tricks I should perform at mkfs time because 
-> thay can't be changed later on ?
+> All it needed to do was only brelse() right before overwriting the
+> current bh with __bread().
 > 
-> - Are there other btrfstune or mount options I should pass before starting to 
-> populate the FS with a system and data ?
-Unless you are using stuff like QEMU or Virtualbox, you should probably
-have autodefrag and space_cache on from the very start.
-> 
-> - Generally speaking, does LZO compression improve or degrade performance ? 
-> I'm not able to figure it out clearly.
-As long as your memory bandwidth is significantly higher than disk
-bandwidth (which is almost always the case, even with SSD's), this
-should provide at least some improvement with respect to IO involving
-large files.  Because you are using a traditional hard disk instead of
-an SSD, you might get better performance using zlib (assuming you don't
-mind slightly higer processor usage for IO to files larger than the
-leafsize).  If you care less about disk utilization than you do about
-performance, you might want to use compress_force instead of compress,
-as the performance boost comes from not having to write as much data to
-disk.
-> 
-> TIA for the insight.
-> 
+> Signed-off-by: Zach Brown <zab@redhat.com>
+
+This is a bit confusing, two changelogs, one patch, the referenced
+commit id does not in fact exist. To keep all due credits, 2 patches
+would make sense but ... up to you.

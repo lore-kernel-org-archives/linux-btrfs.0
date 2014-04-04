@@ -1,54 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:16843 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751989AbaDDVTd convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 17:19:33 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 7.2 \(1874\))
-Subject: Re: Hard restart required
-From: Avi Miller <avi.miller@oracle.com>
-In-Reply-To: <533EDD2E.6090308@benjamindsmith.com>
-Date: Sat, 5 Apr 2014 08:19:27 +1100
-Cc: Avi.Miller@userp1020.oracle.com, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <EE50E6C7-94F9-494A-A930-194FABFC6B68@oracle.com>
-References: <533DFC46.8020704@benjamindsmith.com> <EDB7426B-B4CA-45F7-A8A4-F7CD0C876DC8@oracle.com> <533EDD2E.6090308@benjamindsmith.com>
-To: Lists <lists@benjamindsmith.com>
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:39883 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751738AbaDDWga convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 18:36:30 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS setup advice for laptop performance ?
+Date: Sat, 05 Apr 2014 00:35:08 +0200
+Message-ID: <7675297.F25Z3Ox7Yz@tethys>
+In-Reply-To: <20140404150906.GR7442@carfax.org.uk>
+References: <2692878.dRG1K49eOP@fnix> <20140404150906.GR7442@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Le vendredi 4 avril 2014 16:09:06 Hugo Mills a écrit :
+> We don't have lots of reports of massive slowdowns
+> after a long period of use, so whatever you're doing, there seems to
+> be something unusual involved.
+>
+>    It's almost certainly not your fault, but there would appear to be
+> something in your configuration or your use-case which is leading to
+> these problems, and without knowing what's different, it's hard to set
+> about identifying the problem.
 
-On 5 Apr 2014, at 3:26 am, Lists <lists@benjamindsmith.com> wrote:
+I would have hard times finding what ! I have seen this on each and every 
+machine on which I have installed BTRFS over the past 2 years. These first were 
+Ubuntus, now there is one Mint, 2 Arch, 1 Fedora, all with decently recent 
+kernels and "alls updates applied".
 
-> On 04/03/2014 05:41 PM, Avi Miller wrote:
->> UUID should work fine on OL6. Can you confirm that you have the UEK3 (3.8.18) kernel running? If you’ve installed from OL6U5 media, it should be enabled by default, but older OL6 ISOs only had UEK2 on the media and the UEK3 yum channel would need to be manually enabled.
-> 
-> As suggested earlier on this list, I started with a fresh, vanilla CentOS 6 install and used the centos2ol.sh script to switch to using OL before doing a yum update/upgrade and install of BTRFS. Here's the relevant info after the switchover.
+All those machines do "mainly boring office tasks", email, web surf, word 
+processing, spreadsheets. No databases except for system packages DB and KDE 
+"akonadi" email storage... Few compilations, if any, no heavy disk tasks, all 
+mounted with noatime, space_cache, inode_cache, etc...
 
-Any particular reason why you didn’t just start with Oracle Linux 6? The installation media is available for download from the official Oracle Software Delivery Cloud at http://edelivery.oracle.com/linux or if you can’t be bothered with the registration requirement, from one of the mirrors listed at https://wikis.oracle.com/display/oraclelinux/Downloading+Oracle+Linux
+No torrents, no bitcoins, very seldom used Virtualbox (and this is nocow).
 
-There is no good reason to start with CentOS. 
+No filesystem is over 80% full, some are below 20%...
 
-> [root@oracle ~]# uname -a
-> Linux oracle.schoolpathways.com 2.6.32-431.11.2.el6.x86_64 #1 SMP Tue Mar 25 08:15:39 PDT 2014 x86_64 x86_64 x86_64 GNU/Linux
+No filesystems currently have more than 4 active snapshots.
 
-This kernel is very, very, very old in btrfs terms. In fact, this is the RHCK or Red Hat Compatible Kernel that ships with RHEL6/C6 and isn’t one of the newer Oracle UEK releases at all.
+All get slow like hell over time.
 
-> [ol6_UEKR3_latest]
-> name=Latest Unbreakable Enterprise Kernel for Oracle Linux $releasever ($basearch)
-> baseurl=http://public-yum.oracle.com/repo/OracleLinux/OL6/UEKR3/latest/$basearch/
-> gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
-> gpgcheck=1
-> enabled=0
+> How are you measuring the slowdown -- do you have a
+> specific piece of benchmarking software, or just anecdotal evidence?
 
-Enable this repository and do a yum update to get the latest UEK Release 3, i.e. the 3.8.13 kernel.
+When your system slowly shifts from "normally responsive" to "dreadfully slow" 
+over time, that starting any app takes over a full minute with HD LED steady 
+lit, that booting bhas become so long that the GUI DM dies of timeout before 
+it even starts, and you have to restart it manualle... you can tell it's gone 
+"sloooooow" without any benchmark figures...
 
-Cheers,
-Avi
+(Disk health good on all machines...)
 
---
-Oracle <http://www.oracle.com>
-Avi Miller | Product Management Director | +61 (3) 8616 3496
-Oracle Linux and Virtualization
-417 St Kilda Road, Melbourne, Victoria 3004 Australia
+Go figure...
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 

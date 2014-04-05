@@ -1,62 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:39883 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751738AbaDDWga convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 18:36:30 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Sat, 05 Apr 2014 00:35:08 +0200
-Message-ID: <7675297.F25Z3Ox7Yz@tethys>
-In-Reply-To: <20140404150906.GR7442@carfax.org.uk>
-References: <2692878.dRG1K49eOP@fnix> <20140404150906.GR7442@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from aserp1040.oracle.com ([141.146.126.69]:40354 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753097AbaDEBtE convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Apr 2014 21:49:04 -0400
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 7.2 \(1874\))
+Subject: Re: Hard restart required
+From: Avi Miller <avi.miller@oracle.com>
+In-Reply-To: <533F3732.6090108@benjamindsmith.com>
+Date: Sat, 5 Apr 2014 12:48:59 +1100
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <76C074C2-E0F3-4E01-AF95-94164948A52B@oracle.com>
+References: <533DFC46.8020704@benjamindsmith.com> <EDB7426B-B4CA-45F7-A8A4-F7CD0C876DC8@oracle.com> <533EDD2E.6090308@benjamindsmith.com> <EE50E6C7-94F9-494A-A930-194FABFC6B68@oracle.com> <533F3732.6090108@benjamindsmith.com>
+To: Lists <lists@benjamindsmith.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le vendredi 4 avril 2014 16:09:06 Hugo Mills a écrit :
-> We don't have lots of reports of massive slowdowns
-> after a long period of use, so whatever you're doing, there seems to
-> be something unusual involved.
->
->    It's almost certainly not your fault, but there would appear to be
-> something in your configuration or your use-case which is leading to
-> these problems, and without knowing what's different, it's hard to set
-> about identifying the problem.
+Hey,
 
-I would have hard times finding what ! I have seen this on each and every 
-machine on which I have installed BTRFS over the past 2 years. These first were 
-Ubuntus, now there is one Mint, 2 Arch, 1 Fedora, all with decently recent 
-kernels and "alls updates applied".
+On 5 Apr 2014, at 9:50 am, Lists <lists@benjamindsmith.com> wrote:
 
-All those machines do "mainly boring office tasks", email, web surf, word 
-processing, spreadsheets. No databases except for system packages DB and KDE 
-"akonadi" email storage... Few compilations, if any, no heavy disk tasks, all 
-mounted with noatime, space_cache, inode_cache, etc...
+> Oracle Linux 6 with the Unbreakable Enterprise Kernel Release 2 or Release 3 has production-ready btrfs support. You can even convert your existing CentOS6 boxes across to Oracle Linux 6 in-place without reinstalling:
 
-No torrents, no bitcoins, very seldom used Virtualbox (and this is nocow).
+Yeah, that’s fine and supported. Though, it just switches the existing box across without upgrading to the new kernel. We retain the scripts so that users can switch across without reinstalling. Additional steps are required to install the UEK, though, as below:
 
-No filesystem is over 80% full, some are below 20%...
 
-No filesystems currently have more than 4 active snapshots.
+>>> is had no effect, even after running a yum clean all to ensure that the caches were reset. I'll re-install my test station with a direct download of OL, since the testing now underway is apparently invalid. 
 
-All get slow like hell over time.
+No need for this, just install kernel-uek manually:
 
-> How are you measuring the slowdown -- do you have a
-> specific piece of benchmarking software, or just anecdotal evidence?
+# yum install kernel-uek
 
-When your system slowly shifts from "normally responsive" to "dreadfully slow" 
-over time, that starting any app takes over a full minute with HD LED steady 
-lit, that booting bhas become so long that the GUI DM dies of timeout before 
-it even starts, and you have to restart it manualle... you can tell it's gone 
-"sloooooow" without any benchmark figures...
+It has a different name from the default kernel, so both can be installed at the same time. Because this is a switched box, a yum upgrade won’t automatically pull in the UEK because there isn’t an existing one to upgrade.
 
-(Disk health good on all machines...)
+Sorry for the confusion!
 
-Go figure...
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+--
+Oracle <http://www.oracle.com>
+Avi Miller | Product Management Director | +61 (3) 8616 3496
+Oracle Linux and Virtualization
+417 St Kilda Road, Melbourne, Victoria 3004 Australia
 

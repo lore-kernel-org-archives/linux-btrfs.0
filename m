@@ -1,48 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57579 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:57664 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753681AbaDEWFj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Apr 2014 18:05:39 -0400
-Date: Sat, 5 Apr 2014 15:05:37 -0700
+	with ESMTP id S1753727AbaDEWVx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Apr 2014 18:21:53 -0400
+Date: Sat, 5 Apr 2014 15:21:49 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: cwillu <cwillu@cwillu.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 24/27] btrfs-progs: Convert man page for btrfs-zero-log
-Message-ID: <20140405220537.GC13857@merlins.org>
-References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com> <1396427378-10487-25-git-send-email-quwenruo@cn.fujitsu.com> <20140404184620.GA12124@merlins.org> <CAE5mzvhTZ1bO_uoyz-ixsn29iznXRjzFkM5UfDBcFUdX0ov7RQ@mail.gmail.com> <20140405220203.GB13857@merlins.org>
+Message-ID: <20140405222149.GD13857@merlins.org>
+References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com> <1396427378-10487-25-git-send-email-quwenruo@cn.fujitsu.com> <20140404184620.GA12124@merlins.org> <CAE5mzvhTZ1bO_uoyz-ixsn29iznXRjzFkM5UfDBcFUdX0ov7RQ@mail.gmail.com> <20140405220203.GB13857@merlins.org> <20140405220346.GV7442@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140405220203.GB13857@merlins.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="sdtB3X0nJg68CQEu"
+In-Reply-To: <20140405220346.GV7442@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 05, 2014 at 03:02:03PM -0700, Marc MERLIN wrote:
-> On Sat, Apr 05, 2014 at 04:00:27PM -0600, cwillu wrote:
-> > >> +'btrfs-zero-log' will remove the log tree if log tree is corrupt, which will
-> > >> +allow you to mount the filesystem again.
-> > >> +
-> > >> +The common case where this happens has been fixed a long time ago,
-> > >> +so it is unlikely that you will see this particular problem.
-> > >
-> > > A note on this one: this can happen if your SSD rites things in the
-> > > wrong order or potentially writes garbage when power is lost, or before
-> > > locking up.
-> > > I hit this problem about 10 times and it wasn't a btrfs bug, just the
-> > > drive doing bad things.
-> > 
-> > And -o recovery didn't work around it?  My understanding is that -o
-> > recovery will skip reading the log.
-> 
-> Maybe it does, but if you're trying to mount your root filesystem to boot
-> your laptop, that's not super useful since -o recovery is indeed a read only
-> recovery mode.
 
-Sorry, -o recovery is not read only, but -o recovery,ro which is usually
-what is needed for things to work in my experience, is indeed read only.
+--sdtB3X0nJg68CQEu
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, Apr 05, 2014 at 11:03:46PM +0100, Hugo Mills wrote:
+>    As far as I recall, -orecovery is read-write. -oro,recovery is
+> read-only.
+
+Yes, we both corrected my Email at the same time :)
+
+Actually it's better/worse than that. From my notes at
+http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-an=
+d-Btrfs-Filesystem-Repair
+
+mount -o recovery,ro (for when regular mount isn't working). Note, you have=
+ to use ro or it will give you a misleading error:
+root@polgara:~# mount -o recovery /dev/mapper/crypt /mnt/mnt8
+mount: /dev/mapper/crypt already mounted or /mnt/mnt8 busy
+root@polgara:~# mount -o recovery,ro /dev/mapper/crypt /mnt/mnt8
+root@polgara:~#
+
+In other words, for me -o recovery has never worked unless I added ,ro.
+I'm not saying -o recovery cannot work, but when I needed it, it didn't work
+because likely it failed to replay the log as you say, and adding ro fixed
+that problem.
+
+That said, returning
+mount: /dev/mapper/crypt already mounted or /mnt/mnt8 busy                 =
+                                                              =20
+is not ideal :)
 
 Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+--=20
+"A mouse is a device used to point at the xterm you want to type in" - A.S.=
+R.
 Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+                                      .... what McDonalds is to gourmet coo=
+king
+Home page: http://marc.merlins.org/ =20
+
+--sdtB3X0nJg68CQEu
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQCVAwUBU0CB/X4xUKZ2O+kBAQIvmgP/QOYzoZa7Q2C9Znf2LzdWGySCDWZDW5zV
+m7H3FH3mi7EVZ7owoD8tPArn8gFAYXJCbwIxESrKSxVODKn/X/RG/ptY1Zl/X5BU
+JOJOmG0khJEIbxrm8sL/47Be0tUzlwh8UzW/nAsJ2FxC+uHFhB6XpW5rklxfS8/Z
+rPaUASML5Qc=
+=YwMP
+-----END PGP SIGNATURE-----
+
+--sdtB3X0nJg68CQEu--

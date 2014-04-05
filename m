@@ -1,172 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39081 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752528AbaDEMQl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 5 Apr 2014 08:16:41 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WWPWZ-0004HA-6P
-	for linux-btrfs@vger.kernel.org; Sat, 05 Apr 2014 14:16:39 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Apr 2014 14:16:39 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Apr 2014 14:16:39 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from frost.carfax.org.uk ([85.119.82.111]:46871 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752642AbaDEONs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Apr 2014 10:13:48 -0400
+Date: Sat, 5 Apr 2014 15:13:40 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Sat, 5 Apr 2014 12:16:23 +0000 (UTC)
-Message-ID: <pan$8df02$88ced518$8a164b97$5b1bfadd@cox.net>
-References: <2692878.dRG1K49eOP@fnix> <7675297.F25Z3Ox7Yz@tethys>
-	<pan$ca9c0$aeb7ee6f$84e2e493$5ee834ed@cox.net>
-	<12471892.pAn1KAtSS4@tethys>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20140405141340.GT7442@carfax.org.uk>
+References: <2692878.dRG1K49eOP@fnix>
+ <7675297.F25Z3Ox7Yz@tethys>
+ <pan$ca9c0$aeb7ee6f$84e2e493$5ee834ed@cox.net>
+ <12471892.pAn1KAtSS4@tethys>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="CC5qiHV/f0UkyWC4"
+In-Reply-To: <12471892.pAn1KAtSS4@tethys>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Swâmi Petaramesh posted on Sat, 05 Apr 2014 13:10:13 +0200 as excerpted:
 
-> Le samedi 5 avril 2014 10:12:17 Duncan wrote [excellent performance
-> advice about disabling Akonadi in BTRFS etc]:
-> 
+--CC5qiHV/f0UkyWC4
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, Apr 05, 2014 at 01:10:13PM +0200, Sw=E2mi Petaramesh wrote:
+> Le samedi 5 avril 2014 10:12:17 Duncan wrote [excellent performance advic=
+e=20
+> about disabling Akonadi in BTRFS etc]:
+>=20
 > Thanks Duncan for all this excellent discussion.
-> 
-> However I'm still rather puzzled with a filesystem for which advice is
-> "if you want tolerable performance, you have to turn off features that
-> are the default with any other FS out there (relatime -> noatime) or you
-> have to quit using this database, or you have to fiddle around with
-> esoteric option such as disabling COW wich BTW is one of BTRFS most
-> promiment features".
+>=20
+> However I'm still rather puzzled with a filesystem for which advice is "i=
+f you=20
+> want tolerable performance, you have to turn off features that are the de=
+fault=20
+> with any other FS out there (relatime -> noatime) or you have to quit usi=
+ng=20
+> this database, or you have to fiddle around with esoteric option such as=
+=20
+> disabling COW wich BTW is one of BTRFS most promiment features".
 
-> I need a filesystem that fits me, I don't want to have to fit my
-> filesystem :-\
+   OK, a couple of points here:
 
-In fairness, there are two points to consider.
+ - For the things where you should turn CoW off, they're typically
+   things like databases that do their _own_ CoW handling or similar
+   high-performance reliable transactions/writes, so you generally
+   lose very little there.
 
-1)  Btrfs is still relatively immature and there are corner-cases and 
-kinks and bugs that haven't been worked out yet.
+ - I'm not aware, particularly, of any major differences between
+   noatime and relatime in performance on btrfs. (But I may be wrong
+   there).
 
-2) If you're going to compare filesystems, be sure you're comparing like 
-features.
+ - Given Duncan's discussion of the performance of the semantic
+   desktop, I would suggest turning it off *temporarily* to see if it
+   really is where the difficulty lies. If it turns out that it's
+   unrelated and things still slow down horribly, then at least we've
+   knocked down one theory and need to look elsewhere. If it _is_
+   related, then that at least gives us a reproducer for the problem,
+   and the people who are skilled in tracking down performance
+   problems have something to look at. It also means that you have a
+   range of things you know you can try if the problem gets really bad
+   (maybe delete the database and rebuild it regularly? mark parts of
+   it nodatacow? maybe autodefrag helps? maybe it's something simple
+   the authors of the database can change?).
 
-In the case of noatime in particular, it's recommended for most 
-filesystems these days, with the only reason it's not the default being 
-backward compatibility with apps like mutt that depend on atime.
+[snip]
+> I need a filesystem that fits me, I don't want to have to fit my filesyst=
+em :-\
 
-But the reason it's more of a problem on btrfs than on other filesystems 
-is PRECISELY because of btrfs' snapshotting feature -- a feature that 
-most other filesystems simply don't have, AT ALL.  Thus, if you're going 
-to compare btrfs against other filesystems in that regard, since most 
-other filesystems don't have the snapshotting feature that makes atime a 
-bad idea on btrfs, to compare like to like, you must compare btrfs 
-without using snapshotting to other filesystems that don't have the 
-feature in the first place, and once you do that, btrfs' behavior with 
-relatime or even strict atime isn't all that bad.  It's only when you 
-bring in snapshots that it's an issue at all, and most filesystems don't 
-even have snapshots, so it's not fair to compare the after all relatively 
-small efficiency related recommendation to turn off a legacy-support 
-feature in ordered to get better efficiency on a brand new feature, with 
-filesystems that don't even have that new feature in the first place.
+   If you truly find btrfs unusable -- which you've said at various
+points in the past -- then I'm not going to suggest that you keep
+using it. Maybe something else is genuinely better for you. It's not
+in the interests of the btrfs community to recommend that people use
+btrfs when it's not appropriate. That said, it would be good to have
+your help to try to fix the (apparently quite unusual) problems you're
+seeing. Part of that is tracking down which bit of software is
+triggering the issues, and helping to identify what the issues
+actually are. Sometimes, the hardest problem in fixing bugs is finding
+someone who can reproduce the bug and test fixes.
 
-The exception of course is zfs, which does have snapshotting (and which 
-isn't an alternative for me so I've not looked into its details enough to 
-know the specifics of its snapshot atime handling).  But if you do the 
-research, I'm confident you'll find atime updates have a similar 
-efficiency cost in relation to snapshotting there, because atime updates 
-/are/ a change, and if they're tracked at all, that change must be 
-stored /somewhere/.  Now they may not /mention/ the cost, or perhaps 
-their snapshot format is inefficient enough the cost of storing atime 
-updates is lost in the overall inefficiency of the design, but the cost 
-DOES exist, those metadata changes must be stored SOMEWHERE, and either 
-their design is efficient enough that it will show up and thus be a 
-factor, or it's inefficient and thus it won't be a factor, one or the 
-other.
+   Hugo.
 
-If it's a bother, just ignore what is after all just a small efficiency 
-tweaking hint, and pretend it doesn't matter on btrfs either.  Snapshots 
-will be a bit bigger and thus you'll either run out of space for 
-additional snapshots and have to delete some a bit sooner, or you'll have 
-less room to store the actual data, but you can pretend you never read 
-about that slight loss of efficiency and go on using relatime or even 
-strictatime, and it shouldn't otherwise affect btrfs much more than it 
-affects any other filesystem.  Or just don't use snapshots, if you 
-prefer, and again, it shouldn't affect btrfs much more differently than 
-it affects other filesystems that don't have the snapshotting feature 
-available in the first place.
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                   --- Ceci n'est pas une pipe:  | ---                  =20
 
-As for COW, the problems there are two-fold.  To some extent, it's 
-inherent in the technology.  But there are certainly optimizations that 
-can be had, that btrfs isn't doing at this time.  As the filesystem 
-matures, these will no doubt be added, and btrfs will handle larger 
-internal-write files rather better than it does now.  Still, given the 
-technology, I imagine it'll always be possible to get a bit more 
-performance by setting nocow on this type of file, because it /is/ a 
-problem that's characteristic of COW filesystems and technology in 
-general.
+--CC5qiHV/f0UkyWC4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Meanwhile, one of the great things about Linux is that it DOES have all 
-these filesystem choices available; it's NOT one-size-fits-all (or two-
-sizes, fat and ntfs).  The various filesystems each have their individual 
-quirks and are better or worse in specific use-cases, and btrfs is and 
-will remain no exception.  While btrfs should eventually mature into a 
-reasonable general purpose filesystem, suitable to replace the ext* 
-series as such, /just/ like the ext* series, there will still be use-
-cases where other filesystems are more specifically suited.  For large 
-frequent internal-write files, for example, xfs is I believe the 
-recommended filesystem today, and it may well remain so as btrfs replaces 
-ext3/4, particularly where other btrfs features such as built-in multiple 
-device raidN support aren't needed, and where various limitations such as 
-first-write-after-snapshot-is-cow even on otherwise nocow files make 
-btrfs snapshots not a particularly useful feature for certain types of 
-files.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-As for disabling akonadi, it's worth noting that when I did that, I was 
-still on reiserfs.  Perhaps that's one of the reasons it made such a big 
-difference to me, and that may or may not apply to btrfs or ext3/4 
-users.  But given that it /did/ make such a difference to me, it's 
-certainly worth a try.  I'm certainly biased given my experience with 
-akonadi and will admit just that, but /based/ on that experience, if 
-akonadi is in fact another common thread to all those installations along 
-with btrfs, then based on my own experience, I'd definitely be pointing 
-my finger at it, NOT at btrfs, because I've been very happy with btrfs 
-performance, while akonadi... let's just say the fact that I compared it 
-to malware says it all.
+iQIVAwUBU0APlFheFHXiqx3kAQJR9A/9EBzR9/HELrnJ7aIzSdLgXnVQ2b/It60M
+XqoTk/2BEmOXN6wTfg1PPlW/027LwPnPEQ401LUHHQnHA9cHG4Xqk5iN/PTAjwxi
+hUjA9cPz4znUbEL7KEMh+K5m7yF6E2TcbOz3VQuGQsQ3aWiUMiFY5xjIdURaCkXQ
+J9wyEenGMF5X3y5exxXCKjD7jMbgEIQR8FhyzkRgZZenzwyP7livzrngtw4+f/vx
+PN3H9fW5AM1jEhktyBbLrThRyILZ87qEvOuxhM4IJ6vtkvcxO8+Lmgn32VUHIx65
+xWJqqEvudUtmFoZH0/4whsQaj52/sIu73qdapZZgDNAexLY/FtzZTWM8JYTzDjPl
+Le1ufTKjUDJFDuKTIs0/sIXyb2z/1L6t7nkju22RNKMBuYmR028mD2GSef3KqM6O
+A1eGx8rFo5LKQMxHS8ZYNCnr3Y/thENjIMWBvllHN1upLOTyfWD17fgJW/8tGJmz
+S5M9hvRJHuOjk0tcoWHGDXwq4Z9UAGpk3uoyrj5X4pCEaVQJVaFYiuMu1dn+0iP6
+zIfa0UF1qal2K7wEkbk3DWb+DSsVZRfgoLANsfgyBE1usfTnGT0fZnh41Nq2mnTA
+ZSwiPeblvLq5cgw+Kb71TBA+i16gFyRMomAj2SPtJiMJFbdSMqr4m041o6NwM5JV
+rmpJ6qzXC/Y=
+=EKXa
+-----END PGP SIGNATURE-----
 
-OTOH, for all I know you only had akonadi on one of those installations 
-and just happened to mention it.  Perhaps it had nothing to do with the 
-slowdowns.
-
-Fine.  I'd say it's still worth testing if disabling it gets you back 
-some of that speed.  But it's your systems not mine, and my experience 
-may have in fact been a corner-case that has nothing at all to do with 
-yours, so believe and do what you will.
-
-Meanwhile, you /were/ asking for advice and I gave you mine.  If you 
-don't like it, treat it as worth what you paid for it (zero).  No skin 
-off my nose.  But one more zero-cost bit of advice.  If your btrfs 
-experience really is that consistently bad, it doesn't really matter what 
-I say or someone else says or our experience or advice, why are you still 
-bothering with it?  I certainly wouldn't be, because as you said:
-
-> I need a filesystem that fits me, I don't want to have to fit my
-> filesystem :-\
-
-If that's not happening with btrfs, honestly, why are you still using 
-it?  That's /exactly/ why I'm not using kmail and akonadi today, after 
-nearly a decade of being quite happy with it, and despite the trouble of 
-converting to something else.  When it didn't fit my needs, I found 
-something that did.  Simple as that.  And if btrfs isn't fitting your 
-needs, I'd recommend you do likewise, simple as that.
-
-Tho I do believe it can be made a better match, if you wish to spend the 
-time to make it so, which after all your post implied you were in fact 
-willing and wanting to do.  Your system; your choice. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--CC5qiHV/f0UkyWC4--

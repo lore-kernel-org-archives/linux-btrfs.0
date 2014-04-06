@@ -1,72 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36106 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754163AbaDFRUl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 13:20:41 -0400
-Date: Sun, 6 Apr 2014 10:20:30 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <20140406172030.GF5006@merlins.org>
-References: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
- <20140406001838.GA9485@merlins.org>
- <CAL3q7H7Em8hX1CeARSjoZHwjvEjiQNs9Ni_ofH5aVbjQ04j0fQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7Em8hX1CeARSjoZHwjvEjiQNs9Ni_ofH5aVbjQ04j0fQ@mail.gmail.com>
-Subject: Re: [RFC PATCH] Btrfs: send, add calculate data size flag to allow
- for progress estimation
+Received: from plane.gmane.org ([80.91.229.3]:45723 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752336AbaDFUUH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 6 Apr 2014 16:20:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WWtXv-0002zM-6X
+	for linux-btrfs@vger.kernel.org; Sun, 06 Apr 2014 22:20:03 +0200
+Received: from cac94-1-81-57-151-16.fbx.proxad.net ([81.57.151.16])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Apr 2014 22:20:03 +0200
+Received: from seblu by cac94-1-81-57-151-16.fbx.proxad.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Apr 2014 22:20:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?B?U8OpYmFzdGllbiBMdXR0cmluZ2Vy?= <seblu@archlinux.org>
+Subject: Re: btrfs-progs tagged as v3.12
+Date: Sun, 06 Apr 2014 22:14:43 +0200
+Message-ID: <lhscjk$lfr$1@ger.gmane.org>
+References: <20131125214534.8160.40797@ret.masoncoding.com> <CALOYprVH7pGuAR2OHvyGVfa9FKW-_5yMT-h=BAm_G8ejEOHboQ@mail.gmail.com> <532B7FEE.5090708@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <532B7FEE.5090708@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 06, 2014 at 05:57:38PM +0100, Filipe David Manana wrote:
-> > I looked around and found nothing that looked similar enough.
-> > Obviously it's an assert, so I can run without it, but my source being
-> > very different from yours just made me want to check that this was most
-> > likely ok to run with 3.14.0.
+On 21/03/2014 00:55, Chris Mason wrote:
+> On 03/20/2014 07:36 PM, WorMzy Tykashi wrote:
+>> On 25 November 2013 21:45, Chris Mason <chris.mason@fusionio.com> wrote:
+>>
+>> I don't know if there wasn't enough commits to justify a 3.13 release
+>> (I noticed your integration branch stalled 7 weeks ago, so I assume
+>> this is the case), but can we expect a 3.14 release shortly after
+>> Linus tags the mainline kernel as such?
+>>
 > 
-> This is based on top of btrfs-next plus previous send patches sent to
-> this list but not yet in btrfs-next.
- 
-Right, I figured. It otherwise applied to 3.14, so I'm hopeful it'll
-work since only the assert was missing.
+> Yes, I'm redoing the integration branch off of Dave's latest, and
+> started testing it earlier this week.  We'll definitely have a 3.14.
+Hi,
 
-> > 2) I saw the concerns about protocol incompatibility. Is it an issue if you run without -o
-> > too?
-> 
-> No. See the discussion above. Using a send stream created with the new
-> flag won't work with an old btrfs receive. But to be able to get a
-> send stream with the new flag you need the patched btrfs receive
-> (unless you plan to write your own code to call the send ioctl
-> directly).
+Do you have a release date?
 
-Thanks for confirming. Given that, it sounds more than fine to me.
+Cheers,
 
-> > 3) Do you have a patch for btrfs-tools so that I can try it, or a git
-> > tree of btrfs-tools with this that I should pull?
-> 
-> Yes, without it I couldn't test it and it would be pointless. There's
-> a patch in the list for btrfs-progs.  I've also pasted a link to it
-> (and this one too) in reply to the thread you started days ago.
-
-So yes I knew you had a patch obviously :) but I missed the Email where
-you sent it, and just found it now
-"[RFC PATCH] Btrfs-progs: send, calculate and report progress based on the new flag"
-
-> > 4) Can I run btrfs send -o snap1 snap2 >/dev/null to get quick stats
-> > on the changes between the 2 snapshots, or is it still going to walk
-> > through all the data blocks and send them to /dev/null afterwards?
-> 
-> No, but it's doable and implies only extending the user space tools.
-> What is implemented is explained in the commit log for the btrfs-progs
-> patch.
-
-Yes, I just read that now, my apologies for missing that other Email.
-
-Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Sébastien "Seblu" Luttringer
+https://seblu.net | Twitter: @seblu42
+GPG: 0x2072D77A
+

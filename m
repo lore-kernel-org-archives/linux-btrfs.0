@@ -1,158 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:48113 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753444AbaDFJZt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 05:25:49 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Sun, 06 Apr 2014 11:24:02 +0200
-Message-ID: <2131050.Gsdb2GJxUb@tethys>
-In-Reply-To: <20140405141340.GT7442@carfax.org.uk>
-References: <2692878.dRG1K49eOP@fnix> <12471892.pAn1KAtSS4@tethys> <20140405141340.GT7442@carfax.org.uk>
+Received: from aserp1040.oracle.com ([141.146.126.69]:27292 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754181AbaDFKxT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 06:53:19 -0400
+Message-ID: <534131F0.7090806@oracle.com>
+Date: Sun, 06 Apr 2014 18:52:32 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart33258395.OsKD4pIrKs"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+To: dsterba@suse.cz
+CC: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        wangsl.fnst@cn.fujitsu.com
+Subject: Re: [PATCH RFC v2] Btrfs: device_list_add() should not update list
+ when mounted
+References: <1396431813-24177-1-git-send-email-anand.jain@oracle.com> <1396432101-24276-1-git-send-email-anand.jain@oracle.com> <20140404133536.GT29256@twin.jikos.cz>
+In-Reply-To: <20140404133536.GT29256@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart33258395.OsKD4pIrKs
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+Thanks for the comments.
+More inline below.
 
-Hi people :-)
 
-Le samedi 5 avril 2014 15:13:40 Hugo Mills a =E9crit :
->=20
->  - I'm not aware, particularly, of any major differences between
->    noatime and relatime in performance on btrfs. (But I may be wrong
->    there).
+On 04/04/2014 21:35, David Sterba wrote:
+> On Wed, Apr 02, 2014 at 05:48:21PM +0800, Anand Jain wrote:
+>> Device list add shouldn't update the list when FS is mounted,
+>> unless the whole loop w.r.t to bringing back the missing disk
+>> is completed. (That is making it to be part of the group profile
+>> and the code for this isn't there yet).
+>>
+>> As as of now (without this patch) when device is scanned with
+>> missing disk, it would update in the device list but the disk
+>> is left unused, it won't be opened by the btrfs and won't be
+>> part of the btrfs group profile operation.
+>>
+>> reproducer 1:
+>>   mkfs.btrfs -draid1 -mraid1 /dev/sdb /dev/sdc
+>>   modprobe -r btrfs
+>>   mount -o degraded /dev/sdb /btrfs
+>>   btrfs dev scan /dev/sdc
+>>
+>>   use btrfs-devlist (or any of your method) to know that
+>>   /dev/sdc isn't actually part of the above FS, (though now
+>>   the missing disk path is updated in the btrfs_fs_devices)
+>>   whats more btrfs kernel didn't open it all.
+>
+> Up to now, it works as expected. A device is permanently opened only via
+> mount, 'dev scan' lets the kernel module know about the device, but does
+> not keep it open.
 
-It's especially noticeable at first boot in a given day, as "relatime" =
-will=20
-have atimes updated once a day.
+  Yes. But we unset the missing flag and FS would continue to be mounted.
 
-I've noticed that the 1st boot on any given day can be up to 3-4 times =
-longer=20
-on a BTRFS with "relatime" compared to a btrfs with "noatime". This is=20=
+  (Reviewing the kernel memory for btrfs_fs_devices and the btrfs_device
+  list, will help to understand whats going on inside the btrfs
+  kernel).
 
-especially true if snapshots have recently been made.
+  In this case as the above FS is already mounted when dev scan /dev/sdc
+  is run, should dev scan also trigger to open the reappearing
+  device ? as at this point the missing flag is unset.
 
->  - Given Duncan's discussion of the performance of the semantic
->    desktop, I would suggest turning it off *temporarily* to see if it=
+  Note that when you run btrfs fi show -m here (or for that matter
+  -d also) it would show to the end user that /dev/sdc is already
+  a part of the FS.
 
->    really is where the difficulty lies.
+  After you create ext4, btrfs fi show -m (now not -d) will still
+  show /dev/sdc is part of btrfs, since /dev/sdc is in the
+  btrfs_fs_device->btrfs_devices list kernel memory.
 
-I'm afraid that this would turn my email off (I used Kmail and it's bac=
-king=20
-store is Akonadi, and non, I don't want to change MUA), and I can't rea=
-lly=20
-live long without it ;-)
 
->    (maybe delete the database and rebuild it regularly?
+>>   And so mkfs.ext4 can be successfully be created on /dev/sdc,
+>>   whereas it fails on /dev/sdb
+>
+> This should not matter, the device /dev/sdc is not opened, one could
+> overwrite the block device without restrictions. Besides this passes
+> because mkfs.ext4 does not check the device for existing filesystems.
+> Try other mkfs':
+>
+> # mkfs.btrfs /dev/sda14
+> /dev/sda14 appears to contain an existing filesystem (btrfs).
+> Error: Use the -f option to force overwrite.
+>
+> # mkfs.xfs /dev/sda14
+> mkfs.xfs: /dev/sda14 appears to contain an existing filesystem (btrfs).
+> mkfs.xfs: Use the -f option to force overwrite.
 
-I'm not considering deleting the database. It contains about 1GB of my =
-email=20
-archive and I've no clue about how I could possibly export and reimport=
- it.=20
-The way the Kmail apps use the Akonadi backing store is somewhat tricky=
-...
+   But the problem is /dev/sdc (in the above reproducer) is in the
+   btrfs btrfs_fs_device and btrfs_devices kernel memory list,
+   and so btrfs fi show -m would show /dev/sdc as well.
+   btrfs-devlist is more simple to understand what going on with
+   in kernel.
 
->    mark parts of it nodatacow?
+   Again. If _other_ FS claims the device, the btrfs fi show -m
+   would continue to show the /dev/sdc and the worst is "missing"
+   flag unset.
 
-I woud be allright about trying "nodatacow", but it's totally unclear t=
-o me=20
-what impact this can have on snapshots ?
+   pls use btrfs-devlist to have kernel's view.
 
-Will "nodatacow" defeat snapshots, allowing data to change in snapshots=
- ?
+>> reproducer 2:
+>> disappear a disk then replace (RAID1) the disappeared disk
+>> and then make the disappeared disk to reappear.
+>>
+>>   mkfs.btrfs -f -m raid1 -d raid1 /dev/sdc /dev/sdd
+>>   mount /dev/sdc /btrfs
+>>   dd if=/dev/zero of=/btrfs/tf1 count=1
+>>   btrfs fi sync /btrfs
+>>
+>> devmgt[1] will help to attach or detach a disk easily
+>>
+>>   devmgt show
+>>   devmgt detach /dev/sdc
+>>
+>> btrfs sill unaware of device missing (but thats not the point)
+>
+> Because it prints the device state cached in memory, there's no
+> validation step, and no way as of now to tell btrfs the device is gone.
 
-OTOH will snapshots force datacow to happen, defeating the purpose of=20=
+   Yep. device kobject looks a bit promising, but the notification
+   are designed for the user land not for the kernel land.
 
-nodatacow ?
+   Any idea how do we get the notification in the kernel when
+   the relevant driver knows that device has disappeared. ??
 
-As I don't want to break my DB, I won't use nodatacow until I'm sure ab=
-out the=20
-consequences...
+   Luns disappearing are a common scenario at the data center
+   we need to harden the code against it.
 
->    maybe autodefrag helps?
+>>   btrfs fi show -m
+>> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+>>          Total devices 2 FS bytes used 32.00KiB
+>>          devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <--
+>>          devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+>>
+>>   btrfs rep start -f 1 /dev/sde /btrfs
+>> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+>>          Total devices 2 FS bytes used 32.00KiB
+>>          devid    1 size 958.94MiB used 115.88MiB path /dev/sde
+>>          devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+>>
+>> so far good. now missing /dev/sdc comes-back.
+>>
+>>   devmgt attach host2
+>>
+>> btrfs fi show -m shows sdc
+>> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120^M
+>>          Total devices 2 FS bytes used 32.00KiB^M
+>>          devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <- Wrong.
+>>          devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+>>
+>> this is wrong it should be sde.
+>
+> Agreed, this is a problem.
 
-I've always used autodefrag... Plus I perform manual defrags more often=
- than=20
-in Windows :-/
+   Thanks. But Do you think that when we unset the missing flag
+   in the kernel (of a _mounted_ btrfs FS), as in the reproducer1
+   should we ensure it won't be usable by other FS ?
 
->    maybe it's something simple
->    the authors of the database can change?).
+>> this happened because when
+>> disk comes back device_list_add() is called which would invariably
+>> replace the existing disk with the given disk with the same fsid/devid.
+>> But the actual IO is still going to sde not to sdc.
+>
+> Yes, because it's the 'sde' device that has been open and used, so it's
+> possible that 'btrfs fi show' wrongly identifies the device.
 
-I'm not going to expect KDE people to change anything aytime soon upon =
-users=20
-requests. Some very *SIMPLE* bugs confirmed by dozens of users have sta=
-yed in=20
-their bug tracker for years.
+  Uh. nope. btrfs fi show -m show what is in the kernel's
+  btrfs_fs_device. Which is right way.
 
-KDE bugs stay until somedays God decides to fix one. If ever.
+  btrfs fi show -d adds its intelligence (wrong) would
+  rebuild device list in the user land which does not
+  match with the kernel. End User don't care what btrfs-progs
+  thinks about the devices. But they want to know how
+  the btrfs kernel is managing the disk group-profile.
 
->    If you truly find btrfs unusable -- which you've said at various
-> points in the past -- then I'm not going to suggest that you keep
-> using it. Maybe something else is genuinely better for you.
+  Please look at the kernel's in memory btrfs_fs_device
+  and btrfs_device list using btrfs-devlist.
 
-Every 9 months or so I reads reports or reviews or the BTRFS wiki stati=
-ng that=20
-performance and stability of BTRFS have dramatically improved. Then I r=
-ead=20
-everyting I can about new mkfs or btrfstune options, advice, best mount=
-=20
-options, the wiki, and give it a try.
 
-Typically a couple months later my machines slow down to the point wher=
-e I=20
-come and start complaining here.
+>> Further when we start fresh with (modprobe -r btrfs)
+>> unless it is carefully managed using btrfs dev scan <dev>
+>> it may pair with wrong disk (there will be a new patch
+>> to fix this).
+>
+> IOW, there are more than one devices with the same fsid/id. The same as
+> if we do 'dd'. This is a known problem, and you demonstrated another way
+> how to get to it.
 
-Usually 2 more months and I'm back either to ext4 or ZFS, depending on =
-the=20
-machine's specific usage pattern...
+  its quite a possible scenario at the data center
 
-I still think that BTRFS *should* be very promising *if* its developper=
-s can=20
-fix the recurring performance issues and make it truly usable =AB for b=
-asic=20
-boring office use =BB which is currently typically my case on my laptop=
-s, and I'm=20
-no benchmark (or maybe a human one ?) and I can say that currently, BTR=
-FS is=20
-*not* adapted for a KDE desktop running KMail and Firefox - but if it a=
-int' no=20
-good at this very basic usage, well what is it good at ?
+> IIRC, theres' no way for the kernel module to know which of the devices
+> with same fsid/id is the one desired to mount. The workaround is "don't
+> do that".
 
-I'm not ranting because I love to shoot BTRFS down in flames, but becau=
-se I'd=20
-love to be able to keep it on my system this time, and forget it, and n=
-ot to=20
-reformat everything again in a month or so (as soon as I will tell myse=
-lf : =AB=20
-Well, the improvements promised by kernel 3.14 are still far behind my=20=
+  :-) Yes indeed. But I had a RFC which would also check transid and
+  keeps the disk having higher transid.
 
-usability needs =BB)...
+  http://marc.info/?t=138902753300002&r=1&w=2
 
-Kind regards.
+Thanks, Anand
 
-=2D-=20
-Sw=E2mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 907=
-6E32E
-
---nextPart33258395.OsKD4pIrKs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iD8DBQBTQR1JL8JcHZB24y4RAo/XAKDEw9iIZ1w2DMqwcmOMevtWv27kPwCfRMdg
-A6NSKKwBAOLk+cCgnLynktc=
-=bmK5
------END PGP SIGNATURE-----
-
---nextPart33258395.OsKD4pIrKs--
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

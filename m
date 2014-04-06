@@ -1,63 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47474 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750950AbaDFFAC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 01:00:02 -0400
-Message-ID: <5340DF3E.2070601@oracle.com>
-Date: Sun, 06 Apr 2014 12:59:42 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:48113 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753444AbaDFJZt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 05:25:49 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS setup advice for laptop performance ?
+Date: Sun, 06 Apr 2014 11:24:02 +0200
+Message-ID: <2131050.Gsdb2GJxUb@tethys>
+In-Reply-To: <20140405141340.GT7442@carfax.org.uk>
+References: <2692878.dRG1K49eOP@fnix> <12471892.pAn1KAtSS4@tethys> <20140405141340.GT7442@carfax.org.uk>
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: zab@redhat.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2 v2] btrfs: btrfs_rm_device() should zero mirror SB
- as well
-References: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com> <20140404123925.GS29256@twin.jikos.cz>
-In-Reply-To: <20140404123925.GS29256@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; boundary="nextPart33258395.OsKD4pIrKs"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--nextPart33258395.OsKD4pIrKs
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
-On 04/04/2014 20:39, David Sterba wrote:
-> On Mon, Mar 31, 2014 at 10:13:56PM +0800, Anand Jain wrote:
->> From: Anand Jain <anand.jain@oracle.com>
->>
->> This fix will ensure all SB copies on the disk is zeroed
->> when the disk is intentionally removed. This helps to
->> better manage disks in the user land.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>
->> btrfs: don't double brelse on device rm
->>
->> Device removal currently causes bdev removal to try to double free a bh
->> in the bdev:
->>
->> [   55.714833] WARNING: at fs/buffer.c:1160 __brelse+0x36/0x40()
->> [   55.714833] VFS: brelse: Trying to free free buffer
->>
->> Commit 7e3d9ebb1 added a double release of the bh for a device being
->> removed when all the supers don't fit in the device.  In that case it
->> releases the bh assuming that it's going to read a new one, finds that
->> it won't read, and goes to a label that releases the bh again.
->>
->> All it needed to do was only brelse() right before overwriting the
->> current bh with __bread().
->>
->> Signed-off-by: Zach Brown <zab@redhat.com>
->
-> This is a bit confusing, two changelogs, one patch, the referenced
-> commit id does not in fact exist. To keep all due credits, 2 patches
-> would make sense but ... up to you.
+Hi people :-)
 
-  Sorry to know it was confusing. I have sent out V3 hope that's better.
+Le samedi 5 avril 2014 15:13:40 Hugo Mills a =E9crit :
+>=20
+>  - I'm not aware, particularly, of any major differences between
+>    noatime and relatime in performance on btrfs. (But I may be wrong
+>    there).
 
--Anand
+It's especially noticeable at first boot in a given day, as "relatime" =
+will=20
+have atimes updated once a day.
 
+I've noticed that the 1st boot on any given day can be up to 3-4 times =
+longer=20
+on a BTRFS with "relatime" compared to a btrfs with "noatime". This is=20=
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+especially true if snapshots have recently been made.
+
+>  - Given Duncan's discussion of the performance of the semantic
+>    desktop, I would suggest turning it off *temporarily* to see if it=
+
+>    really is where the difficulty lies.
+
+I'm afraid that this would turn my email off (I used Kmail and it's bac=
+king=20
+store is Akonadi, and non, I don't want to change MUA), and I can't rea=
+lly=20
+live long without it ;-)
+
+>    (maybe delete the database and rebuild it regularly?
+
+I'm not considering deleting the database. It contains about 1GB of my =
+email=20
+archive and I've no clue about how I could possibly export and reimport=
+ it.=20
+The way the Kmail apps use the Akonadi backing store is somewhat tricky=
+...
+
+>    mark parts of it nodatacow?
+
+I woud be allright about trying "nodatacow", but it's totally unclear t=
+o me=20
+what impact this can have on snapshots ?
+
+Will "nodatacow" defeat snapshots, allowing data to change in snapshots=
+ ?
+
+OTOH will snapshots force datacow to happen, defeating the purpose of=20=
+
+nodatacow ?
+
+As I don't want to break my DB, I won't use nodatacow until I'm sure ab=
+out the=20
+consequences...
+
+>    maybe autodefrag helps?
+
+I've always used autodefrag... Plus I perform manual defrags more often=
+ than=20
+in Windows :-/
+
+>    maybe it's something simple
+>    the authors of the database can change?).
+
+I'm not going to expect KDE people to change anything aytime soon upon =
+users=20
+requests. Some very *SIMPLE* bugs confirmed by dozens of users have sta=
+yed in=20
+their bug tracker for years.
+
+KDE bugs stay until somedays God decides to fix one. If ever.
+
+>    If you truly find btrfs unusable -- which you've said at various
+> points in the past -- then I'm not going to suggest that you keep
+> using it. Maybe something else is genuinely better for you.
+
+Every 9 months or so I reads reports or reviews or the BTRFS wiki stati=
+ng that=20
+performance and stability of BTRFS have dramatically improved. Then I r=
+ead=20
+everyting I can about new mkfs or btrfstune options, advice, best mount=
+=20
+options, the wiki, and give it a try.
+
+Typically a couple months later my machines slow down to the point wher=
+e I=20
+come and start complaining here.
+
+Usually 2 more months and I'm back either to ext4 or ZFS, depending on =
+the=20
+machine's specific usage pattern...
+
+I still think that BTRFS *should* be very promising *if* its developper=
+s can=20
+fix the recurring performance issues and make it truly usable =AB for b=
+asic=20
+boring office use =BB which is currently typically my case on my laptop=
+s, and I'm=20
+no benchmark (or maybe a human one ?) and I can say that currently, BTR=
+FS is=20
+*not* adapted for a KDE desktop running KMail and Firefox - but if it a=
+int' no=20
+good at this very basic usage, well what is it good at ?
+
+I'm not ranting because I love to shoot BTRFS down in flames, but becau=
+se I'd=20
+love to be able to keep it on my system this time, and forget it, and n=
+ot to=20
+reformat everything again in a month or so (as soon as I will tell myse=
+lf : =AB=20
+Well, the improvements promised by kernel 3.14 are still far behind my=20=
+
+usability needs =BB)...
+
+Kind regards.
+
+=2D-=20
+Sw=E2mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 907=
+6E32E
+
+--nextPart33258395.OsKD4pIrKs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iD8DBQBTQR1JL8JcHZB24y4RAo/XAKDEw9iIZ1w2DMqwcmOMevtWv27kPwCfRMdg
+A6NSKKwBAOLk+cCgnLynktc=
+=bmK5
+-----END PGP SIGNATURE-----
+
+--nextPart33258395.OsKD4pIrKs--
+

@@ -1,87 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:46764 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750812AbaDFE7Y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 00:59:24 -0400
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v3] btrfs: btrfs_rm_device() should zero mirror SB as well
-Date: Sun,  6 Apr 2014 12:59:07 +0800
-Message-Id: <1396760347-3675-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com>
-References: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:47474 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750950AbaDFFAC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Apr 2014 01:00:02 -0400
+Message-ID: <5340DF3E.2070601@oracle.com>
+Date: Sun, 06 Apr 2014 12:59:42 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: dsterba@suse.cz
+CC: zab@redhat.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2 v2] btrfs: btrfs_rm_device() should zero mirror SB
+ as well
+References: <1396275237-8306-1-git-send-email-Anand.Jain@oracle.com> <20140404123925.GS29256@twin.jikos.cz>
+In-Reply-To: <20140404123925.GS29256@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
 
-This fix will ensure all SB copies on the disk is zeroed
-when the disk is intentionally removed. This helps to
-better manage disks in the user land.
 
-This version of patch also merges the Zach patch as below.
+On 04/04/2014 20:39, David Sterba wrote:
+> On Mon, Mar 31, 2014 at 10:13:56PM +0800, Anand Jain wrote:
+>> From: Anand Jain <anand.jain@oracle.com>
+>>
+>> This fix will ensure all SB copies on the disk is zeroed
+>> when the disk is intentionally removed. This helps to
+>> better manage disks in the user land.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>>
+>> btrfs: don't double brelse on device rm
+>>
+>> Device removal currently causes bdev removal to try to double free a bh
+>> in the bdev:
+>>
+>> [   55.714833] WARNING: at fs/buffer.c:1160 __brelse+0x36/0x40()
+>> [   55.714833] VFS: brelse: Trying to free free buffer
+>>
+>> Commit 7e3d9ebb1 added a double release of the bh for a device being
+>> removed when all the supers don't fit in the device.  In that case it
+>> releases the bh assuming that it's going to read a new one, finds that
+>> it won't read, and goes to a label that releases the bh again.
+>>
+>> All it needed to do was only brelse() right before overwriting the
+>> current bh with __bread().
+>>
+>> Signed-off-by: Zach Brown <zab@redhat.com>
+>
+> This is a bit confusing, two changelogs, one patch, the referenced
+> commit id does not in fact exist. To keep all due credits, 2 patches
+> would make sense but ... up to you.
 
- btrfs: don't double brelse on device rm
+  Sorry to know it was confusing. I have sent out V3 hope that's better.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Zach Brown <zab@redhat.com>
----
+-Anand
 
- v2->v3: commit rework, continues to have Zach patch merged
- v1->v2: merge with Zach fix, commit update
 
- fs/btrfs/volumes.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b4660c4..7243196 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1681,12 +1681,43 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	 * remove it from the devices list and zero out the old super
- 	 */
- 	if (clear_super && disk_super) {
-+		u64 bytenr;
-+		int i;
-+
- 		/* make sure this device isn't detected as part of
- 		 * the FS anymore
- 		 */
- 		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
- 		set_buffer_dirty(bh);
- 		sync_dirty_buffer(bh);
-+
-+		/* clear the mirror copies of super block on the disk
-+		 * being removed, 0th copy is been taken care above and
-+		 * the below would take of the rest
-+		 */
-+		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-+			bytenr = btrfs_sb_offset(i);
-+			if (bytenr + BTRFS_SUPER_INFO_SIZE >=
-+					i_size_read(bdev->bd_inode))
-+				break;
-+
-+			brelse(bh);
-+			bh = __bread(bdev, bytenr / 4096,
-+					BTRFS_SUPER_INFO_SIZE);
-+			if (!bh)
-+				continue;
-+
-+			disk_super = (struct btrfs_super_block *)bh->b_data;
-+
-+			if (btrfs_super_bytenr(disk_super) != bytenr ||
-+				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
-+				continue;
-+			}
-+			memset(&disk_super->magic, 0,
-+						sizeof(disk_super->magic));
-+			set_buffer_dirty(bh);
-+			sync_dirty_buffer(bh);
-+		}
- 	}
- 
- 	ret = 0;
--- 
-1.8.5.3
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

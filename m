@@ -1,141 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:64465 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753057AbaDGPmG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Apr 2014 11:42:06 -0400
-Received: from pps.filterd (m0044012 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s37FfjmQ015007
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Apr 2014 08:42:05 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1k1tw80ak2-12
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 08:42:04 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: don't set path->need_commit_sem when searching backrefs
-Date: Mon, 7 Apr 2014 11:40:42 -0400
-Message-ID: <1396885242-20995-1-git-send-email-jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:52875 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753778AbaDGQyv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 12:54:51 -0400
+Date: Mon, 7 Apr 2014 18:54:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Sasha Levin <sasha.levin@oracle.com>
+Cc: Jeff Mahoney <jeffm@suse.com>, dsterba@suse.cz, clm@fb.com, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>
+Subject: Re: btrfs: lock inversion between delayed_node->mutex and
+ found->groups_sem
+Message-ID: <20140407165449.GA29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <53239AE0.8030306@oracle.com>
+ <20140317130546.GE29256@twin.jikos.cz>
+ <533307ED.8030700@suse.com>
+ <533F20EB.2040500@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <533F20EB.2040500@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I added the ability to specify we needed the commit_sem for using the commit
-root with send.  However when we search clones we already hold the commit sem,
-so we need to set path->need_commit_sem to 0 for this case.  This patch also
-makes it so we don't have to re-allocate a new path for every extent of every
-inode we check while looking at backrefs.  This is meant to be an incremental
-that will be folded into my original ->need_comit_sem patch, just sending this
-as a sanity check.  Thanks,
+On Fri, Apr 04, 2014 at 05:15:23PM -0400, Sasha Levin wrote:
+> On 03/26/2014 01:01 PM, Jeff Mahoney wrote:
+> > On 3/17/14, 9:05 AM, David Sterba wrote:
+> >>> On Fri, Mar 14, 2014 at 08:12:16PM -0400, Sasha Levin wrote:
+> >>>>> While fuzzing with trinity inside a KVM tools guest running the latest -next kernel I've stumbled on the following:
+> >>>>> 
+> >>>>> [  788.458756]        CPU0                    CPU1 [  788.459188] ----                    ---- [  788.459625] lock(&found->groups_sem); [  788.460041] local_irq_disable(); [  788.460041] lock(&delayed_node->mutex); [  788.460041] lock(&found->groups_sem); [  788.460041]   <Interrupt> [ 788.460041]     lock(&delayed_node->mutex); [  788.460041] [ 788.460041]  *** DEADLOCK *** [  788.460041] [  788.460041] 2 locks held by kswapd3/4199:
+> >>> 
+> >>> I've once (3.14-rc5) seen the same warning also caused by xfstests/generic/224
+> > I think this is from my sysfs patches. We call kobject_add while holding the group_sem. kobject_add ultimately allocates with GFP_KERNEL, so it can enter reclaim. This particular case isn't dangerous, but it could hit while hot-adding a device. The fix should be pretty simple.
+> 
+> Is that fix available anywhere? I'm still seeing the issue in -next.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/send.c | 47 +++++++++++++++++++++++++++++++----------------
- 1 file changed, 31 insertions(+), 16 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 59f0b85..1ac3ca9 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -772,29 +772,22 @@ out:
- /*
-  * Helper function to retrieve some fields from an inode item.
-  */
--static int get_inode_info(struct btrfs_root *root,
--			  u64 ino, u64 *size, u64 *gen,
--			  u64 *mode, u64 *uid, u64 *gid,
--			  u64 *rdev)
-+static int __get_inode_info(struct btrfs_root *root, struct btrfs_path *path,
-+			  u64 ino, u64 *size, u64 *gen, u64 *mode, u64 *uid,
-+			  u64 *gid, u64 *rdev)
- {
- 	int ret;
- 	struct btrfs_inode_item *ii;
- 	struct btrfs_key key;
--	struct btrfs_path *path;
--
--	path = alloc_path_for_send();
--	if (!path)
--		return -ENOMEM;
- 
- 	key.objectid = ino;
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.offset = 0;
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--	if (ret < 0)
--		goto out;
- 	if (ret) {
--		ret = -ENOENT;
--		goto out;
-+		if (ret > 0)
-+			ret = -ENOENT;
-+		return ret;
- 	}
- 
- 	ii = btrfs_item_ptr(path->nodes[0], path->slots[0],
-@@ -812,7 +805,22 @@ static int get_inode_info(struct btrfs_root *root,
- 	if (rdev)
- 		*rdev = btrfs_inode_rdev(path->nodes[0], ii);
- 
--out:
-+	return ret;
-+}
-+
-+static int get_inode_info(struct btrfs_root *root,
-+			  u64 ino, u64 *size, u64 *gen,
-+			  u64 *mode, u64 *uid, u64 *gid,
-+			  u64 *rdev)
-+{
-+	struct btrfs_path *path;
-+	int ret;
-+
-+	path = alloc_path_for_send();
-+	if (!path)
-+		return -ENOMEM;
-+	ret = __get_inode_info(root, path, ino, size, gen, mode, uid, gid,
-+			       rdev);
- 	btrfs_free_path(path);
- 	return ret;
- }
-@@ -1086,6 +1094,7 @@ out:
- struct backref_ctx {
- 	struct send_ctx *sctx;
- 
-+	struct btrfs_path *path;
- 	/* number of total found references */
- 	u64 found;
- 
-@@ -1156,8 +1165,9 @@ static int __iterate_backrefs(u64 ino, u64 offset, u64 root, void *ctx_)
- 	 * There are inodes that have extents that lie behind its i_size. Don't
- 	 * accept clones from these extents.
- 	 */
--	ret = get_inode_info(found->root, ino, &i_size, NULL, NULL, NULL, NULL,
--			NULL);
-+	ret = __get_inode_info(found->root, bctx->path, ino, &i_size, NULL, NULL,
-+			       NULL, NULL, NULL);
-+	btrfs_release_path(bctx->path);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -1236,12 +1246,17 @@ static int find_extent_clone(struct send_ctx *sctx,
- 	if (!tmp_path)
- 		return -ENOMEM;
- 
-+	/* We only use this path under the commit sem */
-+	tmp_path->need_commit_sem = 0;
-+
- 	backref_ctx = kmalloc(sizeof(*backref_ctx), GFP_NOFS);
- 	if (!backref_ctx) {
- 		ret = -ENOMEM;
- 		goto out;
- 	}
- 
-+	backref_ctx->path = tmp_path;
-+
- 	if (data_offset >= ino_size) {
- 		/*
- 		 * There may be extents that lie behind the file's size.
--- 
-1.8.3.1
-
+It is: https://patchwork.kernel.org/patch/3894781/ , will probably hit -rc2

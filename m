@@ -1,48 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from datenkhaos.de ([81.89.99.198]:42715 "EHLO datenkhaos.de"
+Received: from plane.gmane.org ([80.91.229.3]:53599 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755254AbaDGM0P convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 08:26:15 -0400
-Date: Mon, 7 Apr 2014 14:18:41 +0200
-From: Johannes Hirte <johannes.hirte@datenkhaos.de>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: =?ISO-8859-1?B?U3fibWk=?= Petaramesh <swami@petaramesh.org>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS setup advice for laptop performance ?
-Message-ID: <20140407141841.476f8aae@datenkhaos.de>
-In-Reply-To: <533EA686.5030909@gmail.com>
-References: <2692878.dRG1K49eOP@fnix>
-	<533EA686.5030909@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1753510AbaDGMmR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 08:42:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WX8sS-00031B-4E
+	for linux-btrfs@vger.kernel.org; Mon, 07 Apr 2014 14:42:16 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 14:42:16 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 14:42:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Possible application issue ...
+Date: Mon, 7 Apr 2014 12:42:05 +0000 (UTC)
+Message-ID: <pan$e4d1$3c986a6f$c6e086ab$b682327c@cox.net>
+References: <534236AF.4020204@chinilu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 04 Apr 2014 08:33:10 -0400
-Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+George Mitchell posted on Sun, 06 Apr 2014 22:25:03 -0700 as excerpted:
 
-> On 2014-04-04 04:02, Swâmi Petaramesh wrote:
-> > - Is it still recommended to mkfs with a nodesize or leafsize
-> > different (bigger) than the default ? I wouldn't like to lose too
-> > much disk space anyway (1/2 nodesize per file on average ?), as it
-> > will be limited...
-> This depends on many things, the average size of the files on the disk
-> is the biggest factor.  In general you should get the best disk
-> utilization by setting nodesize so that a majority of the files are
-> less than the leafsize minus 256 bytes, and all but a few are smaller
-> than two times the leafsize minus 256 bytes.  However, if you want to
-> really benefit from the data compression, you should just use the
-> smallest leaf/nodesize for your system (which is what mkfs defaults
-> to), as data that gets as BTRFS stores files whose size is at least
-> (roughly) 256 bytes less than the leafsize inline with the metadata,
-> and doesn't compress such files.
+> I am seeming to have an issue with a specific application.  I just 
+> installed "Recoll", a really nice desktop search tool.  And the 
+> following day whenever my backup program would attempt to run, my 
+> computer simply stopped dead in its tracks and I was forced to do a
+> hard reboot to get it back.  So tonight I have been trying to shag out
+> the  problem.  And the problem goes like this.  Whenever I try to
+> defrag the  Recoll data files, I get a string of weird messages poring
+> out from the btrfs defrag program itself and flashing messages on the
+> screen  regarding some sort of CPU failure problem for both cpus.  As
+> soon as I removed the ".recoll" data directory from the path,
+> everything got OK.  
 
-With commit c652e4efb8e2dd76ef1627d8cd649c6af5905902 the default
-node-/leafsize has changed:
+> Does anyone know what might be going on here or should I run the thing 
+> and try to trap the output and post it and/or send a copy of the data 
+> files in question?
 
-commit c652e4efb8e2dd76ef1627d8cd649c6af5905902
-Author: Chris Mason <chris.mason@fusionio.com>
-Date:   Fri Nov 8 13:51:52 2013 -0500
+Just a btrfs user and list regular here, not a dev, but...
 
-    mkfs: change default metadata blocksize to 16KB
+You'll probably need to post the output for a bug fix... unless it's 
+simply stalled for NNN seconds warnings (usually 30/60/90/120/etc), in 
+which case the general case is known, but then you'll want to...
+
+echo w > /proc/sysrq-trigger
+
+...  and post the output from that.  That's the usually requested info 
+from that case, anyway.  And if this is the case, the apparent lockup 
+should go away on its own after some time, but it might be a few minutes 
+if the files are very heavily fragmented, as is likely.
+
+
+Meanwhile, database files are part of a general category of frequently 
+internally updated (as opposed to append-only updated) files that all 
+copy-on-write filesystems including btrfs have problems with as they tend 
+to fragment very fast and hard on COW because rewrites are to new 
+locations.
+
+How large are the files in question?  Are you using the btrfs autodefrag 
+mount option?  Do you do use snapper or otherwise do lots of (likely 
+scripted) snapshots on that subvolume or filesystem?
+
+Generally speaking, if the files aren't too large (perhaps a couple 
+hundred MiB or smaller), btrfs' autodefrag option can usually deal with 
+the fragmentation as it occurs.  This works quite well for firefox sqlite 
+databases, for instance.
+
+Once the files in question get over perhaps half a gigabyte in size, 
+however, that doesn't work so well, particularly if the file is being 
+updated at a reasonable speed in real-time, as autodefrag queues the 
+entire file for rewrite in ordered to defrag it, and at some point the 
+rewriting can't keep up with the updates coming in.
+
+For large internal-rewrite-pattern files, there's the NOCOW extended file 
+attribute, which tells btrfs to rewrite the files in place, and disables 
+the usual checksumming and etc that can also take time and complicate 
+things on database files where the database generally already has some 
+file integrity management of its own, that can "fight" with the 
+management btrfs does.
+
+But to be effective, setting nocow (chattr +C /path/to/file/or/dir) needs 
+to be done while the file is still zero size, before it has any content.  
+The easiest way to do that is to set it on the directory, before the 
+files in the directory are created, so they inherit the nocow attribute 
+from the directory they're created in.
+
+The easiest solution at this point might be to delete the current 
+fragmented files instead of trying to defrag them, setup the nocow on the 
+directory that will contain them, and then trigger a reindexing.
+
+
+However, there's one additional caveat involving snapshots.  By 
+definition, the first change to a fileblock after a snapshot will be copy-
+on-write despite the nocow attribute.  This is because the snapshot froze 
+the existing file data in place as it was, so a change to it must be 
+written to a new location even if the file is set nocow.  This shouldn't 
+be too big of a problem if you're just taking a snapshot manually every 
+week or so, but if you're using snapper or a similar automated script to 
+take hourly or even per-minute snapshots, the effect is likely to be 
+nearly as bad as if the file wasn't set nocow in the first place!
+
+If this is the case, creating dedicated subvolume for the directory 
+containing these files is the best idea, since snapshots stop at subvolume 
+boundaries, so as long as you're not snapshotting the subvolume, you can 
+set nocow on directories and files within it and not have to worry about 
+snapshot-based cow undermining your efforts.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

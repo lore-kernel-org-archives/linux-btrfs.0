@@ -1,70 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:7620 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754148AbaDFX5Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 6 Apr 2014 19:57:25 -0400
-Received: from pps.filterd (m0004060 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s36NokWx019733
-	for <linux-btrfs@vger.kernel.org>; Sun, 6 Apr 2014 16:57:24 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1k259sd09b-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Apr 2014 16:57:24 -0700
-Message-ID: <5341E9E5.7070108@fb.com>
-Date: Sun, 6 Apr 2014 19:57:25 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: don't clear uptodate if the eb is under IO
-References: <1396040847-6026-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1396040847-6026-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Received: from smtp.gentoo.org ([140.211.166.183]:32887 "EHLO smtp.gentoo.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753317AbaDGH4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 03:56:04 -0400
+From: Sergei Trofimovich <slyich@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Sergei Trofimovich <slyfox@gentoo.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix crash in remount(thread_pool=) case
+Date: Mon,  7 Apr 2014 10:55:46 +0300
+Message-Id: <1396857346-24877-1-git-send-email-slyich@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/28/2014 05:07 PM, Josef Bacik wrote:
-> So I have an awful exercise script that will run snapshot, balance and
-> send/receive in parallel.  This sometimes would crash spectacularly and when it
-> came back up the fs would be completely hosed.  Turns out this is because of a
-> bad interaction of balance and send/receive.  Send will hold onto its entire
-> path for the whole send, but its blocks could get relocated out from underneath
-> it, and because it doesn't old tree locks theres nothing to keep this from
-> happening.  So it will go to read in a slot with an old transid, and we could
-> have re-allocated this block for something else and it could have a completely
-> different transid.  But because we think it is invalid we clear uptodate and
-> re-read in the block.  If we do this before we actually write out the new block
-> we could write back stale data to the fs, and boom we're screwed.
->
-> Now we definitely need to fix this disconnect between send and balance, but we
-> really really need to not allow ourselves to accidently read in stale data over
-> new data.  So make sure we check if the extent buffer is not under io before
-> clearing uptodate, this will kick back EIO to the caller instead of reading in
-> stale data and keep us from corrupting the fs.  Thanks,
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-Josef is on vacation, so I'm posting a short follow up:
+Reproducer:
+    mount /dev/ubda /mnt
+    mount -oremount,thread_pool=42 /mnt
 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 0148999..6f035ee 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -5609,7 +5609,9 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->   			NULL);
->   	sort_clone_roots = 1;
->
-> +	current->journal_info = (void *)BTRFS_SEND_TRANS_STUB;
->   	ret = send_subvol(sctx);
-> +	current->journal_info = NULL;
->   	if (ret < 0)
->   		goto out;
->
+Gives a crash:
+    ? btrfs_workqueue_set_max+0x0/0x70
+    btrfs_resize_thread_pool+0xe3/0xf0
+    ? sync_filesystem+0x0/0xc0
+    ? btrfs_resize_thread_pool+0x0/0xf0
+    btrfs_remount+0x1d2/0x570
+    ? kern_path+0x0/0x80
+    do_remount_sb+0xd9/0x1c0
+    do_mount+0x26a/0xbf0
+    ? kfree+0x0/0x1b0
+    SyS_mount+0xc4/0x110
 
-This confuses start_transaction() which tries to dereference whatever it 
-finds in current->journal_info.  It just needs an extra check against 
-BTRFS_SEND_TRANS_STUB.
+It's a call
+    btrfs_workqueue_set_max(fs_info->scrub_wr_completion_workers, new_pool_size);
+with
+    fs_info->scrub_wr_completion_workers = NULL;
 
-I'm folding the fix into his original patch in my tree, and rerunning 
-tests here.
+as scrub wqs get created only on user's demand.
 
--chris
+Patch skips not-created-yet workqueues.
+
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: Chris Mason <clm@fb.com>
+CC: Josef Bacik <jbacik@fb.com>
+CC: linux-btrfs@vger.kernel.org
+
+---
+ fs/btrfs/async-thread.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index ecb5832..5a201d8 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -323,6 +323,8 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
+ 
+ void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
+ {
++	if (!wq)
++		return;
+ 	wq->normal->max_active = max;
+ 	if (wq->high)
+ 		wq->high->max_active = max;
+-- 
+1.9.0
 

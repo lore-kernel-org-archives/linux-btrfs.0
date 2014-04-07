@@ -1,68 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:32887 "EHLO smtp.gentoo.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753317AbaDGH4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Apr 2014 03:56:04 -0400
-From: Sergei Trofimovich <slyich@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Sergei Trofimovich <slyfox@gentoo.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix crash in remount(thread_pool=) case
-Date: Mon,  7 Apr 2014 10:55:46 +0300
-Message-Id: <1396857346-24877-1-git-send-email-slyich@gmail.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:33522 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750941AbaDGPZ7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 11:25:59 -0400
+Message-ID: <5342C382.8000709@fb.com>
+Date: Mon, 7 Apr 2014 11:25:54 -0400
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Filipe David Borba Manana <fdmanana@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC PATCH] Btrfs: send, add calculate data size flag to allow
+ for progress estimation
+References: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1396624841-1363-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Sergei Trofimovich <slyfox@gentoo.org>
+On 04/04/2014 11:20 AM, Filipe David Borba Manana wrote:
+> This new send flag makes send calculate first the amount of new file data (in bytes)
+> the send root has relatively to the parent root, or for the case of a non-incremental
+> send, the total amount of file data we will send through the send stream. In other words,
+> it computes the sum of the lengths of all write and clone operations that will be sent
+> through the send stream.
+>
+> This data size value is sent in a new command, named BTRFS_SEND_C_TOTAL_DATA_SIZE, that
+> immediately follows a BTRFS_SEND_C_SUBVOL or BTRFS_SEND_C_SNAPSHOT command, and precedes
+> any command that changes a file or the filesystem hierarchy. Upon receiving a write or
+> clone command, the receiving end can increment a counter by the data length of that
+> command and therefore report progress by comparing the counter's value with the data size
+> value received in the BTRFS_SEND_C_TOTAL_DATA_SIZE command.
+>
+> The approach is simple, before the normal operation of send, do a scan in the file system
+> tree for new inodes and file extent items, just like in send's normal operation, and keep
+> incrementing a counter with new inodes' size and the size of file extents that are going
+> to be written or cloned. This is actually a simpler and more lightweight tree scan/processing
+> than the one we do when sending the changes, as it doesn't process inode references nor does
+> any lookups in the extent tree for example.
+>
+> After modifying btrfs-progs to understand this new command and report progress, here's an
+> example (the -o flag tells btrfs send to pass the new flag to the kernel's send ioctl):
+>
+>      $ btrfs send -o /mnt/sdd/base | btrfs receive /mnt/sdc
+>      At subvol /mnt/sdd/base
+>      At subvol base
+>      About to receive 9211507211 bytes
+>      Subvolume/snapshot /mnt/sdc//base, progress  24.73%, 2278015008 bytes received (9211507211 total bytes)
+>
+>      $ btrfs send -o -p /mnt/sdd/base /mnt/sdd/incr | btrfs receive /mnt/sdc
+>      At subvol /mnt/sdd/incr
+>      At snapshot incr
+>      About to receive 9211747739 bytes
+>      Subvolume/snapshot /mnt/sdc//incr, progress  63.42%, 5843024211 bytes received (9211747739 total bytes)
+>
 
-Reproducer:
-    mount /dev/ubda /mnt
-    mount -oremount,thread_pool=42 /mnt
+So if we are going to add a new command we want to rev the 
+btrfs_stream_header->version so that the old receive command doesn't 
+blow up.  Also if we're going to rev the version we want to go ahead and 
+add an FALLOCATE and PUNCH command as well so we can stop this silly 
+sending zero's stuff and just send down PREALLOC extents as fallocate 
+and new holes as a punch command.  Then we only have to rev the version 
+once for a bunch of new commands.  Thanks,
 
-Gives a crash:
-    ? btrfs_workqueue_set_max+0x0/0x70
-    btrfs_resize_thread_pool+0xe3/0xf0
-    ? sync_filesystem+0x0/0xc0
-    ? btrfs_resize_thread_pool+0x0/0xf0
-    btrfs_remount+0x1d2/0x570
-    ? kern_path+0x0/0x80
-    do_remount_sb+0xd9/0x1c0
-    do_mount+0x26a/0xbf0
-    ? kfree+0x0/0x1b0
-    SyS_mount+0xc4/0x110
-
-It's a call
-    btrfs_workqueue_set_max(fs_info->scrub_wr_completion_workers, new_pool_size);
-with
-    fs_info->scrub_wr_completion_workers = NULL;
-
-as scrub wqs get created only on user's demand.
-
-Patch skips not-created-yet workqueues.
-
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: Chris Mason <clm@fb.com>
-CC: Josef Bacik <jbacik@fb.com>
-CC: linux-btrfs@vger.kernel.org
-
----
- fs/btrfs/async-thread.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index ecb5832..5a201d8 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -323,6 +323,8 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
- 
- void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
- {
-+	if (!wq)
-+		return;
- 	wq->normal->max_active = max;
- 	if (wq->high)
- 		wq->high->max_active = max;
--- 
-1.9.0
+Josef
 

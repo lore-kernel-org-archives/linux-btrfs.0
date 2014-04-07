@@ -1,56 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:47406 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754671AbaDGUAE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 16:00:04 -0400
-Date: Mon, 7 Apr 2014 13:00:02 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs on 3.14rc5 stuck on "btrfs_tree_read_lock           sync"
-Message-ID: <20140407200002.GL1809@merlins.org>
-References: <20140407160506.GG10789@merlins.org> <5342CE0C.3070707@fb.com> <20140407185121.GI10222@merlins.org> <5342FD3D.3090905@fb.com>
+Received: from fe1.lbl.gov ([128.3.41.133]:20101 "EHLO fe1.lbl.gov"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755566AbaDGXYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 19:24:36 -0400
+Received: by mail-pa0-f53.google.com with SMTP id ld10so131563pab.40
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 16:14:59 -0700 (PDT)
+Received: from [128.3.5.130] (apersaud.dhcp.lbl.gov. [128.3.5.130])
+        by mx.google.com with ESMTPSA id et3sm311320pbc.52.2014.04.07.16.14.58
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Mon, 07 Apr 2014 16:14:58 -0700 (PDT)
+Message-ID: <53433170.5030806@lbl.gov>
+Date: Mon, 07 Apr 2014 16:14:56 -0700
+From: Arun Persaud <apersaud@lbl.gov>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5342FD3D.3090905@fb.com>
+To: linux-btrfs@vger.kernel.org
+Subject: error 2001, no inode item
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 07, 2014 at 03:32:13PM -0400, Chris Mason wrote:
-> >You're recommending that I try btrfs-next on a 3.15 pre kernel, correct?
-> >If so would it be likely to fix my filesystem and let me go back to a
-> >stable 3.14? (I'm a bit warry about running some unstable 3.15 on it :).
-> 
-> Right now the fixes for this are in the integration branch on my git 
-> tree.  I think we've shaken  out all the problems, but if you want to 
-> wait until tomorrow I'll have it in my next branch (for linux-next).
+Hello
 
-I can wait, even a few more days if needed.
-But just to be clear: will this new kernel be something that will be
-required for me to run from there on to avoid all those deadlocks and very
-poor performance I'm seeing, or the new kernel will fix things up, and then
-if other stuff isn't quite stable, I can downgrade back to 3.14 stable?
+my HD recently started crashing, so I rescued all files to a new one and
+thought that this might be a good time to convert from ext4 to btrfs. I
+copied all the files from my old HD using dd, converted and then resized
+the file system. However, my old drive already had some errors.
+Currently I have one file that I can't rm or overwrite (stale file
+handle). Here is what I get when running btrfs check:
 
-By the way, I think I know which filesystem is causing this, and one unusual
-thing is that it uses a lot of hardlinks.
+> btrfs check /dev/sda4
 
-In case that helps, there are only 40 snapshots on it, but many inodes, of
-which many are hardlinked together:
+checking extents
+checking free space cache
+checking fs roots
+root 5 inode 5769204 errors 2001, no inode item, link count wrong
+	unresolved ref dir 5783881 index 3 namelen 38 name
+61bd2ed1fba8bc8d2f12766c7e4b3dafff6350 filetype 1 error 4, no inode ref
+root 5 inode 5899187 errors 2001, no inode item, link count wrong
+	unresolved ref dir 5906761 index 3 namelen 38 name
+61bd2ed1fba8bc8d2f12766c7e4b3dafff6350 filetype 1 error 0
+Checking filesystem on /dev/sda4
+UUID: 98190f1e-426f-433d-8335-1216b9a63d16
+cache and super generation don't match, space cache will be invalidated
+found 6932789174 bytes used err is 1
+total csum bytes: 123239772
+total tree bytes: 702812160
+total fs tree bytes: 534839296
+total extent tree bytes: 32509952
+btree space waste bytes: 163897229
+file data blocks allocated: 349199831040
+ referenced 126131052544
+Btrfs v3.12+20131125
 
-gargamel:/mnt/btrfs_pool2# btrfs filesystem df `pwd`
-Data, single: total=3.28TiB, used=2.30TiB
-System, DUP: total=8.00MiB, used=384.00KiB
-System, single: total=4.00MiB, used=0.00
-Metadata, DUP: total=74.50GiB, used=70.11GiB
-Metadata, single: total=8.00MiB, used=0.00
-gargamel:/mnt/btrfs_pool2# btrfs filesystem show `pwd`
-Label: btrfs_pool2  uuid: cb9df6d3-a528-4afc-9a45-4fed5ec358d6
-	Total devices 1 FS bytes used 2.37TiB
-	devid    1 size 7.28TiB used 3.43TiB path /dev/mapper/dshelf2
+the file is a git object, so that's why the name looks like a hash ;)
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+> uname -a
+Linux apersaud 3.14.0-23.gfa168d7-desktop #1 SMP PREEMPT Tue Apr 1
+12:54:08 UTC 2014 (fa168d7) x86_64 x86_64 x86_64 GNU/Linux
+
+I'm running opensuse/Tumbleweed.
+
+Any idea how I can fix the above? check --repair doesn't seem to help.
+Any suggestions would be highly appreciated.
+
+thanks
+
+Arun

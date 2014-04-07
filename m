@@ -1,77 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:36910 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755019AbaDGJNZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 05:13:25 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Scrub bug on kernel 3.13
-Date: Mon, 07 Apr 2014 11:12:52 +0200
-Message-ID: <2486343.V0VCIWFSzf@zafu>
-In-Reply-To: <20140407090236.GW7442@carfax.org.uk>
-References: <17911062.Cl4v2ZqDNL@zafu> <20140407090236.GW7442@carfax.org.uk>
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:56010 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750740AbaDGKe2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 06:34:28 -0400
+Received: by mail-pa0-f52.google.com with SMTP id rd3so6582352pab.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 03:34:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart3287558.jyJTDD2GY3"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Date: Mon, 7 Apr 2014 12:34:27 +0200
+Message-ID: <CAPpBBdPc4ScNEhfYF0SMHwSxZSjN4hYni66VTytMRE6D0BB1rw@mail.gmail.com>
+Subject: "No space left on device" during retroactive compression with btrfs
+ filesystem defragment
+From: George Eleftheriou <eleftg@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Scenario: I had a subvolume with compression disabled and with many snapshots.
 
---nextPart3287558.jyJTDD2GY3
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+Then I decided to compress it retroactively with the following commands:
 
-Le lundi 7 avril 2014 10:02:36 Hugo Mills a =E9crit :
->    There's a status file in /var/lib/btrfs (at least, it's somewhere
-> near there -- I think that's it, though). Delete that
+btrfs  filesystem  defragment  -r  -v  -czlib  /path
 
-# rm /var/lib/btrfs/scrub.status.13c87f57-3a85-4daf-a4bf-ba777407c169
+find  /path  -xdev  -type  d  -print  -exec btrfs filesystem
+defragment -czlib  '{}'  \;
 
-> and you should be OK.
+as indicated in the arch btrfs wiki.
 
-I'm OK, thanks ! :-)
+I quickly ran into ENOSPC "no space left on device" errors which at
+first didn't make sense but then, a little later, the obvious occured
+to me:
 
-> What version of the tools are you using?
+The snapshots were still uncompressed, so the newly compressed data
+were allocated separately taking up free space.
 
-Latest Arch available version:
+So I removed the snapshots, repeated the steps and lived happily ever after.
 
-# pacman -Qi btrfs-progs
-Name           : btrfs-progs
-Version        : 3.12-1
-Description    : btrfs filesystem utilities
-Architecture   : x86_64
-URL            : http://btrfs.wiki.kernel.org/
-[...]
-Provides       : btrfs-progs-unstable
-[...]
-Conflicts With : btrfs-progs-unstable
-Replaces       : btrfs-progs-unstable
-Installed Size : 2480,00 KiB
-Packager       : Tom Gundersen <teg@jklm.no>
-Build Date     : mer. 27 nov. 2013 12:24:33 CET
-Install Date   : dim. 22 d=E9c. 2013 09:48:58 CET
-Install Reason : Explicitly installed
-Install Script : Yes
-Validated By   : Signature
+Browsing the btrfs wiki for a relevant warning I just found this one:
 
-Thanks again :-)
+Caveat: Before Linux 3.9, which adds snapshot-aware defragmentation,
+defragmenting a file which had a COW copy (either a snapshot copy or
+one made with cp --reflink or bcp) would produce two unrelated files.
+If you defragmented a subvolume that had a snapshot, you would roughly
+double the disk usage, as the snapshot files were no longer COW images
+of the originals.
 
-=2D-=20
-Sw=E2mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 907=
-6E32E
+Which comes close but not quite, since the issue happened during
+compression and not plain defragmentation and since the kernel I was
+running was 3.13.8
 
---nextPart3287558.jyJTDD2GY3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iD8DBQBTQmwvL8JcHZB24y4RAu54AJ9aEBnevTT6NIjnTovVo+uenHpl1QCgoIIg
-PN+hUDPjL8BzPt7K3Tl/57Y=
-=ZtF5
------END PGP SIGNATURE-----
-
---nextPart3287558.jyJTDD2GY3--
-
+Do you think this scenario deserves a WARNING in the
+defragmentation/compression area of the wiki just in case someone else
+attempts the same in the future?

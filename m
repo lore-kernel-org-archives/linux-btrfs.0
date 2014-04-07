@@ -1,54 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f52.google.com ([209.85.220.52]:56010 "EHLO
-	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750740AbaDGKe2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 06:34:28 -0400
-Received: by mail-pa0-f52.google.com with SMTP id rd3so6582352pab.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 03:34:27 -0700 (PDT)
+Received: from datenkhaos.de ([81.89.99.198]:42715 "EHLO datenkhaos.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755254AbaDGM0P convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 08:26:15 -0400
+Date: Mon, 7 Apr 2014 14:18:41 +0200
+From: Johannes Hirte <johannes.hirte@datenkhaos.de>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: =?ISO-8859-1?B?U3fibWk=?= Petaramesh <swami@petaramesh.org>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS setup advice for laptop performance ?
+Message-ID: <20140407141841.476f8aae@datenkhaos.de>
+In-Reply-To: <533EA686.5030909@gmail.com>
+References: <2692878.dRG1K49eOP@fnix>
+	<533EA686.5030909@gmail.com>
 MIME-Version: 1.0
-Date: Mon, 7 Apr 2014 12:34:27 +0200
-Message-ID: <CAPpBBdPc4ScNEhfYF0SMHwSxZSjN4hYni66VTytMRE6D0BB1rw@mail.gmail.com>
-Subject: "No space left on device" during retroactive compression with btrfs
- filesystem defragment
-From: George Eleftheriou <eleftg@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Scenario: I had a subvolume with compression disabled and with many snapshots.
+On Fri, 04 Apr 2014 08:33:10 -0400
+Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
 
-Then I decided to compress it retroactively with the following commands:
+> On 2014-04-04 04:02, Swâmi Petaramesh wrote:
+> > - Is it still recommended to mkfs with a nodesize or leafsize
+> > different (bigger) than the default ? I wouldn't like to lose too
+> > much disk space anyway (1/2 nodesize per file on average ?), as it
+> > will be limited...
+> This depends on many things, the average size of the files on the disk
+> is the biggest factor.  In general you should get the best disk
+> utilization by setting nodesize so that a majority of the files are
+> less than the leafsize minus 256 bytes, and all but a few are smaller
+> than two times the leafsize minus 256 bytes.  However, if you want to
+> really benefit from the data compression, you should just use the
+> smallest leaf/nodesize for your system (which is what mkfs defaults
+> to), as data that gets as BTRFS stores files whose size is at least
+> (roughly) 256 bytes less than the leafsize inline with the metadata,
+> and doesn't compress such files.
 
-btrfs  filesystem  defragment  -r  -v  -czlib  /path
+With commit c652e4efb8e2dd76ef1627d8cd649c6af5905902 the default
+node-/leafsize has changed:
 
-find  /path  -xdev  -type  d  -print  -exec btrfs filesystem
-defragment -czlib  '{}'  \;
+commit c652e4efb8e2dd76ef1627d8cd649c6af5905902
+Author: Chris Mason <chris.mason@fusionio.com>
+Date:   Fri Nov 8 13:51:52 2013 -0500
 
-as indicated in the arch btrfs wiki.
+    mkfs: change default metadata blocksize to 16KB
 
-I quickly ran into ENOSPC "no space left on device" errors which at
-first didn't make sense but then, a little later, the obvious occured
-to me:
-
-The snapshots were still uncompressed, so the newly compressed data
-were allocated separately taking up free space.
-
-So I removed the snapshots, repeated the steps and lived happily ever after.
-
-Browsing the btrfs wiki for a relevant warning I just found this one:
-
-Caveat: Before Linux 3.9, which adds snapshot-aware defragmentation,
-defragmenting a file which had a COW copy (either a snapshot copy or
-one made with cp --reflink or bcp) would produce two unrelated files.
-If you defragmented a subvolume that had a snapshot, you would roughly
-double the disk usage, as the snapshot files were no longer COW images
-of the originals.
-
-Which comes close but not quite, since the issue happened during
-compression and not plain defragmentation and since the kernel I was
-running was 3.13.8
-
-Do you think this scenario deserves a WARNING in the
-defragmentation/compression area of the wiki just in case someone else
-attempts the same in the future?

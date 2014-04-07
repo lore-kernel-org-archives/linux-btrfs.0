@@ -1,25 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29466 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753637AbaDGSDe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 14:03:34 -0400
-Message-ID: <5342E86B.4000305@oracle.com>
-Date: Mon, 07 Apr 2014 14:03:23 -0400
-From: Sasha Levin <sasha.levin@oracle.com>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, dsterba@suse.cz, Jeff Mahoney <jeffm@suse.com>,
-        jbacik@fb.com, linux-btrfs@vger.kernel.org,
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36561 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755642AbaDGSbY convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 14:31:24 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Sasha Levin <sasha.levin@oracle.com>
+CC: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.cz>,
+        Jeff Mahoney <jeffm@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         LKML <linux-kernel@vger.kernel.org>
-Subject: Re: btrfs: lock inversion between delayed_node->mutex and found->groups_sem
-References: <53239AE0.8030306@oracle.com> <20140317130546.GE29256@twin.jikos.cz> <533307ED.8030700@suse.com> <533F20EB.2040500@oracle.com> <20140407165449.GA29256@twin.jikos.cz> <5342DD99.3010502@fb.com>
-In-Reply-To: <5342DD99.3010502@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: btrfs: lock inversion between delayed_node->mutex and
+ found->groups_sem
+Date: Mon, 7 Apr 2014 18:29:29 +0000
+Message-ID: <j7epmjmklw5vs88lxuqjqorq.1396895366402@email.android.com>
+References: <53239AE0.8030306@oracle.com>
+ <20140317130546.GE29256@twin.jikos.cz> <533307ED.8030700@suse.com>
+ <533F20EB.2040500@oracle.com> <20140407165449.GA29256@twin.jikos.cz>
+ <5342DD99.3010502@fb.com>,<5342E86B.4000305@oracle.com>
+In-Reply-To: <5342E86B.4000305@oracle.com>
+Content-Type: text/plain; charset=US-ASCII
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I was on vacation last week, I'll update btrfs-next today once we are happy with integration.  Thanks,
+
+Josef
+
+Sasha Levin <sasha.levin@oracle.com> wrote:
+
+
 On 04/07/2014 01:17 PM, Chris Mason wrote:
-> 
-> 
+>
+>
 > On 04/07/2014 12:54 PM, David Sterba wrote:
 >> On Fri, Apr 04, 2014 at 05:15:23PM -0400, Sasha Levin wrote:
 >>> On 03/26/2014 01:01 PM, Jeff Mahoney wrote:
@@ -36,7 +50,7 @@ On 04/07/2014 01:17 PM, Chris Mason wrote:
 >>
 >> It is: https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/patch/3894781/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=HQJVSK4wPTft1zWwI1cGvwj5OfdmN5UItVlucU1K31o%3D%0A&s=5113699a2e7345a779333c87dd5b1d88b4410a7c7fcd5fa424baeb838ad7d31b , will probably hit -rc2
 >>
-> 
+>
 > Its in the integration branch now along with some other important fixes.  We'll get it out shortly
 
 Chris,

@@ -1,37 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56863 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751938AbaDGQDk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Apr 2014 12:03:40 -0400
-Message-ID: <5342CC4D.10302@fb.com>
-Date: Mon, 7 Apr 2014 12:03:25 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from magic.merlins.org ([209.81.13.136]:45562 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751938AbaDGQFH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 12:05:07 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
+	id 1WXC2k-0006Lc-MM
+	for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 09:05:06 -0700
+Date: Mon, 7 Apr 2014 09:05:06 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs on 3.14rc5 stuck on "btrfs_tree_read_lock           sync"
+Message-ID: <20140407160506.GG10789@merlins.org>
 MIME-Version: 1.0
-To: ylet ylet <levin.front@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Fwd: Is this a race bug when releasing eb?
-References: <CAAcaxmWqrLUwbvmsyE+3zLLP1jSVZXGASRvN-D-BLaJp4WnpLQ@mail.gmail.com>	<5342C944.2020000@fb.com>	<CAAcaxmWEDa+jS8n4LZKdE_ZXFVAoOgACDseQs0_fViYdfRHShg@mail.gmail.com> <CAAcaxmURiYRV7Rszb9UQuxSCgR+ZRTu2f+CxVhS4x7qHU2wb4A@mail.gmail.com>
-In-Reply-To: <CAAcaxmURiYRV7Rszb9UQuxSCgR+ZRTu2f+CxVhS4x7qHU2wb4A@mail.gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/07/2014 12:01 PM, ylet ylet wrote:
-> hi Josef
->
-> Thanks, I got it. But i still have no idea to reliably reproduce it.
-> This bug-on is triggered when I ran POSTMARK test lasting two days.
->
-> BTW, can you reproduce the bug reported by email with title of "btrfs
-> hung with iozone test under linux kernel 3.14." The reported bug can
-> be reliably reproduced in my environment.
->
+I was debugging my why backup failed to run, and eventually found it was
+stuck on sync:
+14080       18:18 btrfs_tree_read_lock           sync
 
-Can I have the postmark options you are using and the general setup of 
-your fs?  Number of disks, mount options and mkfs options.  I've not 
-seen it, I'm flirting with paternity leave atm and was gone all last 
-week, once we track down this memory leak I'll give it a shot.  Thanks,
+This was hung for hours on this lock.
 
-Josef
+Strangely, it looks like taking my sysrq-w hung the machine pretty hard for
+close to 30sec, but this seems to have unhung sync and in the end btrfs send
+completed after that.
 
+Sysqrq-w is here:
+http://marc.merlins.org/tmp/sysrq-btrfs-sync-hang.txt
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

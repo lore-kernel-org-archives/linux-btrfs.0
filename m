@@ -1,59 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f178.google.com ([209.85.214.178]:41139 "EHLO
-	mail-ob0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751946AbaDGPpb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 11:45:31 -0400
-Received: by mail-ob0-f178.google.com with SMTP id wp18so6694740obc.23
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 08:45:31 -0700 (PDT)
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:2675 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753190AbaDGPud (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Apr 2014 11:50:33 -0400
+Message-ID: <5342C944.2020000@fb.com>
+Date: Mon, 7 Apr 2014 11:50:28 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Date: Mon, 7 Apr 2014 23:45:30 +0800
-Message-ID: <CAAcaxmWqrLUwbvmsyE+3zLLP1jSVZXGASRvN-D-BLaJp4WnpLQ@mail.gmail.com>
-Subject: Is this a race bug when releasing eb?
-From: ylet ylet <levin.front@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: clm@fb.com, jbacik <jbacik@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: ylet ylet <levin.front@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: <clm@fb.com>
+Subject: Re: Is this a race bug when releasing eb?
+References: <CAAcaxmWqrLUwbvmsyE+3zLLP1jSVZXGASRvN-D-BLaJp4WnpLQ@mail.gmail.com>
+In-Reply-To: <CAAcaxmWqrLUwbvmsyE+3zLLP1jSVZXGASRvN-D-BLaJp4WnpLQ@mail.gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Assuming thread 1 (may be VFS want to release the page) wants to
-release a CLEAN page and thus the eb attaching the page.
-and thread 2 wants to access the eb and cow the eb.
+On 04/07/2014 11:45 AM, ylet ylet wrote:
+> Assuming thread 1 (may be VFS want to release the page) wants to
+> release a CLEAN page and thus the eb attaching the page.
+> and thread 2 wants to access the eb and cow the eb.
+>
+> Thread 1
+>                 Thread 2
+>
+> btree_releasepage
+>
+> try_release_extent_buffer
+>
+> release_extent_buffer
+> ->if (atomic_dec_and_test(&eb->refs)) {
+> ->spin_unlock(&eb->refs_lock);
+>   -------switch to thread 2 here------
+>
+>                 read_block_for_search
+>
+>                  btrfs_find_tree_block
+>
+>       radix_tree_lookup && atomic_inc_not_zero
+>
 
-Thread 1
-               Thread 2
+atomic_inc_not_zero would return 0 here because we've dropped the last 
+buffer for this, that is how we protect against this problem.  How 
+reliably are you able to reproduce this bug?  Cause I'd love to find it 
+if you can reproduce reliably.  Thanks,
 
-btree_releasepage
-
-try_release_extent_buffer
-
-release_extent_buffer
-->if (atomic_dec_and_test(&eb->refs)) {
-->spin_unlock(&eb->refs_lock);
- -------switch to thread 2 here------
-
-               read_block_for_search
-
-                btrfs_find_tree_block
-
-     radix_tree_lookup && atomic_inc_not_zero
-
-                  ................
-
-                btrfs_mark_buffer_dirty(eb)
-
-                ---------switch to thread 1 here ------
-
-- >spin_lock(&tree->buffer_lock);
-->radix_tree_delete(&tree->buffer,
- eb->start >> PAGE_CACHE_SHIFT);
-->spin_unlock(&tree->buffer_lock);
--->btrfs_release_extent_buffer_page
--->trigger BUG_ON(extent_buffer_under_io(eb))!!!!
-
-
-This is because Thread 2 can still find the eb while thread 1 has dec
-the eb->refs to 0, so eventually trigger the BUG_ON.
-
-I have triggered the BUG_ON while testing btrfs, but I am not sure if
-the bug-on is rise by my guess above.
+Josef

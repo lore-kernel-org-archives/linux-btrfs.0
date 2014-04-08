@@ -1,76 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17365 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750789AbaDHJPA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 05:15:00 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH] btrfs-progs: Fix the return value of btrfs_scan_kernel()
-Date: Tue, 8 Apr 2014 17:16:02 +0800
-Message-ID: <1396948562-16653-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-ae2-f132.auone-net.jp ([111.87.219.132]:51336 "EHLO
+	dmta02.auone-net.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1756351AbaDHNrT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 09:47:19 -0400
+Received: from amlmta031.auone-net.jp (amlmta031-MM [10.188.22.11])
+	by dmta02.auone-net.jp (au one net mail) with ESMTP id EC60040013E
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Apr 2014 22:37:39 +0900 (JST)
+Date: Tue, 8 Apr 2014 22:37:39 +0900
+From: Kusanagi Kouichi <slash@ac.auone-net.jp>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Constify getters
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+Message-Id: <5343fba300097b1000000e9600001608fc000431297f@amlmta031.auone-net.jp>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_scan_kernel() is only used in 'btrfs fi show' but returns wrong
-return value.
-When search parameter is passed, it will never return 0 even the search
-can be matched.
-
-This patch will change the whatever strange logic to a more easy to
-understand one using 'found' var.
-
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
 ---
- cmds-filesystem.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ ctree.h | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index b81768b..49d3aa7 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -430,6 +430,7 @@ static int btrfs_scan_kernel_v2(void *search)
- static int btrfs_scan_kernel(void *search)
- {
- 	int ret = 0, fd;
-+	int found = 0;
- 	FILE *f;
- 	struct mntent *mnt;
- 	struct btrfs_ioctl_fs_info_args fs_info_arg;
-@@ -452,7 +453,6 @@ static int btrfs_scan_kernel(void *search)
+diff --git a/ctree.h b/ctree.h
+index 9b461af..45f2faf 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1184,9 +1184,9 @@ struct btrfs_root {
+ 			   sizeof(((type *)0)->member)))
  
- 		if (get_label_mounted(mnt->mnt_dir, label)) {
- 			kfree(dev_info_arg);
--			ret = 1;
- 			goto out;
- 		}
- 		if (search && !match_search_item_kernel(fs_info_arg.fsid,
-@@ -467,19 +467,16 @@ static int btrfs_scan_kernel(void *search)
- 					space_info_arg, label, mnt->mnt_dir);
- 			kfree(space_info_arg);
- 			memset(label, 0, sizeof(label));
-+			found = 1;
- 		}
- 		if (fd != -1)
- 			close(fd);
- 		kfree(dev_info_arg);
--		if (search)
--			ret = 0;
- 	}
--	if (search)
--		ret = 1;
- 
- out:
- 	endmntent(f);
--	return ret;
-+	return !found;
+ #define BTRFS_SETGET_HEADER_FUNCS(name, type, member, bits)		\
+-static inline u##bits btrfs_##name(struct extent_buffer *eb)		\
++static inline u##bits btrfs_##name(const struct extent_buffer *eb)	\
+ {									\
+-	struct btrfs_header *h = (struct btrfs_header *)eb->data;	\
++	const struct btrfs_header *h = (struct btrfs_header *)eb->data;	\
+ 	return le##bits##_to_cpu(h->member);				\
+ }									\
+ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
+@@ -1197,11 +1197,11 @@ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
  }
  
- static int dev_to_fsid(char *dev, __u8 *fsid)
+ #define BTRFS_SETGET_FUNCS(name, type, member, bits)			\
+-static inline u##bits btrfs_##name(struct extent_buffer *eb,		\
+-				   type *s)				\
++static inline u##bits btrfs_##name(const struct extent_buffer *eb,	\
++				   const type *s)			\
+ {									\
+ 	unsigned long offset = (unsigned long)s;			\
+-	type *p = (type *) (eb->data + offset);				\
++	const type *p = (type *) (eb->data + offset);			\
+ 	return get_unaligned_le##bits(&p->member);			\
+ }									\
+ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
+@@ -1213,7 +1213,7 @@ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
+ }
+ 
+ #define BTRFS_SETGET_STACK_FUNCS(name, type, member, bits)		\
+-static inline u##bits btrfs_##name(type *s)				\
++static inline u##bits btrfs_##name(const type *s)			\
+ {									\
+ 	return le##bits##_to_cpu(s->member);				\
+ }									\
 -- 
 1.9.1
 

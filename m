@@ -1,81 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43458 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757142AbaDHRAG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Apr 2014 13:00:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WXZNU-0005zW-2l
-	for linux-btrfs@vger.kernel.org; Tue, 08 Apr 2014 19:00:04 +0200
-Received: from apersaud.dhcp.lbl.gov ([128.3.5.130])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Apr 2014 19:00:04 +0200
-Received: from apersaud by apersaud.dhcp.lbl.gov with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Apr 2014 19:00:04 +0200
+Received: from mail-ve0-f174.google.com ([209.85.128.174]:54683 "EHLO
+	mail-ve0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932159AbaDHTlU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 15:41:20 -0400
+Received: by mail-ve0-f174.google.com with SMTP id oz11so1215327veb.33
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Apr 2014 12:41:19 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$73f63$4e264a95$61f7c205$43e12487@cox.net>
+References: <CAFvQSYSSt_FneFeFUXYK65toiS6MSVGy_pmXd3RUuy=vam-Xsg@mail.gmail.com>
+	<pan$73f63$4e264a95$61f7c205$43e12487@cox.net>
+Date: Tue, 8 Apr 2014 21:41:19 +0200
+Message-ID: <CAFvQSYSZe5JMe7D3OXbwPW=aJrz5yV_ndNUHDsXg9-iK3KE8Tg@mail.gmail.com>
+Subject: Re: Is there any way to determine fragmentation for compressed btrfs volumes?
+From: Clemens Eisserer <linuxhippy@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Arun Persaud <apersaud@lbl.gov>
-Subject: Re: error 2001, no inode item
-Date: Tue, 08 Apr 2014 09:56:45 -0700
-Message-ID: <li19og$m51$1@ger.gmane.org>
-References: <53433170.5030806@lbl.gov> <pan$5202e$e473aa9d$bec69d4b$f69d4a7c@cox.net>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-In-Reply-To: <pan$5202e$e473aa9d$bec69d4b$f69d4a7c@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+Hi Ducan,
 
-On 04/08/2014 05:10 AM, Duncan wrote:
->[...]
->> I
->> copied all the files from my old HD using dd, converted and then resized
->> the file system. However, my old drive already had some errors.
-> 
-> There's a page on the wiki specifically covering conversion.  Please read 
-> it carefully and follow the recommendations, as the post-ext4-subvolume-
-> delete defrag and balance it recommends can prevent problems later.
-> 
-> https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
+> You mention trying scrub and defragging the entire volume, but you don't
+> mention balance.  Balance by default rewrites all chunks (tho you can add
+> filters to rewrite only say data chunks, not metadata, if you like), so
+> that's what I'd say to try, as it should defrag in the process.
+>
+> Tho we've seen a few reports from people saying a full balance actually
+> made for instance boot times longer instead of shorter, too.  I haven't
+> seen and don't have an explanation for that. <shrug>
 
-I did follow instructions from a similar website. The fsck on the ext4
-system didn't work though. I also ran the balance command on btrfs, but
-I'm not sure anymore, if I ran the defrag.
+Ah sorry, I confused scrub with balance.
+I didn't do a scrub but actually I tried to balance the device as I
+was told basically all data has to go through the allocator again
+which most likely will improve on-disk layout. Unfourtunatly in my
+case it made the situation a lot worse, when running this Linux system
+in virtualbox (where disk access has a lot more overhead) it is now
+even with the SSD super slow.
 
-> [...]
->> Btrfs v3.12+20131125
 
-that's the version I have installed at the moment.
+> Meanwhile, have you tried a trim/discard (fstrim command), and/or do you
+> run with the discard (or is it trim) mount option?
+I have tried with discard on and off - however this isn't a SSD issue.
 
-> FWIW, there's a new btrfs-progs v3.14 version available.  [...]
-> 
->>> uname -a
->> Linux apersaud 3.14.0-23.gfa168d7-desktop #1 SMP PREEMPT Tue Apr 1
->> 12:54:08 UTC 2014 (fa168d7) x86_64 x86_64 x86_64 GNU/Linux
-> 
-> Looks like you're up on the kernel, anyway. =:^)
-> 
->> I'm running opensuse/Tumbleweed.
+It is slow even for read-only workload, and windows on the same SSD
+works as expected (with CrystalDiskMark showing the dirve meets the
+specs (~350mb/s seq. write, 500b/s sequential read, good 4k random
+values).
+So I doubt this is an SSD issue.
 
-I'll see if I can get an update for btrfs-progs.
 
->[...]
-> Don't run btrfs check --repair unless you're either told to do so by a 
-> dev after examining the errors you are seeing, or it's the last desperate 
-> step before you scrap the filesystem and mkfs anyway, so there's nothing 
-> to lose.
+> One more thing to consider.  The btrfs of a year and a half ago was a
+> rather less mature btrfs than we have today.  I recently booted to backup
+> here, and did a brand new mkfs.btrfs on my working filesystems to take
+> advantage of several of the newer features
 
-OK, good to know ;)
+I had hopes I could avoid that.
+Having a FS in such a degraded state with the only option to re-create
+it isn't that compelling ;)
 
->[...]
-> And one more thing as a hint to save you some trouble.  Strongly consider 
-> both the noatime (mainly performance) and the autodefrag mount options, 
-
-I have noatime, but I'll add autodefrag.
-
-Thanks
-
-Arun
-
+Thanks & regards, Clemens

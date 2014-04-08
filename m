@@ -1,57 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:40482 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753771AbaDGT1U (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Apr 2014 15:27:20 -0400
-Message-ID: <5342FC08.5070106@fb.com>
-Date: Mon, 7 Apr 2014 15:27:04 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:58426 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754671AbaDHB1O convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 21:27:14 -0400
+Message-ID: <534350AA.8030209@cn.fujitsu.com>
+Date: Tue, 8 Apr 2014 09:28:10 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Sasha Levin <sasha.levin@oracle.com>, <dsterba@suse.cz>,
-        Jeff Mahoney <jeffm@suse.com>, <jbacik@fb.com>,
-        <linux-btrfs@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>
-Subject: Re: btrfs: lock inversion between delayed_node->mutex and found->groups_sem
-References: <53239AE0.8030306@oracle.com> <20140317130546.GE29256@twin.jikos.cz> <533307ED.8030700@suse.com> <533F20EB.2040500@oracle.com> <20140407165449.GA29256@twin.jikos.cz> <5342DD99.3010502@fb.com> <5342E86B.4000305@oracle.com>
-In-Reply-To: <5342E86B.4000305@oracle.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: Sergei Trofimovich <slyich@gmail.com>
+CC: Sergei Trofimovich <slyfox@gentoo.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: fix crash in remount(thread_pool=) case
+References: <1396857346-24877-1-git-send-email-slyich@gmail.com>
+In-Reply-To: <1396857346-24877-1-git-send-email-slyich@gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/07/2014 02:03 PM, Sasha Levin wrote:
-> On 04/07/2014 01:17 PM, Chris Mason wrote:
->>
->>
->> On 04/07/2014 12:54 PM, David Sterba wrote:
->>> On Fri, Apr 04, 2014 at 05:15:23PM -0400, Sasha Levin wrote:
->>>> On 03/26/2014 01:01 PM, Jeff Mahoney wrote:
->>>>> On 3/17/14, 9:05 AM, David Sterba wrote:
->>>>>>> On Fri, Mar 14, 2014 at 08:12:16PM -0400, Sasha Levin wrote:
->>>>>>>>> While fuzzing with trinity inside a KVM tools guest running the latest -next kernel I've stumbled on the following:
->>>>>>>>>
->>>>>>>>> [  788.458756]        CPU0                    CPU1 [  788.459188] ----                    ---- [  788.459625] lock(&found->groups_sem); [  788.460041] local_irq_disable(); [  788.460041] lock(&delayed_node->mutex); [  788.460041] lock(&found->groups_sem); [  788.460041]   <Interrupt> [ 788.460041]     lock(&delayed_node->mutex); [  788.460041] [ 788.460041]  *** DEADLOCK *** [  788.460041] [  788.460041] 2 locks held by kswapd3/4199:
->>>>>>>
->>>>>>> I've once (3.14-rc5) seen the same warning also caused by xfstests/generic/224
->>>>> I think this is from my sysfs patches. We call kobject_add while holding the group_sem. kobject_add ultimately allocates with GFP_KERNEL, so it can enter reclaim. This particular case isn't dangerous, but it could hit while hot-adding a device. The fix should be pretty simple.
->>>>
->>>> Is that fix available anywhere? I'm still seeing the issue in -next.
->>>
->>> It is: https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/patch/3894781/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=HQJVSK4wPTft1zWwI1cGvwj5OfdmN5UItVlucU1K31o%3D%0A&s=5113699a2e7345a779333c87dd5b1d88b4410a7c7fcd5fa424baeb838ad7d31b , will probably hit -rc2
->>>
->>
->> Its in the integration branch now along with some other important fixes.  We'll get it out shortly
+
+于 2014年04月07日 15:55, Sergei Trofimovich 写道:
+> From: Sergei Trofimovich <slyfox@gentoo.org>
 >
-> Chris,
+> Reproducer:
+>      mount /dev/ubda /mnt
+>      mount -oremount,thread_pool=42 /mnt
 >
-> Can I suggest adding the integration branch to linux-next as well? That way
-> all the folks who report issues coming out of -next would be able to test
-> the fixes as well.
+> Gives a crash:
+>      ? btrfs_workqueue_set_max+0x0/0x70
+>      btrfs_resize_thread_pool+0xe3/0xf0
+>      ? sync_filesystem+0x0/0xc0
+>      ? btrfs_resize_thread_pool+0x0/0xf0
+>      btrfs_remount+0x1d2/0x570
+>      ? kern_path+0x0/0x80
+>      do_remount_sb+0xd9/0x1c0
+>      do_mount+0x26a/0xbf0
+>      ? kfree+0x0/0x1b0
+>      SyS_mount+0xc4/0x110
 >
+> It's a call
+>      btrfs_workqueue_set_max(fs_info->scrub_wr_completion_workers, new_pool_size);
+> with
+>      fs_info->scrub_wr_completion_workers = NULL;
+>
+> as scrub wqs get created only on user's demand.
+>
+> Patch skips not-created-yet workqueues.
+>
+> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+> CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> CC: Chris Mason <clm@fb.com>
+> CC: Josef Bacik <jbacik@fb.com>
+> CC: linux-btrfs@vger.kernel.org
+>
+> ---
+>   fs/btrfs/async-thread.c | 2 ++
+>   1 file changed, 2 insertions(+)
+>
+> diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+> index ecb5832..5a201d8 100644
+> --- a/fs/btrfs/async-thread.c
+> +++ b/fs/btrfs/async-thread.c
+> @@ -323,6 +323,8 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
+>   
+>   void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
+>   {
+> +	if (!wq)
+> +		return;
+>   	wq->normal->max_active = max;
+>   	if (wq->high)
+>   		wq->high->max_active = max;
+Oh, that's my fault. You got me.
 
-Hi Sasha,
-
-The ink is still a little wet on the integration branch. It'll 
-definitely go to linux-next and to Linus.
-
--chris
-
+Thanks for the patch.
+Qu.

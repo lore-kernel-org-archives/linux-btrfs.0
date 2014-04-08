@@ -1,77 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57664 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753727AbaDEWVx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Apr 2014 18:21:53 -0400
-Date: Sat, 5 Apr 2014 15:21:49 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 24/27] btrfs-progs: Convert man page for btrfs-zero-log
-Message-ID: <20140405222149.GD13857@merlins.org>
-References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com> <1396427378-10487-25-git-send-email-quwenruo@cn.fujitsu.com> <20140404184620.GA12124@merlins.org> <CAE5mzvhTZ1bO_uoyz-ixsn29iznXRjzFkM5UfDBcFUdX0ov7RQ@mail.gmail.com> <20140405220203.GB13857@merlins.org> <20140405220346.GV7442@carfax.org.uk>
+Received: from cn.fujitsu.com ([59.151.112.132]:25110 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753162AbaDHBTe convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Apr 2014 21:19:34 -0400
+Message-ID: <53434EE0.6030400@cn.fujitsu.com>
+Date: Tue, 8 Apr 2014 09:20:32 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="sdtB3X0nJg68CQEu"
-In-Reply-To: <20140405220346.GV7442@carfax.org.uk>
+To: Marc MERLIN <marc@merlins.org>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 14/27] btrfs-progs: Convert man page for btrfs-replace.
+References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com> <1396427378-10487-15-git-send-email-quwenruo@cn.fujitsu.com> <20140404202929.GB12124@merlins.org>
+In-Reply-To: <20140404202929.GB12124@merlins.org>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---sdtB3X0nJg68CQEu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+于 2014年04月05日 04:29, Marc MERLIN 写道:
+> On Wed, Apr 02, 2014 at 04:29:25PM +0800, Qu Wenruo wrote:
+>> +If the source device is not available anymore, or if the -r option is set,
+>> +the data is built only using the RAID redundancy mechanisms.
+>> +After completion of the operation, the source device is removed from the
+>> +filesystem.
+> Woudl it make sense to add a paragraph explaining that for raid5/6,
+> someone should either:
+> 1) use balance to rebuild on a new drive if one of the drives is missing
+> 2) use btrfs device add of a new drive, then btrfs device delete of the
+> drive to replace, and effectively btrfs will do the same thing that
+> replace would
+>
+> ?
 
-On Sat, Apr 05, 2014 at 11:03:46PM +0100, Hugo Mills wrote:
->    As far as I recall, -orecovery is read-write. -oro,recovery is
-> read-only.
+Nice try, I think it's good to add a note paragraph for the use cases.
 
-Yes, we both corrected my Email at the same time :)
+I'm also wondering should the same things added to btrfs-balance(8) and 
+btrfs-device(8) man pages,
+if added, three same paragraph will be added and the duplication 
+paragraph may increase the difficulty to maintain
+the documentation.
 
-Actually it's better/worse than that. From my notes at
-http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-an=
-d-Btrfs-Filesystem-Repair
+So I prefer to add the explaination about RAID5/6 to btrfs-device(8) and 
+adds note on
+btrfs-replace(8)/btrfs-balance(8) to refer to btrfs-device(8), since all 
+of these things are about btrfs device management.
 
-mount -o recovery,ro (for when regular mount isn't working). Note, you have=
- to use ro or it will give you a misleading error:
-root@polgara:~# mount -o recovery /dev/mapper/crypt /mnt/mnt8
-mount: /dev/mapper/crypt already mounted or /mnt/mnt8 busy
-root@polgara:~# mount -o recovery,ro /dev/mapper/crypt /mnt/mnt8
-root@polgara:~#
+Would you prefer the modification?
 
-In other words, for me -o recovery has never worked unless I added ,ro.
-I'm not saying -o recovery cannot work, but when I needed it, it didn't work
-because likely it failed to replay the log as you say, and adding ro fixed
-that problem.
+Thanks,
+Qu.
+>
+> Thanks,
+> Marc
 
-That said, returning
-mount: /dev/mapper/crypt already mounted or /mnt/mnt8 busy                 =
-                                                              =20
-is not ideal :)
-
-Marc
---=20
-"A mouse is a device used to point at the xterm you want to type in" - A.S.=
-R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet coo=
-king
-Home page: http://marc.merlins.org/ =20
-
---sdtB3X0nJg68CQEu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.15 (GNU/Linux)
-
-iQCVAwUBU0CB/X4xUKZ2O+kBAQIvmgP/QOYzoZa7Q2C9Znf2LzdWGySCDWZDW5zV
-m7H3FH3mi7EVZ7owoD8tPArn8gFAYXJCbwIxESrKSxVODKn/X/RG/ptY1Zl/X5BU
-JOJOmG0khJEIbxrm8sL/47Be0tUzlwh8UzW/nAsJ2FxC+uHFhB6XpW5rklxfS8/Z
-rPaUASML5Qc=
-=YwMP
------END PGP SIGNATURE-----
-
---sdtB3X0nJg68CQEu--

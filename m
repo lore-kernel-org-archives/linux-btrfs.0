@@ -1,198 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f47.google.com ([209.85.214.47]:40499 "EHLO
-	mail-bk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756533AbaDHPQU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 11:16:20 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20140408001443.GG27017@dastard>
-References: <20140404090357.GW17603@dastard>
-	<CAL3q7H6q7M-hrvniaVkAm_L6aSHANmnfdTKGEHHLFqXUhWfY5w@mail.gmail.com>
-	<20140408001443.GG27017@dastard>
-Date: Tue, 8 Apr 2014 16:16:18 +0100
-Message-ID: <CAL3q7H7Uo3d4b+KjPmVMftrVaMu5Ta12B7-BK9498HL_bKfAPg@mail.gmail.com>
-Subject: Re: [ANNOUNCE] xfstests: updated to cf1ed54
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-ext4@vger.kernel.org, lczerner@redhat.com
-Content-Type: text/plain; charset=UTF-8
+Received: from mx1.redhat.com ([209.132.183.28]:35807 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756885AbaDHPnB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Apr 2014 11:43:01 -0400
+From: Lukas Czerner <lczerner@redhat.com>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, fdmanana@gmail.com, david@fromorbit.com,
+        Lukas Czerner <lczerner@redhat.com>
+Subject: [PATCH 1/3] xfstests: Fix SCRATCH_DEV_POOL handling
+Date: Tue,  8 Apr 2014 17:42:48 +0200
+Message-Id: <1396971770-23553-1-git-send-email-lczerner@redhat.com>
+In-Reply-To: <20140404211224.GX17603@dastard>
+References: <20140404211224.GX17603@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 8, 2014 at 1:14 AM, Dave Chinner <david@fromorbit.com> wrote:
-> On Fri, Apr 04, 2014 at 02:07:16PM +0100, Filipe David Manana wrote:
->> On Fri, Apr 4, 2014 at 10:03 AM, Dave Chinner <david@fromorbit.com> wrote:
->> > Hi folks,
->> >
->> > The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
->> > just been updated. Patches often get missed, so please check if your
->> > outstanding patches were in this update. If they have not been in
->> > this update, please resubmit them to xfs@oss.sgi.com so they can be
->> > picked up in the next update.
->> >
->> > The new head of the master branch is commit:
->> >
->> > cf1ed54 check: fix RESULT_BASE typo in check script
->> >
->> > The major new functionality worth mentioning in this update is the
->> > new config file format from Lukas. The existing format config files
->> > should continue to work without change, but the new format is much
->> > richer and allows specification of multiple different configurations
->> > to run test under. Hence testing multiple mount an dmkfs
->> > configurations becomes as simple as iterating the configurations
->> > in the config file.
->>
->> Hi,
->>
->> I might be missing something, but after checking out these changes, I
->> am no longer able to run btrfs tests. Example:
->>
->> $ ./check btrfs/041
->> common/config: Error: $SCRATCH_DEV should be unset when $SCRATCH_DEV_POOL is set
->> Passed all 0 tests
->>
->> $ cat local.config
->> export TEST_DEV=/dev/sdb
->> export TEST_DIR=/home/fdmanana/btrfs-tests/dev
->> export SCRATCH_MNT="/home/fdmanana/btrfs-tests/scratch_1"
->> export SCRATCH_DEV_POOL="/dev/sdc /dev/sdd"
->
-> Are you sure that's the config file that is being picked up? I can't
-> test btrfs at the moment because it appears to be completely screwed
-> in a TOT kernel right now - it doesn't even show up in
-> /proc/filesystems and doesn't emit anything on dmesg to indicate
-> that initialisation of the built in btrfs code has failed or even
-> been attempted. It's simply MIA....
->
-> However, using that same SCRATCH_DEV_POOL config for xfs or ext4
-> works just fine on my test machines with the current TOT xfstests
-> and kernel code.
->
-> $ cat configs/test2.config
-> TEST_DIR=/mnt/test
-> SCRATCH_MNT=/mnt/scratch
-> TEST_DEV=/dev/vda
-> SCRATCH_DEV_POOL="/dev/vdc /dev/vdd"
-> $ sudo MKFS_OPTIONS="-m crc=1" ./check generic/001
-> FSTYP         -- xfs (debug)
-> PLATFORM      -- Linux/x86_64 test2 3.14.0-rc1-dgc+
-> MKFS_OPTIONS  -- -f -m crc=1 /dev/vdc
-> MOUNT_OPTIONS -- /dev/vdc /mnt/scratch
->
-> generic/001 4s ... 3s
-> Ran: generic/001
-> Passed all 1 tests
-> $
->
-> So, as you can see I can't reproduce your problem myself right now.
-> Could you add a "set -x" line to the start of check and post the
-> output?
+With changes introduced in 667308dd97bf41382d4ab299fa5b56c235cfeb27
+it is no longer possible to use SCRATCH_DEV_POOL variable because of
+error:
 
-Ok, here's some more tests:
+ common/config: Error: $SCRATCH_DEV should be unset when
+ $SCRATCH_DEV_POOL is set
 
-# On origin/master:
+This was because get_next_config() would get called twice and hence it
+would complain on the second run that SCRATCH_DEV is already set. Fix
+it by making sure that we call get_next_config() only once if there
+are no sections in the config file.
 
-root 16:56:42 /home/fdmanana/git/hub/xfstests ((cf1ed54...))> cat local.config
-export TEST_DEV=/dev/sdb
-export TEST_DIR=/home/fdmanana/btrfs-tests/dev
-export SCRATCH_MNT="/home/fdmanana/btrfs-tests/scratch_1"
-export SCRATCH_DEV_POOL="/dev/sdc /dev/sdd"
-export FSTYP=btrfs
+Also make sure that we export SCRATCH_DEV in the case we're deducing it
+from SCRATCH_DEV_POOL.
 
-root 16:56:49 /home/fdmanana/git/hub/xfstests ((cf1ed54...))> ./check
-generic/001
-common/config: Error: $SCRATCH_DEV should be unset when $SCRATCH_DEV_POOL is set
-Passed all 0 tests
+Signed-off-by: Lukas Czerner <lczerner@redhat.com>
+Reported-by: Filipe David Manana <fdmanana@gmail.com>
+---
+ common/config | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-# Now going back to an older revision, it works as I showed before:
-
-root 16:56:56 /home/fdmanana/git/hub/xfstests ((cf1ed54...))> git
-checkout 3948694eb12e9699f558fab5e8169a8b090780d1
-Previous HEAD position was cf1ed54... check: fix RESULT_BASE typo in
-check script
-HEAD is now at 3948694... xfs/300: fix golden output
-
-root 16:57:11 /home/fdmanana/git/hub/xfstests ((3948694...))> ./check
-generic/001
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 debian-vm3 3.13.0-fdm-btrfs-next-24+
-MKFS_OPTIONS  -- /dev/sdc
-MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
-
-generic/001 23s ... 23s
-Ran: generic/001
-Passed all 1 tests
-
-# Now if I change my config and remove the definition of FSTYP, it
-still works with the old revision:
-
-root 16:59:19 /home/fdmanana/git/hub/xfstests ((3948694...))> cat local.config
-# Ideally define at least these 4 to match your environment
-# The first 2 are required.
-# See README for other variables which can be set.
-#
-# Note: SCRATCH_DEV >will< get overwritten!
-
-export TEST_DEV=/dev/sdb
-export TEST_DIR=/home/fdmanana/btrfs-tests/dev
-export SCRATCH_MNT="/home/fdmanana/btrfs-tests/scratch_1"
-export SCRATCH_DEV_POOL="/dev/sdc /dev/sdd"
-# export FSTYP=btrfs
-
-root 16:59:22 /home/fdmanana/git/hub/xfstests ((3948694...))> ./check
-generic/001
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 debian-vm3 3.13.0-fdm-btrfs-next-24+
-MKFS_OPTIONS  -- /dev/sdc
-MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
-
-generic/001 23s ... 23s
-Ran: generic/001
-Passed all 1 tests
-
-# Now going back to master, without FSTYP set, it doesn't work too:
-
-root 16:59:50 /home/fdmanana/git/hub/xfstests ((3948694...))> git
-checkout origin/master
-Previous HEAD position was 3948694... xfs/300: fix golden output
-HEAD is now at cf1ed54... check: fix RESULT_BASE typo in check script
-
-root 16:59:57 /home/fdmanana/git/hub/xfstests ((cf1ed54...))> ./check
-generic/001
-common/rc: Error: $TEST_DEV (/dev/sdb) is not a MOUNTED xfs filesystem
-Filesystem     Type  1024-blocks  Used Available Capacity Mounted on
-/dev/sdb       btrfs    20971520   768  18845184       1%
-/home/fdmanana/btrfs-tests/dev
-root 17:00:00 /home/fdmanana/git/hub/xfstests ((cf1ed54...))>
-
-
-After adding set -x to the top of the 'check' script, here's the
-output when running current master:
-
-https://friendpaste.com/6x8Hzq3wJxe2KXZypomCiY
-
-And for the revision that works:  https://friendpaste.com/6x8Hzq3wJxe2KXZyppKkwB
-
-Hope it helps.
-Thanks
-
-
-
->
-> Cheers,
->
-> Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
-
-
-
+diff --git a/common/config b/common/config
+index 4178c27..6fa18e2 100644
+--- a/common/config
++++ b/common/config
+@@ -360,6 +360,10 @@ parse_config_section() {
+ }
+ 
+ get_next_config() {
++	if [ ! -z "$CONFIG_INCLUDED" ] && ! $OPTIONS_HAVE_SECTIONS; then
++		return 0
++	fi
++
+ 	local OLD_FSTYP=$FSTYP
+ 	local OLD_MOUNT_OPTIONS=$MOUNT_OPTIONS
+ 	local OLD_MKFS_OPTIONS=$MKFS_OPTIONS
+@@ -414,10 +418,11 @@ get_next_config() {
+ 	# to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward compatibility
+ 	if [ ! -z "$SCRATCH_DEV_POOL" ]; then
+ 		if [ ! -z "$SCRATCH_DEV" ]; then
+-			echo "common/config: Error: \$SCRATCH_DEV should be unset when \$SCRATCH_DEV_POOL is set"
++			echo "common/config: Error: \$SCRATCH_DEV ($SCRATCH_DEV) should be unset when \$SCRATCH_DEV_POOL ($SCRATCH_DEV_POOL) is set"
+ 			exit 1
+ 		fi
+ 		SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
++		export SCRATCH_DEV
+ 	fi
+ 
+ 	echo $SCRATCH_DEV | grep -q ":" > /dev/null 2>&1
 -- 
-Filipe David Manana,
+1.8.3.1
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

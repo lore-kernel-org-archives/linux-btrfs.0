@@ -1,69 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fe1.lbl.gov ([128.3.41.133]:20101 "EHLO fe1.lbl.gov"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755566AbaDGXYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Apr 2014 19:24:36 -0400
-Received: by mail-pa0-f53.google.com with SMTP id ld10so131563pab.40
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Apr 2014 16:14:59 -0700 (PDT)
-Received: from [128.3.5.130] (apersaud.dhcp.lbl.gov. [128.3.5.130])
-        by mx.google.com with ESMTPSA id et3sm311320pbc.52.2014.04.07.16.14.58
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Mon, 07 Apr 2014 16:14:58 -0700 (PDT)
-Message-ID: <53433170.5030806@lbl.gov>
-Date: Mon, 07 Apr 2014 16:14:56 -0700
-From: Arun Persaud <apersaud@lbl.gov>
+Received: from mail-vc0-f172.google.com ([209.85.220.172]:33331 "EHLO
+	mail-vc0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756079AbaDHLqi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 07:46:38 -0400
+Received: by mail-vc0-f172.google.com with SMTP id la4so653397vcb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Apr 2014 04:46:37 -0700 (PDT)
 MIME-Version: 1.0
+Date: Tue, 8 Apr 2014 13:46:37 +0200
+Message-ID: <CAFvQSYSSt_FneFeFUXYK65toiS6MSVGy_pmXd3RUuy=vam-Xsg@mail.gmail.com>
+Subject: Is there any way to determine fragmentation for compressed btrfs volumes?
+From: Clemens Eisserer <linuxhippy@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: error 2001, no inode item
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+Hi,
 
-my HD recently started crashing, so I rescued all files to a new one and
-thought that this might be a good time to convert from ext4 to btrfs. I
-copied all the files from my old HD using dd, converted and then resized
-the file system. However, my old drive already had some errors.
-Currently I have one file that I can't rm or overwrite (stale file
-handle). Here is what I get when running btrfs check:
+I've been running btrfs on my SSD powered laptop for about a year and
+a half  (with force-compress=lzo and autodefrag) and it seems the
+volume has degraded quite a lot although I am not using snapshot
+functionality.
+No matter what I do (scrub, defrag ob the whole volume), files seem to
+stay highly fragmented - at least that is my guess.
+When e.g. starting up X11+XFCE the hdd led is lid for about 10s (the
+Samsung 830 can do up to 80k/iops random read), also starting
+google-chrome results in an active SSD for ~5s (although the chrome
+binary + libs is for sure < 200mb, so should be loaded in 500ms).
 
-> btrfs check /dev/sda4
+What I wonder is how can I diagnose whats happening and why the FS is
+rather slow?
+The only target value I know is the extend count,  which doesn't seem
+to be meaningful when using fragmentation.
 
-checking extents
-checking free space cache
-checking fs roots
-root 5 inode 5769204 errors 2001, no inode item, link count wrong
-	unresolved ref dir 5783881 index 3 namelen 38 name
-61bd2ed1fba8bc8d2f12766c7e4b3dafff6350 filetype 1 error 4, no inode ref
-root 5 inode 5899187 errors 2001, no inode item, link count wrong
-	unresolved ref dir 5906761 index 3 namelen 38 name
-61bd2ed1fba8bc8d2f12766c7e4b3dafff6350 filetype 1 error 0
-Checking filesystem on /dev/sda4
-UUID: 98190f1e-426f-433d-8335-1216b9a63d16
-cache and super generation don't match, space cache will be invalidated
-found 6932789174 bytes used err is 1
-total csum bytes: 123239772
-total tree bytes: 702812160
-total fs tree bytes: 534839296
-total extent tree bytes: 32509952
-btree space waste bytes: 163897229
-file data blocks allocated: 349199831040
- referenced 126131052544
-Btrfs v3.12+20131125
-
-the file is a git object, so that's why the name looks like a hash ;)
-
-> uname -a
-Linux apersaud 3.14.0-23.gfa168d7-desktop #1 SMP PREEMPT Tue Apr 1
-12:54:08 UTC 2014 (fa168d7) x86_64 x86_64 x86_64 GNU/Linux
-
-I'm running opensuse/Tumbleweed.
-
-Any idea how I can fix the above? check --repair doesn't seem to help.
-Any suggestions would be highly appreciated.
-
-thanks
-
-Arun
+Thank you in advance, Clemens Eisserer

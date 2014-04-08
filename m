@@ -1,76 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34370 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752780AbaDDOuK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Apr 2014 10:50:10 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: add separate make target to clean docs
-Date: Fri,  4 Apr 2014 16:50:05 +0200
-Message-Id: <1396623005-16508-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:17365 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750789AbaDHJPA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 05:15:00 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] btrfs-progs: Fix the return value of btrfs_scan_kernel()
+Date: Tue, 8 Apr 2014 17:16:02 +0800
+Message-ID: <1396948562-16653-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regenerating the asciidoc takes much longer now and makes quick build
-tests long. There's separate clean-doc target for that and clean-all
-that cleans docs and sources.
+btrfs_scan_kernel() is only used in 'btrfs fi show' but returns wrong
+return value.
+When search parameter is passed, it will never return 0 even the search
+can be matched.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+This patch will change the whatever strange logic to a more easy to
+understand one using 'found' var.
+
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Anand Jain <anand.jain@oracle.com>
 ---
+ cmds-filesystem.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-This applies on top of the new asciidoc patches and makes frequent build tests
-more friendly
-
- Makefile | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
-
-diff --git a/Makefile b/Makefile
-index 70eaf5765dd8..f2f2579ed9c6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -56,9 +56,9 @@ btrfs_convert_libs = -lext2fs -lcom_err
- btrfs_image_libs = -lpthread
- btrfs_fragment_libs = -lgd -lpng -ljpeg -lfreetype
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index b81768b..49d3aa7 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -430,6 +430,7 @@ static int btrfs_scan_kernel_v2(void *search)
+ static int btrfs_scan_kernel(void *search)
+ {
+ 	int ret = 0, fd;
++	int found = 0;
+ 	FILE *f;
+ 	struct mntent *mnt;
+ 	struct btrfs_ioctl_fs_info_args fs_info_arg;
+@@ -452,7 +453,6 @@ static int btrfs_scan_kernel(void *search)
  
--SUBDIRS = Documentation
--BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
--INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
-+SUBDIRS =
-+BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS)) Documentation
-+INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS)) Documentation
- CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
+ 		if (get_label_mounted(mnt->mnt_dir, label)) {
+ 			kfree(dev_info_arg);
+-			ret = 1;
+ 			goto out;
+ 		}
+ 		if (search && !match_search_item_kernel(fs_info_arg.fsid,
+@@ -467,19 +467,16 @@ static int btrfs_scan_kernel(void *search)
+ 					space_info_arg, label, mnt->mnt_dir);
+ 			kfree(space_info_arg);
+ 			memset(label, 0, sizeof(label));
++			found = 1;
+ 		}
+ 		if (fd != -1)
+ 			close(fd);
+ 		kfree(dev_info_arg);
+-		if (search)
+-			ret = 0;
+ 	}
+-	if (search)
+-		ret = 1;
  
- .PHONY: $(SUBDIRS)
-@@ -120,7 +120,7 @@ endif
- 	@echo "    [CC]     $@"
- 	$(Q)$(CC) $(AM_CFLAGS) $(STATIC_CFLAGS) -c $< -o $@
+ out:
+ 	endmntent(f);
+-	return ret;
++	return !found;
+ }
  
--all: $(progs) manpages $(BUILDDIRS)
-+all: $(progs) $(BUILDDIRS)
- $(SUBDIRS): $(BUILDDIRS)
- $(BUILDDIRS):
- 	@echo "Making all in $(patsubst build-%,%,$@)"
-@@ -223,6 +223,8 @@ send-test: $(objects) $(libs) send-test.o
- manpages:
- 	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation
- 
-+clean-all: clean-doc clean
-+
- clean: $(CLEANDIRS)
- 	@echo "Cleaning"
- 	$(Q)rm -f $(progs) cscope.out *.o *.o.d btrfs-convert btrfs-image btrfs-select-super \
-@@ -231,6 +233,10 @@ clean: $(CLEANDIRS)
- 	      version.h $(check_defs) \
- 	      $(libs) $(lib_links)
- 
-+clean-doc:
-+	@echo "Cleaning Documentation"
-+	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation clean
-+
- $(CLEANDIRS):
- 	@echo "Cleaning $(patsubst clean-%,%,$@)"
- 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst clean-%,%,$@) clean
+ static int dev_to_fsid(char *dev, __u8 *fsid)
 -- 
-1.9.0
+1.9.1
 

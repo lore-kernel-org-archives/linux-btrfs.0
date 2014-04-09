@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48393 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:49296 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758162AbaDII6V (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 04:58:21 -0400
-Date: Wed, 9 Apr 2014 16:57:56 +0800
+	with ESMTP id S1758178AbaDIKOq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 06:14:46 -0400
+Date: Wed, 9 Apr 2014 18:14:10 +0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
@@ -12,98 +12,407 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: Re: [PATCH v9 01/16] Btrfs: disable qgroups accounting when
- quata_enable is 0
-Message-ID: <20140409085756.GB23743@localhost.localdomain>
+Subject: Re: [PATCH v5] Btrfs-progs: add dedup subcommand
+Message-ID: <20140409101410.GC23743@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
- <1397027325-27151-2-git-send-email-bo.li.liu@oracle.com>
+References: <1397027325-27151-18-git-send-email-bo.li.liu@oracle.com>
+ <1397038240-29614-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1397027325-27151-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1397038240-29614-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Sorry, there is a typo in the subject line, thanks cwillu for pointing it out.
-
-s/quata/quota/g.
-
--liubo
-
-On Wed, Apr 09, 2014 at 03:08:29PM +0800, Liu Bo wrote:
-> It's unnecessary to do qgroups accounting without enabling quota.
+On Wed, Apr 09, 2014 at 06:10:40PM +0800, Liu Bo wrote:
+> This adds deduplication subcommands, 'btrfs dedup command <path>',
+> including enable/disable/on/off.
+> 
+> - btrfs dedup enable
+> Create the dedup tree, and it's the very first step when you're going to use
+> the dedup feature.
+> 
+> - btrfs dedup disable
+> Delete the dedup tree, after this we're not able to use dedup any more unless
+> you enable it again.
+> 
+> - btrfs dedup on [-b]
+> Switch on the dedup feature temporarily, and it's the second step of applying
+> dedup with writes.  Option '-b' is used to set dedup blocksize.
+> The default blocksize is 8192(no special reason, you may argue), and the current
+> limit is [4096, 128 * 1024], because 4K is the generic page size and 128K is the
+> upper limit of btrfs's compression.
+> 
+> - btrfs dedup off
+> Switch off the dedup feature temporarily, but the dedup tree remains.
+> 
+> ---------------------------------------------------------
+> Usage:
+> Step 1: btrfs dedup enable /btrfs
+> Step 2: btrfs dedup on /btrfs or btrfs dedup on -b 4K /btrfs
+> Step 3: now we have dedup, run your test.
+> Step 4: btrfs dedup off /btrfs
+> Step 5: btrfs dedup disable /btrfs
+> ---------------------------------------------------------
 > 
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
->  fs/btrfs/ctree.c       |  2 +-
->  fs/btrfs/delayed-ref.c | 18 ++++++++++++++----
->  fs/btrfs/qgroup.c      |  3 +++
->  3 files changed, 18 insertions(+), 5 deletions(-)
+
+v5: rebase onto the latest btrfs-progs v3.14.
+
+-liubo
+
+> v4: rebase and reserve spare space in btrfs_ioctl_dedup_args struct. 
+> v3: add commands 'btrfs dedup on/off'
+> v2: add manpage
 > 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 88d1b1e..54f3c67 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -406,7 +406,7 @@ u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
->  
->  	tree_mod_log_write_lock(fs_info);
->  	spin_lock(&fs_info->tree_mod_seq_lock);
-> -	if (!elem->seq) {
-> +	if (elem && !elem->seq) {
->  		elem->seq = btrfs_inc_tree_mod_seq_major(fs_info);
->  		list_add_tail(&elem->list, &fs_info->tree_mod_seq_list);
->  	}
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 3129964..3ab37b6 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -656,8 +656,13 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
->  	ref->is_head = 0;
->  	ref->in_tree = 1;
->  
-> -	if (need_ref_seq(for_cow, ref_root))
-> -		seq = btrfs_get_tree_mod_seq(fs_info, &trans->delayed_ref_elem);
-> +	if (need_ref_seq(for_cow, ref_root)) {
-> +		struct seq_list *elem = NULL;
+>  Makefile       |   2 +-
+>  btrfs.c        |   1 +
+>  cmds-dedup.c   | 178 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  commands.h     |   2 +
+>  ctree.h        |   2 +
+>  ioctl.h        |  12 ++++
+>  man/btrfs.8.in |  31 +++++++++-
+>  7 files changed, 224 insertions(+), 4 deletions(-)
+>  create mode 100644 cmds-dedup.c
+> 
+> diff --git a/Makefile b/Makefile
+> index da05197..369df6c 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -14,7 +14,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+>  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+>  	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+>  	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+> -	       cmds-property.o
+> +	       cmds-property.o cmds-dedup.o
+>  libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+>  		   uuid-tree.o
+>  libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+> diff --git a/btrfs.c b/btrfs.c
+> index 98ff6f5..16458ef 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -256,6 +256,7 @@ static const struct cmd_group btrfs_cmd_group = {
+>  		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
+>  		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
+>  		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
+> +		{ "dedup", cmd_dedup, NULL, &dedup_cmd_group, 0 },
+>  		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+>  		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+>  		NULL_CMD_STRUCT
+> diff --git a/cmds-dedup.c b/cmds-dedup.c
+> new file mode 100644
+> index 0000000..b959349
+> --- /dev/null
+> +++ b/cmds-dedup.c
+> @@ -0,0 +1,178 @@
+> +/*
+> + * Copyright (C) 2013 Oracle.  All rights reserved.
+> + *
+> + * This program is free software; you can redistribute it and/or
+> + * modify it under the terms of the GNU General Public
+> + * License v2 as published by the Free Software Foundation.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+> + * General Public License for more details.
+> + *
+> + * You should have received a copy of the GNU General Public
+> + * License along with this program; if not, write to the
+> + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+> + * Boston, MA 021110-1307, USA.
+> + */
 > +
-> +		if (fs_info->quota_enabled)
-> +			elem = &trans->delayed_ref_elem;
-> +		seq = btrfs_get_tree_mod_seq(fs_info, elem);
+> +#include <sys/ioctl.h>
+> +#include <unistd.h>
+> +#include <getopt.h>
+> +
+> +#include "ctree.h"
+> +#include "ioctl.h"
+> +
+> +#include "commands.h"
+> +#include "utils.h"
+> +
+> +static const char * const dedup_cmd_group_usage[] = {
+> +	"btrfs dedup <command> [options] <path>",
+> +	NULL
+> +};
+> +
+> +int dedup_ctl(char *path, struct btrfs_ioctl_dedup_args *args)
+> +{
+> +	int ret = 0;
+> +	int fd;
+> +	int e;
+> +	DIR *dirstream = NULL;
+> +
+> +	fd = open_file_or_dir(path, &dirstream);
+> +	if (fd < 0) {
+> +		fprintf(stderr, "ERROR: can't access '%s'\n", path);
+> +		return -EACCES;
 > +	}
->  	ref->seq = seq;
->  
->  	full_ref = btrfs_delayed_node_to_tree_ref(ref);
-> @@ -718,8 +723,13 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
->  	ref->is_head = 0;
->  	ref->in_tree = 1;
->  
-> -	if (need_ref_seq(for_cow, ref_root))
-> -		seq = btrfs_get_tree_mod_seq(fs_info, &trans->delayed_ref_elem);
-> +	if (need_ref_seq(for_cow, ref_root)) {
-> +		struct seq_list *elem = NULL;
 > +
-> +		if (fs_info->quota_enabled)
-> +			elem = &trans->delayed_ref_elem;
-> +		seq = btrfs_get_tree_mod_seq(fs_info, elem);
+> +	ret = ioctl(fd, BTRFS_IOC_DEDUP_CTL, args);
+> +	e = errno;
+> +	close_file_or_dir(fd, dirstream);
+> +	if (ret < 0) {
+> +		fprintf(stderr, "ERROR: dedup command failed: %s\n",
+> +			strerror(e));
+> +		if (args->cmd == BTRFS_DEDUP_CTL_DISABLE ||
+> +		    args->cmd == BTRFS_DEDUP_CTL_SET_BS)
+> +			fprintf(stderr, "please refer to 'dmesg | tail' for more info\n");
+> +		return -EINVAL;
 > +	}
->  	ref->seq = seq;
->  
->  	full_ref = btrfs_delayed_node_to_data_ref(ref);
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 2cf9058..c634b3e 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1186,6 +1186,9 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
->  {
->  	struct qgroup_update *u;
->  
-> +	if (!trans->root->fs_info->quota_enabled)
-> +		return 0;
+> +	return 0;
+> +}
 > +
->  	BUG_ON(!trans->delayed_ref_elem.seq);
->  	u = kmalloc(sizeof(*u), GFP_NOFS);
->  	if (!u)
+> +static const char * const cmd_dedup_enable_usage[] = {
+> +	"btrfs dedup enable <path>",
+> +	"Enable data deduplication support for a filesystem.",
+> +	NULL
+> +};
+> +
+> +static int cmd_dedup_enable(int argc, char **argv)
+> +{
+> +	struct btrfs_ioctl_dedup_args dargs;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_dedup_enable_usage);
+> +
+> +	dargs.cmd = BTRFS_DEDUP_CTL_ENABLE;
+> +
+> +	return dedup_ctl(argv[1], &dargs);
+> +}
+> +
+> +static const char * const cmd_dedup_disable_usage[] = {
+> +	"btrfs dedup disable <path>",
+> +	"Disable data deduplication support for a filesystem.",
+> +	NULL
+> +};
+> +
+> +static int cmd_dedup_disable(int argc, char **argv)
+> +{
+> +	struct btrfs_ioctl_dedup_args dargs;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_dedup_disable_usage);
+> +
+> +	dargs.cmd = BTRFS_DEDUP_CTL_DISABLE;
+> +
+> +	return dedup_ctl(argv[1], &dargs);
+> +}
+> +
+> +static int dedup_set_bs(char *path, struct btrfs_ioctl_dedup_args *dargs)
+> +{
+> +	return dedup_ctl(path, dargs);
+> +}
+> +
+> +static const char * const cmd_dedup_on_usage[] = {
+> +	"btrfs dedup on [-b|--bs size] <path>",
+> +	"Switch on data deduplication or change the dedup blocksize.",
+> +	"",
+> +	"-b|--bs <size>  set dedup blocksize",
+> +	NULL
+> +};
+> +
+> +static struct option longopts[] = {
+> +	{"bs", required_argument, NULL, 'b'},
+> +	{0, 0, 0, 0}
+> +};
+> +
+> +static int cmd_dedup_on(int argc, char **argv)
+> +{
+> +	struct btrfs_ioctl_dedup_args dargs;
+> +	u64 bs = 8192;
+> +
+> +	optind = 1;
+> +	while (1) {
+> +		int longindex;
+> +
+> +		int c = getopt_long(argc, argv, "b:", longopts, &longindex);
+> +		if (c < 0)
+> +			break;
+> +
+> +		switch (c) {
+> +		case 'b':
+> +			bs = parse_size(optarg);
+> +			break;
+> +		default:
+> +			usage(cmd_dedup_on_usage);
+> +		}
+> +	}
+> +
+> +	if (check_argc_exact(argc - optind, 1))
+> +		usage(cmd_dedup_on_usage);
+> +
+> +	dargs.cmd = BTRFS_DEDUP_CTL_SET_BS;
+> +	dargs.bs = bs;
+> +
+> +	return dedup_set_bs(argv[optind], &dargs);
+> +}
+> +
+> +static const char * const cmd_dedup_off_usage[] = {
+> +	"btrfs dedup off <path>",
+> +	"Switch off data deduplication.",
+> +	NULL
+> +};
+> +
+> +static int cmd_dedup_off(int argc, char **argv)
+> +{
+> +	struct btrfs_ioctl_dedup_args dargs;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_dedup_off_usage);
+> +
+> +	dargs.cmd = BTRFS_DEDUP_CTL_SET_BS;
+> +	dargs.bs = 0;
+> +
+> +	return dedup_set_bs(argv[1], &dargs);
+> +}
+> +
+> +const struct cmd_group dedup_cmd_group = {
+> +	dedup_cmd_group_usage, NULL, {
+> +		{ "enable", cmd_dedup_enable, cmd_dedup_enable_usage, NULL, 0 },
+> +		{ "disable", cmd_dedup_disable, cmd_dedup_disable_usage, 0, 0 },
+> +		{ "on", cmd_dedup_on, cmd_dedup_on_usage, NULL, 0},
+> +		{ "off", cmd_dedup_off, cmd_dedup_off_usage, NULL, 0},
+> +		{ 0, 0, 0, 0, 0 }
+> +	}
+> +};
+> +
+> +int cmd_dedup(int argc, char **argv)
+> +{
+> +	return handle_command_group(&dedup_cmd_group, argc, argv);
+> +}
+> diff --git a/commands.h b/commands.h
+> index db70043..ef2a341 100644
+> --- a/commands.h
+> +++ b/commands.h
+> @@ -92,6 +92,7 @@ extern const struct cmd_group quota_cmd_group;
+>  extern const struct cmd_group qgroup_cmd_group;
+>  extern const struct cmd_group replace_cmd_group;
+>  extern const struct cmd_group rescue_cmd_group;
+> +extern const struct cmd_group dedup_cmd_group;
+>  
+>  extern const char * const cmd_send_usage[];
+>  extern const char * const cmd_receive_usage[];
+> @@ -121,6 +122,7 @@ int cmd_select_super(int argc, char **argv);
+>  int cmd_dump_super(int argc, char **argv);
+>  int cmd_debug_tree(int argc, char **argv);
+>  int cmd_rescue(int argc, char **argv);
+> +int cmd_dedup(int argc, char **argv);
+>  
+>  /* subvolume exported functions */
+>  int test_issubvolume(char *path);
+> diff --git a/ctree.h b/ctree.h
+> index 9b461af..efedbab 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -471,6 +471,7 @@ struct btrfs_super_block {
+>  #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
+>  #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+>  #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+> +#define BTRFS_FEATURE_INCOMPAT_DEDUP		(1ULL << 10)
+>  
+>  
+>  #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+> @@ -484,6 +485,7 @@ struct btrfs_super_block {
+>  	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
+>  	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+>  	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+> +	 BTRFS_FEATURE_INCOMPAT_DEDUP |			\
+>  	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
+>  
+>  /*
+> diff --git a/ioctl.h b/ioctl.h
+> index 402317f..6d86395 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -430,6 +430,16 @@ struct btrfs_ioctl_get_dev_stats {
+>  	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
+>  };
+>  
+> +/* deduplication control ioctl modes */
+> +#define BTRFS_DEDUP_CTL_ENABLE 1
+> +#define BTRFS_DEDUP_CTL_DISABLE 2
+> +#define BTRFS_DEDUP_CTL_SET_BS 3
+> +struct btrfs_ioctl_dedup_args {
+> +	__u64 cmd;
+> +	__u64 bs;
+> +	__u64 unused[14]; /* pad to 128 bytes */
+> +};
+> +
+>  /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
+>  #define BTRFS_QUOTA_CTL_ENABLE	1
+>  #define BTRFS_QUOTA_CTL_DISABLE	2
+> @@ -596,6 +606,8 @@ struct btrfs_ioctl_clone_range_args {
+>  				      struct btrfs_ioctl_get_dev_stats)
+>  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+>  				    struct btrfs_ioctl_dev_replace_args)
+> +#define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
+> +				  struct btrfs_ioctl_dedup_args)
+>  #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+>                                    struct btrfs_ioctl_feature_flags)
+>  #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
+> diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+> index 8fea115..dd65fce 100644
+> --- a/man/btrfs.8.in
+> +++ b/man/btrfs.8.in
+> @@ -109,13 +109,22 @@ btrfs \- control a btrfs filesystem
+>  .PP
+>  \fBbtrfs\fP \fBqgroup limit\fP [\fIoptions\fP] \fI<size>\fP|\fBnone\fP [\fI<qgroupid>\fP] \fI<path>\fP
+>  .PP
+> -.PP
+>  \fBbtrfs\fP \fBreplace start\fP [-Bfr] \fI<srcdev>\fP|\fI<devid> <targetdev> <mount_point>\fP
+>  .PP
+>  \fBbtrfs\fP \fBreplace status\fP [-1] \fI<mount_point>\fP
+>  .PP
+>  \fBbtrfs\fP \fBreplace cancel\fP \fI<mount_point>\fP
+>  .PP
+> +\fBbtrfs\fP \fBdedup enable\fP \fI<path>\fP
+> +.PP
+> +\fBbtrfs\fP \fBdedup disable\fP \fI<path>\fP
+> +.PP
+> +\fBbtrfs\fP \fBdedup on\fP [-b|--bs \fIsize\fP] \fI<path>\fP
+> +.PP
+> +\fBbtrfs\fP \fBdedup off\fP \fI<path>\fP
+> +.PP
+> +.PP
+> +
+>  \fBbtrfs\fP \fBhelp|\-\-help \fP
+>  .PP
+>  \fBbtrfs\fP \fB<command> \-\-help \fP
+> @@ -764,12 +773,28 @@ Print status and progress information of a running device replace operation.
+>  .IP "\fB-1\fP" 5
+>  print once instead of print continuously until the replace
+>  operation finishes (or is canceled)
+> -.RE
+> -.TP
+>  
+>  \fBreplace cancel\fR \fI<mount_point>\fR
+>  Cancel a running device replace operation.
+>  .RE
+> +.TP
+> +
+> +\fBdedup enable\fP \fI<path>\fP
+> +Enable data deduplication support for a filesystem.
+> +.TP
+> +
+> +\fBdedup disable\fP \fI<path>\fP
+> +Disable data deduplication support for a filesystem.
+> +.TP
+> +
+> +\fBdedup on\fP [-b|--bs \fIsize\fP] \fI<path>\fP
+> +Switch on data deduplication or change the dedup blocksize.
+> +.TP
+> +
+> +\fBdedup off\fP \fI<path>\fP
+> +Switch off data deduplication.
+> +.RE
+> +.TP
+>  
+>  .SH EXIT STATUS
+>  \fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
 > -- 
 > 1.8.2.1
 > 

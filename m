@@ -1,54 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54243 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933109AbaDIL0J (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 07:26:09 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s39BPsdn027375
-	for <linux-btrfs@vger.kernel.org>; Wed, 9 Apr 2014 19:25:54 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: make sure there are not any read requests before stopping workers
-Date: Wed, 9 Apr 2014 19:23:22 +0800
-Message-ID: <1397042602-23205-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-we0-f171.google.com ([74.125.82.171]:48221 "EHLO
+	mail-we0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932807AbaDINh7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 09:37:59 -0400
+Received: by mail-we0-f171.google.com with SMTP id t61so2492703wes.30
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 06:37:58 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: check if items are ordered when a leaf is marked dirty
+Date: Wed,  9 Apr 2014 15:37:06 +0100
+Message-Id: <1397054226-17950-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In close_ctree(), after we have stopped all workers,there maybe still
-some read requests(for example readahead) to submit and this *maybe* trigger
-an oops that user reported before:
+To ease finding bugs during development related to modifying btree leaves
+in such a way that it makes its items not sorted by key anymore. Since this
+is an expensive check, it's only enabled if CONFIG_BTRFS_FS_CHECK_INTEGRITY
+is set, which isn't meant to be enabled for regular users.
 
-kernel BUG at fs/btrfs/async-thread.c:619!
-
-By hacking codes, i can reproduce this problem with one cpu available.
-We fix this potential problem by invalidating all btree inode pages before
-stopping all workers.
-
-Thanks to Miao for pointing out this problem.
-
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/disk-io.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/disk-io.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d9698fd..8a49823 100644
+index d9698fd..8bf6628 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3619,6 +3619,11 @@ int close_ctree(struct btrfs_root *root)
+@@ -3695,6 +3695,12 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+ 		__percpu_counter_add(&root->fs_info->dirty_metadata_bytes,
+ 				     buf->len,
+ 				     root->fs_info->dirty_metadata_batch);
++#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
++	if (btrfs_header_level(buf) == 0 && check_leaf(root, buf)) {
++		btrfs_print_leaf(root, buf);
++		ASSERT(0);
++	}
++#endif
+ }
  
- 	btrfs_free_block_groups(fs_info);
- 
-+	/*
-+	 * we must make sure there is not any read request to
-+	 * submit after we stopping all workers.
-+	 */
-+	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 	btrfs_stop_all_workers(fs_info);
- 
- 	free_root_pointers(fs_info, 1);
+ static void __btrfs_btree_balance_dirty(struct btrfs_root *root,
 -- 
-1.9.0
+1.9.1
 

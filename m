@@ -1,97 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:48195 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758486AbaDILlL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 07:41:11 -0400
-Date: Wed, 9 Apr 2014 12:41:07 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:58956 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932482AbaDIL4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Apr 2014 07:56:37 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WXr7J-0008Ed-20
+	for linux-btrfs@vger.kernel.org; Wed, 09 Apr 2014 13:56:33 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 13:56:33 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 13:56:33 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Using noCow with snapshots ?
-Message-ID: <20140409114107.GZ7442@carfax.org.uk>
+Date: Wed, 9 Apr 2014 11:56:20 +0000 (UTC)
+Message-ID: <pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net>
 References: <1541415.olHfkWYf4R@zafu>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="1olvqv+k0f6DP9aD"
-In-Reply-To: <1541415.olHfkWYf4R@zafu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Swâmi Petaramesh posted on Wed, 09 Apr 2014 13:15:24 +0200 as excerpted:
 
---1olvqv+k0f6DP9aD
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Apr 09, 2014 at 01:15:24PM +0200, Sw=E2mi Petaramesh wrote:
-> Hi,
->=20
-> In the quest for BTRFS and performance, and having received the advice to=
-=20
-> "chattr +C" my akonadi DB directory to make it noCow, I would like to be =
-sure=20
-> about what will happen when I take a snapshot of the concerned BTRFS=20
-> subvolume.
->=20
-> 1/ Being noCow, will the database be modified in the snapshot as well,=20
+> In the quest for BTRFS and performance, and having received the advice
+> to "chattr +C" my akonadi DB directory to make it noCow, I would like to
+> be sure about what will happen when I take a snapshot of the concerned
+> BTRFS subvolume.
+> 
+> 1/ Being noCow, will the database be modified in the snapshot as well,
 > efectively defeating the snapshot ?
-
-   No (see below)
-
+> 
 > 2/ Being snapshotted, will the database be COWed even though it's
 > supposed to be noCow ?
-
-   Yes -- once.
-
-   When you make a snapshot of a nodatacow file, the data is shared
-between the snapshot and the original as normal. The extents are
-reference counted, so the original data now has two references to it.
-
-   When one of these copies is written to, the writes are placed
-somewhere else on the disk, still marked as nodatacow, and the
-reference count is reduced to 1 for each copy again. (Note that this
-is done on a per-block basis, although the 30-second transaction
-commit will tend to coalesce adjacent blocks to reduce fragmentation;
-autodefrag helps here, too).
-
-   Basically, a snapshot of a nodatacow file will increase the
-reference count for its blocks. A write to a block with a reference
-count of more than one will *always* write a new block elsewhere. A
-write to a block with a reference count of exactly one will not do so
-if the file is marked nodatacow. I hope that's clear.
-
+> 
 > 3/ Are both options mutually incompatible in some more osbcure ways ?
+> 
+> I'd like to know where I'm going with this ;-)
 
-   Only as noted above.
 
-   Hugo.
+Good questions. =:^)
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- There are three mistaikes in this sentance. ---          =20
+#2. That's from one of the devs when the question came up perhaps a 
+couple months ago.
 
---1olvqv+k0f6DP9aD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+On a NOCOW file the first write to a fileblock (4096 bytes) after a 
+snapshot must still be COW, because the snapshot locks the old version in 
+place, and now the fileblock has changed, so it MUST be written elsewhere 
+despite the NOCOW in ordered to keep the snapshot as it was.  However, 
+the file does retain the NOCOW attribute and additional writes to the 
+same fileblock will be in-place... until the next snapshot of course.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+This is why on filesystems with scripted snapshots as close as a minute a 
+part (I even saw one guy say he was doing them every 30 seconds!!), 
+setting NOCOW has very little value -- they aren't NOCOW on the first 
+write after a snapshot, and with snapshots happening every minute...,  
+Hourly snapshots are still likely to be a problem on a regularly changing 
+file, tho with daily snapshots you'd probably save some fragmentation 
+over the fairly short term anyway, but it'd still be a problem longer 
+term.
 
-iQIVAwUBU0Ux01heFHXiqx3kAQIo8w//SgMWwzjCPp5dgzqKGY6JatAxjFZ6bGW4
-jmS6MqZs4VnYYII0Z/MSSZnRygPVeeTIUCDQjSEK7zv+M6Won+U4YYbEU5bUBdxn
-9KuIvaRcOyrldehrNbV00A/ib6Yy+UqknGXdtZgfeK6g5jZyJhygwYDqin3scnh+
-0wcfmZTXDs/ON68NAwI686jb2A0+zArkotWzE25H5Elp6t6CcvAWUnqOJYDP9KAd
-fjcGIyDiq1BPbCBAB8vcrn/m1RXefxdIYBC+f6wSlmgDcNzvhFHAr/Lp6YtbNbU6
-as+IaugrHm2owCh0c0b67j8FSWqmR6oijQe66xeq2+qq+TKkivQ7rRuh1MkkheAT
-gy6dpiH6ivzQp9u+USFttJOI84q3U4Aos5jtOYn+r/wPDZq1JTRrGHtNWjFoiS1n
-SQYAEYSPC95v7N7oEu1OVf04y9wnzUlPEVNMPVnU5Gm1TJ2xtzpGd6YAL7PserMZ
-RczGLXLetsI4laL2Rrxs/USJmFN91o8gXtlonWshFuzgcvc09lsLm4z3QKvbEl6q
-MnkHmwSHYEnItvGCnn9SwiE4Rb+ru6KZ5g6BfTS7wsKOOgD8jFOZKfPSH5X5m4XU
-DrbjsUi7UBwvlSGBRnkDfEU4QygXRTcUx8RJlfEHLMMmSbAY4ypk2KVGmrpuzTxD
-YTxgSbhpKJ4=
-=an5P
------END PGP SIGNATURE-----
+Which is why I suggest putting such files on a separate subvolume and not 
+snapshotting that subvolume, since snapshots stop at the subvolume 
+boundary.  That gives NOCOW a chance to actually *BE* NOCOW.
 
---1olvqv+k0f6DP9aD--
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,110 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57304 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757863AbaD2QDF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Apr 2014 12:03:05 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D5367AC4F
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 16:03:04 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:29970 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752839AbaDIHJY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:09:24 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 14/14] btrfs-progs: move global reserve to overall summary
-Date: Tue, 29 Apr 2014 18:03:03 +0200
-Message-Id: <79ac9baac3701d9515d44b6a3724bca6be0d7842.1398786620.git.dsterba@suse.cz>
-In-Reply-To: <cover.1398786620.git.dsterba@suse.cz>
-References: <cover.1398786620.git.dsterba@suse.cz>
+Cc: Marcel Ritter <ritter.marcel@gmail.com>,
+        Christian Robert <christian.robert@polymtl.ca>, <alanqk@gmail.com>,
+        Konstantinos Skarlatos <k.skarlatos@gmail.com>,
+        David Sterba <dsterba@suse.cz>,
+        Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
+        Chris Mason <clm@fb.com>
+Subject: [RFC PATCH v9 00/16] Online(inband) data deduplication
+Date: Wed,  9 Apr 2014 15:08:28 +0800
+Message-Id: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks confusing among the chunks, it is not in fact a chunk type.
+Hello,
 
-Sample:
-Overall:
-    Device size:                  35.00GiB
-    Device allocated:              8.07GiB
-    Device unallocated:           26.93GiB
-    Used:                          1.12MiB
-    Free (Estimated):             17.57GiB      (Max: 30.98GiB, min: 17.52GiB)
-    Data to device ratio:             50 %
-    Global reserve:               16.00MiB      (used: 0.00B)
-...
+This the 9th attempt for in-band data dedupe.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- cmds-fi-disk_usage.c | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
+Data deduplication is a specialized data compression technique for eliminating
+duplicate copies of repeating data.[1]
 
-diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
-index d0b061ec7eb0..d8222d4d094d 100644
---- a/cmds-fi-disk_usage.c
-+++ b/cmds-fi-disk_usage.c
-@@ -319,6 +319,8 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 	u64 total_free;		/* logical space un-used */
- 	double K;
- 	u64 raid5_used, raid6_used;
-+	u64 global_reserve;
-+	u64 global_reserve_used;
- 
- 	sargs = load_space_info(fd, path);
- 	if (!sargs) {
-@@ -341,6 +343,8 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 	total_chunks = 0;
- 	total_used = 0;
- 	total_free = 0;
-+	global_reserve = 0;
-+	global_reserve_used = 0;
- 
- 	for (i = 0; i < sargs->total_spaces; i++) {
- 		float ratio = 1;
-@@ -366,6 +370,11 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		else
- 			ratio = 1;
- 
-+		if (flags & BTRFS_SPACE_INFO_GLOBAL_RSV) {
-+			global_reserve = sargs->spaces[i].total_bytes;
-+			global_reserve_used = sargs->spaces[i].used_bytes;
-+		}
-+
- 		allocated = sargs->spaces[i].total_bytes * ratio;
- 
- 		total_chunks += allocated;
-@@ -404,6 +413,9 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		pretty_size_mode((total_disk-total_chunks) / 2 + total_free, mode));
- 	printf("    Data to device ratio:\t%*.0f %%\n",
- 		width - 2, K * 100);
-+	printf("    Global reserve:\t\t%*s\t(used: %s)\n", width,
-+		pretty_size_mode(global_reserve, mode),
-+		pretty_size_mode(global_reserve_used, mode));
- 
- exit:
- 
-@@ -553,8 +565,11 @@ static void _cmd_filesystem_usage_tabular(int mode,
- 	/* header */
- 	for (i = 0; i < sargs->total_spaces; i++) {
- 		const char *description;
--
- 		u64 flags = sargs->spaces[i].flags;
-+
-+		if (flags & BTRFS_SPACE_INFO_GLOBAL_RSV)
-+			continue;
-+
- 		description = group_type_str(flags);
- 
- 		table_printf(matrix, 1+i, 0, "<%s", description);
-@@ -715,8 +730,11 @@ static void _cmd_filesystem_usage_linear(int mode,
- 	for (i = 0; i < sargs->total_spaces; i++) {
- 		const char *description;
- 		const char *r_mode;
--
- 		u64 flags = sargs->spaces[i].flags;
-+
-+		if (flags & BTRFS_SPACE_INFO_GLOBAL_RSV)
-+			continue;
-+
- 		description= group_type_str(flags);
- 		r_mode = group_profile_str(flags);
- 
+This patch set is also related to "Content based storage" in project ideas[2],
+it introduces inband data deduplication for btrfs and dedup/dedupe is for short.
+
+* PATCH 1 is a speed-up improvement, which is about dedup and quota.
+
+* PATCH 2-5 is the preparation work for dedup implementation.
+
+* PATCH 6 shows how we implement dedup feature.
+
+* PATCH 7 fixes a backref walking bug with dedup.
+
+* PATCH 8 fixes a free space bug of dedup extents on error handling.
+
+* PATCH 9 adds the ioctl to control dedup feature.
+
+* PATCH 10 targets delayed refs' scalability problem of deleting refs, which is 
+  uncovered by the dedup feature.
+
+* PATCH 11-16 fixes bugs of dedupe including race bug, deadlock, abnormal
+  transaction abortion and crash.
+
+* btrfs-progs patch(PATCH 17) which offers all details about how to control the
+  dedup feature on progs side.
+
+I've tested this with xfstests by adding a inline dedup 'enable & on' in xfstests'
+mount and scratch_mount.
+
+
+***NOTE***
+Known bugs:
+* Mounting with options "flushoncommit" and enabling dedupe feature will end up
+  with _deadlock_.
+
+
+TODO:
+* a bit-to-bit comparison callback.
+
+All comments are welcome!
+
+
+[1]: http://en.wikipedia.org/wiki/Data_deduplication
+[2]: https://btrfs.wiki.kernel.org/index.php/Project_ideas#Content_based_storage
+
+v9:
+- fix a deadlock and a crash reported by users.
+- fix the metadata ENOSPC problem with dedup again.
+
+v8:
+- fix the race crash of dedup ref again.
+- fix the metadata ENOSPC problem with dedup.
+
+v7:
+- rebase onto the lastest btrfs
+- break a big patch into smaller ones to make reviewers happy.
+- kill mount options of dedup and use ioctl method instead.
+- fix two crash due to the special dedup ref
+
+For former patch sets:
+v6: http://thread.gmane.org/gmane.comp.file-systems.btrfs/27512
+v5: http://thread.gmane.org/gmane.comp.file-systems.btrfs/27257
+v4: http://thread.gmane.org/gmane.comp.file-systems.btrfs/25751
+v3: http://comments.gmane.org/gmane.comp.file-systems.btrfs/25433
+v2: http://comments.gmane.org/gmane.comp.file-systems.btrfs/24959
+
+Liu Bo (16):
+  Btrfs: disable qgroups accounting when quata_enable is 0
+  Btrfs: introduce dedup tree and relatives
+  Btrfs: introduce dedup tree operations
+  Btrfs: introduce dedup state
+  Btrfs: make ordered extent aware of dedup
+  Btrfs: online(inband) data dedup
+  Btrfs: skip dedup reference during backref walking
+  Btrfs: don't return space for dedup extent
+  Btrfs: add ioctl of dedup control
+  Btrfs: improve the delayed refs process in rm case
+  Btrfs: fix a crash of dedup ref
+  Btrfs: fix deadlock of dedup work
+  Btrfs: fix transactin abortion in __btrfs_free_extent
+  Btrfs: fix wrong pinned bytes in __btrfs_free_extent
+  Btrfs: use total_bytes instead of bytes_used for global_rsv
+  Btrfs: fix dedup enospc problem
+
+ fs/btrfs/backref.c           |   9 +
+ fs/btrfs/ctree.c             |   2 +-
+ fs/btrfs/ctree.h             |  86 ++++++
+ fs/btrfs/delayed-ref.c       |  26 +-
+ fs/btrfs/delayed-ref.h       |   3 +
+ fs/btrfs/disk-io.c           |  37 +++
+ fs/btrfs/extent-tree.c       | 235 +++++++++++++---
+ fs/btrfs/extent_io.c         |  22 +-
+ fs/btrfs/extent_io.h         |  16 ++
+ fs/btrfs/file-item.c         | 244 +++++++++++++++++
+ fs/btrfs/inode.c             | 635 ++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c             | 167 ++++++++++++
+ fs/btrfs/ordered-data.c      |  44 ++-
+ fs/btrfs/ordered-data.h      |  13 +-
+ fs/btrfs/qgroup.c            |   3 +
+ fs/btrfs/relocation.c        |   3 +
+ fs/btrfs/transaction.c       |  41 +++
+ fs/btrfs/transaction.h       |   1 +
+ include/trace/events/btrfs.h |   3 +-
+ include/uapi/linux/btrfs.h   |  11 +
+ 20 files changed, 1470 insertions(+), 131 deletions(-)
+
 -- 
-1.9.0
-
+1.8.2.1

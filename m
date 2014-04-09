@@ -1,169 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:58546 "EHLO
-	out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750770AbaDIHpK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Apr 2014 03:45:10 -0400
-Received: from compute1.internal (compute1.nyi.mail.srv.osa [10.202.2.41])
-	by gateway1.nyi.mail.srv.osa (Postfix) with ESMTP id F1BA220B93
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Apr 2014 03:45:09 -0400 (EDT)
-Message-ID: <5344FA85.1030802@grosser.es>
-Date: Wed, 09 Apr 2014 09:45:09 +0200
-From: Tobias Grosser <tobias@grosser.es>
+Received: from csamuel.org ([74.50.50.137]:33146 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932712AbaDIKxu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Apr 2014 06:53:50 -0400
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>,
+        Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS setup advice for laptop performance ?
+Date: Wed, 09 Apr 2014 20:53:20 +1000
+Message-ID: <1748210.42KeASGE2J@quad>
+In-Reply-To: <5342C00F.8070001@gmail.com>
+References: <2692878.dRG1K49eOP@fnix> <12471892.pAn1KAtSS4@tethys> <5342C00F.8070001@gmail.com>
 MIME-Version: 1.0
-To: aagaande@gmail.com, linux-btrfs@vger.kernel.org
-Subject: Re: dm-crypt + btrfs preformance - long lockups during io
-In-Reply-To: <CANOdGizDdNvBjFu+LSGpUdpbO+PeuRLE=Qa-3eQRXhzDtpyFDw@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; boundary="nextPart21173548.1mGQha3dTz"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 5, 2014 at 10:54 AM, Anders Aagaard <aagaande@xxxxxxxxx> wrote:
- > Hi
- >
- > I just recently repartitioned my harddrive, and in the process
-switched from
- > ext4+ecryptfs to dm-crypt and btrfs. I'm on ubuntu 14.04, using kernel
- > 3.14.0-031400-generic. I'm using a intel ssd, which btrfs detects
-(ssd mode
- > enabled according to dmesg).
 
-I also saw and still see lockups on linux 3.8 with a similar 
-configuration. btrfs on dm-crypt with SSD mode. I use slightly different 
-mount options:
+--nextPart21173548.1mGQha3dTz
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
 
-/dev/mapper/sda4_crypt on /home type btrfs 
-(rw,noatime,flushoncommit,subvol=@home)
-/dev/mapper/sda4_crypt on /store type btrfs (rw,subvol=@store)
-/dev/mapper/sda4_crypt on /home/grosser type btrfs 
-(rw,noatime,flushoncommit,subvol=@grosser)
+On Mon, 7 Apr 2014 11:11:11 AM Austin S Hemmelgarn wrote:
 
-(I previously also used compression. This is disabled at the moment, but 
-compressed files are still around)
+> This is because every other filesystem (except ZFS) doesn't use COW
+> semantics.
 
-latencytop gives the following information:
+There is an interesting article on LWN at the moment (subscriber only f=
+or the=20
+next day or two, but if you can afford it I'd suggest considering subsc=
+ribing)=20
+about the Linux Storage, Filesystem, and Memory Management (LSFMM) Summ=
+it=20
+discussions around the impact of the new Shingle Magnetic Recording (SM=
+R)=20
+drives that may change that.
+
+Given these devices are likely to have large sequential write only area=
+s it's=20
+going to make getting existing Linux filesystems to work on them "inter=
+esting",=20
+in the section on Dave Chinners filesystem part of the discussion it sa=
+ys:
+
+# Any of the existing filesystems that do not support copy-on-write (CO=
+W)
+# cannot really be optimized for SMR, he said, because you can't overwr=
+ite
+# data in sequential zones. That would mean adding COW to ext4 and XFS,=
+
+# Chinner said.=20
+
+https://lwn.net/Articles/592091/
+
+There's some background to SMR drives (available to all) from the LSFMM=
+ here:
+
+https://lwn.net/Articles/591782/
+
+All the best,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
 
-firefox: 22909.8 ms latency, cause fsync() on a file
+--nextPart21173548.1mGQha3dTz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-The corresponding backtrace is:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.14 (GNU/Linux)
 
-btrfs_log_inode_parent
-[btrfs]
-btrfs_log_dentry_safe
-[btrfs]
-btrfs_sync_file
-[btrfs]
-do_fsync
-sys_fsync
-system_call_fastpath
+iQEVAwUAU0UmoI1yjaOTJg85AQKO7QgAk94QoA3I7hxCOxdT1ijNlRcwtJq01D8X
+KdG0oHyzPloEK2wUuB8ZsFNrQkbDoViGGAjgaW8LMcm7ytGb4BBnQGBjQqtlIMYa
+3zLCGFDDXC8LqX3fHGGbBl2S/Hir19LmD5aHEwzJl0WsNOaZRTDkNKsULxaSe5nW
+lAVlGFgdr0CgBkmMugwY4hfYojs9vGdHzQgbC6mqwDYh1/IddwBfJoB9BTRYjREl
+aQy/CV6YhNGqo8FN4/ClLB7P47Aki+txy/1lUP/el1sMFnbRzdcgFxftYkONnUIN
+h1HeG3BQRf/eyr6oBKjMv6zxW4VfjReIUc0bchqlWTMrwF5sUxijwA==
+=qccp
+-----END PGP SIGNATURE-----
 
-There are also 6 processes called
+--nextPart21173548.1mGQha3dTz--
 
-btrfs-endio-wri?? with 1050-1391 ms latency due to [sleep_on_page].
-
-The corresponding backtraces are (3x):
-
-sleep_on_page
-wait_on_page_bit
-read_extent_buffer_pages
-[btrfs]
-btree_read_extend_buffer_pages.constprop.119
-[btrfs]
-read_tree_block
-[btrfs]
-read_node_slot
-[btrfs]
-push_leaf_right
-[btrfs]
-split_leaf
-[btrfs]
-btrfs_search_slot
-[btrfs]
-btrfs_csum_file_blocks
-[btrfs]
-add_pending_csums.isra.42
-[btrfs]
-btrfs_finish_ordered_io
-[btrfs]
-
-1x:
-
-sleep_on_page
-wait_on_page_bit
-read_extent_buffer_pages
-[btrfs]
-btree_read_extend_buffer_pages.constprop.119
-[btrfs]
-read_tree_block
-[btrfs]
-read_block_for_search.isra.51
-[btrfs]
-btrfs_search_slot
-[btrfs]
-btrfs_insert_empty_items
-[btrfs]
-run_clustered_refs
-[btrfs]
-btrfs_run_delayed_refs
-[btrfs]
-__btrfs_end_transaction
-[btrfs]
-btfs_end_transaction
-[btrfs]
-
-1x
-sleep_on_page
-wait_on_page_bit
-read_extent_buffer_pages
-[btrfs]
-btree_read_extend_buffer_pages.constprop.119
-[btrfs]
-read_tree_block
-[btrfs]
-read_node_slot
-[btrfs]
-push_leaf_left
-[btrfs]
-split_leaf
-[btrfs]
-btrfs_search_slot
-[btrfs]
-btrfs_insert_empty_items
-[btrfs]
-btrfs_csum_file_blocks
-[btrfs]
-add_pending_csums.isra.42
-[btrfs]
-
-1x
-sleep_on_page
-wait_on_page_bit
-read_extent_buffer_pages
-[btrfs]
-btree_read_extend_buffer_pages.constprop.119
-[btrfs]
-read_tree_block
-[btrfs]
-read_node_slot
-[btrfs]
-push_leaf_right
-[btrfs]
-split_leaf
-[btrfs]
-btrfs_search_slot
-[btrfs]
-btrfs_csum_file_blocks
-[btrfs]
-add_pending_csums.isra.42
-[btrfs]
-btrfs_finish_ordered_io
-[btrfs]
-
-At the moment of deadlock, I am just running normal desktop applications 
-like thunderbird and firefox.
-
-Cheers,
-Tobias
-
-Any idea where such long delays may come from.

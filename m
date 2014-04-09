@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29000 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758261AbaDIHJv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:09:51 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:30291 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932592AbaDIHJ6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:09:58 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
@@ -11,35 +11,47 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: [PATCH v9 13/16] Btrfs: fix transactin abortion in __btrfs_free_extent
-Date: Wed,  9 Apr 2014 15:08:41 +0800
-Message-Id: <1397027325-27151-14-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v9 14/16] Btrfs: fix wrong pinned bytes in __btrfs_free_extent
+Date: Wed,  9 Apr 2014 15:08:42 +0800
+Message-Id: <1397027325-27151-15-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 References: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need to reset @refs_to_drop to 1 when we're going to delete the last
-special dedup reference, otherwise we can trigger (@refs < @refs_to_drop)
-and end up with transaction abortion.
+With the special dedup reference, in the case of (refs == 1) in __btrfs_free_extent,
+we'll actually free the extent, so pinned_bytes of it should not be added to that
+global counter.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent-tree.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/extent-tree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4c1c342..1cb3ec5 100644
+index 1cb3ec5..b8fee86 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5931,6 +5931,7 @@ again:
- 			btrfs_release_path(path);
- 			root_objectid = BTRFS_DEDUP_TREE_OBJECTID;
- 			parent = 0;
-+			refs_to_drop = 1;
+@@ -5915,9 +5915,6 @@ again:
+ 				goto out;
+ 			}
+ 		}
+-		add_pinned_bytes(root->fs_info, -num_bytes, owner_objectid,
+-				 root_objectid);
+-
+ 		/*
+ 		 * special case for dedup
+ 		 *
+@@ -5934,6 +5931,9 @@ again:
+ 			refs_to_drop = 1;
  
  			goto again;
++		} else {
++			add_pinned_bytes(root->fs_info, -num_bytes,
++					 owner_objectid, root_objectid);
  		}
+ 	} else {
+ 		if (is_data && root_objectid == BTRFS_DEDUP_TREE_OBJECTID) {
 -- 
 1.8.2.1
 

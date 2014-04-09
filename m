@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28999 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:29000 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758213AbaDIHJv (ORCPT
+	with ESMTP id S1758261AbaDIHJv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:09:51 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
@@ -11,50 +11,35 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: [PATCH v9 12/16] Btrfs: fix deadlock of dedup work
-Date: Wed,  9 Apr 2014 15:08:40 +0800
-Message-Id: <1397027325-27151-13-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v9 13/16] Btrfs: fix transactin abortion in __btrfs_free_extent
+Date: Wed,  9 Apr 2014 15:08:41 +0800
+Message-Id: <1397027325-27151-14-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 References: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Checking for dedup references needs to allocate memory so it cannot
-be run within spin_lock, otherwise it will end up with heavy deadlock.
+We need to reset @refs_to_drop to 1 when we're going to delete the last
+special dedup reference, otherwise we can trigger (@refs < @refs_to_drop)
+and end up with transaction abortion.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent-tree.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a8da7aa..4c1c342 100644
+index 4c1c342..1cb3ec5 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5720,7 +5720,6 @@ again:
- 	dedup_hash = 0;
- 
- 	path->reada = 1;
--	path->leave_spinning = 1;
- 
- 	is_data = owner_objectid >= BTRFS_FIRST_FREE_OBJECTID;
- 	BUG_ON(!is_data && refs_to_drop != 1);
-@@ -5774,7 +5773,6 @@ again:
- 				goto out;
- 			}
+@@ -5931,6 +5931,7 @@ again:
  			btrfs_release_path(path);
--			path->leave_spinning = 1;
+ 			root_objectid = BTRFS_DEDUP_TREE_OBJECTID;
+ 			parent = 0;
++			refs_to_drop = 1;
  
- 			key.objectid = bytenr;
- 			key.type = BTRFS_EXTENT_ITEM_KEY;
-@@ -5942,6 +5940,7 @@ again:
- 				dedup_hash = extent_data_ref_offset(root,
- 								    path, iref);
- 
-+			WARN_ON_ONCE(path->leave_spinning);
- 			ret = btrfs_free_dedup_extent(trans, root,
- 						      dedup_hash, bytenr);
- 			if (ret) {
+ 			goto again;
+ 		}
 -- 
 1.8.2.1
 

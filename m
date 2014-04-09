@@ -1,66 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:35735 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932560AbaDILIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Apr 2014 07:08:34 -0400
-From: Chris Samuel <chris@csamuel.org>
+Received: from relay6-d.mail.gandi.net ([217.70.183.198]:58557 "EHLO
+	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932726AbaDILP3 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 07:15:29 -0400
+Received: from mfilter7-d.gandi.net (mfilter7-d.gandi.net [217.70.178.136])
+	by relay6-d.mail.gandi.net (Postfix) with ESMTP id 93B0BFB8BF
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Apr 2014 13:15:27 +0200 (CEST)
+Received: from relay6-d.mail.gandi.net ([217.70.183.198])
+	by mfilter7-d.gandi.net (mfilter7-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id rApdKfn8zOqv for <linux-btrfs@vger.kernel.org>;
+	Wed,  9 Apr 2014 13:15:26 +0200 (CEST)
+Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
+	(Authenticated sender: michel@bouissou.net)
+	by relay6-d.mail.gandi.net (Postfix) with ESMTPSA id DB852FB874
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Apr 2014 13:15:25 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 To: linux-btrfs@vger.kernel.org
-Cc: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Wed, 09 Apr 2014 21:08:04 +1000
-Message-ID: <2465844.PWmHTHSuJS@quad>
-In-Reply-To: <2692878.dRG1K49eOP@fnix>
-References: <2692878.dRG1K49eOP@fnix>
+Subject: Using noCow with snapshots ?
+Date: Wed, 09 Apr 2014 13:15:24 +0200
+Message-ID: <1541415.olHfkWYf4R@zafu>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1925277.oMLAmCKECZ"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---nextPart1925277.oMLAmCKECZ
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+In the quest for BTRFS and performance, and having received the advice to 
+"chattr +C" my akonadi DB directory to make it noCow, I would like to be sure 
+about what will happen when I take a snapshot of the concerned BTRFS 
+subvolume.
 
-On Fri, 4 Apr 2014 10:02:27 AM Sw=E2mi Petaramesh wrote:
+1/ Being noCow, will the database be modified in the snapshot as well, 
+efectively defeating the snapshot ?
 
-> However I'm still concerned with chronic BTRFS dreadful performance a=
-nd
-> still  find that BRTFS degrades much over time even with periodic def=
-rag
-> and "best practices" etc.
+2/ Being snapshotted, will the database be COWed even though it's supposed to 
+be noCow ?
 
-That's odd, I've been running it on laptops with SSDs since 2009 and ha=
-ven't=20
-hit this yet.    I'm a KDE user too (though not using Kmail/Akonadi on =
-the=20
-machines in question).
+3/ Are both options mutually incompatible in some more osbcure ways ?
 
-Sorry I can't do much more than say "works for me", but that happens to=
- be the=20
-case.. :-(
+I'd like to know where I'm going with this ;-)
 
-cheers!
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+TIA and kind regards.
 
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
---nextPart1925277.oMLAmCKECZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
-
-iQEVAwUAU0UqFI1yjaOTJg85AQKwaQf+MN6FbGRLo5C62liiU8DK+rjXMN721Oqf
-bIFripee2fCxv8EyjTKjCBPsq9YjuU3lkuELzv9tec8bEHYSSVw8LDUmmD0J4rs2
-+sYzE3kUI7peTSyuBpIgDKmXbkJA4B/keaANlKLQ6iThb6k7ZcaFCP/i69MzJ6I1
-iR3gef3M9EHFu4F7kPJpEqSLhjrxvqdGSX67iorzcbZ+XCIV+XpQXSlxr2U8JaVJ
-k1yWYoSCLvdlmMMuVi5+hycYS6dUzTQDw4fu/itsyrlC0PI4LBQZxURZDk2HsnDV
-aILSderK1nJ3kmVGgn/5H6cigxb0co/LnKSE9gpYzX4RfFHyetv5HQ==
-=XBXD
------END PGP SIGNATURE-----
-
---nextPart1925277.oMLAmCKECZ--
 

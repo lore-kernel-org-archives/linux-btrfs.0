@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29255 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932604AbaDIHKH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:10:07 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:47662 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932247AbaDIKLM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 06:11:12 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
@@ -11,11 +11,11 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: [PATCH v4] Btrfs-progs: add dedup subcommand
-Date: Wed,  9 Apr 2014 15:08:45 +0800
-Message-Id: <1397027325-27151-18-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
-References: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v5] Btrfs-progs: add dedup subcommand
+Date: Wed,  9 Apr 2014 18:10:40 +0800
+Message-Id: <1397038240-29614-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1397027325-27151-18-git-send-email-bo.li.liu@oracle.com>
+References: <1397027325-27151-18-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -55,36 +55,34 @@ v4: rebase and reserve spare space in btrfs_ioctl_dedup_args struct.
 v3: add commands 'btrfs dedup on/off'
 v2: add manpage
 
-
- Makefile       |   3 +-
+ Makefile       |   2 +-
  btrfs.c        |   1 +
  cmds-dedup.c   | 178 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  commands.h     |   2 +
  ctree.h        |   2 +
- ioctl.h        |  13 +++++
+ ioctl.h        |  12 ++++
  man/btrfs.8.in |  31 +++++++++-
- 7 files changed, 226 insertions(+), 4 deletions(-)
+ 7 files changed, 224 insertions(+), 4 deletions(-)
  create mode 100644 cmds-dedup.c
 
 diff --git a/Makefile b/Makefile
-index 0874a41..092f2db 100644
+index da05197..369df6c 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -13,7 +13,8 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+@@ -14,7 +14,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
  	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
  	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
--	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o
-+	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
-+	       cmds-dedup.o
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+-	       cmds-property.o
++	       cmds-property.o cmds-dedup.o
  libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
  		   uuid-tree.o
  libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
 diff --git a/btrfs.c b/btrfs.c
-index d5fc738..dfae35f 100644
+index 98ff6f5..16458ef 100644
 --- a/btrfs.c
 +++ b/btrfs.c
-@@ -255,6 +255,7 @@ static const struct cmd_group btrfs_cmd_group = {
+@@ -256,6 +256,7 @@ static const struct cmd_group btrfs_cmd_group = {
  		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
  		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
  		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
@@ -277,10 +275,10 @@ index 0000000..b959349
 +	return handle_command_group(&dedup_cmd_group, argc, argv);
 +}
 diff --git a/commands.h b/commands.h
-index b791d68..6fccc15 100644
+index db70043..ef2a341 100644
 --- a/commands.h
 +++ b/commands.h
-@@ -91,6 +91,7 @@ extern const struct cmd_group quota_cmd_group;
+@@ -92,6 +92,7 @@ extern const struct cmd_group quota_cmd_group;
  extern const struct cmd_group qgroup_cmd_group;
  extern const struct cmd_group replace_cmd_group;
  extern const struct cmd_group rescue_cmd_group;
@@ -288,7 +286,7 @@ index b791d68..6fccc15 100644
  
  extern const char * const cmd_send_usage[];
  extern const char * const cmd_receive_usage[];
-@@ -119,6 +120,7 @@ int cmd_select_super(int argc, char **argv);
+@@ -121,6 +122,7 @@ int cmd_select_super(int argc, char **argv);
  int cmd_dump_super(int argc, char **argv);
  int cmd_debug_tree(int argc, char **argv);
  int cmd_rescue(int argc, char **argv);
@@ -297,27 +295,27 @@ index b791d68..6fccc15 100644
  /* subvolume exported functions */
  int test_issubvolume(char *path);
 diff --git a/ctree.h b/ctree.h
-index 2117374..dbd86ec 100644
+index 9b461af..efedbab 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -470,6 +470,7 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF	(1ULL << 6)
+@@ -471,6 +471,7 @@ struct btrfs_super_block {
  #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
  #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
 +#define BTRFS_FEATURE_INCOMPAT_DEDUP		(1ULL << 10)
  
  
  #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
-@@ -482,6 +483,7 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
+@@ -484,6 +485,7 @@ struct btrfs_super_block {
  	 BTRFS_FEATURE_INCOMPAT_RAID56 |		\
  	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
 +	 BTRFS_FEATURE_INCOMPAT_DEDUP |			\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES)
  
  /*
 diff --git a/ioctl.h b/ioctl.h
-index a589cd7..d812853 100644
+index 402317f..6d86395 100644
 --- a/ioctl.h
 +++ b/ioctl.h
 @@ -430,6 +430,16 @@ struct btrfs_ioctl_get_dev_stats {
@@ -337,18 +335,17 @@ index a589cd7..d812853 100644
  /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
  #define BTRFS_QUOTA_CTL_ENABLE	1
  #define BTRFS_QUOTA_CTL_DISABLE	2
-@@ -593,6 +603,9 @@ struct btrfs_ioctl_clone_range_args {
+@@ -596,6 +606,8 @@ struct btrfs_ioctl_clone_range_args {
  				      struct btrfs_ioctl_get_dev_stats)
  #define BTRFS_IOC_DEV_REPLACE _IOWR(BTRFS_IOCTL_MAGIC, 53, \
  				    struct btrfs_ioctl_dev_replace_args)
 +#define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
 +				  struct btrfs_ioctl_dedup_args)
-+
- #ifdef __cplusplus
- }
- #endif
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+                                   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index b620348..56cdf1b 100644
+index 8fea115..dd65fce 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
 @@ -109,13 +109,22 @@ btrfs \- control a btrfs filesystem
@@ -375,7 +372,7 @@ index b620348..56cdf1b 100644
  \fBbtrfs\fP \fBhelp|\-\-help \fP
  .PP
  \fBbtrfs\fP \fB<command> \-\-help \fP
-@@ -739,12 +748,28 @@ Print status and progress information of a running device replace operation.
+@@ -764,12 +773,28 @@ Print status and progress information of a running device replace operation.
  .IP "\fB-1\fP" 5
  print once instead of print continuously until the replace
  operation finishes (or is canceled)

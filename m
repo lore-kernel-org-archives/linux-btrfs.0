@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29227 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:28962 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932592AbaDIHKF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:10:05 -0400
+	with ESMTP id S932580AbaDIHJs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 03:09:48 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
@@ -11,209 +11,120 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: [PATCH v9 16/16] Btrfs: fix dedup enospc problem
-Date: Wed,  9 Apr 2014 15:08:44 +0800
-Message-Id: <1397027325-27151-17-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v9 10/16] Btrfs: improve the delayed refs process in rm case
+Date: Wed,  9 Apr 2014 15:08:38 +0800
+Message-Id: <1397027325-27151-11-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 References: <1397027325-27151-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the case of dedupe, btrfs will produce large number of delayed refs, and
-processing them can very likely eat all of the space reserved in
-global_block_rsv, and we'll end up with transaction abortion due to ENOSPC.
+While removing a file with dedup extents, we could have a great number of
+delayed refs pending to process, and these refs refer to droping
+a ref of the extent, which is of BTRFS_DROP_DELAYED_REF type.
 
-I tried several different ways to reserve more space for global_block_rsv to
-hope it's enough for flushing delayed refs, but I failed and code could
-become very messy.
+But in order to prevent an extent's ref count from going down to zero when
+there still are pending delayed refs, we first select those "adding a ref"
+ones, which is of BTRFS_ADD_DELAYED_REF type.
 
-I found that with high delayed refs pressure, the throttle work in the
-end_transaction had little use since it didn't block new delayed refs'
-insertion, so I put throttle stuff into the very start stage,
-i.e. start_transaction.
+So in removing case, all of our delayed refs are of BTRFS_DROP_DELAYED_REF type,
+but we have to walk all the refs issued to the extent to find any
+BTRFS_ADD_DELAYED_REF types and end up there is no such thing, and then start
+over again to find BTRFS_DROP_DELAYED_REF.
 
-We take the worst case into account in the throttle code, that is,
-every delayed_refs would update btree, so when we reach the limit that
-it may use up all the reserved space of global_block_rsv, we kick
-transaction_kthread to commit transaction to process these delayed refs,
-refresh global_block_rsv's space, and get pinned space back as well.
-That way we get rid of annoy ENOSPC problem.
-
-However, this leads to a new problem that it cannot use along with option
-"flushoncommit", otherwise it can cause ABBA deadlock between
-commit_transaction between ordered extents flush.
+This is really unnecessary, we can improve this by tracking how many
+BTRFS_ADD_DELAYED_REF refs we have and search by the right type.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent-tree.c  | 50 ++++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/ordered-data.c |  6 ++++++
- fs/btrfs/transaction.c  | 41 ++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h  |  1 +
- 4 files changed, 87 insertions(+), 11 deletions(-)
+ fs/btrfs/delayed-ref.c |  8 ++++++++
+ fs/btrfs/delayed-ref.h |  3 +++
+ fs/btrfs/extent-tree.c | 16 +++++++++++++---
+ 3 files changed, 24 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 3ab37b6..6435d78 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -538,6 +538,9 @@ update_existing_head_ref(struct btrfs_delayed_ref_node *existing,
+ 	 * currently, for refs we just added we know we're a-ok.
+ 	 */
+ 	existing->ref_mod += update->ref_mod;
++	WARN_ON(update->ref_mod > 1);
++	if (update->ref_mod == 1)
++		existing_ref->add_cnt++;
+ 	spin_unlock(&existing_ref->lock);
+ }
+ 
+@@ -601,6 +604,11 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	head_ref->is_data = is_data;
+ 	head_ref->ref_root = RB_ROOT;
+ 	head_ref->processing = 0;
++	/* track added ref, more comments in select_delayed_ref() */
++	if (count_mod == 1)
++		head_ref->add_cnt = 1;
++	else
++		head_ref->add_cnt = 0;
+ 
+ 	spin_lock_init(&head_ref->lock);
+ 	mutex_init(&head_ref->mutex);
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 4ba9b93..905f991 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -87,6 +87,9 @@ struct btrfs_delayed_ref_head {
+ 	struct rb_node href_node;
+ 
+ 	struct btrfs_delayed_extent_op *extent_op;
++
++	int add_cnt;
++
+ 	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6f8b012..ec6f42d 100644
+index 088846c..191f0a7 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2695,24 +2695,52 @@ static inline u64 heads_to_leaves(struct btrfs_root *root, u64 heads)
- int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
- 				       struct btrfs_root *root)
+@@ -2347,7 +2347,11 @@ static noinline struct btrfs_delayed_ref_node *
+ select_delayed_ref(struct btrfs_delayed_ref_head *head)
  {
-+	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_block_rsv *global_rsv;
--	u64 num_heads = trans->transaction->delayed_refs.num_heads_ready;
-+	u64 num_heads;
-+	u64 num_entries;
- 	u64 num_bytes;
- 	int ret = 0;
- 
--	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
--	num_heads = heads_to_leaves(root, num_heads);
--	if (num_heads > 1)
--		num_bytes += (num_heads - 1) * root->leafsize;
--	num_bytes <<= 1;
- 	global_rsv = &root->fs_info->global_block_rsv;
- 
--	/*
--	 * If we can't allocate any more chunks lets make sure we have _lots_ of
--	 * wiggle room since running delayed refs can create more delayed refs.
--	 */
--	if (global_rsv->space_info->full)
-+	if (trans) {
-+		num_heads = trans->transaction->delayed_refs.num_heads_ready;
-+		num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+		num_heads = heads_to_leaves(root, num_heads);
-+		if (num_heads > 1)
-+			num_bytes += (num_heads - 1) * root->leafsize;
- 		num_bytes <<= 1;
-+		/*
-+		 * If we can't allocate any more chunks lets make sure we have
-+		 * _lots_ of wiggle room since running delayed refs can create
-+		 * more delayed refs.
-+		 */
-+		if (global_rsv->space_info->full)
-+			num_bytes <<= 1;
-+	} else {
-+		if (root->fs_info->dedup_bs == 0)
-+			return 0;
+ 	struct rb_node *node;
+-	struct btrfs_delayed_ref_node *ref, *last = NULL;;
++	struct btrfs_delayed_ref_node *ref, *last = NULL;
++	int action = BTRFS_ADD_DELAYED_REF;
 +
-+		/* dedup enabled */
-+		spin_lock(&root->fs_info->trans_lock);
-+		if (!root->fs_info->running_transaction) {
-+			spin_unlock(&root->fs_info->trans_lock);
-+			return 0;
++	if (head->add_cnt == 0)
++		action = BTRFS_DROP_DELAYED_REF;
+ 
+ 	/*
+ 	 * select delayed ref of type BTRFS_ADD_DELAYED_REF first.
+@@ -2358,10 +2362,13 @@ select_delayed_ref(struct btrfs_delayed_ref_head *head)
+ 	while (node) {
+ 		ref = rb_entry(node, struct btrfs_delayed_ref_node,
+ 				rb_node);
+-		if (ref->action == BTRFS_ADD_DELAYED_REF)
++		if (ref->action == action) {
++			if (ref->action == BTRFS_ADD_DELAYED_REF)
++				head->add_cnt--;
+ 			return ref;
+-		else if (last == NULL)
++		} else if (last == NULL) {
+ 			last = ref;
 +		}
-+
-+		delayed_refs =
-+			 &root->fs_info->running_transaction->delayed_refs;
-+
-+		num_entries = atomic_read(&delayed_refs->num_entries);
-+		num_heads = delayed_refs->num_heads;
-+
-+		spin_unlock(&root->fs_info->trans_lock);
-+
-+		/* The worst case */
-+		num_bytes = (num_entries - num_heads) *
-+					btrfs_calc_trans_metadata_size(root, 1);
-+	}
+ 		node = rb_next(node);
+ 	}
+ 	return last;
+@@ -2435,6 +2442,9 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
  
- 	spin_lock(&global_rsv->lock);
- 	if (global_rsv->reserved <= num_bytes)
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index c520e13..72c0caa 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -747,6 +747,12 @@ int btrfs_run_ordered_operations(struct btrfs_trans_handle *trans,
- 				      &cur_trans->ordered_operations);
- 		spin_unlock(&root->fs_info->ordered_root_lock);
- 
-+		if (cur_trans->blocked) {
-+			cur_trans->blocked = 0;
-+			if (waitqueue_active(&cur_trans->commit_wait))
-+				wake_up(&cur_trans->commit_wait);
-+		}
+ 		if (ref && ref->seq &&
+ 		    btrfs_check_delayed_seq(fs_info, delayed_refs, ref->seq)) {
++			if (ref->action == BTRFS_ADD_DELAYED_REF)
++				locked_ref->add_cnt++;
 +
- 		work = btrfs_alloc_delalloc_work(inode, wait, 1);
- 		if (!work) {
- 			spin_lock(&root->fs_info->ordered_root_lock);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a04707f..9937eb2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -215,6 +215,7 @@ loop:
- 	cur_trans->transid = fs_info->generation;
- 	fs_info->running_transaction = cur_trans;
- 	cur_trans->aborted = 0;
-+	cur_trans->blocked = 1;
- 	spin_unlock(&fs_info->trans_lock);
- 
- 	return 0;
-@@ -329,6 +330,27 @@ static void wait_current_trans(struct btrfs_root *root)
- 		wait_event(root->fs_info->transaction_wait,
- 			   cur_trans->state >= TRANS_STATE_UNBLOCKED ||
- 			   cur_trans->aborted);
-+
-+		btrfs_put_transaction(cur_trans);
-+	} else {
-+		spin_unlock(&root->fs_info->trans_lock);
-+	}
-+}
-+
-+static noinline void wait_current_trans_for_commit(struct btrfs_root *root)
-+{
-+	struct btrfs_transaction *cur_trans;
-+
-+	spin_lock(&root->fs_info->trans_lock);
-+	cur_trans = root->fs_info->running_transaction;
-+	if (cur_trans && is_transaction_blocked(cur_trans)) {
-+		atomic_inc(&cur_trans->use_count);
-+		spin_unlock(&root->fs_info->trans_lock);
-+
-+		wait_event(cur_trans->commit_wait,
-+			   cur_trans->state >= TRANS_STATE_COMPLETED ||
-+			   cur_trans->aborted || cur_trans->blocked == 0);
-+
- 		btrfs_put_transaction(cur_trans);
- 	} else {
- 		spin_unlock(&root->fs_info->trans_lock);
-@@ -436,6 +458,25 @@ again:
- 	if (may_wait_transaction(root, type))
- 		wait_current_trans(root);
- 
-+	/*
-+	 * In the case of dedupe, we need to throttle delayed refs at the
-+	 * very start stage, otherwise we'd run into ENOSPC because more
-+	 * delayed refs are added while processing delayed refs.
-+	 */
-+	if (root->fs_info->dedup_bs > 0 && type == TRANS_JOIN &&
-+	    btrfs_check_space_for_delayed_refs(NULL, root)) {
-+		struct btrfs_transaction *cur_trans;
-+
-+		spin_lock(&root->fs_info->trans_lock);
-+		cur_trans = root->fs_info->running_transaction;
-+		if (cur_trans && cur_trans->state == TRANS_STATE_RUNNING)
-+			cur_trans->state = TRANS_STATE_BLOCKED;
-+		spin_unlock(&root->fs_info->trans_lock);
-+
-+		wake_up_process(root->fs_info->transaction_kthread);
-+		wait_current_trans_for_commit(root);
-+	}
-+
- 	do {
- 		ret = join_transaction(root, type);
- 		if (ret == -EBUSY) {
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 6ac037e..ac58d43 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -59,6 +59,7 @@ struct btrfs_transaction {
- 	struct list_head pending_chunks;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
-+	int blocked;
- };
- 
- #define __TRANS_FREEZABLE	(1U << 0)
+ 			spin_unlock(&locked_ref->lock);
+ 			btrfs_delayed_ref_unlock(locked_ref);
+ 			spin_lock(&delayed_refs->lock);
 -- 
 1.8.2.1
 

@@ -1,232 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61534 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:54243 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755384AbaDHLWJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Apr 2014 07:22:09 -0400
+	with ESMTP id S933109AbaDIL0J (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 07:26:09 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s39BPsdn027375
+	for <linux-btrfs@vger.kernel.org>; Wed, 9 Apr 2014 19:25:54 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-CC: <fengguang.wu@intel.com>, <kbuild-all@01.org>
-Subject: [PATCH v4 2/2] Btrfs: scrub raid56 stripes in the right way
-Date: Tue, 8 Apr 2014 19:18:52 +0800
-Message-ID: <1396955932-4547-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: make sure there are not any read requests before stopping workers
+Date: Wed, 9 Apr 2014 19:23:22 +0800
+Message-ID: <1397042602-23205-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs -f /dev/sda[8-11] -m raid5 -d raid5
- # mount /dev/sda8 /mnt
- # btrfs scrub start -BR /mnt
- # echo $? <--unverified errors make return value be 3
+In close_ctree(), after we have stopped all workers,there maybe still
+some read requests(for example readahead) to submit and this *maybe* trigger
+an oops that user reported before:
 
-This is because we don't setup right mapping between physical
-and logical address for raid56, which makes checksum mismatch.
-But we will find everthing is fine later when rechecking using
-btrfs_map_block().
+kernel BUG at fs/btrfs/async-thread.c:619!
 
-This patch fixed the problem by settuping right mappings and
-we only verify data stripes' checksums.
+By hacking codes, i can reproduce this problem with one cpu available.
+We fix this potential problem by invalidating all btree inode pages before
+stopping all workers.
+
+Thanks to Miao for pointing out this problem.
 
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
-v3->v4: fix compile warnings on avr32 platform.(reported by 0-day LKP)
-v2->v3: fix wrong offset set plus some cleanups.
-v1->v2: on the right way to fix the problem.
----
- fs/btrfs/scrub.c | 108 +++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 89 insertions(+), 19 deletions(-)
+ fs/btrfs/disk-io.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index db21a13..68a5a26 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2235,6 +2235,47 @@ behind_scrub_pages:
- 	return 0;
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d9698fd..8a49823 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3619,6 +3619,11 @@ int close_ctree(struct btrfs_root *root)
  
-+/*
-+ * Given a physical address, this will calculate it's
-+ * logical offset. if this is a parity stripe, it will return
-+ * the most left data stripe's logical offset.
-+ *
-+ * return 0 if it is a data stripe, 1 means parity stripe.
-+ */
-+static int get_raid56_logic_offset(u64 physical, int num,
-+				   struct map_lookup *map, u64 *offset)
-+{
-+	int i;
-+	int j = 0;
-+	u64 stripe_nr;
-+	u64 last_offset;
-+	int stripe_index;
-+	int rot;
-+
-+	last_offset = (physical - map->stripes[num].physical) *
-+		      nr_data_stripes(map);
-+	*offset = last_offset;
-+	for (i = 0; i < nr_data_stripes(map); i++) {
-+		*offset = last_offset + i * map->stripe_len;
-+
-+		stripe_nr = *offset;
-+		do_div(stripe_nr, map->stripe_len);
-+		do_div(stripe_nr, nr_data_stripes(map));
-+
-+		/* Work out the disk rotation on this stripe-set */
-+		rot = do_div(stripe_nr, map->num_stripes);
-+		/* calculate which stripe this data locates */
-+		rot += i;
-+		stripe_index = rot % map->num_stripes;
-+		if (stripe_index == num)
-+			return 0;
-+		if (stripe_index < num)
-+			j++;
-+	}
-+	*offset = last_offset + j * map->stripe_len;
-+	return 1;
-+}
-+
- static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 					   struct map_lookup *map,
- 					   struct btrfs_device *scrub_dev,
-@@ -2256,6 +2297,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 physical;
- 	u64 logical;
- 	u64 logic_end;
-+	u64 physical_end;
- 	u64 generation;
- 	int mirror_num;
- 	struct reada_control *reada1;
-@@ -2269,16 +2311,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 extent_len;
- 	struct btrfs_device *extent_dev;
- 	int extent_mirror_num;
--	int stop_loop;
--
--	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_RAID6)) {
--		if (num >= nr_data_stripes(map)) {
--			return 0;
--		}
--	}
-+	int stop_loop = 0;
+ 	btrfs_free_block_groups(fs_info);
  
- 	nstripes = length;
-+	physical = map->stripes[num].physical;
- 	offset = 0;
- 	do_div(nstripes, map->stripe_len);
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
-@@ -2296,6 +2332,11 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
- 		increment = map->stripe_len;
- 		mirror_num = num % map->num_stripes + 1;
-+	} else if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
-+				BTRFS_BLOCK_GROUP_RAID6)) {
-+		get_raid56_logic_offset(physical, num, map, &offset);
-+		increment = map->stripe_len * nr_data_stripes(map);
-+		mirror_num = 1;
- 	} else {
- 		increment = map->stripe_len;
- 		mirror_num = 1;
-@@ -2319,7 +2360,15 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 * to not hold off transaction commits
- 	 */
- 	logical = base + offset;
--
-+	physical_end = physical + nstripes * map->stripe_len;
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
-+			 BTRFS_BLOCK_GROUP_RAID6)) {
-+		get_raid56_logic_offset(physical_end, num,
-+					map, &logic_end);
-+		logic_end += base;
-+	} else {
-+		logic_end = logical + increment * nstripes;
-+	}
- 	wait_event(sctx->list_wait,
- 		   atomic_read(&sctx->bios_in_flight) == 0);
- 	scrub_blocked_if_needed(fs_info);
-@@ -2328,7 +2377,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	key_start.objectid = logical;
- 	key_start.type = BTRFS_EXTENT_ITEM_KEY;
- 	key_start.offset = (u64)0;
--	key_end.objectid = base + offset + nstripes * increment;
-+	key_end.objectid = logic_end;
- 	key_end.type = BTRFS_METADATA_ITEM_KEY;
- 	key_end.offset = (u64)-1;
- 	reada1 = btrfs_reada_add(root, &key_start, &key_end);
-@@ -2338,7 +2387,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	key_start.offset = logical;
- 	key_end.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
- 	key_end.type = BTRFS_EXTENT_CSUM_KEY;
--	key_end.offset = base + offset + nstripes * increment;
-+	key_end.offset = logic_end;
- 	reada2 = btrfs_reada_add(csum_root, &key_start, &key_end);
++	/*
++	 * we must make sure there is not any read request to
++	 * submit after we stopping all workers.
++	 */
++	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+ 	btrfs_stop_all_workers(fs_info);
  
- 	if (!IS_ERR(reada1))
-@@ -2356,11 +2405,17 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	/*
- 	 * now find all extents for each stripe and scrub them
- 	 */
--	logical = base + offset;
--	physical = map->stripes[num].physical;
--	logic_end = logical + increment * nstripes;
- 	ret = 0;
--	while (logical < logic_end) {
-+	while (physical < physical_end) {
-+		/* for raid56, we skip parity stripe */
-+		if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
-+				BTRFS_BLOCK_GROUP_RAID6)) {
-+			ret = get_raid56_logic_offset(physical, num,
-+					map, &logical);
-+			logical += base;
-+			if (ret)
-+				goto skip;
-+		}
- 		/*
- 		 * canceled?
- 		 */
-@@ -2504,15 +2559,29 @@ again:
- 			scrub_free_csums(sctx);
- 			if (extent_logical + extent_len <
- 			    key.objectid + bytes) {
--				logical += increment;
--				physical += map->stripe_len;
--
-+				if (map->type & (BTRFS_BLOCK_GROUP_RAID5 |
-+					BTRFS_BLOCK_GROUP_RAID6)) {
-+					/*
-+					 * loop until we find next data stripe
-+					 * or we have finished all stripes.
-+					 */
-+					do {
-+						physical += map->stripe_len;
-+						ret = get_raid56_logic_offset(
-+								physical, num,
-+								map, &logical);
-+						logical += base;
-+					} while (physical < physical_end && ret);
-+				} else {
-+					physical += map->stripe_len;
-+					logical += increment;
-+				}
- 				if (logical < key.objectid + bytes) {
- 					cond_resched();
- 					goto again;
- 				}
- 
--				if (logical >= logic_end) {
-+				if (physical >= physical_end) {
- 					stop_loop = 1;
- 					break;
- 				}
-@@ -2521,6 +2590,7 @@ next:
- 			path->slots[0]++;
- 		}
- 		btrfs_release_path(path);
-+skip:
- 		logical += increment;
- 		physical += map->stripe_len;
- 		spin_lock(&sctx->stat_lock);
+ 	free_root_pointers(fs_info, 1);
 -- 
 1.9.0
 

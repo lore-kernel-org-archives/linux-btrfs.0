@@ -1,87 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:33146 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932712AbaDIKxu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Apr 2014 06:53:50 -0400
-From: Chris Samuel <chris@csamuel.org>
+Received: from mail-ee0-f52.google.com ([74.125.83.52]:63169 "EHLO
+	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932482AbaDILAP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 07:00:15 -0400
+Received: by mail-ee0-f52.google.com with SMTP id e49so1694867eek.25
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 04:00:14 -0700 (PDT)
+Received: from honzk.localnet (nat-11.starnet.cz. [178.255.168.11])
+        by mx.google.com with ESMTPSA id 48sm1541147eee.2.2014.04.09.04.00.14
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 09 Apr 2014 04:00:14 -0700 (PDT)
+From: Jan Kouba <kouba.honza@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>,
-        Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS setup advice for laptop performance ?
-Date: Wed, 09 Apr 2014 20:53:20 +1000
-Message-ID: <1748210.42KeASGE2J@quad>
-In-Reply-To: <5342C00F.8070001@gmail.com>
-References: <2692878.dRG1K49eOP@fnix> <12471892.pAn1KAtSS4@tethys> <5342C00F.8070001@gmail.com>
+Subject: Unable to remove read-only seeding device from a filesystem.
+Date: Wed, 09 Apr 2014 13:00:13 +0200
+Message-ID: <1718136.Ye2ZxOq3uC@honzk>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart21173548.1mGQha3dTz"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+When running this script:
 
---nextPart21173548.1mGQha3dTz
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+dd if=/dev/zero of=seed-disk.img bs=1M seek=1k count=0
+dd if=/dev/zero of=test-disk.img bs=1M seek=1k count=0
 
-On Mon, 7 Apr 2014 11:11:11 AM Austin S Hemmelgarn wrote:
+# Make image of seed device
+mkfs.btrfs seed-disk.img
+seed_dev=`losetup -f --show seed-disk.img`
+mount $seed_dev /mnt/tmp
+touch /mnt/tmp/a
+umount /mnt/tmp
+losetup -d $seed_dev
+btrfstune -S 1 seed-disk.img
 
-> This is because every other filesystem (except ZFS) doesn't use COW
-> semantics.
+# Make read-only seed device
+seed_dev=`losetup -f -r --show seed-disk.img`
 
-There is an interesting article on LWN at the moment (subscriber only f=
-or the=20
-next day or two, but if you can afford it I'd suggest considering subsc=
-ribing)=20
-about the Linux Storage, Filesystem, and Memory Management (LSFMM) Summ=
-it=20
-discussions around the impact of the new Shingle Magnetic Recording (SM=
-R)=20
-drives that may change that.
+test_dev=`losetup -f --show test-disk.img`
 
-Given these devices are likely to have large sequential write only area=
-s it's=20
-going to make getting existing Linux filesystems to work on them "inter=
-esting",=20
-in the section on Dave Chinners filesystem part of the discussion it sa=
-ys:
+mount $seed_dev /mnt/tmp
+btrfs dev add $test_dev /mnt/tmp
+mount -o remount,rw /mnt/tmp
 
-# Any of the existing filesystems that do not support copy-on-write (CO=
-W)
-# cannot really be optimized for SMR, he said, because you can't overwr=
-ite
-# data in sequential zones. That would mean adding COW to ext4 and XFS,=
+# This fails
+btrfs dev delete $seed_dev /mnt/tmp
 
-# Chinner said.=20
+# cleanup
+umount /mnt/tmp
+losetup -d $seed_dev
+losetup -d $test_dev
 
-https://lwn.net/Articles/592091/
-
-There's some background to SMR drives (available to all) from the LSFMM=
- here:
-
-https://lwn.net/Articles/591782/
-
-All the best,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+rm seed-disk.img
+rm test-disk.img
 
 
---nextPart21173548.1mGQha3dTz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.14 (GNU/Linux)
 
-iQEVAwUAU0UmoI1yjaOTJg85AQKO7QgAk94QoA3I7hxCOxdT1ijNlRcwtJq01D8X
-KdG0oHyzPloEK2wUuB8ZsFNrQkbDoViGGAjgaW8LMcm7ytGb4BBnQGBjQqtlIMYa
-3zLCGFDDXC8LqX3fHGGbBl2S/Hir19LmD5aHEwzJl0WsNOaZRTDkNKsULxaSe5nW
-lAVlGFgdr0CgBkmMugwY4hfYojs9vGdHzQgbC6mqwDYh1/IddwBfJoB9BTRYjREl
-aQy/CV6YhNGqo8FN4/ClLB7P47Aki+txy/1lUP/el1sMFnbRzdcgFxftYkONnUIN
-h1HeG3BQRf/eyr6oBKjMv6zxW4VfjReIUc0bchqlWTMrwF5sUxijwA==
-=qccp
------END PGP SIGNATURE-----
+the command 
+"btrfs dev delete $seed_dev /mnt/tmp" fails with 
+"ERROR: error removing the device '/dev/loop0' - Permission denied" message.
 
---nextPart21173548.1mGQha3dTz--
+If /dev/loop0 is not read-only everything works. 
+
+I tested this on ubuntu 13.10, 14.04 with stock kernel and btrfs-progs and on 
+ubuntu 14.04 with latest PPA kernel (3.14.0-031400-generic) and v3.14 btrfs-
+progs.
+
+Is this behaviour expected or is it a bug? 
+
+I thougt that btrfs never changes seeding devices, so I don't understand, why 
+it needs to be writeable in order to remove it from a filesystem.
+
+
+Jan Kouba
+
+
+
+
 

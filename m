@@ -1,117 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37111 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933736AbaDIVXZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Apr 2014 17:23:25 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D7B69ACEC
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Apr 2014 21:23:24 +0000 (UTC)
-Message-ID: <5345BA4B.5010007@suse.com>
-Date: Wed, 09 Apr 2014 17:23:23 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23024 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753715AbaDJXfy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 19:35:54 -0400
+Message-ID: <53472AEB.7030004@fb.com>
+Date: Thu, 10 Apr 2014 19:36:11 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: fix lockdep warning with reclaim lock inversion
-Content-Type: text/plain; charset=ISO-8859-1
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+CC: <fengguang.wu@intel.com>, <kbuild-all@01.org>
+Subject: Re: [PATCH v4 2/2] Btrfs: scrub raid56 stripes in the right way
+References: <1396955932-4547-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1396955932-4547-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When encountering memory pressure, testers have run into the following
-lockdep warning. It was caused by __link_block_group calling kobject_add
-with the groups_sem held. kobject_add calls kvasprintf with GFP_KERNEL,
-which gets us into reclaim context. The kobject doesn't actually need
-to be added under the lock -- it just needs to ensure that it's only
-added for the first block group to be linked. We also need to release
-the lock before removing the kobjects.
 
-=========================================================
-[ INFO: possible irq lock inversion dependency detected ]
-3.14.0-rc8-default #1 Not tainted
----------------------------------------------------------
-kswapd0/169 just changed the state of lock:
- (&delayed_node->mutex){+.+.-.}, at: [<ffffffffa018baea>] __btrfs_release_delayed_node+0x3a/0x200 [btrfs]
-but this lock took another, RECLAIM_FS-unsafe lock in the past:
- (&found->groups_sem){+++++.}
 
-and interrupts could create inverse lock ordering between them.
+On 04/08/2014 07:18 AM, Wang Shilong wrote:
+> Steps to reproduce:
+>   # mkfs.btrfs -f /dev/sda[8-11] -m raid5 -d raid5
+>   # mount /dev/sda8 /mnt
+>   # btrfs scrub start -BR /mnt
+>   # echo $? <--unverified errors make return value be 3
+>
+> This is because we don't setup right mapping between physical
+> and logical address for raid56, which makes checksum mismatch.
+> But we will find everthing is fine later when rechecking using
+> btrfs_map_block().
+>
+> This patch fixed the problem by settuping right mappings and
+> we only verify data stripes' checksums.
+>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> ---
+> v3->v4: fix compile warnings on avr32 platform.(reported by 0-day LKP)
 
-other info that might help us debug this:
- Possible interrupt unsafe locking scenario:
-       CPU0                    CPU1
-       ----                    ----
-  lock(&found->groups_sem);
-                               local_irq_disable();
-                               lock(&delayed_node->mutex);
-                               lock(&found->groups_sem);
-  <Interrupt>
-    lock(&delayed_node->mutex);
+Can you please send this as an incremental?  I'd rather not rebase the 
+integration branch right now.
 
- *** DEADLOCK ***
-2 locks held by kswapd0/169:
- #0:  (shrinker_rwsem){++++..}, at: [<ffffffff81159e8a>] shrink_slab+0x3a/0x160
- #1:  (&type->s_umount_key#27){++++..}, at: [<ffffffff811bac6f>] grab_super_passive+0x3f/0x90
+Thanks!
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c |   20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
-
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8343,9 +8343,15 @@ static void __link_block_group(struct bt
- 			       struct btrfs_block_group_cache *cache)
- {
- 	int index = get_block_group_index(cache);
-+	bool first = false;
- 
- 	down_write(&space_info->groups_sem);
--	if (list_empty(&space_info->block_groups[index])) {
-+	if (list_empty(&space_info->block_groups[index]))
-+		first = true;
-+	list_add_tail(&cache->list, &space_info->block_groups[index]);
-+	up_write(&space_info->groups_sem);
-+
-+	if (first) {
- 		struct kobject *kobj = &space_info->block_group_kobjs[index];
- 		int ret;
- 
-@@ -8357,8 +8363,6 @@ static void __link_block_group(struct bt
- 			kobject_put(&space_info->kobj);
- 		}
- 	}
--	list_add_tail(&cache->list, &space_info->block_groups[index]);
--	up_write(&space_info->groups_sem);
- }
- 
- static struct btrfs_block_group_cache *
-@@ -8693,6 +8697,7 @@ int btrfs_remove_block_group(struct btrf
- 	struct btrfs_root *tree_root = root->fs_info->tree_root;
- 	struct btrfs_key key;
- 	struct inode *inode;
-+	bool cleanup_needed = false;
- 	int ret;
- 	int index;
- 	int factor;
-@@ -8791,12 +8796,15 @@ int btrfs_remove_block_group(struct btrf
- 	 * are still on the list after taking the semaphore
- 	 */
- 	list_del_init(&block_group->list);
--	if (list_empty(&block_group->space_info->block_groups[index])) {
-+	if (list_empty(&block_group->space_info->block_groups[index]))
-+		cleanup_needed = true;
-+	up_write(&block_group->space_info->groups_sem);
-+
-+	if (cleanup_needed) {
-+		clear_avail_alloc_bits(root->fs_info, block_group->flags);
- 		kobject_del(&block_group->space_info->block_group_kobjs[index]);
- 		kobject_put(&block_group->space_info->block_group_kobjs[index]);
--		clear_avail_alloc_bits(root->fs_info, block_group->flags);
- 	}
--	up_write(&block_group->space_info->groups_sem);
- 
- 	if (block_group->cached == BTRFS_CACHE_STARTED)
- 		wait_block_group_cache_done(block_group);
-
--- 
-Jeff Mahoney
-SUSE Labs
+-chris

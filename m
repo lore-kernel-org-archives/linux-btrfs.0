@@ -1,106 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:58369 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758630AbaDJUen (ORCPT
+Received: from mail-ee0-f47.google.com ([74.125.83.47]:52720 "EHLO
+	mail-ee0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753657AbaDJWZn convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 16:34:43 -0400
-Date: Thu, 10 Apr 2014 21:34:40 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chip Turner <cturner@pattern.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Filesystem unable to recover from ENOSPC
-Message-ID: <20140410203439.GB20307@carfax.org.uk>
-References: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
+	Thu, 10 Apr 2014 18:25:43 -0400
+Received: by mail-ee0-f47.google.com with SMTP id b15so3473803eek.20
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 15:25:42 -0700 (PDT)
+Received: from honzk.localnet (nat-11.starnet.cz. [178.255.168.11])
+        by mx.google.com with ESMTPSA id y51sm13044190eeu.0.2014.04.10.15.25.41
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Thu, 10 Apr 2014 15:25:41 -0700 (PDT)
+From: Jan Kouba <kouba.honza@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Copying a disk containing a btrfs filesystem
+Date: Fri, 11 Apr 2014 00:25:41 +0200
+Message-ID: <1646501.RvAOndPxnd@honzk>
+In-Reply-To: <1809379.6bJCFjA2Oa@fuchsia>
+References: <4783411.VVGoQz5kVU@fuchsia> <1632469.6TRA6yZMTn@honzk> <1809379.6bJCFjA2Oa@fuchsia>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="OwLcNYc0lM97+oe1"
-In-Reply-To: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---OwLcNYc0lM97+oe1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Thu, Apr 10, 2014 at 01:00:35PM -0700, Chip Turner wrote:
-> I have a filesystem that I can't seem to resolve ENOSPC issues.  No
-> write operation can succeed; I've tried the wiki's suggestions
-> (balancing, which fails because of ENOSPC, mounting with nodatacow,
-> clear_cache, nospace_cache, enospc_debug, truncating files, deleting
-> files, briefly microwaving the drive, etc).
+Dne Čt 10. dubna 2014 20:36:32, Michael Schuerig napsal(a):
+> On Thursday 10 April 2014 19:17:13 Jan Kouba wrote:
+> > Dne Čt 10. dubna 2014 15:21:01, Michael Schuerig napsal(a):
+> > > SMART indicates that my notebook disk may soon be failing (an
+> > > unreadable/uncorrectable sector), therefore I intend to exchange it.
+> > > The disk contains a single btrfs filesystem with several nested(!)
+> > > subvolumes, each with several read-only snapshots in a .snapshots
+> > > subdirectory.
+> > > 
+> > > As far as I can tell, btrfs currently does not offer a sensible way
+> > > to duplicate the entire contents of the old disk onto a new one.
+> > 
+> > Yes it does
+> > 
+> > You can make the old disk a seeding device and use it to seed the new
 > 
-> btrfs show:
-> Label: none  uuid: 04283a32-b388-480b-9949-686675fad7df
-> Total devices 1 FS bytes used 135.58GiB
-> devid    1 size 238.22GiB used 238.22GiB path /dev/sdb2
+> > one like this:
+> Intriguing. I didn't find much on the topic, but these pages seem
+> pertinent
 > 
-> btrfs fi df:
-> Data, single: total=234.21GiB, used=131.82GiB
-> System, single: total=4.00MiB, used=48.00KiB
-> Metadata, single: total=4.01GiB, used=3.76GiB
-
-   I'm surprised it's managed to use that much of the metadata
-allocation. The FS usually hits this problem with a much smaller
-used-to-total ratio.
-
-> So, the filesystem is pretty much unusable, and I can find no way to
-> resuscitate it.  I ended up in this state by creating a snapshot of
-> the root of the fs into a read/write subvolume, which I wanted to
-> become my new root, then began deleting entries in the filesystem
-> itself outside of the new snapshot.  So nothing particularly weird or
-> crazy.  The only oddness is the file count -- I have a *lot* of
-> hardlinked files (this is an rsnapshot volume, so it has a large
-> number of files and many of them are hard linked).
+> http://en.wikipedia.org/wiki/Btrfs#Seed_devices
+> https://btrfs.wiki.kernel.org/index.php/Seed-device
+> http://unix.stackexchange.com/a/97819/64935
 > 
-> It seems like the normal solution is btrfs balance, but that fails.
-> defragment also fails.  Kernel is 3.13.
+> > btrfstune -S 1 <old_device>
 > 
-> Is there anything else I can or should do, or just wipe it and
-> recreate with perhaps better initial defaults?  If this kind of thing
-> is unavoidable, how might I have anticipated it and prevented it?
-> Fortunately this was a migration effort and so my original data is
-> safe inside of ext4 (ew).
+> Does the "1" mean "true" or is this indeed an integer-value arg? I've
+> only seen the "1" in examples, are there other possible values?
+Yes, "1" means "true", "0" false. If you run it twice with the same argument, 
+it says something like "Seeding flag already set/unset.".
+> 
+> > mount <old_device> /mnt
+> > # this will be mounted read-only
+> > 
+> > btrfs dev add <new_device> /mnt
+> > 
+> > mount -o remount,rw /mnt
+> > 
+> > btrfs dev delete <old_device>
+> 
+> Is the last one the step where data is copied from the seed device to
+> the second device? No balance required before deleting the device?
+Yes, everything is copied, no balance needed.
 
-   One thing you could do is btrfs dev add a small new device to the
-filesystem (say, a USB stick, or a 4 GiB loopback file mounted over
-NBD or something). Then run the filtered balance. Then btrfs dev del
-the spare device.
 
-   The fact that this FS has ended up in this state should be
-considered a bug. It used to be quite common, then josef fixed a load
-of problems, and it's been rare for about a year. Only recently we've
-been seeing more of this kind of problem, and I think there's been a
-bit of a regression somewhere.
+Well actually if you don't need to preserve the filesystem on the old device, 
+you can just add the new device into the filesystem and remove the old one like 
+this:
 
-   Hugo.
+mount <old_device> /mnt
+btrfs dev add <new_device> /mnt
+btrfs dev delete <old_device> /mnt
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-            --- "Can I offer you anything? Tea? Seedcake? ---            
-                         Glass of Amontillado?"                          
+The last command will copy everything from <old_device> to the <new_device> 
+and somehow wipe the <old_device> so it can't be mounted anymore.
+ 
+This method will also preserve the UUID of the filesystem so there is no need 
+to change any config files.
 
---OwLcNYc0lM97+oe1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU0cAX1heFHXiqx3kAQKw0Q/+LdIxz5FProNIIiZKEHQ5QPbu+KqpDZp7
-TL2FLnOcoiPPzOU/rrtp4ShxlbUpqz1KDBmRfJuJbXUwccE71dWJpK+yjudt4HLT
-0DxOTcpppSVcYTiMlclEeW2aPJMwssx/BytaIcafHOEtWf9WR9JiuN6BBFy3RSLU
-KSEQCN4srW/qBvvxEe4JkjOQZInAGm87if1TGPmwV+JZ5Bd2u2fu4XsR1USFaZjJ
-GIr3kH0x3xQSVKquWhOvpTlSGTRlk2GxVBR13nVVDV1FfMEL5JX/I/c/eQg3M8Il
-Ie6B58hoJS1Dky6CmZk0AktL/E/x69XX6fxjUrrIaCAVU2gbRjL5jzVR07hTNhQJ
-aiZ5cYvvdp6FgAH+GAZkxPow6oeTEWXUVog4nH1/VQDVxn28tqLJ1v8U03fUevbj
-8XaCxFrFX4fvt6zlSRVioODJthyZn+pYSfsDKgASymJeRne3VWWQ2dLFCsFSbcTH
-x/AorocNWCqZDzqquVIag63biDrr0v6diG8lbqSyTE2T3Ui3+NRgIBofupYMD1e0
-xaO0CwdOc16LbyIGwTQ3iYnUPLqH1qE6fs2OblGD6zcW1t5JPPvxV0AiquXGtStE
-lmF4PRE2E59+QtO3ubr5mHJuFwXqwMt2DmOJLb2o81M8Qp9aAvOtbulsMBuAsLeJ
-BsmSMo4Il2A=
-=p42V
------END PGP SIGNATURE-----
-
---OwLcNYc0lM97+oe1--
+Jan Kouba

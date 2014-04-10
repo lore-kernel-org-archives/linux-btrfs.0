@@ -1,73 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.219]:34632 "EHLO
-	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758709AbaDJSge convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f41.google.com ([74.125.82.41]:34081 "EHLO
+	mail-wg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161075AbaDJUAh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 14:36:34 -0400
-Received: from fuchsia.localnet (p57A571D5.dip0.t-ipconnect.de [87.165.113.213])
-	by smtp.strato.de (RZmta 32.33 DYNA|AUTH)
-	with ESMTPSA id g00a52q3AIaW3JX
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(Client did not present a certificate)
-	for <linux-btrfs@vger.kernel.org>;
-	Thu, 10 Apr 2014 20:36:32 +0200 (CEST)
-From: Michael Schuerig <michael.lists@schuerig.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Copying a disk containing a btrfs filesystem
-Date: Thu, 10 Apr 2014 20:36:32 +0200
-Message-ID: <1809379.6bJCFjA2Oa@fuchsia>
-In-Reply-To: <1632469.6TRA6yZMTn@honzk>
-References: <4783411.VVGoQz5kVU@fuchsia> <1632469.6TRA6yZMTn@honzk>
+	Thu, 10 Apr 2014 16:00:37 -0400
+Received: by mail-wg0-f41.google.com with SMTP id n12so4402635wgh.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 13:00:36 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Date: Thu, 10 Apr 2014 13:00:35 -0700
+Message-ID: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
+Subject: Filesystem unable to recover from ENOSPC
+From: Chip Turner <cturner@pattern.net>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday 10 April 2014 19:17:13 Jan Kouba wrote:
-> Dne Čt 10. dubna 2014 15:21:01, Michael Schuerig napsal(a):
-> > SMART indicates that my notebook disk may soon be failing (an
-> > unreadable/uncorrectable sector), therefore I intend to exchange it.
-> > The disk contains a single btrfs filesystem with several nested(!)
-> > subvolumes, each with several read-only snapshots in a .snapshots
-> > subdirectory.
-> > 
-> > As far as I can tell, btrfs currently does not offer a sensible way
-> > to duplicate the entire contents of the old disk onto a new one.
-> Yes it does
-> 
-> You can make the old disk a seeding device and use it to seed the new
-> one like this:
+I have a filesystem that I can't seem to resolve ENOSPC issues.  No
+write operation can succeed; I've tried the wiki's suggestions
+(balancing, which fails because of ENOSPC, mounting with nodatacow,
+clear_cache, nospace_cache, enospc_debug, truncating files, deleting
+files, briefly microwaving the drive, etc).
 
-Intriguing. I didn't find much on the topic, but these pages seem 
-pertinent
+btrfs show:
+Label: none  uuid: 04283a32-b388-480b-9949-686675fad7df
+Total devices 1 FS bytes used 135.58GiB
+devid    1 size 238.22GiB used 238.22GiB path /dev/sdb2
 
-http://en.wikipedia.org/wiki/Btrfs#Seed_devices
-https://btrfs.wiki.kernel.org/index.php/Seed-device
-http://unix.stackexchange.com/a/97819/64935
+btrfs fi df:
+Data, single: total=234.21GiB, used=131.82GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=4.01GiB, used=3.76GiB
 
-> btrfstune -S 1 <old_device>
+So, the filesystem is pretty much unusable, and I can find no way to
+resuscitate it.  I ended up in this state by creating a snapshot of
+the root of the fs into a read/write subvolume, which I wanted to
+become my new root, then began deleting entries in the filesystem
+itself outside of the new snapshot.  So nothing particularly weird or
+crazy.  The only oddness is the file count -- I have a *lot* of
+hardlinked files (this is an rsnapshot volume, so it has a large
+number of files and many of them are hard linked).
 
-Does the "1" mean "true" or is this indeed an integer-value arg? I've 
-only seen the "1" in examples, are there other possible values?
+It seems like the normal solution is btrfs balance, but that fails.
+defragment also fails.  Kernel is 3.13.
 
-> mount <old_device> /mnt
-> # this will be mounted read-only
-> 
-> btrfs dev add <new_device> /mnt
-> 
-> mount -o remount,rw /mnt
-> 
-> btrfs dev delete <old_device>
-
-Is the last one the step where data is copied from the seed device to 
-the second device? No balance required before deleting the device?
-
-Thanks!
-
-Michael
+Is there anything else I can or should do, or just wipe it and
+recreate with perhaps better initial defaults?  If this kind of thing
+is unavoidable, how might I have anticipated it and prevented it?
+Fortunately this was a migration effort and so my original data is
+safe inside of ext4 (ew).
 
 -- 
-Michael Schuerig
-mailto:michael@schuerig.de
-http://www.schuerig.de/michael/
-
+Chip Turner - cturner@pattern.net

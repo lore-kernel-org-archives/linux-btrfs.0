@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32295 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965310AbaDJDuA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 23:50:00 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:34432 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965306AbaDJDuC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Apr 2014 23:50:02 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Marcel Ritter <ritter.marcel@gmail.com>,
@@ -11,282 +11,120 @@ Cc: Marcel Ritter <ritter.marcel@gmail.com>,
         David Sterba <dsterba@suse.cz>,
         Martin Steigerwald <Martin@lichtvoll.de>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
-Subject: [PATCH v10 09/16] Btrfs: add ioctl of dedup control
-Date: Thu, 10 Apr 2014 11:48:39 +0800
-Message-Id: <1397101727-20806-10-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v10 10/16] Btrfs: improve the delayed refs process in rm case
+Date: Thu, 10 Apr 2014 11:48:40 +0800
+Message-Id: <1397101727-20806-11-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1397101727-20806-1-git-send-email-bo.li.liu@oracle.com>
 References: <1397101727-20806-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So far we have 4 commands to control dedup behaviour,
-- btrfs dedup enable
-Create the dedup tree, and it's the very first step when you're going to use
-the dedup feature.
+While removing a file with dedup extents, we could have a great number of
+delayed refs pending to process, and these refs refer to droping
+a ref of the extent, which is of BTRFS_DROP_DELAYED_REF type.
 
-- btrfs dedup disable
-Delete the dedup tree, after this we're not able to use dedup any more unless
-you enable it again.
+But in order to prevent an extent's ref count from going down to zero when
+there still are pending delayed refs, we first select those "adding a ref"
+ones, which is of BTRFS_ADD_DELAYED_REF type.
 
-- btrfs dedup on [-b]
-Switch on the dedup feature temporarily, and it's the second step of applying
-dedup with writes.  Option '-b' is used to set dedup blocksize.
-The default blocksize is 8192(no special reason, you may argue), and the current
-limit is [4096, 128 * 1024], because 4K is the generic page size and 128K is the
-upper limit of btrfs's compression.
+So in removing case, all of our delayed refs are of BTRFS_DROP_DELAYED_REF type,
+but we have to walk all the refs issued to the extent to find any
+BTRFS_ADD_DELAYED_REF types and end up there is no such thing, and then start
+over again to find BTRFS_DROP_DELAYED_REF.
 
-- btrfs dedup off
-Switch off the dedup feature temporarily, but the dedup tree remains.
+This is really unnecessary, we can improve this by tracking how many
+BTRFS_ADD_DELAYED_REF refs we have and search by the right type.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/ctree.h           |   3 +
- fs/btrfs/disk-io.c         |   1 +
- fs/btrfs/ioctl.c           | 167 +++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |  12 ++++
- 4 files changed, 183 insertions(+)
+ fs/btrfs/delayed-ref.c |  8 ++++++++
+ fs/btrfs/delayed-ref.h |  3 +++
+ fs/btrfs/extent-tree.c | 16 +++++++++++++---
+ 3 files changed, 24 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ca1b516..feebfab 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1740,6 +1740,9 @@ struct btrfs_fs_info {
- 	u64 dedup_bs;
- 
- 	int dedup_type;
-+
-+	/* protect user change for dedup operations */
-+	struct mutex dedup_ioctl_mutex;
- };
- 
- struct btrfs_subvolume_writers {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a2586ac..3be947f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2362,6 +2362,7 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->dev_replace.lock_finishing_cancel_unmount);
- 	mutex_init(&fs_info->dev_replace.lock_management_lock);
- 	mutex_init(&fs_info->dev_replace.lock);
-+	mutex_init(&fs_info->dedup_ioctl_mutex);
- 
- 	spin_lock_init(&fs_info->qgroup_lock);
- 	mutex_init(&fs_info->qgroup_ioctl_lock);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0401397..45c183c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4820,6 +4820,171 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
- 	return btrfs_commit_transaction(trans, root);
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 3ab37b6..6435d78 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -538,6 +538,9 @@ update_existing_head_ref(struct btrfs_delayed_ref_node *existing,
+ 	 * currently, for refs we just added we know we're a-ok.
+ 	 */
+ 	existing->ref_mod += update->ref_mod;
++	WARN_ON(update->ref_mod > 1);
++	if (update->ref_mod == 1)
++		existing_ref->add_cnt++;
+ 	spin_unlock(&existing_ref->lock);
  }
  
-+static long btrfs_enable_dedup(struct btrfs_root *root)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_trans_handle *trans = NULL;
-+	struct btrfs_root *dedup_root;
-+	int ret = 0;
-+
-+	mutex_lock(&fs_info->dedup_ioctl_mutex);
-+	if (fs_info->dedup_root) {
-+		pr_info("btrfs: dedup has already been enabled\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return 0;
-+	}
-+
-+	trans = btrfs_start_transaction(root, 2);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return ret;
-+	}
-+
-+	dedup_root = btrfs_create_tree(trans, fs_info,
-+				       BTRFS_DEDUP_TREE_OBJECTID);
-+	if (IS_ERR(dedup_root))
-+		ret = PTR_ERR(dedup_root);
-+
-+	if (ret)
-+		btrfs_end_transaction(trans, root);
+@@ -601,6 +604,11 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	head_ref->is_data = is_data;
+ 	head_ref->ref_root = RB_ROOT;
+ 	head_ref->processing = 0;
++	/* track added ref, more comments in select_delayed_ref() */
++	if (count_mod == 1)
++		head_ref->add_cnt = 1;
 +	else
-+		ret = btrfs_commit_transaction(trans, root);
-+
-+	if (!ret) {
-+		pr_info("btrfs: dedup enabled\n");
-+		fs_info->dedup_root = dedup_root;
-+		fs_info->dedup_root->block_rsv = &fs_info->global_block_rsv;
-+		btrfs_set_fs_incompat(fs_info, DEDUP);
-+	}
-+
-+	mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+	return ret;
-+}
-+
-+static long btrfs_disable_dedup(struct btrfs_root *root)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root *dedup_root;
-+	int ret;
-+
-+	mutex_lock(&fs_info->dedup_ioctl_mutex);
-+	if (!fs_info->dedup_root) {
-+		pr_info("btrfs: dedup has been disabled\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return 0;
-+	}
-+
-+	if (fs_info->dedup_bs != 0) {
-+		pr_info("btrfs: cannot disable dedup until switching off dedup!\n");
-+		mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+		return -EBUSY;
-+	}
-+
-+	dedup_root = fs_info->dedup_root;
-+
-+	ret = btrfs_drop_snapshot(dedup_root, NULL, 1, 0);
-+
-+	if (!ret) {
-+		fs_info->dedup_root = NULL;
-+		pr_info("btrfs: dedup disabled\n");
-+	}
-+
-+	mutex_unlock(&fs_info->dedup_ioctl_mutex);
-+	WARN_ON(ret < 0 && ret != -EAGAIN && ret != -EROFS);
-+	return ret;
-+}
-+
-+static long btrfs_set_dedup_bs(struct btrfs_root *root, u64 bs)
-+{
-+	struct btrfs_fs_info *info = root->fs_info;
-+	int ret = 0;
-+
-+	mutex_lock(&info->dedup_ioctl_mutex);
-+	if (!info->dedup_root) {
-+		pr_info("btrfs: dedup is disabled, we cannot switch on/off dedup\n");
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	bs = ALIGN(bs, root->sectorsize);
-+	bs = min_t(u64, bs, (128 * 1024ULL));
-+
-+	if (bs == info->dedup_bs) {
-+		if (info->dedup_bs == 0)
-+			pr_info("btrfs: switch OFF dedup(it's already off)\n");
-+		else
-+			pr_info("btrfs: switch ON dedup(its bs is already %llu)\n",
-+				bs);
-+		goto out;
-+	}
-+
-+	/*
-+	 * The dedup works similar to compression, both use async workqueue to
-+	 * reach better performance.  We drain the on-going async works here
-+	 * so that new dedup writes will apply with the new dedup blocksize.
-+	 */
-+	atomic_inc(&info->async_submit_draining);
-+	while (atomic_read(&info->nr_async_submits) ||
-+	       atomic_read(&info->async_delalloc_pages)) {
-+		wait_event(info->async_submit_wait,
-+			   (atomic_read(&info->nr_async_submits) == 0 &&
-+			    atomic_read(&info->async_delalloc_pages) == 0));
-+	}
-+
-+	/*
-+	 * dedup_bs = 0: dedup off;
-+	 * dedup_bs > 0: dedup on;
-+	 */
-+	info->dedup_bs = bs;
-+	if (info->dedup_bs == 0) {
-+		pr_info("btrfs: switch OFF dedup\n");
-+	} else {
-+		info->dedup_bs = bs;
-+		pr_info("btrfs: switch ON dedup(dedup blocksize %llu)\n",
-+			info->dedup_bs);
-+	}
-+	atomic_dec(&info->async_submit_draining);
-+
-+out:
-+	mutex_unlock(&info->dedup_ioctl_mutex);
-+	return ret;
-+}
-+
-+static long btrfs_ioctl_dedup_ctl(struct btrfs_root *root, void __user *args)
-+{
-+	struct btrfs_ioctl_dedup_args *dargs;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	dargs = memdup_user(args, sizeof(*dargs));
-+	if (IS_ERR(dargs)) {
-+		ret = PTR_ERR(dargs);
-+		goto out;
-+	}
-+
-+	switch (dargs->cmd) {
-+	case BTRFS_DEDUP_CTL_ENABLE:
-+		ret = btrfs_enable_dedup(root);
-+		break;
-+	case BTRFS_DEDUP_CTL_DISABLE:
-+		ret = btrfs_disable_dedup(root);
-+		break;
-+	case BTRFS_DEDUP_CTL_SET_BS:
-+		/* dedup on/off */
-+		ret = btrfs_set_dedup_bs(root, dargs->bs);
-+		break;
-+	default:
-+		ret = -EINVAL;
-+	}
-+
-+	kfree(dargs);
-+out:
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -4942,6 +5107,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_set_fslabel(file, argp);
- 	case BTRFS_IOC_FILE_EXTENT_SAME:
- 		return btrfs_ioctl_file_extent_same(file, argp);
-+	case BTRFS_IOC_DEDUP_CTL:
-+		return btrfs_ioctl_dedup_ctl(root, argp);
- 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
- 		return btrfs_ioctl_get_supported_features(file, argp);
- 	case BTRFS_IOC_GET_FEATURES:
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b4d6909..a300b27 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -405,6 +405,16 @@ struct btrfs_ioctl_get_dev_stats {
- 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
- };
++		head_ref->add_cnt = 0;
  
-+/* deduplication control ioctl modes */
-+#define BTRFS_DEDUP_CTL_ENABLE 1
-+#define BTRFS_DEDUP_CTL_DISABLE 2
-+#define BTRFS_DEDUP_CTL_SET_BS 3
-+struct btrfs_ioctl_dedup_args {
-+	__u64 cmd;
-+	__u64 bs;
-+	__u64 unused[14];
-+};
+ 	spin_lock_init(&head_ref->lock);
+ 	mutex_init(&head_ref->mutex);
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 4ba9b93..905f991 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -87,6 +87,9 @@ struct btrfs_delayed_ref_head {
+ 	struct rb_node href_node;
+ 
+ 	struct btrfs_delayed_extent_op *extent_op;
 +
- #define BTRFS_QUOTA_CTL_ENABLE	1
- #define BTRFS_QUOTA_CTL_DISABLE	2
- #define BTRFS_QUOTA_CTL_RESCAN__NOTUSED	3
-@@ -612,6 +622,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_DEDUP_CTL _IOWR(BTRFS_IOCTL_MAGIC, 55, \
-+				struct btrfs_ioctl_dedup_args)
- #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
- 				   struct btrfs_ioctl_feature_flags)
- #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
++	int add_cnt;
++
+ 	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 088846c..191f0a7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2347,7 +2347,11 @@ static noinline struct btrfs_delayed_ref_node *
+ select_delayed_ref(struct btrfs_delayed_ref_head *head)
+ {
+ 	struct rb_node *node;
+-	struct btrfs_delayed_ref_node *ref, *last = NULL;;
++	struct btrfs_delayed_ref_node *ref, *last = NULL;
++	int action = BTRFS_ADD_DELAYED_REF;
++
++	if (head->add_cnt == 0)
++		action = BTRFS_DROP_DELAYED_REF;
+ 
+ 	/*
+ 	 * select delayed ref of type BTRFS_ADD_DELAYED_REF first.
+@@ -2358,10 +2362,13 @@ select_delayed_ref(struct btrfs_delayed_ref_head *head)
+ 	while (node) {
+ 		ref = rb_entry(node, struct btrfs_delayed_ref_node,
+ 				rb_node);
+-		if (ref->action == BTRFS_ADD_DELAYED_REF)
++		if (ref->action == action) {
++			if (ref->action == BTRFS_ADD_DELAYED_REF)
++				head->add_cnt--;
+ 			return ref;
+-		else if (last == NULL)
++		} else if (last == NULL) {
+ 			last = ref;
++		}
+ 		node = rb_next(node);
+ 	}
+ 	return last;
+@@ -2435,6 +2442,9 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 
+ 		if (ref && ref->seq &&
+ 		    btrfs_check_delayed_seq(fs_info, delayed_refs, ref->seq)) {
++			if (ref->action == BTRFS_ADD_DELAYED_REF)
++				locked_ref->add_cnt++;
++
+ 			spin_unlock(&locked_ref->lock);
+ 			btrfs_delayed_ref_unlock(locked_ref);
+ 			spin_lock(&delayed_refs->lock);
 -- 
 1.8.1.4
 

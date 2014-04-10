@@ -1,49 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:43806 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030617AbaDJNTI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 09:19:08 -0400
-Received: by mail-pd0-f170.google.com with SMTP id v10so3898042pde.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 06:19:08 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <3839313.LSaoXm11Qk@zafu>
-References: <1541415.olHfkWYf4R@zafu>
-	<pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net>
-	<3839313.LSaoXm11Qk@zafu>
-Date: Thu, 10 Apr 2014 15:19:08 +0200
-Message-ID: <CAPpBBdM52uWwMydmCxXTx+c20KH7aNrgNersRm=hQqP7gEhK0A@mail.gmail.com>
-Subject: Re: Using noCow with snapshots ?
-From: George Eleftheriou <eleftg@gmail.com>
-To: =?UTF-8?Q?Sw=C3=A2mi_Petaramesh?= <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:60007 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751235AbaDJN65 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 09:58:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WYFVH-00053h-Ka
+	for linux-btrfs@vger.kernel.org; Thu, 10 Apr 2014 15:58:55 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 15:58:55 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 15:58:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Copying a disk containing a btrfs filesystem
+Date: Thu, 10 Apr 2014 13:58:45 +0000 (UTC)
+Message-ID: <pan$90756$dc7a7f84$91c0b585$f9cdfc6f@cox.net>
+References: <4783411.VVGoQz5kVU@fuchsia>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Besides this, I'm still wondering about the changes in data security that
-> turning a database to "NoCow" would bring, i.e. would the data still be well
-> protected in case of a system crash or power failure ?
->
-> I have precious data in there and wouldn't like to jeopardize its security for
-> a performance gain...
+Michael Schuerig posted on Thu, 10 Apr 2014 15:21:01 +0200 as excerpted:
 
-Quoting from the mount options of the wiki:
+> SMART indicates that my notebook disk may soon be failing (an
+> unreadable/uncorrectable sector), therefore I intend to exchange it. The
+> disk contains a single btrfs filesystem with several nested(!)
+> subvolumes, each with several read-only snapshots in a .snapshots
+> subdirectory.
+> 
+> As far as I can tell, btrfs currently does not offer a sensible way to
+> duplicate the entire contents of the old disk onto a new one. I can use
+> cp, rsync, or send/receive to copy the "main" subvolumes. But unless I'm
+> missing something obvious, the snapshots are effectively lost. btrfs
+> send optionally takes multiple clone sources, but I've never seen an
+> example of its usage.
+> 
+> If that's what "experimental" means, I'm willing to accept it. However,
+> I'd like to emphasize that there's still something missing. Of course,
+> most of all I'd like to be proved wrong.
 
-nodatacow
-Do not copy-on-write data for newly created files, existing files are
-unaffected. This also turns off checksumming! IOW, nodatacow implies
-nodatasum. datacow is used to ensure the user either has access to the
-old version of a file, or to the newer version of the file. datacow
-makes sure we never have partially updated files written to disk.
-nodatacow gives slight performance boost by directly overwriting data
-(like ext[234]), at the expense of potentially getting partially
-updated files on system failures. Performance gain is usually < 5%
-unless the workload is random writes to large database files, where
-the difference can become very large. NOTE: switches off compression !
+It's not a btrfs tool, but several of the tools you mentioned aren't, and 
+you didn't mention dd (or ddrescue, if your source device starts giving 
+you issues while you're cloning).  Using it you'd clone the entire raw 
+device, including any not yet allocated areas, in a straight-across bit-
+perfect copy.  Of course you'd need a target of either the same size or 
+larger in ordered to do so...
 
-I don't know if the above applies for "chattr +C" as well... Perhaps
-someone more experienced can help.
+That should give you a bit-perfect copy including the filesystem UUIDs, 
+etc, which will confuse btrfs if you try to mount anything btrfs with 
+both devices attached, so don't.  Do your clone, then umount and 
+disconnect the old device before trying to mount the new one.
 
-In any case, if you have precious data in there then, COW or NOCOW,
-you should regularly do backups to a separate, discrete filesystem.
+
+In fact, there are entire purpose-built special live-image distributions 
+such as Clonezilla for managing storage devices like this.
+
+http://clonezilla.org/
+
+Or use a more general purpose "rescue" live-image distro such as 
+SysRescue:
+
+http://www.sysresccd.org/
+
+Both of these tools support MS Windows systems as well.  Image-cloning is 
+of course OS-agnostic -- what's on the cloned image doesn't matter, just 
+whether the source device is readable and the destination writable.  And 
+sysrescue is often used in the MS world to reset lost passwords and etc.  
+I used to use it for that back when I still worked on friends' MS systems 
+for "gratis" (well, traded for a good dinner or whatever), before I 
+decided that wasn't a worthwhile use of my time, tho I'd be happy to 
+teach them about Linux if they wanted, or might still do it if they paid 
+me enough, but then there's other computer repair services that will do 
+that if they're willing to pay.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,75 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f181.google.com ([209.85.128.181]:33842 "EHLO
-	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965088AbaDJPMs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 11:12:48 -0400
-Received: by mail-ve0-f181.google.com with SMTP id oy12so3465996veb.40
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 08:12:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAFvQSYSZe5JMe7D3OXbwPW=aJrz5yV_ndNUHDsXg9-iK3KE8Tg@mail.gmail.com>
-References: <CAFvQSYSSt_FneFeFUXYK65toiS6MSVGy_pmXd3RUuy=vam-Xsg@mail.gmail.com>
-	<pan$73f63$4e264a95$61f7c205$43e12487@cox.net>
-	<CAFvQSYSZe5JMe7D3OXbwPW=aJrz5yV_ndNUHDsXg9-iK3KE8Tg@mail.gmail.com>
-Date: Thu, 10 Apr 2014 17:12:47 +0200
-Message-ID: <CAFvQSYReY9QNkC2gCfFzn+XO-DBua-9CQzXq+91=JMOBEOQdrw@mail.gmail.com>
-Subject: Re: Is there any way to determine fragmentation for compressed btrfs volumes?
-From: Clemens Eisserer <linuxhippy@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:38846 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751225AbaDJPPR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 11:15:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WYGh9-0004FD-Aa
+	for linux-btrfs@vger.kernel.org; Thu, 10 Apr 2014 17:15:15 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 17:15:15 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 17:15:15 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Copying a disk containing a btrfs filesystem
+Date: Thu, 10 Apr 2014 15:15:02 +0000 (UTC)
+Message-ID: <pan$2aca0$96a1810f$3919e968$6678f073@cox.net>
+References: <4783411.VVGoQz5kVU@fuchsia>
+	<CAPpBBdMCAFASLgGpbWo7-Pp74S_KQdZ2A7qrSNzo0rGrZAbqMw@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi again,
+George Eleftheriou posted on Thu, 10 Apr 2014 16:00:06 +0200 as excerpted:
 
-So it seems performance issues caused by FS degredation are in the
-current development stage of btrfs not getting a lot of attention.
-Hopefully production use on facebook servers will expose one or
-another issue and with the developers being employed there chances are
-good btrfs will handle workload like mine more gracefully with these
-issues fixed.
+> Maybe there is another much more complicated solution:
+> 
+> Plug the old disk in a USB dock/case, do the same for the new disk in
+> another dock/case, plug both docks/cases in another linux system running
+> recent kernel and btrfs-progs and convert to a "-dconvert=raid1
+> -mconvert=raid1" profile with a balance. Then degrade it by removing the
+> old disk and rebalance-convert back to single or DUP profile (i am not
+> quite sure this is even possible).
+> 
+> Just an idea. I wouldn't trust me.
 
-Thanks & best regards, Clemens
+Creative idea, actually, and one I've seen come up here before tho if you 
+read my earlier response I didn't mention it myself, as I failed to 
+recall it.
 
-2014-04-08 21:41 GMT+02:00 Clemens Eisserer <linuxhippy@gmail.com>:
-> Hi Ducan,
->
->> You mention trying scrub and defragging the entire volume, but you don't
->> mention balance.  Balance by default rewrites all chunks (tho you can add
->> filters to rewrite only say data chunks, not metadata, if you like), so
->> that's what I'd say to try, as it should defrag in the process.
->>
->> Tho we've seen a few reports from people saying a full balance actually
->> made for instance boot times longer instead of shorter, too.  I haven't
->> seen and don't have an explanation for that. <shrug>
->
-> Ah sorry, I confused scrub with balance.
-> I didn't do a scrub but actually I tried to balance the device as I
-> was told basically all data has to go through the allocator again
-> which most likely will improve on-disk layout. Unfourtunatly in my
-> case it made the situation a lot worse, when running this Linux system
-> in virtualbox (where disk access has a lot more overhead) it is now
-> even with the SSD super slow.
->
->
->> Meanwhile, have you tried a trim/discard (fstrim command), and/or do you
->> run with the discard (or is it trim) mount option?
-> I have tried with discard on and off - however this isn't a SSD issue.
->
-> It is slow even for read-only workload, and windows on the same SSD
-> works as expected (with CrystalDiskMark showing the dirve meets the
-> specs (~350mb/s seq. write, 500b/s sequential read, good 4k random
-> values).
-> So I doubt this is an SSD issue.
->
->
->> One more thing to consider.  The btrfs of a year and a half ago was a
->> rather less mature btrfs than we have today.  I recently booted to backup
->> here, and did a brand new mkfs.btrfs on my working filesystems to take
->> advantage of several of the newer features
->
-> I had hopes I could avoid that.
-> Having a FS in such a degraded state with the only option to re-create
-> it isn't that compelling ;)
->
-> Thanks & regards, Clemens
+But yes, it is somewhat more complicated, and sort of an abuse of 
+existing features for a purpose they weren't intended for.  It should 
+still work and such unintended purpose uses are a good thing, but because 
+it is unintended usage, it won't have been tested much if at all, and 
+given that btrfs isn't itself fully stable yet, there's a fair likelihood 
+that some unanticipated complexities would arise while doing it, as well.
+
+Meanwhile, by the very fact that btrfs is /not/ yet entirely stable, 
+there's even more reason than normal to have good, tested backups.  Given 
+that, there should be no harm in trying this, since even if it somehow 
+kills the working copy, one can still restore from those already tested 
+backups.  And someone's gotta be the first to test this method and report 
+on how it went, right?
+
+Meanwhile (2), given the existence of those tested backups, there's yet 
+another way to accomplish things.  Simply restore from the backups the 
+same way you would if the working copy went down and you had to restore 
+it, only restore to the new device instead of the old one.  =:^)
+
+(Actually, given my usual insistence on this key point, that btrfs isn't 
+yet fully stable and that as a result by definition, you either have 
+tested backups or you're demonstrating by practice that you simply don't 
+care about losing the data anyway whatever your words might otherwise 
+claim, I really should have thought of and mentioned the restoring from 
+backups method first, instead of having it occur to me as an after-
+thought.  I must be getting sloppy and careless in my thinking! =:^( )
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

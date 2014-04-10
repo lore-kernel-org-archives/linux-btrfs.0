@@ -1,59 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58705 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752630AbaDDMNS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Apr 2014 08:13:18 -0400
-Date: Fri, 4 Apr 2014 14:13:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: filter invalid arg for btrfs resize
-Message-ID: <20140404121316.GR29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1396260206-14153-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:46527 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750849AbaDJHgI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 03:36:08 -0400
+Message-ID: <53464A29.7090607@oracle.com>
+Date: Thu, 10 Apr 2014 15:37:13 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1396260206-14153-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Force 'btrfs dev scan' not using old libblkid
+ cache
+References: <1397115021-30426-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1397115021-30426-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 31, 2014 at 06:03:25PM +0800, Gui Hecheng wrote:
-> Originally following cmds will work:
-> 	# btrfs fi resize -10A  <mnt>
-> 	# btrfs fi resize -10Gaha <mnt>
-> Filter the arg by checking the return pointer of memparse.
 
-This should probably also go to stable@
 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+
+
+On 04/10/2014 03:30 PM, Qu Wenruo wrote:
+> 'btrfs scan' uses libblkid to scan devices by default, and libblkid uses
+> cache to reduce the probe.
+>
+> But if operations below is done in less than 2 seconds(BLKID_PROBE_MIN),
+> 'btrfs scan' will still use the uncorrect cache and scan on the deleted device.
+
+  Great thanks for looking into this.
+
+Anand
+
+
+> 0. /dev/sda[1-4] mounted on /mnt using single data/metadata
+> 1. btrfs dev scan
+> 2. btrfs dev del /dev/sda3 /mnt
+> 3. btrfs dev scan
+
+> Since the cache made by step 1 is still validated, step 3 will use the
+> cache and consider /dev/sda3 as a btrfs filesystem and try to scan it.
+> But the superblock(at least the first one) is wiped and failed to scan,
+> a error message, which can be avoided and is unneeded, is output.
+>
+> This patch will force scan_for_btrfs() not to use cache to avoid the
+> problem.
+>
+> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Singed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->  fs/btrfs/ioctl.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index e174770..2ed21fa 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1459,6 +1459,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
->  	struct btrfs_trans_handle *trans;
->  	struct btrfs_device *device = NULL;
->  	char *sizestr;
-> +	char *retptr;
-
-Minor nit, the variable is otherwise unused, it's better to put it into
-the enclosing statement block with memparse.
-
->  	char *devstr = NULL;
->  	int ret = 0;
->  	int mod = 0;
-> @@ -1526,8 +1527,8 @@ static noinline int btrfs_ioctl_resize(struct file *file,
->  			mod = 1;
->  			sizestr++;
->  		}
-> -		new_size = memparse(sizestr, NULL);
-> -		if (new_size == 0) {
-> +		new_size = memparse(sizestr, &retptr);
-> +		if (*retptr != '\0' || new_size == 0) {
->  			ret = -EINVAL;
->  			goto out_free;
->  		}
+>   utils.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/utils.c b/utils.c
+> index 0bfb9d9..1cd1d28 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2057,7 +2057,8 @@ int btrfs_scan_lblkid(int update_kernel)
+>   	blkid_cache cache = NULL;
+>   	char path[PATH_MAX];
+>
+> -	if (blkid_get_cache(&cache, 0) < 0) {
+> +	/* No to use libblkid cache to avoid old data */
+> +	if (blkid_get_cache(&cache, "/dev/null") < 0) {
+>   		printf("ERROR: lblkid cache get failed\n");
+>   		return 1;
+>   	}
+>

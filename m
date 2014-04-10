@@ -1,67 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45129 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933402AbaDITYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Apr 2014 15:24:17 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WXy6a-0003kt-AX
-	for linux-btrfs@vger.kernel.org; Wed, 09 Apr 2014 21:24:16 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 21:24:16 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Apr 2014 21:24:16 +0200
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:47217 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965184AbaDJIWv convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 04:22:51 -0400
+Received: from mfilter7-d.gandi.net (mfilter7-d.gandi.net [217.70.178.136])
+	by relay4-d.mail.gandi.net (Postfix) with ESMTP id A60741720B1
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 10:22:49 +0200 (CEST)
+Received: from relay4-d.mail.gandi.net ([217.70.183.196])
+	by mfilter7-d.gandi.net (mfilter7-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id n9fuTmMISRXV for <linux-btrfs@vger.kernel.org>;
+	Thu, 10 Apr 2014 10:22:18 +0200 (CEST)
+Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
+	(Authenticated sender: michel@bouissou.net)
+	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 8A2641720C5
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 10:22:17 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Upgrade to 3.14.0 messed up raid0 array (btrfs cleaner crashes
- in fs/btrfs/extent-tree.c:5748 and fs/btrfs/free-space-cache.c:1183 )
-Date: Wed, 9 Apr 2014 19:24:04 +0000 (UTC)
-Message-ID: <pan$67ab$c32b2852$4d6f351b$ebc1ebdd@cox.net>
-References: <20140408153609.GE23524@merlins.org>
-	<20140408220903.GV9923@merlins.org> <53448AFA.4080601@fb.com>
-	<20140409043125.GI10789@merlins.org> <20140409053139.GJ10789@merlins.org>
-	<20140409154259.GM10789@merlins.org> <53456B45.8050906@fb.com>
-	<20140409165134.GO10789@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Using noCow with snapshots ?
+Date: Thu, 10 Apr 2014 10:22:15 +0200
+Message-ID: <3839313.LSaoXm11Qk@zafu>
+In-Reply-To: <pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net>
+References: <1541415.olHfkWYf4R@zafu> <pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Wed, 09 Apr 2014 09:51:34 -0700 as excerpted:
+Thanks Duncan for the perfect explanations.
 
-> But since we're talking about this, is btrfsck ever supposed to return
-> clean on a clean filesystem?
+>From this, I understand that I might get both better performance by setting my 
+akonadi dir to "nocow", and still be able to take a snapshot from time to 
+time, which is exactly what I need.
 
-FWIW, it seems to return clean here, on everything I've tried it on.
+Besides this, I'm still wondering about the changes in data security that 
+turning a database to "NoCow" would bring, i.e. would the data still be well 
+protected in case of a system crash or power failure ?
 
-But I run relatively small partitions (the biggest is I believe 40 gig, 
-my media partitions are still reiserfs on spinning rust, while all my 
-btrfs partitions are on SSD and most are raid1 both data/metadata, with 
-the exceptions (my normal /boot and the backup /boot on the other ssd in 
-the pair that's btrfs raid1 for most partitions) being tiny mixed-data/
-metadata dup), and keep them pretty clean, running balance and scrub when 
-needed.
+I have precious data in there and wouldn't like to jeopardize its security for 
+a performance gain...
 
-I had seen some scrub recoveries back when I was doing suspend-to-ram and 
-the system wasn't reliably resuming, I've quit doing that and recently 
-did a new mkfs.btrfs and restored from backup on the affected filesystems 
-in ordered to take advantage of newer features like 16k metadata nodes, 
-so in fact have never personally seen an unclean output of any type from 
-btrfs check.
+Kind regards.
 
-Tho I don't run btrfs check regularly as in normal mode it's read-only 
-anyway, and I know it can make some problems worse instead of fixing them 
-in repair mode, so my normal idea is why run it and see stuff that might 
-make me worried if I can't really do much about it, and I prefer balance 
-and scrub instead if there's problems.  But I have run it a few times as 
-I was curious just what it /would/ output, and everything came up clean 
-on the filesystems I ran it on.
+
+Le mercredi 9 avril 2014 11:56:20 Duncan a écrit :
+> Good questions. =:^)
+> 
+> #2. That's from one of the devs when the question came up perhaps a 
+> couple months ago.
+> 
+> On a NOCOW file the first write to a fileblock (4096 bytes) after a 
+> snapshot must still be COW, because the snapshot locks the old version in 
+> place, and now the fileblock has changed, so it MUST be written elsewhere 
+> despite the NOCOW in ordered to keep the snapshot as it was.  However, 
+> the file does retain the NOCOW attribute and additional writes to the 
+> same fileblock will be in-place... until the next snapshot of course.
+> 
+> This is why on filesystems with scripted snapshots as close as a minute a 
+> part (I even saw one guy say he was doing them every 30 seconds!!), 
+> setting NOCOW has very little value -- they aren't NOCOW on the first 
+> write after a snapshot, and with snapshots happening every minute...,  
+> Hourly snapshots are still likely to be a problem on a regularly changing 
+> file, tho with daily snapshots you'd probably save some fragmentation 
+> over the fairly short term anyway, but it'd still be a problem longer 
+> term.
+> 
+> Which is why I suggest putting such files on a separate subvolume and not 
+> snapshotting that subvolume, since snapshots stop at the subvolume 
+> boundary.  That gives NOCOW a chance to actually *BE* NOCOW.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 

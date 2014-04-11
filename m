@@ -1,72 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43279 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:38824 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753117AbaDKAfz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 20:35:55 -0400
+	id S1754365AbaDKCKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 22:10:01 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WYPRh-0003R2-QS
-	for linux-btrfs@vger.kernel.org; Fri, 11 Apr 2014 02:35:53 +0200
+	id 1WYQum-0004A7-5s
+	for linux-btrfs@vger.kernel.org; Fri, 11 Apr 2014 04:10:00 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 02:35:53 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 04:10:00 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 02:35:53 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 04:10:00 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Copying a disk containing a btrfs filesystem
-Date: Fri, 11 Apr 2014 00:35:38 +0000 (UTC)
-Message-ID: <pan$4fcd0$87fc5afe$80e50794$911d5718@cox.net>
-References: <4783411.VVGoQz5kVU@fuchsia> <3414746.Gera7uWrI1@fuchsia>
-	<CAPpBBdNo0ar8+2Kt9O_mNyQsmmOvFNfVJ=a_EA1HW=TnS4uTXQ@mail.gmail.com>
-	<1924982.LHpDrRg8EQ@fuchsia>
+Subject: Re: Filesystem unable to recover from ENOSPC
+Date: Fri, 11 Apr 2014 02:09:46 +0000 (UTC)
+Message-ID: <pan$18fc6$7005cb64$a96a9a75$5cd6742f@cox.net>
+References: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
+	<20140410203439.GB20307@carfax.org.uk>
+	<CAH3EO-oSzYTd2Q3H3wfg9eV9ii-phuquvtzU2mT5KGKF1_x5iw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael Schuerig posted on Thu, 10 Apr 2014 18:24:00 +0200 as excerpted:
+Chip Turner posted on Thu, 10 Apr 2014 15:40:22 -0700 as excerpted:
 
-> I *think* send/receive with clone sources might be the key to a
-> solution. I'm still hoping that someone with a far better understanding
-> of btrfs than me gives it a try first...
+> On Thu, Apr 10, 2014 at 1:34 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> On Thu, Apr 10, 2014 at 01:00:35PM -0700, Chip Turner wrote:
+>>> btrfs show:
+>>> Label: none  uuid: 04283a32-b388-480b-9949-686675fad7df
+>>> Total devices 1 FS bytes used 135.58GiB
+>>> devid    1 size 238.22GiB used 238.22GiB path /dev/sdb2
+>>>
+>>> btrfs fi df:
+>>> Data, single: total=234.21GiB, used=131.82GiB
+>>> System, single: total=4.00MiB, used=48.00KiB
+>>> Metadata, single: total=4.01GiB, used=3.76GiB
 
-Well, there's both that (which I don't know enough about to discuss in 
-any intelligent way at all), and the fact that at least until very (very) 
-recently (like recent enough I'm not sure it'll all be in 2.15 yet), 
-btrfs send/receive still had some serious corner-case bugs, such that to 
-my knowledge if it worked without error it was reliable, there were 
-numbers of cases (like where it was originally subdir /a/b/, and then 
-switched to /b/a, reversing the nesting) where it would spit out errors, 
-leaving the receive in a half-received state.
+[Tried all the usual tricks, didn't work.]
 
-So it worked for some people but not others, and for some it would work 
-for awhile, then would start erroring out, whenever they hit whatever 
-corner-case.
+>> One thing you could do is btrfs dev add a small new device to the
+>> filesystem (say, a USB stick, or a 4 GiB loopback file mounted over NBD
+>> or something). Then run the filtered balance. Then btrfs dev del the
+>> spare device.
+> 
+> Ah, this worked great.  It fixed it in about ten seconds.
+> 
+> I'm curious about the space report; why doesn't Data+System+Metadata add
+> up to the total space used on the device?
 
-Regulars on this list will have seen all the recent work going into send/
-receive bug tracing and fixing, however, which will of course ultimately 
-make it far more reliable than it had been.  Surely it's already far more 
-reliable, as a fair number of those corner cases have now been found and 
-dealt with.
+Actually, it does... *IF* you know how to read it.  Unfortunately that's 
+a *BIG* *IF*, because btrfs show very confusingly reports two very 
+different numbers using very similar wording, without making *AT* *ALL* 
+clear what it's actually reporting.
 
-But what I do NOT know yet, is where in the process we are, in terms of 
-/reliable/ send/receive.  Relatively, we're certainly closer than we 
-were, but did that move use from say 80% to 90% reliable, or from 80% to 
-97 or 98% reliable (which is about where I'd put general btrfs at this 
-point), or from 90% to 98-ish% reliable, or... ?  
+Try this:
 
-Without that knowledge, even if you did know the specific CL options you 
-needed, I'd still consider it very much a "great if it works, but don't 
-count on it until you actually see it complete without errors, and even 
-then, be aware that the next time you try it could error out, because 
-it's still very much in bug-fixing-phase" solution.
+Add up the df totals (which is the space allocated for each category 
+type). 234.21 gig, 4.01 gig, 4 meg.  238 gig and change, correct?  Look 
+at the show output.  What number does that look like there?
 
-Meanwhile, the ddrescue solution is mature technology, proven to work 
-with many different types of filesystems over many years, now, so that's 
-the basket I'd be putting my resource eggs into at this point. =:^)
+Now do the same with the df used (which is the space used out of that 
+allocated).  131.82 gig, 3.76 gig, (insubstantial).  135 gig and change.  
+What number from btrfs show does /that/ look like?
+
+Here's what's happening and how to read those numbers.  Btrfs uses space 
+in two stages.
+
+First it on-demand allocates chunks dedicated to the usage type.  Data 
+chunks are 1 GiB in size.  Metadata chunks are 256 MiB in size, a quarter 
+the size of a data chunk, altho by default on a single device they are 
+allocated in pairs, dup mode, so 512 MiB at a time (half a data-chunk), 
+tho I see your metadata is single mode so it's still only 256 MiB at a 
+time.
+
+The space used by these ALLOCATED chunks appears as the totals in btrfs 
+filesystem df and as used in btrfs filesystem show for individual 
+devices, but the show total line comes from somewhere else *ENTIRELY*, 
+which is why the reported individual device used number sum up to (if 
+there's more than one device, the individual device numbers can be added 
+together, if it's just one, that's it) so much larger than the number 
+reported by show as total used.
+
+That metadata-single, BTW, probably explains Hugo's observation, that you 
+were able to use more of your metadata than most, because you're running 
+single metadata mode instead of the more usual dup.  (Either you set it 
+up that way, or mkfs.btrfs detected SSD, in which case it defaults to 
+single metadata for a single device filesystem.)  So you were able to get 
+closer to full metadata usage.  (Btrfs reserves some metadata, typically 
+about a chunk, which means about two chunks in dup mode, for its own 
+usage.  That's never usable so it always looks like you have a bit more 
+free metadata space than you actually do.  But as long as there's 
+unallocated free space to allocate additional metadata blocks from, it 
+doesn't matter.  Only when all space is allocated does it matter, since 
+then it still looks like you have free metadata space to use when you 
+don't.)
+
+Anyway, once btrfs has a chunk of the appropriate type, it fills it up.  
+When necessary, it'll try to allocate another chunk.
+
+The actual usage of the already allocated chunks appears in btrfs 
+filesystem df as used, with the total of all types for all devices also 
+appearing in btrfs filesystem show on the total used line.
+
+So data+metadata+system allocated as reported by df, adds up to the 
+totals reported as used by show for all the individual devices, added 
+together.
+
+And data+metadata+system actually used (out of the allocated) as reported 
+by df, adds up to the total reported by show as used, on the total used 
+line.
+
+But they are two very different numbers, one total chunks allocated, the 
+other the total used OF those allocated chunks.  Makes sense *IF* *YOU* 
+*KNOW* *HOW* *TO* *READ* *IT*, but otherwise, it's *ENTIRELY* misleading 
+and confusing!
+
+There has already been discussion and proposed patches for adding more 
+detail to df and show, with the wording changed up as well, and I sort of 
+expected to see that in btrfs-progs v3.14 when it came out altho I'm 
+running it now and don't see a change, but FWIW, from the posted examples 
+at least, I couldn't quite figure out the proposed new output either, so 
+it might not be that much better than what we have.  Which might or might 
+not have anything to do with it not appearing in v3.14 as I expected. 
+Meanwhile, now that I actually know how to read the current output, it 
+does provide the needed information, even if the output /is/ rather 
+confusing to newbies.
+
+Back to btrfs behavior and how it leads to nospc errors, however...
+
+When btrfs deletes files, it frees space in the corresponding chunks, but 
+since individual files normally use a lot more data space than metadata, 
+data chunks get emptied faster than the corresponding metadata chunks.
+
+But here's the problem.  Btrfs can automatically free space back to the 
+allocated chunks as files get deleted, but it does *NOT* (yet) know how 
+to automatically deallocate those now empty or mostly empty chunks, 
+returning them to the unallocated pool so they can be reused as another 
+chunk-type if necessary.
+
+So btrfs uses space up in two stages, but can only automatically return 
+unused space back in one stage, not the other.  Currently, to deallocate 
+and free those unused blocks, you must run balance (which is where the 
+filtered balance -dusage=20 or whatever, to balance, in that case only 
+data chunks with 20% usage or less), which rewrites those blocks and 
+consolidates any remaining usage as it goes, freeing up the blocks it 
+empties back to the unallocated pool.
+
+At some point the devs plan to automate the process, probably by 
+automatically triggering a balance start -dusage=5 or balance start 
+-musage=5, or whatever, as necessary.  But that hasn't happened yet.  
+Which is why admins must currently keep an eye on things and run that 
+balance manually (or hack up some sort of script to do it automatically, 
+themselves) when necessary.
+
+> Was the fs stuck in a state
+> where it couldn't clean up because it couldn't write more metadata (and
+> hence adding a few gb allowed it to balance)?
+
+Basically, yes.  As you can see from the individual device line in the 
+above show output, 238.22 gig used (that is, chunks allocated), of 238.22 
+filesystem size.  There's no room left to allocate additional chunks, not 
+even one in ordered to rewrite the remaining data from some of those 
+mostly empty data chunks, in ordered to return them to the unallocated 
+pool.
+
+With a bit of luck, you would have had at least one entirely empty data 
+chunk, in which case a balance start -dusage=0 would have freed it (since 
+it was entirely empty and thus there was nothing to rewrite to a new 
+chunk), thus giving you enough space to actually allocate a new chunk, to 
+write into and free more of them.  But if you tried a balance start
+-dusage=0 and it couldn't find even one entirely empty data chunk to 
+free, as apparently you did, then you had a problem, since all available 
+space was already allocated.
+
+Temporarily adding another device gave it enough room to allocate a few 
+new chunks, such that balance then had enough space to rewrite a few of 
+the mostly empty chunks, thereby freeing enough space so you could then 
+btrfs device delete the new device, rewriting those new chunks back to 
+the newly deallocated space on the original device.
+
+> After the balance, the
+> used space dropped to around 150GB, roughly what I'd expect.
+
+=:^)
+
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

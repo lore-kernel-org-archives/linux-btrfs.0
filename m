@@ -1,77 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57352 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751084AbaDKFyz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 01:54:55 -0400
-Date: Thu, 10 Apr 2014 22:54:54 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 24/27] btrfs-progs: Convert man page for btrfs-zero-log
-Message-ID: <20140411055454.GC7322@merlins.org>
-References: <1396427378-10487-1-git-send-email-quwenruo@cn.fujitsu.com> <1396427378-10487-25-git-send-email-quwenruo@cn.fujitsu.com> <20140404184620.GA12124@merlins.org> <534353EB.9020601@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:47427 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750849AbaDKRtZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Apr 2014 13:49:25 -0400
+Date: Fri, 11 Apr 2014 19:49:23 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Subject: Re: [PATCH] Btrfs-progs: update btrfs_file_extent_inline_len to
+ match kernel version
+Message-ID: <20140411174923.GH29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1396977943-12427-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <534353EB.9020601@cn.fujitsu.com>
+In-Reply-To: <1396977943-12427-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 08, 2014 at 09:42:03AM +0800, Qu Wenruo wrote:
-> >I had debian add this to the initramfs initrd by default so that someone
-> >can recover their root filesystem with this command if it won't mount.
-> >
-> >What got fixed is the kernel used to oops and crash, and now it gives a
-> >nice "can't mount" error message.
-> >
-> >Marc
-> Thanks for the note.
+On Tue, Apr 08, 2014 at 06:25:43PM +0100, Filipe David Borba Manana wrote:
+> The following kernel commit changed the definition of the inline function
+> btrfs_file_extent_inline_len():
 > 
-> After reading following up mails on the thread, I agree that the note is 
-> needed.
+>     commit 514ac8ad8793a097c0c9d89202c642479d6dfa34
+>     Author: Chris Mason <clm@fb.com>
+>     Date:   Fri Jan 3 21:07:00 2014 -0800
 > 
-> But I would like to add more method to judge whether to call 
-> btrfs-zero-log or other tools like btrfsck.
- 
-Sounds like a good idea. It may also make sense in places to have the man
-page point to the btrfs wiki for more detailled info since it's easier to
-update the wiki than to update the man page on thousands or millions of
-systems :)
+>     Btrfs: don't use ram_bytes for uncompressed inline items
+> 
+>     If we truncate an uncompressed inline item, ram_bytes isn't updated to reflect
+>     the new size.  The fixe uses the size directly from the item header when
+>     reading uncompressed inlines, and also fixes truncate to update the
+>     size as it goes.
+> 
+> Not having this new definition implies that the restore tool might misbehave when
+> restoring files with an inline extent that got truncated on a kernel older than
+> release 3.14.
 
-I wrote 
-http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair
-which is linked off
-https://btrfs.wiki.kernel.org/index.php/Btrfsck
-which I just updated with more details.
+FYI, I get a compilation error where one instance of
+btrfs_file_extent_inline_len lacks the slot parameter, fixed by
 
-It would be great to put a pointer to the official wiki in the man page, and
-also in the btrfsck man page which currently doesn't warn people enough that
-they have many other options to try before btrfsck.
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1166,7 +1166,7 @@ static int process_file_extent(struct btrfs_root *root,
+        extent_type = btrfs_file_extent_type(eb, fi);
 
-Now that I updated the official wiki page, would you agree that it would be
-good to link to it in the man page?
-
-> It would be quite nice if any one can provide a log-tree-broken small 
-> btrfs image for me to test?
-> (Personally, I would prefer using dmesg warning/backtrace and btrfsck 
-> result to make sure to call btrfs-zero-log)
-
-Unfortunately, my broken SSD that was generating that corruption has been
-returned to the vendor, and my new SSD doesn't crash anymore, so I don't
-have such broken filesystem anymore.
- 
-> P.S: If btrfs can be automatically mounted as RO when log tree is 
-> broken, it would be better.
-> But it also seems log tree related things will be improved sooner or 
-> later, it may not be so urgent.
-
-I agree this is a great idea, especially if it's the root filesystem without
-which you can't fix the machine that's broken.
-
-Thank you,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+        if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-               num_bytes = btrfs_file_extent_inline_len(eb, fi);
++               num_bytes = btrfs_file_extent_inline_len(eb, slot, fi);
+                if (num_bytes == 0)
+                        rec->errors |= I_ERR_BAD_FILE_EXTENT;
+                rec->found_size += num_bytes;
+---

@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:50362 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756585AbaDKJWC convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36467 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754154AbaDKJ2h (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 05:22:02 -0400
-Received: from mfilter29-d.gandi.net (mfilter29-d.gandi.net [217.70.178.160])
-	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 85EA041C064
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:22:00 +0200 (CEST)
-Received: from relay5-d.mail.gandi.net ([217.70.183.197])
-	by mfilter29-d.gandi.net (mfilter29-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id QjUzYIXG7Aqe for <linux-btrfs@vger.kernel.org>;
-	Fri, 11 Apr 2014 11:21:59 +0200 (CEST)
-Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
-	(Authenticated sender: michel@bouissou.net)
-	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 7EFE241C091
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:21:57 +0200 (CEST)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: linux-btrfs@vger.kernel.org
-Subject: mount options ignored / unclear
-Date: Fri, 11 Apr 2014 11:21:55 +0200
-Message-ID: <1988570.7Waz7R0erI@zafu>
+	Fri, 11 Apr 2014 05:28:37 -0400
+Date: Fri, 11 Apr 2014 17:28:28 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Chip Turner <cturner@pattern.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Filesystem unable to recover from ENOSPC
+Message-ID: <20140411092827.GD26503@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
+ <20140410203439.GB20307@carfax.org.uk>
+ <CAH3EO-oSzYTd2Q3H3wfg9eV9ii-phuquvtzU2mT5KGKF1_x5iw@mail.gmail.com>
+ <pan$18fc6$7005cb64$a96a9a75$5cd6742f@cox.net>
+ <CAH3EO-qB91cTUT0ZAib4xAA82_RDGM4dOWmp3smtUfS_=e1uxg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAH3EO-qB91cTUT0ZAib4xAA82_RDGM4dOWmp3smtUfS_=e1uxg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Thu, Apr 10, 2014 at 11:10:33PM -0700, Chip Turner wrote:
+> Thank you for the extremely detailed and helpful reply.  I now
+> understand what was happening.  To me, when I read "total=" I guess I
+> thought that was capacity rather than allocated (but now "holey")
+> chunks.  I agree that perhaps adjusting the phrasing of the output of
+> df and show would be helpful in making this clearer (or perhaps some
+> adjustment to the wiki; maybe I will do that).
+> 
+> I assume metadata is where filesystem information (directory entries,
+> inodes, etc) are stored and not being able to delete was because there
+> wasn't room in the metadata chunks, and no room to allocate more
+> metadata chunks?  Or are those also data chunks and it was purely
+> about data chunks?
 
-(Still in my quest for BTRFS performance)
+Yes and no.  Deleting metadata also needs metadata, and metadata chunk and data
+chunk are different ones.
 
-It is extremely unclear which BTRFS mount options are "filesystem wide" and 
-will apply to each and every mountpoint in the BTRFS filesystem, and which 
-options can be set per subvolume or per mountpoint.
+> 
+> Does defrag do similar reallocation to balance such that it would help
+> combat this behavior?
 
-As far as I can tell, there is no reliable documentation about this, is there 
-any ?
+I'm afraid it won't, since you have that many hardlinks, defrag may not help on
+reducing metadata.
 
-(Kernel is 3.13, Fedora)
-
-
-i.e. I have in fstab :
-
-/dev/sda3 / btrfs subvol=FEDORA,noatime,compress=lzo,autodefrag
-
-...So without suprise I get in /proc/self/mountinfo:
-
-36 1 0:32 /FEDORA / rw,noatime shared:1 - btrfs /dev/sda3 
-rw,seclabel,compress=lzo,space_cache,autodefrag
-
-
-...But then I have in fstab:
-
-/dev/sda3 /home/me/.cache  btrfs   
-subvol=/NOCOW/me/.cache,nodatacow,compress=no,noatime
-
-So it is with great suprise the I get in /proc/self/mountinfo:
-
-49 47 0:32 /NOCOW/me/.cache /home/me/.cache rw,noatime shared:33 - btrfs 
-/dev/sda3 rw,seclabel,compress=lzo,space_cache,autodefrag
-
-
-...I'm not suprised to see "space_cache" which I would assume to be FS-wide, 
-but what the hell does "autodefrag" do in there, or even worse "compress=lzo", 
-where "compress=no" has been exlicitely specified in fstab ?
-
-That's a bug, as far as I can tell.
-
-Kind regards.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+thanks,
+-liubo

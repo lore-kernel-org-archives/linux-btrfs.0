@@ -1,125 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:57198 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754560AbaDKCm7 (ORCPT
+	with ESMTP id S1754560AbaDKCnC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 22:42:59 -0400
+	Thu, 10 Apr 2014 22:43:02 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Marc MERLIN <marc@merlins.org>
-Subject: [PATCH 1/2] btrfs-progs: Add device management related paragraph.
-Date: Fri, 11 Apr 2014 10:43:52 +0800
-Message-ID: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs: Add explain on btrfs-zero-log.
+Date: Fri, 11 Apr 2014 10:43:53 +0800
+Message-ID: <1397184233-18535-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add device management related paragraph to better explain btrfs device
-management.
+Add more explain on btrfs-zero-log about when to use it.
 
 Cc: Marc MERLIN <marc@merlins.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-balance.txt |  3 +++
- Documentation/btrfs-device.txt  | 42 +++++++++++++++++++++++++++++++++++++++++
- Documentation/btrfs-replace.txt |  4 ++++
- 3 files changed, 49 insertions(+)
+ Documentation/btrfs-zero-log.txt | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/Documentation/btrfs-balance.txt b/Documentation/btrfs-balance.txt
-index 2289fdf..1b1861c 100644
---- a/Documentation/btrfs-balance.txt
-+++ b/Documentation/btrfs-balance.txt
-@@ -14,6 +14,8 @@ DESCRIPTION
- 'btrfs balance' is used to balance chunks in a btrfs filesystem across
- multiple or even single device.
+diff --git a/Documentation/btrfs-zero-log.txt b/Documentation/btrfs-zero-log.txt
+index e3041fa..a8e4dd3 100644
+--- a/Documentation/btrfs-zero-log.txt
++++ b/Documentation/btrfs-zero-log.txt
+@@ -17,6 +17,24 @@ allow you to mount the filesystem again.
+ The common case where this happens has been fixed a long time ago,
+ so it is unlikely that you will see this particular problem.
  
-+See `btrfs-device`(8) for more details about the effect on device management.
++One can determine whether 'btrfs-zero-log' is needed according to the kernel
++backtrace:
++----
++? replay_one_dir_item+0xb5/0xb5 [btrfs]
++? walk_log_tree+0x9c/0x19d [btrfs]
++? btrfs_read_fs_root_no_radix+0x169/0x1a1 [btrfs]
++? btrfs_recover_log_trees+0x195/0x29c [btrfs]
++? replay_one_dir_item+0xb5/0xb5 [btrfs]
++? btree_read_extent_buffer_pages+0x76/0xbc [btrfs]
++? open_ctree+0xff6/0x132c [btrfs]
++----
 +
- SUBCOMMAND
- ----------
- <path>::
-@@ -75,3 +77,4 @@ further details.
- SEE ALSO
- --------
- `mkfs.btrfs`(8),
-+`btrfs-device`(8)
-diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
-index 20d7bcd..474d411 100644
---- a/Documentation/btrfs-device.txt
-+++ b/Documentation/btrfs-device.txt
-@@ -14,6 +14,46 @@ DESCRIPTION
- 'btrfs device' is used to control the btrfs devices, since btrfs can be used
- across several devices, 'btrfs device' is used for multiple device management.
- 
-+DEVICE MANAGEMENT
-+-----------------
-+Btrfs filesystem is capable to manage multiple devices.
++If the errors are like above, then 'btrfs-zero-log' should be used to clear
++the log and the filesystem may be mounted normally again.
 +
-+Btrfs filesystem use different profiles to manage different RAID level, and
-+use balance to rebuild chunks, also devices can be added/removed/replace
-+online.
++NOTE: If you use btrfs as the root filesystem, you may want to include
++'btrfs-zero-log' into initramdisk if the log problems hits you often.
 +
-+Profile::
-+Btrfs filesystem use data/metadata profiles to manage allocation/duplication
-+mechanism. Profiles like RAID level can be assigned to data and metadata separately.
-++
-+See `mkfs.btrfs`(8) for more details.
-+
-+RAID level::
-+Btrfs filesystem supports most of the standard RAID level: 0/1/5/6/10.
-+RAID levels can be assigned at mkfs time or online.
-++
-+See `mkfs.btrfs`(8) for mkfs time RAID level assign and `btrfs-balance`(8) for
-+online RAID level assign.
-+
-+Balance::
-+`btrfs-balance`(8) subcommand can be used to balance or rebuild chunks to the
-+desired profile.
-++
-+Due to the fact that balance can rebuild/recovery chunks according to its RAID
-+duplication if possible, so when using RAID1/5/6/10 with some devices failed
-+and you just added a new device to btrfs using `btrfs-device`(8), you should
-+run `btrfs-balance`(8) to rebuild the chunks.
-++
-+See `btrfs-balance`(8) for more details.
-+
-+Device add/remove/replace::
-+Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
-+using `btrfs-replace`(8).
-++
-+When device is removed or replaced, btrfs will do the chunk rebuild if needed.
-++
-+See `btrfs-replace`(8) and this man page for more details.
-+
- SUBCOMMAND
- ----------
- 'add' [-Kf] <dev> [<dev>...] <path>::
-@@ -73,3 +113,5 @@ further details.
- SEE ALSO
- --------
- `mkfs.btrfs`(8),
-+`btrfs-replace`(8),
-+`btrfs-balance`(8)
-diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
-index 8c5dcc4..15a46c2 100644
---- a/Documentation/btrfs-replace.txt
-+++ b/Documentation/btrfs-replace.txt
-@@ -13,6 +13,9 @@ DESCRIPTION
+ EXIT STATUS
  -----------
- 'btrfs replace' is used to replace btrfs managed devices with other device.
- 
-+It is recommended to see `btrfs-device`(8) for more details about btrfs device
-+management.
-+
- SUBCOMMAND
- ----------
- 'start' [-Bfr] <srcdev>|<devid> <targetdev> <path>::
-@@ -74,3 +77,4 @@ further details.
- SEE ALSO
- --------
- `mkfs.btrfs`(8),
-+`btrfs-device`(8),
+ 'btrfs-zero-log' will return 0 if no error happened.
 -- 
 1.9.2
 

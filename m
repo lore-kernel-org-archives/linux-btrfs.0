@@ -1,46 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23024 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753715AbaDJXfy (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48558 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754543AbaDKDLJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 19:35:54 -0400
-Message-ID: <53472AEB.7030004@fb.com>
-Date: Thu, 10 Apr 2014 19:36:11 -0400
-From: Chris Mason <clm@fb.com>
+	Thu, 10 Apr 2014 23:11:09 -0400
+Message-ID: <53475CE2.2040601@cn.fujitsu.com>
+Date: Fri, 11 Apr 2014 11:09:22 +0800
+From: Duan Jiong <duanj.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-CC: <fengguang.wu@intel.com>, <kbuild-all@01.org>
-Subject: Re: [PATCH v4 2/2] Btrfs: scrub raid56 stripes in the right way
-References: <1396955932-4547-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1396955932-4547-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: Filipe David Borba Manana <fdmanana@gmail.com>, Chris Mason <clm@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: Use PTR_ERR_OR_ZERO
+Content-Type: text/plain; charset="GB2312"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+PTR_RET is deprecated. Do not recommend its usage anymore.
+Use PTR_ERR_OR_ZERO instead.
 
-On 04/08/2014 07:18 AM, Wang Shilong wrote:
-> Steps to reproduce:
->   # mkfs.btrfs -f /dev/sda[8-11] -m raid5 -d raid5
->   # mount /dev/sda8 /mnt
->   # btrfs scrub start -BR /mnt
->   # echo $? <--unverified errors make return value be 3
->
-> This is because we don't setup right mapping between physical
-> and logical address for raid56, which makes checksum mismatch.
-> But we will find everthing is fine later when rechecking using
-> btrfs_map_block().
->
-> This patch fixed the problem by settuping right mappings and
-> we only verify data stripes' checksums.
->
-> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-> ---
-> v3->v4: fix compile warnings on avr32 platform.(reported by 0-day LKP)
+Signed-off-by: Duan Jiong <duanj.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/hash.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-Can you please send this as an incremental?  I'd rather not rebase the 
-integration branch right now.
-
-Thanks!
-
--chris
+diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
+index 85889aa..8c2d3b9 100644
+--- a/fs/btrfs/hash.c
++++ b/fs/btrfs/hash.c
+@@ -20,10 +20,7 @@ static struct crypto_shash *tfm;
+ int __init btrfs_hash_init(void)
+ {
+ 	tfm = crypto_alloc_shash("crc32c", 0, 0);
+-	if (IS_ERR(tfm))
+-		return PTR_ERR(tfm);
+-
+-	return 0;
++	return PTR_ERR_OR_ZERO(tfm);
+ }
+ 
+ void btrfs_hash_exit(void)
+-- 
+1.8.3.1

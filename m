@@ -1,79 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f169.google.com ([74.125.82.169]:48070 "EHLO
-	mail-we0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753845AbaDJWkY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 18:40:24 -0400
-Received: by mail-we0-f169.google.com with SMTP id w62so4635380wes.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Apr 2014 15:40:22 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140410203439.GB20307@carfax.org.uk>
-References: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
-	<20140410203439.GB20307@carfax.org.uk>
-Date: Thu, 10 Apr 2014 15:40:22 -0700
-Message-ID: <CAH3EO-oSzYTd2Q3H3wfg9eV9ii-phuquvtzU2mT5KGKF1_x5iw@mail.gmail.com>
-Subject: Re: Filesystem unable to recover from ENOSPC
-From: Chip Turner <cturner@pattern.net>
-To: Hugo Mills <hugo@carfax.org.uk>, Chip Turner <cturner@pattern.net>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:43279 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753117AbaDKAfz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Apr 2014 20:35:55 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WYPRh-0003R2-QS
+	for linux-btrfs@vger.kernel.org; Fri, 11 Apr 2014 02:35:53 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 02:35:53 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 02:35:53 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Copying a disk containing a btrfs filesystem
+Date: Fri, 11 Apr 2014 00:35:38 +0000 (UTC)
+Message-ID: <pan$4fcd0$87fc5afe$80e50794$911d5718@cox.net>
+References: <4783411.VVGoQz5kVU@fuchsia> <3414746.Gera7uWrI1@fuchsia>
+	<CAPpBBdNo0ar8+2Kt9O_mNyQsmmOvFNfVJ=a_EA1HW=TnS4uTXQ@mail.gmail.com>
+	<1924982.LHpDrRg8EQ@fuchsia>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 10, 2014 at 1:34 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Thu, Apr 10, 2014 at 01:00:35PM -0700, Chip Turner wrote:
->> btrfs show:
->> Label: none  uuid: 04283a32-b388-480b-9949-686675fad7df
->> Total devices 1 FS bytes used 135.58GiB
->> devid    1 size 238.22GiB used 238.22GiB path /dev/sdb2
->>
->> btrfs fi df:
->> Data, single: total=234.21GiB, used=131.82GiB
->> System, single: total=4.00MiB, used=48.00KiB
->> Metadata, single: total=4.01GiB, used=3.76GiB
->
->    I'm surprised it's managed to use that much of the metadata
-> allocation. The FS usually hits this problem with a much smaller
-> used-to-total ratio.
+Michael Schuerig posted on Thu, 10 Apr 2014 18:24:00 +0200 as excerpted:
 
-It perhaps was related to how I build it -- basically I dumped many
-files (around 8.5 million, 95% of which are hardlinks rather than
-actual files) onto it at once, created a snapshot, and then began
-deleting files.  The btrfs filesystem they were coming from was fine
-with the files and its own original load, but something about the
-snapshotting and deleting seemed to push it over the edge.
+> I *think* send/receive with clone sources might be the key to a
+> solution. I'm still hoping that someone with a far better understanding
+> of btrfs than me gives it a try first...
 
-The issue happened over a couple of days so I don't recall exactly,
-but I may also have run out of space and had to delete a lot of files
-(basically, I left off the '-H' to rsync, so, when I copied to the
-system, it made copies rather than hard links).  This occurred before
-the original full copy and hence before the snapshot and deletion.
+Well, there's both that (which I don't know enough about to discuss in 
+any intelligent way at all), and the fact that at least until very (very) 
+recently (like recent enough I'm not sure it'll all be in 2.15 yet), 
+btrfs send/receive still had some serious corner-case bugs, such that to 
+my knowledge if it worked without error it was reliable, there were 
+numbers of cases (like where it was originally subdir /a/b/, and then 
+switched to /b/a, reversing the nesting) where it would spit out errors, 
+leaving the receive in a half-received state.
 
->    One thing you could do is btrfs dev add a small new device to the
-> filesystem (say, a USB stick, or a 4 GiB loopback file mounted over
-> NBD or something). Then run the filtered balance. Then btrfs dev del
-> the spare device.
+So it worked for some people but not others, and for some it would work 
+for awhile, then would start erroring out, whenever they hit whatever 
+corner-case.
 
-Ah, this worked great.  It fixed it in about ten seconds.
+Regulars on this list will have seen all the recent work going into send/
+receive bug tracing and fixing, however, which will of course ultimately 
+make it far more reliable than it had been.  Surely it's already far more 
+reliable, as a fair number of those corner cases have now been found and 
+dealt with.
 
-I'm curious about the space report; why doesn't Data+System+Metadata
-add up to the total space used on the device?  Was the fs stuck in a
-state where it couldn't clean up because it couldn't write more
-metadata (and hence adding a few gb allowed it to balance)?  After the
-balance, the used space dropped to around 150GB, roughly what I'd
-expect.
+But what I do NOT know yet, is where in the process we are, in terms of 
+/reliable/ send/receive.  Relatively, we're certainly closer than we 
+were, but did that move use from say 80% to 90% reliable, or from 80% to 
+97 or 98% reliable (which is about where I'd put general btrfs at this 
+point), or from 90% to 98-ish% reliable, or... ?  
 
->    The fact that this FS has ended up in this state should be
-> considered a bug. It used to be quite common, then josef fixed a load
-> of problems, and it's been rare for about a year. Only recently we've
-> been seeing more of this kind of problem, and I think there's been a
-> bit of a regression somewhere.
+Without that knowledge, even if you did know the specific CL options you 
+needed, I'd still consider it very much a "great if it works, but don't 
+count on it until you actually see it complete without errors, and even 
+then, be aware that the next time you try it could error out, because 
+it's still very much in bug-fixing-phase" solution.
 
-Is there any other data I can provide to help fix this?  I can see if
-it's reproducible (I'm migrating disks so I can just keep doing it and
-see if it happens again).
-
-Chip
+Meanwhile, the ddrescue solution is mature technology, proven to work 
+with many different types of filesystems over many years, now, so that's 
+the basket I'd be putting my resource eggs into at this point. =:^)
 
 -- 
-Chip Turner - cturner@pattern.net
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

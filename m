@@ -1,50 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36467 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754154AbaDKJ2h (ORCPT
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:60979 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756602AbaDKJm1 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 05:28:37 -0400
-Date: Fri, 11 Apr 2014 17:28:28 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chip Turner <cturner@pattern.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Filesystem unable to recover from ENOSPC
-Message-ID: <20140411092827.GD26503@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAH3EO-o-S7WveO7V++zB1+Zd3kfrxk4YyMZ6P+GrcNWfALgrfA@mail.gmail.com>
- <20140410203439.GB20307@carfax.org.uk>
- <CAH3EO-oSzYTd2Q3H3wfg9eV9ii-phuquvtzU2mT5KGKF1_x5iw@mail.gmail.com>
- <pan$18fc6$7005cb64$a96a9a75$5cd6742f@cox.net>
- <CAH3EO-qB91cTUT0ZAib4xAA82_RDGM4dOWmp3smtUfS_=e1uxg@mail.gmail.com>
+	Fri, 11 Apr 2014 05:42:27 -0400
+Received: from mfilter26-d.gandi.net (mfilter26-d.gandi.net [217.70.178.154])
+	by relay4-d.mail.gandi.net (Postfix) with ESMTP id 3549117208C
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:42:26 +0200 (CEST)
+Received: from relay4-d.mail.gandi.net ([217.70.183.196])
+	by mfilter26-d.gandi.net (mfilter26-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id aFF6jbe+6dG2 for <linux-btrfs@vger.kernel.org>;
+	Fri, 11 Apr 2014 11:42:24 +0200 (CEST)
+Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
+	(Authenticated sender: michel@bouissou.net)
+	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 74C12172097
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:42:24 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs@vger.kernel.org
+Subject: How to make BTRFS crawl
+Date: Fri, 11 Apr 2014 11:42:23 +0200
+Message-ID: <4171851.75rN5oGIof@zafu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAH3EO-qB91cTUT0ZAib4xAA82_RDGM4dOWmp3smtUfS_=e1uxg@mail.gmail.com>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 10, 2014 at 11:10:33PM -0700, Chip Turner wrote:
-> Thank you for the extremely detailed and helpful reply.  I now
-> understand what was happening.  To me, when I read "total=" I guess I
-> thought that was capacity rather than allocated (but now "holey")
-> chunks.  I agree that perhaps adjusting the phrasing of the output of
-> df and show would be helpful in making this clearer (or perhaps some
-> adjustment to the wiki; maybe I will do that).
-> 
-> I assume metadata is where filesystem information (directory entries,
-> inodes, etc) are stored and not being able to delete was because there
-> wasn't room in the metadata chunks, and no room to allocate more
-> metadata chunks?  Or are those also data chunks and it was purely
-> about data chunks?
+Hi,
 
-Yes and no.  Deleting metadata also needs metadata, and metadata chunk and data
-chunk are different ones.
+I was asked about situations "use cases" that would cause BTRFS to slow down 
+to a crawl.
 
-> 
-> Does defrag do similar reallocation to balance such that it would help
-> combat this behavior?
+And it's exactly what happened to me yesterday when I was trying, on the 
+contrary, to speed it up.
 
-I'm afraid it won't, since you have that many hardlinks, defrag may not help on
-reducing metadata.
+So here's the recipe for getting a "slow to the point it is unusable" BTRFS.
 
-thanks,
--liubo
+
+1/ Perform a clean, fresh install of a recent distro with a 3.13 kernel (i.e. 
+Fedora 20) and a BTRFS root filesystem.
+
+2/ Choose the version with a KDE interface
+
+3/ Configure fstab mountpoints using such options (space_cache will have been 
+manually activated once):
+
+/ btrfs   subvol=FEDORA,noatime,compress=lzo,autodefrag
+
+/home btrfs   subvol=HOME,noatime,compress=lzo,autodefrag
+
+
+4/ Use "chattr +C" to make the following directories NOCOW (move the old 
+directory elsewhere, create a new dir, make it nocow, copy files from the old 
+one so they are recreated with nocow, check permissions...):
+
+- /home/yourself/.cache
+- /home/yourself/.local/share/akonadi
+
+5/ Use IMAP mail in Kmail. Seriously process your email (it will be stored 
+using akonadi mysql)
+
+6/ Surf normally the web using Firefox
+
+7/ Install SuSE "snapper" package that will perform a FS snapshot every hour. 
+Configure it so it will snapshot both the root FS subvol and the /home subvol
+
+8/ Use the system for 24 hours and you will know that "hardly usable" means... 
+Especially every hour-on-the-hour when Kmail or Firefox will try to access 
+files that have been recently snapshotted... Your system will be dead with 
+saturated HD access for several *minutes*
+
+...Hope this may help hunting this down...
+
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+
+

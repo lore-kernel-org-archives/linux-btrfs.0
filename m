@@ -1,73 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37871 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754318AbaDKLXr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 07:23:47 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WYZYd-0001dx-GC
-	for linux-btrfs@vger.kernel.org; Fri, 11 Apr 2014 13:23:43 +0200
-Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 13:23:43 +0200
-Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 13:23:43 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex <alex@bpmit.com>
-Subject: What does scrub do?
-Date: Fri, 11 Apr 2014 11:23:31 +0000 (UTC)
-Message-ID: <loom.20140411T105444-935@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from atl4mhob11.myregisteredsite.com ([209.17.115.49]:57362 "EHLO
+	atl4mhob11.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1758948AbaDKOLG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Apr 2014 10:11:06 -0400
+Received: from mailpod1.hostingplatform.com (atl4obmail04pod1.mgt.hosting.qts.netsol.com [10.30.71.116])
+	by atl4mhob11.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s3BEB3dC002999
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 10:11:03 -0400
+Message-ID: <5347F828.9090306@chinilu.com>
+Date: Fri, 11 Apr 2014 07:11:52 -0700
+From: George Mitchell <george@chinilu.com>
+Reply-To: george@chinilu.com
+MIME-Version: 1.0
+To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: How to make BTRFS crawl
+References: <4171851.75rN5oGIof@zafu>
+In-Reply-To: <4171851.75rN5oGIof@zafu>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Well, Akonadi brought my system to its knees long before I converted to 
+btrfs, so somehow I am not surprised.  I have kept akonadi disabled ever 
+since.for everything except a portion of Thunderbird and that ONLY with 
+sql-lite. Mysql will kill it in no time.  So I am not sure that btrfs is 
+the root of the problem here.  Just my two cents, perhaps others have 
+different experience with akonadi.
 
-Debian testing/Jessie-to-be; except kernels/btrfs-tools are from unstable so
-usually couple of weeks later than you/Linus publish.
-Linux XX 3.13-1-amd64 #1 SMP Debian 3.13.7-1 (2014-03-25) x86_64
-Btrfs-tools v3.12 Debian standard (not particularly messed with looks like) 
 
-I've never had scrub report anything other than 0 (zero) errors. Ever.
-Yet I've had more than one ( ;-) ) problem which required btrfs-zero-log
-and/or btrfs --repair. This are usually my fault - fixed it 'til it broke.
-
-root@XX ~ # btrfs scrub status /
-scrub status for f8152a67-3c2e-4da1-812e-9a6ab2ad1102
-scrub started at Fri Apr 11 09:55:36 2014 and finished after 44 seconds
-total bytes scrubbed: 1.40GiB with 0 errors
-
-[    7.502338] btrfs: device label china devid 1 transid 938773 /dev/vda1
-[    7.514213] btrfs: device label china devid 1 transid 938773 /dev/vda1
-[    7.530893] btrfs: disk space caching is enabled
-[    7.530897] btrfs: has skinny extents
-[    7.720288] btrfs: bdev /dev/vda1 errs: wr 0, rd 0, flush 0, corrupt 66,
-gen 2
-[   18.967319] btrfs: device label china devid 1 transid 938773 /dev/vda1
-[   19.360767] btrfs: device label china devid 1 transid 938773 /dev/vda1
-
-This scrub and dmesg were taken within minutes of each other. So what it the
-utility of running scrub? Or have I got the the wrong idea of what scrub
-should report. This VM guest doesn't get messed with often, and is kept 
-
-Very small KVM virtual machine - easy to send you a btrfs dump. Almost
-vanilla set-up too. Just say the word.
-
-Have been running btrfs here for quite some while (years, since Linux3.1 I
-think) on server. Very very stable (lzo compression sometimes not quite as
-stable as zlib and I only run it on the desktop m/c).
-
-People: for auto snapshots use Snapper (a la SUSE) which is now in Debian et
-al. Only peculiarity is that clear-down of daily snapshots only happens in
-the night so you don't need to put many/any hourly snapshots in.
-
-Thank you. And well done/thank you to the contributors.
-
-Al.
-
-PS: please get the 3.14 tools release out - perhaps the fixes have 
-already gone through the tree and I am just shouting at the wind.
+On 04/11/2014 02:42 AM, Swâmi Petaramesh wrote:
+> Hi,
+>
+> I was asked about situations "use cases" that would cause BTRFS to slow down
+> to a crawl.
+>
+> And it's exactly what happened to me yesterday when I was trying, on the
+> contrary, to speed it up.
+>
+> So here's the recipe for getting a "slow to the point it is unusable" BTRFS.
+>
+>
+> 1/ Perform a clean, fresh install of a recent distro with a 3.13 kernel (i.e.
+> Fedora 20) and a BTRFS root filesystem.
+>
+> 2/ Choose the version with a KDE interface
+>
+> 3/ Configure fstab mountpoints using such options (space_cache will have been
+> manually activated once):
+>
+> / btrfs   subvol=FEDORA,noatime,compress=lzo,autodefrag
+>
+> /home btrfs   subvol=HOME,noatime,compress=lzo,autodefrag
+>
+>
+> 4/ Use "chattr +C" to make the following directories NOCOW (move the old
+> directory elsewhere, create a new dir, make it nocow, copy files from the old
+> one so they are recreated with nocow, check permissions...):
+>
+> - /home/yourself/.cache
+> - /home/yourself/.local/share/akonadi
+>
+> 5/ Use IMAP mail in Kmail. Seriously process your email (it will be stored
+> using akonadi mysql)
+>
+> 6/ Surf normally the web using Firefox
+>
+> 7/ Install SuSE "snapper" package that will perform a FS snapshot every hour.
+> Configure it so it will snapshot both the root FS subvol and the /home subvol
+>
+> 8/ Use the system for 24 hours and you will know that "hardly usable" means...
+> Especially every hour-on-the-hour when Kmail or Firefox will try to access
+> files that have been recently snapshotted... Your system will be dead with
+> saturated HD access for several *minutes*
+>
+> ...Hope this may help hunting this down...
+>
+> Kind regards.
+>
 

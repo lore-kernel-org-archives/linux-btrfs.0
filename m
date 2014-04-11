@@ -1,157 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw12a-lucinda.wadns.net ([196.220.39.179]:21654 "EHLO
-	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755939AbaDKKjo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 06:39:44 -0400
-Message-ID: <5347C663.4050704@swiftspirit.co.za>
-Date: Fri, 11 Apr 2014 12:39:31 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
-MIME-Version: 1.0
-To: Michael Schuerig <michael.lists@schuerig.de>, linux-btrfs@vger.kernel.org
-Subject: Re: Copying a disk containing a btrfs filesystem
-References: <4783411.VVGoQz5kVU@fuchsia>
-In-Reply-To: <4783411.VVGoQz5kVU@fuchsia>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37871 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754318AbaDKLXr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Apr 2014 07:23:47 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WYZYd-0001dx-GC
+	for linux-btrfs@vger.kernel.org; Fri, 11 Apr 2014 13:23:43 +0200
+Received: from 78-32-127-104.static.enta.net ([78.32.127.104])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 13:23:43 +0200
+Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 13:23:43 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alex <alex@bpmit.com>
+Subject: What does scrub do?
+Date: Fri, 11 Apr 2014 11:23:31 +0000 (UTC)
+Message-ID: <loom.20140411T105444-935@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Michael
+Hi all,
 
-Btrfs send/receive can transfer incremental snapshots as well - you're 
-looking for the "-p" or "parent" parameter. On the other hand, it might 
-not be the right tool for the job.
+Debian testing/Jessie-to-be; except kernels/btrfs-tools are from unstable so
+usually couple of weeks later than you/Linus publish.
+Linux XX 3.13-1-amd64 #1 SMP Debian 3.13.7-1 (2014-03-25) x86_64
+Btrfs-tools v3.12 Debian standard (not particularly messed with looks like) 
 
-If you're 100% happy with your old disk's *content*/layout/etc (just not 
-happy with the disk's reliability), try an overnight/over-weekend 
-ddrescue instead:
-http://www.forensicswiki.org/wiki/Ddrescue
+I've never had scrub report anything other than 0 (zero) errors. Ever.
+Yet I've had more than one ( ;-) ) problem which required btrfs-zero-log
+and/or btrfs --repair. This are usually my fault - fixed it 'til it broke.
 
-What I've done in the past is scripted ddrescue to recover as much data 
-as possible. Its like using dd between two disks except that it can keep 
-a log of bad sectors that can be retried later. The log also helps by 
-ensuring that if you cancel the operation, you can start it again and it 
-will continue where it left off.
+root@XX ~ # btrfs scrub status /
+scrub status for f8152a67-3c2e-4da1-812e-9a6ab2ad1102
+scrub started at Fri Apr 11 09:55:36 2014 and finished after 44 seconds
+total bytes scrubbed: 1.40GiB with 0 errors
 
-Additionally, you can have it skip big sections of the disk when it 
-comes across bad sectors - and it can "trim" these sections on 
-subsequent runs.
+[    7.502338] btrfs: device label china devid 1 transid 938773 /dev/vda1
+[    7.514213] btrfs: device label china devid 1 transid 938773 /dev/vda1
+[    7.530893] btrfs: disk space caching is enabled
+[    7.530897] btrfs: has skinny extents
+[    7.720288] btrfs: bdev /dev/vda1 errs: wr 0, rd 0, flush 0, corrupt 66,
+gen 2
+[   18.967319] btrfs: device label china devid 1 transid 938773 /dev/vda1
+[   19.360767] btrfs: device label china devid 1 transid 938773 /dev/vda1
 
-Btrfs send/receive has the advantage that you can run it while your 
-system is still active. DDrescue has the advantage that it is very good 
-at recovering 99% of your data where a disk has lots of bad sectors.
+This scrub and dmesg were taken within minutes of each other. So what it the
+utility of running scrub? Or have I got the the wrong idea of what scrub
+should report. This VM guest doesn't get messed with often, and is kept 
 
-For btrfs, send/receive the main subvolumes then, afterward, 
-send/receive the snapshots using the "parent" parameter, "-p". There 
-*is* the possibility that this needs to be reversed - as in, the backup 
-should be treated as the parent instead of the other way around:
+Very small KVM virtual machine - easy to send you a btrfs dump. Almost
+vanilla set-up too. Just say the word.
 
-  btrfs send /home | btrfs receive /mnt/new-disk/home
-  btrfs send -p /home /backups/home-2014-04-08 | btrfs receive 
-/mnt/new-disk/backups/.
+Have been running btrfs here for quite some while (years, since Linux3.1 I
+think) on server. Very very stable (lzo compression sometimes not quite as
+stable as zlib and I only run it on the desktop m/c).
 
-____
+People: for auto snapshots use Snapper (a la SUSE) which is now in Debian et
+al. Only peculiarity is that clear-down of daily snapshots only happens in
+the night so you don't need to put many/any hourly snapshots in.
 
-Below is from the last scriptlet I made when I last did the ddrescue 
-route (in that case I was recovering a failing NTFS drive). It was 
-particularly bad and took a whole weekend to recover. The new disk 
-worked flawlessly however. :)
+Thank you. And well done/thank you to the contributors.
 
-How I've used ddrescue in the past is to connect the failing and new 
-disk to a server. Alternatively, using USB, you could boot from a rescue 
-CD/flash drive and do the rescue there.
+Al.
 
-a) Identify the disks in /dev/disk/by-<whatever-you-choose> and put 
-those values into the bash script below. ensure that it refers to the 
-disk as a whole (not a partition for example). This ensures that 
-re-ordering of the drives after a reboot won't affect the process.
-b) Set up a log file location on a separate filesystem - a flash drive 
-is ideal unless you've gone the "server" route, where I normally just 
-put the log into a path on the the server as so: 
-/root/brendan-laptop.recovery.log
-
-#!/bin/bash
-src_disk=/dev/disk/by-id/ata-ST3250410AS_6RYF5NP7
-dst_disk=/dev/disk/by-id/ata-ST3500418AS_9VM2ZZQS
-#log=/path/to/log
-log=~/brendan-laptop.recovery.log
-
-#Sector size (default is 512 - newer disks should probably be 4096)
-sector_size=4096
-
-#Force writing to a block device - disable if you're backing up to an 
-image file
-#force=""
-force="-f"
-
-# We want to skip bigger chunks to get as much data as possible before 
-the source disk really dies
-# For the same reason, we also want to start with (attempting) to 
-maintain a high read rate
-#Minimum read rate in MB/s before skipping
-min_readrate=10485760
-
-
-#Default skip size is 64k.
-for skip_size in 65536 16384; do
-  #Going forward
-  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
-$src_disk $dst_disk $log
-  #Going in reverse
-  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
--R $src_disk $dst_disk $log
-done
-
-#Default skip size is 64k.
-#This time re-trying all failed/skipped sections
-for skip_size in 4096; do
-  #Going forward
-  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
--A $src_disk $dst_disk $log
-  #Going in reverse
-  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
--R -A $src_disk $dst_disk $log
-done
-
-#Default skip size is 64k.
-for skip_size in 1024 256 64 ; do
-  #Going forward
-  ddrescue -r 1 -b $sector_size -d $force -K $skip_size $src_disk 
-$dst_disk $log
-  #Going in reverse
-  ddrescue -r 1 -b $sector_size -d $force -K $skip_size -R $src_disk 
-$dst_disk $log
-done
-
-echo "Done. Run an chkdsk/fsck/whatever-might-be appropriate for the new 
-disk's filesystem(s)"
-
-
-On 10/04/14 15:21, Michael Schuerig wrote:
-> SMART indicates that my notebook disk may soon be failing (an
-> unreadable/uncorrectable sector), therefore I intend to exchange it. The
-> disk contains a single btrfs filesystem with several nested(!)
-> subvolumes, each with several read-only snapshots in a .snapshots
-> subdirectory.
->
-> As far as I can tell, btrfs currently does not offer a sensible way to
-> duplicate the entire contents of the old disk onto a new one. I can use
-> cp, rsync, or send/receive to copy the "main" subvolumes. But unless I'm
-> missing something obvious, the snapshots are effectively lost. btrfs
-> send optionally takes multiple clone sources, but I've never seen an
-> example of its usage.
->
-> If that's what "experimental" means, I'm willing to accept it. However,
-> I'd like to emphasize that there's still something missing. Of course,
-> most of all I'd like to be proved wrong.
->
-> Michael
->
-
-
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+PS: please get the 3.14 tools release out - perhaps the fixes have 
+already gone through the tree and I am just shouting at the wind.
 

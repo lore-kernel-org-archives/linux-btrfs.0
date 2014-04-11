@@ -1,143 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30997 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756152AbaDKJRE (ORCPT
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:50362 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756585AbaDKJWC convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 05:17:04 -0400
-Date: Fri, 11 Apr 2014 17:16:22 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Marc MERLIN <marc@merlins.org>
-Subject: Re: [PATCH 1/2] btrfs-progs: Add device management related paragraph.
-Message-ID: <20140411091621.GB26503@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Fri, 11 Apr 2014 05:22:02 -0400
+Received: from mfilter29-d.gandi.net (mfilter29-d.gandi.net [217.70.178.160])
+	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 85EA041C064
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:22:00 +0200 (CEST)
+Received: from relay5-d.mail.gandi.net ([217.70.183.197])
+	by mfilter29-d.gandi.net (mfilter29-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id QjUzYIXG7Aqe for <linux-btrfs@vger.kernel.org>;
+	Fri, 11 Apr 2014 11:21:59 +0200 (CEST)
+Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
+	(Authenticated sender: michel@bouissou.net)
+	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 7EFE241C091
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:21:57 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs@vger.kernel.org
+Subject: mount options ignored / unclear
+Date: Fri, 11 Apr 2014 11:21:55 +0200
+Message-ID: <1988570.7Waz7R0erI@zafu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 11, 2014 at 10:43:52AM +0800, Qu Wenruo wrote:
-> Add device management related paragraph to better explain btrfs device
-> management.
-> 
-> Cc: Marc MERLIN <marc@merlins.org>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->  Documentation/btrfs-balance.txt |  3 +++
->  Documentation/btrfs-device.txt  | 42 +++++++++++++++++++++++++++++++++++++++++
->  Documentation/btrfs-replace.txt |  4 ++++
->  3 files changed, 49 insertions(+)
-> 
-> diff --git a/Documentation/btrfs-balance.txt b/Documentation/btrfs-balance.txt
-> index 2289fdf..1b1861c 100644
-> --- a/Documentation/btrfs-balance.txt
-> +++ b/Documentation/btrfs-balance.txt
-> @@ -14,6 +14,8 @@ DESCRIPTION
->  'btrfs balance' is used to balance chunks in a btrfs filesystem across
->  multiple or even single device.
->  
-> +See `btrfs-device`(8) for more details about the effect on device management.
-> +
->  SUBCOMMAND
->  ----------
->  <path>::
-> @@ -75,3 +77,4 @@ further details.
->  SEE ALSO
->  --------
->  `mkfs.btrfs`(8),
-> +`btrfs-device`(8)
-> diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
-> index 20d7bcd..474d411 100644
-> --- a/Documentation/btrfs-device.txt
-> +++ b/Documentation/btrfs-device.txt
-> @@ -14,6 +14,46 @@ DESCRIPTION
->  'btrfs device' is used to control the btrfs devices, since btrfs can be used
->  across several devices, 'btrfs device' is used for multiple device management.
->  
-> +DEVICE MANAGEMENT
-> +-----------------
-> +Btrfs filesystem is capable to manage multiple devices.
-> +
-> +Btrfs filesystem use different profiles to manage different RAID level, and
-> +use balance to rebuild chunks, also devices can be added/removed/replace
-> +online.
+Hello,
 
-s/use/uses/g
+(Still in my quest for BTRFS performance)
 
-> +
-> +Profile::
-> +Btrfs filesystem use data/metadata profiles to manage allocation/duplication
-> +mechanism. Profiles like RAID level can be assigned to data and metadata separately.
+It is extremely unclear which BTRFS mount options are "filesystem wide" and 
+will apply to each and every mountpoint in the BTRFS filesystem, and which 
+options can be set per subvolume or per mountpoint.
 
-ditto.
+As far as I can tell, there is no reliable documentation about this, is there 
+any ?
 
-Good update.
+(Kernel is 3.13, Fedora)
 
--liubo
 
-> ++
-> +See `mkfs.btrfs`(8) for more details.
-> +
-> +RAID level::
-> +Btrfs filesystem supports most of the standard RAID level: 0/1/5/6/10.
-> +RAID levels can be assigned at mkfs time or online.
-> ++
-> +See `mkfs.btrfs`(8) for mkfs time RAID level assign and `btrfs-balance`(8) for
-> +online RAID level assign.
-> +
-> +Balance::
-> +`btrfs-balance`(8) subcommand can be used to balance or rebuild chunks to the
-> +desired profile.
-> ++
-> +Due to the fact that balance can rebuild/recovery chunks according to its RAID
-> +duplication if possible, so when using RAID1/5/6/10 with some devices failed
-> +and you just added a new device to btrfs using `btrfs-device`(8), you should
-> +run `btrfs-balance`(8) to rebuild the chunks.
-> ++
-> +See `btrfs-balance`(8) for more details.
-> +
-> +Device add/remove/replace::
-> +Device can be added/removed using `btrfs-replace`(8) subcommand and replaced
-> +using `btrfs-replace`(8).
-> ++
-> +When device is removed or replaced, btrfs will do the chunk rebuild if needed.
-> ++
-> +See `btrfs-replace`(8) and this man page for more details.
-> +
->  SUBCOMMAND
->  ----------
->  'add' [-Kf] <dev> [<dev>...] <path>::
-> @@ -73,3 +113,5 @@ further details.
->  SEE ALSO
->  --------
->  `mkfs.btrfs`(8),
-> +`btrfs-replace`(8),
-> +`btrfs-balance`(8)
-> diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
-> index 8c5dcc4..15a46c2 100644
-> --- a/Documentation/btrfs-replace.txt
-> +++ b/Documentation/btrfs-replace.txt
-> @@ -13,6 +13,9 @@ DESCRIPTION
->  -----------
->  'btrfs replace' is used to replace btrfs managed devices with other device.
->  
-> +It is recommended to see `btrfs-device`(8) for more details about btrfs device
-> +management.
-> +
->  SUBCOMMAND
->  ----------
->  'start' [-Bfr] <srcdev>|<devid> <targetdev> <path>::
-> @@ -74,3 +77,4 @@ further details.
->  SEE ALSO
->  --------
->  `mkfs.btrfs`(8),
-> +`btrfs-device`(8),
-> -- 
-> 1.9.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+i.e. I have in fstab :
+
+/dev/sda3 / btrfs subvol=FEDORA,noatime,compress=lzo,autodefrag
+
+...So without suprise I get in /proc/self/mountinfo:
+
+36 1 0:32 /FEDORA / rw,noatime shared:1 - btrfs /dev/sda3 
+rw,seclabel,compress=lzo,space_cache,autodefrag
+
+
+...But then I have in fstab:
+
+/dev/sda3 /home/me/.cache  btrfs   
+subvol=/NOCOW/me/.cache,nodatacow,compress=no,noatime
+
+So it is with great suprise the I get in /proc/self/mountinfo:
+
+49 47 0:32 /NOCOW/me/.cache /home/me/.cache rw,noatime shared:33 - btrfs 
+/dev/sda3 rw,seclabel,compress=lzo,space_cache,autodefrag
+
+
+...I'm not suprised to see "space_cache" which I would assume to be FS-wide, 
+but what the hell does "autodefrag" do in there, or even worse "compress=lzo", 
+where "compress=no" has been exlicitely specified in fstab ?
+
+That's a bug, as far as I can tell.
+
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

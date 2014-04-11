@@ -1,79 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay4-d.mail.gandi.net ([217.70.183.196]:60979 "EHLO
-	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756602AbaDKJm1 convert rfc822-to-8bit (ORCPT
+Received: from fw12a-lucinda.wadns.net ([196.220.39.179]:21654 "EHLO
+	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755939AbaDKKjo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 05:42:27 -0400
-Received: from mfilter26-d.gandi.net (mfilter26-d.gandi.net [217.70.178.154])
-	by relay4-d.mail.gandi.net (Postfix) with ESMTP id 3549117208C
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:42:26 +0200 (CEST)
-Received: from relay4-d.mail.gandi.net ([217.70.183.196])
-	by mfilter26-d.gandi.net (mfilter26-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id aFF6jbe+6dG2 for <linux-btrfs@vger.kernel.org>;
-	Fri, 11 Apr 2014 11:42:24 +0200 (CEST)
-Received: from zafu.localnet (dhcp230.cr2i.univ-montp2.fr [162.38.105.230])
-	(Authenticated sender: michel@bouissou.net)
-	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 74C12172097
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Apr 2014 11:42:24 +0200 (CEST)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: linux-btrfs@vger.kernel.org
-Subject: How to make BTRFS crawl
-Date: Fri, 11 Apr 2014 11:42:23 +0200
-Message-ID: <4171851.75rN5oGIof@zafu>
+	Fri, 11 Apr 2014 06:39:44 -0400
+Message-ID: <5347C663.4050704@swiftspirit.co.za>
+Date: Fri, 11 Apr 2014 12:39:31 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+To: Michael Schuerig <michael.lists@schuerig.de>, linux-btrfs@vger.kernel.org
+Subject: Re: Copying a disk containing a btrfs filesystem
+References: <4783411.VVGoQz5kVU@fuchsia>
+In-Reply-To: <4783411.VVGoQz5kVU@fuchsia>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi, Michael
 
-I was asked about situations "use cases" that would cause BTRFS to slow down 
-to a crawl.
+Btrfs send/receive can transfer incremental snapshots as well - you're 
+looking for the "-p" or "parent" parameter. On the other hand, it might 
+not be the right tool for the job.
 
-And it's exactly what happened to me yesterday when I was trying, on the 
-contrary, to speed it up.
+If you're 100% happy with your old disk's *content*/layout/etc (just not 
+happy with the disk's reliability), try an overnight/over-weekend 
+ddrescue instead:
+http://www.forensicswiki.org/wiki/Ddrescue
 
-So here's the recipe for getting a "slow to the point it is unusable" BTRFS.
+What I've done in the past is scripted ddrescue to recover as much data 
+as possible. Its like using dd between two disks except that it can keep 
+a log of bad sectors that can be retried later. The log also helps by 
+ensuring that if you cancel the operation, you can start it again and it 
+will continue where it left off.
+
+Additionally, you can have it skip big sections of the disk when it 
+comes across bad sectors - and it can "trim" these sections on 
+subsequent runs.
+
+Btrfs send/receive has the advantage that you can run it while your 
+system is still active. DDrescue has the advantage that it is very good 
+at recovering 99% of your data where a disk has lots of bad sectors.
+
+For btrfs, send/receive the main subvolumes then, afterward, 
+send/receive the snapshots using the "parent" parameter, "-p". There 
+*is* the possibility that this needs to be reversed - as in, the backup 
+should be treated as the parent instead of the other way around:
+
+  btrfs send /home | btrfs receive /mnt/new-disk/home
+  btrfs send -p /home /backups/home-2014-04-08 | btrfs receive 
+/mnt/new-disk/backups/.
+
+____
+
+Below is from the last scriptlet I made when I last did the ddrescue 
+route (in that case I was recovering a failing NTFS drive). It was 
+particularly bad and took a whole weekend to recover. The new disk 
+worked flawlessly however. :)
+
+How I've used ddrescue in the past is to connect the failing and new 
+disk to a server. Alternatively, using USB, you could boot from a rescue 
+CD/flash drive and do the rescue there.
+
+a) Identify the disks in /dev/disk/by-<whatever-you-choose> and put 
+those values into the bash script below. ensure that it refers to the 
+disk as a whole (not a partition for example). This ensures that 
+re-ordering of the drives after a reboot won't affect the process.
+b) Set up a log file location on a separate filesystem - a flash drive 
+is ideal unless you've gone the "server" route, where I normally just 
+put the log into a path on the the server as so: 
+/root/brendan-laptop.recovery.log
+
+#!/bin/bash
+src_disk=/dev/disk/by-id/ata-ST3250410AS_6RYF5NP7
+dst_disk=/dev/disk/by-id/ata-ST3500418AS_9VM2ZZQS
+#log=/path/to/log
+log=~/brendan-laptop.recovery.log
+
+#Sector size (default is 512 - newer disks should probably be 4096)
+sector_size=4096
+
+#Force writing to a block device - disable if you're backing up to an 
+image file
+#force=""
+force="-f"
+
+# We want to skip bigger chunks to get as much data as possible before 
+the source disk really dies
+# For the same reason, we also want to start with (attempting) to 
+maintain a high read rate
+#Minimum read rate in MB/s before skipping
+min_readrate=10485760
 
 
-1/ Perform a clean, fresh install of a recent distro with a 3.13 kernel (i.e. 
-Fedora 20) and a BTRFS root filesystem.
+#Default skip size is 64k.
+for skip_size in 65536 16384; do
+  #Going forward
+  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
+$src_disk $dst_disk $log
+  #Going in reverse
+  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
+-R $src_disk $dst_disk $log
+done
 
-2/ Choose the version with a KDE interface
+#Default skip size is 64k.
+#This time re-trying all failed/skipped sections
+for skip_size in 4096; do
+  #Going forward
+  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
+-A $src_disk $dst_disk $log
+  #Going in reverse
+  ddrescue -r 1 -a $min_readrate -b $sector_size -d $force -K $skip_size 
+-R -A $src_disk $dst_disk $log
+done
 
-3/ Configure fstab mountpoints using such options (space_cache will have been 
-manually activated once):
+#Default skip size is 64k.
+for skip_size in 1024 256 64 ; do
+  #Going forward
+  ddrescue -r 1 -b $sector_size -d $force -K $skip_size $src_disk 
+$dst_disk $log
+  #Going in reverse
+  ddrescue -r 1 -b $sector_size -d $force -K $skip_size -R $src_disk 
+$dst_disk $log
+done
 
-/ btrfs   subvol=FEDORA,noatime,compress=lzo,autodefrag
+echo "Done. Run an chkdsk/fsck/whatever-might-be appropriate for the new 
+disk's filesystem(s)"
 
-/home btrfs   subvol=HOME,noatime,compress=lzo,autodefrag
 
+On 10/04/14 15:21, Michael Schuerig wrote:
+> SMART indicates that my notebook disk may soon be failing (an
+> unreadable/uncorrectable sector), therefore I intend to exchange it. The
+> disk contains a single btrfs filesystem with several nested(!)
+> subvolumes, each with several read-only snapshots in a .snapshots
+> subdirectory.
+>
+> As far as I can tell, btrfs currently does not offer a sensible way to
+> duplicate the entire contents of the old disk onto a new one. I can use
+> cp, rsync, or send/receive to copy the "main" subvolumes. But unless I'm
+> missing something obvious, the snapshots are effectively lost. btrfs
+> send optionally takes multiple clone sources, but I've never seen an
+> example of its usage.
+>
+> If that's what "experimental" means, I'm willing to accept it. However,
+> I'd like to emphasize that there's still something missing. Of course,
+> most of all I'd like to be proved wrong.
+>
+> Michael
+>
 
-4/ Use "chattr +C" to make the following directories NOCOW (move the old 
-directory elsewhere, create a new dir, make it nocow, copy files from the old 
-one so they are recreated with nocow, check permissions...):
-
-- /home/yourself/.cache
-- /home/yourself/.local/share/akonadi
-
-5/ Use IMAP mail in Kmail. Seriously process your email (it will be stored 
-using akonadi mysql)
-
-6/ Surf normally the web using Firefox
-
-7/ Install SuSE "snapper" package that will perform a FS snapshot every hour. 
-Configure it so it will snapshot both the root FS subvol and the /home subvol
-
-8/ Use the system for 24 hours and you will know that "hardly usable" means... 
-Especially every hour-on-the-hour when Kmail or Firefox will try to access 
-files that have been recently snapshotted... Your system will be dead with 
-saturated HD access for several *minutes*
-
-...Hope this may help hunting this down...
-
-Kind regards.
 
 -- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

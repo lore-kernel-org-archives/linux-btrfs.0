@@ -1,59 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:57198 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754560AbaDKCnC (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:34460 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750863AbaDKRw2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Apr 2014 22:43:02 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Marc MERLIN <marc@merlins.org>
-Subject: [PATCH 2/2] btrfs-progs: Add explain on btrfs-zero-log.
-Date: Fri, 11 Apr 2014 10:43:53 +0800
-Message-ID: <1397184233-18535-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Fri, 11 Apr 2014 13:52:28 -0400
+Date: Fri, 11 Apr 2014 10:52:26 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: Add device management related paragraph.
+Message-ID: <20140411175226.GL7322@merlins.org>
+References: <1397184233-18535-1-git-send-email-quwenruo@cn.fujitsu.com> <20140411061048.GD7322@merlins.org> <20140411173628.GG29256@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140411173628.GG29256@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add more explain on btrfs-zero-log about when to use it.
+On Fri, Apr 11, 2014 at 07:36:28PM +0200, David Sterba wrote:
+> On Thu, Apr 10, 2014 at 11:10:48PM -0700, Marc MERLIN wrote:
+> > > --- a/Documentation/btrfs-replace.txt
+> > > +++ b/Documentation/btrfs-replace.txt
+> > > @@ -13,6 +13,9 @@ DESCRIPTION
+> > >  -----------
+> > >  'btrfs replace' is used to replace btrfs managed devices with other device.
+> > 
+> > I would add a quick line here saying that it's not currently supported for
+> > RAID5/6, and to see btrfs-device for add/delete to get around the replace
+> > missing problem.
+> 
+> I've added the quick note when committing the patch.
 
-Cc: Marc MERLIN <marc@merlins.org>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- Documentation/btrfs-zero-log.txt | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+Thanks both.
 
-diff --git a/Documentation/btrfs-zero-log.txt b/Documentation/btrfs-zero-log.txt
-index e3041fa..a8e4dd3 100644
---- a/Documentation/btrfs-zero-log.txt
-+++ b/Documentation/btrfs-zero-log.txt
-@@ -17,6 +17,24 @@ allow you to mount the filesystem again.
- The common case where this happens has been fixed a long time ago,
- so it is unlikely that you will see this particular problem.
- 
-+One can determine whether 'btrfs-zero-log' is needed according to the kernel
-+backtrace:
-+----
-+? replay_one_dir_item+0xb5/0xb5 [btrfs]
-+? walk_log_tree+0x9c/0x19d [btrfs]
-+? btrfs_read_fs_root_no_radix+0x169/0x1a1 [btrfs]
-+? btrfs_recover_log_trees+0x195/0x29c [btrfs]
-+? replay_one_dir_item+0xb5/0xb5 [btrfs]
-+? btree_read_extent_buffer_pages+0x76/0xbc [btrfs]
-+? open_ctree+0xff6/0x132c [btrfs]
-+----
-+
-+If the errors are like above, then 'btrfs-zero-log' should be used to clear
-+the log and the filesystem may be mounted normally again.
-+
-+NOTE: If you use btrfs as the root filesystem, you may want to include
-+'btrfs-zero-log' into initramdisk if the log problems hits you often.
-+
- EXIT STATUS
- -----------
- 'btrfs-zero-log' will return 0 if no error happened.
+Generally, would you agree to putting more links to the wiki in man pages
+since man pages are not forever but sure take a long time to update on the
+installed based and the wiki can be up to date for everyone right away?
+(I'm not saying to remove info from the man pages, but more something like
+"btrfs is changing quickly, more up to date information can be found on the
+wiki page for
+raid56: https://btrfs.wiki.kernel.org/index.php/RAID56
+or
+btrfsck: https://btrfs.wiki.kernel.org/index.php/Btrfsck
+btrfs restore: https://btrfs.wiki.kernel.org/index.php/Restore
+
+Thanks,
+Marc
 -- 
-1.9.2
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

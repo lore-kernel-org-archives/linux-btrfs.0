@@ -1,64 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mari.romanrm.net ([157.7.203.202]:60469 "EHLO mari.romanrm.net"
+Received: from plane.gmane.org ([80.91.229.3]:45248 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754354AbaDKTVo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Apr 2014 15:21:44 -0400
-Date: Sat, 12 Apr 2014 01:15:36 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Chris Samuel <chris@csamuel.org>, Martin <m_btrfs@ml1.co.uk>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: How to debug very very slow file delete? (btrfs on md-raid5)
-Message-ID: <20140412011536.5805a0a5@natsu>
-In-Reply-To: <20140411172346.GK7322@merlins.org>
-References: <20140325164142.GN12833@merlins.org>
-	<2708828.vpfalmJ0Wi@quad>
-	<20140411172346.GK7322@merlins.org>
+	id S1750816AbaDLEmn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 12 Apr 2014 00:42:43 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WYpm5-0003jr-4K
+	for linux-btrfs@vger.kernel.org; Sat, 12 Apr 2014 06:42:41 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Apr 2014 06:42:41 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Apr 2014 06:42:41 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: mount options ignored / unclear
+Date: Sat, 12 Apr 2014 04:42:29 +0000 (UTC)
+Message-ID: <pan$726e3$4cc96c8$4136f98$23771afe@cox.net>
+References: <1988570.7Waz7R0erI@zafu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/iG3L1c7ntMcIWSHVzB030Ag"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/iG3L1c7ntMcIWSHVzB030Ag
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Swâmi Petaramesh posted on Fri, 11 Apr 2014 11:21:55 +0200 as excerpted:
 
-On Fri, 11 Apr 2014 10:23:46 -0700
-Marc MERLIN <marc@merlins.org> wrote:
+> It is extremely unclear which BTRFS mount options are "filesystem wide"
+> and will apply to each and every mountpoint in the BTRFS filesystem, and
+> which options can be set per subvolume or per mountpoint.
+> 
+> As far as I can tell, there is no reliable documentation about this, is
+> there any ?
 
-> Is anyone else using btrfs on top of dmcrypt and software raid 5?
+In general, btrfs doesn't _yet_ have the runtime infrastructure to handle 
+per-subvolume mount options.  The on-device format and general approach 
+in the kernel was designed to allow it, and it's on the roadmap, it just 
+hasn't been done... yet.
 
-I use Btrfs accessed via NBD over a LAN, physically stored on mdadm RAID5, a
-setup which is similar to yours in that the block device used for Btrfs has=
- a
-somewhat limited throughput. But there were no problems with this whatsoever
-for the past couple of years (other than caused by unrelated h/w issues).
+So at this time, assume all options apply to the entire filesystem 
+including all subvolumes unless you know and can demonstrate otherwise.
 
-> gargamel:/mnt/dshelf2/backup/polgara# time rm -rf current.todel/
-> real    1087m26.491s
-> user    0m2.448s
-> sys     4m42.012s
+If you will take a look back at my posts related to nocow files, while I 
+suggested a separate subvolume for those files in ordered to prevent 
+snapshotting them with the rest of the filesystem, I specifically did 
+*NOT* suggest using the nodatacow mount-option on that subvolume even tho 
+I knew about it, instead suggesting either still using the nocow file 
+attribute, or putting those file on an entirely separate partition, which 
+could then be other than btrfs if desired, precisely because AFAIK the 
+nodatacow option cannot apply to a single subvolume yet, and for the most 
+part, if one's going to use it on the entire filesystem, one might as 
+well use some other filesystem instead of btrfs, since without cow and 
+checksumming and snapshotting, there's little left to recommend btrfs 
+above a more stable filesystem such as ext3/4 or xfs.  Once the per-
+subvolume mount-options work as is planned, simply mounting that 
+dedicated subvolume nodatacow will be what I'll recommend, while keeping 
+standard cow for the main filesystem, but AFAIK that doesn't work yet, so 
+I can't recommend it yet.
 
-You could check if this slowness is caused by excessive fsync'ing, try runn=
-ing
-"time eatmydata rm -rf ....." next time. ( https://launchpad.net/libeatmyda=
-ta )
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---=20
-With respect,
-Roman
-
---Sig_/iG3L1c7ntMcIWSHVzB030Ag
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlNIP1gACgkQTLKSvz+PZwiDPACeMSUa30vN4VTzJkaIaV9DuqmR
-Eg0An0hnqggZSOYjctNzyAbvTANUcFHs
-=2sLj
------END PGP SIGNATURE-----
-
---Sig_/iG3L1c7ntMcIWSHVzB030Ag--

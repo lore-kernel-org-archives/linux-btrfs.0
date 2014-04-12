@@ -1,41 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:60987 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750833AbaDLQP0 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Apr 2014 12:15:26 -0400
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: Re: SELinux on btrfs
-Date: Sat, 12 Apr 2014 10:15:25 -0600
-Message-Id: <4DB89922-7B01-405A-9E63-0CCBBB6481B3@colorremedies.com>
-Cc: Michael Schuerig <michael.lists@schuerig.de>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:43541 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753028AbaDLRPG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 12 Apr 2014 13:15:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WZ1WB-0003uY-Rd
+	for linux-btrfs@vger.kernel.org; Sat, 12 Apr 2014 19:15:03 +0200
+Received: from ip4da2a5ae.direct-adsl.nl ([77.162.165.174])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Apr 2014 19:15:03 +0200
+Received: from koen by ip4da2a5ae.direct-adsl.nl with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Apr 2014 19:15:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: Koen Kooi <koen@dominion.thruhere.net>
+Subject: Re: BTRFS setup advice for laptop performance ?
+Date: Sat, 12 Apr 2014 19:12:48 +0200
+Message-ID: <libs6f$q4i$1@ger.gmane.org>
+References: <2692878.dRG1K49eOP@fnix> <20140404150906.GR7442@carfax.org.uk> <20140412131710.GR7322@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20140412131710.GR7322@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->  I'm already aware that SELinux's automatic labelling of files is not aware of subvolumes[*]. 
-> [*] https://wiki.debian.org/SELinux/Setup#btrfs
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-I'm not sure exactly what it means since there is always a subvolume (ID 5), and I don't understand why autorelabel behavior would differ from manually running fixfiles or restorecon. 
+Marc MERLIN schreef op 12-04-14 15:17:
+> On Fri, Apr 04, 2014 at 04:09:06PM +0100, Hugo Mills wrote:
+>>> - Generally speaking, does LZO compression improve or degrade
+>>> performance ? I'm not able to figure it out clearly.
+>> 
+>> Yes, it improves or degrades performance. :)
+>> 
+>> It'll depend entirely on what you're doing with it. If you're storing
+>> lots of zeroes (Phoronix, I'm looking at you), then you'll get huge
+>> speedups. If you're storing video data, you'll get a (very) slight
+>> performance drop as it scompresses the first few blocks of the file and
+>> then gives up. I suspect that in general, the performance differences
+>> won't be noticable unless you have highly compressible large files, but
+>> if you _really_ care about it, benchmark it(*).
+>> 
+>> Hugo.
+>> 
+>> (*) If you don't want to go through the effort of benchmarking, you 
+>> don't care enough about it, and should just pick something at random.
+> 
+> Speaking of this bit, I once tried to use zlib instead of lzo, and
+> somehow it felt that my laptop on SSD booted noticeably slower after
+> that, which felt weird since decompression speed should be about the
+> same.
+> 
+> Has anyone else noticed anything like this?
 
-In any case, I just obliterated the labeling in /boot which is a Btrfs subvolume mounted at /boot. I then ran "restorecon -Rv /" and this finds the problems in /boot and fixes them. So I obliterated the labels in /boot again, and then did "touch /.autorelabel; reboot" and again /boot is fixed up.
+LZO should decompress a lot faster than zlib, I know that's the case on ARM
+and 32bit x86.
 
-*shrug* Maybe the issue is labeling unmounted subvolumes, as if they're not treated as folders? Nope, if I snapshot /boot as /boot/.bootsnap, and then only mess up the labels in .bootsnap, and then run a restorecon -Rv on /boot, it goes into .bootsnap and fixes its labels. So that's not it either.
+regards,
 
-> I already have quite a few read-only snapshots that I don't want to forfeit, however, I'm not at all sure how SELinux would interact with them.
+Koen
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.5 (Darwin)
+Comment: GPGTools - http://gpgtools.org
 
-If the default policy mismatches with the file context, the relabel or restorecon will want to change the context to the default, but won't be able to because it's a read-only subvolume. I merely get a non-fatal:
+iD8DBQFTSXQQMkyGM64RGpERAtTRAJ9WQg0xA3s3AA+jMryzn6PVWpyEegCbBZTR
+IzOZtgJvMbLT2fXdw0fOCxQ=
+=2FXK
+-----END PGP SIGNATURE-----
 
-restorecon set context /boot/.bootsnap/grub2->system_u:object_r:boot_t:s0 failed:'Read-only file system'
-
-And it proceeds to the next file.
-
-This is not Btrfs specific, but is about autorelabeling, and better ways to go about it.
-http://danwalsh.livejournal.com/38157.html
-
-
-
-Chris Murphy

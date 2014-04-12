@@ -1,56 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42265 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:42425 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750799AbaDLMzx (ORCPT
+	with ESMTP id S1750810AbaDLNRP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Apr 2014 08:55:53 -0400
-Date: Sat, 12 Apr 2014 05:55:52 -0700
+	Sat, 12 Apr 2014 09:17:15 -0400
+Date: Sat, 12 Apr 2014 06:17:10 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: George Eleftheriou <eleftg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: updating the wiki
-Message-ID: <20140412125552.GO7322@merlins.org>
-References: <CAPpBBdOAa1xKX4Bhqv=qjJYBn-kpfcVk4G5-O7d-11zzjxGUTg@mail.gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS setup advice for laptop performance ?
+Message-ID: <20140412131710.GR7322@merlins.org>
+References: <2692878.dRG1K49eOP@fnix> <20140404150906.GR7442@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAPpBBdOAa1xKX4Bhqv=qjJYBn-kpfcVk4G5-O7d-11zzjxGUTg@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="uQr8t48UFsdbeI+V"
+In-Reply-To: <20140404150906.GR7442@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 07, 2014 at 07:17:31PM +0200, George Eleftheriou wrote:
-> Thank you too for the enlightenment. Not just now but so many times in
-> the past (just the compilation of your list interventions is a wiki in
-> its own right).
-> 
-> Me too, I've been meaning to create a wiki account for quite some time
-> (but I was partly intimidated by the formality of the request :-)
-> )... Finally, with your encouragement, I did create one as soon as I
-> got back from work and rushed to my first edit/correction. Only to
-> discover that someone else got there first!
-> 
-> Speed of light. This is what will always leave me with my mouth open
-> in vibrant FOSS communities...
 
-First, I'll renew the thanks to Duncan for the time he spends giving
-accurate and detailled answers to folks here. 
+--uQr8t48UFsdbeI+V
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Then thanks to you for helping to update the wiki. I started a while ago
-myself after asking whether it was safe to run btrfs on top of dmcrypt and
-it had become so while the wiki still said (then) not to do it.
+On Fri, Apr 04, 2014 at 04:09:06PM +0100, Hugo Mills wrote:
+> > - Generally speaking, does LZO compression improve or degrade performan=
+ce ?=20
+> > I'm not able to figure it out clearly.
+>=20
+>    Yes, it improves or degrades performance. :)
+>=20
+>    It'll depend entirely on what you're doing with it. If you're
+> storing lots of zeroes (Phoronix, I'm looking at you), then you'll get
+> huge speedups. If you're storing video data, you'll get a (very)
+> slight performance drop as it scompresses the first few blocks of the
+> file and then gives up. I suspect that in general, the performance
+> differences won't be noticable unless you have highly compressible
+> large files, but if you _really_ care about it, benchmark it(*).
+>=20
+>    Hugo.
+>=20
+> (*) If you don't want to go through the effort of benchmarking, you
+> don't care enough about it, and should just pick something at random.
 
-Since then, I've written some tips and tricks:
-http://marc.merlins.org/perso/btrfs/
-and been feeding the relevant ones in the wiki where appropriate
+Speaking of this bit, I once tried to use zlib instead of lzo, and somehow
+it felt that my laptop on SSD booted noticeably slower after that, which
+felt weird since decompression speed should be about the same.
 
-But there are lots of pages that can be improved, and more help is welcome.
-Feel free to post here to ask us to review a change you made to the wiki if
-you're not sure, but this is not required, so feel free to updated pages
-anytime.
+Has anyone else noticed anything like this?
 
-Thanks much,
 Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+--=20
+"A mouse is a device used to point at the xterm you want to type in" - A.S.=
+R.
 Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+                                      .... what McDonalds is to gourmet coo=
+king
+Home page: http://marc.merlins.org/ =20
+
+--uQr8t48UFsdbeI+V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.15 (GNU/Linux)
+
+iQCVAwUBU0k81n4xUKZ2O+kBAQKOmgP6Au1yFIFmzEuC0nRKe4rtzIJfZgxgVbpY
+DZyNlV8u0fhZa3vimfdgyhSyU5kV2HhMI8Er6v4JXkJeODDp+2dCyNax0xeAIZ+S
+glz7lGrxgSwAS4M6TMssBDaHv3gTUs5rmE6+nyTz/R6bFyiGnpTegYXO2w71I+Yp
+GVxTyK1D7Lo=
+=jizS
+-----END PGP SIGNATURE-----
+
+--uQr8t48UFsdbeI+V--

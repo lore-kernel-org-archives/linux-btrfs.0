@@ -1,69 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:53975 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753437AbaDMQ7I (ORCPT
+Received: from mail-we0-f176.google.com ([74.125.82.176]:36387 "EHLO
+	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755010AbaDMUSW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Apr 2014 12:59:08 -0400
-Date: Sun, 13 Apr 2014 09:59:07 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Duncan <1i5t5.duncan@cox.net>
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: Re: what does your btrfsck look like?
-Message-ID: <20140413165907.GC7322@merlins.org>
-References: <20140407160506.GG10789@merlins.org> <5342CE0C.3070707@fb.com> <20140407185121.GI10222@merlins.org> <5342FD3D.3090905@fb.com> <20140407200002.GL1809@merlins.org> <20140409173842.GT10789@merlins.org> <20140325014956.GG11533@merlins.org> <20140412202542.GW7322@merlins.org> <20140413145700.GY7322@merlins.org>
+	Sun, 13 Apr 2014 16:18:22 -0400
+Received: by mail-we0-f176.google.com with SMTP id x48so7161082wes.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Apr 2014 13:18:21 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140413145700.GY7322@merlins.org>
+Date: Sun, 13 Apr 2014 22:18:21 +0200
+Message-ID: <CAA7TVBzRubwy-xUOGFGAJCi+mVvBBwwpqXHs9RRKxjpsrAd_=A@mail.gmail.com>
+Subject: Btrfs RAID1 corrupted after crash
+From: =?UTF-8?Q?Maximilian_Br=C3=A4utigam?= <m@xbra.de>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 13, 2014 at 07:57:00AM -0700, Marc MERLIN wrote:
-> On Sat, Apr 12, 2014 at 01:25:42PM -0700, Marc MERLIN wrote:
-> > (I have a btrfsck running, looks like it may take over an hour, so I'll post
-> > that after it's finished)
-> 
-> I ran out of patience after 18 hours of waiting since it seemed to have not
-> progressed after 12 hours (it was still doing stuff, but no more output on
-> the screen).
-> 
-> Let's look at the output:
-> 1794407 lines of lines similar to:
-> Extent back ref already exists for 2148837945344 parent 0 root 257 
-> 
-> 61 lines of 
-> leaf parent key incorrect 504993210368
-> 
-> 67 lines of
-> bad block 504993210368
-> => just curious, what is this one supposed to mean? Is the data checksum
-> bad, or something else?
+Dear all,
 
-We had a chat about btrfsck running clean in some cases.
-Sure enough, it did for me on a filesystem I had just created.
+unfortunately, I am very very deperate and I highly appreciate any help.
+One week ago, I move my entire system to btrfs to setup a RAID1. I
+created the RAID between device /dev/sdb and /dev/sdc with no
+partition table on normal HDDs. Everything was working smoothly until
+my computer crashed and at reboot I was not able to mount the device
+(my home dir) again and got the following messages:
 
-But on existing filesystems I've been using for a while, it never has for me
-has per the example above.
+[  125.834802] BTRFS info (device sdc): disk space caching is enabled
+[  130.600101] BTRFS error (device sdc): block group 1268688879616 has
+wrong amount of free space
+[  130.600113] BTRFS error (device sdc): failed to load free space
+cache for block group 1268688879616
+[  130.751274] BTRFS critical (device sdc): corrupt leaf, slot offset
+bad: block=1268477591552,root=1, slot=137
+[  130.751659] BTRFS critical (device sdc): corrupt leaf, slot offset
+bad: block=1268477591552,root=1, slot=137
 
-I've added some info to:
-https://btrfs.wiki.kernel.org/index.php/Btrfsck
+So I cleared the cache with trying the mount option clear_cache, but
+it stayed problematic and I was not able to mount it:
 
-Two questions:
-1) are others seeing errors like these:
-Extent back ref already exists for 2148837945344 parent 0 root 257
-leaf parent key incorrect 504993210368
-bad block 504993210368
+[  368.159594] BTRFS: error (device sdc) in __btrfs_free_extent:5755:
+errno=-5 IO failure
+[  368.159602] BTRFS: error (device sdc) in
+btrfs_run_delayed_refs:2713: errno=-5 IO failure
+[  368.165584] BTRFS warning (device sdc): Skipping commit of aborted
+transaction.
+[  368.165589] BTRFS: error (device sdc) in cleanup_transaction:1545:
+errno=-5 IO failure
+[  368.165787] BTRFS: error (device sdc) in open_ctree:2839: errno=-5
+IO failure (Failed to recover log tree)
+[  368.227161] BTRFS: open_ctree failed
 
-2) do you know how bad each one is, and should they all be picked up by a
-scrub? (I'm under the impression that they were not for me)
+Now, if I tried to mount it manually with degraded option enabled:
 
-I'm happy to further update the wiki on btrfsck with info you can
-contribute.
+# mount -t btrfs -o degraded /dev/sdb /mnt/sonst/
+mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+       missing codepage or helper program, or other error
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+
+Now I run btrfsck with repair option enabled but still I cannot mount it.
+Here you can find the dmesg and btrfsck outputs:
+dmesg: http://pastebin.com/zsaKQ0h1
+btrfsck: http://pastebin.com/xva6uJwT
+
+Please, help me! ;( Are there other options to investigate my RAID or
+to even temporarily mount it to get some data? What went wrong here?
+What can I do? Why is a simple crash making my RAID unusable? Can I
+use other tools for a recovery?
+
+Again, every help is highly appreciated.
+Best wishes,
+Max
+PS: Archlinux, linux-3.14-5, btrfs-progs-3.14-1

@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:59384 "EHLO
-	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1756355AbaDIANk (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:56450 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750814AbaDNAtp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Apr 2014 20:13:40 -0400
-Date: Wed, 9 Apr 2014 10:12:10 +1000
+	Sun, 13 Apr 2014 20:49:45 -0400
+Date: Mon, 14 Apr 2014 10:49:38 +1000
 From: Dave Chinner <david@fromorbit.com>
 To: xfs@oss.sgi.com
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests: master branch updated to 610e44c
-Message-ID: <20140409001210.GO27017@dastard>
+Subject: [ANNOUNCE] xfstests: master branch updated to 249cc51
+Message-ID: <20140414004938.GE27694@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,18 +23,42 @@ outstanding patches were in this update. If they have not been in
 this update, please resubmit them to xfs@oss.sgi.com so they can be
 picked up in the next update.
 
-This update fixes the SCRATCH_DEV_POOL config file regression.
+This update includes tests for the new renameat2 syscall, and a
+bunch of fixes for the new config file format infrastructure.
 
 The new head of the master branch is commit:
 
-610e44c check: fix wallclock wrapping problem
+249cc51 generic: add renameat2 system call number for i386
 
 New Commits:
 
-Lukas Czerner (3):
+Alexander Tsvetkov (1):
+      [7e07c4b] generic/204: correct log size for XFS
+
+Eric Whitney (2):
+      [2e9061f] generic/300: add fallocate() checks
+      [f729616] generic/311: add fallocate() check
+
+Eryu Guan (1):
+      [9f1a8e7] ext4/306: disable 64bit feature too
+
+Lukas Czerner (6):
       [f00a444] config: Fix SCRATCH_DEV_POOL handling
       [7407717] config: Unset SCRATCH_DEV when deduced from SCRATCH_DEV_POOL
       [e0f5daf] config: Fix setting FSTYP automatically
+      [5138e74] config: fix specifying configuration value with equality sign
+      [ed6d096] generic/022: Fix output file
+      [a0e2d8e] config: Add -s option to run only specified sections
+
+Miklos Szeredi (4):
+      [413f501] common: add infrastructure for renameat2 syscall tests
+      [bdf2150] generic: check plain renameat2 syscall
+      [1f98dd0] generic: check noreplace renameat2 syscall
+      [3c9cd13] generic: check cross renameat2 syscall
+
+Theodore Ts'o (2):
+      [dd8556c] generic/004: fix filtering of expected error message
+      [249cc51] generic: add renameat2 system call number for i386
 
 Wanlong Gao (1):
       [610e44c] check: fix wallclock wrapping problem
@@ -42,9 +66,38 @@ Wanlong Gao (1):
 
 Code Diffstat:
 
- check         | 10 +---------
- common/config | 33 ++++++++++++++++++++++++++-------
- 2 files changed, 27 insertions(+), 16 deletions(-)
+ .gitignore             |   1 +
+ README.config-sections |  30 ++++++++++++
+ check                  |  26 ++++++----
+ common/config          |  35 +++++++++++---
+ common/renameat2       | 129 +++++++++++++++++++++++++++++++++++++++++++++++++
+ configure.ac           |   2 +
+ src/Makefile           |   3 +-
+ src/renameat2.c        | 106 ++++++++++++++++++++++++++++++++++++++++
+ tests/ext4/306         |   2 +-
+ tests/generic/004      |   2 +-
+ tests/generic/004.out  |   2 +-
+ tests/generic/022.out  |   2 +-
+ tests/generic/023      |  57 ++++++++++++++++++++++
+ tests/generic/023.out  |  51 +++++++++++++++++++
+ tests/generic/024      |  64 ++++++++++++++++++++++++
+ tests/generic/024.out  |  51 +++++++++++++++++++
+ tests/generic/025      |  64 ++++++++++++++++++++++++
+ tests/generic/025.out  |  51 +++++++++++++++++++
+ tests/generic/204      |   4 +-
+ tests/generic/300      |   7 +++
+ tests/generic/311      |   6 ++-
+ tests/generic/group    |   3 ++
+ 22 files changed, 672 insertions(+), 26 deletions(-)
+ create mode 100644 common/renameat2
+ create mode 100644 src/renameat2.c
+ create mode 100755 tests/generic/023
+ create mode 100644 tests/generic/023.out
+ create mode 100755 tests/generic/024
+ create mode 100644 tests/generic/024.out
+ create mode 100755 tests/generic/025
+ create mode 100644 tests/generic/025.out
+ mode change 100644 => 100755 tests/generic/311
 -- 
 Dave Chinner
 david@fromorbit.com

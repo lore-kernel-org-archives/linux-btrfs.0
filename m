@@ -1,57 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f173.google.com ([209.85.214.173]:47500 "EHLO
-	mail-ob0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754668AbaDNQu7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 12:50:59 -0400
-Received: by mail-ob0-f173.google.com with SMTP id wn1so1835814obc.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2014 09:50:58 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:38392 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753801AbaDNQva (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Apr 2014 12:51:30 -0400
+Date: Mon, 14 Apr 2014 18:51:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: check if items are ordered when a leaf is marked
+ dirty
+Message-ID: <20140414165128.GQ29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1397054226-17950-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-From: Shaun Reich <sreich@kde.org>
-Date: Mon, 14 Apr 2014 12:50:18 -0400
-Message-ID: <CADVynFCg4KWN9AGNKXAjoamwoLfNO4Q5czv+UCdEhqXWrG8P8A@mail.gmail.com>
-Subject: sub del: directory not empty, even though it is
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1397054226-17950-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-attempting to restructure my fs snapshots the proper way, previous way
-was like this:
+On Wed, Apr 09, 2014 at 03:37:06PM +0100, Filipe David Borba Manana wrote:
+> To ease finding bugs during development related to modifying btree leaves
+> in such a way that it makes its items not sorted by key anymore. Since this
+> is an expensive check, it's only enabled if CONFIG_BTRFS_FS_CHECK_INTEGRITY
+> is set, which isn't meant to be enabled for regular users.
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-(subvol=0)
-boot
-etc
-var
-...
-SNAPSHOTS/01-16-14/{boot,etc,dev, proc..}
-SNAPSHOTS/03-22-14... etc
+> @@ -3695,6 +3695,12 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+>  		__percpu_counter_add(&root->fs_info->dirty_metadata_bytes,
+>  				     buf->len,
+>  				     root->fs_info->dirty_metadata_batch);
+> +#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+> +	if (btrfs_header_level(buf) == 0 && check_leaf(root, buf)) {
 
-i removed all but the 01-16-14 via sub del. i then thought 'i don't
-want the data at top-level anyways as its a botched upgrade, so i'll
-just revert to the last snapshot via a mv.
-
-so i rm'd everything at top level except snapshots, cd
-snapshots/01-16-14;mv * ../..
-
-now an ls -a at the dated dir shows empty, my files are where they
-should be so i really just want this to be gone. and a sub list on the
-top-level mount path lists:
-
-# btrfs sub list -ta /mnt/1
-ID      gen     top level       path
---      ---     ---------       ----
-291     199502  5               SNAPSHOTS/01-16-14
-
-yet, oddly enough btrfs sub del really doesn't want to delete it, even
-though it's entirely empty and not in use either.
-
-# btrfs sub del /mnt/1/SNAPSHOTS/01-16-14
-Transaction commit: none (default)
-Delete subvolume '/mnt/1/SNAPSHOTS/01-16-14'
-ERROR: cannot delete '/mnt/1/SNAPSHOTS/01-16-14' - Directory not empty
-
-
--- 
-Shaun Reich,
-KDE Software Developer (kde.org)
+You coud also add the 'level == 0' to check_leaf() itself.

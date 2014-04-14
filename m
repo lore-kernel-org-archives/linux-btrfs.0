@@ -1,53 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:45956 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750905AbaDNFIj (ORCPT
+Received: from mail-pa0-f54.google.com ([209.85.220.54]:56388 "EHLO
+	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750768AbaDNGhI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 01:08:39 -0400
-Date: Mon, 14 Apr 2014 06:08:34 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [RFC] odd thing in btrfs_file_aio_write()
-Message-ID: <20140414050834.GS18016@ZenIV.linux.org.uk>
-References: <20140414002625.GQ18016@ZenIV.linux.org.uk>
- <534B495C.6060504@cn.fujitsu.com>
- <20140414024830.GR18016@ZenIV.linux.org.uk>
- <534B57D5.9070901@cn.fujitsu.com>
+	Mon, 14 Apr 2014 02:37:08 -0400
+From: Daeseok Youn <daeseok.youn@gmail.com>
+To: clm@fb.com, jbacik@fb.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: remove redundant null check in btrfs_dentry_release()
+Date: Mon, 14 Apr 2014 15:37:02 +0900
+Message-ID: <3662362.sLylFx3ZAR@daeseok-laptop.cloud.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <534B57D5.9070901@cn.fujitsu.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 14, 2014 at 11:36:53AM +0800, Qu Wenruo wrote:
-> >IOW, is that if (start_pos > i_size_read(inode)) { in there correct
-> >these days?  And what'll happen if we hit e.g. an unmapped page in the
-> >middle of the data being written?  That will result in short write, but
-> >will it truncate what's left of that dummy range?
-> I'm very sorry for my poor that I could not understand the question well.
-> Would you please explain what does the "unmapped page" means?
-> 
-> Did you mean two noncontinuous iovecs?
-> If you did mean that, it seems that I should expand the end_pos to
-> the end of the iovec...
 
-I mean that the very first (and only) iovec can very well span an area
-that has been munmapped():
+It doesn't need to check NULL for kfree()
 
-	char *buf = (char *)mmap(NULL, 65536, PROT_READ, MAP_ANON, -1, 0);
-	memset(buf, 'A', 65536);
-	munmap(buf + 4096, 4096);
-	write(fd, buf, 65536);
+Signed-off-by: Daeseok Youn <daeseok.youn@gmail.com>
+---
+ fs/btrfs/inode.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
-or
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 06e9a41..d9f54b0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5141,8 +5141,7 @@ static int btrfs_dentry_delete(const struct dentry *dentry)
+ 
+ static void btrfs_dentry_release(struct dentry *dentry)
+ {
+-	if (dentry->d_fsdata)
+-		kfree(dentry->d_fsdata);
++	kfree(dentry->d_fsdata);
+ }
+ 
+ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+-- 
+1.7.4.4
 
-	char *buf = (char *)mmap(NULL, 65536, PROT_READ, MAP_ANON, -1, 0);
-	struct iovec iv = {buf, 65536};
-	memset(buf, 'A', 65536);
-	munmap(buf + 4096, 4096);
-	writev(fd, &iv, 1);
 
-will end up writing 4Kb of data (filled with 'A') and return 4096.  That's
-how short writes happen...

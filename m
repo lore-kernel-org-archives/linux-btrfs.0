@@ -1,43 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21667 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49019 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750770AbaDNCeS convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1750770AbaDNCnT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Apr 2014 22:34:18 -0400
-Message-ID: <534B495C.6060504@cn.fujitsu.com>
-Date: Mon, 14 Apr 2014 10:35:08 +0800
+	Sun, 13 Apr 2014 22:43:19 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: [PATCH v2] btrfs: Change the expanding write sequence to fix snapshot related bug.
+Date: Mon, 14 Apr 2014 10:44:08 +0800
+Message-ID: <1397443448-20367-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Al Viro <viro@ZenIV.linux.org.uk>, Chris Mason <clm@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>
-Subject: Re: [RFC] odd thing in btrfs_file_aio_write()
-References: <20140414002625.GQ18016@ZenIV.linux.org.uk>
-In-Reply-To: <20140414002625.GQ18016@ZenIV.linux.org.uk>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oh, that's my fault, I forgot that iov can be chained.
+When testing fsstress with snapshot making background, some snapshot
+following problem.
 
-I should use 'pos + count' instead.
+Snapshot 270:
+inode 323: size 0
 
-Thanks for pointing it out.
-Qu.
+Snapshot 271:
+inode 323: size 349145
+|-------Hole---|---------Empty gap-------|-------Hole-----|
+0	    122880			172032	      349145
 
--------- Original Message --------
-Subject: [RFC] odd thing in btrfs_file_aio_write()
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Chris Mason <clm@fb.com>
-Date: 2014年04月14日 08:26
-> 		end_pos = round_up(pos + iov->iov_len, root->sectorsize);
->
-> added in commit 3ac0d7b96a268a98bd474cab8bce3a9f125aaccf
-> Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date:   Thu Mar 27 02:51:58 2014 +0000
->
->      btrfs: Change the expanding write sequence to fix snapshot related bug.
->
-> doesn't look right - after all, just split the first iovec in the array
-> and end_pos will go down.  Do we want pos + count instead of
-> pos + iov->iov_len there?
+Snapshot 272:
+inode 323: size 349145
+|-------Hole---|------------Data---------|-------Hole-----|
+0	    122880			172032	      349145
+
+The fsstress operation on inode 323 is the following:
+write: 		offset 	126832 	len 43124
+truncate: 	size 	349145
+
+Since the write with offset is consist of 2 operations:
+1. punch hole
+2. write data
+Hole punching is faster than data write, so hole punching in write
+and truncate is done first and then buffered write, so the snapshot 271 got
+empty gap, which will not pass btrfsck.
+
+To fix the bug, this patch will change the write sequence which will
+first punch a hole covering the write end if a hole is needed.
+
+Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Al Viro <viro@ZenIV.linux.org.uk>
+Signed-off-by: Chris Mason <clm@fb.com>
+---
+changelog:
+v2:
+  Use 'pos + count' instead of 'pos + iov->iov_len' to deal with
+multi-seg iov.
+---
+ fs/btrfs/file.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 036f506c..e7e78fa 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1727,6 +1727,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	loff_t *ppos = &iocb->ki_pos;
+ 	u64 start_pos;
++	u64 end_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+ 	size_t count, ocount;
+@@ -1781,7 +1782,9 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 
+ 	start_pos = round_down(pos, root->sectorsize);
+ 	if (start_pos > i_size_read(inode)) {
+-		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
++		/* Expand hole size to cover write data, preventing empty gap */
++		end_pos = round_up(pos + count, root->sectorsize);
++		err = btrfs_cont_expand(inode, i_size_read(inode), end_pos);
+ 		if (err) {
+ 			mutex_unlock(&inode->i_mutex);
+ 			goto out;
+-- 
+1.9.2
 

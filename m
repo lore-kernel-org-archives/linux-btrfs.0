@@ -1,64 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46158 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751314AbaDNMqp (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:46872 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754584AbaDNNKS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 08:46:45 -0400
-Message-ID: <534BD8B8.9000108@fb.com>
-Date: Mon, 14 Apr 2014 08:46:48 -0400
-From: Chris Mason <clm@fb.com>
+	Mon, 14 Apr 2014 09:10:18 -0400
+Date: Mon, 14 Apr 2014 16:10:10 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: harald@redhat.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: btrfs: allow mounting btrfs subvolumes with different ro/rw
+ options
+Message-ID: <20140414131010.GA12764@mwanda>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-CC: Al Viro <viro@ZenIV.linux.org.uk>
-Subject: Re: [PATCH v2] btrfs: Change the expanding write sequence to fix
- snapshot related bug.
-References: <1397443448-20367-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1397443448-20367-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/13/2014 10:44 PM, Qu Wenruo wrote:
-> When testing fsstress with snapshot making background, some snapshot
-> following problem.
->
-> Snapshot 270:
-> inode 323: size 0
->
-> Snapshot 271:
-> inode 323: size 349145
-> |-------Hole---|---------Empty gap-------|-------Hole-----|
-> 0	    122880			172032	      349145
->
-> Snapshot 272:
-> inode 323: size 349145
-> |-------Hole---|------------Data---------|-------Hole-----|
-> 0	    122880			172032	      349145
->
-> The fsstress operation on inode 323 is the following:
-> write: 		offset 	126832 	len 43124
-> truncate: 	size 	349145
->
-> Since the write with offset is consist of 2 operations:
-> 1. punch hole
-> 2. write data
-> Hole punching is faster than data write, so hole punching in write
-> and truncate is done first and then buffered write, so the snapshot 271 got
-> empty gap, which will not pass btrfsck.
->
-> To fix the bug, this patch will change the write sequence which will
-> first punch a hole covering the write end if a hole is needed.
->
-> Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Cc: Al Viro <viro@ZenIV.linux.org.uk>
-> Signed-off-by: Chris Mason <clm@fb.com>
-> ---
-> changelog:
-> v2:
->    Use 'pos + count' instead of 'pos + iov->iov_len' to deal with
-> multi-seg iov.
+Hello Harald Hoyer,
 
-Thanks for the review Al.  Qu, could you please send an incremental?
+The patch 0723a0473fb4: "btrfs: allow mounting btrfs subvolumes with
+different ro/rw options" from Nov 19, 2013, leads to the following
+static checker warning:
 
--chris
+	fs/btrfs/super.c:1194 mount_subvol()
+	warn: 'newargs' was already freed.
+
+fs/btrfs/super.c
+  1177  static struct dentry *mount_subvol(const char *subvol_name, int flags,
+  1178                                     const char *device_name, char *data)
+  1179  {
+  1180          struct dentry *root;
+  1181          struct vfsmount *mnt;
+  1182          char *newargs;
+  1183  
+  1184          newargs = setup_root_args(data);
+  1185          if (!newargs)
+  1186                  return ERR_PTR(-ENOMEM);
+  1187          mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name,
+  1188                               newargs);
+  1189          kfree(newargs);
+                      ^^^^^^^
+Freed.
+
+  1190  
+  1191          if (PTR_RET(mnt) == -EBUSY) {
+  1192                  if (flags & MS_RDONLY) {
+  1193                          mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY, device_name,
+  1194                                               newargs);
+                                                     ^^^^^^^
+Used if you have some security stuff enabled.
+
+  1195                  } else {
+  1196                          int r;
+  1197                          mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY, device_name,
+  1198                                               newargs);
+                                                     ^^^^^^^
+  1199                          if (IS_ERR(mnt))
+  1200                                  return ERR_CAST(mnt);
+  1201  
+  1202                          r = btrfs_remount(mnt->mnt_sb, &flags, NULL);
+  1203                          if (r < 0) {
+  1204                                  /* FIXME: release vfsmount mnt ??*/
+  1205                                  return ERR_PTR(r);
+  1206                          }
+  1207                  }
+  1208          }
+  1209  
+
+Also you forgot to Sign your patch.
+
+regards,
+dan carpenter

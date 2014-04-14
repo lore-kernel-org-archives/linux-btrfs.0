@@ -1,37 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37652 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38223 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750771AbaDNQRH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 12:17:07 -0400
-Date: Mon, 14 Apr 2014 18:17:05 +0200
+	id S1754383AbaDNQrF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Apr 2014 12:47:05 -0400
+Date: Mon, 14 Apr 2014 18:47:03 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Chris Mason <clm@fb.com>
-Cc: Dan Carpenter <dan.carpenter@oracle.com>, harald@redhat.com,
-        linux-btrfs@vger.kernel.org, christophjaeger@linux.com
-Subject: Re: btrfs: allow mounting btrfs subvolumes with different ro/rw
- options
-Message-ID: <20140414161705.GN29256@twin.jikos.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: [PATCH] Btrfs: make sure there are not any read requests before
+ stopping workers
+Message-ID: <20140414164703.GP29256@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20140414131010.GA12764@mwanda>
- <534BE4F6.9050300@fb.com>
+References: <1397042602-23205-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <534BE4F6.9050300@fb.com>
+In-Reply-To: <1397042602-23205-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 14, 2014 at 09:39:02AM -0400, Chris Mason wrote:
+On Wed, Apr 09, 2014 at 07:23:22PM +0800, Wang Shilong wrote:
+> In close_ctree(), after we have stopped all workers,there maybe still
+> some read requests(for example readahead) to submit and this *maybe* trigger
+> an oops that user reported before:
 > 
+> kernel BUG at fs/btrfs/async-thread.c:619!
 > 
-> On 04/14/2014 09:10 AM, Dan Carpenter wrote:
-> >Hello Harald Hoyer,
-> >
-> >The patch 0723a0473fb4: "btrfs: allow mounting btrfs subvolumes with
-> >different ro/rw options" from Nov 19, 2013, leads to the following
-> >static checker warning:
+> By hacking codes, i can reproduce this problem with one cpu available.
+> We fix this potential problem by invalidating all btree inode pages before
+> stopping all workers.
 > 
-> I'll fix this one up.  Harald's email has changed and I should have pulled
-> the patch in long ago.
+> Thanks to Miao for pointing out this problem.
+> 
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-There are now 2 reports for that and 1 patch,
-https://patchwork.kernel.org/patch/3972911/
+This is for 3.15-rc
+
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3619,6 +3619,11 @@ int close_ctree(struct btrfs_root *root)
+>  
+>  	btrfs_free_block_groups(fs_info);
+>  
+> +	/*
+> +	 * we must make sure there is not any read request to
+> +	 * submit after we stopping all workers.
+> +	 */
+> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+>  	btrfs_stop_all_workers(fs_info);
+>  
+>  	free_root_pointers(fs_info, 1);
+
+Now this shutdown sequence almost matches the one from open_ctree.

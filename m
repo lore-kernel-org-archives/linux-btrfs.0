@@ -1,63 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58120 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754261AbaDNM0G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 08:26:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WZfxa-0006S3-1N
-	for linux-btrfs@vger.kernel.org; Mon, 14 Apr 2014 14:26:02 +0200
-Received: from p5b005a90.dip0.t-ipconnect.de ([91.0.90.144])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2014 14:26:02 +0200
-Received: from holger.hoffstaette by p5b005a90.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2014 14:26:02 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Subvolumes and isolation
-Date: Mon, 14 Apr 2014 12:25:44 +0000 (UTC)
-Message-ID: <pan.2014.04.14.12.25.44@googlemail.com>
-References: <pan.2014.04.14.10.38.45@googlemail.com>
-	<pan$83f14$2d652951$d4438311$791da6ce@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46158 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751314AbaDNMqp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Apr 2014 08:46:45 -0400
+Message-ID: <534BD8B8.9000108@fb.com>
+Date: Mon, 14 Apr 2014 08:46:48 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+CC: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH v2] btrfs: Change the expanding write sequence to fix
+ snapshot related bug.
+References: <1397443448-20367-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1397443448-20367-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 14 Apr 2014 11:50:19 +0000, Duncan wrote:
+On 04/13/2014 10:44 PM, Qu Wenruo wrote:
+> When testing fsstress with snapshot making background, some snapshot
+> following problem.
+>
+> Snapshot 270:
+> inode 323: size 0
+>
+> Snapshot 271:
+> inode 323: size 349145
+> |-------Hole---|---------Empty gap-------|-------Hole-----|
+> 0	    122880			172032	      349145
+>
+> Snapshot 272:
+> inode 323: size 349145
+> |-------Hole---|------------Data---------|-------Hole-----|
+> 0	    122880			172032	      349145
+>
+> The fsstress operation on inode 323 is the following:
+> write: 		offset 	126832 	len 43124
+> truncate: 	size 	349145
+>
+> Since the write with offset is consist of 2 operations:
+> 1. punch hole
+> 2. write data
+> Hole punching is faster than data write, so hole punching in write
+> and truncate is done first and then buffered write, so the snapshot 271 got
+> empty gap, which will not pass btrfsck.
+>
+> To fix the bug, this patch will change the write sequence which will
+> first punch a hole covering the write end if a hole is needed.
+>
+> Reported-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Cc: Al Viro <viro@ZenIV.linux.org.uk>
+> Signed-off-by: Chris Mason <clm@fb.com>
+> ---
+> changelog:
+> v2:
+>    Use 'pos + count' instead of 'pos + iov->iov_len' to deal with
+> multi-seg iov.
 
-> Holger Hoffstätte posted on Mon, 14 Apr 2014 10:38:45 +0000 as excerpted:
-> 
->> So I'm happily using subvolumes and snapshots and was wondering about
->> subvolume low-level isolation. Assuming metadata=single, would a corrupt
->> metadata block in one subvolume's directory tree affect any other
->> subvolumes on the same physical partition, or would the fallout from
->> this bad block be contained?
-> 
-> This isn't an authoritative answer, but AFAIK, chunks are /not/ subvolume-
-> dedicated.  In fact, on the wiki, the sysadmin's guide page defines a 
-> snapshot as simply a subvolume that shares its data and metadata with 
-> some other subvolume, using btrfs' COW capabilities.  Obviously that 
-> would be rather difficult if subvolumes get dedicated data and metadata 
-> chunks, so...
+Thanks for the review Al.  Qu, could you please send an incremental?
 
-Sure - I guess I should have stated that differently: I fully expect a
-damaged subvolume to potentially have some effect on its snapshots,
-and the same for data blocks (since they are single as well).
-
-The situation is simple: I have the usual big backup drive attached to
-my server with subvolumes for each individual machine, and snapshots that
-are garbage-collected after a configurable amount of time since all machines
-are wildly different in terms of size, change rate and backup retention.
-Therefore subvolumes seemed the best compromise in terms of isolation &
-easy restore while avoding the hassle of separate filesystems, partitions
-etc.
-
-Obviously this setup is not particularly resilient to catastrophic events
-like complete drive death, but that's OK in my case.
-
-Holger
-
+-chris

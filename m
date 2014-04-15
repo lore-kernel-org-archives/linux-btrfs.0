@@ -1,55 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:48099 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750784AbaDOOqI convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Apr 2014 10:46:08 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50713 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1Wa4ch-001Vpm-SR
-	for linux-btrfs@vger.kernel.org; Tue, 15 Apr 2014 08:46:07 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Can I convert an existing directory into a subvolume?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <lijb4u$57s$1@ger.gmane.org>
-Date: Tue, 15 Apr 2014 08:46:09 -0600
-Message-Id: <5B149016-DFF5-4B88-B30C-B3B6C9AEDA73@colorremedies.com>
-References: <lijb4u$57s$1@ger.gmane.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from cantor2.suse.de ([195.135.220.15]:59354 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751358AbaDOQuT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Apr 2014 12:50:19 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 1F021AC86
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 16:50:18 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 3.15-rc2] btrfs: replace error code from btrfs_drop_extents
+Date: Tue, 15 Apr 2014 18:50:17 +0200
+Message-Id: <1397580617-13815-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There's a case which clone does not handle and used to BUG_ON instead,
+(testcase xfstests/btrfs/035), now returns EINVAL. This error code is
+confusing to the ioctl caller, as it normally signifies errorneous
+arguments.
 
-On Apr 15, 2014, at 7:10 AM, Bob Williams <linux@barrowhillfarm.org.uk> wrote:
+Change it to ENOPNOTSUPP which allows a fall back to copy instead of
+clone. This does not affect the common reflink operation.
 
-> Hi,
-> 
-> I'm new to btrfs, just dipping my toes in the water...
-> 
-> I've got two partitions, / on /dev/sda2 and /home on /dev/sda3, both
-> formatted as btrfs in a new openSUSE 13.1 installation. I copied the
-> whole of /home (4 users) into the btrfs formatted /home partition from
-> an ext4 backup.
-> 
-> I would like to create snapshots of /home/user/Documents for example,
-> but I understand these have to be subvolumes first. Googling tells me I
-> can't convert a conventional subdirectory into a subvolume, so I'm
-> guessing I'll have to create a new /home/user/Documents subvolume and
-> then copy all the contents from the subdirectory. Correct? Then delete
-> the subdirectory?
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/file.c  |    6 +++---
+ fs/btrfs/ioctl.c |    4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-Create a new subvolume, move files into the new subvolume as if it were a directory, remove old directory, rename subvolume to the name of the deleted directory.
-
-btrfs subvolume create /home/user1/Documentss
-mv /home/user1/Documents/* /home/user1/Documentss/
-rmdir /home/user1/Documents
-mv /home/user1/Documentss  /home/user1/Documents
-
-One possible gotcha is the ownership of the subvolume at creation time. If you do this as root then you need to chown after you're done; or you need to be logged in as the user who will own the Documents directory in each of the four cases. If you're using SELinux another gotcha is with copying files, which causes them to inherit the security context of the directory copied into, whereas mv preserves existing context. You can just restorecon -Rv /home/user once you're done to make sure the subvolume and its contents have the right labeling.
-
-
-Chris Murphy
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index eb742c07e7a4..bdd0b17150dd 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -800,7 +800,7 @@ next_slot:
+ 		if (start > key.offset && end < extent_end) {
+ 			BUG_ON(del_nr > 0);
+ 			if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-				ret = -EINVAL;
++				ret = -EOPNOTSUPP;
+ 				break;
+ 			}
+ 
+@@ -846,7 +846,7 @@ next_slot:
+ 		 */
+ 		if (start <= key.offset && end < extent_end) {
+ 			if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-				ret = -EINVAL;
++				ret = -EOPNOTSUPP;
+ 				break;
+ 			}
+ 
+@@ -872,7 +872,7 @@ next_slot:
+ 		if (start > key.offset && end >= extent_end) {
+ 			BUG_ON(del_nr > 0);
+ 			if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-				ret = -EINVAL;
++				ret = -EOPNOTSUPP;
+ 				break;
+ 			}
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index e79ff6b90cb7..2ad7de94efef 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3066,7 +3066,7 @@ process_slot:
+ 							 new_key.offset + datal,
+ 							 1);
+ 				if (ret) {
+-					if (ret != -EINVAL)
++					if (ret != -EOPNOTSUPP)
+ 						btrfs_abort_transaction(trans,
+ 								root, ret);
+ 					btrfs_end_transaction(trans, root);
+@@ -3141,7 +3141,7 @@ process_slot:
+ 							 new_key.offset + datal,
+ 							 1);
+ 				if (ret) {
+-					if (ret != -EINVAL)
++					if (ret != -EOPNOTSUPP)
+ 						btrfs_abort_transaction(trans,
+ 							root, ret);
+ 					btrfs_end_transaction(trans, root);
+-- 
+1.7.9
 

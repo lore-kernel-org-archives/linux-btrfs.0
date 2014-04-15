@@ -1,107 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28924 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:39014 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751038AbaDOHDx (ORCPT
+	with ESMTP id S1751104AbaDOHDx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Tue, 15 Apr 2014 03:03:53 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3F73juL001758
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 15:03:49 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3F73oev001772
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 15:03:50 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/4] btrfs-progs: Convert man page for btrfs-restore.
-Date: Tue, 15 Apr 2014 15:04:49 +0800
-Message-ID: <1397545492-3054-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs-progs: Convert man page for btrfs-property.
+Date: Tue, 15 Apr 2014 15:04:50 +0800
+Message-ID: <1397545492-3054-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1397545492-3054-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1397545492-3054-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert man page for btrfs-restore, which I forgot to convert in the
-previous patchset. :P
+Convert the man page for the newly added btrfs-property subcommand.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/Makefile          |  1 +
- Documentation/btrfs-restore.txt | 72 +++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 73 insertions(+)
- create mode 100644 Documentation/btrfs-restore.txt
+ Documentation/Makefile           |  1 +
+ Documentation/btrfs-property.txt | 69 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 70 insertions(+)
+ create mode 100644 Documentation/btrfs-property.txt
 
 diff --git a/Documentation/Makefile b/Documentation/Makefile
-index 97a775a..dfacb93 100644
+index dfacb93..241b41d 100644
 --- a/Documentation/Makefile
 +++ b/Documentation/Makefile
-@@ -30,6 +30,7 @@ MAN8_TXT += btrfs-quota.txt
- MAN8_TXT += btrfs-qgroup.txt
+@@ -31,6 +31,7 @@ MAN8_TXT += btrfs-qgroup.txt
  MAN8_TXT += btrfs-replace.txt
  MAN8_TXT += btrfs-dedup.txt
-+MAN8_TXT += btrfs-restore.txt
+ MAN8_TXT += btrfs-restore.txt
++MAN8_TXT += btrfs-property.txt
  
  MAN_TXT = $(MAN8_TXT)
  MAN_XML = $(patsubst %.txt,%.xml,$(MAN_TXT))
-diff --git a/Documentation/btrfs-restore.txt b/Documentation/btrfs-restore.txt
+diff --git a/Documentation/btrfs-property.txt b/Documentation/btrfs-property.txt
 new file mode 100644
-index 0000000..ea18ebb
+index 0000000..82466f9
 --- /dev/null
-+++ b/Documentation/btrfs-restore.txt
-@@ -0,0 +1,72 @@
-+btrfs-restore(8)
-+================
++++ b/Documentation/btrfs-property.txt
+@@ -0,0 +1,69 @@
++btrfs-property(8)
++=================
 +
 +NAME
 +----
-+btrfs-restore - try to restore files from a damaged btrfs filesystem(unmounted)
++btrfs-property - get/set/list properties for given btrfs object.
 +
 +SYNOPSIS
 +--------
-+'btrfs restore' [options] <device> <path> | -l <device>
++'btrfs property' <subcommand> <args>
 +
 +DESCRIPTION
 +-----------
-+'btrfs restore' is used to try to salvage files from a damaged filesystem and
-+restore them into <path> or just list the tree roots.
++'btrfs property' is used to get/set/list property, like lable or compression
++state, for given btrfs object.
 +
-+Since current `btrfsck`(8) or `btrfs-rescue`(8) only has very limited usage,
-+'btrfs restore' is normally a better choice.
++'btrfs property' provides an unified and user-friendly method to tune different
++btrfs properties instead of using the traditional method like `chattr`(1) or
++`lsattr`(1).
 +
-+OPTIONS
-+-------
-+-s::
-+get snapshots.
++SUBCOMMAND
++----------
++'get' [-t <type>] <object> [<name>]::
++Gets a property from a btrfs object.
+++
++If no name is specified, all properties for the given object are
++printed.
++A filesystem object can be a the filesystem itself, a subvolume,
++an inode or a device.
+++
++The '-t <type>' option can be used to explicitly
++specify what type of object you meant. This is only needed when a
++property could be set for more then one object type.
+++
++Possible types are 's[ubvol]', 'f[ilesystem]', 'i[node]' and 'd[evice]'.
+++
++The <object> can be path of btrfs device, btrfs mount point, or any
++directories/files inside btrfs.
 +
-+-x::
-+get extended attributes.
++'set' [-t <type>] <object> <name> <value>::
++Sets a property on a btrfs object.
+++
++See description of 'get' subcommand for a description of objects and object
++types.
 +
-+-v::
-+verbose.
-+
-+-i::
-+ignore errors.
-+
-+-o::
-+overwrite directories/files in <path>.
-+
-+-t <location>::
-+use <location> to read root tree.
-+
-+-f <offset>::
-+use <offset> to read fs tree.
-+
-+-u <block>::
-+use given superblock mirror identified by <block>.
-+
-+-r <rootid>::
-+use <rootid> as root objectid.
-+
-+-d::
-+find dir.
-+
-+-l::
-+list tree roots.
++'list' [-t <type>] <object>::
++Lists available properties with their descriptions for the given object.
+++
++Please see the help of 'btrfs property get' for a description of
++objects and object types.
 +
 +EXIT STATUS
 +-----------
-+'btrfs restore' returns a zero exist status if it succeeds. Non zero is
++'btrfs property' returns a zero exist status if it succeeds. Non zero is
 +returned in case of failure.
 +
 +AVAILABILITY
@@ -115,8 +113,8 @@ index 0000000..ea18ebb
 +SEE ALSO
 +--------
 +`mkfs.btrfs`(8),
-+`btrfs-rescue`(8),
-+`btrfs-check`(8)
++`lsattr`(1),
++`setattr`(8)
 -- 
 1.9.2
 

@@ -1,52 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52135 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751198AbaDPRez (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 13:34:55 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 36DEBACDB
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 17:34:54 +0000 (UTC)
-From: David Disseldorp <ddiss@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: David Disseldorp <ddiss@suse.de>
-Subject: [PATCH] btrfs-progs: fix typo in subvol list usage
-Date: Wed, 16 Apr 2014 19:34:50 +0200
-Message-Id: <1397669690-11950-1-git-send-email-ddiss@suse.de>
+Received: from mail-lb0-f179.google.com ([209.85.217.179]:59153 "EHLO
+	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752196AbaDOJ1o (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Apr 2014 05:27:44 -0400
+Received: by mail-lb0-f179.google.com with SMTP id p9so6581475lbv.38
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 02:27:43 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1397553744-24465-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1397553744-24465-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Tue, 15 Apr 2014 10:27:43 +0100
+Message-ID: <CAL3q7H78SRZZYyRY9PRj+LnQG_VO+hPuWb8A_2GNJx43m1Z3AA@mail.gmail.com>
+Subject: Re: [PATCH v2 4/4] btrfs-progs: Fix the return value when executing
+ 'btrfs pro get' on a uncompress file.
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
----
- cmds-subvolume.c | 2 +-
- man/btrfs.8.in   | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+On Tue, Apr 15, 2014 at 10:22 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> When executing 'btrfs pro get' on a file which is not compressed, return
+> value will always be 50 since prop_compress() return -ENOATTR.
+>
+> But the codes have already check the errno to avoid unnecessary error
+> message, so the return value should also set to 0.
+>
+> Signed-off-by: Qu Wenruo <quwenro@cn.fujitsu.com>
+Reviewed-by: Filipe Manana <fdmanana@gmail.com>
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 5e821c7..75a7385 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -390,7 +390,7 @@ static const char * const cmd_subvol_list_usage[] = {
- 	"             to the given <path>",
- 	"-c           print the ogeneration of the subvolume",
- 	"-g           print the generation of the subvolume",
--	"-o           print only subvolumes bellow specified path",
-+	"-o           print only subvolumes below the specified path",
- 	"-u           print the uuid of subvolumes (and snapshots)",
- 	"-q           print the parent uuid of the snapshots",
- 	"-t           print the result as a table",
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 8fea115..4221cc2 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -214,7 +214,7 @@ print the ogeneration of the subvolume, aliases: ogen or origin generation.
- .IP "\fB-g\fP" 5
- print the generation of the subvolume.
- .IP "\fB-o\fP" 5
--print only subvolumes bellow specified <path>.
-+print only subvolumes below the specified <path>.
- .IP "\fB-u\fP" 5
- print the UUID of the subvolume.
- .IP "\fB-q\fP" 5
+Thanks Qu
+
+> ---
+>  props.c | 4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
+>
+> diff --git a/props.c b/props.c
+> index 4d0aeea..c09865b 100644
+> --- a/props.c
+> +++ b/props.c
+> @@ -142,10 +142,12 @@ static int prop_compression(enum prop_object_type type,
+>                 sret = fgetxattr(fd, xattr_name, NULL, 0);
+>         if (sret < 0) {
+>                 ret = -errno;
+> -               if (ret != -ENODATA)
+> +               if (ret != -ENOATTR)
+>                         fprintf(stderr,
+>                                 "ERROR: failed to %s compression for %s. %s\n",
+>                                 value ? "set" : "get", object, strerror(-ret));
+> +               else
+> +                       ret = 0;
+>                 goto out;
+>         }
+>         if (!value) {
+> --
+> 1.9.2
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-1.8.4.5
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,63 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f54.google.com ([209.85.219.54]:35599 "EHLO
-	mail-oa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750796AbaDNTab (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:24448 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751389AbaDOCk1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 15:30:31 -0400
-Received: by mail-oa0-f54.google.com with SMTP id n16so9781443oag.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Apr 2014 12:30:31 -0700 (PDT)
+	Mon, 14 Apr 2014 22:40:27 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3F2drGh020036
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 10:39:54 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Change the hole range to a more accurate value.
+Date: Tue, 15 Apr 2014 10:41:00 +0800
+Message-ID: <1397529660-28107-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <534C3390.10402@fb.com>
-References: <CADVynFCg4KWN9AGNKXAjoamwoLfNO4Q5czv+UCdEhqXWrG8P8A@mail.gmail.com>
- <534C2D95.4090103@fb.com> <534C3390.10402@fb.com>
-From: Shaun Reich <sreich@kde.org>
-Date: Mon, 14 Apr 2014 15:29:50 -0400
-Message-ID: <CADVynFA+LXCqBncoe0SP6h70a57=adpvGQWzWqdAsx+J5j1grA@mail.gmail.com>
-Subject: Re: sub del: directory not empty, even though it is
-Cc: Shaun Reich <sreich@kde.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Ok, latest kernels include this commit:
->
-> commit 72de6b5393c15c5228074008bbdc47e92bf6d4f7
-> Author: Guangyu Sun <guangyu.sun@oracle.com>
-> Date:   Tue Mar 11 11:24:18 2014 -0700
->
->     Btrfs: return EPERM when deleting a default subvolume
->
->     The error message is confusing:
->
->      # btrfs sub delete /mnt/mysub/
->      Delete subvolume '/mnt/mysub'
->      ERROR: cannot delete '/mnt/mysub' - Directory not empty
->
->     The error message does not make sense to me: It's not about deleting a
->     directory but it's a subvolume, and it doesn't matter if the subvolume is
->     empty or not.
->
->     Maybe EPERM or is more appropriate in this case, combined with an explanatory
->     kernel log message. (e.g. "subvolume with ID 123 cannot be deleted because
->     it is configured as default subvolume.")
->
->     Reported-by: Koen De Wit <koen.de.wit@oracle.com>
->     Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
->     Reviewed-by: David Sterba <dsterba@suse.cz>
->     Signed-off-by: Chris Mason <clm@fb.com>
->
-> And your btrfs-debug-tree output confirms you're trying to delete the
-> default subvolume.
->
-> Pick a new default and it will all work ;)
+Commit 3ac0d7b96a268a98bd474cab8bce3a9f125aaccf fixed the btrfs expanding
+write problem but the hole punched is sometimes too large for some
+iovec, which has unmapped data ranges.
+This patch will change to hole range to a more accurate value using the
+counts checked by the write check routines.
 
-yep, and that was (embarrassingly) it. set the default to 5, so i can
-remove my use of subvolumes altogether and redo them properly. and the
-delete of course succeeds now.
+Reported-by: Al Viro <viro@ZenIV.linux.org.uk>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-thanks
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index eb742c0..a4ce634 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1777,7 +1777,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	start_pos = round_down(pos, root->sectorsize);
+ 	if (start_pos > i_size_read(inode)) {
+ 		/* Expand hole size to cover write data, preventing empty gap */
+-		end_pos = round_up(pos + iov->iov_len, root->sectorsize);
++		end_pos = round_up(pos + count, root->sectorsize);
+ 		err = btrfs_cont_expand(inode, i_size_read(inode), end_pos);
+ 		if (err) {
+ 			mutex_unlock(&inode->i_mutex);
 -- 
-Shaun Reich,
-KDE Software Developer (kde.org)
+1.9.2
+

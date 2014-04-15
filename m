@@ -1,110 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28924 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752360AbaDOHDz (ORCPT
+Received: from mail-we0-f170.google.com ([74.125.82.170]:57256 "EHLO
+	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753222AbaDOSr0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Apr 2014 03:03:55 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3F73pAf001776
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 15:03:51 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/4] btrfs-progs: Add btrfs wiki reference to man pages.
-Date: Tue, 15 Apr 2014 15:04:51 +0800
-Message-ID: <1397545492-3054-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1397545492-3054-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1397545492-3054-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Tue, 15 Apr 2014 14:47:26 -0400
+Received: by mail-we0-f170.google.com with SMTP id w61so10014462wes.15
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 11:47:25 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs-progs: allow compression property gets for read-only subvolumes
+Date: Tue, 15 Apr 2014 20:47:27 +0100
+Message-Id: <1397591247-25376-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add btrfs wiki page reference to btrfs-check/btrfsck, btrfs-restore and
-btrfs-device as supplement.
+Because the function open_file_or_dir() always opened the input file in
+read/write mode (O_RDWR), we were not able to due a compression property
+get against a file living in a read-only subvolume/snapshot.
+Fix this by opening the file with O_RDONLY mode if we're doing a property
+get.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- Documentation/btrfs-check.txt   |  5 +++++
- Documentation/btrfs-device.txt  | 10 ++++++++--
- Documentation/btrfs-restore.txt |  4 ++++
- Documentation/btrfsck.txt       |  4 ++--
- 4 files changed, 19 insertions(+), 4 deletions(-)
+ props.c | 3 ++-
+ utils.c | 9 +++++++--
+ utils.h | 1 +
+ 3 files changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/btrfs-check.txt b/Documentation/btrfs-check.txt
-index accbed4..ddd7fe7 100644
---- a/Documentation/btrfs-check.txt
-+++ b/Documentation/btrfs-check.txt
-@@ -13,6 +13,11 @@ DESCRIPTION
- -----------
- 'btrfs check' is used to check or repair a btrfs filesystem offline.
+diff --git a/props.c b/props.c
+index 4d0aeea..bd74975 100644
+--- a/props.c
++++ b/props.c
+@@ -119,8 +119,9 @@ static int prop_compression(enum prop_object_type type,
+ 	DIR *dirstream = NULL;
+ 	char *buf = NULL;
+ 	char *xattr_name = NULL;
++	int open_flags = value ? O_RDWR : O_RDONLY;
  
-+NOTE: Since btrfs is under heavy development especially the 'btrfs check'
-+command, it is *highly* recommended to read the following btrfs wiki before
-+executing 'btrfs check' with '--repair' option: +
-+https://btrfs.wiki.kernel.org/index.php/Btrfsck
+-	fd = open_file_or_dir(object, &dirstream);
++	fd = open_file_or_dir3(object, &dirstream, open_flags);
+ 	if (fd == -1) {
+ 		ret = -errno;
+ 		fprintf(stderr, "ERROR: open %s failed. %s\n",
+diff --git a/utils.c b/utils.c
+index 0bfb9d9..458ba54 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1625,7 +1625,7 @@ u64 parse_size(char *s)
+ 	return strtoull(s, NULL, 10) * mult;
+ }
+ 
+-int open_file_or_dir(const char *fname, DIR **dirstream)
++int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags)
+ {
+ 	int ret;
+ 	struct stat st;
+@@ -1641,7 +1641,7 @@ int open_file_or_dir(const char *fname, DIR **dirstream)
+ 			return -1;
+ 		fd = dirfd(*dirstream);
+ 	} else if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
+-		fd = open(fname, O_RDWR);
++		fd = open(fname, open_flags);
+ 	} else {
+ 		/*
+ 		 * we set this on purpose, in case the caller output
+@@ -1658,6 +1658,11 @@ int open_file_or_dir(const char *fname, DIR **dirstream)
+ 	return fd;
+ }
+ 
++int open_file_or_dir(const char *fname, DIR **dirstream)
++{
++	return open_file_or_dir3(fname, dirstream, O_RDWR);
++}
 +
- OPTIONS
- -------
- -s|--support <superblock>::
-diff --git a/Documentation/btrfs-device.txt b/Documentation/btrfs-device.txt
-index 523ae4d..7a6bce5 100644
---- a/Documentation/btrfs-device.txt
-+++ b/Documentation/btrfs-device.txt
-@@ -24,16 +24,22 @@ online.
- 
- Profile::
- Btrfs filesystem uses data/metadata profiles to manage allocation/duplication
--mechanism. Profiles like RAID level can be assigned to data and metadata separately.
-+mechanism. +
-+Profiles like RAID level can be assigned to data and metadata separately.
- +
- See `mkfs.btrfs`(8) for more details.
- 
- RAID level::
--Btrfs filesystem supports most of the standard RAID level: 0/1/5/6/10.
-+Btrfs filesystem supports most of the standard RAID level: 0/1/5/6/10. +
- RAID levels can be assigned at mkfs time or online.
- +
- See `mkfs.btrfs`(8) for mkfs time RAID level assign and `btrfs-balance`(8) for
- online RAID level assign.
-++
-+NOTE: Since btrfs is under heavy development especially the RAID5/6 support,
-+it is *highly* recommended to read the follow btrfs wiki page to get more
-+updated details on RAID5/6: +
-+https://btrfs.wiki.kernel.org/index.php/RAID56
- 
- Balance::
- `btrfs-balance`(8) subcommand can be used to balance or rebuild chunks to the
-diff --git a/Documentation/btrfs-restore.txt b/Documentation/btrfs-restore.txt
-index ea18ebb..72aa084 100644
---- a/Documentation/btrfs-restore.txt
-+++ b/Documentation/btrfs-restore.txt
-@@ -17,6 +17,10 @@ restore them into <path> or just list the tree roots.
- Since current `btrfsck`(8) or `btrfs-rescue`(8) only has very limited usage,
- 'btrfs restore' is normally a better choice.
- 
-+NOTE: It is recommended to read the following btrfs wiki page if your data is
-+not salvaged with default option: +
-+https://btrfs.wiki.kernel.org/index.php/Restore
-+
- OPTIONS
- -------
- -s::
-diff --git a/Documentation/btrfsck.txt b/Documentation/btrfsck.txt
-index 751c4d0..defac80 100644
---- a/Documentation/btrfsck.txt
-+++ b/Documentation/btrfsck.txt
-@@ -20,8 +20,8 @@ Now, it can only be run on an unmounted FS.
- 
- WARNING: Considering it is not well-tested in real-life situations yet.
- If you have a broken Btrfs filesystem, btrfsck may not repair but cause
--additional damages. 
--
-+additional damages. See the wiki page for more: +
-+https://btrfs.wiki.kernel.org/index.php/Btrfsck
- 
- OPTIONS
- -------
+ void close_file_or_dir(int fd, DIR *dirstream)
+ {
+ 	if (dirstream)
+diff --git a/utils.h b/utils.h
+index 06ec938..fc581ca 100644
+--- a/utils.h
++++ b/utils.h
+@@ -73,6 +73,7 @@ int btrfs_scan_block_devices(int run_ioctl);
+ u64 parse_size(char *s);
+ u64 arg_strtou64(const char *str);
+ int open_file_or_dir(const char *fname, DIR **dirstream);
++int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags);
+ void close_file_or_dir(int fd, DIR *dirstream);
+ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 		struct btrfs_ioctl_dev_info_args **di_ret);
 -- 
-1.9.2
+1.9.1
 

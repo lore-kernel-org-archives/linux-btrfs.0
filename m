@@ -1,83 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52244 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752406AbaDPRnS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 13:43:18 -0400
-Date: Wed, 16 Apr 2014 19:43:16 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4 v2] Btrfs-progs: send, implement total data size
- callback and progress report
-Message-ID: <20140416174316.GD29256@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1397580051-26643-2-git-send-email-fdmanana@gmail.com>
- <1397660175-8005-1-git-send-email-fdmanana@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1397660175-8005-1-git-send-email-fdmanana@gmail.com>
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:52980 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754387AbaDOPk7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Apr 2014 11:40:59 -0400
+Received: by mail-wg0-f52.google.com with SMTP id k14so9764234wgh.35
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 08:40:58 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 1/4] Btrfs-progs: send, bump stream version
+Date: Tue, 15 Apr 2014 17:40:48 +0100
+Message-Id: <1397580051-26643-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 16, 2014 at 03:56:15PM +0100, Filipe David Borba Manana wrote:
-> V2: Added new send ioctl flag BTRFS_SEND_FLAG_SUPPORT_FALLOCATE. A version 2
->     stream is now only produced is the ioctl caller specifies at least one of
->     the new send flags (BTRFS_SEND_FLAG_SUPPORT_FALLOCATE or
->     BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE).
+This increases the send stream version from version 1 to version 2, adding
+2 new commands:
 
-Good.
+1) total data size - used to tell the receiver how much file data the stream
+   will add or update;
 
-> @@ -156,6 +165,12 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
->  		goto out;
->  
->  	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
-> +	r->total_data_size = 0;
-> +	r->bytes_received = 0;
-> +	r->progress = 0.0;
-> +	r->last_progress_update = 0;
-> +	r->bytes_received_last_update = 0;
-> +	r->target = "Subvolume";
->  
->  	if (strlen(r->dest_dir_path) == 0)
->  		r->cur_subvol->path = strdup(path);
-> @@ -205,6 +220,12 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
->  		goto out;
->  
->  	r->cur_subvol = calloc(1, sizeof(*r->cur_subvol));
-> +	r->total_data_size = 0;
-> +	r->bytes_received = 0;
-> +	r->progress = 0.0;
-> +	r->last_progress_update = 0;
-> +	r->bytes_received_last_update = 0;
-> +	r->target = "Snapshot";
+2) fallocate - used to pre-allocate space for files and to punch holes in files.
 
-Nontrivial amount of duplicate code, a helper would be better.
+This is preparation work for subsequent changes that implement the new features
+(computing total data size and use fallocate for better performance).
 
-> @@ -673,7 +679,7 @@ out:
->  }
->  
->  const char * const cmd_send_usage[] = {
-> -	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
-> +	"btrfs send [-veo] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
->  	"Send the subvolume(s) to stdout.",
->  	"Sends the subvolume(s) specified by <subvol> to stdout.",
->  	"By default, this will send the whole subvolume. To do an incremental",
-> @@ -697,5 +703,9 @@ const char * const cmd_send_usage[] = {
->  	"-f <outfile>     Output is normally written to stdout. To write to",
->  	"                 a file, use this option. An alternative would be to",
->  	"                 use pipes.",
-> +	"-o               Obtain the total data size for each subvolume or ",
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ ioctl.h |  8 ++++++++
+ send.h  | 13 ++++++++++++-
+ 2 files changed, 20 insertions(+), 1 deletion(-)
 
-UI:
+diff --git a/ioctl.h b/ioctl.h
+index 231660a..901a248 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -392,6 +392,14 @@ struct btrfs_ioctl_received_subvol_args {
+  */
+ #define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
+ 
++/*
++ * The sum of all length fields the receiver will get in write, clone and
++ * fallocate commands.
++ * This can be used by the receiver to compute progress, at the expense of some
++ * initial metadata scan performed by the sender (kernel).
++ */
++#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
++
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
+ 	__u64 clone_sources_count;	/* in */
+diff --git a/send.h b/send.h
+index e8da785..69e81fb 100644
+--- a/send.h
++++ b/send.h
+@@ -24,7 +24,7 @@ extern "C" {
+ #endif
+ 
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+-#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_STREAM_VERSION 2
+ 
+ #define BTRFS_SEND_BUF_SIZE (1024 * 64)
+ #define BTRFS_SEND_READ_SIZE (1024 * 48)
+@@ -91,6 +91,11 @@ enum btrfs_send_cmd {
+ 
+ 	BTRFS_SEND_C_END,
+ 	BTRFS_SEND_C_UPDATE_EXTENT,
++
++	/* added in stream version 2 */
++	BTRFS_SEND_C_TOTAL_DATA_SIZE,
++	BTRFS_SEND_C_FALLOCATE,
++
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+@@ -129,10 +134,16 @@ enum {
+ 	BTRFS_SEND_A_CLONE_OFFSET,
+ 	BTRFS_SEND_A_CLONE_LEN,
+ 
++	/* added in stream version 2 */
++	BTRFS_SEND_A_FALLOCATE_FLAGS,
++
+ 	__BTRFS_SEND_A_MAX,
+ };
+ #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
+ 
++#define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
++#define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
++
+ #ifdef __KERNEL__
+ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
+ #endif
+-- 
+1.9.1
 
--o is sometimes used as an option for 'output', which makes sense in
-context of send, but is already done via -f. I'm not sure if it's a good
-choice. 'p' is already occupied.
-
-As an alternative: how about -s ? mnemonic for 'size'.
-
-> +	"                 snapshot to send. This demands additional processing",
-> +	"                 (mostly IO bound) but is useful for the receive ",
-> +	"                 command to report progress.",
->  	NULL
->  };

@@ -1,58 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-in-03.arcor-online.net ([151.189.21.43]:43545 "EHLO
-	mail-in-03.arcor-online.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1161089AbaDPPBr (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:41436 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161469AbaDPPQ1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 11:01:47 -0400
-Received: from mail-in-12-z2.arcor-online.net (mail-in-12-z2.arcor-online.net [151.189.8.29])
-	by mx.arcor.de (Postfix) with ESMTP id 1DBA4D80D1
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 17:01:46 +0200 (CEST)
-Received: from mail-in-06.arcor-online.net (mail-in-06.arcor-online.net [151.189.21.46])
-	by mail-in-12-z2.arcor-online.net (Postfix) with ESMTP id 119612E6233
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 17:01:46 +0200 (CEST)
-Received: from athene.mittagstun.de (dslb-084-061-021-231.pools.arcor-ip.net [84.61.21.231])
-	(Authenticated sender: mwilck@arcor.de)
-	by mail-in-06.arcor-online.net (Postfix) with ESMTPA id E217010BB21
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 17:01:45 +0200 (CEST)
-Message-ID: <534E8B6A.9060209@arcor.de>
-Date: Wed, 16 Apr 2014 15:53:46 +0200
-From: Martin Wilck <mwilck@arcor.de>
-MIME-Version: 1.0
+	Wed, 16 Apr 2014 11:16:27 -0400
+Received: by mail-wi0-f173.google.com with SMTP id z2so1563057wiv.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 08:16:25 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Lost /home subvolume after btrfs crash
-Content-Type: text/plain; charset=ISO-8859-1
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 3/4 v3] Btrfs: send, use fallocate command to punch holes
+Date: Wed, 16 Apr 2014 17:16:59 +0100
+Message-Id: <1397665019-21410-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1397580021-26598-3-git-send-email-fdmanana@gmail.com>
+References: <1397580021-26598-3-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Instead of sending a write command with a data buffer filled with 0 value bytes,
+use the fallocate command, introduced in the send stream version 2, to tell the
+receiver to punch a file hole using the fallocate system call.
 
-I have a broken btrfs file system on a laptop.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
-Debug material is available here:
-  https://www.dropbox.com/sh/utv8b3qd0do6a04/zTwGQCrN9x
+V2: A v2 stream is now only produced if the send ioctl caller passes in one of
+    the new flags (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | BTRFS_SEND_FLAG_SUPPORT_FALLOCATE)
+    to avoid breaking old clients.
+V3: Added missing path allocation, messed up rebase.
 
-Most importantly, the /home subvolume is lost. All attempts to recover
-data from it (btrfs-restore, mount -o recovery, btrfsck) have failed so
-far (/home is simply empty in the btrfs-restore output), although I was
-able to recover most of the other subvolumes and the main FS. The btrfs
-tools would typically segfault with failed assertions when analyzing the
-FS. Grepping through the entire volume shows that (at least parts of)
-/home are still available, but they seem to be disconnected from the
-main tree somehow, or the meta data is so corrupt that the tools bail
-out trying to find files under it. Making matters worse, the important
-data was encrypted using ecryptfs, so I need to recover the ciphertext
-first and then find a way to recover the plaintext (I do have the
-passphrase).
+ fs/btrfs/send.c | 55 ++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/send.h |  4 ++++
+ 2 files changed, 56 insertions(+), 3 deletions(-)
 
-The crash happened with a rather old OpenSUSE 12.2 kernel (3.4.11-2.16).
-The user says she was just surfing the web normally when the crash
-occured (no screenshot of the original crash, unfortunately). On the
-next boot,  the btrfs root file system couldn't be mounted any more.
-After that I booted an OpenSUSE 12.3 rescue DVD and created the debug
-material shown above.
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index f5db492..bb9afea 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -564,6 +564,7 @@ static int tlv_put(struct send_ctx *sctx, u16 attr, const void *data, int len)
+ 		return tlv_put(sctx, attr, &__tmp, sizeof(__tmp));	\
+ 	}
+ 
++TLV_PUT_DEFINE_INT(32)
+ TLV_PUT_DEFINE_INT(64)
+ 
+ static int tlv_put_string(struct send_ctx *sctx, u16 attr,
+@@ -4483,18 +4484,59 @@ out:
+ 	return ret;
+ }
+ 
++static int send_fallocate(struct send_ctx *sctx, u32 flags,
++			  u64 offset, u64 len)
++{
++	struct fs_path *p = NULL;
++	int ret = 0;
++
++	ASSERT(sctx->flags & BTRFS_SEND_FLAG_SUPPORT_FALLOCATE);
++
++	if (sctx->phase == SEND_PHASE_COMPUTE_DATA_SIZE) {
++		sctx->total_data_size += len;
++		return 0;
++	}
++
++	p = fs_path_alloc();
++	if (!p)
++		return -ENOMEM;
++	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
++	if (ret < 0)
++		goto out;
++
++	ret = begin_cmd(sctx, BTRFS_SEND_C_FALLOCATE);
++	if (ret < 0)
++		goto out;
++	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
++	TLV_PUT_U32(sctx, BTRFS_SEND_A_FALLOCATE_FLAGS, flags);
++	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
++	TLV_PUT_U64(sctx, BTRFS_SEND_A_SIZE, len);
++	ret = send_cmd(sctx);
++
++tlv_put_failure:
++out:
++	fs_path_free(p);
++	return ret;
++}
++
+ static int send_hole(struct send_ctx *sctx, u64 end)
+ {
+ 	struct fs_path *p = NULL;
+ 	u64 offset = sctx->cur_inode_last_extent;
+-	u64 len;
++	u64 len = end - offset;
+ 	int ret = 0;
+ 
+ 	if (sctx->phase == SEND_PHASE_COMPUTE_DATA_SIZE) {
+-		sctx->total_data_size += end - offset;
++		sctx->total_data_size += len;
+ 		return 0;
+ 	}
+ 
++	if (sctx->flags & BTRFS_SEND_FLAG_SUPPORT_FALLOCATE)
++		return send_fallocate(sctx,
++				      BTRFS_SEND_PUNCH_HOLE_FALLOC_FLAGS,
++				      offset,
++				      len);
++
+ 	p = fs_path_alloc();
+ 	if (!p)
+ 		return -ENOMEM;
+@@ -4551,7 +4593,8 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 		len = btrfs_file_extent_num_bytes(path->nodes[0], ei);
+ 	}
+ 
+-	if (offset + len > sctx->cur_inode_size)
++	if (offset < sctx->cur_inode_size &&
++	    offset + len > sctx->cur_inode_size)
+ 		len = sctx->cur_inode_size - offset;
+ 	if (len == 0) {
+ 		ret = 0;
+@@ -4568,6 +4611,12 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 		ret = send_clone(sctx, offset, len, clone_root);
+ 	} else if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA) {
+ 		ret = send_update_extent(sctx, offset, len);
++	} else if (btrfs_file_extent_disk_bytenr(path->nodes[0], ei) == 0 &&
++		   type != BTRFS_FILE_EXTENT_INLINE &&
++		   (sctx->flags & BTRFS_SEND_FLAG_SUPPORT_FALLOCATE) &&
++		   offset < sctx->cur_inode_size) {
++		ret = send_fallocate(sctx, BTRFS_SEND_PUNCH_HOLE_FALLOC_FLAGS,
++				     offset, len);
+ 	} else {
+ 		while (pos < len) {
+ 			l = len - pos;
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 367030d..a632c0d 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -141,6 +141,10 @@ enum {
+ #define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
+ #define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
+ 
++#define BTRFS_SEND_PUNCH_HOLE_FALLOC_FLAGS        \
++	(BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE |  \
++	 BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE)
++
+ #ifdef __KERNEL__
+ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
+ #endif
+-- 
+1.9.1
 
-Any hints how to retrieve files from the /home subvolume from this
-corrupt file system would be highly appreciated.
-
-Best regards
-Martin

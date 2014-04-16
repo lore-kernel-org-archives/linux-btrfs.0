@@ -1,77 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:35619 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755512AbaDPNlh (ORCPT
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:54648 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756341AbaDPNsa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 09:41:37 -0400
-Message-ID: <534E8859.4040507@fb.com>
-Date: Wed, 16 Apr 2014 09:40:41 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Miao Xie <miaox@cn.fujitsu.com>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH 1/2] btrfs: protect snapshots from deleting during send
-References: <cover.1397572052.git.dsterba@suse.cz> <6c15e8cf5f832398461e8dbde0a02255c35fdd4b.1397572052.git.dsterba@suse.cz> <534D479E.3070200@fb.com> <20140415154412.GU29256@twin.jikos.cz> <534D57B1.6090501@fb.com> <20140415162734.GX29256@suse.cz> <534D6AAA.4010709@fb.com> <20140416133202.GZ29256@suse.cz>
-In-Reply-To: <20140416133202.GZ29256@suse.cz>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+	Wed, 16 Apr 2014 09:48:30 -0400
+Received: by mail-wi0-f180.google.com with SMTP id q5so1405208wiv.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 06:48:28 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 1/4 v2] Btrfs: send, bump stream version
+Date: Wed, 16 Apr 2014 15:48:46 +0100
+Message-Id: <1397659726-30615-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1397580021-26598-1-git-send-email-fdmanana@gmail.com>
+References: <1397580021-26598-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This increases the send stream version from version 1 to version 2, adding
+2 new commands:
 
+1) total data size - used to tell the receiver how much file data the stream
+   will add or update;
 
-On 04/16/2014 09:32 AM, David Sterba wrote:
-> On Tue, Apr 15, 2014 at 01:21:46PM -0400, Chris Mason wrote:
->>
->>
->> On 04/15/2014 12:27 PM, David Sterba wrote:
->>> On Tue, Apr 15, 2014 at 12:00:49PM -0400, Chris Mason wrote:
->>>>>> I'm worried about the use case where we have:
->>>>>>
->>>>>>    * periodic automated snapshots
->>>>>>    * periodic automated deletion of old snapshots
->>>>>>    * periodic send for backup
->>>>>>
->>>>>> The automated deletion doesn't want to error out if send is in progress, it
->>>>>> just wants the deletion to happen in the background.
->>>>>
->>>>> I'd give the precedence to the 'backup' process before the 'clean old
->>>>> snapshots', because it can do more harm if the snapshot is removed
->>>>> meanwhile without any possibility to recover.
->>>>
->>>> Right, we don't want either process to stop with an error.  We just want
->>>> them to continue happily and do the right thing...
->>>
->>> ... if everything goes without errors. Not like send going out of
->>> memory, send through network has a glitch, send to a file runs out of
->>> space, and has to be restarted. Is this too unrealistic to happen?
->>
->> It's a good point, a better way to say what I have in mind is that we
->> shouldn't be adding new transient errors to the send process (on purpose ;)
->
-> Ok, I got a wrong understanding from your previous reply.
->
-> So the next thing in the list to try is to add tunables affecting delete
-> vs send. Something like
->
-> $ btrfs send --protect-subvols -c clone1 -c clone2 source
->
-> that would disallow to delete clone1, clone2 and source, passed to the
-> ioctl as a flag and internally adding another refcount for 'how many
-> times it has been protected'. Sounds ugly, but would cover all possible
-> combinations of sending with or without deletion protection.
->
+2) fallocate - used to pre-allocate space for files and to punch holes in files.
 
-Ok, I reread the patch and your original point about dealing with a send 
-+ delete + network interruption.  That's the part I didn't catch the 
-first time around.
+This is preparation work for subsequent changes that implement the new features
+(computing total data size and use fallocate for better performance).
 
-So in my example with the automated tool, the tool really shouldn't be 
-deleting a snapshot where send is in progress.  The tool should be told 
-that snapshot is busy and try to delete it again later.
+A version 2 stream is only produced if the send ioctl caller passes in one of the
+new flags (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | BTRFS_SEND_FLAG_SUPPORT_FALLOCATE),
+meaning old clients are unaffected.
 
-It makes more sense now, 'll queue this up for 3.16 and we can try it 
-out in -next.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
--chris
+V2: A v2 stream is now only produced if the send ioctl caller passes in one of
+    the new flags (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | BTRFS_SEND_FLAG_SUPPORT_FALLOCATE)
+    to avoid breaking old clients.
+
+ fs/btrfs/send.c            |  6 +++++-
+ fs/btrfs/send.h            | 14 +++++++++++++-
+ include/uapi/linux/btrfs.h | 24 +++++++++++++++++++++++-
+ 3 files changed, 41 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 289e9f3..53712aa 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -632,7 +632,11 @@ static int send_header(struct send_ctx *sctx)
+ 	struct btrfs_stream_header hdr;
+ 
+ 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
+-	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
++	if (sctx->flags & (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE |
++			   BTRFS_SEND_FLAG_SUPPORT_FALLOCATE))
++		hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION_2);
++	else
++		hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION_1);
+ 
+ 	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
+ 					&sctx->send_off);
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 48d425a..367030d 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -20,7 +20,8 @@
+ #include "ctree.h"
+ 
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+-#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_STREAM_VERSION_1 1
++#define BTRFS_SEND_STREAM_VERSION_2 2
+ 
+ #define BTRFS_SEND_BUF_SIZE (1024 * 64)
+ #define BTRFS_SEND_READ_SIZE (1024 * 48)
+@@ -87,6 +88,11 @@ enum btrfs_send_cmd {
+ 
+ 	BTRFS_SEND_C_END,
+ 	BTRFS_SEND_C_UPDATE_EXTENT,
++
++	/* added in stream version 2 */
++	BTRFS_SEND_C_TOTAL_DATA_SIZE,
++	BTRFS_SEND_C_FALLOCATE,
++
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+@@ -125,10 +131,16 @@ enum {
+ 	BTRFS_SEND_A_CLONE_OFFSET,
+ 	BTRFS_SEND_A_CLONE_LEN,
+ 
++	/* added in stream version 2 */
++	BTRFS_SEND_A_FALLOCATE_FLAGS,
++
+ 	__BTRFS_SEND_A_MAX,
+ };
+ #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
+ 
++#define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
++#define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
++
+ #ifdef __KERNEL__
+ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
+ #endif
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b4d6909..6611406 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -464,10 +464,32 @@ struct btrfs_ioctl_received_subvol_args {
+  */
+ #define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
+ 
++/*
++ * Calculate the amount (in bytes) of new file data between the send and
++ * parent snapshots, or in case of a full send, the total amount of file data
++ * we will send.
++ * This corresponds to the sum of the data lengths of each write, clone and
++ * fallocate commands that are sent through the send stream. The receiving end
++ * can use this information to compute progress.
++ *
++ * Added in send stream version 2.
++ */
++#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
++
++/*
++ * Use fallocate command to pre-allocate file extents and punch file holes,
++ * instead of write commands with data buffers filled with 0 value bytes.
++ *
++ * Added in send stream version 2.
++ */
++#define BTRFS_SEND_FLAG_SUPPORT_FALLOCATE       0x10
++
+ #define BTRFS_SEND_FLAG_MASK \
+ 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
+ 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
+-	 BTRFS_SEND_FLAG_OMIT_END_CMD)
++	 BTRFS_SEND_FLAG_OMIT_END_CMD | \
++	 BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE |	\
++	 BTRFS_SEND_FLAG_SUPPORT_FALLOCATE)
+ 
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
+-- 
+1.9.1
 

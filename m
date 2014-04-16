@@ -1,33 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:36526 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751295AbaDOTXU (ORCPT
+Received: from e28smtp02.in.ibm.com ([122.248.162.2]:50017 "EHLO
+	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752344AbaDPKHG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Apr 2014 15:23:20 -0400
-Received: by mail-ob0-f181.google.com with SMTP id gq1so1416241obb.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Apr 2014 12:23:19 -0700 (PDT)
+	Wed, 16 Apr 2014 06:07:06 -0400
+Received: from /spool/local
+	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 16 Apr 2014 15:37:02 +0530
+Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 630313940057
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 15:36:58 +0530 (IST)
+Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
+	by d28relay03.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s3GA6qp47471604
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 15:36:53 +0530
+Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
+	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s3GA6uJB003931
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 15:36:57 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>,
+        linuxpatches@star.c10r.facebook.com
+Subject: Re: [PATCH] Btrfs: implement inode_operations callback tmpfile
+Date: Wed, 16 Apr 2014 15:30:51 +0630
+Message-ID: <1468801.p0fTO3mgjp@localhost.localdomain>
+In-Reply-To: <1396392799-9858-1-git-send-email-fdmanana@gmail.com>
+References: <1396392799-9858-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <1397580617-13815-1-git-send-email-dsterba@suse.cz>
-References: <1397580617-13815-1-git-send-email-dsterba@suse.cz>
-Date: Tue, 15 Apr 2014 14:23:19 -0500
-Message-ID: <CAKcLGm9ktxwiZ812P8Trw3GG3QrJhY0845ksNJa5-iwt22Q2yg@mail.gmail.com>
-Subject: Re: [PATCH 3.15-rc2] btrfs: replace error code from btrfs_drop_extents
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 15, 2014 at 11:50 AM, David Sterba <dsterba@suse.cz> wrote:
-> There's a case which clone does not handle and used to BUG_ON instead,
-> (testcase xfstests/btrfs/035), now returns EINVAL. This error code is
-> confusing to the ioctl caller, as it normally signifies errorneous
-> arguments.
->
-> Change it to ENOPNOTSUPP which allows a fall back to copy instead of
-> clone. This does not affect the common reflink operation.
->
+On Tuesday 01 Apr 2014 11:53:19 PM Filipe David Borba Manana wrote:
+> +static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+> +{
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_root *root = BTRFS_I(dir)->root;
+> +	struct inode *inode = NULL;
+> +	u64 objectid;
+> +	u64 index;
+> +	int ret = 0;
+> +
+> +	/*
+> +	 * 2 for inode item and ref
+> +	 * 2 for dir items
+> +	 * 1 for xattr if selinux is on
+> +	 */
+> +	trans = btrfs_start_transaction(root, 5);
+> +	if (IS_ERR(trans))
+> +		return PTR_ERR(trans);
+> +
 
-Minor spelling error in the commit message, you clearly mean
-EOPNOTSUPP, not ENOPNOTSUPP.
+Hello,
+
+Any particular reason to reserve space for 5 items? For the O_TMPFILE
+case we seem to allocate and use just the one inode item and none of
+the associated 'inode ref', 'dir item' and 'dir index item' since
+there is no directory entry associated with the file. I am not
+sure about the xattr item though.
+
+Thanks,
+chandan.
+

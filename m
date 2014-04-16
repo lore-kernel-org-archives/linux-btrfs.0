@@ -1,71 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53111 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754688AbaDPHzO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 03:55:14 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WaKgb-00025g-UN
-	for linux-btrfs@vger.kernel.org; Wed, 16 Apr 2014 09:55:13 +0200
-Received: from p5b005b53.dip0.t-ipconnect.de ([91.0.91.83])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 09:55:13 +0200
-Received: from holger.hoffstaette by p5b005b53.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 09:55:13 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: btrfs-progs v3.14 mkfs.btrfs bug: --features long-option
- segfaults, -O short-option OK
-Date: Wed, 16 Apr 2014 07:55:00 +0000 (UTC)
-Message-ID: <pan.2014.04.16.07.55.00@googlemail.com>
-References: <pan$63522$eac299d1$60270bae$97109238@cox.net>
-	<pan.2014.04.16.07.48.53@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:14005 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754972AbaDPJB2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Apr 2014 05:01:28 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Karel Zak <kzak@redhat.com>
+Subject: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device add/remove.
+Date: Wed, 16 Apr 2014 17:02:32 +0800
+Message-ID: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 16 Apr 2014 07:48:53 +0000, Holger Hoffstätte wrote:
+Btrfs will send uevent to udev inform the device change,
+but ctime/mtime for the block device inode is not udpated, which cause
+libblkid used by btrfs-progs unable to detect device change and use old
+cache, causing 'btrfs dev scan; btrfs dev rmove; btrfs dev scan' give an
+error message.
 
-> On Wed, 16 Apr 2014 06:41:44 +0000, Duncan wrote:
-> 
->> Using btrfs-progs v3.14:
->> 
->> mkfs.btrfs ... --features ...
->> 
->> segfaults.
-> 
-> Can reproduce (also with glibc 2.19 on Gentoo ;-) and building with debug
-> found:
-> 
-> (gdb) bt
-> #0  0x00007ffff6f3aaea in strlen () from /lib64/libc.so.6
-> #1  0x00007ffff6f3a82e in strdup () from /lib64/libc.so.6
-> #2  0x00000000004213e8 in main (ac=2, av=0x7fffffffe308) at mkfs.c:1312
-> 
-> Sure enough that line is handling 'O', where '--features' is supposed to
-> be handled. No idea why -O works, but debugging shows that optarg is null
-> at that point, so strdup goes poof.
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: Karel Zak <kzak@redhat.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
-Well, duh! The long_options array does not declare that --features wants
-an argument, so getopt does not create one.
-
-holger>diff -u mkfs.c\~ mkfs.c
---- mkfs.c~	2014-04-16 09:41:42.000000000 +0200
-+++ mkfs.c	2014-04-16 09:51:45.408854096 +0200
-@@ -350,7 +350,7 @@
- 	{ "version", 0, NULL, 'V' },
- 	{ "rootdir", 1, NULL, 'r' },
- 	{ "nodiscard", 0, NULL, 'K' },
--	{ "features", 0, NULL, 'O' },
-+	{ "features", 1, NULL, 'O' },
- 	{ NULL, 0, NULL, 0}
- };
-
-This fixes it.
-
--h
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 49d7fab..ce232d7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1452,6 +1452,22 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * Function to update ctime/mtime for a given device path.
++ * Mainly used for ctime/mtime based probe like libblkid.
++ */
++static void update_dev_time(char *path_name)
++{
++	struct file *filp;
++
++	filp = filp_open(path_name, O_RDWR, 0);
++	if (!filp)
++		return;
++	file_update_time(filp);
++	filp_close(filp, NULL);
++	return;
++}
++
+ static int btrfs_rm_dev_item(struct btrfs_root *root,
+ 			     struct btrfs_device *device)
+ {
+@@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 
+ 	ret = 0;
+ 
+-	/* Notify udev that device has changed */
+-	if (bdev)
++	if (bdev) {
++		/* Notify udev that device has changed */
+ 		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+ 
++		/* Update ctime/mtime for device path for libblkid */
++		update_dev_time(device_path);
++	}
++
+ error_brelse:
+ 	brelse(bh);
+ 	if (bdev)
+@@ -2146,6 +2166,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 		ret = btrfs_commit_transaction(trans, root);
+ 	}
+ 
++	/* Update ctime/mtime for libblkid */
++	update_dev_time(device_path);
+ 	return ret;
+ 
+ error_trans:
+-- 
+1.9.2
 

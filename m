@@ -1,70 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f48.google.com ([209.85.216.48]:40918 "EHLO
-	mail-qa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161205AbaDPN17 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Apr 2014 09:27:59 -0400
-Received: by mail-qa0-f48.google.com with SMTP id s7so10129110qap.35
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Apr 2014 06:27:58 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:47261 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1161111AbaDPNcF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Apr 2014 09:32:05 -0400
+Date: Wed, 16 Apr 2014 15:32:02 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org, Miao Xie <miaox@cn.fujitsu.com>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH 1/2] btrfs: protect snapshots from deleting during send
+Message-ID: <20140416133202.GZ29256@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1397572052.git.dsterba@suse.cz>
+ <6c15e8cf5f832398461e8dbde0a02255c35fdd4b.1397572052.git.dsterba@suse.cz>
+ <534D479E.3070200@fb.com>
+ <20140415154412.GU29256@twin.jikos.cz>
+ <534D57B1.6090501@fb.com>
+ <20140415162734.GX29256@suse.cz>
+ <534D6AAA.4010709@fb.com>
 MIME-Version: 1.0
-From: Aastha Mehta <aasthakm@gmail.com>
-Date: Wed, 16 Apr 2014 15:27:38 +0200
-Message-ID: <CAEx9m44NE7sFAcOdPMc=mhye=hkhLgVMfmu_mbP4wzp_bGh_rA@mail.gmail.com>
-Subject: How do I find the physical block number?
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <534D6AAA.4010709@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, Apr 15, 2014 at 01:21:46PM -0400, Chris Mason wrote:
+> 
+> 
+> On 04/15/2014 12:27 PM, David Sterba wrote:
+> >On Tue, Apr 15, 2014 at 12:00:49PM -0400, Chris Mason wrote:
+> >>>>I'm worried about the use case where we have:
+> >>>>
+> >>>>   * periodic automated snapshots
+> >>>>   * periodic automated deletion of old snapshots
+> >>>>   * periodic send for backup
+> >>>>
+> >>>>The automated deletion doesn't want to error out if send is in progress, it
+> >>>>just wants the deletion to happen in the background.
+> >>>
+> >>>I'd give the precedence to the 'backup' process before the 'clean old
+> >>>snapshots', because it can do more harm if the snapshot is removed
+> >>>meanwhile without any possibility to recover.
+> >>
+> >>Right, we don't want either process to stop with an error.  We just want
+> >>them to continue happily and do the right thing...
+> >
+> >... if everything goes without errors. Not like send going out of
+> >memory, send through network has a glitch, send to a file runs out of
+> >space, and has to be restarted. Is this too unrealistic to happen?
+> 
+> It's a good point, a better way to say what I have in mind is that we
+> shouldn't be adding new transient errors to the send process (on purpose ;)
 
-I have created a 500GB partition on my HDD and formatted it for btrfs.
-I created a file on it.
-# echo "tmp data in the tmp file.." > /mnt/btrfs/tmp-file
-# umount /mnt/btrfs
+Ok, I got a wrong understanding from your previous reply.
 
-Next I want to know the blocks allocated for the file and I used
-filefrag for it. I get some information as follows -
+So the next thing in the list to try is to add tunables affecting delete
+vs send. Something like
 
-# mount -o max_inline=0 /dev/sdc2 /mnt/btrfs
-# filefrag -v /mnt/btrfs/tmp-file
-Filesystem type is: 9123683e
-File size of /mnt/btrfs/tmp-file is 27 (1 block, blocksize 4096)
- ext logical physical expected length flags
-   0       0 65924123               1 eof
-/mnt/btrfs/tmp-file: 1 extent found
+$ btrfs send --protect-subvols -c clone1 -c clone2 source
 
-Now, I want to read the same data from the disk directly. I tried the
-following -
-
-block 65924123 = byte (65924123*4096) = 270025207808
-
-# dd if=/dev/sdc2 of=tmp-file skip=270025207808 bs=1 count=4096
-# cat tmp-file
-I cannot read the file's contents but some garbage.
-
-I read somewhere that the physical block number shown in filefrag may
-actually be a logical block for the file system and it has an
-additional translation to physical block number. So next I tried the
-following -
-
-# btrfs-map-logical -l 65924123 /dev/sdc2
-mirror 1 logical 65924123 physical 74312731 device /dev/sdc2
-mirror 2 logical 65924123 physical 1148054555 device /dev/sdc2
-
-I again tried reading the block 74312731 using the dd command as
-above, but it is still not the right block.
-
-I want to know what does the physical block number returned by
-filefrag mean, why there are two mappings for the above block number
-and how I can find the exact physical disk block number the file
-system actually writes to.
-
-My sdc has the following partitions:
-   Device Boot      Start         End      Blocks   Id  System
-/dev/sdc1            2048   419432447   209715200   83  Linux
-/dev/sdc2      1468008448  2516584447   524288000   83  Linux (BTRFS)
-/dev/sdc3       419432448  1468008447   524288000   83  Linux
-
-Thanks,
-Aastha.
+that would disallow to delete clone1, clone2 and source, passed to the
+ioctl as a flag and internally adding another refcount for 'how many
+times it has been protected'. Sounds ugly, but would cover all possible
+combinations of sending with or without deletion protection.

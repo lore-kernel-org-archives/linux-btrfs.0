@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:65463 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2824 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751335AbaDOBQS convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1750898AbaDPBYL convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Apr 2014 21:16:18 -0400
-Message-ID: <534C888D.1080509@cn.fujitsu.com>
-Date: Tue, 15 Apr 2014 09:17:01 +0800
+	Tue, 15 Apr 2014 21:24:11 -0400
+Message-ID: <534DDBDF.4050408@cn.fujitsu.com>
+Date: Wed, 16 Apr 2014 09:24:47 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
@@ -56,19 +56,19 @@ Date: 2014年04月15日 00:29
 >
 > I think it's not right to skip the whole cache because one entry may be
 > stale, more that we know which one and when.
-I totally agree with that.
 >
 > We should rather explicitly invalidate the removed device after delete,
 > I don't what's the right way to do that. Maybe blkid_do_probe() or
 > blkid_gc_cache()
-But the problem is, libblkid does not provide such API to invalidate one 
-entry of cache.
-blkid_gc_cache() will only remove non-exsist device cache, and 
-blkid_do_probe() seems not using/update the cache,
-so I used "/dev/null" as cache to avoid the cache completly.
+Please ignore this patch, since after consulting with libblkid mail 
+list, the real problem is that btrfs ioctl for remove device
+does not update the mtime/ctime for the device.
 
-I'll try to dig the libblkid codes deeper to find a method to invalidate 
-an entry.
+Libblkid will only use cache when the device's mtime/ctime stay 
+unchanged, if mtime/ctime changed libblkid will do the lowprobe.
+
+I'll try to fix it in kernel space.
 
 Thanks,
-Qu.
+Qu
+

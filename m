@@ -1,55 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:63891 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752807AbaDRRHD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Apr 2014 13:07:03 -0400
-Received: by mail-lb0-f177.google.com with SMTP id z11so1488637lbi.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Apr 2014 10:07:02 -0700 (PDT)
-Received: from [192.168.1.2] (host-62-63-77-69.rev.as20985.net. [62.63.77.69])
-        by mx.google.com with ESMTPSA id zf7sm28692232lab.7.2014.04.18.10.07.00
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Fri, 18 Apr 2014 10:07:01 -0700 (PDT)
-Message-ID: <53515BB4.7070700@gmail.com>
-Date: Fri, 18 Apr 2014 21:07:00 +0400
-From: "Sergey E. Kolesnikov" <rockingdemon@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:53679 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754470AbaDRRSh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Apr 2014 13:18:37 -0400
+Date: Fri, 18 Apr 2014 19:18:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: Mark Fasheh <mfasheh@suse.de>, Josef Bacik <jbacik@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/4] Btrfs: send, bump stream version
+Message-ID: <20140418171836.GI29256@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1397580021-26598-1-git-send-email-fdmanana@gmail.com>
+ <20140415172800.GD7901@wotan.suse.de>
+ <CAL3q7H6gNbDbZudcUveR+W5PznWzz8L4sc1YTWvEhQextfGCtg@mail.gmail.com>
+ <20140415174121.GE7901@wotan.suse.de>
+ <CAL3q7H4dcDeDZ-j6w5eH-AjE8TZSR0KZJbRJPeNQect-KA_OQg@mail.gmail.com>
+ <20140415180415.GF7901@wotan.suse.de>
+ <3qfwc02110okvx394wlhso7b.1397585421171@email.android.com>
+ <CAL3q7H5wUNAkH7HV+TyizTUe3FCHjOycCFQ9Q6hJOSxoZ78maQ@mail.gmail.com>
+ <20140415193518.GG7901@wotan.suse.de>
+ <CAL3q7H5yYFOiJ=BkEHaRLOh87CoL49xqdm1-aFa2dPASwCFMSg@mail.gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: SSD TRIM on balance
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H5yYFOiJ=BkEHaRLOh87CoL49xqdm1-aFa2dPASwCFMSg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Greetings everyone.
+On Tue, Apr 15, 2014 at 08:49:52PM +0100, Filipe David Manana wrote:
+> On Tue, Apr 15, 2014 at 8:35 PM, Mark Fasheh <mfasheh@suse.de> wrote:
+> > On Tue, Apr 15, 2014 at 07:30:51PM +0100, Filipe David Manana wrote:
+> >> On Tue, Apr 15, 2014 at 7:10 PM, Josef Bacik <jbacik@fb.com> wrote:
+> >> > Just make a SUPPORTS_V2 flag that userspace can pass in through the existing flags to make the kernel spit out V2 commands.  We don't want to break old user space, I still have to see distro guys in real life ;).  Thanks,
+> >>
+> >> So would this flag named like "supports_v2" imply to send fallocate
+> >> commands and data size computation/command? Right now I made data size
+> >> optional, sent only if a new ioctl send flag is set, because for large
+> >> fs trees it can take some time to compute data size.
+> >
+> > If it's already backwards-compatibilty you could keep the flag for data size computation as-is
+> > and simply add another flag that gets passed in for the fallocate commands
+> > (UNDERSTANDS_FALLOCATE or something lke that).
+> 
+> Yep, exactly what I had in mind.
+> 
+> > As far as btrfs-progs go you could go with many different approaches. For
+> > the library interface to this we might just let the callers determine the
+> > behavior they want. For the command processing (user runs the btrfs program
+> > directly), you could do a couple things:
+> >
+> > - perhaps try once with the new flags, if you get an error (EINVAL right now
+> >   for bad flags) try with the old ones and only then throw an error out to
+> >   the caller?
+> >
+> > - have user specify whether new flags should be tried or not (this is
+> >   easiest)
+> >
+> > I would generally avoid breaking compatibility inside of btrfs-progs too so
+> > just forcing the new flag seems the most 'breaking' option.
+> 
+> Sounds good. Will probably try first to have the user explicitly pass
+> a --stream-version=2 for e.g to btrfs send command, with v1 (current)
+> being the default. I like the idea of clearing the
+> SUPPORT_FALLOCATE/DATA_SIZE bits from the flags and retry if the ioctl
+> returns -EINVAL too.
 
-I've recently rebalanced my btrfs (kernel 3.13) running on two SSD 
-drives (raid-0) and a question arose.
-Does btrfs perform TRIM on SSD balance? Fs is mounted with 'ssd' option, 
-but not 'discard'.
+The fallocate and progress flags are of different nature. While
+fallocate should be used by default with v2 (because it's more efficient
+and the right thing to do), the progress is optional.
 
-It seems fstrim only trims free chunks in allocated space, so we 
-possibly having a "trim leak" if no special treatment is taken on blocks 
-reallocated during balance operation.
+So if user selects protocol version=2, he gets the falloc rightaway.
+Ie. no flag like VERSION_V2 or UNDERSTANDS_FALLOCATE, this should be for
+free under "STREAM_VERSION=2".
 
-root@midnight:/mnt/tmp# fstrim -v /
-/: 0 bytes were trimmed
+(I'm not sure if the falloc should be optional at all in v2.)
 
+The progress decreases performance and I think it should be off by
+default.
 
-root@midnight:/mnt/tmp# btrfs fi df /
-Data, RAID0: total=90.00GiB, used=86.84GiB
-System, RAID1: total=32.00MiB, used=12.00KiB
-Metadata, RAID1: total=4.00GiB, used=2.56GiB
-
-
-root@midnight:/mnt/tmp# btrfs fi show /
-Label: ssdbtrfs  uuid: f61f749b-dce6-4e73-9d53-693e93ad61aa
-     Total devices 2 FS bytes used 89.41GiB
-     devid    1 size 111.31GiB used 49.03GiB path /dev/sda2
-     devid    2 size 111.31GiB used 49.03GiB path /dev/sdb2
-
-Btrfs v3.12
-
-
-Best regards,
-Sergey E. Kolesnikov
+The remaining v2-draft features are OTIME, file flags and single-file
+clones - all of them are not optional and would be good to add them to
+v2.

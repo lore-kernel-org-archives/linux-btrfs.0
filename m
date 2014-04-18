@@ -1,48 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:40784 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751517AbaDQJqy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Apr 2014 05:46:54 -0400
-Date: Thu, 17 Apr 2014 10:46:50 +0100
-From: Tomasz Chmielewski <tch@virtall.com>
-To: <miaox@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: filesystem hang when doing snapshot (3.15-rc1)
-Message-ID: <20140417104650.31531b12@s9>
-In-Reply-To: <534F3B60.3090109@cn.fujitsu.com>
-References: <20140416230511.1cbceb2c@virtall.com>
-	<534F3B60.3090109@cn.fujitsu.com>
+Received: from mail-lb0-f177.google.com ([209.85.217.177]:63891 "EHLO
+	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752807AbaDRRHD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Apr 2014 13:07:03 -0400
+Received: by mail-lb0-f177.google.com with SMTP id z11so1488637lbi.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Apr 2014 10:07:02 -0700 (PDT)
+Received: from [192.168.1.2] (host-62-63-77-69.rev.as20985.net. [62.63.77.69])
+        by mx.google.com with ESMTPSA id zf7sm28692232lab.7.2014.04.18.10.07.00
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Fri, 18 Apr 2014 10:07:01 -0700 (PDT)
+Message-ID: <53515BB4.7070700@gmail.com>
+Date: Fri, 18 Apr 2014 21:07:00 +0400
+From: "Sergey E. Kolesnikov" <rockingdemon@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
+Subject: SSD TRIM on balance
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 17 Apr 2014 10:24:32 +0800
-Miao Xie <miaox@cn.fujitsu.com> wrote:
+Greetings everyone.
 
-> > scsi_request_fn+0x31/0x4dc [scsi_mod] [120462.559546]
-> > [<ffffffff8107a8af>] ? ktime_get_ts+0x50/0xb7 [120462.559594]
-> > [<ffffffff810a32db>] ? delayacct_end+0x77/0x82 [120462.559641]
-> > [<ffffffff810b1d6e>] ? __lock_page+0x63/0x63 [120462.559688]
-> > [<ffffffff8139d724>] schedule+0x6a/0x6c [120462.559734]
-> > [<ffffffff8139d7b0>] io_schedule+0x8a/0xc8 [120462.559780]
-> > [<ffffffff810b1d77>] sleep_on_page+0x9/0xd [120462.559827]
-> > [<ffffffff8139db83>] __wait_on_bit_lock+0x43/0x8a [120462.559874]
-> > [<ffffffff810b1d6c>] __lock_page+0x61/0x63 [120462.559921]
-> > [<ffffffff810684de>] ? wake_atomic_t_function+0x28/0x28
-> > [120462.559969]  [<ffffffff810b2064>] find_lock_entry+0x39/0x5d
-> > [120462.560016]  [<ffffffff810b2091>] find_lock_page+0x9/0x16
-> 
-> It is very strange that we should be blocked here. Could you tell me
-> how to reproduce this problem?
+I've recently rebalanced my btrfs (kernel 3.13) running on two SSD 
+drives (raid-0) and a question arose.
+Does btrfs perform TRIM on SSD balance? Fs is mounted with 'ssd' option, 
+but not 'discard'.
 
-I'm not sure, sorry.
+It seems fstrim only trims free chunks in allocated space, so we 
+possibly having a "trim leak" if no special treatment is taken on blocks 
+reallocated during balance operation.
 
-It's just a routine cronjob:
+root@midnight:/mnt/tmp# fstrim -v /
+/: 0 bytes were trimmed
 
-- rsync -> snapshot -> remove old snapshots
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+root@midnight:/mnt/tmp# btrfs fi df /
+Data, RAID0: total=90.00GiB, used=86.84GiB
+System, RAID1: total=32.00MiB, used=12.00KiB
+Metadata, RAID1: total=4.00GiB, used=2.56GiB
 
+
+root@midnight:/mnt/tmp# btrfs fi show /
+Label: ssdbtrfs  uuid: f61f749b-dce6-4e73-9d53-693e93ad61aa
+     Total devices 2 FS bytes used 89.41GiB
+     devid    1 size 111.31GiB used 49.03GiB path /dev/sda2
+     devid    2 size 111.31GiB used 49.03GiB path /dev/sdb2
+
+Btrfs v3.12
+
+
+Best regards,
+Sergey E. Kolesnikov

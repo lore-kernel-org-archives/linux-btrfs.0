@@ -1,59 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37247 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750739AbaDSE7y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Apr 2014 00:59:54 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WbNNX-0001pv-OE
-	for linux-btrfs@vger.kernel.org; Sat, 19 Apr 2014 06:59:51 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2014 06:59:51 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2014 06:59:51 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: SSD TRIM on balance
-Date: Sat, 19 Apr 2014 04:59:40 +0000 (UTC)
-Message-ID: <pan$d3f18$ce6243a7$353dc24b$c2a46503@cox.net>
-References: <53515BB4.7070700@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:38414 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751081AbaDSLXk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 Apr 2014 07:23:40 -0400
+Date: Sat, 19 Apr 2014 13:23:35 +0200
+From: Xavier Bassery <xavier@bartica.org>
+To: Michael Welsh Duggan <mwd@md5i.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Murphy <lists@colorremedies.com>
+Subject: Re: Fixing a degraded RAID
+Message-ID: <20140419132335.05c96c1f@renoir.lan>
+In-Reply-To: <87ppkeato3.fsf@maru2.md5i.com>
+References: <87y4z2avvz.fsf@maru2.md5i.com>
+	<87ppkeato3.fsf@maru2.md5i.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sergey E. Kolesnikov posted on Fri, 18 Apr 2014 21:07:00 +0400 as
-excerpted:
+On Fri, 18 Apr 2014 23:23:56 -0400
+Michael Welsh Duggan <mwd@md5i.com> wrote:
 
-> I've recently rebalanced my btrfs (kernel 3.13) running on two SSD
-> drives (raid-0) and a question arose.
-> Does btrfs perform TRIM on SSD balance? Fs is mounted with 'ssd' option,
-> but not 'discard'.
+> Michael Welsh Duggan <mwd@md5i.com> writes:
 > 
-> It seems fstrim only trims free chunks in allocated space, so we
-> possibly having a "trim leak" if no special treatment is taken on blocks
-> reallocated during balance operation.
+> > I had a disk in my RAID0 die:
+> 
+> My mistake.  This was a stupid typo.  The drives were in a RAID 1
+> configuration.  Both data and metadata are DUP'd.
+> 
+> root@maru2:~# /usr/local/src/btrfs-progs/btrfs fi df /mnt/
+> Data, RAID1: total=353.00GiB, used=328.24GiB
+> System, single: total=32.00MiB, used=56.00KiB
+> Metadata, RAID1: total=4.00GiB, used=1.43GiB
+> 
+> >   root@maru2:~# /usr/local/src/btrfs-progs/btrfs fi show
+> > 8c530f6f-7592-4d57-854d-1fae33ae7cb6 Label: none  uuid:
+> > 8c530f6f-7592-4d57-854d-1fae33ae7cb6 Total devices 3 FS bytes used
+> > 329.66GiB devid    1 size 1.79TiB used 357.03GiB path /dev/sdd1
+> >           devid    3 size 931.51GiB used 178.00GiB path /dev/sdf
+> >           *** Some devices missing
+> >   
+> >   Btrfs v3.12-43-gc2081e2-dirty
+> >
+> > So, I try to mount it with -o degraded.  That fails, implying that a
+> > degraded mount needs to be read-only.  So I successfully mount it
+> > read only.  Then I want to add a new disk to replace the missing
+> > one:
+> >
+> >   root@maru2:~# /usr/local/src/btrfs-progs/btrfs dev
+> > add /dev/sdg /mnt/ ERROR: error adding the device '/dev/sdg' -
+> > Read-only file system
+> >
+> > So I can't add a disk if it's mounted read-only, and can't mount it
+> > read-write?  What am I missing?  What's my way around this?
+> 
 
-As a user and list-regular, I don't know the answer to your question as 
-I've not seen it come up before and don't recall seeing it covered on the 
-wiki or the like either, but you have a very good point... and question.
+As Chris Murphy noted, your "System" chunk still reported as "single" is
+likely the issue here.
+This reminds me of a bug i stumbled upon once:
+https://bugzilla.kernel.org/show_bug.cgi?id=60594
 
-FWIW I'm on dual-physical-device-SSDs here too (tho on btrfs raid1 mainly 
-because I like having a second copy of everything to restore from in case 
-the one copy goes bad and fails checksum) and also don't use the discard 
-option.  While I'm currently running nearly 50% overprovisioned and thus 
-the FTL has plenty of space to do its thing regardless of what I do with 
-trim on the actually partitioned space, you raise a very good question 
-indeed, one I wish I had thought to ask myself, and now that you have, 
-one I'd very much like an answer to as well.
+Have you converted your fs from SINGLE to RAID-1 profile by running a
+balance?
 
-=:^)
+This conversion bug should no longer occur with the patch
+"Btrfs: stop refusing the relocation of chunk 0" which has been merged
+since 3.12.
+But chances are that you've converted your fs with an older kernel
+without that patch.
+While Ilya Dryomov investigated the issue on my system, we managed to
+work around this by using a patched module that ignored the safety
+measure refusing to mount rw in this case.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+I still have the patch, but i think the safest way and only other
+option would be to copy the data from your ro fs and recreate it from
+scratch.
+Doing so with recent btrfs progs (v3.12 or newer) you'll benefit from
+the new default metadata blocksize of 16KB that should increase
+performance.
+
+Xavier Bassery
+
+
+
+
+
 

@@ -1,34 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:43105 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750777AbaDSEzA convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Apr 2014 00:55:00 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Fixing a degraded RAID
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <87ppkeato3.fsf@maru2.md5i.com>
-Date: Fri, 18 Apr 2014 22:54:57 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <B1D8651C-BC87-4D00-9C9C-EACECE00FB3F@colorremedies.com>
-References: <87y4z2avvz.fsf@maru2.md5i.com> <87ppkeato3.fsf@maru2.md5i.com>
-To: Michael Welsh Duggan <mwd@md5i.com>
+Received: from plane.gmane.org ([80.91.229.3]:37247 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750739AbaDSE7y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 Apr 2014 00:59:54 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WbNNX-0001pv-OE
+	for linux-btrfs@vger.kernel.org; Sat, 19 Apr 2014 06:59:51 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2014 06:59:51 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Apr 2014 06:59:51 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: SSD TRIM on balance
+Date: Sat, 19 Apr 2014 04:59:40 +0000 (UTC)
+Message-ID: <pan$d3f18$ce6243a7$353dc24b$c2a46503@cox.net>
+References: <53515BB4.7070700@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Sergey E. Kolesnikov posted on Fri, 18 Apr 2014 21:07:00 +0400 as
+excerpted:
 
-On Apr 18, 2014, at 9:23 PM, Michael Welsh Duggan <mwd@md5i.com> wrote:
-
-> My mistake.  This was a stupid typo.  The drives were in a RAID 1
-> configuration.  Both data and metadata are DUP'd.
+> I've recently rebalanced my btrfs (kernel 3.13) running on two SSD
+> drives (raid-0) and a question arose.
+> Does btrfs perform TRIM on SSD balance? Fs is mounted with 'ssd' option,
+> but not 'discard'.
 > 
-> root@maru2:~# /usr/local/src/btrfs-progs/btrfs fi df /mnt/
-> Data, RAID1: total=353.00GiB, used=328.24GiB
-> System, single: total=32.00MiB, used=56.00KiB
-> Metadata, RAID1: total=4.00GiB, used=1.43GiB
+> It seems fstrim only trims free chunks in allocated space, so we
+> possibly having a "trim leak" if no special treatment is taken on blocks
+> reallocated during balance operation.
 
-Somehow system is set to single instead of raid1. I haven't seen system and metadata be set to different profiles. Only 56KB of system data is being used, but I don't know how that's distributed across three drives when the profile is single.
+As a user and list-regular, I don't know the answer to your question as 
+I've not seen it come up before and don't recall seeing it covered on the 
+wiki or the like either, but you have a very good point... and question.
 
-Chris Murphy
+FWIW I'm on dual-physical-device-SSDs here too (tho on btrfs raid1 mainly 
+because I like having a second copy of everything to restore from in case 
+the one copy goes bad and fails checksum) and also don't use the discard 
+option.  While I'm currently running nearly 50% overprovisioned and thus 
+the FTL has plenty of space to do its thing regardless of what I do with 
+trim on the actually partitioned space, you raise a very good question 
+indeed, one I wish I had thought to ask myself, and now that you have, 
+one I'd very much like an answer to as well.
+
+=:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

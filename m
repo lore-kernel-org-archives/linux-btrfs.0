@@ -1,109 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:43024 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755418AbaDTNHg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Apr 2014 09:07:36 -0400
-Received: by mail-wg0-f47.google.com with SMTP id x12so1879662wgg.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 06:07:35 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from noc.netops.me ([50.22.23.10]:42027 "EHLO noc.netops.me"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751303AbaDTSC7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Apr 2014 14:02:59 -0400
+Received: from [174.77.42.16] (port=59950)
+	by noc.netops.me with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <adam@aeb.io>)
+	id 1WbvWA-0007j1-O7
+	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 12:27:02 -0500
+Message-ID: <53540367.4050707@aeb.io>
+Date: Sun, 20 Apr 2014 10:27:03 -0700
+From: Adam Brenner <adam@aeb.io>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 6/6] Btrfs: add send_stream_version attribute to sysfs
-Date: Sun, 20 Apr 2014 15:07:27 +0100
-Message-Id: <1398002847-11144-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1397659726-30615-6-git-send-email-fdmanana@gmail.com>
-References: <1397659726-30615-6-git-send-email-fdmanana@gmail.com>
+Subject: Slow Write Performance w/ No Cache Enabled and Different Size Drives
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So that applications can find out what's the highest send stream
-version supported/implemented by the running kernel:
+Howdy,
 
-    $ cat /sys/fs/btrfs/send_stream_version
-    2
+I recently setup a new BTRFS filesystem based on BTRFS version 3.12 on
+Linux kernel 3.13-1 running Debian Jessie.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/send.h  |  1 +
- fs/btrfs/sysfs.c | 36 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 37 insertions(+)
+The BTRFS volume spans 3x 4TB disks, two of which are using the entire
+raw block device, and one of them is using a partition (OS disks). The
+setup is like so:
 
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 987936c..047fd6d 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -22,6 +22,7 @@
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
- #define BTRFS_SEND_STREAM_VERSION_1 1
- #define BTRFS_SEND_STREAM_VERSION_2 2
-+#define BTRFS_SEND_STREAM_VERSION_LATEST BTRFS_SEND_STREAM_VERSION_2
- 
- #define BTRFS_SEND_BUF_SIZE (1024 * 64)
- #define BTRFS_SEND_READ_SIZE (1024 * 48)
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 58a1dd1..2f8fff6 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -31,6 +31,7 @@
- #include "transaction.h"
- #include "sysfs.h"
- #include "volumes.h"
-+#include "send.h"
- 
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- 
-@@ -662,6 +663,36 @@ static int btrfs_init_debugfs(void)
- 	return 0;
- }
- 
-+static ssize_t send_stream_version_show(struct kobject *kobj,
-+					struct kobj_attribute *a,
-+					char *buf)
-+{
-+	return snprintf(buf, PAGE_SIZE, "%d\n",
-+			BTRFS_SEND_STREAM_VERSION_LATEST);
-+}
-+
-+BTRFS_ATTR(send_stream_version, 0444, send_stream_version_show);
-+
-+static const struct attribute *btrfs_root_attrs[] = {
-+	BTRFS_ATTR_PTR(send_stream_version),
-+	NULL
-+};
-+
-+static int add_root_attrs(struct kobject *kobj)
-+{
-+	int error = 0;
-+	int i;
-+
-+	for (i = 0; btrfs_root_attrs[i]; i++) {
-+		const struct attribute *a = btrfs_root_attrs[i];
-+
-+		error = sysfs_add_file_to_group(kobj->parent, a, kobj->name);
-+		if (error)
-+			break;
-+	}
-+	return error;
-+}
-+
- int btrfs_init_sysfs(void)
- {
- 	int ret;
-@@ -678,8 +709,13 @@ int btrfs_init_sysfs(void)
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- 	if (ret)
- 		goto out2;
-+	ret = add_root_attrs(&btrfs_kset->kobj);
-+	if (ret)
-+		goto out3;
- 
- 	return 0;
-+out3:
-+	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- out2:
- 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- out1:
+
+     root@gra-dfs:/data/tmp# btrfs filesystem show
+     Label: none  uuid: 63d51c9b-f851-404f-b0f2-bf84d07df163
+	    Total devices 3 FS bytes used 3.03TiB
+	    devid    1 size 3.61TiB used 1.01TiB path /dev/sda3
+	    devid    2 size 3.64TiB used 1.04TiB path /dev/sdb
+	    devid    3 size 3.64TiB used 1.04TiB path /dev/sdc
+
+     Btrfs v3.12
+     root@gra-dfs:/data/tmp# btrfs filesystem df /data
+     Data, single: total=3.07TiB, used=3.03TiB
+     System, RAID1: total=8.00MiB, used=352.00KiB
+     System, single: total=4.00MiB, used=0.00
+     Metadata, RAID1: total=5.00GiB, used=3.60GiB
+     Metadata, single: total=8.00MiB, used=0.00
+     root@gra-dfs:/data/tmp#
+     root@gra-dfs:/home# mount | grep /data
+     /dev/sda3 on /data type btrfs (rw,noatime,space_cache)
+     root@gra-dfs:/home#
+
+
+The setup is supposed to be "RAID-0 like" but with different size drives
+within the volume, I created the BTRFS filesystem using the following
+command based on the WiKi[1]
+
+     mkfs.btrfs -d single /dev/sda3 /dev/sdb /dev/sdc -f
+
+Once setup, I transferred roughly 3.1TB of data and noticed the write 
+speed was limited to 200MB/s. This is the same write speed that I would 
+see across a single device. I used dd with oflag=direct and a block size 
+of 1M and a count of 1024 from /dev/zero. Both showed the same speeds.
+
+So my question is, should I have setup the BTRFS filesystem with -d 
+raid0? Would this have worked with multiple devices with different sizes?
+
+[1]: 
+https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
+
+
 -- 
-1.9.1
-
+Adam Brenner <adam@aeb.io>

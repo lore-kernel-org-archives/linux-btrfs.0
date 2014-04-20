@@ -1,169 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51666 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751615AbaDSX3n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Apr 2014 19:29:43 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WbehV-0004lB-23
-	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 01:29:37 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 01:29:37 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 01:29:37 +0200
+Received: from mail-we0-f178.google.com ([74.125.82.178]:52613 "EHLO
+	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755196AbaDTNBo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Apr 2014 09:01:44 -0400
+Received: by mail-we0-f178.google.com with SMTP id u56so2895001wes.23
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 06:01:43 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Balance interrupted twice, not mountable fs
-Date: Sat, 19 Apr 2014 23:29:25 +0000 (UTC)
-Message-ID: <pan$b8c4e$f96906f0$ac0968d6$6ffcafe7@cox.net>
-References: <CAOTaaruU9MWeSmeYkhmhutjL5LE5aj9SDyb4G9XuqgLD647z0A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH 1/6 v3] Btrfs: send, bump stream version
+Date: Sun, 20 Apr 2014 15:01:30 +0100
+Message-Id: <1398002490-9675-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1397659726-30615-1-git-send-email-fdmanana@gmail.com>
+References: <1397659726-30615-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dario Santamaria posted on Sat, 19 Apr 2014 13:26:42 +0200 as excerpted:
+This increases the send stream version from version 1 to version 2, adding
+new commands:
 
-> Hi there,
-> after 2 power down during "btrfs balance" (I'm a very lucky man), now my
-> fs is not mountable.
-> It's an SSD with btrfs as the main root partition. Have Debian testing,
-> kernel 3.13.10 with btrfs-progs from git (cloned yesterday).
-> I know data is there, but I can't use it.
+1) total data size - used to tell the receiver how much file data the stream
+   will add or update;
 
-> Btrfs v3.14.1 matrix64:~/tmpgit/btrfs-progs# mount -v -t btrfs /dev/sdb1
-> ~/pendrive/
-> mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
->        missing codepage or helper program, or other error In some cases
->        useful info is found in syslog - try dmesg | tail  or so
+2) fallocate - used to pre-allocate space for files and to punch holes in files;
 
-That's the generic mount error, not even btrfs specific.  No info there 
-except that it couldn't mount.  As it says, check dmesg, which follows...
+3) inode set flags;
 
-> matrix64:~/tmpgit/btrfs-progs# dmesg|tail -50 [...]
-> [ 3424.805108] btrfs: device label debianssd devid 1 transid 2032022
-> /dev/sdb1
-> [ 3565.122729] btrfs: device label debianssd devid 1 transid 2032022
-> /dev/sdb1
-> [ 3565.124126] btrfs: disk space caching is enabled
-> [ 3565.127616] parent transid verify failed on 126732546048 wanted
-> 2032022 found 2032019
-> [ 3565.128113] parent transid verify failed on 126732546048 wanted
-> 2032022 found 2032019
-> [ 3565.128116] btrfs: failed to read tree root on sdb1
-> [ 3565.134066] btrfs: open_ctree failed
-> matrix64:~/tmpgit/btrfs-progs#
+4) set inode otime.
 
-The verify failed reports are saying those blocks fail checksum.  It 
-appears they're the root blocks for one of the trees, thus failing 
-checksum there fails that tree open and thus the mount.  However, that 
-too is reasonably generic for btrfs.  Tho you do have the block numbers, 
-which could possibly help with debugging, etc.
+This is preparation work for subsequent changes that implement the new features.
 
-> I tried all the option to mount: "recovery", "recovery,ro",
-> "recovery,noatime,clear_cache", "recovery,noatime,nospace_cache" with no
-> luck.
+A version 2 stream is only produced if the send ioctl caller passes in one of the
+new flags (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | BTRFS_SEND_FLAG_STREAM_V2), meaning
+old clients are unaffected.
 
-With a bit of luck the bad tree would have just been the space-cache and 
-resetting it would have helped.  Given the frequent re-write of the space-
-cache data that's often all it takes.  Unfortunately, not in your case.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
 
-The recovery mount option tries previous tree roots, and often, 
-particularly in combination with ro so the filesystem doesn't error out 
-trying to repair other damage, it can help.  But it looks like your 
-filesystem is beyond its automated attempts as well.  Tho there's still 
-something left to try.  See below.
+V2: A v2 stream is now only produced if the send ioctl caller passes in one of
+    the new flags (BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | BTRFS_SEND_FLAG_SUPPORT_FALLOCATE)
+    to avoid breaking old clients.
+V3: Removed BTRFS_SEND_FLAG_SUPPORT_FALLOCATE and added BTRFS_SEND_FLAG_STREAM_V2,
+    added commands for inode set flags and otime.
 
-> Then I tried a "./btrfs rescue chunk-recover -vy /dev/sdb1" but it
-> failed with:
-> 
-> [...]
-> Orphan Device Extents:
-[...]
-> Couldn't setup extent tree open with broken chunk
-> error Fail to recover the chunk tree.
-> 
-> Full log here: http://www.freezonestudio.com/btrfs-recover.txt
+ fs/btrfs/send.c            |  7 ++++++-
+ fs/btrfs/send.h            | 21 ++++++++++++++++++++-
+ include/uapi/linux/btrfs.h | 21 ++++++++++++++++++++-
+ 3 files changed, 46 insertions(+), 3 deletions(-)
 
-I don't know enough about rescue chunk-recover to say anything 
-intelligent about it, so I'll leave it as-is.
-
-> Finally the btrfs check exit with Segmentation Fault...
-> 
-> matrix64:~/tmpgit/btrfs-progs# ./btrfs check --repair /dev/sdb1
-[...]
-> Critical roots corrupted, unable to fsck the FS
-> Errore di segmentazione
-> matrix64:~/tmpgit/btrfs-progs#
-
-You left btrfs check --repair until last, good. =:^)  While it can help 
-with some errors, it doesn't know how to handle others yet and can thus 
-sometimes make the problem worse.  So the on-list recommendation is to 
-leave it until last, either right before you give up hope and do a mkfs 
-over the remains so the risk is zero anyway, or on the recommendation of 
-a dev after they've examined the situation and know it won't make things 
-worse.  Unfortunately, that's not well documented, and people often run 
-it first.
-
-> Any test? Any hint? Any suggestion?
-
-Looks like you've tried /almost/ everything except letting the devs take 
-a look, which is why you've posted here.  But there's one thing left to 
-try, the restore tool, btrfs restore.  Quoting its wiki page:
-
->> The btrfs restore utility is a non-destructive method for attempting
->> to recover data from an unmountable filesystem. It makes no attempt to
->> repair the filesystem, which means that you cannot cause further
->> damage by running it.
-
-Unless the devs pull something out of a hat, it looks like your 
-filesystem is beyond recovery, but assuming you have some free space on 
-another filesystem to put it, there's still a chance of getting at least 
-some data off of it.  Hopefully you had backups, as recommended for btrfs 
-since it's not entirely stable yet, and can recover from them at least 
-older copies of whatever you can't get off of the filesystem using this 
-tool.
-
-The wiki has far more practical advice about using btrfs restore, and 
-find-root to give it as good a root as possible to work with if necessary 
-(as it likely will be in your case), than I have, so I'll just point you 
-at it.
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-Note that as of btrfs-progs 3.14 there's another potentially quite useful 
-btrfs restore option, -D/--dry-run.  This isn't listed on either the wiki 
-or the btrfs manpage yet, but it is listed if you run btrfs restore 
-help.  The idea of this option is that it can give you at least some idea 
-of how much can actually be restored and thus how much space you'll need 
-for it.
-
-
-Meanwhile, if you've not yet discovered the wiki, it's well worth taking 
-a look around at other pages.  Here's the general landing page, suitable 
-for bookmarking or simply memorizing:
-
-https://btrfs.wiki.kernel.org
-
-Or for bookmarking, here's the guides and usage information link.  The 
-pages reachable from here are where you'll spend most of your time as a 
-user.
-
-https://btrfs.wiki.kernel.org/index.php/Main_Page#Guides_and_usage_information
-
-(The restore page linked above can be reached via guides/usage, problem 
-faq, #5 my filesystem won't mount and none of the above helped, is there 
-any hope for my data, which links the restore page.)
-
-
-
-
-
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 289e9f3..7b4b0c3 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -632,7 +632,10 @@ static int send_header(struct send_ctx *sctx)
+ 	struct btrfs_stream_header hdr;
+ 
+ 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
+-	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
++	if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2)
++		hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION_2);
++	else
++		hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION_1);
+ 
+ 	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
+ 					&sctx->send_off);
+@@ -5554,6 +5557,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 
+ 	sctx->flags = arg->flags;
++	if (sctx->flags & BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE)
++		sctx->flags |= BTRFS_SEND_FLAG_STREAM_V2;
+ 
+ 	sctx->send_filp = fget(arg->send_fd);
+ 	if (!sctx->send_filp) {
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 48d425a..96f583c 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -20,7 +20,8 @@
+ #include "ctree.h"
+ 
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+-#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_STREAM_VERSION_1 1
++#define BTRFS_SEND_STREAM_VERSION_2 2
+ 
+ #define BTRFS_SEND_BUF_SIZE (1024 * 64)
+ #define BTRFS_SEND_READ_SIZE (1024 * 48)
+@@ -87,6 +88,15 @@ enum btrfs_send_cmd {
+ 
+ 	BTRFS_SEND_C_END,
+ 	BTRFS_SEND_C_UPDATE_EXTENT,
++
++	/*
++	 * The following commands were added in stream version 2.
++	 */
++	BTRFS_SEND_C_TOTAL_DATA_SIZE,
++	BTRFS_SEND_C_FALLOCATE,
++	BTRFS_SEND_C_INODE_SET_FLAGS,
++	BTRFS_SEND_C_UTIMES2, /* Same as UTIMES, but it includes OTIME too. */
++
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+@@ -125,10 +135,19 @@ enum {
+ 	BTRFS_SEND_A_CLONE_OFFSET,
+ 	BTRFS_SEND_A_CLONE_LEN,
+ 
++	/*
++	 * The following attributes were added in stream version 2.
++	 */
++	BTRFS_SEND_A_FALLOCATE_FLAGS, /* 32 bits */
++	BTRFS_SEND_A_INODE_FLAGS,     /* 32 bits */
++
+ 	__BTRFS_SEND_A_MAX,
+ };
+ #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
+ 
++#define BTRFS_SEND_A_FALLOCATE_FLAG_KEEP_SIZE   (1 << 0)
++#define BTRFS_SEND_A_FALLOCATE_FLAG_PUNCH_HOLE  (1 << 1)
++
+ #ifdef __KERNEL__
+ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
+ #endif
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b4d6909..8ab2761 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -464,10 +464,29 @@ struct btrfs_ioctl_received_subvol_args {
+  */
+ #define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
+ 
++/*
++ * Calculate the amount (in bytes) of new file data between the send and
++ * parent snapshots, or in case of a full send, the total amount of file data
++ * we will send.
++ * This corresponds to the sum of the data lengths of each write, clone and
++ * fallocate commands that are sent through the send stream. The receiving end
++ * can use this information to compute progress.
++ *
++ * Added in send stream version 2, and implies producing a version 2 stream.
++ */
++#define BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE	0x8
++
++/*
++ * Used by a client to request a version 2 of the send stream.
++ */
++#define BTRFS_SEND_FLAG_STREAM_V2              0x10
++
+ #define BTRFS_SEND_FLAG_MASK \
+ 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
+ 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
+-	 BTRFS_SEND_FLAG_OMIT_END_CMD)
++	 BTRFS_SEND_FLAG_OMIT_END_CMD | \
++	 BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE | \
++	 BTRFS_SEND_FLAG_STREAM_V2)
+ 
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.9.1
 

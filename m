@@ -1,81 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:62194 "EHLO
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:26829 "EHLO
 	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755081AbaDSTFp (ORCPT
+	with ESMTP id S1755321AbaDTNR4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Apr 2014 15:05:45 -0400
-Date: Sat, 19 Apr 2014 22:05:41 +0300
+	Sun, 20 Apr 2014 09:17:56 -0400
+Date: Sun, 20 Apr 2014 16:17:53 +0300
 From: Rakesh Pandit <rakesh@tuxera.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: make smatch checker happy (trivial fixes)
-Message-ID: <20140419190540.GA10872@hercules.tuxera.com>
+Subject: [PATCH] Btrfs-progs: fsck: fix double free memory crash
+Message-ID: <20140420131751.GA5921@hercules.tuxera.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It complains errno never gets assigned to zero in find-root and since
-errno anyway is zero at program started up, lets remove it.
+Fix double free of memory if btrfs_open_devices fails:
+*** Error in `btrfs': double free or corruption (fasttop): 0x000000000066e020 ***
 
-Check "copy is less then zero" isn't possible because strtoull used by
-arg_strtou64 wouldn't return -ve number.
-
-Trivial space fixes.
+Crash happened because when open failed on device inside
+btrfs_open_devices it freed all memory by calling btrfs_close_devices but
+inside disk-io.c we call btrfs_close_again it again.
 
 Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
- btrfs-find-root.c   | 1 -
- btrfs-map-logical.c | 2 --
- cmds-check.c        | 4 ++--
- 3 files changed, 2 insertions(+), 5 deletions(-)
+ disk-io.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index db01923..25d79f1 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -287,7 +287,6 @@ int main(int argc, char **argv)
+diff --git a/disk-io.c b/disk-io.c
+index 19b95a7..8db0335 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1091,8 +1091,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
  
- 	while ((opt = getopt(argc, argv, "l:o:g:")) != -1) {
- 		switch(opt) {
--			errno = 0;
- 			case 'o':
- 				search_objectid = arg_strtou64(optarg);
- 				break;
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index a907e4d..e47a1ae 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -153,8 +153,6 @@ int main(int ac, char **av)
- 		print_usage();
- 	if (logical == 0)
- 		print_usage();
--	if (copy < 0)
--		print_usage();
+ 	ret = btrfs_open_devices(fs_devices, oflags);
+ 	if (ret)
+-		goto out_devices;
+-
++		goto out;
  
- 	dev = av[optind];
- 
-diff --git a/cmds-check.c b/cmds-check.c
-index 93f9ae6..04bdae5 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2886,7 +2886,7 @@ static int add_data_backref(struct cache_tree *extent_cache, u64 bytenr,
- 	} else {
- 		if (back->node.found_extent_tree) {
- 			fprintf(stderr, "Extent back ref already exists "
--				"for %llu parent %llu root %llu"
-+				"for %llu parent %llu root %llu "
- 				"owner %llu offset %llu num_refs %lu\n",
- 				(unsigned long long)bytenr,
- 				(unsigned long long)parent,
-@@ -4859,7 +4859,7 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
- 	if (!best) {
- 		entry = find_entry(&entries, rec->start, rec->nr);
- 		if (!entry && (!broken_entries || !rec->found_rec)) {
--			fprintf(stderr, "Backrefs don't agree with eachother "
-+			fprintf(stderr, "Backrefs don't agree with each other "
- 				"and extent record doesn't agree with anybody,"
- 				" so we can't fix bytenr %Lu bytes %Lu\n",
- 				rec->start, rec->nr);
+ 	disk_super = fs_info->super_copy;
+ 	if (!(flags & OPEN_CTREE_RECOVER_SUPER))
 -- 
 1.8.5.3
 

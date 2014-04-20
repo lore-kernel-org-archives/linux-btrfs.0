@@ -1,76 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:38047 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:38125 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755529AbaDTTqg (ORCPT
+	with ESMTP id S1755412AbaDTT7J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Apr 2014 15:46:36 -0400
-Received: from svh-gw.merlins.org ([173.11.111.145]:50782 helo=legolas.merlins.org)
+	Sun, 20 Apr 2014 15:59:09 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:50974 helo=legolas.merlins.org)
 	by mail1.merlins.org with esmtpsa
 	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1Wbxh6-0007A9-07 by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 12:46:35 -0700
+	id 1WbxtG-0008NF-PY by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 12:59:08 -0700
 Received: from merlin by legolas.merlins.org with local (Exim 4.80)
 	(envelope-from <merlin@legolas.merlins.org>)
-	id 1Wbxh5-0000ov-JX
-	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 12:46:27 -0700
-Date: Sun, 20 Apr 2014 12:46:27 -0700
+	id 1WbxtG-0001m0-1b
+	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 12:59:02 -0700
+Date: Sun, 20 Apr 2014 12:59:01 -0700
 From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Message-ID: <20140420194627.GO7884@merlins.org>
+Message-ID: <20140420195901.GP7884@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Subject: Planning for subvolumes of subvolumes and btrfs send/receive
+Subject: Do quota groups cost noticeable performance in 3.14?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can you help me design this right?
+I was looking at using qgroups for my backup server, which will be
+filled with millions of files in subvolumes with snapshots.
 
-Long story short, I'm wondering if I can use btrfs send to copy sub
-subvolumes (by snapshotting a parent subvolume, and hopefully getting
-all the children underneath). My reading so far, says no.
+I read a warning that quota groups had performance issues, at least in
+the past.
 
-So, Ideally I would have:
-
-/mnt/btrfs_pool/backup: backup is a subvolume of btrfs_pool
-
-/mnt/btrfs_pool/backup/debian/machine1: 
-/mnt/btrfs_pool/backup/debian/machine2: 
-/mnt/btrfs_pool/backup/debian/machine3: 
-machinex would be a subvolume ideally speaking for quota counting purposes
-
-/mnt/btrfs_pool/backup/debian/machine1/current
-/mnt/btrfs_pool/backup/debian/machine1/201401
-/mnt/btrfs_pool/backup/debian/machine1/201308
-...
-
-current would be a subvolume, that would be snapshotted to 201401 with
-an rsync of diffs on top
-Same thing for 201308
-
-In other words, they'd also be subvolumes, and I'm using snapshots so
-that I can collapse the identical data (I'm currently using hardlinks
-for that).
-
-This would all work fine from what I can see, but from here, if I try to
-do 
-btrfs subvolume snapshot -r /mnt/btrfs_pool/backup/debian/machine1 /mnt/btrfs_pool/backup/debian/machine1_ro_send
-do to a btrfs send next, my understanding is that /mnt/btrfs_pool/backup/debian/machine1_ro_send
-will effectively have no data because all my data is in the subvolumes
-under that.
-
-As a result, I'd then need a complicated script that goes in each
-subvolume and makes independent snapshots for btrfs send/receive.
-
-(In this case, I'm copying my backup data to another backup backup
-server)
-
-Is there an easier way to do this, or you can really only btrfs send the
-very last level of subvolume if I want the data in there?
-
-I suppose I could use cp -a --reflink instead of snapshots to replicate
-the identical data, but the reason I don't love this is that there is no
-way I know to replicate that reflink relationship to another filesystem
-unless I use btrfs send/receive. Is that correct?
+Is it still true? 
+If there is a performance issue, is it as simple as just turning off
+quota support and then things go back to normal?
 
 Thanks,
 Marc

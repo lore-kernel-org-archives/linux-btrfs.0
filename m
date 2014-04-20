@@ -1,112 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:46425 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750887AbaDTUk3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Apr 2014 16:40:29 -0400
-Received: by mail-wi0-f169.google.com with SMTP id hm4so1184534wib.4
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 13:40:28 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 6/6 v2] Btrfs: add send_stream_version attribute to sysfs
-Date: Sun, 20 Apr 2014 22:40:03 +0100
-Message-Id: <1398030003-12697-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1398002847-11144-1-git-send-email-fdmanana@gmail.com>
-References: <1398002847-11144-1-git-send-email-fdmanana@gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55054 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750887AbaDTUyZ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Apr 2014 16:54:25 -0400
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Slow Write Performance w/ No Cache Enabled and Different Size Drives
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <53540367.4050707@aeb.io>
+Date: Sun, 20 Apr 2014 14:54:23 -0600
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <D954AF21-BC14-4ADC-9C62-254753AF1998@colorremedies.com>
+References: <53540367.4050707@aeb.io>
+To: Adam Brenner <adam@aeb.io>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So that applications can find out what's the highest send stream
-version supported/implemented by the running kernel:
 
-    $ cat /sys/fs/btrfs/send/stream_version
-    2
+On Apr 20, 2014, at 11:27 AM, Adam Brenner <adam@aeb.io> wrote:
+> 
+>    mkfs.btrfs -d single /dev/sda3 /dev/sdb /dev/sdc -f
+> 
+> Once setup, I transferred roughly 3.1TB of data and noticed the write speed was limited to 200MB/s. This is the same write speed that I would see across a single device. I used dd with oflag=direct and a block size of 1M and a count of 1024 from /dev/zero. Both showed the same speeds.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+This is expected. And although I haven't tested it, I think you'd get the same results with multiple threads writing at the same time: the allocation would aggregate the threads to one chunk at a time until full, which means writing to one device at a time, then writing a new chunk on a different device until full, and so on in round robin fashion.
 
-V2: Renamed /sys/fs/btrfs/send_stream_version to /sys/fs/btrfs/send/stream_version,
-    as in the future it might be useful to add other sysfs attrbutes related to
-    send (other ro information or tunables like internal buffer sizes, etc).
+I also haven't tested this, so I'm not sure if different behavior happens for reading files located in different chunks on different devices, if those are effectively single threaded reads, or if the files can be read simultaneously.
 
- fs/btrfs/send.h  |  1 +
- fs/btrfs/sysfs.c | 27 +++++++++++++++++++++++++++
- 2 files changed, 28 insertions(+)
+> 
+> So my question is, should I have setup the BTRFS filesystem with -d raid0? Would this have worked with multiple devices with different sizes?
 
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 987936c..047fd6d 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -22,6 +22,7 @@
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
- #define BTRFS_SEND_STREAM_VERSION_1 1
- #define BTRFS_SEND_STREAM_VERSION_2 2
-+#define BTRFS_SEND_STREAM_VERSION_LATEST BTRFS_SEND_STREAM_VERSION_2
- 
- #define BTRFS_SEND_BUF_SIZE (1024 * 64)
- #define BTRFS_SEND_READ_SIZE (1024 * 48)
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 58a1dd1..d93c0b5 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -31,6 +31,7 @@
- #include "transaction.h"
- #include "sysfs.h"
- #include "volumes.h"
-+#include "send.h"
- 
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- 
-@@ -662,6 +663,26 @@ static int btrfs_init_debugfs(void)
- 	return 0;
- }
- 
-+static ssize_t send_stream_version_show(struct kobject *kobj,
-+					struct kobj_attribute *a,
-+					char *buf)
-+{
-+	return snprintf(buf, PAGE_SIZE, "%d\n",
-+			BTRFS_SEND_STREAM_VERSION_LATEST);
-+}
-+
-+BTRFS_ATTR(stream_version, 0444, send_stream_version_show);
-+
-+static struct attribute *btrfs_send_attrs[] = {
-+	BTRFS_ATTR_PTR(stream_version),
-+	NULL
-+};
-+
-+static const struct attribute_group btrfs_send_attr_group = {
-+	.name = "send",
-+	.attrs = btrfs_send_attrs,
-+};
-+
- int btrfs_init_sysfs(void)
- {
- 	int ret;
-@@ -678,8 +699,13 @@ int btrfs_init_sysfs(void)
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- 	if (ret)
- 		goto out2;
-+	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_send_attr_group);
-+	if (ret)
-+		goto out3;
- 
- 	return 0;
-+out3:
-+	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
- out2:
- 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- out1:
-@@ -691,6 +717,7 @@ out1:
- void btrfs_exit_sysfs(void)
- {
- 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
-+	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_send_attr_group);
- 	kset_unregister(btrfs_kset);
- 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
- }
--- 
-1.9.1
+raid0 does work with multiple devices of different sizes, but it won't use the full capacity of the last drive with the most space.
+
+For example: 2GB, 3GB, and 4GB devices as raid0.
+
+The first 2GB copies using 3 stripes, one per device, until the 2GB device is full. The next 1GB copies using 2 stripes, one per remaining device (the 3GB and 4GB ones) until the 3GB device is full. Additional copying results in "cp: error writing ‘./IMG_2892.dng’: No space left on device"
+
+Label: none  uuid: 7dfde9eb-04a8-4920-95c0-51253b2483f8
+	Total devices 3 FS bytes used 7.33GiB
+	devid    1 size 2.00GiB used 2.00GiB path /dev/sdb
+	devid    2 size 3.00GiB used 3.00GiB path /dev/sdc
+	devid    3 size 4.00GiB used 3.00GiB path /dev/sdd
+
+
+Ergo, there is no such thing as single device raid0, so the point at which all but 1 drive is full, writes fail.
+
+
+Chris Murphy
 

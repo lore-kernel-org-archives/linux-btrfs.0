@@ -1,71 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from noc.netops.me ([50.22.23.10]:42027 "EHLO noc.netops.me"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751303AbaDTSC7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Apr 2014 14:02:59 -0400
-Received: from [174.77.42.16] (port=59950)
-	by noc.netops.me with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <adam@aeb.io>)
-	id 1WbvWA-0007j1-O7
-	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 12:27:02 -0500
-Message-ID: <53540367.4050707@aeb.io>
-Date: Sun, 20 Apr 2014 10:27:03 -0700
-From: Adam Brenner <adam@aeb.io>
-MIME-Version: 1.0
+Received: from magic.merlins.org ([209.81.13.136]:38047 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755529AbaDTTqg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Apr 2014 15:46:36 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:50782 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1Wbxh6-0007A9-07 by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Apr 2014 12:46:35 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1Wbxh5-0000ov-JX
+	for linux-btrfs@vger.kernel.org; Sun, 20 Apr 2014 12:46:27 -0700
+Date: Sun, 20 Apr 2014 12:46:27 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Slow Write Performance w/ No Cache Enabled and Different Size Drives
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Message-ID: <20140420194627.GO7884@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Subject: Planning for subvolumes of subvolumes and btrfs send/receive
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Howdy,
+Can you help me design this right?
 
-I recently setup a new BTRFS filesystem based on BTRFS version 3.12 on
-Linux kernel 3.13-1 running Debian Jessie.
+Long story short, I'm wondering if I can use btrfs send to copy sub
+subvolumes (by snapshotting a parent subvolume, and hopefully getting
+all the children underneath). My reading so far, says no.
 
-The BTRFS volume spans 3x 4TB disks, two of which are using the entire
-raw block device, and one of them is using a partition (OS disks). The
-setup is like so:
+So, Ideally I would have:
 
+/mnt/btrfs_pool/backup: backup is a subvolume of btrfs_pool
 
-     root@gra-dfs:/data/tmp# btrfs filesystem show
-     Label: none  uuid: 63d51c9b-f851-404f-b0f2-bf84d07df163
-	    Total devices 3 FS bytes used 3.03TiB
-	    devid    1 size 3.61TiB used 1.01TiB path /dev/sda3
-	    devid    2 size 3.64TiB used 1.04TiB path /dev/sdb
-	    devid    3 size 3.64TiB used 1.04TiB path /dev/sdc
+/mnt/btrfs_pool/backup/debian/machine1: 
+/mnt/btrfs_pool/backup/debian/machine2: 
+/mnt/btrfs_pool/backup/debian/machine3: 
+machinex would be a subvolume ideally speaking for quota counting purposes
 
-     Btrfs v3.12
-     root@gra-dfs:/data/tmp# btrfs filesystem df /data
-     Data, single: total=3.07TiB, used=3.03TiB
-     System, RAID1: total=8.00MiB, used=352.00KiB
-     System, single: total=4.00MiB, used=0.00
-     Metadata, RAID1: total=5.00GiB, used=3.60GiB
-     Metadata, single: total=8.00MiB, used=0.00
-     root@gra-dfs:/data/tmp#
-     root@gra-dfs:/home# mount | grep /data
-     /dev/sda3 on /data type btrfs (rw,noatime,space_cache)
-     root@gra-dfs:/home#
+/mnt/btrfs_pool/backup/debian/machine1/current
+/mnt/btrfs_pool/backup/debian/machine1/201401
+/mnt/btrfs_pool/backup/debian/machine1/201308
+...
 
+current would be a subvolume, that would be snapshotted to 201401 with
+an rsync of diffs on top
+Same thing for 201308
 
-The setup is supposed to be "RAID-0 like" but with different size drives
-within the volume, I created the BTRFS filesystem using the following
-command based on the WiKi[1]
+In other words, they'd also be subvolumes, and I'm using snapshots so
+that I can collapse the identical data (I'm currently using hardlinks
+for that).
 
-     mkfs.btrfs -d single /dev/sda3 /dev/sdb /dev/sdc -f
+This would all work fine from what I can see, but from here, if I try to
+do 
+btrfs subvolume snapshot -r /mnt/btrfs_pool/backup/debian/machine1 /mnt/btrfs_pool/backup/debian/machine1_ro_send
+do to a btrfs send next, my understanding is that /mnt/btrfs_pool/backup/debian/machine1_ro_send
+will effectively have no data because all my data is in the subvolumes
+under that.
 
-Once setup, I transferred roughly 3.1TB of data and noticed the write 
-speed was limited to 200MB/s. This is the same write speed that I would 
-see across a single device. I used dd with oflag=direct and a block size 
-of 1M and a count of 1024 from /dev/zero. Both showed the same speeds.
+As a result, I'd then need a complicated script that goes in each
+subvolume and makes independent snapshots for btrfs send/receive.
 
-So my question is, should I have setup the BTRFS filesystem with -d 
-raid0? Would this have worked with multiple devices with different sizes?
+(In this case, I'm copying my backup data to another backup backup
+server)
 
-[1]: 
-https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
+Is there an easier way to do this, or you can really only btrfs send the
+very last level of subvolume if I want the data in there?
 
+I suppose I could use cp -a --reflink instead of snapshots to replicate
+the identical data, but the reason I don't love this is that there is no
+way I know to replicate that reflink relationship to another filesystem
+unless I use btrfs send/receive. Is that correct?
 
+Thanks,
+Marc
 -- 
-Adam Brenner <adam@aeb.io>
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

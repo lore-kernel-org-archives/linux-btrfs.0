@@ -1,99 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f47.google.com ([74.125.83.47]:40723 "EHLO
-	mail-ee0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751016AbaDUTNV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Apr 2014 15:13:21 -0400
-Received: by mail-ee0-f47.google.com with SMTP id b15so3867067eek.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2014 12:13:19 -0700 (PDT)
-Received: from [192.168.1.229] (188-195-1-249-dynip.superkabel.de. [188.195.1.249])
-        by mx.google.com with ESMTPSA id a4sm106027462eep.12.2014.04.21.12.13.17
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 21 Apr 2014 12:13:17 -0700 (PDT)
-Message-ID: <53556DCC.3000108@gmail.com>
-Date: Mon, 21 Apr 2014 21:13:16 +0200
-From: Andreas Reis <andreas.reis@gmail.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:47810 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754151AbaDUVKI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Apr 2014 17:10:08 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WcLTX-0004yV-MT
+	for linux-btrfs@vger.kernel.org; Mon, 21 Apr 2014 23:10:03 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2014 23:10:03 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2014 23:10:03 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume unmountable,
- "btrfs check" crashes
-References: <53554469.5070503@gmail.com>
-In-Reply-To: <53554469.5070503@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Slow Write Performance w/ No Cache Enabled and Different Size
+ Drives
+Date: Mon, 21 Apr 2014 21:09:52 +0000 (UTC)
+Message-ID: <pan$ced8d$1ee3475f$a3c53cfd$a3dfb247@cox.net>
+References: <53540367.4050707@aeb.io>
+	<D954AF21-BC14-4ADC-9C62-254753AF1998@colorremedies.com>
+	<5354A4EA.3000209@aeb.io>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alright, turns out the partition does actually mount on 3.15-rc2 (error 
-messages remain, of course).
+Adam Brenner posted on Sun, 20 Apr 2014 21:56:10 -0700 as excerpted:
 
-But systemd will fail to continue booting as /bin/mount returns "exit 
-status 32" and / thus ends as ro, yet can be manually remounted as rw.
+> So ... BTRFS at this point in time, does not actually "stripe" the data
+> across N number of devices/blocks for aggregated performance increase
+> (both read and write)?
 
-Another error message I've spotted with 3.15 is
+What Chris says is correct, but just in case it's unclear as written, let 
+me try a reworded version, perhaps addressing a few uncaught details in 
+the process.
 
-BTRFS error (device sdc5): error loading props for ino 1810424 (root 
-257): -5
+1) Btrfs treats data and metadata separately, so unless they're both 
+setup the same way (both raid0 or both single or whatever), different 
+rules will apply to each.
 
-I've now tried to mount with -o recovery and clear_cache, no effect.
+2) Btrfs separately allocates data and metadata chunks, then fills them 
+in until it needs to allocate more.  So as the filesystem fills, there 
+will come a point at which all space is allocated to either data or 
+metadata chunks and no more chunk allocations can be made.  At this 
+point, you can still write to the filesystem, filling up the chunks that 
+are there, but one or the other will fill up first, and then you'll get 
+errors.
 
-On 21.04.2014 18:16, Andreas Reis wrote:
-> Kernel 3.15.0-rc2, btrfs-progs 3.14.1
->
-> While doing some minor package updates my btrfs root partition [*]
-> decided to corrupt itself. There was no system crash, although I had
-> plenty of these (due to an USB-related regression) in recent weeks that
-> resulted in no trouble.
->
-> First only one of a package's folders was corrupted, any access to files
-> within (incl. attempts to delete) printed
->
-> btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
->
-> to dmesg (I'm actually not sure about the numbers, but that was indeed
-> the error message). After moving the folder out of the way the partition
-> continued to appear working as normal, one reboot also worked fine.
->
-> Now I can't boot at all (beyond loading the kernel image located on
-> another partition), neither with 3,15-rc2 nor 3.14.1. Attempting to
-> mount the __current/ROOT subvolume on ArchLinux's current Live-CD
-> (kernel 3.13.7) prints
->
-> btrfs: device label Linux devid 1 transid 55586 /dev/sdc5
-> btrfs: use ssd allocation scheme
-> btrfs: disk space caching is enabled
-> btrfs: checking UUID tree
-> btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
-> btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
-> BTRFS error (device sdc5): Error removing orphan entry, stopping orphan
-> cleanup
-> BTRFS critical (device sdc5): could not do orphan cleanup -22
->
-> Doing "btrfs check /dev/sdc5" merely first prints ten
->
-> free space inode generation (0) did not match free space cache
-> generation ([different transids between 40010 and 55578])
->
-> to then abort with
->
-> checking fs roots
-> btrfs: cmds-check.c:1151: procecss_file_extent: Assertion `!(rec->ino !=
-> key->objectid || rec->refs > 1)' failed.
->
-> I'm reluctant to try any of "btrfs check" options (or mount with -o
-> recovery) since the last three times I did this (with other partitions)
-> it resulted in the partition becoming entirely trashed, while before at
-> least "btrfs restore" still managed to extract some data each time.
->
-> The affected folder was one within /usr/include/qt4 (which I then moved
-> to /usr/BROKEN, to successfully reinstall the package), ie. on the
-> __current/ROOT subvolume.
->
-> Which seems the only subvolume affected (yet). Mounting & accessing the
-> other three (__current/{var,home,opt}) still works.
->
-> [*] Organised following
-> http://blog.fabio.mancinelli.me/2012/12/28/Arch_Linux_on_BTRFS.html
->
-> (Also posted on https://bugzilla.kernel.org/show_bug.cgi?id=74611 )
+2a) By default, data chunks are 1 GiB in size, metadata chunks are 256 
+MiB, altho the last ones written can be smaller to fill the available 
+space.   Note that except for single mode, all chunks must be written in 
+multiples: pairs for dup, raid1, a minimum of pairs for raid0, a minimum 
+of triplets for raid5, a minimum of quads for raid6, raid10.  Thus, when 
+using unequal sized devices or a number of devices that doesn't evenly 
+match the minimum multiple, it's very likely that depending on the size 
+of the individual devices, some space may not actually be allocatable.  
+This is what Chris was seeing with his 3 device raid0, 2G, 3G, 4G.  The 
+first two fill up, leaving no room to allocate in pairs+, with a gig of 
+space left unused on the 4G device.
+
+2b) For various reasons it usually the metadata that fills up first.  
+When that happens, further operations (even attempting to delete files, 
+since on a COW filesystem deletions require room to rewrite the metadata) 
+return ENOSPC.  There are various tricks that can be tried when this 
+happens (balance, etc) to recover some likely not yet full data chunks to 
+unallocated and thus have more room to write metadata, but ideally, you 
+watch the btrfs filesystem df and btrfs filesystem show stats and 
+rebalance before you start getting ENOSPC errors.
+
+It's also worth noting that btrfs reserves some metadata space, typically 
+around 200 MiB, for its own usage.  Since metadata chunks are normally 
+256 MiB in size, an easy way to look at it is to simply say you always 
+need a spare metadata chunk allocated.  Once the filesystem cannot 
+allocate more and you're on your last one, you run into ENOSPC trouble 
+pretty quickly.
+
+2c) Chris has reported the opposite situation in his test.  With no more 
+space to allocate, he filled up his data chunks first.  At that point 
+there's metadata space still available, thus the zero-length files he was 
+reporting.  (Technically, he could probably write really small files too, 
+because if they're small enough, likely something under 16 KiB and 
+possibly something under 4 KiB, depending on the metadata node size (4 KiB 
+by default until recently, 16 KiB from IIRC kernel 3.13), btrfs will 
+write them directly into the metadata node and not actually allocate a 
+data extent for them.  But the ~20 MiB files he was trying were too big 
+for that, so he was getting the metadata allocation but not the data, 
+thus zero-length files.)
+
+Again, a rebalance might be able to return some unused metadata chunks to 
+the unallocated pool, allowing a little more data to be written.
+
+2d)  Still, if you keep adding more, there comes a point at which no more 
+can be written using current data and metadata modes and there's no 
+further partially written chunks to free using balance either, at which 
+point the filesystem is full, even if there's still space left unused on 
+one device.
+
+With those basics in mind, we're now equipped to answer the question 
+above.
+
+On a multi-device filesystem, in default data allocation "single" mode, 
+btrfs can sort of be said to stripe in theory, since it'll allocate 
+chunks from all available devices, but since it's allocating and using 
+only a single data chunk at a time and they're a GiB in size, the 
+"stripes" are effectively a GiB in size, far too large to get any 
+practical speedup from them.
+
+But single mode does allow using that last bit of space on unevenly sized 
+devices, and if a device goes bad, you can still recover files written to 
+the other devices.
+
+OTOH, raid0 mode will allocate in gig chunks per device across all 
+available devices (minimum two) at once and will then write in much 
+smaller stripes (IIRC 64 KiB, since that's the normal device read-ahead 
+size) in the pre-allocated chunks, giving you far faster single-thread 
+access.
+
+But raid0 mode does require pair-minimum chunk allocation, so if the 
+devices are uneven in size, depending on exact device sizes you'll likely 
+end up with some unusable space on the last device.  Also, as is normally 
+the case with raid0, if a device dies, consider the entire filesystem 
+toast.  (In theory you can often still recover some files smaller than 
+the stripe size, particularly if the metadata was raid1 as it is by 
+default so it's still available, but in practice, if you're storing 
+anything but throwaway data on a raid0 and/or you don't have current/
+tested backups, you're abusing raid0 and playing Russian roulette with 
+your data.  Just don't put valuable data on raid1 in the first place and/
+or keep current/tested backups, and you can simply scrap the raid0 when a 
+device dies without worry.)
+
+OTOH, I vastly prefer raid1 here, both for the traditional device-fail 
+redundancy and to take advantage of btrfs' data integrity features should 
+one copy of the data go bad for some reason.  My biggest gripe is that 
+currently btrfs raid1 only does pair-mirroring regardless of the number 
+of devices thrown at it, and my sweet-spot is triplet-mirroring, which 
+I'd really *REALLY* like to have available, just in case.  Oh, well...  
+Anyway, for multi-threaded primarily read-based IO, raid1 mode is the 
+better choice, since you get N-thread access in parallel, with N=number-
+of-mirrors.  (Again, I'd really REALLY like N=3, but oh, well... it's on 
+the roadmap.  I'll have to wait...)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

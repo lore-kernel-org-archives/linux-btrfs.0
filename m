@@ -1,82 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42401 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:39626 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751561AbaDUXoX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Apr 2014 19:44:23 -0400
+	id S1751561AbaDUX7C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Apr 2014 19:59:02 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WcNss-0001tL-9K
-	for linux-btrfs@vger.kernel.org; Tue, 22 Apr 2014 01:44:22 +0200
+	id 1WcO72-000642-Th
+	for linux-btrfs@vger.kernel.org; Tue, 22 Apr 2014 01:59:00 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:44:22 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:59:00 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:44:22 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:59:00 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume
- unmountable, "btrfs check" crashes
-Date: Mon, 21 Apr 2014 23:44:10 +0000 (UTC)
-Message-ID: <pan$8bfac$8e221e7d$ddf57415$e1995c17@cox.net>
-References: <53554469.5070503@gmail.com> <53556DCC.3000108@gmail.com>
+Subject: Re: convert from RAID5: enospc errors during balance (500 GB free
+ on each device)
+Date: Mon, 21 Apr 2014 23:58:46 +0000 (UTC)
+Message-ID: <pan$9d7d7$bfa295b1$7c7453$10fbdf2e@cox.net>
+References: <CAG6W84JS1-rzAJfGyPmXMTPLqLN=0UbqefRa-BoqgyzFruhJ_g@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andreas Reis posted on Mon, 21 Apr 2014 21:13:16 +0200 as excerpted:
+Arjen Nienhuis posted on Mon, 21 Apr 2014 08:32:56 +0200 as excerpted:
 
-> Alright, turns out the partition does actually mount on 3.15-rc2 (error
-> messages remain, of course).
+> I experimented with RAID5, but now I want to get rid of it:
 > 
-> But systemd will fail to continue booting as /bin/mount returns "exit
-> status 32" and / thus ends as ro, yet can be manually remounted as rw.
-
-The mount manpage says status 32 is mount failure.  Dmesg should contain 
-more, but that's probably the errors you already mentioned.
-
-So you're getting the read-only mount, but can't remount rw.
-
-(This doesn't apply in your case, but FWIW, I now have my root filesystem 
-setup to be ro mounted by default, and have been running that way for 
-some months, now.  Seems safer that way.  The only time I remount / rw is 
-when I'm updating the system or changing something in the config, then I 
-normally remount ro again, altho after updating the system I normally 
-have to exit and restart X and kde as well as various system services 
-before I can remount ro, depending on what libraries got changed out from 
-under my running processes.  Of course in ordered to make this work a 
-few /var/ subdirs that need to be writable are actually symlinks to
-/home/var/ subdirs, /var/log is a dedicated writable logging partition of 
-its own, etc.  So a read-only rootfs is the /normal/ case for me, and 
-wouldn't interfere with normal operations at all. =:^)
-
-> Another error message I've spotted with 3.15 is
+> $ sudo btrfs balance start -dconvert=raid1,soft -v /
+> Dumping filters: flags 0x1, state 0x0, force is off
+>   DATA (flags 0x300): converting, target=16, soft is on
+> ERROR: error during balancing '/' - No space left on device There may be
+> more info in syslog - try dmesg | tail
 > 
-> BTRFS error (device sdc5): error loading props for ino 1810424 (root
-> 257): -5
+> This is in dmesg:
+> 
+> [ 166.799139] btrfs: relocating block group 13368320589824 flags 129
+> [ 248.927524] btrfs: relocating block group 13338255818752 flags 129 ...
+> [ 409.184588] btrfs: relocating block group 11607454253056 flags 129
+> [ 410.528075] btrfs: relocating block group 11605306769408 flags 129
+> [ 411.957809] btrfs: 62 enospc errors during balance
+> 
+> Extra info:
 
-That would be one of the new btrfs properties introduced in kernel 3.14.  
-See btrfs property list/get/set...  Unless you've set individual file 
-properties (such as compress), that's probably a property (such as ro/rw) 
-on a subvolume, or possibly on the main filesystem (label, etc).
+> Data, RAID1: total=3.26TiB, used=3.25TiB
+> Data, RAID5: total=124.00GiB, used=123.90GiB
+> System, RAID1: total=32.00MiB, used=508.00KiB
+> System, single: total=4.00MiB, used=0.00
+> Metadata, RAID1: total=9.00GiB, used=7.97GiB 
 
-Meanwhile, "orphans" normally refer to files that are deleted while 
-they're still in use.  Normally, these will be libraries, etc, replaced 
-during a system upgrade, but still in use by running programs.  Once all 
-such running programs have been restarted (loading the new version of the 
-library) or terminated, the filesystem can be unmounted or remounted read-
-only.  In the event they're not fully cleaned up at umount time, they are 
-normally cleaned up after reboot, when a filesystem is first mounted 
-writable once again.
+> Label: data  uuid: 93be47ab-af7a-4329-8a6c-c6ff220060b0
+>         Total devices 3 FS bytes used 3.38TiB
+> devid    1 size 1.82TiB used 1.22TiB path /dev/sdd
+> devid    2 size 3.64TiB used 2.63TiB path /dev/sdb
+> devid    6 size 3.64TiB used 2.87TiB path /dev/sdc
+> 
+> Btrfs v3.12
+> 
+> Linux maxi 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 2014
+> x86_64 x86_64 x86_64 GNU/Linux
+> 
+> I tried scrub (no errors) and I cleared the free space cache. Nothing
+> worked.
+> 
+> Now I'm doing full balance (without 'soft') but that will take days.
 
-Obviously there's a problem with one of these orphans, and attempts to 
-clean it up are failing, causing the remount rw to fail.
+Did you try running another balance soft?
 
-While that doesn't help with fixing the problem, it should at least give 
-you some idea of what's going on, and how to interpret the messages and 
-errors you see.
+Depending on how fully allocated you were originally, those 62 enospce 
+errors during the first balance may have simply been before you cleared 
+enough space to rewrite additional raid1 data.  You now have two devices 
+with plenty of unallocated room on them (the btrfs fi show output), so 
+rerunning the soft conversion to raid1 may well be all you needed to do.
+
+Meanwhile... kernel v3.13, btrfs-progs v3.12.  You're just a bit behind, 
+as kernel 3.14 is out (and 3.15 is rc2), and btrfs-progs is 3.14 
+(possibly 3.14.1, I've not updated in a week or so).  When you run into 
+problems, consider updating before reporting, as there are still very 
+real fixes going into each new version, and they might just fix the 
+problem you're reporting.
+
+That said, I don't know if updating would help here, but it's worth a 
+shot.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

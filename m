@@ -1,90 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:47652 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754743AbaDUXBm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Apr 2014 19:01:42 -0400
-Date: Mon, 21 Apr 2014 16:01:41 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Do quota groups cost noticeable performance in 3.14?
-Message-ID: <20140421230141.GT26949@merlins.org>
-References: <20140420195901.GP7884@merlins.org> <pan$a2f12$b2daf6bc$70ff71c$1a6edc97@cox.net> <pan$32bc6$efdaee98$c580d086$1cd467bd@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$32bc6$efdaee98$c580d086$1cd467bd@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:42401 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751561AbaDUXoX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Apr 2014 19:44:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WcNss-0001tL-9K
+	for linux-btrfs@vger.kernel.org; Tue, 22 Apr 2014 01:44:22 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:44:22 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 01:44:22 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume
+ unmountable, "btrfs check" crashes
+Date: Mon, 21 Apr 2014 23:44:10 +0000 (UTC)
+Message-ID: <pan$8bfac$8e221e7d$ddf57415$e1995c17@cox.net>
+References: <53554469.5070503@gmail.com> <53556DCC.3000108@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 21, 2014 at 10:45:43PM +0000, Duncan wrote:
-> New information.  See Josef Bacik's new thread:
- 
-Very good info, thank you.
+Andreas Reis posted on Mon, 21 Apr 2014 21:13:16 +0200 as excerpted:
 
-It looks however like the use case I'm looking at (mostly write once backups
-with snapshots), should not be affected.
+> Alright, turns out the partition does actually mount on 3.15-rc2 (error
+> messages remain, of course).
+> 
+> But systemd will fail to continue booting as /bin/mount returns "exit
+> status 32" and / thus ends as ro, yet can be manually remounted as rw.
 
-I'll give it a shot, and if performance really sucks, I can remove the
-quotas, reboot, and that should clear the issues.
-I can definitely live with that, especially vs du -sh which could take a
-_long_ time to run on my trees :)
+The mount manpage says status 32 is mount failure.  Dmesg should contain 
+more, but that's probably the errors you already mentioned.
 
-Thanks,
-Marc
+So you're getting the read-only mount, but can't remount rw.
 
-> Snapshot aware defrag and qgroups thoughts
-> Monday, 21 April, 7:55:46 -0700
+(This doesn't apply in your case, but FWIW, I now have my root filesystem 
+setup to be ro mounted by default, and have been running that way for 
+some months, now.  Seems safer that way.  The only time I remount / rw is 
+when I'm updating the system or changing something in the config, then I 
+normally remount ro again, altho after updating the system I normally 
+have to exit and restart X and kde as well as various system services 
+before I can remount ro, depending on what libraries got changed out from 
+under my running processes.  Of course in ordered to make this work a 
+few /var/ subdirs that need to be writable are actually symlinks to
+/home/var/ subdirs, /var/log is a dedicated writable logging partition of 
+its own, etc.  So a read-only rootfs is the /normal/ case for me, and 
+wouldn't interfere with normal operations at all. =:^)
+
+> Another error message I've spotted with 3.15 is
 > 
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/34405
-> 
-> Looks like he's going to be rewriting qgroups accounting to rework 
-> sequence numbers, as part of his work to get a reasonable scalable 
-> snapshot-aware-defrag.  But he's on paternity leave ATM, so my guess is 
-> that's iffy for the 3.16 commit-window and thus may not make it until 
-> 3.17, which @ ~10 weeks a kernel cycle and being ~2 weeks past the 3.15 
-> commit window (we're on rc2), leaves us ~18 weeks until 3.17-rc1, early 
-> September.
-> 
-> Anyway, with that rewrite coming, unless you're really itchy to get into 
-> qgroups now, I'd wait until after that to dive in.
-> 
-> Meanwhile, his explanation of the present interaction between qgroups and 
-> the (currently disabled) snapshot-aware-defrag was an entirely new thing 
-> for me.  As I haven't any current need for qgroups I had somewhat walled 
-> that area off as something I didn't mess with or need to know about at 
-> this time, but his explanation certainly goes quite some way to 
-> explaining why snapshot-aware-defrag was so horribly bad for some people, 
-> those unlucky enough to be doing heavy snapshotting, with qgroups active, 
-> on very active heavy-internal-rewrite-pattern files.
-> 
-> I was already (and still) recommending a good snapshot thinning program 
-> for those doing automated snapshotting, keeping the number of snapshots 
-> per subvolume under 500 and preferably 200-300 max (quite reasonable with 
-> a good thinning setup, even with originally per-minute snapshots).  And I 
-> was already recommending that people keep large (>1 GiB) heavy-internal-
-> rewrite-pattern files NOCOW, on dedicated subvolumes to avoid 
-> snapshotting (using conventional backup for them).  But I had no /idea/ 
-> qgroups threw another geometric-scaling factor into the mix!
-> 
-> That definitely adds a new recommendation to the set -- avoid qgroups on 
-> subvolumes with heavy-internal-rewrite-pattern files.  And if you MUST 
-> qgroup OR heavily snapshot, choose one OR the other, DEFINITELY NOT 
-> BOTH!  At least until that qgroups accounting rewrite gets done.
-> 
-> -- 
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> BTRFS error (device sdc5): error loading props for ino 1810424 (root
+> 257): -5
+
+That would be one of the new btrfs properties introduced in kernel 3.14.  
+See btrfs property list/get/set...  Unless you've set individual file 
+properties (such as compress), that's probably a property (such as ro/rw) 
+on a subvolume, or possibly on the main filesystem (label, etc).
+
+Meanwhile, "orphans" normally refer to files that are deleted while 
+they're still in use.  Normally, these will be libraries, etc, replaced 
+during a system upgrade, but still in use by running programs.  Once all 
+such running programs have been restarted (loading the new version of the 
+library) or terminated, the filesystem can be unmounted or remounted read-
+only.  In the event they're not fully cleaned up at umount time, they are 
+normally cleaned up after reboot, when a filesystem is first mounted 
+writable once again.
+
+Obviously there's a problem with one of these orphans, and attempts to 
+clean it up are failing, causing the remount rw to fail.
+
+While that doesn't help with fixing the problem, it should at least give 
+you some idea of what's going on, and how to interpret the messages and 
+errors you see.
 
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

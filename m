@@ -1,47 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:62817 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751275AbaDUPUx (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:41389 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751307AbaDUQQr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Apr 2014 11:20:53 -0400
-Received: by mail-ob0-f181.google.com with SMTP id gq1so4346242obb.40
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2014 08:20:53 -0700 (PDT)
+	Mon, 21 Apr 2014 12:16:47 -0400
+Received: by mail-ee0-f46.google.com with SMTP id t10so3741003eei.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Apr 2014 09:16:45 -0700 (PDT)
+Received: from [192.168.1.229] (188-195-1-249-dynip.superkabel.de. [188.195.1.249])
+        by mx.google.com with ESMTPSA id w1sm104800480eel.16.2014.04.21.09.16.43
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 21 Apr 2014 09:16:44 -0700 (PDT)
+Message-ID: <53554469.5070503@gmail.com>
+Date: Mon, 21 Apr 2014 18:16:41 +0200
+From: Andreas Reis <andreas.reis@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAAcaxmUYW4SLmBjv7QPO_0zeHaxLX4PQEu0kT+g5FWNPFOLhDQ@mail.gmail.com>
-References: <CAAcaxmUYW4SLmBjv7QPO_0zeHaxLX4PQEu0kT+g5FWNPFOLhDQ@mail.gmail.com>
-Date: Mon, 21 Apr 2014 23:20:53 +0800
-Message-ID: <CAAcaxmVwUAvPzpU0_+f=SRce+8B772eCrh1Xmp8DG8iOL9rMBw@mail.gmail.com>
-Subject: Re: bug report: softlockup hung task
-From: ylet ylet <levin.front@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: jbacik <jbacik@fb.com>, clm@fb.com
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: Bug: "corrupt leaf. slot offset bad": root subvolume unmountable,
+ "btrfs check" crashes
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does anyone encounter this problem? and dose anyone have solution to it?
+Kernel 3.15.0-rc2, btrfs-progs 3.14.1
 
-Today, I have changed the compress max size from 512KB to 16KB:
+While doing some minor package updates my btrfs root partition [*] 
+decided to corrupt itself. There was no system crash, although I had 
+plenty of these (due to an USB-related regression) in recent weeks that 
+resulted in no trouble.
 
-in cow_file_range_async function,
+First only one of a package's folders was corrupted, any access to files 
+within (incl. attempts to delete) printed
 
-cur_end = min(end, start + 512 * 1024 - 1);
--->
-cur_end = min(end, start + 16 * 1024 - 1);
+btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
 
-This bug can be reproduced almost every time in my environment.
+to dmesg (I'm actually not sure about the numbers, but that was indeed 
+the error message). After moving the folder out of the way the partition 
+continued to appear working as normal, one reboot also worked fine.
 
-2014-04-19 20:13 GMT+08:00 ylet ylet <levin.front@gmail.com>:
-> I tried the latest git pull for linus(2014-04-12). The softlockup bug still
-> exists.
->
-> I ran IOZONE in performance test with zlib mount option:
-> mount -t btrfs -o nospace_cache -o compress-force=zlib -o enospc_debug
-> /dev/sdb /mnt/btrfs
->
-> My PC has i5 4-core CPU, 8GB mem and a 256GB SSD.
->
->  The iozone configuration is as follow:
-> ./iozone -s 16g -i 0 -i 1 -i 2 -t 4 -r 4k -+w 50 -+y 20 -+C 60 -F
-> /mnt/btrfs/test1 /mnt/btrfs/test2 /mnt/btrfs/test3 /mnt/btrfs/test
->
+Now I can't boot at all (beyond loading the kernel image located on 
+another partition), neither with 3,15-rc2 nor 3.14.1. Attempting to 
+mount the __current/ROOT subvolume on ArchLinux's current Live-CD 
+(kernel 3.13.7) prints
+
+btrfs: device label Linux devid 1 transid 55586 /dev/sdc5
+btrfs: use ssd allocation scheme
+btrfs: disk space caching is enabled
+btrfs: checking UUID tree
+btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
+btrfs: corrupt leaf, slot offset bad: block=842924032,root=1, slot=88
+BTRFS error (device sdc5): Error removing orphan entry, stopping orphan 
+cleanup
+BTRFS critical (device sdc5): could not do orphan cleanup -22
+
+Doing "btrfs check /dev/sdc5" merely first prints ten
+
+free space inode generation (0) did not match free space cache 
+generation ([different transids between 40010 and 55578])
+
+to then abort with
+
+checking fs roots
+btrfs: cmds-check.c:1151: procecss_file_extent: Assertion `!(rec->ino != 
+key->objectid || rec->refs > 1)' failed.
+
+I'm reluctant to try any of "btrfs check" options (or mount with -o 
+recovery) since the last three times I did this (with other partitions) 
+it resulted in the partition becoming entirely trashed, while before at 
+least "btrfs restore" still managed to extract some data each time.
+
+The affected folder was one within /usr/include/qt4 (which I then moved 
+to /usr/BROKEN, to successfully reinstall the package), ie. on the 
+__current/ROOT subvolume.
+
+Which seems the only subvolume affected (yet). Mounting & accessing the 
+other three (__current/{var,home,opt}) still works.
+
+[*] Organised following 
+http://blog.fabio.mancinelli.me/2012/12/28/Arch_Linux_on_BTRFS.html
+
+(Also posted on https://bugzilla.kernel.org/show_bug.cgi?id=74611 )

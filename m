@@ -1,59 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39247 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756135AbaDVNUD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Apr 2014 09:20:03 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 492ACAD0E
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 13:20:02 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: read global reserve size from space infos
-Date: Tue, 22 Apr 2014 15:20:00 +0200
-Message-Id: <1398172800-19548-1-git-send-email-dsterba@suse.cz>
+Received: from nbl-ex10-fe01.nebula.fi ([188.117.32.121]:7589 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750908AbaDVNab (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Apr 2014 09:30:31 -0400
+Date: Tue, 22 Apr 2014 16:30:27 +0300
+From: Rakesh Pandit <rakesh@tuxera.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: fix check to test trim support
+Message-ID: <20140422133025.GA13578@hercules.tuxera.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernels 3.15 > export the global block reserve as a space info presented
-by 'btrfs fi df' but would display 'unknown' instead of some meaningful
-string.
+It was added in 25d82d22 but broke recently in 4724d7b0 while making
+discard interruptible.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
+ utils.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Global_rsv or GlobalRsv or Globalrsv or something else?
-
- cmds-filesystem.c | 2 ++
- ctree.h           | 2 ++
- 2 files changed, 4 insertions(+)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 306f715475ac..5a3bbca91458 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -129,6 +129,8 @@ static char *group_type_str(u64 flag)
- 		return "Metadata";
- 	case BTRFS_BLOCK_GROUP_DATA|BTRFS_BLOCK_GROUP_METADATA:
- 		return "Data+Metadata";
-+	case BTRFS_SPACE_INFO_GLOBAL_RSV:
-+		return "Global_rsv";
- 	default:
- 		return "unknown";
- 	}
-diff --git a/ctree.h b/ctree.h
-index a4d2cd114614..7e8ced718931 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -861,6 +861,8 @@ struct btrfs_csum_item {
- /* used in struct btrfs_balance_args fields */
- #define BTRFS_AVAIL_ALLOC_BIT_SINGLE	(1ULL << 48)
- 
-+#define BTRFS_SPACE_INFO_GLOBAL_RSV    (1ULL << 49)
-+
- #define BTRFS_QGROUP_STATUS_OFF			0
- #define BTRFS_QGROUP_STATUS_ON			1
- #define BTRFS_QGROUP_STATUS_SCANNING		2
+diff --git a/utils.c b/utils.c
+index 0bfb9d9..068b4f3 100644
+--- a/utils.c
++++ b/utils.c
+@@ -629,7 +629,7 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 		 * is not necessary for the mkfs functionality but just an
+ 		 * optimization.
+ 		 */
+-		if (discard_blocks(fd, 0, 0) == 0) {
++		if (discard_range(fd, 0, 0) == 0) {
+ 			fprintf(stderr, "Performing full device TRIM (%s) ...\n",
+ 				pretty_size(block_count));
+ 			discard_blocks(fd, 0, block_count);
 -- 
-1.9.0
+1.8.5.3
 

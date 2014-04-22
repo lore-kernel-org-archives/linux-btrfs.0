@@ -1,40 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nbl-ex10-fe01.nebula.fi ([188.117.32.121]:7589 "EHLO
-	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750908AbaDVNab (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Apr 2014 09:30:31 -0400
-Date: Tue, 22 Apr 2014 16:30:27 +0300
-From: Rakesh Pandit <rakesh@tuxera.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix check to test trim support
-Message-ID: <20140422133025.GA13578@hercules.tuxera.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from cantor2.suse.de ([195.135.220.15]:42964 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757068AbaDVPtD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Apr 2014 11:49:03 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 573A5ACF0
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 15:49:02 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2] btrfs-progs: move arg_strtou64 to a separate file for library
+Date: Tue, 22 Apr 2014 17:49:01 +0200
+Message-Id: <1398181741-4505-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1398177433-27216-1-git-send-email-dsterba@suse.cz>
+References: <1398177433-27216-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It was added in 25d82d22 but broke recently in 4724d7b0 while making
-discard interruptible.
+Linking with libbtrfs fails because arg_strtou64 is not defined and we
+cannot just add utils.o to library objects because it's not
+library-clean.
 
-Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
+Reported-by: Arvin Schnell <aschnell@suse.com>
+Reported-by: Anton Farygin <rider@altlinux.org>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- utils.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
+v2: (thanks to Hugo)
+- added missing line from comment
+- fixed typo
+- reformated comment paragraphs
+
+ Makefile    |  5 +++--
+ utils-lib.c | 42 ++++++++++++++++++++++++++++++++++++++++++
+ utils.c     | 33 ---------------------------------
+ 3 files changed, 45 insertions(+), 35 deletions(-)
+ create mode 100644 utils-lib.c
+
+diff --git a/Makefile b/Makefile
+index 51d53fadf5af..76565e8b2307 100644
+--- a/Makefile
++++ b/Makefile
+@@ -9,14 +9,15 @@ CFLAGS = -g -O1 -fno-strict-aliasing
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+-	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o
++	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
++	  utils-lib.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o
+ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+-		   uuid-tree.o
++		   uuid-tree.o utils-lib.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
+ 	       extent_io.h ioctl.h ctree.h btrfsck.h
+diff --git a/utils-lib.c b/utils-lib.c
+new file mode 100644
+index 000000000000..9d53c6e5c710
+--- /dev/null
++++ b/utils-lib.c
+@@ -0,0 +1,42 @@
++#define _GNU_SOURCE
++
++#include "kerncompat.h"
++#include <unistd.h>
++#include <stdlib.h>
++#include <limits.h>
++
++#if BTRFS_FLAT_INCLUDES
++#else
++#endif /* BTRFS_FLAT_INCLUDES */
++
++/*
++ * This function should be only used when parsing command arg, it won't return
++ * error to its caller and rather exit directly just like usage().
++ */
++u64 arg_strtou64(const char *str)
++{
++	u64 value;
++	char *ptr_parse_end = NULL;
++
++	value = strtoull(str, &ptr_parse_end, 0);
++	if (ptr_parse_end && *ptr_parse_end != '\0') {
++		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
++			str);
++		exit(1);
++	}
++
++	/*
++	 * if we pass a negative number to strtoull, it will return an
++	 * unexpected number to us, so let's do the check ourselves.
++	 */
++	if (str[0] == '-') {
++		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
++			str);
++		exit(1);
++	}
++	if (value == ULLONG_MAX) {
++		fprintf(stderr, "ERROR: %s is too large.\n", str);
++		exit(1);
++	}
++	return value;
++}
 diff --git a/utils.c b/utils.c
-index 0bfb9d9..068b4f3 100644
+index 29953d9dd2a9..e130849c7bb5 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -629,7 +629,7 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
- 		 * is not necessary for the mkfs functionality but just an
- 		 * optimization.
- 		 */
--		if (discard_blocks(fd, 0, 0) == 0) {
-+		if (discard_range(fd, 0, 0) == 0) {
- 			fprintf(stderr, "Performing full device TRIM (%s) ...\n",
- 				pretty_size(block_count));
- 			discard_blocks(fd, 0, block_count);
+@@ -1538,39 +1538,6 @@ scan_again:
+ 	return 0;
+ }
+ 
+-/*
+- * This function should be only used when parsing
+- * command arg, it won't return error to it's
+- * caller and rather exit directly just like usage().
+- */
+-u64 arg_strtou64(const char *str)
+-{
+-	u64 value;
+-	char *ptr_parse_end = NULL;
+-
+-	value = strtoull(str, &ptr_parse_end, 0);
+-	if (ptr_parse_end && *ptr_parse_end != '\0') {
+-		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
+-			str);
+-		exit(1);
+-	}
+-	/*
+-	 * if we pass a negative number to strtoull,
+-	 * it will return an unexpected number to us,
+-	 * so let's do the check ourselves.
+-	 */
+-	if (str[0] == '-') {
+-		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
+-			str);
+-		exit(1);
+-	}
+-	if (value == ULLONG_MAX) {
+-		fprintf(stderr, "ERROR: %s is too large.\n", str);
+-		exit(1);
+-	}
+-	return value;
+-}
+-
+ u64 parse_size(char *s)
+ {
+ 	int i;
 -- 
-1.8.5.3
+1.9.0
 

@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:60231 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752767AbaDWUZo (ORCPT
+Received: from qmta12.emeryville.ca.mail.comcast.net ([76.96.27.227]:56393
+	"EHLO qmta12.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752767AbaDWUoX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 16:25:44 -0400
-Received: by mail-ig0-f179.google.com with SMTP id hl10so55652igb.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 13:25:44 -0700 (PDT)
-Message-ID: <1398284721.20580.7.camel@sasami>
-Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or
- newer?
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Wed, 23 Apr 2014 16:25:21 -0400
-In-Reply-To: <vifl2b-87g.ln1@hurikhan77.spdns.de>
-References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info>
-	 <vifl2b-87g.ln1@hurikhan77.spdns.de>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Wed, 23 Apr 2014 16:44:23 -0400
+Message-ID: <53582625.3030800@pobox.com>
+Date: Wed, 23 Apr 2014 13:44:21 -0700
+From: Robert White <rwhite@pobox.com>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: hung task timer + btrfs_convert or btrfs balance = OOPS
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2014-04-23 at 21:06 +0200, Kai Krakow wrote:
-> Пламен Петров <plamen@petrovi.no-ip.info> schrieb:
-> 
-> I'm going with the module suggestion from Marc, too.
-> 
-> > /dev/sda2              /         btrfs     relatime,compress=zlib 0      0
-> 
-> This line looks kinda useless to me. The compress=zlib option won't be 
-> applied at boot and cannot be changed at runtime because AFAIR btrfs does 
-> not allow that yet.
+The first mount of a non-trivial file system after a btrfs_convert, or 
+an ongoing btrfs balance operation containing large files may lead to an 
+oops (and a pathologically damaged file system) if the hang check timer 
+(CONFIG_DETECT_HUNG_TASK=y) is compiled into the linux kernel and not 
+disabled.
 
-... My understanding is that the compress= option on btrfs *can* be
-changed at run time. After remounting with a compress= option, later
-writes will be done using the newly selected algorithm.
+I've had two systems destroyed after a btrfs_convert. After the 
+conversion the first mount took several minutes. The hung task timer 
+expired against some internal btrfs_daemon. I think it was 
+'[btrfs-transacti]'. Said task then goes oops and the file system was 
+chock full of errors. So many that I no longer trusted the conversion so 
+mkfs.btrfs and restored from backup.
 
-The compress= option is filesystem-wide, you cannot currently use
-different compress= options for different subvolumes. Mounting a
-subvolume with a different compress= option will change the compression
-algorithm for all mounted subvolumes on that filesystem.
+On another system the same thing happened after a successful convert and 
+mount (I'd remembered to disable the timer during the first mount) when 
+a btrfs balance was running.
 
-(Note that I wouldn't recommend zlib on most systems as a / filesystem -
-it's slow to decompress compared to lzo, so it will cause slower boots
-if your disk is reasonably fast.)
+Whatever is blocking in that task really ought not to do that for 2+ 
+minutes and sleep on some data structure instead.
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
+As it is, the two options are not happy together. Be sure to
+
+echo 0 > /proc/sys/kernel/hung_task_timeout_secs
+
+to disable the timer before doing a mount or balance after a 
+btrfs_convert (and possibly a btrfs balance if it decides to move a very 
+large file like a VM disk image).
 

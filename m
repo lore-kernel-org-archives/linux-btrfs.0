@@ -1,107 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37675 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:36443 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751547AbaDWCa6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Apr 2014 22:30:58 -0400
+	id S1755997AbaDWCzx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Apr 2014 22:55:53 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wcmxd-00060V-12
-	for linux-btrfs@vger.kernel.org; Wed, 23 Apr 2014 04:30:57 +0200
+	id 1WcnLk-0001Lt-Lw
+	for linux-btrfs@vger.kernel.org; Wed, 23 Apr 2014 04:55:52 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:30:57 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:55:52 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:30:57 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:55:52 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: convert from RAID5: enospc errors during balance (500 GB free
- on each device)
-Date: Wed, 23 Apr 2014 02:30:45 +0000 (UTC)
-Message-ID: <pan$7a4f$d3c597d8$d78eba87$c0f85f47@cox.net>
-References: <CAG6W84JS1-rzAJfGyPmXMTPLqLN=0UbqefRa-BoqgyzFruhJ_g@mail.gmail.com>
-	<CAG6W84JEBg3FRDn6Q9m-cKgA9L=wZP0PQxJTTVXSxVn73pEotA@mail.gmail.com>
+Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume
+ unmountable, "btrfs check" crashes
+Date: Wed, 23 Apr 2014 02:55:36 +0000 (UTC)
+Message-ID: <pan$df664$93c6c4b1$b586c2f$c5ce83c7@cox.net>
+References: <53554469.5070503@gmail.com> <53556DCC.3000108@gmail.com>
+	<5356B1ED.8060608@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arjen Nienhuis posted on Tue, 22 Apr 2014 23:52:43 +0200 as excerpted:
+Andreas Reis posted on Tue, 22 Apr 2014 20:16:13 +0200 as excerpted:
 
->> Did you try running another balance soft?
+> Same failure with btrfs-progs from integration-20140421 (apart from the
+> line number 1156).
 > 
-> I tried a few. The only thing that happens is that more empty blocks get
-> allocated. I also tried convert=single,profiles=raid5. I ended up with a
-> few empty 'single' blocks. (The empty blocks could be discarded with
-> balance usage=0)
+> Can I get a bit of input on this? Is it safe to just ignore the error
+> for now (as I'm doing atm), ie. remount as rw to skip the orphan
+> cleanup?
 
-Hmm... So the blocks of the new type get allocated, but nothing gets 
-written into them.  That's strange.
+I explained orphans in my other reply.  Since they're simply not yet 
+completed file deletions, it should be /relatively/ safe to continue 
+ignoring and doing the manual remount rw, since that continues to work.
 
-I'm not a dev just a btrfs user and list regular, and this is the first 
-time I've seen that sort of behavior reported so I can't help much 
-further there, but the reason I suggested rerunning the balance is that 
-I've had times when I got ENOSPC errors for some chunks on the first 
-balance, but it did free enough space from the ones it could rewrite that 
-a second pass went just fine, no errors, and since you didn't mention 
-retrying in the original post, I thought I would.
+"Relatively" as in that's what I'd do in the shorter term here were I 
+seeing the problem, tho I'd ensure my backups were current and tested, as 
+should be the case on btrfs anyway since it's not entirely stable yet, 
+and just because I don't like nagging half-dealt-with-problems left 
+laying around and the error would eat at me until I'd cleared it, at some 
+point likely rather sooner than later, I'd very likely mkfs and restore 
+from those backups.  But I'd certainly be willing to continue running 
+from the partition short term, for a week or so until I had a chance to 
+do the mkfs.btrfs and restore from backup, as long as that remained the 
+only issue I was seeing.
 
-The one similar report we did have was with someone that had originally 
-done the conversion from ext3/4 following the instructions in the wiki, 
-and had removed the ext3/4 subvolume after conversion, but had *NOT* then 
-run the defrag and rebalance as recommended.  IIRC he was actually trying 
-a later btrfs mode convert (IIRC from single to raid1, after adding a 
-second device) as well, when he ran into problems.  Those problems were 
-traced to the fact that btrfs data chunks are 1 GiB in size, so that's 
-the largest possible extent on native btrfs, while ext3/4 allowed larger 
-extents.  The problems thus occurred when the conversion process ran into 
-these larger extents, which the original btrfs single mode handled, but 
-which the conversion to raid1, copying to the other device in now native 
-btrfs mode, couldn't manage.
+> Might it even be safe to call btrfs check --repair on the partition? I'm
+> not keen on that failing mid-process at the same assertion and thus
+> breaking it over a bunch of minor files, just like it happened with my
+> previous btrfs partitions.
 
-He ended up having to move a bunch of files off of the btrfs (to tmpfs in 
-his case, the files were multi-gig but he had the memory to handle it) 
-and then back onto it, in ordered to have them recreated in btrfs-native 
-1-GiB data chunks mode.  I don't recall whether they were written back in 
-raid1 or single mode, but in any case, once he dealt with the problem 
-files that way, the conversion finished properly.
+That I can't say.  Based on reports and the common knowledge of the list, 
+I've become rather leery of btrfs check --repair myself, and tend to rely 
+on scrub and balance to fix issues if they can, and beyond that, 
+mkfs.btrfs and restore from backup.  In fact, while btrfs check without 
+the --repair is safe as it's read-only, I don't run it regularly either, 
+because I know should it report problems I'd then be worried about things 
+I might have no reasonable way to fix, that obviously aren't causing me 
+problems anyway.  Basically, if mounting and regular use of the 
+filesystem isn't giving me anything unusual in dmesg, I consider it good, 
+and I for the most part I tend to route around btrfs check entirely, as 
+if it weren't even there, tho I've run it in default read-only mode a few 
+times, to compare my output with a post from the list or something, 
+always with a clean bill of health from btrfs check when I have run it.
 
-So on the off chance... your filesystem wasn't also originally converted 
-from ext3/4 to btrfs, was it?  If so, it might be that issue.  Otherwise 
-I don't have a clue.  Maybe the devs can help.
+That said, if you have backups tested and ready anyway, and would 
+otherwise be doing a mkfs.btrfs in short order in ordered to get rid of 
+those bad orphan warnings anyway, I don't see the harm in running it, 
+since at that point it's zero risk anyway.  If you lose the filesystem as 
+a result, big deal, as you were going to mkfs.btrfs and restore from 
+backup anyway, and if it fixes the problem, well, you saved yourself the 
+hassle.
 
->> Meanwhile... kernel v3.13, btrfs-progs v3.12.  You're just a bit
->> behind, as kernel 3.14 is out (and 3.15 is rc2), and btrfs-progs is
->> 3.14 (possibly 3.14.1, I've not updated in a week or so).  When you
->> run into problems, consider updating before reporting, as there are
->> still very real fixes going into each new version, and they might just
->> fix the problem you're reporting.
-> 
-> I just upgraded to Ubuntu 14.04. I can try a kernel ppa but I didn't
-> find anything in the about this on the wiki.
-
-When you do a mkfs.btrfs, the output there warns that btrfs is still 
-experimental, run current kernels, keep backups, etc.  (I'm not creating 
-one ATM so I unlike the wiki I don't have that right in front of me, but 
-I just redid my backups with a new mkfs.btrfs a few days ago and the 
-experimental warning was still there).  The wiki also strongly encourages 
-both.  See the stuff in red right near the top of the getting started 
-page:
-
-https://btrfs.wiki.kernel.org/index.php/Getting_started
-
-Further down the page there's both a distros vs shipped versions table, 
-and a discussion of building from source when the distro version is 
-behind.
-
-https://btrfs.wiki.kernel.org/index.php/
-Getting_started#Compiling_Btrfs_from_sources
-
-Also see stability status, which emphasizes running the latest stable if 
-not the development version, on the main page:
-
-https://btrfs.wiki.kernel.org/index.php/Main_Page#Stability_status
+Plus, either way you can report back the results and then we'll know 
+whether it's safe to recommend btrfs check for the next report, or not. 
+=:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

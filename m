@@ -1,86 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36443 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:45988 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755997AbaDWCzx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Apr 2014 22:55:53 -0400
+	id S1751154AbaDWDSw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Apr 2014 23:18:52 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WcnLk-0001Lt-Lw
-	for linux-btrfs@vger.kernel.org; Wed, 23 Apr 2014 04:55:52 +0200
+	id 1Wcnhy-0004OT-89
+	for linux-btrfs@vger.kernel.org; Wed, 23 Apr 2014 05:18:50 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:55:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 05:18:50 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 04:55:52 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 05:18:50 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume
- unmountable, "btrfs check" crashes
-Date: Wed, 23 Apr 2014 02:55:36 +0000 (UTC)
-Message-ID: <pan$df664$93c6c4b1$b586c2f$c5ce83c7@cox.net>
-References: <53554469.5070503@gmail.com> <53556DCC.3000108@gmail.com>
-	<5356B1ED.8060608@gmail.com>
+Subject: Re: Slow Write Performance w/ No Cache Enabled and Different Size
+ Drives
+Date: Wed, 23 Apr 2014 03:18:34 +0000 (UTC)
+Message-ID: <pan$d444b$cef389d2$82cdb021$b6eb95b4@cox.net>
+References: <53540367.4050707@aeb.io>
+	<D954AF21-BC14-4ADC-9C62-254753AF1998@colorremedies.com>
+	<5354A4EA.3000209@aeb.io> <pan$ced8d$1ee3475f$a3c53cfd$a3dfb247@cox.net>
+	<BDB8ED64-0A92-4C22-A07D-C06D790410ED@colorremedies.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andreas Reis posted on Tue, 22 Apr 2014 20:16:13 +0200 as excerpted:
+Chris Murphy posted on Tue, 22 Apr 2014 11:42:09 -0600 as excerpted:
 
-> Same failure with btrfs-progs from integration-20140421 (apart from the
-> line number 1156).
+
+> On Apr 21, 2014, at 3:09 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 > 
-> Can I get a bit of input on this? Is it safe to just ignore the error
-> for now (as I'm doing atm), ie. remount as rw to skip the orphan
-> cleanup?
+>> Adam Brenner posted on Sun, 20 Apr 2014 21:56:10 -0700 as excerpted:
+>> 
+>>> So ... BTRFS at this point in time, does not actually "stripe" the
+>>> data across N number of devices/blocks for aggregated performance
+>>> increase (both read and write)?
+>> 
+>> What Chris says is correct, but just in case it's unclear as written,
+>> let me try a reworded version, perhaps addressing a few uncaught
+>> details in the process.
+> 
+> Another likely problem is terminology. It's 2014 and still we don't have
+> consistency in basic RAID terminology.
 
-I explained orphans in my other reply.  Since they're simply not yet 
-completed file deletions, it should be /relatively/ safe to continue 
-ignoring and doing the manual remount rw, since that continues to work.
+> It's not immediately obvious to the btrfs newcomer that the md raid
+> chunk isn't the same thing as the btrfs chunk, for example.
+> 
+> And strip, chunk, stripe unit, and stripe size get used interchangeably
+> to mean the same thing, while just as often stripe size means something
+> different.
 
-"Relatively" as in that's what I'd do in the shorter term here were I 
-seeing the problem, tho I'd ensure my backups were current and tested, as 
-should be the case on btrfs anyway since it's not entirely stable yet, 
-and just because I don't like nagging half-dealt-with-problems left 
-laying around and the error would eat at me until I'd cleared it, at some 
-point likely rather sooner than later, I'd very likely mkfs and restore 
-from those backups.  But I'd certainly be willing to continue running 
-from the partition short term, for a week or so until I had a chance to 
-do the mkfs.btrfs and restore from backup, as long as that remained the 
-only issue I was seeing.
+FWIW, I did hesitate at one point, then used "stripe" for what I guess 
+should have been strip or stripe-unit, after considering and rejecting 
+"chunk" as already in use.
 
-> Might it even be safe to call btrfs check --repair on the partition? I'm
-> not keen on that failing mid-process at the same assertion and thus
-> breaking it over a bunch of minor files, just like it happened with my
-> previous btrfs partitions.
+But in any case, while btrfs single mode is distinct from btrfs raid0 
+mode, and because the minimum single-mode unit is 1 GiB and thus too 
+large to do practical raid0, on multiple devices btrfs single mode does 
+in fact end up in a sort of raid0 layout, just with too big a "strip" to 
+work as raid0 in practice.
 
-That I can't say.  Based on reports and the common knowledge of the list, 
-I've become rather leery of btrfs check --repair myself, and tend to rely 
-on scrub and balance to fix issues if they can, and beyond that, 
-mkfs.btrfs and restore from backup.  In fact, while btrfs check without 
-the --repair is safe as it's read-only, I don't run it regularly either, 
-because I know should it report problems I'd then be worried about things 
-I might have no reasonable way to fix, that obviously aren't causing me 
-problems anyway.  Basically, if mounting and regular use of the 
-filesystem isn't giving me anything unusual in dmesg, I consider it good, 
-and I for the most part I tend to route around btrfs check entirely, as 
-if it weren't even there, tho I've run it in default read-only mode a few 
-times, to compare my output with a post from the list or something, 
-always with a clean bill of health from btrfs check when I have run it.
+IOW, btrfs single mode layout is one 1 GiB chunk on one device at a time, 
+but btrfs will alternate devices with those 1 GiB chunks (choosing the 
+one with the least usage from those available), *NOT* use one device 
+until it's full, then another until its full, etc, like md/raid linear 
+mode does.  In that way, the layout is raid0-like, even if the chunks are 
+too big to be practical raid0.
 
-That said, if you have backups tested and ready anyway, and would 
-otherwise be doing a mkfs.btrfs in short order in ordered to get rid of 
-those bad orphan warnings anyway, I don't see the harm in running it, 
-since at that point it's zero risk anyway.  If you lose the filesystem as 
-a result, big deal, as you were going to mkfs.btrfs and restore from 
-backup anyway, and if it fixes the problem, well, you saved yourself the 
-hassle.
+Btrfs raid0 mode, however, *DOES* work as raid0 in practice.  It still 
+allocates 1 GiB chunks per devices, but does so in parallel across all 
+available devices, and then stripes at a unit far smaller than the 1 GiB 
+chunk, using I believe a 64 or 128 KiB strip/stripe-unit/whatever, with 
+the full stripe-size thus being that times the number of devices in 
+parallel in the stripe.
 
-Plus, either way you can report back the results and then we'll know 
-whether it's safe to recommend btrfs check for the next report, or not. 
-=:^)
+<sigh>  It's all clear in my head, anyway! =:^(
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

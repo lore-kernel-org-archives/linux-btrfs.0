@@ -1,57 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sub5.mail.dreamhost.com ([208.113.200.129]:54548 "EHLO
-	homiemail-a46.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753696AbaDWRY5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 13:24:57 -0400
-Received: from homiemail-a46.g.dreamhost.com (localhost [127.0.0.1])
-	by homiemail-a46.g.dreamhost.com (Postfix) with ESMTP id 4C3A53E4073
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 10:24:57 -0700 (PDT)
-Received: from bheem.localnet (unknown [49.248.64.37])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: ghodechhap@ghodechhap.net)
-	by homiemail-a46.g.dreamhost.com (Postfix) with ESMTPSA id DAAE13E406E
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 10:24:56 -0700 (PDT)
-From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
-To: linux-btrfs@vger.kernel.org
-Subject: inode cache rebuild problem
-Date: Wed, 23 Apr 2014 23:07:13 +0630
-Message-ID: <2497757.A2A0fxBM0J@bheem>
+Received: from SD88.btc-net.bg ([212.39.90.88]:57864 "HELO sd88.btc-net.bg"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with SMTP
+	id S1161002AbaDWRhJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 13:37:09 -0400
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by petrovi.no-ip.info (Postfix) with ESMTP id B706335D4AD
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 20:30:24 +0300 (EEST)
+Received: from petrovi.no-ip.info ([127.0.0.1])
+	by localhost (petrovi.no-ip.info [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id BdbghFetL+dp for <linux-btrfs@vger.kernel.org>;
+	Wed, 23 Apr 2014 20:30:13 +0300 (EEST)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by petrovi.no-ip.info (Postfix) with ESMTP id 382D035D4E2
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 20:30:13 +0300 (EEST)
+Received: from PEPS (peps.petrovi.no-ip.info [192.168.10.11])
+	by petrovi.no-ip.info (Postfix) with ESMTP id 9F73D35D4AD
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 20:30:12 +0300 (EEST)
+From: =?koi8-r?B?8MzBzcXOIPDF1NLP1w==?= <plamen@petrovi.no-ip.info>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Can anyone boot a system using btrfs root with linux 3.14 or newer?
+Date: Wed, 23 Apr 2014 20:30:08 +0300
+Message-ID: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain;
+	charset="koi8-r"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Can anyone boot a system using btrfs root with linux 3.14 or newer?
 
-I have a desktop system with 2 disks, all btrfs, single partition. All of 
-these partitions had 
-space_cache,inode_cache enabled.
+Because I can't.
 
-Linux 3.14 has broken resume on my desktop, hence I need to shutdown and 
-restart the 
-machine every time. 
+I'm trying to move some 3.13.x based systems to 3.14.x and the kernel panics
+during boot. It says to append a correct root=sdaX partition, but the one
+provided is correct, because if use 3.13.x with the same kernel command line
+- the system boots fine.
 
-But even on clean reboot, inode_cache was constantly being rebuilt on each 
-boot. It 
-caused kdm/X to timeout, even getty weren't spawned. I had to reboot it with 
-ctrl-alt-delete, 
-just to make it usable again. 2 out of 3 times, I had to reboot more than 
-once, to make it 
-usable.
+The thing is - there is an ext2 /boot partition and root / is btrfs, like
+so:
 
-While the disk was constantly grinding in the boot process, I ssh'ed into it 
-from another 
-machine and observed the inode cache overhead.
+# cat /etc/fstab
+#
+# /etc/fstab: static file system information
+#
+# <file system>        <dir>     <type>    <options>              <dump>
+<pass>
 
-Hence I disabled both the caches on all the partition(yes, I know, space_cache 
-will stick 
-around), and the machine is lot more snappier and responsive than ever before.
+#/dev/#REISERFS_ROOT#  /         reiserfs  defaults               0      0
+#/dev/#EXT3FS_ROOT#    /         ext3      defaults               0      1
+/dev/sda2              /         btrfs     relatime,compress=zlib 0      0
+/dev/sda1              /boot     ext4      defaults               0      1
+#/dev/#JFS_ROOT#       /         jfs       defaults               1      1
 
-I am running archlinux with 3.14.1 kernel.
+Here is my relevant GRUB config file part:
 
-Thanks,
--- 
-Regards
- Shridhar
+#menuentry 0
+title Linux
+    root (hd0,0)
+    kernel /vmlinuz rw root=/dev/sda2 vga=6 raid=noautodetect
+
+And for the record - I used the same kernel config as the one from 3.13.x -
+I just copied my old .config file over to linux 3.14.x sources and did a
+"make olddefconfig" and compiled my kernel, just as I did with all previous
+ones...
+
+Ideas?
+
+P.S. Please, CC me - I'm not subscribed.
+---------------------------------
+Plamen Petrov
+

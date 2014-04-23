@@ -1,184 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from SD88.btc-net.bg ([212.39.90.88]:56498 "HELO sd88.btc-net.bg"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with SMTP
-	id S1751182AbaDWTiM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 15:38:12 -0400
-From: =?UTF-8?B?0J/Qu9Cw0LzQtdC9INCf0LXRgtGA0L7Qsg==?=
-	<plamen@petrovi.no-ip.info>
-To: "'Marc MERLIN'" <marc@merlins.org>
-Cc: <linux-btrfs@vger.kernel.org>
-References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info> <20140423185413.GF26949@merlins.org> <001401cf5f27$17cae590$4760b0b0$@petrovi.no-ip.info> <20140423191546.GG26949@merlins.org>
-In-Reply-To: <20140423191546.GG26949@merlins.org>
-Subject: RE: Can anyone boot a system using btrfs root with linux 3.14 or newer?
-Date: Wed, 23 Apr 2014 22:37:44 +0300
-Message-ID: <002401cf5f2b$7f8d41b0$7ea7c510$@petrovi.no-ip.info>
+Received: from mail-lb0-f175.google.com ([209.85.217.175]:51797 "EHLO
+	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756671AbaDWTjA convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 15:39:00 -0400
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0025_01CF5F44.A4DA79B0"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1C24A869E87C7B45BE3E2BB439AB8F8C0D13DAE0@G5W2738.americas.hpqcorp.net>
+References: <1C24A869E87C7B45BE3E2BB439AB8F8C0D13DAE0@G5W2738.americas.hpqcorp.net>
+Date: Wed, 23 Apr 2014 20:38:59 +0100
+Message-ID: <CAL3q7H7qkwbSnM0QO98BA-Low_h_Y89uAmi5PQ6K9GSY4QWEqw@mail.gmail.com>
+Subject: Re: [PATCH 001/001] btrfs: Mechanism to modify the permission of a subvolume
+From: Filipe David Manana <fdmanana@gmail.com>
+To: "J S, Ajesh" <ajesh.js@hp.com>
+Cc: "clm@fb.com" <clm@fb.com>, "jbacik@fb.com" <jbacik@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multipart message in MIME format.
+On Wed, Apr 23, 2014 at 2:28 PM, J S, Ajesh <ajesh.js@hp.com> wrote:
+> From: Ajesh JS <ajesh.js@hp.com>
+>
+> This patch provides a mechanism to modify the permission of a subvolume in a btrfs file system
+> This helps to apply a policy of having read-write subvolume inside a read-only subvolume.
+> One use case is to have the whole root file system as a read-only subvolume and have /etc as a read-write subvolume inside.
 
-------=_NextPart_000_0025_01CF5F44.A4DA79B0
-Content-Type: text/plain;
-	charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-> -----Original Message-----
-> From: Marc MERLIN [mailto:marc@merlins.org]
-> Sent: Wednesday, April 23, 2014 10:16 PM
-> To: =D0=9F=D0=BB=D0=B0=D0=BC=D0=B5=D0=BD =
-=D0=9F=D0=B5=D1=82=D1=80=D0=BE=D0=B2
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 =
-or
-> newer?
->=20
-> On Wed, Apr 23, 2014 at 10:06:12PM +0300, =
-=D0=9F=D0=BB=D0=B0=D0=BC=D0=B5=D0=BD =
-=D0=9F=D0=B5=D1=82=D1=80=D0=BE=D0=B2 wrote:
-> > Just to clarify - I am using a monolithic kernel built from source, =
-and it has all
-> the stuff it needs to support built-in, and then some. And no modules.
-> > The sources I'm using are the vanilla kernels from Linus and Greg KH
-> downloaded from kernel.org.
->=20
-> Ok.
->=20
-> > Check out the attached config I am using - it=E2=80=99s a kernel I'm =
-running on one
-> server and a couple of virtual machines.
->=20
-> That's the working .config.
-> I suggest you diff that one with the new one you have for 3.14
->=20
-> > Until now - copying said config and doing a "make oldconfig" or =
-"make
-> olddefconfig" and compiling-then-booting worked fine.
->=20
-> This should indeed work, this is what I do too.
->=20
-> So now, we're kind of guessing. To save us all time, could you capture =
-a serial
-> console boot from the running 3.13 and then the failing 3.14.
+Why doesn't the existing properties feature (3.14) work for you?
 
-Well, for the details - see for example here:
-https://bugzilla.kernel.org/attachment.cgi?id=3D133111
-how does a 3.14.1 built the way described earlier fails.
+Example:
 
-And for that matter - see the whole bugzilla bug entry - I went on and =
-bisected this, using the linux-stable git tree, and after that landed me =
-on the commit that introduces some "shiny new btrfs feature" for 3.14 - =
-I decided my git bisection has gone wrong. And because I reported it on =
-April 17-th and since then there has been no activity on the bugzilla =
-entry besides me updating it - I posted my problem here, for more eyes =
-to see.
+$ mkfs.btrfs -f /dev/sdd
+$ mount /dev/sdd /mnt/sdd
 
->=20
-> My guess is that if you diff both you'll likely find what went wrong, =
-but if not
-> you can post here.
+$ btrfs subvolume create /mnt/sdd/topsubvol
+$ btrfs subvolume create /mnt/sdd/topsubvol/child
 
-See the result of "diff config-v3.14.1-mix64 config-v3.13.11-mix64" in =
-the attached file.
+$ btrfs property set /mnt/sdd/topsubvol ro true
 
->=20
-> As for the btrfs FS format, it has not changed in a way that new =
-kernels
-> wouldn't be able to mount an FS from a year ago or more.
+$ touch /mnt/sdd/topsubvol/file
+$ touch: cannot touch ‘/mnt/sdd/topsubvol/file’: Read-only file system
 
-Good to know! Thanks!
+$ touch /mnt/sdd/topsubvol/child/file
 
->=20
-> Marc
----------------------------------
-Plamen Petrov
+The property set/get just uses the ioctls BTRFS_IOC_SUBVOL_SETFLAGS
+and BTRFS_IOC_SUBVOL_GETFLAGS.
 
-------=_NextPart_000_0025_01CF5F44.A4DA79B0
-Content-Type: text/plain;
-	name="diff-3.14.1-to-3.13.11.txt"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
-	filename="diff-3.14.1-to-3.13.11.txt"
+thanks
 
- diff config-v3.14.1-mix64 config-v3.13.11-mix64=0A=
-3c3=0A=
-< # Linux/x86 3.14.1 Kernel Configuration=0A=
----=0A=
-> # Linux/x86 3.13.11 Kernel Configuration=0A=
-155a156=0A=
-> # CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set=0A=
-230,234d230=0A=
-< CONFIG_HAVE_CC_STACKPROTECTOR=3Dy=0A=
-< # CONFIG_CC_STACKPROTECTOR is not set=0A=
-< CONFIG_CC_STACKPROTECTOR_NONE=3Dy=0A=
-< # CONFIG_CC_STACKPROTECTOR_REGULAR is not set=0A=
-< # CONFIG_CC_STACKPROTECTOR_STRONG is not set=0A=
-309d304=0A=
-< # CONFIG_XEN_PVH is not set=0A=
-358a354=0A=
-> CONFIG_MICROCODE_INTEL_LIB=3Dy=0A=
-407d402=0A=
-< # CONFIG_ZSMALLOC is not set=0A=
-419a415=0A=
-> # CONFIG_CC_STACKPROTECTOR is not set=0A=
-430d425=0A=
-< # CONFIG_RANDOMIZE_BASE is not set=0A=
-762,763d756=0A=
-< # CONFIG_NET_SCH_HHF is not set=0A=
-< # CONFIG_NET_SCH_PIE is not set=0A=
-794,795c787=0A=
-< # CONFIG_CGROUP_NET_PRIO is not set=0A=
-< # CONFIG_CGROUP_NET_CLASSID is not set=0A=
----=0A=
-> # CONFIG_NETPRIO_CGROUP is not set=0A=
-944d935=0A=
-< # CONFIG_GENWQE is not set=0A=
-997a989=0A=
-> # CONFIG_SCSI_AIC7XXX_OLD is not set=0A=
-1158d1149=0A=
-< CONFIG_DM_BUFIO=3Dy=0A=
-1256d1246=0A=
-< # CONFIG_I40EVF is not set=0A=
-1489d1478=0A=
-< CONFIG_ARCH_MIGHT_HAVE_PC_SERIO=3Dy=0A=
-1608d1596=0A=
-< # CONFIG_I2C_DESIGNWARE_PLATFORM is not set=0A=
-1622d1609=0A=
-< # CONFIG_I2C_ROBOTFUZZ_OSIF is not set=0A=
-1807a1795=0A=
-> # CONFIG_CPU_THERMAL is not set=0A=
-1811d1798=0A=
-< # CONFIG_ACPI_INT3403_THERMAL is not set=0A=
-1851d1837=0A=
-< # CONFIG_MFD_MAX14577 is not set=0A=
-1872d1857=0A=
-< # CONFIG_MFD_LP3943 is not set=0A=
-1904d1888=0A=
-< CONFIG_INTEL_GTT=3Dy=0A=
-1928d1911=0A=
-< # CONFIG_DRM_I915_UMS is not set=0A=
-1940d1922=0A=
-< # CONFIG_DRM_BOCHS is not set=0A=
-1978d1959=0A=
-< # CONFIG_FB_OPENCORES is not set=0A=
-2080a2062=0A=
-> # CONFIG_HID_LOGITECH_DJ is not set=0A=
-2184d2165=0A=
-< # CONFIG_USB_MUSB_HDRC is not set=0A=
-2186d2166=0A=
-< # CONFIG_USB_DWC2 is not set=0A=
-2225d2204=0A=
-< # CONFIG_USB_OTG_FSM is not set=0A=
-2269d2247=0A=
-< # CONFIG_RTC_DRV_ISL12057 is not set=0A=
-2403d2380=0A=
-< CONFIG_DMI_SCAN_MACHINE_NON_EFI_FALLBACK=3Dy=0A=
-2450a2428=0A=
-> CONFIG_GENERIC_ACL=3Dy=0A=
-2604d2581=0A=
-< CONFIG_PANIC_TIMEOUT=3D0=0A=
 
-------=_NextPart_000_0025_01CF5F44.A4DA79B0--
+>
+> Signed-off-by: Ajesh JS <ajesh.js@hp.com>
+> Reviewed-by: Liverance Fletcher <fletch@hp.com>; Clemenceau, <Matthieu matthieu.clemenceau@hp.com>
+> "-------------------------------------------------------------------------"
+> diff -rup linux-3.13.6/fs/btrfs/ioctl.c linux-3.13.6_btrfs/fs/btrfs/ioctl.c
+> --- linux-3.13.6/fs/btrfs/ioctl.c       2014-03-07 11:37:02.000000000 +0530
+> +++ linux-3.13.6_btrfs/fs/btrfs/ioctl.c 2014-03-19 14:25:28.375139699 +0530
+> @@ -1636,6 +1636,68 @@ out:
+>         return ret;
+>  }
+>
+> +static noinline int btrfs_ioctl_subvol_modify(struct file *file,
+> +                                               void __user *arg)
+> +{
+> +       struct btrfs_ioctl_vol_args_v2 *vol_args;
+> +       struct inode *inode = file_inode(file);
+> +       struct btrfs_root *root = BTRFS_I(inode)->root;
+> +       struct btrfs_trans_handle *trans;
+> +       u64 root_flags;
+> +       u64 flags;
+> +       int ret = 0;
+> +
+> +       ret = mnt_want_write_file(file);
+> +       if (ret)
+> +               goto out;
+> +
+> +       if (btrfs_ino(inode) != BTRFS_FIRST_FREE_OBJECTID) {
+> +               ret = -EINVAL;
+> +               goto out_drop_write;
+> +       }
+> +       vol_args = memdup_user(arg, sizeof(*vol_args));
+> +       if (IS_ERR(vol_args))
+> +               goto out_drop_write;
+> +       vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
+> +       flags = vol_args->flags;
+> +       if (!inode_owner_or_capable(inode)) {
+> +               ret = -EACCES;
+> +               goto out_drop_write;
+> +       }
+> +
+> +       down_write(&root->fs_info->subvol_sem);
+> +       root_flags = btrfs_root_flags(&root->root_item);
+> +
+> +       if (flags & BTRFS_SUBVOL_RDONLY) {
+> +               btrfs_set_root_flags(&root->root_item,
+> +                                       root_flags | BTRFS_ROOT_SUBVOL_RDONLY);
+> +               printk(KERN_INFO "Setting %s to ro\n", vol_args->name);
+> +       } else {
+> +               btrfs_set_root_flags(&root->root_item,
+> +                                       root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
+> +               printk(KERN_INFO "Setting %s to rw\n", vol_args->name);
+> +       }
+> +
+> +       trans = btrfs_start_transaction(root, 1);
+> +       if (IS_ERR(trans)) {
+> +               ret = PTR_ERR(trans);
+> +               goto out_reset;
+> +       }
+> +
+> +       ret = btrfs_update_root(trans, root->fs_info->tree_root,
+> +                                       &root->root_key, &root->root_item);
+> +       btrfs_commit_transaction(trans, root);
+> +
+> +out_reset:
+> +       if (ret)
+> +               btrfs_set_root_flags(&root->root_item, root_flags);
+> +       up_write(&root->fs_info->subvol_sem);
+> +out_drop_write:
+> +       mnt_drop_write_file(file);
+> +out:
+> +       return ret;
+> +}
+> +
+>  static noinline int btrfs_ioctl_subvol_getflags(struct file *file,
+>                                                 void __user *arg)
+>  {
+> @@ -4509,6 +4571,8 @@ long btrfs_ioctl(struct file *file, unsi
+>                 return btrfs_ioctl_snap_create(file, argp, 1);
+>         case BTRFS_IOC_SUBVOL_CREATE_V2:
+>                 return btrfs_ioctl_snap_create_v2(file, argp, 1);
+> +       case BTRFS_IOC_SUBVOL_MODIFY:
+> +               return btrfs_ioctl_subvol_modify(file, argp);
+>         case BTRFS_IOC_SNAP_DESTROY:
+>                 return btrfs_ioctl_snap_destroy(file, argp);
+>         case BTRFS_IOC_SUBVOL_GETFLAGS:
+> diff -rup linux-3.13.6/include/uapi/linux/btrfs.h linux-3.13.6_btrfs/include/uapi/linux/btrfs.h
+> --- linux-3.13.6/include/uapi/linux/btrfs.h     2014-03-07 11:37:02.000000000 +0530
+> +++ linux-3.13.6_btrfs/include/uapi/linux/btrfs.h       2014-03-19 15:34:30.648255239 +0530
+> @@ -606,5 +606,7 @@ static inline char *btrfs_err_str(enum b
+>                                     struct btrfs_ioctl_dev_replace_args)
+>  #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+>                                          struct btrfs_ioctl_same_args)
+> +#define BTRFS_IOC_SUBVOL_MODIFY _IOW(BTRFS_IOCTL_MAGIC, 55, \
+> +                                  struct btrfs_ioctl_vol_args_v2)
+>
+>  #endif /* _UAPI_LINUX_BTRFS_H */
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

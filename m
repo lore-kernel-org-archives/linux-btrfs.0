@@ -1,36 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:52567 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752148AbaDWQep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 12:34:45 -0400
-Message-ID: <5357EBA2.7030605@gmx.net>
-Date: Wed, 23 Apr 2014 18:34:42 +0200
-From: Marcel Partap <mpartap@gmx.net>
+Received: from sub5.mail.dreamhost.com ([208.113.200.129]:54548 "EHLO
+	homiemail-a46.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753696AbaDWRY5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 13:24:57 -0400
+Received: from homiemail-a46.g.dreamhost.com (localhost [127.0.0.1])
+	by homiemail-a46.g.dreamhost.com (Postfix) with ESMTP id 4C3A53E4073
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 10:24:57 -0700 (PDT)
+Received: from bheem.localnet (unknown [49.248.64.37])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: ghodechhap@ghodechhap.net)
+	by homiemail-a46.g.dreamhost.com (Postfix) with ESMTPSA id DAAE13E406E
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 10:24:56 -0700 (PDT)
+From: Shridhar Daithankar <ghodechhap@ghodechhap.net>
+To: linux-btrfs@vger.kernel.org
+Subject: inode cache rebuild problem
+Date: Wed, 23 Apr 2014 23:07:13 +0630
+Message-ID: <2497757.A2A0fxBM0J@bheem>
 MIME-Version: 1.0
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: How to view transaction log chronologically, human-readable?
-References: <53113626.3060706@gmx.net>	<5322E39C.3030802@gmx.net>	<5352D26A.70601@gmx.net> <CAKcLGm9Ng4J2rGsC_JUpG+A6Q5bR81kSD8zBAONjkrqsLuUyWQ@mail.gmail.com>
-In-Reply-To: <CAKcLGm9Ng4J2rGsC_JUpG+A6Q5bR81kSD8zBAONjkrqsLuUyWQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I am not a "dev", but since BTRFS utilizes a COW (Copy On Write)
-> architecture, it doesn't keep a journal or history of transactions
-> that can be unwound.
-Ok, thanks for making that clear, I wasn't aware of that.
-But shouldn't the chain of recent root trees kinda allow similar
-functionality?
+Hello,
 
-> It sounds like you've effectively tried this manually, but here's a
-> link to an btrfs undelete script that also makes use of
-> btrfs-find-root and 'btrfs restore':
-Actually I was using that script as a starting point.. Unfortunately,
-the files I was looking for were nowhere to be found..
->From a journal-type functionality I was hoping for a way to actually see
-the most recent file system actions..
-Is there no hope to recreate that information from the roots
-btrfs-find-root comes up with?
+I have a desktop system with 2 disks, all btrfs, single partition. All of 
+these partitions had 
+space_cache,inode_cache enabled.
 
-#Regards
+Linux 3.14 has broken resume on my desktop, hence I need to shutdown and 
+restart the 
+machine every time. 
+
+But even on clean reboot, inode_cache was constantly being rebuilt on each 
+boot. It 
+caused kdm/X to timeout, even getty weren't spawned. I had to reboot it with 
+ctrl-alt-delete, 
+just to make it usable again. 2 out of 3 times, I had to reboot more than 
+once, to make it 
+usable.
+
+While the disk was constantly grinding in the boot process, I ssh'ed into it 
+from another 
+machine and observed the inode cache overhead.
+
+Hence I disabled both the caches on all the partition(yes, I know, space_cache 
+will stick 
+around), and the machine is lot more snappier and responsive than ever before.
+
+I am running archlinux with 3.14.1 kernel.
+
+Thanks,
+-- 
+Regards
+ Shridhar

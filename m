@@ -1,92 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f181.google.com ([209.85.128.181]:59090 "EHLO
-	mail-ve0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753990AbaDWVEL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 17:04:11 -0400
-Received: by mail-ve0-f181.google.com with SMTP id oy12so1876613veb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 14:04:10 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:42365 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751178AbaDWV64 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 17:58:56 -0400
+Date: Wed, 23 Apr 2014 23:58:52 +0200
+From: Michal Hocko <mhocko@suse.cz>
+To: Richard Davies <richard@arachsys.com>
+Cc: cgroups@vger.kernel.org, linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        Vladimir Davydov <vdavydov@parallels.com>
+Subject: Re: Kernel crash triggered by dd to file with memcg, worst on btrfs
+Message-ID: <20140423215852.GA6651@dhcp22.suse.cz>
+References: <20140416174210.GA11486@alpha.arachsys.com>
 MIME-Version: 1.0
-Date: Wed, 23 Apr 2014 17:04:10 -0400
-Message-ID: <CACZaor2-NMo2PeZ=pO0ygz=VjE4JDoORp4Np8unVGd3buwKBxw@mail.gmail.com>
-Subject: raid6, disks of different sizes, ENOSPC errors despite having plenty
- of space
-From: Sergey Ivanyuk <modemch@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140416174210.GA11486@alpha.arachsys.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+[CCing Vladimir]
 
-I have a filesystem that I've converted to raid6 from raid1, on 4 drives (I
-have another copy of the data):
+On Wed 16-04-14 18:42:10, Richard Davies wrote:
+> Hi all,
+> 
+> I have a test case in which I can often crash an entire machine by running
+> dd to a file with a memcg with relatively generous limits. This is
+> simplified from real world problems with heavy disk i/o inside containers.
+> 
+> The crashes are easy to trigger when dding to create a file on btrfs. On
+> ext3, typically there is just an error in the kernel log, although
+> occasionally it also crashes.
+> 
+> I'm not a kernel developer, but I'm happy to help with any further debugging
+> or try patches.
+> 
+> [I have also just reported a different but similar bug with untar in a memcg
+> http://marc.info/?l=linux-mm&m=139766321822891 That one is not btrfs-linked]
+> 
+> 
+> To replicate on Linux 3.14.0, run the following 8 commands:
+> 
+> # mkdir -p /sys/fs/cgroup/test/
+> # cat /sys/fs/cgroup/cpuset.cpus > /sys/fs/cgroup/test/cpuset.cpus
+> # cat /sys/fs/cgroup/cpuset.mems > /sys/fs/cgroup/test/cpuset.mems
+> # echo $((1<<30)) >/sys/fs/cgroup/test/memory.limit_in_bytes
+> # echo $((1<<30)) >/sys/fs/cgroup/test/memory.memsw.limit_in_bytes
+> # echo $((1<<28)) >/sys/fs/cgroup/test/memory.kmem.limit_in_bytes
 
-        Total devices 4 FS bytes used 924.64GiB
-        devid    1 size 1.82TiB used 474.00GiB path /dev/sdd
-        devid    2 size 465.76GiB used 465.76GiB path /dev/sda
-        devid    3 size 465.76GiB used 465.76GiB path /dev/sdb
-        devid    4 size 465.76GiB used 465.73GiB path /dev/sdc
+Does this happen even if no kmem limit is specified?
+The kmem limit would explain allocation failures for ext3 logged bellow
+but I would be interested about the "Thread overran stack, or stack
+corrupted" message reported for btrfs. The stack doesn't seem very deep
+there. I would expect some issues in the writeback path during the limit
+reclaim but this looks quite innocent. Rulling out kmem accounting would
+be a good first step though . (I am keepinng the full email for Vladimir)
 
-Data, RAID6: total=924.00GiB, used=923.42GiB
-System, RAID1: total=32.00MiB, used=208.00KiB
-Metadata, RAID1: total=1.70GiB, used=1.28GiB
-Metadata, DUP: total=384.00MiB, used=252.13MiB
-unknown, single: total=512.00MiB, used=0.00
+> # echo $$ > /sys/fs/cgroup/test/tasks
+> # dd if=/dev/zero of=./crashme bs=2M
+> 
+> and leave until several GB of data have been written.
+> 
+> When running into a btrfs filesystem, this dd crashes the entire machine
+> about 50% of the time for me, generating a console log as copied below. If
+> the initial dd is running smoothly, I can often get it to crash by stopping
+> the dd with ctrl-c and starting it again with a different output file,
+> perhaps repeating this a few times.
+> 
+> When running into an ext3 filesystem, this dd typically doesn't crash the
+> machine but just output errors in the kernel log as copied below.
+> Occasionally it will still crash.
+> 
+> 
+> I am happy to help with extra information on kernel configuration, but I
+> hope that the above is sufficient for others to replicate. I'm also happy to
+> try suggestions and patches.
+> 
+> Thanks in advance for your help,
+> 
+> Richard.
+> 
+> 
+> Ext3 kernel error log
+> =====================
+> 
+> 17:20:05 kernel: SLUB: Unable to allocate memory on node -1 (gfp=0x20)
+> 17:20:05 kernel:  cache: ext4_extent_status(2:test), object size: 40, buffer size: 40, default order: 0, min order: 0
+> 17:20:05 kernel:  node 0: slabs: 375, objs: 38250, free: 0
+> 17:20:05 kernel:  node 1: slabs: 128, objs: 13056, free: 0
+> (many times)
 
+This looks like the kmem limit has been reached and all the further
+allocation fails.
 
-Recent btrfs-progs built from source, kernel 3.15.0-rc2 on armv7l. Despite
-having plenty of space left on the larger drive, attempting to copy more
-data onto the filesystem results in a kworker process pegged at 100% CPU
-for a very long time (10s of minutes), at which point the writes proceed
-for some time, and the process repeats until the eventual "No space left on
-device" error. Balancing fails with the same error, even if attempting to
-convert back to raid1.
+> Btrfs kernel console crash log
+> ==============================
+> 
+> BUG: unable to handle kernel paging request at fffffffe36a55230
+> IP: [<ffffffff810f5055>] cpuacct_charge+0x35/0x58
+> PGD 1b5d067 PUD 0
+> Thread overran stack, or stack corrupted
 
-I realize that this likely has something to do with the disparity between
-device sizes, and per the wiki a fixed-width stripe may help, though I'm
-not sure if it's possible to change the stripe width in my situation, since
-I can't rebalance. Is there anything I can do to get this filesystem back
-to writable state?
+This is really unexpected. Especially when the stack dumped bellow is
+not a usual suspect. This is a simple interrupt handler which handles
+hrtimer and this shouldn't overflow the stack...
 
-Also, here's a stack trace for the stuck kworker process, which appears to
-be a bug since it does this for a very long time:
+> Oops: 0000 [#1] PREEMPT SMP
+> Modules linked in:
+> CPU: 6 PID: 5729 Comm: dd Not tainted 3.14.0-elastic #1
+> Hardware name: Supermicro H8DMT-IBX/H8DMT-IBX, BIOS 080014  10/17/2009
+> task: ffff88040a6fdac0 ti: ffff8800d69cc000 task.ti: ffff8800d69cc000
+> RIP: 0010:[<ffffffff810f5055>]  [<ffffffff810f5055>] cpuacct_charge+0x35/0x58
+> RSP: 0018:ffff880827d03d88  EFLAGS: 00010002
+> RAX: 000060f7d80032d0 RBX: ffff88040a6fdac0 RCX: ffffffffd69cc148
+> RDX: ffff88081191a180 RSI: 00000000000ebb99 RDI: ffff88040a6fdac0
+> RBP: ffff880827d03da8 R08: 0000000000000000 R09: ffff880827ffc348
+> R10: ffff880827ffc2a0 R11: ffff880827ffc340 R12: ffffffffd69cc148
+> R13: 00000000000ebb99 R14: fffffffffffebb99 R15: ffff88040a6fdac0
+> FS:  00007f508b54e6f0(0000) GS:ffff880827d00000(0000) knlGS:0000000000000000
+> CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> CR2: fffffffe36a55230 CR3: 000000080e9d2000 CR4: 00000000000007e0
+> Stack:
+>  0000000000000000 ffff88040a6fdac0 ffff880810fe2800 00000000000ebb99
+>  ffff880827d03dd8 ffffffff810ebbb3 ffff88040a6fdb28 ffff880810fe2800
+>  ffff880827d11bc0 0000000000000000 ffff880827d03e28 ffffffff810eeaaf
+> Call Trace:
+>  <IRQ>
+>  [<ffffffff810ebbb3>] update_curr+0xc2/0x11e
+>  [<ffffffff810eeaaf>] task_tick_fair+0x3d/0x631
+>  [<ffffffff810e5bb7>] scheduler_tick+0x57/0xba
+>  [<ffffffff81108eaf>] ? tick_nohz_handler+0xcf/0xcf
+>  [<ffffffff810cb73d>] update_process_times+0x55/0x66
+>  [<ffffffff81108f2b>] tick_sched_timer+0x7c/0x9b
+>  [<ffffffff810dd0d2>] __run_hrtimer+0x57/0xcc
+>  [<ffffffff810dd4c7>] hrtimer_interrupt+0xd0/0x1db
+>  [<ffffffff810e761b>] ? __vtime_account_system+0x2d/0x31
+>  [<ffffffff8105f8c1>] local_apic_timer_interrupt+0x53/0x58
+>  [<ffffffff81060475>] smp_apic_timer_interrupt+0x3e/0x51
+>  [<ffffffff8186299d>] apic_timer_interrupt+0x6d/0x80
+>  <EOI>
+> Code: 54 53 48 89 fb 48 83 ec 08 48 8b 47 08 4c 63 60 18 e8 84 8c 00 00 48 8b 83 a0 06 00 00 4c 89 e1 48 8b 50 48 48 8b 82 80 00 00 00 <48> 03 04 cd f0 47 bf 81 4c 01 28 48 8b 52 40 48 85 d2 75 e5 e8
+> RIP  [<ffffffff810f5055>] cpuacct_charge+0x35/0x58
+>  RSP <ffff880827d03d88>
+> CR2: fffffffe36a55230
+> ---[ end trace b449af50c3a0711c ]---
+> Kernel panic - not syncing: Fatal exception in interrupt
+> Kernel Offset: 0x0 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffff9fffffff)
+> --
+> To unsubscribe from this list: send the line "unsubscribe cgroups" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Exception stack(0xab4699c8 to 0xab469a10)
-99c0:                   aec7c870 00000000 00000000 aec7c841 08000000
-aec7c870
-99e0: ab469ad0 bd51e880 00003000 00000000 0006c000 00000000 00000005
-ab469a10
-9a00: 80299c8c 80310098 200e0013 ffffffff
-[<80011e80>] (__irq_svc) from [<80310098>] (rb_next+0x14/0x5c)
-[<80310098>] (rb_next) from [<80299c8c>]
-(btrfs_find_space_for_alloc+0x138/0x344)
-[<80299c8c>] (btrfs_find_space_for_alloc) from [<80240020>]
-(find_free_extent+0x378/0xabc)
-[<80240020>] (find_free_extent) from [<80240840>]
-(btrfs_reserve_extent+0xdc/0x164)
-[<80240840>] (btrfs_reserve_extent) from [<8025aef4>]
-(cow_file_range+0x17c/0x5bc)
-[<8025aef4>] (cow_file_range) from [<8025c1e0>]
-(run_delalloc_range+0x34c/0x380)
-[<8025c1e0>] (run_delalloc_range) from [<80274d6c>]
-(__extent_writepage+0x708/0x940)
-[<80274d6c>] (__extent_writepage) from [<802754b4>]
-(extent_writepages+0x238/0x368)
-[<802754b4>] (extent_writepages) from [<8009b190>] (do_writepages+0x24/0x38)
-[<8009b190>] (do_writepages) from [<800ef59c>]
-(__writeback_single_inode+0x28/0x110)
-[<800ef59c>] (__writeback_single_inode) from [<800f04c8>]
-(writeback_sb_inodes+0x184/0x38c)
-[<800f04c8>] (writeback_sb_inodes) from [<800f0740>]
-(__writeback_inodes_wb+0x70/0xac)
-[<800f0740>] (__writeback_inodes_wb) from [<800f0978>]
-(wb_writeback+0x1fc/0x20c)
-[<800f0978>] (wb_writeback) from [<800f0b78>]
-(bdi_writeback_workfn+0x144/0x338)
-[<800f0b78>] (bdi_writeback_workfn) from [<80037cfc>]
-(process_one_work+0x110/0x368)
-[<80037cfc>] (process_one_work) from [<800383c8>]
-(worker_thread+0x138/0x3e8)
-[<800383c8>] (worker_thread) from [<8003de90>] (kthread+0xcc/0xe8)
-[<8003de90>] (kthread) from [<8000e238>] (ret_from_fork+0x14/0x3c)
+-- 
+Michal Hocko
+SUSE Labs

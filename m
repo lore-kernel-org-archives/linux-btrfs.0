@@ -1,39 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-in-04.arcor-online.net ([151.189.21.44]:53999 "EHLO
-	mail-in-04.arcor-online.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1757863AbaDWTmF (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:60231 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752767AbaDWUZo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 15:42:05 -0400
-Message-ID: <53580794.3050001@arcor.de>
-Date: Wed, 23 Apr 2014 20:33:56 +0200
-From: Martin Wilck <mwilck@arcor.de>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Lost /home subvolume after btrfs crash
-References: <534E8B6A.9060209@arcor.de> <7C3AD7C7-44A4-45F3-9634-3E92618DCD15@colorremedies.com>
-In-Reply-To: <7C3AD7C7-44A4-45F3-9634-3E92618DCD15@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	Wed, 23 Apr 2014 16:25:44 -0400
+Received: by mail-ig0-f179.google.com with SMTP id hl10so55652igb.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 13:25:44 -0700 (PDT)
+Message-ID: <1398284721.20580.7.camel@sasami>
+Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or
+ newer?
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Wed, 23 Apr 2014 16:25:21 -0400
+In-Reply-To: <vifl2b-87g.ln1@hurikhan77.spdns.de>
+References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info>
+	 <vifl2b-87g.ln1@hurikhan77.spdns.de>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
+On Wed, 2014-04-23 at 21:06 +0200, Kai Krakow wrote:
+> Пламен Петров <plamen@petrovi.no-ip.info> schrieb:
+> 
+> I'm going with the module suggestion from Marc, too.
+> 
+> > /dev/sda2              /         btrfs     relatime,compress=zlib 0      0
+> 
+> This line looks kinda useless to me. The compress=zlib option won't be 
+> applied at boot and cannot be changed at runtime because AFAIR btrfs does 
+> not allow that yet.
 
-> OpenSUSE 12.3 is using kernel 3.7 which is also old for this sort of recovery attempt. Even openSUSE 13.1 is at 3.11.6 which might work in a bind, but if it doesn't, inevitably someone will suggest you use something even newer. 
+... My understanding is that the compress= option on btrfs *can* be
+changed at run time. After remounting with a compress= option, later
+writes will be done using the newly selected algorithm.
 
-Thanks for your reply, I appreciate it a lot.
+The compress= option is filesystem-wide, you cannot currently use
+different compress= options for different subvolumes. Mounting a
+subvolume with a different compress= option will change the compression
+algorithm for all mounted subvolumes on that filesystem.
 
-> Current stable is 3.14.1, I suggest giving 3.13 or 3.14 a shot at this with -o ro,recovery as a first step and see if it at least mounts.
+(Note that I wouldn't recommend zlib on most systems as a / filesystem -
+it's slow to decompress compared to lzo, so it will cause slower boots
+if your disk is reasonably fast.)
 
-I will. Note that with 12.3, which was the most recent media I had at
-hand at the time, the FS was actually mountable at first (-o
-ro,recovery). But there was no /home and later attempts to actually
-access data in other subvolumes failed with the messages in my debug
-material.
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
 
-> And an old kernel implies old btrfs-progs too, which is where the code for btrfsck and btrfs restore is contained. So that needs to be at least v 3.12. And hopefully you didn't use --repair with btrfsck yet.
-
-I did, but I made a block-level copy of the device before.
-
-Thanks again
-Martin

@@ -1,120 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from g9t1613g.houston.hp.com ([15.240.0.71]:58594 "EHLO
-	g9t1613g.houston.hp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755077AbaDWNaQ convert rfc822-to-8bit (ORCPT
+Received: from mail-ee0-f51.google.com ([74.125.83.51]:34450 "EHLO
+	mail-ee0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752402AbaDWPCZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 09:30:16 -0400
-From: "J S, Ajesh" <ajesh.js@hp.com>
-To: "clm@fb.com" <clm@fb.com>, "jbacik@fb.com" <jbacik@fb.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: [PATCH 001/001] btrfs: Mechanism to modify the permission of a
- subvolume
-Date: Wed, 23 Apr 2014 13:28:01 +0000
-Message-ID: <1C24A869E87C7B45BE3E2BB439AB8F8C0D13DAE0@G5W2738.americas.hpqcorp.net>
-Content-Type: text/plain; charset="us-ascii"
+	Wed, 23 Apr 2014 11:02:25 -0400
+Received: by mail-ee0-f51.google.com with SMTP id c13so880561eek.24
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Apr 2014 08:02:24 -0700 (PDT)
+Received: from [192.168.1.229] (188-194-184-29-dynip.superkabel.de. [188.194.184.29])
+        by mx.google.com with ESMTPSA id x45sm7002330eef.15.2014.04.23.08.02.22
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 23 Apr 2014 08:02:23 -0700 (PDT)
+Message-ID: <5357D5FC.2010301@gmail.com>
+Date: Wed, 23 Apr 2014 17:02:20 +0200
+From: Andreas Reis <andreas.reis@gmail.com>
 MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Bug: "corrupt leaf. slot offset bad": root subvolume unmountable,
+ "btrfs check" crashes
+References: <53554469.5070503@gmail.com> <53556DCC.3000108@gmail.com> <5356B1ED.8060608@gmail.com>
+In-Reply-To: <5356B1ED.8060608@gmail.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Ajesh JS <ajesh.js@hp.com>
+Ah. Thank you for the replies. I didn't get them as mails and spinics 
+didn't update the thread until yesterday.
 
-This patch provides a mechanism to modify the permission of a subvolume in a btrfs file system
-This helps to apply a policy of having read-write subvolume inside a read-only subvolume.
-One use case is to have the whole root file system as a read-only subvolume and have /etc as a read-write subvolume inside.
+So I take it that the recommended course of action is not to wait for 
+any more or less unlikely btrfs-progs fix, but to try --repair and be 
+ready to restore from backup, too. Darn, and that over what probably 
+doesn't amount to more than a few dozen KB. Wish I could simply replace 
+the single subvolume instead, but I suppose that's one of btrfs's drawbacks.
 
-Signed-off-by: Ajesh JS <ajesh.js@hp.com>
-Reviewed-by: Liverance Fletcher <fletch@hp.com>; Clemenceau, <Matthieu matthieu.clemenceau@hp.com>
-"-------------------------------------------------------------------------"
-diff -rup linux-3.13.6/fs/btrfs/ioctl.c linux-3.13.6_btrfs/fs/btrfs/ioctl.c
---- linux-3.13.6/fs/btrfs/ioctl.c	2014-03-07 11:37:02.000000000 +0530
-+++ linux-3.13.6_btrfs/fs/btrfs/ioctl.c	2014-03-19 14:25:28.375139699 +0530
-@@ -1636,6 +1636,68 @@ out:
- 	return ret;
- }
- 
-+static noinline int btrfs_ioctl_subvol_modify(struct file *file,
-+						void __user *arg)
-+{
-+	struct btrfs_ioctl_vol_args_v2 *vol_args;
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	u64 root_flags;
-+	u64 flags;
-+	int ret = 0;
-+
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		goto out;
-+
-+	if (btrfs_ino(inode) != BTRFS_FIRST_FREE_OBJECTID) {
-+		ret = -EINVAL;
-+		goto out_drop_write;
-+	}
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		goto out_drop_write;
-+	vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
-+	flags = vol_args->flags;
-+	if (!inode_owner_or_capable(inode)) {
-+		ret = -EACCES;
-+		goto out_drop_write;
-+	}
-+
-+	down_write(&root->fs_info->subvol_sem);
-+	root_flags = btrfs_root_flags(&root->root_item);
-+
-+	if (flags & BTRFS_SUBVOL_RDONLY) {
-+		btrfs_set_root_flags(&root->root_item,
-+					root_flags | BTRFS_ROOT_SUBVOL_RDONLY);
-+		printk(KERN_INFO "Setting %s to ro\n", vol_args->name);
-+	} else {
-+		btrfs_set_root_flags(&root->root_item,
-+					root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
-+		printk(KERN_INFO "Setting %s to rw\n", vol_args->name);
-+	}
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out_reset;
-+	}
-+
-+	ret = btrfs_update_root(trans, root->fs_info->tree_root,
-+					&root->root_key, &root->root_item);
-+	btrfs_commit_transaction(trans, root);
-+
-+out_reset:
-+	if (ret)
-+		btrfs_set_root_flags(&root->root_item, root_flags);
-+	up_write(&root->fs_info->subvol_sem);
-+out_drop_write:
-+	mnt_drop_write_file(file);
-+out:
-+	return ret;
-+}
-+
- static noinline int btrfs_ioctl_subvol_getflags(struct file *file,
- 						void __user *arg)
- {
-@@ -4509,6 +4571,8 @@ long btrfs_ioctl(struct file *file, unsi
- 		return btrfs_ioctl_snap_create(file, argp, 1);
- 	case BTRFS_IOC_SUBVOL_CREATE_V2:
- 		return btrfs_ioctl_snap_create_v2(file, argp, 1);
-+	case BTRFS_IOC_SUBVOL_MODIFY:
-+		return btrfs_ioctl_subvol_modify(file, argp);
- 	case BTRFS_IOC_SNAP_DESTROY:
- 		return btrfs_ioctl_snap_destroy(file, argp);
- 	case BTRFS_IOC_SUBVOL_GETFLAGS:
-diff -rup linux-3.13.6/include/uapi/linux/btrfs.h linux-3.13.6_btrfs/include/uapi/linux/btrfs.h
---- linux-3.13.6/include/uapi/linux/btrfs.h	2014-03-07 11:37:02.000000000 +0530
-+++ linux-3.13.6_btrfs/include/uapi/linux/btrfs.h	2014-03-19 15:34:30.648255239 +0530
-@@ -606,5 +606,7 @@ static inline char *btrfs_err_str(enum b
- 				    struct btrfs_ioctl_dev_replace_args)
- #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
- 					 struct btrfs_ioctl_same_args)
-+#define BTRFS_IOC_SUBVOL_MODIFY _IOW(BTRFS_IOCTL_MAGIC, 55, \
-+				   struct btrfs_ioctl_vol_args_v2)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
+I did a full partition backup some three weeks ago, so I'll have to 
+spend some hours to figure out what has changed since then, and how to 
+do incremental backups of it to different devices for the next time…
+
+I don't have the time atm though; it'll probably take at least a week 
+(unless the partition decides to die) to report back.
+
+As a side note, there was an ostensibly similar issue fixed in 2012: 
+https://bugzilla.novell.com/show_bug.cgi?id=760279 Guess that was a 
+different underlying issue, though.
+
+Duncan posted on Wed, 23 Apr 2014 02:55:36 +0000:
+
+ > Andreas Reis posted on Tue, 22 Apr 2014 20:16:13 +0200 as excerpted:
+ >
+ > > Same failure with btrfs-progs from integration-20140421 (apart from
+ > > the line number 1156).
+ > >
+ > > Can I get a bit of input on this? Is it safe to just ignore the
+ > > error for now (as I'm doing atm), ie. remount as rw to skip the
+ > > orphan cleanup?
+ >
+ > I explained orphans in my other reply.  Since they're simply not yet
+ > completed file deletions, it should be /relatively/ safe to continue
+ > ignoring and doing the manual remount rw, since that continues to
+ > kwork.

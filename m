@@ -1,38 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:40621 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752678AbaDXMzd (ORCPT
+Received: from pipebreaker.pl ([109.107.25.67]:57153 "EHLO
+	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752988AbaDXM7N (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 08:55:33 -0400
-Received: by mail-we0-f174.google.com with SMTP id w62so960235wes.33
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 05:55:32 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140424113956.GA5988@twin.jikos.cz>
+	Thu, 24 Apr 2014 08:59:13 -0400
+Date: Thu, 24 Apr 2014 14:52:51 +0200
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+To: Marc MERLIN <marc@merlins.org>
+Subject: Re: Which companies are using Btrfs in production?
+Message-ID: <20140424125251.GA6571@mother.pipebreaker.pl>
 References: <20140424011834.GN26949@merlins.org>
-	<20140424113956.GA5988@twin.jikos.cz>
-Date: Thu, 24 Apr 2014 19:55:31 +0700
-Message-ID: <CAG1y0scEBgMJX-Q+z1t7aX+vmHLKzt5y7rUKz2U3+MwOMHet=g@mail.gmail.com>
-Subject: Re: Which companies contribute to Btrfs?
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: dsterba@suse.cz, Marc MERLIN <marc@merlins.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+ <20140424011952.GO26949@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140424011952.GO26949@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 24, 2014 at 6:39 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Apr 23, 2014 at 06:18:34PM -0700, Marc MERLIN wrote:
->> I writing slides about btrfs for an upcoming talk (at linuxcon) and I was
->> trying to gather a list of companies that contribute code to btrfs.
->
-> https://btrfs.wiki.kernel.org/index.php/Main_Page
->
-> "[...] Jointly developed at Oracle, Red Hat, Fujitsu, Intel, SUSE, STRATO [...]"
->
->> Are there other companies I missed?
+On Wed, Apr 23, 2014 at 06:19:52PM -0700, Marc MERLIN wrote:
+> Oh while we're at it, are there companies that can say they are using btrfs
+> in production?
 
-
-The page now says "... Jointly developed at Facebook, Oracle, Red Hat .... " :D
+  Jolla is selling smartphones with btrfs.
 
 -- 
-Fajar
+Tomasz Torcz            There exists no separation between gods and men:
+xmpp: zdzichubg@chrome.pl   one blends softly casual into the other.
+

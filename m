@@ -1,29 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pipebreaker.pl ([109.107.25.67]:57153 "EHLO
-	mother.pipebreaker.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752988AbaDXM7N (ORCPT
+Received: from mail-yk0-f175.google.com ([209.85.160.175]:62473 "EHLO
+	mail-yk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753344AbaDXNed (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 08:59:13 -0400
-Date: Thu, 24 Apr 2014 14:52:51 +0200
-From: Tomasz Torcz <tomek@pipebreaker.pl>
-To: Marc MERLIN <marc@merlins.org>
-Subject: Re: Which companies are using Btrfs in production?
-Message-ID: <20140424125251.GA6571@mother.pipebreaker.pl>
-References: <20140424011834.GN26949@merlins.org>
- <20140424011952.GO26949@merlins.org>
+	Thu, 24 Apr 2014 09:34:33 -0400
+Received: by mail-yk0-f175.google.com with SMTP id 131so2040124ykp.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 06:34:32 -0700 (PDT)
+Message-ID: <535912E5.7080106@gmail.com>
+Date: Thu, 24 Apr 2014 06:34:29 -0700
+From: Daniel Lee <longinus00@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Which companies are using Btrfs in production?
+References: <20140424011834.GN26949@merlins.org> <20140424011952.GO26949@merlins.org>
 In-Reply-To: <20140424011952.GO26949@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 23, 2014 at 06:19:52PM -0700, Marc MERLIN wrote:
+On 04/23/2014 06:19 PM, Marc MERLIN wrote:
 > Oh while we're at it, are there companies that can say they are using btrfs
 > in production?
+>
+> Marc
+Netgear uses BTRFS as the filesystem in their refreshed ReadyNAS line.
+They apparently use Oracle's linux distro so I assume they're relying on
+them to do most of the heavy lifting as far as support BTRFS and
+backporting goes since they're still on 3.0! They also have raid5/6
+support so they are probably running BTRFS on top of md.
 
-  Jolla is selling smartphones with btrfs.
-
--- 
-Tomasz Torcz            There exists no separation between gods and men:
-xmpp: zdzichubg@chrome.pl   one blends softly casual into the other.
+http://www.netgear.com/images/BTRFS%20on%20ReadyNAS%20OS%206_9May1318-76105.pdf
 

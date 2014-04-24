@@ -1,156 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42964 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757068AbaDVPtD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Apr 2014 11:49:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 573A5ACF0
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Apr 2014 15:49:02 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs-progs: move arg_strtou64 to a separate file for library
-Date: Tue, 22 Apr 2014 17:49:01 +0200
-Message-Id: <1398181741-4505-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1398177433-27216-1-git-send-email-dsterba@suse.cz>
-References: <1398177433-27216-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:21762 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751451AbaDXDW3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 23:22:29 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3O3MEq6005664
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 11:22:14 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/3] Btrfs-progs: fsck: clear out log tree in repair mode
+Date: Thu, 24 Apr 2014 11:19:16 +0800
+Message-ID: <1398309558-29509-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Linking with libbtrfs fails because arg_strtou64 is not defined and we
-cannot just add utils.o to library objects because it's not
-library-clean.
+Repair mode will commit transaction which will make us
+fail to load log tree anymore.
 
-Reported-by: Arvin Schnell <aschnell@suse.com>
-Reported-by: Anton Farygin <rider@altlinux.org>
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Give a warning to common users, if they really want to
+coninue, we will clear out log tree.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
+ cmds-check.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
-v2: (thanks to Hugo)
-- added missing line from comment
-- fixed typo
-- reformated comment paragraphs
-
- Makefile    |  5 +++--
- utils-lib.c | 42 ++++++++++++++++++++++++++++++++++++++++++
- utils.c     | 33 ---------------------------------
- 3 files changed, 45 insertions(+), 35 deletions(-)
- create mode 100644 utils-lib.c
-
-diff --git a/Makefile b/Makefile
-index 51d53fadf5af..76565e8b2307 100644
---- a/Makefile
-+++ b/Makefile
-@@ -9,14 +9,15 @@ CFLAGS = -g -O1 -fno-strict-aliasing
- objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
- 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
--	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o
-+	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
-+	  utils-lib.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
- 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
- 	       cmds-property.o
- libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
--		   uuid-tree.o
-+		   uuid-tree.o utils-lib.o
- libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
- 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
- 	       extent_io.h ioctl.h ctree.h btrfsck.h
-diff --git a/utils-lib.c b/utils-lib.c
-new file mode 100644
-index 000000000000..9d53c6e5c710
---- /dev/null
-+++ b/utils-lib.c
-@@ -0,0 +1,42 @@
-+#define _GNU_SOURCE
-+
-+#include "kerncompat.h"
-+#include <unistd.h>
-+#include <stdlib.h>
-+#include <limits.h>
-+
-+#if BTRFS_FLAT_INCLUDES
-+#else
-+#endif /* BTRFS_FLAT_INCLUDES */
-+
-+/*
-+ * This function should be only used when parsing command arg, it won't return
-+ * error to its caller and rather exit directly just like usage().
-+ */
-+u64 arg_strtou64(const char *str)
-+{
-+	u64 value;
-+	char *ptr_parse_end = NULL;
-+
-+	value = strtoull(str, &ptr_parse_end, 0);
-+	if (ptr_parse_end && *ptr_parse_end != '\0') {
-+		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
-+			str);
-+		exit(1);
-+	}
-+
-+	/*
-+	 * if we pass a negative number to strtoull, it will return an
-+	 * unexpected number to us, so let's do the check ourselves.
-+	 */
-+	if (str[0] == '-') {
-+		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
-+			str);
-+		exit(1);
-+	}
-+	if (value == ULLONG_MAX) {
-+		fprintf(stderr, "ERROR: %s is too large.\n", str);
-+		exit(1);
-+	}
-+	return value;
-+}
-diff --git a/utils.c b/utils.c
-index 29953d9dd2a9..e130849c7bb5 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1538,39 +1538,6 @@ scan_again:
- 	return 0;
+diff --git a/cmds-check.c b/cmds-check.c
+index 93f9ae6..15806a4 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6615,6 +6615,22 @@ out:
+ 	return ret;
  }
  
--/*
-- * This function should be only used when parsing
-- * command arg, it won't return error to it's
-- * caller and rather exit directly just like usage().
-- */
--u64 arg_strtou64(const char *str)
--{
--	u64 value;
--	char *ptr_parse_end = NULL;
--
--	value = strtoull(str, &ptr_parse_end, 0);
--	if (ptr_parse_end && *ptr_parse_end != '\0') {
--		fprintf(stderr, "ERROR: %s is not a valid numeric value.\n",
--			str);
--		exit(1);
--	}
--	/*
--	 * if we pass a negative number to strtoull,
--	 * it will return an unexpected number to us,
--	 * so let's do the check ourselves.
--	 */
--	if (str[0] == '-') {
--		fprintf(stderr, "ERROR: %s: negative value is invalid.\n",
--			str);
--		exit(1);
--	}
--	if (value == ULLONG_MAX) {
--		fprintf(stderr, "ERROR: %s is too large.\n", str);
--		exit(1);
--	}
--	return value;
--}
--
- u64 parse_size(char *s)
- {
- 	int i;
++static int zero_log_tree(struct btrfs_root *root)
++{
++	struct btrfs_trans_handle *trans;
++	int ret;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		return ret;
++	}
++	btrfs_set_super_log_root(root->fs_info->super_copy, 0);
++	btrfs_set_super_log_root_level(root->fs_info->super_copy, 0);
++	ret = btrfs_commit_transaction(trans, root);
++	return ret;
++}
++
+ static struct option long_options[] = {
+ 	{ "super", 1, NULL, 's' },
+ 	{ "repair", 0, NULL, 0 },
+@@ -6719,6 +6735,23 @@ int cmd_check(int argc, char **argv)
+ 	}
+ 
+ 	root = info->fs_root;
++	/*
++	 * repair mode will force us to commit transaction which
++	 * will make us fail to load log tree when mounting.
++	 */
++	if (repair && btrfs_super_log_root(info->super_copy)) {
++		ret = ask_user("repair mode will force to clear out log tree, Are you sure?");
++		if (!ret) {
++			ret = 1;
++			goto close_out;
++		}
++		ret = zero_log_tree(root);
++		if (ret) {
++			fprintf(stderr, "fail to zero log tree\n");
++			goto close_out;
++		}
++	}
++
+ 	uuid_unparse(info->super_copy->fsid, uuidbuf);
+ 	printf("Checking filesystem on %s\nUUID: %s\n", argv[optind], uuidbuf);
+ 
 -- 
 1.9.0
 

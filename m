@@ -1,54 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:33479 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753344AbaDXNPt (ORCPT
+Received: from mail-wg0-f45.google.com ([74.125.82.45]:40837 "EHLO
+	mail-wg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753344AbaDXNPy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 09:15:49 -0400
-Received: by mail-wg0-f52.google.com with SMTP id b13so1037877wgh.35
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 06:15:48 -0700 (PDT)
+	Thu, 24 Apr 2014 09:15:54 -0400
+Received: by mail-wg0-f45.google.com with SMTP id l18so2191294wgh.28
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 06:15:53 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: use correct key when repeating search for extent item
-Date: Thu, 24 Apr 2014 15:15:28 +0100
-Message-Id: <1398348929-1827-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: correctly set profile flags on seqlock retry
+Date: Thu, 24 Apr 2014 15:15:29 +0100
+Message-Id: <1398348929-1827-2-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1398348929-1827-1-git-send-email-fdmanana@gmail.com>
+References: <1398348929-1827-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If skinny metadata is enabled and our first tree search fails to find a
-skinny extent item, we may repeat a tree search for a "fat" extent item
-(if the previous item in the leaf is not the "fat" extent we're looking
-for). However we were not setting the new key's objectid to the right
-value, as we previously used the same key variable to peek at the previous
-item in the leaf, which has a different objectid. So just set the right
-objectid to avoid modifying/deleting a wrong item if we repeat the tree
-search.
+If we had to retry on the profiles seqlock (due to a concurrent write), we
+would set bits on the input flags that corresponded both to the current
+profile and to previous values of the profile.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/extent-tree.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/extent-tree.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1306487..678cb35 100644
+index 678cb35..5590af9 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -1542,6 +1542,7 @@ again:
- 				ret = 0;
- 		}
- 		if (ret) {
-+			key.objectid = bytenr;
- 			key.type = BTRFS_EXTENT_ITEM_KEY;
- 			key.offset = num_bytes;
- 			btrfs_release_path(path);
-@@ -5719,6 +5720,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+@@ -3543,11 +3543,13 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
+ 	return extended_to_chunk(flags | tmp);
+ }
  
- 			if (ret > 0 && skinny_metadata) {
- 				skinny_metadata = false;
-+				key.objectid = bytenr;
- 				key.type = BTRFS_EXTENT_ITEM_KEY;
- 				key.offset = num_bytes;
- 				btrfs_release_path(path);
+-static u64 get_alloc_profile(struct btrfs_root *root, u64 flags)
++static u64 get_alloc_profile(struct btrfs_root *root, u64 orig_flags)
+ {
+ 	unsigned seq;
++	u64 flags;
+ 
+ 	do {
++		flags = orig_flags;
+ 		seq = read_seqbegin(&root->fs_info->profiles_lock);
+ 
+ 		if (flags & BTRFS_BLOCK_GROUP_DATA)
 -- 
 1.9.1
 

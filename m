@@ -1,31 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50432 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755969AbaDXLj6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 07:39:58 -0400
-Date: Thu, 24 Apr 2014 13:39:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Which companies contribute to Btrfs?
-Message-ID: <20140424113956.GA5988@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20140424011834.GN26949@merlins.org>
+Received: from minx.mdc-dayton.com ([70.62.41.4]:45908 "EHLO minx.ohiogt.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752870AbaDXMmn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Apr 2014 08:42:43 -0400
+Message-ID: <535904E0.5080608@ohiogt.com>
+Date: Thu, 24 Apr 2014 08:34:40 -0400
+From: "Austin S. Hemmelgarn" <ahemmelg@ohiogt.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140424011834.GN26949@merlins.org>
+To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
+Subject: Re: Which companies are using Btrfs in production?
+References: <20140424011834.GN26949@merlins.org> <20140424011952.GO26949@merlins.org>
+In-Reply-To: <20140424011952.GO26949@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 23, 2014 at 06:18:34PM -0700, Marc MERLIN wrote:
-> I writing slides about btrfs for an upcoming talk (at linuxcon) and I was
-> trying to gather a list of companies that contribute code to btrfs.
-
-https://btrfs.wiki.kernel.org/index.php/Main_Page
-
-"[...] Jointly developed at Oracle, Red Hat, Fujitsu, Intel, SUSE, STRATO [...]"
-
-> Are there other companies I missed?
-
-STRATO, the guys who wrote scrub, integrity checker, quotas, device stats,
-device-replace and portions of send/receive.
+On 2014-04-23 21:19, Marc MERLIN wrote:
+> Oh while we're at it, are there companies that can say they are using btrfs
+> in production?
+> 
+> Marc
+> 
+Ohio Gravure Technologies is currently preparing to use it on our next
+generation of production systems.

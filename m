@@ -1,29 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:40951 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752202AbaDXDXC convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Apr 2014 23:23:02 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:52986 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WdAFZ-003aMn-LI
-	for linux-btrfs@vger.kernel.org; Wed, 23 Apr 2014 21:23:01 -0600
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or newer?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info>
-Date: Wed, 23 Apr 2014 21:23:00 -0600
-Message-Id: <1B72A2CD-1F52-459C-B9AE-639B6937AC0F@colorremedies.com>
-References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from fw10a-lesia.wadns.net ([196.220.39.109]:3377 "EHLO
+	fw10a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750752AbaDXE2k (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Apr 2014 00:28:40 -0400
+Message-ID: <535892EE.6040301@swiftspirit.co.za>
+Date: Thu, 24 Apr 2014 06:28:30 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Robert White <rwhite@pobox.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Cycle of send/receive for backup/restore is incomplete...
+References: <53583F1E.7050603@pobox.com>
+In-Reply-To: <53583F1E.7050603@pobox.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It sounds like either a grub.cfg misconfiguration, or a failure to correctly build the initrd/initramfs. So I'd post the grub.cfg kernel command line for the boot entry that works and the entry that fails, for comparison.
+Replied inline:
 
-And then also check and see if whatever utility builds your initrd has been upgraded along with your kernel, maybe there's a bug/regression.
+On 2014/04/24 12:30 AM, Robert White wrote:
+> So the backup/restore system described using snapshots is incomplete 
+> because the final restore is a copy operation. As such, the act of 
+> restoring from the backup will require restarting the entire backup 
+> cycle because the copy operation will scramble the metadata 
+> consanguinity.
+>
+> The real choice is to restore by sending the snapshot back via send 
+> and receive so that all the UIDs and metadata continue to match up.
+>
+> But there's no way to "promote" the final snapshot to a non-snapshot 
+> subvolume identical to the one made by the original btrfs subvolume 
+> create operation.
 
-Chris Murphy
+btrfs doesn't differentiate snapshots and subvolumes. They're the same 
+first-class citizen. A snapshot is a subvolume that just happens to have 
+some data (automagically/naturally) deduplicated with another subvolume.
+
+> Consider a file system with __System as the default mount (e.g. btrfs 
+> subvolume create /__System). You make a snapshot (btrfs sub snap -r 
+> /__System /__System_BACKUP). Then you send the backup to another file 
+> system with send receive. Nothing new here.
+>
+> The thing is, if you want to restore from that backup, you'd 
+> send/receive /__System_BACKUP to the new/restore drive. But that 
+> snapshot is _forced_ to be read only. So then your only choice is to 
+> make a writable snapshot called /__System. At this point you have a 
+> tiny problem, the three drives aren't really the same.
+>
+> The __System and __System_BACKUP on the final drive are subvolumes of 
+> /, while on the original system / and /__System were full subvolumes.
+
+There's no such thing as a "full" subvolume. Again, they're all 
+first-class citizens. The "real" root of a btrfs is always treated as a 
+subvolume, as are the subvolumes inside it too. Just because other 
+subvolumes are contained therein it doesn't mean they're diminished 
+somehow. You cannot have multiple subvolumes *without* having them be a 
+"sub" volume of the real "root" subvolume.
+
+> It's dumb, it's a tiny difference, but it's annoying. There needs to 
+> be a way to promote /__System to a non-snapshot status.
+>
+> If you look at the output of "btrfs subvolume list -s /" on the 
+> various drives it's not possible to end up with the exact same system 
+> as the original.
+
+ From a user application perspective, the system *is* identical to the 
+original. That's the important part.
+
+If you want the disk to be identical bit for bit then you want a 
+different backup system entirely, one that backs up the hard disk, not 
+the files/content.
+
+On the other hand if you just want to have all your snapshots restored 
+as well, that's not too difficult. Its pointless from most perspectives 
+- but not difficult.
+
+> There needs to be either an option to btrfs subvolume create that 
+> takes a snapshot as an argument to base the new device on, or an 
+> option to receive that will make a read-write non-snapshot subvolume.
+
+This feature already exists. This is a very important aspect of how 
+snapshots work with send / receive and why it makes things very 
+efficient. They work just as well for a restore as they do for a backup. 
+The flag you are looking for is "-p" for "parent", which you should 
+already be using for the backups in the first place:
+
+ From backup host:
+$ btrfs send -p /backup/path/yesterday /backup/path/last_backup | 
+<netcat or whatever you choose>
+
+ From restored host:
+$ <netcat or whatever you choose> | btrfs receive /tmp/btrfs_root/
+
+Then you make the non-read-only snapshot of the restored subvolume.
+
+> [snip]
+>
+
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

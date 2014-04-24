@@ -1,106 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw10a-lesia.wadns.net ([196.220.39.109]:3377 "EHLO
-	fw10a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750752AbaDXE2k (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:21954 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751265AbaDXFaM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 00:28:40 -0400
-Message-ID: <535892EE.6040301@swiftspirit.co.za>
-Date: Thu, 24 Apr 2014 06:28:30 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+	Thu, 24 Apr 2014 01:30:12 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3O5U7kK011757
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 13:30:07 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH V2 1/2] Btrfs: output warning instead of error when loading free space cache failed
+Date: Thu, 24 Apr 2014 13:31:55 +0800
+Message-ID: <1398317516-29575-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1389787258-10865-5-git-send-email-miaox@cn.fujitsu.com>
+References: <1389787258-10865-5-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Robert White <rwhite@pobox.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Cycle of send/receive for backup/restore is incomplete...
-References: <53583F1E.7050603@pobox.com>
-In-Reply-To: <53583F1E.7050603@pobox.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replied inline:
+If we fail to load a free space cache, we can rebuild it from the extent tree,
+so it is not a serious error, we should not output a error message that
+would make the users uncomfortable. This patch uses warning message instead
+of it.
 
-On 2014/04/24 12:30 AM, Robert White wrote:
-> So the backup/restore system described using snapshots is incomplete 
-> because the final restore is a copy operation. As such, the act of 
-> restoring from the backup will require restarting the entire backup 
-> cycle because the copy operation will scramble the metadata 
-> consanguinity.
->
-> The real choice is to restore by sending the snapshot back via send 
-> and receive so that all the UIDs and metadata continue to match up.
->
-> But there's no way to "promote" the final snapshot to a non-snapshot 
-> subvolume identical to the one made by the original btrfs subvolume 
-> create operation.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v1 -> v2:
+- New patch
+---
+ fs/btrfs/free-space-cache.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-btrfs doesn't differentiate snapshots and subvolumes. They're the same 
-first-class citizen. A snapshot is a subvolume that just happens to have 
-some data (automagically/naturally) deduplicated with another subvolume.
-
-> Consider a file system with __System as the default mount (e.g. btrfs 
-> subvolume create /__System). You make a snapshot (btrfs sub snap -r 
-> /__System /__System_BACKUP). Then you send the backup to another file 
-> system with send receive. Nothing new here.
->
-> The thing is, if you want to restore from that backup, you'd 
-> send/receive /__System_BACKUP to the new/restore drive. But that 
-> snapshot is _forced_ to be read only. So then your only choice is to 
-> make a writable snapshot called /__System. At this point you have a 
-> tiny problem, the three drives aren't really the same.
->
-> The __System and __System_BACKUP on the final drive are subvolumes of 
-> /, while on the original system / and /__System were full subvolumes.
-
-There's no such thing as a "full" subvolume. Again, they're all 
-first-class citizens. The "real" root of a btrfs is always treated as a 
-subvolume, as are the subvolumes inside it too. Just because other 
-subvolumes are contained therein it doesn't mean they're diminished 
-somehow. You cannot have multiple subvolumes *without* having them be a 
-"sub" volume of the real "root" subvolume.
-
-> It's dumb, it's a tiny difference, but it's annoying. There needs to 
-> be a way to promote /__System to a non-snapshot status.
->
-> If you look at the output of "btrfs subvolume list -s /" on the 
-> various drives it's not possible to end up with the exact same system 
-> as the original.
-
- From a user application perspective, the system *is* identical to the 
-original. That's the important part.
-
-If you want the disk to be identical bit for bit then you want a 
-different backup system entirely, one that backs up the hard disk, not 
-the files/content.
-
-On the other hand if you just want to have all your snapshots restored 
-as well, that's not too difficult. Its pointless from most perspectives 
-- but not difficult.
-
-> There needs to be either an option to btrfs subvolume create that 
-> takes a snapshot as an argument to base the new device on, or an 
-> option to receive that will make a read-write non-snapshot subvolume.
-
-This feature already exists. This is a very important aspect of how 
-snapshots work with send / receive and why it makes things very 
-efficient. They work just as well for a restore as they do for a backup. 
-The flag you are looking for is "-p" for "parent", which you should 
-already be using for the backups in the first place:
-
- From backup host:
-$ btrfs send -p /backup/path/yesterday /backup/path/last_backup | 
-<netcat or whatever you choose>
-
- From restored host:
-$ <netcat or whatever you choose> | btrfs receive /tmp/btrfs_root/
-
-Then you make the non-read-only snapshot of the restored subvolume.
-
-> [snip]
->
-
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 73f3de7..a6bd654 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -831,7 +831,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 
+ 	if (!matched) {
+ 		__btrfs_remove_free_space_cache(ctl);
+-		btrfs_err(fs_info, "block group %llu has wrong amount of free space",
++		btrfs_warn(fs_info, "block group %llu has wrong amount of free space",
+ 			block_group->key.objectid);
+ 		ret = -1;
+ 	}
+@@ -843,7 +843,7 @@ out:
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ 
+-		btrfs_err(fs_info, "failed to load free space cache for block group %llu",
++		btrfs_warn(fs_info, "failed to load free space cache for block group %llu, rebuild it now",
+ 			block_group->key.objectid);
+ 	}
+ 
 -- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+1.9.0
 

@@ -1,121 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:38515 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751138AbaDXTiB convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 15:38:01 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:51202 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WdPT6-001oc0-7u
-	for linux-btrfs@vger.kernel.org; Thu, 24 Apr 2014 13:38:00 -0600
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Cycle of send/receive for backup/restore is incomplete...
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <5358B877.4040204@pobox.com>
-Date: Thu, 24 Apr 2014 13:37:58 -0600
-Message-Id: <9ED78F1C-4DA4-48EE-A9B2-B3CF67536F34@colorremedies.com>
-References: <53583F1E.7050603@pobox.com> <535892EE.6040301@swiftspirit.co.za> <5358B877.4040204@pobox.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from SD88.btc-net.bg ([212.39.90.88]:35667 "HELO sd88.btc-net.bg"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with SMTP
+	id S1751177AbaDXU1J convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Apr 2014 16:27:09 -0400
+From: =?utf-8?B?0J/Qu9Cw0LzQtdC9INCf0LXRgtGA0L7Qsg==?=
+	<plamen@petrovi.no-ip.info>
+To: "'Marc MERLIN'" <marc@merlins.org>
+Cc: <linux-btrfs@vger.kernel.org>
+References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info> <20140423185413.GF26949@merlins.org> <001401cf5f27$17cae590$4760b0b0$@petrovi.no-ip.info> <20140423191546.GG26949@merlins.org> <000501cf5fe1$55198590$ff4c90b0$@petrovi.no-ip.info> <20140424173317.GI7884@merlins.org> <002301cf5fee$346fefc0$9d4fcf40$@petrovi.no-ip.info> <20140424193117.GQ26949@merlins.org>
+In-Reply-To: <20140424193117.GQ26949@merlins.org>
+Subject: RE: Can anyone boot a system using btrfs root with linux 3.14 or newer?
+Date: Thu, 24 Apr 2014 23:26:48 +0300
+Message-ID: <000001cf5ffb$84da9020$8e8fb060$@petrovi.no-ip.info>
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> -----Original Message-----
+> From: Marc MERLIN [mailto:marc@merlins.org]
+> Sent: Thursday, April 24, 2014 10:31 PM
+> To: Пламен Петров
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or
+> newer?
+> 
+> On Thu, Apr 24, 2014 at 09:51:30PM +0300, Пламен Петров wrote:
+> > So, here is what I did:
+> > My debug VM had:
+> > sda
+> > 	sda1 200 MB /boot - ext2
+> > 	sda2 5 GB / - BTRFS
+> > 	sda3 5 GB / - XFS
+> > 	sda4 One extra partition used for mangling (XFS).
+> >
+> > sda2 and sda3 were mostly the same, except /etc/fstab, for obvious
+> reasons.
+> >
+> > I booted 3.14.1 using sda3 as root, and then tried mounting sda2. It went
+> OK, here is what dmesg said:
+> > [   12.412465] Btrfs loaded
+> > [   86.490078] BTRFS: device fsid 2ba08fbc-4b95-46cc-b638-299f16462620
+> devid 1 transid 22 /dev/sda2
+> > [   86.492947] BTRFS info (device sda2): disk space caching is enabled
+> > [   86.579155] BTRFS: creating UUID tree
+> > [   86.748681] mount (1899) used greatest stack depth: 2560 bytes left
+> 
+> Ok, that's good news. It indeed rules out that your new kernel cannot mount
+> an older btrfs filesystem.
+> 
+> At this point, you may have a problem with the device not being available
+> when btrfs tries to mount it.
 
-On Apr 24, 2014, at 1:08 AM, Robert White <rwhite@pobox.com> wrote:
-
-
-> So the systems are "the same" but they aren't really the same according to this clearly visible symptom.
-
-I don't think of btrfs send/receive as sending/receiving whole subvolumes, but rather just their contents.
-
-Try btrfs sub show <subvol> on the original rw subvolume, its ro snapshot, and the sent/received ro snapshot on the target drive. It looks like this:
-
-Drive [a]
-
-[a]# btrfs sub show pictures
-/mnt/a/pictures
-	Name: 			pictures
-	uuid: 			f15ebd77-1151-1740-a7fb-7fd82a0de4aa
-	Parent uuid: 		-
-	Creation time: 		2014-04-24 08:39:53
-	Object ID: 		257
-	Generation (Gen): 	11
-	Gen at creation: 	7
-	
-[a]# btrfs sub show pictures_1ro
-/mnt/a/pictures_1ro
-	Name: 			pictures_1ro
-	uuid: 			7bfc06b2-dcc1-0346-a36f-a6305d45934b
-	Parent uuid: 		f15ebd77-1151-1740-a7fb-7fd82a0de4aa
-	Creation time: 		2014-04-24 08:45:58
-	Object ID: 		260
-	Generation (Gen): 	11
-	Gen at creation: 	11
-	
-	
-	[send from drive a to drive b]
-	
-[b]# btrfs sub show pictures_1ro/
-/mnt/b/pictures_1ro
-	Name: 			pictures_1ro
-	uuid: 			a814808d-18f7-924b-ba11-68bd3e032bf6
-	Parent uuid: 		-
-	Creation time: 		2014-04-24 08:46:54
-	Object ID: 		257
-	Generation (Gen): 	8
-	Gen at creation: 	7
-
-
-Nothing except the name is the same between them. The subvolumes uuids, object ids, generation number, are all different.
-
-
+Need a way to pinpoint the actual problem then.
 
 > 
-> It's _impossible_ to strip Base of it's subvolume status on /driveb. If you delete the Base_BACKUP element so that Base is the only thing on the drive, it's still a shapshot according to -s. What does this status even mean if it's as meaningless as it seems.
+> > From the above - the first obvious thing is that with 3.13.11 BTRFS gets
+> loaded much earlier in the boot process - that is why the second dmesg
+> dump is much larger, and both start at " Btrfs loaded" - mind you.
+> >
+> > Next was booting the BTRFS sda2 with 3.14.1.
+> > Sadly, it panicked again. So, no dmesg dump - just a screenshot. See the
+> attached file.
+> > So, what got changed during the 3.14 merge window, that messed up
+> booting for BTRFS partitions?
+> > Should I try building an "allyesconfig" kernel, in case something is messed
+> up with my kernel .configs?
+> > What do you think guys and galls?
+> > Anything you want me try  - this is entirely disposable VM now, so I'll gladly
+> try everything you ask...
 > 
-> That seems like a second surprise.
+> So, I'm not sure how many people use btrfs built it vs as a module. Clearly the
+> code works for mounting your partition, but when built in the kernel, there
+> seems to be a timing issue.
 
-I don't know what the first sentence means. A subvolume isn't a state, it's an object, and so it either exists or not. It isn't a flag that can be set and unset.
-
-The snapshot state and parent uuid isn't exactly fool proof, it's easily spoofed. So I take it to mean "how it was created" - subvolume create vs subvolume snapshot. There is no actual difference between a subvolume and a snapshot.
-
-For example. Subvolume A with some files in it. I subvolume create B, and I --reflink files from A to B. I've just functionally made B a snapshot of A, yet its metadata doesn't indicate this. It's a subvolume that doesn't proclaim being a snapshot, nor does it have a parent uuid.
-
-Conversely, if I subvolume snapshot A C, and then rm -rf C/* and fill it with some new files, I have a subvolume claiming to be a snapshot with a parent uuid, but it has nothing at all in common with that parent.
-
-So the snapshot flag and parent uuid are conveniences, they indicate a truth at the time of creation. It's not a dynamic status.
-
-
-> 
-> ---
-> 
-> Is this a common case? It could easily be if you use NAS or movable USB to do your backups and restore-or-media-migration operations.
-> 
-> Are we sure it doesn't matter? I find it problematic but fixable in concept. I've got no information whether the internal parentage relationship could be reversed so that the before and after of the subvolume list -s result are the same.
-> 
-> No I'm not looking for byte-level identical status, I know that's ridiculous.
-> 
-> I want semantically identical status.
-
-I don't see how that's presently possible since subvolumes themselves aren't being sent. Instead their contents are, with an efficient incremental/clone stream feature. We can't use send on a rw subvolume, so from the outset we have a semantic disconnect between source and destination.
-
-I really think what you're after is seed device. Or possibly some hybrid between seed and send.
+Yeah, and an issue that just popped up with kernels >= 3.14. If memory serves - I started using BTRFS on linux 3.6.x, and since then I followed exactly the same method of upgrading the kernel - described in this thread and in the bugzilla entry - and it always "Just Works" TM!
 
 > 
-
-> ====
+> For reference, you said this was the bug where you found the CL that causes
+> this change:
+> https://bugzilla.kernel.org/show_bug.cgi?id=74261
 > 
-> Why it matters...
+> You said using rootwait as recommended by Chris Mason did not help.
 > 
-> If I am doing monthly and weekly archiving I don't want to interrupt the rolling archive(s) if I end up having to do a restore. I don't want to create a catastrophe point or an interrupting epoch in the archive history.
+> What output are you getting when you use this?
+
+The image file attached to my previous mail applies to both rootwait and no-rootwait cases. Result is always a kernel panic for 3.14.x on BTRFS root. All other filesystem/kernel combos just work either way.
+
 > 
-> It sounds like it doesn't matter once you know not to use the -s status for anything�
+> By the way, you should be able to define a pseudo serial port in your VM and
+> specify something like
+> console=tty0 console=ttyS0,38400n8
+> on your boot command line.
+> This will give you serial console output in text that you can cut/paste/diff
 
-I'd say it's not a status because the word status implies present state and thus is a dynamic indicator. Instead, -s indicates how the subvolume was created: empty or prefilled. And it's really mostly useful for ro snapshots because we're assured they haven't changed since they were created.
+I will try and use this the next time.
+Thanks!
+---------------------------------
+Plamen Petrov
 
-
-
-Chris Murphy
 

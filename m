@@ -1,81 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57196 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756726AbaD2P46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Apr 2014 11:56:58 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 60E9FAC4F
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 15:56:57 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 00/14] Enhanced df - followup
-Date: Tue, 29 Apr 2014 17:56:47 +0200
-Message-Id: <cover.1398786620.git.dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:46702 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751451AbaDXDWb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Apr 2014 23:22:31 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3O3MGgE005675
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 11:22:17 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 3/3] Btrfs-progs: fsck: add ability to check reloc roots
+Date: Thu, 24 Apr 2014 11:19:18 +0800
+Message-ID: <1398309558-29509-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1398309558-29509-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1398309558-29509-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+When encountering system crash or balance enospc errors,
+there maybe still some reloc roots left.
 
-this is a followup to the df (space usage) enhancements, Goffredo's
-patches are merged without changes, though the code needs updates.
+The way we store reloc root is different from fs root:
 
-But, given the patchset size, net benefit of the enriched output and
-longstanding need of the update, I've deliberately skipped the process of
-incremental rewiew/resend loop that should normally take place and implemented
-the changes that were agreed in previous discussions and did code cleanups
-along the way.
+reloc root's root key(BTRFS_RELOC_TREE_OBJECTID, ROOT_ITEM, objectid)
+fs root's root key(objectid, ROOT_ITEM, -1)
+reloc data's root key(BTRFS_DATA_RELOC_TREE_OBJECTID, ROOT_ITEM, 0)
 
-The basic layout of the command output has been kept, there are some
-tweaks or additions.
+So this patch use right key to search corresponding root node, and
+avoid using normal fs root cache for reloc roots.
 
-Changes:
-* btrfs filesystem disk_usage - renamed to usage
-  * added a section of overall filesystem usage, that used to be in the
-    'fi df' output
-* btrfs device disk_usage - renamed to usage
-  * the device size prints both blockdevie size and the size that's occupied
-    by the filesystem
-  * device ID is printed
-* btrfs filesystem df - reverted to the original output
-* btrfs filesystem df - now prints the GlobalReserve info
-* units print B for bytes
-* the ioctls FS_INFO and DEV_INFO need root (patches sent to drop that
-  requirement), so there's a warning printed instead
-* no documentation for now
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ cmds-check.c | 32 +++++++++++++++++++++++++-------
+ 1 file changed, 25 insertions(+), 7 deletions(-)
 
-It's not finished, I've tried to scan all the previous iteration of the
-patches for the suggested UI tweaks and probably missed some, but IMO in a
-state that can go to git and be scheduled for a near release.
-
-The major UI changes are there, we can tweak it further of course.
-
-
-David Sterba (14):
-  btrfs-progs: read global reserve size from space infos
-  btrfs-progs: add original 'df' and rename 'disk_usage' to 'usage'
-  btrfs-progs: move device usage to cmds-device, more cleanups
-  btrfs-progs: check if we can't get info from ioctls due to permissions
-  btrfs-progs: zero out structures before calling ioctl
-  btrfs-progs: print B for bytes
-  btrfs-progs: Print more info about device sizes
-  btrfs-progs: compare unallocated space against the correct value
-  btrfs-progs: add section of overall filesystem usage
-  btrfs-progs: cleanup filesystem/device usage code
-  btrfs-progs: extend pretty printers with unit mode
-  btrfs-progs: replace df_pretty_sizes with pretty_size_mode
-  btrfs-progs: clean up return codes and paths
-  btrfs-progs: move global reserve to overall summary
-
- cmds-device.c        |  92 +++++++-
- cmds-fi-disk_usage.c | 631 +++++++++++++++++++--------------------------------
- cmds-fi-disk_usage.h |  35 ++-
- cmds-filesystem.c    |  55 ++++-
- ctree.h              |   6 +
- utils.c              |  78 +++++--
- utils.h              |  21 +-
- 7 files changed, 482 insertions(+), 436 deletions(-)
-
+diff --git a/cmds-check.c b/cmds-check.c
+index e6fb380..93342ad 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -299,8 +299,22 @@ static struct inode_record *clone_inode_rec(struct inode_record *orig_rec)
+ 	return rec;
+ }
+ 
+-static void print_inode_error(int errors)
++static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ {
++	u64 root_objectid = root->root_key.objectid;
++	int errors = rec->errors;
++
++	if (!errors)
++		return;
++	/* reloc root errors, we print its corresponding fs root objectid*/
++	if (root_objectid == BTRFS_TREE_RELOC_OBJECTID) {
++		root_objectid = root->root_key.offset;
++		fprintf(stderr, "reloc");
++	}
++	fprintf(stderr, "root %llu inode %llu errors %x",
++		(unsigned long long) root_objectid,
++		(unsigned long long) rec->ino, rec->errors);
++
+ 	if (errors & I_ERR_NO_INODE_ITEM)
+ 		fprintf(stderr, ", no inode item");
+ 	if (errors & I_ERR_NO_ORPHAN_ITEM)
+@@ -1598,10 +1612,7 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			rec->errors |= I_ERR_NO_INODE_ITEM;
+ 		if (rec->found_link != rec->nlink)
+ 			rec->errors |= I_ERR_LINK_COUNT_WRONG;
+-		fprintf(stderr, "root %llu inode %llu errors %x",
+-			(unsigned long long) root->root_key.objectid,
+-			(unsigned long long) rec->ino, rec->errors);
+-		print_inode_error(rec->errors);
++		print_inode_error(root, rec);
+ 		list_for_each_entry(backref, &rec->backrefs, list) {
+ 			if (!backref->found_dir_item)
+ 				backref->errors |= REF_ERR_NO_DIR_ITEM;
+@@ -2059,8 +2070,15 @@ static int check_fs_roots(struct btrfs_root *root,
+ 		btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
+ 		if (key.type == BTRFS_ROOT_ITEM_KEY &&
+ 		    fs_root_objectid(key.objectid)) {
+-			key.offset = (u64)-1;
+-			tmp_root = btrfs_read_fs_root(root->fs_info, &key);
++			if (key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID ||
++			    key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
++				tmp_root = btrfs_read_fs_root_no_cache(
++						root->fs_info, &key);
++			} else {
++				key.offset = (u64)-1;
++				tmp_root = btrfs_read_fs_root(
++						root->fs_info, &key);
++			}
+ 			if (IS_ERR(tmp_root)) {
+ 				err = 1;
+ 				goto next;
 -- 
 1.9.0
 

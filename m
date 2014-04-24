@@ -1,41 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:51803 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:51813 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753354AbaDXVlJ (ORCPT
+	with ESMTP id S1753354AbaDXVls (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 17:41:09 -0400
-Date: Thu, 24 Apr 2014 14:41:08 -0700
+	Thu, 24 Apr 2014 17:41:48 -0400
+Date: Thu, 24 Apr 2014 14:41:44 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Daniel Lee <longinus00@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Which companies are using Btrfs in production?
-Message-ID: <20140424214108.GU26949@merlins.org>
-References: <20140424011834.GN26949@merlins.org> <20140424011952.GO26949@merlins.org> <535912E5.7080106@gmail.com>
+To: "Fajar A. Nugraha" <list@fajar.net>
+Cc: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Which companies contribute to Btrfs?
+Message-ID: <20140424214144.GV26949@merlins.org>
+References: <20140424011834.GN26949@merlins.org> <20140424113956.GA5988@twin.jikos.cz> <CAG1y0scEBgMJX-Q+z1t7aX+vmHLKzt5y7rUKz2U3+MwOMHet=g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <535912E5.7080106@gmail.com>
+In-Reply-To: <CAG1y0scEBgMJX-Q+z1t7aX+vmHLKzt5y7rUKz2U3+MwOMHet=g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 24, 2014 at 06:34:29AM -0700, Daniel Lee wrote:
-> On 04/23/2014 06:19 PM, Marc MERLIN wrote:
-> > Oh while we're at it, are there companies that can say they are using btrfs
-> > in production?
+On Thu, Apr 24, 2014 at 07:55:31PM +0700, Fajar A. Nugraha wrote:
+> On Thu, Apr 24, 2014 at 6:39 PM, David Sterba <dsterba@suse.cz> wrote:
+> > On Wed, Apr 23, 2014 at 06:18:34PM -0700, Marc MERLIN wrote:
+> >> I writing slides about btrfs for an upcoming talk (at linuxcon) and I was
+> >> trying to gather a list of companies that contribute code to btrfs.
 > >
-> > Marc
-> Netgear uses BTRFS as the filesystem in their refreshed ReadyNAS line.
-> They apparently use Oracle's linux distro so I assume they're relying on
-> them to do most of the heavy lifting as far as support BTRFS and
-> backporting goes since they're still on 3.0! They also have raid5/6
-> support so they are probably running BTRFS on top of md.
+> > https://btrfs.wiki.kernel.org/index.php/Main_Page
+> >
+> > "[...] Jointly developed at Oracle, Red Hat, Fujitsu, Intel, SUSE, STRATO [...]"
+> >
+> >> Are there other companies I missed?
 > 
-> http://www.netgear.com/images/BTRFS%20on%20ReadyNAS%20OS%206_9May1318-76105.pdf
+> The page now says "... Jointly developed at Facebook, Oracle, Red Hat .... " :D
 
-Thanks for those pointers.
+I went a step further and made a web page to list contributors here:
+https://btrfs.wiki.kernel.org/index.php/Contributors
 
-I've created a page where we can add these:
-https://btrfs.wiki.kernel.org/index.php/Production_Users
-
+Thanks,
 Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.

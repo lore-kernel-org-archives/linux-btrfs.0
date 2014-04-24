@@ -1,43 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52083 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753723AbaDXNJU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 09:09:20 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 8B493ACDB
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 13:09:19 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:33479 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753344AbaDXNPt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Apr 2014 09:15:49 -0400
+Received: by mail-wg0-f52.google.com with SMTP id b13so1037877wgh.35
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 06:15:48 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: make FS_INFO ioctl available to anyone
-Date: Thu, 24 Apr 2014 15:09:18 +0200
-Message-Id: <1398344958-12256-1-git-send-email-dsterba@suse.cz>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: use correct key when repeating search for extent item
+Date: Thu, 24 Apr 2014 15:15:28 +0100
+Message-Id: <1398348929-1827-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This ioctl provides basic info about the filesystem that can be obtained
-in other ways (eg. sysfs), there's no reason to restrict it to
-CAP_SYSADMIN.
+If skinny metadata is enabled and our first tree search fails to find a
+skinny extent item, we may repeat a tree search for a "fat" extent item
+(if the previous item in the leaf is not the "fat" extent we're looking
+for). However we were not setting the new key's objectid to the right
+value, as we previously used the same key variable to peek at the previous
+item in the leaf, which has a different objectid. So just set the right
+objectid to avoid modifying/deleting a wrong item if we repeat the tree
+search.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/ioctl.c |    3 ---
- 1 files changed, 0 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e79ff6b90cb7..f6073375b39e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2557,9 +2557,6 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	int ret = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1306487..678cb35 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1542,6 +1542,7 @@ again:
+ 				ret = 0;
+ 		}
+ 		if (ret) {
++			key.objectid = bytenr;
+ 			key.type = BTRFS_EXTENT_ITEM_KEY;
+ 			key.offset = num_bytes;
+ 			btrfs_release_path(path);
+@@ -5719,6 +5720,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
  
--	if (!capable(CAP_SYS_ADMIN))
--		return -EPERM;
--
- 	fi_args = kzalloc(sizeof(*fi_args), GFP_KERNEL);
- 	if (!fi_args)
- 		return -ENOMEM;
+ 			if (ret > 0 && skinny_metadata) {
+ 				skinny_metadata = false;
++				key.objectid = bytenr;
+ 				key.type = BTRFS_EXTENT_ITEM_KEY;
+ 				key.offset = num_bytes;
+ 				btrfs_release_path(path);
 -- 
-1.7.9
+1.9.1
 

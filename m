@@ -1,73 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40943 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754758AbaDXKca (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Apr 2014 06:32:30 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WdGx2-0004dw-Ej
-	for linux-btrfs@vger.kernel.org; Thu, 24 Apr 2014 12:32:20 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 12:32:20 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Apr 2014 12:32:20 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: inode cache rebuild problem
-Date: Thu, 24 Apr 2014 10:32:02 +0000 (UTC)
-Message-ID: <pan$d038e$7f5b1007$d20628fc$207de29f@cox.net>
-References: <2497757.A2A0fxBM0J@bheem>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:65297 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753280AbaDXMda (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Apr 2014 08:33:30 -0400
+Message-ID: <535904BB.1090307@fb.com>
+Date: Thu, 24 Apr 2014 08:34:03 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Marc MERLIN <marc@merlins.org>,
+        =?UTF-8?B?0J/Qu9Cw0LzQtdC9INCf0LXRgtGA?= =?UTF-8?B?0L7Qsg==?=
+	<plamen@petrovi.no-ip.info>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or
+ newer?
+References: <000001cf5f19$ac92b2b0$05b81810$@petrovi.no-ip.info> <20140423185413.GF26949@merlins.org> <001401cf5f27$17cae590$4760b0b0$@petrovi.no-ip.info> <20140423191546.GG26949@merlins.org> <002401cf5f2b$7f8d41b0$7ea7c510$@petrovi.no-ip.info> <20140423205819.GH26949@merlins.org>
+In-Reply-To: <20140423205819.GH26949@merlins.org>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Shridhar Daithankar posted on Wed, 23 Apr 2014 23:07:13 +0630 as
-excerpted:
 
-> I have a desktop system with 2 disks, all btrfs, single partition. All
-> of these partitions had space_cache,inode_cache enabled.
 
-> But even on clean reboot, inode_cache was constantly being rebuilt on
-> each boot. While the disk was constantly grinding in the boot process,
-> I ssh'ed into it from another machine and observed the inode cache
-> overhead.
-> 
-> Hence I disabled both the caches on all the partition(yes, I know,
-> space_cache will stick around), and the machine is lot more snappier and
-> responsive than ever before.
-> 
-> I am running archlinux with 3.14.1 kernel.
+On 04/23/2014 04:58 PM, Marc MERLIN wrote:
+> On Wed, Apr 23, 2014 at 10:37:44PM +0300, Пламен Петров wrote:
+>>> So now, we're kind of guessing. To save us all time, could you capture a serial
+>>> console boot from the running 3.13 and then the failing 3.14.
+>>
+>> Well, for the details - see for example here:
+>> https://bugzilla.kernel.org/attachment.cgi?id=133111
+>> how does a 3.14.1 built the way described earlier fails.
+>
+> Thanks, that helps.
+> Except, now I'm perplexed.
+>
+> It indeed shows btrfs loaded and your block device being detected.
+> However it does not show a btrfs mount error.
 
-The recommendation on this list has always (well, for as long as I've 
-been around anyway) been to disable the inode cache, unless you know what 
-you're doing and am sure you need it.  I've not seen a lot of detail on 
-why, but apparently it simply isn't appropriate for normal users.
+The mount error is popping up after the printk about not being able to 
+find root.  Add rootwait to the command line.
 
-You've basically proved the point...
-
-Actually, I wouldn't mind a bit more information on exactly what the 
-option does and under what circumstances one might wish to enable it, 
-myself.
-
-But based on the few hints I've seen, an example of where it may be 
-useful is for relatively high volume mail servers with a large churn of 
-relatively small files, writing and deleting them pretty much constantly 
-as new mail comes in and then is forwarded and deleted.  In that context, 
-an inode cache might make some sense even if it's reinitialized at every 
-reboot, because such machines are seldom rebooted.
-
-OTOH, space_cache *IS* supposed to be useful for ordinary users, the 
-reason it's enabled by default, these days.  And if it's having to be 
-reinitialized at every boot, you have a bug.  (There has been at least 
-one report of such happening, but IIRC it was fixed tho I don't recall 
-the details.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+-chris

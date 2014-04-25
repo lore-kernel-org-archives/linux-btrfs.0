@@ -1,96 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f182.google.com ([209.85.223.182]:32995 "EHLO
-	mail-ie0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752200AbaDYTHh (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:47524 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751539AbaDYTPB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Apr 2014 15:07:37 -0400
-Received: by mail-ie0-f182.google.com with SMTP id tp5so868163ieb.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Apr 2014 12:07:36 -0700 (PDT)
-Message-ID: <535AB27C.6070205@gmail.com>
-Date: Fri, 25 Apr 2014 15:07:40 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Steve Leung <sjleung@shaw.ca>, Chris Murphy <lists@colorremedies.com>
-CC: linux-btrfs@vger.kernel.org
+	Fri, 25 Apr 2014 15:15:01 -0400
+Date: Fri, 25 Apr 2014 20:14:48 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Steve Leung <sjleung@shaw.ca>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: safe/necessary to balance system chunks?
-References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung> <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com> <535AA581.1080301@gmail.com> <535AACC0.2000600@shaw.ca>
-In-Reply-To: <535AACC0.2000600@shaw.ca>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20140425191448.GJ2391@carfax.org.uk>
+References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung>
+ <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com>
+ <535AA581.1080301@gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="enLffk0M6cffIOOh"
+In-Reply-To: <535AA581.1080301@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-04-25 14:43, Steve Leung wrote:
-> On 04/25/2014 12:12 PM, Austin S Hemmelgarn wrote:
->> On 2014-04-25 13:24, Chris Murphy wrote:
->>>
->>> On Apr 25, 2014, at 8:57 AM, Steve Leung <sjleung@shaw.ca> wrote:
->>>
->>>> I've got a 3-device RAID1 btrfs filesystem that started out life as
->>>> single-device.
->>>>
->>>> btrfs fi df:
->>>>
->>>> Data, RAID1: total=1.31TiB, used=1.07TiB
->>>> System, RAID1: total=32.00MiB, used=224.00KiB
->>>> System, DUP: total=32.00MiB, used=32.00KiB
->>>> System, single: total=4.00MiB, used=0.00
->>>> Metadata, RAID1: total=66.00GiB, used=2.97GiB
->>>>
->>>> This still lists some system chunks as DUP, and not as RAID1.  Does
->>>> this mean that if one device were to fail, some system chunks would
->>>> be unrecoverable?  How bad would that be?
->>>>
->>>> Assuming this is something that needs to be fixed, would I be able
->>>> to fix this by balancing the system chunks?  Since the "force" flag
->>>> is required, does that mean that balancing system chunks is
->>>> inherently risky or unpleasant?
->>>
->>> I don't think force is needed. You'd use btrfs balance start
->>> -sconvert=raid1 <mountpoint>; or with -sconvert=raid1,soft although
->>> it's probably a minor distinction for such a small amount of data.
->> The kernel won't allow a balance involving system chunks unless you
->> specify force, as it considers any kind of balance using them to be
->> dangerous.  Given your circumstances, I'd personally say that the safety
->> provided by RAID1 outweighs the risk of making the FS un-mountable.
-> 
-> Agreed, I'll attempt the system balance shortly.
-> 
->> Personally, I would recommend making a full backup of all the data (tar
->> works wonderfully for this), and recreate the entire filesystem from
->> scratch, but passing all three devices to mkfs.btrfs.  This should
->> result in all the chunks being RAID1, and will also allow you to benefit
->> from newer features.
-> 
-> I do have backups of the really important stuff from this filesystem,
-> but they're offsite.  As this is just for a home system, I don't have
-> enough temporary space for a full backup handy (which is related to how
-> I ended up in this situation in the first place).
-> 
-> Once everything gets rebalanced though, I don't think I'd be missing out
-> on any features, would I?
-> 
-> Steve
-In general, it shouldn't be an issue, but it might get you slightly
-better performance to recreate it.  I actually have a similar situation
- with how I have my desktop system set up, when I go about recreating
-the filesystem (which I do every time I upgrade either the tools or the
-kernel), I use the following approach:
 
-1. Delete one of the devices from the filesystem
-2. Create a new btrfs file system on the device just removed from the
-filesystem
-3. Copy the data from the old filesystem to the new one
-4. one at a time, delete the remaining devices from the old filesystem
-and add them to the new one, re-balancing the new filesystem after
-adding each device.
+--enLffk0M6cffIOOh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-This seems to work relatively well for me, and prevents the possibility
-that there is ever just one copy of the data.  It does, however, require
-that the amount of data that you are storing on the filesystem is less
-than the size of one of the devices (although you can kind of work
-around this limitation by setting compress-force=zlib on the new file
-system when you mount it, then using defrag to decompress everything
-after the conversion is done), and that you have to drop to single user
-mode for the conversion (unless it's something that isn't needed all the
-time, like the home directories or /usr/src, in which case you just log
-everyone out and log in as root on the console to do it).
+On Fri, Apr 25, 2014 at 02:12:17PM -0400, Austin S Hemmelgarn wrote:
+> On 2014-04-25 13:24, Chris Murphy wrote:
+> > 
+> > On Apr 25, 2014, at 8:57 AM, Steve Leung <sjleung@shaw.ca> wrote:
+> > 
+> >>
+> >> Hi list,
+> >>
+> >> I've got a 3-device RAID1 btrfs filesystem that started out life as single-device.
+> >>
+> >> btrfs fi df:
+> >>
+> >> Data, RAID1: total=1.31TiB, used=1.07TiB
+> >> System, RAID1: total=32.00MiB, used=224.00KiB
+> >> System, DUP: total=32.00MiB, used=32.00KiB
+> >> System, single: total=4.00MiB, used=0.00
+> >> Metadata, RAID1: total=66.00GiB, used=2.97GiB
+> >>
+> >> This still lists some system chunks as DUP, and not as RAID1.  Does this mean that if one device were to fail, some system chunks would be unrecoverable?  How bad would that be?
+> > 
+> > Since it's "system" type, it might mean the whole volume is toast if the drive containing those 32KB dies. I'm not sure what kind of information is in system chunk type, but I'd expect it's important enough that if unavailable that mounting the file system may be difficult or impossible. Perhaps btrfs restore would still work?
+> > 
+> > Anyway, it's probably a high penalty for losing only 32KB of data.  I think this could use some testing to try and reproduce conversions where some amount of "system" or "metadata" type chunks are stuck in DUP. This has come up before on the list but I'm not sure how it's happening, as I've never encountered it.
+> >
+> As far as I understand it, the system chunks are THE root chunk tree for
+> the entire system, that is to say, it's the tree of tree roots that is
+> pointed to by the superblock. (I would love to know if this
+> understanding is wrong).  Thus losing that data almost always means
+> losing the whole filesystem.
+
+   From a conversation I had with cmason a while ago, the System
+chunks contain the chunk tree. They're special because *everything* in
+the filesystem -- including the locations of all the trees, including
+the chunk tree and the roots tree -- is positioned in terms of the
+internal virtual address space. Therefore, when starting up the FS,
+you can read the superblock (which is at a known position on each
+device), which tells you the virtual address of the other trees... and
+you still need to find out where that really is.
+
+   The superblock has (I think) a list of physical block addresses at
+the end of it (sys_chunk_array), which allows you to find the blocks
+for the chunk tree and work out this mapping, which allows you to find
+everything else. I'm not 100% certain of the actual format of that
+array -- it's declared as u8 [2048], so I'm guessing there's a load of
+casting to something useful going on in the code somewhere.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- Is it still called an affair if I'm sleeping with my wife ---    
+                        behind her lover's back?
+
+--enLffk0M6cffIOOh
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBU1q0KFheFHXiqx3kAQIc3A/9FZUHaWJb/shd7ozGkqCqpaQb1GcjmYAs
+X/oDutCrzdmOFdw0lbahx3h0NdCIc/Yyg9uAQ4KyIDHt/oktpNk0LdmxoQUDbMBN
+oSoTFqcZKygwEPwW43EbCkeByIzxGZGZcHLpRPdbq94Hz+o33UnqxcTvKusCCtqw
+N57zcdtGlTWWVI6bmvGbdTEgf0xfwQy/vn/jZBKi0vV4uHulM06oLuI0q4NMCD7Q
+cobSVIHiR2atDUKrATG26gZ+LLu+wLZCatm+PjznzA1D9/Ifpg4wLAYLoe/myyvx
+YP+mgnT15rIerB0UbsKAQN1ClHme6L8JkCdprE51j046S0XOUOpnYFTGqmBSZdm9
+BSQjG1AyOXSF7a3FqGIIg+8zii8+yFIESClDOYrSRkwm99o4W7Hb50cZEBJ3it5q
+11UzEZTa01MyepjEnaBK1bd7LtQQzSvvZm/SJWe9JXG1NQ8OYfhjDXGDu7M2v1Wf
+qWUX5OnMHrD5XuiYcNeyQVAKsi1o90m1WvIlJuRJRAcBwL+i7D/Eu+xRl9fd5l7x
+ilp75GTOTYffKlU1IG9NtId/S24Jv3wmDvBHAurymoPFiyYSNVWKjwb6Zl0aBXDj
+MW/YhcotF2n8jCfHLMJEN+byot48GukAcZZA6sP80aUBt14dBkJJb5FgjmxhL+Oe
+AIcy+4ul7G4=
+=qwPd
+-----END PGP SIGNATURE-----
+
+--enLffk0M6cffIOOh--

@@ -1,62 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-out-02.shaw.ca ([64.59.136.138]:15631 "EHLO
+Received: from smtp-out-02.shaw.ca ([64.59.136.138]:16789 "EHLO
 	smtp-out-02.shaw.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750902AbaDYSnN (ORCPT
+	with ESMTP id S1751247AbaDYSpz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Apr 2014 14:43:13 -0400
-Message-ID: <535AACC0.2000600@shaw.ca>
-Date: Fri, 25 Apr 2014 12:43:12 -0600
+	Fri, 25 Apr 2014 14:45:55 -0400
+Message-ID: <535AAB24.4000206@shaw.ca>
+Date: Fri, 25 Apr 2014 12:36:20 -0600
 From: Steve Leung <sjleung@shaw.ca>
 MIME-Version: 1.0
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
+To: Chris Murphy <lists@colorremedies.com>
 CC: linux-btrfs@vger.kernel.org
 Subject: Re: safe/necessary to balance system chunks?
-References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung> <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com> <535AA581.1080301@gmail.com>
-In-Reply-To: <535AA581.1080301@gmail.com>
+References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung> <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com>
+In-Reply-To: <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/25/2014 12:12 PM, Austin S Hemmelgarn wrote:
-> On 2014-04-25 13:24, Chris Murphy wrote:
+On 04/25/2014 11:24 AM, Chris Murphy wrote:
+>
+> On Apr 25, 2014, at 8:57 AM, Steve Leung <sjleung@shaw.ca> wrote:
+>
+>> I've got a 3-device RAID1 btrfs filesystem that started out life as single-device.
 >>
->> On Apr 25, 2014, at 8:57 AM, Steve Leung <sjleung@shaw.ca> wrote:
+>> btrfs fi df:
 >>
->>> I've got a 3-device RAID1 btrfs filesystem that started out life as single-device.
->>>
->>> btrfs fi df:
->>>
->>> Data, RAID1: total=1.31TiB, used=1.07TiB
->>> System, RAID1: total=32.00MiB, used=224.00KiB
->>> System, DUP: total=32.00MiB, used=32.00KiB
->>> System, single: total=4.00MiB, used=0.00
->>> Metadata, RAID1: total=66.00GiB, used=2.97GiB
->>>
->>> This still lists some system chunks as DUP, and not as RAID1.  Does this mean that if one device were to fail, some system chunks would be unrecoverable?  How bad would that be?
->>>
->>> Assuming this is something that needs to be fixed, would I be able to fix this by balancing the system chunks?  Since the "force" flag is required, does that mean that balancing system chunks is inherently risky or unpleasant?
+>> Data, RAID1: total=1.31TiB, used=1.07TiB
+>> System, RAID1: total=32.00MiB, used=224.00KiB
+>> System, DUP: total=32.00MiB, used=32.00KiB
+>> System, single: total=4.00MiB, used=0.00
+>> Metadata, RAID1: total=66.00GiB, used=2.97GiB
 >>
->> I don't think force is needed. You'd use btrfs balance start -sconvert=raid1 <mountpoint>; or with -sconvert=raid1,soft although it's probably a minor distinction for such a small amount of data.
-> The kernel won't allow a balance involving system chunks unless you
-> specify force, as it considers any kind of balance using them to be
-> dangerous.  Given your circumstances, I'd personally say that the safety
-> provided by RAID1 outweighs the risk of making the FS un-mountable.
+>> This still lists some system chunks as DUP, and not as RAID1.  Does this mean that if one device were to fail, some system chunks would be unrecoverable?  How bad would that be?
+>
+> Anyway, it's probably a high penalty for losing only 32KB of data.  I think this could use some testing to try and reproduce conversions where some amount of "system" or "metadata" type chunks are stuck in DUP. This has come up before on the list but I'm not sure how it's happening, as I've never encountered it.
 
-Agreed, I'll attempt the system balance shortly.
+As for how it occurred, I'm not sure.  I created this filesystem some 
+time ago (not sure exactly, but I'm guessing with a 3.4-era kernel?) so 
+it's quite possible it's not reproducible on newer kernels.
 
-> Personally, I would recommend making a full backup of all the data (tar
-> works wonderfully for this), and recreate the entire filesystem from
-> scratch, but passing all three devices to mkfs.btrfs.  This should
-> result in all the chunks being RAID1, and will also allow you to benefit
-> from newer features.
-
-I do have backups of the really important stuff from this filesystem, 
-but they're offsite.  As this is just for a home system, I don't have 
-enough temporary space for a full backup handy (which is related to how 
-I ended up in this situation in the first place).
-
-Once everything gets rebalanced though, I don't think I'd be missing out 
-on any features, would I?
+It's also nice to know I've been one failed device away from a dead 
+filesystem for a long time now, but better to notice it late than never.  :)
 
 Steve

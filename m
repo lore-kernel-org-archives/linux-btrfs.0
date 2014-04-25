@@ -1,52 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25810 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752230AbaDYKoP (ORCPT
+Received: from nbl-ex10-fe02.nebula.fi ([188.117.32.122]:31250 "EHLO
+	ex10.nebula.fi" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753303AbaDYXFf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Apr 2014 06:44:15 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs-progs: set string end sing '\0' for property
-Date: Fri, 25 Apr 2014 18:44:03 +0800
-Message-Id: <1398422643-6741-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1398407399-10963-1-git-send-email-bo.li.liu@oracle.com>
-References: <1398407399-10963-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 25 Apr 2014 19:05:35 -0400
+Date: Sat, 26 Apr 2014 02:05:31 +0300
+From: Rakesh Pandit <rakesh@tuxera.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: mkfs: remove ununsed parameters
+Message-ID: <20140425230530.GA26003@hercules.tuxera.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Set string "xattr_name" 's end with '\0' so that it won't be
-violated in memory.
+Remove ununsed parameters since 71d6bd3c in create_raid_groups.
 
-With this fix, xfstest/btrfs/048 can pass on my box.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Rakesh Pandit <rakesh@tuxera.com>
 ---
-v2: avoid buffer overflow of malloc().
+ mkfs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- props.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/props.c b/props.c
-index 9ff63ca..cc87454 100644
---- a/props.c
-+++ b/props.c
-@@ -131,13 +131,14 @@ static int prop_compression(enum prop_object_type type,
- 		goto out;
+diff --git a/mkfs.c b/mkfs.c
+index dbd83f5..35917f1 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -210,7 +210,7 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
+ static int create_raid_groups(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root, u64 data_profile,
+ 			      int data_profile_opt, u64 metadata_profile,
+-			      int metadata_profile_opt, int mixed, int ssd)
++			      int mixed)
+ {
+ 	u64 num_devices = btrfs_super_num_devices(root->fs_info->super_copy);
+ 	int ret;
+@@ -1586,7 +1586,7 @@ raid_groups:
+ 	if (!source_dir_set) {
+ 		ret = create_raid_groups(trans, root, data_profile,
+ 				 data_profile_opt, metadata_profile,
+-				 metadata_profile_opt, mixed, ssd);
++				 mixed);
+ 		BUG_ON(ret);
  	}
  
--	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name));
-+	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
- 	if (!xattr_name) {
- 		ret = -ENOMEM;
- 		goto out;
- 	}
- 	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
- 	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
-+	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
- 
- 	if (value)
- 		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
 -- 
-1.7.7
+1.8.5.3
 

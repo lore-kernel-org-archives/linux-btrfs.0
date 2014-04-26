@@ -1,35 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41555 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750923AbaDZEFo convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Apr 2014 00:05:44 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:54486 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750729AbaDZEXd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Apr 2014 00:23:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wdu97-00017k-On
+	for linux-btrfs@vger.kernel.org; Sat, 26 Apr 2014 06:23:25 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Apr 2014 06:23:25 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Apr 2014 06:23:25 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: safe/necessary to balance system chunks?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <alpine.DEB.2.10.1404252035150.4873@cubia.leung>
-Date: Fri, 25 Apr 2014 22:05:41 -0600
-Cc: Steve Leung <sjleung@shaw.ca>
-Message-Id: <0EE2D80D-5AE3-4056-B41E-674050A4787F@colorremedies.com>
-References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung> <75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com> <535AA581.1080301@gmail.com> <535AACC0.2000600@shaw.ca> <7336D5A2-5CDD-45A4-9D43-E94F1C451137@colorremedies.com> <alpine.DEB.2.10.1404252035150.4873@cubia.leung>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sat, 26 Apr 2014 04:23:13 +0000 (UTC)
+Message-ID: <pan$3ed2f$4edb7153$eb405bea$cf2b6b8@cox.net>
+References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung>
+	<75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com>
+	<535AA581.1080301@gmail.com>
+	<pan$a73aa$187744ee$76aa9d20$301f58e9@cox.net>
+	<765C03C7-08EB-4927-8934-5D6F926D6008@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Chris Murphy posted on Fri, 25 Apr 2014 19:41:43 -0600 as excerpted:
 
-On Apr 25, 2014, at 8:56 PM, Steve Leung <sjleung@shaw.ca> wrote:
+> OK so somehow in Steve's conversion, metadata was converted from DUP to
+> RAID1 completely, but some portion of system was left as DUP,
+> incompletely converted to RAID1. It doesn't seem obvious that -mconvert
+> is what he'd use now, but maybe newer btrfs-progs it will also convert
+> any unconverted system chunk.
 > 
-> Incidentally, is there a way for someone to tell what the node size currently is for a btrfs filesystem?  I never noticed that info printed anywhere from any of the btrfs utilities.
+> If not, then -sconvert=raid1 -f and optionally -v.
+> 
+> This isn't exactly risk free, given that it requires -f; and I'm not
+> sure we can risk assess conversion failure vs the specific drive
+> containing system DUP chunks dying. But for me a forced susage balance
+> was fast:
+> 
+> [root@rawhide ~]# time btrfs balance start -susage=100 -f -v /
+> Dumping filters: flags 0xa, state 0x0, force is on
+>   SYSTEM (flags 0x2): balancing, usage=100
+> Done, had to relocate 1 out of 8 chunks
+> 
+> real	0m0.095s user	0m0.001s sys	0m0.017s
 
-btrfs-show-super
+Yes.  The one thing that can be said about system chunks is that they're 
+small enough that processing just them should be quite fast, even on 
+spinning rust.
 
-> In case anyone's wondering, I did balance the system chunks on my filesystem and "btrfs fi df" now looks normal.  So thanks to all for the hints and advice.
+So regardless of whether there's a safety issue justifying the required 
+-f/force for -s/system-only, or not, unlike the possibly many hours a 
+full balance or some minutes to an hour or so a full balance on a large 
+spinning rust based btrfs may take, at least if there is some possible 
+danger in the -s system alone rebalance, the risk-window should be quite 
+small, time-wise. =:^)
 
-Good news.
+And correspondingly, safety issue or not, I've never seen a report here 
+of bugs or filesystem loss due to use of -s -f.  That doesn't mean it 
+can't happen, that's under debate and I can't safely say; it does mean 
+you're pretty unlucky if you're the first to have a need to report such a 
+thing, here. =:^\
 
-I kinda wonder if some of the degraded multiple device mount failures we've seen are the result of partially missing system chunks.
+But we all know that btrfs is still under heavy development, and thus 
+have those tested backups ready just in case, right?  In which case, I 
+think whatever risk there might be relative to that of simply using btrfs 
+at all at this point in time, must be pretty negligible. =:^)  Tho a few 
+people each year still do get struck by lightening... or win the lottery. 
+Just living is a risk.  <shrug>
 
-
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

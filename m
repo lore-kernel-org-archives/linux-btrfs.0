@@ -1,33 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relais.videotron.ca ([24.201.245.36]:36894 "EHLO
-	relais.videotron.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751125AbaDZCfS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Apr 2014 22:35:18 -0400
-MIME-version: 1.0
-Content-type: text/plain; CHARSET=US-ASCII; format=flowed
-Received: from [192.168.2.90]
- (modemcable211.176-81-70.mc.videotron.ca [70.81.176.211])
- by VL-VM-MR005.ip.videotron.ca
- (Oracle Communications Messaging Exchange Server 7u4-22.01 64bit (built Apr 21
- 2011)) with ESMTPA id <0N4M00ANM9UT4Z10@VL-VM-MR005.ip.videotron.ca> for
- linux-btrfs@vger.kernel.org; Fri, 25 Apr 2014 22:35:17 -0400 (EDT)
-Message-id: <535B1B53.80807@polymtl.ca>
-Date: Fri, 25 Apr 2014 22:34:59 -0400
-From: Christian Robert <christian.robert@polymtl.ca>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfsck is using far too much memory
+Received: from mout.gmx.net ([212.227.15.18]:59953 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751816AbaDZS5K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Apr 2014 14:57:10 -0400
+Message-ID: <535C017C.7060509@gmx.de>
+Date: Sat, 26 Apr 2014 20:57:00 +0200
+From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+MIME-Version: 1.0
+To: Chris Mason <clm@fb.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: superfluous " else if ()"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfsck is using far too much memory !
+/me wonders if this
 
-I tryed a btrfsck on my /dev/md127 (13T) and had to kill it
-because btrfsck used 7.8 Gigs of ram ( machine have 8 Gigs of ram, plus four Gigs on swap when I killed it)
+        if (ret >= 0) {
+                /* Add an item for the type for the first time */
+                eb = path->nodes[0];
+                slot = path->slots[0];
+                offset = btrfs_item_ptr_offset(eb, slot);
+        } else if (ret == -EEXIST) {
+                /*
+                 * An item with that type already exists.
+                 * Extend the item and store the new subid at the end.
+                 */
+                btrfs_extend_item(uuid_root, path, sizeof(subid_le));
+                eb = path->nodes[0];
+                slot = path->slots[0];
+                offset = btrfs_item_ptr_offset(eb, slot);
+                offset += btrfs_item_size_nr(eb, slot) - sizeof(subid_le);
+        } else if (ret < 0) {							<-----------------
+                btrfs_warn(uuid_root->fs_info, "insert uuid item failed %d "
+                        "(0x%016llx, 0x%016llx) type %u!",
+                        ret, (unsigned long long)key.objectid,
+                        (unsigned long long)key.offset, type);
+                goto out;
+        }
 
-btrfsck should not try to bring "in memory" the whole metadata, etc.
 
-my 2 cents, (will reformat /dev/md127 tomorrow, actually saving what can be saved on the old readonly fs)
+shouldn't be condensed into just "} else {" ?
 
+-- 
+Toralf
 
-Xtian.

@@ -1,62 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:39128 "EHLO
-	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750843AbaD0Ph3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 11:37:29 -0400
-Received: from cc-smtpin2.netcologne.de (cc-smtpin2.netcologne.de [89.1.8.202])
-	by cc-smtpout3.netcologne.de (Postfix) with ESMTP id E6CE012234
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 17:37:26 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-	by cc-smtpin2.netcologne.de (Postfix) with ESMTP id E0FDF11D75
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 17:37:26 +0200 (CEST)
-Received: from [87.78.231.95] (helo=cc-smtpin2.netcologne.de)
-	by localhost with ESMTP (eXpurgate 4.0.2)
-	(envelope-from <s.schumacher@netcologne.de>)
-	id 535d2436-0b79-7f0000012729-7f000001e99b-1
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 17:37:26 +0200
-Received: from mars.solar.net (xdsl-87-78-231-95.netcologne.de [87.78.231.95])
-	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by cc-smtpin2.netcologne.de (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 17:37:26 +0200 (CEST)
-Date: Sun, 27 Apr 2014 17:37:26 +0200
-From: Stefan Malte Schumacher <s.schumacher@netcologne.de>
+Received: from plane.gmane.org ([80.91.229.3]:51392 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751497AbaD0QBL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Apr 2014 12:01:11 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WeRVu-0000Da-0v
+	for linux-btrfs@vger.kernel.org; Sun, 27 Apr 2014 18:01:10 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 18:01:10 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 18:01:10 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Confusing output of btrfs fi df
-Message-ID: <20140427153726.GA20596@mars>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Can anyone boot a system using btrfs root with linux 3.14 or
+ newer? - RESOLVED
+Date: Sun, 27 Apr 2014 17:00:58 +0100
+Message-ID: <ljj9jr$jmn$1@ger.gmane.org>
+References: <001501cf6210$4142a840$c3c7f8c0$@petrovi.no-ip.info>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <001501cf6210$4142a840$c3c7f8c0$@petrovi.no-ip.info>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+On 27/04/14 13:00, Пламен Петров wrote:
+> The problem reported in this thread has been RESOLVED.
+> 
+> It's not BTRFS's fault.
+> 
+> Debugging on my part led to the actual problem in do_mounts.c - some
+> filesystems mount routines return error codes other than 0, EACCES
+> and EINVAL and such return codes result in the kernel panicking
+> without trying to mount root with all of the available filesystems.
+> 
+> Patch is available as attachment to bug 74901 -
+> https://bugzilla.kernel.org/show_bug.cgi?id=74901 . The bugentry
+> documents how I managed to find the problem.
 
-Chris and Duncan: I tried both your suggestions but unfortunately
-without success. Here is the output:
+Well deduced and that looks to be a good natural clean fix.
 
-mars:~ # btrfs balance start -susage=0 -f -v /mnt/btrfs/
-Dumping filters: flags 0xa, state 0x0, force is on
-  SYSTEM (flags 0x2): balancing, usage=0
-  Done, had to relocate 0 out of 2708 chunks
-  
-mars:~ # btrfs fi df /mnt/btrfs/
-  Data, RAID1: total=2.64TiB, used=2.22TiB
-  System, RAID1: total=8.00MiB, used=380.00KiB
-  System, single: total=4.00MiB, used=0.00
-  Metadata, RAID1: total=4.00GiB, used=2.94GiB
---------------------------------------------
+My only question is: What was the original intent to deliberately fail
+if something other than EACCES or EINVAL were reported?
 
-mars:~ # btrfs balance start -sconvert=raid1,soft -f -v /mnt/btrfs/
-Dumping filters: flags 0xa, state 0x0, force is on
-  SYSTEM (flags 0x300): converting, target=16, soft is on
-  Done, had to relocate 0 out of 2708 chunks
 
-mars:~ # btrfs fi df /mnt/btrfs/
-  Data, RAID1: total=2.64TiB, used=2.22TiB
-  System, RAID1: total=8.00MiB, used=380.00KiB
-  System, single: total=4.00MiB, used=0.00
-  Metadata, RAID1: total=4.00GiB, used=2.94GiB
+> Also, the patch has been sent to the linux kernel mailing list - see
+> http://news.gmane.org/find-root.php?group=gmane.linux.kernel&article=1691881
+> Hopefully, it will find its way into the kernel, and later on - in
+> stable releases.
 
-Yours sincerely
-Stefan
+That all looks very good and very thorough.
+
+
+> Thanks to you all! ------------------------------ Plamen Petrov
+
+Thanks to you for chasing it through!
+
+AND for posting the "Resolved" to let everyone know. :-)
+
+
+Regards,
+Martin
+
+
+
+

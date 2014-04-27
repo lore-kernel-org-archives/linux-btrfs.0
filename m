@@ -1,227 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:38665 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751333AbaD0Sl6 (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:47768 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751335AbaD0Sqt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 14:41:58 -0400
-Received: by mail-wg0-f42.google.com with SMTP id k14so2815458wgh.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 11:41:56 -0700 (PDT)
+	Sun, 27 Apr 2014 14:46:49 -0400
+Received: by mail-wi0-f176.google.com with SMTP id r20so4721594wiv.9
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 11:46:48 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: implement inode_operations callback tmpfile
-Date: Sun, 27 Apr 2014 20:40:45 +0100
-Message-Id: <1398627645-9622-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1396392799-9858-1-git-send-email-fdmanana@gmail.com>
-References: <1396392799-9858-1-git-send-email-fdmanana@gmail.com>
+Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix leaf corruption caused by ENOSPC while hole punching
+Date: Sun, 27 Apr 2014 20:44:25 +0100
+Message-Id: <1398627865-12223-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This implements the tmpfile callback of struct inode_operations, introduced
-in the linux kernel 3.11, and implemented already by some filesystems. This
-callback is invoked by the VFS when the flag O_TMPFILE is passed to the open
-system call.
+While running a stress test with multiple threads writing to the same btrfs
+file system, I ended up with a situation where a leaf was corrupted in that
+it had 2 file extent item keys that had the same exact key. I was able to
+detect this quickly thanks to the following patch which triggers an assertion
+as soon as a leaf is marked dirty if there are duplicated keys or out of order
+keys:
+
+    Btrfs: check if items are ordered when a leaf is marked dirty
+    (https://patchwork.kernel.org/patch/3955431/)
+
+Basically while running the test, I got the following in dmesg:
+
+    [28877.415877] WARNING: CPU: 2 PID: 10706 at fs/btrfs/file.c:553 btrfs_drop_extent_cache+0x435/0x440 [btrfs]()
+    (...)
+    [28877.415917] Call Trace:
+    [28877.415922]  [<ffffffff816f1189>] dump_stack+0x4e/0x68
+    [28877.415926]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
+    [28877.415929]  [<ffffffff8104a37a>] warn_slowpath_null+0x1a/0x20
+    [28877.415944]  [<ffffffffa03775a5>] btrfs_drop_extent_cache+0x435/0x440 [btrfs]
+    [28877.415949]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
+    [28877.415962]  [<ffffffffa03777d9>] fill_holes+0x229/0x3e0 [btrfs]
+    [28877.415972]  [<ffffffffa0345865>] ? block_rsv_add_bytes+0x55/0x80 [btrfs]
+    [28877.415984]  [<ffffffffa03792cb>] btrfs_fallocate+0xb6b/0xc20 [btrfs]
+    (...)
+    [29854.132560] BTRFS critical (device sdc): corrupt leaf, bad key order: block=955232256,root=1, slot=24
+    [29854.132565] BTRFS info (device sdc): leaf 955232256 total ptrs 40 free space 778
+    (...)
+    [29854.132637] 	item 23 key (3486 108 667648) itemoff 2694 itemsize 53
+    [29854.132638] 		extent data disk bytenr 14574411776 nr 286720
+    [29854.132639] 		extent data offset 0 nr 286720 ram 286720
+    [29854.132640] 	item 24 key (3486 108 954368) itemoff 2641 itemsize 53
+    [29854.132641] 		extent data disk bytenr 0 nr 0
+    [29854.132643] 		extent data offset 0 nr 0 ram 0
+    [29854.132644] 	item 25 key (3486 108 954368) itemoff 2588 itemsize 53
+    [29854.132645] 		extent data disk bytenr 8699670528 nr 77824
+    [29854.132646] 		extent data offset 0 nr 77824 ram 77824
+    [29854.132647] 	item 26 key (3486 108 1146880) itemoff 2535 itemsize 53
+    [29854.132648] 		extent data disk bytenr 8699670528 nr 77824
+    [29854.132649] 		extent data offset 0 nr 77824 ram 77824
+    (...)
+    [29854.132707] kernel BUG at fs/btrfs/ctree.h:3901!
+    (...)
+    [29854.132771] Call Trace:
+    [29854.132779]  [<ffffffffa0342b5c>] setup_items_for_insert+0x2dc/0x400 [btrfs]
+    [29854.132791]  [<ffffffffa0378537>] __btrfs_drop_extents+0xba7/0xdd0 [btrfs]
+    [29854.132794]  [<ffffffff8109c0d6>] ? trace_hardirqs_on_caller+0x16/0x1d0
+    [29854.132797]  [<ffffffff8109c29d>] ? trace_hardirqs_on+0xd/0x10
+    [29854.132800]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
+    [29854.132810]  [<ffffffffa036783b>] insert_reserved_file_extent.constprop.66+0xab/0x310 [btrfs]
+    [29854.132820]  [<ffffffffa036a6c6>] __btrfs_prealloc_file_range+0x116/0x340 [btrfs]
+    [29854.132830]  [<ffffffffa0374d53>] btrfs_prealloc_file_range+0x23/0x30 [btrfs]
+    (...)
+
+So this is caused by getting an -ENOSPC error while punching a file hole, more
+specifically, we get -ENOSPC error from __btrfs_drop_extents in the while loop
+of file.c:btrfs_punch_hole() when it's unable to modify the btree to delete one
+or more file extent items due to lack of enough free space. When this happens,
+in btrfs_punch_hole(), we attempt to reclaim free space by switching our transaction
+block reservation object to root->fs_info->trans_block_rsv, end our transaction and
+start a new transaction basically - and, we keep increasing our current offset
+(cur_offset) as long as it's smaller than the end of the target range (lockend) -
+this makes use leave the loop with cur_offset == drop_end which in turn makes us
+call fill_holes() for inserting a file extent item that represents a 0 bytes range
+hole (and this insertion succeeds, as in the meanwhile more space became available).
+
+This 0 bytes file hole extent item is a problem because any subsequent caller of
+__btrfs_drop_extents (regular file writes, or fallocate calls for e.g.), with a
+start file offset that is equal to the offset of the hole, will not remove this
+extent item due to the following conditional in the while loop of
+__btrfs_drop_extents:
+
+    if (extent_end <= search_start) {
+            path->slots[0]++;
+            goto next_slot;
+    }
+
+This later makes the call to setup_items_for_insert() (at the very end of
+__btrfs_drop_extents), insert a new file extent item with the same offset as
+the 0 bytes file hole extent item that follows it. Needless is to say that this
+causes chaos, either when reading the leaf from disk (btree_readpage_end_io_hook),
+where we perform leaf sanity checks or in subsequent operations that manipulate
+file extent items, as in the fallocate call as shown by the dmesg trace above.
+
+Without my other patch to perform the leaf sanity checks once a leaf is marked
+as dirty (if the integrity checker is enabled), it would have been much harder
+to debug this issue.
+
+This change might fix a few similar issues reported by users in the mailing
+list regarding assertion failures in btrfs_set_item_key_safe calls performed
+by __btrfs_drop_extents, such as the following report:
+
+    http://comments.gmane.org/gmane.comp.file-systems.btrfs/32938
+
+Asking fill_holes() to create a 0 bytes wide file hole item also produced the
+first warning in the trace above, as we passed a range to btrfs_drop_extent_cache
+that has an end smaller (by -1) than its start.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
+ fs/btrfs/file.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-V2: Updated change log and comment about how many metadata units are needed
-    for the transaction.
-    Left the ACL inheritance in the callback (like ext4 does) since the thread
-    in linux-fsdevel seems to have ended with the conclusion that this is the
-    right behaviour (as Andreas Gruenbacher says).
-
- fs/btrfs/inode.c | 118 +++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 98 insertions(+), 20 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0c0bb45..b5397db 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5549,6 +5549,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	struct btrfs_inode_ref *ref;
- 	struct btrfs_key key[2];
- 	u32 sizes[2];
-+	int nitems = name ? 2 : 1;
- 	unsigned long ptr;
- 	int ret;
- 
-@@ -5568,7 +5569,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	 */
- 	inode->i_ino = objectid;
- 
--	if (dir) {
-+	if (dir && name) {
- 		trace_btrfs_inode_request(dir);
- 
- 		ret = btrfs_set_inode_index(dir, index);
-@@ -5577,6 +5578,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 			iput(inode);
- 			return ERR_PTR(ret);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 49e5fbf..cac902a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -785,7 +785,17 @@ next_slot:
+ 			extent_end = search_start;
  		}
-+	} else if (dir) {
-+		*index = 0;
- 	}
- 	/*
- 	 * index_cnt is ignored for everything but a dir,
-@@ -5601,21 +5604,24 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	btrfs_set_key_type(&key[0], BTRFS_INODE_ITEM_KEY);
- 	key[0].offset = 0;
  
--	/*
--	 * Start new inodes with an inode_ref. This is slightly more
--	 * efficient for small numbers of hard links since they will
--	 * be packed into one item. Extended refs will kick in if we
--	 * add more hard links than can fit in the ref item.
--	 */
--	key[1].objectid = objectid;
--	btrfs_set_key_type(&key[1], BTRFS_INODE_REF_KEY);
--	key[1].offset = ref_objectid;
--
- 	sizes[0] = sizeof(struct btrfs_inode_item);
--	sizes[1] = name_len + sizeof(*ref);
-+
-+	if (name) {
+-		if (extent_end <= search_start) {
 +		/*
-+		 * Start new inodes with an inode_ref. This is slightly more
-+		 * efficient for small numbers of hard links since they will
-+		 * be packed into one item. Extended refs will kick in if we
-+		 * add more hard links than can fit in the ref item.
++		 * Don't skip extent items representing 0 byte lengths. They
++		 * used to be created (bug) if while punching holes we hit
++		 * -ENOSPC condition. So if we find one here, just ensure we
++		 * delete it, otherwise we would insert a new file extent item
++		 * with the same key (offset) as that 0 bytes length file
++		 * extent item in the call to setup_items_for_insert() later
++		 * in this function.
 +		 */
-+		key[1].objectid = objectid;
-+		btrfs_set_key_type(&key[1], BTRFS_INODE_REF_KEY);
-+		key[1].offset = ref_objectid;
-+
-+		sizes[1] = name_len + sizeof(*ref);
-+	}
- 
- 	path->leave_spinning = 1;
--	ret = btrfs_insert_empty_items(trans, root, path, key, sizes, 2);
-+	ret = btrfs_insert_empty_items(trans, root, path, key, sizes, nitems);
- 	if (ret != 0)
- 		goto fail;
- 
-@@ -5628,12 +5634,14 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 			     sizeof(*inode_item));
- 	fill_inode_item(trans, path->nodes[0], inode_item, inode);
- 
--	ref = btrfs_item_ptr(path->nodes[0], path->slots[0] + 1,
--			     struct btrfs_inode_ref);
--	btrfs_set_inode_ref_name_len(path->nodes[0], ref, name_len);
--	btrfs_set_inode_ref_index(path->nodes[0], ref, *index);
--	ptr = (unsigned long)(ref + 1);
--	write_extent_buffer(path->nodes[0], name, ptr, name_len);
-+	if (name) {
-+		ref = btrfs_item_ptr(path->nodes[0], path->slots[0] + 1,
-+				     struct btrfs_inode_ref);
-+		btrfs_set_inode_ref_name_len(path->nodes[0], ref, name_len);
-+		btrfs_set_inode_ref_index(path->nodes[0], ref, *index);
-+		ptr = (unsigned long)(ref + 1);
-+		write_extent_buffer(path->nodes[0], name, ptr, name_len);
-+	}
- 
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- 	btrfs_free_path(path);
-@@ -5669,7 +5677,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 
- 	return inode;
- fail:
--	if (dir)
-+	if (dir && name)
- 		BTRFS_I(dir)->index_cnt--;
- 	btrfs_free_path(path);
- 	iput(inode);
-@@ -5954,6 +5962,15 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 		err = btrfs_update_inode(trans, root, inode);
- 		if (err)
- 			goto fail;
-+		if (inode->i_nlink == 1) {
-+			/*
-+			 * If new hard link count is 1, it's a file created
-+			 * with open(2) O_TMPFILE flag.
-+			 */
-+			err = btrfs_orphan_del(trans, inode);
-+			if (err)
-+				goto fail;
-+		}
- 		d_instantiate(dentry, inode);
- 		btrfs_log_new_name(trans, inode, NULL, parent);
++		if (extent_end <= search_start &&
++		    !(extent_end == key.offset && extent_end == search_start)) {
+ 			path->slots[0]++;
+ 			goto next_slot;
+ 		}
+@@ -2353,7 +2363,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
  	}
-@@ -8886,6 +8903,66 @@ static int btrfs_permission(struct inode *inode, int mask)
- 	return generic_permission(inode, mask);
- }
  
-+static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *root = BTRFS_I(dir)->root;
-+	struct inode *inode = NULL;
-+	u64 objectid;
-+	u64 index;
-+	int ret = 0;
-+
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+-	if (cur_offset < ino_size) {
 +	/*
-+	 * 5 units required for adding orphan entry
++	 * Don't insert file hole extent item if it's for a range beyond eof
++	 * (because it's useless) or if it represents a 0 bytes range (when
++	 * cur_offset == drop_end).
 +	 */
-+	trans = btrfs_start_transaction(root, 5);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	ret = btrfs_find_free_ino(root, &objectid);
-+	if (ret)
-+		goto out;
-+
-+	inode = btrfs_new_inode(trans, root, dir, NULL, 0,
-+				btrfs_ino(dir), objectid, mode, &index);
-+	if (IS_ERR(inode)) {
-+		ret = PTR_ERR(inode);
-+		inode = NULL;
-+		goto out;
-+	}
-+
-+	ret = btrfs_init_inode_security(trans, inode, dir, NULL);
-+	if (ret)
-+		goto out;
-+
-+	ret = btrfs_update_inode(trans, root, inode);
-+	if (ret)
-+		goto out;
-+
-+	inode->i_fop = &btrfs_file_operations;
-+	inode->i_op = &btrfs_file_inode_operations;
-+
-+	inode->i_mapping->a_ops = &btrfs_aops;
-+	inode->i_mapping->backing_dev_info = &root->fs_info->bdi;
-+	BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
-+
-+	ret = btrfs_orphan_add(trans, inode);
-+	if (ret)
-+		goto out;
-+
-+	d_tmpfile(dentry, inode);
-+	mark_inode_dirty(inode);
-+
-+out:
-+	btrfs_end_transaction(trans, root);
-+	if (ret)
-+		iput(inode);
-+	btrfs_balance_delayed_items(root);
-+	btrfs_btree_balance_dirty(root);
-+
-+	return ret;
-+}
-+
- static const struct inode_operations btrfs_dir_inode_operations = {
- 	.getattr	= btrfs_getattr,
- 	.lookup		= btrfs_lookup,
-@@ -8905,6 +8982,7 @@ static const struct inode_operations btrfs_dir_inode_operations = {
- 	.permission	= btrfs_permission,
- 	.get_acl	= btrfs_get_acl,
- 	.update_time	= btrfs_update_time,
-+	.tmpfile        = btrfs_tmpfile,
- };
- static const struct inode_operations btrfs_dir_ro_inode_operations = {
- 	.lookup		= btrfs_lookup,
++	if (cur_offset < ino_size && cur_offset < drop_end) {
+ 		ret = fill_holes(trans, inode, path, cur_offset, drop_end);
+ 		if (ret) {
+ 			err = ret;
 -- 
 1.9.1
 

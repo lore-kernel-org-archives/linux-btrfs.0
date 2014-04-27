@@ -1,87 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-in-05.arcor-online.net ([151.189.21.45]:44577 "EHLO
-	mail-in-05.arcor-online.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751303AbaD0Uko (ORCPT
+Received: from mail-ee0-f52.google.com ([74.125.83.52]:44213 "EHLO
+	mail-ee0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751307AbaD0VJj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 16:40:44 -0400
-Message-ID: <535D5B4E.3010508@arcor.de>
-Date: Sun, 27 Apr 2014 21:32:30 +0200
-From: Martin Wilck <mwilck@arcor.de>
+	Sun, 27 Apr 2014 17:09:39 -0400
+Received: by mail-ee0-f52.google.com with SMTP id e49so4247959eek.39
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 14:09:37 -0700 (PDT)
+Received: from [192.168.3.10] (bzq-84-109-114-49.red.bezeqint.net. [84.109.114.49])
+        by mx.google.com with ESMTPSA id q41sm44590792eez.7.2014.04.27.14.09.35
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sun, 27 Apr 2014 14:09:36 -0700 (PDT)
+Message-ID: <535D720E.1080900@gmail.com>
+Date: Mon, 28 Apr 2014 00:09:34 +0300
+From: Niv Gal Waizer <nivwiz@gmail.com>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Lost /home subvolume after btrfs crash
-References: <534E8B6A.9060209@arcor.de> <7C3AD7C7-44A4-45F3-9634-3E92618DCD15@colorremedies.com> <53580794.3050001@arcor.de> <0B414713-868B-4BA0-8BDF-D731B8E44F5F@colorremedies.com>
-In-Reply-To: <0B414713-868B-4BA0-8BDF-D731B8E44F5F@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: File system errors
+References: <535D714C.3000507@gmail.com>
+In-Reply-To: <535D714C.3000507@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/24/2014 05:15 AM, Chris Murphy wrote:
 
->>> Current stable is 3.14.1, I suggest giving 3.13 or 3.14 a shot at this with -o ro,recovery as a first step and see if it at least mounts.
->>
->> I will. Note that with 12.3, which was the most recent media I had at
->> hand at the time, the FS was actually mountable at first (-o
->> ro,recovery). But there was no /home and later attempts to actually
->> access data in other subvolumes failed with the messages in my debug
->> material.
-> 
-> I'd skip 3.13 and go straight to 3.14.1 or 3.15rc2, and use mount option -o ro,recovery straight away and see if you can extract all of /home.
+A week ago I installed kernel 3.14 on an existing laptop with btrfs 
+install by ubuntu.  I upgraded ubuntu to 14.04 a few days ago.
+I had problems installing a package, then I removed libc6 by mistake, I 
+could no longer boot the system. I booted from a usb disk with ubuntu 
+14.04. I ran btrfsck on the btrfs partition and find many errors:
+root@ubuntu:~# btrfsck /dev/sda1
+Checking filesystem on /dev/sda1
+UUID: a4e2f8a7-3a4e-47a0-8d96-20d70a53af04
+checking extents
+Incorrect local backref count on 772273311744 parent 839903506432 owner 
+0 offset 0 found 0 wanted 1 back 0x2e5d7f0
+Backref disk bytenr does not match extent record, bytenr=772273311744, 
+ref bytenr=0
+Backref 772273311744 root 256 owner 1453610 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 772273311744 root 256 owner 1453610 
+offset 0 found 1 wanted 0 back 0x7c79cd0
+backpointer mismatch on [772273311744 8192]
+Incorrect local backref count on 772276248576 parent 839903506432 owner 
+0 offset 0 found 0 wanted 1 back 0x342da60
+Backref disk bytenr does not match extent record, bytenr=772276248576, 
+ref bytenr=0
+Backref 772276248576 root 256 owner 1453611 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 772276248576 root 256 owner 1453611 
+offset 0 found 1 wanted 0 back 0x7c7a5d0
+backpointer mismatch on [772276248576 12288]
+Incorrect local backref count on 772277743616 parent 839903506432 owner 
+0 offset 0 found 0 wanted 1 back 0x43b1a70
+Backref disk bytenr does not match extent record, bytenr=772277743616, 
+ref bytenr=0
+Backref 772277743616 root 256 owner 1453614 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 772277743616 root 256 owner 1453614 
+offset 0 found 1 wanted 0 back 0x7c7b7d0
+backpointer mismatch on [772277743616 16384]
+Backref 821382955008 root 256 owner 1870931 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821382955008 root 256 owner 1870931 
+offset 0 found 1 wanted 0 back 0xd387530
+Incorrect local backref count on 821382955008 parent 839914647552 owner 
+0 offset 0 found 0 wanted 1 back 0x4565fb0
+Backref disk bytenr does not match extent record, bytenr=821382955008, 
+ref bytenr=64
+backpointer mismatch on [821382955008 16384]
+Backref 821382971392 root 256 owner 1870932 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821382971392 root 256 owner 1870932 
+offset 0 found 1 wanted 0 back 0xec1d240
+Incorrect local backref count on 821382971392 parent 839914647552 owner 
+0 offset 0 found 0 wanted 1 back 0x45829c0
+Backref disk bytenr does not match extent record, bytenr=821382971392, 
+ref bytenr=64
+backpointer mismatch on [821382971392 12288]
+Backref 821382983680 root 256 owner 1870933 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821382983680 root 256 owner 1870933 
+offset 0 found 1 wanted 0 back 0x6e71620
+Incorrect local backref count on 821382983680 parent 839914647552 owner 
+0 offset 0 found 0 wanted 1 back 0x8c86800
+Backref disk bytenr does not match extent record, bytenr=821382983680, 
+ref bytenr=64
+backpointer mismatch on [821382983680 8192]
+Backref 821382991872 root 256 owner 1870934 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821382991872 root 256 owner 1870934 
+offset 0 found 1 wanted 0 back 0x3707e40
+Incorrect local backref count on 821382991872 parent 839914647552 owner 
+0 offset 0 found 0 wanted 1 back 0x8c86c80
+Backref disk bytenr does not match extent record, bytenr=821382991872, 
+ref bytenr=64
+backpointer mismatch on [821382991872 8192]
+Backref 821383000064 root 256 owner 1870936 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821383000064 root 256 owner 1870936 
+offset 0 found 1 wanted 0 back 0x3707cc0
+Incorrect local backref count on 821383000064 parent 839914647552 owner 
+0 offset 0 found 0 wanted 1 back 0x47addf0
+Backref disk bytenr does not match extent record, bytenr=821383000064, 
+ref bytenr=64
+backpointer mismatch on [821383000064 20480]
+Backref 821383643136 root 256 owner 1871006 offset 0 num_refs 0 not 
+found in extent tree
+Incorrect local backref count on 821383643136 root 256 owner 1871006 
+offset 0 found 1 wanted 0 back 0x965b6b0
+Incorrect local backref count on 821383643136 parent 839914913792 owner 
+0 offset 0 found 0 wanted 1 back 0xcf696c0
+Backref disk bytenr does not match extent record, bytenr=821383643136, 
+ref bytenr=64
+backpointer mismatch on [821383643136 28672]
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 256 inode 146314 errors 200, dir isize wrong
+root 256 inode 160861 errors 400, nbytes wrong
+root 256 inode 967929 errors 1800, odd csum item, some csum missing
+root 256 inode 996928 errors 1800, odd csum item, some csum missing
+root 256 inode 1326452 errors 400, nbytes wrong
+root 256 inode 1326453 errors 400, nbytes wrong
+root 261 inode 160861 errors 400, nbytes wrong
+root 261 inode 967929 errors 1800, odd csum item, some csum missing
+root 261 inode 996928 errors 1800, odd csum item, some csum missing
+root 261 inode 1326452 errors 400, nbytes wrong
+root 261 inode 1326453 errors 400, nbytes wrong
+found 77318565024 bytes used err is 1
+total csum bytes: 203137304
+total tree bytes: 2158280704
+total fs tree bytes: 1807392768
+total extent tree bytes: 124895232
+btree space waste bytes: 539994004
+file data blocks allocated: 3634757378048
+  referenced 303491842048
+Btrfs v3.12
 
-I tried mount -o ro,recovery with 3.14.1 (3.14.1-vanilla from OpenSUSE
-tumbleweed), but results weren't better than before. The kernel choked
-on the FS. The attempt to mount the broken FS with -o ro,recovery ended
-with a kernel Oops:
+I then ran btrfsck --repair /dev/sda1
+I then ran it again and got:
+btrfsck /dev/sda1
+Checking filesystem on /dev/sda1
+UUID: a4e2f8a7-3a4e-47a0-8d96-20d70a53af04
+checking extents
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 256 inode 160861 errors 400, nbytes wrong
+root 256 inode 967929 errors 1800, odd csum item, some csum missing
+root 256 inode 996928 errors 1800, odd csum item, some csum missing
+root 256 inode 1326452 errors 400, nbytes wrong
+root 256 inode 1326453 errors 400, nbytes wrong
+root 261 inode 160861 errors 400, nbytes wrong
+root 261 inode 967929 errors 1800, odd csum item, some csum missing
+root 261 inode 996928 errors 1800, odd csum item, some csum missing
+root 261 inode 1326452 errors 400, nbytes wrong
+root 261 inode 1326453 errors 400, nbytes wrong
+found 237847721824 bytes used err is 1
+total csum bytes: 203137304
+total tree bytes: 2158297088
+total fs tree bytes: 1807392768
+total extent tree bytes: 124911616
+btree space waste bytes: 540009404
+file data blocks allocated: 3634757378048
+  referenced 303491842048
+Btrfs v3.12
 
-BTRFS error (device dm-18): unable to find ref byte nr 980791296 parent
-0 root 2  owner 0 offset 0
-BUG: unable to handle kernel paging request at ff000000
-IP: [<c0324cab>] page_address+0xb/0xd0
-[<f926deef>] btrfs_del_items+0xdf/0x390
-[<f9275636>] __btrfs_free_extent+0x796/0xb30
-[<f927a81c>] __btrfs_run_delayed_refs+0x8dc/0x10e0
-[<f9276c21>] ? btrfs_delayed_refs_qgroup_accounting+0xa1/0xe0
-[<f927ec96>] btrfs_run_delayed_refs.part.56+0x56/0x1f0
-[<f92a963f>] ? btrfs_run_ordered_operations+0x19f/0x220
-[<f927ee3f>] btrfs_run_delayed_refs+0xf/0x20
-[<f928e0cc>] btrfs_commit_transaction+0x3c/0xbf0
-...
+I ran the btrfsck from this kerenl:
+Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
+2014 x86_64 x86_64 x86_64 GNU/Linux
+I ran an offline smart long test and found no errors on the drive.
 
-After that, the system was basically dead, all IO would be blocked by
-some deadlock in btrfs.
+What is wrong with my file system?
+What extra info need I supply?
 
-Full kernel log again under
-https://www.dropbox.com/sh/utv8b3qd0do6a04/zTwGQCrN9x.
 
-> You could then try btrfs-progs v3.14's btrfs restore to extract
-> /home. 
-
-btrfs restore from btrfs-progs 3.14.1 definitely looked more promising
-than the version I tried previously. However, /home is still empty.
-
-> If that doesn't work then I'd give up on this instance of the
-> file system as it sounds damaged by something possibly even the
-> btrfsck --repair.
-
-I made the block-level copy before trying any write operation (IOW,
-before copying, I tried only btrfs-restore and mount -ro,recovery).
-So it should be a 1:1 copy of the broken FS.
-
-I can't easily give up this data,
-
-> I wouldn't use --repair until a dev recommends it (even with btrfs-progs v3.14 let alone the I'm guessing v0.19 or v0.20 you were using); or once all other reasonable options are exhausted.
-
-Well it seems as if all "reasonable" options are indeed exhausted :-(
-Still looking for ideas to recover the contents of /home.
-
-Would it make sens to try to check out previous generations of the root
-tree with btrfs recover?
-
-Regards
-Martin
-
-> 
-> 
-> Chris Murphy
 

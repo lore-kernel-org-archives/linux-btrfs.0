@@ -1,159 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:47768 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751335AbaD0Sqt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 14:46:49 -0400
-Received: by mail-wi0-f176.google.com with SMTP id r20so4721594wiv.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 Apr 2014 11:46:48 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:38823 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751379AbaD1D06 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Apr 2014 23:26:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WecDZ-0005aY-8W
+	for linux-btrfs@vger.kernel.org; Mon, 28 Apr 2014 05:26:57 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 05:26:57 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 05:26:57 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix leaf corruption caused by ENOSPC while hole punching
-Date: Sun, 27 Apr 2014 20:44:25 +0100
-Message-Id: <1398627865-12223-1-git-send-email-fdmanana@gmail.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: "kernel BUG at
+ =?us-ascii?Q?=2Fhome=2Fapw=2FCOD=2Flinux=2Ffs=2Fbtrfs=2Fextent=5Fio?=
+ =?us-ascii?Q?=2Ec=3A2116!=22?= when deleting device or balancing
+ filesystem.
+Date: Mon, 28 Apr 2014 03:26:45 +0000 (UTC)
+Message-ID: <pan$2abc$efe882ea$fdd493d$5779ebd8@cox.net>
+References: <C25AA8A9-30B0-4D00-80B5-B681D93D67A3@pieroen.nl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While running a stress test with multiple threads writing to the same btrfs
-file system, I ended up with a situation where a leaf was corrupted in that
-it had 2 file extent item keys that had the same exact key. I was able to
-detect this quickly thanks to the following patch which triggers an assertion
-as soon as a leaf is marked dirty if there are duplicated keys or out of order
-keys:
+Jaap Pieroen posted on Sun, 27 Apr 2014 18:30:19 +0200 as excerpted:
 
-    Btrfs: check if items are ordered when a leaf is marked dirty
-    (https://patchwork.kernel.org/patch/3955431/)
+> Hello,
+> 
+> When I try to delete a device from my btrfs filesystem I always get the
+> following kernel bug error:
 
-Basically while running the test, I got the following in dmesg:
+> kernel BUG at /home/apw/COD/linux/fs/btrfs/extent_io.c:2116!
+> invalid opcode: 0000 [#3] SMP
+> See attached log file for more details.
 
-    [28877.415877] WARNING: CPU: 2 PID: 10706 at fs/btrfs/file.c:553 btrfs_drop_extent_cache+0x435/0x440 [btrfs]()
-    (...)
-    [28877.415917] Call Trace:
-    [28877.415922]  [<ffffffff816f1189>] dump_stack+0x4e/0x68
-    [28877.415926]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
-    [28877.415929]  [<ffffffff8104a37a>] warn_slowpath_null+0x1a/0x20
-    [28877.415944]  [<ffffffffa03775a5>] btrfs_drop_extent_cache+0x435/0x440 [btrfs]
-    [28877.415949]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
-    [28877.415962]  [<ffffffffa03777d9>] fill_holes+0x229/0x3e0 [btrfs]
-    [28877.415972]  [<ffffffffa0345865>] ? block_rsv_add_bytes+0x55/0x80 [btrfs]
-    [28877.415984]  [<ffffffffa03792cb>] btrfs_fallocate+0xb6b/0xc20 [btrfs]
-    (...)
-    [29854.132560] BTRFS critical (device sdc): corrupt leaf, bad key order: block=955232256,root=1, slot=24
-    [29854.132565] BTRFS info (device sdc): leaf 955232256 total ptrs 40 free space 778
-    (...)
-    [29854.132637] 	item 23 key (3486 108 667648) itemoff 2694 itemsize 53
-    [29854.132638] 		extent data disk bytenr 14574411776 nr 286720
-    [29854.132639] 		extent data offset 0 nr 286720 ram 286720
-    [29854.132640] 	item 24 key (3486 108 954368) itemoff 2641 itemsize 53
-    [29854.132641] 		extent data disk bytenr 0 nr 0
-    [29854.132643] 		extent data offset 0 nr 0 ram 0
-    [29854.132644] 	item 25 key (3486 108 954368) itemoff 2588 itemsize 53
-    [29854.132645] 		extent data disk bytenr 8699670528 nr 77824
-    [29854.132646] 		extent data offset 0 nr 77824 ram 77824
-    [29854.132647] 	item 26 key (3486 108 1146880) itemoff 2535 itemsize 53
-    [29854.132648] 		extent data disk bytenr 8699670528 nr 77824
-    [29854.132649] 		extent data offset 0 nr 77824 ram 77824
-    (...)
-    [29854.132707] kernel BUG at fs/btrfs/ctree.h:3901!
-    (...)
-    [29854.132771] Call Trace:
-    [29854.132779]  [<ffffffffa0342b5c>] setup_items_for_insert+0x2dc/0x400 [btrfs]
-    [29854.132791]  [<ffffffffa0378537>] __btrfs_drop_extents+0xba7/0xdd0 [btrfs]
-    [29854.132794]  [<ffffffff8109c0d6>] ? trace_hardirqs_on_caller+0x16/0x1d0
-    [29854.132797]  [<ffffffff8109c29d>] ? trace_hardirqs_on+0xd/0x10
-    [29854.132800]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
-    [29854.132810]  [<ffffffffa036783b>] insert_reserved_file_extent.constprop.66+0xab/0x310 [btrfs]
-    [29854.132820]  [<ffffffffa036a6c6>] __btrfs_prealloc_file_range+0x116/0x340 [btrfs]
-    [29854.132830]  [<ffffffffa0374d53>] btrfs_prealloc_file_range+0x23/0x30 [btrfs]
-    (...)
+That's a reasonably common, generic error, simply indicating the kernel 
+got an invalid/zero opcode instead of what it was supposed to get, but 
+not really saying why, tho the log does give some more info.
 
-So this is caused by getting an -ENOSPC error while punching a file hole, more
-specifically, we get -ENOSPC error from __btrfs_drop_extents in the while loop
-of file.c:btrfs_punch_hole() when it's unable to modify the btree to delete one
-or more file extent items due to lack of enough free space. When this happens,
-in btrfs_punch_hole(), we attempt to reclaim free space by switching our transaction
-block reservation object to root->fs_info->trans_block_rsv, end our transaction and
-start a new transaction basically - and, we keep increasing our current offset
-(cur_offset) as long as it's smaller than the end of the target range (lockend) -
-this makes use leave the loop with cur_offset == drop_end which in turn makes us
-call fill_holes() for inserting a file extent item that represents a 0 bytes range
-hole (and this insertion succeeds, as in the meanwhile more space became available).
+In the log, it relocates various block groups, but then fails on one, due 
+to invalid checksum (csum).  See below for the implications of that.
 
-This 0 bytes file hole extent item is a problem because any subsequent caller of
-__btrfs_drop_extents (regular file writes, or fallocate calls for e.g.), with a
-start file offset that is equal to the offset of the hole, will not remove this
-extent item due to the following conditional in the while loop of
-__btrfs_drop_extents:
+> I’m trying to delete the device /dev/sdb from my filesystem.
+> 
+> Steps I tried so far are:
+> 1. mount with the clear_cache option
+> 2. balance the filesystem (results in the same kernel error)
+> 3. scrub the filesystem
+> 4. btrfsck —repair
 
-    if (extent_end <= search_start) {
-            path->slots[0]++;
-            goto next_slot;
-    }
+Never use btrfsck (or btrfs check) with the --repair option, unless 
+you're about ready to give up on the filesystem and do a mkfs, in which 
+case you aren't risking anything anyway, or unless a dev suggests you run 
+it.
 
-This later makes the call to setup_items_for_insert() (at the very end of
-__btrfs_drop_extents), insert a new file extent item with the same offset as
-the 0 bytes file hole extent item that follows it. Needless is to say that this
-causes chaos, either when reading the leaf from disk (btree_readpage_end_io_hook),
-where we perform leaf sanity checks or in subsequent operations that manipulate
-file extent items, as in the fallocate call as shown by the dmesg trace above.
+The reason being, btrfs check --repair knows how to fix some types of 
+errors, but among the ones it doesn't know how to fix, it can sometimes 
+make the problem worse.  At some point it should know most problems and 
+at least not make them worse, but until then, it's not a good risk to 
+take unless  you really know what you're doing or it's no risk as the 
+next step is blowing away the filesystem anyway.
 
-Without my other patch to perform the leaf sanity checks once a leaf is marked
-as dirty (if the integrity checker is enabled), it would have been much harder
-to debug this issue.
+(btrfs check, without --repair, is fine to run, since it's read-only and 
+thus won't make anything worse.  But by the same token, it won't fix 
+anything either, it's simply informational.)
 
-This change might fix a few similar issues reported by users in the mailing
-list regarding assertion failures in btrfs_set_item_key_safe calls performed
-by __btrfs_drop_extents, such as the following report:
+> During scrubbing and btrfsck some error where found and fixed. But I
+> think these where error caused by system lockups during copying data to
+> the new btrfs filesystem. These lockups where caused by an extraordinary
+> amount of hard links, since I was using rsnapshot to create hourly
+> snapshots on my old filesystem that I am migrating towards btrfs.
+> Removing these hard links solved the lockup problems.
+> 
+> Something I also noted was that after the btrfsck run, the command
+> ‘btrfs fi show’ reported
+> “devid    4 size 0.0GiB used 98.00GiB path /dev/sdb” (mind the 0.0GB).
+> 
+> I’m ready to run any diagnostics necessary, but the filesystem is 4.7T
+> so it won’t be able to provide an image.
+> 
+> System details:
+> $ uname -a Linux nasbak 3.14.1-031401-generic
 
-    http://comments.gmane.org/gmane.comp.file-systems.btrfs/32938
+Good, latest stable kernel. =:^)
 
-Asking fill_holes() to create a 0 bytes wide file hole item also produced the
-first warning in the trace above, as we passed a range to btrfs_drop_extent_cache
-that has an end smaller (by -1) than its start.
+> $ btrfs --version
+> Btrfs v3.12
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/file.c | 19 +++++++++++++++++--
- 1 file changed, 17 insertions(+), 2 deletions(-)
+You're behind on btrfs-tools.  =:^(  The latest version is v3.14.1.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 49e5fbf..cac902a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -785,7 +785,17 @@ next_slot:
- 			extent_end = search_start;
- 		}
- 
--		if (extent_end <= search_start) {
-+		/*
-+		 * Don't skip extent items representing 0 byte lengths. They
-+		 * used to be created (bug) if while punching holes we hit
-+		 * -ENOSPC condition. So if we find one here, just ensure we
-+		 * delete it, otherwise we would insert a new file extent item
-+		 * with the same key (offset) as that 0 bytes length file
-+		 * extent item in the call to setup_items_for_insert() later
-+		 * in this function.
-+		 */
-+		if (extent_end <= search_start &&
-+		    !(extent_end == key.offset && extent_end == search_start)) {
- 			path->slots[0]++;
- 			goto next_slot;
- 		}
-@@ -2353,7 +2363,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	}
- 
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
--	if (cur_offset < ino_size) {
-+	/*
-+	 * Don't insert file hole extent item if it's for a range beyond eof
-+	 * (because it's useless) or if it represents a 0 bytes range (when
-+	 * cur_offset == drop_end).
-+	 */
-+	if (cur_offset < ino_size && cur_offset < drop_end) {
- 		ret = fill_holes(trans, inode, path, cur_offset, drop_end);
- 		if (ret) {
- 			err = ret;
+> $ sudo btrfs fi show
+> Label: btrfs_storage  uuid: 7ca5f38e-308f-43ab-b3ea-31b3bcd11a0d
+> 	Total devices 6 FS bytes used 4.57TiB
+> 	devid    1 size 1.82TiB used 1.32TiB path /dev/sde
+> 	devid    2 size 1.82TiB used 1.32TiB path /dev/sdf
+> 	devid    3 size 1.82TiB used 1.32TiB path /dev/sdg
+> 	devid    4 size 931.51GiB used 88.00GiB path /dev/sdb
+> 	devid    6 size 2.73TiB used 947.03GiB path /dev/sdh
+> 	devid    7 size 2.73TiB used 947.03GiB path /dev/sdi
+> 	
+> Btrfs v3.12
+
+For further reference, whenever you post btrfs fi show, please post btrfs 
+fi df as well, as the two provide complementary information, and the 
+picture without both of them is incomplete.
+
+If you'd supplied the btrfs fi df output, we could see what raid level 
+you're running for data/metadata/system, as well as which type of chunks 
+were still left on /dev/sdb.
+
+For raid1 and raid10 modes (and dup mode on a single device), there's two 
+copies of each chunk, thus a second copy to try if the checksum fails.   
+Single and raid0 modes only keep a single copy, so there's not much to do 
+there but find the corresponding file and delete it, to correct the 
+problem.  In normal operation, if such a checksum error is found and 
+there is a second copy that passes checksum, the invalid copy is 
+rewritten to match.  What scrub does is go thru the entire filesystem 
+looking for such errors and rewriting the invalid copy if possible, so 
+you don't have to wait until you happen on the problem by accident.
+
+You mentioned that you did try scrub and that it fixed some errors, which 
+would be csum errors.  But did it leave any unfixed because there wasn't 
+a second, valid copy of the invalid data with which to rewrite it?  If it 
+found and fixed all the errors, then you shouldn't be seeing further csum 
+errors like those in the log file, unless more are being created, which 
+would indicate an ongoing problem (perhaps a device going bad).
+
+Of course the kernel bug is presumably locking up your system, not 
+allowing a clean shutdown, in which case you may well have more csum 
+errors due to that.  So after rebooting, be sure to run a scrub before 
+you try to balance or device delete, and hopefully eliminate the problem.
+
+But... since you didn't post the df output, we don't know what the 
+remaining content on the device is, data/metadata/system, nor do we know 
+what mode it is, and it could well be that scrub can't remove it due to 
+invalid csums if there's no second, valid copy, as will definitely be the 
+case if it's single or raid0 mode (with data chunks being single by 
+default, tho metadata and system chunks default to raid1 on a multi-
+device filesystem and dup on a single-device filesystem).
+
+If there's no valid second copy to rewrite the bad one with, you may 
+simply have to figure out what file and/or snapshot(s) it belongs to and 
+delete them, fixing the bad csums that way.
+
+Of course that's assuming it's the bad csums causing the problem, not 
+something else.
+
+Meanwhile, while I don't claim to be a dev nor to /really/ read code, I 
+did see some recent patches go by with comments that described bugs that 
+looked to me like they might match the problem you're reporting here, 
+specifically, failure to properly device delete under some conditions.  
+So I'd suggest updating to a current btrfs-progs v3.14.1 and see if that 
+helps.  If not, try a current v3.15-rcX testing kernel, or if you don't 
+want to try that, wait a couple stable kernel releases and see if there's 
+any btrfs patches applied.
+
+With a bit of luck, between tracking down and eliminating the bad csums, 
+and the newer code that I think fixes at least some of the failure to 
+device delete issues, the problem will be addressed. =:^)
+
 -- 
-1.9.1
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

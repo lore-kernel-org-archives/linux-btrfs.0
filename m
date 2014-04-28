@@ -1,84 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48278 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755442AbaD1Bs1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Apr 2014 21:48:27 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WeagE-0002CQ-E7
-	for linux-btrfs@vger.kernel.org; Mon, 28 Apr 2014 03:48:26 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 03:48:26 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 03:48:26 +0200
+Received: from cc-smtpout3.netcologne.de ([89.1.8.213]:39650 "EHLO
+	cc-smtpout3.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754108AbaD1L5G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Apr 2014 07:57:06 -0400
+Received: from cc-smtpin1.netcologne.de (cc-smtpin1.netcologne.de [89.1.8.201])
+	by cc-smtpout3.netcologne.de (Postfix) with ESMTP id 74CF8122DA
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 13:57:03 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+	by cc-smtpin1.netcologne.de (Postfix) with ESMTP id 6E34F11DCA
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 13:57:03 +0200 (CEST)
+Received: from [87.78.83.178] (helo=cc-smtpin1.netcologne.de)
+	by localhost with ESMTP (eXpurgate 4.0.2)
+	(envelope-from <s.schumacher@netcologne.de>)
+	id 535e420f-0bb0-7f0000012729-7f0000018df7-1
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 13:57:03 +0200
+Received: from mars.solar.net (xdsl-87-78-83-178.netcologne.de [87.78.83.178])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by cc-smtpin1.netcologne.de (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 13:57:03 +0200 (CEST)
+Date: Mon, 28 Apr 2014 13:57:02 +0200
+From: Stefan Malte Schumacher <s.schumacher@netcologne.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Confusing output of btrfs fi df
-Date: Mon, 28 Apr 2014 01:48:15 +0000 (UTC)
-Message-ID: <pan$bf8bb$295ee5d2$1cf4d367$4ef83ac5@cox.net>
-References: <20140427153726.GA20596@mars>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20140428115702.GA26444@mars>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Malte Schumacher posted on Sun, 27 Apr 2014 17:37:26 +0200 as
-excerpted:
 
-> Chris and Duncan: I tried both your suggestions but unfortunately
-> without success. Here is the output:
-> 
-> mars:~ # btrfs balance start -susage=0 -f -v /mnt/btrfs/
-> Dumping filters: flags 0xa, state 0x0, force is on
->   SYSTEM (flags 0x2): balancing, usage=0
->   Done, had to relocate 0 out of 2708 chunks
->   
-> mars:~ # btrfs fi df /mnt/btrfs/
->   Data, RAID1: total=2.64TiB, used=2.22TiB
->   System, RAID1: total=8.00MiB, used=380.00KiB
->   System, single: total=4.00MiB, used=0.00
->   Metadata, RAID1: total=4.00GiB, used=2.94GiB
-> --------------------------------------------
-> 
-> mars:~ # btrfs balance start -sconvert=raid1,soft -f -v /mnt/btrfs/
-> Dumping filters: flags 0xa, state 0x0, force is on
->   SYSTEM (flags 0x300): converting, target=16, soft is on
->   Done, had to relocate 0 out of 2708 chunks
-> 
-> mars:~ # btrfs fi df /mnt/btrfs/
->   Data, RAID1: total=2.64TiB, used=2.22TiB
->   System, RAID1: total=8.00MiB, used=380.00KiB
->   System, single: total=4.00MiB, used=0.00
->   Metadata, RAID1: total=4.00GiB, used=2.94GiB
 
-OK, this is interesting  It may be that you're reproducing something a 
-couple other people saw earlier, but I've never seen here, which might be 
-because I tend to do -m<whatever (metadata) and let it handle -s/system 
-at the same time, instead of doing -s<whatever> explicitly.
+> So try this one:
+> btrfs balance start -musage=0 -v
 
-So try this one:
+I fear that didn't work too. 
 
-btrfs balance start -musage=0 -v
+mars:/mnt # btrfs balance start -musage=0 -v btrfs/
+Dumping filters: flags 0x6, state 0x0, force is off
+  METADATA (flags 0x2): balancing, usage=0
+  SYSTEM (flags 0x2): balancing, usage=0
+  Done, had to relocate 1 out of 2708 chunks
+  
+mars:/mnt # btrfs fi df btrfs/
+Data, RAID1: total=2.64TiB, used=2.22TiB
+System, RAID1: total=8.00MiB, used=380.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, RAID1: total=4.00GiB, used=2.94GiB
 
-(-f shouldn't be needed for this one because you're not doing -s 
-specifically, and not forcing a lower redundancy level.)
 
-It may or may not free a couple metadata chunks too, but at least here, 
-that's /exactly/ what I've used, and it has /never/ failed to cleanup 
-that unused system chunk.
+>If that fails to remove the extra system chunk, then we have a mystery
+>indeed.  What's different on your system and why isn't it working?
 
-If that fails to remove the extra system chunk, then we have a mystery 
-indeed.  What's different on your system and why isn't it working?
+I have no idea. Its just a plain openSUSE 13.1 and they consider btrfs
+support stable enough to use it as default filesystem in the upcoming
+13.2. I could create the filesystem again and restore the data but of
+course I would actually need to know what went wrong the first time in
+order to avoid doing it again. Is there anything you need to know
+about my system which would be of use? (Controller, Disks, Mainboard
+etc. ?)  
 
-If it succeeds in removing it, then we have a different and more limited 
-bug/mystery.  -s sometimes ignores system chunks it's documented to 
-balance, while -m is doing both metadata and system, as expected.
+Yours sincerely
+Stefan
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+   

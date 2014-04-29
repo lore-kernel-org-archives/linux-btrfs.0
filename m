@@ -1,69 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57542 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754297AbaD2G2w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Apr 2014 02:28:52 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wf1X8-0004zc-Ud
-	for linux-btrfs@vger.kernel.org; Tue, 29 Apr 2014 08:28:50 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 08:28:50 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 08:28:50 +0200
+Received: from mail-we0-f174.google.com ([74.125.82.174]:52591 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757477AbaD2LTa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Apr 2014 07:19:30 -0400
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: "kernel BUG at
- =?us-ascii?Q?=2Fhome=2Fapw=2FCOD=2Flinux=2Ffs=2Fbtrfs=2Fextent=5Fio?=
- =?us-ascii?Q?=2Ec=3A2116!=22?= when deleting device or balancing
- filesystem.
-Date: Tue, 29 Apr 2014 06:28:39 +0000 (UTC)
-Message-ID: <pan$c3e1d$1f669ca6$e80dc3d5$584048c@cox.net>
-References: <C25AA8A9-30B0-4D00-80B5-B681D93D67A3@pieroen.nl>
-	<pan$2abc$efe882ea$fdd493d$5779ebd8@cox.net>
-	<loom.20140428T222711-911@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>,
+        stable@vger.kernel.org
+Subject: [PATCH v2] Btrfs: fix leaf corruption caused by ENOSPC while hole punching
+Date: Tue, 29 Apr 2014 13:18:40 +0100
+Message-Id: <1398773920-7442-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1398627865-12223-1-git-send-email-fdmanana@gmail.com>
+References: <1398627865-12223-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jaap Pieroen posted on Mon, 28 Apr 2014 20:30:55 +0000 as excerpted:
+While running a stress test with multiple threads writing to the same btrfs
+file system, I ended up with a situation where a leaf was corrupted in that
+it had 2 file extent item keys that had the same exact key. I was able to
+detect this quickly thanks to the following patch which triggers an assertion
+as soon as a leaf is marked dirty if there are duplicated keys or out of order
+keys:
 
->> For further reference, whenever you post btrfs fi show, please post
->> btrfs fi df as well, as the two provide complementary information, and
->> the picture without both of them is incomplete.
->> 
->> If you'd supplied the btrfs fi df output, we could see what raid level
->> you're running for data/metadata/system, as well as which type of
->> chunks were still left on /dev/sdb.
-> 
-> Yep, I dropped the ball here. I did look in the wiki for a list of
-> output required when asking for support, but I couldn't find any. I'll
-> make sure I add it to the wiki for the next person.
+    Btrfs: check if items are ordered when a leaf is marked dirty
+    (https://patchwork.kernel.org/patch/3955431/)
 
-Thanks.  That's likely to be quite practically useful to many people over 
-time, including me.  =:^)
+Basically while running the test, I got the following in dmesg:
 
-(FWIW, while I mentally appreciate that wikis are there to be user-
-edited, in practice I seem to treat them like I do most of the web, read-
-only, and never actually seem to get around to changing them at all.  
-OTOH, I've always enjoyed the give and take of newsgroups and mailing 
-lists and in practice spend quite a bit of time replying to posts, 
-hopefully helping others there, which I know I do based on the thanks I 
-get.  So I really /can/ thank you for putting that on the wiki, since 
-while it's likely to make my job replying to posts easier, in practice 
-it's something I'd be extremely unlikely to change on the wiki myself, 
-even on wikis like the btrfs wiki which I highly value and have spent 
-quite some time reading and much more replying on the related list, 
-because for whatever reason I personally just seem to have an easier time 
-replying on-list than I do editing wikis.  But I'm sure glad others get 
-around to editing them. =:^)
+    [28877.415877] WARNING: CPU: 2 PID: 10706 at fs/btrfs/file.c:553 btrfs_drop_extent_cache+0x435/0x440 [btrfs]()
+    (...)
+    [28877.415917] Call Trace:
+    [28877.415922]  [<ffffffff816f1189>] dump_stack+0x4e/0x68
+    [28877.415926]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
+    [28877.415929]  [<ffffffff8104a37a>] warn_slowpath_null+0x1a/0x20
+    [28877.415944]  [<ffffffffa03775a5>] btrfs_drop_extent_cache+0x435/0x440 [btrfs]
+    [28877.415949]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
+    [28877.415962]  [<ffffffffa03777d9>] fill_holes+0x229/0x3e0 [btrfs]
+    [28877.415972]  [<ffffffffa0345865>] ? block_rsv_add_bytes+0x55/0x80 [btrfs]
+    [28877.415984]  [<ffffffffa03792cb>] btrfs_fallocate+0xb6b/0xc20 [btrfs]
+    (...)
+    [29854.132560] BTRFS critical (device sdc): corrupt leaf, bad key order: block=955232256,root=1, slot=24
+    [29854.132565] BTRFS info (device sdc): leaf 955232256 total ptrs 40 free space 778
+    (...)
+    [29854.132637] 	item 23 key (3486 108 667648) itemoff 2694 itemsize 53
+    [29854.132638] 		extent data disk bytenr 14574411776 nr 286720
+    [29854.132639] 		extent data offset 0 nr 286720 ram 286720
+    [29854.132640] 	item 24 key (3486 108 954368) itemoff 2641 itemsize 53
+    [29854.132641] 		extent data disk bytenr 0 nr 0
+    [29854.132643] 		extent data offset 0 nr 0 ram 0
+    [29854.132644] 	item 25 key (3486 108 954368) itemoff 2588 itemsize 53
+    [29854.132645] 		extent data disk bytenr 8699670528 nr 77824
+    [29854.132646] 		extent data offset 0 nr 77824 ram 77824
+    [29854.132647] 	item 26 key (3486 108 1146880) itemoff 2535 itemsize 53
+    [29854.132648] 		extent data disk bytenr 8699670528 nr 77824
+    [29854.132649] 		extent data offset 0 nr 77824 ram 77824
+    (...)
+    [29854.132707] kernel BUG at fs/btrfs/ctree.h:3901!
+    (...)
+    [29854.132771] Call Trace:
+    [29854.132779]  [<ffffffffa0342b5c>] setup_items_for_insert+0x2dc/0x400 [btrfs]
+    [29854.132791]  [<ffffffffa0378537>] __btrfs_drop_extents+0xba7/0xdd0 [btrfs]
+    [29854.132794]  [<ffffffff8109c0d6>] ? trace_hardirqs_on_caller+0x16/0x1d0
+    [29854.132797]  [<ffffffff8109c29d>] ? trace_hardirqs_on+0xd/0x10
+    [29854.132800]  [<ffffffff8118e7be>] ? kmem_cache_alloc+0xfe/0x1c0
+    [29854.132810]  [<ffffffffa036783b>] insert_reserved_file_extent.constprop.66+0xab/0x310 [btrfs]
+    [29854.132820]  [<ffffffffa036a6c6>] __btrfs_prealloc_file_range+0x116/0x340 [btrfs]
+    [29854.132830]  [<ffffffffa0374d53>] btrfs_prealloc_file_range+0x23/0x30 [btrfs]
+    (...)
 
+So this is caused by getting an -ENOSPC error while punching a file hole, more
+specifically, we get -ENOSPC error from __btrfs_drop_extents in the while loop
+of file.c:btrfs_punch_hole() when it's unable to modify the btree to delete one
+or more file extent items due to lack of enough free space. When this happens,
+in btrfs_punch_hole(), we attempt to reclaim free space by switching our transaction
+block reservation object to root->fs_info->trans_block_rsv, end our transaction and
+start a new transaction basically - and, we keep increasing our current offset
+(cur_offset) as long as it's smaller than the end of the target range (lockend) -
+this makes use leave the loop with cur_offset == drop_end which in turn makes us
+call fill_holes() for inserting a file extent item that represents a 0 bytes range
+hole (and this insertion succeeds, as in the meanwhile more space became available).
+
+This 0 bytes file hole extent item is a problem because any subsequent caller of
+__btrfs_drop_extents (regular file writes, or fallocate calls for e.g.), with a
+start file offset that is equal to the offset of the hole, will not remove this
+extent item due to the following conditional in the while loop of
+__btrfs_drop_extents:
+
+    if (extent_end <= search_start) {
+            path->slots[0]++;
+            goto next_slot;
+    }
+
+This later makes the call to setup_items_for_insert() (at the very end of
+__btrfs_drop_extents), insert a new file extent item with the same offset as
+the 0 bytes file hole extent item that follows it. Needless is to say that this
+causes chaos, either when reading the leaf from disk (btree_readpage_end_io_hook),
+where we perform leaf sanity checks or in subsequent operations that manipulate
+file extent items, as in the fallocate call as shown by the dmesg trace above.
+
+Without my other patch to perform the leaf sanity checks once a leaf is marked
+as dirty (if the integrity checker is enabled), it would have been much harder
+to debug this issue.
+
+This change might fix a few similar issues reported by users in the mailing
+list regarding assertion failures in btrfs_set_item_key_safe calls performed
+by __btrfs_drop_extents, such as the following report:
+
+    http://comments.gmane.org/gmane.comp.file-systems.btrfs/32938
+
+Asking fill_holes() to create a 0 bytes wide file hole item also produced the
+first warning in the trace above, as we passed a range to btrfs_drop_extent_cache
+that has an end smaller (by -1) than its start.
+
+On 3.14 kernels this issue manifests itself through leaf corruption, as we get
+duplicated file extent item keys in a leaf when calling setup_items_for_insert(),
+but on older kernels, setup_items_for_insert() isn't called by __btrfs_drop_extents(),
+instead we have callers of __btrfs_drop_extents(), namely the functions
+inode.c:insert_inline_extent() and inode.c:insert_reserved_file_extent(), calling
+btrfs_insert_empty_item() to insert the new file extent item, which would fail with
+error -EEXIST, instead of inserting a duplicated key - which is still a serious
+issue as it would make all similar file extent item replace operations keep
+failing if they target the same file range.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+
+V2: Updated commit message to mention difference between 3.14 kernels and older
+    releases and cc'ed stable. Made the logic in __btrfs_drop_extents simpler
+    and made it remove any 0 bytes file extent item within the target range, and
+    not only extent items that have an offset matching search_start.
+
+ fs/btrfs/file.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 49e5fbf..7c3c84f 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -785,6 +785,18 @@ next_slot:
+ 			extent_end = search_start;
+ 		}
+ 
++		/*
++		 * Don't skip extent items representing 0 byte lengths. They
++		 * used to be created (bug) if while punching holes we hit
++		 * -ENOSPC condition. So if we find one here, just ensure we
++		 * delete it, otherwise we would insert a new file extent item
++		 * with the same key (offset) as that 0 bytes length file
++		 * extent item in the call to setup_items_for_insert() later
++		 * in this function.
++		 */
++		if (extent_end == key.offset && extent_end >= search_start)
++			goto delete_extent_item;
++
+ 		if (extent_end <= search_start) {
+ 			path->slots[0]++;
+ 			goto next_slot;
+@@ -898,6 +910,7 @@ next_slot:
+ 		 *    | ------ extent ------ |
+ 		 */
+ 		if (start <= key.offset && end >= extent_end) {
++delete_extent_item:
+ 			if (del_nr == 0) {
+ 				del_slot = path->slots[0];
+ 				del_nr = 1;
+@@ -2353,7 +2366,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	}
+ 
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+-	if (cur_offset < ino_size) {
++	/*
++	 * Don't insert file hole extent item if it's for a range beyond eof
++	 * (because it's useless) or if it represents a 0 bytes range (when
++	 * cur_offset == drop_end).
++	 */
++	if (cur_offset < ino_size && cur_offset < drop_end) {
+ 		ret = fill_holes(trans, inode, path, cur_offset, drop_end);
+ 		if (ret) {
+ 			err = ret;
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.9.1
 

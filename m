@@ -1,71 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f47.google.com ([209.85.215.47]:64750 "EHLO
-	mail-la0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751402AbaDYKvh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Apr 2014 06:51:37 -0400
-Received: by mail-la0-f47.google.com with SMTP id pn19so2900943lab.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Apr 2014 03:51:36 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1398422643-6741-1-git-send-email-bo.li.liu@oracle.com>
-References: <1398407399-10963-1-git-send-email-bo.li.liu@oracle.com>
-	<1398422643-6741-1-git-send-email-bo.li.liu@oracle.com>
-Date: Fri, 25 Apr 2014 11:51:36 +0100
-Message-ID: <CAL3q7H6Lxjz8TkLkFXhwUas3VO75nRNuZfBpT2Ns8A2xOdjEQw@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs-progs: set string end sing '\0' for property
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:57196 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756726AbaD2P46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Apr 2014 11:56:58 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 60E9FAC4F
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 15:56:57 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 00/14] Enhanced df - followup
+Date: Tue, 29 Apr 2014 17:56:47 +0200
+Message-Id: <cover.1398786620.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 25, 2014 at 11:44 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> Set string "xattr_name" 's end with '\0' so that it won't be
-> violated in memory.
->
-> With this fix, xfstest/btrfs/048 can pass on my box.
->
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Hi,
 
-Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+this is a followup to the df (space usage) enhancements, Goffredo's
+patches are merged without changes, though the code needs updates.
 
-> ---
-> v2: avoid buffer overflow of malloc().
->
->  props.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
->
-> diff --git a/props.c b/props.c
-> index 9ff63ca..cc87454 100644
-> --- a/props.c
-> +++ b/props.c
-> @@ -131,13 +131,14 @@ static int prop_compression(enum prop_object_type type,
->                 goto out;
->         }
->
-> -       xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name));
-> +       xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
->         if (!xattr_name) {
->                 ret = -ENOMEM;
->                 goto out;
->         }
->         memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
->         memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
-> +       xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
->
->         if (value)
->                 sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
-> --
-> 1.7.7
->
+But, given the patchset size, net benefit of the enriched output and
+longstanding need of the update, I've deliberately skipped the process of
+incremental rewiew/resend loop that should normally take place and implemented
+the changes that were agreed in previous discussions and did code cleanups
+along the way.
+
+The basic layout of the command output has been kept, there are some
+tweaks or additions.
+
+Changes:
+* btrfs filesystem disk_usage - renamed to usage
+  * added a section of overall filesystem usage, that used to be in the
+    'fi df' output
+* btrfs device disk_usage - renamed to usage
+  * the device size prints both blockdevie size and the size that's occupied
+    by the filesystem
+  * device ID is printed
+* btrfs filesystem df - reverted to the original output
+* btrfs filesystem df - now prints the GlobalReserve info
+* units print B for bytes
+* the ioctls FS_INFO and DEV_INFO need root (patches sent to drop that
+  requirement), so there's a warning printed instead
+* no documentation for now
+
+It's not finished, I've tried to scan all the previous iteration of the
+patches for the suggested UI tweaks and probably missed some, but IMO in a
+state that can go to git and be scheduled for a near release.
+
+The major UI changes are there, we can tweak it further of course.
 
 
+David Sterba (14):
+  btrfs-progs: read global reserve size from space infos
+  btrfs-progs: add original 'df' and rename 'disk_usage' to 'usage'
+  btrfs-progs: move device usage to cmds-device, more cleanups
+  btrfs-progs: check if we can't get info from ioctls due to permissions
+  btrfs-progs: zero out structures before calling ioctl
+  btrfs-progs: print B for bytes
+  btrfs-progs: Print more info about device sizes
+  btrfs-progs: compare unallocated space against the correct value
+  btrfs-progs: add section of overall filesystem usage
+  btrfs-progs: cleanup filesystem/device usage code
+  btrfs-progs: extend pretty printers with unit mode
+  btrfs-progs: replace df_pretty_sizes with pretty_size_mode
+  btrfs-progs: clean up return codes and paths
+  btrfs-progs: move global reserve to overall summary
+
+ cmds-device.c        |  92 +++++++-
+ cmds-fi-disk_usage.c | 631 +++++++++++++++++++--------------------------------
+ cmds-fi-disk_usage.h |  35 ++-
+ cmds-filesystem.c    |  55 ++++-
+ ctree.h              |   6 +
+ utils.c              |  78 +++++--
+ utils.h              |  21 +-
+ 7 files changed, 482 insertions(+), 436 deletions(-)
 
 -- 
-Filipe David Manana,
+1.9.0
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

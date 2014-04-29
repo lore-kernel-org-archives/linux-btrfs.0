@@ -1,61 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35500 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753944AbaD1Igb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Apr 2014 04:36:31 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s3S8aSlY001439
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Apr 2014 16:36:28 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs-progs: Replace the overkill assert with normal error message.
-Date: Mon, 28 Apr 2014 16:37:30 +0800
-Message-ID: <1398674250-9656-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1398674250-9656-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1398674250-9656-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:57197 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757634AbaD2P5D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Apr 2014 11:57:03 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id C7E7FAC4F
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 15:57:02 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH 01/14] btrfs-progs: read global reserve size from space infos
+Date: Tue, 29 Apr 2014 17:57:01 +0200
+Message-Id: <b0d096eacc220f6d523706c1685099a37070925d.1398786620.git.dsterba@suse.cz>
+In-Reply-To: <cover.1398786620.git.dsterba@suse.cz>
+References: <cover.1398786620.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When 'btrfs replace status' encounters an unknown dev replace status, it
-will cause an assert, which is somewhat overkilled and can be replaced
-with a normal error message.
+Kernels >= 3.15 export the global block reserve as a space info presented
+by 'btrfs fi df' but would display 'unknown' instead of some meaningful
+string.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- cmds-replace.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ ctree.h | 6 ++++++
+ utils.c | 7 ++++++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 645dc98..9eb981b 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -449,7 +449,10 @@ static int print_replace_status(int fd, const char *path, int once)
- 			break;
- 		default:
- 			prevent_loop = 1;
--			assert(0);
-+			fprintf(stderr,
-+				"Unknown btrfs dev replace status:%llu",
-+				status->replace_state);
-+			ret = -EINVAL;
- 			break;
- 		}
+diff --git a/ctree.h b/ctree.h
+index 8ac17619b9dc..5c43fc5f5f6e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -862,6 +862,12 @@ struct btrfs_csum_item {
+ /* used in struct btrfs_balance_args fields */
+ #define BTRFS_AVAIL_ALLOC_BIT_SINGLE	(1ULL << 48)
  
-@@ -459,9 +462,9 @@ static int print_replace_status(int fd, const char *path, int once)
- 				(unsigned long long)status->num_write_errors,
- 				(unsigned long long)
- 				 status->num_uncorrectable_read_errors);
--		if (once || prevent_loop) {
-+		if (once || prevent_loop || ret) {
- 			printf("\n");
--			return 0;
-+			return ret;
- 		}
- 
- 		fflush(stdout);
++/*
++ * GLOBAL_RSV does not exist as a on-disk block group type and is used
++ * internally for exporting info about global block reserve from space infos
++ */
++#define BTRFS_SPACE_INFO_GLOBAL_RSV    (1ULL << 49)
++
+ #define BTRFS_QGROUP_STATUS_OFF			0
+ #define BTRFS_QGROUP_STATUS_ON			1
+ #define BTRFS_QGROUP_STATUS_SCANNING		2
+diff --git a/utils.c b/utils.c
+index f2ab416c28b2..ca150404ea6f 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2240,7 +2240,10 @@ u64 get_partition_size(char *dev)
+  */
+ const char *group_type_str(u64 flag)
+ {
+-	switch (flag & BTRFS_BLOCK_GROUP_TYPE_MASK) {
++	u64 mask = BTRFS_BLOCK_GROUP_TYPE_MASK |
++		BTRFS_SPACE_INFO_GLOBAL_RSV;
++
++	switch (flag & mask) {
+ 	case BTRFS_BLOCK_GROUP_DATA:
+ 		return "Data";
+ 	case BTRFS_BLOCK_GROUP_SYSTEM:
+@@ -2249,6 +2252,8 @@ const char *group_type_str(u64 flag)
+ 		return "Metadata";
+ 	case BTRFS_BLOCK_GROUP_DATA|BTRFS_BLOCK_GROUP_METADATA:
+ 		return "Data+Metadata";
++	case BTRFS_SPACE_INFO_GLOBAL_RSV:
++		return "GlobalReserve";
+ 	default:
+ 		return "unknown";
+ 	}
 -- 
-1.9.2
+1.9.0
 

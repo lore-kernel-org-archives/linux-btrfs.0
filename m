@@ -1,47 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36354 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S933829AbaD3QEP convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Apr 2014 12:04:15 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: SELinux on btrfs
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <3219639.10M590kytU@russell.coker.com.au>
-Date: Wed, 30 Apr 2014 10:04:13 -0600
-Cc: Russell Coker <russell@coker.com.au>
-Message-Id: <1334991E-DB91-4AA8-AF51-E11C881AB8C2@colorremedies.com>
-References: <4DB89922-7B01-405A-9E63-0CCBBB6481B3@colorremedies.com> <3219639.10M590kytU@russell.coker.com.au>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from relay6-d.mail.gandi.net ([217.70.183.198]:51563 "EHLO
+	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759308AbaD3TaA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Apr 2014 15:30:00 -0400
+Date: Wed, 30 Apr 2014 21:29:54 +0200
+From: Xavier Bassery <xavier@bartica.org>
+To: linux-btrfs@vger.kernel.org
+Cc: Niv Gal Waizer <nivwiz@gmail.com>
+Subject: Re: File system errors
+Message-ID: <20140430212954.2cfdaf03@renoir.lan>
+In-Reply-To: <535D720E.1080900@gmail.com>
+References: <535D714C.3000507@gmail.com>
+	<535D720E.1080900@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 28 Apr 2014 00:09:34 +0300
+Niv Gal Waizer <nivwiz@gmail.com> wrote:
 
-On Apr 30, 2014, at 2:01 AM, Russell Coker <russell@coker.com.au> wrote:
+[this reply comes after we've dealt with the issue on IRC]
 
-> On Sat, 12 Apr 2014 10:15:25 Chris Murphy wrote:
->>> I'm already aware that SELinux's automatic labelling of files is not
->>> aware of subvolumes[*].> 
->>> [*] https://wiki.debian.org/SELinux/Setup#btrfs
->> 
->> I'm not sure exactly what it means since there is always a subvolume (ID 5),
->> and I don't understand why autorelabel behavior would differ from manually
->> running fixfiles or restorecon.
+> A week ago I installed kernel 3.14 on an existing laptop with btrfs 
+> install by ubuntu.  I upgraded ubuntu to 14.04 a few days ago.
+> I had problems installing a package, then I removed libc6 by mistake,
+> I could no longer boot the system. I booted from a usb disk with
+> ubuntu 14.04. I ran btrfsck on the btrfs partition and find many
+> errors:
+> root@ubuntu:~# btrfsck /dev/sda1
+> Checking filesystem on /dev/sda1
+> UUID: a4e2f8a7-3a4e-47a0-8d96-20d70a53af04
+> checking extents
+> Incorrect local backref count on 772273311744 parent 839903506432
+> owner 0 offset 0 found 0 wanted 1 back 0x2e5d7f0
+> Backref disk bytenr does not match extent record,
+> bytenr=772273311744, ref bytenr=0
+> Backref 772273311744 root 256 owner 1453610 offset 0 num_refs 0 not 
+> found in extent tree
+[...]
+> Errors found in extent allocation tree or chunk allocation
+> checking free space cache
+> cache and super generation don't match, space cache will be
+> invalidated checking fs roots
+> root 256 inode 146314 errors 200, dir isize wrong
+> root 256 inode 160861 errors 400, nbytes wrong
+> root 256 inode 967929 errors 1800, odd csum item, some csum missing
+> root 256 inode 996928 errors 1800, odd csum item, some csum missing
+> root 256 inode 1326452 errors 400, nbytes wrong
+> root 256 inode 1326453 errors 400, nbytes wrong
+> root 261 inode 160861 errors 400, nbytes wrong
+> root 261 inode 967929 errors 1800, odd csum item, some csum missing
+> root 261 inode 996928 errors 1800, odd csum item, some csum missing
+> root 261 inode 1326452 errors 400, nbytes wrong
+> root 261 inode 1326453 errors 400, nbytes wrong
+> found 77318565024 bytes used err is 1
+
+ 
+> I then ran btrfsck --repair /dev/sda1
+
+It is often recommended to not use --repair without being told so by a
+developer or an experienced user.
+The reason is that there are cases (esp. fs that refuse to mount) where
+--repair is not appropriate and could make things worse instead of
+fixing anything.
+Fortunately, you were not in such a case.
+
+> I then ran it again and got:
+> btrfsck /dev/sda1
+> Checking filesystem on /dev/sda1
+> UUID: a4e2f8a7-3a4e-47a0-8d96-20d70a53af04
+> checking extents
+
+The multiple "Incorrect local backref" are gone.
+It looks like the repair in your case fixed them.
+Some others have experienced huge numbers a those lines that
+would show up intermittently but would not go away with a repair.
+
+> checking free space cache
+> cache and super generation don't match, space cache will be
+> invalidated checking fs roots
+> root 256 inode 160861 errors 400, nbytes wrong
+> root 256 inode 967929 errors 1800, odd csum item, some csum missing
+> root 256 inode 996928 errors 1800, odd csum item, some csum missing
+> root 256 inode 1326452 errors 400, nbytes wrong
+> root 256 inode 1326453 errors 400, nbytes wrong
+> root 261 inode 160861 errors 400, nbytes wrong
+> root 261 inode 967929 errors 1800, odd csum item, some csum missing
+> root 261 inode 996928 errors 1800, odd csum item, some csum missing
+> root 261 inode 1326452 errors 400, nbytes wrong
+> root 261 inode 1326453 errors 400, nbytes wrong
+> found 237847721824 bytes used err is 1
+
+These lines report inconsistencies in the metadata.
+These inconsistencies were likely linked to former bugs that should have
+been fixed now in your 3.14 kernel.
+Possible culprits are bugs that have been patched by:
+- "Btrfs: relocate csums properly with prealloc extents" for the errors
+1800 (which are actually 2 errors with bitfields 0x1000 and 0x800)
+[confirmed on IRC, as those files were VM image files]
+, and 
+- "Btrfs: don't use ram_bytes for uncompressed inline items" for the
+errors 400 messages.
+I've been told that the latter errors (nbytes wrong) should be harmless.
+
+As you've noticed, "btrfs check --repair" didn't fix those errors
+(except the error 200, dir isize wrong).
+
+> I ran the btrfsck from this kerenl:
+> Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
+> 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+btrfs check is in userspace and as such doesn't behave differently
+based on the kernel that is used.
+
+> I ran an offline smart long test and found no errors on the drive.
 > 
-> When you initially setup SE Linux on Debian you run the command "selinux-
-> activate" which configures GRUB and creates a 0 byte file named /.autorelabel .
-> 
-> On boot if /.autorelabel is detected (as it will on a first install of SE Linux 
-> or any time you have a serious labelling problem you want to fix) then a script 
-> will run that labels all files and reboots the system (to make daemons run with 
-> the correct context).  The script in question is not aware of subvolumes, so 
-> if you have writable subvolumes they won't be labelled.  
+> What is wrong with my file system?
+> What extra info need I supply?
 
-That has not been my experience. I changed /boot files to have the wrong selinux labels, set .autorelabel, rebooted, and those files were fixed despite /boot being a mount point for a btrfs subvolume named boot located at the top level of the file system, and mounted with an fstab using subvol=boot option.
+Hopefully, there is nothing to worry much about.
+If you still want to clean the 400 and 1800 errors from the check
+output then you first need to find those files.
+Let's consider "root 256 inode 967929 errors 1800" for instance.
+To find the subvolume path of "root 256", use:
 
-I can see how unmounted subvolumes won't be visible to any scripts or even restorecon, so maybe that's what's being referred to?
+# btrfs subv list /mountpoint
 
+you may get something like:
+ID 256 gen 425928 top level 5 path @	 <-- here's the path
+ID 261 gen 426018 top level 5 path @home
 
-Chris Murphy
+Then you can find the file path that matches the reported inode number
+in that subvolume with:
+btrfs inspect-internal inode-resolve 967929 /mountpoint/@
+
+Now to fix the errors you can try various things.
+First, for files you don't care, deleting them is the obvious fix.
+For those valuable, you could copy the problematic file to a temporary
+file and replace the original file with that copy and hopefully that
+should do the trick.
+In the case  you couldn't read them because of any csum error, you may
+consider mounting the fs with -o ro,nodatasum once, the time for you to
+copy the files somewhere else.
+Alternatively you could also try "btrfs restore".
+
 

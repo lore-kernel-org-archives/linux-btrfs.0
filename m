@@ -1,45 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43832 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44061 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933561AbaD3MWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Apr 2014 08:22:42 -0400
-Date: Wed, 30 Apr 2014 14:22:41 +0200
+	id S1422648AbaD3Mhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Apr 2014 08:37:37 -0400
+Date: Wed, 30 Apr 2014 14:37:35 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Mike Fleetwood <mike.fleetwood@googlemail.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 00/14] Enhanced df - followup
-Message-ID: <20140430122241.GJ5988@twin.jikos.cz>
+Message-ID: <20140430123735.GK5988@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1398786620.git.dsterba@suse.cz>
- <CAMU1PDhc1xp3C2fDfs1mnxofn7wA3HxAjU14yw+1pT1_TUC1YQ@mail.gmail.com>
+ <pan.2014.04.29.17.33.09@googlemail.com>
+ <pan$8e22f$932a091f$427154c$9f1ff63a@cox.net>
+ <1408814.ZZlx3uERlS@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAMU1PDhc1xp3C2fDfs1mnxofn7wA3HxAjU14yw+1pT1_TUC1YQ@mail.gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1408814.ZZlx3uERlS@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 29, 2014 at 08:14:30PM +0100, Mike Fleetwood wrote:
-> On 29 April 2014 16:56, David Sterba <dsterba@suse.cz> wrote:
-> > Changes:
-> > * btrfs filesystem disk_usage - renamed to usage
-> >   * added a section of overall filesystem usage, that used to be in the
-> >     'fi df' output
-> > * btrfs device disk_usage - renamed to usage
-> >   * the device size prints both blockdevie size and the size that's occupied
-> >     by the filesystem
-> >   * device ID is printed
+On Wed, Apr 30, 2014 at 10:15:11AM +0200, Martin Steigerwald wrote:
+> [keeping dropped CC although not customary on this list]
 > 
-> >  cmds-fi-disk_usage.c | 631 +++++++++++++++++++--------------------------------
-> >  cmds-fi-disk_usage.h |  35 ++-
+> Am Mittwoch, 30. April 2014, 00:42:44 schrieb Duncan:
+> > >>> > * btrfs filesystem disk_usage - renamed to usage
+> > >>> 
+> > >>> [On the CLI, "usage" is often used to print a briefer "help",
+> > >>> and thus shouldn't be used for an actual command.]
+> > > 
+> > > I think the point was to have the same term for both filesystem and
+> > > device categories, which IMHO makes a lot of sense and is less to
+> > > remember. Categorical polymorphism: it's a good thing. :)
+> > 
+> > Good idea to use the same term.
+> > 
+> > Bad idea (IMO) to make that term "usage", by itself.
+> > 
+> > =:^)
 > 
-> After renaming the commands btrfs ... disk_usage to btrfs ... usage
-> should the source files also be renamed to cmds-fi-usage.[ch]?
+> Hmmm, I disagree. What it basically displays is usage. So the term "usage" is 
+> just about right.
+> 
+> And it isn´t an option either.
+> 
+> Additionally I never ever used the option "--usage". I didn´t even know it 
+> existed.
+> 
+> But if you have a different equally short sugestion, I am all ears.
+> 
+> Anyway, I´d personally wouldn´t block the patch going in due to this.
 
-I should have mentioned that in the cover letter why they've been left
-as-is - to keep the amount of unrelated cleanup changes low. The files
-contain helpers for loading/calculating the space information etc and
-will be moved to a separate file, possibly usable from libbtrfs.
+I agree with all your points.
 
-This can be done independently of the 'enhanced df' changes.
+For the reference, the term 'usage' has been agreed in the previous
+iteration.
 
-Thanks.
+[1] http://www.spinics.net/lists/linux-btrfs/msg31698.html
+[2] http://www.spinics.net/lists/linux-btrfs/msg31694.html

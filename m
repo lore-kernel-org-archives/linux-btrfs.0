@@ -1,47 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f173.google.com ([209.85.220.173]:33776 "EHLO
-	mail-vc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757878AbaD3MPA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Apr 2014 08:15:00 -0400
-Received: by mail-vc0-f173.google.com with SMTP id ik5so2022114vcb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Apr 2014 05:14:59 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:43832 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933561AbaD3MWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Apr 2014 08:22:42 -0400
+Date: Wed, 30 Apr 2014 14:22:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Mike Fleetwood <mike.fleetwood@googlemail.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 00/14] Enhanced df - followup
+Message-ID: <20140430122241.GJ5988@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1398786620.git.dsterba@suse.cz>
+ <CAMU1PDhc1xp3C2fDfs1mnxofn7wA3HxAjU14yw+1pT1_TUC1YQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20140418144801.GG29256@suse.cz>
-References: <20140416171219.GC29256@twin.jikos.cz>
-	<1397668577-846-1-git-send-email-dsterba@suse.cz>
-	<534F24A0.5000304@cn.fujitsu.com>
-	<20140418144801.GG29256@suse.cz>
-Date: Wed, 30 Apr 2014 13:14:59 +0100
-Message-ID: <CALOYprUDC-FR9qz-EJhnuoHZzS=9g3cdbv1Q+gSzJgnkb=LHxg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: doc: link btrfsck to btrfs-check
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAMU1PDhc1xp3C2fDfs1mnxofn7wA3HxAjU14yw+1pT1_TUC1YQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Apr 29, 2014 at 08:14:30PM +0100, Mike Fleetwood wrote:
+> On 29 April 2014 16:56, David Sterba <dsterba@suse.cz> wrote:
+> > Changes:
+> > * btrfs filesystem disk_usage - renamed to usage
+> >   * added a section of overall filesystem usage, that used to be in the
+> >     'fi df' output
+> > * btrfs device disk_usage - renamed to usage
+> >   * the device size prints both blockdevie size and the size that's occupied
+> >     by the filesystem
+> >   * device ID is printed
+> 
+> >  cmds-fi-disk_usage.c | 631 +++++++++++++++++++--------------------------------
+> >  cmds-fi-disk_usage.h |  35 ++-
+> 
+> After renaming the commands btrfs ... disk_usage to btrfs ... usage
+> should the source files also be renamed to cmds-fi-usage.[ch]?
 
-While trying to view the btrfs-check manpage today (using
-integration-20140429), I noticed that the current symlink overwrites
-the actual btrfs-check manpage, making an unusable, cyclic link:
+I should have mentioned that in the cover letter why they've been left
+as-is - to keep the amount of unrelated cleanup changes low. The files
+contain helpers for loading/calculating the space information etc and
+will be moved to a separate file, possibly usable from libbtrfs.
 
-    $ man btrfs-check
-    man: can't resolve /usr/share/man/man8/btrfs-check.8.gz: Too many
-levels of symbolic links
-    No manual entry for btrfs-check
+This can be done independently of the 'enhanced df' changes.
 
-I believe you forgot to add the file name of the symlink at the end of
-the line, e.g.
-
-    $(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)
-
-should be
-
-    $(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)/btrfsck.8.gz
-
-Cheers,
-
-
-WorMzy
+Thanks.

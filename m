@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44061 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:44580 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1422648AbaD3Mhh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Apr 2014 08:37:37 -0400
-Date: Wed, 30 Apr 2014 14:37:35 +0200
+	id S1758734AbaD3NBg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Apr 2014 09:01:36 -0400
+Date: Wed, 30 Apr 2014 15:01:34 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Martin Steigerwald <Martin@lichtvoll.de>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 00/14] Enhanced df - followup
-Message-ID: <20140430123735.GK5988@twin.jikos.cz>
+Message-ID: <20140430130134.GL5988@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1398786620.git.dsterba@suse.cz>
- <pan.2014.04.29.17.33.09@googlemail.com>
- <pan$8e22f$932a091f$427154c$9f1ff63a@cox.net>
- <1408814.ZZlx3uERlS@merkaba>
+ <pan$274e8$4b1540e1$e4bc4fe0$2126c4cf@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1408814.ZZlx3uERlS@merkaba>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$274e8$4b1540e1$e4bc4fe0$2126c4cf@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 30, 2014 at 10:15:11AM +0200, Martin Steigerwald wrote:
-> [keeping dropped CC although not customary on this list]
-> 
-> Am Mittwoch, 30. April 2014, 00:42:44 schrieb Duncan:
-> > >>> > * btrfs filesystem disk_usage - renamed to usage
-> > >>> 
-> > >>> [On the CLI, "usage" is often used to print a briefer "help",
-> > >>> and thus shouldn't be used for an actual command.]
-> > > 
-> > > I think the point was to have the same term for both filesystem and
-> > > device categories, which IMHO makes a lot of sense and is less to
-> > > remember. Categorical polymorphism: it's a good thing. :)
-> > 
-> > Good idea to use the same term.
-> > 
-> > Bad idea (IMO) to make that term "usage", by itself.
-> > 
-> > =:^)
-> 
-> Hmmm, I disagree. What it basically displays is usage. So the term "usage" is 
-> just about right.
-> 
-> And it isn´t an option either.
-> 
-> Additionally I never ever used the option "--usage". I didn´t even know it 
-> existed.
-> 
-> But if you have a different equally short sugestion, I am all ears.
-> 
-> Anyway, I´d personally wouldn´t block the patch going in due to this.
+On Tue, Apr 29, 2014 at 05:10:31PM +0000, Duncan wrote:
+> To users familiar with Unix/POSIX/Linux CLI, "usage" (as --usage) is most 
+> often seen as a rather less common and generally briefer form of --help, 
+> usually with the distinction being that --help may be a screen or more of 
+> output, while --usage is much shorter, perhaps a single line.
 
-I agree with all your points.
+I did a quick check of ~20 randomly chosen binaries in /usr/bin and none
+of them had --usage among options, unlike --help.
 
-For the reference, the term 'usage' has been agreed in the previous
-iteration.
+> While I had seen it listed in manpages and --help output often enough, 
+> once I actually went looking for real examples I had a hard time finding 
+> some, but eventually found some in the grub (grub2) command set.
 
-[1] http://www.spinics.net/lists/linux-btrfs/msg31698.html
-[2] http://www.spinics.net/lists/linux-btrfs/msg31694.html
+We can put usage examples to the man pages, following git here.
+
+> OTOH, for CLI veterans anyway, standard old "du" (btrfs fi du) should be 
+> as immediately understood as "df".
+
+> Given that confusion, I'd suggest either simply making it du, or making 
+> it "device_usage" but with "du" a documented alias printing exactly the 
+> same output, thus giving folks an easy way to avoid the _.
+
+Though adding a command alias is trivial, I'd rather not do that right
+now. Let's see if we can live with 'btrfs fi us'. I worked for me during
+developing the patch series.

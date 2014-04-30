@@ -1,75 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.miceliux.com ([81.4.104.92]:54094 "EHLO mx2.miceliux.com"
+Received: from plane.gmane.org ([80.91.229.3]:58700 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964935AbaD2T12 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Apr 2014 15:27:28 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mx2.miceliux.com (Postfix) with ESMTP id 29651895BB
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 21:21:55 +0200 (CEST)
-Received: from mx2.miceliux.com ([127.0.0.1])
-	by localhost (mx2.miceliux.com [127.0.0.1]) (amavisd-new, port 10028)
-	with ESMTP id Qi-26g9RU7f3 for <linux-btrfs@vger.kernel.org>;
-	Tue, 29 Apr 2014 21:21:53 +0200 (CEST)
-Received: from xenon.miceliux.com (83.138.225.18.dyn.user.ono.com [83.138.225.18])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: juan.orti@miceliux.com)
-	by mx2.miceliux.com (Postfix) with ESMTPSA id 7D2FE895B5
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Apr 2014 21:21:53 +0200 (CEST)
-From: Juan Orti Alcaine <juan.orti@miceliux.com>
+	id S1752066AbaD3GkH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Apr 2014 02:40:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WfOBX-0008SE-Up
+	for linux-btrfs@vger.kernel.org; Wed, 30 Apr 2014 08:40:03 +0200
+Received: from 80-218-32-173.dclient.hispeed.ch ([80.218.32.173])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Apr 2014 08:40:03 +0200
+Received: from auslands-kv by 80-218-32-173.dclient.hispeed.ch with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Apr 2014 08:40:03 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: File capabilities are lost when sending/receiving a btrfs subvolume
-Date: Tue, 29 Apr 2014 21:21:45 +0200
-Message-ID: <2199169.56ItP7JcO9@xenon.miceliux.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2598426.UPXiesILaJ"; micalg="pgp-sha512"; protocol="application/pgp-signature"
+From: Neuer User <auslands-kv@gmx.de>
+Subject: task sync:2450 blocked for more than 120 seconds.
+Date: Wed, 30 Apr 2014 08:37:58 +0200
+Message-ID: <ljq5o6$f0d$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi
 
---nextPart2598426.UPXiesILaJ
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="us-ascii"
+I have a non-rootfs btrfs partition that I use for some work where I
+like to keep some snapshots. The partition is about 160GB big and has
+about 80-90 GB of data.
 
-Hello, I noticed that file capabilites are lost on received subvolumes,=
- so I=20
-opened the bug report #68891 [1]. I don't know if other xattrs are affe=
-cted by=20
-this problem.
+I often see the following errors:
 
-I just like to know if fixing this issue is under the radar of the deve=
-lopers.
+Apr 29 20:41:24 DesktopMB kernel: [47030.195270] INFO: task sync:2450
+blocked for more than 120 seconds.
+Apr 29 20:41:24 DesktopMB kernel: [47030.195275]       Tainted: GF
+    O 3.14.1-031401-generic #201404141220
+Apr 29 20:41:24 DesktopMB kernel: [47030.195276] "echo 0 >
+/proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Apr 29 20:41:24 DesktopMB kernel: [47030.195277] sync            D
+ffffffff818118e0     0  2450  29298 0x00000004
+Apr 29 20:41:24 DesktopMB kernel: [47030.195280]  ffff8801261bbc68
+0000000000000002 ffff8801261bbc18 ffff8801261bbfd8
+Apr 29 20:41:24 DesktopMB kernel: [47030.195282]  00000000000144c0
+00000000000144c0 ffff88022341b1e0 ffff88012606cad0
+Apr 29 20:41:24 DesktopMB kernel: [47030.195284]  ffff8801261bbc68
+ffff88022f3d4dc8 ffff88012606cad0 ffffffff8115f460
+Apr 29 20:41:24 DesktopMB kernel: [47030.195286] Call Trace:
+Apr 29 20:41:24 DesktopMB kernel: [47030.195292]  [<ffffffff8115f460>] ?
+__lock_page+0x70/0x70
+Apr 29 20:41:24 DesktopMB kernel: [47030.195295]  [<ffffffff817650e9>]
+schedule+0x29/0x70
+Apr 29 20:41:24 DesktopMB kernel: [47030.195297]  [<ffffffff817651bf>]
+io_schedule+0x8f/0xd0
+Apr 29 20:41:24 DesktopMB kernel: [47030.195299]  [<ffffffff8115f46e>]
+sleep_on_page+0xe/0x20
+Apr 29 20:41:24 DesktopMB kernel: [47030.195300]  [<ffffffff81765882>]
+__wait_on_bit+0x62/0x90
+Apr 29 20:41:24 DesktopMB kernel: [47030.195302]  [<ffffffff8115ff0b>] ?
+find_get_pages_tag+0xcb/0x170
+Apr 29 20:41:24 DesktopMB kernel: [47030.195304]  [<ffffffff8115f5d0>]
+wait_on_page_bit+0x80/0x90
+Apr 29 20:41:24 DesktopMB kernel: [47030.195307]  [<ffffffff810b51c0>] ?
+wake_atomic_t_function+0x40/0x40
+Apr 29 20:41:24 DesktopMB kernel: [47030.195309]  [<ffffffff8115f6d4>]
+filemap_fdatawait_range+0xf4/0x180
+Apr 29 20:41:24 DesktopMB kernel: [47030.195312]  [<ffffffff8108624a>] ?
+__queue_delayed_work+0xaa/0x1a0
+Apr 29 20:41:24 DesktopMB kernel: [47030.195314]  [<ffffffff810867c5>] ?
+try_to_grab_pending+0x65/0x80
+Apr 29 20:41:24 DesktopMB kernel: [47030.195316]  [<ffffffff8115f78b>]
+filemap_fdatawait+0x2b/0x30
+Apr 29 20:41:24 DesktopMB kernel: [47030.195319]  [<ffffffff811fa6a5>]
+wait_sb_inodes+0xc5/0x120
+Apr 29 20:41:24 DesktopMB kernel: [47030.195321]  [<ffffffff81202300>] ?
+fdatawrite_one_bdev+0x20/0x20
+Apr 29 20:41:24 DesktopMB kernel: [47030.195323]  [<ffffffff811fa7a3>]
+sync_inodes_sb+0xa3/0xd0
+Apr 29 20:41:24 DesktopMB kernel: [47030.195325]  [<ffffffff8120231d>]
+sync_inodes_one_sb+0x1d/0x30
+Apr 29 20:41:24 DesktopMB kernel: [47030.195328]  [<ffffffff811d5711>]
+iterate_supers+0xf1/0x100
+Apr 29 20:41:24 DesktopMB kernel: [47030.195330]  [<ffffffff81202485>]
+sys_sync+0x35/0x90
+Apr 29 20:41:24 DesktopMB kernel: [47030.195333]  [<ffffffff8177247f>]
+tracesys+0xe1/0xe6
+Apr 29 20:43:24 DesktopMB kernel: [47150.168257] INFO: task sync:2450
+blocked for more than 120 seconds.
 
-Thank you.
+In such a case I can only emergency remount and
+power of the system. Nothing else.
 
-[1] https://bugzilla.kernel.org/show_bug.cgi?id=3D68891
+I am still not sure how to exactly reproduce the error. But it only
+happens, when the filesysstem has been used extensively for some time (I
+am doing kernel compilation on that fs).
 
-=2D-=20
-Juan Orti
-GPG Key: DEEBD08B - http://jorti.fedorapeople.org/pubkey.asc
-Blog: https://apuntesderoot.wordpress.com/
---nextPart2598426.UPXiesILaJ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
+When I mount the system and then sync, nothing happens. After a full day
+of work with some compiles, I can no longer unmount the fs as the sync
+then blocks.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+A btrfs scrub reports no errors. A btrfs check report hundreds of errors:
 
-iQIcBAABCgAGBQJTX/vQAAoJELYwS3Le69CLbrgP/1gDBSRa3MuG6J6OvnuYHe4a
-+4Wc/q5x/5kamaSLhvX8PFJDriw8MoqFCKL9tpXDdwuNQyhb1w5s6RMQ5BKK4GGI
-ZzgQCUVbH0KpZ+2E7rEnK1V/ZgxhXyyPuGqOo4puL6uqLRftMWT5vx5NSDg4aYTP
-W5F0aiiO9t2kpdFu7rHdRqHJVxlpFZi5htIxkensA7lqf7k5U9cSNFT7GvXfLHU4
-I2lgtpNDrZQLWFywclaLK9hG9QbIcaH7Mk0+zb5qbI1Bx7GELdjJdlSxD06qG7FJ
-Tx87Zg2CBc8rzOnxDNyWxsF4tikU91Xt5Yusm2FRaJF7yUebzr/poyZ5JKdDP/G0
-hTu7pJpx3lteIgE4/8UAV09imZ9adFfaOo0MimU0lLhnHvZpJ+JeO/bbgxR5DIKe
-1XEp869X33WRN+pbNvCkSdHxj4Fz5tM1I6ZhhMMbn+45ccI4AUuTkjBQ1xSVUQe6
-Vf/sCpdzaWXptQGZMXsDCIKPGA8Ti4w3N/ZlLta0FUxrN+tojLLa9fL5SZKKgoyW
-73L0bu7fqidtt5askJUYf3bY6lPRsfLVPSsiqJEyCIPxheYlTCjiJPiU2KLCb+R6
-6uv/bxIcreDdxoygcEhnYyIJQZHOESnmQes62Wa2119by5OU1nvRLTj+tIUMZ96V
-p3WYp6D1edhOcBm07Lw5
-=KVZ+
------END PGP SIGNATURE-----
+...
+Incorrect global backref count on 91295694848 found 1 wanted 2
+backpointer mismatch on [91295694848 16384]
+ref mismatch on [91295711232 16384] extent item 1, found 2
+Incorrect global backref count on 91295711232 found 1 wanted 2
+backpointer mismatch on [91295711232 16384]
+ref mismatch on [91295727616 16384] extent item 1, found 2
+Incorrect global backref count on 91295727616 found 1 wanted 2
+backpointer mismatch on [91295727616 16384]
+ref mismatch on [91295744000 16384] extent item 1, found 2
+Incorrect global backref count on 91295744000 found 1 wanted 2
+backpointer mismatch on [91295744000 16384]
+ref mismatch on [91295760384 16384] extent item 1, found 2
+Incorrect global backref count on 91295760384 found 1 wanted 2
+backpointer mismatch on [91295760384 16384]
+ref mismatch on [91295776768 16384] extent item 1, found 2
+Incorrect global backref count on 91295776768 found 1 wanted 2
+backpointer mismatch on [91295776768 16384]
+ref mismatch on [91295793152 16384] extent item 1, found 2
+Incorrect global backref count on 91295793152 found 1 wanted 2
+backpointer mismatch on [91295793152 16384]
+ref mismatch on [91295809536 16384] extent item 1, found 2
+Incorrect global backref count on 91295809536 found 1 wanted 2
+backpointer mismatch on [91295809536 16384]
+ref mismatch on [91295825920 16384] extent item 1, found 2
+Incorrect global backref count on 91295825920 found 1 wanted 2
+backpointer mismatch on [91295825920 16384]
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+free space inode generation (0) did not match free space cache
+generation (3272)
+checking fs roots
+checking csums
+checking root refs
+found 42565280463 bytes used err is 0
+total csum bytes: 82221224
+total tree bytes: 3689676800
+total fs tree bytes: 3475308544
+total extent tree bytes: 109215744
+btree space waste bytes: 609518812
+file data blocks allocated: 118278844416
+ referenced 117607366656
+Btrfs v3.12
 
---nextPart2598426.UPXiesILaJ--
+Kernel is 3.14.1, Ubuntu 14.04.
+
+The question is: What shall I do? btrfs check --repair? Or better just
+copy all data to a new fs and delete the partition?
+
+Michael
 

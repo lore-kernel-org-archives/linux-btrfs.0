@@ -1,74 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44300 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:51012 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751168AbaEAQ6u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 May 2014 12:58:50 -0400
+	id S1750851AbaEARQZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 May 2014 13:16:25 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WfuJq-0004AG-NC
-	for linux-btrfs@vger.kernel.org; Thu, 01 May 2014 18:58:46 +0200
+	id 1Wfuau-0000jw-HX
+	for linux-btrfs@vger.kernel.org; Thu, 01 May 2014 19:16:24 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 18:58:46 +0200
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 19:16:24 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 18:58:46 +0200
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 19:16:24 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Negative qgroup sizes
-Date: Thu, 1 May 2014 16:58:34 +0000 (UTC)
-Message-ID: <pan$cea24$895c4bc2$f096e7bb$50b7a75d@cox.net>
-References: <53624D07.2000602@elastichosts.com>
+Subject: Re: task sync:2450 blocked for more than 120 seconds.
+Date: Thu, 1 May 2014 17:16:06 +0000 (UTC)
+Message-ID: <pan$5efeb$21e4ebfc$652f5a00$7fae9e71@cox.net>
+References: <ljq5o6$f0d$1@ger.gmane.org> <ljsvpb$cl6$1@ger.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alin Dobre posted on Thu, 01 May 2014 14:32:55 +0100 as excerpted:
+Neuer User posted on Thu, 01 May 2014 10:14:35 +0200 as excerpted:
 
-> I am having trouble with one of the btrfs subvolumes, as it shows
-> negative quota accounting values
+> It's probably best to copy al my data to another disk, then delete the
+> parttiion and make a new ext4 partition. btrfs is probably still too
+> experimental, I guess.
 
-> Running a "btrfs quota rescan -w /tmp/test" seems to fix it, but it
-> seems to come back pretty often (happened twice in the last couple of
-> days).
+I thought I replied to this one but it was to a different, similar 
+problem, post.
 
-> The kernel we are using is 3.14.1 (stable) and the btrfs-progs version
-> is 3.12.
+The blocked task bug isn't entirely uncommon, and is apparently a number 
+of bugs with similar symptoms.  One thing the devs have been requesting 
+on such reports is the output from a sysrq-w, which dumps the blocked 
+tasks so the devs can trace where the blocks are happening and fix the 
+bugs.  Either alt-sysrq-w, if you're running direct on hardware, or
+echo w > /proc/sysrq-trigger, which should work in VMs, etc, as well.
 
-I'm not a qgroups user myself, but I know there were quite some 
-complaints about negative numbers some months ago.  I hadn't seen any in 
-awhile and had hoped the problems were all fixed, but now you're 
-reporting them again, so I guess not.
+But you're correct, tracking down and fixing all these bugs is likely to 
+take awhile, and if you simply want something that works and don't have 
+the luxury of testing and waiting for fixes, switching back to ext4 or 
+whatever, until btrfs has matured a bit longer, would be the recommended 
+course of action.
 
-Tho you are slightly outdated on your btrfs-progs version, 3.14.1 being 
-current.  But I think the code in question is kernel code and the progs 
-simply report it, so I don't think that can be the problem in this case.
-
-The earlier recommendation, back when the problem reports were common, 
-was not to use qgroups on btrfs as the code obviously wasn't accounting 
-for something correctly.  Either use btrfs without qgroups, or if you 
-really need quotas, use some other filesystem where the quota code works 
-reliably.
-
-As for the problems themselves, I saw some patches go by that fixed 
-qgroups issues related to snapshot maintenance, and it's possible there's 
-more work to do in that area.  The problem there is apparently due to the 
-difficulty in properly accounting quotas for shared data, such that 
-deleting old snapshots could turn things negative as the code subtracted 
-the quota numbers repeatedly, once for each snapshot deleted, instead of 
-properly figuring out what was shared and only subtracting for the data 
-unique to that snapshot when it was deleted.
-
-So if you are doing snapshots, you can try not doing them (switching to 
-conventional backup if necessary) and see if that stabilizes your 
-numbers.  If so, you know there's still more problems in that area.
-
-Of course if the subvolumes involved aren't snapshotted, then the problem 
-must be elsewhere, but I do know the snapshotting case /is/ reasonably 
-difficult to get right... while staying within a reasonable performance 
-envelope at least.
+And one more comment, a hint for next time.  On mailing lists it's common 
+to quote what you're replying to and reply below it.  Top posting the 
+reply works for that post, but messes things up for others trying to 
+reply to the thread as well and for later readers, since now there's 
+either a mixture of top-posted and in-context-posted replies at multiple 
+levels or people end up omitting entirely the second level and deeper 
+quotes that might have put the whole thing in context.  Either case makes 
+the thread difficult to follow or to properly reply to. =:^(
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,175 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:37844 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750730AbaEAEsW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 May 2014 00:48:22 -0400
-Received: by mail-ig0-f169.google.com with SMTP id h18so173923igc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Apr 2014 21:48:22 -0700 (PDT)
-MIME-Version: 1.0
-Date: Thu, 1 May 2014 00:48:22 -0400
-Message-ID: <CAE6A3M0zmzDmLKzRDALNeLsqx72ttC8CA74-GfuSXN1TwJW-0A@mail.gmail.com>
-Subject: Unable to rebuild a 3 drive raid1 - blocked for more than 120 seconds.
-From: Saran Neti <sarannmr@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:49712 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750720AbaEAFd6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 May 2014 01:33:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wfjd6-0004H0-NN
+	for linux-btrfs@vger.kernel.org; Thu, 01 May 2014 07:33:56 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 07:33:56 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 07:33:56 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Help with space
+Date: Thu, 1 May 2014 05:33:45 +0000 (UTC)
+Message-ID: <pan$e723c$9c5c686c$f2068dd4$dd71b519@cox.net>
+References: <CAAmRLYx1L=o7a2PMSAiJbr7qH_JiuYG2-ncHG-mHLyLcM3Z-GQ@mail.gmail.com>
+	<20140228103436.2dfd2669@natsu> <2809235.lZD2oazSeA@xev>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Russell Coker posted on Thu, 01 May 2014 11:52:33 +1000 as excerpted:
 
-I had 3 x 3 TB drives in an almost full btrfs raid1 setup containing
-only large (~20 GB) files linearly written and not modified after.
-Then one of the drives got busted. Mounting the fs in degraded mode
-and adding a new fresh drive to rebuild raid1, generated several
-"...blocked for more than 120 seconds." messages. I left it running
-for a couple of days, but "btrfs device add..." command wouldn't
-return. I did a hard reboot, and after a degraded mount, am unable to
-unmount, or add a drive or delete missing without getting stuck with
-the same error. iostat shows no disk activity. When attempting an
-unmount, both "umount" and "[btrfs-transacti]" processes become
-defunct. Tried -o skip_balance as well to no avail.
+> I've just been doing some experiments with a failing disk used for
+> backups (so I'm not losing any real data here).
 
-Described in https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg30017.html
-are two possible causes, fragmentation due to COW and hardlinks, both
-of which I think are unlikely in this case. I can mount in degraded
-mode and read files, but that's about it. Is there something I'm
-missing? Any debugging tips would be appreciated. Please let me know
-if I can provide more information.
+=:^)
 
---- Info ---
-# uname -a
-Linux localhost 3.14.1-1-ARCH #1 SMP PREEMPT Mon Apr 14 20:40:47 CEST
-2014 x86_64 GNU/Linux
+> The "dup" option for metadata means that the entire filesystem
+> structure is intact in spite of having lots of errors (in another
+> thread I wrote about getting 50+ correctable errors on metadata while
+> doing a backup).
 
-# btrfs --version
-Btrfs v3.14
+TL;DR: Discustion of btrfs raid1 and n-way-mirroring.  Bonus discussion 
+on spinning rust heat-death and death in general modes.
 
-# btrfs fi show
-Label: 'cohenraid1'  uuid: 288723c3-2e98-4a6c-87d3-058451d87d26
-        Total devices 3 FS bytes used 3.44TiB
-        devid    1 size 2.73TiB used 2.19TiB path /dev/sdg1
-        devid    2 size 2.73TiB used 2.46TiB path /dev/sdf1
-        *** Some devices missing
+That's why I'm running raid1 for both data and metadata here.  I love 
+btrfs' data/metadata checksumming and integrity mechanisms, and having 
+that second copy to scrub from in the event of an error on one of them is 
+just as important to me as the device-redundancy-and-failure-recovery bit.
 
-# btrfs fi df /mnt/cohenraid1
-Data, RAID1: total=3.54TiB, used=3.43TiB
-System, RAID1: total=32.00MiB, used=528.00KiB
-Metadata, RAID1: total=6.00GiB, used=3.57GiB
+I could get the latter on md/raid and did run it for some years, but the 
+fact that there's no way to have it do routine read-time parity cross-
+check and scrub (or N-way checking and vote, rewriting to a bad copy on 
+failure, in the case of raid1), even tho it has all the cross-checksums 
+already there and available to do it, but only actually makes /use/ of 
+that for recovery if a device fails...
 
-(Originally, there were two 2.19 TiB filled drives and one 2.46 TiB
-filled drive. All drives incl. the new one I'm unable to add are
-SMART-longtest good.)
+My biggest frustration with btrfs ATM is the lack of "true" raid1, aka 
+N-way-mirroring.  Btrfs presently only does pair-mirroring, no matter the 
+number of devices in the "raid1".  Checksummed-3-way-redundancy really is 
+the sweet spot I'd like to hit, and yes it's on the road map, but this 
+thing seems to be taking about as long as Christmas does to a five or six 
+year old... which is a pretty apt metaphor of my anticipation and the 
+eagerness with which I'll be unwrapping and playing with that present 
+once it comes! =:^)
 
-Kernel messages:
+> My experience is that in the vast majority of disk failures that don't
+> involve dropping a disk the majority of disk data will still be
+> readable.  For example one time I had a workstation running RAID-1 get
+> too hot in summer and both disks developed significant numbers of
+> errors, enough that it couldn't maintain a Linux Software RAID-1 (disks
+> got kicked out all the time).  I wrote a program to read all the data
+> from disk 0 and read from disk 1 any blocks that couldn't be read from
+> disk 0, the result was that after running e2fsck on the result I didn't
+> lose any data.
 
-Apr 30 09:49:34 localhost kernel: INFO: task btrfs-transacti:4080
-blocked for more than 120 seconds.
-Apr 30 09:49:34 localhost kernel:       Not tainted 3.14.1-1-ARCH #1
-Apr 30 09:49:34 localhost kernel: "echo 0 >
-/proc/sys/kernel/hung_task_timeout_secs" disables this message.
-Apr 30 09:49:34 localhost kernel: btrfs-transacti D ffff8804fe89eb40
-  0  4080      2 0x00000000
-Apr 30 09:49:34 localhost kernel:  ffff8804b0bdbdc0 0000000000000046
-ffff8804cb3193a0 ffff8804b0bdbfd8
-Apr 30 09:49:34 localhost kernel:  00000000000142c0 00000000000142c0
-ffff8804cb3193a0 00000000000142c0
-Apr 30 09:49:34 localhost kernel:  ffff8804cb3193a0 0000000000000000
-0000000200000000 0000000000000009
-Apr 30 09:49:34 localhost kernel: Call Trace:
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa076a7f8>] ?
-start_transaction+0x138/0x5a0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8109c648>] ?
-__enqueue_entity+0x78/0x80
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8109580e>] ?
-set_task_cpu+0x6e/0x1d0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8107279b>] ?
-lock_timer_base.isra.35+0x2b/0x50
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814d7eb9>] schedule+0x29/0x70
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa076934f>]
-wait_current_trans.isra.19+0x9f/0x100 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff810aa350>] ?
-__wake_up_sync+0x20/0x20
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa076a978>]
-start_transaction+0x2b8/0x5a0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa076ad17>]
-btrfs_attach_transaction+0x17/0x20 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa0765acb>]
-transaction_kthread+0x16b/0x240 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa0765960>] ?
-btrfs_cleanup_transaction+0x570/0x570 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff810872a2>] kthread+0xd2/0xf0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff810871d0>] ?
-kthread_create_on_node+0x180/0x180
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814e2ffc>] ret_from_fork+0x7c/0xb0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff810871d0>] ?
-kthread_create_on_node+0x180/0x180
-Apr 30 09:49:34 localhost kernel: INFO: task umount:4298 blocked for
-more than 120 seconds.
-Apr 30 09:49:34 localhost kernel:       Not tainted 3.14.1-1-ARCH #1
-Apr 30 09:49:34 localhost kernel: "echo 0 >
-/proc/sys/kernel/hung_task_timeout_secs" disables this message.
-Apr 30 09:49:34 localhost kernel: umount          D ffff8804ab5f99f0
-  0  4298   4296 0x00000004
-Apr 30 09:49:34 localhost kernel:  ffff8804ab5f9960 0000000000000082
-ffff8804d72ff5c0 ffff8804ab5f9fd8
-Apr 30 09:49:34 localhost kernel:  00000000000142c0 00000000000142c0
-ffff8804d72ff5c0 ffff880509cd26a8
-Apr 30 09:49:34 localhost kernel:  0000000000000080 ffff8804ab5f98f8
-ffffffff81251ea8 ffff8804e7f34260
-Apr 30 09:49:34 localhost kernel: Call Trace:
-Apr 30 09:49:34 localhost kernel:  [<ffffffff81251ea8>] ? submit_bio+0x78/0x160
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa0793841>] ?
-btrfs_map_bio+0x2a1/0x550 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8101d3c9>] ? read_tsc+0x9/0x20
-Apr 30 09:49:34 localhost kernel:  [<ffffffff81133760>] ?
-filemap_fdatawait+0x30/0x30
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814d7eb9>] schedule+0x29/0x70
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814d815f>] io_schedule+0x8f/0xe0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8113376e>] sleep_on_page+0xe/0x20
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814d84d2>] __wait_on_bit+0x62/0x90
-Apr 30 09:49:34 localhost kernel:  [<ffffffff8113352f>]
-wait_on_page_bit+0x7f/0x90
-Apr 30 09:49:34 localhost kernel:  [<ffffffff810aa390>] ?
-autoremove_wake_function+0x40/0x40
-Apr 30 09:49:34 localhost kernel:  [<ffffffff81141471>] ?
-pagevec_lookup_tag+0x21/0x30
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811336aa>]
-filemap_fdatawait_range+0x10a/0x190
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa078333f>]
-btrfs_wait_ordered_range+0x6f/0x140 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa07a9c30>]
-__btrfs_write_out_cache+0x6d0/0x8e0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa07aaf1d>]
-btrfs_write_out_cache+0x8d/0xe0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa075a393>]
-btrfs_write_dirty_block_groups+0x593/0x680 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa0768023>]
-commit_cowonly_roots+0x163/0x230 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa076a118>]
-btrfs_commit_transaction+0x428/0x9d0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa07641ff>]
-btrfs_commit_super+0x8f/0xa0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa0765e10>]
-close_ctree+0x270/0x2a0 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811bee6c>] ?
-evict_inodes+0x11c/0x130
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa073d049>]
-btrfs_put_super+0x19/0x20 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811a66b2>]
-generic_shutdown_super+0x72/0xf0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811a68f2>]
-kill_anon_super+0x12/0x20
-Apr 30 09:49:34 localhost kernel:  [<ffffffffa073cdd6>]
-btrfs_kill_super+0x16/0x90 [btrfs]
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811a6c4d>]
-deactivate_locked_super+0x3d/0x60
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811a7206>]
-deactivate_super+0x46/0x60
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811c25c5>]
-mntput_no_expire+0xe5/0x170
-Apr 30 09:49:34 localhost kernel:  [<ffffffff811c3890>] SyS_umount+0x90/0x3c0
-Apr 30 09:49:34 localhost kernel:  [<ffffffff814e30a9>]
-system_call_fastpath+0x16/0x1b
+That's rather similar to an experience of mine.  I'm in Phoenix, AZ, and 
+outdoor in-the-shade temps can reach near 50C.  Air-conditioning failure 
+with a system left running while I was elsewhere.  I came home the the 
+"hot car effect", far hotter inside than out, so likely 55-60C ambient 
+air temp, very likely 70+ device temps.  The system was still on but 
+"frozen" (broiled?) due to disk head crash and possibly CPU thermal 
+shutdown.
+
+Surprisingly, after shutting everything down, getting a new AC, and 
+letting the system cool for a few hours, it pretty much all came back to 
+life, including the CPU(s) (that was pre-multi-core, but I don't remember 
+whether it was my dual socket original Opteron, or pre-dual-socket for me 
+as well) which I had feared would be dead.
+
+The disk as well came back, minus the sections that were being accessed 
+at the time of the head crash, which I expect were physically grooved.
+
+I only had the one main disk running at the time, but fortunately I had 
+partitioned it up and had working and backup partitions for everything 
+vital, and of course the backup partitions weren't mounted at the time, 
+and they came thru just fine (tho without checksumming so I'll never know 
+if there were bit-flips, but I could boot from the backup / and mount the 
+other backups, and a working partition or two that weren't hurt, just 
+fine.
+
+But I *DID* have quite a time recovering anyway, primarily because my 
+rootfs, /usr/ and /var (which had the system's installed package 
+database), were three different partitions that ended up being from three 
+different backup dates... on gentoo, with its rolling updates!  IIRC I 
+had a current /var including the package database, but the package files 
+actually on the rootfs and on /usr were from different package versions 
+from what the db in /var was tracking, and were different from each other 
+as well.  I was still finding stale package remnants nearly two years 
+later!
+
+But I continued running that disk for several months until I had some 
+money to replace it, then copied the system, by then current again except 
+for the occasional stale file, to the new setup.  I always wondered how 
+much longer I could have run the heat-tested one, but didn't want to 
+trust my luck any further, so retired it.
+
+Which was when I got into md/raid, first mostly raid6, then later redone 
+to raid1, once I figured out the fancy dual checksums weren't doing 
+anything but slowing me down in normal operations anyway.
+
+And on my new setup, I used a partitioning policy I continue to this day, 
+namely, everything that the package manager touches[1] including its 
+installed-pkg database on /var goes on rootfs.  With a working rootfs and 
+several backups of various ages on various physical devices (that 
+filesystem's only 8 gig or so, with only 4 gig or so of data, so I can 
+and do now keep multiple alternate rootfs partition backups on multiple 
+devices) should I need to use them, that means no matter what age the 
+backup I might ultimately end up booting to, the package database it 
+contains will remain in sync with the content of the packages it's 
+tracking.  No further possibility of database and /var from one backup, 
+rootfs from another, and /usr from a third!
+
+Anyway, yes, my experience tracks yours.  Both in that case and when I 
+simply run the disks to wear-out (which I sometimes do as a secondary/
+backup/low-priority-cache-data device once it starts clicking or 
+developing bad sectors or whatever), the devices themselves continue to 
+work in general, long after I've begun to see intermittent issues with 
+them.
+
+Tho my experience to date has been spinning rust.  My primary workstation 
+pair of current primary devices are now SSD (Corsair Neutron 256-gig, NOT 
+Neutron GTX), partitioned identically with multiple btrfs partitions, in 
+btrfs raid1 mode except for the two separate individual /boots), and I'm 
+happy with them so far, but I must admit to being a bit worried about 
+their less familiar failure modes.
+
+> So if you have BTRFS configured to "dup" metadata on a RAID-5 array
+> (either hardware RAID or Linux Software RAID) then the probability of
+> losing metadata would be a lot lower than for a filesystem which doesn't
+> do checksums and doesn't duplicate metadata.  To lose metadata you would
+> need to have two errors that line up with both copies of the same
+> metadata block.
+
+Like I said, btrfs raid1 both data/metadata here, for exactly that 
+reason.  But I'd sure like to make it triplet-mirror instead of being 
+limited to pair-mirror, again for exactly that reason.  Currently, I 
+figure the chance of both copies independently going bad is lower than 
+the risk of a bug in still-under-development btrfs making BOTH copies 
+equally bad (even if they pass checksum), and I'm choosing to run btrfs 
+knowing that tho I keep non-btrfs backups just in case.  But as btrfs 
+matures and stabilizes, the chance of a btrfs bug making both copies bad 
+goes down, while the chance of the two copies independently going bad at 
+the same place remains the same, and as the two chances reverse in 
+likelihood, I'd sure like to have that triplet-mirroring available.
+
+Oh well, the day will come, even if I'm a six-year-old waiting for 
+Christmas at this point.  =:^\
+
+> One problem with many RAID arrays is that it seems to only be possible
+> to remove a disk and generate a replacement from parity.  I'd like to be
+> able to read all the data from the old disk which is readable and write
+> it to the new disk.  Then use the parity from other disks to recover the
+> blocks which weren't readable.  That way if you have errors on two disks
+> it won't matter unless they both happen to be on the same stripe.  Given
+> that BTRFS RAID-5 isn't usable yet it seems that the only way to get
+> this result is to use RAID-Z on ZFS.
+
+=:^(  But at least you're already in December, in terms of your btrfs 
+Christmas, while at best I'm still in November, for mine...
+
+---
+[1] Everything the package manager touches:  Minus a few write-required 
+state files and the like in /var, which are now symlinked to parallels 
+in /home/var, since I keep the rootfs read-only mounted by default these 
+days, but by the same token, those operational-write-required files can 
+go missing or be out of sync without dramatically affecting operation.
 
 -- 
-Saran
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

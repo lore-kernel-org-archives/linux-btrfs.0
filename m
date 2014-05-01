@@ -1,65 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41626 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751553AbaEAGBt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 May 2014 02:01:49 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wfk43-0004AU-HL
-	for linux-btrfs@vger.kernel.org; Thu, 01 May 2014 08:01:47 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 08:01:47 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 08:01:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unable to rebuild a 3 drive raid1 - blocked for more than 120
- seconds.
-Date: Thu, 1 May 2014 06:01:34 +0000 (UTC)
-Message-ID: <pan$30fe3$a9a78108$41476c4c$c7949e11@cox.net>
-References: <CAE6A3M0zmzDmLKzRDALNeLsqx72ttC8CA74-GfuSXN1TwJW-0A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from SD97.btc-net.bg ([212.39.90.97]:47582 "HELO sd97.btc-net.bg"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with SMTP
+	id S1751786AbaEAU2S convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 May 2014 16:28:18 -0400
+From: =?utf-8?B?0J/Qu9Cw0LzQtdC9INCf0LXRgtGA0L7Qsg==?=
+	<plamen@petrovi.no-ip.info>
+To: "'Chris Mason'" <clm@fb.com>, "'Chris Murphy'" <lists@colorremedies.com>,
+        "'Marc MERLIN'" <marc@merlins.org>,
+        "=?utf-8?Q?'Johannes_L=C3=B6thberg'?=" <johannes@kyriasis.com>,
+        "'Duncan'" <1i5t5.duncan@cox.net>, "'Martin'" <m_btrfs@ml1.co.uk>
+Cc: <linux-btrfs@vger.kernel.org>
+References: 
+In-Reply-To: 
+Subject: RE: Can anyone boot a system using btrfs root with linux 3.14 or newer? - RESOLVED
+Date: Thu, 1 May 2014 23:27:54 +0300
+Message-ID: <000301cf657b$d51ca200$7f55e600$@petrovi.no-ip.info>
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Saran Neti posted on Thu, 01 May 2014 00:48:22 -0400 as excerpted:
+>On 27/04/14 13:00, Пламен Петров wrote:
+>> The problem reported in this thread has been RESOLVED.
+>> 
+>> It's not BTRFS's fault.
+>> 
+>> Debugging on my part led to the actual problem in do_mounts.c - some
+>> filesystems mount routines return error codes other than 0, EACCES
+>> and EINVAL and such return codes result in the kernel panicking
+>> without trying to mount root with all of the available filesystems.
+>> 
+>> Patch is available as attachment to bug 74901 -
+>> https://bugzilla.kernel.org/show_bug.cgi?id=74901 . The bugentry
+>> documents how I managed to find the problem.
+>
+>Well deduced and that looks to be a good natural clean fix.
+>
+>My only question is: What was the original intent to deliberately fail
+>if something other than EACCES or EINVAL were reported?
+>
 
-> I had 3 x 3 TB drives [...] Then one of the drives got busted.
-> Mounting the fs in degraded mode and adding a new fresh drive to
-> rebuild raid1, generated several "...blocked
-> for more than 120 seconds." messages.
+This one beats me as well: I looked up current git history for init/do_mounts.c - it turns out that it came in git this way, with 2.6.12-rc2. The actual reasoning behind its behavior - I do not know... and did not bother looking it up further.
 
-> Described in
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg30017.html
-> are two possible causes, fragmentation due to COW and hardlinks, both of
-> which I think are unlikely in this case. I can mount in degraded mode
-> and read files, but that's about it. Is there something I'm missing? Any
-> debugging tips would be appreciated.
+>> Also, the patch has been sent to the linux kernel mailing list - see
+>> http://news.gmane.org/find-root.php?group=gmane.linux.kernel&article=1691881
+>> Hopefully, it will find its way into the kernel, and later on - in
+>> stable releases.
+>
+>>That all looks very good and very thorough.
+>>
+>> Thanks to you all! ------------------------------ Plamen Petrov
+>
+>Thanks to you for chasing it through!
+>
+>AND for posting the "Resolved" to let everyone know. 
+>
+>Regards,
+>Martin
 
-Just a btrfs user and list regular here, not a dev, but...
+You are welcome!
 
-You're to be commended for all that useful information you posted.  Way 
-more helpful than most manage in their first round. =:^)  But it's enough 
-to see I can't be of much help but for the below, so it's mostly snipped 
-here as unnecessary for this reply...
-
-I've several times seen the devs request a magic-sysrq-w dump for cases 
-like this.  That should be alt-srq-w on x86 hardware, or
-echo w > /proc/sysrq-trigger (should work in a VM also).
-
-That dumps IO-blocked tasks, letting the devs see where things are 
-screwing up.
-
-(If magic-srq is new to you, there's more about it in
-$KERNDIR/Documentation/sysrq.txt.  Last I looked a google returned some 
-pretty good hits discussing it, too.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Regards,
+---------------------------------
+Plamen Petrov
 

@@ -1,68 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29243 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753225AbaEAPRY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 May 2014 11:17:24 -0400
-Message-ID: <5362659D.3030003@fb.com>
-Date: Thu, 1 May 2014 11:17:49 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Jan Kasiak <j.kasiak@gmail.com>, <bo.li.liu@oracle.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs checksum
-References: <CAD15GZfSy0QWzpNQ2X2_3jUMBMV-WN4obAsnHH=Ea9xt-BEA7w@mail.gmail.com>
-In-Reply-To: <CAD15GZfSy0QWzpNQ2X2_3jUMBMV-WN4obAsnHH=Ea9xt-BEA7w@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:44300 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751168AbaEAQ6u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 May 2014 12:58:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WfuJq-0004AG-NC
+	for linux-btrfs@vger.kernel.org; Thu, 01 May 2014 18:58:46 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 18:58:46 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 May 2014 18:58:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Negative qgroup sizes
+Date: Thu, 1 May 2014 16:58:34 +0000 (UTC)
+Message-ID: <pan$cea24$895c4bc2$f096e7bb$50b7a75d@cox.net>
+References: <53624D07.2000602@elastichosts.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/01/2014 12:16 AM, Jan Kasiak wrote:
-> Is there a design/technical reason behind btrfs using checksums
-> separately per block, versus checksumming into a merkle tree?
+Alin Dobre posted on Thu, 01 May 2014 14:32:55 +0100 as excerpted:
 
-We're using crc32c, which isn't suitable for detecting malicious data in 
-general.  The goal was just to find blocks that were not correctly 
-returned by the storage.  But, more below:
+> I am having trouble with one of the btrfs subvolumes, as it shows
+> negative quota accounting values
 
->
-> Where I'm coming from: there's a Linux kernel device mapper module
-> called dm-verity, which let's you verify the contents of a block
-> device using a merkle tree (at mount time you provide the root hash).
-> For my project, I'm modifying the module to enable write support, but
-> in order to maintain consistency in the event of a power failure, I
-> have to do the equivalent of data journaling to a circular log (so I
-> end up writing data twice).
->
-> Where I'm going with this: I've been looking into what improvements
-> could be made if this were implemented at the filesystem level, and
-> btrfs looks like a good candidate. But it already has a checksumming
-> scheme, which is incompatible with a merkle tree, and would be
-> redundant if a merkle tree would be implemented as well. (zfs has a
-> merkle tree, but from what I can tell, it doesn't expose the root hash
-> to the user)
->
-> What the example use case is: you want to detect malicious data
-> tampering across the entire file system, so at mount time you provide
-> the merkle tree root hash. You get back an updated version of the root
-> hash when you unmount, which you store in a secure place until the
-> next time you mount the filesystem. You can detect if anyone modifies
-> your data in between mounts, and also if they modify the underlying
-> storage while the filesystem is mounted.
+> Running a "btrfs quota rescan -w /tmp/test" seems to fix it, but it
+> seems to come back pretty often (happened twice in the last couple of
+> days).
 
-We're actively looking into schemes to detect malicious changes to the 
-FS data.  A merkle tree could actually work fairly well.  The part I was 
-missing the last time I thought about this was the data blocks.
+> The kernel we are using is 3.14.1 (stable) and the btrfs-progs version
+> is 3.12.
 
-I was thinking that we'd have to include the checksum of the data blocks 
-in the combined crc of the leaves in the filesystem tree.
+I'm not a qgroups user myself, but I know there were quite some 
+complaints about negative numbers some months ago.  I hadn't seen any in 
+awhile and had hoped the problems were all fixed, but now you're 
+reporting them again, so I guess not.
 
-But if we keep the crc tree (using stronger crcs instead), we can just 
-do the merkle on the crc tree and the regular metadata blocks separately.
+Tho you are slightly outdated on your btrfs-progs version, 3.14.1 being 
+current.  But I think the code in question is kernel code and the progs 
+simply report it, so I don't think that can be the problem in this case.
 
-I think the biggest problem is that we wouldn't be allowed to write a 
-tree node until all of its children had been crc'd.  We've avoided these 
-kinds of write ordering rules in the past because they tend to make 
-things very difficult under memory pressure.
+The earlier recommendation, back when the problem reports were common, 
+was not to use qgroups on btrfs as the code obviously wasn't accounting 
+for something correctly.  Either use btrfs without qgroups, or if you 
+really need quotas, use some other filesystem where the quota code works 
+reliably.
 
--chris
+As for the problems themselves, I saw some patches go by that fixed 
+qgroups issues related to snapshot maintenance, and it's possible there's 
+more work to do in that area.  The problem there is apparently due to the 
+difficulty in properly accounting quotas for shared data, such that 
+deleting old snapshots could turn things negative as the code subtracted 
+the quota numbers repeatedly, once for each snapshot deleted, instead of 
+properly figuring out what was shared and only subtracting for the data 
+unique to that snapshot when it was deleted.
+
+So if you are doing snapshots, you can try not doing them (switching to 
+conventional backup if necessary) and see if that stabilizes your 
+numbers.  If so, you know there's still more problems in that area.
+
+Of course if the subvolumes involved aren't snapshotted, then the problem 
+must be elsewhere, but I do know the snapshotting case /is/ reasonably 
+difficult to get right... while staying within a reasonable performance 
+envelope at least.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

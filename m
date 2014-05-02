@@ -1,83 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-db3lp0081.outbound.protection.outlook.com ([213.199.154.81]:41613
-	"EHLO emea01-db3-obe.outbound.protection.outlook.com"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751015AbaEBKP0 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 May 2014 06:15:26 -0400
-From: George Pochiscan <george.pochiscan@sphs.ro>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Unable to boot
-Date: Fri, 2 May 2014 10:00:05 +0000
-Message-ID: <1399024804436.53859@sphs.ro>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:40837 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751015AbaEBKUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 2 May 2014 06:20:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WgAZl-0006LM-0h
+	for linux-btrfs@vger.kernel.org; Fri, 02 May 2014 12:20:17 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 May 2014 12:20:17 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 May 2014 12:20:17 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: "csum failed" that was not detected by scrub
+Date: Fri, 2 May 2014 10:20:03 +0000 (UTC)
+Message-ID: <pan$ba09e$4b80fc30$5f891c70$5774c32f@cox.net>
+References: <CAOwjQU4GP5PjdPZx8HPihS7GQOA74M+DexwMWoh1FOQP0tCTcw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Jaap Pieroen posted on Fri, 02 May 2014 11:42:35 +0200 as excerpted:
 
-I have a problem with a server with Fedora 20 and BTRFS. This server had frequent hard restarts before the filesystem got corrupt and we are unable to boot it.
+> I completed a full scrub:
+> root@nasbak:/home/jpieroen# btrfs scrub status /home/
+> scrub status for 7ca5f38e-308f-43ab-b3ea-31b3bcd11a0d
+> scrub started at Wed Apr 30 08:30:19 2014
+> and finished after 144131 seconds
+> total bytes scrubbed: 4.76TiB with 0 errors
+> 
+> Then tried to remove a device:
+> root@nasbak:/home/jpieroen# btrfs device delete /dev/sdb /home
+> 
+> This triggered bug_on, with the following error in dmesg: csum failed
+> ino 258 off 1395560448 csum 2284440321 expected csum 319628859
+> 
+> How can there still be csum failures directly after a scrub?
 
-We have a HP Proliant server with 4 disks @1TB each and Software RAID 5.
-It had Debian installed (i don't know the version) and right now i'm using fedora 20 live to try to rescue the  system.
+Simple enough, really...
 
-When we try btrfsck /dev/md127 i have a lot of checksum errors, and the output is: 
+> root@nasbak:/home/jpieroen#   btrfs fi df /home
+> Data, RAID5: total=4.57TiB, used=4.55TiB
+> System, RAID1: total=32.00MiB, used=352.00KiB
+> Metadata, RAID1: total=7.00GiB, used=5.59GiB
 
-Checking filesystem on /dev/md127
-UUID: e068faf0-2c16-4566-9093-e6d1e21a5e3c
-checking extents
-checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-Csum didn't match
-checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-Csum didn't match
------------------------------------------------------------------
+To those that know the details, this tells the story.
 
-extent buffer leak: start 1006686208 len 4096
-found 32039247396 bytes used err is -22
-total csum bytes: 41608612
-total tree bytes: 388857856
-total fs tree bytes: 310124544
-total extent tree bytes: 22016000
-btree space waste bytes: 126431234
-file data blocks allocated: 47227326464
- referenced 42595635200
-Btrfs v3.12
+Btrfs raid5/6 modes are not yet code-complete, and scrub is one of the 
+incomplete bits.  btrfs scrub doesn't know how to deal with raid5/6 
+properly just yet.
 
+While the operational bits of raid5/6 support are there, parity is 
+calculated and written, scrub, and recovery from a lost device, are not 
+yet code complete.  Thus, it's effectively a slower, lower capacity raid0 
+without scrub support at this point, except that when the code is 
+complete, you'll get an automatic "free" upgrade to full raid5 or raid6, 
+because the operational bits have been working since they were 
+introduced, just the recovery and scrub bits were bad, making it 
+effectively a raid0 in reliability terms, lose one and you've lost them 
+all.
 
+That's the big picture anyway.  Marc Merlin recently did quite a bit of 
+raid5/6 testing and there's a page on the wiki now with what he found.  
+Additionally, I saw a scrub support for raid5/6 modes patch on the list 
+recently, but while it may be in integration, I believe it's too new to 
+have reached release yet.
 
-When i attempt to repair i have the following error:
------------------------------------------
-Backref 1005817856 parent 5 root 5 not found in extent tree
-backpointer mismatch on [1005817856 4096]
-owner ref check failed [1006686208 4096]
-repaired damaged extent references
-Failed to find [1000525824, 168, 4096]
-btrfs unable to find ref byte nr 1000525824 parent 0 root 1  owner 1 offset 0
-btrfsck: extent-tree.c:1752: write_one_cache_group: Assertion `!(ret)' failed.
-Aborted
-------------------------------------
+Wiki, for memory or bookmark: https://btrfs.wiki.kernel.org
 
+Direct user documentation link for bookmark (unwrap as necessary):
 
+https://btrfs.wiki.kernel.org/index.php/
+Main_Page#Guides_and_usage_information
 
+The raid5/6 page (which I didn't otherwise see conveniently linked, I dug 
+it out of the recent changes list since I knew it was there from on-list 
+discussion):
 
-I have installed btrfs version 3.12
-
-Linux localhost 3.11.10-301.fc20.x86_64 #1 SMP Thu Dec 5 14:01:17 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
-
-[root@localhost liveuser]# btrfs fi show
-Label: none  uuid: e068faf0-2c16-4566-9093-e6d1e21a5e3c
-	Total devices 1 FS bytes used 40.04GiB
-	devid    1 size 1.82TiB used 43.04GiB path /dev/md127
-Btrfs v3.12
+https://btrfs.wiki.kernel.org/index.php/RAID56
 
 
-Please advice.
+@ Marc or Hugo or someone with a wiki account:  Can this be more visibly 
+linked from the user-docs contents, added to the user docs category list, 
+and probably linked from at least the multiple devices and (for now) the 
+gotchas pages?
 
-Thank you,
-George Pochiscan
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

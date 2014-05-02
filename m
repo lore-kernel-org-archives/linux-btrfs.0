@@ -1,46 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from old.lon-b.elastichosts.com ([84.45.121.3]:59315 "EHLO
-	lon-b.elastichosts.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751396AbaEBJRe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 May 2014 05:17:34 -0400
-Message-ID: <536362B9.7020505@elastichosts.com>
-Date: Fri, 02 May 2014 10:17:45 +0100
-From: Alin Dobre <alin.dobre@elastichosts.com>
+Received: from mail-ig0-f181.google.com ([209.85.213.181]:40873 "EHLO
+	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751388AbaEBJmg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 May 2014 05:42:36 -0400
+Received: by mail-ig0-f181.google.com with SMTP id h18so1635529igc.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 May 2014 02:42:35 -0700 (PDT)
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Negative qgroup sizes
-References: <53624D07.2000602@elastichosts.com> <pan$cea24$895c4bc2$f096e7bb$50b7a75d@cox.net>
-In-Reply-To: <pan$cea24$895c4bc2$f096e7bb$50b7a75d@cox.net>
+Date: Fri, 2 May 2014 11:42:35 +0200
+Message-ID: <CAOwjQU4GP5PjdPZx8HPihS7GQOA74M+DexwMWoh1FOQP0tCTcw@mail.gmail.com>
+Subject: "csum failed" that was not detected by scrub
+From: Jaap Pieroen <jaap@pieroen.nl>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the response, Duncan.
+Hi all,
 
-On 01/05/14 17:58, Duncan wrote:
-> 
-> Tho you are slightly outdated on your btrfs-progs version, 3.14.1 being 
-> current.  But I think the code in question is kernel code and the progs 
-> simply report it, so I don't think that can be the problem in this case.
+I completed a full scrub:
+root@nasbak:/home/jpieroen# btrfs scrub status /home/
+scrub status for 7ca5f38e-308f-43ab-b3ea-31b3bcd11a0d
+scrub started at Wed Apr 30 08:30:19 2014 and finished after 144131 seconds
+total bytes scrubbed: 4.76TiB with 0 errors
 
-Yes, I'm aware that 3.14 version of btrfs progs was already there, but
-this is just for couple of weeks and I'm pretty sure that the kernel
-code (which does the real time accounting) is broken.
+Then tried to remove a device:
+root@nasbak:/home/jpieroen# btrfs device delete /dev/sdb /home
 
-> So if you are doing snapshots, you can try not doing them (switching to 
-> conventional backup if necessary) and see if that stabilizes your 
-> numbers.  If so, you know there's still more problems in that area.
-> 
-> Of course if the subvolumes involved aren't snapshotted, then the problem 
-> must be elsewhere, but I do know the snapshotting case /is/ reasonably 
-> difficult to get right... while staying within a reasonable performance 
-> envelope at least.
-> 
+This triggered bug_on, with the following error in dmesg: csum failed
+ino 258 off 1395560448 csum 2284440321 expected csum 319628859
 
-I have already searched and found some patches around this issue, but I
-thought I'd also mention the issue on this mailing list and hoped that I
-somehow missed something. The subvolumes are highly probable to be
-snapshotted, so this might indeed be the case.
+How can there still be csum failures directly after a scrub?
+If I rerun the scrub it still won't find any errors. I know this,
+because I've had the same issue 3 times in a row. Each time running a
+scrub and still being unable to remove the device.
 
-Cheers,
-Alin.
+Kind Regards,
+Jaap
+
+--------------------------------------------------------------
+Details:
+
+root@nasbak:/home/jpieroen#   uname -a
+Linux nasbak 3.14.1-031401-generic #201404141220 SMP Mon Apr 14
+16:21:48 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+root@nasbak:/home/jpieroen#   btrfs --version
+Btrfs v3.14.1
+
+root@nasbak:/home/jpieroen#   btrfs fi df /home
+Data, RAID5: total=4.57TiB, used=4.55TiB
+System, RAID1: total=32.00MiB, used=352.00KiB
+Metadata, RAID1: total=7.00GiB, used=5.59GiB
+
+root@nasbak:/home/jpieroen# btrfs fi show
+Label: 'btrfs_storage'  uuid: 7ca5f38e-308f-43ab-b3ea-31b3bcd11a0d
+Total devices 6 FS bytes used 4.56TiB
+devid    1 size 1.82TiB used 1.31TiB path /dev/sde
+devid    2 size 1.82TiB used 1.31TiB path /dev/sdf
+devid    3 size 1.82TiB used 1.31TiB path /dev/sdg
+devid    4 size 931.51GiB used 25.00GiB path /dev/sdb
+devid    6 size 2.73TiB used 994.03GiB path /dev/sdh
+devid    7 size 2.73TiB used 994.03GiB path /dev/sdi
+
+Btrfs v3.14.1
+
+jpieroen@nasbak:~$ dmesg
+[227248.656438] BTRFS info (device sdi): relocating block group
+9735225016320 flags 129
+[227261.713860] BTRFS info (device sdi): found 9 extents
+[227264.531019] BTRFS info (device sdi): found 9 extents
+[227265.011826] BTRFS info (device sdi): relocating block group
+76265029632 flags 129
+[227274.052249] BTRFS info (device sdi): csum failed ino 258 off
+1395560448 csum 2284440321 expected csum 319628859
+[227274.052354] BTRFS info (device sdi): csum failed ino 258 off
+1395564544 csum 3646299263 expected csum 319628859
+[227274.052402] BTRFS info (device sdi): csum failed ino 258 off
+1395568640 csum 281259278 expected csum 319628859
+[227274.052449] BTRFS info (device sdi): csum failed ino 258 off
+1395572736 csum 2594807184 expected csum 319628859
+[227274.052492] BTRFS info (device sdi): csum failed ino 258 off
+1395576832 csum 4288971971 expected csum 319628859
+[227274.052537] BTRFS info (device sdi): csum failed ino 258 off
+1395580928 csum 752615894 expected csum 319628859
+[227274.052581] BTRFS info (device sdi): csum failed ino 258 off
+1395585024 csum 3828951500 expected csum 319628859
+[227274.061279] ------------[ cut here ]------------
+[227274.061354] kernel BUG at /home/apw/COD/linux/fs/btrfs/extent_io.c:2116!
+[227274.061445] invalid opcode: 0000 [#1] SMP
+[227274.061509] Modules linked in: cuse deflate
+[227274.061573] BTRFS info (device sdi): csum failed ino 258 off
+1395560448 csum 2284440321 expected csum 319628859
+[227274.061707]  ctr twofish_generic twofish_x86_64_3way
+twofish_x86_64 twofish_common camellia_generic camellia_x86_64
+serpent_sse2_x86_64 xts serpent_generic lrw gf128mul glue_helper
+blowfish_generic blowfish_x86_64 blowfish_common cast5_generic
+cast_common ablk_helper cryptd des_generic cmac xcbc rmd160
+crypto_null af_key xfrm_algo nfsd auth_rpcgss nfs_acl nfs lockd sunrpc
+fscache dm_crypt ip6t_REJECT ppdev xt_hl ip6t_rt nf_conntrack_ipv6
+nf_defrag_ipv6 ipt_REJECT xt_comment xt_LOG kvm xt_recent microcode
+xt_multiport xt_limit xt_tcpudp psmouse serio_raw xt_addrtype k10temp
+edac_core ipt_MASQUERADE edac_mce_amd iptable_nat nf_nat_ipv4
+sp5100_tco nf_conntrack_ipv4 nf_defrag_ipv4 ftdi_sio i2c_piix4
+usbserial xt_conntrack ip6table_filter ip6_tables joydev
+nf_conntrack_netbios_ns nf_conntrack_broadcast snd_hda_codec_via
+nf_nat_ftp snd_hda_codec_hdmi nf_nat snd_hda_codec_generic
+nf_conntrack_ftp nf_conntrack snd_hda_intel iptable_filter
+ir_lirc_codec(OF) lirc_dev(OF) ip_tables snd_hda_codec
+ir_mce_kbd_decoder(OF) x_tables snd_hwdep ir_sony_decoder(OF)
+rc_tbs_nec(OF) ir_jvc_decoder(OF) snd_pcm ir_rc6_decoder(OF)
+ir_rc5_decoder(OF) saa716x_tbs_dvb(OF) tbs6982fe(POF) tbs6680fe(POF)
+ir_nec_decoder(OF) tbs6923fe(POF) tbs6985se(POF) tbs6928se(POF)
+tbs6982se(POF) tbs6991fe(POF) tbs6618fe(POF) saa716x_core(OF)
+tbs6922fe(POF) tbs6928fe(POF) tbs6991se(POF) stv090x(OF) dvb_core(OF)
+rc_core(OF) snd_timer snd soundcore asus_atk0110 parport_pc shpchp
+mac_hid lp parport btrfs xor raid6_pq pata_acpi hid_generic usbhid hid
+usb_storage radeon pata_atiixp r8169 mii i2c_algo_bit sata_sil24 ttm
+drm_kms_helper drm ahci libahci wmi
+[227274.064118] CPU: 1 PID: 15543 Comm: btrfs-endio-4 Tainted: PF
+    O 3.14.1-031401-generic #201404141220
+[227274.064246] Hardware name: System manufacturer System Product
+Name/M4A78LT-M, BIOS 0802    08/24/2010
+[227274.064368] task: ffff88030a0e31e0 ti: ffff8800a15b8000 task.ti:
+ffff8800a15b8000
+[227274.064467] RIP: 0010:[<ffffffffa0304c33>]  [<ffffffffa0304c33>]
+clean_io_failure+0x1a3/0x1b0 [btrfs]
+[227274.064623] RSP: 0018:ffff8800a15b9cd8  EFLAGS: 00010246
+[227274.064694] RAX: 0000000000000000 RBX: ffff88010b2869b8 RCX:
+0000000000000000
+[227274.064789] RDX: ffff8802cad30f00 RSI: 00000000720071fe RDI:
+ffff88010b286884
+[227274.064883] RBP: ffff8800a15b9d28 R08: 0000000000000000 R09:
+0000000000000000
+[227274.064977] R10: 0000000000000200 R11: 0000000000000000 R12:
+ffffea000102b080
+[227274.065071] R13: ffff880004366c00 R14: ffff88010b286800 R15:
+00000000532ef000
+[227274.065166] FS:  00007f16670b0740(0000) GS:ffff88031fc40000(0000)
+knlGS:0000000000000000
+[227274.065271] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[227274.065348] CR2: 00007f9c5c3b0000 CR3: 00000002dd8a8000 CR4:
+00000000000007e0
+[227274.065443] Stack:
+[227274.065471]  00000000000532ef ffff88030a14c000 0000000000000000
+ffff880004366c00
+[227274.065584]  ffff88030a95f780 ffffea000102b080 ffff8801026cc4b0
+ffff88010b2869b8
+[227274.065697]  00000000532ef000 0000000000000000 ffff8800a15b9db8
+ffffffffa0304f1b
+[227274.065809] Call Trace:
+[227274.065872]  [<ffffffffa0304f1b>]
+end_bio_extent_readpage+0x2db/0x3d0 [btrfs]
+[227274.065971]  [<ffffffff8120a013>] bio_endio+0x53/0xa0
+[227274.066042]  [<ffffffff8120a072>] bio_endio_nodec+0x12/0x20
+[227274.066137]  [<ffffffffa02dde81>] end_workqueue_fn+0x41/0x50 [btrfs]
+[227274.066243]  [<ffffffffa03157d0>] worker_loop+0xa0/0x330 [btrfs]
+[227274.066345]  [<ffffffffa0315730>] ?
+check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+[227274.066455]  [<ffffffff8108ffa9>] kthread+0xc9/0xe0
+[227274.066522]  [<ffffffff8108fee0>] ? flush_kthread_worker+0xb0/0xb0
+[227274.066606]  [<ffffffff817721bc>] ret_from_fork+0x7c/0xb0
+[227274.066680]  [<ffffffff8108fee0>] ? flush_kthread_worker+0xb0/0xb0
+[227274.066761] Code: 00 00 83 f8 01 0f 8e 49 ff ff ff 49 8b 4d 18 49
+8b 55 10 4d 89 e0 45 8b 4d 2c 48 8b 7d b8 4c 89 fe e8 72 fc ff ff e9
+29 ff ff ff <0f> 0b 66 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 55
+48 89
+[227274.067266] RIP  [<ffffffffa0304c33>] clean_io_failure+0x1a3/0x1b0 [btrfs]
+[227274.067380]  RSP <ffff8800a15b9cd8>

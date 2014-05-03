@@ -1,96 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57137 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750813AbaEBTln convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 May 2014 15:41:43 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Unable to boot
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <1399024804436.53859@sphs.ro>
-Date: Fri, 2 May 2014 13:41:38 -0600
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <B2BE5A00-6E38-4B2D-9A80-AB1F49F1830B@colorremedies.com>
-References: <1399024804436.53859@sphs.ro>
-To: George Pochiscan <george.pochiscan@sphs.ro>
+Received: from plane.gmane.org ([80.91.229.3]:60125 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752465AbaECDKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 2 May 2014 23:10:35 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WgQLQ-0002ig-JG
+	for linux-btrfs@vger.kernel.org; Sat, 03 May 2014 05:10:32 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 May 2014 05:10:32 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 May 2014 05:10:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: btrfs raid56 Was: "csum failed" that was not detected by scrub
+Date: Sat, 3 May 2014 03:10:15 +0000 (UTC)
+Message-ID: <pan$7fdf7$8b1d584a$86e500d9$23690ab4@cox.net>
+References: <CAOwjQU4GP5PjdPZx8HPihS7GQOA74M+DexwMWoh1FOQP0tCTcw@mail.gmail.com>
+	<pan$ba09e$4b80fc30$5f891c70$5774c32f@cox.net>
+	<loom.20140502T194216-357@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Jaap Pieroen posted on Fri, 02 May 2014 17:48:13 +0000 as excerpted:
 
-On May 2, 2014, at 4:00 AM, George Pochiscan <george.pochiscan@sphs.ro> wrote:
-
-> Hello,
-> 
-> I have a problem with a server with Fedora 20 and BTRFS. This server had frequent hard restarts before the filesystem got corrupt and we are unable to boot it.
-> 
-> We have a HP Proliant server with 4 disks @1TB each and Software RAID 5.
-> It had Debian installed (i don't know the version) and right now i'm using fedora 20 live to try to rescue the  system.
-
-Fedora 20 Live has kernel 3.11.10 and btrfs-progs 0.20.rc1.20131114git9f0c53f-1.fc20. So the general rule of thumb without knowing exactly what the problem and solution is, is to try a much newer kernel and btrfs-progs, like a Fedora Rawhide live media. These are built daily, but don't always succeed so you can go here to find the latest of everything:
-
-https://apps.fedoraproject.org/releng-dash/
-
-Find Fedora Live Desktop or Live KDE and click on details. Click the green link under descendants   livecd. And then under Output listing you'll see an ISO you can download, the one there right now is Fedora-Live-Desktop-x86_64-rawhide-20140502.iso - but of course this changes daily.
-
-You might want to boot with kernel parameter slub_debug=- (that's a minus symbol) because all but Monday built Rawhide kernels have a bunch of kernel debug options enabled which makes it quite slow.
-
-
-> 
-> When we try btrfsck /dev/md127 i have a lot of checksum errors, and the output is: 
-> 
-> Checking filesystem on /dev/md127
-> UUID: e068faf0-2c16-4566-9093-e6d1e21a5e3c
-> checking extents
-> checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-> checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-> checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-> checksum verify failed on 1006686208 found 457560AC wanted 6B3ECE11
-> Csum didn't match
-> checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-> checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-> checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-> checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
-> Csum didn't match
-> -----------------------------------------------------------------
-> 
-> extent buffer leak: start 1006686208 len 4096
-> found 32039247396 bytes used err is -22
-> total csum bytes: 41608612
-> total tree bytes: 388857856
-> total fs tree bytes: 310124544
-> total extent tree bytes: 22016000
-> btree space waste bytes: 126431234
-> file data blocks allocated: 47227326464
-> referenced 42595635200
-> Btrfs v3.12
-
-
-I suggest a recent Rawhide build. And I suggest just trying to mount the file system normally first, and post anything that appears in dmesg. And if the mount fails, then try mount option -o recovery, and also post any dmesg messages from that too, and note whether or not it mounts. Finally if that doesn't work either then see if -o ro,recovery works and what kernel messages you get.
-
-
+> Duncan <1i5t5.duncan <at> cox.net> writes:
 > 
 > 
+>> To those that know the details, this tells the story.
+>> 
+>> Btrfs raid5/6 modes are not yet code-complete, and scrub is one of the
+>> incomplete bits.  btrfs scrub doesn't know how to deal with raid5/6
+>> properly just yet.
+
+>> The raid5/6 page (which I didn't otherwise see conveniently linked, I
+>> dug it out of the recent changes list since I knew it was there from
+>> on-list discussion):
+>> 
+>> https://btrfs.wiki.kernel.org/index.php/RAID56
+
+> So raid5 is much more useless than I assumed. I read Marc's blog and
+> figured that btrfs was ready enough.
 > 
-> When i attempt to repair i have the following error:
-> -----------------------------------------
-> Backref 1005817856 parent 5 root 5 not found in extent tree
-> backpointer mismatch on [1005817856 4096]
-> owner ref check failed [1006686208 4096]
-> repaired damaged extent references
-> Failed to find [1000525824, 168, 4096]
-> btrfs unable to find ref byte nr 1000525824 parent 0 root 1  owner 1 offset 0
-> btrfsck: extent-tree.c:1752: write_one_cache_group: Assertion `!(ret)' failed.
-> Aborted
-> ------------------------------------
+> I' really in trouble now. I tried to get rid of raid5 by doing a convert
+> balance to raid1. But of course this triggered the same issue. And now I
+> have a dead system because the first thing btrfs does after mounting is
+> continue the balance which will crash the system and send me into a
+> vicious loop.
+> 
+> - How can I stop btrfs from continuing balancing?
 
-You really shouldn't use --repair right off the bat, it's not a recommended early step, you should try normal mounting with newer kernels first, then recovery mount options first. Sometimes the repair option makes things worse. I'm not sure what its safety status is as of v3.14.
+That one's easy.  See the Documentation/filesystems/btrfs.txt file in the 
+kernel tree or the wiki for btrfs mount options, one of which is 
+"skip_balance", to address this very sort of problem! =:^)
 
-https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
+Alternatively, mounting it read-only should prevent further changes 
+including the balance, at least allowing you to get the data off the 
+filesystem.
 
-Fedora includes btrfs-zero-log already so depending on the kernel messages you might try that before a btrfsck --repair.
+> - How can I salvage this situation and convert to raid1?
+> 
+> Unfortunately I have little spare drives left. Not enough to contain
+> 4.7TiB of data.. :(
+
+[OK, this goes a bit philosophical, but it's something to think about...]
+
+If you've done your research and followed the advice of the warnings when 
+you do a mkfs.btrfs or on the wiki, not a problem, since you know that 
+btrfs is still under heavy development and that as a result, it's even 
+more critical to have current tested backups for anything you value 
+anyway.  Simply use those backups.
+
+Which, by definition, means that if you don't have such backups, you 
+didn't consider the data all that valuable after all, actions perhaps 
+giving the lie to your claims.  And no excuse for not doing the research 
+either, since if you really care about your data, you research a 
+filesystem you're not familiar with before trusting your data to it.  So 
+again, if you didn't know btrfs was experimental and thus didn't have 
+those backups, by definition your actions say you didn't really care 
+about the data you put on it, no matter what your words might say.
+
+OTOH, there *IS* such a thing as not realizing the value of something 
+until you're in the process of losing it... that I do understand.  But of 
+course try telling that to, for instance, someone who has just lost a 
+loved one that they never actually /told/ them that...  Sometimes it's 
+simply too late.  Tho if it's going to happen, at least here I'd much 
+rather it happen to some data, than one of my own loved ones...
 
 
+Anyway, at least for now you should still be able to recover most of the 
+data using skip_balance or read-only mounting.  My guess is that if push 
+comes to shove you can either prioritize that data and give up a TiB or 
+two if it comes to that, or scrimp here and there, putting a few gigs on 
+the odd blank DVD you may have lying around or downgrading a few meals to 
+Raman-noodle to afford the $100 or so shipped that pricewatch says a new 
+3 TB drive costs, these days.  I've been there, and have found that if I 
+think I need it bad enough, that $100 has a way of appearing, like I said 
+even if I'm noodling it for a few meals to do it.
 
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

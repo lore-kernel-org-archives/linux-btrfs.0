@@ -1,63 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw8a-gabriella.wadns.net ([196.220.39.91]:36004 "EHLO
-	fw8a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751360AbaEDHQM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 03:16:12 -0400
-Message-ID: <5365E932.20602@swiftspirit.co.za>
-Date: Sun, 04 May 2014 09:16:02 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+Received: from magic.merlins.org ([209.81.13.136]:34510 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753439AbaEDHYo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 03:24:44 -0400
+Date: Sun, 4 May 2014 00:24:20 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Is metadata redundant over more than one drive with raid0 too?
+Message-ID: <20140504072420.GJ9061@merlins.org>
+References: <20140503232702.GC9061@merlins.org>
+ <5365E4CF.3050405@swiftspirit.co.za>
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
-Subject: Re: Copying related snapshots to another server with btrfs send/receive?
-References: <20140504031231.GG9061@merlins.org>
-In-Reply-To: <20140504031231.GG9061@merlins.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5365E4CF.3050405@swiftspirit.co.za>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/05/04 05:12 AM, Marc MERLIN wrote:
-> Another question I just came up with.
->
-> If I have historical snapshots like so:
-> backup
-> backup.sav1
-> backup.sav2
-> backup.sav3
->
-> If I want to copy them up to another server, can btrfs send/receive
-> let me copy all of the to another btrfs pool while keeping the
-> duplicated block relationship between all of them?
-> Note that the backup.sav dirs will never change, so I won't need
-> incremental backups on those, just a one time send.
-> I believe this is supposed to work, correct?
->
-> The only part I'm not clear about is am I supposed to copy them all at
-> once in the same send command, or one by one?
->
-> If they had to be copied together and if I create a new snapshot of
-> backup: backup.sav4
->
-> If I use btrfs send to that same destination, is btrfs send/receive indeed
-> able to keep the shared block relationship?
->
-> Thanks,
-> Marc
-I'm not sure if they can be sent in one go. :-/
+On Sun, May 04, 2014 at 08:57:19AM +0200, Brendan Hide wrote:
+> Hi, Marc
+> 
+> Raid0 is not redundant in any way. See inline below.
+ 
+Thanks for clearing things up.
 
-Sending one-at-a-time, the shared-data relationship will be kept by 
-using the -p (parent) parameter. Send will only send the differences and 
-receive will create a new snapshot, adjusting for those differences, 
-even when the receive is run on a remote server.
+> >But now I have 2 questions
+> >1) btrfs has two copies of all metadata on even a single drive, correct?
+> 
+> Only when *specifically* using -m dup (which is the default on a
+> single non-SSD device), will there be two copies of the metadata
+> stored on a single device. This is not recommended when using
 
-$ btrfs send backup | btrfs receive $path/
-$ btrfs send -p backup backup.sav1 | btrfs receive $path/
-$ btrfs send -p backup.sav1 backup.sav2 | btrfs receive $path/
-$ btrfs send -p backup.sav2 backup.sav3 | btrfs receive $path/
-$ btrfs send -p backup.sav3 backup.sav4 | btrfs receive $path/
+Ah, so -m dup is default like I thought, but not on SSD?
+Ooops, that means that my laptop does not have redundant metadata on its
+SSD like I thought. Thanks for the heads up.
+Ah, I see the man page now "This is because SSDs can remap blocks
+internally so duplicate blocks could end up in the same erase block
+which negates the benefits of doing metadata duplication."
 
+> multiple devices as it means one device failure will likely cause
+> critical loss of metadata. 
+
+That's the part where I'm not clear:
+
+What's the difference between -m dup and -m raid1
+Don't they both say 2 copies of the metadata?
+Is -m dup only valid for a single drive, while -m raid1 for 2+ drives?
+
+> >If so, and I have a -d raid0 -m raid0 filesystem, are both copies of the
+> >metadata on the same drive or is btrfs smart enough to spread out
+> >metadata copies so that they're not on the same drive?
+> 
+> This will mean there is only a single copy, albeit striped across
+> the drives.
+
+Ok, so -m raid0 only means a single copy of metadata, thanks for
+explaining.
+
+> good for redundancy. A total failure of a single device will mean
+> any large files will be lost and only files smaller than the default
+> per-disk stripe width (I believe this used to be 4K and is now 16K -
+> I could be wrong) stored only on the remaining disk will be
+> available.
+ 
+Gotcha, thanks for confirming, so -m raid1 -d raid0 really only protects
+against metadata corruption or a single block loss, but otherwise if you
+lost a drive in a 2 drive raid0, you'll have lost more than just half
+your files.
+
+> The scenario you mentioned at the beginning, "if I lose a drive,
+> I'll still have full metadata for the entire filesystem and only
+> missing files" is more applicable to using "-m raid1 -d single".
+> Single is not geared towards performance and, though it doesn't
+> guarantee a file is only on a single disk, the allocation does mean
+> that the majority of all files smaller than a chunk will be stored
+> on only one disk or the other - not both.
+
+Ok, so in other words:
+-d raid0: if you one 1 drive out of 2, you may end up with small files
+and the rest will be lost
+
+-d single: you're more likely to have files be on one drive or the
+other, although there is no guarantee there either.
+
+Correct?
+
+Thanks,
+Marc
 -- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

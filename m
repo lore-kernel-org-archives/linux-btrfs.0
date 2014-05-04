@@ -1,61 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw11a-maira.wadns.net ([196.220.39.139]:64114 "EHLO
-	fw11a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751258AbaEDH1Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 03:27:25 -0400
-Message-ID: <5365EBCE.1060605@swiftspirit.co.za>
-Date: Sun, 04 May 2014 09:27:10 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
+Received: from magic.merlins.org ([209.81.13.136]:34682 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752541AbaEDHra (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 03:47:30 -0400
+Received: from i118-21-136-4.s30.a048.ap.plala.or.jp ([118.21.136.4]:12285 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1Wgr8z-0002yX-Sn by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sun, 04 May 2014 00:47:30 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1Wgr8n-0004Rl-HY
+	for linux-btrfs@vger.kernel.org; Sun, 04 May 2014 00:47:17 -0700
+Date: Sun, 4 May 2014 00:47:12 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs on top of multiple dmcrypted devices howto
+Message-ID: <20140504074712.GL9061@merlins.org>
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
-        Hugo Mills <hugo@carfax.org.uk>, Russell Coker <russell@coker.com.au>
-Subject: Re: copies= option
-References: <201405041216.54348.russell@coker.com.au> <pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net>
-In-Reply-To: <pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/05/04 05:27 AM, Duncan wrote:
-> Russell Coker posted on Sun, 04 May 2014 12:16:54 +1000 as excerpted:
->
->> Are there any plans for a feature like the ZFS copies= option?
->>
->> I'd like to be able to set copies= separately for data and metadata.  In
->> most cases RAID-1 provides adequate data protection but I'd like to have
->> RAID-1 and copies=2 for metadata so that if one disk dies and another
->> has some bad sectors during recovery I'm unlikely to lose metadata.
-> Hugo's the guy with the better info on this one, but until he answers...
->
-> The zfs license issues mean it's not an option for me and I'm thus not
-> familiar with its options in any detail, but if I understand the question
-> correctly, yes.
->
-> And of course since btrfs treats data and metadata separately, it's
-> extremely unlikely that any sort of copies= option wouldn't be separately
-> configurable for each.
->
-> There was a discussion of a very nice multi-way-configuration schema that
-> I deliberately stayed out of as both a bit above my head and far enough
-> in the future that I didn't want to get my hopes up too high about it
-> yet.  I already want N-way-mirroring so bad I can taste it, and this was
-> that and way more... if/when it ever actually gets coded and committed to
-> the mainline kernel btrfs.  As I said, Hugo should have more on it, as he
-> was active in that discussion as it seemed to line up perfectly with his
-> area of interest.
->
-The simple answer is yes, this is planned. As Duncan implied, however, 
-it is not on the immediate roadmap. Internally we appear to be referring 
-to this feature as "N-way redundancy" or "N-way mirroring".
+I've just updated
+https://btrfs.wiki.kernel.org/index.php/FAQ#Does_Btrfs_work_on_top_of_dm-crypt.3F
+to point to
+http://marc.merlins.org/perso/btrfs/post_2014-04-27_Btrfs-Multi-Device-Dmcrypt.html
+where I give this script:
+http://marc.merlins.org/linux/scripts/start-btrfs-dmcrypt
+which shows one way to bring up a btrfs filesystem based off multiple
+dm-crypted devices.
 
-My understanding is that the biggest hurdle before the primary devs will 
-look into N-way redundancy is to finish the Raid5/6 implementation to 
-include self-healing/scrubbing support - a critical issue before it can 
-be adopted further.
+Hope this helps someone.
 
+Marc
 -- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

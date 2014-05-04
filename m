@@ -1,60 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39962 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753210AbaEDD1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 May 2014 23:27:32 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wgn5O-0004TP-LS
-	for linux-btrfs@vger.kernel.org; Sun, 04 May 2014 05:27:30 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 May 2014 05:27:30 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 May 2014 05:27:30 +0200
+Received: from magic.merlins.org ([209.81.13.136]:33873 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751031AbaEDFqa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 01:46:30 -0400
+Received: from i118-21-136-4.s30.a048.ap.plala.or.jp ([118.21.136.4]:31718 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WgpFt-0000am-MH by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Sat, 03 May 2014 22:46:30 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1Wgkab-0005Dx-Pe
+	for linux-btrfs@vger.kernel.org; Sat, 03 May 2014 17:47:33 -0700
+Date: Sat, 3 May 2014 17:47:32 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: copies= option
-Date: Sun, 4 May 2014 03:27:16 +0000 (UTC)
-Message-ID: <pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net>
-References: <201405041216.54348.russell@coker.com.au>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Using mount -o bind vs mount -o subvol=vol
+Message-ID: <20140504004732.GE9061@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Russell Coker posted on Sun, 04 May 2014 12:16:54 +1000 as excerpted:
+Is there any functional difference between 
 
-> Are there any plans for a feature like the ZFS copies= option?
-> 
-> I'd like to be able to set copies= separately for data and metadata.  In
-> most cases RAID-1 provides adequate data protection but I'd like to have
-> RAID-1 and copies=2 for metadata so that if one disk dies and another
-> has some bad sectors during recovery I'm unlikely to lose metadata.
+mount -o subvol=usr /dev/sda1 /usr
+and
+mount /dev/sda1 /mnt/btrfs_pool
+mount -o bind /mnt/btrfs_pool/usr /usr
 
-Hugo's the guy with the better info on this one, but until he answers...
+?
 
-The zfs license issues mean it's not an option for me and I'm thus not 
-familiar with its options in any detail, but if I understand the question 
-correctly, yes.
-
-And of course since btrfs treats data and metadata separately, it's 
-extremely unlikely that any sort of copies= option wouldn't be separately 
-configurable for each.
-
-There was a discussion of a very nice multi-way-configuration schema that 
-I deliberately stayed out of as both a bit above my head and far enough 
-in the future that I didn't want to get my hopes up too high about it 
-yet.  I already want N-way-mirroring so bad I can taste it, and this was 
-that and way more... if/when it ever actually gets coded and committed to 
-the mainline kernel btrfs.  As I said, Hugo should have more on it, as he 
-was active in that discussion as it seemed to line up perfectly with his 
-area of interest.
-
+Thanks,
+Marc
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

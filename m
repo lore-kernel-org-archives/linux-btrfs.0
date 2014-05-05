@@ -1,69 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:52058 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756251AbaEEVmz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 May 2014 17:42:55 -0400
-Received: by mail-pd0-f169.google.com with SMTP id z10so7269868pdj.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 May 2014 14:42:55 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140505212513.GS10159@merlins.org>
-References: <CANg_oxxFKHioyWO0ct7vcT=aTbX11KbCKtGwvZo_59jirLDGow@mail.gmail.com>
-	<20140505212513.GS10159@merlins.org>
-Date: Mon, 5 May 2014 14:42:53 -0700
-Message-ID: <CAN05THTVtGp=R_xJg5_1OgmbDEonFSUgza-r0UGWyuuORmYSZg@mail.gmail.com>
-Subject: Re: btrfs on software RAID0
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: john terragon <jterragon@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53332 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1756885AbaEEVtW convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 May 2014 17:49:22 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Unable to boot
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1399302707150.24606@sphs.ro>
+Date: Mon, 5 May 2014 15:49:20 -0600
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-Id: <40C60877-4F96-42D9-8818-DDAE21B64F9E@colorremedies.com>
+References: <1399024804436.53859@sphs.ro> <B2BE5A00-6E38-4B2D-9A80-AB1F49F1830B@colorremedies.com> <1399302243852.20163@sphs.ro>,<20140505150720.GQ24298@carfax.org.uk> <1399302707150.24606@sphs.ro>
+To: George Pochiscan <george.pochiscan@sphs.ro>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-start-btrfs-dmcrypt :
-...
-echo "$pwd" |
-...
 
-Hmmm. This makes the plaintext password visible in ps output.
-It is probably better to pass this in by redirecting a file to stdin.
+On May 5, 2014, at 9:11 AM, George Pochiscan <george.pochiscan@sphs.ro> wrote:
 
+> Hello Hugo,
+> 
+> Running btrfs-zero-log /dev/md127 i have the following error:
+> 
+> checksum verify failed on 1001492480 found 74CC3F5D wanted C222A2C9
+> Csum didn't match
+> btrfs-zero-log: extent-tree.c:2717: alloc_reserved_tree_block: Assertion `!(ret)' failed.
+> Aborted (core dumped)
+> 
+> Full output : http://pastebin.com/3h5zVuWg
+> Full dmesg : http://pastebin.com/r9Fk8J8F
 
+OK. Well I'm out of ideas at this point. I'm not a developer, and don't know what the problem is or how to fix it. So my advice at this point will be like throwing spaghetti  at a wall. (There is a lot of spaghetti available to throw at the wall when it comes to fixing btrfs if the normal mount code doesn't fix it automatically.)
 
-On Mon, May 5, 2014 at 2:25 PM, Marc MERLIN <marc@merlins.org> wrote:
-> On Mon, May 05, 2014 at 10:51:46PM +0200, john terragon wrote:
->> Hi.
->> I'm about to try btrfs on an RAID0 md device (to be precise there will
->> be dm-crypt in between the md device and btrfs). If I used ext4 I
->> would set the stride and stripe_width extended options. Is there
->> anything similar I should be doing with mkfs.btrfs? Or maybe some
->> mount options beneficial to this kind of setting.
->
-> This is not directly an answer to your question, so far I haven't used a
-> special option like this with btrfs on my arrays although my
-> undertstanding is that it's not as important as with ext4.
->
-> That said, please read
-> http://marc.merlins.org/perso/btrfs/post_2014-04-27_Btrfs-Multi-Device-Dmcrypt.html
->
-> 1) use align-payload=1024 on cryptsetup instead of something bigger like
-> 8192. This will reduce write amplification (if you're not on an SSD).
->
-> 2) you don't need md0 in the middle, crypt each device and then use
-> btrfs built in raid0 which will be faster (and is stable, at least as
-> far as we know :) ).
->
-> Then use /etc/crypttab or a script like this
-> http://marc.merlins.org/linux/scripts/start-btrfs-dmcrypt
-> to decrypt all your devices in one swoop and mount btrfs.
->
-> Marc
-> --
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Baring better advice from pretty much anyone else:
+
+- First, btrfs-image -c9 -t4 /dev/md127 /path/for/large/file
+
+The resulting file will be somewhere between 50% to 100% of the size reported for metadata by btrfs filesystem df. put this somewhere in case a developer wants to look at it in the current state.
+
+- Then, btrfs check --init-csum-tree /dev/md127 will remove all checksums from the file system and should remove the csum errors preventing mount. The problem with this is it removes all checksums, so every read is reported as a mismatch but still permits the reads to proceed. As a result it's just a way to mount the file system, make a backup, and then created a new file system to restore to. So it's a recovery operation rather than a repair operation.
+
+Chris Murphy

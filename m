@@ -1,57 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:41574 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:41581 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753843AbaEEBqY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 21:46:24 -0400
-Received: from [172.56.6.57] (port=49017 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1Wh7z2-0006fu-45 by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Sun, 04 May 2014 18:46:23 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <merlin@legolas.merlins.org>)
-	id 1Wh7Aa-0003K0-6Q
-	for linux-btrfs@vger.kernel.org; Sun, 04 May 2014 17:54:12 -0700
-Date: Sun, 4 May 2014 17:54:12 -0700
+	with ESMTP id S1753843AbaEEBrG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 21:47:06 -0400
+Date: Sun, 4 May 2014 17:56:44 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: How does "btrfs fi show" show full?
-Message-ID: <20140505005412.GS9061@merlins.org>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Using mount -o bind vs mount -o subvol=vol
+Message-ID: <20140505005644.GB10159@merlins.org>
+References: <20140504004732.GE9061@merlins.org>
+ <5365E74B.6020805@swiftspirit.co.za>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5365E74B.6020805@swiftspirit.co.za>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-More slides, more questions, sorry :)
-(thanks for the other answers, I'm still going through them)
+On Sun, May 04, 2014 at 09:07:55AM +0200, Brendan Hide wrote:
+> On 2014/05/04 02:47 AM, Marc MERLIN wrote:
+> >Is there any functional difference between
+> >
+> >mount -o subvol=usr /dev/sda1 /usr
+> >and
+> >mount /dev/sda1 /mnt/btrfs_pool
+> >mount -o bind /mnt/btrfs_pool/usr /usr
+> >
+> >?
+> >
+> >Thanks,
+> >Marc
+> There are two "issues" with this.
+> 1) There will be a *very* small performance penalty (negligible, really)
 
-If I have:
-gandalfthegreat:~# btrfs fi show
-Label: 'btrfs_pool1'  uuid: 873d526c-e911-4234-af1b-239889cd143d
-	Total devices 1 FS bytes used 214.44GB
-	devid    1 size 231.02GB used 231.02GB path /dev/dm-0
+Oh, really, it's slower to mount the device directly? Not that I really
+care, but that's unexpected.
+ 
+> 2) Old snapshots and other supposedly-hidden subvolumes will be
+> accessible under /mnt/btrfs_pool. This is a minor security concern
+> (which of course may not concern you, depending on your use-case).
+> There are a few similar minor security concerns - the
+> recently-highlighted issue with old snapshots is the potential that
+> old vulnerable binaries within a snapshot are still accessible
+> and/or executable.
 
-I'm a bit confused.
+That's a fair point. I can of course make that mountpoint 0700, but it's
+a valid concern in some cases (not for me though).
 
-It tells me
-1) FS uses 214GB out of 231GB
-2) Device uses 231GB out of 231GB
-
-I understand how the device can use less than the FS if you have
-multiple devices that share a filesystem.
-But I'm not sure how a filesystem can use less than what's being used on
-a single device.
-
-Similarly, my current laptop shows:
-legolas:~# btrfs fi show
-Label: btrfs_pool1  uuid: 4850ee22-bf32-4131-a841-02abdb4a5ba6
-	Total devices 1 FS bytes used 442.17GiB
-	devid    1 size 865.01GiB used 751.04GiB path /dev/mapper/cryptroot
-
-So, am I 100GB from being full, or am I really only using 442GB out of 865GB?
-
-If so, what does the device used value really mean if it can be that
-much higher than the filesystem used value?
+So thanks for confirming my understanding, it sounds like both are valid
+and if you're already mounting the main pool like I am, that's the
+easiest way.
 
 Thanks,
 Marc

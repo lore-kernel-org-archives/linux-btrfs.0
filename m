@@ -1,77 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45775 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:45922 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753202AbaEEQFH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 May 2014 12:05:07 -0400
-Date: Mon, 5 May 2014 18:05:05 +0200
+	id S1751007AbaEEQQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 May 2014 12:16:12 -0400
+Date: Mon, 5 May 2014 18:16:11 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Russell Coker <russell@coker.com.au>
+To: Hendrik Friedel <hendrik@friedels.name>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: metadata vs data errors
-Message-ID: <20140505160505.GS5988@twin.jikos.cz>
+Subject: Re: Very high load when reading/writing
+Message-ID: <20140505161611.GT5988@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <201405041119.17103.russell@coker.com.au>
+References: <53628953.8030707@friedels.name>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201405041119.17103.russell@coker.com.au>
+In-Reply-To: <53628953.8030707@friedels.name>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, May 04, 2014 at 11:19:15AM +1000, Russell Coker wrote:
-> To discover whether there were any metadata errors I grepped for "metadata" in 
-> the kernel message log and found lots of lines like the above.  Will all 
-> errors that involve metadata match a grep for "metadata" in the kernel message 
-> log?
-
-Yes, the messages should match the scrub error message by the 'metadata'
-keyword, however there's ratelimiting applied so some of the messages
-can be lost.
-
-> I think it would be good to have a scrub count of the number of uncorrectable 
-> metadata vs data errors.  When there are uncorrectable data errors you know 
-> the name of the file (it's in the kernel message log) and can recover just 
-> that file.  When there are uncorrectable metadata errors you don't.
-
-Collecting the data/metadata stats is possible, just increment the right
-counter in scrub_handle_errored_block(), the type of block is known.
-
-For backward compatibility, 2 new counters would be needed for each type
-and keep the existing counter without change of it's meaning.
-
-The stats are collected in struct btrfs_scrub_progress that does not
-have any spare bytes left so this would need some work to add the logic
-to do the current or extended stats.
-
-> Also would it be possible to log the names of directories that are affected by 
-> uncorrectable metadata errors?  When BTRFS scales up to the systems where a 
-> "find /" takes days to complete and run 24*7 there won't be an option to just 
-> restore from backup.  In this case the root of every subvol appears undamaged 
-> so BTRFS should be able to tell me part of the path related to metadata 
-> corruption.
-
-Tracing back to the directory names from corrupted metadata can be
-tricky, as the path resolving needs to use the metadata blocks for that
-purpose. Also, the metadata are spread over several trees, so it depends
-which tree is b0rked.
-
-Handling all cases from kernel could be hard to impractically complex,
-so we can report all the broken blocks and then let userspace deal with
-that. Ie. read the block and decide what to do next based on the block
-contents.
-
-This led me to an question, whether we'd like to collect more detailed
-information about which tree contains the errors.
-
-> # btrfs subvol list /mnt/backup/                                                                                                                                                                                                                                                                                                               
-> ID 823 gen 3212 top level 5 path backup                                                                                                                                                                                                                                                                                                                          
-> ID 826 gen 1832 top level 5 path backup-2013-05-21
+On Thu, May 01, 2014 at 07:50:11PM +0200, Hendrik Friedel wrote:
+> I have very high load when writing/reading from/to two of my btrfs volumes.
+> One sda1, mounted as /mnt/BTRFS, the other, sdd2/sde2 (raid) as /
+> sda1 is a 3TB disc, whereas the sdd2/sde2 are small SSDs of 16GB.
 > 
-> Above is the start of the output of a subvol list, there is no ID 2.  What 
-> does the "tree 2" in the above kernel error log mean?
+> I wrote a small script to demonstrate it. It does:
+> -echo what it will do
+> -show the current load
+> -dd from one volume to the other.
+> -show the current load
+> -sync and flush the cache
+> -sleep 300s in order to get the load down again.
 
-Tree with ID 2 is extent tree:
+load average is not a good metric, it mixes IO an CPU load into one
+number, would be better to measure cpu and IO loads separately.
 
-ctree.h
-#define BTRFS_EXTENT_TREE_OBJECTID 2ULL
+> Here the output:
+> Test from /mnt/BTRFS to /tmp
+> 124,553 s, 16,8 MB/s
 
-The trees with id >= 256 correspond to subvolumes.
+Is the transfer speed comparable if using a bare blockdevice instead of
+a filesystem on top of that?
+
+According to the S.M.A.R.T. stats the devices seem to be working
+normally.

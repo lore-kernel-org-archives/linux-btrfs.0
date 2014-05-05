@@ -1,75 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:53225 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:43146 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755567AbaEPOnk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 10:43:40 -0400
-Date: Fri, 16 May 2014 15:43:36 +0100
+	with ESMTP id S1751974AbaEERkX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 May 2014 13:40:23 -0400
+Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
+	by frost.carfax.org.uk with esmtp (Exim 4.80)
+	(envelope-from <hugo@carfax.org.uk>)
+	id 1WhMMp-0007aj-Uj
+	for linux-btrfs@vger.kernel.org; Mon, 05 May 2014 17:07:52 +0000
+Received: from [10.0.0.10] (helo=ruthven.carfax.org.uk)
+	by ruthven.carfax.org.uk with esmtp (Exim 4.82)
+	(envelope-from <hugo@carfax.org.uk>)
+	id 1WhMMp-0002Pg-I0
+	for linux-btrfs@vger.kernel.org; Mon, 05 May 2014 18:07:51 +0100
 From: Hugo Mills <hugo@carfax.org.uk>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs check: Attempt to fix misordered keys with
- bitflips in them
-Message-ID: <20140516144336.GA2537@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs check: Fix wrong level access
+Date: Mon,  5 May 2014 18:07:49 +0100
+Message-Id: <1399309671-9240-2-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1399309671-9240-1-git-send-email-hugo@carfax.org.uk>
 References: <1399309671-9240-1-git-send-email-hugo@carfax.org.uk>
- <1399309671-9240-4-git-send-email-hugo@carfax.org.uk>
- <20140516142236.GW6917@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="bg08WKrSYDhXBjb5"
-In-Reply-To: <20140516142236.GW6917@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There's no reason to assume that the bad key order is in a leaf block,
+so accessing level 0 of the path is going to be an error if it's actually
+a node block that's bad.
 
---bg08WKrSYDhXBjb5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Reported-by: Chris Mason <clm@fb.com>
+Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
+---
+ cmds-check.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-On Fri, May 16, 2014 at 04:22:36PM +0200, David Sterba wrote:
-> On Mon, May 05, 2014 at 06:07:51PM +0100, Hugo Mills wrote:
-> > If precisely one of those bitflips puts the broken key back into order
-> > relative to its two neighbours, we probably have a fix for the bitflip,
-> > and so we write it back to the FS.
-> 
-> This sounds safe enough to me.  I'll add the patch to integration but
-> before I push it further upstream I'd really like to see the bitflip fix
-> in action, so if you already have testing images, please let me know.
-
-   Here's the one I mostly used to test with -- it's a 32 GiB sparse
-full filesystem image, with a file full of zeroes in it. It has a
-single bitflip in the csum tree created by hand with a hex editor, and
-then the csum fixed up afterwards, again by hand.
-
-   Hugo.
-
-[1] http://carfax.org.uk/files/temp/testfs.img.tar.gz
-
+diff --git a/cmds-check.c b/cmds-check.c
+index d195e7a..fc84ad8 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -2418,6 +2418,7 @@ static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct btrfs_key k1, k2;
+ 	int i;
++	int level;
+ 	int ret;
+ 
+ 	if (status != BTRFS_TREE_BLOCK_BAD_KEY_ORDER)
+@@ -2435,9 +2436,10 @@ static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -EIO;
+ 
+-	path->lowest_level = btrfs_header_level(buf);
++	level = btrfs_header_level(buf);
++	path->lowest_level = level;
+ 	path->skip_check_block = 1;
+-	if (btrfs_header_level(buf))
++	if (level)
+ 		btrfs_node_key_to_cpu(buf, &k1, 0);
+ 	else
+ 		btrfs_item_key_to_cpu(buf, &k1, 0);
+@@ -2448,9 +2450,9 @@ static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
+ 		return -EIO;
+ 	}
+ 
+-	buf = path->nodes[0];
++	buf = path->nodes[level];
+ 	for (i = 0; i < btrfs_header_nritems(buf) - 1; i++) {
+-		if (btrfs_header_level(buf)) {
++		if (level) {
+ 			btrfs_node_key_to_cpu(buf, &k1, i);
+ 			btrfs_node_key_to_cpu(buf, &k2, i + 1);
+ 		} else {
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- I don't care about "it works on my machine". We are not ---     
-                         shipping your machine.                          
+1.9.2
 
---bg08WKrSYDhXBjb5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU3YkGFheFHXiqx3kAQJo6Q/+KMb/DL8ULr2O1LJitM4E6FRUXGOLsOB5
-ba4/3TFZqaE4J+T9dOk0IIUUILdUxx83TIZ9UGlqgtMgtZkt3yVgiUzqPy8XpOKV
-PCtv4OyXGcpF1hWGFJe6XNIWOhqYJmIt2n2BW2VXBIGPZ/vDnr0PLKts9NplEUih
-Kr5fFT4FNwX73rxuQ1petlvm8d2ye7eAz0uitFTQovaBmUwIflaLhNssi/2rOeDi
-07BU8btzoGSMax/5KLfg1N+6YW9GcvTpHrOWqLIwoCOFF6gNNWWQkA5SpPBOInBJ
-c8ThYSzMXL0fll2Exlrv0utCqDL7lR/HvviW2TLAwDJmOS+z8bokTuHwvc3U6pEs
-cvJsGkGwcGCLRTmNm6U6tPFTmq22dOG3GSH/myx5AHZwcJzWsnUiMXYCLB/HQGAt
-i+yp0qSmItEnlYEV5M8kcokQJQC1h9tf7YABreAdat57fi5j5YvCamKzhm86IAR2
-mdFNOzc1q3UknXLe64Ge47nF710HPmEbYRIjpFQ4w0IT5cZDoVcE443kK9xtkFA9
-CyrDViXmtX7B8SLllwbZouUfcKAA73S9x/mKfP0s4ujz/YgNcnUPl4spH2JtKxzh
-fP7RHqktpe4+4A8K2IFmp7JAbFgbUrlIW9drPCv2E5Bx8BMAFARLNN28uSgV2L6y
-3OMFjRljXKE=
-=vlcy
------END PGP SIGNATURE-----
-
---bg08WKrSYDhXBjb5--

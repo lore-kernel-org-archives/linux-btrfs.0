@@ -1,34 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ble59-2-81-56-123-40.fbx.proxad.net ([81.56.123.40]:33257 "EHLO
-	jmuchemb.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754215AbaE3Scu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 14:32:50 -0400
-Message-ID: <5388CD3A.6090600@jmuchemb.eu>
-Date: Fri, 30 May 2014 20:26:02 +0200
-From: Julien Muchembled <jm@jmuchemb.eu>
-MIME-Version: 1.0
-To: Adam Buchbinder <abuchbinder@google.com>, linux-btrfs@vger.kernel.org
-CC: dave@jikos.cz
-Subject: Re: [PATCH] Add some simple end-to-end tests for btrfs-convert.
-References: <1400692827-14606-1-git-send-email-abuchbinder@google.com>
-In-Reply-To: <1400692827-14606-1-git-send-email-abuchbinder@google.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:44345 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932448AbaEEOyC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 May 2014 10:54:02 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 66DAAAD23
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 May 2014 14:54:01 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: doc: fix symlink target for btrfsck.8
+Date: Mon,  5 May 2014 16:54:00 +0200
+Message-Id: <1399301640-31846-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 05/21/14 19:20, Adam Buchbinder a écrit :
-> +	# 256MB is the smallest acceptable btrfs image.
-> +	dd if=/dev/zero of=$here/test.img bs=1024 count=$((256*1024)) \
-> +		>> convert-tests-results.txt 2>&1 || _fail "dd failed"
+The manpage of btrfsck.8 is supposed to link to btrfs-check.8 .
 
-What about using a sparse file to speed up the test and be nicer with the underlying storage ?
-For example:
-  truncate -s 256M $here/test.img
+Reported-by: WorMzy Tykashi <wormzy.tykashi@gmail.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ Documentation/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Because this does not reset test.img with zeros, one may want to the
-  rm -f test.img
-line at the beginning of the test function.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+diff --git a/Documentation/Makefile b/Documentation/Makefile
+index e22f5bca0ff2..e3ad34133832 100644
+--- a/Documentation/Makefile
++++ b/Documentation/Makefile
+@@ -74,7 +74,7 @@ install: install-man
+ install-man: man
+ 	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
+ 	$(INSTALL) -m 644 $(GZ_MAN8) $(DESTDIR)$(man8dir)
+-	$(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)
++	$(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)/btrfsck.8.gz
+ 
+ clean:
+ 	$(RM) *.xml *.xml+ *.8 *.8.gz
+-- 
+1.9.0
+

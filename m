@@ -1,74 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37069 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:45846 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754353AbaEFTiV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 15:38:21 -0400
+	id S1751365AbaEFTnW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 May 2014 15:43:22 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WhkHz-0000m9-Iy
-	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 20:40:27 +0200
+	id 1WhjlW-0005lT-8n
+	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 20:06:54 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:40:27 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:06:54 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:40:27 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:06:54 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Copying related snapshots to another server with btrfs
- send/receive?
-Date: Mon, 5 May 2014 03:24:45 +0000 (UTC)
-Message-ID: <pan$10f8$1751c450$6f6d3a98$57d04ce1@cox.net>
-References: <20140504031231.GG9061@merlins.org>
-	<5365E932.20602@swiftspirit.co.za> <20140504072829.GK9061@merlins.org>
-	<5365F23E.8070009@swiftspirit.co.za>
+Subject: Re: How does Suse do live filesystem revert with btrfs?
+Date: Mon, 5 May 2014 02:39:57 +0000 (UTC)
+Message-ID: <pan$1e4dd$1456e7b9$312797ca$4849ce65@cox.net>
+References: <20140504005257.GF9061@merlins.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brendan Hide posted on Sun, 04 May 2014 09:54:38 +0200 as excerpted:
+Marc MERLIN posted on Sat, 03 May 2014 17:52:57 -0700 as excerpted:
 
->  From the man page section on -c:
->      "You must not specify clone sources unless you guarantee that these
-> snapshots are exactly in the same state on both sides, the sender and
-> the receiver. It is allowed to omit the '-p <parent>' option when '-c
-> <clone-src>' options are given, in which case 'btrfs send' will
-> determine a suitable parent among the clone sources itself."
+> (more questions I'm asking myself while writing my talk slides)
 > 
-> -p does require that the sources be read-only. I suspect -c does as
-> well. This means that it won't be so simple as you want your sources to
-> be read-write. Probably the only way then would be to make read-only
-> snapshots whenever you want to sync these over while also ensuring that
-> you keep at least one read-only snapshot intact - again, much like
-> incremental backups.
+> I know Suse uses btrfs to roll back filesystem changes.
+> 
+> So I understand how you can take a snapshot before making a change, but
+> not how you revert to that snapshot without rebooting or using rsync,
+> 
+> How do you do a pivot-root like mountpoint swap to an older snapshot,
+> especially if you have filehandles opened on the current snapshot?
+> 
+> Is that what Suse manages, or are they doing something simpler?
 
-I don't claim in any way to be a send/receive expert as I don't use it 
-for my use-case at all.  However...
+While I don't have any OpenSuSE specific knowledge on this, I strongly 
+suspect their solution is more along the select-the-root-snapshot-to-roll-
+back-to-from-the-initramfs/initrd line.
 
-It's worth noting in the context of that manpage quote, that really the 
-only practical way to guarantee that the snapshots are exactly the same 
-on both sides is to have them read-only the entire time.  Because the 
-moment you make them writable on either side all bets are off as to 
-whether something has been written, thereby killing the exact-same-state 
-guarantee. =:^(
+Consider, they do the snapshot, then the upgrade.  In-use files won't be 
+entirely removed and the upgrade actually activated for them until a 
+reboot or at least an application restart[1] for all those running apps 
+in ordered to free their in-use files, anyway.  At that point, if the 
+user finds something broke, they've just rebooted[1], so rebooting[1] to 
+select the pre-upgrade rootfs snapshot won't be too big a deal, since 
+they've already disrupted the normal high level session and have just 
+attempted a reload in ordered to discover the breakage, in the first 
+place.
 
-*However*: snapshotting a read-only snapshot and making the new one 
-writable is easy enough[1].  Just keep the originals read-only so they 
-can be used as parents/clones, and make a second, writable snapshot of 
-the first, to do your writable stuff in.
+IOW, for the rootfs and main system, anyway, the rollback technology is a 
+great step up from not having that snapshot to rollback to in the first 
+place, but it's /not/ /magic/; if a rollback is needed, they almost 
+certainly will need to reboot[1] and from there select the rootfs 
+snapshot to rollback to, in ordered to mount it and accomplish that 
+rollback.
 
 ---
-[1]  Snapshotting a snapshot: I'm getting a metaphorical flashing light 
-saying I need to go check the wiki FAQ that deals with this again before 
-I post, but unfortunately I can't check out why ATM as I just upgraded 
-firefox and cairo and am currently getting a blank window where the 
-firefox content should be, that will hopefully be gone and the content 
-displayed after I reboot and get rid of the still loaded old libs, so 
-unfortunately I can't check that flashing light ATM and am writing 
-blind.  Hopefully that flashing light warning isn't for something /too/ 
-major that I'm overlooking!  =:^(
+[1] Reboot:  Or possibly dipped to single user mode, and/or to the 
+initramfs, which they'd need to reload and switch-root into for the 
+purpose, but systemd is doing just that sort of thing these days in 
+ordered to properly unmount rootfs after upgrades before shutdown as it's 
+a step safer than the old style remount read-only, and implementing a 
+snapshot selector and remount of the rootfs in that initr* instead of 
+dropping all the way to a full reboot is only a small step from there.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

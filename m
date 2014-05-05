@@ -1,31 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38131 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932395AbaEENys (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:27698 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932713AbaEEO2i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 May 2014 09:54:48 -0400
-Message-ID: <53679811.1020001@fb.com>
-Date: Mon, 5 May 2014 09:54:25 -0400
-From: Chris Mason <clm@fb.com>
+	Mon, 5 May 2014 10:28:38 -0400
+Received: from pps.filterd (m0004077 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s45ESctV023385
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 May 2014 07:28:38 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0b-00082601.pphosted.com with ESMTP id 1kmq3fe4mv-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 05 May 2014 07:28:28 -0700
+Message-ID: <53679FFD.2090501@fb.com>
+Date: Mon, 5 May 2014 10:28:13 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Using mount -o bind vs mount -o subvol=vol
-References: <20140504004732.GE9061@merlins.org>
-In-Reply-To: <20140504004732.GE9061@merlins.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Back from leave
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/03/2014 08:47 PM, Marc MERLIN wrote:
-> Is there any functional difference between
->
-> mount -o subvol=usr /dev/sda1 /usr
-> and
-> mount /dev/sda1 /mnt/btrfs_pool
-> mount -o bind /mnt/btrfs_pool/usr /usr
+Hello,
 
-The internal implementation of mount -o subvol is a bind mount.  The 
-only real difference is having /mnt/btrfs_pool hanging around.
+I had way too much email so I just deleted it all, if there was 
+something you wanted my specific attention on then bounce it back at me 
+and I'll look at it.  Thanks,
 
--chris
-
+Josef

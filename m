@@ -1,110 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37241 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753891AbaEEAgn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 20:36:43 -0400
-Date: Mon, 5 May 2014 01:36:39 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How does Suse do live filesystem revert with btrfs?
-Message-ID: <20140505003639.GO24298@carfax.org.uk>
-References: <20140504005257.GF9061@merlins.org>
- <20140504232645.GQ9061@merlins.org>
+Received: from mail-yh0-f50.google.com ([209.85.213.50]:39330 "EHLO
+	mail-yh0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753971AbaEEAyJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 May 2014 20:54:09 -0400
+Received: by mail-yh0-f50.google.com with SMTP id 29so61969yhl.37
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 May 2014 17:54:08 -0700 (PDT)
+Message-ID: <5366DF48.40209@gmail.com>
+Date: Sun, 04 May 2014 17:46:00 -0700
+From: Daniel Lee <longinus00@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="MmQIYbZiCoQ2kDro"
-In-Reply-To: <20140504232645.GQ9061@merlins.org>
+To: Marc MERLIN <marc@merlins.org>
+CC: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Subject: Re: Is metadata redundant over more than one drive with raid0 too?
+References: <20140503232702.GC9061@merlins.org> <5365E4CF.3050405@swiftspirit.co.za> <20140504072420.GJ9061@merlins.org>
+In-Reply-To: <20140504072420.GJ9061@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---MmQIYbZiCoQ2kDro
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sun, May 04, 2014 at 04:26:45PM -0700, Marc MERLIN wrote:
-> Actually, never mind Suse, does someone know whether you can revert to
-> an older snapshot in place?
-
-   Not while the system's running useful services, no.
-
-> The only way I can think of is to mount the snapshot on top of the other
-> filesystem. This gets around the umounting a filesystem with open
-> filehandles problem, but this also means that you have to keep track of
-> daemons that are still accessing filehandles on the overlayed
-> filesystem.
-
-   You have a good handle on the problems.
-
-> My one concern with this approach is that you can't free up the
-> subvolume/snapshot of the underlying filesystem if it's mounted and even
-> after you free up filehandles pointing to it, I don't think you can
-> umount it.
-> 
-> In other words, you can play this trick to delay a reboot a bit, but
-> ultimately you'll have to reboot to free up the mountpoints, old
-> subvolumes, and be able to delete them.
-
-   Yup.
-
-> Somehow I'm thinking Suse came up with a better method.
-
-   I'm guessing it involves reflink copies of files from the snapshot
-back to the "original", and then restarting affected services. That's
-about the only other thing that I can think of, but it's got load of
-race conditions in it (albeit difficult to hit in most cases, I
-suspect).
-
-   Hugo.
-
-> Even if you don't know Suse, can you think of a better way to do this?
-> 
+On 05/04/2014 12:24 AM, Marc MERLIN wrote:
+>  
+> Gotcha, thanks for confirming, so -m raid1 -d raid0 really only protects
+> against metadata corruption or a single block loss, but otherwise if you
+> lost a drive in a 2 drive raid0, you'll have lost more than just half
+> your files.
+>
+>> The scenario you mentioned at the beginning, "if I lose a drive,
+>> I'll still have full metadata for the entire filesystem and only
+>> missing files" is more applicable to using "-m raid1 -d single".
+>> Single is not geared towards performance and, though it doesn't
+>> guarantee a file is only on a single disk, the allocation does mean
+>> that the majority of all files smaller than a chunk will be stored
+>> on only one disk or the other - not both.
+> Ok, so in other words:
+> -d raid0: if you one 1 drive out of 2, you may end up with small files
+> and the rest will be lost
+>
+> -d single: you're more likely to have files be on one drive or the
+> other, although there is no guarantee there either.
+>
+> Correct?
+>
 > Thanks,
 > Marc
-> 
-> On Sat, May 03, 2014 at 05:52:57PM -0700, Marc MERLIN wrote:
-> > (more questions I'm asking myself while writing my talk slides)
-> > 
-> > I know Suse uses btrfs to roll back filesystem changes.
-> > 
-> > So I understand how you can take a snapshot before making a change, but
-> > not how you revert to that snapshot without rebooting or using rsync,
-> > 
-> > How do you do a pivot-root like mountpoint swap to an older snapshot,
-> > especially if you have filehandles opened on the current snapshot?
-> > 
-> > Is that what Suse manages, or are they doing something simpler?
-> > 
-> > Thanks,
-> > Marc
-> 
+This often seems to confuse people and I think there is a common
+misconception that the btrfs raid/single/dup features work at the file
+level when in reality they work at a level closer to lvm/md.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-        --- That's not rain,  that's a lake with slots in it. ---        
+If someone told you that they lost a device out of a jbod or multi disk
+lvm group(somewhat analogous to -d single) with ext on top you would
+expect them to lose data in any file that had a fragment in the lost
+region (lets ignore metadata for a moment). This is potentially up to
+100% of the files but this should not be a surprising result. Similarly,
+someone who has lost a disk out of a md/lvm raid0 volume should not be
+surprised to have a hard time recovering any data at all from it.
 
---MmQIYbZiCoQ2kDro
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU2bdF1heFHXiqx3kAQKvZQ//beb4jjt+84ohUYyfKDg0pbshhYKC4CEV
-H7QPg46LQ3jiee63Qp20TS9UzvQYF3Zw1e5DDyXhM93wA+LHefy9CNzfi2m5VKDa
-m+0n+yeVVSCXQ4CW+g9eV6vAGaORh+7BI1+1fmnLTRagDI4MPjsVVmegWfUxRH5k
-LDJxJCu8z0xkLI3179PvlnwDJoEfbXhFKTgeU3gquCzuQ1I8c5d2lx0NBZ41F5M2
-ur/379bltZABXt+G8ucpp4KtSFKWBa1tHYyYHic/ewqGiluqy25vxi0sQCY3JReo
-EHbBOCR7/IeFHxN3eFnTtBTq4P/u4F9woPhWw/mrRHg4+Cu0T/BKEsnYkuluhGvI
-UdcBiXUpf0lUtd25ju7f+tRDS4UE8nm+VeXuRuFWSBsI19S7MhDKlDgdHVw5Xm4t
-g5HmWH7u6fnRQ0x+efypb3ErIQj4P0d8vzxL7BfN6QMAvWoLiGnjU5Pwc6KJQGjD
-JQ6dMJNR23PlfgU39bgpGpGWTNYENoB4XmwX/IsJub+TBsRs80YC6CYjRgfwrKlr
-Na9s7sS5Z9cgF23JAKU5ivHi7gF1Q1Yh7ZZMHZbL+nHtVzLY4VCwah3kU5DhqJl4
-9Egba2t+pAyUBaWteblW3PWCi/LCAfzGCbPs4c6i/XiD7+4AlmDUdwuVvHW5X7w3
-lzw989v9Do8=
-=4mYr
------END PGP SIGNATURE-----
-
---MmQIYbZiCoQ2kDro--

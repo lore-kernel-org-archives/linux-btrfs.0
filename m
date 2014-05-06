@@ -1,63 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from web4.novatel.si ([46.23.1.13]:44375 "EHLO web4.novatel.si"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933838AbaEFHAD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 03:00:03 -0400
-Received: from [192.168.200.152] (unknown [46.23.0.66])
-	(Authenticated sender: blist@bss.si)
-	by web4.novatel.si (Postfix) with ESMTPSA id D631342004D
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 May 2014 08:50:50 +0200 (CEST)
-Message-ID: <5368860E.2010107@bss.si>
-Date: Tue, 06 May 2014 08:49:50 +0200
-From: Blaz Repas <blist@bss.si>
+Received: from magic.merlins.org ([209.81.13.136]:56150 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752419AbaEFMUf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 May 2014 08:20:35 -0400
+Date: Tue, 6 May 2014 05:19:37 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Brendan Hide <brendan@swiftspirit.co.za>,
+        Calvin Walton <calvin.walton@kepstin.ca>,
+        Russell Coker <russell@coker.com.au>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Please review and comment, dealing with btrfs full issues
+Message-ID: <20140506121937.GD10159@merlins.org>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: 3.14.0rc3: did not find backref in send_root
-References: <20140225063652.GD3521@merlins.org> <20140506061053.GA17689@davidb.org>
-In-Reply-To: <20140506061053.GA17689@davidb.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <34134059.SEVPBPKYjM@russell.coker.com.au>
+ <1399314969.4155.1.camel@sasami>
+ <5367C5C2.9070808@swiftspirit.co.za>
+ <5367C551.6020604@swiftspirit.co.za>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/06/2014 08:10 AM, David Brown wrote:
-> On Mon, Feb 24, 2014 at 10:36:52PM -0800, Marc MERLIN wrote:
->> I got this during a btrfs send:
->> BTRFS error (device dm-2): did not find backref in send_root. 
->> inode=22672, offset=524288, disk_byte=1490517954560 found 
->> extent=1490517954560
->>
->> I'll try a scrub when I've finished my backup, but is there anything I
->> can run on the file I've found from the inode?
->>
->> gargamel:/mnt/dshelf1/Sound# btrfs inspect-internal inode-resolve  -v 
->> 22672 file.mp3
->> ioctl ret=0, bytes_left=3998, bytes_missing=0, cnt=1, missed=0
->> file.mp3
->
-> I've just seen this error:
->
->   BTRFS error (device sda4): did not find backref in send_root. 
-> inode=411890, offset=307200, disk_byte=48100618240 found 
-> extent=48100618240
->
-> during a send between two snapshots I have.
->
-> after moving to 3.14.2.  I've seen it on two filesystems now since
-> moving to 3.14.  I have the two readonly snapshots if there is
-> anything helpful I can figure out from them.
->
-> Scrub reports no errors, but I don't seem to be able to back up
-> anything now.
->
-> David
-> -- 
+On Mon, May 05, 2014 at 07:07:29PM +0200, Brendan Hide wrote:
+> "In the case above, because the filesystem is only 55% full, I can
+> ask balance to rewrite all chunks that are more than 55% full:
+> 
+> legolas:~# btrfs balance start -dusage=50 /mnt/btrfs_pool1"
+> 
+> "-dusage=50" will balance all chunks that are 50% *or less* used,
 
-I am also seeing this on 3.14.1 (on ArchLinux). Scrub also reports no 
-errors.
-I could also not do a ful send. Balancing made it better for a while (I 
-was able to send a full snapshot of one subvolume, but not another), but 
-it did not help. Offline repairing the fs with btrfsck --repair also did 
-not affect it.
+Sorry, I actually meant to write 55 there.
 
-Blaz
+> not more. The idea is that full chunks are better left alone while
+> emptyish chunks are bundled together to make new full chunks,
+> leaving big open areas for new chunks. Your process is good however
+> - just the explanation that needs the tweak. :)
 
+Mmmh, so if I'm 55% full, should I actually use -dusage=45 or 55?
+
+> In your last example, a full rebalance is not necessary. If you want
+> to clear all unnecessary chunks you can run the balance with
+> -dusage=80 (636GB/800GB~=79%). That will cause a rebalance only of
+> the data chunks that are 80% and less used, which would by necessity
+> get about ~160GB worth chunks back out of data and available for
+> re-use.
+
+So in my case when I hit that case, I had to use dusage=0 to recover.
+Anything above that just didn't work.
+
+On Mon, May 05, 2014 at 07:09:22PM +0200, Brendan Hide wrote:
+> Forgot this part: Also in your last example, you used "-dusage=0"
+> and it balanced 91 chunks. That means you had 91 empty or
+> very-close-to-empty chunks. ;)
+
+Correct. That FS was very mis-balanced.
+
+On Mon, May 05, 2014 at 02:36:09PM -0400, Calvin Walton wrote:
+> The standard response on the mailing list for this issue is to
+> temporarily add an additional device to the filesystem (even e.g. a 4GB
+> USB flash drive is often enough) - this will add space to allocate a few
+> new chunks, allowing the balance to proceed. You can remove the extra
+> device after the balance completes.
+
+I just added that tip, thank you.
+ 
+On Tue, May 06, 2014 at 02:41:16PM +1000, Russell Coker wrote:
+> Recently kernel 3.14 allowed fixing a metadata space error that seemed to be 
+> impossible to solve with 3.13.  So it's possible that some of my other 
+> problems with a lack of metadata space could have been solved with kernel 3.14 
+> too.
+
+Good point. I added that tip too.
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

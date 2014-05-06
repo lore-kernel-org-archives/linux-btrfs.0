@@ -1,49 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38948 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:39452 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752948AbaEFTlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 15:41:24 -0400
+	id S1754398AbaEFTmN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 May 2014 15:42:13 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Whk88-0006Nq-Jr
-	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 20:30:16 +0200
+	id 1WhjXD-0006Vw-Tj
+	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 19:52:08 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:30:16 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 19:52:07 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 20:30:16 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 19:52:07 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: copies= option
-Date: Mon, 5 May 2014 02:59:35 +0000 (UTC)
-Message-ID: <pan$dabcf$295111b1$f1cac574$f1f862c3@cox.net>
-References: <201405041216.54348.russell@coker.com.au>
-	<pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net>
-	<20140504111238.197768d6@ws> <20140504183155.GK24298@carfax.org.uk>
+Subject: Re: Using mount -o bind vs mount -o subvol=vol
+Date: Tue, 6 May 2014 17:34:11 +0000 (UTC)
+Message-ID: <pan$db71b$28ae8fc2$4747ca76$c08f8373@cox.net>
+References: <20140504004732.GE9061@merlins.org>
+	<5365E74B.6020805@swiftspirit.co.za> <20140505005644.GB10159@merlins.org>
+	<53670FEA.8050806@swiftspirit.co.za> <20140505103617.0e66f5a9@natsu>
+	<536735FB.6020205@swiftspirit.co.za>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Sun, 04 May 2014 19:31:55 +0100 as excerpted:
+Brendan Hide posted on Mon, 05 May 2014 08:55:55 +0200 as excerpted:
 
->  My proposal was simply a description mechanism, not an
-> implementation. The description is N-copies, M-device-stripe,
-> P-parity-devices (NcMsPp), and (more or less comfortably) covers at
-> minimum all of the current and currently-proposed replication levels.
-> There's a couple of tweaks covering description of allocation rules
-> (DUP vs RAID-1).
+> You are 100% right, though. The scale is very small. By negligible, the
+> "penalty" is at most a few CPU cycles. When compared to the wait time on
+> a spindle, it really doesn't matter much.
 
-Thanks.  That was it. =:^)
+The analogy I've used before is that of taking a trip (which the data 
+effectively is, between the device and the CPU).
 
-But I had interpreted the discussion as a bit more concrete in terms of 
-ultimate implementation than it apparently was.  Anyway, it would indeed 
-be nice to see an eventual implementation such that the above notation 
-could be used with, for instance, mkfs.btrfs, and
-btrfs balance start -Xconvert, but regardless, that does look to be a way 
-off.
+We've booked a 10-day cruise and are now debating what we plan on taking 
+to and from the boarding dock.  Will taking the local bus with a couple 
+of transfers, or a taxi that will take us there in one trip but there's 
+road construction and thus a detour, or a helicopter to fly directly,  
+get us back from the cruise faster?
+
+Obviously, taking the helicopter (at least for the return leg) will get 
+us back a bit faster, but we're talking perhaps a couple hours difference 
+at the end of a 10 day cruise!
+
+=:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

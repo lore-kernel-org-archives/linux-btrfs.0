@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63896 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48208 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933953AbaEFGcN (ORCPT
+	with ESMTP id S933956AbaEFGcN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 May 2014 02:32:13 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Anand Jain <Anand.Jain@oracle.com>
-Subject: [RFC PATCH 1/2] btrfs: Add missing device check in dev_info/rm_dev ioctl
-Date: Tue, 6 May 2014 14:33:12 +0800
-Message-ID: <1399357993-9254-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 2/2] btrfs: Add new member of btrfs_ioctl_dev_info_args.
+Date: Tue, 6 May 2014 14:33:13 +0800
+Message-ID: <1399357993-9254-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,89 +16,54 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Old btrfs can't find a missing btrfs device since there is no
-mechanism for block layer to inform fs layer.
+Add flags member for btrfs_ioctl_dev_info_args to preset missing btrfs
+devices.
 
-But we can use a workaround that only check status(by using
-request_queue->queue_flags) of every device in a btrfs
-filesystem when calling dev_info/rm_dev ioctl, since other ioctls
-do not really cares about missing device.
+The new member is added in the original padding area so the ioctl API is
+not affected but user headers needs to be updated.
 
 Cc: Anand Jain <Anand.Jain@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c   |  1 +
- fs/btrfs/volumes.c | 25 ++++++++++++++++++++++++-
- fs/btrfs/volumes.h |  2 ++
- 3 files changed, 27 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c           | 3 +++
+ include/uapi/linux/btrfs.h | 5 ++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0401397..7680a40 100644
+index 7680a40..1920f24 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2606,6 +2606,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 		goto out;
- 	}
- 
-+	btrfs_check_dev_missing(root, dev, 1);
+@@ -2610,6 +2610,9 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
  	di_args->devid = dev->devid;
  	di_args->bytes_used = dev->bytes_used;
  	di_args->total_bytes = dev->total_bytes;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d241130a..c7d7908 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1548,9 +1548,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 		 * is held.
- 		 */
- 		list_for_each_entry(tmp, devices, dev_list) {
-+			btrfs_check_dev_missing(root, tmp, 0);
- 			if (tmp->in_fs_metadata &&
- 			    !tmp->is_tgtdev_for_dev_replace &&
--			    !tmp->bdev) {
-+			    (!tmp->bdev || tmp->missing)) {
- 				device = tmp;
- 				break;
- 			}
-@@ -6300,3 +6301,25 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
++	di_args->flags = BTRFS_IOCTL_DEV_INFO_FLAG_SET;
++	if (dev->missing)
++		di_args->flags |= BTRFS_IOCTL_DEV_INFO_MISSING;
+ 	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
+ 	if (dev->name) {
+ 		struct rcu_string *name;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b4d6909..5eb1f03 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -168,12 +168,15 @@ struct btrfs_ioctl_dev_replace_args {
+ 	__u64 spare[64];
+ };
  
- 	return 0;
- }
-+
-+/* If need_lock is set, uuid_mutex will be used */
-+int btrfs_check_dev_missing(struct btrfs_root *root, struct btrfs_device *dev,
-+			    int need_lock)
-+{
-+	struct request_queue *q;
-+
-+	if (unlikely(!dev || !dev->bdev || !dev->bdev->bd_queue))
-+		return -ENOENT;
-+	q = dev->bdev->bd_queue;
-+
-+	if (need_lock)
-+		mutex_lock(&uuid_mutex);
-+	if (test_bit(QUEUE_FLAG_DEAD, &q->queue_flags) ||
-+	    test_bit(QUEUE_FLAG_DYING, &q->queue_flags)) {
-+		dev->missing = 1;
-+		root->fs_info->fs_devices->missing_devices++;
-+	}
-+	if (need_lock)
-+		mutex_unlock(&uuid_mutex);
-+	return 0;
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 80754f9..47a44af 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -356,6 +356,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
- int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *extent_root,
- 				u64 chunk_offset, u64 chunk_size);
-+int btrfs_check_dev_missing(struct btrfs_root *root, struct btrfs_device *dev,
-+			    int need_lock);
- static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
- 				      int index)
- {
++#define BTRFS_IOCTL_DEV_INFO_MISSING			(1ULL<<0)
++#define BTRFS_IOCTL_DEV_INFO_FLAG_SET			(1ULL<<63)
+ struct btrfs_ioctl_dev_info_args {
+ 	__u64 devid;				/* in/out */
+ 	__u8 uuid[BTRFS_UUID_SIZE];		/* in/out */
+ 	__u64 bytes_used;			/* out */
+ 	__u64 total_bytes;			/* out */
+-	__u64 unused[379];			/* pad to 4k */
++	__u64 flags;				/* out */
++	__u64 unused[378];			/* pad to 4k */
+ 	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
+ };
+ 
 -- 
 1.9.2
 

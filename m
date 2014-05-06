@@ -1,38 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:33418 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751538AbaEFUNT convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 16:13:19 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: copies= option
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140504111238.197768d6@ws>
-Date: Tue, 6 May 2014 14:13:12 -0600
-Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org,
-        Hugo Mills <hugo@carfax.org.uk>, Russell Coker <russell@coker.com.au>
-Message-Id: <89C69688-FB8A-4D74-ADE9-C38FFD778257@colorremedies.com>
-References: <201405041216.54348.russell@coker.com.au> <pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net> <xjTK1n01B308YdQ01jTMAf> <20140504111238.197768d6@ws>
-To: Duncan <1i5t5.duncan@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:41945 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751355AbaEFUcc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 May 2014 16:32:32 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Whlvl-0000c4-QB
+	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 22:25:37 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 22:25:37 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 22:25:37 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: How does "btrfs fi show" show full?
+Date: Tue, 6 May 2014 20:10:00 +0000 (UTC)
+Message-ID: <pan$1f225$3bfd5829$2b5ac65b$4bb85dc6@cox.net>
+References: <20140505005412.GS9061@merlins.org>
+	<53670F70.1010509@swiftspirit.co.za> <20140505055029.GM10159@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Sun, 04 May 2014 22:50:29 -0700 as excerpted:
 
-> N-copies, M-device-stripe, P-parity-devices (NcMsPp)
+> In the second FS:
+>> >Label: btrfs_pool1  uuid: [...]
+>> >	Total devices 1 FS bytes used 442.17GiB
+>> >	devid    1 size 865.01GiB used 751.04GiB path [...]
+> 
+> The difference is huge between 'Total used' and 'devid used'.
+> 
+> Is btrfs going to fix this on its own, or likely not and I'm stuck doing
+> a full balance (without filters since I'm balancing data and not
+> metadata)?
+> 
+> If that helps.
+> legolas:~# btrfs fi df /mnt/btrfs_pool1
+> Data, single: total=734.01GiB, used=435.29GiB
+> System, DUP: total=8.00MiB, used=96.00KiB
+> System, single: total=4.00MiB, used=0.00
+> Metadata, DUP: total=8.50GiB, used=6.74GiB
+> Metadata, single: total=8.00MiB, used=0.00
 
-At expense of being the terminology nut, who doesn't even like SNIA's chosen terminology because it's confusing, I suggest a concerted effort to either use SNIA's terms anyway, or push back and ask them to make changes before propagating deviant terminology.
+Definitely helps.  The spread is in data.
 
-Strip is a consecutive blocks on a single extent (on a single device)
-Strip size is the number of blocks in a single extent (on a single device)
+Try
 
-Stripe is a set of strips on each member extent (on multiple devices)
-Stripe size is strip size times non-parity extents.
+btrfs balance start -dusage=20 /mnt/btrfs_pool1
 
-e.g. Btrfs default strip size is 64KiB, therefore a 5 disk raid5 volume stripe size is 256KiB. I use and specify size units in bytes rather than SNIAs blocks (sectors) because it's less ambiguous.
+You still have plenty of unused (if allocated) space available, so you 
+can play around with the usage= a bit.  -dusage=20 will be faster than 
+something like -dusage=50 or -dusage=80, likely MUCH faster, but will 
+return less chunks to unallocated, as well.  Still, your spread between 
+data-total and data-used is high enough, I expect -dusage=20 will give 
+you pretty good results.
 
-In other words, for M- what we care about is the strip size, which is what md/mdadm calls a chunk. We can't know the stripe size without knowing how many non-parity member devices there are.
+Since show says you still have ~100 GiB unallocated in df, there's no 
+real urgency, and again I'd try -dusage=20 the first time.  If that 
+doesn't cut it you can of course try bumping the usage= as needed, but 
+because you still have 100 GiB unallocated and because the data used vs. 
+total spread is so big, I really do think -dusage=20 will do it for you.
+As your actual device usage goes up the spread between used and size will 
+go down, meaning more frequent balances to keep some reasonable 
+unallocated space available, and you'll either need to actually delete 
+some stuff or to bump up those usage= numbers as well, but usage=20 is 
+very likely to be sufficient at this point.
 
+I hadn't seen anyone try an actual formula as Brendan suggests in his 
+post, and I'm not actually sure that formula will apply well in all use-
+cases as I think fragmentation and fill-pattern will have a lot to do 
+with it, but based on his post it does apply for his use-case, and the 
+same general principle if not the specific formula should apply 
+everywhere and is what I'm doing above, only simply eyeballing it, not 
+using a specific formula.
 
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

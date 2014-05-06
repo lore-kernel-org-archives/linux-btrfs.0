@@ -1,45 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48229 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753916AbaEFULt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 16:11:49 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Whkwv-0005Rk-Dy
-	for linux-btrfs@vger.kernel.org; Tue, 06 May 2014 21:22:45 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 21:22:45 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 May 2014 21:22:45 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs scrub will not start nor cancel howto
-Date: Mon, 5 May 2014 02:52:37 +0000 (UTC)
-Message-ID: <pan$cc5c2$d078531$622abad8$ab052cbb@cox.net>
-References: <20140504075407.GM9061@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:33418 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751538AbaEFUNT convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 May 2014 16:13:19 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: copies= option
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140504111238.197768d6@ws>
+Date: Tue, 6 May 2014 14:13:12 -0600
+Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org,
+        Hugo Mills <hugo@carfax.org.uk>, Russell Coker <russell@coker.com.au>
+Message-Id: <89C69688-FB8A-4D74-ADE9-C38FFD778257@colorremedies.com>
+References: <201405041216.54348.russell@coker.com.au> <pan$9bead$d5bbe620$2c7141f7$fab07860@cox.net> <xjTK1n01B308YdQ01jTMAf> <20140504111238.197768d6@ws>
+To: Duncan <1i5t5.duncan@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Sun, 04 May 2014 00:54:07 -0700 as excerpted:
 
-> This has been asked a few times, so I ended up writing a blog entry on
-> it [and then] in the end pasted all of it in the main wiki
-> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#btrfs_scrub_will_not_start_nor_cancel
-> 
-> Of course, this is really a stopgap until the cancel tool can realize
-> that the scrub isn't really running anymore, and update the state file
-> on its own.
+> N-copies, M-device-stripe, P-parity-devices (NcMsPp)
 
-Thanks.  As you said, this has come up a few times, so having it
-on the wiki is a very good thing. =:^)
+At expense of being the terminology nut, who doesn't even like SNIA's chosen terminology because it's confusing, I suggest a concerted effort to either use SNIA's terms anyway, or push back and ask them to make changes before propagating deviant terminology.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Strip is a consecutive blocks on a single extent (on a single device)
+Strip size is the number of blocks in a single extent (on a single device)
+
+Stripe is a set of strips on each member extent (on multiple devices)
+Stripe size is strip size times non-parity extents.
+
+e.g. Btrfs default strip size is 64KiB, therefore a 5 disk raid5 volume stripe size is 256KiB. I use and specify size units in bytes rather than SNIAs blocks (sectors) because it's less ambiguous.
+
+In other words, for M- what we care about is the strip size, which is what md/mdadm calls a chunk. We can't know the stripe size without knowing how many non-parity member devices there are.
+
+
+Chris Murphy
 

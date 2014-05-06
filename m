@@ -1,47 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:40190 "EHLO
-	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751992AbaEFGKw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 May 2014 02:10:52 -0400
-Received: from compute5.internal (compute5.nyi.mail.srv.osa [10.202.2.45])
-	by gateway1.nyi.mail.srv.osa (Postfix) with ESMTP id A6F2A21ABB
-	for <linux-btrfs@vger.kernel.org>; Tue,  6 May 2014 02:10:51 -0400 (EDT)
-Date: Mon, 5 May 2014 23:10:54 -0700
-From: David Brown <davidb@davidb.org>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: 3.14.0rc3: did not find backref in send_root
-Message-ID: <20140506061053.GA17689@davidb.org>
-References: <20140225063652.GD3521@merlins.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:63896 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933943AbaEFGcL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 May 2014 02:32:11 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Anand Jain <Anand.Jain@oracle.com>
+Subject: [RFC PATCH 0/2] Kernel space btrfs missing device detection.
+Date: Tue, 6 May 2014 14:33:11 +0800
+Message-ID: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-In-Reply-To: <20140225063652.GD3521@merlins.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 24, 2014 at 10:36:52PM -0800, Marc MERLIN wrote:
->I got this during a btrfs send:
->BTRFS error (device dm-2): did not find backref in send_root. inode=22672, offset=524288, disk_byte=1490517954560 found extent=1490517954560
->
->I'll try a scrub when I've finished my backup, but is there anything I
->can run on the file I've found from the inode?
->
->gargamel:/mnt/dshelf1/Sound# btrfs inspect-internal inode-resolve  -v 22672 file.mp3
->ioctl ret=0, bytes_left=3998, bytes_missing=0, cnt=1, missed=0
->file.mp3
+Original btrfs will not detection any missing device since there is no
+notification mechanism for fs layer to detect missing device in block layer.
 
-I've just seen this error:
+However we don't really need to notify fs layer upon dev remove, probing in
+dev_info/rm_dev ioctl is good enough since they are the only two ioctls caring
+about missing device.
 
-   BTRFS error (device sda4): did not find backref in send_root. inode=411890, offset=307200, disk_byte=48100618240 found extent=48100618240
+This patchset will do ioctl time missing dev detection and return device missing
+status in dev_info ioctl using a new member in btrfs_ioctl_dev_info_args with a
+backward compatible method.
 
-during a send between two snapshots I have.
+Cc: Anand Jain <Anand.Jain@oracle.com>
+Qu Wenruo (2):
+  btrfs: Add missing device check in dev_info/rm_dev ioctl
+  btrfs: Add new member of btrfs_ioctl_dev_info_args.
 
-after moving to 3.14.2.  I've seen it on two filesystems now since
-moving to 3.14.  I have the two readonly snapshots if there is
-anything helpful I can figure out from them.
+ fs/btrfs/ioctl.c           |  4 ++++
+ fs/btrfs/volumes.c         | 25 ++++++++++++++++++++++++-
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h |  5 ++++-
+ 4 files changed, 34 insertions(+), 2 deletions(-)
 
-Scrub reports no errors, but I don't seem to be able to back up
-anything now.
+-- 
+1.9.2
 
-David

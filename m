@@ -1,69 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48208 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933956AbaEFGcN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 May 2014 02:32:13 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Anand Jain <Anand.Jain@oracle.com>
-Subject: [RFC PATCH 2/2] btrfs: Add new member of btrfs_ioctl_dev_info_args.
-Date: Tue, 6 May 2014 14:33:13 +0800
-Message-ID: <1399357993-9254-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from web4.novatel.si ([46.23.1.13]:44375 "EHLO web4.novatel.si"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933838AbaEFHAD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 May 2014 03:00:03 -0400
+Received: from [192.168.200.152] (unknown [46.23.0.66])
+	(Authenticated sender: blist@bss.si)
+	by web4.novatel.si (Postfix) with ESMTPSA id D631342004D
+	for <linux-btrfs@vger.kernel.org>; Tue,  6 May 2014 08:50:50 +0200 (CEST)
+Message-ID: <5368860E.2010107@bss.si>
+Date: Tue, 06 May 2014 08:49:50 +0200
+From: Blaz Repas <blist@bss.si>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: Re: 3.14.0rc3: did not find backref in send_root
+References: <20140225063652.GD3521@merlins.org> <20140506061053.GA17689@davidb.org>
+In-Reply-To: <20140506061053.GA17689@davidb.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add flags member for btrfs_ioctl_dev_info_args to preset missing btrfs
-devices.
+On 05/06/2014 08:10 AM, David Brown wrote:
+> On Mon, Feb 24, 2014 at 10:36:52PM -0800, Marc MERLIN wrote:
+>> I got this during a btrfs send:
+>> BTRFS error (device dm-2): did not find backref in send_root. 
+>> inode=22672, offset=524288, disk_byte=1490517954560 found 
+>> extent=1490517954560
+>>
+>> I'll try a scrub when I've finished my backup, but is there anything I
+>> can run on the file I've found from the inode?
+>>
+>> gargamel:/mnt/dshelf1/Sound# btrfs inspect-internal inode-resolve  -v 
+>> 22672 file.mp3
+>> ioctl ret=0, bytes_left=3998, bytes_missing=0, cnt=1, missed=0
+>> file.mp3
+>
+> I've just seen this error:
+>
+>   BTRFS error (device sda4): did not find backref in send_root. 
+> inode=411890, offset=307200, disk_byte=48100618240 found 
+> extent=48100618240
+>
+> during a send between two snapshots I have.
+>
+> after moving to 3.14.2.  I've seen it on two filesystems now since
+> moving to 3.14.  I have the two readonly snapshots if there is
+> anything helpful I can figure out from them.
+>
+> Scrub reports no errors, but I don't seem to be able to back up
+> anything now.
+>
+> David
+> -- 
 
-The new member is added in the original padding area so the ioctl API is
-not affected but user headers needs to be updated.
+I am also seeing this on 3.14.1 (on ArchLinux). Scrub also reports no 
+errors.
+I could also not do a ful send. Balancing made it better for a while (I 
+was able to send a full snapshot of one subvolume, but not another), but 
+it did not help. Offline repairing the fs with btrfsck --repair also did 
+not affect it.
 
-Cc: Anand Jain <Anand.Jain@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c           | 3 +++
- include/uapi/linux/btrfs.h | 5 ++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7680a40..1920f24 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2610,6 +2610,9 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	di_args->devid = dev->devid;
- 	di_args->bytes_used = dev->bytes_used;
- 	di_args->total_bytes = dev->total_bytes;
-+	di_args->flags = BTRFS_IOCTL_DEV_INFO_FLAG_SET;
-+	if (dev->missing)
-+		di_args->flags |= BTRFS_IOCTL_DEV_INFO_MISSING;
- 	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
- 	if (dev->name) {
- 		struct rcu_string *name;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b4d6909..5eb1f03 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -168,12 +168,15 @@ struct btrfs_ioctl_dev_replace_args {
- 	__u64 spare[64];
- };
- 
-+#define BTRFS_IOCTL_DEV_INFO_MISSING			(1ULL<<0)
-+#define BTRFS_IOCTL_DEV_INFO_FLAG_SET			(1ULL<<63)
- struct btrfs_ioctl_dev_info_args {
- 	__u64 devid;				/* in/out */
- 	__u8 uuid[BTRFS_UUID_SIZE];		/* in/out */
- 	__u64 bytes_used;			/* out */
- 	__u64 total_bytes;			/* out */
--	__u64 unused[379];			/* pad to 4k */
-+	__u64 flags;				/* out */
-+	__u64 unused[378];			/* pad to 4k */
- 	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
- };
- 
--- 
-1.9.2
+Blaz
 

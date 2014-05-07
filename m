@@ -1,83 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:37141 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:37629 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750910AbaEGH7K (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 03:59:10 -0400
-Date: Wed, 7 May 2014 00:59:02 -0700
+	with ESMTP id S932086AbaEGJBJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 05:01:09 -0400
+Date: Wed, 7 May 2014 02:01:01 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
+To: john terragon <jterragon@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How does "btrfs fi show" show full?
-Message-ID: <20140507075902.GL10159@merlins.org>
-References: <20140505005412.GS9061@merlins.org>
- <53670F70.1010509@swiftspirit.co.za>
- <20140505055029.GM10159@merlins.org>
- <pan$1f225$3bfd5829$2b5ac65b$4bb85dc6@cox.net>
+Subject: Re: btrfs on software RAID0
+Message-ID: <20140507090101.GC19238@merlins.org>
+References: <CANg_oxxFKHioyWO0ct7vcT=aTbX11KbCKtGwvZo_59jirLDGow@mail.gmail.com>
+ <20140505212513.GS10159@merlins.org>
+ <CANg_oxw_qy154eiRw9zdsCUwR1JTOGsUEa=VWq-7RM=nsATU3g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$1f225$3bfd5829$2b5ac65b$4bb85dc6@cox.net>
+In-Reply-To: <CANg_oxw_qy154eiRw9zdsCUwR1JTOGsUEa=VWq-7RM=nsATU3g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 06, 2014 at 08:10:00PM +0000, Duncan wrote:
-> Marc MERLIN posted on Sun, 04 May 2014 22:50:29 -0700 as excerpted:
+On Tue, May 06, 2014 at 09:02:46AM +0200, john terragon wrote:
+> just one last doubt:
 > 
-> > In the second FS:
-> >> >Label: btrfs_pool1  uuid: [...]
-> >> >	Total devices 1 FS bytes used 442.17GiB
-> >> >	devid    1 size 865.01GiB used 751.04GiB path [...]
-> > 
-> > The difference is huge between 'Total used' and 'devid used'.
-> > 
-> > Is btrfs going to fix this on its own, or likely not and I'm stuck doing
-> > a full balance (without filters since I'm balancing data and not
-> > metadata)?
-> > 
-> > If that helps.
-> > legolas:~# btrfs fi df /mnt/btrfs_pool1
-> > Data, single: total=734.01GiB, used=435.29GiB
-> > System, DUP: total=8.00MiB, used=96.00KiB
-> > System, single: total=4.00MiB, used=0.00
-> > Metadata, DUP: total=8.50GiB, used=6.74GiB
-> > Metadata, single: total=8.00MiB, used=0.00
-> 
-> Definitely helps.  The spread is in data.
-> 
-> Try
-> 
-> btrfs balance start -dusage=20 /mnt/btrfs_pool1
+> why do you use --align-payload=1024? (or 8912)
+> Cryptsetup man says that the default for the payload alignment is 2048
+> (512-byte sectors). So, it's already aligned by default to 4K-byte
+> physical sectors (if that was your concern). Am I missing something?
 
-So, I had already tried -dusage=50 yesterday, and I'm now reasonable:
-Label: btrfs_pool1  uuid: 4850ee22-bf32-4131-a841-02abdb4a5ba6
-	Total devices 1 FS bytes used 443.22GiB
-	devid    1 size 865.01GiB used 514.04GiB path /dev/mapper/cryptroot
+With 4K sectors, I agree that 2048 would be better.
 
+What I was trying to do there is avoid write amplification.
 
-> something like -dusage=50 or -dusage=80, likely MUCH faster, but will 
-> return less chunks to unallocated, as well.  Still, your spread between 
+After reading 
+http://wiki.drewhess.com/wiki/Creating_an_encrypted_filesystem_on_a_partition
+I went with
+mdadm --create /dev/md8 --level=5 --raid-devices=5 /dev/sd[abdef]1 --chunk=256 --bitmap=/boot/bitmap-md8
+which I believe required me to use
+cryptsetup luksFormat --align-payload=1024 -s 256 -c aes-xts-plain64  /dev/md8
+(that was with 5 drives, or 4 drives with data).
 
-(fewer)
+Would agree with the math?
 
-> data-total and data-used is high enough, I expect -dusage=20 will give 
-> you pretty good results.
-
-So, on
-On http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
-I wrote
-In the case above, because the filesystem is only 55% full, I can ask
-balance to rewrite all chunks that are more than 55% full:
-legolas:~# btrfs balance start -dusage=55 /mnt/btrfs_pool1
-
-Did I get this right?
-I'm not sure I did, since it seems the bigger the -dusage number, the
-more work balance has to do.
-
-If I asked -dsuage=85, it would do all chunks that are more than 15%
-full?
-So, do I need to change the text above to say "more than 45% full" ?
-
-More generally, does it not make sense to just use the same percentage
-in -dusage than the percentage of total filesytem full?
+If so, for 4K sector sizes, if we have to use align-payload=1024, in
+turn I'd have to use --chunk=512. 
+Does that sound right?
 
 Thanks,
 Marc

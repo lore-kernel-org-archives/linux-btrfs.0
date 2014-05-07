@@ -1,60 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8706 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750793AbaEGBrj convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 May 2014 21:47:39 -0400
-Message-ID: <536990F8.6040608@cn.fujitsu.com>
-Date: Wed, 7 May 2014 09:48:40 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:48487 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750900AbaEGFga (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 01:36:30 -0400
+In-Reply-To: <pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
+References: <1541415.olHfkWYf4R@zafu> <pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net> <3839313.LSaoXm11Qk@zafu> <pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
 MIME-Version: 1.0
-To: <kreijack@inwind.it>, <linux-btrfs@vger.kernel.org>
-CC: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: [RFC PATCH 0/2] Kernel space btrfs missing device detection.
-References: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com> <536925A7.4000201@libero.it>
-In-Reply-To: <536925A7.4000201@libero.it>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain;
+ charset=UTF-8
+Subject: Re: Using noCow with snapshots ?
+From: Russell Coker <russell@coker.com.au>
+Date: Wed, 07 May 2014 15:36:15 +1000
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Message-ID: <16fd4391-5c16-42a6-82a2-9bd1cb988906@email.android.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+How could BTRFS and a database "fight" about data recovery?
 
--------- Original Message --------
-Subject: Re: [RFC PATCH 0/2] Kernel space btrfs missing device detection.
-From: Goffredo Baroncelli <kreijack@libero.it>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Date: 2014年05月07日 02:10
-> Hi,
->
-> instead of extending the BTRFS_IOCTL_DEV_INFO ioctl, why do not add a field under /sys/fs/btrfs/<UUID>/ ? Something like /sys/fs/btrfs/<UUID>/missing_device
->
-> BR
-> G.Baroncelli
-I think that is also a good idea. I'll try to add it later.
+BTRFS offers similar guarantees about data durability etc to other journalled filesystems and only differs by having checksums so that while a snapshot might have half the data that was written by an app you at least know that the half will be consistent.
 
-Thanks
-Qu
-
->
-> On 05/06/2014 08:33 AM, Qu Wenruo wrote:
->> Original btrfs will not detection any missing device since there is
->> no notification mechanism for fs layer to detect missing device in
->> block layer.
->>
->> However we don't really need to notify fs layer upon dev remove,
->> probing in dev_info/rm_dev ioctl is good enough since they are the
->> only two ioctls caring about missing device.
->>
->> This patchset will do ioctl time missing dev detection and return
->> device missing status in dev_info ioctl using a new member in
->> btrfs_ioctl_dev_info_args with a backward compatible method.
->>
->> Cc: Anand Jain <Anand.Jain@oracle.com> Qu Wenruo (2): btrfs: Add
->> missing device check in dev_info/rm_dev ioctl btrfs: Add new member
->> of btrfs_ioctl_dev_info_args.
->>
->> fs/btrfs/ioctl.c           |  4 ++++ fs/btrfs/volumes.c         | 25
->> ++++++++++++++++++++++++- fs/btrfs/volumes.h         |  2 ++
->> include/uapi/linux/btrfs.h |  5 ++++- 4 files changed, 34
->> insertions(+), 2 deletions(-)
->>
->
-
+If you had database files on a separate subvol to the database log then you would be at risk of having problems making a any sort of consistent snapshot (the Debian approach of /var/log/mysql and /var/lib/mysql is a bad idea). But there would be no difference with LVM snapshots in that regard.
+-- 
+Sent from my Samsung Galaxy Note 2 with K-9 Mail.

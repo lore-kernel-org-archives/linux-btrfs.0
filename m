@@ -1,81 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60548 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:43123 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752012AbaEGMZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 May 2014 08:25:21 -0400
-From: David Disseldorp <ddiss@suse.de>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com,
-        David Disseldorp <ddiss@suse.de>
-Subject: [PATCH] btrfs/035: update clone test to expect EOPNOTSUPP
-Date: Wed,  7 May 2014 14:33:18 +0200
-Message-Id: <1399465998-26545-1-git-send-email-ddiss@suse.de>
+	id S1751297AbaEGMbQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 08:31:16 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wi10D-0005Xp-Ok
+	for linux-btrfs@vger.kernel.org; Wed, 07 May 2014 14:31:13 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 14:31:13 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 14:31:13 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Using mount -o bind vs mount -o subvol=vol
+Date: Wed, 7 May 2014 12:31:01 +0000 (UTC)
+Message-ID: <pan$c0576$dfde4ffc$83a172b$f40ec159@cox.net>
+References: <20140504004732.GE9061@merlins.org>
+	<pan$422b5$795bfbf0$455b3e56$2333506b@cox.net>
+	<20140507105551.GS10159@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, the first
-clone-range overwrite attempt now fails with EOPNOTSUPP, rather than
-tripping a Btrfs BUG_ON().
+Marc MERLIN posted on Wed, 07 May 2014 03:55:51 -0700 as excerpted:
 
-This test now trips a new Btrfs bug, in which EIO is returned for
-subsequent reads following the second clone range ioctl.
+> subvolumes are also used as units of backup for btrfs send.
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
----
- tests/btrfs/035     | 11 +++++++++++
- tests/btrfs/035.out |  5 +++++
- 2 files changed, 16 insertions(+)
+Hmm, yes.  Thanks.  I don't use send/receive here so forgot about that.
 
-diff --git a/tests/btrfs/035 b/tests/btrfs/035
-index 6808179..c9530f6 100755
---- a/tests/btrfs/035
-+++ b/tests/btrfs/035
-@@ -57,21 +57,32 @@ src_str="aaaaaaaaaa"
- echo -n "$src_str" > $SCRATCH_MNT/src
- 
- $CLONER_PROG $SCRATCH_MNT/src  $SCRATCH_MNT/src.clone1
-+cat $SCRATCH_MNT/src.clone1
-+echo
- 
- src_str="bbbbbbbbbbcccccccccc"
- 
- echo -n "$src_str" > $SCRATCH_MNT/src
- 
- $CLONER_PROG $SCRATCH_MNT/src $SCRATCH_MNT/src.clone2
-+cat $SCRATCH_MNT/src.clone2
-+echo
- 
-+# Prior to kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, this clone
-+# resulted in a BUG_ON in __btrfs_drop_extents(). The kernel now returns
-+# EOPNOTSUPP up to userspace.
- snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone1 | awk '{print $5}'`
- echo "attempting ioctl (src.clone1 src)"
- $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
- 	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src
-+cat $SCRATCH_MNT/src
-+echo
- 
- snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
- echo "attempting ioctl (src.clone2 src)"
- $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
- 	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src
-+# BUG: subsequent access attempts currently result in EIO...
-+cat $SCRATCH_MNT/src
- 
- status=0 ; exit
-diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
-index f86cadf..0ea2c4f 100644
---- a/tests/btrfs/035.out
-+++ b/tests/btrfs/035.out
-@@ -1,3 +1,8 @@
- QA output created by 035
-+aaaaaaaaaa
-+bbbbbbbbbbcccccccccc
- attempting ioctl (src.clone1 src)
-+clone failed: Operation not supported
-+bbbbbbbbbbcccccccccc
- attempting ioctl (src.clone2 src)
-+bbbbbbbbbbcccccccccc
+>> So my vote would be, for example (modified slightly for posting from my
+>> own mounts):
+>> 
+>> mount /dev/sda5 /
+>> mount /dev/sda4 /var/log
+>> mount /dev/sda6 /home
+> 
+> On my laptop: [snip]
+
+FWIW, those were examples.  I actually have more.
+
+> But to each their own :)
+
+Indeed.
+
 -- 
-1.8.4.5
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

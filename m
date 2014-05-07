@@ -1,75 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52803 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:50035 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755585AbaEGLKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 May 2014 07:10:01 -0400
+	id S932368AbaEGLgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 07:36:07 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Whzjb-0003Tp-QQ
-	for linux-btrfs@vger.kernel.org; Wed, 07 May 2014 13:09:59 +0200
+	id 1Wi08r-0005s5-EU
+	for linux-btrfs@vger.kernel.org; Wed, 07 May 2014 13:36:05 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:09:59 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:36:05 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:09:59 +0200
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:36:05 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Using noCow with snapshots ?
-Date: Wed, 7 May 2014 11:09:47 +0000 (UTC)
-Message-ID: <pan$a42a8$6dec058$c2834d89$1d550ded@cox.net>
-References: <1541415.olHfkWYf4R@zafu>
-	<pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net> <3839313.LSaoXm11Qk@zafu>
-	<pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
-	<16fd4391-5c16-42a6-82a2-9bd1cb988906@email.android.com>
+Subject: Re: How does Suse do live filesystem revert with btrfs?
+Date: Wed, 7 May 2014 11:35:52 +0000 (UTC)
+Message-ID: <pan$2da2e$d0644856$de7d595b$8d7f256e@cox.net>
+References: <20140504005257.GF9061@merlins.org>
+	<20140504232645.GQ9061@merlins.org> <20140505003639.GO24298@carfax.org.uk>
+	<20140505050459.GF10159@merlins.org>
+	<pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net>
+	<20140507085612.GB19238@merlins.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Russell Coker posted on Wed, 07 May 2014 15:36:15 +1000 as excerpted:
+Marc MERLIN posted on Wed, 07 May 2014 01:56:12 -0700 as excerpted:
 
-> How could BTRFS and a database "fight" about data recovery?
+> On Tue, May 06, 2014 at 04:26:48PM +0000, Duncan wrote:
+>> Marc MERLIN posted on Sun, 04 May 2014 22:04:59 -0700 as excerpted:
+>> 
+>> > 
+>> > Aaah, right, you can use a script to see the file differences between
+>> > two snapshots, and then restore that with reflink if you can truly
+>> > get a list of all changed files.
+>> > However, that is indeed not atomic at all, even if faster than rsync.
+>> 
+>> Would send/receive help in such a script?
 > 
-> BTRFS offers similar guarantees about data durability etc to other
-> journalled filesystems and only differs by having checksums so that
-> while a snapshot might have half the data that was written by an app you
-> at least know that the half will be consistent.
+> Not really, you still end up with a new snapshot that you can't live
+> switch to.
 > 
-> If you had database files on a separate subvol to the database log then
-> you would be at risk of having problems making a any sort of consistent
-> snapshot (the Debian approach of /var/log/mysql and /var/lib/mysql is a
-> bad idea). But there would be no difference with LVM snapshots in that
-> regard.
+> It's really either 1) reboot 2) use cp --reflink to copy a list of
+> changed files (as well as rm to delete the ones that were removed).
 
-Race conditions having to do with unsynced checkpoints, primarily.  And 
-it's actually the btrfs checksumming that seems to create the problem.
+What I meant was... use send/receive locally, in place of the
+cp --reflink.
 
-The symptom being reported (tho I can say I've not seen further reports 
-recently, maybe it's fixed now) was that the checksummed values btrfs 
-restored as "correct" were considered corrupted by the database or vm.  
-If the checksums checked out after btrfs did its replay (as they did or 
-btrfs would error on access), but the databases and VMs were still 
-reporting corruption, then the explanation that was left was that the 
-btrfs replay and checksum validation was screwing up the application's 
-own checksumming validation, which could be explained if the two were 
-sufficiently out of sync that btrfs fixing its own view was actually 
-breaking the view as seen by the data validating app.
-
-Tho as I said I've not seen that sort of report in several kernel cycles 
-now.  But I'm not sure whether that's because the issues have been fixed 
-or for some other reason (maybe everybody experiencing the problem gave 
-up and switched to some other filesystem now, and the message is out 
-there well enough that new people see it before they experience and 
-report the same thing, or similar but everybody's switched to NOCOW now 
-and knows not to do snapshotting on the NOCOW files, or...).
-
-Regardless, NOCOW and not doing snapshotting (because it triggers COW 
-anyway) on gig-plus internal-write files remains a very good idea.  
-(Also, quotas and quota sequence numbers play into the combinational 
-explosion problem along with snapshot-aware-defrag, too.  See the writeup 
-on that that Dave wrote while he was on paternity leave.)
+But now that I think of it, at least in the normal sense that wouldn't 
+work, since send is like diff and receive like patch, but what would be 
+needed would actually be an option similar to patch --reverse.  With 
+something like that, you could (in theory, in practice it'd be racy if 
+other running apps were writing to it too) "reverse" the live subvolume 
+to the state of the snapshot.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

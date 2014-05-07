@@ -1,66 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:38839 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932243AbaEGLc6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 07:32:58 -0400
-Received: from p2237-ipad08yosemiya.okinawa.ocn.ne.jp ([124.97.214.237]:55669 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1Wi05q-0004ZA-5a by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 04:32:58 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <merlin@legolas.merlins.org>)
-	id 1Wi05l-0001Mr-94
-	for linux-btrfs@vger.kernel.org; Wed, 07 May 2014 04:32:53 -0700
-Date: Wed, 7 May 2014 04:19:49 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs snapshot sizes
-Message-ID: <20140507111949.GT10159@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cantor2.suse.de ([195.135.220.15]:60548 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752012AbaEGMZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 08:25:21 -0400
+From: David Disseldorp <ddiss@suse.de>
+To: xfs@oss.sgi.com
+Cc: linux-btrfs@vger.kernel.org, bo.li.liu@oracle.com,
+        David Disseldorp <ddiss@suse.de>
+Subject: [PATCH] btrfs/035: update clone test to expect EOPNOTSUPP
+Date: Wed,  7 May 2014 14:33:18 +0200
+Message-Id: <1399465998-26545-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So have others found a good way to have an idea about how much space is
-taken by each snapshot?
+With kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, the first
+clone-range overwrite attempt now fails with EOPNOTSUPP, rather than
+tripping a Btrfs BUG_ON().
 
-I've tried quota trees, but I'm not sure how to read the output, or if it's
-correct (including the negative numbers some have mentioned). Are there
-other options?
+This test now trips a new Btrfs bug, in which EIO is returned for
+subsequent reads following the second clone range ioctl.
 
-I think the main problem is that the shared data field is not working,
-making it harder to know which blocks are only used in a given snapshot.
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ tests/btrfs/035     | 11 +++++++++++
+ tests/btrfs/035.out |  5 +++++
+ 2 files changed, 16 insertions(+)
 
-
-subvol                                          group         total    unshared  
-------------------------------------------------------------------------------- 
-backup/debian32                                 0/262       403.84G      -5.46G  
-backup/debian32_daily_20140504_00:03:01         0/3660      446.45G       0.00G  
-backup/debian32_daily_20140505_00:03:01         0/3687      431.11G       0.00G  
-backup/debian32_daily_20140506_00:03:00         0/3705      420.83G       0.00G  
-backup/debian32_daily_20140507_00:03:01         0/3724      411.87G       0.00G  
-backup/debian32_weekly_20140504_00:04:01        0/3675      446.45G       0.00G  
-
-backup/debian64                                 0/263       855.97G      -1.50G  
-backup/debian64_daily_20140504_00:03:01         0/3662      860.19G       0.00G  
-backup/debian64_daily_20140505_00:03:01         0/3690      859.32G       0.00G  
-backup/debian64_daily_20140506_00:03:00         0/3707      858.15G       0.00G  
-backup/debian64_daily_20140507_00:03:01         0/3726      857.47G       0.00G  
-backup/debian64_weekly_20140504_00:04:01        0/3676      860.19G       0.00G  
-
-backup/ubuntu                                   0/264       360.28G       0.00G  
-backup/ubuntu_daily_20140504_00:03:01           0/3664      364.53G       0.00G  
-backup/ubuntu_daily_20140505_00:03:01           0/3692      362.44G       0.00G  
-backup/ubuntu_daily_20140506_00:03:00           0/3709      360.91G       0.00G  
-backup/ubuntu_daily_20140507_00:03:01           0/3727      360.33G       0.00G  
-backup/ubuntu_weekly_20140504_00:04:01          0/3677      364.53G       0.00G  
-
-
-Thanks,
-Marc
+diff --git a/tests/btrfs/035 b/tests/btrfs/035
+index 6808179..c9530f6 100755
+--- a/tests/btrfs/035
++++ b/tests/btrfs/035
+@@ -57,21 +57,32 @@ src_str="aaaaaaaaaa"
+ echo -n "$src_str" > $SCRATCH_MNT/src
+ 
+ $CLONER_PROG $SCRATCH_MNT/src  $SCRATCH_MNT/src.clone1
++cat $SCRATCH_MNT/src.clone1
++echo
+ 
+ src_str="bbbbbbbbbbcccccccccc"
+ 
+ echo -n "$src_str" > $SCRATCH_MNT/src
+ 
+ $CLONER_PROG $SCRATCH_MNT/src $SCRATCH_MNT/src.clone2
++cat $SCRATCH_MNT/src.clone2
++echo
+ 
++# Prior to kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, this clone
++# resulted in a BUG_ON in __btrfs_drop_extents(). The kernel now returns
++# EOPNOTSUPP up to userspace.
+ snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone1 | awk '{print $5}'`
+ echo "attempting ioctl (src.clone1 src)"
+ $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+ 	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src
++cat $SCRATCH_MNT/src
++echo
+ 
+ snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
+ echo "attempting ioctl (src.clone2 src)"
+ $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+ 	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src
++# BUG: subsequent access attempts currently result in EIO...
++cat $SCRATCH_MNT/src
+ 
+ status=0 ; exit
+diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
+index f86cadf..0ea2c4f 100644
+--- a/tests/btrfs/035.out
++++ b/tests/btrfs/035.out
+@@ -1,3 +1,8 @@
+ QA output created by 035
++aaaaaaaaaa
++bbbbbbbbbbcccccccccc
+ attempting ioctl (src.clone1 src)
++clone failed: Operation not supported
++bbbbbbbbbbcccccccccc
+ attempting ioctl (src.clone2 src)
++bbbbbbbbbbcccccccccc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+1.8.4.5
+

@@ -1,54 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eastrmfepo101.cox.net ([68.230.241.213]:51996 "EHLO
-	eastrmfepo101.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932681AbaEGMkb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 08:40:31 -0400
-Received: from eastrmimpo210 ([68.230.241.225]) by eastrmfepo101.cox.net
-          (InterMail vM.8.01.05.15 201-2260-151-145-20131218) with ESMTP
-          id <20140507124031.XHXA30009.eastrmfepo101.cox.net@eastrmimpo210>
-          for <linux-btrfs@vger.kernel.org>; Wed, 7 May 2014 08:40:31 -0400
-Date: Wed, 7 May 2014 05:40:29 -0700
-From: Duncan <1i5t5.duncan@cox.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
-Subject: Re: How does "btrfs fi show" show full?
-Message-ID: <20140507054029.70ecda6f@ws>
-In-Reply-To: <yzWd1n0292w7UQp01zWf8e>
-References: <20140505005412.GS9061@merlins.org>
-	<53670F70.1010509@swiftspirit.co.za>
-	<20140505055029.GM10159@merlins.org>
-	<pan$1f225$3bfd5829$2b5ac65b$4bb85dc6@cox.net>
-	<20140507075902.GL10159@merlins.org>
-	<536A1097.2020508@swiftspirit.co.za>
-	<yzWd1n0292w7UQp01zWf8e>
+Received: from mail-qa0-f42.google.com ([209.85.216.42]:36828 "EHLO
+	mail-qa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756253AbaEGNNm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 09:13:42 -0400
+Received: by mail-qa0-f42.google.com with SMTP id j5so963176qaq.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 06:13:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <CAEVbaUcV-M9jnwR4ii3zR6RrbfpCtMmYAmhp8O01T4T6jJQN4A@mail.gmail.com>
+References: <CAEVbaUdcCQCWhZ-ZdBr_Dkv-WaMbtBkQ0n8HRfc0p9F0xw1+0A@mail.gmail.com>
+ <20140507022245.GA15783@localhost.localdomain> <CAEVbaUcV-M9jnwR4ii3zR6RrbfpCtMmYAmhp8O01T4T6jJQN4A@mail.gmail.com>
+From: Kenny MacDermid <kenny.macdermid@gmail.com>
+Date: Wed, 7 May 2014 10:13:01 -0300
+Message-ID: <CAEVbaUcRrxErXQ=5a66+28=MEZK+szzoPiwCDwZyZ=pDLTem+Q@mail.gmail.com>
+Subject: Re: btrfs issues in 3.14
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 7 May 2014 04:30:30 -0700
-Marc MERLIN <marc@merlins.org> wrote:
+On Wed, May 7, 2014 at 9:35 AM, Kenny MacDermid
+<kenny.macdermid@gmail.com> wrote:
+> On Tue, May 6, 2014 at 11:22 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+>>
+>> What does sysrq+w say when the hang happens?
+>
+> The whole system isn't hung, I may have explained that wrong. The
+> system will hang if I try to shutdown, and the process will hang if I
+> try to kill -9 it.
+>
+> It looks like the browser is in this state currently so I did an 'echo
+> w >/proc/sysrq-trigger' and have attached the full dmesg with the
+> browser issues and the output.
 
-> > -dusage=85 balances all chunks that up to 85% full. The higher the
-> > number, the more work that needs to be done.  
-> 
-> Aah, right. I see why it's more work. =20 only makes is process the
-> few chunks that are up to 20% full which won't be many if your FS
-> is almost full.
+I had to hard reboot to clear that issue, and I decided to do another
+'btrfs check' while /home was unmounted. It generated the following
+output:
 
-It's actually even less work than you imply.
+checking extents
+checking free space cache
+Wanted bytes 45056, found 32768 for off 63805808640
+Wanted bytes 111190016, found 32768 for off 63805808640
+cache appears valid but isnt 62843256832
+Checking filesystem on //dev/mapper/home
+UUID: 9a60a25f-eeb4-494c-b1af-ebd8e4f79b6b
+found 13672418478 bytes used err is -22
+total csum bytes: 72089212
+total tree bytes: 906100736
+total fs tree bytes: 808370176
+total extent tree bytes: 18153472
+btree space waste bytes: 116247440
+file data blocks allocated: 101046853632
+ referenced 73680674816
+Btrfs v3.14.1
 
-Balance only has to rewrite the actual content, not the empty space in
-the chunk.  So 20% full means it's only writing 20% of the
-(possible/full) content, thus only taking 20% of the time to rewrite
-that chunk that it'd take to rewrite a full chunk.
+This is on the new filesystem. I redid the dmcrypt and the lvm lv when
+I recreated the filesystem as well, so it's less than a week old.
+Before rebuilding the old was was telling me:
 
-Which is why a usage=5 or 20 goes so fast, even if the system's
-actually mostly empty but is all allocated.  With a 20% full chunk it's
-rewriting five chunks into one; at 5%, it's rewriting 20 chunks into
-one.  That goes pretty fast, even if there's a bunch of them to write!
+Checking filesystem on /dev/mapper/home
+UUID: 4f5d7a10-d003-48a7-a901-bf22d534888f
+free space inode generation (0) did not match free space cache
+generation (115200)
+found 29963117667 bytes used err is 1
+total csum bytes: 63740440
+total tree bytes: 745504768
+total fs tree bytes: 624951296
+total extent tree bytes: 36749312
+btree space waste bytes: 119018687
+file data blocks allocated: 181026942976
+ referenced 73759866880
+Btrfs v0.20-rc1-358-g194aa4a-dirty
 
--- 
-Duncan - No HTML messages please, as they are filtered as spam.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+and
+
+checking extents
+checking free space cache
+checking fs roots
+root 257 inode 29647 errors 200, dir isize wrong
+root 257 inode 391917 errors 200, dir isize wrong
+root 257 inode 497392 errors 410, odd dir item, nbytes wrong
+Checking filesystem on /dev/mapper/home
+UUID: 4f5d7a10-d003-48a7-a901-bf22d534888f
+free space inode generation (0) did not match free space cache
+generation (115200)
+found 31310902624 bytes used err is 1
+total csum bytes: 63579480
+total tree bytes: 743342080
+total fs tree bytes: 623198208
+total extent tree bytes: 36601856
+btree space waste bytes: 118906643
+file data blocks allocated: 180831965184
+ referenced 73631731712
+Btrfs v3.14

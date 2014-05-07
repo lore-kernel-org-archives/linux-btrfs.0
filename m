@@ -1,80 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:37601 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754472AbaEGI4U (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 04:56:20 -0400
-Date: Wed, 7 May 2014 01:56:12 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How does Suse do live filesystem revert with btrfs?
-Message-ID: <20140507085612.GB19238@merlins.org>
-References: <20140504005257.GF9061@merlins.org>
- <20140504232645.GQ9061@merlins.org>
- <20140505003639.GO24298@carfax.org.uk>
- <20140505050459.GF10159@merlins.org>
- <pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net>
+Received: from plane.gmane.org ([80.91.229.3]:52803 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755585AbaEGLKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 07:10:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Whzjb-0003Tp-QQ
+	for linux-btrfs@vger.kernel.org; Wed, 07 May 2014 13:09:59 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:09:59 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 13:09:59 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Using noCow with snapshots ?
+Date: Wed, 7 May 2014 11:09:47 +0000 (UTC)
+Message-ID: <pan$a42a8$6dec058$c2834d89$1d550ded@cox.net>
+References: <1541415.olHfkWYf4R@zafu>
+	<pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net> <3839313.LSaoXm11Qk@zafu>
+	<pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
+	<16fd4391-5c16-42a6-82a2-9bd1cb988906@email.android.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 06, 2014 at 04:26:48PM +0000, Duncan wrote:
-> Marc MERLIN posted on Sun, 04 May 2014 22:04:59 -0700 as excerpted:
+Russell Coker posted on Wed, 07 May 2014 15:36:15 +1000 as excerpted:
+
+> How could BTRFS and a database "fight" about data recovery?
 > 
-> > On Mon, May 05, 2014 at 01:36:39AM +0100, Hugo Mills wrote:
-> >>    I'm guessing it involves reflink copies of files from the snapshot
-> >> back to the "original", and then restarting affected services. That's
-> >> about the only other thing that I can think of, but it's got load of
-> >> race conditions in it (albeit difficult to hit in most cases, I
-> >> suspect).
-> > 
-> > Aaah, right, you can use a script to see the file differences between
-> > two snapshots, and then restore that with reflink if you can truly get a
-> > list of all changed files.
-> > However, that is indeed not atomic at all, even if faster than rsync.
+> BTRFS offers similar guarantees about data durability etc to other
+> journalled filesystems and only differs by having checksums so that
+> while a snapshot might have half the data that was written by an app you
+> at least know that the half will be consistent.
 > 
-> Would send/receive help in such a script?
+> If you had database files on a separate subvol to the database log then
+> you would be at risk of having problems making a any sort of consistent
+> snapshot (the Debian approach of /var/log/mysql and /var/lib/mysql is a
+> bad idea). But there would be no difference with LVM snapshots in that
+> regard.
 
-Not really, you still end up with a new snapshot that you can't live
-switch to.
+Race conditions having to do with unsynced checkpoints, primarily.  And 
+it's actually the btrfs checksumming that seems to create the problem.
 
-It's really either
-1) reboot
-2) use cp --reflink to copy a list of changed files (as well as rm to
-delete the ones that were removed).
+The symptom being reported (tho I can say I've not seen further reports 
+recently, maybe it's fixed now) was that the checksummed values btrfs 
+restored as "correct" were considered corrupted by the database or vm.  
+If the checksums checked out after btrfs did its replay (as they did or 
+btrfs would error on access), but the databases and VMs were still 
+reporting corruption, then the explanation that was left was that the 
+btrfs replay and checksum validation was screwing up the application's 
+own checksumming validation, which could be explained if the two were 
+sufficiently out of sync that btrfs fixing its own view was actually 
+breaking the view as seen by the data validating app.
 
-I'm currently using btrfs-diff (below) which shows changed files but it
-doesn't show files deleted.
+Tho as I said I've not seen that sort of report in several kernel cycles 
+now.  But I'm not sure whether that's because the issues have been fixed 
+or for some other reason (maybe everybody experiencing the problem gave 
+up and switched to some other filesystem now, and the message is out 
+there well enough that new people see it before they experience and 
+report the same thing, or similar but everybody's switched to NOCOW now 
+and knows not to do snapshotting on the NOCOW files, or...).
 
-Is there something better that would show me which files changed and how
-between 2 snapshots?
+Regardless, NOCOW and not doing snapshotting (because it triggers COW 
+anyway) on gig-plus internal-write files remains a very good idea.  
+(Also, quotas and quota sequence numbers play into the combinational 
+explosion problem along with snapshot-aware-defrag, too.  See the writeup 
+on that that Dave wrote while he was on paternity leave.)
 
-btrfs-diff:
--------------------------------------------------------------
-#!/bin/bash
-
-usage() { echo $@ >2; echo "Usage: $0 <older-snapshot> <newer-snapshot>" >2; exit 1; }
-
-[ $# -eq 2 ] || usage "Incorrect invocation";
-SNAPSHOT_OLD=$1;
-SNAPSHOT_NEW=$2;
-
-[ -d $SNAPSHOT_OLD ] || usage "$SNAPSHOT_OLD does not exist";
-[ -d $SNAPSHOT_NEW ] || usage "$SNAPSHOT_NEW does not exist";
-
-OLD_TRANSID=`btrfs subvolume find-new "$SNAPSHOT_OLD" 9999999`
-OLD_TRANSID=${OLD_TRANSID#transid marker was }
-[ -n "$OLD_TRANSID" -a "$OLD_TRANSID" -gt 0 ] || usage "Failed to find generation for $SNAPSHOT_NEW"
-
-btrfs subvolume find-new "$SNAPSHOT_NEW" $OLD_TRANSID | sed '$d' | cut -f17- -d' ' | sort | uniq
--------------------------------------------------------------
-
-Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

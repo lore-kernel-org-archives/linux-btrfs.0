@@ -1,44 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:37575 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:37601 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752675AbaEGIwu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 04:52:50 -0400
-Date: Wed, 7 May 2014 01:52:40 -0700
+	with ESMTP id S1754472AbaEGI4U (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 04:56:20 -0400
+Date: Wed, 7 May 2014 01:56:12 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Hugo Mills <hugo@carfax.org.uk>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: raid0 vs single, and should we allow -mdup by default on SSDs?
-Message-ID: <20140507085240.GN10159@merlins.org>
-References: <pan$43f87$1b04f612$26876f7$5d505a6d@cox.net>
- <pan$31100$5edd829$14fe1b2f$4e1f4bd7@cox.net>
- <pan$a6ac4$b6e79aa$56ddd950$5b7b75c2@cox.net>
- <20140507081840.GM10159@merlins.org>
- <20140507082941.GA19199@carfax.org.uk>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: How does Suse do live filesystem revert with btrfs?
+Message-ID: <20140507085612.GB19238@merlins.org>
+References: <20140504005257.GF9061@merlins.org>
+ <20140504232645.GQ9061@merlins.org>
+ <20140505003639.GO24298@carfax.org.uk>
+ <20140505050459.GF10159@merlins.org>
+ <pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140507082941.GA19199@carfax.org.uk>
+In-Reply-To: <pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 07, 2014 at 09:29:41AM +0100, Hugo Mills wrote:
-> On Wed, May 07, 2014 at 01:18:40AM -0700, Marc MERLIN wrote:
-> > On Tue, May 06, 2014 at 07:39:12PM +0000, Duncan wrote:
-> > > That appears to be a very good use of either -d raid0 or -d single, yes.  
-> > > And since you're apparently not streaming such high resolution video that 
-> > > you NEED the raid0, single does indeed give you a somewhat better chance 
-> > > at recovery.
-> >  
-> > zoneminder saves 'video' as a stream of independent small jpegs, so I'm
-> > good. Actually come to think of it they're so small that they probably
-> > all ended up in the raid1 metadata. That also means that I'm not getting
-> > twice the storage space like I planned to. Oh well...
+On Tue, May 06, 2014 at 04:26:48PM +0000, Duncan wrote:
+> Marc MERLIN posted on Sun, 04 May 2014 22:04:59 -0700 as excerpted:
 > 
->    There's a mount option to change the threshold at which files are
-> inlined in metadata: maxinline=<bytes>. You could play with that for
-> this particular use-case.
+> > On Mon, May 05, 2014 at 01:36:39AM +0100, Hugo Mills wrote:
+> >>    I'm guessing it involves reflink copies of files from the snapshot
+> >> back to the "original", and then restarting affected services. That's
+> >> about the only other thing that I can think of, but it's got load of
+> >> race conditions in it (albeit difficult to hit in most cases, I
+> >> suspect).
+> > 
+> > Aaah, right, you can use a script to see the file differences between
+> > two snapshots, and then restore that with reflink if you can truly get a
+> > list of all changed files.
+> > However, that is indeed not atomic at all, even if faster than rsync.
+> 
+> Would send/receive help in such a script?
 
-Oh cool, thank you.
+Not really, you still end up with a new snapshot that you can't live
+switch to.
 
+It's really either
+1) reboot
+2) use cp --reflink to copy a list of changed files (as well as rm to
+delete the ones that were removed).
+
+I'm currently using btrfs-diff (below) which shows changed files but it
+doesn't show files deleted.
+
+Is there something better that would show me which files changed and how
+between 2 snapshots?
+
+btrfs-diff:
+-------------------------------------------------------------
+#!/bin/bash
+
+usage() { echo $@ >2; echo "Usage: $0 <older-snapshot> <newer-snapshot>" >2; exit 1; }
+
+[ $# -eq 2 ] || usage "Incorrect invocation";
+SNAPSHOT_OLD=$1;
+SNAPSHOT_NEW=$2;
+
+[ -d $SNAPSHOT_OLD ] || usage "$SNAPSHOT_OLD does not exist";
+[ -d $SNAPSHOT_NEW ] || usage "$SNAPSHOT_NEW does not exist";
+
+OLD_TRANSID=`btrfs subvolume find-new "$SNAPSHOT_OLD" 9999999`
+OLD_TRANSID=${OLD_TRANSID#transid marker was }
+[ -n "$OLD_TRANSID" -a "$OLD_TRANSID" -gt 0 ] || usage "Failed to find generation for $SNAPSHOT_NEW"
+
+btrfs subvolume find-new "$SNAPSHOT_NEW" $OLD_TRANSID | sed '$d' | cut -f17- -d' ' | sort | uniq
+-------------------------------------------------------------
+
+Thanks,
 Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.

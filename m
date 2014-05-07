@@ -1,25 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:48487 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750900AbaEGFga (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 01:36:30 -0400
-In-Reply-To: <pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
-References: <1541415.olHfkWYf4R@zafu> <pan$77cb2$eaaf65a0$d47fcc2f$d279fdb@cox.net> <3839313.LSaoXm11Qk@zafu> <pan$9fcd4$1023a4e5$d241126e$285ca14@cox.net>
+Received: from magic.merlins.org ([209.81.13.136]:37050 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750910AbaEGHvf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 03:51:35 -0400
+Date: Wed, 7 May 2014 00:51:26 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Copying related snapshots to another server with btrfs
+ send/receive?
+Message-ID: <20140507075126.GA19238@merlins.org>
+References: <20140504031231.GG9061@merlins.org>
+ <5365E932.20602@swiftspirit.co.za>
+ <20140504072829.GK9061@merlins.org>
+ <5365F23E.8070009@swiftspirit.co.za>
+ <pan$10f8$1751c450$6f6d3a98$57d04ce1@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: Using noCow with snapshots ?
-From: Russell Coker <russell@coker.com.au>
-Date: Wed, 07 May 2014 15:36:15 +1000
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Message-ID: <16fd4391-5c16-42a6-82a2-9bd1cb988906@email.android.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$10f8$1751c450$6f6d3a98$57d04ce1@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-How could BTRFS and a database "fight" about data recovery?
+On Mon, May 05, 2014 at 03:24:45AM +0000, Duncan wrote:
+> *However*: snapshotting a read-only snapshot and making the new one 
+> writable is easy enough[1].  Just keep the originals read-only so they 
+> can be used as parents/clones, and make a second, writable snapshot of 
+> the first, to do your writable stuff in.
+> 
+> ---
+> [1]  Snapshotting a snapshot: I'm getting a metaphorical flashing light 
 
-BTRFS offers similar guarantees about data durability etc to other journalled filesystems and only differs by having checksums so that while a snapshot might have half the data that was written by an app you at least know that the half will be consistent.
+I already snapshot ro snapshots as rw snapshots and that works fine.
+It's actually rely on this in my script:
+http://marc.merlins.org/perso/btrfs/post_2014-03-22_Btrfs-Tips_-Doing-Fast-Incremental-Backups-With-Btrfs-Send-and-Receive.html
+(skip to the bottom)
+# We make a read-write snapshot in case you want to use it for a chroot
+# and some testing with a writeable filesystem or want to boot from a
+# last good known snapshot.
+btrfs subvolume snapshot "$src_newsnap" "$src_newsnaprw"
+$ssh btrfs subvolume snapshot "$dest_pool/$src_newsnap" "$dest_pool/$src_newsnaprw"
 
-If you had database files on a separate subvol to the database log then you would be at risk of having problems making a any sort of consistent snapshot (the Debian approach of /var/log/mysql and /var/lib/mysql is a bad idea). But there would be no difference with LVM snapshots in that regard.
+Marc
 -- 
-Sent from my Samsung Galaxy Note 2 with K-9 Mail.
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

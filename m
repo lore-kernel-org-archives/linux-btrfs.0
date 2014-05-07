@@ -1,145 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37369 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38465 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752665AbaEGPh6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 May 2014 11:37:58 -0400
+	id S1752320AbaEGQRL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 12:17:11 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 23238AC7D
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 May 2014 16:17:09 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Ilya Dryomov <idryomov@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH] btrfs: balance filter: add limit of processed chunks
-Date: Wed,  7 May 2014 17:37:51 +0200
-Message-Id: <1399477071-15792-1-git-send-email-dsterba@suse.cz>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: retrieve more info from FS_INFO ioctl
+Date: Wed,  7 May 2014 18:17:06 +0200
+Message-Id: <1399479426-17716-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This started as debugging helper, to watch the effects of converting
-between raid levels on multiple devices, but could be useful standalone.
+Provide the basic information about filesystem through the ioctl:
+* b-tree node size (same as leaf size)
+* sector size
+* expected alignment of CLONE_RANGE and EXTENT_SAME ioctl arguments
 
-In my case the usage filter was not finegrained enough and led to
-converting too many chunks at once. Another example use is in connection
-with drange+devid or vrange filters that allow to work with a specific
-chunk or even with a chunk on a given device.
+Backward compatibility: if the values are 0, kernel does not provide
+this information, the applications should ignore them.
 
-The limit filter applies last, the value of 0 means no limiting.
-
-CC: Ilya Dryomov <idryomov@gmail.com>
-CC: Hugo Mills <hugo@carfax.org.uk>
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
+ fs/btrfs/ioctl.c           |    4 ++++
+ include/uapi/linux/btrfs.h |    6 +++++-
+ 2 files changed, 9 insertions(+), 1 deletions(-)
 
-The name 'limit' should resebmle the meaning from SQL SELECT.
-
-Though it may not be that useful on it's own, we can use it as a building block
-for more complex filters.
-
- fs/btrfs/ctree.h           |    7 ++++++-
- fs/btrfs/volumes.c         |   18 ++++++++++++++++++
- fs/btrfs/volumes.h         |    1 +
- include/uapi/linux/btrfs.h |    3 ++-
- 4 files changed, 27 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ba6b88528dc7..e6f899dc5e47 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -840,7 +840,10 @@ struct btrfs_disk_balance_args {
- 	/* BTRFS_BALANCE_ARGS_* */
- 	__le64 flags;
- 
--	__le64 unused[8];
-+	/* BTRFS_BALANCE_ARGS_LIMIT value */
-+	__le64 limit;
-+
-+	__le64 unused[7];
- } __attribute__ ((__packed__));
- 
- /*
-@@ -2897,6 +2900,7 @@ btrfs_disk_balance_args_to_cpu(struct btrfs_balance_args *cpu,
- 	cpu->vend = le64_to_cpu(disk->vend);
- 	cpu->target = le64_to_cpu(disk->target);
- 	cpu->flags = le64_to_cpu(disk->flags);
-+	cpu->limit = le64_to_cpu(disk->limit);
- }
- 
- static inline void
-@@ -2914,6 +2918,7 @@ btrfs_cpu_balance_args_to_disk(struct btrfs_disk_balance_args *disk,
- 	disk->vend = cpu_to_le64(cpu->vend);
- 	disk->target = cpu_to_le64(cpu->target);
- 	disk->flags = cpu_to_le64(cpu->flags);
-+	disk->limit = cpu_to_le64(cpu->limit);
- }
- 
- /* struct btrfs_super_block */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 49d7fab73360..3b761a456acd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2922,6 +2922,16 @@ static int should_balance_chunk(struct btrfs_root *root,
- 		return 0;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2ad7de94efef..74530f226e50 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2574,6 +2574,10 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
  	}
+ 	mutex_unlock(&fs_devices->device_list_mutex);
  
-+	/*
-+	 * limited by count, must be the last filter
-+	 */
-+	if ((bargs->flags & BTRFS_BALANCE_ARGS_LIMIT)) {
-+		if (bargs->limit == 0)
-+			return 0;
-+		else
-+			bargs->limit--;
-+	}
++	fi_args->nodesize = root->fs_info->super_copy->nodesize;
++	fi_args->sectorsize = root->fs_info->super_copy->sectorsize;
++	fi_args->clone_alignment = root->fs_info->super_copy->sectorsize;
 +
- 	return 1;
- }
+ 	if (copy_to_user(arg, fi_args, sizeof(*fi_args)))
+ 		ret = -EFAULT;
  
-@@ -2944,6 +2954,9 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	int ret;
- 	int enospc_errors = 0;
- 	bool counting = true;
-+	u64 limit_data = bctl->data.limit;
-+	u64 limit_meta = bctl->meta.limit;
-+	u64 limit_sys = bctl->sys.limit;
- 
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -2982,6 +2995,11 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	memset(&bctl->stat, 0, sizeof(bctl->stat));
- 	spin_unlock(&fs_info->balance_lock);
- again:
-+	if (!counting) {
-+		bctl->data.limit = limit_data;
-+		bctl->meta.limit = limit_meta;
-+		bctl->sys.limit = limit_sys;
-+	}
- 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 80754f9dd3df..1a15bbeb65e2 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -255,6 +255,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_DEVID	(1ULL << 2)
- #define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
- #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
-+#define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
- 
- /*
-  * Profile changing flags.  When SOFT is set we won't relocate chunk if
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b4d69092fbdb..901a3c563f60 100644
+index b4d69092fbdb..aad9391e0a6d 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -211,7 +211,8 @@ struct btrfs_balance_args {
+@@ -181,7 +181,11 @@ struct btrfs_ioctl_fs_info_args {
+ 	__u64 max_id;				/* out */
+ 	__u64 num_devices;			/* out */
+ 	__u8 fsid[BTRFS_FSID_SIZE];		/* out */
+-	__u64 reserved[124];			/* pad to 1k */
++	__u32 nodesize;				/* out */
++	__u32 sectorsize;			/* out */
++	__u32 clone_alignment;			/* out */
++	__u32 reserved32;
++	__u64 reserved[122];			/* pad to 1k */
+ };
  
- 	__u64 flags;
- 
--	__u64 unused[8];
-+	__u64 limit;		/* limit number of processed chunks */
-+	__u64 unused[7];
- } __attribute__ ((__packed__));
- 
- /* report balance progress to userspace */
+ struct btrfs_ioctl_feature_flags {
 -- 
 1.7.9
 

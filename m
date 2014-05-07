@@ -1,176 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43145 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751804AbaEERkV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 May 2014 13:40:21 -0400
-Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
-	by frost.carfax.org.uk with esmtp (Exim 4.80)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1WhMMq-0007al-Gb
-	for linux-btrfs@vger.kernel.org; Mon, 05 May 2014 17:07:52 +0000
-Received: from [10.0.0.10] (helo=ruthven.carfax.org.uk)
-	by ruthven.carfax.org.uk with esmtp (Exim 4.82)
-	(envelope-from <hugo@carfax.org.uk>)
-	id 1WhMMp-0002Pg-T1
-	for linux-btrfs@vger.kernel.org; Mon, 05 May 2014 18:07:51 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs check: Attempt to fix misordered keys with bitflips in them
-Date: Mon,  5 May 2014 18:07:51 +0100
-Message-Id: <1399309671-9240-4-git-send-email-hugo@carfax.org.uk>
-In-Reply-To: <1399309671-9240-1-git-send-email-hugo@carfax.org.uk>
-References: <1399309671-9240-1-git-send-email-hugo@carfax.org.uk>
+Received: from userp1040.oracle.com ([156.151.31.81]:37251 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752203AbaEGPVR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 11:21:17 -0400
+Date: Wed, 7 May 2014 23:21:01 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] Btrfs: faster/more efficient insertion of file extent
+ items
+Message-ID: <20140507152100.GA2702@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1391989512-31797-1-git-send-email-fdmanana@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1391989512-31797-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If someone has had bad RAM which has been used to store a metadata block,
-there's a chance that one or more of the keys has had a bit changed. The
-block checksum doesn't help us here, because it's made on the bad data.
+On Sun, Feb 09, 2014 at 11:45:12PM +0000, Filipe David Borba Manana wrote:
+> This is an extension to my previous commit titled:
+> 
+>   "Btrfs: faster file extent item replace operations"
+>   (hash 1acae57b161ef1282f565ef907f72aeed0eb71d9)
+> 
+> Instead of inserting the new file extent item if we deleted existing
+> file extent items covering our target file range, also allow to insert
+> the new file extent item if we didn't find any existing items to delete
+> and replace_extent != 0, since in this case our caller would do another
+> tree search to insert the new file extent item anyway, therefore just
+> combine the two tree searches into a single one, saving cpu time, reducing
+> lock contention and reducing btree node/leaf COW operations.
+> 
+> This covers the case where applications keep doing tail append writes to
+> files, which for example is the case of Apache CouchDB (its database and
+> view index files are always open with O_APPEND).
 
-To fix this, if there's a block with a bad key order in it, we find out-of-
-order keys by bracketing them between the good keys either side of them,
-and then attempting to flip each bit of the key in turn.
+(I'm tracking a bug which is very hard to reproduce and the stack seems to
+locate on this area.)
 
-If precisely one of those bitflips puts the broken key back into order
-relative to its two neighbours, we probably have a fix for the bitflip,
-and so we write it back to the FS.
+Even I know that this has been merged, I still have to say that this just
+makes the code nearly hard-to-maintained.
 
-This doesn't repair bitflipped keys at the start or end of a metadata
-block, nor bitflips in any other data structure.
+__btrfs_drop_extents() has already been one of the most complex function since
+it was written, but now it's become more and more complex!
 
-Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
----
- cmds-check.c | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 99 insertions(+), 4 deletions(-)
+I'm not sure whether the gained performance number deserves that kind of
+complexity, man, to be honest, try to ask yourself how much time you'll spend in
+re-understanding the code and all the details.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index b2e4a46..c93fea3 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2406,8 +2406,9 @@ static int swap_values(struct btrfs_root *root, struct btrfs_path *path,
- }
- 
- /*
-- * Attempt to fix basic block failures.  Currently we only handle bad key
-- * orders, we will cycle through the keys and swap them if necessary.
-+ * Attempt to fix basic block failures. Currently we only handle bad
-+ * key orders, we will look for fixable bitflips, and also cycle
-+ * through the keys and swap them if necessary.
-  */
- static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
-@@ -2416,8 +2417,9 @@ static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
- 				enum btrfs_tree_block_status status)
- {
- 	struct btrfs_path *path;
--	struct btrfs_key k1, k2;
--	int i;
-+	struct btrfs_key k1, k2, k3;
-+	int i, j;
-+	int bit, field;
- 	int level;
- 	int ret;
- 
-@@ -2452,6 +2454,99 @@ static int try_to_fix_bad_block(struct btrfs_trans_handle *trans,
- 	}
- 
- 	buf = path->nodes[level];
-+
-+	/* First, look for bitflips in keys: we identify these where k1 <
-+	 * k3 but k1 >= k2 or k2 >= k3. We can fix a bitflip if there's
-+	 * exactly one bit that we can flip that makes k1 < k2 < k3. */
-+	for (i = 0; i < btrfs_header_nritems(buf) - 2; i++) {
-+		if (level) {
-+			btrfs_node_key_to_cpu(buf, &k1, i);
-+			btrfs_node_key_to_cpu(buf, &k2, i+1);
-+			btrfs_node_key_to_cpu(buf, &k3, i+2);
-+		} else {
-+			btrfs_item_key_to_cpu(buf, &k1, i);
-+			btrfs_item_key_to_cpu(buf, &k2, i+1);
-+			btrfs_item_key_to_cpu(buf, &k3, i+2);
-+		}
-+
-+		if (btrfs_comp_cpu_keys(&k1, &k3) >= 0)
-+			continue; /* Bracketing keys compare incorrectly:
-+						 we can't fix this */
-+		if (btrfs_comp_cpu_keys(&k1, &k2) <= 0
-+			&& btrfs_comp_cpu_keys(&k2, &k3) <= 0)
-+			continue; /* All three keys are in order: nothing to do */
-+
-+		bit = -1;
-+		field = -1;
-+		for(j = 0; j < 64; j++) {
-+			/* Look for flipped/fixable bits in the objectid */
-+			k2.objectid ^= 0x1ULL << j;
-+			if (btrfs_comp_cpu_keys(&k1, &k2) <= 0
-+				&& btrfs_comp_cpu_keys(&k2, &k3) <= 0) {
-+				/* Do nothing if we've already found a flippable bit:
-+				 * multiple solutions means we can't know what the
-+				 * right thing to do is */
-+				if (field != -1) {
-+					field = -1;
-+					break;
-+				}
-+				bit = j;
-+				field = 0;
-+			}
-+			k2.objectid ^= 0x1ULL << j;
-+
-+			/* Look for flipped/fixable bits in the type */
-+			if (j < 8) {
-+				k2.type ^= 0x1ULL << j;
-+				if (btrfs_comp_cpu_keys(&k1, &k2) <= 0
-+					&& btrfs_comp_cpu_keys(&k2, &k3) <= 0) {
-+					if (field != -1) {
-+						field = -1;
-+						break;
-+					}
-+					bit = j;
-+					field = 1;
-+				}
-+				k2.type ^= 0x1ULL << j;
-+			}
-+
-+			/* Look for flipped/fixable bits in the offset */
-+			k2.offset ^= 0x1ULL << j;
-+			if (btrfs_comp_cpu_keys(&k1, &k2) <= 0
-+				&& btrfs_comp_cpu_keys(&k2, &k3) <= 0) {
-+				if (field != -1) {
-+					field = -1;
-+					break;
-+				}
-+				bit = j;
-+				field = 2;
-+			}
-+			k2.offset ^= 0x1ULL << j;
-+		}
-+
-+		if (field != -1) {
-+			fprintf(stderr, "Fixing bitflipped key (%llx, %d, %llx) ",
-+					k2.objectid, k2.type, k2.offset);
-+			if (field == 0)
-+				k2.objectid ^= 0x1ULL << bit;
-+			else if (field == 1)
-+				k2.type ^= 0x1ULL << bit;
-+			else if (field == 2)
-+				k2.offset ^= 0x1ULL << bit;
-+
-+			fprintf(stderr, "to (%llx, %d, %llx)\n",
-+					k2.objectid, k2.type, k2.offset);
-+
-+			/* Write the key back to disk */
-+			path->slots[0] = i+1;
-+			btrfs_set_item_key_unsafe(root, path, &k2);
-+			btrfs_mark_buffer_dirty(buf);
-+			/* Go back and test all the keys again */
-+			i = 0;
-+		}
-+	}
-+
-+	/* Now simply swap keys to put them in order */
- 	for (i = 0; i < btrfs_header_nritems(buf) - 1; i++) {
- 		if (level) {
- 			btrfs_node_key_to_cpu(buf, &k1, i);
--- 
-1.9.2
+thanks,
+-liubo
 
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>  fs/btrfs/file.c |   52 ++++++++++++++++++++++++++++++----------------------
+>  1 file changed, 30 insertions(+), 22 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 0165b86..006af2f 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -720,7 +720,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+>  	if (drop_cache)
+>  		btrfs_drop_extent_cache(inode, start, end - 1, 0);
+>  
+> -	if (start >= BTRFS_I(inode)->disk_i_size)
+> +	if (start >= BTRFS_I(inode)->disk_i_size && !replace_extent)
+>  		modify_tree = 0;
+>  
+>  	while (1) {
+> @@ -938,34 +938,42 @@ next_slot:
+>  		 * Set path->slots[0] to first slot, so that after the delete
+>  		 * if items are move off from our leaf to its immediate left or
+>  		 * right neighbor leafs, we end up with a correct and adjusted
+> -		 * path->slots[0] for our insertion.
+> +		 * path->slots[0] for our insertion (if replace_extent != 0).
+>  		 */
+>  		path->slots[0] = del_slot;
+>  		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
+>  		if (ret)
+>  			btrfs_abort_transaction(trans, root, ret);
+> +	}
+>  
+> -		leaf = path->nodes[0];
+> -		/*
+> -		 * leaf eb has flag EXTENT_BUFFER_STALE if it was deleted (that
+> -		 * is, its contents got pushed to its neighbors), in which case
+> -		 * it means path->locks[0] == 0
+> -		 */
+> -		if (!ret && replace_extent && leafs_visited == 1 &&
+> -		    path->locks[0] &&
+> -		    btrfs_leaf_free_space(root, leaf) >=
+> -		    sizeof(struct btrfs_item) + extent_item_size) {
+> -
+> -			key.objectid = ino;
+> -			key.type = BTRFS_EXTENT_DATA_KEY;
+> -			key.offset = start;
+> -			setup_items_for_insert(root, path, &key,
+> -					       &extent_item_size,
+> -					       extent_item_size,
+> -					       sizeof(struct btrfs_item) +
+> -					       extent_item_size, 1);
+> -			*key_inserted = 1;
+> +	leaf = path->nodes[0];
+> +	/*
+> +	 * If btrfs_del_items() was called, it might have deleted a leaf, in
+> +	 * which case it unlocked our path, so check path->locks[0] matches a
+> +	 * write lock.
+> +	 */
+> +	if (!ret && replace_extent && leafs_visited == 1 &&
+> +	    (path->locks[0] == BTRFS_WRITE_LOCK_BLOCKING ||
+> +	     path->locks[0] == BTRFS_WRITE_LOCK) &&
+> +	    btrfs_leaf_free_space(root, leaf) >=
+> +	    sizeof(struct btrfs_item) + extent_item_size) {
+> +
+> +		key.objectid = ino;
+> +		key.type = BTRFS_EXTENT_DATA_KEY;
+> +		key.offset = start;
+> +		if (!del_nr && path->slots[0] < btrfs_header_nritems(leaf)) {
+> +			struct btrfs_key slot_key;
+> +
+> +			btrfs_item_key_to_cpu(leaf, &slot_key, path->slots[0]);
+> +			if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
+> +				path->slots[0]++;
+>  		}
+> +		setup_items_for_insert(root, path, &key,
+> +				       &extent_item_size,
+> +				       extent_item_size,
+> +				       sizeof(struct btrfs_item) +
+> +				       extent_item_size, 1);
+> +		*key_inserted = 1;
+>  	}
+>  
+>  	if (!replace_extent || !(*key_inserted))
+> -- 
+> 1.7.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,71 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:59030 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750924AbaEGSam (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 14:30:42 -0400
-Message-ID: <536A7C6D.2030300@libero.it>
-Date: Wed, 07 May 2014 20:33:17 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from mail-ob0-f170.google.com ([209.85.214.170]:57258 "EHLO
+	mail-ob0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751054AbaEGWjT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 18:39:19 -0400
+Received: by mail-ob0-f170.google.com with SMTP id uy5so2055478obc.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 15:39:19 -0700 (PDT)
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, Duncan <1i5t5.duncan@cox.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: How does Suse do live filesystem revert with btrfs?
-References: <20140504005257.GF9061@merlins.org> <20140504232645.GQ9061@merlins.org> <20140505003639.GO24298@carfax.org.uk> <20140505050459.GF10159@merlins.org> <pan$4eac3$a2d76a4$a81e0fed$b4b18c9e@cox.net> <20140507085612.GB19238@merlins.org> <pan$2da2e$d0644856$de7d595b$8d7f256e@cox.net> <20140507113942.GY10159@merlins.org>
-In-Reply-To: <20140507113942.GY10159@merlins.org>
-Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <20140507085240.GN10159@merlins.org>
+References: <pan$43f87$1b04f612$26876f7$5d505a6d@cox.net>
+	<pan$31100$5edd829$14fe1b2f$4e1f4bd7@cox.net>
+	<pan$a6ac4$b6e79aa$56ddd950$5b7b75c2@cox.net>
+	<20140507081840.GM10159@merlins.org>
+	<20140507082941.GA19199@carfax.org.uk>
+	<20140507085240.GN10159@merlins.org>
+Date: Wed, 7 May 2014 17:39:18 -0500
+Message-ID: <CAKcLGm9gJ0ZRwp_h=AtP8ArdC7Yuq_Cspxg=23FS4reazO6R+g@mail.gmail.com>
+Subject: Re: raid0 vs single, and should we allow -mdup by default on SSDs?
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/07/2014 01:39 PM, Marc MERLIN wrote:
-> On Wed, May 07, 2014 at 11:35:52AM +0000, Duncan wrote:
->> Marc MERLIN posted on Wed, 07 May 2014 01:56:12 -0700 as excerpted:
+On Wed, May 7, 2014 at 3:52 AM, Marc MERLIN <marc@merlins.org> wrote:
+> On Wed, May 07, 2014 at 09:29:41AM +0100, Hugo Mills wrote:
+>> On Wed, May 07, 2014 at 01:18:40AM -0700, Marc MERLIN wrote:
+>> > On Tue, May 06, 2014 at 07:39:12PM +0000, Duncan wrote:
+>> > > That appears to be a very good use of either -d raid0 or -d single, yes.
+>> > > And since you're apparently not streaming such high resolution video that
+>> > > you NEED the raid0, single does indeed give you a somewhat better chance
+>> > > at recovery.
+>> >
+>> > zoneminder saves 'video' as a stream of independent small jpegs, so I'm
+>> > good. Actually come to think of it they're so small that they probably
+>> > all ended up in the raid1 metadata. That also means that I'm not getting
+>> > twice the storage space like I planned to. Oh well...
 >>
->>> On Tue, May 06, 2014 at 04:26:48PM +0000, Duncan wrote:
->>>> Marc MERLIN posted on Sun, 04 May 2014 22:04:59 -0700 as excerpted:
->>>>
->>>>>
->>>>> Aaah, right, you can use a script to see the file differences between
->>>>> two snapshots, and then restore that with reflink if you can truly
->>>>> get a list of all changed files.
->>>>> However, that is indeed not atomic at all, even if faster than rsync.
->>>>
->>>> Would send/receive help in such a script?
->>>
->>> Not really, you still end up with a new snapshot that you can't live
->>> switch to.
->>>
->>> It's really either 1) reboot 2) use cp --reflink to copy a list of
->>> changed files (as well as rm to delete the ones that were removed).
->>
->> What I meant was... use send/receive locally, in place of the
->> cp --reflink.
-> 
-> This won't work since it can only work on another read-only subvolume.
-> 
-> But you could use btrfs send -p to get a list of changes between 2
-> snapshots, decode that (without btrfs receive) just to spit out the
-> names of the files that changed or got deleted.
-> It would be wasteful since it would cause all the changed blocks to be
-> read on the source, but still better than nothing.
-> 
-> Really, we'd just need a btrfs --send --dry-run -v -p vol1 vol2 
-> which would spit out a list of the file ops it would do.
-> 
-> That'd be enough to simply grep out the deletes, do them locally and
-> then use cp --reflink on everything else.
+>>    There's a mount option to change the threshold at which files are
+>> inlined in metadata: maxinline=<bytes>. You could play with that for
+>> this particular use-case.
+>
+> Oh cool, thank you.
+>
 
-What happens to the already opened files ? I suppose that a process which has already opened a file, see the old one; instead a new open could see the new one.
-If this is acceptable, why not doing "mount --bind /snapshot /", or use pivot_root(2), or a overlay filesystem ?
-May be that we need to move also the other already mounted_filesystem (like /proc, /sys)...
+Since each non-inlined file will occupy a minimum of 4k, you may find
+that inlining will still save space even if it is duplicated.
 
+Even if they are duplicated in the metadata under RAID1, inlining a
+bunch of 256 byte files will still be more space efficient than
+storing them as regular files.
 
-
-> 
-> Marc
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+But if most of the files are in the 2k-3k range, you may be more
+efficient to store them as files.

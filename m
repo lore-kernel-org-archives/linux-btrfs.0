@@ -1,95 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37371 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42239 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752291AbaEGPiD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 May 2014 11:38:03 -0400
-From: David Sterba <dsterba@suse.cz>
+	id S1751477AbaEGUH0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 May 2014 16:07:26 -0400
+From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Ilya Dryomov <idryomov@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH] btrfs-progs: balance filter: add limit of processed chunks
-Date: Wed,  7 May 2014 17:38:00 +0200
-Message-Id: <1399477080-15846-1-git-send-email-dsterba@suse.cz>
+Cc: Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 1/3] btrfs-progs: print qgroup excl as unsigned
+Date: Wed,  7 May 2014 13:07:15 -0700
+Message-Id: <1399493237-19740-2-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1399493237-19740-1-git-send-email-mfasheh@suse.de>
+References: <1399493237-19740-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add more control to the balance behaviour.
+It's unsigned in the structure definition.
 
-Usage filter may not be finegrained enough and can lead to moving too
-many chunks at once. Another example use is in connection with
-drange+devid or vrange filters that allow to work with a specific chunk
-or even with a chunk on a given device.
-
-The limit filter applies last, the value of 0 means no limiting.
-
-CC: Ilya Dryomov <idryomov@gmail.com>
-CC: Hugo Mills <hugo@carfax.org.uk>
-Signed-off-by: David Sterba <dsterba@suse.cz>
+Reviewed-by: Mark Fasheh <mfasheh@suse.de>
 ---
- cmds-balance.c | 14 ++++++++++++++
- ioctl.h        |  4 +++-
- volumes.h      |  1 +
- 3 files changed, 18 insertions(+), 1 deletion(-)
+ print-tree.c | 12 ++++++------
+ qgroup.c     |  4 ++--
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 8a743ecabd33..5de51bd463c4 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -218,6 +218,18 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
- 			args->flags |= BTRFS_BALANCE_ARGS_CONVERT;
- 		} else if (!strcmp(this_char, "soft")) {
- 			args->flags |= BTRFS_BALANCE_ARGS_SOFT;
-+		} else if (!strcmp(this_char, "limit")) {
-+			if (!value || !*value) {
-+				fprintf(stderr,
-+					"the limit filter requires an argument\n");
-+				return 1;
-+			}
-+			if (parse_u64(value, &args->limit)) {
-+				fprintf(stderr, "Invalid limit argument: %s\n",
-+				       value);
-+				return 1;
-+			}
-+			args->flags |= BTRFS_BALANCE_ARGS_LIMIT;
- 		} else {
- 			fprintf(stderr, "Unrecognized balance option '%s'\n",
- 				this_char);
-@@ -252,6 +264,8 @@ static void dump_balance_args(struct btrfs_balance_args *args)
- 		printf(", vrange=%llu..%llu",
- 		       (unsigned long long)args->vstart,
- 		       (unsigned long long)args->vend);
-+	if (args->flags & BTRFS_BALANCE_ARGS_LIMIT)
-+		printf(", limit=%llu", (unsigned long long)args->limit);
- 
- 	printf("\n");
- }
-diff --git a/ioctl.h b/ioctl.h
-index 9627e8d1bac6..f0fc06086c3e 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -194,7 +194,9 @@ struct btrfs_balance_args {
- 
- 	__u64 flags;
- 
--	__u64 unused[8];
-+	__u64 limit;
-+
-+	__u64 unused[7];
- } __attribute__ ((__packed__));
- 
- struct btrfs_balance_progress {
-diff --git a/volumes.h b/volumes.h
-index b1ff3d04f931..8405aef2cc0a 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -130,6 +130,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_DEVID	(1ULL << 2)
- #define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
- #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
-+#define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
- 
- /*
-  * Profile changing flags.  When SOFT is set we won't relocate chunk if
+diff --git a/print-tree.c b/print-tree.c
+index 7263b09..adef94a 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -884,18 +884,18 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 			qg_info = btrfs_item_ptr(l, i,
+ 						 struct btrfs_qgroup_info_item);
+ 			printf("\t\tgeneration %llu\n"
+-			     "\t\treferenced %lld referenced compressed %lld\n"
+-			     "\t\texclusive %lld exclusive compressed %lld\n",
++			     "\t\treferenced %llu referenced compressed %llu\n"
++			     "\t\texclusive %llu exclusive compressed %llu\n",
+ 			       (unsigned long long)
+ 			       btrfs_qgroup_info_generation(l, qg_info),
+-			       (long long)
++			       (unsigned long long)
+ 			       btrfs_qgroup_info_referenced(l, qg_info),
+-			       (long long)
++			       (unsigned long long)
+ 			       btrfs_qgroup_info_referenced_compressed(l,
+ 								       qg_info),
+-			       (long long)
++			       (unsigned long long)
+ 			       btrfs_qgroup_info_exclusive(l, qg_info),
+-			       (long long)
++			       (unsigned long long)
+ 			       btrfs_qgroup_info_exclusive_compressed(l,
+ 								      qg_info));
+ 			break;
+diff --git a/qgroup.c b/qgroup.c
+index 94d1feb..368b262 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -203,11 +203,11 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_QGROUPID, len);
+ 		break;
+ 	case BTRFS_QGROUP_RFER:
+-		len = printf("%lld", qgroup->rfer);
++		len = printf("%llu", qgroup->rfer);
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_RFER, len);
+ 		break;
+ 	case BTRFS_QGROUP_EXCL:
+-		len = printf("%lld", qgroup->excl);
++		len = printf("%llu", qgroup->excl);
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_EXCL, len);
+ 		break;
+ 	case BTRFS_QGROUP_PARENT:
 -- 
-1.9.0
+1.8.4
 

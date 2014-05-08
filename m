@@ -1,32 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:47859 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754571AbaEHRkH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 13:40:07 -0400
-Received: by mail-lb0-f179.google.com with SMTP id c11so3992275lbj.24
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 May 2014 10:40:06 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140508013440.GH11401@merlins.org>
-References: <20140507233959.GB11401@merlins.org>
-	<536AD20E.70004@fb.com>
-	<20140508004344.GE11401@merlins.org>
-	<20140508013440.GH11401@merlins.org>
-Date: Thu, 8 May 2014 10:40:05 -0700
-Message-ID: <CAKgsxVR=6GTesbtqG_SAyKnpw9pxz1TZ0oOi_MB8Ej3j4-vMiw@mail.gmail.com>
-Subject: Re: URGENT: my laptop's boot ssd btrfs crashed, what do you need off it?
-From: Justin Maggard <jmaggard10@gmail.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:42095 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753127AbaEHS1o (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 14:27:44 -0400
+Received: by mail-wi0-f179.google.com with SMTP id bs8so162070wib.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 May 2014 11:27:43 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: fix hang on error (such as ENOSPC) when writing extent pages
+Date: Thu,  8 May 2014 20:27:11 +0100
+Message-Id: <1399577231-6345-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 7, 2014 at 6:34 PM, Marc MERLIN <marc@merlins.org> wrote:
-> Can btrfs restore be used to navigate the filesystem and look for files and patterns
-> without dumping the entire filesystem, which I don't have room for?
+When running low on available disk space and having several processes
+doing buffered file IO, I got the following trace in dmesg:
 
-On recent versions of btrfs-progs, you can run btrfs restore with both
-the verbose and dry-run options to see what it finds, without actually
-restoring anything.
+[ 4202.720152] INFO: task kworker/u8:1:5450 blocked for more than 120 seconds.
+[ 4202.720401]       Not tainted 3.13.0-fdm-btrfs-next-26+ #1
+[ 4202.720596] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 4202.720874] kworker/u8:1    D 0000000000000001     0  5450      2 0x00000000
+[ 4202.720904] Workqueue: btrfs-flush_delalloc normal_work_helper [btrfs]
+[ 4202.720908]  ffff8801f62ddc38 0000000000000082 ffff880203ac2490 00000000001d3f40
+[ 4202.720913]  ffff8801f62ddfd8 00000000001d3f40 ffff8800c4f0c920 ffff880203ac2490
+[ 4202.720918]  00000000001d4a40 ffff88020fe85a40 ffff88020fe85ab8 0000000000000001
+[ 4202.720922] Call Trace:
+[ 4202.720931]  [<ffffffff816a3cb9>] schedule+0x29/0x70
+[ 4202.720950]  [<ffffffffa01ec48d>] btrfs_start_ordered_extent+0x6d/0x110 [btrfs]
+[ 4202.720956]  [<ffffffff8108e620>] ? bit_waitqueue+0xc0/0xc0
+[ 4202.720972]  [<ffffffffa01ec559>] btrfs_run_ordered_extent_work+0x29/0x40 [btrfs]
+[ 4202.720988]  [<ffffffffa0201987>] normal_work_helper+0x137/0x2c0 [btrfs]
+[ 4202.720994]  [<ffffffff810680e5>] process_one_work+0x1f5/0x530
+(...)
+[ 4202.721027] 2 locks held by kworker/u8:1/5450:
+[ 4202.721028]  #0:  (%s-%s){++++..}, at: [<ffffffff81068083>] process_one_work+0x193/0x530
+[ 4202.721037]  #1:  ((&work->normal_work)){+.+...}, at: [<ffffffff81068083>] process_one_work+0x193/0x530
+[ 4202.721054] INFO: task btrfs:7891 blocked for more than 120 seconds.
+[ 4202.721258]       Not tainted 3.13.0-fdm-btrfs-next-26+ #1
+[ 4202.721444] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 4202.721699] btrfs           D 0000000000000001     0  7891   7890 0x00000001
+[ 4202.721704]  ffff88018c2119e8 0000000000000086 ffff8800a33d2490 00000000001d3f40
+[ 4202.721710]  ffff88018c211fd8 00000000001d3f40 ffff8802144b0000 ffff8800a33d2490
+[ 4202.721714]  ffff8800d8576640 ffff88020fe85bc0 ffff88020fe85bc8 7fffffffffffffff
+[ 4202.721718] Call Trace:
+[ 4202.721723]  [<ffffffff816a3cb9>] schedule+0x29/0x70
+[ 4202.721727]  [<ffffffff816a2ebc>] schedule_timeout+0x1dc/0x270
+[ 4202.721732]  [<ffffffff8109bd79>] ? mark_held_locks+0xb9/0x140
+[ 4202.721736]  [<ffffffff816a90c0>] ? _raw_spin_unlock_irq+0x30/0x40
+[ 4202.721740]  [<ffffffff8109bf0d>] ? trace_hardirqs_on_caller+0x10d/0x1d0
+[ 4202.721744]  [<ffffffff816a488f>] wait_for_completion+0xdf/0x120
+[ 4202.721749]  [<ffffffff8107fa90>] ? try_to_wake_up+0x310/0x310
+[ 4202.721765]  [<ffffffffa01ebee4>] btrfs_wait_ordered_extents+0x1f4/0x280 [btrfs]
+[ 4202.721781]  [<ffffffffa020526e>] btrfs_mksubvol.isra.62+0x30e/0x5a0 [btrfs]
+[ 4202.721786]  [<ffffffff8108e620>] ? bit_waitqueue+0xc0/0xc0
+[ 4202.721799]  [<ffffffffa02056a9>] btrfs_ioctl_snap_create_transid+0x1a9/0x1b0 [btrfs]
+[ 4202.721813]  [<ffffffffa020583a>] btrfs_ioctl_snap_create_v2+0x10a/0x170 [btrfs]
+(...)
 
--Justin
+It turns out that extent_io.c:__extent_writepage(), which ends up being called
+through filemap_fdatawrite_range() in btrfs_start_ordered_extent(), was getting
+-ENOSPC when calling the fill_delalloc callback. In this situation, it returned
+without the writepage_end_io_hook callback (inode.c:btrfs_writepage_end_io_hook)
+ever being called for the respective page, which prevents the ordered extent's
+bytes_left count from ever reaching 0, and therefore a finish_ordered_fn work
+is never queued into the endio_write_workers queue. This makes the task that
+called btrfs_start_ordered_extent() hang forever on the wait queue of the ordered
+extent.
+
+This is fairly easy to reproduce using a small filesystem and fsstress on
+a quad core vm:
+
+    mkfs.btrfs -f -b `expr 2100 \* 1024 \* 1024` /dev/sdd
+    mount /dev/sdd /mnt
+
+    fsstress -p 6 -d /mnt -n 100000 -x \
+        "btrfs subvolume snapshot -r /mnt /mnt/mysnap" \
+	    -f allocsp=0 \
+	    -f bulkstat=0 \
+	    -f bulkstat1=0 \
+	    -f chown=0 \
+	    -f creat=1 \
+	    -f dread=0 \
+	    -f dwrite=0 \
+	    -f fallocate=1 \
+	    -f fdatasync=0 \
+	    -f fiemap=0 \
+	    -f freesp=0 \
+	    -f fsync=0 \
+	    -f getattr=0 \
+	    -f getdents=0 \
+	    -f link=0 \
+	    -f mkdir=0 \
+	    -f mknod=0 \
+	    -f punch=1 \
+	    -f read=0 \
+	    -f readlink=0 \
+	    -f rename=0 \
+	    -f resvsp=0 \
+	    -f rmdir=0 \
+	    -f setxattr=0 \
+	    -f stat=0 \
+	    -f symlink=0 \
+	    -f sync=0 \
+	    -f truncate=1 \
+	    -f unlink=0 \
+	    -f unresvsp=0 \
+	    -f write=4
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/extent_io.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0c43896..b5a097f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3374,9 +3374,13 @@ done:
+ 
+ done_unlocked:
+ 
++	if (PageError(page)) {
++		ret = ret < 0 ? ret : -EIO;
++		end_extent_writepage(page, ret, start, page_end);
++	}
+ 	/* drop our reference on any cached states */
+ 	free_extent_state(cached_state);
+-	return 0;
++	return ret;
+ }
+ 
+ static int eb_wait(void *word)
+-- 
+1.9.1
+

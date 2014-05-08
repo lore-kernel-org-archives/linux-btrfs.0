@@ -1,45 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f179.google.com ([209.85.192.179]:63462 "EHLO
-	mail-pd0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751509AbaEHE4x (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 00:56:53 -0400
-Received: by mail-pd0-f179.google.com with SMTP id g10so1950539pdj.24
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 21:56:52 -0700 (PDT)
-From: Guangliang Zhao <lucienchao@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: lucienchao@gmail.com
-Subject: [PATCH] Btrfs: remove OPT_acl parse when acl disabled
-Date: Thu,  8 May 2014 12:56:32 +0800
-Message-Id: <1399524992-10810-1-git-send-email-lucienchao@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:46859 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751103AbaEHGbx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 02:31:53 -0400
+Date: Thu, 8 May 2014 14:31:38 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Disseldorp <ddiss@suse.de>
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs/035: update clone test to expect EOPNOTSUPP
+Message-ID: <20140508063136.GC3407@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1399465998-26545-1-git-send-email-ddiss@suse.de>
+ <20140508041123.GB3407@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140508041123.GB3407@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even CONFIG_BTRFS_FS_POSIX_ACL is not defined, the acl still could
-been enabled using a mount option, and now fs/btrfs/acl.o is not
-built, so the mount options will appear to be supported but will
-be silently ignored.
+On Thu, May 08, 2014 at 12:11:24PM +0800, Liu Bo wrote:
+> On Wed, May 07, 2014 at 02:33:18PM +0200, David Disseldorp wrote:
+> > With kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, the first
+> > clone-range overwrite attempt now fails with EOPNOTSUPP, rather than
+> > tripping a Btrfs BUG_ON().
+> > 
+> > This test now trips a new Btrfs bug, in which EIO is returned for
+> > subsequent reads following the second clone range ioctl.
+> > 
+> 
+> Hi David,
+> 
+> Something different here, I didn't get EI on 3.15.0-rc4.
 
-Signed-off-by: Guangliang Zhao <lucienchao@gmail.com>
----
- fs/btrfs/super.c |    2 ++
- 1 file changed, 2 insertions(+)
+s/EI/EIO/g
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 363404b..68ae27c 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -579,9 +579,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				goto out;
- 			}
- 			break;
-+#ifdef CONFIG_BTRFS_FS_POSIX_ACL
- 		case Opt_acl:
- 			root->fs_info->sb->s_flags |= MS_POSIXACL;
- 			break;
-+#endif
- 		case Opt_noacl:
- 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
- 			break;
--- 
-1.7.9.5
+-liubo
 
+> 
+> thanks,
+> -liubo
+> 
+> > Signed-off-by: David Disseldorp <ddiss@suse.de>
+> > ---
+> >  tests/btrfs/035     | 11 +++++++++++
+> >  tests/btrfs/035.out |  5 +++++
+> >  2 files changed, 16 insertions(+)
+> > 
+> > diff --git a/tests/btrfs/035 b/tests/btrfs/035
+> > index 6808179..c9530f6 100755
+> > --- a/tests/btrfs/035
+> > +++ b/tests/btrfs/035
+> > @@ -57,21 +57,32 @@ src_str="aaaaaaaaaa"
+> >  echo -n "$src_str" > $SCRATCH_MNT/src
+> >  
+> >  $CLONER_PROG $SCRATCH_MNT/src  $SCRATCH_MNT/src.clone1
+> > +cat $SCRATCH_MNT/src.clone1
+> > +echo
+> >  
+> >  src_str="bbbbbbbbbbcccccccccc"
+> >  
+> >  echo -n "$src_str" > $SCRATCH_MNT/src
+> >  
+> >  $CLONER_PROG $SCRATCH_MNT/src $SCRATCH_MNT/src.clone2
+> > +cat $SCRATCH_MNT/src.clone2
+> > +echo
+> >  
+> > +# Prior to kernel commit 00fdf13a2e9f313a044288aa59d3b8ec29ff904a, this clone
+> > +# resulted in a BUG_ON in __btrfs_drop_extents(). The kernel now returns
+> > +# EOPNOTSUPP up to userspace.
+> >  snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone1 | awk '{print $5}'`
+> >  echo "attempting ioctl (src.clone1 src)"
+> >  $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+> >  	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src
+> > +cat $SCRATCH_MNT/src
+> > +echo
+> >  
+> >  snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
+> >  echo "attempting ioctl (src.clone2 src)"
+> >  $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+> >  	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src
+> > +# BUG: subsequent access attempts currently result in EIO...
+> > +cat $SCRATCH_MNT/src
+> >  
+> >  status=0 ; exit
+> > diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
+> > index f86cadf..0ea2c4f 100644
+> > --- a/tests/btrfs/035.out
+> > +++ b/tests/btrfs/035.out
+> > @@ -1,3 +1,8 @@
+> >  QA output created by 035
+> > +aaaaaaaaaa
+> > +bbbbbbbbbbcccccccccc
+> >  attempting ioctl (src.clone1 src)
+> > +clone failed: Operation not supported
+> > +bbbbbbbbbbcccccccccc
+> >  attempting ioctl (src.clone2 src)
+> > +bbbbbbbbbbcccccccccc
+> > -- 
+> > 1.8.4.5
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

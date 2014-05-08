@@ -1,137 +1,501 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:42095 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753127AbaEHS1o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 14:27:44 -0400
-Received: by mail-wi0-f179.google.com with SMTP id bs8so162070wib.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 May 2014 11:27:43 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix hang on error (such as ENOSPC) when writing extent pages
-Date: Thu,  8 May 2014 20:27:11 +0100
-Message-Id: <1399577231-6345-1-git-send-email-fdmanana@gmail.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:36748 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753994AbaEHVzM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 17:55:12 -0400
+Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
+	by frost.carfax.org.uk with esmtp (Exim 4.80)
+	(envelope-from <hrm@carfax.org.uk>)
+	id 1WiWHV-0004Dc-46
+	for linux-btrfs@vger.kernel.org; Thu, 08 May 2014 21:55:10 +0000
+Received: from hrm by ruthven.carfax.org.uk with local (Exim 4.82)
+	(envelope-from <hrm@carfax.org.uk>)
+	id 1WiWHU-0005fp-HA
+	for linux-btrfs@vger.kernel.org; Thu, 08 May 2014 22:55:08 +0100
+Date: Thu, 8 May 2014 22:55:08 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: Thoughts on RAID nomenclature
+Message-ID: <20140508215508.GA16185@carfax.org.uk>
+References: <20140505211738.GS24298@carfax.org.uk>
+ <20140508155834.GA29043@carfax.org.uk>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="9amGYk9869ThD9tj"
+In-Reply-To: <20140508155834.GA29043@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running low on available disk space and having several processes
-doing buffered file IO, I got the following trace in dmesg:
 
-[ 4202.720152] INFO: task kworker/u8:1:5450 blocked for more than 120 seconds.
-[ 4202.720401]       Not tainted 3.13.0-fdm-btrfs-next-26+ #1
-[ 4202.720596] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 4202.720874] kworker/u8:1    D 0000000000000001     0  5450      2 0x00000000
-[ 4202.720904] Workqueue: btrfs-flush_delalloc normal_work_helper [btrfs]
-[ 4202.720908]  ffff8801f62ddc38 0000000000000082 ffff880203ac2490 00000000001d3f40
-[ 4202.720913]  ffff8801f62ddfd8 00000000001d3f40 ffff8800c4f0c920 ffff880203ac2490
-[ 4202.720918]  00000000001d4a40 ffff88020fe85a40 ffff88020fe85ab8 0000000000000001
-[ 4202.720922] Call Trace:
-[ 4202.720931]  [<ffffffff816a3cb9>] schedule+0x29/0x70
-[ 4202.720950]  [<ffffffffa01ec48d>] btrfs_start_ordered_extent+0x6d/0x110 [btrfs]
-[ 4202.720956]  [<ffffffff8108e620>] ? bit_waitqueue+0xc0/0xc0
-[ 4202.720972]  [<ffffffffa01ec559>] btrfs_run_ordered_extent_work+0x29/0x40 [btrfs]
-[ 4202.720988]  [<ffffffffa0201987>] normal_work_helper+0x137/0x2c0 [btrfs]
-[ 4202.720994]  [<ffffffff810680e5>] process_one_work+0x1f5/0x530
-(...)
-[ 4202.721027] 2 locks held by kworker/u8:1/5450:
-[ 4202.721028]  #0:  (%s-%s){++++..}, at: [<ffffffff81068083>] process_one_work+0x193/0x530
-[ 4202.721037]  #1:  ((&work->normal_work)){+.+...}, at: [<ffffffff81068083>] process_one_work+0x193/0x530
-[ 4202.721054] INFO: task btrfs:7891 blocked for more than 120 seconds.
-[ 4202.721258]       Not tainted 3.13.0-fdm-btrfs-next-26+ #1
-[ 4202.721444] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 4202.721699] btrfs           D 0000000000000001     0  7891   7890 0x00000001
-[ 4202.721704]  ffff88018c2119e8 0000000000000086 ffff8800a33d2490 00000000001d3f40
-[ 4202.721710]  ffff88018c211fd8 00000000001d3f40 ffff8802144b0000 ffff8800a33d2490
-[ 4202.721714]  ffff8800d8576640 ffff88020fe85bc0 ffff88020fe85bc8 7fffffffffffffff
-[ 4202.721718] Call Trace:
-[ 4202.721723]  [<ffffffff816a3cb9>] schedule+0x29/0x70
-[ 4202.721727]  [<ffffffff816a2ebc>] schedule_timeout+0x1dc/0x270
-[ 4202.721732]  [<ffffffff8109bd79>] ? mark_held_locks+0xb9/0x140
-[ 4202.721736]  [<ffffffff816a90c0>] ? _raw_spin_unlock_irq+0x30/0x40
-[ 4202.721740]  [<ffffffff8109bf0d>] ? trace_hardirqs_on_caller+0x10d/0x1d0
-[ 4202.721744]  [<ffffffff816a488f>] wait_for_completion+0xdf/0x120
-[ 4202.721749]  [<ffffffff8107fa90>] ? try_to_wake_up+0x310/0x310
-[ 4202.721765]  [<ffffffffa01ebee4>] btrfs_wait_ordered_extents+0x1f4/0x280 [btrfs]
-[ 4202.721781]  [<ffffffffa020526e>] btrfs_mksubvol.isra.62+0x30e/0x5a0 [btrfs]
-[ 4202.721786]  [<ffffffff8108e620>] ? bit_waitqueue+0xc0/0xc0
-[ 4202.721799]  [<ffffffffa02056a9>] btrfs_ioctl_snap_create_transid+0x1a9/0x1b0 [btrfs]
-[ 4202.721813]  [<ffffffffa020583a>] btrfs_ioctl_snap_create_v2+0x10a/0x170 [btrfs]
-(...)
+--9amGYk9869ThD9tj
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-It turns out that extent_io.c:__extent_writepage(), which ends up being called
-through filemap_fdatawrite_range() in btrfs_start_ordered_extent(), was getting
--ENOSPC when calling the fill_delalloc callback. In this situation, it returned
-without the writepage_end_io_hook callback (inode.c:btrfs_writepage_end_io_hook)
-ever being called for the respective page, which prevents the ordered extent's
-bytes_left count from ever reaching 0, and therefore a finish_ordered_fn work
-is never queued into the endio_write_workers queue. This makes the task that
-called btrfs_start_ordered_extent() hang forever on the wait queue of the ordered
-extent.
+On Thu, May 08, 2014 at 04:58:34PM +0100, Hugo Mills wrote:
+>    The first axis is selection of a suitable device from a list of
+> candidates. I've renamed things from my last email to try to make
+> things clearer, but example algorithms here could be:
+> 
+>  - first:   The old algorithm, which simply selects the available device
+>             with the smallest device ID.
+> 
+>  - even:    The current algorithm, which selects the available device
+>             with the largest free space.
+> 
+>  - round-robin: A stateful selection, which selects the next available
+>             device after the last one selected.
+> 
+>  - forward: Like "first", only if a device becomes full, we don't go
+>             back to look at it until we've exhausted all the other
+>             devices first. This approximates a ring-buffer type
+>             structure (only where we only fill in gaps, obviously).
+> 
+>  - seq:     Like "first", only with a user-supplied arbitrary ordering of
+>             devices.
+> 
+>    These can be stateful (r-r and forward are), and each function may
+> be called multiple times for each block group: once per chunk
+> required. I don't necessarily propose to implement all of these, but
+> at least even and first, and possibly seq, seem sensible.
+> 
+>    After selecting a device on which to create a chunk, we then need
+> to winnow out the devices which are no longer suitable for selection
+> as a result of that allocation. This is the other axis, and the
+> behaviours here are:
+> 
+>  - any: The current behaviour. Only the selected device is removed
+>         from consideration.
+> 
+>  - fast, slow: Like "any", except that devices which are,
+>         respectively, slow and fast are put in a special "don't use"
+>         group which prevents them from being allocated at all.
+> 
+>  - grouped: All devices within the group of the selected device are
+>         removed from consideration. This allows us to specify, for
+>         example, that different copies in Nc configurations should go
+>         on different controllers(**). It also allows us to specify
+>         that metadata chunks should only go on specific devices.
+> 
+>  - dup: may be applied to any of the other winnowing functions, and
+>         simply forces that function to put its discarded devices to
+>         the back of the queue of possible devices again, allowing them
+>         to be reused.
+> 
+>    So, current (and strongly recommended) behaviour is even,any or
+> even,any+dup. The linear allocation which is sometimes requested would
+> be first,any -- this is the same as the old allocator from a few years
+> ago. Allocating different copies to different controllers might be:
+> even,grouped with groups A=sda,sdb,sdc;B=sdd,sde,sdf. Note that "any",
+> "fast" and "slow" are all special cases of "grouped". It's worth
+> noting, as I've just discovered, that it's possible to configure this
+> system to do some _really_ silly suboptimal things with chunk
+> allocation.
+> 
+>    I've got the algorithms for all this coded in python (mostly --
+> I've got a couple of things to finish off), to verify that it turns
+> into a sane implementation at least. It does.
 
-This is fairly easy to reproduce using a small filesystem and fsstress on
-a quad core vm:
+   ... and here's the code. Usage:
 
-    mkfs.btrfs -f -b `expr 2100 \* 1024 \* 1024` /dev/sdd
-    mount /dev/sdd /mnt
+alloc <repl> <allocator> [groups] <dev_size> ...
 
-    fsstress -p 6 -d /mnt -n 100000 -x \
-        "btrfs subvolume snapshot -r /mnt /mnt/mysnap" \
-	    -f allocsp=0 \
-	    -f bulkstat=0 \
-	    -f bulkstat1=0 \
-	    -f chown=0 \
-	    -f creat=1 \
-	    -f dread=0 \
-	    -f dwrite=0 \
-	    -f fallocate=1 \
-	    -f fdatasync=0 \
-	    -f fiemap=0 \
-	    -f freesp=0 \
-	    -f fsync=0 \
-	    -f getattr=0 \
-	    -f getdents=0 \
-	    -f link=0 \
-	    -f mkdir=0 \
-	    -f mknod=0 \
-	    -f punch=1 \
-	    -f read=0 \
-	    -f readlink=0 \
-	    -f rename=0 \
-	    -f resvsp=0 \
-	    -f rmdir=0 \
-	    -f setxattr=0 \
-	    -f stat=0 \
-	    -f symlink=0 \
-	    -f sync=0 \
-	    -f truncate=1 \
-	    -f unlink=0 \
-	    -f unresvsp=0 \
-	    -f write=4
+   Examples:
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/extent_io.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+$ ./alloc 2c even 1000 1000 2000             # Current behaviour RAID-1
+$ ./alloc 2c even,any,dup 1000 1000 2000     # Current behaviour DUP
+$ ./alloc 2cMs first 100 100 100 200 200     # RAID-10, first-found allocator
+$ ./alloc 1c3s1p rr,grouped A=0,1:B=2,3 100 100 100 100
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0c43896..b5a097f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3374,9 +3374,13 @@ done:
- 
- done_unlocked:
- 
-+	if (PageError(page)) {
-+		ret = ret < 0 ? ret : -EIO;
-+		end_extent_writepage(page, ret, start, page_end);
-+	}
- 	/* drop our reference on any cached states */
- 	free_extent_state(cached_state);
--	return 0;
-+	return ret;
- }
- 
- static int eb_wait(void *word)
+   Allocators are {even,forward,first,rr},{any,grouped},{distinct,dup}.
+
+   If "grouped" is selected, you must supply a group mapping:
+<groupid>=<dev>,<dev>,...:<groupid>=<dev>,<dev>,...:... A <groupid> of
+"." prevents use of that group entirely.
+
+   Device sizes are scaled to a maximum of 24, for display purposes.
+
+   Hugo.
+
+#!/usr/bin/python3
+
+import sys
+import itertools
+
+# Device list filters: filter the sequence of eligible devices based
+# on the selected device. Return the filtered sequence
+
+# winn_any is the existing algorithm: it disallows a device from
+# being used again if it's already been used once
+def winn_any(seq, dev, dgrp, dup):
+    seq.remove(dev)
+    if dup:
+        seq.append(dev)
+    return seq
+
+# winn_grouped uses group definitions, and disallows a device if any
+# device in its group has already been used.
+def winn_grouped(seq, dev, dgrp, dup):
+    removed = [d for d in seq if dgrp[d.id] == dgrp[dev.id]]
+    seq = [d for d in seq if dgrp[d.id] != dgrp[dev.id]]
+
+    if dup:
+        seq += removed
+
+    return seq
+
+# Selection algorithms: given a list of devices and a state, return a
+# device (or None), and an updated state
+
+# seq_even is the existing algorithm: pick devices with the largest
+# amount of free space
+def seq_even(devs, state):
+    dev = None
+    for d in devs:
+        if dev is None or d.free > dev.free:
+            dev = d
+
+    if dev is not None:
+        return dev, dev.get_first_from(0), state
+    else:
+        return None, 0, state
+
+# seq_rr does a round-robin through the free devices
+def seq_rr(devs, state):
+    if state is None:
+        state = -1
+    dev = None
+    for d in devs:
+        # We pick a device in preference if: We don't have one at all,
+        # or we've got something closer to the last selection than we
+        # have at the moment (where "closer" is smaller.
+        if (dev is None
+            or (state < d.id and d.id < dev.id)
+            or (dev.id <= state and (d.id < dev.id or d.id > state))):
+            dev = d
+
+    if dev is not None:
+        state = dev.id
+        return dev, dev.get_first_from(0), state
+    else:
+        return None, 0, state
+
+# This is the old allocator: We pick the first device that has free
+# space
+def seq_first(devs, state):
+    dev = None
+    if devs:
+        dev = devs[0]
+
+    if dev is not None:
+        return dev, dev.get_first_from(0), state
+    else:
+        return None, 0, state
+
+# seq_forward keeps track of where it had allocated on a device, and
+# won't go back to fill in gaps on a device until it's reached the end
+# of all the other devices first. If no chunks are freed, this is
+# equivalent to seq_first
+def seq_forward(devs, state):
+    if state is None:
+        state = [0] * len(devs)
+
+    dev = None
+    for x in range(2):
+        # As with seq_first, pick the first eligible device, but ignore
+        # any device which doesn't have any chunks after the last-
+        # allocated one.
+        for d in devs:
+            first = d.get_first_from(state[d.id])
+            if first is not None:
+                dev = d
+                break
+
+        if dev is not None:
+            break
+
+        for d in devs:
+            state[d.id] = 0
+
+    if dev is not None:
+        state[dev.id] = first
+        return dev, first, state
+    else:
+        return None, 0, state    
+
+def free_devs(devs):
+    return len([d for d in devs if d.free > 0])
+
+def allocate(devs, sch, name):
+    chunks = count_chunks(sch, devs)
+    dev = None
+
+    # Initialise the set of devices that we wish to try: drop full
+    # devices immediately as uninteresting, and ones with a group ID
+    # of ".", which are forbidden in this scheme
+    seq = [d for d in devs if d.free > 0 and sch.dgrp[d.id] != "."]
+    # nxt is the list of devices we haven't allocated a chunk to
+    nxt = seq[:]
+    # rem is the list of devices already allocated: we recycle this
+    # when nxt is empty if we're doing dup
+    rem = []
+
+    # Generate the sequence of chunk IDs: for each stripe component,
+    # we run through all the copies in order. The chid is a 2-tuple,
+    # of (data-stripe, copy)
+    ids = itertools.product(range(chunks//sch.c), range(sch.c))
+    c_and_s = (sch.c > 1 and chunks//sch.c > 1)
+
+    # Now iterate through the sequence, picking devices in turn
+    # and modifying the list as appropriate
+    chid = (-1, -1)
+    while chunks > 0:
+        old = chid[0]
+        chid = next(ids)
+        print("  chid", chid, "old", old)
+
+        # If we're doing multiple copies and multiple data-stripes,
+        # and have skipped to the next data-stripe, we need to
+        # reinitialise our list of devices with the ones that we
+        # haven't used so far.
+        if c_and_s and chid[0] != old:
+            if sch.dup and len(nxt) == 0:
+                nxt = rem
+                rem = []
+            seq = nxt[:]
+
+        # Select a suitable device and location for the new chunk,
+        # based on the current list of candidates and the current
+        # state
+        print("  Eligible device sequence is",
+              " ".join((str(d.id) for d in seq)))
+        print("  nxt =", nxt)
+        dev, pos, sch.state = sch.sequence(seq, sch.state)
+
+        if dev is None:
+            print("  Failed -- no suitable device found")
+            break
+
+        print("  Found device", repr(dev), "at", pos, "seq", seq, "state", sch.state)
+        dev.set_at(pos, name)
+
+        # Filter the remaining candidates based on the selection
+        seq = sch.winnower(seq, dev, sch.dgrp, sch.dup)
+        nxt.remove(dev)
+
+        print("  Filtered seq", seq, "/", nxt)
+        chunks -= 1
+
+    for d in devs:
+        if dev is None:
+            d.rollback()
+        else:
+            d.commit()
+
+    return dev is not None
+
+def count_chunks(sch, devs):
+    # How many chunks do we want to allocate?
+    # First, work out the total number of stripes we have to play with
+    if sch.s is None:
+        stripe = free_devs(devs) // sch.c
+        # Complain if we drop below 1 data stripe with parity,
+        if sch.p > 0 and stripe < sch.p + 1:
+            return -1
+        # Or 2 data stripes without
+        if sch.p == 0 and stripe < 2:
+            return -1
+    else:
+        stripe = sch.s + sch.p
+
+    return stripe * sch.c
+
+def all_alpha():
+    return itertools.chain(range(ord("A"), ord("Z")+1),
+                           range(ord("a"), ord("z")+1))
+
+class Scheme(object):
+    # This is just a dumb struct to hold all the details necessary for
+    # a single scheme
+    pass
+
+def main():
+    sch = Scheme()
+
+    sys.argv.pop(0)
+    # Parse input:
+    sch.c, sch.s, sch.p = parse_csp(sys.argv.pop(0))
+    sch.sequence, sch.winnower, sch.dup, grouped = parse_alloc(sys.argv.pop(0))
+    sch.state = None
+    if grouped:
+        sch.dgrp = parse_groups(sys.argv.pop(0))
+    else:
+        sch.dgrp = [0] * len(sys.argv)
+
+    # Device sizes
+    devsz = normalise_devs([int(sz) for sz in sys.argv])
+    devs = [Device(i, sz) for i, sz in enumerate(devsz)]
+
+    for d in devs:
+        print(d)
+    print()
+
+    # List of chunks to allocate
+    names = itertools.chain(
+        ("{0}{0}".format(chr(c)) for c in all_alpha()),
+        ("{0}*".format(chr(c)) for c in all_alpha()),
+        ("{0}:".format(chr(c)) for c in all_alpha()),
+        ("{0}^".format(chr(c)) for c in all_alpha()),)
+
+    success = True
+    while success:
+        name = next(names)
+        print("Name is", name)
+
+        success = allocate(devs, sch, name)
+
+        for d in devs:
+            print(d)
+        print()
+
+
+class Device(object):
+    def __init__(self, i, size):
+        self.id = i
+        self.size = size
+        self.free = size
+        self.alloc = ["--" for x in range(size)]
+
+    def get_first_from(self, pos):
+        for i in range(pos, self.size):
+            if self.alloc[i] == "--":
+                return i
+        return None
+
+    def set_at(self, pos, name):
+        self.alloc[pos] = "." + name
+        self.free -= 1
+
+    def commit(self):
+        for i in range(0, self.size):
+            if self.alloc[i][0] == ".":
+                self.alloc[i] = self.alloc[i][1:]
+
+    def rollback(self):
+        for i in range(0, self.size):
+            if self.alloc[i][0] == ".":
+                self.alloc[i] = "--"
+
+    def __str__(self):
+        return "{0.id:2d} |".format(self) + " ".join(self.alloc) + "|"
+
+    def __repr__(self):
+        return "dev{0.id}".format(self)
+
+## Parsing code and assorted infrastructure
+
+def parse_csp(csp):
+    c = "1"
+    s = "1"
+    p = "0"
+    c, sp = csp.split("c")
+    if sp != "":
+        s, pp = sp.split("s")
+        if pp != "":
+            p, x = pp.split("p")
+            if x != "":
+                raise ValueError("p must be the last character in the csp string")
+    c = int(c)
+    if s == "M":
+        s = None
+    else:
+        s = int(s)
+    p = int(p)
+    return c, s, p
+
+WINNOWER = {"any": winn_any,
+            "grouped": winn_grouped,
+            }
+SEQUENCE = {"even": seq_even,
+            "forward": seq_forward,
+            "first": seq_first,
+            "round-robin": seq_rr,
+            "rr": seq_rr, # Synonym for round-robin
+            }
+PACKING = {"distinct": "distinct",
+           "dup": "dup",
+           }
+        
+def parse_groups(s):
+    gdev = {}
+    maxdev = 0
+    for g in s.split(":"):
+        name, devlist = g.split("=")
+        devs = [int(d) for d in devlist.split(",")]
+        gdev[name] = devs
+        maxdev = max(maxdev, *devs)
+    print("Largest device ID is", maxdev)
+    dgrp = [0] * (maxdev+1)
+    for g, ds in gdev.items():
+        for d in ds:
+            dgrp[d] = g
+    print(dgrp)
+    return dgrp
+
+def parse_alloc(s):
+    opts = s.split(",")
+    aopt = "even"
+    wopt = "any"
+    popt = "distinct"
+    try:
+        sopt = opts[0]
+        wopt = opts[1]
+        popt = opts[2]
+    except IndexError:
+        pass
+    sequence = SEQUENCE[sopt]
+    winnower = WINNOWER[wopt]
+    packing = PACKING[popt]
+
+    return sequence, winnower, (packing == "dup"), (wopt == "grouped")
+
+def normalise_devs(seq):
+    maxs = max(*seq)
+    if maxs > 24:
+        return [int(s*24/maxs+0.5) for s in seq]
+    else:
+        return seq
+
+if __name__ == "__main__":
+    main()
+
+
 -- 
-1.9.1
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- There's an infinite number of monkeys outside who want to ---    
+               talk to us about this new script for Hamlet               
+                           they've worked out!                           
 
+--9amGYk9869ThD9tj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBU2v9PFheFHXiqx3kAQKcmw/+N5A6D9Yu3fwaijrjpTKs96EdD6ab2r1/
+iNW8lNpuIAV0IhCZPQg0sRyOncmvTLF/Uzyuzub0EqgILmd59mI/SEBeT3cDc77k
++WYHIQkK7In7Y9R0GvqU4hU97KXK9dSQqfHbQlEvWZM17K5YEIc8Mt306Su3CeaJ
+RVrWMa1v2uhsNI6c2YXqoUBECblRRb/kFNrUVQT13FOgZ+Sarw4FWZS6VwpiKJGD
+dc7730gkw+fTqCOknlJ988mc9dWO3pGYAPA4v/eXSizfhbjgC0AYLrQFiAHzAouv
+jxxYEQe/BRYztwdWNwXHUTVUTFBXUR0xM3v6SH/1SPPz86qOQGfqIj5p6hpqx7+e
+TkHlRbla5ST2d+WO7UM7cBE97u7B6ZMgnpCsjZSemdmUXJ2td0tdiZ3fjUH5UfcG
+dsayvnMJ34xGGLi0tJtiYlT+WLpyOVBzPPF2kxTWCis1vOLE9xjudwvjCK2yzjZE
+Vv64fdr5/SuEznqsY7H/wsMYBpRT/j8FIRebasD8UnBYQq7QqEgIGfJ0LoqoupZq
+OkhHwyP2qbboCvDRIPewgaz3nnZK4KunN5AzcMzerCOy0L4JdHgYtgnyvgPB+AoV
+FoovUYdq9wgWeeK5uZtqF49Amo7M3SjRxER3quM5dtD+r+bcZsJyQbQhk6Ser9lo
+yAbs3bRlXnA=
+=/791
+-----END PGP SIGNATURE-----
+
+--9amGYk9869ThD9tj--

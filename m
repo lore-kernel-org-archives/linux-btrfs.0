@@ -1,168 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:63317 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751553AbaEaPU7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 11:20:59 -0400
-Received: by mail-wg0-f48.google.com with SMTP id k14so3190029wgh.31
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 08:20:58 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: fix clone to deal with holes when NO_HOLES feature is enabled
-Date: Sat, 31 May 2014 17:20:50 +0100
-Message-Id: <1401553250-6408-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1401498977-11117-1-git-send-email-fdmanana@gmail.com>
-References: <1401498977-11117-1-git-send-email-fdmanana@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11780 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752822AbaEHCFG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 22:05:06 -0400
+Message-ID: <536AE6BE.5040505@cn.fujitsu.com>
+Date: Thu, 8 May 2014 10:06:54 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V2 10/10] Btrfs: reclaim the reserved metadata space at
+ background
+References: <1394085304-32589-1-git-send-email-miaox@cn.fujitsu.com> <1394085304-32589-10-git-send-email-miaox@cn.fujitsu.com> <531DBF91.60701@fb.com>
+In-Reply-To: <531DBF91.60701@fb.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If the NO_HOLES feature is enabled holes don't have file extent items in
-the btree that represent them anymore. This made the clone operation
-ignore the gaps that exist between consecutive file extent items and
-therefore not create the holes at the destination.
+On Mon, 10 Mar 2014 09:35:13 -0400, Josef Bacik wrote:
+> On 03/06/2014 12:55 AM, Miao Xie wrote:
+>> Before applying this patch, the task had to reclaim the metadata
+>> space by itself if the metadata space was not enough. And When the
+>> task started the space reclamation, all the other tasks which
+>> wanted to reserve the metadata space were blocked. At some cases,
+>> they would be blocked for a long time, it made the performance
+>> fluctuate wildly.
+>>
+>> So we introduce the background metadata space reclamation, when the
+>> space is about to be exhausted, we insert a reclaim work into the
+>> workqueue, the worker of the workqueue helps us to reclaim the
+>> reserved space at the background. By this way, the tasks needn't
+>> reclaim the space by themselves at most cases, and even if the
+>> tasks have to reclaim the space or are blocked for the space
+>> reclamation, they will get enough space more quickly.
+>>
+>> We needn't worry about the early enospc problem because all the
+>> reclaim work is serialized by the lock.
+>>
+>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> 
+> This causes generic/015 to fail with early enospc, I'm kicking this
+> patch out, I'll take the rest.  Thanks,
 
-A test case for xfstests follows.
+It is not early enospc problem.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+This test is to check that the space of the file is released immediately
+or not after the file is deleted. In fact, the result of the test is
+unstable, because the kernel may be syncing the file data when we delete
+it, if so the space of file would not be released immediately.
 
-V2: Deal with holes at the boundaries of the cloning range and that
-    either overlap the boundary completely or partially.
-    Test case for xfstests updated too to test these 2 cases.
+But the case I said above is rare because the size of fs in this test is
+just 50MB, and the memory size of the most machine is very large(maybe > 1GB),
+that is the dirty pages is not so many, the background flusher may not
+be waked up immediately, so no one holds the inode of the test file after
+we delete it, and then the space of it can be released immediately.
 
-V3: Deal with the case where the cloning range overlaps (partially or
-    completely) a hole at the end of the source file, and might increase
-    the size of the target file.
-    Updated the test for xfstests to cover these cases too.
+After applying this patch, we will flush the dirty pages because our background
+metadata space reclaimer finds that the metadata space is going to be used up
+(< 5% of the total metadata size), and need flush dirty pages to reclaim some
+delalloc metadata space. that is this patch makes the above case happen easily.
 
- fs/btrfs/ioctl.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 59 insertions(+), 4 deletions(-)
+Anyway, we need improve this patch though it is not a bug. I will send out
+a new one.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 04ece8f..f508f5e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2995,7 +2995,8 @@ out:
-  * @destoff: Offset within @inode to start clone
-  */
- static int btrfs_clone(struct inode *src, struct inode *inode,
--		       u64 off, u64 olen, u64 olen_aligned, u64 destoff)
-+		       const u64 off, const u64 olen, const u64 olen_aligned,
-+		       const u64 destoff)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_path *path = NULL;
-@@ -3007,8 +3008,9 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 	int slot;
- 	int ret;
- 	int no_quota;
--	u64 len = olen_aligned;
-+	const u64 len = olen_aligned;
- 	u64 last_disko = 0;
-+	u64 last_dest_end = destoff;
- 
- 	ret = -ENOMEM;
- 	buf = vmalloc(btrfs_level_size(root, 0));
-@@ -3077,6 +3079,7 @@ process_slot:
- 			u64 datao = 0, datal = 0;
- 			u8 comp;
- 			u64 endoff;
-+			u64 drop_start;
- 
- 			extent = btrfs_item_ptr(leaf, slot,
- 						struct btrfs_file_extent_item);
-@@ -3125,6 +3128,18 @@ process_slot:
- 				new_key.offset = destoff;
- 
- 			/*
-+			 * Deal with a hole that doesn't have an extent item
-+			 * that represents it (NO_HOLES feature enabled).
-+			 * This hole is either in the middle of the cloning
-+			 * range or at the beginning (fully overlaps it or
-+			 * partially overlaps it).
-+			 */
-+			if (new_key.offset != last_dest_end)
-+				drop_start = last_dest_end;
-+			else
-+				drop_start = new_key.offset;
-+
-+			/*
- 			 * 1 - adjusting old extent (we may have to split it)
- 			 * 1 - add new extent
- 			 * 1 - inode update
-@@ -3153,7 +3168,7 @@ process_slot:
- 				}
- 
- 				ret = btrfs_drop_extents(trans, root, inode,
--							 new_key.offset,
-+							 drop_start,
- 							 new_key.offset + datal,
- 							 1);
- 				if (ret) {
-@@ -3254,7 +3269,7 @@ process_slot:
- 				aligned_end = ALIGN(new_key.offset + datal,
- 						    root->sectorsize);
- 				ret = btrfs_drop_extents(trans, root, inode,
--							 new_key.offset,
-+							 drop_start,
- 							 aligned_end,
- 							 1);
- 				if (ret) {
-@@ -3301,6 +3316,7 @@ process_slot:
- 			 * but shouldn't round up the file size
- 			 */
- 			endoff = new_key.offset + datal;
-+			last_dest_end = endoff;
- 			if (endoff > destoff+olen)
- 				endoff = destoff+olen;
- 			if (endoff > inode->i_size)
-@@ -3321,6 +3337,45 @@ process_slot:
- 	}
- 	ret = 0;
- 
-+	if (last_dest_end < destoff + len) {
-+		/*
-+		 * We have an implicit hole (NO_HOLES feature is enabled) that
-+		 * fully or partially overlaps our cloning range at its end.
-+		 */
-+		btrfs_release_path(path);
-+		path->leave_spinning = 0;
-+
-+		/*
-+		 * 1 - remove extent(s)
-+		 * 1 - inode update
-+		 */
-+		trans = btrfs_start_transaction(root, 2);
-+		if (IS_ERR(trans)) {
-+			ret = PTR_ERR(trans);
-+			goto out;
-+		}
-+		ret = btrfs_drop_extents(trans, root, inode,
-+					 last_dest_end, destoff + len, 1);
-+		if (ret) {
-+			if (ret != -EOPNOTSUPP)
-+				btrfs_abort_transaction(trans, root, ret);
-+			btrfs_end_transaction(trans, root);
-+			goto out;
-+		}
-+		last_dest_end = destoff + len;
-+		if (last_dest_end > destoff + olen)
-+			last_dest_end = destoff + olen;
-+		if (last_dest_end > inode->i_size)
-+			btrfs_i_size_write(inode, last_dest_end);
-+		ret = btrfs_update_inode(trans, root, inode);
-+		if (ret) {
-+			btrfs_abort_transaction(trans, root, ret);
-+			btrfs_end_transaction(trans, root);
-+			goto out;
-+		}
-+		ret = btrfs_end_transaction(trans, root);
-+	}
-+
- out:
- 	btrfs_free_path(path);
- 	vfree(buf);
--- 
-1.9.1
+Thanks
+Miao
+
+> 
+> Josef
+> 
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1
+> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+> 
+> iQIcBAEBAgAGBQJTHb+NAAoJEANb+wAKly3BCcUP/jGmW85hiurfTF7eom+wzDcr
+> nxqvdTB/F21UJU1RRrb92CdYRYb9d4hHKhXE5OK+qamE+K55GEtgCUWCLQgDfJJL
+> Wx0aUD/pTqv3J5S5zM43UBJkn2ZR99Q7hJzm9PPMSMn7hBgK87QUEme8HerCPUgY
+> 0VS4OcqUGhg88qO8GjdEFLnHawhjMDw9iGPUi+tMdCEmr9aQQo8ntiahdVKyTHej
+> vSRQRs0igvAt73OWHXiP6vc4LOQdu1vKCFdbxhgg+duKjNOHfUoaiiaUiGhWIA9l
+> BcTWd62bEJNOaXd6k06GzhpCWzMM6faTLfjI6XADUFY0VZ79akzk2KAO6YdaLz8w
+> 3IAKN1chTpr7q7oPuRDgDQuwwdeLPImN29CKlAF3jlSRJEblM8CKoXYD1fyqVwDy
+> c1mA6mMUJnEnXrkJ/Pb5zuNIZMAlU+v3d6CCjYKHMACORvJeZVlg9gLLMATaAJIA
+> xLjFlzbgSbp/OUNuBuS4YGIaa51aAyODd2h1T3E+T5JYbVkA39N3Ni9HODE8AuSE
+> E6U/06FK47L0e5uGFrM3tMTL0XBF62C1iml4NsjOWgiERz8lFDdFVArgXamCVacM
+> 1+VdeLLS88RHFEuwlMBy/ZQBdnvWCVsNVjYukuxntmWbSWrsLUFUSzExWnp+7TAO
+> xkEd2yMw75yasTVGKSXU
+> =Q/fM
+> -----END PGP SIGNATURE-----
+> 
 

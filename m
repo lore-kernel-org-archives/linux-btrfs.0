@@ -1,20 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4214 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754438AbaEIBUs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 21:20:48 -0400
-Message-ID: <536C2C99.6020506@cn.fujitsu.com>
-Date: Fri, 9 May 2014 09:17:13 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>
-CC: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57235 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755298AbaEICNZ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 May 2014 22:13:25 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+CC: "xfs@oss.sgi.com" <xfs@oss.sgi.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH v2 1/3] xfstests/btrfs: add qgroup rescan stress test
-References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <536A9E73.90802@fb.com> <536AFC3B.7070502@cn.fujitsu.com> <536BCDF7.7070404@fb.com>
-In-Reply-To: <536BCDF7.7070404@fb.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Date: Fri, 9 May 2014 02:13:01 +0000
+Message-ID: <xmifb9cukl6cxjty7n8malrf.1399601580721@email.android.com>
+References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+ <536A9E73.90802@fb.com> <536AFC3B.7070502@cn.fujitsu.com>
+ <536BCDF7.7070404@fb.com>,<536C2C99.6020506@cn.fujitsu.com>
+In-Reply-To: <536C2C99.6020506@cn.fujitsu.com>
+Content-Type: text/plain; charset=US-ASCII
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+The inode cache is saved in the FS tree itself for every individual FS tree, that affects the sizes reported by qgroup show so we need to explicitly turn it off to get consistent values.  Thanks,
+
+Josef
+
+Wang Shilong <wangsl.fnst@cn.fujitsu.com> wrote:
+
 
 On 05/09/2014 02:33 AM, Josef Bacik wrote:
 > On 05/07/2014 11:38 PM, Wang Shilong wrote:
@@ -49,7 +60,7 @@ On 05/09/2014 02:33 AM, Josef Bacik wrote:
 >>>> +# Quota rescan stress test, we run fsstress and quota rescan
 >>>> concurrently
 >>>> +#
->>>> +#----------------------------------------------------------------------- 
+>>>> +#-----------------------------------------------------------------------
 >>>>
 >>>>
 >>>> +# Copyright (C) 2014 Fujitsu.  All rights reserved.
@@ -64,11 +75,11 @@ On 05/09/2014 02:33 AM, Josef Bacik wrote:
 >>>> +# GNU General Public License for more details.
 >>>> +#
 >>>> +# You should have received a copy of the GNU General Public License
->>>> +# along with this program; if not, write the Free Software 
+>>>> +# along with this program; if not, write the Free Software
 >>>> Foundation,
 >>>> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 >>>> +#
->>>> +#----------------------------------------------------------------------- 
+>>>> +#-----------------------------------------------------------------------
 >>>>
 >>>>
 >>>> +#
@@ -108,17 +119,17 @@ On 05/09/2014 02:33 AM, Josef Bacik wrote:
 >>> output.
 >>
 >> I am little confused why we need specify this mount option explicitly?
->> As far as i know, space cache is not included into qgroup accounting 
+>> As far as i know, space cache is not included into qgroup accounting
 >> space.
 >>
 >
 > It is.  Thanks,
-Free space cache are inserted in tree root, they can not be shared with 
+Free space cache are inserted in tree root, they can not be shared with
 other trees(fs/file tree).
-So normal fs/file tree's qgroup accounting is independeng of free space 
+So normal fs/file tree's qgroup accounting is independeng of free space
 cache.
 
-With or without the option, subvolume qgroup's value should not have any 
+With or without the option, subvolume qgroup's value should not have any
 differences.
 Did i miss something here?:-)
 
@@ -130,3 +141,7 @@ Wang
 > .
 >
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  https://urldefense.proofpoint.com/v1/url?u=http://vger.kernel.org/majordomo-info.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=G4HqImi%2Fy7KWWbAvCZf%2Bl8CSV3XzU9ODKrgtdQCTPYQ%3D%0A&s=e27422f119365ab04dddfb06e08c152eec84c4de29e19b6811310607e6a15c99

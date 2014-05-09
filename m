@@ -1,62 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f175.google.com ([74.125.82.175]:40633 "EHLO
-	mail-we0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750744AbaEIPlo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 11:41:44 -0400
-Received: by mail-we0-f175.google.com with SMTP id t61so4061307wes.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 May 2014 08:41:42 -0700 (PDT)
-MIME-Version: 1.0
-Date: Fri, 9 May 2014 20:41:42 +0500
-Message-ID: <CAKAA-n=_jMyWFbfcGvMsMDJg3t7VpRegDDDybEeQ5oxof8graA@mail.gmail.com>
-Subject: Sending incremental backup causes deadlock (3.14.3)
-From: Abbas <mickylmartin@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53160 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754033AbaEIQTp convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 12:19:45 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59777 helo=[192.168.1.120])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WinWT-0001Ey-0X
+	for linux-btrfs@vger.kernel.org; Fri, 09 May 2014 10:19:45 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: URGENT: my laptop's boot ssd btrfs crashed, what do you need off it?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAKhhfD5DTPfKvWcRDERxWa_pjfhCkZxW3WBtznYC94EFy7A0mQ@mail.gmail.com>
+Date: Fri, 9 May 2014 10:19:46 -0600
+Message-Id: <423AB9BE-EDBF-478B-8CED-C1A9A0FAE736@colorremedies.com>
+References: <20140507233959.GB11401@merlins.org> <536AD20E.70004@fb.com> <20140508004344.GE11401@merlins.org> <20140508013440.GH11401@merlins.org> <CAKgsxVR=6GTesbtqG_SAyKnpw9pxz1TZ0oOi_MB8Ej3j4-vMiw@mail.gmail.com> <20140508220242.GO11401@merlins.org> <CAKhhfD5DTPfKvWcRDERxWa_pjfhCkZxW3WBtznYC94EFy7A0mQ@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Has anyone else experienced a deadlock while doing an incremental send
-/ receive?
 
-# uname -r
-3.14.3-1.el6.elrepo.x86_64
+On May 9, 2014, at 4:35 AM, Marc MERLIN <marc@merlins.org> wrote:
 
-# btrfs version
-Btrfs v3.14.1
+> 
+> Howdy,
+> 
+> I won't have the time to rebuild my laptop tonight, so I'll wait one more
+> day to see if anyone would like data from that fs to see why it crashed and
+> why btrfs recovery doesn't even seem able to open it.
 
-Initial send works well but sending incremental snapshots just HALTS:
+There's some underlying reason why it went read only, but we don't have those messages. The message we do have says the kernel is already tainted, so something (possibly entirely unrelated) happened earlier.
 
-# btrfs send -vvvv -p test/snap-2014-05-09-13:29:04
-test/snap-2014-05-09-13:32:58 | btrfs receive -vvvv backup/test
-At subvol test/snap-2014-05-09-13:32:58
-At snapshot snap-2014-05-09-13:32:58
-receiving snapshot snap-2014-05-09-13:32:58
-uuid=8cde86f7-6ded-5046-a55c-3a0d40e7a2fc, ctransid=0
-parent_uuid=1a2a9dc2-c271-524f-bd01-b671da630446, parent_ctransid=0
-...
 
-Here's the dmesg:
+> Also I'm not sure if I should risk 3.15rc to rebuild the filesystem and I'd
+> love not to have to say during my talk that even almost latest btrfs
+> corrupts itself without reason and working recovery methods :-/
 
-INFO: task btrfs:16204 blocked for more than 120 seconds.
-      Not tainted 3.14.3-1.el6.elrepo.x86_64 #1
-"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-btrfs           D ffffffff8181d240     0 16204  23963 0x00000080
- ffff88003c8abc38 0000000000000086 ffff88003c8abbd8 ffff88003c8aa010
- 0000000000014440 0000000000014440 ffff880004b40250 ffffffff81c13480
- ffff88003c8abc48 ffff880036b46960 ffff880037bf5800 ffff88003c8abc68
-Call Trace:
- [<ffffffff81636649>] schedule+0x29/0x70
- [<ffffffffa011f235>] btrfs_commit_transaction+0x335/0x9e0 [btrfs]
- [<ffffffff810b2e50>] ? bit_waitqueue+0xe0/0xe0
- [<ffffffffa014fb45>] create_snapshot+0x265/0x280 [btrfs]
- [<ffffffffa0150403>] btrfs_mksubvol+0x153/0x1f0 [btrfs]
- [<ffffffffa015063c>] btrfs_ioctl_snap_create_transid+0x19c/0x1b0 [btrfs]
- [<ffffffffa01507d8>] btrfs_ioctl_snap_create_v2+0x108/0x160 [btrfs]
- [<ffffffff811d395a>] ? do_filp_open+0x4a/0xa0
- [<ffffffffa015728a>] btrfs_ioctl+0x45a/0x950 [btrfs]
- [<ffffffff8126215d>] ? inode_has_perm+0x2d/0x40
- [<ffffffff81262202>] ? file_has_perm+0x92/0xa0
- [<ffffffff811d4f53>] do_vfs_ioctl+0x73/0x380
- [<ffffffff81263e6f>] ? selinux_file_ioctl+0x4f/0xf0
- [<ffffffff811d5301>] SyS_ioctl+0xa1/0xb0
- [<ffffffff81642de9>] system_call_fastpath+0x16/0x1b
+Just because the reason isn't yet known or understood yet doesn't mean it's happened without reason. And we also don't know whether it corrupted itself, or had help earlier on. Neither is good, but depending on the cause of the corruption, recovery may not even be realistic.
+
+I'd probably consider 3.13.11 if I simply had work that needs to get done rather than testing. If the problem happens there too then you've stumbled on something that isn't likely a regression.
+
+If you've done any suspend/hibernate at all, I'd stop doing that until you're in a position to do a lot more rigorous testing. I say that because suspend and hibernate have become so completely unreliable for so many people I know doing testing, including myself, that it's worth avoiding. I've had lots of corruptions, not just Btrfs, related to suspend testing in particular (hibernate doesn't work either but it hasn't corrupted the file system). And there's a bunch of new work happening on suspend in 3.15 so things are probably about to change yet again.
+
+
+Chris Murphy

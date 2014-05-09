@@ -1,69 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22512 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754355AbaEICCq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 May 2014 22:02:46 -0400
-Date: Fri, 9 May 2014 10:02:34 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Disseldorp <ddiss@suse.de>
-Subject: Re: [PATCH] Btrfs: fix EIO on reading file after ioctl clone works
- on it
-Message-ID: <20140509020234.GA4250@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1399600862-3141-1-git-send-email-bo.li.liu@oracle.com>
+Received: from queue01a.mail.zen.net.uk ([212.23.3.234]:47089 "EHLO
+	queue01a.mail.zen.net.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752270AbaEIIUm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 04:20:42 -0400
+Received: from [212.23.1.7] (helo=smarthost01d.mail.zen.net.uk)
+	by queue01a.mail.zen.net.uk with esmtp (Exim 4.72)
+	(envelope-from <david@chrestomanci.org>)
+	id 1WifTq-0006pu-L2
+	for linux-btrfs@vger.kernel.org; Fri, 09 May 2014 07:44:30 +0000
+Received: from [82.70.68.182] (helo=www.chrestomanci.org)
+	by smarthost01d.mail.zen.net.uk with esmtps (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
+	(Exim 4.80)
+	(envelope-from <david@chrestomanci.org>)
+	id 1WifRt-0007CG-E7
+	for linux-btrfs@vger.kernel.org; Fri, 09 May 2014 08:42:29 +0100
+Message-ID: <536C86DE.9090003@chrestomanci.org>
+Date: Fri, 09 May 2014 08:42:22 +0100
+From: David Pottage <david@chrestomanci.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1399600862-3141-1-git-send-email-bo.li.liu@oracle.com>
+To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs snapshot sizes
+References: <20140507111949.GT10159@merlins.org>
+In-Reply-To: <20140507111949.GT10159@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(cc David)
+On 07/05/14 12:19, Marc MERLIN wrote:
+> So have others found a good way to have an idea about how much space is
+> taken by each snapshot?
+>
+> I've tried quota trees, but I'm not sure how to read the output, or if it's
+> correct (including the negative numbers some have mentioned). Are there
+> other options?
+>
+> I think the main problem is that the shared data field is not working,
+> making it harder to know which blocks are only used in a given snapshot.
 
--liubo
+In my understanding (devs please correct me if I am wrong), a snapshot 
+is just a subvolume that happens to share a lot of data with another 
+subvolume. The idea of taking regular snapshots to preserve the state of 
+the filing system at a point in time is a userland concept. From the 
+kernel's point of view the user has asked for a clone of a subvolume, 
+and both copies are equal. What the user does with one or other clone 
+after that is their affair.
 
-On Fri, May 09, 2014 at 10:01:02AM +0800, Liu Bo wrote:
-> For inline data extent, we need to make its length aligned, otherwise,
-> we can get a phantom extent map which confuses readpages() to return -EIO.
-> 
-> This can be detected by xfstests/btrfs/035.
-> 
-> Reported-by: David Disseldorp <ddiss@suse.de>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/ioctl.c | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 2ad7de9..2f6d7b1 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3120,6 +3120,8 @@ process_slot:
->  			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
->  				u64 skip = 0;
->  				u64 trim = 0;
-> +				u64 aligned_end = 0;
-> +
->  				if (off > key.offset) {
->  					skip = off - key.offset;
->  					new_key.offset += skip;
-> @@ -3136,9 +3138,11 @@ process_slot:
->  				size -= skip + trim;
->  				datal -= skip + trim;
->  
-> +				aligned_end = ALIGN(new_key.offset + datal,
-> +						    root->sectorsize);
->  				ret = btrfs_drop_extents(trans, root, inode,
->  							 new_key.offset,
-> -							 new_key.offset + datal,
-> +							 aligned_end,
->  							 1);
->  				if (ret) {
->  					if (ret != -EOPNOTSUPP)
-> -- 
-> 1.8.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This means that suppose you have a subvolume representing your home 
+directory that contains around 1Gb of data, and then take daily 
+snapshots, asking the kernel how big each snapshot is will not give the 
+answer you expect. They all contain roughly 1Gb.
+
+The question you should be asking, is to compare two subvolumes. (eg the 
+current /home and a snapshot taken of it last week), and ask how much 
+data is different between the two. Depending on how you count the "size" 
+of the snapshot will be the total amount of data that is not shared, or 
+just the data that is in the snapshot but not the base.
+
+The thing is, I don't think there is an easy way to get a report of the 
+amount of non shared data without walking the file-systems in both 
+subvolumes and building a large data structure of inodes or suchlike.
+
+Measuring the size of snapshots will get even more thorny when you take 
+many snapshots. For example suppose you take one every hour, and you 
+have just deleted a large file. All your old hourly snapshots will 
+contain a reference to that large file, but the data will only be on 
+disc once, so you don't want to count it's size more than once when 
+considering how much of you disc is taken up by snapshots.
+
+NB: I am not a btrfs developer, just an interested user, and lurker on 
+this list.
+
+-- 
+David Pottage
+
+
+
+
+
+

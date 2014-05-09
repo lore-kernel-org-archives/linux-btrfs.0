@@ -1,60 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:24400 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756779AbaEIRXk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 May 2014 13:23:40 -0400
-Message-ID: <536D0F10.3040305@fb.com>
-Date: Fri, 9 May 2014 13:23:28 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from mx1.redhat.com ([209.132.183.28]:35906 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757152AbaEIUc3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 16:32:29 -0400
+Date: Fri, 9 May 2014 13:32:27 -0700
+From: Zach Brown <zab@redhat.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs: fix inline compressed read err corruption
+Message-ID: <20140509203227.GA23244@lenny.home.zabbo.net>
+References: <1399590979-15331-1-git-send-email-zab@redhat.com>
+ <1399590979-15331-3-git-send-email-zab@redhat.com>
+ <20140509135800.GC5988@twin.jikos.cz>
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs snapshot sizes
-References: <20140507111949.GT10159@merlins.org>
-In-Reply-To: <20140507111949.GT10159@merlins.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140509135800.GC5988@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/07/2014 07:19 AM, Marc MERLIN wrote:
-> So have others found a good way to have an idea about how much space is
-> taken by each snapshot?
->
-> I've tried quota trees, but I'm not sure how to read the output, or if it's
-> correct (including the negative numbers some have mentioned). Are there
-> other options?
->
-> I think the main problem is that the shared data field is not working,
-> making it harder to know which blocks are only used in a given snapshot.
->
->
-> subvol                                          group         total    unshared
-> -------------------------------------------------------------------------------
-> backup/debian32                                 0/262       403.84G      -5.46G
-> backup/debian32_daily_20140504_00:03:01         0/3660      446.45G       0.00G
-> backup/debian32_daily_20140505_00:03:01         0/3687      431.11G       0.00G
-> backup/debian32_daily_20140506_00:03:00         0/3705      420.83G       0.00G
-> backup/debian32_daily_20140507_00:03:01         0/3724      411.87G       0.00G
-> backup/debian32_weekly_20140504_00:04:01        0/3675      446.45G       0.00G
->
-> backup/debian64                                 0/263       855.97G      -1.50G
-> backup/debian64_daily_20140504_00:03:01         0/3662      860.19G       0.00G
-> backup/debian64_daily_20140505_00:03:01         0/3690      859.32G       0.00G
-> backup/debian64_daily_20140506_00:03:00         0/3707      858.15G       0.00G
-> backup/debian64_daily_20140507_00:03:01         0/3726      857.47G       0.00G
-> backup/debian64_weekly_20140504_00:04:01        0/3676      860.19G       0.00G
->
-> backup/ubuntu                                   0/264       360.28G       0.00G
-> backup/ubuntu_daily_20140504_00:03:01           0/3664      364.53G       0.00G
-> backup/ubuntu_daily_20140505_00:03:01           0/3692      362.44G       0.00G
-> backup/ubuntu_daily_20140506_00:03:00           0/3709      360.91G       0.00G
-> backup/ubuntu_daily_20140507_00:03:01           0/3727      360.33G       0.00G
-> backup/ubuntu_weekly_20140504_00:04:01          0/3677      364.53G       0.00G
->
->
+On Fri, May 09, 2014 at 03:58:00PM +0200, David Sterba wrote:
+> On Thu, May 08, 2014 at 07:16:19PM -0400, Zach Brown wrote:
+> > uncompress_inline() is silently dropping an error from
+> > btrfs_decompress() after testing it and zeroing the page that was
+> > supposed to hold decompressed data.  This can silently turn compressed
+> > inline data in to zeros if decompression fails due to corrupt compressed
+> > data or memory allocation failure.
+> > 
+> > I have no idea why uncompress_inline() is zeroing the page for an error
+> > from btrfs_decompress() but not for the earlier ENOMEM from kmalloc().
+> > Can someone explain this?
+> 
+> I don't see a reason for that in the current code, nor in the code that
+> introduced it. The changes that could have affected that are in the error
+> handling, but even with that in mind, the silent error does not make
+> sense.
 
-Quota's wont work quite right unless you have my most recent patch, give 
-that a whirl and you should be good to go.  Thanks,
+Agreed.  I removed it and will send out a v2 of the series.
 
-Josef
-
+- z

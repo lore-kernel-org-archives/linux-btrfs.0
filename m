@@ -1,87 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:47233 "EHLO tetsuo.zabbo.net"
+Received: from mx1.redhat.com ([209.132.183.28]:51538 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757704AbaEIVPP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 May 2014 17:15:15 -0400
-Received: from f18.lab.localdomain (lenny.home.zabbo.net [192.168.242.10])
-	by tetsuo.zabbo.net (Postfix) with ESMTP id 75255720036C
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 May 2014 14:15:14 -0700 (PDT)
+	id S1756553AbaEIVZA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 17:25:00 -0400
+Date: Fri, 9 May 2014 13:40:15 -0700
 From: Zach Brown <zab@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: fix inline compressed read err corruption
-Date: Fri,  9 May 2014 17:15:10 -0400
-Message-Id: <1399670110-3335-3-git-send-email-zab@redhat.com>
-In-Reply-To: <1399670110-3335-1-git-send-email-zab@redhat.com>
-References: <1399670110-3335-1-git-send-email-zab@redhat.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: return errno instead of -1 from compression
+Message-ID: <20140509204015.GB23244@lenny.home.zabbo.net>
+References: <1399590979-15331-1-git-send-email-zab@redhat.com>
+ <20140509133926.GA5988@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140509133926.GA5988@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-uncompress_inline() is dropping the error from btrfs_decompress() after
-testing it and zeroing the page that was supposed to hold decompressed
-data.  This can silently turn compressed inline data in to zeros if
-decompression fails due to corrupt compressed data or memory allocation
-failure.
+On Fri, May 09, 2014 at 03:39:26PM +0200, David Sterba wrote:
+> On Thu, May 08, 2014 at 07:16:17PM -0400, Zach Brown wrote:
+> > The compression layer seems to have been built to return -1 and have
+> > callers make up errors that make sense.  This isn't great because there
+> > are different classes of errors that originate down in the compression
+> > layer.  Allocation failure and corrupt compressed data to name two.
+> > 
+> > --- a/fs/btrfs/lzo.c
+> > +++ b/fs/btrfs/lzo.c
+> > @@ -143,7 +143,7 @@ static int lzo_compress_pages(struct list_head *ws,
+> >  		if (ret != LZO_E_OK) {
+> >  			printk(KERN_DEBUG "BTRFS: deflate in loop returned %d\n",
+> >  			       ret);
+> > -			ret = -1;
+> > +			ret = -EIO;
+> >  			goto out;
+> >  		}
+> >  
+> > @@ -189,7 +189,7 @@ static int lzo_compress_pages(struct list_head *ws,
+> >  				kunmap(out_page);
+> >  				if (nr_pages == nr_dest_pages) {
+> >  					out_page = NULL;
+> > -					ret = -1;
+> > +					ret = -EIO;
+> 
+> This is not a true EIO, the error conditions says that the caller
+> prepared nr_dest_pages for the compressed data but the compression wants
+> more.
+> 
+> The number of pages is at most 128k / PAGE_SIZE.
+> 
+> It's a soft error, the data are written uncompressed. The closest errno
+> here seems E2BIG that would apply in the following hunk as well.
 
-I verified this by manually forcing the error from btrfs_decompress()
-for a silly named copy of od:
+Sure.  *Anything* is better than the raw -EPERM :).  I'll change these
+and resend v2.
 
-	if (!strcmp(current->comm, "failod"))
-		ret = -ENOMEM;
+> > @@ -335,7 +335,7 @@ cont:
+> >  					break;
+> >  
+> >  				if (page_in_index + 1 >= total_pages_in) {
+> > -					ret = -1;
+> > +					ret = -EIO;
+> 
+> That looks like an internal error, we should never ask for more pages
+> than is in the input, so the buffer offset calculations are wrong.
 
-  # od -x /mnt/btrfs/dir/80 | head -1
-  0000000 3031 3038 310a 2d30 6f70 6e69 0a74 3031
-  # echo 3 > /proc/sys/vm/drop_caches
-  # cp $(which od) /tmp/failod
-  # /tmp/failod -x /mnt/btrfs/dir/80 | head -1
-  0000000 0000 0000 0000 0000 0000 0000 0000 0000
+Yeah, but EIO is still arguably the right thing.  There's nothing
+userspace can do about broken kernel code.  We don't want to give them
+an error that could be misinterpreted as them having used an interface
+incorrectly.  We could wrap WARN_ON_ONCE() around it, I suppose.  I'm
+inclined to leave it as is.
 
-The fix is to pass the error to its caller.  Which still has a BUG_ON().
-So we fix that too.
-
-There seems to be no reason for the zeroing of the page on the error
-from btrfs_decompress() but not from the allocation error a few lines
-above.  So the page zeroing is removed.
-
-Signed-off-by: Zach Brown <zab@redhat.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/inode.c | 15 +++++----------
- 1 file changed, 5 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0c0bb45..f75ba53 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6082,16 +6082,8 @@ static noinline int uncompress_inline(struct btrfs_path *path,
- 	max_size = min_t(unsigned long, PAGE_CACHE_SIZE, max_size);
- 	ret = btrfs_decompress(compress_type, tmp, page,
- 			       extent_offset, inline_size, max_size);
--	if (ret) {
--		char *kaddr = kmap_atomic(page);
--		unsigned long copy_size = min_t(u64,
--				  PAGE_CACHE_SIZE - pg_offset,
--				  max_size - extent_offset);
--		memset(kaddr + pg_offset, 0, copy_size);
--		kunmap_atomic(kaddr);
--	}
- 	kfree(tmp);
--	return 0;
-+	return ret;
- }
- 
- /*
-@@ -6292,7 +6284,10 @@ next:
- 				ret = uncompress_inline(path, inode, page,
- 							pg_offset,
- 							extent_offset, item);
--				BUG_ON(ret); /* -ENOMEM */
-+				if (ret) {
-+					err = ret;
-+					goto out;
-+				}
- 			} else {
- 				map = kmap(page);
- 				read_extent_buffer(leaf, map + pg_offset, ptr,
--- 
-1.8.1.4
-
+- z

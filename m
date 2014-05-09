@@ -1,76 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40881 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756903AbaEISBj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 14:01:39 -0400
-Date: Fri, 9 May 2014 19:01:37 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: laie <laie@halifax.rwth-aachen.de>, linux-btrfs@vger.kernel.org
-Subject: Re: destroyed disk in btrfs raid
-Message-ID: <20140509180137.GH16185@carfax.org.uk>
-References: <2a45648842c071a8e0d3285541d96c6f@halifax.rwth-aachen.de>
- <20140509175827.GG16185@carfax.org.uk>
+Received: from outrelay07.libero.it ([212.52.84.111]:38839 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756129AbaEISKN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 14:10:13 -0400
+Message-ID: <536D1AA6.7050407@libero.it>
+Date: Fri, 09 May 2014 20:12:54 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/Gk0KcsbyUMelFU1"
-In-Reply-To: <20140509175827.GG16185@carfax.org.uk>
+To: dsterba@suse.cz, =?UTF-8?B?VG9tw6HFoSBQcnXFvmluYQ==?= <pruzinat@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: [suggestion] Add verbose notification about inode-cache
+ rebuild to kernel log
+References: <CACHxQ2tAU15z_pUEGBuGqYFR9n_fH9BeyA8=jYryRrb3H=zCYA@mail.gmail.com> <CACHxQ2sQH96Z==zqEaoEoOxc65k9TYD66yLXQzOYL1kxaPcrqw@mail.gmail.com> <20140509145118.GD5988@twin.jikos.cz>
+In-Reply-To: <20140509145118.GD5988@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---/Gk0KcsbyUMelFU1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, May 09, 2014 at 06:58:27PM +0100, Hugo Mills wrote:
-> On Fri, May 09, 2014 at 08:02:45PM +0200, laie wrote:
-> > Now I'm looking for a way to tell btrfs to provide me with a list of the
-> > corrupted files and delete them afterwards. This would be great, because
-> > otherwise it would take very long to get the data back from slow backups.
+On 05/09/2014 04:51 PM, David Sterba wrote:
+> On Thu, May 08, 2014 at 04:22:13PM +0200, Tomáš Pružina wrote:
+>> I ran into some troubles with inode-cache rebuilding on root fs after
+>> filesystem was mounted without inode_cache, which stalls boot of my
+>> box by several minutes.
+>>
+>> I boot from commandline like:
+>> root=/dev/sda4 rootfstype=btrfs
+>> rootflags=inode_cache,space_cache,autodefrag rw ...
+>>
+>> However when I manually remount root fs without inode_cache (for
+>> example via kexec), it triggers cache rebuild at next mount which
+>> takes several tens of minutes and mimick 'freeze' on boot.
+>>
+>> Would it be possible to put some printk saying that this is happening
+>> so users don't get confused about it??
 > 
->    Simple solution: cat every file to /dev/null, and see which ones
-> fail with an I/O error. With RAID-0 data, losing a device is going to
-> damage most files, though, so don't necessarily expect much to survive.
+> Adding the printk is probably a good thing, but I'd rather reconsider
+> using inode_cache at all. IMO it's supposed to fix problems with inode
+> numbers that we don't have.
 
-   Actually, you could cat just the first 256 KiB of each file to
-/dev/null -- that should be sufficient, because with RAID-0, the
-stripe size is 64 KiB, and 256 KiB is therefore 4 stripes, and so
-should cover every device... :)
+IIRC, the problem is for the 32 bit system, were the API wants the inode number to be 32 bit..
 
-   Hugo.
+In the past the inode_cache was introduced because the inode often reached 2^32 [1]
 
-> > btrfs fi show
-> > Label: userspace  uuid: there is one ;)
-> >         Total devices 3 FS bytes used 27.21TiB
-> >         devid    1 size 21.83TiB used 13.03TiB path /dev/dm-3
-> >         devid    2 size 16.37TiB used 13.01TiB path /dev/dm-2
-> >         devid    3 size 8.19TiB used 4.27TiB path
+Because most modern hardware is 64 bit (with the exception of ARM ?), could be make sense to allow btrfs to work without inode_cache only on 64bit, loosing the possibility to be used on 32 bit system.
 
+Instead when the inode_cache is used, btrfs still be compatible with both 32bit and 64bit systems.
+
+How often a filesystem is moved between a 64bit and 32bit systems ?
+
+
+[1] http://article.gmane.org/gmane.comp.file-systems.btrfs/9573
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- UDP jokes: It's OK if no-one gets them. ---             
-
---/Gk0KcsbyUMelFU1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU20YAVheFHXiqx3kAQLzTQ/9EvCHNnKQCPIazOkkKw/X7GC4WlslVeeA
-dp2syBWPGOk+nlbX4Nexoj3NV/Qe7p5w/R60is+Xw3O3i1CKgUSI/mhenGdbGVtX
-NbVJ8DBhtxfJuh09fAznf8CDKzeMfwJWbm5fGlNX+LBYlZfmoJcAEL5ittBiDT1Y
-t8MetlDRw2GNoa8tYhDAqQFFEBjI/57ZSNLt/5tvUuOKIL2jnvqzTCEIi912hBSS
-CsEhsvO7Li40M0ID4VbkqSAE2YHynSJ6L28XLiQe3sIBcOIO7qLjYZ2q6ZqDtaPW
-2vZyu5tYxTXAan6ExA1NEmVQRh8aikYw3dN4bEwOwLLOy2x/YVGfPh2+vd2GX1Iu
-x5gEtp1n5GjxL33oAmVkzPcRG12PuoGLSu3rc0m2fZ+fD1fQ+pLKXN+qw6hgXSZg
-9TdawBv94TbTA9a7pGFKIelA4g/woDO1h/kIW5xI13REgxiiDN5mKrX5Ds5cOVlb
-S05fXokY4y1gdPQDgqrlc3Hgmtd9mUD2H+tlaWW1VaqrPcrttbXT2eX5mWF3E+D+
-+PlaRBfqDgAGlb5Mg0vBsDUgimER8FSrKphTKipnXAWB54EuSFOVlGrsIvo1pH8G
-UtckiiXqV8DlxhBn7QIOLvUV6uo/58l3j8kQpWGAh8nbIAqSyZ1ynyIHvnEfNyB6
-hMGc9TShSmU=
-=11xq
------END PGP SIGNATURE-----
-
---/Gk0KcsbyUMelFU1--
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

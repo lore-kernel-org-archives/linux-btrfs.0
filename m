@@ -1,52 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.218]:46814 "EHLO
-	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751010AbaEINJM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 09:09:12 -0400
-Message-ID: <536CD1FA.2000200@giantdisaster.de>
-Date: Fri, 09 May 2014 15:02:50 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from cantor2.suse.de ([195.135.220.15]:44640 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754530AbaEINVK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 09:21:10 -0400
+Date: Fri, 9 May 2014 15:21:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Guangliang Zhao <lucienchao@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: remove OPT_acl parse when acl disabled
+Message-ID: <20140509132109.GZ5988@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1399524992-10810-1-git-send-email-lucienchao@gmail.com>
 MIME-Version: 1.0
-To: Dan Carpenter <dan.carpenter@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs: add optional integrity check code
-References: <20140509120007.GE32027@mwanda>
-In-Reply-To: <20140509120007.GE32027@mwanda>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1399524992-10810-1-git-send-email-lucienchao@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 9 May 2014 15:00:07 +0300, Dan Carpenter wrote:
-> Hello Stefan Behrens,
+On Thu, May 08, 2014 at 12:56:32PM +0800, Guangliang Zhao wrote:
+> Even CONFIG_BTRFS_FS_POSIX_ACL is not defined, the acl still could
+> been enabled using a mount option, and now fs/btrfs/acl.o is not
+> built, so the mount options will appear to be supported but will
+> be silently ignored.
 > 
-> The patch 5db0276014b8: "Btrfs: add optional integrity check code"
-> from Nov 1, 2011, leads to the following static checker warning:
-> 
-> 	fs/btrfs/check-integrity.c:1099 btrfsic_process_metablock()
-> 	warn: missing error code here? 'btrfsic_stack_frame_alloc()' failed. 'sf->error' = '0'
-> 
-> fs/btrfs/check-integrity.c
->   1092  
->   1093                                          next_stack =
->   1094                                              btrfsic_stack_frame_alloc();
->   1095                                          if (NULL == next_stack) {
->   1096                                                  btrfsic_release_block_ctx(
->   1097                                                                  &sf->
->   1098                                                                  next_block_ctx);
-> 
-> Should we set "sf->error" here?  I don't know the code well enough to
-> say the answer.
-> 
->   1099                                                  goto one_stack_frame_backwards;
->   1100                                          }
->   1101  
->   1102                                          next_stack->i = -1;
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -579,9 +579,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  				goto out;
+>  			}
+>  			break;
+> +#ifdef CONFIG_BTRFS_FS_POSIX_ACL
+>  		case Opt_acl:
+>  			root->fs_info->sb->s_flags |= MS_POSIXACL;
+>  			break;
+> +#endif
 
-Looking at this function immediately made me blind and getting terrible
-headache, therefore I can only guess whether not setting sf->error was
-intentional or not three years ago. Nowadays, I'd set sf->error since
-this propagates the error condition upwards. Although it doesn't make a
-difference to the user and doesn't cause a crash whether it is set or
-not. But if the function returns an error/success status, and an error
-was detected, the error status should be returned. I'll send a patch.
+This will still silently accept the 'acl' mount option:
 
+  token = match_token(p, tokens, args);
+
+token will be Opt_acl
+
+and in the switch(token), caught by the default: branch and will return 0.
+
+What' needed here is a #if/#else/#endif sequence where the #else block
+says that something like "acls requested but not compiled in".
+
+Similar to how the Opt_check_integrity* options are handled.
+
+>  		case Opt_noacl:
+>  			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+>  			break;

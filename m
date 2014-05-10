@@ -1,52 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35931 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752051AbaEJBzH convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 May 2014 21:55:07 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:54115 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752724AbaEJCC7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 22:02:59 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wiwcq-000571-Oo
+	for linux-btrfs@vger.kernel.org; Sat, 10 May 2014 04:02:56 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 May 2014 04:02:56 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 May 2014 04:02:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs cleaner failure - fs/btrfs/extent-tree.c:5748 (3.14.0)
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140510010518.GP16185@carfax.org.uk>
-Date: Fri, 9 May 2014 19:54:20 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <2AB0814E-BFF4-47A9-832F-2DED825E5763@colorremedies.com>
-References: <2678329.EOSaIZaHNO@quad> <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com> <20140510004254.GB9276@merlins.org> <20140510010518.GP16185@carfax.org.uk>
-To: Hugo Mills <hugo@carfax.org.uk>
+Date: Sat, 10 May 2014 02:02:44 +0000 (UTC)
+Message-ID: <pan$b4b3b$cb4c25df$c163ab62$5bed98f2@cox.net>
+References: <20140507233959.GB11401@merlins.org> <536AD20E.70004@fb.com>
+	<20140508004344.GE11401@merlins.org> <20140508013440.GH11401@merlins.org>
+	<CAKgsxVR=6GTesbtqG_SAyKnpw9pxz1TZ0oOi_MB8Ej3j4-vMiw@mail.gmail.com>
+	<20140508220242.GO11401@merlins.org>
+	<CAKhhfD5DTPfKvWcRDERxWa_pjfhCkZxW3WBtznYC94EFy7A0mQ@mail.gmail.com>
+	<423AB9BE-EDBF-478B-8CED-C1A9A0FAE736@colorremedies.com>
+	<20140509223659.GW11401@merlins.org>
+	<0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com>
+	<20140510010902.GQ16185@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Sat, 10 May 2014 02:09:02 +0100 as excerpted:
 
-On May 9, 2014, at 7:05 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-
-> On Fri, May 09, 2014 at 05:42:54PM -0700, Marc MERLIN wrote:
->> On Sat, May 10, 2014 at 10:13:43AM +1000, Chris Samuel wrote:
->>>> Right now, I do see:
->>>> legolas:~# cat /proc/sys/kernel/tainted
->>>> 512
->>> 
->>> IIUC that's an array of bit flags, and that value means you've had a previous 
->>> kernel warning at that point according to:
->>> 
->>> https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
->> 
->> Yep, I meant to say that I don't have the 'G' now.
+> Life would be so much easier if filesystems didn't store any
+> persistent state... :)
 > 
->   G is actually good, I think. IIRC, it's "everything we've had to
-> this point has been under a license where we have the source
-> available". It's when you load a proprietary module that you get the P
-> and the G goes away.
+> The number of people who don't quite get that that's the function
+> and natural behaviour of a filesystem is... surprising.
 > 
->> It's likely that vbox did 'G' even if I didn't successfully start it,
->> and even if I haven't had problems with it 'till now, it's a possible
->> culprit (more details below)
-> 
->   I think G is actually a default state, and is "good".
+> As in, "Your filesystem got corruption as a result of a bug in some
+> earlier version. Upgrading to the new version isn't magically going to
+> make that corruption go away". (Not saying that's what's happened here,
+> but it's common, and commonly misunderstood).
 
-The G just means it's not a proprietary kernel module, but it's still out of tree. So the kernel is in a state that we don't really know, without finding out what's causing it to be tainted. If it's a video or wireless driver (pretty likely) then it's probably sufficiently unrelated to fs to not matter.
+FWIW, this is why I'm currently doing a mkfs.btrfs and copying over from 
+primary backup (an identically sized partition on the same set of 
+physical devices, also btrfs, secondary backup is reiserfs on a different 
+device, just in case) every few kernel cycles, perhaps twice a year or 
+every eight months.
 
-However, I have a recent case in VBox guest, with guest additions built. That cause the kernel to be tainted G because it's an out of tree kernel module for guest additions. I'm getting a bunch of Btrfs errors that aren't reproducible with an untainted kernel. So I'm not filing a bug against Btrfs, instead I've filed a bug against VirtualBox because I'm also getting a pile of read write errors with /dev/sda which is backed by a VDI. A virtual device producing hardware read write errors (as far as linux kernel is concerned). But only with guest additions loaded. And the sustained copy event that triggers it doesn't even involve sda. It's a shared folder copy as the source, to a raw device as destination. Yet I get dozens of read write errors on sda, and ensuing Btrfs complaints as well. But in this case Btrfs is behaving exactly as I'd expect. What's unexpected is the virtual sata device behaving wrong, but apparently only with guest additions loaded.
+My thinking is that even if scrub/balance/btrfs-check report no problems:
 
-Chris Murphy
+a) There are new on-device filesystem features I can now take advantage 
+of (at least, there have been in each of the two mkfs.btrfs cycles I've 
+done so far).  And...
+
+b) Recreating the filesystem and copying everything over new limits the 
+time-window I'm exposed to old and potentially latent bugs that may have 
+in fact been fixed in new deployments without every having triggered at 
+the time, due to masking from some other bug or happenstance that may 
+eventually go away, otherwise leaving me exposed to this strange corner-
+case bug from two years or whatever ago.
+
+I'll probably continue to do that until btrfs is considered stable, or 
+even past that (tho then likely at a rather lower frequency, say every 
+year to year and a half), because it's relatively easy to do with the way 
+I handle backups.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

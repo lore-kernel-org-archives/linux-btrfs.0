@@ -1,37 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:41915 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756653AbaEJOCp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 10:02:45 -0400
-Date: Sat, 10 May 2014 07:02:40 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Korent <ckorent@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Unable to mount filesystem
-Message-ID: <20140510140240.GH9276@merlins.org>
-References: <CAF6NbWy+0AqJS3GdewrQfO=z1NWhYOUBtOFy+B2DjTO5F3i6aQ@mail.gmail.com>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:33208 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751318AbaEJQfP convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 May 2014 12:35:15 -0400
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAF6NbWy+0AqJS3GdewrQfO=z1NWhYOUBtOFy+B2DjTO5F3i6aQ@mail.gmail.com>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs cleaner failure - fs/btrfs/extent-tree.c:5748 (3.14.0)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140510135153.GE9276@merlins.org>
+Date: Sat, 10 May 2014 10:34:38 -0600
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <00D71C65-1992-4E89-874E-AA7772497DAA@colorremedies.com>
+References: <2678329.EOSaIZaHNO@quad> <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com> <20140510004254.GB9276@merlins.org> <20140510010518.GP16185@carfax.org.uk> <2AB0814E-BFF4-47A9-832F-2DED825E5763@colorremedies.com> <20140510135153.GE9276@merlins.org>
+To: Marc MERLIN <marc@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 08, 2014 at 01:06:25PM +0000, Chris Korent wrote:
-> This seemed to happen after a power failure. I rebooted and the FS was
-> mounted, but read-only and there were some errors (journalctl not able
-> to start. I did not capture all the errors). I rebooted again and then
-> it wouldn't mount at all. Is there anything else I can do?
 
-You did some things, but look at the checklist I put on 
-https://btrfs.wiki.kernel.org/index.php/Btrfsck
-1) use -o recovery,ro, not -o recovery)
-2) does btrfs restore work?
-3) btrfs check is your last option.
+On May 10, 2014, at 7:51 AM, Marc MERLIN <marc@merlins.org> wrote:
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> Note that in my case, I wasn't trying to run linux inside vbox, just to
+> start a win7 vm guest on my linux laptop.
+> Is that a case that also is known to cause problems?
+
+No, the host experiences no issues, although in my case the host is OS X so it's a completely different kernel. I don't think they're related. Mine was just an example of tainted kernel correlating to some other problem, while not known (yet) to be causation the source of the taintedness is suspect.
+
+https://www.virtualbox.org/ticket/13022
+
+
+Chris Murphy
+

@@ -1,68 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:42049 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757257AbaEJAOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 May 2014 20:14:06 -0400
-From: Chris Samuel <chris@csamuel.org>
-To: linux-btrfs@vger.kernel.org
-Cc: Marc MERLIN <marc@merlins.org>, Chris Murphy <lists@colorremedies.com>,
-        bo.li.liu@oracle.com, jbacik@fb.com, hugo@carfax.org.uk,
-        dsterba@suse.cz, clm@fb.com
+Received: from magic.merlins.org ([209.81.13.136]:36810 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752300AbaEJA5S (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 20:57:18 -0400
+Date: Fri, 9 May 2014 17:42:54 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>, Chris Samuel <chris@csamuel.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, bo.li.liu@oracle.com,
+        jbacik@fb.com, hugo@carfax.org.uk, dsterba@suse.cz, clm@fb.com
 Subject: Re: btrfs cleaner failure - fs/btrfs/extent-tree.c:5748 (3.14.0)
-Date: Sat, 10 May 2014 10:13:43 +1000
-Message-ID: <2678329.EOSaIZaHNO@quad>
-In-Reply-To: <20140509223659.GW11401@merlins.org>
-References: <20140507233959.GB11401@merlins.org> <423AB9BE-EDBF-478B-8CED-C1A9A0FAE736@colorremedies.com> <20140509223659.GW11401@merlins.org>
+Message-ID: <20140510004254.GB9276@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <2678329.EOSaIZaHNO@quad>
+ <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Sat, May 10, 2014 at 10:13:43AM +1000, Chris Samuel wrote:
+> > Right now, I do see:
+> > legolas:~# cat /proc/sys/kernel/tainted
+> > 512
+> 
+> IIUC that's an array of bit flags, and that value means you've had a previous 
+> kernel warning at that point according to:
+> 
+> https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
 
-Hi Marc,
+Yep, I meant to say that I don't have the 'G' now.
 
-On Fri, 9 May 2014 03:36:59 PM Marc MERLIN wrote:
+It's likely that vbox did 'G' even if I didn't successfully start it,
+and even if I haven't had problems with it 'till now, it's a possible
+culprit (more details below)
 
-> Oh, I missed that.
-> May  2 14:23:06 legolas kernel: [283268.319035] CPU: 0 PID: 25726 Comm:
-> watchdog/0 Tainted: G        W    3.14.0-amd64-i915-preempt-20140216 #2
-> This is weird because I don't use any 3rd party binary modules.
+Anyway, it sounds like the FS is toast, there isn't much useful that can
+be gleaned from it, so I'll just wipe it and start over. 
+I think really my biggest disappointment is that no recovery tools seem
+to be able to open the FS now even though it was accessible and
+seemingly working well enough when it was read only before I rebooted.
 
-There's actually a bunch of reasons a kernel can be tainted.
+On Fri, May 09, 2014 at 06:00:50PM -0600, Chris Murphy wrote:
+> Well I'm sorta dense, so I only find a complete dmesg useful because
+> with storage problems it seems much is due to some other problem
+> happening earlier. Maybe a fs developer would say "yeah that's not
 
-> Right now, I do see:
-> legolas:~# cat /proc/sys/kernel/tainted
-> 512
+True, although I didn't find anything earlier that looked relevant.
 
-IIUC that's an array of bit flags, and that value means you've had a previous 
-kernel warning at that point according to:
+> good, but we maybe should do better failing gracefully". Call traces
+> don't mean much of anything to me, I think the real problem happened
+> before this, unless it's strictly a Btrfs bug in which case the
+> evidence may be localized in just the trace.
 
-https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
+Sure, the corruption could have happened before the cleaner process
+uncovered it and then turned my FS read only.
+But to be honest, before cleaner ran, the FS worked (I was using it),
+after that, it was read only and upon reboot it became unmountable by
+anything.
+That seems suspect to me :-/
+ 
+> Also you said it went read only overnight but I'm seeing a reference
+> here to cleaning up a deleted snapshot? Are you running something
+> that's taking and deleting snapshots on a schedule?
 
-# tainted:
-#
-# Non-zero if the kernel has been tainted.  Numeric values,
-# which can be ORed together:
-#
-[...]
-# 512 - A kernel warning has occurred.
+Yes, hourly snapshot rotations and hourly btrfs send/receive to my
+secondary drive, which is still working as of now and I'm using to type
+this now.
+(I'll format the SSD and copy things back tonight since I'm worried that
+if anything happens to my HD, my laptop will be toast until I get home)
 
-Best of luck!
-Chris
-- -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+> The G means it's not a proprietary driver involved. You'd have to go
+> through a full dmesg to find out what's causing it, but the point of
+> the tainted state notification is that the kernel is in a state likely
+> no one, or very few, other people are experiencing and any subsequent
+> problems are suspect.
+ 
+Mmmh, I did try to start virtualbox, but it didn't start because the
+driver was out of date. I did not compile and install the new one yet,
+nor actually used virtualbox.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+> There are still ZFS corruptions from time to time. And they happen
+> even on file systems that get pounded on mercilessly like NTFS, XFS
+> and HFS+. Almost always it's not the file system itself, something
+> else instigated the problem. Still such mature file systems have bugs
+> being found and fixed. So recovery not working itself doesn't surprise
+> me, I don't even know what caused the problem.
 
-iQEVAwUBU21vOo1yjaOTJg85AQLJDwf/QOxRt0f5KqPbhknn8x0XyUQ5upC8PbzD
-FoDHAkKV7tCUGQ6ZmCufBUKi0beNHNE3YKXlld8zLjlYpyV5lCZIgP3XvjQ/A4pZ
-Vq+XKiqddaZHOFnjQuk9kseqXJaeH7Vr90xz2D92lcRb3NY6yoD2sdFMhAeN43vh
-23stzC2Ybr79NFELWPCL3MTFL4qZrAY/4KFFKDQEZsNHMEJW2zJXX841lFsTXJwO
-1Ggsi3WzNCJMo+GHRqH+9Gyb4ICk7u7FABHo+y/dShTGnxAh5/8zMnKidlSfCdzd
-APKPMrydKEX+O+Fm3zDcKg8gER3FJtWKCyHXfW+zyORTMbxiH5QK5Q==
-=q69d
------END PGP SIGNATURE-----
+True. Never had this with ext2/3/4 in 15 years, but as you say, it's
+possible.
 
+> I think Btrfs in general is still buyer beware, but that's in the
+> category of Not News because I think all free software distributions
+> say the same thing, essentially. None of it comes with support or a
+> warranty unless you've bought an SLA. If you really suspect a problem
+> in 3.14.x that may not yet be fixed in 3.15rc or you don't want to
+> run rc kernels is reasonable to run the kernel prior to the current
+> one which is 3.13.11. The way kernel fixes work, a fix has to be
+> demonstrated in
+
+Right. I'd want to avoid 3.15rc unless someone tells me I really should
+be running it.
+
+> Well you think you've been using it successfully for 10 years. If
+> you've have exactly 0 cases of any kind of fs corruption in 10 years,
+> or can exclude suspend/resume from corruption incident by assurance
+> there was a reboot in between the suspend/resume and the corruption,
+> then maybe you haven't experienced a problem. But Google is full of
+> users who have not merely immediate corruption on suspend/resume
+
+Point taken, thanks.
+But not suspending (S3 sleep) on my lapotp isn't exactly practical
+either :-/
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

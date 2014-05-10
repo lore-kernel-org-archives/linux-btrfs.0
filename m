@@ -1,80 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:42030 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752300AbaEJBJN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 May 2014 21:09:13 -0400
-Date: Sat, 10 May 2014 02:09:02 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Marc MERLIN <marc@merlins.org>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35931 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752051AbaEJBzH convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 May 2014 21:55:07 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: btrfs cleaner failure - fs/btrfs/extent-tree.c:5748 (3.14.0)
-Message-ID: <20140510010902.GQ16185@carfax.org.uk>
-References: <20140507233959.GB11401@merlins.org>
- <536AD20E.70004@fb.com>
- <20140508004344.GE11401@merlins.org>
- <20140508013440.GH11401@merlins.org>
- <CAKgsxVR=6GTesbtqG_SAyKnpw9pxz1TZ0oOi_MB8Ej3j4-vMiw@mail.gmail.com>
- <20140508220242.GO11401@merlins.org>
- <CAKhhfD5DTPfKvWcRDERxWa_pjfhCkZxW3WBtznYC94EFy7A0mQ@mail.gmail.com>
- <423AB9BE-EDBF-478B-8CED-C1A9A0FAE736@colorremedies.com>
- <20140509223659.GW11401@merlins.org>
- <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="oDto3OTLsk6uOlQH"
-In-Reply-To: <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140510010518.GP16185@carfax.org.uk>
+Date: Fri, 9 May 2014 19:54:20 -0600
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-Id: <2AB0814E-BFF4-47A9-832F-2DED825E5763@colorremedies.com>
+References: <2678329.EOSaIZaHNO@quad> <0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com> <20140510004254.GB9276@merlins.org> <20140510010518.GP16185@carfax.org.uk>
+To: Hugo Mills <hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---oDto3OTLsk6uOlQH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On May 9, 2014, at 7:05 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 
-On Fri, May 09, 2014 at 06:00:50PM -0600, Chris Murphy wrote:
-> Well I'm sorta dense, so I only find a complete dmesg useful because
-> with storage problems it seems much is due to some other problem
-> happening earlier. 
+> On Fri, May 09, 2014 at 05:42:54PM -0700, Marc MERLIN wrote:
+>> On Sat, May 10, 2014 at 10:13:43AM +1000, Chris Samuel wrote:
+>>>> Right now, I do see:
+>>>> legolas:~# cat /proc/sys/kernel/tainted
+>>>> 512
+>>> 
+>>> IIUC that's an array of bit flags, and that value means you've had a previous 
+>>> kernel warning at that point according to:
+>>> 
+>>> https://www.kernel.org/doc/Documentation/sysctl/kernel.txt
+>> 
+>> Yep, I meant to say that I don't have the 'G' now.
+> 
+>   G is actually good, I think. IIRC, it's "everything we've had to
+> this point has been under a license where we have the source
+> available". It's when you load a proprietary module that you get the P
+> and the G goes away.
+> 
+>> It's likely that vbox did 'G' even if I didn't successfully start it,
+>> and even if I haven't had problems with it 'till now, it's a possible
+>> culprit (more details below)
+> 
+>   I think G is actually a default state, and is "good".
 
-   Life would be so much easier if filesystems didn't store any
-persistent state... :)
+The G just means it's not a proprietary kernel module, but it's still out of tree. So the kernel is in a state that we don't really know, without finding out what's causing it to be tainted. If it's a video or wireless driver (pretty likely) then it's probably sufficiently unrelated to fs to not matter.
 
-   The number of people who don't quite get that that's the function
-and natural behaviour of a filesystem is... surprising. 
+However, I have a recent case in VBox guest, with guest additions built. That cause the kernel to be tainted G because it's an out of tree kernel module for guest additions. I'm getting a bunch of Btrfs errors that aren't reproducible with an untainted kernel. So I'm not filing a bug against Btrfs, instead I've filed a bug against VirtualBox because I'm also getting a pile of read write errors with /dev/sda which is backed by a VDI. A virtual device producing hardware read write errors (as far as linux kernel is concerned). But only with guest additions loaded. And the sustained copy event that triggers it doesn't even involve sda. It's a shared folder copy as the source, to a raw device as destination. Yet I get dozens of read write errors on sda, and ensuing Btrfs complaints as well. But in this case Btrfs is behaving exactly as I'd expect. What's unexpected is the virtual sata device behaving wrong, but apparently only with guest additions loaded.
 
-   As in, "Your filesystem got corruption as a result of a bug in some
-earlier version. Upgrading to the new version isn't magically going to
-make that corruption go away". (Not saying that's what's happened
-here, but it's common, and commonly misunderstood).
+Chris Murphy
 
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- The makers of Steinway pianos would like me to tell you that ---   
-                          this is a Bechstein.                           
-
---oDto3OTLsk6uOlQH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU218LlheFHXiqx3kAQISGBAAo7sMiKarTTuTuLof8inI7BZQNLPNZC8Z
-VwkmK4gvyFKvpP9saTl+zKQUPZx36Ieg6MCdLt+D8fNS6sMEFXDRDlzb3kifmKSL
-xC+lo01ezvdkj2cruJhAOw3gSnH89/uL2huUAjrQpbQU7ZKFy7L+TIsDOij4cZXy
-0FgoBZRlVKXJy1zU0bshIE1hMJMiLacbS9/M7rn3yy0K7c2Bge0lENZgDhQCe8LU
-zs3W4RWf/MjKgDSGF0d7jOrnHVdFLCUaRDnSuS1fzknXqU4bXkENfK1UPQcaP9WZ
-+qgbub3vI60451l+LLH/z9TzMIWcsqHm2ZBk9mwhzjZH6lUbs1JEpl5fN2Cfynz+
-3UxdhBbI60LUJ4Zu3yJ+Z0xXtVZHRlKGLvIVPM3TMQKXOiuq142alH0O0tHhpQFt
-3cMMghGX/z1o37bLYKJiDFRiFi9eUYt3OHVe34HPDneTHSwQ4j0qlOB+iclAYydP
-gTs/uS7Ie1IBVHbs7TUOZ1uCrF+faSFg7HQR+ETa7zAfSO/J3BKEOxdXzCXl2TQe
-o3pI7rrxE5wvtRXWy6IxyXxjAtrR+3WDRrgkQR+yKsPGNwdhkjZk8NO8WfCI6QLT
-lRevwaOOLzNOcchHXNgR990z37g+hQhXF9VwDUt3g9AjB5RZmOtI3DSM+xy05YXN
-1r/asR3H0Tc=
-=zckd
------END PGP SIGNATURE-----
-
---oDto3OTLsk6uOlQH--

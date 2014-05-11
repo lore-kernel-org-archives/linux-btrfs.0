@@ -1,86 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37589 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751983AbaEKC2i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 22:28:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WjJVE-0000gW-7R
-	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 04:28:36 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:28:36 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:28:36 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs cleaner failure - fs/btrfs/extent-tree.c:5748 (3.14.0)
-Date: Sun, 11 May 2014 02:28:23 +0000 (UTC)
-Message-ID: <pan$31216$3d0b94d7$92fede49$858a4a3e@cox.net>
-References: <20140507233959.GB11401@merlins.org> <536AD20E.70004@fb.com>
-	<20140508004344.GE11401@merlins.org> <20140508013440.GH11401@merlins.org>
-	<CAKgsxVR=6GTesbtqG_SAyKnpw9pxz1TZ0oOi_MB8Ej3j4-vMiw@mail.gmail.com>
-	<20140508220242.GO11401@merlins.org>
-	<CAKhhfD5DTPfKvWcRDERxWa_pjfhCkZxW3WBtznYC94EFy7A0mQ@mail.gmail.com>
-	<423AB9BE-EDBF-478B-8CED-C1A9A0FAE736@colorremedies.com>
-	<20140509223659.GW11401@merlins.org>
-	<0AE72D68-224C-4B12-9C9B-3B7628174ACB@colorremedies.com>
-	<20140510010902.GQ16185@carfax.org.uk>
-	<CAKhhfD5c+poPPEYd=VLcU7m8xjORx9yc8TY7M3jZDRUapRX__w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from magic.merlins.org ([209.81.13.136]:46311 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751983AbaEKCaG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 May 2014 22:30:06 -0400
+Date: Sat, 10 May 2014 19:29:54 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org, Filipe David Manana <fdmanana@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+Subject: Re: 3.15-rc5 btrfs send/receive corruption errors? Does scrub warn
+ of silent corruption?
+Message-ID: <20140511022954.GA14398@merlins.org>
+References: <20140510220710.GA6772@merlins.org>
+ <20140510224249.GA15909@merlins.org>
+ <D55BDA6A-5DFA-4981-AC69-3156317ED169@colorremedies.com>
+ <E1WiphR-0003MN-50@legolas.merlins.org>
+ <20140510224249.GA15909@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <D55BDA6A-5DFA-4981-AC69-3156317ED169@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Fri, 09 May 2014 20:40:26 -0700 as excerpted:
-
-> On May 10, 2014 10:09 AM, "Hugo Mills" <hugo@carfax.org.uk> wrote:
->>    As in, "Your filesystem got corruption as a result of a bug in some
->> earlier version. Upgrading to the new version isn't magically going to
->> make that corruption go away". (Not saying that's what's happened here,
->> but it's common, and commonly misunderstood).
+On Sat, May 10, 2014 at 04:57:18PM -0700, Marc MERLIN wrote:
+> On Sat, May 10, 2014 at 03:42:49PM -0700, Marc MERLIN wrote:
+> > I tried with 3.14.3 and it went further, however it died with
+> > legolas:/mnt/btrfs_pool2# btrfs send  home_ro.20140507_10:00:01 | btrfs receive /mnt/btrfs_pool1/
+> > At subvol home_ro.20140507_10:00:01
+> > At subvol home_ro.20140507_10:00:01
+> > ERROR: send ioctl failed with -5: Input/output error
+> > ERROR: unexpected EOF in stream.
+> > 
+> > I'll look up -5 later when I have time, but I guess there is a problem
+> > on the source that is causing copies to fail with both kernels?
 > 
-> That's a fair point but I run scrub every day with errors if any, mailed
-> to me.
-> Can scrub miss latent corruption?
+> This brings me back to the earlier question:
+> 
+> When my other FS died, scrub ran ok just earlier.
+> 
+> Now, having 2 btrfs sends (not incremental, full) fail with 2 kernels
+> would indicate that something might be wrong on the source filesystem.
+> 
+> Yet, last night's scrub ran fine too:
+> 
+> On Fri, May 09, 2014 at 11:39:13AM -0700, Anacron wrote:
+> > /etc/cron.daily/btrfs-scrub:
+> > scrub device /dev/mapper/cryptroot (id 1) done
+> > 	scrub started at Fri May  9 06:09:14 2014 and finished after 19153 seconds
+> > 	total bytes scrubbed: 646.15GiB with 0 errors
+> 
+> So, does scrub actually make sure everything on my filesystem is sane,
+> or can it miss some kinds of corruptions?
 
-Depends on the type of corruption.  Scrub simply checks the checksums, 
-replacing any bad copies it finds with good copies if there's good copies 
-to do so with (thus my raid1 here, giving me an alternate to look at, too 
-bad I can't get N-way-mirroring yet and have a second alternate just in 
-case).  Bitflipping and random corruption, it should detect and if 
-possible fix, no problem.
+I'm thinking that there must be some corruption on btrfs_pool2,
+because:
 
-But if the bug was a logic error and btrfs validly checksummed bad 
-(meta)data due to that faulty logic, scrub won't do anything to find 
-that, because all it does is validate the checksum and that's perfectly 
-fine -- the result of the faulty logic was still faulty, but perfectly 
-retained. =:^\
+On Sat, May 10, 2014 at 06:06:46PM -0600, Chris Murphy wrote:
+> I think the issue might be there are still problems and changing code on the receive side (btrfs-progs). The kernel side code responsible for send is probably working correctly.
 
-Faulty logic is what rebalance and btrfs check will try to detect, except 
-unlike checksums which are binary case and match or don't match, there's 
-all /sorts/ of ways logic can be faulty, and given the immaturity of the 
-tools, there's still some decent gaps in what they'll detect -- there's a 
-LOT more ways that the filesystem can be wrong and the logic faulty than 
-we know about yet, and if we don't know about it, it's pretty hard to 
-test for it.
+I tried
+3.15 and progs 3.12
+3.15 and progs 3.14
+3.14 and progs 3.12
+3.14 and progs 3.14
 
-(Let alone the case of btrfs check /thinking/ it detects something wrong, 
-but either it's fine, or it's wrong in a different way than btrfs check 
-thinks, such that btrfs check --repair could actually make things 
-worse... thus the recommendation not to blindly run --repair, only as a 
-last resort before a new mkfs, or on the specific recommendation of a 
-dev.)
+All 4 failed to run
+legolas:/mnt/btrfs_pool2# btrfs send home_ro.20140507_10:00:01 | btrfs receive /mnt/btrfs_pool1/
 
-Bottom line, if the logic was wrong, scrub isn't likely to catch the 
-problem, since the checksum on the faulty logic output can and likely 
-will still be perfectly valid.  It's simply the wrong tool to detect that 
-sort of error.
+3.14 gives:
+ERROR: send ioctl failed with -5: Input/output error
+ERROR: unexpected EOF in stream.
 
+3.15 gives a more detailled message how it can't rename some corrupted
+filename (regardless of whether I use progs 3.12 or 3.14).
+
+So, since scrub tells me my FS is ok, is scrub right, or do I have a
+file pattern that is causing a bug in btrfs send ?
+
+Thanks,
+Marc
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,63 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52567 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:46822 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752417AbaEKCv7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 22:51:59 -0400
+	id S1752845AbaEKDJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 May 2014 23:09:19 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WjJrq-0002o6-2D
-	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 04:51:58 +0200
+	id 1WjK8c-0002Gc-Cg
+	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 05:09:18 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:51:58 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 05:09:18 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:51:58 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 05:09:18 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unable to mount filesystem
-Date: Sun, 11 May 2014 02:51:46 +0000 (UTC)
-Message-ID: <pan$9ae5$6b264925$51c778dc$642cda8e@cox.net>
-References: <CAF6NbWy+0AqJS3GdewrQfO=z1NWhYOUBtOFy+B2DjTO5F3i6aQ@mail.gmail.com>
-	<230A0896-9CCD-4B48-A0D2-4BB5932BDEAB@colorremedies.com>
+Subject: Re: 3.15-rc5 btrfs send/receive corruption errors? Does scrub
+Date: Sun, 11 May 2014 03:09:03 +0000 (UTC)
+Message-ID: <pan$ca817$195609f1$cf655dea$2b05cd43@cox.net>
+References: <20140510235717.GB15909@merlins.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Sat, 10 May 2014 10:49:07 -0600 as excerpted:
+Marc MERLIN posted on Sat, 10 May 2014 16:57:18 -0700 as excerpted:
 
-> On May 8, 2014, at 7:06 AM, Chris Korent <ckorent@gmail.com> wrote:
-> 
->> Linux sysresccd 3.10.35-std420-amd64 #2 SMP Wed Apr 2 18:31:51 UTC
->> 
->> btrfs --version Btrfs v3.14.1
-> 
-> I'm uncertain if this is an OK combination. I'm under the impression
-> that the kernel should be the same or newer version than progs. Also
-> kernel 3.10 is old in Btrfs terms. Before altering the file system
-> further, I'd try a normal mount with the newest kernel you can get your
-> hands on.
+> So, does scrub actually make sure everything on my filesystem is sane,
+> or can it miss some kinds of corruptions?
 
-In theory it's OK as the progs are supposed to be backward compatible at 
-least some way (I wouldn't try anything pre-2.6.32 for sure as that was 
-the last big format change, IIRC, and anything pre-3.5 or so may work but 
-I'd not suggest it), but... there are of course bugs, and btrfs is still 
-under intense enough development that there are bugs being fixed every 
-kernel...
+Catching it here as well as the other thread...
 
-So while yes, in theory the above version spread should work, the 
-recommendation to try the latest stable-kernel from the latest stable 
-series 3.14.x is an absolutely solid one, and in fact we're late enough 
-in the 3.15-rc cycle now that trying with that is ultimately the best bet.
+All scrub does is verify the checksum (and replace bad versions with good 
+versions where there's a good copy available to do so).
 
-In fact, as the output from mkfs.btrfs suggests, running the latest 
-stable at the oldest really is recommended, and kernel is a bit more 
-critical in that regard than btrfs-progs, since the kernel is what 
-actually handles the filesystem and thus running an old kernel really is 
-basically uselessly risking your btrfs and the data on it to known and 
-now fixed bugs.
+Scrub does NOT detect or fix faulty logic bug writes that never-the-less 
+were properly checksummed, as the checksums can be perfectly valid on 
+entirely invalid (meta)data.
+
+Using an example from recent US political history, it's as if someone 
+recorded the head of the US NSA assuring congress that it did not 
+knowingly collect data on US citizens in the generic case, when a few 
+months later we found out it was doing just that.  Now if that recording 
+was checksummed, that checksum will normally still verify just fine 
+today, even tho we know the claims in the recorded stream are 100% 
+faulty.  Verifying the checksum can validate the recording hasn't been 
+corrupted since it was stored, but it does nothing at all to verify the 
+claims made in that recording, and is simply the wrong tool for the job 
+if that's what you're trying to do.
+
+Back on btrfs, if we were checksumming metadata and that metadata was 
+faulty due to some now fixed bug, verifying the checksum simply verifies 
+that the still-faulty metadata hasn't changed from when we stored it, not 
+that the metadata isn't faulty in the first place.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

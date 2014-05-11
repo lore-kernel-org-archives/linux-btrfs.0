@@ -1,86 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46311 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751983AbaEKCaG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 22:30:06 -0400
-Date: Sat, 10 May 2014 19:29:54 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org, Filipe David Manana <fdmanana@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Subject: Re: 3.15-rc5 btrfs send/receive corruption errors? Does scrub warn
- of silent corruption?
-Message-ID: <20140511022954.GA14398@merlins.org>
-References: <20140510220710.GA6772@merlins.org>
- <20140510224249.GA15909@merlins.org>
- <D55BDA6A-5DFA-4981-AC69-3156317ED169@colorremedies.com>
- <E1WiphR-0003MN-50@legolas.merlins.org>
- <20140510224249.GA15909@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <D55BDA6A-5DFA-4981-AC69-3156317ED169@colorremedies.com>
+Received: from plane.gmane.org ([80.91.229.3]:52567 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752417AbaEKCv7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 May 2014 22:51:59 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WjJrq-0002o6-2D
+	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 04:51:58 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:51:58 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 04:51:58 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Unable to mount filesystem
+Date: Sun, 11 May 2014 02:51:46 +0000 (UTC)
+Message-ID: <pan$9ae5$6b264925$51c778dc$642cda8e@cox.net>
+References: <CAF6NbWy+0AqJS3GdewrQfO=z1NWhYOUBtOFy+B2DjTO5F3i6aQ@mail.gmail.com>
+	<230A0896-9CCD-4B48-A0D2-4BB5932BDEAB@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 10, 2014 at 04:57:18PM -0700, Marc MERLIN wrote:
-> On Sat, May 10, 2014 at 03:42:49PM -0700, Marc MERLIN wrote:
-> > I tried with 3.14.3 and it went further, however it died with
-> > legolas:/mnt/btrfs_pool2# btrfs send  home_ro.20140507_10:00:01 | btrfs receive /mnt/btrfs_pool1/
-> > At subvol home_ro.20140507_10:00:01
-> > At subvol home_ro.20140507_10:00:01
-> > ERROR: send ioctl failed with -5: Input/output error
-> > ERROR: unexpected EOF in stream.
-> > 
-> > I'll look up -5 later when I have time, but I guess there is a problem
-> > on the source that is causing copies to fail with both kernels?
+Chris Murphy posted on Sat, 10 May 2014 10:49:07 -0600 as excerpted:
+
+> On May 8, 2014, at 7:06 AM, Chris Korent <ckorent@gmail.com> wrote:
 > 
-> This brings me back to the earlier question:
+>> Linux sysresccd 3.10.35-std420-amd64 #2 SMP Wed Apr 2 18:31:51 UTC
+>> 
+>> btrfs --version Btrfs v3.14.1
 > 
-> When my other FS died, scrub ran ok just earlier.
-> 
-> Now, having 2 btrfs sends (not incremental, full) fail with 2 kernels
-> would indicate that something might be wrong on the source filesystem.
-> 
-> Yet, last night's scrub ran fine too:
-> 
-> On Fri, May 09, 2014 at 11:39:13AM -0700, Anacron wrote:
-> > /etc/cron.daily/btrfs-scrub:
-> > scrub device /dev/mapper/cryptroot (id 1) done
-> > 	scrub started at Fri May  9 06:09:14 2014 and finished after 19153 seconds
-> > 	total bytes scrubbed: 646.15GiB with 0 errors
-> 
-> So, does scrub actually make sure everything on my filesystem is sane,
-> or can it miss some kinds of corruptions?
+> I'm uncertain if this is an OK combination. I'm under the impression
+> that the kernel should be the same or newer version than progs. Also
+> kernel 3.10 is old in Btrfs terms. Before altering the file system
+> further, I'd try a normal mount with the newest kernel you can get your
+> hands on.
 
-I'm thinking that there must be some corruption on btrfs_pool2,
-because:
+In theory it's OK as the progs are supposed to be backward compatible at 
+least some way (I wouldn't try anything pre-2.6.32 for sure as that was 
+the last big format change, IIRC, and anything pre-3.5 or so may work but 
+I'd not suggest it), but... there are of course bugs, and btrfs is still 
+under intense enough development that there are bugs being fixed every 
+kernel...
 
-On Sat, May 10, 2014 at 06:06:46PM -0600, Chris Murphy wrote:
-> I think the issue might be there are still problems and changing code on the receive side (btrfs-progs). The kernel side code responsible for send is probably working correctly.
+So while yes, in theory the above version spread should work, the 
+recommendation to try the latest stable-kernel from the latest stable 
+series 3.14.x is an absolutely solid one, and in fact we're late enough 
+in the 3.15-rc cycle now that trying with that is ultimately the best bet.
 
-I tried
-3.15 and progs 3.12
-3.15 and progs 3.14
-3.14 and progs 3.12
-3.14 and progs 3.14
+In fact, as the output from mkfs.btrfs suggests, running the latest 
+stable at the oldest really is recommended, and kernel is a bit more 
+critical in that regard than btrfs-progs, since the kernel is what 
+actually handles the filesystem and thus running an old kernel really is 
+basically uselessly risking your btrfs and the data on it to known and 
+now fixed bugs.
 
-All 4 failed to run
-legolas:/mnt/btrfs_pool2# btrfs send home_ro.20140507_10:00:01 | btrfs receive /mnt/btrfs_pool1/
-
-3.14 gives:
-ERROR: send ioctl failed with -5: Input/output error
-ERROR: unexpected EOF in stream.
-
-3.15 gives a more detailled message how it can't rename some corrupted
-filename (regardless of whether I use progs 3.12 or 3.14).
-
-So, since scrub tells me my FS is ok, is scrub right, or do I have a
-file pattern that is causing a bug in btrfs send ?
-
-Thanks,
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

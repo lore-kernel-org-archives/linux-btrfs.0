@@ -1,51 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37186 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750948AbaEKPRM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 May 2014 11:17:12 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:37245 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752082AbaEKQR5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 May 2014 12:17:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WjWRo-0003j6-2n
+	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 18:17:56 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 18:17:56 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 18:17:56 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Murphy <lists@colorremedies.com>
-Subject: [PATCH] Btrfs: fix NULL pointer crash of deleting a seed device
-Date: Sun, 11 May 2014 23:14:59 +0800
-Message-Id: <1399821299-15131-1-git-send-email-bo.li.liu@oracle.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: -musage=>0 means always reporting relocation
+Date: Sun, 11 May 2014 16:17:44 +0000 (UTC)
+Message-ID: <pan$bf0a8$25fa97dc$2ae1cf04$b68a5dc3@cox.net>
+References: <201405111943.16913.russell@coker.com.au>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Same as normal devices, seed devices should be initialized with
-fs_info->dev_root as well, otherwise we'll get a NULL pointer crash.
+Russell Coker posted on Sun, 11 May 2014 19:43:16 +1000 as excerpted:
 
-Cc: Chris Murphy <lists@colorremedies.com>
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/volumes.c | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+> Below is the output of running a balance a few times on a 120G SSD.
+> 
+> It seems that whenever I set the metadata usage to be greater than 0 it
+> will report relocating something, regardless of whether that's possible.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 49d7fab..bddf2bd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6058,10 +6058,14 @@ void btrfs_init_devices_late(struct btrfs_fs_info *fs_info)
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	struct btrfs_device *device;
- 
--	mutex_lock(&fs_devices->device_list_mutex);
--	list_for_each_entry(device, &fs_devices->devices, dev_list)
--		device->dev_root = fs_info->dev_root;
--	mutex_unlock(&fs_devices->device_list_mutex);
-+	while (fs_devices) {
-+		mutex_lock(&fs_devices->device_list_mutex);
-+		list_for_each_entry(device, &fs_devices->devices, dev_list)
-+			device->dev_root = fs_info->dev_root;
-+		mutex_unlock(&fs_devices->device_list_mutex);
-+
-+		fs_devices = fs_devices->seed;
-+	}
- }
- 
- static void __btrfs_reset_dev_stats(struct btrfs_device *dev)
+Why would it be impossible?  It's certainly not impossible from the 
+information posted.
+
+As Brendan suggests, depending on the amount of metadata present, it's 
+entirely possible that you have enough to fill X whole metadata chunks, 
+plus under 10% and possibly under 1% of the next chunk, such that 
+repeatedly running -musage=10 or -musage=1 will repeatedly balance that 
+last chunk.
+
+Also, not being a dev I don't normally read code to know whether this is 
+an issue or not, but given that btrfs will inline small enough files in 
+the metadata, it's theoretically possible that a balanced state where 
+more than one metadata chunk remains less than 100% full, if the inlined 
+file data doesn't line up to exact chunks.
+
+Then of course there's the dup or raid1 metadata case (dup being the 
+normal single-device metadata default, except if ssd is detected, raid1 
+being the multi-device metadata default in all cases), such that all 
+metadata chunks are duplicated, effectively doubling the number of chunks 
+rebalanced since each one has two copies.
+
 -- 
-1.8.1.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

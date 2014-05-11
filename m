@@ -1,115 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f169.google.com ([209.85.216.169]:33598 "EHLO
-	mail-qc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751332AbaEKGMy (ORCPT
+Received: from 27-32-84-95.static.tpgi.com.au ([27.32.84.95]:40803 "EHLO
+	array.commandict.com.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752038AbaEKICs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 May 2014 02:12:54 -0400
-Received: by mail-qc0-f169.google.com with SMTP id e16so6482561qcx.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 May 2014 23:12:54 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAF1_xX2nVWGyq5s3hjDoJ6i9QM3LmocshPgrca1hkD0YsvCTcw@mail.gmail.com>
-References: <CAF1_xX2nVWGyq5s3hjDoJ6i9QM3LmocshPgrca1hkD0YsvCTcw@mail.gmail.com>
-Date: Sun, 11 May 2014 08:12:53 +0200
-Message-ID: <CAF1_xX2Prc60KtxB1dnwSZhvK7TpfCuGnaPjnD5Tg8LjFQXMvg@mail.gmail.com>
-Subject: Re: [regression] [v3.14] btrfs hangs while reading some files
-From: Ronald <ronald645@gmail.com>
+	Sun, 11 May 2014 04:02:48 -0400
+Received: from array.commandict.com.au (localhost [127.0.0.1])
+	by array.commandict.com.au (Postfix) with ESMTP id D4B5B93E
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 May 2014 17:53:41 +1000 (EST)
+Received: (from brett@localhost)
+	by array.commandict.com.au (8.14.8/8.14.8/Submit) id s4B7reS4024218
+	for linux-btrfs@vger.kernel.org; Sun, 11 May 2014 17:53:40 +1000
+Date: Sun, 11 May 2014 17:53:40 +1000
+From: brett.king@commandict.com.au
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: RAID10 across different sized disks shows data layout as single
+ not RAID10
+Message-ID: <536f2c84.B0TBIV79nRteuoU7%brett.king@commandict.com.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Forgot to mention that these btrfs partitions reside on an LVM.
+Hi,
+I created a RAID10 array of 4x 4TB disks and later added another 4x 3TB disks, expecting the result to be the same level of fault tolerance however with simply more capacity. Recently I noticed the output of 'btrfs fi df' lists the Data layout as 'single' and not RAID10 per my initial mkfs.btrfs -d raid10 -m raid10 /dev/... command.
 
-2014-05-11 7:56 GMT+02:00 Ronald <ronald645@gmail.com>:
-> Dear btrfs developers,
->
-> Since v3.14, it has occasionally hapenned that reading some files from
-> a btrfs partition cause the process to hang. Right, a file has been
-> located that exhibits this behaviour.
->
-> /home/gebruiker/.wine_office/drive_c/MSOCache/All
-> Users/{90120000-0030-0000-0000-0000000FF1CE}-C/EnterWW.cab
->
-> This is what happens on v3.13:
->
-> 08:46 gebruiker@delta ~ :)
->  ==> FILE="$(cat fail)"
-> 08:46 gebruiker@delta ~ :)
->  ==> dd if="$FILE" of=/dev/zero
-> 517229+1 records in
-> 517229+1 records out
-> 264821640 bytes (265 MB) copied, 7.57866 s, 34.9 MB/s
->
-> This is what happens on v3.14:
->
-> 08:46 gebruiker@delta ~ :)
->  ==> FILE="$(cat fail)"
-> 08:46 gebruiker@delta ~ :)
->  ==> dd if="$FILE" of=/dev/zero
-> Killed
->
-> Eventually the process is killed by me, as nothing sems to be
-> hapenning. What I know is the following:
->
-> - the bug has thus far consistently reproduced
-> - appears to happen mostly to big files (e.g. hundreds of megs or
-> several gigabyte's)
-> - probably only happens when reading files from a btrfs partition
->
-> An attempt to bisect has been performed:
-> # bad: [455c6fdbd219161bd09b1165f11699d6d73de11c] Linux 3.14
-> # good: [d8ec26d7f8287f5788a494f56e8814210f0e64be] Linux 3.13
-> git bisect start 'v3.14' 'v3.13' '--' 'fs/btrfs'
-> # good: [bd0330ad2174d1a5f762eee2ee58f0148f10d575] btrfs: Add acl mount option.
-> git bisect good bd0330ad2174d1a5f762eee2ee58f0148f10d575
-> # skip: [95def2ede1a9dd12b164932eaf5fefb67aefc41c] Btrfs: fix to catch
-> all errors when resolving indirect ref
-> git bisect skip 95def2ede1a9dd12b164932eaf5fefb67aefc41c
-> # skip: [49fc647a2c558862145357f3a25892248042f6fe] Btrfs: do not
-> export ulist functions
-> git bisect skip 49fc647a2c558862145357f3a25892248042f6fe
-> # skip: [3a6d75e846224542151e9ff186cb89df5a6ca2c6] Btrfs: fix qgroup
-> rescan to work with skinny metadata
-> git bisect skip 3a6d75e846224542151e9ff186cb89df5a6ca2c6
-> # skip: [4c7a6f74ceeafd738b55d1c57349327f7ea8e895] Btrfs: rework ulist
-> with list+rb_tree
-> git bisect skip 4c7a6f74ceeafd738b55d1c57349327f7ea8e895
-> # bad: [f568849edac8611d603e00bd6cbbcfea09395ae6] Merge branch
-> 'for-3.14/core' of git://git.kernel.dk/linux-block
-> git bisect bad f568849edac8611d603e00bd6cbbcfea09395ae6
-> # good: [bf3d846b783327359ddc4bd4f52627b36abb4d1d] Merge branch
-> 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
-> git bisect good bf3d846b783327359ddc4bd4f52627b36abb4d1d
-> # skip: [4f024f3797c43cb4b73cd2c50cec728842d0e49e] block: Abstract out
-> bvec iterator
-> git bisect skip 4f024f3797c43cb4b73cd2c50cec728842d0e49e
-> # skip: [33879d4512c021ae65be9706608dacb36b4687b1] block:
-> submit_bio_wait() conversions
-> git bisect skip 33879d4512c021ae65be9706608dacb36b4687b1
-> # skip: [bc1e79acc13d70c5bb1b2a47bf0a580e6ae81fb6] block: fixup for
-> generic bio chaining
-> git bisect skip bc1e79acc13d70c5bb1b2a47bf0a580e6ae81fb6
-> # good: [b28bc9b38c52f63f43e3fd875af982f2240a2859] Merge tag
-> 'v3.13-rc6' into for-3.14/core
-> git bisect good b28bc9b38c52f63f43e3fd875af982f2240a2859
-> # bad: [c7b22bb19a24fef1a851a41e5c0657c0c4a41550] btrfs: fix missing
-> increment of bi_remaining
-> git bisect bad c7b22bb19a24fef1a851a41e5c0657c0c4a41550
-> # first bad commit: [c7b22bb19a24fef1a851a41e5c0657c0c4a41550] btrfs:
-> fix missing increment of bi_remaining
->
-> Reverting this commit causes the resulting kernel to OOPS during boot.
-> Furthermore, the first batch of skipping is because this kernel would
-> not load (grub keeps displaying 'Loading 'ArchLinux''. The second
-> batch of skipping is because the resulting kernel would OOPS during
-> boot.
->
-> The bisect failed, since the attempt to boot the latest marked good
-> kernel ended in an OOPS. So, testing this was not reliable.
->
-> The machine is an 32bit UP box. ~10,5 years old. This bug has also
-> been observed on multicore 64bit machines.
->
-> Would appreciate some pointers on how to debug this further.
->
->                                    Ronald
+Is this single data layout due to the overall inconsistent disk size used ? e.g. it can no longer fully stripe across all disks hence simply concatenates the subsequent smaller disks and displays this as an overall 'single' Data layout.
+
+I require fault tolerance hence ultimately want to know if I actually do have a RAID10 data layout, else should try perhaps a 'btrfs fi balance start -dconvert=raid10 /export' (assuming enough free space exists).
+
+I also noticed there are 2x System layouts shown, which leads me to think perhaps the first disks (4x4TB) are laid out as RAID10 for Data however the subsequent disks (4x3TB) are simply concatenated, giving me hopefully a limited level of fault tolerance for now.
+
+[root@array ~]# uname -a
+Linux array.commandict.com.au 3.14.2-200.fc20.x86_64 #1 SMP Mon Apr 28 14:40:57 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+[root@array ~]# btrfs --version
+Btrfs v3.12
+[root@array ~]# btrfs fi show
+Label: export  uuid: 22c7663a-93ca-40a6-9491-26abaa62b924
+        Total devices 8 FS bytes used 12.66TiB
+        devid    1 size 3.64TiB used 2.12TiB path /dev/sda
+        devid    2 size 3.64TiB used 2.12TiB path /dev/sde
+        devid    3 size 3.64TiB used 2.12TiB path /dev/sdi
+        devid    4 size 3.64TiB used 2.12TiB path /dev/sdg
+        devid    5 size 2.73TiB used 1.21TiB path /dev/sdb
+        devid    6 size 2.73TiB used 1.21TiB path /dev/sdf
+        devid    7 size 2.73TiB used 1.21TiB path /dev/sdh
+        devid    8 size 2.73TiB used 1.21TiB path /dev/sdj
+
+Btrfs v3.12
+[root@array ~]# btrfs fi df /export
+Data, single: total=13.25TiB, used=12.65TiB
+System, RAID10: total=64.00MiB, used=1.41MiB
+System, single: total=4.00MiB, used=0.00
+Metadata, RAID10: total=19.00GiB, used=16.47GiB
+[root@array ~]#
+
+Thanks in advance,
+Brett.

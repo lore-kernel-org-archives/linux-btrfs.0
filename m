@@ -1,32 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:40486 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:38950 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751672AbaEKAua convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751672AbaEKBwb convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 20:50:30 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: 3.15-rc5 btrfs send/receive corruption errors?
+	Sat, 10 May 2014 21:52:31 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49735 helo=[192.168.1.120])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WjIw3-002jYk-25
+	for linux-btrfs@vger.kernel.org; Sat, 10 May 2014 19:52:15 -0600
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140511001649.GF27530@merlins.org>
-Date: Sat, 10 May 2014 18:50:04 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <A1339B38-993E-48EF-9E36-1E85A6E2F7E4@colorremedies.com>
-References: <20140510220710.GA6772@merlins.org> <20140510224249.GA15909@merlins.org> <D55BDA6A-5DFA-4981-AC69-3156317ED169@colorremedies.com> <20140511001649.GF27530@merlins.org>
-To: Marc MERLIN <marc@merlins.org>
+Content-Type: text/plain; charset=us-ascii
+Subject: bug adding device to seed device, btrfs fi show fails
+Message-Id: <29B81ECC-8877-4BBB-9701-1CB5C46717ED@colorremedies.com>
+Date: Sat, 10 May 2014 19:51:59 -0600
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+kernel 3.15.0-0.rc5.git0.1.fc21.x86_64
+btrfs-progs 3.14
 
-On May 10, 2014, at 6:16 PM, Marc MERLIN <marc@merlins.org> wrote:
-
-> On Sat, May 10, 2014 at 06:06:46PM -0600, Chris Murphy wrote:
->> I think the issue might be there are still problems and changing code on the receive side (btrfs-progs). The kernel side code responsible for send is probably working correctly.
-> 
-> Mmmh, good point, I didn't consider that.
-> Do you think I should downgrade btrfs-progs back down from 3.14 to 3.12?
-
-If anything, David's btrfs-integration branch, but I'm not sure what its status is at the moment compared to 3.14.
+/dev/sdb2 = existing btrfs fs
+/dev/sdc3 = unformatted partition
 
 
-Chris Murphy
+# btrfstune -S1 /dev/sdb2
+# mount /dev/sdb2 /mnt
+mount: /dev/sdb2 is write-protected, mounting read-only
+# btrfs device add /dev/sdc3 /mnt
+Performing full device TRIM (75.90GiB) ...
+# btrfs fi show
+Label: 'rawhide'  uuid: d372e5d1-386f-460c-b036-611469e0155e
+	Total devices 1 FS bytes used 7.55GiB
+	devid    1 size 79.31GiB used 11.04GiB path /dev/sda3
+
+btrfs: utils.c:1769: get_fs_info: Assertion `!(ndevs >= fi_args->num_devices)' failed.
+
+Nothing listed in dmesg.

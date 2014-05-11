@@ -1,42 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:38950 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751672AbaEKBwb convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 May 2014 21:52:31 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49735 helo=[192.168.1.120])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WjIw3-002jYk-25
-	for linux-btrfs@vger.kernel.org; Sat, 10 May 2014 19:52:15 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: bug adding device to seed device, btrfs fi show fails
-Message-Id: <29B81ECC-8877-4BBB-9701-1CB5C46717ED@colorremedies.com>
-Date: Sat, 10 May 2014 19:51:59 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:36865 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751672AbaEKB67 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 May 2014 21:58:59 -0400
+Date: Sat, 10 May 2014 18:59:05 -0700
+From: David Brown <davidb@davidb.org>
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org, Filipe David Manana <fdmanana@gmail.com>
+Subject: Re: 3.15-rc5 btrfs send/receive corruption errors? Does scrub
+Message-ID: <20140511015905.GA29448@davidb.org>
+References: <20140510235717.GB15909@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
+In-Reply-To: <20140510235717.GB15909@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-kernel 3.15.0-0.rc5.git0.1.fc21.x86_64
-btrfs-progs 3.14
+On Sat, May 10, 2014 at 04:57:18PM -0700, Marc MERLIN wrote:
 
-/dev/sdb2 = existing btrfs fs
-/dev/sdc3 = unformatted partition
+>On Fri, May 09, 2014 at 11:39:13AM -0700, Anacron wrote:
+>> /etc/cron.daily/btrfs-scrub:
+>> scrub device /dev/mapper/cryptroot (id 1) done
+>> 	scrub started at Fri May  9 06:09:14 2014 and finished after 19153 seconds
+>> 	total bytes scrubbed: 646.15GiB with 0 errors
+>
+>So, does scrub actually make sure everything on my filesystem is sane,
+>or can it miss some kinds of corruptions?
 
+Does scrub make sure _anything_ on the filesystem is sane?  I guess it
+would detect some failures because the tree is incorrect, but I
+thought scrub was mostly about making sure the data match the
+checksums.
 
-# btrfstune -S1 /dev/sdb2
-# mount /dev/sdb2 /mnt
-mount: /dev/sdb2 is write-protected, mounting read-only
-# btrfs device add /dev/sdc3 /mnt
-Performing full device TRIM (75.90GiB) ...
-# btrfs fi show
-Label: 'rawhide'  uuid: d372e5d1-386f-460c-b036-611469e0155e
-	Total devices 1 FS bytes used 7.55GiB
-	devid    1 size 79.31GiB used 11.04GiB path /dev/sda3
+Just curious, the future "online filesystem check", will that be part
+of scrub, or another command.  It seems like it would be common to
+want a faster integrity check that doesn't have to read all of the
+data as well.
 
-btrfs: utils.c:1769: get_fs_info: Assertion `!(ndevs >= fi_args->num_devices)' failed.
-
-Nothing listed in dmesg.
+David

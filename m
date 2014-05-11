@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx-out-2.rwth-aachen.de ([134.130.5.187]:34102 "EHLO
-	mx-out-2.rwth-aachen.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751457AbaEKOI4 (ORCPT
+Received: from fw10a-lesia.wadns.net ([196.220.39.109]:17836 "EHLO
+	fw10a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751806AbaEKOMI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 May 2014 10:08:56 -0400
+	Sun, 11 May 2014 10:12:08 -0400
+Message-ID: <536F852C.3000100@swiftspirit.co.za>
+Date: Sun, 11 May 2014 16:11:56 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Tue, 13 May 2014 10:16:59 +0200
-From: laie <laie@halifax.rwth-aachen.de>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: destroyed disk in btrfs raid
-In-Reply-To: <20140509180137.GH16185@carfax.org.uk>
-References: <2a45648842c071a8e0d3285541d96c6f@halifax.rwth-aachen.de>
- <20140509175827.GG16185@carfax.org.uk>
- <20140509180137.GH16185@carfax.org.uk>
-Message-ID: <c1b636dffe4c70c4e15010000e730703@halifax.rwth-aachen.de>
+To: russell@coker.com.au, linux-btrfs@vger.kernel.org
+Subject: Re: -musage=>0 means always reporting relocation
+References: <201405111943.16913.russell@coker.com.au> <201405111952.43458.russell@coker.com.au>
+In-Reply-To: <201405111952.43458.russell@coker.com.au>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-05-09 20:01, Hugo Mills wrote:
-> On Fri, May 09, 2014 at 06:58:27PM +0100, Hugo Mills wrote:
->> On Fri, May 09, 2014 at 08:02:45PM +0200, laie wrote:
->> > Now I'm looking for a way to tell btrfs to provide me with a list of the
->> > corrupted files and delete them afterwards. This would be great, because
->> > otherwise it would take very long to get the data back from slow backups.
->> 
->>    Simple solution: cat every file to /dev/null, and see which ones
->> fail with an I/O error. With RAID-0 data, losing a device is going to
->> damage most files, though, so don't necessarily expect much to 
->> survive.
-> 
->    Actually, you could cat just the first 256 KiB of each file to
-> /dev/null -- that should be sufficient, because with RAID-0, the
-> stripe size is 64 KiB, and 256 KiB is therefore 4 stripes, and so
-> should cover every device... :)
+On 2014/05/11 11:52 AM, Russell Coker wrote:
+> On Sun, 11 May 2014, Russell Coker <russell@coker.com.au> wrote:
+>> Below is the output of running a balance a few times on a 120G SSD.
+> Sorry forgot to mention that's kernel 3.14.1 Debian package.
+>
+Please send the output of the two following command:
+btrfs fi df /
 
-I was hoping for an internal tool, but I guess the matter is to 
-specific. Thank you for the fast and easy solution.
+This will give more information on your current chunk situation. I 
+suspect this is a case where a system chunk (which is included when 
+specifying metadata) that is not actually being relocated. This is a bug 
+that I believe was already fixed, though I'm not sure in which version.
 
-Are you sure that using only 256KiB covers also huge files, even if only 
-the last Part is missing?
+The pathological case is where you have a chunk that is 1% full and 
+*every* other in-use chunk on the device is 100% full. In that 
+situation, a balance will simply move that data into a new chunk (which 
+will only ever reach 1% full). Thus, all subsequent balances will 
+relocate that same data again to another new chunk.
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

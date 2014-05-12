@@ -1,60 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37191 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751328AbaELErq (ORCPT
+Received: from szxga01-in.huawei.com ([119.145.14.64]:31361 "EHLO
+	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750752AbaELLBS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 00:47:46 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s4C4lj2c023399
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 May 2014 04:47:46 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4C4liYX027650
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 May 2014 04:47:45 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4C4linl007053
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 May 2014 04:47:44 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: mark mapping with error flag to report errors to userspace
-Date: Mon, 12 May 2014 12:47:36 +0800
-Message-Id: <1399870056-29030-1-git-send-email-bo.li.liu@oracle.com>
+	Mon, 12 May 2014 07:01:18 -0400
+Message-ID: <5370A9ED.9000106@huawei.com>
+Date: Mon, 12 May 2014 19:01:01 +0800
+From: Zhang Zhen <zhenzhang.zhang@huawei.com>
+MIME-Version: 1.0
+To: <clm@fb.com>, <jbacik@fb.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: replace simple_strtoul() with kstrtoul()
+References: <1399892355-3781-1-git-send-email-zhenzhang.zhang@huawei.com>
+In-Reply-To: <1399892355-3781-1-git-send-email-zhenzhang.zhang@huawei.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-According to commit 865ffef3797da2cac85b3354b5b6050dc9660978
-(fs: fix fsync() error reporting),
-it's not stable to just check error pages because pages can be
-truncated or invalidated, we should also mark mapping with error
-flag so that a later fsync can catch the error.
+use the newer and more pleasant kstrtoul() to replace simple_strtoul(),
+because simple_strtoul() is marked for obsoletion.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Zhang Zhen <zhenzhang.zhang@huawei.com>
 ---
- fs/btrfs/extent_io.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 80be17c..d7c7813 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2367,6 +2367,7 @@ int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 	if (!uptodate) {
- 		ClearPageUptodate(page);
- 		SetPageError(page);
-+		mapping_set_error(page->mapping, ret);
- 	}
- 	return 0;
- }
-@@ -3368,6 +3369,8 @@ done:
- 		set_page_writeback(page);
- 		end_page_writeback(page);
- 	}
-+	if (PageError(page))
-+		mapping_set_error(page->mapping, ret);
- 	unlock_page(page);
- 
- done_unlocked:
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2ad7de9..0075b7d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1506,7 +1506,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		sizestr = devstr + 1;
+ 		*devstr = '\0';
+ 		devstr = vol_args->name;
+-		devid = simple_strtoull(devstr, &end, 10);
++		devid = kstrtoul(devstr, &end, 10);
+ 		if (!devid) {
+ 			ret = -EINVAL;
+ 			goto out_free;
 -- 
-1.8.1.4
+1.8.1.2
+
+
+.
+
+
+
 

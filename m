@@ -1,38 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:22122 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751297AbaELPWW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 11:22:22 -0400
-Message-ID: <5370E724.1010401@fb.com>
-Date: Mon, 12 May 2014 11:22:12 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:36907 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751989AbaELQRy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 May 2014 12:17:54 -0400
+Date: Mon, 12 May 2014 18:17:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: russell@coker.com.au, linux-btrfs@vger.kernel.org
+Subject: Re: -musage=>0 means always reporting relocation
+Message-ID: <20140512161751.GE6917@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201405111943.16913.russell@coker.com.au>
+ <201405111952.43458.russell@coker.com.au>
+ <536F852C.3000100@swiftspirit.co.za>
 MIME-Version: 1.0
-To: Chris Samuel <chris@csamuel.org>, <linux-btrfs@vger.kernel.org>
-CC: Abbas <mickylmartin@gmail.com>
-Subject: Re: Sending incremental backup causes deadlock (3.14.3)
-References: <CAKAA-n=_jMyWFbfcGvMsMDJg3t7VpRegDDDybEeQ5oxof8graA@mail.gmail.com> <536D0ED3.2050602@fb.com> <1718079.d2fxXYZyoQ@quad>
-In-Reply-To: <1718079.d2fxXYZyoQ@quad>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <536F852C.3000100@swiftspirit.co.za>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/10/2014 04:04 AM, Chris Samuel wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> Hi Josef,
->
-> On Fri, 9 May 2014 01:22:27 PM Josef Bacik wrote:
->
->> Known problem, fixed in 3.15-rc1.  Thanks,
->
-> Is the fix suitable for -stable too?
->
+On Sun, May 11, 2014 at 04:11:56PM +0200, Brendan Hide wrote:
+> On 2014/05/11 11:52 AM, Russell Coker wrote:
+> >On Sun, 11 May 2014, Russell Coker <russell@coker.com.au> wrote:
+> >>Below is the output of running a balance a few times on a 120G SSD.
+> >Sorry forgot to mention that's kernel 3.14.1 Debian package.
+> >
+> Please send the output of the two following command:
+> btrfs fi df /
+> 
+> This will give more information on your current chunk situation. I suspect
+> this is a case where a system chunk (which is included when specifying
+> metadata) that is not actually being relocated. This is a bug that I believe
+> was already fixed, though I'm not sure in which version.
+> 
+> The pathological case is where you have a chunk that is 1% full and *every*
+> other in-use chunk on the device is 100% full. In that situation, a balance
+> will simply move that data into a new chunk (which will only ever reach 1%
+> full). Thus, all subsequent balances will relocate that same data again to
+> another new chunk.
 
-Unfortunately no, it's too big.  I had thought about shoving it back but 
-it's simply too complicated and has a lot of other patches that go along 
-with it to fix other things.  Thanks,
+You're right about the system chunk, the message says it's blockgroup
+type '34', which matches SYSTEM (2) and DUP (32).
 
-Josef
-
+Seems that the usage value does not propagate to the system group filter
+and just processes all its chunks each time, though all the metadata
+chunks are correctly filtered.

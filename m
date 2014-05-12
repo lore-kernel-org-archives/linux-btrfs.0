@@ -1,95 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21243 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932434AbaELPAi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 11:00:38 -0400
-Date: Mon, 12 May 2014 23:00:23 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Zach Brown <zab@redhat.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: fix inline compressed read err corruption
-Message-ID: <20140512150022.GA15727@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1399590979-15331-1-git-send-email-zab@redhat.com>
- <1399590979-15331-3-git-send-email-zab@redhat.com>
+Received: from cantor2.suse.de ([195.135.220.15]:38010 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754643AbaELRKS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 May 2014 13:10:18 -0400
+Date: Mon, 12 May 2014 19:10:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Hugo Mills <hugo@carfax.org.uk>, Russell Coker <russell@coker.com.au>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: known UUID and metadata consistency
+Message-ID: <20140512171017.GF6917@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201405111416.28012.russell@coker.com.au>
+ <20140511091041.GA23212@carfax.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1399590979-15331-3-git-send-email-zab@redhat.com>
+In-Reply-To: <20140511091041.GA23212@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 08, 2014 at 07:16:19PM -0400, Zach Brown wrote:
-> uncompress_inline() is silently dropping an error from
-> btrfs_decompress() after testing it and zeroing the page that was
-> supposed to hold decompressed data.  This can silently turn compressed
-> inline data in to zeros if decompression fails due to corrupt compressed
-> data or memory allocation failure.
+On Sun, May 11, 2014 at 10:10:41AM +0100, Hugo Mills wrote:
+> a) The chunk tree is whole and consistent
+> b) We need to (or have been asked to) rebuild the chunk tree from scratch
 > 
-> I have no idea why uncompress_inline() is zeroing the page for an error
-> from btrfs_decompress() but not for the earlier ENOMEM from kmalloc().
-> Can someone explain this?
+>    So I think, yes, you can make fake metadata blocks, but you have to
+> rely on either (a) your fake data being written to exactly the right
+> place and not overwritten by a balance, or (b) having the chunk tree
+> broken and the admin looking for a usable set of metadata with
+> btrfs-find-root and choosing your fake (with enough plausible complex
+> data in it to fool them).
+> 
+>    I've probably missed loads of points here, but I think this is a
+> good start for the conversation. :)
 
-I guess that's because decompress() may have put part of real data on the page
-and then bail out, and we don't want those data to be exposed to users in this
-error case.
+I think you've covered most of it.
 
-And kmalloc() 's ENOMEM runs before that decompress(), page has whatever random
-data.
+One thing that looks as a show stopper is the fact that the fake data
+blocks that would become the metadata blocks would lie out of any
+metadata group. I'm not familiar with the chunk rebuilder, but this
+seems as a simple check to do when it tries to guess the block group
+layout from what it finds on disk.
 
--liubo
+Otherwise, faking the metadata block contents seems very fragile, we'd
+need at least some knowledge where the block will end up in the key
+space and also something about the adjacent blocks -- all must fit at
+the time when the fsck will happen.
 
-> 
-> The fix is to pass the error to its caller.  Which still has a BUG_ON().
-> So we fix that too.
-> 
-> I verified this by manually forcing the error from btrfs_decompress()
-> for a silly named copy of od:
-> 
-> 	if (!strcmp(current->comm, "failod"))
-> 		ret = -ENOMEM;
-> 
->   # od -x /mnt/btrfs/dir/80 | head -1
->   0000000 3031 3038 310a 2d30 6f70 6e69 0a74 3031
->   # echo 3 > /proc/sys/vm/drop_caches
->   # cp $(which od) /tmp/failod
->   # /tmp/failod -x /mnt/btrfs/dir/80 | head -1
->   0000000 0000 0000 0000 0000 0000 0000 0000 0000
-> 
-> Signed-off-by: Zach Brown <zab@redhat.com>
-> ---
->  fs/btrfs/inode.c | 7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0c0bb45..fc89fa7 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6091,7 +6091,7 @@ static noinline int uncompress_inline(struct btrfs_path *path,
->  		kunmap_atomic(kaddr);
->  	}
->  	kfree(tmp);
-> -	return 0;
-> +	return ret;
->  }
->  
->  /*
-> @@ -6292,7 +6292,10 @@ next:
->  				ret = uncompress_inline(path, inode, page,
->  							pg_offset,
->  							extent_offset, item);
-> -				BUG_ON(ret); /* -ENOMEM */
-> +				if (ret) {
-> +					err = ret;
-> +					goto out;
-> +				}
->  			} else {
->  				map = kmap(page);
->  				read_extent_buffer(leaf, map + pg_offset, ptr,
-> -- 
-> 1.8.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The logical offset of the block is incorporated in the metadata blocks
+in the upper layers as a key and this propagates up the tree, so
+replacing one block pointer would disrupt the key ordering, unless it's
+at the beginning/end of a gap in the key space so it could point to a
+data blockgroup.
+
+Replacing a chain of nodes would need a correct parent transaction ids
+that match the current state of the fs.
+
+*more handwaving*

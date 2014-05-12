@@ -1,74 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:31154 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750986AbaELNuz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 09:50:55 -0400
-Message-ID: <5370D21C.6000009@fb.com>
-Date: Mon, 12 May 2014 09:52:28 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:35034 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758475AbaELOjs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 May 2014 10:39:48 -0400
+Date: Mon, 12 May 2014 16:39:46 +0200
+From: David Sterba <dsterba@suse.cz>
+To: kreijack@inwind.it
+Cc: =?utf-8?B?VG9tw6HFoSBQcnXFvmluYQ==?= <pruzinat@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: [suggestion] Add verbose notification about inode-cache
+ rebuild to kernel log
+Message-ID: <20140512143946.GD6917@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <CACHxQ2tAU15z_pUEGBuGqYFR9n_fH9BeyA8=jYryRrb3H=zCYA@mail.gmail.com>
+ <CACHxQ2sQH96Z==zqEaoEoOxc65k9TYD66yLXQzOYL1kxaPcrqw@mail.gmail.com>
+ <20140509145118.GD5988@twin.jikos.cz>
+ <536D1AA6.7050407@libero.it>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-CC: Miao Xie <miaox@cn.fujitsu.com>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH 1/2] btrfs: protect snapshots from deleting during send
-References: <cover.1397572052.git.dsterba@suse.cz> <6c15e8cf5f832398461e8dbde0a02255c35fdd4b.1397572052.git.dsterba@suse.cz>
-In-Reply-To: <6c15e8cf5f832398461e8dbde0a02255c35fdd4b.1397572052.git.dsterba@suse.cz>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <536D1AA6.7050407@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, May 09, 2014 at 08:12:54PM +0200, Goffredo Baroncelli wrote:
+> > Adding the printk is probably a good thing, but I'd rather reconsider
+> > using inode_cache at all. IMO it's supposed to fix problems with inode
+> > numbers that we don't have.
+> 
+> IIRC, the problem is for the 32 bit system, were the API wants the inode number to be 32 bit..
+> 
+> In the past the inode_cache was introduced because the inode often reached 2^32 [1]
 
+Right, it makes sense for the 32bit case under some circumstances.
+However I don't see where's "often reached 2^32" mentioned in the link.
+If it's really 'often', then there's something wrong. A 32bit machine
+serving large amounts of files? Or, it could reach the limit over time,
+say a few years, so I'm not saying it can't happen in practice.
 
-On 04/15/2014 10:41 AM, David Sterba wrote:
-> The patch "Btrfs: fix protection between send and root deletion"
-> (18f687d538449373c37c) does not actually prevent to delete the snapshot
-> and just takes care during background cleaning, but this seems rather
-> user unfriendly, this patch implements the idea presented in
->
-> https://urldefense.proofpoint.com/v1/url?u=http://www.spinics.net/lists/linux-btrfs/msg30813.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=oPq3jsCvKlZXohAj%2B1Mz9EvxoJ1iqsxD4%2Fkm%2By17esY%3D%0A&s=b820d70b0984d1e875bf8e22adadef7d6c2a6e0c1cdb4c3e0913f8f1521fc966
->
-> - add an internal root_item flag to denote a dead root
-> - check if the send_in_progress is set and refuse to delete, otherwise
->    set the flag and proceed
-> - check the flag in send similar to the btrfs_root_readonly checks, for
->    all involved roots
->
-> The root lookup in send via btrfs_read_fs_root_no_name will check if the
-> root is really dead or not. If it is, ENOENT, aborted send. If it's
-> alive, it's protected by send_in_progress, send can continue.
->
+Then, inode_cache is the workaround for this usecase and can be turned on
+if things are going to be bad.
 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 9dde9717c1b9..80ec4fdc0b40 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -5263,7 +5263,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->
->   	/*
->   	 * The subvolume must remain read-only during send, protect against
-> -	 * making it RW.
-> +	 * making it RW. This also protects against deletion.
->   	 */
->   	spin_lock(&send_root->root_item_lock);
->   	send_root->send_in_progress++;
-> @@ -5284,6 +5284,15 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
->   		goto out;
->   	}
->
-> +	/*
-> +	 * Unlikely but possible, if the subvolume is marked for deletion but
-> +	 * is slow to remove the directory entry, send can still be started
-> +	 */
-> +	if (btrfs_root_dead(sctx->parent_root)) {
-> +		ret = -EPERM;
-> +		goto out;
-> +	}
-> +
+Another workaround, that requires more manual intervention, is to create
+a new subvolume and reflink all the files there.
 
-This should be sctx->send_root and it should be lower right?  At this 
-point the sctx hasn't been allocated yet.
+> Because most modern hardware is 64 bit (with the exception of ARM ?),
+> could be make sense to allow btrfs to work without inode_cache only on
+> 64bit, loosing the possibility to be used on 32 bit system.
+> 
+> Instead when the inode_cache is used, btrfs still be compatible with
+> both 32bit and 64bit systems.
 
-I've changed it here and it'll go into integration shortly, but I can 
-rebase in something different if required.
+There are 32bit machines in use and inode_cache brings some
+compatibility assurance. Just that I would not recommend it to use by
+default.
 
--chris
+> How often a filesystem is moved between a 64bit and 32bit systems ?
+
+Not so often I'd say, but for example the block device on a 32bit
+machine can be exported via iscsi to a 64bit machine temporarily, then
+the changes made on the 64bit host can make it unusable.
+
+Thanks for the pointer, I think this is a documentation issue, we can
+keep inode_cache code as-is.

@@ -1,53 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34203 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754486AbaELB7L (ORCPT
+Received: from mail-ve0-f170.google.com ([209.85.128.170]:56461 "EHLO
+	mail-ve0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750752AbaELM1e (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 May 2014 21:59:11 -0400
-Message-ID: <53702B42.8040806@oracle.com>
-Date: Mon, 12 May 2014 10:00:34 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 12 May 2014 08:27:34 -0400
+Received: by mail-ve0-f170.google.com with SMTP id db11so8626577veb.15
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 May 2014 05:27:33 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: bug adding device to seed device, btrfs fi show fails
-References: <29B81ECC-8877-4BBB-9701-1CB5C46717ED@colorremedies.com>
-In-Reply-To: <29B81ECC-8877-4BBB-9701-1CB5C46717ED@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+From: Scott Middleton <scott@assuretek.com.au>
+Date: Mon, 12 May 2014 20:27:13 +0800
+Message-ID: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com>
+Subject: send/receive and bedup
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Everyone
 
-This patch posted a long time back should fix it.
-   http://permalink.gmane.org/gmane.comp.file-systems.btrfs/33276
+History:
+I just recently discovered BtrFS. Well really only just started
+reading a lot about it. Starting with blogs by Jim Salters and Marc
+Merlin. So, thanks for those blogs guys.
 
-Could you test it ?
+This also introduced me to ZoL (ZFS). It seemed a bit more stable but
+one of the features I really wanted was deduplication and needing 20GB
+RAM for 1TB of deduped data and the fact it is always on - pushed me
+away. Some of those guys really don't like BtrFS BTW!
 
-Thanks, Anand
+What I want to be able to do is backup Virtual images (VirtualBox and
+some older VMware) over ADSL. I hoped a mixture of Dedupe and the
+send/receive functions of BtrFS might accomplish this.
+
+I am in the process of building a test BtrFS system at home now but I
+hope to put it into production in the next few months.
 
 
-On 05/11/2014 09:51 AM, Chris Murphy wrote:
-> kernel 3.15.0-0.rc5.git0.1.fc21.x86_64
-> btrfs-progs 3.14
->
-> /dev/sdb2 = existing btrfs fs
-> /dev/sdc3 = unformatted partition
->
->
-> # btrfstune -S1 /dev/sdb2
-> # mount /dev/sdb2 /mnt
-> mount: /dev/sdb2 is write-protected, mounting read-only
-> # btrfs device add /dev/sdc3 /mnt
-> Performing full device TRIM (75.90GiB) ...
-> # btrfs fi show
-> Label: 'rawhide'  uuid: d372e5d1-386f-460c-b036-611469e0155e
-> 	Total devices 1 FS bytes used 7.55GiB
-> 	devid    1 size 79.31GiB used 11.04GiB path /dev/sda3
->
-> btrfs: utils.c:1769: get_fs_info: Assertion `!(ndevs >= fi_args->num_devices)' failed.
->
-> Nothing listed in dmesg.--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Current server is a Dual Xeon, Intel server board, 32GB RAM, 2 x 2TB
+Hardware RAID SAS (consisting of 4 x 2TB SATA drives) as / and /home
+in ext4 format. I also have 2 unused 4TB SATA drives that will be
+eventually be BtrFS RAID1 as /Backup. Ubuntu 14.04. Its is mainly a VM
+host, small file storage for word docs etc, some large archival .pst
+files and shadowprotect backups of the Terminal Server. I only just
+built this server over the last weekend to replace their other aging
+server and I purposely over engineered it.
+
+Onsite there is also a backup server that is pretty basic with 2 x 4TB
+HDDs and 8GB RAM. I plan on converting it to BtrFS as well. Currently
+is Ubuntu 12.04 but I will be upgrading it soon to 14.04.
+
+Offsite in a data centre I have an aging 1 RU server that I will be
+upgrading. It'll probably have 8GB RAM, 1 X 60GB SSD as boot/swap and
+2 X 4TB HDD BtrFS in RAID 1. Currently running 32 bit Debian 7.5. It
+has had many partial hardware and OS upgrades over the years as it
+originally started as Slink or even Hamm. Time to start again since I
+need to move to 64bit.
+
+What I want to do is backup the / and /home directories on the main
+server to /Backup BtrFS directory, run bedup then "send" it to the
+onsite backup server. The onsite backup server will "send" it to the
+offsite server. I am assuming (correctly I hope) that the
+deduplication will also be replicated across the machines.  I'll have
+NOCOW on the VM images, Archived PST files, Shadow protect images and
+some other stuff.
+
+I guess the first question is this even possible? I don't believe that
+much actual non duplicated data changes all that much mostly just word
+docs that I already send offsite. I'm really hoping to backup the VMs
+and the shadow protects offsite as well. I can  upgrade the broadband
+to fibre but before I do that (spend a lot of money) I want to be able
+to see that it would be possible.
+
+
+Kind Regards
+
+-
+Scott

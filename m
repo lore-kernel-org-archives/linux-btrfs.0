@@ -1,37 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gremlin.yadt.co.uk ([149.255.108.98]:59274 "EHLO
-	gremlin.yadt.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751442AbaELL2T (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 07:28:19 -0400
-Date: Mon, 12 May 2014 12:28:09 +0100
-From: David Taylor <davidt-btrfs@yadt.co.uk>
-To: Zhang Zhen <zhenzhang.zhang@huawei.com>
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: replace simple_strtoul() with kstrtoul()
-Message-ID: <20140512112808.GA5103@yadt.co.uk>
-References: <1399892355-3781-1-git-send-email-zhenzhang.zhang@huawei.com>
- <5370A9ED.9000106@huawei.com>
+Received: from cantor2.suse.de ([195.135.220.15]:34436 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758506AbaELOPj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 May 2014 10:15:39 -0400
+Date: Mon, 12 May 2014 16:15:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Toralf =?iso-8859-1?Q?F=F6rster?= <toralf.foerster@gmx.de>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: superfluous " else if ()"
+Message-ID: <20140512141538.GB6917@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <535C017C.7060509@gmx.de>
+ <20140509164902.GA6039@twin.jikos.cz>
+ <536D0C96.4020705@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-In-Reply-To: <5370A9ED.9000106@huawei.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <536D0C96.4020705@gmx.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 12 May 2014, Zhang Zhen wrote:
+On Fri, May 09, 2014 at 07:12:54PM +0200, Toralf Förster wrote:
+> But what came into my mind, wouldn't the following avoid such question in future ? :
 
->use the newer and more pleasant kstrtoul() to replace simple_strtoul(),
->because simple_strtoul() is marked for obsoletion.
-[...]
->-		devid = simple_strtoull(devstr, &end, 10);
->+		devid = kstrtoul(devstr, &end, 10);
+Yes and though it's a tiny change, I don't mind a patch for that.
 
-kstrtoul appears to take its arguments in a different order:
+>          } else {
+> 		/* ret < 0 */
 
-unsigned long long simple_strtoull(const char * cp,
-  char ** endp, unsigned int base);
-
-int kstrtoul(const char *s, unsigned int base, unsigned long *res);
-
--- 
-David Taylor
+The comment is IMHO unnecessary.

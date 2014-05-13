@@ -1,71 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sandeen.net ([63.231.237.45]:37960 "EHLO sandeen.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757189AbaEIUy1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 May 2014 16:54:27 -0400
-Message-ID: <536D4082.2090707@sandeen.net>
-Date: Fri, 09 May 2014 15:54:26 -0500
-From: Eric Sandeen <sandeen@sandeen.net>
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:10041 "EHLO
+	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751288AbaEMGaW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 02:30:22 -0400
+Date: Tue, 13 May 2014 16:30:18 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: xfs@oss.sgi.com
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [ANNOUNCE] xfstests: master branch updated to 10fd79a
+Message-ID: <20140513063018.GB5421@dastard>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
-        sandeen@redhat.com
-Subject: Re: [PATCH] xfstests: fix selinux context handling
-References: <1399668027-12912-1-git-send-email-jbacik@fb.com>
-In-Reply-To: <1399668027-12912-1-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/9/14, 3:40 PM, Josef Bacik wrote:
-> With the new config stuff we lost the selinux options being set for systems with
-> selinux turned on.  We want the selinux context set all the time, wether we
-> provide a MOUNT_OPTIONS value or not, so take this logic out of _mount_opts()
-> and just put it in the body of common/config
-> 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+Hi folks,
 
-This makes sense to me... untested, TBH, but I assume you did, so:
+The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
+just been updated. Patches often get missed, so please check if your
+outstanding patches were in this update. If they have not been in
+this update, please resubmit them to xfs@oss.sgi.com so they can be
+picked up in the next update.
 
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
+The new head of the master branch is commit:
 
-At some point it'd probably make sense to figure out which tests actually
-need this, and put it in a _use_selinux_context() or something, so that
-other tests still exercise under a normal selinux environment...
+10fd79a locktest: add a F_GETLK vs. openmode test
 
--Eric
+New Commits:
 
-> ---
->  common/config | 16 ++++++++--------
->  1 file changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/common/config b/common/config
-> index e8bcf48..a2f55cf 100644
-> --- a/common/config
-> +++ b/common/config
-> @@ -217,16 +217,16 @@ case "$HOSTOS" in
->          ;;
->  esac
->  
-> +# SELinux adds extra xattrs which can mess up our expected output.
-> +# So, mount with a context, and they won't be created
-> +# # nfs_t is a "liberal" context so we can use it.
-> +if [ -x /usr/sbin/selinuxenabled ] && /usr/sbin/selinuxenabled; then
-> +	SELINUX_MOUNT_OPTIONS="-o context=system_u:object_r:nfs_t:s0"
-> +	export SELINUX_MOUNT_OPTIONS
-> +fi
-> +
->  _mount_opts()
->  {
-> -	# SELinux adds extra xattrs which can mess up our expected output.
-> -	# So, mount with a context, and they won't be created
-> -	# # nfs_t is a "liberal" context so we can use it.
-> -	if [ -x /usr/sbin/selinuxenabled ] && /usr/sbin/selinuxenabled; then
-> -		SELINUX_MOUNT_OPTIONS="-o context=system_u:object_r:nfs_t:s0"
-> -		export SELINUX_MOUNT_OPTIONS
-> -	fi
-> -
->  	case $FSTYP in
->  	xfs)
->  		export MOUNT_OPTIONS=$XFS_MOUNT_OPTIONS
-> 
+Brian Foster (5):
+      [2a52b8f] xfs/030: filter out extra repair noise for finobt enabled fs'
+      [9d5cb63] common: add _require_xfs_[mkfs_]finobt() checks for finobt tests
+      [01fbf44] repair: filter agno/ino repair output for finobt
+      [d95ecb0] xfs/010: test repair for finobt corruption
+      [c141570] xfs/013: stress the free inode btree
 
+Eryu Guan (1):
+      [ec08236] common: new function to get real device path name and basename
+
+Jeff Layton (4):
+      [2baab36] locktest: don't assume that F_OPEN should use O_RDWR
+      [ece564a] locktest: set f_fd to INVALID_HANDLE on close
+      [fe7056d] locktest: consolidate do_lock and do_unlock, and add ability to F_GETLK
+      [10fd79a] locktest: add a F_GETLK vs. openmode test
+
+Josef Bacik (2):
+      [0fd4705] common: fix flink check
+      [b6689ad] config: fix selinux context handling
+
+Namjae Jeon (1):
+      [995a459] fsstress: fix incorrect if condition check for collapse range mode
+
+Theodore Ts'o (1):
+      [9f35155] check: add support for an external file containing tests to exclude
+
+Wang Shilong (1):
+      [49398f8] btrfs: add regression test for inode cache vs tree log
+
+hch@infradead.org (1):
+      [7f82a5f] common: use a relative path to fsstress
+
+
+Code Diffstat:
+
+ check               |   6 ++
+ common/config       |  18 +++---
+ common/rc           |  36 ++++++++++++
+ common/repair       |   2 +
+ ltp/fsstress.c      |   2 +-
+ src/locktest.c      | 125 +++++++++++++++++++-----------------------
+ tests/btrfs/049     | 109 ++++++++++++++++++++++++++++++++++++
+ tests/btrfs/049.out |   1 +
+ tests/btrfs/group   |   1 +
+ tests/ext4/305      |   2 +-
+ tests/generic/009   |   2 +-
+ tests/generic/019   |   4 +-
+ tests/generic/285   |   2 +-
+ tests/generic/312   |   2 +-
+ tests/xfs/010       | 133 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/010.out   |  57 +++++++++++++++++++
+ tests/xfs/013       | 155 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/xfs/013.out   |   7 +++
+ tests/xfs/030       |   3 +-
+ tests/xfs/group     |   2 +
+ 20 files changed, 582 insertions(+), 87 deletions(-)
+ create mode 100644 tests/btrfs/049
+ create mode 100644 tests/btrfs/049.out
+ create mode 100755 tests/xfs/010
+ create mode 100644 tests/xfs/010.out
+ create mode 100755 tests/xfs/013
+ create mode 100644 tests/xfs/013.out
+-- 
+Dave Chinner
+david@fromorbit.com

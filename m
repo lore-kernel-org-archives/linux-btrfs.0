@@ -1,38 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38558 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756889AbaEPMOX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 08:14:23 -0400
-Date: Fri, 16 May 2014 14:14:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: Anand Jain <Anand.Jain@oracle.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: save us an unnecessary ioctl call
-Message-ID: <20140516121421.GU6917@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
- <20140515170634.GR6917@twin.jikos.cz>
- <537594D9.8010902@oracle.com>
- <53759B06.9030109@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:62849 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932281AbaEMJIX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 05:08:23 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4D98LOH025709
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 17:08:21 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs-progs: save us an unnecessary ioctl call
+Date: Tue, 13 May 2014 17:05:05 +0800
+Message-ID: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53759B06.9030109@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 16, 2014 at 12:58:46PM +0800, Wang Shilong wrote:
-> Hi Anand,
-> 
-> On 05/16/2014 12:32 PM, Anand Jain wrote:
-> >
-> >David,
-> >
-> > As mentioned, this patch will back-out the earlier patch
-> >
-> > 50275bacab0f62b91453fbfa29e75c2bb77bf9b6
-> >
-> > I am confused on what I am missing ? Any comment?
-> You are right, i guess dave just missed your previous thread.:-)
+Btrfs device id start from 1, not 0.
 
-Oh I did, sorry.
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ utils.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/utils.c b/utils.c
+index 560c557..d480353 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1765,7 +1765,7 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 		goto out;
+ 	}
+ 
+-	for (; i <= fi_args->max_id; ++i) {
++	for (i = 1; i <= fi_args->max_id; ++i) {
+ 		BUG_ON(ndevs >= fi_args->num_devices);
+ 		ret = get_device_info(fd, i, &di_args[ndevs]);
+ 		if (ret == -ENODEV)
+-- 
+1.8.2.1
+

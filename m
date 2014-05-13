@@ -1,101 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1200 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758786AbaEMJVI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 May 2014 05:21:08 -0400
-Message-ID: <5371E346.3000704@cn.fujitsu.com>
-Date: Tue, 13 May 2014 17:17:58 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57341 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933559AbaEMOWf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 10:22:35 -0400
+Date: Tue, 13 May 2014 16:22:34 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: =?utf-8?B?VG9tw6HFoSBQcnXFvmluYQ==?= <pruzinat@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Fwd: [suggestion] Add verbose notification about inode-cache
+ rebuild to kernel log
+Message-ID: <20140513142234.GI6917@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <CACHxQ2tAU15z_pUEGBuGqYFR9n_fH9BeyA8=jYryRrb3H=zCYA@mail.gmail.com>
+ <CACHxQ2sQH96Z==zqEaoEoOxc65k9TYD66yLXQzOYL1kxaPcrqw@mail.gmail.com>
+ <20140509145118.GD5988@twin.jikos.cz>
+ <536D1AA6.7050407@libero.it>
+ <20140512143946.GD6917@suse.cz>
+ <5371105C.5030306@inwind.it>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/3 RFC] btrfs: total_devices should count replacing devices
-References: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com> <1394207319-13252-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1394207319-13252-2-git-send-email-Anand.Jain@oracle.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5371105C.5030306@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Anand,
+On Mon, May 12, 2014 at 08:18:04PM +0200, Goffredo Baroncelli wrote:
+> To be clear, I would like to avoid inode_cache on 64bit machine.
+>
+> In order to avoid the risk to exhaust the inode on 32bit and to be
+> backward compatible with what already exists, we could add a flag to
+> mkfs.btrfs to be only 64bit compatible and avoid inode_cache.
 
-I agree we can export @total_devices to fix 'btrfs file show' problem.
-This patch addressed two problem, it is better to split it into two patches.
+I thought about such bit as well but don't see a strong need for it, at
+the moment the inode_cache is the only option that could prevent the
+incompatibilities, but otherwise all features are designed to work on
+32bits the same way as on 64bit.
 
-Could you please resend the patch, at least we should fix 'btrfs file show'
-problem firstly.
+So, my position here is not enforce anything, but document all the pros
+and cons of the option and let the user decide.
 
-Thanks,
-Wang
+Possibly, add more safety checks that would detect that a filesystem is
+not safely mountable on 32bit. Eg. look for the highest inode num if
+it's a 32bit system and inode_cache is not up-to-date, or warn early
+that the inode space is running out.
 
-On 03/07/2014 11:48 PM, Anand Jain wrote:
-> ioctl(BTRFS_IOC_FS_INFO) returns num_devices which does not
-> count seed device. num_devices is used to calculate
-> the number of slots during the ioctl(BTRFS_IOC_DEV_INFO)
-> but ioctl(BTRFS_IOC_DEV_INFO) would count seed devices as well.
-> Due to this miss match btrfs_progs get_fs_info() hits the bug..
->              get_fs_info()
->              ::
->                      BUG_ON(ndevs >= fi_args->num_devices);
->
-> what I notice is total_devices should be returned by the
-> ioctl(BTRFS_IOC_FS_INFO)), however total_devices does not
-> count (transient) replacing device but num_devices does.
->
-> first, num_devices which appears to be a subset of
-> total_devices helps to count the number of devices
-> under a FSID which excludes the seed devices but
-> includes the transient replacing device.
->
-> total_devices which includes seed devices is as of
-> now does not count the tansient replacing device,
-> which IMO is a bug or the implementation details
-> are not clear enough to state the role of num_devices
-> and total_devices.
->
-> The user land on the otherhand would want to know
-> all the devices that would come out of probe
-> against a FSID
->
-> As of now in this patch I am making the ioctl.c local
-> changes (instead of asking replace thread to update
-> total_devices) to  include replacing device.
->
-> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-> ---
->   fs/btrfs/ioctl.c | 13 ++++++++++++-
->   1 file changed, 12 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5036f9d..ec7d5c6 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2510,6 +2510,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
->   	struct btrfs_device *next;
->   	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
->   	int ret = 0;
-> +	int dev_replace_running = 0;
->   
->   	if (!capable(CAP_SYS_ADMIN))
->   		return -EPERM;
-> @@ -2518,8 +2519,18 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
->   	if (!fi_args)
->   		return -ENOMEM;
->   
-> +	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
-> +	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace))
-> +		dev_replace_running = 1;
-> +
-> +	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
-> +
->   	mutex_lock(&fs_devices->device_list_mutex);
-> -	fi_args->num_devices = fs_devices->num_devices;
-> +	if (dev_replace_running)
-> +		fi_args->num_devices = fs_devices->total_devices + 1;
-> +	else
-> +		fi_args->num_devices = fs_devices->total_devices;
-> +
->   	memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
->   
->   	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+> It it would be faster, I am sure that there are uses cases for that.
+> 
+> The major drawback that I see, is that it would be a code path less
+> tested: I think that the 32bit system[*] would disappear soon
 
+That's a valid point and for that reason I would not add more code.
+
+> Finally I have a question: it is possible to disable inode_cache ?
+> what means the flag "noinode_cache" ? It means disable the inode cache
+> at all, or only avoid to store on disk the inode cache ?
+
+The noinode_cache disables using the cache at runtime, it will be kept
+on disk though (there's no "clear inode_cache" as for the space cache).

@@ -1,52 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:35801 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751740AbaELX0i (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 19:26:38 -0400
-Date: Mon, 12 May 2014 16:26:09 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org, Filipe David Manana <fdmanana@gmail.com>
-Subject: Re: 3.15-rc5 btrfs send/receive corruption errors? Does scrub warn
- of silent corruption?
-Message-ID: <20140512232609.GI14174@merlins.org>
-References: <E1WiphR-0003MN-50@legolas.merlins.org>
- <20140510224249.GA15909@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from plane.gmane.org ([80.91.229.3]:34946 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751949AbaEMEzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 00:55:46 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wk4kj-00071M-Je
+	for linux-btrfs@vger.kernel.org; Tue, 13 May 2014 06:55:45 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 06:55:45 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 06:55:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Fwd: [suggestion] Add verbose notification about inode-cache
+ rebuild to kernel log
+Date: Tue, 13 May 2014 04:55:32 +0000 (UTC)
+Message-ID: <pan$32b2f$6c928539$a433bdd$26be4562@cox.net>
+References: <CACHxQ2tAU15z_pUEGBuGqYFR9n_fH9BeyA8=jYryRrb3H=zCYA@mail.gmail.com>
+	<CACHxQ2sQH96Z==zqEaoEoOxc65k9TYD66yLXQzOYL1kxaPcrqw@mail.gmail.com>
+	<20140509145118.GD5988@twin.jikos.cz> <536D1AA6.7050407@libero.it>
+	<20140512143946.GD6917@suse.cz> <5371105C.5030306@inwind.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 10, 2014 at 04:57:18PM -0700, Marc MERLIN wrote:
-> On Sat, May 10, 2014 at 03:42:49PM -0700, Marc MERLIN wrote:
-> > I tried with 3.14.3 and it went further, however it died with
-> > legolas:/mnt/btrfs_pool2# btrfs send  home_ro.20140507_10:00:01 | btrfs receive /mnt/btrfs_pool1/
-> > At subvol home_ro.20140507_10:00:01
-> > At subvol home_ro.20140507_10:00:01
-> > ERROR: send ioctl failed with -5: Input/output error
-> > ERROR: unexpected EOF in stream.
-> > 
-> > I'll look up -5 later when I have time, but I guess there is a problem
-> > on the source that is causing copies to fail with both kernels?
-> 
-> This brings me back to the earlier question:
-> 
-> When my other FS died, scrub ran ok just earlier.
-> 
-> Now, having 2 btrfs sends (not incremental, full) fail with 2 kernels
-> would indicate that something might be wrong on the source filesystem.
+Goffredo Baroncelli posted on Mon, 12 May 2014 20:18:04 +0200 as
+excerpted:
 
-So I copied the entire FS back to the SSD using rsync instead of btrfs
-send/receive and as far as I can tell all the data got over fine.
+> Finally I have a question: it is possible to disable inode_cache ? what
+> means the flag "noinode_cache" ? It means disable the inode cache at
+> all, or only avoid to store on disk the inode cache ?
 
-Is there anything you'd like from the subvolumes on the source that
-btrfs cannot process and that I'm going to delete so that I can start
-syncing back from the SSD to the HDD?
+Unlike space_cache, which is enabled by default these days, inode_cache 
+must be specifically enabled every time it is to be used.  So simply not 
+including the inode_cache mount option when doing the original mount 
+means it's disabled.
 
-Thanks,
-Marc
+Meanwhile, the noinode_cache flag is simply one of the mount-option 
+negators, to allow turning off a mount option on an existing mount when 
+it is remounted, to avoid having to fully umount and do a fresh mount, to 
+deactivate the option.
+
+So simply don't include inode_cache when doing the original mount to 
+disable it, or if for whatever reason it's enabled and you want to 
+disable it on a remount, use -o remount,noinode_cache for the remount, 
+and it'll disable inode_cache if the filesystem was already mounted with 
+it enabled.
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

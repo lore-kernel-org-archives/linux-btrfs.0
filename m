@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga03-in.huawei.com ([119.145.14.66]:36090 "EHLO
+Received: from szxga03-in.huawei.com ([119.145.14.66]:64126 "EHLO
 	szxga03-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751729AbaEMCXh (ORCPT
+	with ESMTP id S1759223AbaEMIgW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 22:23:37 -0400
-Message-ID: <537181DB.2010400@huawei.com>
-Date: Tue, 13 May 2014 10:22:19 +0800
+	Tue, 13 May 2014 04:36:22 -0400
+Message-ID: <5371D978.4050304@huawei.com>
+Date: Tue, 13 May 2014 16:36:08 +0800
 From: Zhang Zhen <zhenzhang.zhang@huawei.com>
 MIME-Version: 1.0
 To: <clm@fb.com>, <jbacik@fb.com>, David Taylor <davidt-btrfs@yadt.co.uk>
 CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: replace simple_strtoul() with kstrtoul()
+Subject: [PATCH v2] btrfs: replace simple_strtoull() with kstrtoull()
 References: <1399947478-11287-1-git-send-email-zhenzhang.zhang@huawei.com>
 In-Reply-To: <1399947478-11287-1-git-send-email-zhenzhang.zhang@huawei.com>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-use the newer and more pleasant kstrtoul() to replace simple_strtoul(),
-because simple_strtoul() is marked for obsoletion.
+use the newer and more pleasant kstrtoull() to replace simple_strtoull(),
+because simple_strtoull() is marked for obsoletion.
 
 Signed-off-by: Zhang Zhen <zhenzhang.zhang@huawei.com>
 ---
@@ -38,7 +38,7 @@ index 2ad7de9..30bcc47 100644
  		*devstr = '\0';
  		devstr = vol_args->name;
 -		devid = simple_strtoull(devstr, &end, 10);
-+		ret = kstrtoul(devstr, 10, &devid);
++		ret = kstrtoull(devstr, 10, &devid);
 +		if (ret)
 +			goto out_free;
  		if (!devid) {

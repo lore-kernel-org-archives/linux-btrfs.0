@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31205 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750810AbaELBim (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 May 2014 21:38:42 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4C1ccag026121
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 May 2014 09:38:38 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Remove unneeded assert in find_good_parent().
-Date: Mon, 12 May 2014 09:39:42 +0800
-Message-ID: <1399858782-15109-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:21966 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751348AbaEMUFw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 16:05:52 -0400
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s4DK5qXC022968
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 16:05:52 -0400
+Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id s4DK5p71026351
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 16:05:52 -0400
+Message-ID: <53727B21.8070901@redhat.com>
+Date: Tue, 13 May 2014 15:05:53 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: clarify mkfs.btrfs --alloc-start option
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-find_good_parent() uses assert to deal with the problem that clone
-source's parent can't be found.
-But in fact the assert is somewhat overkilled since subvol_uuid_search()
-has enough error messages for debug and caller of find_good_parent() can
-handle the problems in find_good_parent(), so the assert can be removed
-without any problem.
+Fedora had a bug where a poor user thought that --alloc-start
+meant that the filesystem would be created at that offset into
+the device, rather than just starting allocations at that offset.
+A subtle difference, but worth clarifying, because the manpage
+is misleading on this point.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+The original commit log for this option says:
+
+    Add mkfs.btrfs -A offset to control allocation start on devices
+    
+    This is a utility option for the resizer, it makes sure to allocate
+    at offset bytes in the disk or higher.  It ensures the resizer will have
+    something to move when testing it.
+
+so allude to that intended use in the manpage.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- cmds-send.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-send.c b/cmds-send.c
-index ff17092..9a73b32 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -132,7 +132,10 @@ static int find_good_parent(struct btrfs_send *s, u64 root_id, u64 *found)
- 		parent2 = subvol_uuid_search(&s->sus, s->clone_sources[i], NULL,
- 				0, NULL, subvol_search_by_root_id);
- 
--		assert(parent2);
-+		if (!parent2) {
-+			ret = -ENOENT;
-+			goto out;
-+		}
- 		tmp = parent2->ctransid - parent->ctransid;
- 		if (tmp < 0)
- 			tmp *= -1;
--- 
-1.9.2
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+index dabeb62..bef509d 100644
+--- a/man/mkfs.btrfs.8.in
++++ b/man/mkfs.btrfs.8.in
+@@ -30,7 +30,7 @@ spanning across the specified \fI devices\fP.
+ .SH OPTIONS
+ .TP
+ \fB\-A\fR, \fB\-\-alloc\-start \fIoffset\fR
+-Specify the offset from the start of the device to start the btrfs filesystem. The default value is zero, or the start of the device.
++Specify the offset from the start of the device at which to start allocations in this btrfs filesystem. The default value is zero, or the start of the device.  This option is intended only for debugging filesystem resize operations.
+ .TP
+ \fB\-b\fR, \fB\-\-byte\-count \fIsize\fR
+ Specify the size of the resultant filesystem. If this option is not used,
 

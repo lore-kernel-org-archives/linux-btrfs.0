@@ -1,59 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34946 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751949AbaEMEzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 May 2014 00:55:46 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wk4kj-00071M-Je
-	for linux-btrfs@vger.kernel.org; Tue, 13 May 2014 06:55:45 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 06:55:45 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 06:55:45 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Fwd: [suggestion] Add verbose notification about inode-cache
- rebuild to kernel log
-Date: Tue, 13 May 2014 04:55:32 +0000 (UTC)
-Message-ID: <pan$32b2f$6c928539$a433bdd$26be4562@cox.net>
-References: <CACHxQ2tAU15z_pUEGBuGqYFR9n_fH9BeyA8=jYryRrb3H=zCYA@mail.gmail.com>
-	<CACHxQ2sQH96Z==zqEaoEoOxc65k9TYD66yLXQzOYL1kxaPcrqw@mail.gmail.com>
-	<20140509145118.GD5988@twin.jikos.cz> <536D1AA6.7050407@libero.it>
-	<20140512143946.GD6917@suse.cz> <5371105C.5030306@inwind.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:52831 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751811AbaEMH5F (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 03:57:05 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: -musage=>0 means always reporting relocation
+Date: Tue, 13 May 2014 17:57 +1000
+Message-ID: <2427848.SjNntC7t9e@xev>
+In-Reply-To: <536F852C.3000100@swiftspirit.co.za>
+References: <201405111943.16913.russell@coker.com.au> <201405111952.43458.russell@coker.com.au> <536F852C.3000100@swiftspirit.co.za>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli posted on Mon, 12 May 2014 20:18:04 +0200 as
-excerpted:
+On Sun, 11 May 2014 16:11:56 Brendan Hide wrote:
+> On 2014/05/11 11:52 AM, Russell Coker wrote:
+> > On Sun, 11 May 2014, Russell Coker <russell@coker.com.au> wrote:
+> >> Below is the output of running a balance a few times on a 120G SSD.
+> > 
+> > Sorry forgot to mention that's kernel 3.14.1 Debian package.
+> 
+> Please send the output of the two following command:
+> btrfs fi df /
 
-> Finally I have a question: it is possible to disable inode_cache ? what
-> means the flag "noinode_cache" ? It means disable the inode cache at
-> all, or only avoid to store on disk the inode cache ?
+#btrfs fi balance start -dusage=0 -musage=10 /
+Done, had to relocate 2 out of 107 chunks
+#btrfs fi balance start -dusage=0 -musage=10 /
+Done, had to relocate 2 out of 107 chunks
+#btrfs fi balance start -dusage=0 -musage=0 /
+Done, had to relocate 1 out of 107 chunks
+#btrfs fi balance start -dusage=0 -musage=0 /
+Done, had to relocate 1 out of 107 chunks
+#btrfs fi balance start -dusage=10 -musage=10 /
+Done, had to relocate 2 out of 107 chunks
+#btrfs fi balance start -dusage=10 -musage=10 /
+Done, had to relocate 2 out of 107 chunks
+#btrfs fi balance start -dusage=0 -musage=0 /
+Done, had to relocate 1 out of 107 chunks
+#btrfs fi balance start -dusage=0 -musage=0 /
+Done, had to relocate 1 out of 107 chunks
+#btrfs fi df /
+Data, single: total=100.47GiB, used=92.11GiB
+System, DUP: total=32.00MiB, used=20.00KiB
+Metadata, DUP: total=2.50GiB, used=1.50GiB
+#uname -a
+Linux workstation 3.14-1-amd64 #1 SMP Debian 3.14.2-1 (2014-04-28) x86_64 
+GNU/Linux
 
-Unlike space_cache, which is enabled by default these days, inode_cache 
-must be specifically enabled every time it is to be used.  So simply not 
-including the inode_cache mount option when doing the original mount 
-means it's disabled.
+Above is my workstation.  Below is the server/workstation my wife uses.
 
-Meanwhile, the noinode_cache flag is simply one of the mount-option 
-negators, to allow turning off a mount option on an existing mount when 
-it is remounted, to avoid having to fully umount and do a fresh mount, to 
-deactivate the option.
+#btrfs fi balance start -dusage=0 -musage=0 / 
+Done, had to relocate 0 out of 81 chunks
+#btrfs fi balance start -dusage=0 -musage=0 / 
+Done, had to relocate 0 out of 81 chunks
+#btrfs fi balance start -dusage=1 -musage=1 / 
+Done, had to relocate 1 out of 81 chunks
+#btrfs fi balance start -dusage=1 -musage=1 / 
+Done, had to relocate 1 out of 81 chunks
+#btrfs fi balance start -dusage=1 -musage=1 / 
+Done, had to relocate 1 out of 81 chunks
+#btrfs fi balance start -dusage=0 -musage=0 / 
+Done, had to relocate 0 out of 81 chunks
+#btrfs fi df /
+Data: total=75.01GB, used=52.32GB
+System, DUP: total=32.00MB, used=16.00KB
+Metadata, DUP: total=2.50GB, used=1.52GB
+#uname -a
+Linux server 3.14-trunk-amd64 #1 SMP Debian 3.14.1-1~exp1 (2014-04-17) x86_64 
+GNU/Linux
 
-So simply don't include inode_cache when doing the original mount to 
-disable it, or if for whatever reason it's enabled and you want to 
-disable it on a remount, use -o remount,noinode_cache for the remount, 
-and it'll disable inode_cache if the filesystem was already mounted with 
-it enabled.
+> This will give more information on your current chunk situation. I
+> suspect this is a case where a system chunk (which is included when
+> specifying metadata) that is not actually being relocated. This is a bug
+> that I believe was already fixed, though I'm not sure in which version.
+> 
+> The pathological case is where you have a chunk that is 1% full and
+> *every* other in-use chunk on the device is 100% full. In that
+> situation, a balance will simply move that data into a new chunk (which
+> will only ever reach 1% full). Thus, all subsequent balances will
+> relocate that same data again to another new chunk.
+
+In that pathological case surely the correct thing to do is to not move that 
+chunk.  If moving a chunk doesn't achieve filesystem tuning goals (EG 
+converting to a different RAID level) and doesn't result in a decrease of the 
+number of chunks in use then surely there's no point to doing it.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

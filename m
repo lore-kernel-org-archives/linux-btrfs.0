@@ -1,43 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38133 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755911AbaELRSv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 13:18:51 -0400
-Date: Mon, 12 May 2014 19:18:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Zach Brown <zab@redhat.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: fix inline compressed read err corruption
-Message-ID: <20140512171850.GG6917@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1399590979-15331-1-git-send-email-zab@redhat.com>
- <1399590979-15331-3-git-send-email-zab@redhat.com>
- <20140512150022.GA15727@localhost.localdomain>
+Received: from szxga03-in.huawei.com ([119.145.14.66]:11260 "EHLO
+	szxga03-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751710AbaEMBpS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 May 2014 21:45:18 -0400
+Message-ID: <5371790A.6010102@huawei.com>
+Date: Tue, 13 May 2014 09:44:42 +0800
+From: Zhang Zhen <zhenzhang.zhang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140512150022.GA15727@localhost.localdomain>
+To: <clm@fb.com>, <jbacik@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Taylor <davidt-btrfs@yadt.co.uk>
+Subject: Re: [PATCH] btrfs: replace simple_strtoul() with kstrtoul()
+References: <1399892355-3781-1-git-send-email-zhenzhang.zhang@huawei.com> <5370A9ED.9000106@huawei.com> <20140512112808.GA5103@yadt.co.uk>
+In-Reply-To: <20140512112808.GA5103@yadt.co.uk>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 12, 2014 at 11:00:23PM +0800, Liu Bo wrote:
-> On Thu, May 08, 2014 at 07:16:19PM -0400, Zach Brown wrote:
-> > uncompress_inline() is silently dropping an error from
-> > btrfs_decompress() after testing it and zeroing the page that was
-> > supposed to hold decompressed data.  This can silently turn compressed
-> > inline data in to zeros if decompression fails due to corrupt compressed
-> > data or memory allocation failure.
-> > 
-> > I have no idea why uncompress_inline() is zeroing the page for an error
-> > from btrfs_decompress() but not for the earlier ENOMEM from kmalloc().
-> > Can someone explain this?
+On 2014/5/12 19:28, David Taylor wrote:
+> On Mon, 12 May 2014, Zhang Zhen wrote:
 > 
-> I guess that's because decompress() may have put part of real data on the page
-> and then bail out, and we don't want those data to be exposed to users in this
-> error case.
+>> use the newer and more pleasant kstrtoul() to replace simple_strtoul(),
+>> because simple_strtoul() is marked for obsoletion.
+> [...]
+>> -        devid = simple_strtoull(devstr, &end, 10);
+>> +        devid = kstrtoul(devstr, &end, 10);
 > 
-> And kmalloc() 's ENOMEM runs before that decompress(), page has whatever random
-> data.
+> kstrtoul appears to take its arguments in a different order:
+> 
+> unsigned long long simple_strtoull(const char * cp,
+>  char ** endp, unsigned int base);
+> 
+> int kstrtoul(const char *s, unsigned int base, unsigned long *res);
+> 
+Hi David,
 
-But we don't return any data in case of error. In the unpatched code,
-there's no error so a zeroed page is returned, but this would not happen
-after Zach's fix.
+You are right, i made a mistake.
+I will soon send the right one .
+
+Thanks for your reply.
+

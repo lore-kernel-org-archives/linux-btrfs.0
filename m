@@ -1,40 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46963 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751468AbaENMtn (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49490 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755098AbaENNKo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 08:49:43 -0400
-Message-ID: <537366D2.3080808@fb.com>
-Date: Wed, 14 May 2014 08:51:30 -0400
+	Wed, 14 May 2014 09:10:44 -0400
+Message-ID: <53736BB6.30508@fb.com>
+Date: Wed, 14 May 2014 09:12:22 -0400
 From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: David Sterba <dsterba@suse.cz>, Arvin Schnell <aschnell@suse.de>
-Subject: Re: [PATCH] btrfs: extend BTRFS_IOC_SNAP_CREATE_V2 to snapshot by
- subvolid
-References: <5330C6A8.5050206@suse.com>
-In-Reply-To: <5330C6A8.5050206@suse.com>
+To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
+        Zach Brown <zab@redhat.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/3] btrfs: fix inline compressed read err corruption
+References: <1399590979-15331-1-git-send-email-zab@redhat.com> <1399590979-15331-3-git-send-email-zab@redhat.com> <20140512150022.GA15727@localhost.localdomain> <20140512171850.GG6917@twin.jikos.cz>
+In-Reply-To: <20140512171850.GG6917@twin.jikos.cz>
 Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/24/2014 07:58 PM, Jeff Mahoney wrote:
-> The BTRFS_IOC_SNAP_CREATE_V2 ioctl is limited by requiring that a file
-> descriptor be passed in order to create the snapshot. This means that
-> snapshots may only be created of trees that are available in the mounted
-> namespace. We have a need to create snapshots from subvolumes outside
-> of the namespace. This is already possible by mounting the numbered
-> subvolume by ID on a separate mount point, creating the snapshot, and
-> unmounting it. That's a tedious and unnecessary process since the ioctl
-> can be extended so easily.
+On 05/12/2014 01:18 PM, David Sterba wrote:
+> On Mon, May 12, 2014 at 11:00:23PM +0800, Liu Bo wrote:
+>> On Thu, May 08, 2014 at 07:16:19PM -0400, Zach Brown wrote:
+>>> uncompress_inline() is silently dropping an error from
+>>> btrfs_decompress() after testing it and zeroing the page that was
+>>> supposed to hold decompressed data.  This can silently turn compressed
+>>> inline data in to zeros if decompression fails due to corrupt compressed
+>>> data or memory allocation failure.
+>>>
+>>> I have no idea why uncompress_inline() is zeroing the page for an error
+>>> from btrfs_decompress() but not for the earlier ENOMEM from kmalloc().
+>>> Can someone explain this?
+>>
+>> I guess that's because decompress() may have put part of real data on the page
+>> and then bail out, and we don't want those data to be exposed to users in this
+>> error case.
+>>
+>> And kmalloc() 's ENOMEM runs before that decompress(), page has whatever random
+>> data.
 > 
-> This patch adds a new BTRFS_SUBVOL_CREATE_SUBVOLID flag that instructs
-> the ioctl to use the fd argument (which is now a union) as a subvolume
-> id instead. The subvolume ID is used to look up the root and instantiate
-> the inode so proper permission checking takes place.
+> But we don't return any data in case of error. In the unpatched code,
+> there's no error so a zeroed page is returned, but this would not happen
+> after Zach's fix.
 
-Can you please make this root only?  The file handle makes sure the
-admin hasn't intentionally hidden the subvol from the user, and this
-bypasses those permission checks.
+I dug a little more, the zeroing goes all the way back to the original
+compression code.  It looks like some paranoia of mine.
+
+I'd say its fine to leave off as long as we don't mark the page uptodate.
 
 -chris
+

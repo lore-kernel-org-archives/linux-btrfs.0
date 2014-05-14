@@ -1,103 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:2685 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:2000 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752064AbaENOlX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 10:41:23 -0400
-Message-ID: <5373808F.4020403@redhat.com>
-Date: Wed, 14 May 2014 09:41:19 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: jshubin@redhat.com
+	id S1753772AbaENOnH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 10:43:07 -0400
+Message-ID: <1400078533.15603.175.camel@rh>
 Subject: Re: [PATCH] mkfs.btrfs: allow UUID specification at mkfs time
-References: <5372C457.3000706@redhat.com> <5373803E.9000406@libero.it>
-In-Reply-To: <5373803E.9000406@libero.it>
-Content-Type: text/plain; charset=ISO-8859-1
+From: James Shubin <purpleidea@redhat.com>
+To: Brendan Hide <brendan@swiftspirit.co.za>
+Cc: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, jshubin@redhat.com
+Date: Wed, 14 May 2014 10:42:13 -0400
+In-Reply-To: <537360B2.50107@swiftspirit.co.za>
+References: <5372C457.3000706@redhat.com> <53731BE3.5010604@cn.fujitsu.com>
+	 <537360B2.50107@swiftspirit.co.za>
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
+	boundary="=-mUl07/b7dfnsutxY9eAg"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/14/14, 9:39 AM, Goffredo Baroncelli wrote:
-> Hi Eric,
-> 
-> On 05/14/2014 03:18 AM, Eric Sandeen wrote:
->> Allow the specification of the filesystem UUID at mkfs time.
-> 
-> I suggest to add some warning when this options is used, because the
-> behavior could be very different than the one expected.
-> 
-> I suspect that BTRFS tracks the filesystem by UUID and not by
-> devices. When two filesystems have the same UUID at the same time, it
-> may mount the wrong one.
 
-Well, of course if you explicitly create two "universally unique identifiers"
-which are not actually unique, you can shoot yourself in the foot.
+--=-mUl07/b7dfnsutxY9eAg
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-"Here's enough rope to hang yourself with" is a proud tradition in
-the Unix world.  ;)
+On Wed, 2014-05-14 at 14:25 +0200, Brendan Hide wrote:
+> On 14/05/14 09:31, Wang Shilong wrote:
+> > On 05/14/2014 09:18 AM, Eric Sandeen wrote:
+> >> Allow the specification of the filesystem UUID at mkfs time.
+> >>
+> >> (Implemented only for mkfs.btrfs, not btrfs-convert).
+> > Just out of curiosity, this option is used for what kind of use case?
+> > I notice Ext4 also has this option.:-)
+> Personally I can't think of any "average" or "normal" use case. The=20
+> simplest case however is in using predictable/predetermined UUIDs.
+>=20
+> Certain things, such as testing or perhaps even large-scale automation,=
+=20
+> are likely simpler to implement with a predictable UUID.
+>=20
+Exactly this! My use case is actually for storage automation. By using
+an internally generated UUID, it's one easy way to "track" which
+filesystem your automation code made.
 
-> $ #
-> $ # Make two *different* filesystems with the *same* UUID
-> $ #
-> $ UUID=e285c9bd-ea97-40b3-ad7d-8713dcfd5eea
-> $ sudo ./mkfs.btrfs -f -U $UUID /dev/vdg
-> $ sudo ./mkfs.btrfs -f -U $UUID /dev/vdh
-> 
-> $ #
-> $ # from the beginning "btrfs fi show" reports wrong information
-> $ #
-> $ sudo btrfs fi show
-> Label: none  uuid: e285c9bd-ea97-40b3-ad7d-8713dcfd5eea
-> 	Total devices 1 FS bytes used 96.00KB
-> 	devid    1 size 50.00GB used 4.00MB path /dev/vdh
-> 	devid    1 size 50.00GB used 2.04GB path /dev/vdg
-> 
-> $ #
-> $ # mount the first one, create a new file then un-mount it
-> $ #
-> $ sudo mount /dev/vdg /mnt/btrfs1
-> $ sudo touch /mnt/btrfs1/dev-vdg
-> $ sudo umount /dev/vdg
-> 
-> $ #
-> $ # mount the second one, it should be empty
-> $ # instead btrfs mount the first one
-> $ #
-> $ sudo mount /dev/vdh /mnt/btrfs2
-> $ ls -l /mnt/btrfs2
-> total 0
-> -rw-r--r-- 1 root root 0 May 14 16:12 dev-vdg
+Example:
 
-o_O ok, that's a little unexpected.
+https://github.com/purpleidea/puppet-gluster/blob/master/manifests/brick.pp=
+#L469
 
-> 
-> I am not against this option; I am suggesting to add a explicit
-> warning to the user about the risk of doing that, both on the man
-> pages and into the program. The warning should say that this option
-> is only for testing. Better ask for a confirmation (even with an
-> undocumented switch like
-> '--I-know-that-I-am-doing-something-really-dangerous').
+HTH,
+James
 
-meh.  ext4 and xfs have had the ability to either set or change the
-UUID for years, and I've not heard of any horror stories.
 
-> 
-> For the record, BTRFS seems unable to mount at the same time two different filesystems with the same UUID:
-> 
-> $ #
-> $ # try to mount two fs with the same UUID, but BTRFS doesn't allow it
-> $ #
-> $ sudo mount /dev/vdh /mnt/btrfs2
-> $ sudo mount /dev/vdg /mnt/btrfs1
-> ERROR: mount failed : 16 - Device or resource busy
+--=-mUl07/b7dfnsutxY9eAg
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
 
-(presumably the kernel said something, too?)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-and this seems to make it even more safe.
+iQIcBAABAgAGBQJTc4DFAAoJEF9gnLdaSQBg3SYP/1HnrhgkQUyW8bYbwBpjfAXP
+xFHhTy9nkU8qUxbWpBS/g7Cu4Ke4FWAr042Fu7Dh/x9BUEUuGGDCpo608EyTXb/r
+8ZJJ7dT5ft4DVkar/BR6jfuT1o827E7siRRXTnjZfWQsdeRo6eRl4tsXAM4jYEgR
+/F/yaRT6xnhYX1q5q/dGT9qChkPALZKXpTb8iMgKXlVqobHGB9pGr9UOLavzdt5u
+rbS8M6GrvKYsIahvKSWpSliCAnjZPQjo1q3ACK3hiDiX/JoFHGXWUfDa2/iQP07w
+7G9gBdyk8a+ZzJo8X2e4idV0YFvjoW4qPw6mp0xgzszFj3czQRFw7jU8t5BJgIqo
+qfPjFu09F2UaD4buuR1P9ivOot9NtZUoJg5R8fYImHOB0lqHQj0PkBr2sIS1x5db
+u2jqRsS1Ou/ws9OAlGfBsEBoII71X0RPEBN1KlhpgNVZ2PQOVwgXDvQE5X7OHhbH
+2x1IGRgA6C0aqrXxZa/KUH3Asjl8LazDOv7UxPuslsxj3MixwqTTEypdNl/23Rvp
+DYGk8UIo0+QicpBFoV9PjdYBdPXqqssMUcwHWAzRIfmrNheFwvTnKqEquQMP/tqr
+CylBQhnNCI/DwQvECnEhO7wI84ToQyoT5Rg1KZACM4RkJqZFtkt/XiMr2XPjOi/o
+a2gkjo9OTF0ul60HysfA
+=wC/N
+-----END PGP SIGNATURE-----
 
--Eric
-
-> 
-> BR
-> G.Baroncelli
-> 
+--=-mUl07/b7dfnsutxY9eAg--
 

@@ -1,62 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51410 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755731AbaENNfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 09:35:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WkZKh-0007nI-UZ
-	for linux-btrfs@vger.kernel.org; Wed, 14 May 2014 15:34:55 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 15:34:55 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 15:34:55 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from outrelay07.libero.it ([212.52.84.111]:35167 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750762AbaENOhB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 10:37:01 -0400
+Message-ID: <5373803E.9000406@libero.it>
+Date: Wed, 14 May 2014 16:39:58 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: jshubin@redhat.com
 Subject: Re: [PATCH] mkfs.btrfs: allow UUID specification at mkfs time
-Date: Wed, 14 May 2014 13:34:40 +0000 (UTC)
-Message-ID: <pan$613d3$f7783f17$e8368cec$6bbea6af@cox.net>
-References: <5372C457.3000706@redhat.com> <53731BE3.5010604@cn.fujitsu.com>
-	<537360B2.50107@swiftspirit.co.za>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <5372C457.3000706@redhat.com>
+In-Reply-To: <5372C457.3000706@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brendan Hide posted on Wed, 14 May 2014 14:25:22 +0200 as excerpted:
+Hi Eric,
 
-> On 14/05/14 09:31, Wang Shilong wrote:
->> On 05/14/2014 09:18 AM, Eric Sandeen wrote:
->>> Allow the specification of the filesystem UUID at mkfs time.
->>>
->>> (Implemented only for mkfs.btrfs, not btrfs-convert).
->> Just out of curiosity, this option is used for what kind of use case?
->> I notice Ext4 also has this option.:-)
+On 05/14/2014 03:18 AM, Eric Sandeen wrote:
+> Allow the specification of the filesystem UUID at mkfs time.
 
-> Personally I can't think of any "average" or "normal" use case. The
-> simplest case however is in using predictable/predetermined UUIDs.
+I suggest to add some warning when this options is used, because the behavior could be very different than the one expected.
 
-AFAIK the most common use-case would be when redoing filesystems already 
-listed in fstab with UUID= mounting.
+I suspect that BTRFS tracks the filesystem by UUID and not by devices. When two filesystems have the same UUID at the same time, it may mount the wrong one.
 
-I use and prefer LABEL= instead of UUID= mounting here, but I commonly 
-keep a working and at least one identically sized partition backup 
-filesystem copy of all non-throw-away filesystems, with fstab entries for 
-both the working and backup versions, and periodically do a mkfs and 
-recopy of the backup, with occasional boots to the backup and mkfs and 
-recopy of the working version as well.  As I use LABEL= fstab entries I 
-ensure that I specify the same label at mkfs time so I don't have to redo 
-the fstab, and people that use UUID= fstab entries would find the ability 
-to specify UUID at mkfs time as useful as I do the ability to specify 
-label. =:^)
+$ #
+$ # Make two *different* filesystems with the *same* UUID
+$ #
+$ UUID=e285c9bd-ea97-40b3-ad7d-8713dcfd5eea
+$ sudo ./mkfs.btrfs -f -U $UUID /dev/vdg
+$ sudo ./mkfs.btrfs -f -U $UUID /dev/vdh
 
-Many grub2 configurations also uses UUID so the same idea applies there.
+$ #
+$ # from the beginning "btrfs fi show" reports wrong information
+$ #
+$ sudo btrfs fi show
+Label: none  uuid: e285c9bd-ea97-40b3-ad7d-8713dcfd5eea
+	Total devices 1 FS bytes used 96.00KB
+	devid    1 size 50.00GB used 4.00MB path /dev/vdh
+	devid    1 size 50.00GB used 2.04GB path /dev/vdg
+
+$ #
+$ # mount the first one, create a new file then un-mount it
+$ #
+$ sudo mount /dev/vdg /mnt/btrfs1
+$ sudo touch /mnt/btrfs1/dev-vdg
+$ sudo umount /dev/vdg
+
+$ #
+$ # mount the second one, it should be empty
+$ # instead btrfs mount the first one
+$ #
+$ sudo mount /dev/vdh /mnt/btrfs2
+$ ls -l /mnt/btrfs2
+total 0
+-rw-r--r-- 1 root root 0 May 14 16:12 dev-vdg
+
+
+I am not against this option; I am suggesting to add a explicit warning to the user about the risk of doing that, both on the man pages and into the program. 
+The warning should say that this option is only for testing. Better ask for a confirmation (even with an undocumented switch like '--I-know-that-I-am-doing-something-really-dangerous').
+
+For the record, BTRFS seems unable to mount at the same time two different filesystems with the same UUID:
+
+$ #
+$ # try to mount two fs with the same UUID, but BTRFS doesn't allow it
+$ #
+$ sudo mount /dev/vdh /mnt/btrfs2
+$ sudo mount /dev/vdg /mnt/btrfs1
+ERROR: mount failed : 16 - Device or resource busy
+
+
+BR
+G.Baroncelli
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

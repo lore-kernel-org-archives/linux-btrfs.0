@@ -1,97 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:52242 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751145AbaEMUB2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 May 2014 16:01:28 -0400
-Received: by mail-we0-f174.google.com with SMTP id k48so904201wev.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 13:01:27 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: send, fix incorrect ref access when using extrefs
-Date: Tue, 13 May 2014 22:01:02 +0100
-Message-Id: <1400014862-2131-1-git-send-email-fdmanana@gmail.com>
+Received: from nm14-vm9.bullet.mail.ir2.yahoo.com ([212.82.96.197]:44486 "EHLO
+	nm14-vm9.bullet.mail.ir2.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753217AbaENI5F convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 04:57:05 -0400
+Message-ID: <1400057388.37889.YahooMailNeo@web172202.mail.ir2.yahoo.com>
+Date: Wed, 14 May 2014 09:49:48 +0100 (BST)
+From: Astro Xe <astroxeu@yahoo.it>
+Reply-To: Astro Xe <astroxeu@yahoo.it>
+Subject: Error in btrfs wiki - "How much space will I get with my multi-device configuration?"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running send, if an inode only has extended reference items
-associated to it and no regular references, send.c:get_first_ref()
-was incorrectly assuming the reference it found was of type
-BTRFS_INODE_REF_KEY due to use of the wrong key variable.
-This caused weird behaviour when using the found item has a regular
-reference, such as weird path string, and occasionally (when lucky)
-a crash:
+The content of the FAQ "How much space will I get with my multi-device configuration?" (https://btrfs.wiki.kernel.org/index.php/FAQ#How_much_space_will_I_get_with_my_multi-device_configuration.3F) is currently wrong. The usable space is the sum of the space of the devices. I'm using multi-device btrfs (data: single, metadata: single or DUP) on kernels from 3.2 to 3.14 and I have never seen the behavior described in the answer.
 
-[  190.600652] general protection fault: 0000 [#1] SMP DEBUG_PAGEALLOC
-[  190.600994] Modules linked in: btrfs xor raid6_pq binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc psmouse serio_raw evbug pcspkr i2c_piix4 e1000 floppy
-[  190.602565] CPU: 2 PID: 14520 Comm: btrfs Not tainted 3.13.0-fdm-btrfs-next-26+ #1
-[  190.602728] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
-[  190.602868] task: ffff8800d447c920 ti: ffff8801fa79e000 task.ti: ffff8801fa79e000
-[  190.603030] RIP: 0010:[<ffffffff813266b4>]  [<ffffffff813266b4>] memcpy+0x54/0x110
-[  190.603262] RSP: 0018:ffff8801fa79f880  EFLAGS: 00010202
-[  190.603395] RAX: ffff8800d4326e3f RBX: 000000000000036a RCX: ffff880000000000
-[  190.603553] RDX: 000000000000032a RSI: ffe708844042936a RDI: ffff8800d43271a9
-[  190.603710] RBP: ffff8801fa79f8c8 R08: 00000000003a4ef0 R09: 0000000000000000
-[  190.603867] R10: 793a4ef09f000000 R11: 9f0000000053726f R12: ffff8800d43271a9
-[  190.604020] R13: 0000160000000000 R14: ffff8802110134f0 R15: 000000000000036a
-[  190.604020] FS:  00007fb423d09b80(0000) GS:ffff880216200000(0000) knlGS:0000000000000000
-[  190.604020] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[  190.604020] CR2: 00007fb4229d4b78 CR3: 00000001f5d76000 CR4: 00000000000006e0
-[  190.604020] Stack:
-[  190.604020]  ffffffffa01f4d49 ffff8801fa79f8f0 00000000000009f9 ffff8801fa79f8c8
-[  190.604020]  00000000000009f9 ffff880211013260 000000000000f971 ffff88021147dba8
-[  190.604020]  00000000000009f9 ffff8801fa79f918 ffffffffa02367f5 ffff8801fa79f928
-[  190.604020] Call Trace:
-[  190.604020]  [<ffffffffa01f4d49>] ? read_extent_buffer+0xb9/0x120 [btrfs]
-[  190.604020]  [<ffffffffa02367f5>] fs_path_add_from_extent_buffer+0x45/0x60 [btrfs]
-[  190.604020]  [<ffffffffa0238806>] get_first_ref+0x1f6/0x210 [btrfs]
-[  190.604020]  [<ffffffffa0238994>] __get_cur_name_and_parent+0x174/0x3a0 [btrfs]
-[  190.604020]  [<ffffffff8118df3d>] ? kmem_cache_alloc_trace+0x11d/0x1e0
-[  190.604020]  [<ffffffffa0236674>] ? fs_path_alloc+0x24/0x60 [btrfs]
-[  190.604020]  [<ffffffffa0238c91>] get_cur_path+0xd1/0x240 [btrfs]
-(...)
+Please remove this question.
 
-Steps to reproduce (either crash or some weirdness like an odd path string):
 
-    mkfs.btrfs -f -O extref /dev/sdd
-    mount /dev/sdd /mnt
-
-    mkdir /mnt/testdir
-    touch /mnt/testdir/foobar
-
-    for i in `seq 1 2550`; do
-        ln /mnt/testdir/foobar /mnt/testdir/foobar_link_`printf "%04d" $i`
-    done
-
-    ln /mnt/testdir/foobar /mnt/testdir/final_foobar_name
-
-    rm -f /mnt/testdir/foobar
-    for i in `seq 1 2550`; do
-        rm -f /mnt/testdir/foobar_link_`printf "%04d" $i`
-    done
-
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap
-    btrfs send /mnt/mysnap -f /tmp/mysnap.send
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/send.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 40f353f..0035bdd 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -1688,7 +1688,7 @@ static int get_first_ref(struct btrfs_root *root, u64 ino,
- 		goto out;
- 	}
- 
--	if (key.type == BTRFS_INODE_REF_KEY) {
-+	if (found_key.type == BTRFS_INODE_REF_KEY) {
- 		struct btrfs_inode_ref *iref;
- 		iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				      struct btrfs_inode_ref);
--- 
-1.9.1
+Thanks,
 

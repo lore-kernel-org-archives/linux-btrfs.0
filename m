@@ -1,46 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34293 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758506AbaELOJX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 May 2014 10:09:23 -0400
-Date: Mon, 12 May 2014 16:09:17 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: doc: link btrfsck to btrfs-check
-Message-ID: <20140512140917.GA6917@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20140416171219.GC29256@twin.jikos.cz>
- <1397668577-846-1-git-send-email-dsterba@suse.cz>
- <534F24A0.5000304@cn.fujitsu.com>
- <20140418144801.GG29256@suse.cz>
- <536AE073.2070307@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:26672 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751067AbaENHfJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 03:35:09 -0400
+Message-ID: <53731BE3.5010604@cn.fujitsu.com>
+Date: Wed, 14 May 2014 15:31:47 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <536AE073.2070307@cn.fujitsu.com>
+To: Eric Sandeen <sandeen@redhat.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, <jshubin@redhat.com>
+Subject: Re: [PATCH] mkfs.btrfs: allow UUID specification at mkfs time
+References: <5372C457.3000706@redhat.com>
+In-Reply-To: <5372C457.3000706@redhat.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 08, 2014 at 09:40:03AM +0800, Qu Wenruo wrote:
-> -------- Original Message --------
-> Subject: Re: [PATCH] btrfs-progs: doc: link btrfsck to btrfs-check
-> From: David Sterba <dsterba@suse.cz>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2014年04月18日 22:48
-> >On Thu, Apr 17, 2014 at 08:47:28AM +0800, Qu Wenruo wrote:
-> >>>@@ -73,6 +74,7 @@ install: install-man
-> >>>  install-man: man
-> >>>  	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
-> >>>  	$(INSTALL) -m 644 $(GZ_MAN8) $(DESTDIR)$(man8dir)
-> >>>+	$(LNS) btrfs-check.txt $(DESTDIR)$(man8dir)
-> >>Shouldn't the source of soft link be btrfs-check.8.gz. ?
-> Forgot to mention that the dest is also wrong. This will make
-> $(DESTDIR)$(man8dir)/btrfs-check.8.gz to be a
-> infinite loop(pointing to it self).
-> The correct one should be like the following:
-> +       $(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)/btrfsck.8.gz
+On 05/14/2014 09:18 AM, Eric Sandeen wrote:
+> Allow the specification of the filesystem UUID at mkfs time.
+>
+> (Implemented only for mkfs.btrfs, not btrfs-convert).
+Just out of curiosity, this option is used for what kind of use case?
+I notice Ext4 also has this option.:-)
 
-Thanks, it was reported & fixed a few days ago, though it's not in the
-integration branch, lag is on my side.
+>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+>
+> diff --git a/btrfs-convert.c b/btrfs-convert.c
+> index a8b2c51..d62d4f8 100644
+> --- a/btrfs-convert.c
+> +++ b/btrfs-convert.c
+> @@ -2240,7 +2240,7 @@ static int do_convert(const char *devname, int datacsum, int packing,
+>   		goto fail;
+>   	}
+>   	ret = make_btrfs(fd, devname, ext2_fs->super->s_volume_name,
+> -			 blocks, total_bytes, blocksize, blocksize,
+> +			 NULL, blocks, total_bytes, blocksize, blocksize,
+>   			 blocksize, blocksize, 0);
+>   	if (ret) {
+>   		fprintf(stderr, "unable to create initial ctree: %s\n",
+> diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+> index bef509d..4450d03 100644
+> --- a/man/mkfs.btrfs.8.in
+> +++ b/man/mkfs.btrfs.8.in
+> @@ -16,6 +16,7 @@ mkfs.btrfs \- create a btrfs filesystem
+>   [ \fB\-r\fP\fI rootdir\fP ]
+>   [ \fB\-K\fP ]
+>   [ \fB\-O\fP\fI feature1,feature2,...\fP ]
+> +[ \fB\-U\fP\fI uuid\fP ]
+>   [ \fB\-h\fP ]
+>   [ \fB\-V\fP ]
+>   \fI device\fP [ \fIdevice ...\fP ]
+> @@ -90,6 +91,9 @@ To see all run
+>   
+>   \fBmkfs.btrfs -O list-all\fR
+>   .TP
+> +\fB\-U\fR, \fB\-\-uuid \fR
+> +Create the filesystem with the specified UUID.
+> +.TP
+>   \fB\-V\fR, \fB\-\-version\fR
+>   Print the \fBmkfs.btrfs\fP version and exit.
+>   .SH UNIT
+> diff --git a/mkfs.c b/mkfs.c
+> index dbd83f5..eccb08f 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -288,6 +288,7 @@ static void print_usage(void)
+>   	fprintf(stderr, "\t -r --rootdir the source directory\n");
+>   	fprintf(stderr, "\t -K --nodiscard do not perform whole device TRIM\n");
+>   	fprintf(stderr, "\t -O --features comma separated list of filesystem features\n");
+> +	fprintf(stderr, "\t -U --uuid specify the filesystem UUID\n");
+>   	fprintf(stderr, "\t -V --version print the mkfs.btrfs version and exit\n");
+>   	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+>   	exit(1);
+> @@ -351,6 +352,7 @@ static struct option long_options[] = {
+>   	{ "rootdir", 1, NULL, 'r' },
+>   	{ "nodiscard", 0, NULL, 'K' },
+>   	{ "features", 0, NULL, 'O' },
+> +	{ "uuid", 0, NULL, 'U' },
+>   	{ NULL, 0, NULL, 0}
+>   };
+>   
+> @@ -1273,11 +1275,12 @@ int main(int ac, char **av)
+>   	int dev_cnt = 0;
+>   	int saved_optind;
+>   	char estr[100];
+> +	char *fs_uuid = NULL;
+>   	u64 features = DEFAULT_MKFS_FEATURES;
+>   
+>   	while(1) {
+>   		int c;
+> -		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:VMK",
+> +		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:U:VMK",
+>   				long_options, &option_index);
+>   		if (c < 0)
+>   			break;
+> @@ -1346,6 +1349,9 @@ int main(int ac, char **av)
+>   				source_dir = optarg;
+>   				source_dir_set = 1;
+>   				break;
+> +			case 'U':
+> +				fs_uuid = optarg;
+> +				break;
+>   			case 'K':
+>   				discard = 0;
+>   				break;
+> @@ -1514,7 +1520,7 @@ int main(int ac, char **av)
+>   
+>   	process_fs_features(features);
+>   
+> -	ret = make_btrfs(fd, file, label, blocks, dev_block_count,
+> +	ret = make_btrfs(fd, file, label, fs_uuid, blocks, dev_block_count,
+>   			 nodesize, leafsize,
+>   			 sectorsize, stripesize, features);
+>   	if (ret) {
+> diff --git a/utils.c b/utils.c
+> index 3e9c527..3f46e8f 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -93,12 +93,12 @@ static u64 reference_root_table[] = {
+>   	[6] =	BTRFS_CSUM_TREE_OBJECTID,
+>   };
+>   
+> -int make_btrfs(int fd, const char *device, const char *label,
+> +int make_btrfs(int fd, const char *device, const char *label, char *fs_uuid,
+>   	       u64 blocks[7], u64 num_bytes, u32 nodesize,
+>   	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features)
+>   {
+>   	struct btrfs_super_block super;
+> -	struct extent_buffer *buf;
+> +	struct extent_buffer *buf = NULL;
+>   	struct btrfs_root_item root_item;
+>   	struct btrfs_disk_key disk_key;
+>   	struct btrfs_extent_item *extent_item;
+> @@ -125,7 +125,14 @@ int make_btrfs(int fd, const char *device, const char *label,
+>   	memset(&super, 0, sizeof(super));
+>   
+>   	num_bytes = (num_bytes / sectorsize) * sectorsize;
+> -	uuid_generate(super.fsid);
+> +	if (fs_uuid) {
+> +		if (uuid_parse(fs_uuid, super.fsid) != 0) {
+> +			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
+> +			ret = -EINVAL;
+> +			goto out;
+> +		}
+> +	} else
+> +		uuid_generate(super.fsid);
+>   	uuid_generate(super.dev_item.uuid);
+>   	uuid_generate(chunk_tree_uuid);
+>   
+> diff --git a/utils.h b/utils.h
+> index 3c62066..054cbb6 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -40,7 +40,7 @@
+>   #define BTRFS_UUID_UNPARSED_SIZE	37
+>   
+>   int make_btrfs(int fd, const char *device, const char *label,
+> -	       u64 blocks[6], u64 num_bytes, u32 nodesize,
+> +	       char *fs_uuid, u64 blocks[6], u64 num_bytes, u32 nodesize,
+>   	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features);
+>   int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+>   			struct btrfs_root *root, u64 objectid);
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+>
 
-https://patchwork.kernel.org/patch/4115501/

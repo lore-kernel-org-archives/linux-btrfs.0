@@ -1,238 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:2304 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:54347 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750975AbaENRjD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 13:39:03 -0400
-Received: from int-mx02.intmail.prod.int.phx2.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s4EHd3Gl018557
+	id S1751871AbaENCDD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 22:03:03 -0400
+Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s4E233OT006116
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 13:39:03 -0400
-Message-ID: <5373AA3B.5000100@redhat.com>
-Date: Wed, 14 May 2014 12:39:07 -0500
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 22:03:03 -0400
+Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id s4E232Sx007399
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 22:03:02 -0400
+Message-ID: <5372CED8.7030404@redhat.com>
+Date: Tue, 13 May 2014 21:03:04 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: jshubin@redhat.com
-Subject: PATCH V3] mkfs.btrfs: allow UUID specification at mkfs time
-References: <5372C457.3000706@redhat.com> <53738D29.7020405@redhat.com>
-In-Reply-To: <53738D29.7020405@redhat.com>
+Subject: [PATCH] btrfs-show-super: don't try to print not-superblocks
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Allow the specification of the filesystem UUID at mkfs time.
+If we point btrfs-show-super at a not-btrfs-device and
+try to print all superblocks, bad things are apt to happen:
 
-Non-unique unique IDs are rejected.  This includes attempting
-to re-mkfs with the same UUID; if you really want to do that,
-you can mkfs with a new UUID, then re-mkfs with the one you
-wanted.  ;)
+superblock: bytenr=274877906944, device=/dev/sdc2
+---------------------------------------------------------
+btrfs-show-super: ctree.h:1984: btrfs_super_csum_size: Assertion `!(t >= (sizeof(btrfs_csum_sizes) / sizeof((btrfs_csum_sizes)[0])))' failed.
+csum			0xAborted
 
-(Implemented only for mkfs.btrfs, not btrfs-convert).
+Don't try to print superblocks that don't look like superblocks,
+and add an "-f" (force) option to try anyway, if the user
+really wants to give it a shot.
+
+Fix some spelling & capitalization while we're at it.
+
+The manpage says that if any problem happens, 1 will
+be returned, but that's already not true today LOL, so
+I didn't bother to make it true when we detect bad
+sb magic, either...
+
+I figure it's worth continuing and trying all superblocks
+in case just one has a corrupt magic.
 
 Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
 
-NB: the prior patch didn't work well if you re-mkfs'd with
-the same UUID; to be honest I didn't get to the bottom of it,
-but the fact that that old UUID was already in an internal
-list of present devices seems to have confused things.
-
-V2: reject non-unique unique IDs.
-V3: test for non-unique unique IDs early in mkfs.
-
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index a8b2c51..d62d4f8 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2240,7 +2240,7 @@ static int do_convert(const char *devname, int datacsum, int packing,
- 		goto fail;
- 	}
- 	ret = make_btrfs(fd, devname, ext2_fs->super->s_volume_name,
--			 blocks, total_bytes, blocksize, blocksize,
-+			 NULL, blocks, total_bytes, blocksize, blocksize,
- 			 blocksize, blocksize, 0);
- 	if (ret) {
- 		fprintf(stderr, "unable to create initial ctree: %s\n",
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index bef509d..4450d03 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -16,6 +16,7 @@ mkfs.btrfs \- create a btrfs filesystem
- [ \fB\-r\fP\fI rootdir\fP ]
- [ \fB\-K\fP ]
- [ \fB\-O\fP\fI feature1,feature2,...\fP ]
-+[ \fB\-U\fP\fI uuid\fP ]
- [ \fB\-h\fP ]
- [ \fB\-V\fP ]
- \fI device\fP [ \fIdevice ...\fP ]
-@@ -90,6 +91,9 @@ To see all run
+diff --git a/btrfs-show-super.c b/btrfs-show-super.c
+index d4df0ac..023f099 100644
+--- a/btrfs-show-super.c
++++ b/btrfs-show-super.c
+@@ -40,16 +40,17 @@
+ static void print_usage(void);
+ static void dump_superblock(struct btrfs_super_block *sb);
+ int main(int argc, char **argv);
+-static int load_and_dump_sb(char *, int fd, u64 sb_bytenr);
++static int load_and_dump_sb(char *, int fd, u64 sb_bytenr, int force);
  
- \fBmkfs.btrfs -O list-all\fR
- .TP
-+\fB\-U\fR, \fB\-\-uuid \fR
-+Create the filesystem with the specified UUID, which must not already exist on the system.
-+.TP
- \fB\-V\fR, \fB\-\-version\fR
- Print the \fBmkfs.btrfs\fP version and exit.
- .SH UNIT
-diff --git a/mkfs.c b/mkfs.c
-index dbd83f5..d67a5ba 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -288,6 +288,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t -r --rootdir the source directory\n");
- 	fprintf(stderr, "\t -K --nodiscard do not perform whole device TRIM\n");
- 	fprintf(stderr, "\t -O --features comma separated list of filesystem features\n");
-+	fprintf(stderr, "\t -U --uuid specify the filesystem UUID\n");
- 	fprintf(stderr, "\t -V --version print the mkfs.btrfs version and exit\n");
- 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
- 	exit(1);
-@@ -351,6 +352,7 @@ static struct option long_options[] = {
- 	{ "rootdir", 1, NULL, 'r' },
- 	{ "nodiscard", 0, NULL, 'K' },
- 	{ "features", 0, NULL, 'O' },
-+	{ "uuid", 0, NULL, 'U' },
- 	{ NULL, 0, NULL, 0}
- };
  
-@@ -1273,11 +1275,12 @@ int main(int ac, char **av)
- 	int dev_cnt = 0;
- 	int saved_optind;
- 	char estr[100];
-+	char *fs_uuid = NULL;
- 	u64 features = DEFAULT_MKFS_FEATURES;
- 
- 	while(1) {
- 		int c;
--		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:VMK",
-+		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:U:VMK",
- 				long_options, &option_index);
- 		if (c < 0)
- 			break;
-@@ -1346,6 +1349,9 @@ int main(int ac, char **av)
- 				source_dir = optarg;
- 				source_dir_set = 1;
- 				break;
-+			case 'U':
-+				fs_uuid = optarg;
-+				break;
- 			case 'K':
- 				discard = 0;
- 				break;
-@@ -1368,6 +1374,20 @@ int main(int ac, char **av)
- 			"The -r option is limited to a single device\n");
- 		exit(1);
- 	}
-+
-+	if (fs_uuid) {
-+		uuid_t dummy_uuid;
-+
-+		if (uuid_parse(fs_uuid, dummy_uuid) != 0) {
-+			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
-+			exit(1);
-+		}
-+		if (!test_uuid_unique(fs_uuid)) {
-+			fprintf(stderr, "non-unique UUID: %s\n", fs_uuid);
-+			exit(1);
-+		}
-+	}
-+	
- 	while (dev_cnt-- > 0) {
- 		file = av[optind++];
- 		if (is_block_device(file))
-@@ -1514,7 +1534,7 @@ int main(int ac, char **av)
- 
- 	process_fs_features(features);
- 
--	ret = make_btrfs(fd, file, label, blocks, dev_block_count,
-+	ret = make_btrfs(fd, file, label, fs_uuid, blocks, dev_block_count,
- 			 nodesize, leafsize,
- 			 sectorsize, stripesize, features);
- 	if (ret) {
-diff --git a/utils.c b/utils.c
-index 3e9c527..cfac0d4 100644
---- a/utils.c
-+++ b/utils.c
-@@ -93,12 +93,41 @@ static u64 reference_root_table[] = {
- 	[6] =	BTRFS_CSUM_TREE_OBJECTID,
- };
- 
--int make_btrfs(int fd, const char *device, const char *label,
-+int test_uuid_unique(char *fs_uuid)
-+{
-+	int unique = 1;
-+	blkid_dev_iterate iter = NULL;
-+	blkid_dev dev = NULL;
-+	blkid_cache cache = NULL;
-+
-+	if (blkid_get_cache(&cache, 0) < 0) {
-+		printf("ERROR: lblkid cache get failed\n");
-+		return 1;
-+	}
-+	blkid_probe_all(cache);
-+	iter = blkid_dev_iterate_begin(cache);
-+	blkid_dev_set_search(iter, "UUID", fs_uuid);
-+
-+	while (blkid_dev_next(iter, &dev) == 0) {
-+		dev = blkid_verify(cache, dev);
-+		if (dev) {
-+			unique = 0;
-+			break;
-+		}
-+	}
-+
-+	blkid_dev_iterate_end(iter);
-+	blkid_put_cache(cache);
-+
-+	return unique;
-+}
-+
-+int make_btrfs(int fd, const char *device, const char *label, char *fs_uuid,
- 	       u64 blocks[7], u64 num_bytes, u32 nodesize,
- 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features)
+ static void print_usage(void)
  {
- 	struct btrfs_super_block super;
--	struct extent_buffer *buf;
-+	struct extent_buffer *buf = NULL;
- 	struct btrfs_root_item root_item;
- 	struct btrfs_disk_key disk_key;
- 	struct btrfs_extent_item *extent_item;
-@@ -125,7 +154,20 @@ int make_btrfs(int fd, const char *device, const char *label,
- 	memset(&super, 0, sizeof(super));
+ 	fprintf(stderr,
+-		"usage: btrfs-show-super [-i super_mirror|-a] dev [dev..]\n");
++		"usage: btrfs-show-super [-i super_mirror|-a] [-f] dev [dev..]\n");
+ 	fprintf(stderr, "\tThe super_mirror number is between 0 and %d.\n",
+ 		BTRFS_SUPER_MIRROR_MAX - 1);
+-	fprintf(stderr, "\tIf -a is passed all the superblocks are showed.\n");
++	fprintf(stderr, "\tIf -a is passed all the superblocks are shown.\n");
++	fprintf(stderr, "\tPass -f to attempt to dump superblocks with bad magic.\n");
+ 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+ }
  
- 	num_bytes = (num_bytes / sectorsize) * sectorsize;
--	uuid_generate(super.fsid);
-+	if (fs_uuid) {
-+		if (uuid_parse(fs_uuid, super.fsid) != 0) {
-+			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (!test_uuid_unique(fs_uuid)) {
-+			fprintf(stderr, "non-unique UUID: %s\n", fs_uuid);
-+			ret = -EBUSY;
-+			goto out;
-+		}
-+	} else {
-+		uuid_generate(super.fsid);
-+	}
- 	uuid_generate(super.dev_item.uuid);
- 	uuid_generate(chunk_tree_uuid);
+@@ -60,10 +61,11 @@ int main(int argc, char **argv)
+ 	char *filename;
+ 	int fd = -1;
+ 	int i;
++	int force = 0;
+ 	u64 arg;
+ 	u64 sb_bytenr = btrfs_sb_offset(0);
  
-
-diff --git a/utils.h b/utils.h
-index 3c62066..4a404ae 100644
---- a/utils.h
-+++ b/utils.h
-@@ -39,8 +39,9 @@
+-	while ((opt = getopt(argc, argv, "ai:")) != -1) {
++	while ((opt = getopt(argc, argv, "afi:")) != -1) {
+ 		switch (opt) {
+ 		case 'i':
+ 			arg = arg_strtou64(optarg);
+@@ -81,6 +83,10 @@ int main(int argc, char **argv)
+ 			all = 1;
+ 			break;
  
- #define BTRFS_UUID_UNPARSED_SIZE	37
++		case 'f':
++			force = 1;
++			break;
++
+ 		default:
+ 			print_usage();
+ 			exit(1);
+@@ -104,7 +110,8 @@ int main(int argc, char **argv)
+ 			int idx;
+ 			for (idx = 0; idx < BTRFS_SUPER_MIRROR_MAX; idx++) {
+ 				sb_bytenr = btrfs_sb_offset(idx);
+-				if (load_and_dump_sb(filename, fd, sb_bytenr)) {
++				if (load_and_dump_sb(filename, fd,
++						     sb_bytenr, force)) {
+ 					close(fd);
+ 					exit(1);
+ 				}
+@@ -112,7 +119,7 @@ int main(int argc, char **argv)
+ 				putchar('\n');
+ 			}
+ 		} else {
+-			load_and_dump_sb(filename, fd, sb_bytenr);
++			load_and_dump_sb(filename, fd, sb_bytenr, force);
+ 			putchar('\n');
+ 		}
+ 		close(fd);
+@@ -121,7 +128,7 @@ int main(int argc, char **argv)
+ 	exit(0);
+ }
  
-+int test_uuid_unique(char *fs_uuid);
- int make_btrfs(int fd, const char *device, const char *label,
--	       u64 blocks[6], u64 num_bytes, u32 nodesize,
-+	       char *fs_uuid, u64 blocks[6], u64 num_bytes, u32 nodesize,
- 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features);
- int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, u64 objectid);
+-static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr)
++static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int force)
+ {
+ 	u8 super_block_data[BTRFS_SUPER_INFO_SIZE];
+ 	struct btrfs_super_block *sb;
+@@ -146,7 +153,12 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr)
+ 	}
+ 	printf("superblock: bytenr=%llu, device=%s\n", sb_bytenr, filename);
+ 	printf("---------------------------------------------------------\n");
+-	dump_superblock(sb);
++	if (btrfs_super_magic(sb) != BTRFS_MAGIC && !force) {
++		fprintf(stderr,
++		    "ERROR: bad magic on superblock on %s at %llu\n",
++		    filename, (unsigned long long)sb_bytenr);
++	} else
++		dump_superblock(sb);
+ 	return 0;
+ }
+ 
+diff --git a/man/btrfs-show-super.8.in b/man/btrfs-show-super.8.in
+index 3fe8bde..582649a 100644
+--- a/man/btrfs-show-super.8.in
++++ b/man/btrfs-show-super.8.in
+@@ -10,9 +10,11 @@ first superblock will be printed out.
+ 
+ \fIOptions\fP
+ .IP "\fB-a\fP" 5
+-print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
++Print all the superblock information, if this option is given, '\fB-i\fP' option will be ignored.
++.IP "\fB-f\fP" 5
++Attempt to print the superblock even if no superblock magic is found.  May end badly.
+ .IP "\fB-i \fI<super_mirror>\fP" 5
+-specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2. if several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
++Specify which mirror to print out. \fI<super_mirror>\fP is between 0 and 2.  If several '\fB-i \fI<super_mirror>\fP'\fR are given, only the last one is valid.
+ 
+ .SH EXIT CODE
+ \fBbtrfs-show-super\fR will return 0 exit code if no error happened.
 

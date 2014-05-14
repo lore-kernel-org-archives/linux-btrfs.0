@@ -1,50 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:49490 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755098AbaENNKo (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:51277 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755561AbaENNew (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 09:10:44 -0400
-Message-ID: <53736BB6.30508@fb.com>
-Date: Wed, 14 May 2014 09:12:22 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 14 May 2014 09:34:52 -0400
+Date: Wed, 14 May 2014 21:34:38 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: send, fix incorrect ref access when using extrefs
+Message-ID: <20140514133436.GA25197@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1400014862-2131-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, Liu Bo <bo.li.liu@oracle.com>,
-        Zach Brown <zab@redhat.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/3] btrfs: fix inline compressed read err corruption
-References: <1399590979-15331-1-git-send-email-zab@redhat.com> <1399590979-15331-3-git-send-email-zab@redhat.com> <20140512150022.GA15727@localhost.localdomain> <20140512171850.GG6917@twin.jikos.cz>
-In-Reply-To: <20140512171850.GG6917@twin.jikos.cz>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1400014862-2131-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/12/2014 01:18 PM, David Sterba wrote:
-> On Mon, May 12, 2014 at 11:00:23PM +0800, Liu Bo wrote:
->> On Thu, May 08, 2014 at 07:16:19PM -0400, Zach Brown wrote:
->>> uncompress_inline() is silently dropping an error from
->>> btrfs_decompress() after testing it and zeroing the page that was
->>> supposed to hold decompressed data.  This can silently turn compressed
->>> inline data in to zeros if decompression fails due to corrupt compressed
->>> data or memory allocation failure.
->>>
->>> I have no idea why uncompress_inline() is zeroing the page for an error
->>> from btrfs_decompress() but not for the earlier ENOMEM from kmalloc().
->>> Can someone explain this?
->>
->> I guess that's because decompress() may have put part of real data on the page
->> and then bail out, and we don't want those data to be exposed to users in this
->> error case.
->>
->> And kmalloc() 's ENOMEM runs before that decompress(), page has whatever random
->> data.
+On Tue, May 13, 2014 at 10:01:02PM +0100, Filipe David Borba Manana wrote:
+> When running send, if an inode only has extended reference items
+> associated to it and no regular references, send.c:get_first_ref()
+> was incorrectly assuming the reference it found was of type
+> BTRFS_INODE_REF_KEY due to use of the wrong key variable.
+> This caused weird behaviour when using the found item has a regular
+> reference, such as weird path string, and occasionally (when lucky)
+> a crash:
 > 
-> But we don't return any data in case of error. In the unpatched code,
-> there's no error so a zeroed page is returned, but this would not happen
-> after Zach's fix.
+> [  190.600652] general protection fault: 0000 [#1] SMP DEBUG_PAGEALLOC
+> [  190.600994] Modules linked in: btrfs xor raid6_pq binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc psmouse serio_raw evbug pcspkr i2c_piix4 e1000 floppy
+> [  190.602565] CPU: 2 PID: 14520 Comm: btrfs Not tainted 3.13.0-fdm-btrfs-next-26+ #1
+> [  190.602728] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+> [  190.602868] task: ffff8800d447c920 ti: ffff8801fa79e000 task.ti: ffff8801fa79e000
+> [  190.603030] RIP: 0010:[<ffffffff813266b4>]  [<ffffffff813266b4>] memcpy+0x54/0x110
+> [  190.603262] RSP: 0018:ffff8801fa79f880  EFLAGS: 00010202
+> [  190.603395] RAX: ffff8800d4326e3f RBX: 000000000000036a RCX: ffff880000000000
+> [  190.603553] RDX: 000000000000032a RSI: ffe708844042936a RDI: ffff8800d43271a9
+> [  190.603710] RBP: ffff8801fa79f8c8 R08: 00000000003a4ef0 R09: 0000000000000000
+> [  190.603867] R10: 793a4ef09f000000 R11: 9f0000000053726f R12: ffff8800d43271a9
+> [  190.604020] R13: 0000160000000000 R14: ffff8802110134f0 R15: 000000000000036a
+> [  190.604020] FS:  00007fb423d09b80(0000) GS:ffff880216200000(0000) knlGS:0000000000000000
+> [  190.604020] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [  190.604020] CR2: 00007fb4229d4b78 CR3: 00000001f5d76000 CR4: 00000000000006e0
+> [  190.604020] Stack:
+> [  190.604020]  ffffffffa01f4d49 ffff8801fa79f8f0 00000000000009f9 ffff8801fa79f8c8
+> [  190.604020]  00000000000009f9 ffff880211013260 000000000000f971 ffff88021147dba8
+> [  190.604020]  00000000000009f9 ffff8801fa79f918 ffffffffa02367f5 ffff8801fa79f928
+> [  190.604020] Call Trace:
+> [  190.604020]  [<ffffffffa01f4d49>] ? read_extent_buffer+0xb9/0x120 [btrfs]
+> [  190.604020]  [<ffffffffa02367f5>] fs_path_add_from_extent_buffer+0x45/0x60 [btrfs]
+> [  190.604020]  [<ffffffffa0238806>] get_first_ref+0x1f6/0x210 [btrfs]
+> [  190.604020]  [<ffffffffa0238994>] __get_cur_name_and_parent+0x174/0x3a0 [btrfs]
+> [  190.604020]  [<ffffffff8118df3d>] ? kmem_cache_alloc_trace+0x11d/0x1e0
+> [  190.604020]  [<ffffffffa0236674>] ? fs_path_alloc+0x24/0x60 [btrfs]
+> [  190.604020]  [<ffffffffa0238c91>] get_cur_path+0xd1/0x240 [btrfs]
+> (...)
+> 
+> Steps to reproduce (either crash or some weirdness like an odd path string):
+> 
+>     mkfs.btrfs -f -O extref /dev/sdd
+>     mount /dev/sdd /mnt
+> 
+>     mkdir /mnt/testdir
+>     touch /mnt/testdir/foobar
+> 
+>     for i in `seq 1 2550`; do
+>         ln /mnt/testdir/foobar /mnt/testdir/foobar_link_`printf "%04d" $i`
+>     done
+> 
+>     ln /mnt/testdir/foobar /mnt/testdir/final_foobar_name
+> 
+>     rm -f /mnt/testdir/foobar
+>     for i in `seq 1 2550`; do
+>         rm -f /mnt/testdir/foobar_link_`printf "%04d" $i`
+>     done
+> 
+>     btrfs subvolume snapshot -r /mnt /mnt/mysnap
+>     btrfs send /mnt/mysnap -f /tmp/mysnap.send
 
-I dug a little more, the zeroing goes all the way back to the original
-compression code.  It looks like some paranoia of mine.
+Looks good.
 
-I'd say its fine to leave off as long as we don't mark the page uptodate.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
--chris
+-liubo
 
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 40f353f..0035bdd 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -1688,7 +1688,7 @@ static int get_first_ref(struct btrfs_root *root, u64 ino,
+>  		goto out;
+>  	}
+>  
+> -	if (key.type == BTRFS_INODE_REF_KEY) {
+> +	if (found_key.type == BTRFS_INODE_REF_KEY) {
+>  		struct btrfs_inode_ref *iref;
+>  		iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>  				      struct btrfs_inode_ref);
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

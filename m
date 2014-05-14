@@ -1,59 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from queue01b.mail.zen.net.uk ([212.23.3.242]:39352 "EHLO
-	queue01b.mail.zen.net.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755688AbaENNeO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 09:34:14 -0400
-Received: from [212.23.1.1] (helo=smarthost01a.mail.zen.net.uk)
-	by queue01b.mail.zen.net.uk with esmtp (Exim 4.72)
-	(envelope-from <david@chrestomanci.org>)
-	id 1WkZK1-0002xZ-28
-	for linux-btrfs@vger.kernel.org; Wed, 14 May 2014 13:34:13 +0000
-Received: from [82.70.68.182] (helo=www.chrestomanci.org)
-	by smarthost01a.mail.zen.net.uk with esmtps (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-	(Exim 4.80)
-	(envelope-from <david@chrestomanci.org>)
-	id 1WkZJz-000AI4-JZ
-	for linux-btrfs@vger.kernel.org; Wed, 14 May 2014 14:34:11 +0100
-Message-ID: <537370C8.8010606@chrestomanci.org>
-Date: Wed, 14 May 2014 14:34:00 +0100
-From: David Pottage <david@chrestomanci.org>
-MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        Eric Sandeen <sandeen@redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>, jshubin@redhat.com
+Received: from plane.gmane.org ([80.91.229.3]:51410 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755731AbaENNfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 09:35:02 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WkZKh-0007nI-UZ
+	for linux-btrfs@vger.kernel.org; Wed, 14 May 2014 15:34:55 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 15:34:55 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 15:34:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH] mkfs.btrfs: allow UUID specification at mkfs time
+Date: Wed, 14 May 2014 13:34:40 +0000 (UTC)
+Message-ID: <pan$613d3$f7783f17$e8368cec$6bbea6af@cox.net>
 References: <5372C457.3000706@redhat.com> <53731BE3.5010604@cn.fujitsu.com>
-In-Reply-To: <53731BE3.5010604@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	<537360B2.50107@swiftspirit.co.za>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Brendan Hide posted on Wed, 14 May 2014 14:25:22 +0200 as excerpted:
 
-On 14/05/14 08:31, Wang Shilong wrote:
-> On 05/14/2014 09:18 AM, Eric Sandeen wrote:
->> Allow the specification of the filesystem UUID at mkfs time.
->>
->> (Implemented only for mkfs.btrfs, not btrfs-convert).
-> Just out of curiosity, this option is used for what kind of use case?
-> I notice Ext4 also has this option.:-)
-I have used it a few times when replacing the hard disc of a Linux 
-system, while trying to leave everything else untouched.
+> On 14/05/14 09:31, Wang Shilong wrote:
+>> On 05/14/2014 09:18 AM, Eric Sandeen wrote:
+>>> Allow the specification of the filesystem UUID at mkfs time.
+>>>
+>>> (Implemented only for mkfs.btrfs, not btrfs-convert).
+>> Just out of curiosity, this option is used for what kind of use case?
+>> I notice Ext4 also has this option.:-)
 
-Many distros, including Debian and Ubuntu write the /etc/fstab to 
-specify volumes by UUID instead of by label or device path.
+> Personally I can't think of any "average" or "normal" use case. The
+> simplest case however is in using predictable/predetermined UUIDs.
 
-I have also had the misfortune to use an embedded system where the boot 
-volume UUID was configured into the flash in a non obvious way, so the 
-easiest fix was to set-up the boot and root volumes on the replacement 
-hard disc to have the same UUID.
+AFAIK the most common use-case would be when redoing filesystems already 
+listed in fstab with UUID= mounting.
 
-Of course in either case I could have just taken a bit for bit copy of 
-the source volume using dd, but that had it'd own problems because the 
-destination was smaller. I also wanted to defrag the fs while copying it.
+I use and prefer LABEL= instead of UUID= mounting here, but I commonly 
+keep a working and at least one identically sized partition backup 
+filesystem copy of all non-throw-away filesystems, with fstab entries for 
+both the working and backup versions, and periodically do a mkfs and 
+recopy of the backup, with occasional boots to the backup and mkfs and 
+recopy of the working version as well.  As I use LABEL= fstab entries I 
+ensure that I specify the same label at mkfs time so I don't have to redo 
+the fstab, and people that use UUID= fstab entries would find the ability 
+to specify UUID at mkfs time as useful as I do the ability to specify 
+label. =:^)
+
+Many grub2 configurations also uses UUID so the same idea applies there.
 
 -- 
-David Pottage
-
-
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

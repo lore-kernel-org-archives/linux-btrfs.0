@@ -1,57 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56224 "EHLO mx2.suse.de"
+Received: from mx1.redhat.com ([209.132.183.28]:45126 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751447AbaENQBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 12:01:35 -0400
-Date: Wed, 14 May 2014 18:01:33 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, jshubin@redhat.com
-Subject: Re: [PATCH V2] mkfs.btrfs: allow UUID specification at mkfs time
-Message-ID: <20140514160133.GN6917@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5372C457.3000706@redhat.com>
- <53738D29.7020405@redhat.com>
+	id S1750750AbaENBSP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 May 2014 21:18:15 -0400
+Received: from int-mx12.intmail.prod.int.phx2.redhat.com (int-mx12.intmail.prod.int.phx2.redhat.com [10.5.11.25])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s4E1IEx1008022
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 21:18:14 -0400
+Message-ID: <5372C457.3000706@redhat.com>
+Date: Tue, 13 May 2014 20:18:15 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53738D29.7020405@redhat.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: jshubin@redhat.com
+Subject: [PATCH] mkfs.btrfs: allow UUID specification at mkfs time
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for adding the uuid uniqueness check, that was my major
-objection for previous patch iterations,
+Allow the specification of the filesystem UUID at mkfs time.
 
-http://www.spinics.net/lists/linux-btrfs/msg30572.html
+(Implemented only for mkfs.btrfs, not btrfs-convert).
 
-we can now use it for convert as well (to generate or copy the uuid).
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
 
-On Wed, May 14, 2014 at 10:35:05AM -0500, Eric Sandeen wrote:
-> @@ -125,7 +154,19 @@ int make_btrfs(int fd, const char *device, const char *label,
->  	memset(&super, 0, sizeof(super));
->  
->  	num_bytes = (num_bytes / sectorsize) * sectorsize;
-> -	uuid_generate(super.fsid);
-> +	if (fs_uuid) {
-> +		if (uuid_parse(fs_uuid, super.fsid) != 0) {
-> +			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
-> +			ret = -EINVAL;
-> +			goto out;
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index a8b2c51..d62d4f8 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2240,7 +2240,7 @@ static int do_convert(const char *devname, int datacsum, int packing,
+ 		goto fail;
+ 	}
+ 	ret = make_btrfs(fd, devname, ext2_fs->super->s_volume_name,
+-			 blocks, total_bytes, blocksize, blocksize,
++			 NULL, blocks, total_bytes, blocksize, blocksize,
+ 			 blocksize, blocksize, 0);
+ 	if (ret) {
+ 		fprintf(stderr, "unable to create initial ctree: %s\n",
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+index bef509d..4450d03 100644
+--- a/man/mkfs.btrfs.8.in
++++ b/man/mkfs.btrfs.8.in
+@@ -16,6 +16,7 @@ mkfs.btrfs \- create a btrfs filesystem
+ [ \fB\-r\fP\fI rootdir\fP ]
+ [ \fB\-K\fP ]
+ [ \fB\-O\fP\fI feature1,feature2,...\fP ]
++[ \fB\-U\fP\fI uuid\fP ]
+ [ \fB\-h\fP ]
+ [ \fB\-V\fP ]
+ \fI device\fP [ \fIdevice ...\fP ]
+@@ -90,6 +91,9 @@ To see all run
+ 
+ \fBmkfs.btrfs -O list-all\fR
+ .TP
++\fB\-U\fR, \fB\-\-uuid \fR
++Create the filesystem with the specified UUID.
++.TP
+ \fB\-V\fR, \fB\-\-version\fR
+ Print the \fBmkfs.btrfs\fP version and exit.
+ .SH UNIT
+diff --git a/mkfs.c b/mkfs.c
+index dbd83f5..eccb08f 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -288,6 +288,7 @@ static void print_usage(void)
+ 	fprintf(stderr, "\t -r --rootdir the source directory\n");
+ 	fprintf(stderr, "\t -K --nodiscard do not perform whole device TRIM\n");
+ 	fprintf(stderr, "\t -O --features comma separated list of filesystem features\n");
++	fprintf(stderr, "\t -U --uuid specify the filesystem UUID\n");
+ 	fprintf(stderr, "\t -V --version print the mkfs.btrfs version and exit\n");
+ 	fprintf(stderr, "%s\n", BTRFS_BUILD_VERSION);
+ 	exit(1);
+@@ -351,6 +352,7 @@ static struct option long_options[] = {
+ 	{ "rootdir", 1, NULL, 'r' },
+ 	{ "nodiscard", 0, NULL, 'K' },
+ 	{ "features", 0, NULL, 'O' },
++	{ "uuid", 0, NULL, 'U' },
+ 	{ NULL, 0, NULL, 0}
+ };
+ 
+@@ -1273,11 +1275,12 @@ int main(int ac, char **av)
+ 	int dev_cnt = 0;
+ 	int saved_optind;
+ 	char estr[100];
++	char *fs_uuid = NULL;
+ 	u64 features = DEFAULT_MKFS_FEATURES;
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:VMK",
++		c = getopt_long(ac, av, "A:b:fl:n:s:m:d:L:O:r:U:VMK",
+ 				long_options, &option_index);
+ 		if (c < 0)
+ 			break;
+@@ -1346,6 +1349,9 @@ int main(int ac, char **av)
+ 				source_dir = optarg;
+ 				source_dir_set = 1;
+ 				break;
++			case 'U':
++				fs_uuid = optarg;
++				break;
+ 			case 'K':
+ 				discard = 0;
+ 				break;
+@@ -1514,7 +1520,7 @@ int main(int ac, char **av)
+ 
+ 	process_fs_features(features);
+ 
+-	ret = make_btrfs(fd, file, label, blocks, dev_block_count,
++	ret = make_btrfs(fd, file, label, fs_uuid, blocks, dev_block_count,
+ 			 nodesize, leafsize,
+ 			 sectorsize, stripesize, features);
+ 	if (ret) {
+diff --git a/utils.c b/utils.c
+index 3e9c527..3f46e8f 100644
+--- a/utils.c
++++ b/utils.c
+@@ -93,12 +93,12 @@ static u64 reference_root_table[] = {
+ 	[6] =	BTRFS_CSUM_TREE_OBJECTID,
+ };
+ 
+-int make_btrfs(int fd, const char *device, const char *label,
++int make_btrfs(int fd, const char *device, const char *label, char *fs_uuid,
+ 	       u64 blocks[7], u64 num_bytes, u32 nodesize,
+ 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features)
+ {
+ 	struct btrfs_super_block super;
+-	struct extent_buffer *buf;
++	struct extent_buffer *buf = NULL;
+ 	struct btrfs_root_item root_item;
+ 	struct btrfs_disk_key disk_key;
+ 	struct btrfs_extent_item *extent_item;
+@@ -125,7 +125,14 @@ int make_btrfs(int fd, const char *device, const char *label,
+ 	memset(&super, 0, sizeof(super));
+ 
+ 	num_bytes = (num_bytes / sectorsize) * sectorsize;
+-	uuid_generate(super.fsid);
++	if (fs_uuid) {
++		if (uuid_parse(fs_uuid, super.fsid) != 0) {
++			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
++			ret = -EINVAL;
++			goto out;
++		}
++	} else
++		uuid_generate(super.fsid);
+ 	uuid_generate(super.dev_item.uuid);
+ 	uuid_generate(chunk_tree_uuid);
+ 
+diff --git a/utils.h b/utils.h
+index 3c62066..054cbb6 100644
+--- a/utils.h
++++ b/utils.h
+@@ -40,7 +40,7 @@
+ #define BTRFS_UUID_UNPARSED_SIZE	37
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+-	       u64 blocks[6], u64 num_bytes, u32 nodesize,
++	       char *fs_uuid, u64 blocks[6], u64 num_bytes, u32 nodesize,
+ 	       u32 leafsize, u32 sectorsize, u32 stripesize, u64 features);
+ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, u64 objectid);
 
-I think the uuid validity check comes too late, IMHO it should be done
-after the while/getopt block outside of make_btrfs. At this point eg.
-the discard or device zeroing is already done.
 
-I would not mind to keep the check here as well as a last sanity check,
-though the number of mkfs_btrfs callers is 1 and the function is not
-exported to the library.
-
-> +		}
-> +		if (!test_uuid_unique(fs_uuid)) {
-> +			fprintf(stderr, "non-unique UUID: %s\n", fs_uuid);
-> +			ret = -EBUSY;
-> +			goto out;
-> +		}
-> +	} else
-> +		uuid_generate(super.fsid);
->  	uuid_generate(super.dev_item.uuid);
->  	uuid_generate(chunk_tree_uuid);

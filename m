@@ -1,77 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f178.google.com ([209.85.128.178]:56714 "EHLO
-	mail-ve0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755489AbaENPgY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 11:36:24 -0400
-Received: by mail-ve0-f178.google.com with SMTP id sa20so2604788veb.37
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 08:36:23 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net>
-References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com>
- <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net>
-From: Scott Middleton <scott@assuretek.com.au>
-Date: Wed, 14 May 2014 23:36:03 +0800
-Message-ID: <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com>
-Subject: Re: send/receive and bedup
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37384 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750741AbaENSJo convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 May 2014 14:09:44 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Can a snapshot become a parent subvolume when its parent is deleted?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140514135057.GA12849@merlins.org>
+Date: Wed, 14 May 2014 12:09:38 -0600
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <FA8D4920-8A23-4C8D-848F-EC52BF43311C@colorremedies.com>
+References: <20140514135057.GA12849@merlins.org>
+To: Marc MERLIN <marc@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+
+On May 14, 2014, at 7:50 AM, Marc MERLIN <marc@merlins.org> wrote:
+
+> So, I had btrfs_pool1 that was trashed/lost as discussed here recently.
+> 
+> I did btrfs send btrfs_pool2/root_ro.date | btrfs receive /mnt/btrfs_pool1
+> 
+> Then btrfs subvolume snapshot root_ro.date root
+> 
+> Now, after I delete root_ro.date on btrfs_pool1, shouldn't root become a
+> parent subvolume?
+
+There's no explicit hierarchy like this. There's no state "parent" or "child". 
+
+If a subvolume is created by snapshotting another subvolume, the new subvolume refers to the uuid of its source as the parent uuid. And the original subvolume, at least in the UI, contains a list of its snapshots but I don't know that this metadata is literally associated with the subvolume rather than inferred from its snapshots, all of which contain the "parent" subvolume's uuid as a parent_uuid.
+
+
+> 
+> Right now, I have:
+> legolas:/mnt/btrfs_pool1# btrfs subvolume list -q . 
+> ID 390 gen 5954 top level 5 parent_uuid faea7df8-d51a-6b4b-994b-887d55267cce path root
+> legolas:/mnt/btrfs_pool1# btrfs subvolume list  -u .  |grep faea7df8-d51a-6b4b-994b-887d55267cce
+> legolas:/mnt/btrfs_pool1#
+> 
+> Is it possible not to have a parent?
+> 
+> If so, shouldn't you become a parent at that time?
+
+No. The listed subvolume parent_uuid is the subvolume uuid for now deleted subvolume root_ro.date. Even though it's deleted, the subvolume created from it still retains the parent_uuid reference.
+
+If you snapshot root, you could say it "becomes a parent" but it's only a metaphor it's not something that literally happens on disk. All I'm aware of that happens is the new subvolume gets its own uuid and its parent_uuid is set to match the subvolume uuid it was created from.
 
 
 
-> I left this for a couple days hoping someone else with a more directly
-> similar use-case would answer, but none so far, so I'll give it a go...
 
-Thanks for getting back to me mate!
-
-
->
-> First some general boilerplate.  Btrfs is still under heavy development
-> and keeping current with especially the kernel is *STRONGLY* recommended,
-> as every new kernel still brings lots of fixes, meaning if you're running
-> an old kernel, you're running known-buggy code with fixes available in a
-> current kernel.  Similarly, you probably don't want to let the btrfs-progs
-> userspace tools get too outdated either, tho that's not as critical as it
-> mostly means not being able to take advantage of the latest features and
-> fixes for maintenance, not the risk of operational data loss if one of
-> the known-fixed old-version kernel bugs hits that you have when running
-> an older kernel.
->
-
-My test environment is:
-root@Ubuntu-14:~/btrfs/btrfs-progs# uname -a
-Linux Ubuntu-14 3.14.1-031401-generic #201404141220 SMP Mon Apr 14
-16:21:48 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-
-root@Ubuntu-14:~/btrfs/btrfs-progs# which btrfs
-/usr/local/bin/btrfs
-root@Ubuntu-14:~/btrfs/btrfs-progs# btrfs --version
-Btrfs v3.14.1
-
-I read so much about BtrFS that I mistaked Bedup with Duperemove.
-Duperemove is actually what I am testing.
-
-I also plan on testing SDFS - opendedup again! They have some
-development since the last time I tried,  Not a fan of having to use
-Java though!
-
-> Second, as you've done some research already you're likely aware of this,
-> but just in case, let me give you the link to the wiki.  If you haven't
-> read up there, please do, as it's likely to be quite helpful. =:^)
->
-> Memory or bookmark: https://btrfs.wiki.kernel.org
-
-
-Lots of bookmarks. One of my faves is:
-https://wiki.archlinux.org/index.php/Btrfs
-
-
-It will be interesting on what happens. I rsync'd the clients data
-from a 2TB mdadm RAID to a standard 3TB BtrFS drive, Currently running
- Duperemove on it. I reckon it will take days but it will be
-interesting to see what happens.
+Chris Murphy

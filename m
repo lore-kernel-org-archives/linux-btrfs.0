@@ -1,145 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f44.google.com ([209.85.219.44]:65135 "EHLO
-	mail-oa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750919AbaENMLa (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59600 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755092AbaENM0r (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 08:11:30 -0400
-Received: by mail-oa0-f44.google.com with SMTP id o6so2024698oag.17
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 05:11:30 -0700 (PDT)
+	Wed, 14 May 2014 08:26:47 -0400
+Message-ID: <5373616E.9070409@fb.com>
+Date: Wed, 14 May 2014 08:28:30 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Date: Wed, 14 May 2014 17:41:29 +0530
-Message-ID: <CAJqT0iz2ZM7mygQQg6sE9-rg=wMNboOi-PgFZ=Cyw-FVhhoVtw@mail.gmail.com>
-Subject: "No space left on device" though btrfs df shows lots of space left
-From: sampath rapaka <sampath.rapaka@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.15rc5 deadlock
+References: <20140514114027.GA32301@merlins.org>
+In-Reply-To: <20140514114027.GA32301@merlins.org>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+On 05/14/2014 07:40 AM, Marc MERLIN wrote:
+> Got this soon after boot:
+> 
+> [  720.086389] INFO: task pidgin:11330 blocked for more than 120 seconds.
+> [  720.086402]       Not tainted 3.15.0-rc5-amd64-i915-preempt-20140216s1 #1
+> [  720.086406] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [  720.086411] pidgin          D 0000000000000004     0 11330   5187 0x00000080
+> [  720.086423]  ffff8803d7233c30 0000000000000082 ffff8803d7233c00 ffff8803d7233fd8
+> [  720.086433]  ffff8804066345d0 00000000000141c0 ffff88041e3141c0 ffff8804066345d0
+> [  720.086441]  ffff8803d7233cd0 0000000000000002 ffffffff810fda1a ffff8803d7233c40
+> [  720.086450] Call Trace:
+> [  720.086468]  [<ffffffff810fda1a>] ? wait_on_page_read+0x3c/0x3c
+> [  720.086494]  [<ffffffff8161c816>] schedule+0x73/0x75
+> [  720.086502]  [<ffffffff8161c9bb>] io_schedule+0x60/0x7a
+> [  720.086510]  [<ffffffff810fda28>] sleep_on_page+0xe/0x12
+> [  720.086519]  [<ffffffff8161cd4b>] __wait_on_bit_lock+0x46/0x8a
+> [  720.086528]  [<ffffffff810fdae3>] __lock_page+0x69/0x6b
+> [  720.086536]  [<ffffffff81084771>] ? autoremove_wake_function+0x34/0x34
+> [  720.086544]  [<ffffffff81240c41>] lock_page+0x1e/0x21
+> [  720.086553]  [<ffffffff8124470e>] extent_write_cache_pages.isra.16.constprop.32+0x10e/0x2c6
+> [  720.086562]  [<ffffffff81244b6c>] extent_writepages+0x4b/0x5c
+> [  720.086573]  [<ffffffff813159e0>] ? debug_smp_processor_id+0x17/0x19
+> [  720.086581]  [<ffffffff8122ee1f>] ? btrfs_submit_direct+0x3f4/0x3f4
+> [  720.086592]  [<ffffffff8122d3fa>] btrfs_writepages+0x28/0x2a
+> [  720.086602]  [<ffffffff811082b1>] do_writepages+0x1e/0x2c
+> [  720.086611]  [<ffffffff810ff179>] __filemap_fdatawrite_range+0x55/0x57
+> [  720.086620]  [<ffffffff810ff1ef>] filemap_fdatawrite_range+0x13/0x15
+> [  720.086628]  [<ffffffff8123883d>] btrfs_sync_file+0x8b/0x2b3
+> [  720.086636]  [<ffffffff8132042f>] ? __percpu_counter_add+0x8c/0xa6
+> [  720.086647]  [<ffffffff81157087>] ? __sb_end_write+0x2d/0x5b
+> [  720.086657]  [<ffffffff8117a1a7>] vfs_fsync_range+0x18/0x22
+> [  720.086663]  [<ffffffff8117a1cd>] vfs_fsync+0x1c/0x1e
+> [  720.086670]  [<ffffffff8117a3d9>] do_fsync+0x2c/0x4c
+> [  720.086678]  [<ffffffff8117a5e2>] SyS_fsync+0x10/0x14
+> [  720.086686]  [<ffffffff81625b6d>] system_call_fastpath+0x1a/0x1f
 
-I have started using Btrfs for the first time today. I have created a
-RAID 5 Array. Did a mount and created Btrfs on top of it.
+I think Filipe fixed this one:
 
-I was doing some IO using FIO tool. After 2 tests one of the tests
-have got below error.
+https://patchwork.kernel.org/patch/4143821/
 
-Console log:
-============
-stress: (g=0): rw=randrw, bs=4K-4K/4K-4K/4K-4K, ioengine=libaio, iodepth=32
-fio-2.1.7
-Starting 1 process
-fio: io_u error on file /mnt/btrfs_raid5/stress.0.0: No space left on device
-     write offset=5415628800, buflen=4096
-fio: io_u error on file /mnt/btrfs_raid5/stress.0.0: Read-only file system
-     write offset=457945088, buflen=4096
-fio: pid=16013, err=28/file:io_u.c:1550, func=io_u error, error=No
-space left on device
-
-stress: (groupid=0, jobs=1): err=28 (file:io_u.c:1550, func=io_u
-error, error=No space left on device): pid=16013: Thu May 15 00:21:02
-2014
-
-Uname Output:
-============
-
-Linux  3.12.15-1.1+ #2 SMP  x86_64 x86_64 x86_64 GNU/Linux
-
-Btrfs Show output;
-=================
-:~$ btrfs fi df /mnt/btrfs_raid5/
-Data, single: total=12.01GiB, used=10.69GiB
-System, DUP: total=8.00MiB, used=16.00KiB
-System, single: total=4.00MiB, used=0.00
-Metadata, DUP: total=1.00GiB, used=266.41MiB
-Metadata, single: total=8.00MiB, used=0.00
-
-~$ sudo btrfs fi show
-[sudo] password for rapaka:
-Label: 'btrfs_md5'  uuid: 9645bc32-579b-429d-99c2-7e2fd519de6f
-        Total devices 1 FS bytes used 10.95GiB
-        devid    1 size 1.31TiB used 14.04GiB path /dev/md5
-
-Btrfs v3.14.1
-
-
-Dmesg log:
-=========
-
-[81028.942683] btrfs: device label btrfs_md5 devid 1 transid 4 /dev/md5
-[81028.943120] btrfs: disk space caching is enabled
-[81028.943122] btrfs flagging fs with big metadata feature
-[81028.944880] btrfs: creating UUID tree
-[81144.555977] md: md5: recovery done.
-[81144.557917] RAID conf printout:
-[81144.557920]  --- level:5 rd:4 wd:4
-[81144.557923]  disk 0, o:1, dev:sda
-[81144.557924]  disk 1, o:1, dev:sdc
-[81144.557926]  disk 2, o:1, dev:sdd
-[81144.557927]  disk 3, o:1, dev:sde
-[93241.295892] ------------[ cut here ]------------
-[93241.295908] WARNING: CPU: 0 PID: 13706 at fs/btrfs/super.c:255
-__btrfs_abort_transaction+0x12d/0x140 [btrfs]()
-[93241.295909] btrfs: Transaction aborted (error -28)
-[93241.295910] Modules linked in: nouveau snd_hda_codec_hdmi
-snd_hda_codec_realtek snd_hda_intel snd_hda_codec mxm_wmi wmi ttm
-snd_hwdep snd_pcm drm_kms_helper raid456 drm snd_page_alloc snd_timer
-async_memcpy async_raid6_recov snd async_pq async_xor psmouse async_tx
-soundcore serio_raw md_mod i2c_algo_bit lp video lpc_ich parport
-mac_hid btrfs xor raid6_pq libcrc32c hid_generic usbhid hid e1000e
-ahci libahci ptp pps_core
-[93241.295923] CPU: 0 PID: 13706 Comm: btrfs-transacti Tainted: G
-    I  3.12.15-1.1+ #2
-[93241.295924] Hardware name:                  /DH87RL, BIOS
-RLH8710H.86A.0320.2013.0606.1802 06/06/2013
-[93241.295925]  0000000000000009 ffff8800cd99dac0 ffffffff816a3e43
-ffff8800cd99db08
-[93241.295927]  ffff8800cd99daf8 ffffffff8104e46c 00000000ffffffe4
-ffff8800cc622800
-[93241.295929]  ffff8800cdfd5b40 ffffffffa0151ba0 0000000000001661
-ffff8800cd99db58
-[93241.295931] Call Trace:
-[93241.295935]  [<ffffffff816a3e43>] dump_stack+0x45/0x56
-[93241.295938]  [<ffffffff8104e46c>] warn_slowpath_common+0x8c/0xc0
-[93241.295940]  [<ffffffff8104e55c>] warn_slowpath_fmt+0x4c/0x50
-[93241.295945]  [<ffffffffa00b5ced>]
-__btrfs_abort_transaction+0x12d/0x140 [btrfs]
-[93241.295950]  [<ffffffffa00c76f3>] __btrfs_free_extent+0x553/0xa50 [btrfs]
-[93241.295959]  [<ffffffffa0123bac>] ?
-btrfs_merge_delayed_refs+0x1fc/0x3c0 [btrfs]
-[93241.295965]  [<ffffffffa00cb86f>] run_clustered_refs+0x40f/0xe80 [btrfs]
-[93241.295970]  [<ffffffffa00cbb1f>] ? run_clustered_refs+0x6bf/0xe80 [btrfs]
-[93241.295975]  [<ffffffffa00cbb1f>] ? run_clustered_refs+0x6bf/0xe80 [btrfs]
-[93241.295981]  [<ffffffffa00cff70>] btrfs_run_delayed_refs+0xe0/0x5a0 [btrfs]
-[93241.295983]  [<ffffffff8105afd8>] ? lock_timer_base.isra.34+0x38/0x70
-[93241.295990]  [<ffffffffa00e0489>] btrfs_commit_transaction+0x59/0x920 [btrfs]
-[93241.295996]  [<ffffffffa00d8ccd>] transaction_kthread+0x1bd/0x230 [btrfs]
-[93241.296002]  [<ffffffffa00d8b10>] ? cleaner_kthread+0x190/0x190 [btrfs]
-[93241.296004]  [<ffffffff81070e80>] kthread+0xc0/0xd0
-[93241.296006]  [<ffffffff81070dc0>] ? kthread_create_on_node+0x120/0x120
-[93241.296009]  [<ffffffff816b2b2c>] ret_from_fork+0x7c/0xb0
-[93241.296010]  [<ffffffff81070dc0>] ? kthread_create_on_node+0x120/0x120
-[93241.296011] ---[ end trace 2f0caa7baa4183d8 ]---
-[93241.296013] BTRFS error (device md5) in __btrfs_free_extent:5729:
-errno=-28 No space left
-[93241.296181] BTRFS info (device md5): forced readonly
-[93241.296182] BTRFS debug (device md5): run_one_delayed_ref returned -28
-[93241.296184] BTRFS error (device md5) in
-btrfs_run_delayed_refs:2715: errno=-28 No space left
-
-
-Though the used space is only 14.04 G I was facing ENOSPC.
-
-When See through the FAQ for the same problem it advices to run
-balance. But in that case all the space it utilized .  which is not
-the case here.
-
-Could some help me whether I am using unstable version or If this is a
-known issue
-please help me with patch if available.
-
-As I Plan to run multiple test could some one help me with more stable
-version of Btrfs.
-
-Regards
-Sampath
+-chris

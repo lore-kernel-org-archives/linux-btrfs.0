@@ -1,72 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:58737 "EHLO
-	out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752156AbaENOl6 (ORCPT
+Received: from mail-ve0-f178.google.com ([209.85.128.178]:56714 "EHLO
+	mail-ve0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755489AbaENPgY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 10:41:58 -0400
-Received: from compute1.internal (compute1.nyi.mail.srv.osa [10.202.2.41])
-	by gateway1.nyi.mail.srv.osa (Postfix) with ESMTP id B1F86210AD
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 10:41:57 -0400 (EDT)
-Date: Wed, 14 May 2014 07:41:54 -0700
-From: David Brown <davidb@davidb.org>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Bernardo Donadio <bcdonadio@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: lsetxattr error when doing send/receive
-Message-ID: <20140514144154.GA9110@davidb.org>
-References: <lkuapc$si7$1@ger.gmane.org>
- <20140514015746.GA8032@davidb.org>
- <5B4A1BF5-7178-448B-8989-50B793C0912D@colorremedies.com>
+	Wed, 14 May 2014 11:36:24 -0400
+Received: by mail-ve0-f178.google.com with SMTP id sa20so2604788veb.37
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 May 2014 08:36:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-In-Reply-To: <5B4A1BF5-7178-448B-8989-50B793C0912D@colorremedies.com>
+In-Reply-To: <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net>
+References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com>
+ <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net>
+From: Scott Middleton <scott@assuretek.com.au>
+Date: Wed, 14 May 2014 23:36:03 +0800
+Message-ID: <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com>
+Subject: Re: send/receive and bedup
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 14, 2014 at 12:52:50AM -0600, Chris Murphy wrote:
+Hi
+
+
+
+> I left this for a couple days hoping someone else with a more directly
+> similar use-case would answer, but none so far, so I'll give it a go...
+
+Thanks for getting back to me mate!
+
+
 >
->On May 13, 2014, at 7:57 PM, David Brown <davidb@davidb.org> wrote:
+> First some general boilerplate.  Btrfs is still under heavy development
+> and keeping current with especially the kernel is *STRONGLY* recommended,
+> as every new kernel still brings lots of fixes, meaning if you're running
+> an old kernel, you're running known-buggy code with fixes available in a
+> current kernel.  Similarly, you probably don't want to let the btrfs-progs
+> userspace tools get too outdated either, tho that's not as critical as it
+> mostly means not being able to take advantage of the latest features and
+> fixes for maintenance, not the risk of operational data loss if one of
+> the known-fixed old-version kernel bugs hits that you have when running
+> an older kernel.
 >
->> On Tue, May 13, 2014 at 08:44:44PM -0300, Bernardo Donadio wrote:
->>> Hi!
->>>
->>> I'm trying to do a send/receive of a snapshot between two disks on Fedora 20 with Linux 3.15-rc5 (and also tried with 3.14 and 3.11) and SELinux disabled, and then I'm receiving the following error:
->>>
->>> [root@darwin /]# btrfs subvolume snapshot -r / @.$(date +%Y-%m-%d-%H%M%S)Create a readonly snapshot of '/' in './@.2014-05-13-203532'
->>> [root@darwin /]# btrfs send @.2014-05-13-203532 | btrfs receive /mnt/cold/
->>> At subvol @.2014-05-13-203532
->>> At subvol @.2014-05-13-203532
->>> ERROR: lsetxattr bin security.selinux=system_u:object_r:bin_t:s0 failed. Operation not supported
->>>
->>> I'm missing something? Is this a bug?
->>
->> Is selinux 'disabled' or just non-enforcing?  If it is enabled, but
->> even non-enforcing, it still won't allow the security attributes to be
->> set.
+
+My test environment is:
+root@Ubuntu-14:~/btrfs/btrfs-progs# uname -a
+Linux Ubuntu-14 3.14.1-031401-generic #201404141220 SMP Mon Apr 14
+16:21:48 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+root@Ubuntu-14:~/btrfs/btrfs-progs# which btrfs
+/usr/local/bin/btrfs
+root@Ubuntu-14:~/btrfs/btrfs-progs# btrfs --version
+Btrfs v3.14.1
+
+I read so much about BtrFS that I mistaked Bedup with Duperemove.
+Duperemove is actually what I am testing.
+
+I also plan on testing SDFS - opendedup again! They have some
+development since the last time I tried,  Not a fan of having to use
+Java though!
+
+> Second, as you've done some research already you're likely aware of this,
+> but just in case, let me give you the link to the wiki.  If you haven't
+> read up there, please do, as it's likely to be quite helpful. =:^)
 >
->Reverse that. If selinux is disabled, labels can't be set. If not
->enforcing, you won't get AVC denials for the vast majority of events,
->but labels can be set and e.g. restorecon will still work.
+> Memory or bookmark: https://btrfs.wiki.kernel.org
 
-   $ selinuxenabled ; echo $?
-   0
-   $ touch /var/tmp/foo
-   $ sudo setfattr -n security.selinux -v system_u:object_r:bin_t:s0 /var/tmp/foo
-   $ ls -lZ /var/tmp/foo
-   -rw-rw-r--. davidb davidb system_u:object_r:bin_t:s0      /var/tmp/foo
 
-and on a machine with selinux disabled:
+Lots of bookmarks. One of my faves is:
+https://wiki.archlinux.org/index.php/Btrfs
 
-   $ selinuxenabled ; echo $?
-   1
-   $ touch /var/tmp/foo
-   $ sudo setfattr -n security.selinux -v system_u:object_r:bin_t:s0 /var/tmp/foo
-   $ ls -lZ /var/tmp/foo
-   -rw-rw-r--. davidb davidb system_u:object_r:bin_t:s0      /var/tmp/foo
 
-so it doesn't actually seem to matter.  At this point, I'm suspecting
-this was actually a bug in a kernel I was running at some point, and I
-just haven't bothered trying to enable selinux since then.  I
-definitely have received errors in the past from rsync that look like
-the above error that I could fix by booting with selinux disabled.
-
-David
+It will be interesting on what happens. I rsync'd the clients data
+from a 2TB mdadm RAID to a standard 3TB BtrFS drive, Currently running
+ Duperemove on it. I reckon it will take days but it will be
+interesting to see what happens.

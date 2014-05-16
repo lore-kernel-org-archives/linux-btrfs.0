@@ -1,66 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:64059 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753187AbaEORxx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 May 2014 13:53:53 -0400
-Message-ID: <5374FF30.5080708@redhat.com>
-Date: Thu, 15 May 2014 12:53:52 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:36840 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751252AbaEPBXy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 15 May 2014 21:23:54 -0400
+Message-ID: <1400203051.21609.1.camel@localhost.localdomain>
+Subject: Re: [PATCH 1/2] btrfs-progs: add sys_chunk_array and backup roots
+ info to show-super
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Fri, 16 May 2014 09:17:31 +0800
+In-Reply-To: <20140515163538.GP6917@twin.jikos.cz>
+References: <1399518238-3337-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <20140515163538.GP6917@twin.jikos.cz>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-To: dsterba@suse.cz, kreijack@inwind.it,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, jshubin@redhat.com
-Subject: Re: PATCH V3] mkfs.btrfs: allow UUID specification at mkfs time
-References: <5372C457.3000706@redhat.com> <53738D29.7020405@redhat.com> <5373AA3B.5000100@redhat.com> <5373E864.4040807@libero.it> <5373E908.4040800@redhat.com> <20140515173940.GS6917@twin.jikos.cz>
-In-Reply-To: <20140515173940.GS6917@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/15/14, 12:39 PM, David Sterba wrote:
-> On Wed, May 14, 2014 at 05:07:04PM -0500, Eric Sandeen wrote:
->>>> @@ -125,7 +154,20 @@ int make_btrfs(int fd, const char *device, const char *label,
->>>>  	memset(&super, 0, sizeof(super));
->>>>  
->>>>  	num_bytes = (num_bytes / sectorsize) * sectorsize;
->>>> -	uuid_generate(super.fsid);
->>>> +	if (fs_uuid) {
->>>> +		if (uuid_parse(fs_uuid, super.fsid) != 0) {
->>>> +			fprintf(stderr, "could not parse UUID: %s\n", fs_uuid);
->>>> +			ret = -EINVAL;
->>>> +			goto out;
->>>> +		}
->>>> +		if (!test_uuid_unique(fs_uuid)) {
->>>> +			fprintf(stderr, "non-unique UUID: %s\n", fs_uuid);
->>>> +			ret = -EBUSY;
->>>> +			goto out;
->>>> +		}
->>>
->>> Why a second call to test_uuid_unique(fs_uuid) ?
->>
->> Because kdave said he thought it was worth being paranoid in an earlier email,
->> if I understood him correctly.
+On Thu, 2014-05-15 at 18:35 +0200, David Sterba wrote:
+> On Thu, May 08, 2014 at 11:03:57AM +0800, Gui Hecheng wrote:
+> > Add sys chunk array and backup roots info if the new option '-f'
+> > if specified.
+> > This may be useful for debugging sys_chunk related issues.
 > 
-> I'm thinking about it again. My original idea was not to easily allow
-> to create a duplicate uuid to a regular user. But, if one uses --uuid
-> already, that's something I can count as a willful action and any
-> mistakes can be blamed on the user.
+> Sounds useful. One comment below.
 > 
-> If we end up with a warning, then the documentation should say how
-> spectacularly it can blow up the system.
+> > +static void print_sys_chunk_array(struct btrfs_super_block *sb)
+> > +{
+> > +	struct extent_buffer *buf;
+> > +	struct btrfs_disk_key *disk_key;
+> > +	struct btrfs_chunk *chunk;
+> > +	struct btrfs_key key;
+> > +	u8 *ptr, *array_end;
+> > +	u32 num_stripes;
+> > +	u32 len = 0;
+> > +	int i = 0;
+> > +
+> > +	buf = malloc(sizeof(*buf) + sizeof(*sb));
 > 
+> Unchecked memory allocation
 
-So, in my testing, I found that re-mkfsing a device with the same UUID lead
-to weird & distant segfaults in other bits of code.  Probably due to the
-uuid cache?  </handwave> - I didn't dig into it, because ...
+Yes, indeed. I'll resend. Thanks, David.
 
-... people didn't want to be able to create duplicate UUIDs, so I figured
-the outright rejection of that was a trivial way to solve it ...
+> > +	write_extent_buffer(buf, sb, 0, sizeof(*sb));
+> > +	ptr = sb->sys_chunk_array;
+> > +	array_end = ptr + btrfs_super_sys_array_size(sb);
+> > +
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-And like I mentioned, if you really want to recreate the same UUID, you
-can mkfs twice.  It doesn't take long.  ;)
 
-I dunno, maybe that's too lame.  For a feature that upstream development
-doesn't really seem to want, I'm not sure how much more effort I should
-put into it?
-
--Eric

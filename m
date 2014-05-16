@@ -1,221 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:38413 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757027AbaEPKre (ORCPT
+Received: from relay6-d.mail.gandi.net ([217.70.183.198]:58493 "EHLO
+	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753215AbaEPNGe convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 06:47:34 -0400
-Received: by mail-wi0-f173.google.com with SMTP id bs8so723350wib.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2014 03:47:33 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: ensure readers see new data after a clone operation
-Date: Fri, 16 May 2014 12:47:13 +0100
-Message-Id: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
+	Fri, 16 May 2014 09:06:34 -0400
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: 3.14.4 Kernel BUG at fs/namei.c : KDE's kate + ecryptfs + BTRFS + LVM2 + LUKS
+Date: Fri, 16 May 2014 15:06:24 +0200
+Message-ID: <1496827.xlXt6pDnuG@zafu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were cleaning the clone target file range from the page cache before
-we did replace the file extent items in the fs tree. This was racy,
-as right after cleaning the relevant range from the page cache and before
-replacing the file extent items, a read against that range could be
-performed by another task and populate again the page cache with stale
-data (stale after the cloning finishes). This would result in reads after
-the clone operation successfully finishes to get old data (and potentially
-for a very long time).
-Therefore evict the pages after inserting each new file extent item, so
-that subsequent reads will always get the new data.
+(I'm not subscribed to linux-kernel, pls copy me on the anwsers)
 
-This is reproducible by running the following C program in a loop until
-it exits with return value 1 (to make it easier, an msleep or ssleep call
-after calling inode_truncate_pages_range triggers the issue sooner).
+Hi there,
 
- #include <unistd.h>
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include <errno.h>
- #include <pthread.h>
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <assert.h>
- #include <asm/types.h>
- #include <linux/ioctl.h>
- #include <sys/stat.h>
- #include <sys/types.h>
- #include <sys/ioctl.h>
+# uname -a
+Linux zafu 3.14.4-1-ARCH #1 SMP PREEMPT Tue May 13 16:41:39 CEST 2014 x86_64 
+GNU/Linux
 
- #define SRC_FILE "/mnt/sdd/foo"
- #define DST_FILE "/mnt/sdd/bar"
- #define FILE_SIZE (16 * 1024)
- #define PATTERN_SRC 'X'
- #define PATTERN_DST 'Y'
+I've seen the same thing happen several times in the last couple of months (so 
+with said kernel version + at least 3.13)
 
-struct btrfs_ioctl_clone_range_args {
-	__s64 src_fd;
-	__u64 src_offset, src_length;
-	__u64 dest_offset;
-};
+Symptom: KDE's kate freezes while saving a small (arbitrary) text file.
 
- #define BTRFS_IOCTL_MAGIC 0x94
- #define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
-				   struct btrfs_ioctl_clone_range_args)
+(Yes, always KDE's kate and only KDE's kate, while saving a quite small text 
+file... Besides this, machine's stability is rock-solid.)
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static int clone_done = 0;
-static int reader_ready = 0;
-static int stale_data = 0;
+Afterwards the machine remains more or less able to access its filesystems, 
+however KDE's Dolphin file manager is usually dead as well.
 
-static void *reader_loop(void *arg)
-{
-	char buf[4096], want_buf[4096];
+Underlying is ecryptfs over BTRFS over LVM2 over LUKS (what else ?)
 
-	memset(want_buf, PATTERN_SRC, 4096);
-	pthread_mutex_lock(&mutex);
-	reader_ready = 1;
-	pthread_mutex_unlock(&mutex);
+System logs :
 
-	while (1) {
-		int done, fd, ret;
 
-		fd = open(DST_FILE, O_RDONLY);
-		assert(fd != -1);
+kernel: ------------[ cut here ]------------
+kernel: kernel BUG at fs/namei.c:2404!
+kernel: invalid opcode: 0000 [#1] PREEMPT SMP 
+kernel: Modules linked in: nls_iso8859_1 usb_storage ctr ccm md5 fuse ecb 
+ecryptfs encrypted_keys sha1_ssse3 sha1_generic hmac trusted nls_utf8 
+nls_cp437 vfat fat uvcvideo
+kernel:  vboxdrv(O) sha256_ssse3 sha256_generic cbc dm_crypt dm_mod btrfs xor 
+raid6_pq hid_multitouch hid_generic hid_logitech_dj usbhid hid sd_mod 
+crc_t10dif atkbd libps2
+kernel: CPU: 0 PID: 2142 Comm: kate Tainted: G           O 3.14.4-1-ARCH #1
+kernel: Hardware name: ASUSTeK COMPUTER INC. X202EV/X202EV, BIOS X202EV.200 
+02/27/2013
+kernel: task: ffff8800a503bae0 ti: ffff880012dba000 task.ti: ffff880012dba000
+kernel: RIP: 0010:[<ffffffff811ca378>]  [<ffffffff811ca378>] may_delete+0x138/0x150
+kernel: RSP: 0018:ffff880012dbbd78  EFLAGS: 00010283
+kernel: RAX: ffff88006ae82cc0 RBX: ffff8800b0f23d80 RCX: 0000000d00001616
+kernel: RDX: 0000000000000000 RSI: ffff8800b0f23d80 RDI: ffff8800ba841568
+kernel: RBP: ffff880012dbbd98 R08: 7077732d6574616b R09: ffff8800b0f23c00
+kernel: R10: 8080808080808080 R11: fefefefefefefeff R12: ffff8800a3836918
+kernel: R13: ffff8800561501b8 R14: ffff8800b0f23d80 R15: ffff8800ba841568
+kernel: FS:  00007fe1e2648780(0000) GS:ffff88011ee00000(0000) 
+knlGS:0000000000000000
+kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+kernel: CR2: 00007f2875f70000 CR3: 0000000013ee5000 CR4: 00000000001407f0
+kernel: Stack:
+kernel:  ffff8800b0f23d80 ffff8800ba841568 ffff8800561501b8 ffff8800b0f23d80
+kernel:  ffff880012dbbdd8 ffffffff811ca6db 0000000000000000 ffff8800b0f23d80
+kernel:  ffff88006ae82cc0 ffff880012f0e000 ffff88008cc52000 ffff8800ba841568
+kernel: Call Trace:
+kernel:  [<ffffffff811ca6db>] vfs_unlink+0x2b/0x160
+kernel:  [<ffffffffa05afed5>] ecryptfs_do_unlink+0x65/0x120 [ecryptfs]
+kernel:  [<ffffffffa05affa2>] ecryptfs_unlink+0x12/0x20 [ecryptfs]
+kernel:  [<ffffffff811ca796>] vfs_unlink+0xe6/0x160
+kernel:  [<ffffffff811caaa9>] do_unlinkat+0x299/0x300
+kernel:  [<ffffffff811bc6fe>] ? ____fput+0xe/0x10
+kernel:  [<ffffffff8108c254>] ? task_work_run+0xb4/0xe0
+kernel:  [<ffffffff81016c55>] ? do_notify_resume+0x95/0xa0
+kernel:  [<ffffffff811cb986>] SyS_unlink+0x16/0x20
+kernel:  [<ffffffff81517769>] system_call_fastpath+0x16/0x1b
+kernel: Code: 1f 41 5d 83 e0 f0 41 5e 5d c3 66 0f 1f 84 00 00 00 00 00 b8 ff ff 
+ff ff eb b1 66 0f 1f 84 00 00 00 00 00 0f 0b 66 0f 1f 44 00 00 <0f> 0b 66 0f 1f 
+44 00 00 b8
+kernel: RIP  [<ffffffff811ca378>] may_delete+0x138/0x150
+kernel:  RSP <ffff880012dbbd78>
+kernel: ---[ end trace 73914218811ba28d ]---
 
-		pthread_mutex_lock(&mutex);
-		done = clone_done;
-		pthread_mutex_unlock(&mutex);
-
-		ret = read(fd, buf, 4096);
-		assert(ret == 4096);
-		close(fd);
-
-		if (done) {
-			ret = memcmp(buf, want_buf, 4096);
-			if (ret == 0) {
-				printf("Found new content\n");
-			} else {
-				printf("Found old content\n");
-				pthread_mutex_lock(&mutex);
-				stale_data = 1;
-				pthread_mutex_unlock(&mutex);
-			}
-			break;
-		}
-	}
-	return NULL;
-}
-
-int main(int argc, char *argv[])
-{
-	pthread_t reader;
-	int ret, i, fd;
-	struct btrfs_ioctl_clone_range_args clone_args;
-	int fd1, fd2;
-
-	ret = remove(SRC_FILE);
-	if (ret == -1 && errno != ENOENT) {
-		fprintf(stderr, "Error deleting src file: %s\n", strerror(errno));
-		return 1;
-	}
-	ret = remove(DST_FILE);
-	if (ret == -1 && errno != ENOENT) {
-		fprintf(stderr, "Error deleting dst file: %s\n", strerror(errno));
-		return 1;
-	}
-
-	fd = open(SRC_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd != -1);
-	for (i = 0; i < FILE_SIZE; i++) {
-		char c = PATTERN_SRC;
-		ret = write(fd, &c, 1);
-		assert(ret == 1);
-	}
-	close(fd);
-	fd = open(DST_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd != -1);
-	for (i = 0; i < FILE_SIZE; i++) {
-		char c = PATTERN_DST;
-		ret = write(fd, &c, 1);
-		assert(ret == 1);
-	}
-	close(fd);
-
-	ret = pthread_create(&reader, NULL, reader_loop, NULL);
-	assert(ret == 0);
-	while (1) {
-		int r;
-		pthread_mutex_lock(&mutex);
-		r = reader_ready;
-		pthread_mutex_unlock(&mutex);
-		if (r) break;
-	}
-
-	fd1 = open(SRC_FILE, O_RDONLY);
-	if (fd1 < 0) {
-		fprintf(stderr, "Error open src file: %s\n", strerror(errno));
-		return 1;
-	}
-	fd2 = open(DST_FILE, O_RDWR);
-	if (fd2 < 0) {
-		fprintf(stderr, "Error open dst file: %s\n", strerror(errno));
-		return 1;
-	}
-	clone_args.src_fd = fd1;
-	clone_args.src_offset = 0;
-	clone_args.src_length = 4096;
-	clone_args.dest_offset = 0;
-	ret = ioctl(fd2, BTRFS_IOC_CLONE_RANGE, &clone_args);
-	assert(ret == 0);
-	close(fd1);
-	close(fd2);
-
-	pthread_mutex_lock(&mutex);
-	clone_done = 1;
-	pthread_mutex_unlock(&mutex);
-	ret = pthread_join(reader, NULL);
-	assert(ret == 0);
-
-	pthread_mutex_lock(&mutex);
-	ret = stale_data ? 1 : 0;
-	pthread_mutex_unlock(&mutex);
-	return ret;
-}
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/ioctl.c | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fba7a00..8e65530 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3291,6 +3291,14 @@ process_slot:
- 				goto out;
- 			}
- 			ret = btrfs_end_transaction(trans, root);
-+			/*
-+			 * Truncate page cache pages so that future reads will
-+			 * see the cloned data immediately and not the previous
-+			 * data.
-+			 */
-+			truncate_inode_pages_range(&inode->i_data,
-+			       new_key.offset,
-+			       PAGE_CACHE_ALIGN(new_key.offset + datal) - 1);
- 		}
- 		btrfs_release_path(path);
- 		key.offset++;
-@@ -3410,10 +3418,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			goto out_unlock;
- 	}
- 
--	/* truncate page cache pages from target inode range */
--	truncate_inode_pages_range(&inode->i_data, destoff,
--				   PAGE_CACHE_ALIGN(destoff + len) - 1);
--
- 	lock_extent_range(src, off, len);
- 
- 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
 -- 
-1.9.1
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+
 

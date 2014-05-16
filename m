@@ -1,174 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:55026 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752371AbaEMUFE (ORCPT
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:9852 "EHLO
+	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753077AbaEPEq0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 May 2014 16:05:04 -0400
-Received: by mail-wi0-f174.google.com with SMTP id r20so6899468wiv.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 13:05:02 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: xfs@oss.sgi.com
-Cc: linux-btrfs@vger.kernel.org,
-        Filipe David Borba Manana <fdmanana@gmail.com>,
-        Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] xfstests: btrfs, add regression test for send with extrefs
-Date: Tue, 13 May 2014 22:04:41 +0100
-Message-Id: <1400015081-2192-1-git-send-email-fdmanana@gmail.com>
+	Fri, 16 May 2014 00:46:26 -0400
+Date: Fri, 16 May 2014 14:46:11 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: fstests@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [ANNOUNCE] xfstests: new mailing list
+Message-ID: <20140516044611.GA8206@dastard>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="fdj2RfSjLxBAspz7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression for btrfs send when an inode only has extended references
-associated to it (no regular references present). This used to cause
-incorrect access to a b+tree leaf, where an extended reference item
-was accessed as if it were a regular reference item, causing unexpected
-and unpredictable behaviour such as producing a random/weird path string
-or a crash.
 
-This issue is fixed by the following linux kernel btrfs patch:
+--fdj2RfSjLxBAspz7
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-   Btrfs: send, fix incorrect ref access when using extrefs
+Hi folks,
 
-Cc: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- tests/btrfs/050     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/050.out |   1 +
- tests/btrfs/group   |   1 +
- 3 files changed, 111 insertions(+)
- create mode 100755 tests/btrfs/050
- create mode 100644 tests/btrfs/050.out
+As requested I've created a new mailing list for xfstests
+development and discussion. Reflecting the fact that the test
+harness is not really XFS specific anymore, the list is:
 
-diff --git a/tests/btrfs/050 b/tests/btrfs/050
-new file mode 100755
-index 0000000..6e4bd13
---- /dev/null
-+++ b/tests/btrfs/050
-@@ -0,0 +1,109 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/050
-+#
-+# Regression for btrfs send when an inode only has extended references
-+# associated to it (no regular references present). This used to cause
-+# incorrect access to a b+tree leaf, where an extended reference item
-+# was accessed as if it were a regular reference item, causing unexpected
-+# and unpredictable behaviour such as producing a random/weird path string
-+# or a crash.
-+#
-+# This issue is fixed by the following linux kernel btrfs patch:
-+#
-+#   Btrfs: send, fix incorrect ref access when using extrefs
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    rm -fr $send_files_dir
-+    rm -fr $tmp
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_fssum
-+_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
-+
-+_scratch_mkfs "-O extref" >/dev/null 2>&1
-+_scratch_mount
-+
-+# 2550 hard links is enough to cause creation of extended references
-+# even if the leaf/node size is 64Kb (largest possible).
-+NUM_LINKS=2550
-+TEST_PATH=$SCRATCH_MNT/home/john/files/series/qwerty
-+
-+mkdir -p $TEST_PATH
-+touch $TEST_PATH/foobar
-+
-+# Create a bunch of hard links for the file, such that at least one
-+# inode extended reference item is created.
-+for i in `seq 1 $NUM_LINKS`; do
-+	ln $TEST_PATH/foobar $TEST_PATH/foobar_link_`printf "%04d" $i`
-+done
-+
-+# The only link we'll have alive at the end.
-+ln $TEST_PATH/foobar $TEST_PATH/final_foobar_name
-+
-+# Now delete all previous hard links (except the last one). This will
-+# remove the regular inode reference item from the b+tree, and will
-+# leave only an inode extended reference item, which is the condition
-+# necessary to trigger the bug.
-+rm -f $TEST_PATH/foobar
-+for i in `seq 1 $NUM_LINKS`; do
-+	rm -f $TEST_PATH/foobar_link_`printf "%04d" $i`
-+done
-+
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+
-+_scratch_unmount
-+_check_scratch_fs
-+
-+_scratch_mkfs >/dev/null 2>&1
-+_scratch_mount
-+
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
-+
-+_check_scratch_fs
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/050.out b/tests/btrfs/050.out
-new file mode 100644
-index 0000000..37f2cbc
---- /dev/null
-+++ b/tests/btrfs/050.out
-@@ -0,0 +1 @@
-+QA output created by 050
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 59b0c98..69a80e0 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -52,3 +52,4 @@
- 047 auto quick
- 048 auto quick
- 049 auto quick
-+050 auto
--- 
-1.9.1
+	fstests@vger.kernel.org
 
+I have not confirmed an archiving location yet (in the process of
+doing so through marc.info), but that should be set up real soon.
+
+I'll still be listening in on the XFS list for xfstests patches, bug
+reports and questions, so don't worry if you forget this new list
+exists... :)
+
+Cheers,
+
+Dave.
+--=20
+Dave Chinner
+david@fromorbit.com
+
+--fdj2RfSjLxBAspz7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJTdZgSAAoJEK3oKUf0dfod1cgP/juW/Xi58anr5nRB7H9IDPGm
+2jcBlQdx5sDxEZ2BGcDb3D1Q1hB4Wdni4riS6QerSX/2o+Zge9aMUzsQUcdY1R8S
+ujaAH+IvFCdMBZEa45ZnwsJk11B2erIffWIsNaOzKEFpBVNA55d3A6oqDQV2bK7C
+4Y58jxPjykzZvndA8qIc6ZdZEohQvUMGsGGdvl8D8QEIC2n961sosv3RM48GXhX1
+saU06gA79GeVuEaXsCt8NJzq7VPiq6Ym/TEVhSXphL0wczCweJEqNypbufZrAqIn
+I+iUcp4lCVO4SjHHXy/1hOQsYbYnv/cxwQ2Z3xapoV3uL+KrvdndZA4nZtWcIyPq
++8Dni44xKrA4JqT2QKyfglV02LgO6aN7Bqw/jd+iw11OyuFhGbOdTyLWZ6cMhJ4/
+YpZSJPaw7zEXjj0/cC7Wjg6vwYumqOvnLn9jUXNfTky+PTrKjvYHXKEOQnI52c2c
+D/HsrFIQivwuXEJ6fMTHtzKQTeYlk60il3bY0Xq87EVcpbPaRbHtqgcVn5PXFHdq
+AfRbTMUuEytAlCRp5TS0KD5BTfifpTifeQpu69iDiiib76zNfI2J5vd7RM84R5XH
+npgn8MgkCtbQQBTXov63i/xzET2x0H01CsDMuU2tu7pPGJNlkTW6NVgiaEbynAsU
+x0x7h9Bl2KyfROp236Pp
+=myJY
+-----END PGP SIGNATURE-----
+
+--fdj2RfSjLxBAspz7--

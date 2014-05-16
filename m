@@ -1,59 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54583 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932785AbaEMJIY (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35613 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751106AbaEPEaB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 May 2014 05:08:24 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4D98Mir025713
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 May 2014 17:08:22 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: set right total device count for seeding support
-Date: Tue, 13 May 2014 17:05:06 +0800
-Message-ID: <1399971906-1237-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-References: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	Fri, 16 May 2014 00:30:01 -0400
+Message-ID: <537594D9.8010902@oracle.com>
+Date: Fri, 16 May 2014 12:32:25 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: dsterba@suse.cz, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: save us an unnecessary ioctl call
+References: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140515170634.GR6917@twin.jikos.cz>
+In-Reply-To: <20140515170634.GR6917@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seeding device support allows us to create a new filesystem
-based on existed filesystem.
 
-However newly created filesystem's @total_devices should include seed
-devices. This patch fix the following problem:
+David,
 
- # mkfs.btrfs -f /dev/sdb
- # btrfstune -S 1 /dev/sdb
- # mount /dev/sdb /mnt
- # btrfs device add -f /dev/sdc /mnt --->fs_devices->total_devices = 1
- # umount /mnt
- # mount /dev/sdc /mnt               --->fs_devices->total_devices = 2
+  As mentioned, this patch will back-out the earlier patch
 
-This is because we record right @total_devices in superblock, but
-@fs_devices->total_devices is reset to be 0 in btrfs_prepare_sprout().
+  50275bacab0f62b91453fbfa29e75c2bb77bf9b6
 
-Fix this problem by not resetting @fs_devices->total_devices.
+  I am confused on what I am missing ? Any comment?
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/volumes.c | 1 -
- 1 file changed, 1 deletion(-)
+Thanks, Anand
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fd7fe6..19b2d32 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1883,7 +1883,6 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
- 	fs_devices->seeding = 0;
- 	fs_devices->num_devices = 0;
- 	fs_devices->open_devices = 0;
--	fs_devices->total_devices = 0;
- 	fs_devices->seed = seed_devices;
- 
- 	generate_random_uuid(fs_devices->fsid);
--- 
-1.8.2.1
 
+On 16/05/14 01:06, David Sterba wrote:
+> On Tue, May 13, 2014 at 05:05:05PM +0800, Wang Shilong wrote:
+>> Btrfs device id start from 1, not 0.
+>
+>> --- a/utils.c
+>> +++ b/utils.c
+>> @@ -1765,7 +1765,7 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+>>   		goto out;
+>>   	}
+>>
+>> -	for (; i <= fi_args->max_id; ++i) {
+>> +	for (i = 1; i <= fi_args->max_id; ++i) {
+>
+> You're right about the device id start, but forcing 1 here breaks the
+> case when get_fs_info is called with block device as an argument and 'i'
+> is set to the devid a few lines above.
+>
+> Initializing i to 1 in the declaration block is the right fix IMO, and
+> as this is a trivial change I'll do that myself, no need to resend.
+>
+>>   		BUG_ON(ndevs >= fi_args->num_devices);
+>>   		ret = get_device_info(fd, i, &di_args[ndevs]);
+>>   		if (ret == -ENODEV)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,130 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23887 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755964AbaEPOI7 (ORCPT
+Received: from mail-qc0-f178.google.com ([209.85.216.178]:34847 "EHLO
+	mail-qc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755145AbaEPOki (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 10:08:59 -0400
-Message-ID: <53761C9F.5050005@oracle.com>
-Date: Fri, 16 May 2014 22:11:43 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Fri, 16 May 2014 10:40:38 -0400
+Received: by mail-qc0-f178.google.com with SMTP id l6so4392499qcy.37
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2014 07:40:38 -0700 (PDT)
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3 RFC] btrfs: total_devices should count replacing devices
-References: <1394207319-13252-1-git-send-email-Anand.Jain@oracle.com> <1394207319-13252-2-git-send-email-Anand.Jain@oracle.com> <5371E346.3000704@cn.fujitsu.com> <537329B9.6010605@oracle.com>
-In-Reply-To: <537329B9.6010605@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <1400249160-23186-1-git-send-email-anand.jain@oracle.com>
+References: <1400249160-23186-1-git-send-email-anand.jain@oracle.com>
+Date: Fri, 16 May 2014 22:40:38 +0800
+Message-ID: <CAP9B-Q=rxYAtoyKp899+8w+8u-OighEm2KRjuvKPyn3uXWWuwA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO
+ miss-matched with slots
+From: Shilong Wang <wangshilong1991@gmail.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Wang,
-
-  After a much of investigation on this, I think I found a
-  better approach to fix this. Can you kindly comment on
-  patch
-
-[PATCH] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO 
-miss-matched with slots
-
-  Thanks,
-Anand
-
-On 14/05/14 16:30, Anand Jain wrote:
+2014-05-16 22:06 GMT+08:00 Anand Jain <anand.jain@oracle.com>:
+> BTRFS_IOC_FS_INFO return num_devices which does not include seed disks,
+> BTRFS_IOC_DEV_INFO fetches seed disk when probed. So in this case hits
+> the btrfs-progs bug:
+>             get_fs_info()
+>             ::
+>                     BUG_ON(ndevs >= fi_args->num_devices);
+> which is very easy to hit by using btrfs filesystem show.
 >
-> Hello Wang,
+> This patch will make BTRFS_IOC_DEV_INFO ioctl to provide disks only
+> of the FSID being probed (seed disks are under different FSID).
 >
->   sure will do. Thanks for the comments.
+> which means when seed is still not deleted from the sprout the btrfs
+> filesystem show command will show disks them under their
+> respective FSIDs
+
+Just a quick comment:
+
+Newly created filesystem is based on existed seeding filesystem.
+Though they have different fsid, newly created filesystem devices
+should include seed devices, from seed device filesytem, they can not
+see newly created filesystem devices! No?
+
+Will the follow patch change the above behavior?
+
+Thanks,
+Wang
 >
-> Anand
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/ioctl.c |    3 ++-
+>  1 files changed, 2 insertions(+), 1 deletions(-)
 >
-> On 13/05/14 17:17, Wang Shilong wrote:
->> Hello Anand,
->>
->> I agree we can export @total_devices to fix 'btrfs file show' problem.
->> This patch addressed two problem, it is better to split it into two
->> patches.
->>
->> Could you please resend the patch, at least we should fix 'btrfs file
->> show'
->> problem firstly.
->>
->> Thanks,
->> Wang
->>
->> On 03/07/2014 11:48 PM, Anand Jain wrote:
->>> ioctl(BTRFS_IOC_FS_INFO) returns num_devices which does not
->>> count seed device. num_devices is used to calculate
->>> the number of slots during the ioctl(BTRFS_IOC_DEV_INFO)
->>> but ioctl(BTRFS_IOC_DEV_INFO) would count seed devices as well.
->>> Due to this miss match btrfs_progs get_fs_info() hits the bug..
->>>              get_fs_info()
->>>              ::
->>>                      BUG_ON(ndevs >= fi_args->num_devices);
->>>
->>> what I notice is total_devices should be returned by the
->>> ioctl(BTRFS_IOC_FS_INFO)), however total_devices does not
->>> count (transient) replacing device but num_devices does.
->>>
->>> first, num_devices which appears to be a subset of
->>> total_devices helps to count the number of devices
->>> under a FSID which excludes the seed devices but
->>> includes the transient replacing device.
->>>
->>> total_devices which includes seed devices is as of
->>> now does not count the tansient replacing device,
->>> which IMO is a bug or the implementation details
->>> are not clear enough to state the role of num_devices
->>> and total_devices.
->>>
->>> The user land on the otherhand would want to know
->>> all the devices that would come out of probe
->>> against a FSID
->>>
->>> As of now in this patch I am making the ioctl.c local
->>> changes (instead of asking replace thread to update
->>> total_devices) to  include replacing device.
->>>
->>> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->>> ---
->>>   fs/btrfs/ioctl.c | 13 ++++++++++++-
->>>   1 file changed, 12 insertions(+), 1 deletion(-)
->>>
->>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>> index 5036f9d..ec7d5c6 100644
->>> --- a/fs/btrfs/ioctl.c
->>> +++ b/fs/btrfs/ioctl.c
->>> @@ -2510,6 +2510,7 @@ static long btrfs_ioctl_fs_info(struct
->>> btrfs_root *root, void __user *arg)
->>>       struct btrfs_device *next;
->>>       struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
->>>       int ret = 0;
->>> +    int dev_replace_running = 0;
->>>       if (!capable(CAP_SYS_ADMIN))
->>>           return -EPERM;
->>> @@ -2518,8 +2519,18 @@ static long btrfs_ioctl_fs_info(struct
->>> btrfs_root *root, void __user *arg)
->>>       if (!fi_args)
->>>           return -ENOMEM;
->>> +    btrfs_dev_replace_lock(&root->fs_info->dev_replace);
->>> +    if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace))
->>> +        dev_replace_running = 1;
->>> +
->>> +    btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
->>> +
->>>       mutex_lock(&fs_devices->device_list_mutex);
->>> -    fi_args->num_devices = fs_devices->num_devices;
->>> +    if (dev_replace_running)
->>> +        fi_args->num_devices = fs_devices->total_devices + 1;
->>> +    else
->>> +        fi_args->num_devices = fs_devices->total_devices;
->>> +
->>>       memcpy(&fi_args->fsid, root->fs_info->fsid,
->>> sizeof(fi_args->fsid));
->>>       list_for_each_entry_safe(device, next, &fs_devices->devices,
->>> dev_list) {
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index ff27c08..902d279 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2584,7 +2584,8 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
+>                 s_uuid = di_args->uuid;
+>
+>         mutex_lock(&fs_devices->device_list_mutex);
+> -       dev = btrfs_find_device(root->fs_info, di_args->devid, s_uuid, NULL);
+> +       dev = btrfs_find_device(root->fs_info, di_args->devid, s_uuid,
+> +                               fs_devices->fsid);
+>
+>         if (!dev) {
+>                 ret = -ENODEV;
+> --
+> 1.7.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

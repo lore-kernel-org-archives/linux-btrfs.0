@@ -1,112 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f173.google.com ([209.85.216.173]:59253 "EHLO
-	mail-qc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932391AbaEPPXW (ORCPT
+Received: from mail.virtall.com ([178.63.195.102]:59342 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751294AbaEPPsW convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 11:23:22 -0400
-Received: by mail-qc0-f173.google.com with SMTP id i8so4598363qcq.32
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2014 08:23:21 -0700 (PDT)
+	Fri, 16 May 2014 11:48:22 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+	by mail.virtall.com (Postfix) with ESMTP id B1C27426574
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2014 17:48:19 +0200 (CEST)
+Received: from s9 (unknown [88.214.166.36])
+	by mail.virtall.com (Postfix) with ESMTPSA id 3C7D1426203
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 May 2014 17:48:19 +0200 (CEST)
+Date: Fri, 16 May 2014 16:48:15 +0100
+From: Tomasz Chmielewski <tch@virtall.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RAID-1 - suboptimal write performance?
+Message-ID: <20140516164815.1c33149b@s9>
 MIME-Version: 1.0
-In-Reply-To: <53762AFC.6050102@oracle.com>
-References: <1400249160-23186-1-git-send-email-anand.jain@oracle.com>
-	<CAP9B-Q=rxYAtoyKp899+8w+8u-OighEm2KRjuvKPyn3uXWWuwA@mail.gmail.com>
-	<53762AFC.6050102@oracle.com>
-Date: Fri, 16 May 2014 23:23:21 +0800
-Message-ID: <CAP9B-QksVn+CDJWfvMB1TK_7yNgKR+U5nZ2sJ6L8NPsEz9xV0Q@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO
- miss-matched with slots
-From: Shilong Wang <wangshilong1991@gmail.com>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2014-05-16 23:13 GMT+08:00 Anand Jain <Anand.Jain@oracle.com>:
->
->
-> On 16/05/14 22:40, Shilong Wang wrote:
->>
->> 2014-05-16 22:06 GMT+08:00 Anand Jain <anand.jain@oracle.com>:
->>>
->>> BTRFS_IOC_FS_INFO return num_devices which does not include seed disks,
->>> BTRFS_IOC_DEV_INFO fetches seed disk when probed. So in this case hits
->>> the btrfs-progs bug:
->>>              get_fs_info()
->>>              ::
->>>                      BUG_ON(ndevs >= fi_args->num_devices);
->>> which is very easy to hit by using btrfs filesystem show.
->>>
->>> This patch will make BTRFS_IOC_DEV_INFO ioctl to provide disks only
->>> of the FSID being probed (seed disks are under different FSID).
->>>
->>> which means when seed is still not deleted from the sprout the btrfs
->>> filesystem show command will show disks them under their
->>> respective FSIDs
->>
->>
->> Just a quick comment:
->>
->> Newly created filesystem is based on existed seeding filesystem.
->> Though they have different fsid, newly created filesystem devices
->> should include seed devices, from seed device filesytem, they can not
->> see newly created filesystem devices! No?
->>
->> Will the follow patch change the above behavior?
->
->
->  Yes, as the dev info list does not contain the seed disk
->  so is the btrfs fi show output. Do you think its better
->  to show seed and sprout "disks together" ? other way is
->  indicate the seed fsid against the added disk until
->  seed is deleted.
+While doing rsyncs of large archives from one RAID-1 btrfs filesystem
+to another RAID-1 btrfs filesystem:
 
-IMO, i think dev info list should contain seed disks, since new filesystem
-can access their data.
+btrfs filesystem 1: sda + sdb (RAID-1), being copied to:
+btrfs filesystem 2: sdc + sdd (RAID-1)
+Server has 32 GB RAM
 
-Maybe a better way 'file show' will tell users which devices are seed devices..
 
->
-> Thanks. Anand
->
->
->> Thanks,
->> Wang
->>>
->>>
->>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>> ---
->>>   fs/btrfs/ioctl.c |    3 ++-
->>>   1 files changed, 2 insertions(+), 1 deletions(-)
->>>
->>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>> index ff27c08..902d279 100644
->>> --- a/fs/btrfs/ioctl.c
->>> +++ b/fs/btrfs/ioctl.c
->>> @@ -2584,7 +2584,8 @@ static long btrfs_ioctl_dev_info(struct btrfs_root
->>> *root, void __user *arg)
->>>                  s_uuid = di_args->uuid;
->>>
->>>          mutex_lock(&fs_devices->device_list_mutex);
->>> -       dev = btrfs_find_device(root->fs_info, di_args->devid, s_uuid,
->>> NULL);
->>> +       dev = btrfs_find_device(root->fs_info, di_args->devid, s_uuid,
->>> +                               fs_devices->fsid);
->>>
->>>          if (!dev) {
->>>                  ret = -ENODEV;
->>> --
->>> 1.7.1
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
+I can observe the following:
+
+
+>From time to time, rsync "freezes", while there is high IO on only *one*
+of write drives.
+
+
+To reproduce:
+
+dd if=/dev/urandom of=/mnt/btrfs1/bigfile.img bs=1M count=10000; sync
+# cp should work, too, but won't show copy speed/progress
+rsync -a -v --progress /mnt/btrfs1/bigfile.img /mnt/btrfs2/
+
+In another terminal, run iostat -m 1:
+
+1) a few seconds of writes to only one RAID-1 member:
+
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sdc             355.00         0.00       177.50          0        177
+sdb               0.00         0.00         0.00          0          0
+sdd               0.00         0.00         0.00          0          0
+sda               0.00         0.00         0.00          0          0
+
+
+2) then, a few seconds of writes to the other RAID-1 member:
+
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sdc               0.00         0.00         0.00          0          0
+sdb               0.00         0.00         0.00          0          0
+sdd             351.00         0.00       175.50          0        175
+sda               0.00         0.00         0.00          0          0
+
+
+Is it optimal behaviour? With software RAID-1, I'm seeing writes to
+both devices at the same time.
+
+Also, what happens when the system crashes, and one drive has several
+hundred megabytes data more than the other one?
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

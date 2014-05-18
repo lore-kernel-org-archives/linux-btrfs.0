@@ -1,88 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:48091 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751590AbaERQJj (ORCPT
+Received: from mail-oa0-f54.google.com ([209.85.219.54]:63574 "EHLO
+	mail-oa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751463AbaERQhD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 May 2014 12:09:39 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Martin <m_btrfs@ml1.co.uk>
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: ditto blocks on ZFS
-Date: Mon, 19 May 2014 02:09:34 +1000
-Message-ID: <10946613.XrCytCZfuu@xev>
-In-Reply-To: <ll7lvd$ulk$1@ger.gmane.org>
-References: <2308735.51F3c4eZQ7@xev> <ll7lvd$ulk$1@ger.gmane.org>
+	Sun, 18 May 2014 12:37:03 -0400
+Received: by mail-oa0-f54.google.com with SMTP id j17so5181519oag.41
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 May 2014 09:37:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Joshua McKinney <joshka@joshka.net>
+Date: Mon, 19 May 2014 02:36:42 +1000
+Message-ID: <CAOUy=vobwRvhDAJHj_XWAdPvXwzGu47viCY=cDaTbJVkZjJmFA@mail.gmail.com>
+Subject: Hang while deleting file
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 17 May 2014 13:50:52 Martin wrote:
-> On 16/05/14 04:07, Russell Coker wrote:
-> > https://blogs.oracle.com/bill/entry/ditto_blocks_the_amazing_tape
-> > 
-> > Probably most of you already know about this, but for those of you who
-> > haven't the above describes ZFS "ditto blocks" which is a good feature we
-> > need on BTRFS.  The briefest summary is that on top of the RAID
-> > redundancy there...
-> [... are additional copies of metadata ...]
-> 
-> 
-> Is that idea not already implemented in effect in btrfs with the way
-> that the superblocks are replicated multiple times, ever more times, for
-> ever more huge storage devices?
+https://bugzilla.kernel.org/show_bug.cgi?id=76421
 
-No.  If the metadata for the root directory is corrupted then everything is 
-lost even if the superblock is OK.  At every level in the directory tree a 
-corruption will lose all levels below that, a corruption for /home would be 
-very significant as would a corruption of /home/importantuser/major-project.
+Perceived issue: SABNZBD hangs, requires restart.
+Diagnosis shows the following in my system log at the time of hang.
+This happens more than once.
+Log:
 
-> The one exception is for SSDs whereby there is the excuse that you
-> cannot know whether your data is usefully replicated across different
-> erase blocks on a single device, and SSDs are not 'that big' anyhow.
+[ 5883.464766] INFO: task SABnzbd.py:994 blocked for more than 120 seconds.
+[ 5883.464906]       Not tainted 3.14.4-1-ARCH #1
+[ 5883.464989] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[ 5883.465130] SABnzbd.py      D ffff880196d1f5c0     0   994      1 0x00000000
+[ 5883.465140]  ffff8800765c9ce8 0000000000000082 0000005000000002
+ffff880196d1f5c0
+[ 5883.465148]  00000000000146c0 ffff8800765c9fd8 00000000000146c0
+ffff880196d1f5c0
+[ 5883.465156]  00000000ffffffef ffff880177d9a000 ffffffffa02d0dbc
+ffff8800765c9c50
+[ 5883.465163] Call Trace:
+[ 5883.465218]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
+[ 5883.465252]  [<ffffffffa02d03c3>] ? free_extent_state+0x43/0xc0 [btrfs]
+[ 5883.465284]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
+[ 5883.465295]  [<ffffffff810b3ba4>] ? __wake_up+0x44/0x50
+[ 5883.465304]  [<ffffffff8150b729>] schedule+0x29/0x70
+[ 5883.465335]  [<ffffffffa02d1cd2>] lock_extent_bits+0x152/0x1e0 [btrfs]
+[ 5883.465344]  [<ffffffff810b4020>] ? __wake_up_sync+0x20/0x20
+[ 5883.465375]  [<ffffffffa02bfa59>] btrfs_evict_inode+0x139/0x520 [btrfs]
+[ 5883.465387]  [<ffffffff811d5a80>] evict+0xb0/0x1c0
+[ 5883.465394]  [<ffffffff811d6335>] iput+0xf5/0x1a0
+[ 5883.465402]  [<ffffffff811ca9c5>] do_unlinkat+0x1b5/0x300
+[ 5883.465411]  [<ffffffff8117899c>] ? vm_munmap+0x4c/0x60
+[ 5883.465418]  [<ffffffff811cb986>] SyS_unlink+0x16/0x20
+[ 5883.465427]  [<ffffffff81517769>] system_call_fastpath+0x16/0x1b
 
-I am not convinced by that argument.  While you can't know that it's usefully 
-replicated you also can't say for sure that replication will never save you.  
-There will surely be some random factors involved.  If dup on ssd will save 
-you from 50% of corruption problems is it worth doing?  What if it's 80% or 
-20%?
+Filesystem:
+# btrfs filesystem show
+Btrfs v3.14.1
 
-I have BTRFS running as the root filesystem on Intel SSDs on four machines 
-(one of which is a file server with a pair of large disks in a BTRFS RAID-1).  
-On all of those systems I have dup for metadata, it doesn't take up any amount 
-of space I need for something else and it might save me.
+running Data RAID, sys/meta RAID10 on 5x4TB. SABNzbd is a usenet
+download program, so the file attempting to be deleted was possibly
+large (>GB)
 
-> So... Your idea of replicating metadata multiple times in proportion to
-> assumed 'importance' or 'extent of impact if lost' is an interesting
-> approach. However, is that appropriate and useful considering the real
-> world failure mechanisms that are to be guarded against?
+Recently updated to 3.14 kernel provided in arch linux. I haven't seen
+this issue before the last couple of days.
 
-Firstly it's not my idea, it's the idea of the ZFS developers.  Secondly I 
-started reading about this after doing some experiments with a failing SATA 
-disk.  In spite of having ~14,000 read errors (which sounds like a lot but is 
-a small fraction of a 2TB disk) the vast majority of the data was readable, 
-largely due to ~2000 errors corrected by dup metadata.
-
-> Do you see or measure any real advantage?
-
-Imagine that you have a RAID-1 array where both disks get ~14,000 read errors.  
-This could happen due to a design defect common to drives of a particular 
-model or some shared environmental problem.  Most errors would be corrected by 
-RAID-1 but there would be a risk of some data being lost due to both copies 
-being corrupt.  Another possibility is that one disk could entirely die 
-(although total disk death seems rare nowadays) and the other could have 
-corruption.  If metadata was duplicated in addition to being on both disks 
-then the probability of data loss would be reduced.
-
-Another issue is the case where all drive slots are filled with active drives 
-(a very common configuration).  To replace a disk you have to physically 
-remove the old disk before adding the new one.  If the array is a RAID-1 or 
-RAID-5 then ANY error during reconstruction loses data.  Using dup for 
-metadata on top of the RAID protections (IE the ZFS ditto idea) means that 
-case doesn't lose you data.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+Happy to provide more info if necessary.

@@ -1,79 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:35553 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751877AbaERSAW convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 May 2014 14:00:22 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Hang while deleting file
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAOUy=vobwRvhDAJHj_XWAdPvXwzGu47viCY=cDaTbJVkZjJmFA@mail.gmail.com>
-Date: Sun, 18 May 2014 12:00:21 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <972A5831-6DC4-48C6-99A0-8EAF20E11EFE@colorremedies.com>
-References: <CAOUy=vobwRvhDAJHj_XWAdPvXwzGu47viCY=cDaTbJVkZjJmFA@mail.gmail.com>
-To: Joshua McKinney <joshka@joshka.net>
+Received: from fw12a-lucinda.wadns.net ([196.220.39.179]:2763 "EHLO
+	fw12a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751326AbaERSuG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 18 May 2014 14:50:06 -0400
+Message-ID: <537900D1.6060802@swiftspirit.co.za>
+Date: Sun, 18 May 2014 20:49:53 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Tomasz Chmielewski <tch@virtall.com>,
+        Calvin Walton <calvin.walton@kepstin.ca>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: RAID-1 - suboptimal write performance?
+References: <20140516164815.1c33149b@s9>	<1400263584.979.17.camel@sasami.ottawa.blindsidenetworks.com> <20140516214135.23fefc39@s9> <537684F9.6060909@gmail.com>
+In-Reply-To: <537684F9.6060909@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2014/05/16 11:36 PM, Austin S Hemmelgarn wrote:
+> On 05/16/2014 04:41 PM, Tomasz Chmielewski wrote:
+>> On Fri, 16 May 2014 14:06:24 -0400
+>> Calvin Walton <calvin.walton@kepstin.ca> wrote:
+>>
+>>> No comment on the performance issue, other than to say that I've seen
+>>> similar on RAID-10 before, I think.
+>>>
+>>>> Also, what happens when the system crashes, and one drive has
+>>>> several hundred megabytes data more than the other one?
+>>> This shouldn't be an issue as long as you occasionally run a scrub or
+>>> balance. The scrub should find it and fix the missing data, and a
+>>> balance would just rewrite it as proper RAID-1 as a matter of course.
+>> It's similar (writes to just one drive, while the other is idle) when
+>> removing (many) snapshots.
+>>
+>> Not sure if that's optimal behaviour.
+>>
+> [snip]
+>
+> Ideally, BTRFS should dispatch the first write for a block in a
+> round-robin fashion among available devices.  This won't fix the
+> underlying issue, but it will make it less of an issue for BTRFS.
+>
 
-On May 18, 2014, at 10:36 AM, Joshua McKinney <joshka@joshka.net> wrote:
-
-> https://bugzilla.kernel.org/show_bug.cgi?id=76421
-> 
-> Perceived issue: SABNZBD hangs, requires restart.
-> Diagnosis shows the following in my system log at the time of hang.
-> This happens more than once.
-> Log:
-> 
-> [ 5883.464766] INFO: task SABnzbd.py:994 blocked for more than 120 seconds.
-> [ 5883.464906]       Not tainted 3.14.4-1-ARCH #1
-> [ 5883.464989] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-> disables this message.
-> [ 5883.465130] SABnzbd.py      D ffff880196d1f5c0     0   994      1 0x00000000
-> [ 5883.465140]  ffff8800765c9ce8 0000000000000082 0000005000000002
-> ffff880196d1f5c0
-> [ 5883.465148]  00000000000146c0 ffff8800765c9fd8 00000000000146c0
-> ffff880196d1f5c0
-> [ 5883.465156]  00000000ffffffef ffff880177d9a000 ffffffffa02d0dbc
-> ffff8800765c9c50
-> [ 5883.465163] Call Trace:
-> [ 5883.465218]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
-> [ 5883.465252]  [<ffffffffa02d03c3>] ? free_extent_state+0x43/0xc0 [btrfs]
-> [ 5883.465284]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
-> [ 5883.465295]  [<ffffffff810b3ba4>] ? __wake_up+0x44/0x50
-> [ 5883.465304]  [<ffffffff8150b729>] schedule+0x29/0x70
-> [ 5883.465335]  [<ffffffffa02d1cd2>] lock_extent_bits+0x152/0x1e0 [btrfs]
-> [ 5883.465344]  [<ffffffff810b4020>] ? __wake_up_sync+0x20/0x20
-> [ 5883.465375]  [<ffffffffa02bfa59>] btrfs_evict_inode+0x139/0x520 [btrfs]
-> [ 5883.465387]  [<ffffffff811d5a80>] evict+0xb0/0x1c0
-> [ 5883.465394]  [<ffffffff811d6335>] iput+0xf5/0x1a0
-> [ 5883.465402]  [<ffffffff811ca9c5>] do_unlinkat+0x1b5/0x300
-> [ 5883.465411]  [<ffffffff8117899c>] ? vm_munmap+0x4c/0x60
-> [ 5883.465418]  [<ffffffff811cb986>] SyS_unlink+0x16/0x20
-> [ 5883.465427]  [<ffffffff81517769>] system_call_fastpath+0x16/0x1b
-> 
-> Filesystem:
-> # btrfs filesystem show
-> Btrfs v3.14.1
-> 
-> running Data RAID, sys/meta RAID10 on 5x4TB. SABNzbd is a usenet
-> download program, so the file attempting to be deleted was possibly
-> large (>GB)
-> 
-> Recently updated to 3.14 kernel provided in arch linux. I haven't seen
-> this issue before the last couple of days.
-> 
-> Happy to provide more info if necessary.
-
-I'd include as an attachment to the bug the output from sysrq-w.
-
-echo 1 > /proc/sys/kernel/sysrq
-echo w > /proc/sysrq-trigger
-dmesg
-
-https://www.kernel.org/doc/Documentation/sysrq.txt
+More ideally, btrfs should dispatch them in parallel. This will likely 
+be looked into for N-way mirroring. Having 3 or more copies and working 
+in the current way would be far from optimal.
 
 
-Chris Murphy
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

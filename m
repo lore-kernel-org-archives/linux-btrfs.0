@@ -1,59 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [119.145.14.64] ([119.145.14.64]:6080 "EHLO
-	szxga01-in.huawei.com" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1752732AbaESG1U (ORCPT
+Received: from mail-we0-f196.google.com ([74.125.82.196]:40939 "EHLO
+	mail-we0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753461AbaESIkX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 02:27:20 -0400
-Message-ID: <5379A412.3050806@huawei.com>
-Date: Mon, 19 May 2014 14:26:26 +0800
-From: Zhang Zhen <zhenzhang.zhang@huawei.com>
+	Mon, 19 May 2014 04:40:23 -0400
+Received: by mail-we0-f196.google.com with SMTP id k48so1931116wev.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 01:40:22 -0700 (PDT)
 MIME-Version: 1.0
-To: <clm@fb.com>, <jbacik@fb.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: remove a FIXME in btrfs_get_acl()
-References: <1400480536-18691-1-git-send-email-zhenzhang.zhang@huawei.com>
-In-Reply-To: <1400480536-18691-1-git-send-email-zhenzhang.zhang@huawei.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Date: Mon, 19 May 2014 10:40:22 +0200
+Message-ID: <CAF_AmaOyqgxn8rPs4rKugUz9ZkGoc4mt+Q8Q-nLJF_hPxUufZw@mail.gmail.com>
+Subject: Convert btrfs software code to ASIC
+From: Le Nguyen Tran <lntran.de@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no function returns a value of -ENOENT, so the check is
-useless.
-Remove it, and the redundant braces.
+Hi,
 
-Signed-off-by: Zhang Zhen <zhenzhang.zhang@huawei.com>
----
- fs/btrfs/acl.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+I am Nguyen. I am not a software development engineer but an IC (chip)
+development engineer. I have a plan to develop an IC controller for
+Network Attached Storage (NAS). The main idea is converting software
+code into hardware implementation. Because the chip is customized for
+NAS, its performance is high, and its cost is lower than using micro
+processor like Atom or Xeon (for servers).
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index ff9b399..cae7480 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -53,14 +53,12 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 			return ERR_PTR(-ENOMEM);
- 		size = __btrfs_getxattr(inode, name, value, size);
- 	}
--	if (size > 0) {
-+	if (size > 0)
- 		acl = posix_acl_from_xattr(&init_user_ns, value, size);
--	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
--		/* FIXME, who returns -ENOENT?  I think nobody */
-+	else if (size == -ENODATA || size == 0)
- 		acl = NULL;
--	} else {
-+	else
- 		acl = ERR_PTR(-EIO);
--	}
- 	kfree(value);
+I plan to use btrfs as the file system specification for my NAS. The
+main point is that I need to understand the btrfs sofware code in
+order to covert them into hardware implementation. I am wandering if
+any of you can help me. If we can make the chip in a good shape, we
+can start up a company and have our own business.
 
- 	if (!IS_ERR(acl))
--- 
-1.8.1.2
+If you are interested in my idea and have further questions, please
+send me an email: lntran.de@gmail.com
 
+Thanks.
 
-.
-
-
-
-
+Nguyen.

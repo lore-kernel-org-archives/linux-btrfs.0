@@ -1,92 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56436 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752360AbaESAyO convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 May 2014 20:54:14 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:51624 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WmBqG-001O0p-3Q
-	for linux-btrfs@vger.kernel.org; Sun, 18 May 2014 18:54:12 -0600
-From: Chris Murphy <lists@colorremedies.com>
+Received: from magic.merlins.org ([209.81.13.136]:41030 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751046AbaESBM3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 18 May 2014 21:12:29 -0400
+Date: Sun, 18 May 2014 18:07:05 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Scott Middleton <scott@assuretek.com.au>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: send/receive and bedup
+Message-ID: <20140519010705.GI10566@merlins.org>
+References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com>
+ <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net>
+ <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Subject: problem with degraded boot and systemd
-Message-Id: <45D5C607-ED9D-49BB-BA60-CA2B0E94223D@colorremedies.com>
-Date: Sun, 18 May 2014 18:54:10 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+In-Reply-To: <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Summary:
+On Wed, May 14, 2014 at 11:36:03PM +0800, Scott Middleton wrote:
+> I read so much about BtrFS that I mistaked Bedup with Duperemove.
+> Duperemove is actually what I am testing.
 
-It's insufficient to pass rootflags=degraded to get the system root to mount when a device is missing. It looks like when a device is missing, udev doesn't create the dev-disk-by-uuid linkage that then causes systemd to change the device state from dead to plugged. Only once plugged, will systemd attempt to mount the volume. This issue was brought up on systemd-devel under the subject "timed out waiting for device dev-disk-by\x2duuid" for those who want details.
+I'm currently using programs that find files that are the same, and
+hardlink them together:
+http://marc.merlins.org/perso/linux/post_2012-05-01_Handy-tip-to-save-on-inodes-and-disk-space_-finddupes_-fdupes_-and-hardlink_py.html
 
-Work around:
+hardlink.py actually seems to be the faster (memory and CPU) one event
+though it's in python.
+I can get others to run out of RAM on my 8GB server easily :(
 
-I tested systemd 208-16.fc20, and 212-4.fc21. Both will wait indefinitely for dev-disk-by-x2uuid, and fail to drop to a dracut shell for a manual recovery attempt. That seems like a bug to me so I filed that here:
-https://bugzilla.redhat.com/show_bug.cgi?id=1096910
+Bedup should be better, but last I tried I couldn't get it to work.
+It's been updated since then, I just haven't had the chance to try it
+again since then.
 
-Therefore, first the system must be forced to shutdown, rebooted with boot param "rd.break=pre-mount" to get to a dracut shell before the wait for root by uuid begins. Then:
+Please post what you find out, or if you have a hardlink maker that's
+better than the ones I found :)
 
-# mount -o subvol=root,ro,degraded <device> /sysroot
-# exit
-# exit
-
-And then it boots normally. Fortunately btrfs fi show works so you can mount with -U or with a non-missing /dev device.
-
-
-What's going on:
-
-Example of a 2 device Btrfs raid1 volume, using sda3 and sdb3.
-
-Since boot parameter root=UUID= is used, systemd is expecting to issue the mount command referencing that particular volume UUID. When all devices are available, systemd-udevd produces entries like this for each device:
-
-[    2.168697] localhost.localdomain systemd-udevd[109]: creating link '/dev/disk/by-uuid/9ff63135-ce42-4447-a6de-d7c9b4fb6d66' to '/dev/sda3'
-[    2.170232] localhost.localdomain systemd-udevd[135]: creating link '/dev/disk/by-uuid/9ff63135-ce42-4447-a6de-d7c9b4fb6d66' to '/dev/sdb3'
-
-But when just one device is missing, neither link is created by udev, and that's the show stopper. 
-
-When all devices are present, the links are created, and systemd changes the dev-disk-by-uuid device from dead to plugged like this:
-
-[    2.176280] localhost.localdomain systemd[1]: dev-disk-by\x2duuid-9ff63135\x2dce42\x2d4447\x2da6de\x2dd7c9b4fb6d66.device changed dead -> plugged
-
-And then systemd will initiate the command to mount it.
-
-[    2.177501] localhost.localdomain systemd[1]: Job dev-disk-by\x2duuid-9ff63135\x2dce42\x2d4447\x2da6de\x2dd7c9b4fb6d66.device/start finished, result=done
-[    2.586488] localhost.localdomain systemd[152]: Executing: /bin/mount /dev/disk/by-uuid/9ff63135-ce42-4447-a6de-d7c9b4fb6d66 /sysroot -t auto -o ro,ro,subvol=root
-
-I think the key problem is either a limitation of udev, or a problem with the existing udev rule, that prevents the link creation for any remaining btrfs device. Or maybe it's intentional. But I'm not a udev expert. This is the current udev rule:
-
-# cat /usr/lib/udev/rules.d/64-btrfs.rules
-# do not edit this file, it will be overwritten on update
-
-SUBSYSTEM!="block", GOTO="btrfs_end"
-ACTION=="remove", GOTO="btrfs_end"
-ENV{ID_FS_TYPE}!="btrfs", GOTO="btrfs_end"
-
-# let the kernel know about this btrfs filesystem, and check if it is complete
-IMPORT{builtin}="btrfs ready $devnode"
-
-# mark the device as not ready to be used by the system
-ENV{ID_BTRFS_READY}=="0", ENV{SYSTEMD_READY}="0"
-
-LABEL="btrfs_end"
-
-
-How this works with raid:
-
-RAID assembly is separate from filesystem mount. The volume UUID isn't available until the RAID is successfully assembled. 
-
-On at least Fedora (dracut) systems with the system root on an md device, the initramfs contains 30-parse-md.sh which includes a loop to check for the volume UUID. If it's not found, the script sleeps for 0.5 seconds, and then looks for it again, up to 240 times. If it's still not found at attempt 240, then the script executes mdadm -R to forcibly run the array with fewer than all devices present (degraded assembly). Now the volume UUID exists, udevd creates the linkage, systemd picks this up and changes device state from dead to plugged, and then executes a normal mount command.
-
-The approximate Btrfs equivalent down the road would be a similar initrd script, or maybe a user space daemon, that causes btrfs device ready to confirm/deny all devices are present. And after x number of failures, then it's issue an equivalent to mdadm -R which right now we don't seem to have. 
-
-That equivalent might be a decoupling of degraded as a mount option, such that the user space tool deals with degradedness. And the mount command remains a normal mount command (without degraded option). For example something like "btrfs filesystem allowdegraded -U <uuid>" would cause some logic to confirm/deny that degraded mounting is even possible, such as having the minimum number of devices available. If it succeeds, then btrfs device ready will report all devices are in fact present, enable udevd to create the links by volume uuid, which then allows systemd to tigger a normal mount command. Further, the btrfs allowdegraded command would set appropriate metadata on the file system such that a normal mount command will succeed.
-
-Or something like that.
-
-
-Chris Murphy
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

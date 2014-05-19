@@ -1,276 +1,255 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31057 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752589AbaESRCa (ORCPT
+Received: from mail-wg0-f49.google.com ([74.125.82.49]:49180 "EHLO
+	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752230AbaESSMM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 13:02:30 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s4JH2SSx006338
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:02:29 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH2Sd9006956
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:02:28 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH2RtF012872
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:02:27 GMT
-From: Anand Jain <anand.jain@oracle.com>
+	Mon, 19 May 2014 14:12:12 -0400
+Received: by mail-wg0-f49.google.com with SMTP id m15so8344933wgh.20
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 11:12:11 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: revamp /sys/fs/btrfs/<fsid>/devices
-Date: Tue, 20 May 2014 01:05:22 +0800
-Message-Id: <1400519122-5620-1-git-send-email-anand.jain@oracle.com>
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: ensure readers see new data after a clone operation
+Date: Mon, 19 May 2014 20:11:53 +0100
+Message-Id: <1400526713-27660-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
+References: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As of now with out this patch the content under the
-dir /sys/fs/btrfs/<fsid>/devices is just links to the
-block devs.
+We were cleaning the clone target file range from the page cache before
+we did replace the file extent items in the fs tree. This was racy,
+as right after cleaning the relevant range from the page cache and before
+replacing the file extent items, a read against that range could be
+performed by another task and populate again the page cache with stale
+data (stale after the cloning finishes). This would result in reads after
+the clone operation successfully finishes to get old data (and potentially
+for a very long time). Therefore evict the pages after replacing the file
+extent items, so that subsequent reads will always get the new data.
 
-Moving forward we would need the above btrfs sysfs path
-to contain more info about the btrfs devices.
+Similarly, we were prone to races while cloning the file extent items
+because we weren't locking the target range and wait for any existing
+ordered extents against that range to complete. It was possible that
+after cloning the extent items, a write operation that was performed
+before the clone operation and overlaps the same range, would end up
+undoing all or part of the work the clone operation did (a worker task
+running inode.c:btrfs_finish_ordered_io). Therefore lock the target
+range in the io tree, wait for all pending ordered extents against that
+range to finish and then safely perform the cloning.
 
-This patch provide a framework and as of now a fault
-notification interface, which is needed to notify when
-disk disappear.
+The issue of reading stale data after the clone operation is easy to
+reproduce by running the following C program in a loop until it exits
+with return value 1.
 
-The idea is to call
-  /sys/fs/btrfs/<fsid>/devices/<disk>/fault
-when we get a kobject notification about the disk
-disappearance.
+ #include <unistd.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+ #include <pthread.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <assert.h>
+ #include <asm/types.h>
+ #include <linux/ioctl.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+ #define SRC_FILE "/mnt/sdd/foo"
+ #define DST_FILE "/mnt/sdd/bar"
+ #define FILE_SIZE (16 * 1024)
+ #define PATTERN_SRC 'X'
+ #define PATTERN_DST 'Y'
+
+struct btrfs_ioctl_clone_range_args {
+	__s64 src_fd;
+	__u64 src_offset, src_length;
+	__u64 dest_offset;
+};
+
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
+				   struct btrfs_ioctl_clone_range_args)
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static int clone_done = 0;
+static int reader_ready = 0;
+static int stale_data = 0;
+
+static void *reader_loop(void *arg)
+{
+	char buf[4096], want_buf[4096];
+
+	memset(want_buf, PATTERN_SRC, 4096);
+	pthread_mutex_lock(&mutex);
+	reader_ready = 1;
+	pthread_mutex_unlock(&mutex);
+
+	while (1) {
+		int done, fd, ret;
+
+		fd = open(DST_FILE, O_RDONLY);
+		assert(fd != -1);
+
+		pthread_mutex_lock(&mutex);
+		done = clone_done;
+		pthread_mutex_unlock(&mutex);
+
+		ret = read(fd, buf, 4096);
+		assert(ret == 4096);
+		close(fd);
+
+		if (done) {
+			ret = memcmp(buf, want_buf, 4096);
+			if (ret == 0) {
+				printf("Found new content\n");
+			} else {
+				printf("Found old content\n");
+				pthread_mutex_lock(&mutex);
+				stale_data = 1;
+				pthread_mutex_unlock(&mutex);
+			}
+			break;
+		}
+	}
+	return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+	pthread_t reader;
+	int ret, i, fd;
+	struct btrfs_ioctl_clone_range_args clone_args;
+	int fd1, fd2;
+
+	ret = remove(SRC_FILE);
+	if (ret == -1 && errno != ENOENT) {
+		fprintf(stderr, "Error deleting src file: %s\n", strerror(errno));
+		return 1;
+	}
+	ret = remove(DST_FILE);
+	if (ret == -1 && errno != ENOENT) {
+		fprintf(stderr, "Error deleting dst file: %s\n", strerror(errno));
+		return 1;
+	}
+
+	fd = open(SRC_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+	assert(fd != -1);
+	for (i = 0; i < FILE_SIZE; i++) {
+		char c = PATTERN_SRC;
+		ret = write(fd, &c, 1);
+		assert(ret == 1);
+	}
+	close(fd);
+	fd = open(DST_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+	assert(fd != -1);
+	for (i = 0; i < FILE_SIZE; i++) {
+		char c = PATTERN_DST;
+		ret = write(fd, &c, 1);
+		assert(ret == 1);
+	}
+	close(fd);
+
+	ret = pthread_create(&reader, NULL, reader_loop, NULL);
+	assert(ret == 0);
+	while (1) {
+		int r;
+		pthread_mutex_lock(&mutex);
+		r = reader_ready;
+		pthread_mutex_unlock(&mutex);
+		if (r) break;
+	}
+
+	fd1 = open(SRC_FILE, O_RDONLY);
+	if (fd1 < 0) {
+		fprintf(stderr, "Error open src file: %s\n", strerror(errno));
+		return 1;
+	}
+	fd2 = open(DST_FILE, O_RDWR);
+	if (fd2 < 0) {
+		fprintf(stderr, "Error open dst file: %s\n", strerror(errno));
+		return 1;
+	}
+	clone_args.src_fd = fd1;
+	clone_args.src_offset = 0;
+	clone_args.src_length = 4096;
+	clone_args.dest_offset = 0;
+	ret = ioctl(fd2, BTRFS_IOC_CLONE_RANGE, &clone_args);
+	assert(ret == 0);
+	close(fd1);
+	close(fd2);
+
+	pthread_mutex_lock(&mutex);
+	clone_done = 1;
+	pthread_mutex_unlock(&mutex);
+	ret = pthread_join(reader, NULL);
+	assert(ret == 0);
+
+	pthread_mutex_lock(&mutex);
+	ret = stale_data ? 1 : 0;
+	pthread_mutex_unlock(&mutex);
+	return ret;
+}
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/sysfs.c   | 110 +++++++++++++++++++++++++++++++++++++++++------------
- fs/btrfs/sysfs.h   |   3 ++
- fs/btrfs/volumes.c |   5 +++
- fs/btrfs/volumes.h |   2 +
- 4 files changed, 96 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f729199..7c80a99 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -31,6 +31,7 @@
- #include "transaction.h"
- #include "sysfs.h"
- #include "volumes.h"
-+#include "rcu-string.h"
- 
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- 
-@@ -475,19 +476,6 @@ static void __btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
- 	wait_for_completion(&fs_info->kobj_unregister);
- }
- 
--void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
--{
--	if (fs_info->space_info_kobj) {
--		sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
--		kobject_del(fs_info->space_info_kobj);
--		kobject_put(fs_info->space_info_kobj);
--	}
--	kobject_del(fs_info->device_dir_kobj);
--	kobject_put(fs_info->device_dir_kobj);
--	addrm_unknown_feature_attrs(fs_info, false);
--	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
--	__btrfs_sysfs_remove_one(fs_info);
--}
- 
- const char * const btrfs_feature_set_names[3] = {
- 	[FEAT_COMPAT]	 = "compat",
-@@ -564,36 +552,91 @@ static void init_feature_attrs(void)
+V2: Protect against ongoing writes by locking the target range in
+    the io tree and wait for any existing ordered extents for that
+    range to finish before starting the clone operation.
+
+ fs/btrfs/ioctl.c | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fba7a00..12a60ef 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3410,15 +3410,37 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 			goto out_unlock;
  	}
- }
  
--static int add_device_membership(struct btrfs_fs_info *fs_info)
-+
-+#define to_btrfs_device(_kobj) container_of(_kobj, struct btrfs_device, device_kobj)
-+
-+static ssize_t device_kobj_fault_store(struct kobject *dev_kobj,
-+			struct kobj_attribute *a, const char *buf, size_t len)
-+{
-+	struct btrfs_device *dev = to_btrfs_device(dev_kobj);
-+
-+	if (dev->missing || !dev->bdev)
-+		return -EINVAL;
-+
-+	/* Fixme: Call appropriate device check status handler */
-+
-+        return len;
-+}
-+
-+BTRFS_ATTR_RW(fault, 0200, NULL, device_kobj_fault_store);
-+
-+static struct attribute *device_kobj_attrs[] = {
-+	BTRFS_ATTR_PTR(fault),
-+	NULL,
-+};
-+
-+static void device_kobj_release(struct kobject *dev_kobj)
-+{
-+	/* nothing to free as of now */
-+}
-+
-+struct kobj_type device_ktype = {
-+	.sysfs_ops	= &kobj_sysfs_ops,
-+	.release	= device_kobj_release,
-+	.default_attrs	= device_kobj_attrs,
-+};
-+
-+int device_add_kobject(struct btrfs_fs_info *fs_info)
- {
- 	int error = 0;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	struct btrfs_device *dev;
- 
--	fs_info->device_dir_kobj = kobject_create_and_add("devices",
-+	if (!fs_info->device_dir_kobj)
-+		fs_info->device_dir_kobj = kobject_create_and_add("devices",
- 						&fs_info->super_kobj);
- 	if (!fs_info->device_dir_kobj)
- 		return -ENOMEM;
- 
- 	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
--		struct hd_struct *disk;
--		struct kobject *disk_kobj;
- 
--		if (!dev->bdev)
-+		if (!dev->bdev || dev->missing || dev->device_kobj.parent)
- 			continue;
- 
--		disk = dev->bdev->bd_part;
--		disk_kobj = &part_to_dev(disk)->kobj;
-+		error = kobject_init_and_add(&dev->device_kobj, &device_ktype,
-+			fs_info->device_dir_kobj, "%s",
-+			strrchr(rcu_str_deref(dev->name), '/') + 1);
- 
--		error = sysfs_create_link(fs_info->device_dir_kobj,
--					  disk_kobj, disk_kobj->name);
- 		if (error)
- 			break;
- 	}
+-	/* truncate page cache pages from target inode range */
+-	truncate_inode_pages_range(&inode->i_data, destoff,
+-				   PAGE_CACHE_ALIGN(destoff + len) - 1);
 -
- 	return error;
- }
- 
-+/*
-+ * Remove the sysfs entries for the devices.
-+ * devid provides a perticular devid for which the sysfs entry
-+ * has to be removed, if -1 it would remove for all devs
-+ */
-+void device_rm_kobject(struct btrfs_fs_info *fs_info, u64 devid)
-+{
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	struct btrfs_device *dev;
-+
-+	if (!fs_info->device_dir_kobj)
-+		return;
-+
-+	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
-+		if (!dev->device_kobj.parent)
-+			continue;
-+
-+		if (devid == -1 || devid == dev->devid) {
-+			kobject_del(&dev->device_kobj);
-+			kobject_put(&dev->device_kobj);
-+		}
+-	lock_extent_range(src, off, len);
++	/*
++	 * Lock the target range too. Right after we replace the file extent
++	 * items in the fs tree (which now point to the cloned data), we might
++	 * have a worker replace them with extent items relative to a write
++	 * operation that was issued before this clone operation (i.e. confront
++	 * with inode.c:btrfs_finish_ordered_io).
++	 */
++	if (same_inode) {
++		lock_extent_range(src, min_t(u64, off, destoff),
++				  max_t(u64, off + len, destoff + len));
++	} else {
++		lock_extent_range(src, off, len);
++		lock_extent_range(inode, destoff, len);
 +	}
-+}
-+
- /* /sys/fs/btrfs/ entry */
- static struct kset *btrfs_kset;
  
-@@ -603,6 +646,25 @@ static struct dentry *btrfs_debugfs_root_dentry;
- /* Debugging tunables and exported data */
- u64 btrfs_debugfs_test;
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
  
-+void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info)
-+{
-+	if (fs_info->space_info_kobj) {
-+		sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
-+		kobject_del(fs_info->space_info_kobj);
-+		kobject_put(fs_info->space_info_kobj);
+-	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
++	if (same_inode) {
++		unlock_extent(&BTRFS_I(src)->io_tree, min_t(u64, off, destoff),
++			      max_t(u64, off + len, destoff + len) - 1);
++	} else {
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
++		unlock_extent(&BTRFS_I(inode)->io_tree, destoff,
++			      destoff + len - 1);
 +	}
-+
-+	if (fs_info->device_dir_kobj) {
-+		device_rm_kobject(fs_info, -1);
-+		kobject_del(fs_info->device_dir_kobj);
-+		kobject_put(fs_info->device_dir_kobj);
-+	}
-+
-+	addrm_unknown_feature_attrs(fs_info, false);
-+	sysfs_remove_group(&fs_info->super_kobj, &btrfs_feature_attr_group);
-+	__btrfs_sysfs_remove_one(fs_info);
-+}
-+
- int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- {
- 	int error;
-@@ -625,7 +687,7 @@ int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
- 	if (error)
- 		goto failure;
- 
--	error = add_device_membership(fs_info);
-+	error = device_add_kobject(fs_info);
- 	if (error)
- 		goto failure;
- 
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 9ab5763..ff4b87b 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -66,4 +66,7 @@ char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
- extern const char * const btrfs_feature_set_names[3];
- extern struct kobj_type space_info_ktype;
- extern struct kobj_type btrfs_raid_ktype;
-+
-+int device_add_kobject(struct btrfs_fs_info *fs_info);
-+void device_rm_kobject(struct btrfs_fs_info *fs_info, u64 devid);
- #endif /* _BTRFS_SYSFS_H_ */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index db211fd..27dfbb4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -40,6 +40,7 @@
- #include "rcu-string.h"
- #include "math.h"
- #include "dev-replace.h"
-+#include "sysfs.h"
- 
- static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
-@@ -1633,6 +1634,9 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 
- 	cur_devices = device->fs_devices;
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
-+
-+	device_rm_kobject(root->fs_info, device->devid);
-+
- 	list_del_rcu(&device->dev_list);
- 
- 	device->fs_devices->num_devices--;
-@@ -2129,6 +2133,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 			btrfs_abort_transaction(trans, root, ret);
- 			goto error_trans;
- 		}
-+		device_add_kobject(root->fs_info);
- 	}
- 
- 	/*
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 4ca67b3..a434611 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -113,6 +113,8 @@ struct btrfs_device {
- 	int dev_stats_valid;
- 	int dev_stats_dirty; /* counters need to be written to disk */
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
-+
-+	struct kobject device_kobj;
- };
- 
- struct btrfs_fs_devices {
++	/*
++	 * Truncate page cache pages so that future reads will see the cloned
++	 * data immediately and not the previous data.
++	 */
++	truncate_inode_pages_range(&inode->i_data, destoff,
++				   PAGE_CACHE_ALIGN(destoff + len) - 1);
+ out_unlock:
+ 	if (!same_inode) {
+ 		if (inode < src) {
 -- 
-1.8.5.3
+1.9.1
 

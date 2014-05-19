@@ -1,92 +1,241 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30743 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754441AbaESRAw (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:29908 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751596AbaESRAx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 13:00:52 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s4JH0pWu018694
+	Mon, 19 May 2014 13:00:53 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s4JH0qOB003928
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:52 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:53 GMT
 Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH0oaE013342
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH0pTD002391
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:51 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:52 GMT
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH0ovs013335
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:50 GMT
+	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s4JH0pMJ013391
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 17:00:51 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/4 RESEND] btrfs: btrfs_rm_device() should zero mirror SB as well
-Date: Tue, 20 May 2014 01:03:40 +0800
-Message-Id: <1400519022-5540-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 3/4 RESEND] btrfs: add framework to read fs info from btrfs-control
+Date: Tue, 20 May 2014 01:03:41 +0800
+Message-Id: <1400519022-5540-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1400519022-5540-1-git-send-email-anand.jain@oracle.com>
 References: <1400519022-5540-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fix will ensure all SB copies on the disk is zeroed
-when the disk is intentionally removed. This helps to
-better manage disks in the user land.
-
-This version of patch also merges the Zach patch as below.
-
- btrfs: don't double brelse on device rm
+This adds ioctl BTRFS_IOC_GET_FSIDS which reads the fs
+info through the btrfs-control, needed to optimize
+heavily used btrfs-progs function check_mounted()
+plus few other minor uses.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Zach Brown <zab@redhat.com>
 ---
- fs/btrfs/volumes.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ fs/btrfs/super.c           | 66 +++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/volumes.c         | 39 +++++++++++++++++++++++++++
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h | 19 +++++++++++++
+ 4 files changed, 120 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 19e68f7..1567439 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1681,12 +1681,43 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	 * remove it from the devices list and zero out the old super
- 	 */
- 	if (clear_super && disk_super) {
-+		u64 bytenr;
-+		int i;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d4878dd..b42cd50 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1717,38 +1717,92 @@ static struct file_system_type btrfs_fs_type = {
+ };
+ MODULE_ALIAS_FS("btrfs");
+ 
++static int btrfs_ioc_get_fslist(void __user *arg)
++{
++	int ret = 0;
++	u64 sz_fslist_arg;
++	u64 sz_fslist;
++	u64 sz_out;
++	struct btrfs_ioctl_fslist_args *fslist_arg;
++	struct btrfs_ioctl_fslist_args *fslist_arg_tmp;
++	struct btrfs_ioctl_fslist *fslist;
 +
- 		/* make sure this device isn't detected as part of
- 		 * the FS anymore
- 		 */
- 		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
- 		set_buffer_dirty(bh);
- 		sync_dirty_buffer(bh);
++	u64 cnt = 0, ucnt;
 +
-+		/* clear the mirror copies of super block on the disk
-+		 * being removed, 0th copy is been taken care above and
-+		 * the below would take of the rest
-+		 */
-+		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-+			bytenr = btrfs_sb_offset(i);
-+			if (bytenr + BTRFS_SUPER_INFO_SIZE >=
-+					i_size_read(bdev->bd_inode))
-+				break;
++	sz_fslist_arg = sizeof(*fslist_arg);
++	sz_fslist = sizeof(*fslist);
++	if (copy_from_user(&ucnt,
++		(struct btrfs_ioctl_fslist_args __user *)(arg +
++		offsetof(struct btrfs_ioctl_fslist_args, count)),
++			sizeof(ucnt)))
++		return -EFAULT;
 +
-+			brelse(bh);
-+			bh = __bread(bdev, bytenr / 4096,
-+					BTRFS_SUPER_INFO_SIZE);
-+			if (!bh)
-+				continue;
++	cnt = btrfs_get_fslist_cnt();
 +
-+			disk_super = (struct btrfs_super_block *)bh->b_data;
++	if (cnt > ucnt) {
++		if (copy_to_user(arg +
++		offsetof(struct btrfs_ioctl_fslist_args, count),
++			&cnt, sizeof(cnt)))
++			return -EFAULT;
++		return 1;
++	}
 +
-+			if (btrfs_super_bytenr(disk_super) != bytenr ||
-+				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
-+				continue;
-+			}
-+			memset(&disk_super->magic, 0,
-+						sizeof(disk_super->magic));
-+			set_buffer_dirty(bh);
-+			sync_dirty_buffer(bh);
-+		}
++	sz_out = sz_fslist_arg + sz_fslist * cnt;
++	fslist_arg_tmp = fslist_arg = memdup_user(arg, sz_out);
++	if (IS_ERR(fslist_arg))
++		return PTR_ERR(fslist_arg);
++	fslist = (struct btrfs_ioctl_fslist *) (++fslist_arg_tmp);
++	cnt = btrfs_get_fslist(fslist, cnt);
++	fslist_arg->count = cnt;
++	if (copy_to_user(arg, fslist_arg, sz_out)) {
++		ret = -EFAULT;
++		goto out;
++	}
++	ret = 0;
++out:
++	kfree(fslist_arg);
++	return ret;
++}
++
+ /*
+  * used by btrfsctl to scan devices when no FS is mounted
+  */
+ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 				unsigned long arg)
+ {
+-	struct btrfs_ioctl_vol_args *vol;
++	struct btrfs_ioctl_vol_args *vol = NULL;
+ 	struct btrfs_fs_devices *fs_devices;
+ 	int ret = -ENOTTY;
++	void __user *argp = (void __user *)arg;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	vol = memdup_user((void __user *)arg, sizeof(*vol));
+-	if (IS_ERR(vol))
+-		return PTR_ERR(vol);
+-
+ 	switch (cmd) {
+ 	case BTRFS_IOC_SCAN_DEV:
++		vol = memdup_user((void __user *)arg, sizeof(*vol));
++		if (IS_ERR(vol))
++			return PTR_ERR(vol);
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
++		kfree(vol);
+ 		break;
+ 	case BTRFS_IOC_DEVICES_READY:
++		vol = memdup_user((void __user *)arg, sizeof(*vol));
++		if (IS_ERR(vol))
++			return PTR_ERR(vol);
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
++		kfree(vol);
+ 		if (ret)
+ 			break;
+ 		ret = !(fs_devices->num_devices == fs_devices->total_devices);
+ 		break;
++	case BTRFS_IOC_GET_FSLIST:
++		ret = btrfs_ioc_get_fslist(argp);
++		break;
  	}
  
- 	ret = 0;
+-	kfree(vol);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1567439..e22ac22 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6341,3 +6341,42 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
+ 
+ 	return 0;
+ }
++
++int btrfs_get_fslist_cnt(void)
++{
++	int cnt = 0;
++	struct btrfs_fs_devices *fs_devices;
++
++	mutex_lock(&uuid_mutex);
++	list_for_each_entry(fs_devices, &fs_uuids, list)
++		cnt++;
++	mutex_unlock(&uuid_mutex);
++
++	return cnt;
++}
++
++u64 btrfs_get_fslist(struct btrfs_ioctl_fslist *fslist, u64 ucnt)
++{
++	u64 cnt = 0;
++	struct btrfs_fs_devices *fs_devices;
++
++	mutex_lock(&uuid_mutex);
++	list_for_each_entry(fs_devices, &fs_uuids, list) {
++		if (!(cnt < ucnt))
++			break;
++		memcpy(fslist->fsid, fs_devices->fsid,
++				BTRFS_FSID_SIZE);
++		fslist->num_devices = fs_devices->num_devices;
++		fslist->missing_devices = fs_devices->missing_devices;
++		fslist->total_devices = fs_devices->total_devices;
++
++		if (fs_devices->opened)
++			fslist->flags = BTRFS_FS_MOUNTED;
++
++		fslist++;
++		cnt++;
++	}
++	mutex_unlock(&uuid_mutex);
++
++	return cnt;
++}
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 80754f9..0b97fcf 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -391,4 +391,6 @@ static inline void btrfs_dev_stat_reset(struct btrfs_device *dev,
+ {
+ 	btrfs_dev_stat_set(dev, index, 0);
+ }
++int btrfs_get_fslist_cnt(void);
++u64 btrfs_get_fslist(struct btrfs_ioctl_fslist *fslist, u64 ucnt);
+ #endif
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b4d6909..76b91d6 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -518,6 +518,23 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 	}
+ }
+ 
++/* fs flags */
++#define BTRFS_FS_MOUNTED	(1LLU << 0)
++
++struct btrfs_ioctl_fslist {
++	__u64 self_sz;			/* in/out */
++	__u8 fsid[BTRFS_FSID_SIZE];	/* out */
++	__u64 num_devices;
++	__u64 missing_devices;
++	__u64 total_devices;
++	__u64 flags;
++};
++
++struct btrfs_ioctl_fslist_args {
++	__u64 self_sz;		/* in/out */
++	__u64 count;		/* out */
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -612,6 +629,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				    struct btrfs_ioctl_dev_replace_args)
+ #define BTRFS_IOC_FILE_EXTENT_SAME _IOWR(BTRFS_IOCTL_MAGIC, 54, \
+ 					 struct btrfs_ioctl_same_args)
++#define BTRFS_IOC_GET_FSLIST _IOWR(BTRFS_IOCTL_MAGIC, 56, \
++					struct btrfs_ioctl_fslist_args)
+ #define BTRFS_IOC_GET_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
+ 				   struct btrfs_ioctl_feature_flags)
+ #define BTRFS_IOC_SET_FEATURES _IOW(BTRFS_IOCTL_MAGIC, 57, \
 -- 
 1.8.5.3
 

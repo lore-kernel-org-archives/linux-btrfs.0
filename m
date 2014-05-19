@@ -1,55 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:46122 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752758AbaEPWTf (ORCPT
+Received: from bombadil.infradead.org ([198.137.202.9]:36181 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751544AbaESOzq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 18:19:35 -0400
-Date: Sat, 17 May 2014 08:19:30 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Christoph Hellwig <hch@infradead.org>
+	Mon, 19 May 2014 10:55:46 -0400
+Date: Mon, 19 May 2014 07:55:41 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Dave Chinner <david@fromorbit.com>
 Cc: Luk?? Czerner <lczerner@redhat.com>, fstests@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
 Subject: Re: [ANNOUNCE] xfstests: new mailing list
-Message-ID: <20140516221930.GA8554@dastard>
+Message-ID: <20140519145541.GA32055@infradead.org>
 References: <20140516044611.GA8206@dastard>
  <20140516054009.GA17647@infradead.org>
  <alpine.LFD.2.00.1405161047010.2099@localhost.localdomain>
  <20140516085320.GA29279@infradead.org>
+ <20140516221930.GA8554@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140516085320.GA29279@infradead.org>
+In-Reply-To: <20140516221930.GA8554@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 16, 2014 at 01:53:20AM -0700, Christoph Hellwig wrote:
-> On Fri, May 16, 2014 at 10:48:42AM +0200, Luk?? Czerner wrote:
-> > > > As requested I've created a new mailing list for xfstests
-> > > > development and discussion. Reflecting the fact that the test
-> > > > harness is not really XFS specific anymore, the list is:
-> > > > 
-> > > > 	fstests@vger.kernel.org
-> > > 
-> > > Isn't there an "x" missing somewhere?
-> > 
-> > It's intentional and it is "Reflecting the fact that the test
-> > harness is not really XFS specific anymore", even though the test
-> > suite itself keep the name xfstests.
-> > 
-> > This way it's more obvious to people that this is in fact not xfs
-> > specific.
-> 
-> Having the name different from the project it is for is stupid.  Either
-> rename the test suite, or use the same name for the mailing list.
+On Sat, May 17, 2014 at 08:19:30AM +1000, Dave Chinner wrote:
+> Renaming the test suite take a lot more work - .e.g renaming/moving
+> source trees and a fixing all the documentation that points to it...
 
-Renaming the test suite take a lot more work - .e.g renaming/moving
-source trees and a fixing all the documentation that points to it...
+In that case please call the list xfstests - a name different by a
+single character is utterly confusing.  And I defintively see some merit
+to the suggestion that we'll just keep the x and allow people to come up
+with a nice backronym for it if they care enough.
 
-So, small steps.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com

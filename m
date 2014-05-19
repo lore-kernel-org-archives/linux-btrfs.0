@@ -1,67 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:48817 "EHLO mx1.redhat.com"
+Received: from mari.romanrm.net ([157.7.203.202]:38007 "EHLO mari.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753183AbaESRQe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 13:16:34 -0400
-Message-ID: <537A3C6F.60608@redhat.com>
-Date: Mon, 19 May 2014 12:16:31 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+	id S932375AbaESRTe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 May 2014 13:19:34 -0400
+Date: Mon, 19 May 2014 23:19:26 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/2] btrfs: label should not contain return char
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <20140519231926.34e8942c@natsu>
 In-Reply-To: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
+References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/hWtf2OBsrKCtSr+lul4uvjB"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/19/14, 12:04 PM, Anand Jain wrote:
+--Sig_/hWtf2OBsrKCtSr+lul4uvjB
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, 20 May 2014 01:04:30 +0800
+Anand Jain <anand.jain@oracle.com> wrote:
+
 > From: Anand Jain <Anand.Jain@oracle.com>
-> 
+>=20
 > generally if you use
 >   echo "test" > /sys/fs/btrfs/<fsid>/label
 > it would introduce return char at the end and it can not
 > be part of the label. The correct command is
 >   echo -n "test" > /sys/fs/btrfs/<fsid>/label
-> 
+>=20
 > This patch will check for this user error
 
-Wouldn't it be a lot better to just strip the "\n" if it
-exists?
+Maybe instead consider checking for one trailing "\n", and silently remove =
+it
+if passed, so that both of the mentioned variants of 'echo' can be used?
 
-> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-> ---
->  fs/btrfs/sysfs.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index c5eb214..63c2907 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -374,7 +374,7 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
->  	struct btrfs_root *root = fs_info->fs_root;
->  	int ret;
->  
-> -	if (len >= BTRFS_LABEL_SIZE) {
-> +	if (len >= BTRFS_LABEL_SIZE || strchr(buf, '\n')) {
->  		pr_err("BTRFS: unable to set label with more than %d bytes\n",
->  		       BTRFS_LABEL_SIZE - 1);
+All other sysfs files do not care if you pass an extra "\n" at the end, e.g.
 
-so if I do:
+  echo cfq > /sys/block/sda/queue/scheduler =20
 
-# echo "mylabel" > /sys/fs/btrfs/<fsid>/label
+works fine, doesn't require you to use "echo -n cfq".
 
-I'll get:
+--=20
+With respect,
+Roman
 
-BTRFS: unable to set label with more than 255 bytes"
+--Sig_/hWtf2OBsrKCtSr+lul4uvjB
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-which would be pretty confusing, IMHO, given the short
-label I tried to create.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Just strip out the \n ...
+iEYEARECAAYFAlN6PR4ACgkQTLKSvz+PZwiFygCeKcIrJE7MxyWnbKUe6OsOPM8T
+a/QAn2WW9SZuX1HfzZjdOr9uKP2ADMHP
+=GuJt
+-----END PGP SIGNATURE-----
 
--Eric
-
->  		return -EINVAL;
-> 
-
+--Sig_/hWtf2OBsrKCtSr+lul4uvjB--

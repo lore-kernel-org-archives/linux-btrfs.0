@@ -1,86 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f45.google.com ([209.85.219.45]:54675 "EHLO
-	mail-oa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750957AbaESOQw (ORCPT
+Received: from fw5a-delaine.wadns.net ([196.220.39.203]:25143 "EHLO
+	fw5a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752794AbaESQBn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 10:16:52 -0400
-Received: by mail-oa0-f45.google.com with SMTP id l6so6287593oag.18
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 07:16:52 -0700 (PDT)
+	Mon, 19 May 2014 12:01:43 -0400
+Message-ID: <537A2AD5.9050507@swiftspirit.co.za>
+Date: Mon, 19 May 2014 18:01:25 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-In-Reply-To: <972A5831-6DC4-48C6-99A0-8EAF20E11EFE@colorremedies.com>
-References: <CAOUy=vobwRvhDAJHj_XWAdPvXwzGu47viCY=cDaTbJVkZjJmFA@mail.gmail.com>
- <972A5831-6DC4-48C6-99A0-8EAF20E11EFE@colorremedies.com>
-From: Joshua McKinney <joshka@joshka.net>
-Date: Tue, 20 May 2014 00:16:32 +1000
-Message-ID: <CAOUy=vqMwoO4v1AfM=L0CYztFYHx9-2b-wtCSV5pWQFwLuQ3hQ@mail.gmail.com>
-Subject: Re: Hang while deleting file
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Scott Middleton <scott@assuretek.com.au>
+CC: linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
+Subject: Re: send/receive and bedup
+References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com> <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net> <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com> <20140519010705.GI10566@merlins.org> <CAPm-YUVXGRA1AnXoJA5+7P_MhFweaw163+b1fA97VW4cLPS01g@mail.gmail.com>
+In-Reply-To: <CAPm-YUVXGRA1AnXoJA5+7P_MhFweaw163+b1fA97VW4cLPS01g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No luck of catching it in the act unfortunately, but I'll bear that
-tip in mind for any future issues.
+On 19/05/14 15:00, Scott Middleton wrote:
+> On 19 May 2014 09:07, Marc MERLIN <marc@merlins.org> wrote:
+>> On Wed, May 14, 2014 at 11:36:03PM +0800, Scott Middleton wrote:
+>>> I read so much about BtrFS that I mistaked Bedup with Duperemove.
+>>> Duperemove is actually what I am testing.
+>> I'm currently using programs that find files that are the same, and
+>> hardlink them together:
+>> http://marc.merlins.org/perso/linux/post_2012-05-01_Handy-tip-to-save-on-inodes-and-disk-space_-finddupes_-fdupes_-and-hardlink_py.html
+>>
+>> hardlink.py actually seems to be the faster (memory and CPU) one event
+>> though it's in python.
+>> I can get others to run out of RAM on my 8GB server easily :(
 
-On Mon, May 19, 2014 at 4:00 AM, Chris Murphy <lists@colorremedies.com> wrote:
->
-> On May 18, 2014, at 10:36 AM, Joshua McKinney <joshka@joshka.net> wrote:
->
->> https://bugzilla.kernel.org/show_bug.cgi?id=76421
+Interesting app.
+
+An issue with hardlinking (with the backups use-case, this problem isn't likely to happen), is that if you modify a file, all the hardlinks get changed along with it - including the ones that you don't want changed.
+
+@Marc: Since you've been using btrfs for a while now I'm sure you've already considered whether or not a reflink copy is the better/worse option.
+
 >>
->> Perceived issue: SABNZBD hangs, requires restart.
->> Diagnosis shows the following in my system log at the time of hang.
->> This happens more than once.
->> Log:
+>> Bedup should be better, but last I tried I couldn't get it to work.
+>> It's been updated since then, I just haven't had the chance to try it
+>> again since then.
 >>
->> [ 5883.464766] INFO: task SABnzbd.py:994 blocked for more than 120 seconds.
->> [ 5883.464906]       Not tainted 3.14.4-1-ARCH #1
->> [ 5883.464989] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
->> disables this message.
->> [ 5883.465130] SABnzbd.py      D ffff880196d1f5c0     0   994      1 0x00000000
->> [ 5883.465140]  ffff8800765c9ce8 0000000000000082 0000005000000002
->> ffff880196d1f5c0
->> [ 5883.465148]  00000000000146c0 ffff8800765c9fd8 00000000000146c0
->> ffff880196d1f5c0
->> [ 5883.465156]  00000000ffffffef ffff880177d9a000 ffffffffa02d0dbc
->> ffff8800765c9c50
->> [ 5883.465163] Call Trace:
->> [ 5883.465218]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
->> [ 5883.465252]  [<ffffffffa02d03c3>] ? free_extent_state+0x43/0xc0 [btrfs]
->> [ 5883.465284]  [<ffffffffa02d0dbc>] ? __set_extent_bit+0x45c/0x550 [btrfs]
->> [ 5883.465295]  [<ffffffff810b3ba4>] ? __wake_up+0x44/0x50
->> [ 5883.465304]  [<ffffffff8150b729>] schedule+0x29/0x70
->> [ 5883.465335]  [<ffffffffa02d1cd2>] lock_extent_bits+0x152/0x1e0 [btrfs]
->> [ 5883.465344]  [<ffffffff810b4020>] ? __wake_up_sync+0x20/0x20
->> [ 5883.465375]  [<ffffffffa02bfa59>] btrfs_evict_inode+0x139/0x520 [btrfs]
->> [ 5883.465387]  [<ffffffff811d5a80>] evict+0xb0/0x1c0
->> [ 5883.465394]  [<ffffffff811d6335>] iput+0xf5/0x1a0
->> [ 5883.465402]  [<ffffffff811ca9c5>] do_unlinkat+0x1b5/0x300
->> [ 5883.465411]  [<ffffffff8117899c>] ? vm_munmap+0x4c/0x60
->> [ 5883.465418]  [<ffffffff811cb986>] SyS_unlink+0x16/0x20
->> [ 5883.465427]  [<ffffffff81517769>] system_call_fastpath+0x16/0x1b
+>> Please post what you find out, or if you have a hardlink maker that's
+>> better than the ones I found :)
 >>
->> Filesystem:
->> # btrfs filesystem show
->> Btrfs v3.14.1
->>
->> running Data RAID, sys/meta RAID10 on 5x4TB. SABNzbd is a usenet
->> download program, so the file attempting to be deleted was possibly
->> large (>GB)
->>
->> Recently updated to 3.14 kernel provided in arch linux. I haven't seen
->> this issue before the last couple of days.
->>
->> Happy to provide more info if necessary.
 >
-> I'd include as an attachment to the bug the output from sysrq-w.
+> Thanks for that.
 >
-> echo 1 > /proc/sys/kernel/sysrq
-> echo w > /proc/sysrq-trigger
-> dmesg
+> I may be  completely wrong in my approach.
 >
-> https://www.kernel.org/doc/Documentation/sysrq.txt
+> I am not looking for a file level comparison. Bedup worked fine for
+> that. I have a lot of virtual images and shadow protect images where
+> only a few megabytes may be the difference. So a file level hash and
+> comparison doesn't really achieve my goals.
+>
+> I thought duperemove may be on a lower level.
+>
+> https://github.com/markfasheh/duperemove
+>
+> "Duperemove is a simple tool for finding duplicated extents and
+> submitting them for deduplication. When given a list of files it will
+> hash their contents on a block by block basis and compare those hashes
+> to each other, finding and categorizing extents that match each
+> other. When given the -d option, duperemove will submit those
+> extents for deduplication using the btrfs-extent-same ioctl."
+>
+> It defaults to 128k but you can make it smaller.
+>
+> I hit a hurdle though. The 3TB HDD  I used seemed OK when I did a long
+> SMART test but seems to die every few hours. Admittedly it was part of
+> a failed mdadm RAID array that I pulled out of a clients machine.
+>
+> The only other copy I have of the data is the original mdadm array
+> that was recently replaced with a new server, so I am loathe to use
+> that HDD yet. At least for another couple of weeks!
 >
 >
-> Chris Murphy
+> I am still hopeful duperemove will work.
+Duperemove does look exactly like what you are looking for. The last 
+traffic on the mailing list regarding that was in August last year. It 
+looks like it was pulled into the main kernel repository on September 1st.
+
+The last commit to the duperemove application was on April 20th this 
+year. Maybe Mark (cc'd) can provide further insight on its current status.
+
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

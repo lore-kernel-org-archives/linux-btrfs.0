@@ -1,55 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:52042 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750870AbaETCGJ (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:34569 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932086AbaETCHO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 22:06:09 -0400
-Received: from p10053-ipngn5802marunouchi.tokyo.ocn.ne.jp ([153.163.201.53]:29048 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1WmZRR-0002uE-63 by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 19:06:09 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <merlin@legolas.merlins.org>)
-	id 1WmZRO-0003sj-RS
-	for linux-btrfs@vger.kernel.org; Mon, 19 May 2014 19:06:06 -0700
-Date: Mon, 19 May 2014 19:06:06 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs diff between snapshosts
-Message-ID: <20140520020606.GA10656@merlins.org>
+	Mon, 19 May 2014 22:07:14 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+Reply-To: russell@coker.com.au
+Subject: Re: ditto blocks on ZFS
+Date: Tue, 20 May 2014 12:07:10 +1000
+Message-ID: <4483661.BdmCOR8JR5@xev>
+In-Reply-To: <537A7BF9.5060508@swiftspirit.co.za>
+References: <2308735.51F3c4eZQ7@xev> <lldpvm$s7c$1@ger.gmane.org> <537A7BF9.5060508@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As a followup on the discussion we had on how to do a live data switch
-on a partition without unmounting it since it's busy, it came back to
-how do you know what changed between 2 snapshots.
+On Mon, 19 May 2014 23:47:37 Brendan Hide wrote:
+> This is extremely difficult to measure objectively. Subjectively ... see
+> below.
+> 
+> > [snip]
+> > 
+> > *What other failure modes* should we guard against?
+> 
+> I know I'd sleep a /little/ better at night knowing that a double disk
+> failure on a "raid5/1/10" configuration might ruin a ton of data along
+> with an obscure set of metadata in some "long" tree paths - but not the
+> entire filesystem.
 
-btrfs send giving a file list of what was added/modified/removed is the
-long term answer, and Filipe is working on patches that will offer this
-in the future (thanks Filipe).
+My experience is that most disk failures that don't involve extreme physical 
+damage (EG dropping a drive on concrete) don't involve totally losing the 
+disk.  Much of the discussion about RAID failures concerns entirely failed 
+disks, but I believe that is due to RAID implementations such as Linux 
+software RAID that will entirely remove a disk when it gives errors.
 
-In the meantime, I found a hack/script that gives a partial diff between
-2 snapshots, called it btrfs-diff but then remembered that there isn't a
-page for it.
+I have a disk which had ~14,000 errors of which ~2000 errors were corrected by 
+duplicate metadata.  If two disks with that problem were in a RAID-1 array 
+then duplicate metadata would be a significant benefit.
 
-So, I made one, along with example usage:
-http://marc.merlins.org/perso/btrfs/post_2014-05-19_Btrfs-diff-Between-Snapshots.html
+> The other use-case/failure mode - where you are somehow unlucky enough
+> to have sets of bad sectors/bitrot on multiple disks that simultaneously
+> affect the only copies of the tree roots - is an extremely unlikely
+> scenario. As unlikely as it may be, the scenario is a very painful
+> consequence in spite of VERY little corruption. That is where the
+> peace-of-mind/bragging rights come in.
 
-Hope this helps.
+http://research.cs.wisc.edu/adsl/Publications/corruption-fast08.html
 
-As another temp hack, I tried to look at a quick way to parse btrfs send
-output to just spit out filenames, but that wasn't too trivial (as in
-with sed/perl).
+The NetApp research on latent errors on drives is worth reading.  On page 12 
+they report latent sector errors on 9.5% of SATA disks per year.  So if you 
+lose one disk entirely the risk of having errors on a second disk is higher 
+than you would want for RAID-5.  While losing the root of the tree is 
+unlikely, losing a directory in the middle that has lots of subdirectories is 
+a risk.
 
-If someone has something better, please share :)
+I can understand why people wouldn't want ditto blocks to be mandatory.  But 
+why are people arguing against them as an option?
 
-Thanks,
-Marc
+
+As an aside, I'd really like to be able to set RAID levels by subtree.  I'd 
+like to use RAID-1 with ditto blocks for my important data and RAID-0 for 
+unimportant data.
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

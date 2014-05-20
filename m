@@ -1,109 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f170.google.com ([74.125.82.170]:56237 "EHLO
-	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750789AbaESWH4 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:52042 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750870AbaETCGJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 May 2014 18:07:56 -0400
-Received: by mail-we0-f170.google.com with SMTP id u57so6259779wes.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 15:07:54 -0700 (PDT)
-Message-ID: <537A80B6.9080202@gmail.com>
-Date: Tue, 20 May 2014 01:07:50 +0300
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+	Mon, 19 May 2014 22:06:09 -0400
+Received: from p10053-ipngn5802marunouchi.tokyo.ocn.ne.jp ([153.163.201.53]:29048 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WmZRR-0002uE-63 by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 May 2014 19:06:09 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1WmZRO-0003sj-RS
+	for linux-btrfs@vger.kernel.org; Mon, 19 May 2014 19:06:06 -0700
+Date: Mon, 19 May 2014 19:06:06 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs diff between snapshosts
+Message-ID: <20140520020606.GA10656@merlins.org>
 MIME-Version: 1.0
-To: Mark Fasheh <mfasheh@suse.de>, Brendan Hide <brendan@swiftspirit.co.za>
-CC: Scott Middleton <scott@assuretek.com.au>, linux-btrfs@vger.kernel.org
-Subject: Re: send/receive and bedup
-References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com> <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net> <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com> <20140519010705.GI10566@merlins.org> <CAPm-YUVXGRA1AnXoJA5+7P_MhFweaw163+b1fA97VW4cLPS01g@mail.gmail.com> <537A2AD5.9050507@swiftspirit.co.za> <20140519173854.GN27178@wotan.suse.de>
-In-Reply-To: <20140519173854.GN27178@wotan.suse.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19/5/2014 8:38 μμ, Mark Fasheh wrote:
-> On Mon, May 19, 2014 at 06:01:25PM +0200, Brendan Hide wrote:
->> On 19/05/14 15:00, Scott Middleton wrote:
->>> On 19 May 2014 09:07, Marc MERLIN <marc@merlins.org> wrote:
->>> Thanks for that.
->>>
->>> I may be  completely wrong in my approach.
->>>
->>> I am not looking for a file level comparison. Bedup worked fine for
->>> that. I have a lot of virtual images and shadow protect images where
->>> only a few megabytes may be the difference. So a file level hash and
->>> comparison doesn't really achieve my goals.
->>>
->>> I thought duperemove may be on a lower level.
->>>
->>> https://github.com/markfasheh/duperemove
->>>
->>> "Duperemove is a simple tool for finding duplicated extents and
->>> submitting them for deduplication. When given a list of files it will
->>> hash their contents on a block by block basis and compare those hashes
->>> to each other, finding and categorizing extents that match each
->>> other. When given the -d option, duperemove will submit those
->>> extents for deduplication using the btrfs-extent-same ioctl."
->>>
->>> It defaults to 128k but you can make it smaller.
->>>
->>> I hit a hurdle though. The 3TB HDD  I used seemed OK when I did a long
->>> SMART test but seems to die every few hours. Admittedly it was part of
->>> a failed mdadm RAID array that I pulled out of a clients machine.
->>>
->>> The only other copy I have of the data is the original mdadm array
->>> that was recently replaced with a new server, so I am loathe to use
->>> that HDD yet. At least for another couple of weeks!
->>>
->>>
->>> I am still hopeful duperemove will work.
->> Duperemove does look exactly like what you are looking for. The last
->> traffic on the mailing list regarding that was in August last year. It
->> looks like it was pulled into the main kernel repository on September 1st.
-> I'm confused - you need to avoid a file scan completely? Duperemove does do
-> that just to be clear.
->
-> In your mind, what would be the alternative to that sort of a scan?
->
-> By the way, if you know exactly where the changes are you
-> could just feed the duplicate extents directly to the ioctl via a script. I
-> have a small tool in the duperemove repositry that can do that for you
-> ('make btrfs-extent-same').
->
->
->> The last commit to the duperemove application was on April 20th this year.
->> Maybe Mark (cc'd) can provide further insight on its current status.
-> Duperemove will be shipping as supported software in a major SUSE release so
-> it will be bug fixed, etc as you would expect. At the moment I'm very busy
-> trying to fix qgroup bugs so I haven't had much time to add features, or
-> handle external bug reports, etc. Also I'm not very good at advertising my
-> software which would be why it hasn't really been mentioned on list lately
-> :)
->
-> I would say that state that it's in is that I've gotten the feature set to a
-> point which feels reasonable, and I've fixed enough bugs that I'd appreciate
-> folks giving it a spin and providing reasonable feedback.
-Well, after having good results with duperemove with a few gigs of data, 
-i tried it on a 500gb subvolume. After it scanned all files, it is stuck 
-at 100% of one cpu core for about 5 hours, and still hasn't done any 
-deduping. My cpu is an Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz, so i 
-guess thats not the problem. So I guess the speed of duperemove drops 
-dramatically as data volume increases.
+As a followup on the discussion we had on how to do a live data switch
+on a partition without unmounting it since it's busy, it came back to
+how do you know what changed between 2 snapshots.
 
->
-> There's a TODO list which gives a decent idea of what's on my mind for
-> possible future improvements. I think what I'm most wanting to do right now
-> is some sort of (optional) writeout to a file of what was done during a run.
-> The idea is that you could feed that data back to duperemove to improve the
-> speed of subsequent runs. My priorities may change depending on feedback
-> from users of course.
->
-> I also at some point want to rewrite some of the duplicate extent finding
-> code as it got messy and could be a bit faster.
-> 	--Mark
->
-> --
-> Mark Fasheh
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+btrfs send giving a file list of what was added/modified/removed is the
+long term answer, and Filipe is working on patches that will offer this
+in the future (thanks Filipe).
 
+In the meantime, I found a hack/script that gives a partial diff between
+2 snapshots, called it btrfs-diff but then remembered that there isn't a
+page for it.
+
+So, I made one, along with example usage:
+http://marc.merlins.org/perso/btrfs/post_2014-05-19_Btrfs-diff-Between-Snapshots.html
+
+Hope this helps.
+
+As another temp hack, I tried to look at a quick way to parse btrfs send
+output to just spit out filenames, but that wasn't too trivial (as in
+with sed/perl).
+
+If someone has something better, please share :)
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

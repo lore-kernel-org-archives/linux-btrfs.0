@@ -1,45 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21101 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751173AbaETNXr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 09:23:47 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s4KDKoQ9008394
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 May 2014 06:23:46 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1kykcfkyjj-2
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 May 2014 06:23:46 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: free tmp ulist for qgroup rescan
-Date: Tue, 20 May 2014 09:23:31 -0400
-Message-ID: <1400592211-4023-1-git-send-email-jbacik@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57492 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753125AbaETQri (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 May 2014 12:47:38 -0400
+Date: Tue, 20 May 2014 18:47:37 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Clemens Eisserer <linuxhippy@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: What do the "wait_current_trans" messages mean I see on my
+ raspberry pi?
+Message-ID: <20140520164736.GN31608@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAFvQSYTwfgpd3-ndBzy8nfmCJeewN2-+zWpDmSmZXbYoYhmi5A@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAFvQSYTwfgpd3-ndBzy8nfmCJeewN2-+zWpDmSmZXbYoYhmi5A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Memory leaks are bad mmkay?
+On Sun, May 18, 2014 at 09:48:17PM +0200, Clemens Eisserer wrote:
+> Over the weekend I tried to copy one external usb drive (on ext4) to
+> another one formatted with btrfs.
+> Now I came back, and 48h later only ~300GB were copied and I found
+> messages like the following on syslog:
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/qgroup.c | 1 +
- 1 file changed, 1 insertion(+)
+That's about 1 MB/sec on average, I'd expect more.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 73f706c..cf5aead 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2478,6 +2478,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- out:
- 	kfree(scratch_leaf);
- 	ulist_free(qgroups);
-+	ulist_free(tmp);
- 	btrfs_free_path(path);
- 
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
--- 
-1.8.3.1
+> Any idea what they mean? Are they related to the slow speed I observed?
 
+Yes, I believe so.

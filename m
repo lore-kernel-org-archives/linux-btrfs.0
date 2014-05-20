@@ -1,30 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53520 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752103AbaETQ42 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 12:56:28 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49449 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WmnL1-0029yV-FI
-	for linux-btrfs@vger.kernel.org; Tue, 20 May 2014 10:56:27 -0600
-From: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=us-ascii
-Subject: btrfs check, btrfsck, fsck.btrfs
-Message-Id: <9B5A4230-5A2F-4C00-AC4F-D9CA36A91620@colorremedies.com>
-Date: Tue, 20 May 2014 10:56:26 -0600
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from fw8a-gabriella.wadns.net ([196.220.39.91]:8339 "EHLO
+	fw8a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750721AbaETUL3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 May 2014 16:11:29 -0400
+Message-ID: <537BB6E4.2020508@swiftspirit.co.za>
+Date: Tue, 20 May 2014 22:11:16 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>, russell@coker.com.au,
+        linux-btrfs@vger.kernel.org
+Subject: Re: ditto blocks on ZFS
+References: <2308735.51F3c4eZQ7@xev> <lldpvm$s7c$1@ger.gmane.org> <537A7BF9.5060508@swiftspirit.co.za> <4483661.BdmCOR8JR5@xev> <537B6190.2030100@gmail.com>
+In-Reply-To: <537B6190.2030100@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Should the initrd/initramfs no longer include btrfsck, and instead include btrfs and fsck.btrfs?
+On 2014/05/20 04:07 PM, Austin S Hemmelgarn wrote:
+> On 2014-05-19 22:07, Russell Coker wrote:
+>> [snip]
+>> As an aside, I'd really like to be able to set RAID levels by subtree.  I'd
+>> like to use RAID-1 with ditto blocks for my important data and RAID-0 for
+>> unimportant data.
+>>
+> But the proposed changes for n-way replication would already handle
+> this.
+> [snip]
+>
+Russell's specific request above is probably best handled by being able 
+to change replication levels per subvolume - this won't be handled by 
+N-way replication.
 
-In btrfs-progs 3.14 there is now a 1K /sbin/fsck.btrfs placeholder file.
+Extra replication on leaf nodes will make relatively little difference 
+in the scenarios laid out in this thread - but on "trunk" nodes (folders 
+or subvolumes closer to the filesystem root) it makes a significant 
+difference. "Plain" N-way replication doesn't flexibly treat these two 
+nodes differently.
 
-btrfs and btrfsck files are the same binary, the difference is btrfsck only can do check/repair. Including btrfs instead allows more flexibility to use additional subcommands, and it's also consistent with fsck.btrfs which references btrfs not btrfsck.
+As an example, Russell might have a server with two disks - yet he wants 
+6 copies of all metadata for subvolumes and their immediate subfolders. 
+At three folders deep he "only" wants to have 4 copies. At six folders 
+deep, only 2. Ditto blocks add an attractive safety net without 
+unnecessarily doubling or tripling the size of *all* metadata.
 
+It is a good idea. The next question to me is whether or not it is 
+something that can be implemented elegantly and whether or not a 
+talented *dev* thinks it is a good idea.
 
-Chris Murphy
+-- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+

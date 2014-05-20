@@ -1,56 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54911 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751288AbaEUA6Z convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 20:58:25 -0400
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: send/receive and bedup
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <537BDDB4.1050406@gmail.com>
-Date: Tue, 20 May 2014 18:58:22 -0600
-Cc: Mark Fasheh <mfasheh@suse.de>, Brendan Hide <brendan@swiftspirit.co.za>,
-        Scott Middleton <scott@assuretek.com.au>, linux-btrfs@vger.kernel.org
-Message-Id: <EF03712B-B6C1-4EAA-96CA-44054A706B67@colorremedies.com>
-References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com> <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net> <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com> <20140519010705.GI10566@merlins.org> <CAPm-YUVXGRA1AnXoJA5+7P_MhFweaw163+b1fA97VW4cLPS01g@mail.gmail.com> <537A2AD5.9050507@swiftspirit.co.za> <20140519173854.GN27178@wotan.suse.de> <537A80B6.9080202@gmail.com> <20140520223702.GQ27178@wotan.suse.de> <537BDDB4.1050406@gmail.com>
-To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Received: from lb1.pop2.wanet.net ([65.244.248.2]:56873 "EHLO
+	serv004.pop2.wanet.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750737AbaEUB3q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 May 2014 21:29:46 -0400
+Message-ID: <57f050e2a37907d810b40c5e115b28ff.squirrel@webmail.wanet.net>
+In-Reply-To: <4483661.BdmCOR8JR5@xev>
+References: <2308735.51F3c4eZQ7@xev> <lldpvm$s7c$1@ger.gmane.org>
+    <537A7BF9.5060508@swiftspirit.co.za> <4483661.BdmCOR8JR5@xev>
+Date: Tue, 20 May 2014 07:56:41 -0700
+Subject: Re: ditto blocks on ZFS
+From: ashford@whisperpc.com
+To: linux-btrfs@vger.kernel.org
+Cc: ahferroin7@gmail.com, russell@coker.com.au, brendan@swiftspirit.co.za
+MIME-Version: 1.0
+Content-Type: text/plain;charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I’ve been reading this list for a few years, and giving almost no
+feedback, but I feel that this subject demands that I provide some input.
 
-On May 20, 2014, at 4:56 PM, Konstantinos Skarlatos <k.skarlatos@gmail.com> wrote:
+I can think of five possible effects of implementing ditto blocks for the
+metadata.  We've only been discussing one (#3 in my list) in this thread. 
+While most of these effects are fairly obvious, I have seen no discussion
+on them.
 
-> On 21/5/2014 1:37 Ï€Î¼, Mark Fasheh wrote:
->> On Tue, May 20, 2014 at 01:07:50AM +0300, Konstantinos Skarlatos wrote:
->>>> Duperemove will be shipping as supported software in a major SUSE release so
->>>> it will be bug fixed, etc as you would expect. At the moment I'm very busy
->>>> trying to fix qgroup bugs so I haven't had much time to add features, or
->>>> handle external bug reports, etc. Also I'm not very good at advertising my
->>>> software which would be why it hasn't really been mentioned on list lately
->>>> :)
->>>> 
->>>> I would say that state that it's in is that I've gotten the feature set to a
->>>> point which feels reasonable, and I've fixed enough bugs that I'd appreciate
->>>> folks giving it a spin and providing reasonable feedback.
->>> Well, after having good results with duperemove with a few gigs of data, i
->>> tried it on a 500gb subvolume. After it scanned all files, it is stuck at
->>> 100% of one cpu core for about 5 hours, and still hasn't done any deduping.
->>> My cpu is an Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz, so i guess thats
->>> not the problem. So I guess the speed of duperemove drops dramatically as
->>> data volume increases.
->> Yeah I doubt it's your CPU. Duperemove is right now targeted at smaller data
->> sets (a few VMS, iso images, etc) than you threw it at as you undoubtedly
->> have figured out. It will need a bit of work before it can handle entire
->> file systems. My guess is that it was spending an enormous amount of time
->> finding duplicates (it has a very thorough check that could probably be
->> optimized).
-> It finished after 9 or so hours, so I agree it was checking for duplicates. It does a few GB in just seconds, so time probably scales exponentially with data size.
+In discussing the issues of implementing ditto blocks, I think it would be
+good to address all of the potential effects, and determine from that
+discussion whether or not the enhancement should be made, and, if so, when
+the appropriate development resources should be made available.  As Austin
+pointed out, there are some enhancements currently planned which would
+make the implementation of ditto blocks simpler.  I believe that defines
+the earliest good time for implementation of ditto blocks.
 
-I'm going to guess it ran out of memory. I wonder what happens if you take an SSD and specify a humongous swap partition on it. Like, 4x, or more, the amount of installed memory.
+1.  There will be more disk space used by the metadata.  I've been aware
+of space allocation issues in BTRFS for more than three years.  If the use
+of ditto blocks will make this issue worse, then it's probably not a good
+idea to implement it.  The actual increase in metadata space is probably
+small in most circumstances.
 
-This same trick has been mentioned on the XFS list for use with xfsrepair when memory requirements exceed system memory, and is immensely faster.
+2.  Use of ditto blocks will increase write bandwidth to the disk.  This
+is a direct and unavoidable result of having more copies of the metadata. 
+The actual impact of this would depend on the file-system usage pattern,
+but would probably be unnoticeable in most circumstances.  Does anyone
+have a “worst-case” scenario for testing?
+
+3.  Certain kinds of disk errors would be easier to recover from.  Some
+people here claim that those specific errors are rare.  I have no opinion
+on how often they happen, but I believe that if the overall disk space
+cost is low, it will have a reasonable return.  There would be virtually
+no reliability gains on an SSD-based file-system, as the ditto blocks
+would be written at the same time, and the SSD would be likely to map the
+logical blocks into the same page of flash memory.
+
+4.  If the BIO layer of BTRFS and the device driver are smart enough,
+ditto blocks could reduce I/O wait time.  This is a direct result of
+having more instances of the data on the disk, so it's likely that there
+will be a ditto block closer to where the disk head is currently.  The
+actual benefit for disk-based file-systems is likely to be under 1ms per
+metadata seek.  It's possible that a short-term backlog on one disk could
+cause BTRFS to use a ditto block on another disk, which could deliver
+>20ms of performance.  There would be no performance benefit for SSD-based
+file-systems.
+
+5.  There will be a (hopefully short) period where the code may be
+slightly less stable, due to the modifications being performed at a
+low-level within the file-system.  This is likely to happen with any
+modification of the file-system code, with more complex modifications
+being more likely to introduce instability.  I believe that the overall
+complexity of this particular modification is great enough that there may
+be some added instability for a bit, but perhaps use of the n-way
+replication feature will substantially reduce the complexity.  Hopefully,
+the integration testing that’s being performed on the BTRFS code will find
+most of the new bugs, and point the core developers in the right direction
+to fix them.
 
 
-Chris Murphy
+
+I have one final note about RAID levels.  I build and sell file servers as
+a side job, having assembled and delivered over 100 file servers storing
+several hundreds of TB.  TTBOMK, no system that I’ve built to my own
+specifications (not overridden by customer requests) has lost any data
+during the first 3 years of operation.  One customer requested a disk
+manufacturer change, and has lost data.  A few systems have had data loss
+in the 4-year timeframe, due to multiple drive failure, combined with
+inadequate disk status monitoring.
+
+My experience is that once your disks are larger than about 500-750GB,
+RAID-6 becomes a much better choice, due to the increased chances of
+having an uncorrectable read error during a reconstruct.  My opinion is
+that anyone storing critical information in RAID-5, or even 2-disk RAID-1,
+with disks of this capacity, should either reconsider their storage
+topology, or verify that they have a good backup/restore mechanism in
+place for that data.
+
+Thank you.
+
+Peter Ashford
 

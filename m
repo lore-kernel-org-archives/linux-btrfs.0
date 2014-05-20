@@ -1,56 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:30578 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:41729 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750706AbaETF7T (ORCPT
+	with ESMTP id S1750879AbaETG3u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 01:59:19 -0400
-Message-ID: <537AEFE7.5030203@oracle.com>
-Date: Tue, 20 May 2014 14:02:15 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: all super blocks of the replaced disk must be
- scratched
-References: <1395057486-4341-1-git-send-email-Anand.Jain@oracle.com> <20140320182154.GM29256@twin.jikos.cz>
-In-Reply-To: <20140320182154.GM29256@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Tue, 20 May 2014 02:29:50 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: brendan@swiftspirit.co.za
+Subject: [PATCH 1/4 RESEND V3] Btrfs: all super blocks of the replaced disk must be scratched
+Date: Tue, 20 May 2014 14:31:57 +0800
+Message-Id: <1400567517-9437-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1400519022-5540-1-git-send-email-anand.jain@oracle.com>
+References: <1400519022-5540-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <Anand.Jain@oracle.com>
 
+In a normal scenario when sys-admin replaces a disk, the
+expectation is that btrfs will release the disk completely.
 
+However the below test case gives a wrong impression that
+replaced disk is still is in use.
 
-On 21/03/14 02:21, David Sterba wrote:
-> On Mon, Mar 17, 2014 at 07:58:06PM +0800, Anand Jain wrote:
->> In a normal scenario when sys-admin replaces a disk, the
->> expeted is btrfs will release the disk completely.
->>
->> However the below test case gives a wrong impression that
->> replaced disk is still is in use.
->>
->> $ btrfs rep start /dev/sde /dev/sdg4 /btrfs
->> $ mkfs.btrfs /dev/sde
->> /dev/sde appears to contain an existing filesystem (btrfs).
->> Error: Use the -f option to force overwrite.
->
-> (your signed-off is missing)
->
-> Reviewed-by: David Sterba <dsterba@suse.cz>
->
-> I've noticed that btrfs_rm_device also cleans only the first superblock
-> signature, so it should do the same.
+$ btrfs rep start /dev/sde /dev/sdg4 /btrfs
+$ mkfs.btrfs /dev/sde
+/dev/sde appears to contain an existing filesystem (btrfs).
+Error: Use the -f option to force overwrite.
 
-  A separate patch was generated for this
-    btrfs: btrfs_rm_device() should zero mirror SB as well
+Reviewed-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2->v3: fix commit typo error. thanks Brendan
+v1->v2: add missing signed-off
 
+ fs/btrfs/volumes.c |   33 +++++++++++++++++++++++++--------
+ 1 files changed, 25 insertions(+), 8 deletions(-)
 
-Thanks, Anand
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b4660c4..19e68f7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6280,16 +6280,33 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
+ {
+ 	struct buffer_head *bh;
+ 	struct btrfs_super_block *disk_super;
++	int i;
++	u64 bytenr;
+ 
+-	bh = btrfs_read_dev_super(device->bdev);
+-	if (!bh)
+-		return -EINVAL;
+-	disk_super = (struct btrfs_super_block *)bh->b_data;
++	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++		bytenr = btrfs_sb_offset(i);
++		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
++				i_size_read(device->bdev->bd_inode))
++			break;
+ 
+-	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+-	set_buffer_dirty(bh);
+-	sync_dirty_buffer(bh);
+-	brelse(bh);
++		bh = __bread(device->bdev, bytenr / 4096,
++					BTRFS_SUPER_INFO_SIZE);
++		if (!bh)
++			continue;
++
++		disk_super = (struct btrfs_super_block *)bh->b_data;
++		if (btrfs_super_bytenr(disk_super) != bytenr ||
++				btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
++			brelse(bh);
++			continue;
++		}
++
++		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
++
++		set_buffer_dirty(bh);
++		sync_dirty_buffer(bh);
++		brelse(bh);
++	}
+ 
+ 	return 0;
+ }
+-- 
+1.7.1
 
-
-> I can't think of any drawback where all the superblocks are scratched,
-> should be safe.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

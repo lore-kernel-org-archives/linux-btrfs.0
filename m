@@ -1,22 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:41187 "EHLO mx1.redhat.com"
+Received: from cantor2.suse.de ([195.135.220.15]:57177 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754541AbaETQcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 12:32:50 -0400
-Message-ID: <537B83AD.5010901@redhat.com>
-Date: Tue, 20 May 2014 11:32:45 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-CC: rm@romanrm.net
+	id S1753893AbaETQd4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 May 2014 12:33:56 -0400
+Date: Tue, 20 May 2014 18:33:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, sandeen@redhat.com, rm@romanrm.net
 Subject: Re: [PATCH 1/2 v2] btrfs: label should not contain return char
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com> <1400567808-9494-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <20140520163352.GL31608@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
+ <1400567808-9494-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1400567808-9494-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5/20/14, 1:36 AM, Anand Jain wrote:
+On Tue, May 20, 2014 at 02:36:48PM +0800, Anand Jain wrote:
 > From: Anand Jain <Anand.Jain@oracle.com>
 > 
 > generally if you use
@@ -47,68 +49,8 @@ On 5/20/14, 1:36 AM, Anand Jain wrote:
 >  
 > -	if (len >= BTRFS_LABEL_SIZE) {
 > +	label = kzalloc(len, GFP_NOFS);
-> +	if (!label)
-> +		return -ENOMEM;
-> +
-> +	memcpy(label, buf, len);
 
-  +     strlcpy(label, buf, len);
+You can avoid allocating the buffer entirely:
 
-would ensure that the resulting string is null-terminated... I don't know
-if "buf" comes in 0-terminated or not, or if len includes \0.  *shrug*
-these are strings after all...
-
-> +	if ((pos = strchr(label, '\n')))
-> +		*pos = '\0';
-
-label = strstrip(label); might be simpler/better?
-
-(this would strip all leading & trailing whitespace, I presume that'd
-be desirable, but then maybe someone really does want " mylabel \t " ?)
-
-> +
-> +	if (strlen(label) >= BTRFS_LABEL_SIZE) {
-
-hm, strlen doesn't include the \0 right?  so if we had 256 chars + \0, this
-would pass, and the subsequent strcpy will copy 257 bytes into a 256-byte
-buffer, right?
-
-(I'm terrible at string handling in C, so I might be wrong... you all
-can point and laugh if I am)
-
->  		pr_err("BTRFS: unable to set label with more than %d bytes\n",
->  		       BTRFS_LABEL_SIZE - 1);
-> +		kfree(label);
->  		return -EINVAL;
->  	}
->  
->  	trans = btrfs_start_transaction(root, 0);
-> -	if (IS_ERR(trans))
-> +	if (IS_ERR(trans)) {
-> +		kfree(label);
->  		return PTR_ERR(trans);
-> +	}
->  
->  	spin_lock(&root->fs_info->super_lock);
-> -	strcpy(fs_info->super_copy->label, buf);
-> +	strcpy(fs_info->super_copy->label, label);
->  	spin_unlock(&root->fs_info->super_lock);
->  	ret = btrfs_commit_transaction(trans, root);
->  
-> +	kfree(label);
-
-after the 3rd kfree() maybe an
-
-out:
-
-target would be better....
-
-(Random aside: why does btrfs support online fs relabeling, anyway?)
-
--Eric
-
->  	if (!ret)
->  		return len;
->  
-> 
-
+- search for '\n', if found, use only that amount of bytes
+- check for maximum size, copy to label if ok

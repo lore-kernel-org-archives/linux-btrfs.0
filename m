@@ -1,178 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49589 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751648AbaEUEP1 convert rfc822-to-8bit (ORCPT
+Received: from eastrmfepo101.cox.net ([68.230.241.213]:36306 "EHLO
+	eastrmfepo101.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751673AbaEUKfH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 00:15:27 -0400
-Message-ID: <537C285F.7080101@cn.fujitsu.com>
-Date: Wed, 21 May 2014 12:15:27 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Wed, 21 May 2014 06:35:07 -0400
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo101.cox.net
+          (InterMail vM.8.01.05.15 201-2260-151-145-20131218) with ESMTP
+          id <20140521103506.DDYL30009.eastrmfepo101.cox.net@eastrmimpo306>
+          for <linux-btrfs@vger.kernel.org>;
+          Wed, 21 May 2014 06:35:06 -0400
+Date: Wed, 21 May 2014 03:35:05 -0700
+From: Duncan <1i5t5.duncan@cox.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: problem with degraded boot and systemd
+Message-ID: <20140521033505.7d9e7aab@ws>
+In-Reply-To: <4QrS1o00b1EMSLa01QrT4N>
+References: <45D5C607-ED9D-49BB-BA60-CA2B0E94223D@colorremedies.com>
+	<537BD078.7070504@libero.it>
+	<20140520222609.GD1756@carfax.org.uk>
+	<pan$6f6ec$5ba926ea$9860d25c$5d86cd20@cox.net>
+	<4QrS1o00b1EMSLa01QrT4N>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH 1/2] btrfs: Add missing device check in dev_info/rm_dev
- ioctl
-References: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com> <1399357993-9254-2-git-send-email-quwenruo@cn.fujitsu.com> <5369E818.7000606@oracle.com> <537C19B9.8080203@cn.fujitsu.com> <537C235F.5030303@oracle.com>
-In-Reply-To: <537C235F.5030303@oracle.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, 20 May 2014 18:51:26 -0600
+Chris Murphy <lists@colorremedies.com> wrote:
 
--------- Original Message --------
-Subject: Re: [RFC PATCH 1/2] btrfs: Add missing device check in 
-dev_info/rm_dev ioctl
-From: Anand Jain <Anand.Jain@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年05月21日 11:54
->
-> Hi Qu,
->
->  Thanks for checking with me. sorry for the delay. The
->  preliminary RFC patch which was sent and mentioned in
->  the other emails took time more than expected.
->
-Thanks for the commenting, it seems that my RFC patches can only deal with
-btrfs fi show but not sysfs things.
->  Further on top of your check_missing patch I am writing
->  code to to handle disk reappear. I should be sending them
->  all soon.
-Disk reappear problem is also reproduce here.
+> 
+> On May 20, 2014, at 6:03 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> > 
+> > 
+> > I'd actually argue that's functioning as it should, since I see
+> > forced manual intervention in ordered to mount degraded as a
+> > FEATURE, NOT A BUG.
+> 
+> Manual intervention is OK for now, when it takes the form of dropping
+> to a dracut shell, and only requires the user to pass mount -o
+> degraded. To mount degraded automatically is worse because within a
+> notification API for user space, it will lead users to make bad
+> choices resulting in data loss.
+> 
+> But the needed sequence is fairly burdensome: force shutdown, boot
+> again, use rd.break=premount, then use mount -o degraded, and then
+> exit a couple of times.
 
-I am intersting about how will your patch to deal with.
-Is your patch going to check super genertion to determing previously 
-missing device and
-wipe reappeared superblock?(Wang mentioned it in the mail in Jan.)
+I haven't had the rootfs fail to mount due to that, but every time it
+has failed for other reasons[2], I've been dropped to an emergency shell
+prompt, from which I could run the mount manually, or do whatever else
+I needed to do.  No force shutdown, boot again...  Just do the manual
+mount or whatever, exit, and let the boot process continue from where
+it errored out and dropped to the emergency shell.
 
-IMO the reappear disk problem can also be resolved by not swap 
-tgtdev->uuid and srcdev->uuid,
-which means tgtdev will not use the same uuid of srcdev.
+But now that I think about it, I believe that automatic dropping to an
+emergency shell when something goes wrong is a dracut option, that I
+must have enabled by default.  I can't imagine why anyone would want it
+off, thus forcing the reboot and manually adding the rd.break=whatever,
+but apparently some folks do, so it's an option.  And I guess if you're
+having to do the reboot and add the rd.break manually, you must not
+have that option on when you do your dracut initr* builds.
 
-Thanks,
-Qu
->
-> Thanks, Anand
->
+> > [1] dracut: I use it here on gentoo as well, because my rootfs is a
+> > multi-device btrfs and a kernel rootflags=device= line won't parse
+> > correctly, apparently due to splitting at the wrong =, so I must
+> > use an initr* despite my preference for a direct initr*-less boot,
+> > and I use dracut to generate it.
+> 
+> rootflags doesn't take a device argument, it only applies to the
+> volume to be mounted at /sysroot, so only one = is needed.
 
->
-> On 21/05/14 11:12, Qu Wenruo wrote:
->>
->> I'm sorry to bother your but it has been about 2 weeks after your last
->> reply.
->>
->> Is there any problem?
->>
->> Thanks,
->> Qu
->> -------- Original Message --------
->> Subject: Re: [RFC PATCH 1/2] btrfs: Add missing device check in
->> dev_info/rm_dev ioctl
->> From: Anand Jain <Anand.Jain@oracle.com>
->> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> Date: 2014年05月07日 16:00
->>>
->>>
->>> Thanks for working on this.
->>> I am running some tests will let you know.
->>>
->>> Anand
->>>
->>>
->>> On 05/06/2014 02:33 PM, Qu Wenruo wrote:
->>>> Old btrfs can't find a missing btrfs device since there is no
->>>> mechanism for block layer to inform fs layer.
->>>>
->>>> But we can use a workaround that only check status(by using
->>>> request_queue->queue_flags) of every device in a btrfs
->>>> filesystem when calling dev_info/rm_dev ioctl, since other ioctls
->>>> do not really cares about missing device.
->>>>
->>>> Cc: Anand Jain <Anand.Jain@oracle.com>
->>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>>> ---
->>>>   fs/btrfs/ioctl.c   |  1 +
->>>>   fs/btrfs/volumes.c | 25 ++++++++++++++++++++++++-
->>>>   fs/btrfs/volumes.h |  2 ++
->>>>   3 files changed, 27 insertions(+), 1 deletion(-)
->>>>
->>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>>> index 0401397..7680a40 100644
->>>> --- a/fs/btrfs/ioctl.c
->>>> +++ b/fs/btrfs/ioctl.c
->>>> @@ -2606,6 +2606,7 @@ static long btrfs_ioctl_dev_info(struct
->>>> btrfs_root *root, void __user *arg)
->>>>           goto out;
->>>>       }
->>>>
->>>> +    btrfs_check_dev_missing(root, dev, 1);
->>>>       di_args->devid = dev->devid;
->>>>       di_args->bytes_used = dev->bytes_used;
->>>>       di_args->total_bytes = dev->total_bytes;
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index d241130a..c7d7908 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1548,9 +1548,10 @@ int btrfs_rm_device(struct btrfs_root *root,
->>>> char *device_path)
->>>>            * is held.
->>>>            */
->>>>           list_for_each_entry(tmp, devices, dev_list) {
->>>> +            btrfs_check_dev_missing(root, tmp, 0);
->>>>               if (tmp->in_fs_metadata &&
->>>>                   !tmp->is_tgtdev_for_dev_replace &&
->>>> -                !tmp->bdev) {
->>>> +                (!tmp->bdev || tmp->missing)) {
->>>>                   device = tmp;
->>>>                   break;
->>>>               }
->>>> @@ -6300,3 +6301,25 @@ int btrfs_scratch_superblock(struct
->>>> btrfs_device *device)
->>>>
->>>>       return 0;
->>>>   }
->>>> +
->>>> +/* If need_lock is set, uuid_mutex will be used */
->>>> +int btrfs_check_dev_missing(struct btrfs_root *root, struct
->>>> btrfs_device *dev,
->>>> +                int need_lock)
->>>> +{
->>>> +    struct request_queue *q;
->>>> +
->>>> +    if (unlikely(!dev || !dev->bdev || !dev->bdev->bd_queue))
->>>> +        return -ENOENT;
->>>> +    q = dev->bdev->bd_queue;
->>>> +
->>>> +    if (need_lock)
->>>> +        mutex_lock(&uuid_mutex);
->>>> +    if (test_bit(QUEUE_FLAG_DEAD, &q->queue_flags) ||
->>>> +        test_bit(QUEUE_FLAG_DYING, &q->queue_flags)) {
->>>> +        dev->missing = 1;
->>>> + root->fs_info->fs_devices->missing_devices++;
->>>> +    }
->>>> +    if (need_lock)
->>>> +        mutex_unlock(&uuid_mutex);
->>>> +    return 0;
->>>> +}
->>>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
->>>> index 80754f9..47a44af 100644
->>>> --- a/fs/btrfs/volumes.h
->>>> +++ b/fs/btrfs/volumes.h
->>>> @@ -356,6 +356,8 @@ unsigned long btrfs_full_stripe_len(struct
->>>> btrfs_root *root,
->>>>   int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
->>>>                   struct btrfs_root *extent_root,
->>>>                   u64 chunk_offset, u64 chunk_size);
->>>> +int btrfs_check_dev_missing(struct btrfs_root *root, struct
->>>> btrfs_device *dev,
->>>> +                int need_lock);
->>>>   static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
->>>>                         int index)
->>>>   {
->>>>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
+You misunderstand.  To mount a multi-device btrfs, one of two things
+must happen to let the kernel know about all the devices.
 
+A) btrfs device scan.
+
+That's userspace, so for a multi-device btrfs
+rootfs, it requires an initr* with the btrfs command and something to
+trigger it (with dracut it's a udev rule that triggers the btrfs device
+scan), before the mount is attempted.
+
+B) btrfs has the device= mount option.
+
+This can be given several times, once for each device in the
+multi-device filesystem.
+
+Under normal conditions, the rootflags= kernel commandline option could
+thus be used to pass appropriate device= options to be used to mount
+the rootfs, thus avoiding the need for an initr* with btrfs device scan
+or the device= options passed to a userspace mount.
+
+But trying rootflags=device=/dev/sda5,device=/dev/sdb5,... doesn't
+work and the kernel will not mount the filesystem.
+
+But rootflags=degraded works, but then activates the filesystem with
+only the single device listed, say root=/dev/sda5, without the other
+device.
+
+So obviously rootflags= works since rootflags=degraded works.  But
+rootflags=device= does NOT work.  The obvious difference and likely bug
+is as I said, the multiple equals, with the kernel commandline parser
+apparently trying to parse a parameter called rootflags=device, instead
+of a parameter called rootflags, with device= as part of its value.
+And of course rootflags=device isn't rootflags, so it doesn't do what
+it's supposed to do.
+
+Make more sense now? =:^)
+
+Since I realized the double-equal parsing must be the problem, I've
+been going to file a kernel bug on it and hopefully get the kernel
+commandline parser fixed.  But apparently I have yet to find an
+appropriately rounded tuit, since I've not done so yet. =:^(
+
+FWIW, the btrfs kernel devs are aware that using device= with
+rootflags= is broken, as it was one of them that originally mentioned
+it to me when I was still asking about things before I had setup my
+multi-device btrfs rootfs.  So it's a known issue.  But I'm not sure
+they had looked into why, they just knew it didn't work.  And since it
+only affects (1) btrfs users who (2) use a multi-device rootfs, *BUT*
+(3) do NOT wish to use an initr*, I guess the priority simply hasn't
+been high enough for them to investigate further.
+
+So I really should file that bug[3] and get it it to the right people.
+
+---
+[2] Back a few dracut versions ago, building the initr* with host-only
+would tie the initr* to the UUID of the default rootfs.  As long as
+that UUID could be found, the usual root= could be used on the kernel
+commandline to boot any other rootfs if desired, and naturally, that's
+how I tested my backup, with the main rootfs still there and thus its
+UUID available.  But then I renewed my backup, tested again that I
+could boot to it using root=, and did a fresh mkfs on the main rootfs,
+thus of course killing the UUID dracut was tied to.  When I tried to
+reboot back to the fresh rootfs, I found I could no longer boot to
+EITHER it or the backup, because of course the new UUID didn't match
+what dracut was looking for.
+
+That was of course stupid but I figured that must be what host-only was
+setup to do, so I didn't report it.  Later, I happened to mention that
+experience in a general gentoo discussion and the gentoo dracut
+maintainer said that was definitely a bug.  It is now said to be fixed,
+but I no longer trust host-only in any case, instead using module
+blacklists and whitelists to build in the specific modules I need.
+
+Anyway, that was one such drop-to-initr* emergency-shell-prompt that I
+got.
+
+[3] File that bug:  I normally use the kernel bugzilla to report my
+bugs.  Seems to work as I've filed several bugs based on my pre-release
+testing over the years, and but for one which took a couple kernel
+cycles to resolve, they've all been resolved before full .0 kernel
+release.
+
+-- 
+Duncan - No HTML messages please, as they are filtered as spam.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

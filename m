@@ -1,38 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:16656 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750798AbaETTX0 (ORCPT
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:59854 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751023AbaEUPYS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 15:23:26 -0400
-Message-ID: <537BAC0C.4020705@fb.com>
-Date: Tue, 20 May 2014 15:25:00 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Content-Type: text/plain; charset="ISO-8859-1"
+	Wed, 21 May 2014 11:24:18 -0400
+Received: by mail-wi0-f182.google.com with SMTP id r20so2925386wiv.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2014 08:24:16 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>,
+        Marc Merlin <marc@merlins.org>
+Subject: [PATCH] Btrfs: send, fix corrupted paths strings for long paths
+Date: Wed, 21 May 2014 17:23:39 +0100
+Message-Id: <1400689419-13446-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus
+If a path has more than 230 characters, we allocate a new buffer to
+use for the path, but we were forgotting to copy the contents of the
+previous buffer into the new one, which has random content from the
+kmalloc call.
 
-Please pull my for-linus branch:
+Test:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+    mkfs.btrfs -f /dev/sdd
+    mount /dev/sdd /mnt
 
-It has two fixes that we've been testing for 3.16, but since both are safe 
-and fix real bugs, it makes sense to send for 3.15 instead
+    TEST_PATH="/mnt/fdmanana/.config/google-chrome-mysetup/Default/Pepper_Data/Shockwave_Flash/WritableRoot/#SharedObjects/JSHJ4ZKN/s.wsj.net/[[IMPORT]]/players.edgesuite.net/flash/plugins/osmf/advanced-streaming-plugin/v2.7/osmf1.6/Ak#"
+    mkdir -p $TEST_PATH
+    echo "hello world" > $TEST_PATH/amaiAdvancedStreamingPlugin.txt
 
-Liu Bo (1) commits (+5/-1):
-    Btrfs: fix EIO on reading file after ioctl clone works on it
+    btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+    btrfs send /mnt/mysnap1 -f /tmp/1.snap
 
-Filipe Manana (1) commits (+1/-1):
-    Btrfs: send, fix incorrect ref access when using extrefs
+A test for xfstests follows.
 
-Total: (2) commits (+6/-2)
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Cc: Marc Merlin <marc@merlins.org>
+---
+ fs/btrfs/send.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
- fs/btrfs/ioctl.c | 6 +++++-
- fs/btrfs/send.c  | 2 +-
- 2 files changed, 6 insertions(+), 2 deletions(-)
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index f6bbc1e..70c5e8c 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -368,10 +368,13 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
+ 	/*
+ 	 * First time the inline_buf does not suffice
+ 	 */
+-	if (p->buf == p->inline_buf)
++	if (p->buf == p->inline_buf) {
+ 		tmp_buf = kmalloc(len, GFP_NOFS);
+-	else
++		if (tmp_buf)
++			memcpy(tmp_buf, p->buf, old_buf_len);
++	} else {
+ 		tmp_buf = krealloc(p->buf, len, GFP_NOFS);
++	}
+ 	if (!tmp_buf)
+ 		return -ENOMEM;
+ 	p->buf = tmp_buf;
+-- 
+1.9.1
+

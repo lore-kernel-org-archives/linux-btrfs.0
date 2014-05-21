@@ -1,41 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57543 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54911 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750735AbaEUAv2 convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751288AbaEUA6Z convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 20:51:28 -0400
-Content-Type: text/plain; charset=us-ascii
+	Tue, 20 May 2014 20:58:25 -0400
+Content-Type: text/plain; charset=utf-8
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: problem with degraded boot and systemd
+Subject: Re: send/receive and bedup
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$6f6ec$5ba926ea$9860d25c$5d86cd20@cox.net>
-Date: Tue, 20 May 2014 18:51:26 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <9289871B-275D-4994-8617-BD83EECCFB2B@colorremedies.com>
-References: <45D5C607-ED9D-49BB-BA60-CA2B0E94223D@colorremedies.com> <537BD078.7070504@libero.it> <20140520222609.GD1756@carfax.org.uk> <pan$6f6ec$5ba926ea$9860d25c$5d86cd20@cox.net>
-To: Duncan <1i5t5.duncan@cox.net>
+In-Reply-To: <537BDDB4.1050406@gmail.com>
+Date: Tue, 20 May 2014 18:58:22 -0600
+Cc: Mark Fasheh <mfasheh@suse.de>, Brendan Hide <brendan@swiftspirit.co.za>,
+        Scott Middleton <scott@assuretek.com.au>, linux-btrfs@vger.kernel.org
+Message-Id: <EF03712B-B6C1-4EAA-96CA-44054A706B67@colorremedies.com>
+References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com> <pan$43445$a1ed5a9d$d03f1b1$41238e2b@cox.net> <CAPm-YUWryMcGFop+miu+dnMBac6gf-mdJCx07XHPxdr66h3Big@mail.gmail.com> <20140519010705.GI10566@merlins.org> <CAPm-YUVXGRA1AnXoJA5+7P_MhFweaw163+b1fA97VW4cLPS01g@mail.gmail.com> <537A2AD5.9050507@swiftspirit.co.za> <20140519173854.GN27178@wotan.suse.de> <537A80B6.9080202@gmail.com> <20140520223702.GQ27178@wotan.suse.de> <537BDDB4.1050406@gmail.com>
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On May 20, 2014, at 6:03 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
-> 
-> I'd actually argue that's functioning as it should, since I see forced 
-> manual intervention in ordered to mount degraded as a FEATURE, NOT A BUG.
+On May 20, 2014, at 4:56 PM, Konstantinos Skarlatos <k.skarlatos@gmail.com> wrote:
 
-Manual intervention is OK for now, when it takes the form of dropping to a dracut shell, and only requires the user to pass mount -o degraded. To mount degraded automatically is worse because within a notification API for user space, it will lead users to make bad choices resulting in data loss.
+> On 21/5/2014 1:37 πμ, Mark Fasheh wrote:
+>> On Tue, May 20, 2014 at 01:07:50AM +0300, Konstantinos Skarlatos wrote:
+>>>> Duperemove will be shipping as supported software in a major SUSE release so
+>>>> it will be bug fixed, etc as you would expect. At the moment I'm very busy
+>>>> trying to fix qgroup bugs so I haven't had much time to add features, or
+>>>> handle external bug reports, etc. Also I'm not very good at advertising my
+>>>> software which would be why it hasn't really been mentioned on list lately
+>>>> :)
+>>>> 
+>>>> I would say that state that it's in is that I've gotten the feature set to a
+>>>> point which feels reasonable, and I've fixed enough bugs that I'd appreciate
+>>>> folks giving it a spin and providing reasonable feedback.
+>>> Well, after having good results with duperemove with a few gigs of data, i
+>>> tried it on a 500gb subvolume. After it scanned all files, it is stuck at
+>>> 100% of one cpu core for about 5 hours, and still hasn't done any deduping.
+>>> My cpu is an Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz, so i guess thats
+>>> not the problem. So I guess the speed of duperemove drops dramatically as
+>>> data volume increases.
+>> Yeah I doubt it's your CPU. Duperemove is right now targeted at smaller data
+>> sets (a few VMS, iso images, etc) than you threw it at as you undoubtedly
+>> have figured out. It will need a bit of work before it can handle entire
+>> file systems. My guess is that it was spending an enormous amount of time
+>> finding duplicates (it has a very thorough check that could probably be
+>> optimized).
+> It finished after 9 or so hours, so I agree it was checking for duplicates. It does a few GB in just seconds, so time probably scales exponentially with data size.
 
-But the needed sequence is fairly burdensome: force shutdown, boot again, use rd.break=premount, then use mount -o degraded, and then exit a couple of times.
+I'm going to guess it ran out of memory. I wonder what happens if you take an SSD and specify a humongous swap partition on it. Like, 4x, or more, the amount of installed memory.
 
-
-> [1] dracut: I use it here on gentoo as well, because my rootfs is a multi-
-> device btrfs and a kernel rootflags=device= line won't parse correctly, 
-> apparently due to splitting at the wrong =, so I must use an initr* 
-> despite my preference for a direct initr*-less boot, and I use dracut to 
-> generate it.
-
-rootflags doesn't take a device argument, it only applies to the volume to be mounted at /sysroot, so only one = is needed.
+This same trick has been mentioned on the XFS list for use with xfsrepair when memory requirements exceed system memory, and is immensely faster.
 
 
 Chris Murphy
+

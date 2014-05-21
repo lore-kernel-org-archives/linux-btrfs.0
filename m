@@ -1,72 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52500 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753399AbaEUXFq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 19:05:46 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WnFZu-0003ZN-VD
-	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 01:05:42 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 01:05:42 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 01:05:42 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
+Received: from mail-ee0-f54.google.com ([74.125.83.54]:59627 "EHLO
+	mail-ee0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753321AbaEUXaD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 May 2014 19:30:03 -0400
+Received: by mail-ee0-f54.google.com with SMTP id b57so2047914eek.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2014 16:30:01 -0700 (PDT)
+Message-ID: <537D36F3.7070707@gmail.com>
+Date: Thu, 22 May 2014 02:29:55 +0300
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+MIME-Version: 1.0
+To: russell@coker.com.au, Brendan Hide <brendan@swiftspirit.co.za>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: ditto blocks on ZFS
-Date: Thu, 22 May 2014 00:05:26 +0100
-Message-ID: <lljbfo$6vm$1@ger.gmane.org>
-References: <2308735.51F3c4eZQ7@xev> <4483661.BdmCOR8JR5@xev> <57f050e2a37907d810b40c5e115b28ff.squirrel@webmail.wanet.net> <1795587.Ol58oREtZ7@xev>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-In-Reply-To: <1795587.Ol58oREtZ7@xev>
+References: <2308735.51F3c4eZQ7@xev> <lldpvm$s7c$1@ger.gmane.org> <537A7BF9.5060508@swiftspirit.co.za> <4483661.BdmCOR8JR5@xev>
+In-Reply-To: <4483661.BdmCOR8JR5@xev>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Very good comment from Ashford.
+On 20/5/2014 5:07 πμ, Russell Coker wrote:
+> On Mon, 19 May 2014 23:47:37 Brendan Hide wrote:
+>> This is extremely difficult to measure objectively. Subjectively ... see
+>> below.
+>>
+>>> [snip]
+>>>
+>>> *What other failure modes* should we guard against?
+>> I know I'd sleep a /little/ better at night knowing that a double disk
+>> failure on a "raid5/1/10" configuration might ruin a ton of data along
+>> with an obscure set of metadata in some "long" tree paths - but not the
+>> entire filesystem.
+> My experience is that most disk failures that don't involve extreme physical
+> damage (EG dropping a drive on concrete) don't involve totally losing the
+> disk.  Much of the discussion about RAID failures concerns entirely failed
+> disks, but I believe that is due to RAID implementations such as Linux
+> software RAID that will entirely remove a disk when it gives errors.
+>
+> I have a disk which had ~14,000 errors of which ~2000 errors were corrected by
+> duplicate metadata.  If two disks with that problem were in a RAID-1 array
+> then duplicate metadata would be a significant benefit.
+>
+>> The other use-case/failure mode - where you are somehow unlucky enough
+>> to have sets of bad sectors/bitrot on multiple disks that simultaneously
+>> affect the only copies of the tree roots - is an extremely unlikely
+>> scenario. As unlikely as it may be, the scenario is a very painful
+>> consequence in spite of VERY little corruption. That is where the
+>> peace-of-mind/bragging rights come in.
+> http://research.cs.wisc.edu/adsl/Publications/corruption-fast08.html
+>
+> The NetApp research on latent errors on drives is worth reading.  On page 12
+> they report latent sector errors on 9.5% of SATA disks per year.  So if you
+> lose one disk entirely the risk of having errors on a second disk is higher
+> than you would want for RAID-5.  While losing the root of the tree is
+> unlikely, losing a directory in the middle that has lots of subdirectories is
+> a risk.
+Seeing the results of that paper, I think erasure coding is a better 
+solution. Instead of having many copies of metadata or data, we could do 
+erasure coding using something like zfec[1] that is being used by 
+Tahoe-LAFS, increasing their size by lets say 5-10%, and be quite safe 
+even from multiple continuous bad sectors.
 
-
-Sorry, but I see no advantages from Russell's replies other than for a
-"feel-good" factor or a dangerous false sense of security. At best,
-there is a weak justification that "for metadata, again going from 2% to
-4% isn't going to be a great problem" (storage is cheap and fast).
-
-I thought an important idea behind btrfs was that we avoid by design in
-the first place the very long and vulnerable RAID rebuild scenarios
-suffered for block-level RAID...
-
-
-On 21/05/14 03:51, Russell Coker wrote:
-> Absolutely. Hopefully this discussion will inspire the developers to
-> consider this an interesting technical challenge and a feature that
-> is needed to beat ZFS.
-
-Sorry, but I think that is completely the wrong reasoning. ...Unless
-that is you are some proprietary sales droid hyping features and big
-numbers! :-P
-
-
-Personally I'm not convinced we gain anything beyond what btrfs will
-eventually offer in any case for the n-way raid or the raid-n Cauchy stuff.
-
-Also note that usually, data is wanted to be 100% reliable and
-retrievable. Or if that fails, you go to your backups instead. Gambling
-"proportions" and "importance" rather than *ensuring* fault/error
-tolerance is a very human thing... ;-)
-
-
-Sorry:
-
-Interesting idea but not convinced there's any advantage for disk/SSD
-storage.
-
-
-Regards,
-Martin
-
-
-
+[1] https://pypi.python.org/pypi/zfec
+>
+> I can understand why people wouldn't want ditto blocks to be mandatory.  But
+> why are people arguing against them as an option?
+>
+>
+> As an aside, I'd really like to be able to set RAID levels by subtree.  I'd
+> like to use RAID-1 with ditto blocks for my important data and RAID-0 for
+> unimportant data.
+>
 

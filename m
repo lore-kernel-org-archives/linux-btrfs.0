@@ -1,19 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42811 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:44792 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750737AbaEUDgG (ORCPT
+	with ESMTP id S1751288AbaEUDoO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 May 2014 23:36:06 -0400
-Message-ID: <537C1FCC.4060801@oracle.com>
-Date: Wed, 21 May 2014 11:38:52 +0800
+	Tue, 20 May 2014 23:44:14 -0400
+Message-ID: <537C21C1.9040809@oracle.com>
+Date: Wed, 21 May 2014 11:47:13 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-CC: David Sterba <dsterba@suse.cz>
-Subject: Re: [RFC PATCH 2/2] btrfs-progs: Add userspace support for kernel
- missing dev detection.
-References: <1399358005-9780-1-git-send-email-quwenruo@cn.fujitsu.com> <1399358005-9780-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1399358005-9780-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: Re: [RFC PATCH 1/2] btrfs: Add missing device check in dev_info/rm_dev
+ ioctl
+References: <1399357993-9254-1-git-send-email-quwenruo@cn.fujitsu.com> <1399357993-9254-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1399357993-9254-2-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,115 +20,112 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Qu,
 
-  First of all. With this patch, we don't need the old btrfs-progs
-  workaround fix [1] anymore.  David should back-out if you are ok.
 
-[1]
-  commit 206efb60cbe3049e0d44c6da3c1909aeee18f813
-  Author: Qu Wenruo <quwenruo@cn.fujitsu.com>
-  Date:   Fri Feb 7 15:07:19 2014 +0800
+  Either we need to determine missing disk when disk disappear
+  or when we hit by -ENODEV during IO.
 
-     btrfs-progs: Add missing devices check for mounted btrfs.
+  Discovering the same at the time when "user" run
+  'btrfs fi show' or 'btrfs dev del', is just "not correct".
+
+  You might use interface as proposed here.
+
+  [PATCH RFC] btrfs: revamp /sys/fs/btrfs/<fsid>/devices
+
+  further to this I will be sending another patch which will
+  call the above sysfs interlace when we get the kobject
+  notification when disk disappear.
 
 
-more below.
 
 
 On 05/06/2014 02:33 PM, Qu Wenruo wrote:
-> Add userspace support for kernel missing dev detection from dev_info
-> ioctl.
+> Old btrfs can't find a missing btrfs device since there is no
+> mechanism for block layer to inform fs layer.
 >
-> Now 'btrfs fi show' will auto detect the output format of dev_info ioctl
-> and use kernel missing dev detection if supported.
-> Also userspace missing dev detection is used as a fallback method and
-> when used, a info message will be printed showing 'btrfs dev del missing'
-> will not work.
->
+> But we can use a workaround that only check status(by using
+> request_queue->queue_flags) of every device in a btrfs
+> filesystem when calling dev_info/rm_dev ioctl, since other ioctls
+> do not really cares about missing device.
+
+
+> Cc: Anand Jain <Anand.Jain@oracle.com>
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->   cmds-filesystem.c | 29 ++++++++++++++++++++++-------
->   utils.c           |  2 ++
->   2 files changed, 24 insertions(+), 7 deletions(-)
+>   fs/btrfs/ioctl.c   |  1 +
+>   fs/btrfs/volumes.c | 25 ++++++++++++++++++++++++-
+>   fs/btrfs/volumes.h |  2 ++
+>   3 files changed, 27 insertions(+), 1 deletion(-)
 >
-> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index 306f715..0ff1ca6 100644
-> --- a/cmds-filesystem.c
-> +++ b/cmds-filesystem.c
-> @@ -369,6 +369,7 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
->   	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
->   	struct btrfs_ioctl_dev_info_args *tmp_dev_info;
->   	int ret;
-> +	int new_flag = 0;
-
-  This part didn't work until I made this change
-----
--       int new_flag = 0;
-+       u64 new_flag = 0;
-----
-
-
->   	ret = add_seen_fsid(fs_info->fsid);
->   	if (ret == -EEXIST)
-> @@ -389,13 +390,22 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
->   	for (i = 0; i < fs_info->num_devices; i++) {
->   		tmp_dev_info = (struct btrfs_ioctl_dev_info_args *)&dev_info[i];
->
-> -		/* Add check for missing devices even mounted */
-> -		fd = open((char *)tmp_dev_info->path, O_RDONLY);
-> -		if (fd < 0) {
-> -			missing = 1;
-> -			continue;
-> +		new_flag = tmp_dev_info->flags & BTRFS_IOCTL_DEV_INFO_FLAG_SET;
-> +		if (!new_flag) {
-> +			/* Add check for missing devices even mounted */
-> +			fd = open((char *)tmp_dev_info->path, O_RDONLY);
-> +			if (fd < 0) {
-> +				missing = 1;
-> +				continue;
-> +			}
-> +			close(fd);
-> +		} else {
-> +			if (tmp_dev_info->flags &
-> +			    BTRFS_IOCTL_DEV_INFO_MISSING) {
-> +				missing = 1;
-> +				continue;
-> +			}
->   		}
-> -		close(fd);
->   		printf("\tdevid %4llu size %s used %s path %s\n",
->   			tmp_dev_info->devid,
->   			pretty_size(tmp_dev_info->total_bytes),
-> @@ -403,8 +413,13 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
->   			tmp_dev_info->path);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0401397..7680a40 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2606,6 +2606,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
+>   		goto out;
 >   	}
 >
-> -	if (missing)
-> +	if (missing) {
->   		printf("\t*** Some devices missing\n");
-> +		if (!new_flag) {
-> +			printf("\tOlder kernel detected\n");
-> +			printf("\t'btrfs dev delete missing' may not work\n");
-> +		}
-> +	}
-
-  we need one good solution - which is to update kernel when we have
-  missing disk and we don't need the btrfs-progs workaround fix.
-  which means we also don't need the new_flag check as well.
-
->   	printf("\n");
+> +	btrfs_check_dev_missing(root, dev, 1);
+>   	di_args->devid = dev->devid;
+>   	di_args->bytes_used = dev->bytes_used;
+>   	di_args->total_bytes = dev->total_bytes;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d241130a..c7d7908 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1548,9 +1548,10 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>   		 * is held.
+>   		 */
+>   		list_for_each_entry(tmp, devices, dev_list) {
+> +			btrfs_check_dev_missing(root, tmp, 0);
+>   			if (tmp->in_fs_metadata &&
+>   			    !tmp->is_tgtdev_for_dev_replace &&
+> -			    !tmp->bdev) {
+> +			    (!tmp->bdev || tmp->missing)) {
+>   				device = tmp;
+>   				break;
+>   			}
+> @@ -6300,3 +6301,25 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
+>
 >   	return 0;
 >   }
-> diff --git a/utils.c b/utils.c
-> index 3e9c527..230471f 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -1670,6 +1670,8 @@ int get_device_info(int fd, u64 devid,
->
->   	di_args->devid = devid;
->   	memset(&di_args->uuid, '\0', sizeof(di_args->uuid));
-> +	/* Clear flags to ensure old kernel returns untouched flags */
-> +	memset(&di_args->flags, 0, sizeof(di_args->flags));
->
->   	ret = ioctl(fd, BTRFS_IOC_DEV_INFO, di_args);
->   	return ret ? -errno : 0;
+> +
+> +/* If need_lock is set, uuid_mutex will be used */
+> +int btrfs_check_dev_missing(struct btrfs_root *root, struct btrfs_device *dev,
+> +			    int need_lock)
+> +{
+> +	struct request_queue *q;
+> +
+> +	if (unlikely(!dev || !dev->bdev || !dev->bdev->bd_queue))
+> +		return -ENOENT;
+> +	q = dev->bdev->bd_queue;
+> +
+> +	if (need_lock)
+> +		mutex_lock(&uuid_mutex);
+> +	if (test_bit(QUEUE_FLAG_DEAD, &q->queue_flags) ||
+> +	    test_bit(QUEUE_FLAG_DYING, &q->queue_flags)) {
+> +		dev->missing = 1;
+> +		root->fs_info->fs_devices->missing_devices++;
+> +	}
+> +	if (need_lock)
+> +		mutex_unlock(&uuid_mutex);
+> +	return 0;
+> +}
+
+
+
+
+
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 80754f9..47a44af 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -356,6 +356,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+>   int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+>   				struct btrfs_root *extent_root,
+>   				u64 chunk_offset, u64 chunk_size);
+> +int btrfs_check_dev_missing(struct btrfs_root *root, struct btrfs_device *dev,
+> +			    int need_lock);
+>   static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+>   				      int index)
+>   {
 >

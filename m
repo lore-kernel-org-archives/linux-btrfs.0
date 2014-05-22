@@ -1,69 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33466 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752359AbaEVJnz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 05:43:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WnPXW-0007dZ-Cb
-	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 11:43:54 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 11:43:54 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 11:43:54 +0200
+Received: from userp1040.oracle.com ([156.151.31.81]:48112 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751993AbaEVKi1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 06:38:27 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: mount hangs after disk crash (RAID-1)
-Date: Thu, 22 May 2014 09:43:40 +0000 (UTC)
-Message-ID: <pan$4965$e2755b8c$eb8c082f$e15db32d@cox.net>
-References: <20140522032258.234aaab7@s9>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: dsterba@suse.cz, sandeen@redhat.com, rm@romanrm.net
+Subject: [PATCH 2/2 v3] btrfs: usage error should not be logged into system log
+Date: Thu, 22 May 2014 18:41:12 +0800
+Message-Id: <1400755272-22590-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1400755272-22590-1-git-send-email-anand.jain@oracle.com>
+References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
+ <1400755272-22590-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Chmielewski posted on Thu, 22 May 2014 03:22:58 +0100 as excerpted:
+From: Anand Jain <Anand.Jain@oracle.com>
 
-> One disk in RAID-1 crashed, so powered off, changed disk, powered on,
-> trying to mount degraded.
-> 
-> Unfortunately it hangs (running 3.14.4).
-> 
-> # mount -o degraded,compress=lzo,noatime /dev/sdb4 /home (...never
-> returns...)
+I have an opinion that system logs /var/log/messages are
+valuable info to investigate the real system issues at
+the data center. People handling data center issues
+do spend a lot time and efforts analyzing messages
+files. Having usage error logged into /var/log/messages
+is something we should avoid.
 
-1) Just to be sure, btrfs raid1, not btrfs on md/raid1 or the like, 
-correct?
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+---
+ v3: rebase again
+ v2: rebase
+ fs/btrfs/sysfs.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
 
-2) Btrfs raid1 for both data and metadata, correct?
-
-3) How many devices in the btrfs raid1?
-
-4) Did you try mounting read-only?
-
-Note that unlike md/raid1, btrfs raid1 won't mount writable with only a 
-single device.  You must have at least two devices to mount writable, tho 
-a formerly two-device raid1 with a device missing should mount read-only.
-
-However, ordinarily you can't add a device to a filesystem unless it's 
-mounted writable, and if it won't go writable as you have only the one 
-device, so you can't add another device...  I'm actually not sure how 
-that's supposed to work, as the requiring two devices to mount writable 
-bit is fairly new.
-
-In the worst case, however, you could create a new single-device 
-filesystem with the new device and mount it, mount the old one read-only 
-and copy everything over, then unmount the old one and add it to the new 
-one, then do a balance-convert to raid1 mode again.  That's actually how 
-I've been planning to handle it if I lose a device from my paired-device 
-btrfs raid1 and it goes read-only, so I can't add the replacement 
-device.  Seems there should be an easier way, but...
-
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 159df4f..c81b499 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -381,11 +381,8 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
+ 	 */
+ 	p_len = strcspn(buf, "\n");
+ 
+-	if (p_len >= BTRFS_LABEL_SIZE) {
+-		pr_err("BTRFS: unable to set label with more than %d bytes\n",
+-		       BTRFS_LABEL_SIZE - 1);
++	if (p_len >= BTRFS_LABEL_SIZE)
+ 		return -EINVAL;
+-	}
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (IS_ERR(trans))
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.1
 

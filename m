@@ -1,52 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56444 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750956AbaEVVGv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 17:06:51 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WnaCL-000553-CC
-	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 23:06:45 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 23:06:45 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 23:06:45 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:43703 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752539AbaEVWIC convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 18:08:02 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:51622 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1Wnb9b-0022rj-Vr
+	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 16:08:01 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: mount hangs after disk crash (RAID-1)
-Date: Thu, 22 May 2014 21:06:26 +0000 (UTC)
-Message-ID: <pan$9e1ee$dd62e9f3$9263e2c8$c034feaf@cox.net>
-References: <20140522032258.234aaab7@s9> <20140522095101.107b62e8@s9>
-	<20140522161634.054ec95f@s9> <20140522185025.4c72aab9@s9>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140522185025.4c72aab9@s9>
+Date: Thu, 22 May 2014 16:07:58 -0600
+Message-Id: <ED54B94A-528B-4382-9D1F-EE8D234F55D6@colorremedies.com>
+References: <20140522032258.234aaab7@s9> <20140522095101.107b62e8@s9> <20140522161634.054ec95f@s9> <20140522185025.4c72aab9@s9>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Chmielewski posted on Thu, 22 May 2014 18:50:25 +0100 as excerpted:
 
+On May 22, 2014, at 11:50 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
+
+>> Try -o recovery,degraded
+>> 
+>> I would drop the other options for now, since they aren't necessary
+>> to recover from a \ device failure.
+> 
+> Yes I've tried that as well, and it ends in the similar "hang" - high
+> IO for a while, then no IO at all, mount does not return.
+> 
+> 
 > It *does* mount as ro,degraded, but then, it's not possible to add a
 > disk and recover to a functioning RAID-1.
 > Also, when I try to remount rw, the mount command hangs as well.
 > 
 > Is there anything else I can try?
 
-It's a long shot, but in addition to Chris's excellent suggestions, try 
-the skip_balance mount option.  In the outside case that it's just a 
-resumed balance that's triggering the hang, that should allow the rw 
-mount to succeed as it kills the balance that would otherwise be 
-immediately resumed as soon as the filesystem goes writable, possibly 
-before the mount returns.
+How much metadata is there on the volume? And how much memory does the system have? This might also be a case where it might take hours, or longer, for it sort things out, and isn't actually permanently hung up. Worth a shot to leave it overnight and see what happens.
 
-Otherwise, I'd go with Chris's suggestion, mount read-only and ensure 
-your backups are current, then go experimental on it, since there's 
-nothing further to lose at that point anyway.
+I agree trying skip_balance is worth a shot also.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+Chris Murphy

@@ -1,69 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mari.romanrm.net ([157.7.203.202]:38733 "EHLO mari.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750836AbaEVEOj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 00:14:39 -0400
-Date: Thu, 22 May 2014 10:14:31 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: Anand Jain <Anand.Jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2 v2] btrfs: label should not contain return char
-Message-ID: <20140522101431.6b2a9ee2@natsu>
-In-Reply-To: <537D5D6F.900@redhat.com>
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
-	<1400567808-9494-1-git-send-email-anand.jain@oracle.com>
-	<537B83AD.5010901@redhat.com>
-	<537D5B55.1010207@oracle.com>
-	<537D5D6F.900@redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/jRjoUox6YD1/KPU0A.UVH7W"; protocol="application/pgp-signature"
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:54258 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750720AbaEVEY6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 00:24:58 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
+Reply-To: russell@coker.com.au
+Subject: Re: historical backups with hardlinks vs cp --reflink vs snapshots
+Date: Thu, 22 May 2014 14:24:53 +1000
+Message-ID: <1668691.Jr8NPxkTPc@xev>
+In-Reply-To: <20140521035928.GW10656@merlins.org>
+References: <CAPm-YUXRNPhrq+xoJt-S3NvVgg+NOQHB7wj1fjf+XAKs+yUJOg@mail.gmail.com> <537A2AD5.9050507@swiftspirit.co.za> <20140521035928.GW10656@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/jRjoUox6YD1/KPU0A.UVH7W
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, 20 May 2014 20:59:28 Marc MERLIN wrote:
+>  just wrote a blog post about the 3 way of doing historical snapshots:
+> http://marc.merlins.org/perso/btrfs/post_2014-05-20_Historical-Snapshots-Wit
+> h-Btrfs.html 
+> I love reflink, but that forces me to use btrfs send as the only way to
+> copy a filesystem without losing the reflink relationship, and I have no
+> good way from user space to see the blocks shared to see how many are
+> shared or whether some just got duped in a copy.
+> As a result, for now I still use hardlinks.
 
-On Wed, 21 May 2014 21:14:07 -0500
-Eric Sandeen <sandeen@redhat.com> wrote:
+It would be nice if someone patched rsync to look for files with identical 
+contents and use reflink or hardlinks (optionally at user request) instead of 
+making multiple copies of the same data.  Also it would be nice if rsync would 
+look for matching blocks in different files to save transfer.
 
-> >> (Random aside: why does btrfs support online fs relabeling, anyway?)
-> >>
-> >> -Eric
-> >=20
-> >   Online you mean when mounted ?
->=20
-> Yep - I'm just not sure who would ever want to do that.
->=20
-> Aren't labels primarly used for mounting, during the mount process?
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 
-Well if you want to change the label of your root filesystem, how else would
-you go about that? If Btrfs did not support this, then only while booted fr=
-om a
-rescue LiveCD? That's quite a bit more involved and not even always feasible
-in case of remote machines with no IPMI or similar management.
-
-Extfs supports online change of the volume label as well, albeit probably n=
-ot
-via a sysfs file, but with the tune2fs utility:
-
-  tune2fs -L <name> /dev/blockdevice
-
---=20
-With respect,
-Roman
-
---Sig_/jRjoUox6YD1/KPU0A.UVH7W
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlN9eacACgkQTLKSvz+PZwh1lACfengaHCsfFGNgLYt8JHUcLtjm
-oRQAoIzPeIH/wgZfQW4/gpy1U7cXE0yP
-=DrpC
------END PGP SIGNATURE-----
-
---Sig_/jRjoUox6YD1/KPU0A.UVH7W--

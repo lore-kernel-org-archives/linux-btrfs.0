@@ -1,32 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32318 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750760AbaEVCCO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 22:02:14 -0400
-Message-ID: <537D5B55.1010207@oracle.com>
-Date: Thu, 22 May 2014 10:05:09 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:49261 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751548AbaEVCOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 May 2014 22:14:10 -0400
+Message-ID: <537D5D6F.900@redhat.com>
+Date: Wed, 21 May 2014 21:14:07 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: Eric Sandeen <sandeen@redhat.com>, linux-btrfs@vger.kernel.org
+To: Anand Jain <Anand.Jain@oracle.com>, linux-btrfs@vger.kernel.org
 CC: rm@romanrm.net
 Subject: Re: [PATCH 1/2 v2] btrfs: label should not contain return char
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com> <1400567808-9494-1-git-send-email-anand.jain@oracle.com> <537B83AD.5010901@redhat.com>
-In-Reply-To: <537B83AD.5010901@redhat.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com> <1400567808-9494-1-git-send-email-anand.jain@oracle.com> <537B83AD.5010901@redhat.com> <537D5B55.1010207@oracle.com>
+In-Reply-To: <537D5B55.1010207@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 5/21/14, 9:05 PM, Anand Jain wrote:
+> 
+>>
+>> (Random aside: why does btrfs support online fs relabeling, anyway?)
+>>
+>> -Eric
+> 
+>   Online you mean when mounted ?
 
->
-> (Random aside: why does btrfs support online fs relabeling, anyway?)
->
-> -Eric
+Yep - I'm just not sure who would ever want to do that.
 
-   Online you mean when mounted ?
+Aren't labels primarly used for mounting, during the mount process?
 
-   But I had an opinion that should we support label store from the sysfs
-   interface when the (sysfs) interface can't communicate the module's
-   specific errors back to the user.?
+So changing it while mounted seems like a feature looking for a usecase...
 
-Thanks
+-Eric

@@ -1,71 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:39464 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751781AbaEUPiZ (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:13907 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752075AbaEVAJV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 11:38:25 -0400
-Received: by mail-we0-f174.google.com with SMTP id k48so2194438wev.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2014 08:38:23 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe David Borba Manana <fdmanana@gmail.com>,
-        Marc Merlin <marc@merlins.org>
-Subject: [PATCH v2] Btrfs: send, fix corrupted path strings for long paths
-Date: Wed, 21 May 2014 17:38:13 +0100
-Message-Id: <1400690293-14506-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400689419-13446-1-git-send-email-fdmanana@gmail.com>
-References: <1400689419-13446-1-git-send-email-fdmanana@gmail.com>
+	Wed, 21 May 2014 20:09:21 -0400
+Message-ID: <537D40EB.60906@fb.com>
+Date: Wed, 21 May 2014 20:12:27 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>,
+        Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH] Btrfs: don't remove raid type sysfs entries until unmount
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a path has more than 230 characters, we allocate a new buffer to
-use for the path, but we were forgotting to copy the contents of the
-previous buffer into the new one, which has random content from the
-kmalloc call.
 
-Test:
+The Btrfs sysfs code removes entries for raid types that are no
+longer in use.  This means that if you have a raid0 FS and use balance
+to turn it into a raid1 FS, the raid0 sysfs entries will go away.
 
-    mkfs.btrfs -f /dev/sdd
-    mount /dev/sdd /mnt
+The rough chain of events is:
 
-    TEST_PATH="/mnt/fdmanana/.config/google-chrome-mysetup/Default/Pepper_Data/Shockwave_Flash/WritableRoot/#SharedObjects/JSHJ4ZKN/s.wsj.net/[[IMPORT]]/players.edgesuite.net/flash/plugins/osmf/advanced-streaming-plugin/v2.7/osmf1.6/Ak#"
-    mkdir -p $TEST_PATH
-    echo "hello world" > $TEST_PATH/amaiAdvancedStreamingPlugin.txt
+__link_block_group() -> see we're the first RAIDX, add sysfs entry
 
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap1
-    btrfs send /mnt/mysnap1 -f /tmp/1.snap
+btrfs_remove_block_group() -> notice we're removing the last RAIDX
+remove sysfs entry
 
-A test for xfstests follows.
+This all makes sense until we try to add RAIDX back into the FS again.
+The problem is that our RAID kobjects are just in an array that gets
+freed at unmount time, instead of an array of pointers to kobjects that
+get freed when the great sysfs in the sky is done with them.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: Marc Merlin <marc@merlins.org>
----
+When we remove the sysfs entry for a given raid level, the syfs code
+free's the name.  When we use the same kobject to add back the RAIDX
+entry again, sysfs sees the old name pointer and tries to free it again.
 
-V2: Fix change title, "paths" to "path".
+All of which is a long way of saying we're using sysfs wrong.  For now,
+just don't remove entries for raid levels that we're no longer using.
 
- fs/btrfs/send.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+Signed-off-by: Chris Mason <clm@fb.com>
+Reported-by: Dave Sterba <dsterba@suse.cz>
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index f6bbc1e..70c5e8c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -368,10 +368,13 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
- 	/*
- 	 * First time the inline_buf does not suffice
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ddf16bf..acdc7ed 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8535,12 +8535,14 @@ static void __link_block_group(struct btrfs_space_info *space_info,
+ 		struct kobject *kobj = &space_info->block_group_kobjs[index];
+ 		int ret;
+ 
+-		kobject_get(&space_info->kobj); /* put in release */
+-		ret = kobject_add(kobj, &space_info->kobj, "%s",
+-				  get_raid_name(index));
+-		if (ret) {
+-			pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
+-			kobject_put(&space_info->kobj);
++		if (!kobj->name) {
++			kobject_get(&space_info->kobj); /* put in release */
++			ret = kobject_add(kobj, &space_info->kobj, "%s",
++					  get_raid_name(index));
++			if (ret) {
++				pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
++				kobject_put(&space_info->kobj);
++			}
+ 		}
+ 	}
+ }
+@@ -8976,8 +8978,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
  	 */
--	if (p->buf == p->inline_buf)
-+	if (p->buf == p->inline_buf) {
- 		tmp_buf = kmalloc(len, GFP_NOFS);
--	else
-+		if (tmp_buf)
-+			memcpy(tmp_buf, p->buf, old_buf_len);
-+	} else {
- 		tmp_buf = krealloc(p->buf, len, GFP_NOFS);
-+	}
- 	if (!tmp_buf)
- 		return -ENOMEM;
- 	p->buf = tmp_buf;
--- 
-1.9.1
-
+ 	list_del_init(&block_group->list);
+ 	if (list_empty(&block_group->space_info->block_groups[index])) {
+-		kobject_del(&block_group->space_info->block_group_kobjs[index]);
+-		kobject_put(&block_group->space_info->block_group_kobjs[index]);
+ 		clear_avail_alloc_bits(root->fs_info, block_group->flags);
+ 	}
+ 	up_write(&block_group->space_info->groups_sem);

@@ -1,94 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48323 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751168AbaEVDGR (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:47338 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751454AbaEVDTJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 23:06:17 -0400
-Message-ID: <537D6A58.5040907@oracle.com>
-Date: Thu, 22 May 2014 11:09:12 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Wed, 21 May 2014 23:19:09 -0400
+Received: from p10053-ipngn5802marunouchi.tokyo.ocn.ne.jp ([153.163.201.53]:60938 helo=legolas.merlins.org)
+	by mail1.merlins.org with esmtpsa
+	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
+	id 1WnJXA-000564-Rv by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 May 2014 20:19:09 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+	(envelope-from <merlin@legolas.merlins.org>)
+	id 1WnJX8-0008JH-PH
+	for linux-btrfs@vger.kernel.org; Wed, 21 May 2014 20:19:06 -0700
+Date: Wed, 21 May 2014 20:19:06 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Linuxcon-JP Btrfs talk
+Message-ID: <20140522031906.GA31747@merlins.org>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Should btrfs reuse the src_dev's dev UUID when doing dev replacing?
-References: <537D5468.3040808@cn.fujitsu.com>
-In-Reply-To: <537D5468.3040808@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+If you're new with Btrfs, this may be a useful walkthrough for you.
 
+You can go through the slides which I wrote to be readable without the
+video, but the video is available too if you'd like:
+http://marc.merlins.org/perso/btrfs/post_2014-05-21_My-Btrfs-Talk-at-Linuxcon-JP-2014.html
 
-  Thanks Qu for bringing up this topic. We definitely need some focus
-  on the btrfs volume management related bugs/features/enhancements.
+If you've already been using btrfs for a while, this probably won't tell
+you anything you didn't already know :)
 
-  more inline..
-
-On 22/05/14 09:35, Qu Wenruo wrote:
-> Hi,
->
-> [Current dev replace]
-> As kernel codes show, 'btrfs dev replace' will swap tgt_dev's uuid with
-> src_dev's uuid.
-> This method works fine most of the time, since it doesn't need to change
-> the chunk tree.
->
-> [Problem with re-appear missing device]
-> (Anand Jain reported the problem in Jan 2014)
-> Take the following suitiuation as example:
-> /dev/sda, /dev/sdb, /dev/sdc as btrfs RAID1.
-> 1, 2, 3 as their dev id.
->
-> 1)/dev/sdb is missing,
-> Mount them in degraded mode.
->
-> 2) 'btrfs dev replace start 2 /dev/sdd' will replace missing /dev/sdb.
->
-> 3) /dev/sdb is online again.
->
-> 4) umount /BTRFS/MOUNT/POINT; mount /dev/sda
-> After mount, btrfs will still use /dev/sdb but not /dev/sdd
-
-  Yeah its weird that grouping depends on the mercy of chronological
-  oder of device probing. The _last_ device probed stays in the list.
-  But the most weird is if FS is mounted and is followed with the dev
-  scan it would just overwrite the btrfs_device struct.
-  I have sent out interim fix to both of these bugs a long time back.
-
-> [Cause of the bug]
-> When this comes to missing device, since the src_dev is missing, neither
-> UUID swap nor superblock wipe will
-> work. So if the device reappears, next mount will scan the the fsid and
-> dev uuid, and if btrfs scan the re-appeared
-> device first, it will use the re-appeared device.
->
-> [Method to fix]
-> IMO there are 2 possible method to fix the bug.
-> 1) Don't reuse the src_dev's dev UUID.
-> I don't think any of the UUID in btrfs should be reused, so if every
-> device in btrfs has its own UUID,
-> it is quite easy to distinguish different devices, and even don't need
-> to wipe the superblock of src_dev.
-> (But superblock wipe is still needed for other reasons)
-
-  Yep that the right way IMO too. UUID must be unique to disk, even in
-  the case of replace.
-
-> 2) Do generation check in device_list_add.
-> When multiple devices with same dev UUID is found, only add the one
-> whose generation is the same with
-> other deivces.
-> IMO this is just a workaround.
-
-  yes an interim fix, patch was sent out a long time back.
-
-> I think it is better to be decided before any related patch sent.
->
-> Any suggestions?
->
-> Thanks,
-> Qu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

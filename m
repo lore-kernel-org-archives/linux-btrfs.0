@@ -1,90 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46758 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750796AbaEVBjg (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34211 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752696AbaEVMQH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 May 2014 21:39:36 -0400
-Date: Wed, 21 May 2014 18:39:32 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: [PATCH v2] Btrfs: send, fix corrupted path strings for long paths
-Message-ID: <20140522013932.GB17040@merlins.org>
-References: <1400689419-13446-1-git-send-email-fdmanana@gmail.com>
- <1400690293-14506-1-git-send-email-fdmanana@gmail.com>
+	Thu, 22 May 2014 08:16:07 -0400
+Message-ID: <537DEB3F.5020303@fb.com>
+Date: Thu, 22 May 2014 08:19:11 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1400690293-14506-1-git-send-email-fdmanana@gmail.com>
+To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: don't remove raid type sysfs entries until unmount
+References: <537D40EB.60906@fb.com> <537D5136.4050007@suse.com>
+In-Reply-To: <537D5136.4050007@suse.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 21, 2014 at 05:38:13PM +0100, Filipe David Borba Manana wrote:
-> If a path has more than 230 characters, we allocate a new buffer to
-> use for the path, but we were forgotting to copy the contents of the
-> previous buffer into the new one, which has random content from the
-> kmalloc call.
 
-I've confirmed this fixes the problem I was seeing when applied to
-3.15rc5.
-Thanks for taking that down.
 
-Tested-by: Marc MERLIN <marc@merlins.org>
+On 05/21/2014 09:21 PM, Jeff Mahoney wrote:
+> On 05/21/2014 08:12 PM, Chris Mason wrote:
+>>
+>> The Btrfs sysfs code removes entries for raid types that are no
+>> longer in use.  This means that if you have a raid0 FS and use balance
+>> to turn it into a raid1 FS, the raid0 sysfs entries will go away.
+>>
+>> The rough chain of events is:
+>>
+>> __link_block_group() -> see we're the first RAIDX, add sysfs entry
+>>
+>> btrfs_remove_block_group() -> notice we're removing the last RAIDX
+>> remove sysfs entry
+>>
+>> This all makes sense until we try to add RAIDX back into the FS again.
+>> The problem is that our RAID kobjects are just in an array that gets
+>> freed at unmount time, instead of an array of pointers to kobjects that
+>> get freed when the great sysfs in the sky is done with them.
+>>
+>> When we remove the sysfs entry for a given raid level, the syfs code
+>> free's the name.  When we use the same kobject to add back the RAIDX
+>> entry again, sysfs sees the old name pointer and tries to free it again.
+>>
+>> All of which is a long way of saying we're using sysfs wrong.  For now,
+>> just don't remove entries for raid levels that we're no longer using.
+> 
+> Hi Chris -
+> 
+> Thanks for posting the problem. I disagree that sysfs is being used
+> wrong here - or well, not on purpose. The problem is only that I didn't
+> anticipate raid levels going away and only initialize the kobjects i
+> update_space_info.
 
-(while we're at it, I post with my personal address, but I work at
-Google, I'm supposed to state that :) )
+Thanks Jeff, this is more a comment on the sadness that comes from using
+sysfs, not a knock on your patch ;)
 
-Marc
+> 
+> The name being double-freed is only part of the problem. The kobject
+> isn't reinitialized at all. Clearing ->name and re-calling kobject_init
+> would fix it - but I think we can do one better.
+> 
+> kobject_cleanup's comment for freeing ->name claims that ->name being
+> set means that it was allocated by the kobject infrastructure. The raid
+> names come directly out of an array anyway, so we don't even need to
+> copy it. We can avoid the string allocation entirely and handle the
+> reuse properly.
+> 
+> The following (untested, tonight anyway) patch should fix it.
 
-> Test:
-> 
->     mkfs.btrfs -f /dev/sdd
->     mount /dev/sdd /mnt
-> 
->     TEST_PATH="/mnt/fdmanana/.config/google-chrome-mysetup/Default/Pepper_Data/Shockwave_Flash/WritableRoot/#SharedObjects/JSHJ4ZKN/s.wsj.net/[[IMPORT]]/players.edgesuite.net/flash/plugins/osmf/advanced-streaming-plugin/v2.7/osmf1.6/Ak#"
->     mkdir -p $TEST_PATH
->     echo "hello world" > $TEST_PATH/amaiAdvancedStreamingPlugin.txt
-> 
->     btrfs subvolume snapshot -r /mnt /mnt/mysnap1
->     btrfs send /mnt/mysnap1 -f /tmp/1.snap
-> 
-> A test for xfstests follows.
-> 
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> Cc: Marc Merlin <marc@merlins.org>
-> ---
-> 
-> V2: Fix change title, "paths" to "path".
-> 
->  fs/btrfs/send.c | 7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index f6bbc1e..70c5e8c 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -368,10 +368,13 @@ static int fs_path_ensure_buf(struct fs_path *p, int len)
->  	/*
->  	 * First time the inline_buf does not suffice
->  	 */
-> -	if (p->buf == p->inline_buf)
-> +	if (p->buf == p->inline_buf) {
->  		tmp_buf = kmalloc(len, GFP_NOFS);
-> -	else
-> +		if (tmp_buf)
-> +			memcpy(tmp_buf, p->buf, old_buf_len);
-> +	} else {
->  		tmp_buf = krealloc(p->buf, len, GFP_NOFS);
-> +	}
->  	if (!tmp_buf)
->  		return -ENOMEM;
->  	p->buf = tmp_buf;
-> -- 
-> 1.9.1
-> 
-> 
+Can we safely reinit a kobject that has been put in use in sysfs?  Given
+all the things that can hold refs etc is this legal?
 
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+-chris

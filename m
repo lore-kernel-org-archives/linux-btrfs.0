@@ -1,52 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:44780 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751158AbaEVSUp convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 14:20:45 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:65233 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WnXbe-004FPA-Kj
-	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 12:20:43 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: mount hangs after disk crash (RAID-1)
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140522185025.4c72aab9@s9>
-Date: Thu, 22 May 2014 12:20:41 -0600
-Message-Id: <69656C71-5797-4D86-88FD-E254C4667305@colorremedies.com>
-References: <20140522032258.234aaab7@s9> <20140522095101.107b62e8@s9> <20140522161634.054ec95f@s9> <20140522185025.4c72aab9@s9>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:58785 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750870AbaEVUwt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 16:52:49 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WnZyn-0002oQ-Qh
+	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 22:52:45 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 22:52:45 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 22:52:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 3.15.0-rc5: btrfs and sync deadlock:
+ call_rwsem_down_read_failed / balance seems to create locks that block
+ everything else
+Date: Thu, 22 May 2014 20:52:34 +0000 (UTC)
+Message-ID: <pan$ed92c$6d9566f6$dd2041b0$f135597e@cox.net>
+References: <20140522090921.GA12037@merlins.org>
+	<20140522131528.GB22952@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Thu, 22 May 2014 06:15:29 -0700 as excerpted:
 
-On May 22, 2014, at 11:50 AM, Tomasz Chmielewski <tch@virtall.com> wrote:
+> Balance cancel hangs too and so does sync [...]
 
->> Try -o recovery,degraded
->> 
->> I would drop the other options for now, since they aren't necessary
->> to recover from a \ device failure.
+For balance, if it comes to having to stop it on new mount after a 
+shutdown, there is of course the skip_balance mount option.
+
+> I was able to stop my btrfs send/receive, in turn this unlocked sync
+> which succeeded too (2mn later).
+> btrfs balance cancel did not return, but maybe that's normal.
+> I see:
+> legolas:~# btrfs balance status /mnt/btrfs_pool2/
+> Balance on '/mnt/btrfs_pool2/' is running, cancel requested
+> 383 out of about 388 chunks balanced (457 considered),   1% left
 > 
-> Yes I've tried that as well, and it ends in the similar "hang" - high
-> IO for a while, then no IO at all, mount does not return.
+> It's been running for at least 15mn in 'cancel mode'. Is that normal?
+
+I'd guess so.  It's probably in the middle of operations for a single 
+chunk, and only checks for cancel between chunks.  Given the possible 
+complexity of those operations with snapshotting and quotas factored in 
+as well as COW fragmentation, 15 minutes on a single chunk isn't 
+/entirely/ out there.
+
+That being symptomatic of the whole performance problem they're battling 
+ATM.  They've turned off snapshot-aware-defrag for the time being, and 
+there's the quota handling rework in the pipeline, but...
+
+> The system doesn't seem hung, but it seems that running anything else
+> while balance is running creates an avalanche of locks that kills
+> everything.
 > 
-> 
-> It *does* mount as ro,degraded, but then, it's not possible to add a
-> disk and recover to a functioning RAID-1.
-> Also, when I try to remount rw, the mount command hangs as well.
-> 
-> Is there anything else I can try?
+> Is that a known performance problem?
 
-It sounds like it's able to read the file system but in the course of repairing whatever problems it has, it's getting stuck. 
+Yes, in that at least there's currently a definite known problem with 
+balance and snapshotting and snapshot deletion and send all going on at 
+the same time, as is certainly a possibility if some of those are on a 
+cron job that the admin running the other(s) didn't think about when they 
+initiated their own commands.
 
-I'd mount it ro and make sure its backup is updated. Then take a btrfs image btrfs-image -c 9 -t <cores> in case a dev wants to look at the fs at some point it its current state.
+I've seen patches for at least one related race-related problem (where 
+snapshot deletion could collide with balance or send) go by, and don't 
+believe it's in Linus-mainline yet, tho I haven't closely tracked status 
+beyond that.
 
-Then you can try some other things if you want: btrfs-next is one direction, and also regression testing with older kernels is also reasonable.
+Basically, at this point running only one such "major" btrfs operation at 
+a time should drastically reduce the possibility of problems, because 
+there /are/ known races.  Even after the known races are fixed, it's 
+probably a good idea anyway where possible, since just one such operation 
+is complex enough and running more than one at a time is only going to 
+slow them all down as well as requiring more CPU/IO/memory bandwidth, but 
+there /is/ recognition of the very real likelihood that people /will/ end 
+up doing it, especially since one or more of the operations may be cron 
+jobs that the admin isn't thinking about, so they're /trying/ to make it 
+work.  But "just don't do that" does remain the best policy, where it's 
+possible.  And of course right now there are known collision issues, so 
+definitely avoid it ATM.
 
-Last you could try btrfs-zero-log, but this doesn't look like the typical case for it, and probably will make things worse so it's not the next thing to try. Also I don't expect btrfs check or even --repair to work. I've not yet had any luck with it working on degraded volumes, and even rejoined volumes (no longer degraded) but not yet manually balanced the btrfs check crashes. After a manual balance then the btrfs check is OK.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-Chris Murphy

@@ -1,71 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:56293 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751088AbaEVQGZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 12:06:25 -0400
-Message-ID: <537E2081.9080007@redhat.com>
-Date: Thu, 22 May 2014 11:06:25 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Roman Mamedov <rm@romanrm.net>
-CC: Anand Jain <Anand.Jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2 v2] btrfs: label should not contain return char
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>	<1400567808-9494-1-git-send-email-anand.jain@oracle.com>	<537B83AD.5010901@redhat.com>	<537D5B55.1010207@oracle.com>	<537D5D6F.900@redhat.com> <20140522101431.6b2a9ee2@natsu>
-In-Reply-To: <20140522101431.6b2a9ee2@natsu>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57835 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750886AbaEVQ1f convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 12:27:35 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:63624 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WnVq9-003IeK-DT
+	for linux-btrfs@vger.kernel.org; Thu, 22 May 2014 10:27:34 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: mount hangs after disk crash (RAID-1)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <pan$4965$e2755b8c$eb8c082f$e15db32d@cox.net>
+Date: Thu, 22 May 2014 10:27:28 -0600
+Message-Id: <CDA6B778-BD10-4D3E-A4C4-ED3E956FEFD2@colorremedies.com>
+References: <20140522032258.234aaab7@s9> <pan$4965$e2755b8c$eb8c082f$e15db32d@cox.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 5/21/14, 11:14 PM, Roman Mamedov wrote:
-> On Wed, 21 May 2014 21:14:07 -0500
-> Eric Sandeen <sandeen@redhat.com> wrote:
+On May 22, 2014, at 3:43 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 > 
->>>> (Random aside: why does btrfs support online fs relabeling, anyway?)
->>>>
->>>> -Eric
->>>
->>>   Online you mean when mounted ?
->>
->> Yep - I'm just not sure who would ever want to do that.
->>
->> Aren't labels primarly used for mounting, during the mount process?
-> 
-> Well if you want to change the label of your root filesystem, how else would
-> you go about that? If Btrfs did not support this, then only while booted from a
-> rescue LiveCD? That's quite a bit more involved and not even always feasible
-> in case of remote machines with no IPMI or similar management.
-> 
-> Extfs supports online change of the volume label as well, albeit probably not
-> via a sysfs file, but with the tune2fs utility:
-> 
->   tune2fs -L <name> /dev/blockdevice
+> Note that unlike md/raid1, btrfs raid1 won't mount writable with only a 
+> single device.  You must have at least two devices to mount writable, tho 
+> a formerly two-device raid1 with a device missing should mount read-only.
 
-Yeah, that just writes directly to the block device.  :)
-But ok, I guess relabeling root is a fair case.
+No, a single device from a two device Btrfs raid1 is normally mountable degraded,rw. I did this just a week ago when bug "kernel BUG at fs/btrfs/locking.c when mounting with previously missing device". At one point when reproducing it, I was running degraded,rw with a single device for several hours without problems.
 
-- -Eric
- 
+Try -o recovery,degraded
 
+I would drop the other options for now, since they aren't necessary to recover from a device failure.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.17 (Darwin)
-Comment: GPGTools - http://gpgtools.org
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+Chris Murphy
 
-iQIcBAEBAgAGBQJTfiCAAAoJECCuFpLhPd7gAHoP/AlFeFJ8Om0wKxcnuolG7o4G
-9AHRu4Jto8JTHWToOwmtJAcWQFS+fJtUF009cl118eb+vUOoWFdTDK3H8UiC6uwM
-/OcFaeDRJOg4JEA8OBaXihCoG1JOPU2ygCezyg59mbHV6SFIYy4kDgqzfFm6qcaC
-8vqenmPkGhYiIadvPeDYctIPGS6DquLjxKk/xI52gLwP6so2eJ9nH4jmO7K1gF6n
-dRa7zfCDpcMq5AqiJW5XZWBfmuNH5etGgJW8J4JpuOSzYPECwuHzcXP3LZny/xUP
-t15LxzUR+0SZg04zJYXY5YoytZaz6mfk0jOksggeY9GiDenlWUZhDi/QexIhc2ZL
-ZuHt8WDWDtIqt4D84GE/9QlI5tVU+F8FkJBnPSS+ybP8YSShNWmIdKLVtn+4g8/x
-YVC6PnUyYvLj/1ZSJTGUQtJZkSjsfkRISk3ygVz1NJQG75euRL2gxmZkn11497rU
-rc4a+yZQ3Gxe0cOn1J8RzN9dDQ3iIQnM7Fn25vFdn/uN1dPuQuDP3zy9MG4WJD8e
-3xX1HNiXePgZGN5bhaCLXqAER6E4Xigd5mcdjuXZvmkexEkTRn3xOcXuoDhU8v2i
-Oloroh09tpMmzw4sNyaeqw11oIkBcUEvY/7ggqYEtZcOAtnFuyot9y5LUIgNmtBM
-Sas6/mxzXeTPCApF1o1a
-=sUri
------END PGP SIGNATURE-----

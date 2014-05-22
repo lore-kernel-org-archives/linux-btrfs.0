@@ -1,50 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:48756 "EHLO mail.virtall.com"
+Received: from mx1.redhat.com ([209.132.183.28]:56293 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751581AbaEVP2u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 11:28:50 -0400
-Received: from mail.virtall.com (localhost [127.0.0.1])
-	by mail.virtall.com (Postfix) with ESMTP id EAF3D36A57D
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 17:28:47 +0200 (CEST)
-Received: from s9 (7.Red-88-15-60.dynamicIP.rima-tde.net [88.15.60.7])
-	by mail.virtall.com (Postfix) with ESMTPSA id 8C4B036A52C
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 17:28:47 +0200 (CEST)
-Date: Thu, 22 May 2014 16:28:44 +0100
-From: Tomasz Chmielewski <tch@virtall.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: ditto blocks on ZFS
-Message-ID: <20140522162844.268cbed6@s9>
+	id S1751088AbaEVQGZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 May 2014 12:06:25 -0400
+Message-ID: <537E2081.9080007@redhat.com>
+Date: Thu, 22 May 2014 11:06:25 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+To: Roman Mamedov <rm@romanrm.net>
+CC: Anand Jain <Anand.Jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2 v2] btrfs: label should not contain return char
+References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>	<1400567808-9494-1-git-send-email-anand.jain@oracle.com>	<537B83AD.5010901@redhat.com>	<537D5B55.1010207@oracle.com>	<537D5D6F.900@redhat.com> <20140522101431.6b2a9ee2@natsu>
+In-Reply-To: <20140522101431.6b2a9ee2@natsu>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I thought an important idea behind btrfs was that we avoid by design
-> in the first place the very long and vulnerable RAID rebuild scenarios
-> suffered for block-level RAID...
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-This may be true for SSD disks - for ordinary disks it's not entirely
-the case.
+On 5/21/14, 11:14 PM, Roman Mamedov wrote:
+> On Wed, 21 May 2014 21:14:07 -0500
+> Eric Sandeen <sandeen@redhat.com> wrote:
+> 
+>>>> (Random aside: why does btrfs support online fs relabeling, anyway?)
+>>>>
+>>>> -Eric
+>>>
+>>>   Online you mean when mounted ?
+>>
+>> Yep - I'm just not sure who would ever want to do that.
+>>
+>> Aren't labels primarly used for mounting, during the mount process?
+> 
+> Well if you want to change the label of your root filesystem, how else would
+> you go about that? If Btrfs did not support this, then only while booted from a
+> rescue LiveCD? That's quite a bit more involved and not even always feasible
+> in case of remote machines with no IPMI or similar management.
+> 
+> Extfs supports online change of the volume label as well, albeit probably not
+> via a sysfs file, but with the tune2fs utility:
+> 
+>   tune2fs -L <name> /dev/blockdevice
 
-For most RAID rebuilds, it still seems way faster with software RAID-1
-where one drive is being read at its (almost) full speed, and the other
-is being written to at its (almost) full speed (assuming no other IO
-load).
+Yeah, that just writes directly to the block device.  :)
+But ok, I guess relabeling root is a fair case.
 
-With btrfs RAID-1, the way balance is made after disk replace, it takes
-lots of disk head movements resulting in overall small speed to rebuild
-the RAID, especially with lots of snapshots and related fragmentation.
-
-And the balance is still not smart and is causing reads from one device,
-and writes to *both* devices (extra unnecessary write to the
-healthy device - while it should read from the healthy device and write
-to the replaced device only).
+- -Eric
+ 
 
 
-Of course, other factors such as the amount of data or disk IO usage
-during rebuild apply.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.17 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-
--- 
-Tomasz Chmielewski
-http://wpkg.org
+iQIcBAEBAgAGBQJTfiCAAAoJECCuFpLhPd7gAHoP/AlFeFJ8Om0wKxcnuolG7o4G
+9AHRu4Jto8JTHWToOwmtJAcWQFS+fJtUF009cl118eb+vUOoWFdTDK3H8UiC6uwM
+/OcFaeDRJOg4JEA8OBaXihCoG1JOPU2ygCezyg59mbHV6SFIYy4kDgqzfFm6qcaC
+8vqenmPkGhYiIadvPeDYctIPGS6DquLjxKk/xI52gLwP6so2eJ9nH4jmO7K1gF6n
+dRa7zfCDpcMq5AqiJW5XZWBfmuNH5etGgJW8J4JpuOSzYPECwuHzcXP3LZny/xUP
+t15LxzUR+0SZg04zJYXY5YoytZaz6mfk0jOksggeY9GiDenlWUZhDi/QexIhc2ZL
+ZuHt8WDWDtIqt4D84GE/9QlI5tVU+F8FkJBnPSS+ybP8YSShNWmIdKLVtn+4g8/x
+YVC6PnUyYvLj/1ZSJTGUQtJZkSjsfkRISk3ygVz1NJQG75euRL2gxmZkn11497rU
+rc4a+yZQ3Gxe0cOn1J8RzN9dDQ3iIQnM7Fn25vFdn/uN1dPuQuDP3zy9MG4WJD8e
+3xX1HNiXePgZGN5bhaCLXqAER6E4Xigd5mcdjuXZvmkexEkTRn3xOcXuoDhU8v2i
+Oloroh09tpMmzw4sNyaeqw11oIkBcUEvY/7ggqYEtZcOAtnFuyot9y5LUIgNmtBM
+Sas6/mxzXeTPCApF1o1a
+=sUri
+-----END PGP SIGNATURE-----

@@ -1,61 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43401 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751266AbaEWDkT (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:36888 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750985AbaEWDyu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 23:40:19 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4N3eIvp031937
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2014 11:40:18 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: clear compress-force when remounting with compress option
-Date: Fri, 23 May 2014 11:36:52 +0800
-Message-ID: <1400816212-2501-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	Thu, 22 May 2014 23:54:50 -0400
+From: Russell Coker <russell@coker.com.au>
+To: ashford@whisperpc.com
+Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: ditto blocks on ZFS
+Date: Fri, 23 May 2014 13:54:46 +1000
+Message-ID: <7834850.9NHERJjFOs@xev>
+In-Reply-To: <ac1e9fe46f993235f30b4c003210dec8.squirrel@webmail.wanet.net>
+References: <2308735.51F3c4eZQ7@xev> <1795587.Ol58oREtZ7@xev> <ac1e9fe46f993235f30b4c003210dec8.squirrel@webmail.wanet.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
- # mkfs.btrfs -f /dev/sdb
- # mount /dev/sdb /mnt -o compress-force=lzo
- # mount /dev/sdb /mnt -o remount,compress=zlib
- # cat /proc/mounts
+On Thu, 22 May 2014 15:09:40 ashford@whisperpc.com wrote:
+> You've addressed half of the issue.  It appears that the metadata is
+> normally a bit over 1% using the current methods, but two samples do not
+> make a statistical universe.  The good news is that these two samples are
+> from opposite extremes of usage, so I expect they're close to where the
+> overall average would end up.  I'd like to see a few more samples, from
+> other usage scenarios, just to be sure.
+> 
+> If the above numbers are normal, adding ditto blocks could increase the
+> size of the metadata from 1% to 2% or even 3%.  This isn't a problem.
+> 
+> What we still don't know, and probably won't until after it's implemented,
+> is whether or not the addition of ditto blocks will make the space
+> allocation worse.
 
-Remounting from compress-force to compress could not clear compress-force
-option. The problem is there is no way for users to clear compress-force
-option separately.
+I've been involved in many discussions about filesystem choice.  None of them 
+have included anyone raising an issue about ZFS metadata space usage, probably 
+most ZFS users don't even know about ditto blocks.
 
-Fix this problem by clearing @FORCE_COMPRESS flag when remounting to
-compress=xxx.
+The relevant issue regarding disk space is the fact that filesystems tend to 
+perform better if there is a reasonable amount of free space.  The amount of 
+free space for good performance will depend on filesystem, usage pattern, and 
+whatever you might define as "good performance".
 
-Suggested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
----
- fs/btrfs/super.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+The first two Google hits on searching for recommended free space on ZFS 
+recommended using no more than 80% and 85% of disk space.  Obviously if "good 
+performance" requires 15% of free disk space then your capacity problem isn't 
+going to be solved by not duplicating metadata.  Note that I am not aware of 
+the accuracy of such claims about ZFS performance.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4662d92..c3bb35f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 					btrfs_info(root->fs_info,
- 						   "btrfs: use %s compression",
- 						   compress_type);
-+				/*
-+				 * If we remount from compress-force=xxx to
-+				 * compress=xxx, we need clear FORCE_COMPRESS
-+				 * flag, otherwise, there is no way for users
-+				 * to disable forcible compression separately.
-+				 */
-+				btrfs_clear_and_info(root, FORCE_COMPRESS,
-+						     "compress is not forced anymore");
- 			}
- 			break;
- 		case Opt_ssd:
+Is anyone doing research on how much free disk space is required on BTRFS for 
+"good performance"?  If a rumor (whether correct or incorrect) goes around 
+that you need 20% free space on a BTRFS filesystem for performance then that 
+will vastly outweigh the space used for metadata.
+
+> > The ZFS design involves ditto blocks being spaced apart due to the fact
+> > that corruption tends to have some spacial locality.  So you are adding
+> > an extra seek.
+> > 
+> > The worst case would be when you have lots of small synchronous writes,
+> > probably the default configuration of Maildir delivery would be a good
+> > case.
+> 
+> Is there a performance test for this?  That would be helpful in
+> determining the worst-case performance impact of implementing ditto
+> blocks, and probably some other enhancements as well.
+
+http://doc.coker.com.au/projects/postal/
+
+My Postal mail server benchmark is one option.  There are more than a few 
+benchmarks of synchronous writes of small files, but Postal uses real world 
+programs that need such performance.  Delivering a single message via a 
+typical Unix MTA requires synchronous writes of two queue files and then the 
+destination file in the mail store.
+
 -- 
-1.9.0
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

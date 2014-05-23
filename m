@@ -1,47 +1,264 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:9313 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750869AbaEVRO5 (ORCPT
+Received: from mail-wg0-f50.google.com ([74.125.82.50]:58911 "EHLO
+	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750985AbaEWDF3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 13:14:57 -0400
-Message-ID: <537E313E.8050906@fb.com>
-Date: Thu, 22 May 2014 13:17:50 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: don't remove raid type sysfs entries until unmount
-References: <537D40EB.60906@fb.com> <537D5136.4050007@suse.com> <537DEB3F.5020303@fb.com> <537E1242.1010109@suse.com>
-In-Reply-To: <537E1242.1010109@suse.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+	Thu, 22 May 2014 23:05:29 -0400
+Received: by mail-wg0-f50.google.com with SMTP id x12so4333493wgg.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 20:05:27 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: ensure readers see new data after a clone operation
+Date: Fri, 23 May 2014 05:03:34 +0100
+Message-Id: <1400817814-32222-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
+References: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/22/2014 11:05 AM, Jeff Mahoney wrote:
-> - gpg control packet
-> On 5/22/14, 8:19 AM, Chris Mason wrote:
->> Can we safely reinit a kobject that has been put in use in sysfs?
->> Given all the things that can hold refs etc is this legal?
-> 
-> It depends on how the kobject is being used.
-> 
-> It wouldn't be safe to re-use the kobject embedded in space_info since
-> it controls the lifetime of the object, regardless of its use in sysfs.
-> 
-> The kobjects for block groups only exist for creating the
-> subdirectories and their lifetime is actually the lifetime of the
-> space_info. We take a reference to the space_info when we add them to
-> sysfs because that's where they draw their data. The only reference to
-> a block group kobject is taken when we add it to sysfs and is dropped
-> when we remove it. Holding a sysfs file open doesn't pin the kobject,
-> so once we remove it from sysfs (kobject_del waits for readers to
-> complete), it's safe to reinitialize it.
-> 
+We were cleaning the clone target file range from the page cache before
+we did replace the file extent items in the fs tree. This was racy,
+as right after cleaning the relevant range from the page cache and before
+replacing the file extent items, a read against that range could be
+performed by another task and populate again the page cache with stale
+data (stale after the cloning finishes). This would result in reads after
+the clone operation successfully finishes to get old data (and potentially
+for a very long time). Therefore evict the pages after replacing the file
+extent items, so that subsequent reads will always get the new data.
 
-Fair enough, once you've tested this new patch a bit I'll drop mine for
-yours.
+Similarly, we were prone to races while cloning the file extent items
+because we weren't locking the target range and wait for any existing
+ordered extents against that range to complete. It was possible that
+after cloning the extent items, a write operation that was performed
+before the clone operation and overlaps the same range, would end up
+undoing all or part of the work the clone operation did (a worker task
+running inode.c:btrfs_finish_ordered_io). Therefore lock the target
+range in the io tree, wait for all pending ordered extents against that
+range to finish and then safely perform the cloning.
 
-Thanks!
+The issue of reading stale data after the clone operation is easy to
+reproduce by running the following C program in a loop until it exits
+with return value 1.
 
--chris
+ #include <unistd.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+ #include <pthread.h>
+ #include <fcntl.h>
+ #include <assert.h>
+ #include <asm/types.h>
+ #include <linux/ioctl.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
+
+ #define SRC_FILE "/mnt/sdd/foo"
+ #define DST_FILE "/mnt/sdd/bar"
+ #define FILE_SIZE (16 * 1024)
+ #define PATTERN_SRC 'X'
+ #define PATTERN_DST 'Y'
+
+struct btrfs_ioctl_clone_range_args {
+	__s64 src_fd;
+	__u64 src_offset, src_length;
+	__u64 dest_offset;
+};
+
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
+				   struct btrfs_ioctl_clone_range_args)
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static int clone_done = 0;
+static int reader_ready = 0;
+static int stale_data = 0;
+
+static void *reader_loop(void *arg)
+{
+	char buf[4096], want_buf[4096];
+
+	memset(want_buf, PATTERN_SRC, 4096);
+	pthread_mutex_lock(&mutex);
+	reader_ready = 1;
+	pthread_mutex_unlock(&mutex);
+
+	while (1) {
+		int done, fd, ret;
+
+		fd = open(DST_FILE, O_RDONLY);
+		assert(fd != -1);
+
+		pthread_mutex_lock(&mutex);
+		done = clone_done;
+		pthread_mutex_unlock(&mutex);
+
+		ret = read(fd, buf, 4096);
+		assert(ret == 4096);
+		close(fd);
+
+		if (done) {
+			ret = memcmp(buf, want_buf, 4096);
+			if (ret == 0) {
+				printf("Found new content\n");
+			} else {
+				printf("Found old content\n");
+				pthread_mutex_lock(&mutex);
+				stale_data = 1;
+				pthread_mutex_unlock(&mutex);
+			}
+			break;
+		}
+	}
+	return NULL;
+}
+
+int main(int argc, char *argv[])
+{
+	pthread_t reader;
+	int ret, i, fd;
+	struct btrfs_ioctl_clone_range_args clone_args;
+	int fd1, fd2;
+
+	ret = remove(SRC_FILE);
+	if (ret == -1 && errno != ENOENT) {
+		fprintf(stderr, "Error deleting src file: %s\n", strerror(errno));
+		return 1;
+	}
+	ret = remove(DST_FILE);
+	if (ret == -1 && errno != ENOENT) {
+		fprintf(stderr, "Error deleting dst file: %s\n", strerror(errno));
+		return 1;
+	}
+
+	fd = open(SRC_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+	assert(fd != -1);
+	for (i = 0; i < FILE_SIZE; i++) {
+		char c = PATTERN_SRC;
+		ret = write(fd, &c, 1);
+		assert(ret == 1);
+	}
+	close(fd);
+	fd = open(DST_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+	assert(fd != -1);
+	for (i = 0; i < FILE_SIZE; i++) {
+		char c = PATTERN_DST;
+		ret = write(fd, &c, 1);
+		assert(ret == 1);
+	}
+	close(fd);
+        sync();
+
+	ret = pthread_create(&reader, NULL, reader_loop, NULL);
+	assert(ret == 0);
+	while (1) {
+		int r;
+		pthread_mutex_lock(&mutex);
+		r = reader_ready;
+		pthread_mutex_unlock(&mutex);
+		if (r) break;
+	}
+
+	fd1 = open(SRC_FILE, O_RDONLY);
+	if (fd1 < 0) {
+		fprintf(stderr, "Error open src file: %s\n", strerror(errno));
+		return 1;
+	}
+	fd2 = open(DST_FILE, O_RDWR);
+	if (fd2 < 0) {
+		fprintf(stderr, "Error open dst file: %s\n", strerror(errno));
+		return 1;
+	}
+	clone_args.src_fd = fd1;
+	clone_args.src_offset = 0;
+	clone_args.src_length = 4096;
+	clone_args.dest_offset = 0;
+	ret = ioctl(fd2, BTRFS_IOC_CLONE_RANGE, &clone_args);
+	assert(ret == 0);
+	close(fd1);
+	close(fd2);
+
+	pthread_mutex_lock(&mutex);
+	clone_done = 1;
+	pthread_mutex_unlock(&mutex);
+	ret = pthread_join(reader, NULL);
+	assert(ret == 0);
+
+	pthread_mutex_lock(&mutex);
+	ret = stale_data ? 1 : 0;
+	pthread_mutex_unlock(&mutex);
+	return ret;
+}
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+
+V2: Protect against ongoing writes by locking the target range in
+    the io tree and wait for any existing ordered extents for that
+    range to finish before starting the clone operation.
+
+V3: Fixed the locking ranges for the case where the source and target
+    inodes are the same. I was passing an end offset to lock_extent_range
+    when that function expects a range length instead. This resulted in
+    incorrect unlocking, leave some extent states locked forever. This
+    is now tested with a new test case for xfstests.
+
+ fs/btrfs/ioctl.c | 36 +++++++++++++++++++++++++++++++-----
+ 1 file changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fba7a00..362720a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3410,15 +3410,41 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 			goto out_unlock;
+ 	}
+ 
+-	/* truncate page cache pages from target inode range */
+-	truncate_inode_pages_range(&inode->i_data, destoff,
+-				   PAGE_CACHE_ALIGN(destoff + len) - 1);
++	/*
++	 * Lock the target range too. Right after we replace the file extent
++	 * items in the fs tree (which now point to the cloned data), we might
++	 * have a worker replace them with extent items relative to a write
++	 * operation that was issued before this clone operation (i.e. confront
++	 * with inode.c:btrfs_finish_ordered_io).
++	 */
++	if (same_inode) {
++		u64 lock_start = min_t(u64, off, destoff);
++		u64 lock_len = max_t(u64, off, destoff) + len - lock_start;
+ 
+-	lock_extent_range(src, off, len);
++		lock_extent_range(src, lock_start, lock_len);
++	} else {
++		lock_extent_range(src, off, len);
++		lock_extent_range(inode, destoff, len);
++	}
+ 
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
+ 
+-	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
++	if (same_inode) {
++		u64 lock_start = min_t(u64, off, destoff);
++		u64 lock_end = max_t(u64, off, destoff) + len - 1;
++
++		unlock_extent(&BTRFS_I(src)->io_tree, lock_start, lock_end);
++	} else {
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
++		unlock_extent(&BTRFS_I(inode)->io_tree, destoff,
++			      destoff + len - 1);
++	}
++	/*
++	 * Truncate page cache pages so that future reads will see the cloned
++	 * data immediately and not the previous data.
++	 */
++	truncate_inode_pages_range(&inode->i_data, destoff,
++				   PAGE_CACHE_ALIGN(destoff + len) - 1);
+ out_unlock:
+ 	if (!same_inode) {
+ 		if (inode < src) {
+-- 
+1.9.1
 

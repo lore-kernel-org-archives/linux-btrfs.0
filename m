@@ -1,71 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mari.romanrm.net ([157.7.203.202]:39082 "EHLO mari.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751427AbaEWM6G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 May 2014 08:58:06 -0400
-Date: Fri, 23 May 2014 18:57:53 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Tomasz Chmielewski <tch@virtall.com>,
-        Calvin Walton <calvin.walton@kepstin.ca>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: RAID-1 - suboptimal write performance?
-Message-ID: <20140523185753.65c96c16@natsu>
-In-Reply-To: <537684F9.6060909@gmail.com>
-References: <20140516164815.1c33149b@s9>
-	<1400263584.979.17.camel@sasami.ottawa.blindsidenetworks.com>
-	<20140516214135.23fefc39@s9>
-	<537684F9.6060909@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/_bBUS6E.Kj/+qS9UBMtHw5E"; protocol="application/pgp-signature"
+Received: from magic.merlins.org ([209.81.13.136]:36246 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751113AbaEWORX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 May 2014 10:17:23 -0400
+Date: Fri, 23 May 2014 07:17:22 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org, takeuchi_satoru@jp.fujitsu.com
+Subject: Re: 3.15.0-rc5: now sync and mount are hung on call_rwsem_down_write_failed
+Message-ID: <20140523141722.GA11991@merlins.org>
+References: <20140522090921.GA12037@merlins.org> <20140522131528.GB22952@merlins.org> <pan$ed92c$6d9566f6$dd2041b0$f135597e@cox.net> <20140523002243.GE12312@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140523002243.GE12312@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/_bBUS6E.Kj/+qS9UBMtHw5E
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+I had btrfs send/receive running.
 
-On Fri, 16 May 2014 17:36:57 -0400
-Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+Plugging the power in caused laptop-mode to remount my root partition.
 
-> > It's similar (writes to just one drive, while the other is idle) when
-> > removing (many) snapshots.=20
-> >=20
-> > Not sure if that's optimal behaviour.
-> >=20
-> I think, after having looked at some of the code, that I know what is
-> causing this (although my interpretation of the code may be completely
-> off target).  As far as I can make out, BTRFS only dispatches writes to
-> one device at a time
+That hung, and in turn all of btrfs hung too.
 
-Yes, I can confirm this... yesterday I was writing large files to my Btrfs
-RAID1 of two devices, and remembering this thread, decided to take a look at
-how the writes are performed. And indeed in 'iostat' it was clear that only
-one device works at a time. In my case, first one drive was writing at 80-1=
-00
-MB/sec for 5-10 seconds, then activity on that once ceased entirely, and the
-second drive started writing for the same period at similar speeds.
+ 7668 root     btrfs send home_ro.20140523 -
+ 7669 root     btrfs receive /mnt/btrfs_po sleep_on_page
+12118 root     mount /dev/mapper/cryptroot call_rwsem_down_write_failed
+10678 merlin   mencoder -passlogfile dsc04 sleep_on_page
 
-In effect this is causing the whole operation take about 2x longer than ide=
-al
-(or in case of just a single device Btrfs). Surprising that this performance
-drawback of Btrfs RAID1 is not more widely known or discussed.
+Clearly, it takes very little for 3.15rc5 to deadlock :(
 
---=20
-With respect,
-Roman
+(I wasn't running balance or snapshot this time)
 
---Sig_/_bBUS6E.Kj/+qS9UBMtHw5E
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+I was able to kill btrfs send and receive, but mencoder is very hung, and
+sync does not finish either:
+10654 merlin   sync                        sync_inodes_sb
+17191 merlin   sync                        call_rwsem_down_read_failed
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+I'm not posting the sysrq-w every time, but I have it available if needed.
 
-iEYEARECAAYFAlN/RdEACgkQTLKSvz+PZwgG3wCgmHfHlNkzg2LMKMi7QVXq05r/
-QGUAn3wOQ4QoZ95/xmEUfZLq6vNNlfAs
-=R4aB
------END PGP SIGNATURE-----
-
---Sig_/_bBUS6E.Kj/+qS9UBMtHw5E--
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

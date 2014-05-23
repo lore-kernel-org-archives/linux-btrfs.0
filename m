@@ -1,52 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:40449 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750936AbaEWMTS (ORCPT
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:38448 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751042AbaEWSPm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 May 2014 08:19:18 -0400
+	Fri, 23 May 2014 14:15:42 -0400
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, ddiss@suse.de,
+Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 2/2 v2] xfstests: add test for btrfs ioctl clone operation
-Date: Fri, 23 May 2014 14:19:08 +0100
-Message-Id: <1400851148-597-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400817931-32326-2-git-send-email-fdmanana@gmail.com>
-References: <1400817931-32326-2-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs send with large xattrs
+Date: Fri, 23 May 2014 20:15:30 +0100
+Message-Id: <1400872530-7706-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a test to verify that the btrfs ioctl clone operation is
-able to clone extents of a file to different positions of the file,
-that is, the source and target files are the same. Existing tests
-only cover the case where the source and target files are different.
+Verify that btrfs send is able to replicate xattrs larger than
+PATH_MAX. This is possible if the b+tree leaf size is larger
+than 4Kb (mkfs.btrfs's default is max(16Kb, PAGE_SIZE) as of
+btrfs-progs v3.12, and max(4Kb, PAGE_SIZE in older versions).
+
+This issue is fixed by the following linux kernel btrfs patch:
+
+   Btrfs: send, use the right limits for xattr names and values
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-
-V2: Made the test exercise a more complex code path in the btrfs ioctl clone
-    code. Now we have extents with different sizes and make the cloner process
-    partial extents and split existing extents with smaller ones.
-
- tests/btrfs/052     | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/052.out |  51 +++++++++++++++++++++++
+ tests/btrfs/053     | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/053.out |   1 +
  tests/btrfs/group   |   1 +
- 3 files changed, 168 insertions(+)
- create mode 100755 tests/btrfs/052
- create mode 100644 tests/btrfs/052.out
+ 3 files changed, 110 insertions(+)
+ create mode 100755 tests/btrfs/053
+ create mode 100644 tests/btrfs/053.out
 
-diff --git a/tests/btrfs/052 b/tests/btrfs/052
+diff --git a/tests/btrfs/053 b/tests/btrfs/053
 new file mode 100755
-index 0000000..9b98521
+index 0000000..4dbdf59
 --- /dev/null
-+++ b/tests/btrfs/052
-@@ -0,0 +1,116 @@
++++ b/tests/btrfs/053
+@@ -0,0 +1,108 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/052
++# FS QA Test No. btrfs/053
 +#
-+# Verify that the btrfs ioctl clone operation can operate on the same
-+# file as a source and target. That is, clone extents within the same
-+# file.
++# Verify that btrfs send is able to replicate xattrs larger than PATH_MAX.
++# This is possible if the b+tree leaf size is larger than 4Kb (mkfs.btrfs's
++# default is max(16Kb, PAGE_SIZE) as of btrfs-progs v3.12, and max(4Kb,
++# PAGE_SIZE in older versions).
++#
++# This issue is fixed by the following linux kernel btrfs patch:
++#
++#   Btrfs: send, use the right limits for xattr names and values
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -76,153 +78,90 @@ index 0000000..9b98521
 +
 +_cleanup()
 +{
++    rm -fr $send_files_dir
 +    rm -fr $tmp
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
++. ./common/attr
 +
 +# real QA test starts here
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_btrfs_cloner
++_require_fssum
++_require_attrs
 +_need_to_be_root
 +
-+rm -f $seqres.full
++# max(16384, PAGE_SIZE) is the default leaf/node size on btrfs-progs v3.12+.
++# Older versions just use max(4096, PAGE_SIZE).
++# mkfs.btrfs can't create an fs with a leaf/node size smaller than PAGE_SIZE.
++leaf_size=$(echo -e "16384\n`getconf PAGE_SIZE`" | sort -nr | head -1)
 +
-+_scratch_mkfs >/dev/null 2>&1
++send_files_dir=$TEST_DIR/btrfs-test-$seq
++
++rm -f $seqres.full
++rm -fr $send_files_dir
++mkdir $send_files_dir
++
++_scratch_mkfs "-l $leaf_size" >/dev/null 2>&1
 +_scratch_mount
 +
-+# Create a file with 5 extents, 4 of 8Kb each and 1 of 64Kb.
-+$XFS_IO_PROG -f -c "pwrite -S 0x01 -b 8192 0 8192" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sync
-+$XFS_IO_PROG -c "pwrite -S 0x02 -b 8192 8192 8192" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sync
-+$XFS_IO_PROG -c "pwrite -S 0x03 -b 8192 16384 8192" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sync
-+$XFS_IO_PROG -c "pwrite -S 0x04 -b 8192 24576 8192" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sync
-+$XFS_IO_PROG -c "pwrite -S 0x05 -b 65536 32768 65536" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sync
++echo "hello world" > $SCRATCH_MNT/foobar
 +
-+# Digest of initial content.
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
++$SETFATTR_PROG -n user.xattr_name_1 -v `$PERL_PROG -e 'print "A" x 6000;'` \
++	$SCRATCH_MNT/foobar
 +
-+# Same source and target ranges - must fail.
-+$CLONER_PROG -s 8192 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+# Check file content didn't change.
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
++run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
 +
-+# Intersection between source and target ranges - must fail too.
-+$CLONER_PROG -s 4096 -d 8192 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+# Check file content didn't change.
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
++# Update existing xattr value and add a new xattr too.
++$SETFATTR_PROG -n user.xattr_name_1 -v `$PERL_PROG -e 'print "Z" x 6666;'` \
++	$SCRATCH_MNT/foobar
++$SETFATTR_PROG -n user.xattr_name_2 -v `$PERL_PROG -e 'print "U" x 5555;'` \
++	$SCRATCH_MNT/foobar
 +
-+# Clone an entire extent from a higher range to a lower range.
-+$CLONER_PROG -s 24576 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
++_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
++	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
 +
-+# Check entire file, the 8Kb block at offset 0 now has the same content as the
-+# 8Kb block at offset 24576.
-+od -t x1 $SCRATCH_MNT/foo
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap2 -f $send_files_dir/2.snap
 +
-+# Clone an entire extent from a lower range to a higher range.
-+$CLONER_PROG -s 8192 -d 16384 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
++_scratch_unmount
++_check_scratch_fs
 +
-+# Check entire file, the 8Kb block at offset 0 now has the same content as the
-+# 8Kb block at offset 24576, and the 8Kb block at offset 16384 now has the same
-+# content as the 8Kb block at offset 8192.
-+od -t x1 $SCRATCH_MNT/foo
++_scratch_mkfs "-l $leaf_size" >/dev/null 2>&1
++_scratch_mount
 +
-+# Now clone 1 extent and an half into the file range starting at offset 65536.
-+# So we get the second half of the extent at offset 16384 and the whole extent
-+# at 24576 cloned into the middle of the 64Kb extent that starts at file offset
-+# 32768. This makes the clone ioctl process more extent items from the b+tree
-+# and forces a split of the large 64Kb extent at the end of the file.
-+$CLONER_PROG -s 20480 -d 65536 -l 12288 $SCRATCH_MNT/foo $SCRATCH_MNT/foo
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
++run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
 +
-+# Check entire file. Besides the previous changes, we now should have 4096 bytes
-+# with the value 0x02 at file offset 65536, and 8192 bytes with value 0x04 at
-+# the file offset 69632. The ranges [32768, 65536[ and [77824, 98304[ should
-+# remain with all bytes having a value of 0x05.
-+od -t x1 $SCRATCH_MNT/foo
++_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
++run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
 +
 +_check_scratch_fs
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/052.out b/tests/btrfs/052.out
+diff --git a/tests/btrfs/053.out b/tests/btrfs/053.out
 new file mode 100644
-index 0000000..1070517
+index 0000000..4c61638
 --- /dev/null
-+++ b/tests/btrfs/052.out
-@@ -0,0 +1,51 @@
-+QA output created by 052
-+wrote 8192/8192 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 8192
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 16384
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8192/8192 bytes at offset 24576
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 65536/65536 bytes at offset 32768
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+clone failed: Invalid argument
-+5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+clone failed: Invalid argument
-+5af7a1d6d3757be1e3e911ba5fdf4cbe  SCRATCH_MNT/foo
-+0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+*
-+0040000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+*
-+0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+*
-+0300000
-+0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+*
-+0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+*
-+0300000
-+0000000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0020000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+*
-+0060000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0100000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+*
-+0200000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-+*
-+0210000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
-+*
-+0230000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
-+*
-+0300000
++++ b/tests/btrfs/053.out
+@@ -0,0 +1 @@
++QA output created by 053
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 0673449..5ff9b8e 100644
+index 5ff9b8e..ea49c5c 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -54,3 +54,4 @@
- 049 auto quick
+@@ -55,3 +55,4 @@
  050 auto
  051 auto quick
-+052 auto quick
+ 052 auto quick
++053 auto quick
 -- 
 1.9.1
 

@@ -1,58 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20991 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751225AbaEWCrP (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:43401 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751266AbaEWDkT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 22:47:15 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, sandeen@redhat.com, rm@romanrm.net,
-        koen@dominion.thruhere.net
-Subject: [PATCH 2/2 v4] btrfs: usage error should not be logged into system log
-Date: Fri, 23 May 2014 10:50:02 +0800
-Message-Id: <1400813402-27474-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1400813402-27474-1-git-send-email-anand.jain@oracle.com>
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com>
- <1400813402-27474-1-git-send-email-anand.jain@oracle.com>
+	Thu, 22 May 2014 23:40:19 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4N3eIvp031937
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2014 11:40:18 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] Btrfs: clear compress-force when remounting with compress option
+Date: Fri, 23 May 2014 11:36:52 +0800
+Message-ID: <1400816212-2501-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+Steps to reproduce:
+ # mkfs.btrfs -f /dev/sdb
+ # mount /dev/sdb /mnt -o compress-force=lzo
+ # mount /dev/sdb /mnt -o remount,compress=zlib
+ # cat /proc/mounts
 
-I have an opinion that system logs under /var/log/ are
-valuable info to investigate the real system issues at
-the data center. People handling data center issues
-do spend a lot time and efforts analyzing messages
-files. Having usage error logged into system log is
-something we should avoid.
+Remounting from compress-force to compress could not clear compress-force
+option. The problem is there is no way for users to clear compress-force
+option separately.
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Fix this problem by clearing @FORCE_COMPRESS flag when remounting to
+compress=xxx.
+
+Suggested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- v4: commit reword. Thanks Koen
- v3: rebase again
- v2: rebase
+ fs/btrfs/super.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
- fs/btrfs/sysfs.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index e12e2be..522d023 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -381,11 +381,8 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	 */
- 	p_len = strcspn(buf, "\n");
- 
--	if (p_len >= BTRFS_LABEL_SIZE) {
--		pr_err("BTRFS: unable to set label with more than %d bytes\n",
--		       BTRFS_LABEL_SIZE - 1);
-+	if (p_len >= BTRFS_LABEL_SIZE)
- 		return -EINVAL;
--	}
- 
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans))
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4662d92..c3bb35f 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 					btrfs_info(root->fs_info,
+ 						   "btrfs: use %s compression",
+ 						   compress_type);
++				/*
++				 * If we remount from compress-force=xxx to
++				 * compress=xxx, we need clear FORCE_COMPRESS
++				 * flag, otherwise, there is no way for users
++				 * to disable forcible compression separately.
++				 */
++				btrfs_clear_and_info(root, FORCE_COMPRESS,
++						     "compress is not forced anymore");
+ 			}
+ 			break;
+ 		case Opt_ssd:
 -- 
-1.7.1
+1.9.0
 

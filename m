@@ -1,177 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37625 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:37637 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751074AbaEWUGv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 May 2014 16:06:51 -0400
-Message-ID: <537FAA56.4060001@suse.com>
-Date: Fri, 23 May 2014 16:06:46 -0400
+	id S1750985AbaEWUHm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 May 2014 16:07:42 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 04CDFAC77
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2014 20:07:41 +0000 (UTC)
+Message-ID: <537FAA8B.3060402@suse.com>
+Date: Fri, 23 May 2014 16:07:39 -0400
 From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>,
-        Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] btrfs: allocate raid type kobjects dynamically
-References: <537F9BC3.9040002@suse.com> <537FA461.4050700@suse.com>
-In-Reply-To: <537FA461.4050700@suse.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: handle add/remove of sysfs links when devices are
+ added/removed
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 5/23/14, 3:41 PM, Jeff Mahoney wrote:
-> On 5/23/14, 3:04 PM, Jeff Mahoney wrote:
->> We are currently allocating space_info objects in an array when
->> we allocate space_info. When a user does something like:
-> 
->> # btrfs balance start -mconvert=raid1 -dconvert=raid1 /mnt #
->> btrfs balance start -mconvert=single -dconvert=single /mnt -f #
->> btrfs balance start -mconvert=raid1 -dconvert=raid1 /
-> 
->> We can end up with memory corruption since the kobject hasn't
->> been reinitialized properly and the name pointer was left set.
-> 
->> The rationale behind allocating them statically was to avoid 
->> creating a separate kobject container that just contained the
->> raid type. It used the index in the array to determine the
->> index.
-> 
->> Ultimately, though, this wastes more memory than it saves in all
->>  but the most complex scenarios and introduces kobject lifetime 
->> questions.
-> 
->> This patch allocates the kobjects dynamically instead. Note that
->> we also remove the kobject_get/put of the parent kobject since 
->> kobject_add and kobject_del do that internally.
-> 
-> Nack.
-> 
-> Works with switching raid groups but crashes on umount.
+btrfs currently publishes device membership via sysfs based on the devices
+present when the file system is mounted. That publishing is not updated
+when devices are added or removed while mounted.
 
-It was due to if (kobj->parent) not being switched over to if (kobj)
-in the cleanup-for-umount code.
+This patch handles those events.
 
-I've posted a fixed version.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/volumes.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-- -Jeff
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1704,6 +1704,9 @@ int btrfs_rm_device(struct btrfs_root *r
+ 
+ 	ret = 0;
+ 
++	sysfs_remove_link(root->fs_info->device_dir_kobj,
++			  part_to_dev(bdev->bd_part)->kobj.name);
++
+ 	/* Notify udev that device has changed */
+ 	if (bdev)
+ 		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+@@ -2038,6 +2041,12 @@ int btrfs_init_new_device(struct btrfs_r
+ 		goto error;
+ 	}
+ 
++	ret = sysfs_create_link(root->fs_info->device_dir_kobj,
++				&part_to_dev(bdev->bd_part)->kobj,
++				part_to_dev(bdev->bd_part)->kobj.name);
++	if (ret)
++		goto error;
++
+ 	lock_chunks(root);
+ 
+ 	q = bdev_get_queue(bdev);
+@@ -2152,6 +2161,8 @@ error_trans:
+ 	unlock_chunks(root);
+ 	btrfs_end_transaction(trans, root);
+ 	rcu_string_free(device->name);
++	sysfs_remove_link(root->fs_info->device_dir_kobj,
++			  part_to_dev(bdev->bd_part)->kobj.name);
+ 	kfree(device);
+ error:
+ 	blkdev_put(bdev, FMODE_EXCL);
 
-> -Jeff
-> 
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com> ---
->> fs/btrfs/ctree.h |    8 +++++++- fs/btrfs/extent-tree.c |   33 
->> +++++++++++++++++++++------------ fs/btrfs/sysfs.c       |    5 
->> +++-- 3 files changed, 31 insertions(+), 15 deletions(-)
-> 
->> --- a/fs/btrfs/ctree.h +++ b/fs/btrfs/ctree.h @@ -1113,6
->> +1113,12 @@ struct btrfs_qgroup_limit_item { __le64 rsv_excl; } 
->> __attribute__ ((__packed__));
-> 
->> +/* For raid type sysfs entries */ +struct raid_kobject { +	int 
->> raid_type; +	struct kobject kobj; +}; + struct btrfs_space_info {
->>  spinlock_t lock;
-> 
->> @@ -1163,7 +1169,7 @@ struct btrfs_space_info {
->> wait_queue_head_t wait;
-> 
->> struct kobject kobj; -	struct kobject 
->> block_group_kobjs[BTRFS_NR_RAID_TYPES]; +	struct kobject 
->> *block_group_kobjs[BTRFS_NR_RAID_TYPES]; };
-> 
->> #define	BTRFS_BLOCK_RSV_GLOBAL		1 --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c @@ -3401,10 +3401,8 @@ static int 
->> update_space_info(struct btrf return ret; }
-> 
->> -	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) { +	for (i = 0; i < 
->> BTRFS_NR_RAID_TYPES; i++)
->> INIT_LIST_HEAD(&found->block_groups[i]); -
->> kobject_init(&found->block_group_kobjs[i], &btrfs_raid_ktype); - 
->> } init_rwsem(&found->groups_sem); spin_lock_init(&found->lock); 
->> found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK; @@ -8327,7 
->> +8325,8 @@ int btrfs_free_block_groups(struct btrfs 
->> list_del(&space_info->list); for (i = 0; i <
->> BTRFS_NR_RAID_TYPES; i++) { struct kobject *kobj; -			kobj = 
->> &space_info->block_group_kobjs[i]; +			kobj = 
->> space_info->block_group_kobjs[i]; + 
->> space_info->block_group_kobjs[i] = NULL; if (kobj->parent) { 
->> kobject_del(kobj); kobject_put(kobj); @@ -8352,17 +8351,26 @@ 
->> static void __link_block_group(struct bt 
->> up_write(&space_info->groups_sem);
-> 
->> if (first) { -		struct kobject *kobj = 
->> &space_info->block_group_kobjs[index]; +		struct raid_kobject 
->> *rkobj; int ret;
-> 
->> -		kobject_get(&space_info->kobj); /* put in release */ -		ret = 
->> kobject_add(kobj, &space_info->kobj, "%s", - 
->> get_raid_name(index)); +		rkobj = kzalloc(sizeof(*rkobj), 
->> GFP_KERNEL); +		if (!rkobj) +			goto out_err; +		rkobj->raid_type
->> = index; +		kobject_init(&rkobj->kobj, &btrfs_raid_ktype); +		ret
->> = kobject_add(&rkobj->kobj, &space_info->kobj, +				  "%s", 
->> get_raid_name(index)); if (ret) { -			pr_warn("BTRFS: failed to
->> add kobject for block cache. ignoring.\n"); - 
->> kobject_put(&space_info->kobj); +			kobject_put(&rkobj->kobj); + 
->> goto out_err; } +		space_info->block_group_kobjs[index] = 
->> &rkobj->kobj; } + +	return; +out_err: +	pr_warn("BTRFS: failed
->> to add kobject for block cache. ignoring.\n"); }
-> 
->> static struct btrfs_block_group_cache * @@ -8796,8 +8804,9 @@
->> int btrfs_remove_block_group(struct btrf */ 
->> list_del_init(&block_group->list); if 
->> (list_empty(&block_group->space_info->block_groups[index])) { - 
->> kobject_del(&block_group->space_info->block_group_kobjs[index]);
->> - 
->> kobject_put(&block_group->space_info->block_group_kobjs[index]);
->> + kobject_del(block_group->space_info->block_group_kobjs[index]);
->> + kobject_put(block_group->space_info->block_group_kobjs[index]);
->> + block_group->space_info->block_group_kobjs[index] = NULL; 
->> clear_avail_alloc_bits(root->fs_info, block_group->flags); } 
->> up_write(&block_group->space_info->groups_sem); --- 
->> a/fs/btrfs/sysfs.c +++ b/fs/btrfs/sysfs.c @@ -254,6 +254,7 @@ 
->> static ssize_t global_rsv_reserved_show( 
->> BTRFS_ATTR(global_rsv_reserved, 0444, global_rsv_reserved_show);
-> 
->> #define to_space_info(_kobj) container_of(_kobj, struct 
->> btrfs_space_info, kobj) +#define to_raid_kobj(_kobj) 
->> container_of(_kobj, struct raid_kobject, kobj)
-> 
->> static ssize_t raid_bytes_show(struct kobject *kobj, struct 
->> kobj_attribute *attr, char *buf); @@ -266,7 +267,7 @@ static 
->> ssize_t raid_bytes_show(struct ko { struct btrfs_space_info
->> *sinfo = to_space_info(kobj->parent); struct
->> btrfs_block_group_cache *block_group; -	int index = kobj -
->> sinfo->block_group_kobjs; +	int index =
->> to_raid_kobj(kobj)->raid_type; u64 val = 0;
-> 
->> down_read(&sinfo->groups_sem); @@ -288,7 +289,7 @@ static struct 
->> attribute *raid_attributes
-> 
->> static void release_raid_kobj(struct kobject *kobj) { - 
->> kobject_put(kobj->parent); +	kfree(to_raid_kobj(kobj)); }
-> 
->> struct kobj_type btrfs_raid_ktype = {
-> 
-> 
-> 
-> 
-> 
-
-- -- 
+-- 
 Jeff Mahoney
 SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.22 (Darwin)
-
-iQIcBAEBAgAGBQJTf6pVAAoJEB57S2MheeWylvwP/jaG8w4Pnu/0+FvxW10xMcFN
-HPJyS98JfekVDvnGgVfOA4UrI1ioK3Luwp8jAbk4tnbmZS4pryeJFhTDMpXYLzgY
-w5LuXDxMxwQK8U6P47IuYnnRNL0+k4yiBAVT+ULOc2Ly0y8MItl27a1UxWMofzbm
-KtNRKwpJpA1QQWDz3aTeLgCGEHa+fGm9BBu5l7RE4wLAFYzYdWYXf0//kv/P0tZo
-rruAHIPggsd4tSJwnQBbXTlfJMTf4vFBm1wceeLeXSKTgcZjO9oHOCKlo019nrkw
-nR8FwBiWvmFox4m1Ub4zHs9AtIEdbnkUly9/6+L7Bc+L41ro5iMuG1tOrZo+5KJy
-vjfcYJTRtn9T3ThoKojsP3Uu8HxFSB5ggi8znmZuzLU5yZMB4dwbGojoq6l4hAvj
-XnDXYZapp3FQeBIMGUnEaValmiaYfCV2HjSMf07NvxTY40/Ce3XM6b35J5ESr0ms
-ilzFdXPTg2GifWFzSXprunXsvxRRviQrys740U8nW1MOnyTIEipb75fMNmcfT49J
-ABzkuvFnI6z82bVK02q1XifKgVsQ4T35aDW2O/AzHWfmIPistdstDFUrRntWLZCS
-km29dtdSQC8Ql5uJrw7pRby75O9TRlMtKrD6pic/BfD3aM77DCudnWEhkvm1WEEf
-toOjMaX0w5Nk5/VYSCHc
-=JmMQ
------END PGP SIGNATURE-----

@@ -1,91 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f181.google.com ([209.85.212.181]:63859 "EHLO
-	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751010AbaEWSPY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 May 2014 14:15:24 -0400
-Received: by mail-wi0-f181.google.com with SMTP id n15so1315186wiw.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2014 11:15:23 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: send, use the right limits for xattr names and values
-Date: Fri, 23 May 2014 20:15:16 +0100
-Message-Id: <1400872516-7664-1-git-send-email-fdmanana@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:37077 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751079AbaEWTEj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 May 2014 15:04:39 -0400
+Message-ID: <537F9BC3.9040002@suse.com>
+Date: Fri, 23 May 2014 15:04:35 -0400
+From: Jeff Mahoney <jeffm@suse.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>,
+        Chris Mason <clm@fb.com>
+Subject: [PATCH] btrfs: allocate raid type kobjects dynamically
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were limiting the sum of the xattr name and value lengths to PATH_MAX,
-which is not correct, specially on filesystems created with btrfs-progs
-v3.12 or higher, where the default leaf size is max(16384, PAGE_SIZE), or
-systems with page sizes larger than 4096 bytes.
+We are currently allocating space_info objects in an array when we
+allocate space_info. When a user does something like:
 
-Xattrs have their own specific maximum name and value lengths, which depend
-on the leaf size, therefore use these limits to be able to send xattrs with
-sizes larger than PATH_MAX.
+# btrfs balance start -mconvert=raid1 -dconvert=raid1 /mnt
+# btrfs balance start -mconvert=single -dconvert=single /mnt -f
+# btrfs balance start -mconvert=raid1 -dconvert=raid1 /
 
-A test case for xfstests follows.
+We can end up with memory corruption since the kobject hasn't
+been reinitialized properly and the name pointer was left set.
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+The rationale behind allocating them statically was to avoid
+creating a separate kobject container that just contained the
+raid type. It used the index in the array to determine the index.
+
+Ultimately, though, this wastes more memory than it saves in all
+but the most complex scenarios and introduces kobject lifetime
+questions.
+
+This patch allocates the kobjects dynamically instead. Note that
+we also remove the kobject_get/put of the parent kobject since
+kobject_add and kobject_del do that internally.
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/send.c | 30 +++++++++++++++++++++++-------
- 1 file changed, 23 insertions(+), 7 deletions(-)
+ fs/btrfs/ctree.h       |    8 +++++++-
+ fs/btrfs/extent-tree.c |   33 +++++++++++++++++++++------------
+ fs/btrfs/sysfs.c       |    5 +++--
+ 3 files changed, 31 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 70c5e8c..1a65a40 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -995,7 +995,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 	struct btrfs_dir_item *di;
- 	struct btrfs_key di_key;
- 	char *buf = NULL;
--	const int buf_len = PATH_MAX;
-+	int buf_len;
- 	u32 name_len;
- 	u32 data_len;
- 	u32 cur;
-@@ -1005,6 +1005,11 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 	int num;
- 	u8 type;
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1113,6 +1113,12 @@ struct btrfs_qgroup_limit_item {
+ 	__le64 rsv_excl;
+ } __attribute__ ((__packed__));
  
-+	if (found_key->type == BTRFS_XATTR_ITEM_KEY)
-+		buf_len = BTRFS_MAX_XATTR_SIZE(root);
-+	else
-+		buf_len = PATH_MAX;
++/* For raid type sysfs entries */
++struct raid_kobject {
++	int raid_type;
++	struct kobject kobj;
++};
 +
- 	buf = kmalloc(buf_len, GFP_NOFS);
- 	if (!buf) {
- 		ret = -ENOMEM;
-@@ -1026,12 +1031,23 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 		type = btrfs_dir_type(eb, di);
- 		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
+ struct btrfs_space_info {
+ 	spinlock_t lock;
  
--		/*
--		 * Path too long
--		 */
--		if (name_len + data_len > buf_len) {
--			ret = -ENAMETOOLONG;
--			goto out;
-+		if (type == BTRFS_FT_XATTR) {
-+			if (name_len > XATTR_NAME_MAX) {
-+				ret = -ENAMETOOLONG;
-+				goto out;
-+			}
-+			if (name_len + data_len > buf_len) {
-+				ret = -E2BIG;
-+				goto out;
-+			}
-+		} else {
-+			/*
-+			 * Path too long
-+			 */
-+			if (name_len + data_len > buf_len) {
-+				ret = -ENAMETOOLONG;
-+				goto out;
-+			}
+@@ -1163,7 +1169,7 @@ struct btrfs_space_info {
+ 	wait_queue_head_t wait;
+ 
+ 	struct kobject kobj;
+-	struct kobject block_group_kobjs[BTRFS_NR_RAID_TYPES];
++	struct kobject *block_group_kobjs[BTRFS_NR_RAID_TYPES];
+ };
+ 
+ #define	BTRFS_BLOCK_RSV_GLOBAL		1
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3401,10 +3401,8 @@ static int update_space_info(struct btrf
+ 		return ret;
+ 	}
+ 
+-	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
++	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+ 		INIT_LIST_HEAD(&found->block_groups[i]);
+-		kobject_init(&found->block_group_kobjs[i], &btrfs_raid_ktype);
+-	}
+ 	init_rwsem(&found->groups_sem);
+ 	spin_lock_init(&found->lock);
+ 	found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
+@@ -8327,7 +8325,8 @@ int btrfs_free_block_groups(struct btrfs
+ 		list_del(&space_info->list);
+ 		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
+ 			struct kobject *kobj;
+-			kobj = &space_info->block_group_kobjs[i];
++			kobj = space_info->block_group_kobjs[i];
++			space_info->block_group_kobjs[i] = NULL;
+ 			if (kobj->parent) {
+ 				kobject_del(kobj);
+ 				kobject_put(kobj);
+@@ -8352,17 +8351,26 @@ static void __link_block_group(struct bt
+ 	up_write(&space_info->groups_sem);
+ 
+ 	if (first) {
+-		struct kobject *kobj = &space_info->block_group_kobjs[index];
++		struct raid_kobject *rkobj;
+ 		int ret;
+ 
+-		kobject_get(&space_info->kobj); /* put in release */
+-		ret = kobject_add(kobj, &space_info->kobj, "%s",
+-				  get_raid_name(index));
++		rkobj = kzalloc(sizeof(*rkobj), GFP_KERNEL);
++		if (!rkobj)
++			goto out_err;
++		rkobj->raid_type = index;
++		kobject_init(&rkobj->kobj, &btrfs_raid_ktype);
++		ret = kobject_add(&rkobj->kobj, &space_info->kobj,
++				  "%s", get_raid_name(index));
+ 		if (ret) {
+-			pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
+-			kobject_put(&space_info->kobj);
++			kobject_put(&rkobj->kobj);
++			goto out_err;
  		}
++		space_info->block_group_kobjs[index] = &rkobj->kobj;
+ 	}
++
++	return;
++out_err:
++	pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
+ }
  
- 		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
--- 
-1.9.1
+ static struct btrfs_block_group_cache *
+@@ -8796,8 +8804,9 @@ int btrfs_remove_block_group(struct btrf
+ 	 */
+ 	list_del_init(&block_group->list);
+ 	if (list_empty(&block_group->space_info->block_groups[index])) {
+-		kobject_del(&block_group->space_info->block_group_kobjs[index]);
+-		kobject_put(&block_group->space_info->block_group_kobjs[index]);
++		kobject_del(block_group->space_info->block_group_kobjs[index]);
++		kobject_put(block_group->space_info->block_group_kobjs[index]);
++		block_group->space_info->block_group_kobjs[index] = NULL;
+ 		clear_avail_alloc_bits(root->fs_info, block_group->flags);
+ 	}
+ 	up_write(&block_group->space_info->groups_sem);
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -254,6 +254,7 @@ static ssize_t global_rsv_reserved_show(
+ BTRFS_ATTR(global_rsv_reserved, 0444, global_rsv_reserved_show);
+ 
+ #define to_space_info(_kobj) container_of(_kobj, struct btrfs_space_info, kobj)
++#define to_raid_kobj(_kobj) container_of(_kobj, struct raid_kobject, kobj)
+ 
+ static ssize_t raid_bytes_show(struct kobject *kobj,
+ 			       struct kobj_attribute *attr, char *buf);
+@@ -266,7 +267,7 @@ static ssize_t raid_bytes_show(struct ko
+ {
+ 	struct btrfs_space_info *sinfo = to_space_info(kobj->parent);
+ 	struct btrfs_block_group_cache *block_group;
+-	int index = kobj - sinfo->block_group_kobjs;
++	int index = to_raid_kobj(kobj)->raid_type;
+ 	u64 val = 0;
+ 
+ 	down_read(&sinfo->groups_sem);
+@@ -288,7 +289,7 @@ static struct attribute *raid_attributes
+ 
+ static void release_raid_kobj(struct kobject *kobj)
+ {
+-	kobject_put(kobj->parent);
++	kfree(to_raid_kobj(kobj));
+ }
+ 
+ struct kobj_type btrfs_raid_ktype = {
 
+
+-- 
+Jeff Mahoney
+SUSE Labs

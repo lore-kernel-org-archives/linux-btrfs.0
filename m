@@ -1,264 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f50.google.com ([74.125.82.50]:58911 "EHLO
-	mail-wg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750985AbaEWDF3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 23:05:29 -0400
-Received: by mail-wg0-f50.google.com with SMTP id x12so4333493wgg.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 20:05:27 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: ensure readers see new data after a clone operation
-Date: Fri, 23 May 2014 05:03:34 +0100
-Message-Id: <1400817814-32222-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
-References: <1400240833-7197-1-git-send-email-fdmanana@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:58467 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750981AbaEWMiv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 May 2014 08:38:51 -0400
+Date: Fri, 23 May 2014 14:38:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chris Mason <clm@fb.com>
+Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: don't remove raid type sysfs entries until unmount
+Message-ID: <20140523123849.GE5346@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <537D40EB.60906@fb.com>
+ <537D5136.4050007@suse.com>
+ <537DEB3F.5020303@fb.com>
+ <537E1242.1010109@suse.com>
+ <537E313E.8050906@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <537E313E.8050906@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were cleaning the clone target file range from the page cache before
-we did replace the file extent items in the fs tree. This was racy,
-as right after cleaning the relevant range from the page cache and before
-replacing the file extent items, a read against that range could be
-performed by another task and populate again the page cache with stale
-data (stale after the cloning finishes). This would result in reads after
-the clone operation successfully finishes to get old data (and potentially
-for a very long time). Therefore evict the pages after replacing the file
-extent items, so that subsequent reads will always get the new data.
+On Thu, May 22, 2014 at 01:17:50PM -0400, Chris Mason wrote:
+> On 05/22/2014 11:05 AM, Jeff Mahoney wrote:
+> > - gpg control packet
+> > On 5/22/14, 8:19 AM, Chris Mason wrote:
+> >> Can we safely reinit a kobject that has been put in use in sysfs?
+> >> Given all the things that can hold refs etc is this legal?
+> > 
+> > It depends on how the kobject is being used.
+> > 
+> > It wouldn't be safe to re-use the kobject embedded in space_info since
+> > it controls the lifetime of the object, regardless of its use in sysfs.
+> > 
+> > The kobjects for block groups only exist for creating the
+> > subdirectories and their lifetime is actually the lifetime of the
+> > space_info. We take a reference to the space_info when we add them to
+> > sysfs because that's where they draw their data. The only reference to
+> > a block group kobject is taken when we add it to sysfs and is dropped
+> > when we remove it. Holding a sysfs file open doesn't pin the kobject,
+> > so once we remove it from sysfs (kobject_del waits for readers to
+> > complete), it's safe to reinitialize it.
+> > 
+> 
+> Fair enough, once you've tested this new patch a bit I'll drop mine for
+> yours.
 
-Similarly, we were prone to races while cloning the file extent items
-because we weren't locking the target range and wait for any existing
-ordered extents against that range to complete. It was possible that
-after cloning the extent items, a write operation that was performed
-before the clone operation and overlaps the same range, would end up
-undoing all or part of the work the clone operation did (a worker task
-running inode.c:btrfs_finish_ordered_io). Therefore lock the target
-range in the io tree, wait for all pending ordered extents against that
-range to finish and then safely perform the cloning.
+With a fixup in __link_block_group
 
-The issue of reading stale data after the clone operation is easy to
-reproduce by running the following C program in a loop until it exits
-with return value 1.
+-               kobject->name = get_raid_name(index);
++               kobj->name = get_raid_name(index);
 
- #include <unistd.h>
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include <errno.h>
- #include <pthread.h>
- #include <fcntl.h>
- #include <assert.h>
- #include <asm/types.h>
- #include <linux/ioctl.h>
- #include <sys/stat.h>
- #include <sys/types.h>
- #include <sys/ioctl.h>
+it crashes right away, tests/btrfs/001, patch applied on top of 3.15-rc6,
+I haven't analyzed the cause yet.
 
- #define SRC_FILE "/mnt/sdd/foo"
- #define DST_FILE "/mnt/sdd/bar"
- #define FILE_SIZE (16 * 1024)
- #define PATTERN_SRC 'X'
- #define PATTERN_DST 'Y'
-
-struct btrfs_ioctl_clone_range_args {
-	__s64 src_fd;
-	__u64 src_offset, src_length;
-	__u64 dest_offset;
-};
-
- #define BTRFS_IOCTL_MAGIC 0x94
- #define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
-				   struct btrfs_ioctl_clone_range_args)
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static int clone_done = 0;
-static int reader_ready = 0;
-static int stale_data = 0;
-
-static void *reader_loop(void *arg)
-{
-	char buf[4096], want_buf[4096];
-
-	memset(want_buf, PATTERN_SRC, 4096);
-	pthread_mutex_lock(&mutex);
-	reader_ready = 1;
-	pthread_mutex_unlock(&mutex);
-
-	while (1) {
-		int done, fd, ret;
-
-		fd = open(DST_FILE, O_RDONLY);
-		assert(fd != -1);
-
-		pthread_mutex_lock(&mutex);
-		done = clone_done;
-		pthread_mutex_unlock(&mutex);
-
-		ret = read(fd, buf, 4096);
-		assert(ret == 4096);
-		close(fd);
-
-		if (done) {
-			ret = memcmp(buf, want_buf, 4096);
-			if (ret == 0) {
-				printf("Found new content\n");
-			} else {
-				printf("Found old content\n");
-				pthread_mutex_lock(&mutex);
-				stale_data = 1;
-				pthread_mutex_unlock(&mutex);
-			}
-			break;
-		}
-	}
-	return NULL;
-}
-
-int main(int argc, char *argv[])
-{
-	pthread_t reader;
-	int ret, i, fd;
-	struct btrfs_ioctl_clone_range_args clone_args;
-	int fd1, fd2;
-
-	ret = remove(SRC_FILE);
-	if (ret == -1 && errno != ENOENT) {
-		fprintf(stderr, "Error deleting src file: %s\n", strerror(errno));
-		return 1;
-	}
-	ret = remove(DST_FILE);
-	if (ret == -1 && errno != ENOENT) {
-		fprintf(stderr, "Error deleting dst file: %s\n", strerror(errno));
-		return 1;
-	}
-
-	fd = open(SRC_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd != -1);
-	for (i = 0; i < FILE_SIZE; i++) {
-		char c = PATTERN_SRC;
-		ret = write(fd, &c, 1);
-		assert(ret == 1);
-	}
-	close(fd);
-	fd = open(DST_FILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-	assert(fd != -1);
-	for (i = 0; i < FILE_SIZE; i++) {
-		char c = PATTERN_DST;
-		ret = write(fd, &c, 1);
-		assert(ret == 1);
-	}
-	close(fd);
-        sync();
-
-	ret = pthread_create(&reader, NULL, reader_loop, NULL);
-	assert(ret == 0);
-	while (1) {
-		int r;
-		pthread_mutex_lock(&mutex);
-		r = reader_ready;
-		pthread_mutex_unlock(&mutex);
-		if (r) break;
-	}
-
-	fd1 = open(SRC_FILE, O_RDONLY);
-	if (fd1 < 0) {
-		fprintf(stderr, "Error open src file: %s\n", strerror(errno));
-		return 1;
-	}
-	fd2 = open(DST_FILE, O_RDWR);
-	if (fd2 < 0) {
-		fprintf(stderr, "Error open dst file: %s\n", strerror(errno));
-		return 1;
-	}
-	clone_args.src_fd = fd1;
-	clone_args.src_offset = 0;
-	clone_args.src_length = 4096;
-	clone_args.dest_offset = 0;
-	ret = ioctl(fd2, BTRFS_IOC_CLONE_RANGE, &clone_args);
-	assert(ret == 0);
-	close(fd1);
-	close(fd2);
-
-	pthread_mutex_lock(&mutex);
-	clone_done = 1;
-	pthread_mutex_unlock(&mutex);
-	ret = pthread_join(reader, NULL);
-	assert(ret == 0);
-
-	pthread_mutex_lock(&mutex);
-	ret = stale_data ? 1 : 0;
-	pthread_mutex_unlock(&mutex);
-	return ret;
-}
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
-
-V2: Protect against ongoing writes by locking the target range in
-    the io tree and wait for any existing ordered extents for that
-    range to finish before starting the clone operation.
-
-V3: Fixed the locking ranges for the case where the source and target
-    inodes are the same. I was passing an end offset to lock_extent_range
-    when that function expects a range length instead. This resulted in
-    incorrect unlocking, leave some extent states locked forever. This
-    is now tested with a new test case for xfstests.
-
- fs/btrfs/ioctl.c | 36 +++++++++++++++++++++++++++++++-----
- 1 file changed, 31 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fba7a00..362720a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3410,15 +3410,41 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			goto out_unlock;
- 	}
- 
--	/* truncate page cache pages from target inode range */
--	truncate_inode_pages_range(&inode->i_data, destoff,
--				   PAGE_CACHE_ALIGN(destoff + len) - 1);
-+	/*
-+	 * Lock the target range too. Right after we replace the file extent
-+	 * items in the fs tree (which now point to the cloned data), we might
-+	 * have a worker replace them with extent items relative to a write
-+	 * operation that was issued before this clone operation (i.e. confront
-+	 * with inode.c:btrfs_finish_ordered_io).
-+	 */
-+	if (same_inode) {
-+		u64 lock_start = min_t(u64, off, destoff);
-+		u64 lock_len = max_t(u64, off, destoff) + len - lock_start;
- 
--	lock_extent_range(src, off, len);
-+		lock_extent_range(src, lock_start, lock_len);
-+	} else {
-+		lock_extent_range(src, off, len);
-+		lock_extent_range(inode, destoff, len);
-+	}
- 
- 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
- 
--	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
-+	if (same_inode) {
-+		u64 lock_start = min_t(u64, off, destoff);
-+		u64 lock_end = max_t(u64, off, destoff) + len - 1;
-+
-+		unlock_extent(&BTRFS_I(src)->io_tree, lock_start, lock_end);
-+	} else {
-+		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
-+		unlock_extent(&BTRFS_I(inode)->io_tree, destoff,
-+			      destoff + len - 1);
-+	}
-+	/*
-+	 * Truncate page cache pages so that future reads will see the cloned
-+	 * data immediately and not the previous data.
-+	 */
-+	truncate_inode_pages_range(&inode->i_data, destoff,
-+				   PAGE_CACHE_ALIGN(destoff + len) - 1);
- out_unlock:
- 	if (!same_inode) {
- 		if (inode < src) {
--- 
-1.9.1
-
+[  520.880250] ------------[ cut here ]------------
+[  520.884185] kernel BUG at mm/slub.c:3376!
+[  520.884185] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+[  520.884185] Modules linked in: rpcsec_gss_krb5 dm_crypt loop btrfs
+[  520.884185] CPU: 1 PID: 3698 Comm: umount Not tainted 3.15.0-rc6-default+ #144
+[  520.884185] Hardware name: Intel Corporation Santa Rosa platform/Matanzas, BIOS TSRSCRB1.86C.0047.B00.0610170821 10/17/06
+[  520.884185] task: ffff880075892370 ti: ffff88006e0ce000 task.ti: ffff88006e0ce000
+[  520.884185] RIP: 0010:[<ffffffff8116efcf>]  [<ffffffff8116efcf>] kfree+0x1bf/0x1d0
+[  520.884185] RSP: 0018:ffff88006e0cfcb8  EFLAGS: 00010246
+[  520.884185] RAX: 4000000000000000 RBX: ffffffffa00bb63e RCX: 0000000180190007
+[  520.884185] RDX: 0000000000000000 RSI: ffffea0001d5ad40 RDI: ffffffffa00bb63e
+[  520.884185] RBP: ffff88006e0cfce8 R08: 0000000000000001 R09: 0000000000000000
+[  520.884185] R10: 0000000000000000 R11: 0000000000000001 R12: ffffea0000802ec0
+[  520.884185] R13: ffffffff813ba137 R14: ffffffffa00bb63e R15: 0000000000000003
+[  520.884185] FS:  00007fba2c0cd7e0(0000) GS:ffff88007d400000(0000) knlGS:0000000000000000
+[  520.884185] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  520.884185] CR2: 00007fba2b759610 CR3: 00000000756a6000 CR4: 00000000000007e0
+[  520.884185] Stack:
+[  520.884185]  ffff88007a849000 ffffffffa00cde20 ffff880075950be0 ffff880075950ba8
+[  520.884185]  ffffffffa00bb63e 0000000000000003 ffff88006e0cfd18 ffffffff813ba137
+[  520.884185]  ffff880075950ba8 ffff880075950800 ffff8800755e5a58 0000000000000004
+[  520.884185] Call Trace:
+[  520.884185]  [<ffffffff813ba137>] kobject_release+0xa7/0x1d0
+[  520.884185]  [<ffffffff813ba291>] kobject_put+0x31/0x70
+[  520.884185]  [<ffffffffa00223ca>] btrfs_free_block_groups+0x30a/0x420 [btrfs]
+[  520.884185]  [<ffffffffa002f939>] close_ctree+0x149/0x2e0 [btrfs]
+[  520.884185]  [<ffffffff8119560f>] ? dispose_list+0x4f/0x60
+[  520.884185]  [<ffffffff81196544>] ? evict_inodes+0x114/0x130
+[  520.884185]  [<ffffffffa00019b9>] btrfs_put_super+0x19/0x20 [btrfs]
+[  520.884185]  [<ffffffff8117c78e>] generic_shutdown_super+0x7e/0x110
+[  520.884185]  [<ffffffff8117c8b6>] kill_anon_super+0x16/0x30
+[  520.884185]  [<ffffffffa000289a>] btrfs_kill_super+0x1a/0xa0 [btrfs]
+[  520.884185]  [<ffffffff8117c94d>] deactivate_locked_super+0x4d/0x80
+[  520.884185]  [<ffffffff8117cf5a>] deactivate_super+0x4a/0x70
+[  520.884185]  [<ffffffff8119a341>] mntput_no_expire+0x111/0x180
+[  520.884185]  [<ffffffff8119a247>] ? mntput_no_expire+0x17/0x180
+[  520.884185]  [<ffffffff81190213>] ? dput+0x23/0x110
+[  520.884185]  [<ffffffff8119b8eb>] SyS_umount+0xcb/0x420
+[  520.884185]  [<ffffffff81a16092>] ? system_call_fastpath+0x16/0x1b
+[  520.884185]  [<ffffffff81a16092>] system_call_fastpath+0x16/0x1b
+[  520.884185] Code: c4 40 74 05 41 8b 74 24 68 4c 89 e7 e8 4b 25 fc ff e9 4f ff ff ff 49 8b 44 24 30 49 8b 14 24 80 e6 80 4c 0f 45 e0 e9 ae fe ff ff <0f> 0b 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5
+[  520.884185] RIP  [<ffffffff8116efcf>] kfree+0x1bf/0x1d0
+[  520.884185]  RSP <ffff88006e0cfcb8>
+[  521.242658] ---[ end trace 4228a5dbb43499c0 ]---

@@ -1,69 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37637 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750985AbaEWUHm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 May 2014 16:07:42 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 04CDFAC77
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 May 2014 20:07:41 +0000 (UTC)
-Message-ID: <537FAA8B.3060402@suse.com>
-Date: Fri, 23 May 2014 16:07:39 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from qmta14.emeryville.ca.mail.comcast.net ([76.96.27.212]:60864
+	"EHLO qmta14.emeryville.ca.mail.comcast.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751079AbaEXCYL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 May 2014 22:24:11 -0400
+Message-ID: <538002C9.8080503@pobox.com>
+Date: Fri, 23 May 2014 19:24:09 -0700
+From: Robert White <rwhite@pobox.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: handle add/remove of sysfs links when devices are
- added/removed
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: BUG: Replacing a directory with a subvolume breaks incremental snapshots
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Howdy,
 
-btrfs currently publishes device membership via sysfs based on the devices
-present when the file system is mounted. That publishing is not updated
-when devices are added or removed while mounted.
+If you remove an existing directory and then create a subvolume with the 
+same name the incremental send (btrfs send -p) will die with errno==2 
+(file not found).
 
-This patch handles those events.
+Steps to Reproduce:
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/volumes.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+btrfs subvol create scratch # make a playground
+mkdir scratch/example
+btrfs subvol snap -r scratch scratch_BEFORE
+rmdir scratch/example
+btrfs subvol create scratch/example
+btrfs subvol snap -r scratch scratch_AFTER
+btrfs send -p scratch_BEFORE scratch_AFTER >/dev/null
 
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1704,6 +1704,9 @@ int btrfs_rm_device(struct btrfs_root *r
- 
- 	ret = 0;
- 
-+	sysfs_remove_link(root->fs_info->device_dir_kobj,
-+			  part_to_dev(bdev->bd_part)->kobj.name);
-+
- 	/* Notify udev that device has changed */
- 	if (bdev)
- 		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
-@@ -2038,6 +2041,12 @@ int btrfs_init_new_device(struct btrfs_r
- 		goto error;
- 	}
- 
-+	ret = sysfs_create_link(root->fs_info->device_dir_kobj,
-+				&part_to_dev(bdev->bd_part)->kobj,
-+				part_to_dev(bdev->bd_part)->kobj.name);
-+	if (ret)
-+		goto error;
-+
- 	lock_chunks(root);
- 
- 	q = bdev_get_queue(bdev);
-@@ -2152,6 +2161,8 @@ error_trans:
- 	unlock_chunks(root);
- 	btrfs_end_transaction(trans, root);
- 	rcu_string_free(device->name);
-+	sysfs_remove_link(root->fs_info->device_dir_kobj,
-+			  part_to_dev(bdev->bd_part)->kobj.name);
- 	kfree(device);
- error:
- 	blkdev_put(bdev, FMODE_EXCL);
+The output produced:
+At subvol scratch_AFTER
+ERROR: send ioctl failed with -2: No such file or directory
 
--- 
-Jeff Mahoney
-SUSE Labs

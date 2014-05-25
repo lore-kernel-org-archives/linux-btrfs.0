@@ -1,83 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:36712 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751402AbaEYMgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 May 2014 08:36:07 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 74B5040F50
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 May 2014 22:36:06 +1000 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 15533-03 for <linux-btrfs@vger.kernel.org>;
- Sun, 25 May 2014 22:36:06 +1000 (EST)
-Received: from quad.localnet (2001-44b8-41dd-d500-99f6-8f5a-a01e-32fa.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:99f6:8f5a:a01e:32fa])
-	by csamuel.org (Postfix) with ESMTPSA id EAADE40F4F
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 May 2014 22:36:05 +1000 (EST)
-From: Chris Samuel <chris@csamuel.org>
+Received: from new1-smtp.messagingengine.com ([66.111.4.221]:44161 "EHLO
+	new1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751075AbaEYSdD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 25 May 2014 14:33:03 -0400
+Received: from compute6.internal (compute6.nyi.mail.srv.osa [10.202.2.46])
+	by gateway1.nyi.mail.srv.osa (Postfix) with ESMTP id 2FFC824
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 May 2014 14:24:26 -0400 (EDT)
+Received: from avolt.net (unknown [83.142.149.227])
+	by mail.messagingengine.com (Postfix) with ESMTPA id 9B21A6800FD
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 May 2014 14:24:25 -0400 (EDT)
+Date: Sun, 25 May 2014 20:26:01 +0200
+From: Andrei Volt <andrei@avolt.net>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS hangs - possibly NFS related?
-Date: Sun, 25 May 2014 22:36 +1000
-Message-ID: <1414589.yRqiue0P7g@quad>
-In-Reply-To: <058b01cf780e$6ae065c0$40a13140$@bluemoose.org.uk>
-References: <019301cf4da9$bf837930$3e8a6b90$@bluemoose.org.uk> <pan$1bfd3$d8184f3c$26ab13aa$2e81c88f@cox.net> <058b01cf780e$6ae065c0$40a13140$@bluemoose.org.uk>
+Subject: mount fails with "double free or corruption" after failed
+Message-ID: <20140525182601.GA7642@dmt>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="3V7upXqbjpZ4EhLz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On Sun, 25 May 2014 12:42:32 PM kim-btrfs@bluemoose.org.uk wrote:
+--3V7upXqbjpZ4EhLz
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> Any ideas of what I can do to help debug it...?
+resize operation
+Reply-To:=20
 
-Looking at that output it seems that all those blocked processes are in 
-congestion_wait() in mm/backing-dev.c, the comments for which say:
+Hello all,
 
-/**
- * congestion_wait - wait for a backing_dev to become uncongested
- * @sync: SYNC or ASYNC IO
- * @timeout: timeout in jiffies
- *
- * Waits for up to @timeout jiffies for a backing_dev (any backing_dev) to exit
- * write congestion.  If no backing_devs are congested then just wait for the
- * next write to be completed.
- */
+Someone on #archlinux suggested I post this problem I'm having on this
+mailing list. Apologies if this is off-topic, although I believe it's not.
 
-The blocked tasks are:
+After a failed resize operation (shrink of 30 GB, waited 8 hours, iotop
+reporting 50 M/s writes, no reads), my btrfs partition wouldn't mount,
+complaining about "double free or corruption". I finally managed to
+mount the filesystem after a btrfs-zero-log and reboot.
 
-kswapd0
-smbd (which correlates with what you've said before)
-ShFolders  (is this something local?)
-ATA-0 (I suspect a kernel process handling that device)
+I've run an additional backup, a bit more up to date then my previous one,
+but obviously the error message worries me a bit.
 
-Interestingly there are no calls to congestion_wait() in fs/btrfs so those 
-blocked tasks are blocked accessing other filesystems.
+How can I make sure the data is intact? What kind of corruption could
+occur? (what's the worse that could happen? so far I'm not seeing anything
+unusual). I didn't do anything else apart from the resize operation, a
+few btrfsck(s) which failed immediately, and the btrfs-zero-log operation.
 
-One thing that would be interesting is to see the wchan of processes blocked 
-in device wait state when you're in that situation.
+I should mention that on the second to last reboot the mount failed
+again, and it only mounted again correctly after zero-log + reboot.
+(same error, "double free or corruption", after a bunch of output that
+got cleared from the scrollback buffer.
 
-Something like this should do it:
+I've made a backup via rsync but when I try to du -sc the backup and the
+original, the original reports "infinity" (although this is not new),
+and the backup errors out on some files (which is why I'd rather not go
+=66rom the restore from backup option, until I'm sure the backup is correct)
 
-ps -eo pid,user,stat,wchan:30,comm | fgrep -w D
+What should I do to:
 
-Is this system under memory pressure at the time these happen?
+1. (ideally) repair the FS. Right now it _seems_ to be failing on
+every other boot, and I have to run btrfs-zero-log to mount, and even
+then it only mounts successfully on reboot.
 
-All the best,
-Chris
-- -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+2. check for data integrity
+
+3. check that my backup is correct?
+
+Here's the output of the commands suggested on the wiki:
+
+Linux 3.13.9-1-ck #1 SMP PREEMPT Fri Apr 18 23:21:44 CEST 2014 x86_64 GNU/L=
+inux
+
+Btrfs v3.14.1
+
+Data, single: total=3D188.99GiB, used=3D143.17GiB
+Label: 'root'  uuid: 0c2bfb0a-a549-4170-92a5-c4f218c023eb
+	Total devices 1 FS bytes used 25.20GiB
+	devid    1 size 37.97GiB used 37.97GiB path /dev/sda3
+
+Label: 'home'  uuid: ea64435d-b24f-453b-8f0a-af7e18726c86
+	Total devices 1 FS bytes used 145.96GiB
+	devid    1 size 200.00GiB used 193.00GiB path /dev/sda2
+
+System, single: total=3D4.00MiB, used=3D28.00KiB
+Metadata, single: total=3D4.01GiB, used=3D2.79GiB
+
+I've also ran a btrfs scrub which reported 4 uncorrectable errors.
+
+Cheers,
+Andrei
+
+--=20
+Andrei Volt
+
+--3V7upXqbjpZ4EhLz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
-iQEVAwUBU4HjtI1yjaOTJg85AQKPYAgAlI7elWEx0YxPqABFmS3cUVIgTskxFL6/
-ha7G1wxIxeqxhx1x1cLE3oKsCAhJlrwXd6cB8e0Kmu2280fCa/N9uqdJaMq+E8ha
-VU0K0D6lAd2lJP9L1XVI2hlAO8YEwuFpe5ebYk//1LERsZxkPVJSrIntVKvG8aCR
-9fHLa9W7Pscn9oOyC2Nvh/z4FAAHu0/QWj/uuA8cOUX0FRyHrsqhhi3a+zHNJkOo
-vB6nfd/TWJXXDTRO6Og9ozW8InvAvpuG0NNOVSVQd10xc09qLMaP98cBBhisFji/
-r3RZ0GiyW4SlYjQWhfxP9eBtZlsQD8lZMGEXHPyzlHZrJzMfjQjJvw==
-=h6xh
+iQEcBAEBAgAGBQJTgjW5AAoJEGC4J/i2HiAknzcIAIrSZTFrilsAivFcCoxw/rkO
+w9NWGBlyAGffjaSEIa7e2lWlJfpzkFFprGw6lxfEylMYE94XLSfzAe33O79C+Bch
+O09zc/mKiJgWjMCz2Bol6q6yFV/mGKLUutNUoIl3sRZfV8b+qVOjWjcLerHSSsQe
+QeRcKVAtIUVwFdchXWbdq1c9JxDzQqVnPu/z02Mu5q7PKWpUMkCrRek4N9pCsjfm
+DDYNHcykgNQKrF1wvBITirlqQtHWuDvn/hSHunKKwGPHKS20IIjuzFD+NoJXJEdb
+pcMOBCHZJ08Q+rlO4g7ci0/iaKFp0IFKf40etUEvU2ezWUyUM50n14KAsj64nho=
+=K/gb
 -----END PGP SIGNATURE-----
 
+--3V7upXqbjpZ4EhLz--

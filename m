@@ -1,61 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:36969 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750794AbaEXVTL (ORCPT
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:45057 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751322AbaEYB6I (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 May 2014 17:19:11 -0400
+	Sat, 24 May 2014 21:58:08 -0400
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add test for btrfs send with large xattrs
-Date: Sat, 24 May 2014 23:18:47 +0100
-Message-Id: <1400969927-24169-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400872530-7706-1-git-send-email-fdmanana@gmail.com>
-References: <1400872530-7706-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH] xfstests: test for btrfs send when nested subvols/snapshots exist
+Date: Sun, 25 May 2014 03:45:24 +0100
+Message-Id: <1400985924-16431-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Verify that btrfs send is able to replicate xattrs larger than
-PATH_MAX. This is possible if the b+tree leaf size is larger
-than 4Kb (mkfs.btrfs's default is max(16Kb, PAGE_SIZE) as of
-btrfs-progs v3.12, and max(4Kb, PAGE_SIZE in older versions).
+Regression test for a btrfs incremental send issue where the difference
+between the snapshots used by the incremental send consists of one of
+these cases:
 
-This issue is fixed by the following linux kernel btrfs patch:
+1) First snapshot has a directory with name X and in the second snapshot
+   that directory doesn't exist anymore but a subvolume/snapshot with
+   the same name (X) exists;
 
-   Btrfs: send, use the right limits for xattr names and values
+2) First snapshot has a subvolume/snapshot with name X and in the second
+   snapshot that subvolume/snapshot doesn't exist anymore (might have been
+   replaced by a directory with the same name or not).
+
+This issue is fixed by the following linux kernel btrfs patches:
+
+    Btrfs: send, don't error in the presence of subvols/snapshots
+    Btrfs: set dead flag on the right root when destroying snapshot
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
-
-V2: Updated second invocation of btrfs send to be incremental.
-    This way we test both a full send (snapshot 1) and an incremental
-    send (differences between snapshot 2 and snapshot 1).
-
- tests/btrfs/053     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/053.out |   1 +
+ tests/btrfs/054     | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/054.out |   1 +
  tests/btrfs/group   |   1 +
  3 files changed, 111 insertions(+)
- create mode 100755 tests/btrfs/053
- create mode 100644 tests/btrfs/053.out
+ create mode 100755 tests/btrfs/054
+ create mode 100644 tests/btrfs/054.out
 
-diff --git a/tests/btrfs/053 b/tests/btrfs/053
+diff --git a/tests/btrfs/054 b/tests/btrfs/054
 new file mode 100755
-index 0000000..3994110
+index 0000000..215861c
 --- /dev/null
-+++ b/tests/btrfs/053
++++ b/tests/btrfs/054
 @@ -0,0 +1,109 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/053
++# FS QA Test No. btrfs/054
 +#
-+# Verify that btrfs send is able to replicate xattrs larger than PATH_MAX.
-+# This is possible if the b+tree leaf size is larger than 4Kb (mkfs.btrfs's
-+# default is max(16Kb, PAGE_SIZE) as of btrfs-progs v3.12, and max(4Kb,
-+# PAGE_SIZE in older versions).
++# Regression test for a btrfs incremental send issue where the difference
++# between the snapshots used by the incremental send consists of one of
++# these cases:
 +#
-+# This issue is fixed by the following linux kernel btrfs patch:
++# 1) First snapshot has a directory with name X and in the second snapshot
++#    that directory doesn't exist anymore but a subvolume/snapshot with
++#    the same name (X) exists;
 +#
-+#   Btrfs: send, use the right limits for xattr names and values
++# 2) First snapshot has a subvolume/snapshot with name X and in the second
++#    snapshot that subvolume/snapshot doesn't exist anymore (might have been
++#    replaced by a directory with the same name or not).
++#
++# This issue is fixed by the following linux kernel btrfs patches:
++#
++#    Btrfs: send, don't error in the presence of subvols/snapshots
++#    Btrfs: set dead flag on the right root when destroying snapshot
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
@@ -98,14 +107,7 @@ index 0000000..3994110
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_fssum
-+_require_attrs
 +_need_to_be_root
-+
-+# max(16384, PAGE_SIZE) is the default leaf/node size on btrfs-progs v3.12+.
-+# Older versions just use max(4096, PAGE_SIZE).
-+# mkfs.btrfs can't create an fs with a leaf/node size smaller than PAGE_SIZE.
-+leaf_size=$(echo -e "16384\n`getconf PAGE_SIZE`" | sort -nr | head -1)
 +
 +send_files_dir=$TEST_DIR/btrfs-test-$seq
 +
@@ -113,63 +115,62 @@ index 0000000..3994110
 +rm -fr $send_files_dir
 +mkdir $send_files_dir
 +
-+_scratch_mkfs "-l $leaf_size" >/dev/null 2>&1
++_scratch_mkfs >/dev/null 2>&1
 +_scratch_mount
 +
-+echo "hello world" > $SCRATCH_MNT/foobar
-+
-+$SETFATTR_PROG -n user.xattr_name_1 -v `$PERL_PROG -e 'print "A" x 6000;'` \
-+	$SCRATCH_MNT/foobar
++mkdir $SCRATCH_MNT/testdir
++_run_btrfs_util_prog subvolume create $SCRATCH_MNT/first_subvol
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
 +
-+# Update existing xattr value and add a new xattr too.
-+$SETFATTR_PROG -n user.xattr_name_1 -v `$PERL_PROG -e 'print "Z" x 6666;'` \
-+	$SCRATCH_MNT/foobar
-+$SETFATTR_PROG -n user.xattr_name_2 -v `$PERL_PROG -e 'print "U" x 5555;'` \
-+	$SCRATCH_MNT/foobar
++# Replace the directory testdir with a subvolume that has the same name.
++rmdir $SCRATCH_MNT/testdir
++_run_btrfs_util_prog subvolume create $SCRATCH_MNT/testdir
++
++# Delete the subvolume first_subvol and create a directory with the same name.
++_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/first_subvol
++mkdir $SCRATCH_MNT/first_subvol
 +
 +_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
-+run_check $FSSUM_PROG -A -f -w $send_files_dir/2.fssum \
-+	-x $SCRATCH_MNT/mysnap2/mysnap1 $SCRATCH_MNT/mysnap2
 +
 +_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
++_run_btrfs_util_prog send $SCRATCH_MNT/mysnap2 -p $SCRATCH_MNT/mysnap1 \
 +	-f $send_files_dir/2.snap
 +
 +_scratch_unmount
 +_check_scratch_fs
 +
-+_scratch_mkfs "-l $leaf_size" >/dev/null 2>&1
++_scratch_mkfs >/dev/null 2>&1
 +_scratch_mount
 +
 +_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+run_check $FSSUM_PROG -r $send_files_dir/1.fssum $SCRATCH_MNT/mysnap1
++[ -e $SCRATCH_MNT/first_subvol ] && \
++	echo "Subvolume first_subvol was not supposed to be replicated by full send!"
 +
 +_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+run_check $FSSUM_PROG -r $send_files_dir/2.fssum $SCRATCH_MNT/mysnap2
++[ -e $SCRATCH_MNT/testdir ] && \
++	echo "Directory testdir was supposed to be deleted after incremental send!"
 +
 +_check_scratch_fs
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/053.out b/tests/btrfs/053.out
+diff --git a/tests/btrfs/054.out b/tests/btrfs/054.out
 new file mode 100644
-index 0000000..4c61638
+index 0000000..03e258b
 --- /dev/null
-+++ b/tests/btrfs/053.out
++++ b/tests/btrfs/054.out
 @@ -0,0 +1 @@
-+QA output created by 053
++QA output created by 054
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 5ff9b8e..ea49c5c 100644
+index ea49c5c..b668485 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -55,3 +55,4 @@
- 050 auto
+@@ -56,3 +56,4 @@
  051 auto quick
  052 auto quick
-+053 auto quick
+ 053 auto quick
++054 auto quick
 -- 
 1.9.1
 

@@ -1,86 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:57520 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751322AbaEYB4U (ORCPT
+Received: from mail-la0-f53.google.com ([209.85.215.53]:51238 "EHLO
+	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751322AbaEYCBC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 May 2014 21:56:20 -0400
-Received: by mail-wg0-f51.google.com with SMTP id x13so6454754wgg.22
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2014 18:56:19 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: set dead flag on the right root when destroying snapshot
-Date: Sun, 25 May 2014 03:55:44 +0100
-Message-Id: <1400986544-22440-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400985885-16386-1-git-send-email-fdmanana@gmail.com>
-References: <1400985885-16386-1-git-send-email-fdmanana@gmail.com>
+	Sat, 24 May 2014 22:01:02 -0400
+Received: by mail-la0-f53.google.com with SMTP id ty20so3475192lab.40
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2014 19:01:00 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <538002C9.8080503@pobox.com>
+References: <538002C9.8080503@pobox.com>
+Date: Sun, 25 May 2014 03:01:00 +0100
+Message-ID: <CAL3q7H7kq73rXdDCdbTVig9WFMXxpWVra24B4DsGJbS2aQc_0g@mail.gmail.com>
+Subject: Re: BUG: Replacing a directory with a subvolume breaks incremental snapshots
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Robert White <rwhite@pobox.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We were setting the BTRFS_ROOT_SUBVOL_DEAD flag on the root of the
-parent of our target snapshot, instead of setting it in the target
-snapshot's root.
+On Sat, May 24, 2014 at 3:24 AM, Robert White <rwhite@pobox.com> wrote:
+> Howdy,
+>
+> If you remove an existing directory and then create a subvolume with the
+> same name the incremental send (btrfs send -p) will die with errno==2 (file
+> not found).
+>
+> Steps to Reproduce:
+>
+> btrfs subvol create scratch # make a playground
+> mkdir scratch/example
+> btrfs subvol snap -r scratch scratch_BEFORE
+> rmdir scratch/example
+> btrfs subvol create scratch/example
+> btrfs subvol snap -r scratch scratch_AFTER
+> btrfs send -p scratch_BEFORE scratch_AFTER >/dev/null
+>
+> The output produced:
+> At subvol scratch_AFTER
+> ERROR: send ioctl failed with -2: No such file or directory
 
-This is easy to observe by running the following scenario:
+Fixed here:  https://patchwork.kernel.org/patch/4238131/
 
-    mkfs.btrfs -f /dev/sdd
-    mount /dev/sdd /mnt
+Thanks Robert.
 
-    btrfs subvolume create /mnt/first_subvol
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-    btrfs subvolume delete /mnt/first_subvol
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap2
 
-    btrfs send -p /mnt/mysnap1 /mnt/mysnap2 -f /tmp/send.data
 
-The send command failed because the send ioctl returned -EPERM.
-A test case for xfstests follows.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
-
-V2: Add missing replacements of 'root' with 'dest'.
-
- fs/btrfs/ioctl.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 362720a..38f2169 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2312,16 +2312,16 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	 * again is not run concurrently.
- 	 */
- 	spin_lock(&dest->root_item_lock);
--	root_flags = btrfs_root_flags(&root->root_item);
--	if (root->send_in_progress == 0) {
--		btrfs_set_root_flags(&root->root_item,
-+	root_flags = btrfs_root_flags(&dest->root_item);
-+	if (dest->send_in_progress == 0) {
-+		btrfs_set_root_flags(&dest->root_item,
- 				root_flags | BTRFS_ROOT_SUBVOL_DEAD);
- 		spin_unlock(&dest->root_item_lock);
- 	} else {
- 		spin_unlock(&dest->root_item_lock);
- 		btrfs_warn(root->fs_info,
- 			"Attempt to delete subvolume %llu during send",
--			root->root_key.objectid);
-+			dest->root_key.objectid);
- 		err = -EPERM;
- 		goto out_dput;
- 	}
-@@ -2416,8 +2416,8 @@ out_up_write:
- out_unlock:
- 	if (err) {
- 		spin_lock(&dest->root_item_lock);
--		root_flags = btrfs_root_flags(&root->root_item);
--		btrfs_set_root_flags(&root->root_item,
-+		root_flags = btrfs_root_flags(&dest->root_item);
-+		btrfs_set_root_flags(&dest->root_item,
- 				root_flags & ~BTRFS_ROOT_SUBVOL_DEAD);
- 		spin_unlock(&dest->root_item_lock);
- 	}
 -- 
-1.9.1
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

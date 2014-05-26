@@ -1,97 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47884 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:47873 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752061AbaEZJ12 (ORCPT
+	with ESMTP id S1751782AbaEZJ12 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 26 May 2014 05:27:28 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jeffm@suse.com, dsterba@suse.cz, clm@fb.com
-Subject: [PATCH 1/4] btrfs: dev delete should remove sysfs entry
-Date: Mon, 26 May 2014 17:30:23 +0800
-Message-Id: <1401096626-13210-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
-References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 0/4] update sysfs per btrfs device operations
+Date: Mon, 26 May 2014 17:30:22 +0800
+Message-Id: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+This patch set fixes the bugs which Jeff patch is fixing,
+which is to update sysfs when device is added and removed.
 
-when we delete the device from the mounted btrfs,
-we would need its corresponding sysfs enty to
-be removed as well.
+Further, this patch set also address the following.
+  - Update sysfs path when device is replaced
+  - Update sysfs path when sprout is created
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/sysfs.c   |   20 ++++++++++++++++++++
- fs/btrfs/sysfs.h   |    2 ++
- fs/btrfs/volumes.c |    4 ++++
- 3 files changed, 26 insertions(+), 0 deletions(-)
+Also mainly this patch makes the code more modular
+which will support the enhancement like in the RFC
+sent before.
+   [PATCH RFC] btrfs: revamp /sys/fs/btrfs/<fsid>/devices
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 522d023..4fe3f0b 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -572,6 +572,26 @@ static void init_feature_attrs(void)
- 	}
- }
- 
-+int rm_device_membership(struct btrfs_fs_info *fs_info,
-+		struct btrfs_device *one_device)
-+{
-+	struct hd_struct *disk;
-+	struct kobject *disk_kobj;
-+
-+	if (!fs_info->device_dir_kobj)
-+		return -EINVAL;
-+
-+	if (one_device) {
-+		disk = one_device->bdev->bd_part;
-+		disk_kobj = &part_to_dev(disk)->kobj;
-+
-+		sysfs_remove_link(fs_info->device_dir_kobj,
-+						disk_kobj->name);
-+	}
-+
-+	return 0;
-+}
-+
- static int add_device_membership(struct btrfs_fs_info *fs_info)
- {
- 	int error = 0;
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 9ab5763..eaed810 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -66,4 +66,6 @@ char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
- extern const char * const btrfs_feature_set_names[3];
- extern struct kobj_type space_info_ktype;
- extern struct kobj_type btrfs_raid_ktype;
-+int rm_device_membership(struct btrfs_fs_info *fs_info,
-+                struct btrfs_device *one_device);
- #endif /* _BTRFS_SYSFS_H_ */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 15a8934..3ceb28c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -40,6 +40,7 @@
- #include "rcu-string.h"
- #include "math.h"
- #include "dev-replace.h"
-+#include "sysfs.h"
- 
- static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
-@@ -1651,6 +1652,9 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	if (device->bdev)
- 		device->fs_devices->open_devices--;
- 
-+	/* remove sysfs entry */
-+	rm_device_membership(root->fs_info, device);
-+
- 	call_rcu(&device->rcu, free_device);
- 
- 	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
--- 
-1.7.1
+Thanks.
+
+
+Anand Jain (4):
+  btrfs: dev delete should remove sysfs entry
+  btrfs: dev add should add its sysfs entry
+  btrfs: dev replace should replace the sysfs entry
+  btrfs: create sprout should rename fsid on the sysfs as well
+
+ fs/btrfs/dev-replace.c |    5 +++++
+ fs/btrfs/sysfs.c       |   32 +++++++++++++++++++++++++++++---
+ fs/btrfs/sysfs.h       |    4 ++++
+ fs/btrfs/volumes.c     |   17 +++++++++++++++++
+ 4 files changed, 55 insertions(+), 3 deletions(-)
 

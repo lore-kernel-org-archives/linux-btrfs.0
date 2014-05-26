@@ -1,64 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47920 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751782AbaEZJ1d (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45090 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752121AbaEZJ1e (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 May 2014 05:27:33 -0400
+	Mon, 26 May 2014 05:27:34 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jeffm@suse.com, dsterba@suse.cz, clm@fb.com
-Subject: [PATCH 4/4] btrfs: create sprout should rename fsid on the sysfs as well
-Date: Mon, 26 May 2014 17:30:26 +0800
-Message-Id: <1401096626-13210-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 3/4] btrfs: dev replace should replace the sysfs entry
+Date: Mon, 26 May 2014 17:30:25 +0800
+Message-Id: <1401096626-13210-4-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
 References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Creating sprout will change the fsid of the mounted root.
-do the same on the sysfs as well.
-
-reproducer:
- mount /dev/sdb /btrfs (seed disk)
- btrfs dev add /dev/sdc /btrfs
- mount -o rw,remount /btrfs
- btrfs dev del /dev/sdb /btrfs
- mount /dev/sdb /btrfs
-
-Error:
-kobject_add_internal failed for fe350492-dc28-4051-a601-e017b17e6145 with -EEXIST, don't try to register things with the same name in the same directory.
+when we replace the device its corresponding sysfs
+entry has to be replaced as well
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+ fs/btrfs/dev-replace.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5a577ab..e6cf3a7 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2084,6 +2084,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 9f22905..f4f8728 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -36,6 +36,7 @@
+ #include "check-integrity.h"
+ #include "rcu-string.h"
+ #include "dev-replace.h"
++#include "sysfs.h"
  
- 	if (seeding_dev) {
-+		char fsid_buf[37];
- 		ret = init_first_rw_device(trans, root, device);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, root, ret);
-@@ -2094,6 +2095,13 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 			btrfs_abort_transaction(trans, root, ret);
- 			goto error_trans;
- 		}
+ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 				       int scrub_ret);
+@@ -562,6 +563,10 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		fs_info->fs_devices->latest_bdev = tgt_device->bdev;
+ 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
+ 
++	/* replace the sysfs entry */
++	rm_device_membership(fs_info, src_device);
++	add_device_membership(fs_info, tgt_device);
 +
-+		/* Sprouting would change fsid of the mounted root,
-+		 * so rename the fsid on the sysfs
-+		 */
-+		sprintf(fsid_buf, "%pU", root->fs_info->fsid);
-+		if (kobject_rename(&root->fs_info->super_kobj, fsid_buf))
-+			goto error_trans;
- 	} else {
- 		ret = btrfs_add_device(trans, root, device);
- 		if (ret) {
+ 	btrfs_rm_dev_replace_blocked(fs_info);
+ 
+ 	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
 -- 
 1.7.1
 

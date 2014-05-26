@@ -1,70 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f177.google.com ([74.125.82.177]:47829 "EHLO
-	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751322AbaEYCu2 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:22787 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751656AbaEZJs2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 May 2014 22:50:28 -0400
-Received: by mail-we0-f177.google.com with SMTP id x48so6289418wes.8
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 May 2014 19:50:26 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: send, don't error in the presence of subvols/snapshots
-Date: Sun, 25 May 2014 04:49:24 +0100
-Message-Id: <1400989764-2478-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1400985786-16240-1-git-send-email-fdmanana@gmail.com>
-References: <1400985786-16240-1-git-send-email-fdmanana@gmail.com>
+	Mon, 26 May 2014 05:48:28 -0400
+Message-ID: <53830EA7.0@oracle.com>
+Date: Mon, 26 May 2014 17:51:35 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: Jeff Mahoney <jeffm@suse.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs: handle add/remove of sysfs links when devices
+ are added/removed
+References: <537FAA8B.3060402@suse.com>
+In-Reply-To: <537FAA8B.3060402@suse.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we are doing an incremental send and the base snapshot has a
-directory with name X that doesn't exist anymore in the second
-snapshot and a new subvolume/snapshot exists in the second snapshot
-that has the same name as the directory (name X), the incremental
-send would fail with -ENOENT error. This is because it attempts
-to lookup for an inode with a number matching the objectid of a
-root, which doesn't exist.
 
-Steps to reproduce:
 
-    mkfs.btrfs -f /dev/sdd
-    mount /dev/sdd /mnt
+Jeff,
 
-    mkdir /mnt/testdir
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+  We were working on the same bugs. I have sent out my patches
+  as well.
 
-    rmdir /mnt/testdir
-    btrfs subvolume create /mnt/testdir
-    btrfs subvolume snapshot -r /mnt /mnt/mysnap2
+  Further I will be working on to revamp /sys/fs/btrfs/<fsid>/devices
+  so that instead of links to block device we will have dir based
+  on devices of the FS.
 
-    btrfs send -p /mnt/mysnap1 /mnt/mysnap2 -f /tmp/send.data
+     [PATCH RFC] btrfs: revamp /sys/fs/btrfs/<fsid>/devices
 
-A test case for xfstests follows.
+  Comments appreciated.
 
-Reported-by: Robert White <rwhite@pobox.com>
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+Thanks, Anand
 
-V2: Simpler version.
 
- fs/btrfs/send.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1a65a40..2722b26 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -1664,6 +1664,10 @@ static int lookup_dir_item_inode(struct btrfs_root *root,
- 		goto out;
- 	}
- 	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
-+	if (key.type == BTRFS_ROOT_ITEM_KEY) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
- 	*found_inode = key.objectid;
- 	*found_type = btrfs_dir_type(path->nodes[0], di);
- 
--- 
-1.9.1
-
+On 24/05/14 04:07, Jeff Mahoney wrote:
+>
+> btrfs currently publishes device membership via sysfs based on the devices
+> present when the file system is mounted. That publishing is not updated
+> when devices are added or removed while mounted.
+>
+> This patch handles those events.
+>
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>   fs/btrfs/volumes.c |   11 +++++++++++
+>   1 file changed, 11 insertions(+)
+>
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1704,6 +1704,9 @@ int btrfs_rm_device(struct btrfs_root *r
+>
+>   	ret = 0;
+>
+> +	sysfs_remove_link(root->fs_info->device_dir_kobj,
+> +			  part_to_dev(bdev->bd_part)->kobj.name);
+> +
+>   	/* Notify udev that device has changed */
+>   	if (bdev)
+>   		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+> @@ -2038,6 +2041,12 @@ int btrfs_init_new_device(struct btrfs_r
+>   		goto error;
+>   	}
+>
+> +	ret = sysfs_create_link(root->fs_info->device_dir_kobj,
+> +				&part_to_dev(bdev->bd_part)->kobj,
+> +				part_to_dev(bdev->bd_part)->kobj.name);
+> +	if (ret)
+> +		goto error;
+> +
+>   	lock_chunks(root);
+>
+>   	q = bdev_get_queue(bdev);
+> @@ -2152,6 +2161,8 @@ error_trans:
+>   	unlock_chunks(root);
+>   	btrfs_end_transaction(trans, root);
+>   	rcu_string_free(device->name);
+> +	sysfs_remove_link(root->fs_info->device_dir_kobj,
+> +			  part_to_dev(bdev->bd_part)->kobj.name);
+>   	kfree(device);
+>   error:
+>   	blkdev_put(bdev, FMODE_EXCL);
+>

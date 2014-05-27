@@ -1,59 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:52931 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752047AbaE0TY4 (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.54]:50510 "EHLO
+	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751591AbaE0UmZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 May 2014 15:24:56 -0400
-Message-ID: <5384E728.3070403@fb.com>
-Date: Tue, 27 May 2014 15:27:36 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 27 May 2014 16:42:25 -0400
+Message-ID: <5384F8A4.1050206@skagestad.org>
+Date: Tue, 27 May 2014 22:42:12 +0200
+From: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>
-CC: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>,
-        <takeuchi_satoru@jp.fujitsu.com>
-Subject: Re: 3.15.0-rc5: now sync and mount are hung on call_rwsem_down_write_failed
-References: <20140522090921.GA12037@merlins.org> <20140522131528.GB22952@merlins.org> <pan$ed92c$6d9566f6$dd2041b0$f135597e@cox.net> <20140523002243.GE12312@merlins.org> <20140523141722.GA11991@merlins.org> <537FAE91.20308@fb.com> <20140523231337.GC12384@merlins.org>
-In-Reply-To: <20140523231337.GC12384@merlins.org>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Chris Mason <clm@fb.com>
+Subject: Re: 3.15-rc6 - btrfs-transacti:4157 blocked for more than 120 seconds.
+References: <5384D53C.9070509@skagestad.org> <5384E2FA.1070509@fb.com> <5384F0B4.7040309@skagestad.org>
+In-Reply-To: <5384F0B4.7040309@skagestad.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 05/23/2014 07:13 PM, Marc MERLIN wrote:
-> On Fri, May 23, 2014 at 04:24:49PM -0400, Chris Mason wrote:
->>> I was able to kill btrfs send and receive, but mencoder is very hung, and
->>> sync does not finish either:
->>> 10654 merlin   sync                        sync_inodes_sb
->>> 17191 merlin   sync                        call_rwsem_down_read_failed
+On 05/27/2014 10:08 PM, Torbjørn wrote:
+> On 05/27/2014 09:09 PM, Chris Mason wrote:
+>>
+>> On 05/27/2014 02:11 PM, Torbjørn wrote:
+>>> Hi,
 >>>
->>> I'm not posting the sysrq-w every time, but I have it available if needed.
+>>> Btrfs-transaction keeps blocking for me on all 3.15-rc versions.
+>>> 3.14 does not have this issue.
+>>> The process never gets unstuck. btrfs fi sync does not help. A hard
+>>> reboot seems to be the only way to recover.
+>>>
+>>> The volume is still readable when it's in this state.
+>>>
+>>> dmesg + sysrq-w is available at
+>>> https://urldefense.proofpoint.com/v1/url?u=http://pastebin.com/vHQnRE2F&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=IKSs%2F0C3x9a0LIiVKFmZVoP9lSAZ%2BK9JgEkchLEAAzM%3D%0A&s=127b40cc34dbb205b5277e6081b082f26e84fc417d35310f3aeee04998a679a8 
+>>>
+>>>
+>>> It's over 6000 lines, and would most likely not be allowed on the list.
+>>>
+>>> The blocking happons on a server with local kvm-clients reading and
+>>> writing to a local btrfs-volume over nfs.
+>>> The btrfs-volume is on top of dm-crypt devices.
+>>>
+>>> Any additional info I can give to help?
+>>> Tests you want me to run?
+>> Very strange, since I don't actually see what we're waiting for.  Can
+>> you please either send me your btrfs.ko or use gdb to see where this
+>> statement is:
 >>
->> Hi Marc,
 >>
->> Can I have the sysrq-w from this one if it's still available?
-> 
-> Argh, just found out that the bug caused none of the 2 copies to ever
-> be committed to disk (including an ext4 partition), and the remote
-> syslog lost too much for it to be useful.
-> 
-> What's more weird is the previous one, where I was able to copy the
-> syslog data that never got committed to disk but was still in the page
-> cache to another machine, I just realized that this one is missing the
-> beginning (it starts at cpu #4).
-> 
-> So it looks like the only complete one I have right now is
-> https://urldefense.proofpoint.com/v1/url?u=http://marc.merlins.org/tmp/btrfs-hang.txt&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=trVl686QjTewKFAeRvMI4%2BQqLBCr36hUPGAiCv6xEMk%3D%0A&s=8b775a694311d54d110d686f86531ca5ce2db479b2aa5966d6056ebf173825b8
-> 
-> If you need more, please let me know, and I'll make sure that I save
-> that very carefully next time.
+>> btrfs_commit_transaction+0x315
+>>
+>> The syntax is
+>>
+>> gdb btrfs.ko
+>> gdb> list *btrfs_commit_transaction+0x315
+>>
+>> -chris
+> Sure, here you go.
+>
+> Reading symbols from btrfs.ko...done.
+> (gdb) list *btrfs_commit_transaction+0x315
+> 0x30f95 is in btrfs_commit_transaction (fs/btrfs/transaction.c:1752).
+> 1747         * COMMIT_DOING so make sure to wait for num_writers to == 
+> 1 again.
+> 1748         */
+> 1749        spin_lock(&root->fs_info->trans_lock);
+> 1750        cur_trans->state = TRANS_STATE_COMMIT_DOING;
+> 1751        spin_unlock(&root->fs_info->trans_lock);
+> 1752        wait_event(cur_trans->writer_wait,
+> 1753               atomic_read(&cur_trans->num_writers) == 1);
+> 1754
+> 1755        /* ->aborted might be set after the previous check, so 
+> check it */
+> 1756        if (unlikely(ACCESS_ONCE(cur_trans->aborted))) {
+> (gdb)
+>
+> I'm attaching the btrfs.ko as well, hopefully the 20M file gets through.
+> -- 
+> Torbjørn
+Seems like the attachment stopped the email from reaching the list.
+Resending with only debug info.
 
-It's not 100% clear what is going on here.  You have a number of procs
-waiting for page locks, one of which is trying to read in your free
-space cache.
-
-Was this one of your machines with metadata corruption?  More traces
-definitely help.
-
--chris
-
+--
+Torbjørn

@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f51.google.com ([74.125.83.51]:54596 "EHLO
-	mail-ee0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751566AbaEVUmy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 May 2014 16:42:54 -0400
-Received: by mail-ee0-f51.google.com with SMTP id e51so3033555eek.38
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 May 2014 13:42:53 -0700 (PDT)
-From: Rickard Strandqvist <rickard_strandqvist@spectrumdigital.se>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>
-Cc: Rickard Strandqvist <rickard_strandqvist@spectrumdigital.se>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] fs: btrfs: volumes.c:  Fix for possible null pointer dereference
-Date: Thu, 22 May 2014 22:43:43 +0200
-Message-Id: <1400791423-11935-1-git-send-email-rickard_strandqvist@spectrumdigital.se>
+Received: from cantor2.suse.de ([195.135.220.15]:38799 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750904AbaE0QWw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 May 2014 12:22:52 -0400
+Date: Tue, 27 May 2014 18:22:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, t-itoh@jp.fujitsu.com
+Subject: Re: [PATCH] Btrfs: clear compress-force when remounting with
+ compress option
+Message-ID: <20140527162249.GM5346@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1400816212-2501-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1400816212-2501-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is otherwise a risk of a possible null pointer dereference.
+On Fri, May 23, 2014 at 11:36:52AM +0800, Wang Shilong wrote:
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  					btrfs_info(root->fs_info,
+>  						   "btrfs: use %s compression",
+>  						   compress_type);
+> +				/*
+> +				 * If we remount from compress-force=xxx to
+> +				 * compress=xxx, we need clear FORCE_COMPRESS
+> +				 * flag, otherwise, there is no way for users
+> +				 * to disable forcible compression separately.
+> +				 */
+> +				btrfs_clear_and_info(root, FORCE_COMPRESS,
+> +						     "compress is not forced anymore");
 
-Was largely found by using a static code analysis program called cppcheck.
+This adds another message and does not make sense if it's not during
+remount.
 
-Signed-off-by: Rickard Strandqvist <rickard_strandqvist@spectrumdigital.se>
----
- fs/btrfs/volumes.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+The message "btrfs: use %s compression" could be printed
+unconditionally, we want to see that the compression is requested via
+mount option.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 49d7fab..d85a225 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1674,11 +1674,12 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 		struct btrfs_fs_devices *fs_devices;
- 		fs_devices = root->fs_info->fs_devices;
- 		while (fs_devices) {
--			if (fs_devices->seed == cur_devices)
-+			if (fs_devices->seed == cur_devices) {
-+				fs_devices->seed = cur_devices->seed;
- 				break;
-+			}
- 			fs_devices = fs_devices->seed;
- 		}
--		fs_devices->seed = cur_devices->seed;
- 		cur_devices->seed = NULL;
- 		lock_chunks(root);
- 		__btrfs_close_devices(cur_devices);
--- 
-1.7.10.4
+Otherwise, the variable 'compress' does nothing useful and can be
+removed as well.
 
+
+>  			}
+>  			break;
+>  		case Opt_ssd:

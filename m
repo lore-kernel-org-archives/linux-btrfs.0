@@ -1,186 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51687 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:59403 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751487AbaE0Bfb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 May 2014 21:35:31 -0400
-Message-ID: <5383EBE0.2000906@suse.com>
-Date: Mon, 26 May 2014 21:35:28 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+	id S1751886AbaE0L0H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 May 2014 07:26:07 -0400
+Date: Tue, 27 May 2014 13:26:05 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
+Subject: Re: [PATCH v3] btrfs: allocate raid type kobjects dynamically
+Message-ID: <20140527112604.GJ5346@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <5383EBE0.2000906@suse.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>,
-        Chris Mason <clm@fb.com>
-Subject: [PATCH v3] btrfs: allocate raid type kobjects dynamically
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5383EBE0.2000906@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We are currently allocating space_info objects in an array when we
-allocate space_info. When a user does something like:
+A different lockdep chain, from test btrfs/014:
 
-# btrfs balance start -mconvert=raid1 -dconvert=raid1 /mnt
-# btrfs balance start -mconvert=single -dconvert=single /mnt -f
-# btrfs balance start -mconvert=raid1 -dconvert=raid1 /
+[  229.850151] ======================================================
+[  229.850788] [ INFO: possible circular locking dependency detected ]
+[  229.850788] 3.15.0-rc7-default+ #146 Tainted: G        W
+[  229.850788] -------------------------------------------------------
+[  229.850788] btrfs/26558 is trying to acquire lock:
+[  229.850788]  (s_active#149){++++.+}, at: [<ffffffff811ee787>] kernfs_remove+0x27/0x40
+[  229.850788]
+[  229.850788] but task is already holding lock:
+[  229.850788]  (&found->groups_sem){++++..}, at: [<ffffffffa0023abe>] btrfs_remove_block_group+0x24e/0x580 [btrfs]
+[  229.850788]
+[  229.850788] which lock already depends on the new lock.
+[  229.850788]
+[  229.850788]
+[  229.850788] the existing dependency chain (in reverse order) is:
+[  229.850788]
+-> #1 (&found->groups_sem){++++..}:
+[  229.850788]        [<ffffffff810b0662>] lock_acquire+0x92/0x120
+[  229.850788]        [<ffffffff81a0bedc>] down_read+0x4c/0xa0
+[  229.850788]        [<ffffffffa004babe>] raid_bytes_show+0x3e/0xd0 [btrfs]
+[  229.850788]        [<ffffffff813b9ef6>] kobj_attr_show+0x16/0x20
+[  229.850788]        [<ffffffff811f04e9>] sysfs_kf_seq_show+0xd9/0x230
+[  229.850788]        [<ffffffff811eec56>] kernfs_seq_show+0x26/0x30
+[  229.850788]        [<ffffffff8119ec8f>] seq_read+0xef/0x410
+[  229.850788]        [<ffffffff811efa35>] kernfs_fop_read+0x125/0x180
+[  229.850788]        [<ffffffff81179fe4>] vfs_read+0xb4/0x180
+[  229.850788]        [<ffffffff8117a269>] SyS_read+0x59/0xd0
+[  229.850788]        [<ffffffff81a16cd2>] system_call_fastpath+0x16/0x1b
+[  229.850788]
+-> #0 (s_active#149){++++.+}:
+[  229.850788]        [<ffffffff810afc5c>] __lock_acquire+0x1c4c/0x1fa0
+[  229.850788]        [<ffffffff810b0662>] lock_acquire+0x92/0x120
+[  229.850788]        [<ffffffff811edc07>] __kernfs_remove+0x2b7/0x380
+[  229.850788]        [<ffffffff811ee787>] kernfs_remove+0x27/0x40
+[  229.850788]        [<ffffffff811f0b3a>] sysfs_remove_dir+0x5a/0x90
+[  229.850788]        [<ffffffff813ba028>] kobject_del+0x18/0x90
+[  229.850788]        [<ffffffffa0023cb2>] btrfs_remove_block_group+0x442/0x580 [btrfs]
+[  229.850788]        [<ffffffffa005caf4>] btrfs_relocate_chunk+0x624/0x770 [btrfs]
+[  229.850788]        [<ffffffffa005f652>] btrfs_balance+0x902/0xf50 [btrfs]
+[  229.850788]        [<ffffffffa006b090>] btrfs_ioctl_balance+0x1e0/0x350 [btrfs]
+[  229.850788]        [<ffffffffa006d4a9>] btrfs_ioctl+0xc39/0x1830 [btrfs]
+[  229.850788]        [<ffffffff8118c381>] do_vfs_ioctl+0x91/0x560
+[  229.850788]        [<ffffffff8118c8a3>] SyS_ioctl+0x53/0x80
+[  229.850788]        [<ffffffff81a16cd2>] system_call_fastpath+0x16/0x1b
+[  229.850788]
+[  229.850788] other info that might help us debug this:
+[  229.850788]
+[  229.850788]  Possible unsafe locking scenario:
+[  229.850788]
+[  229.850788]        CPU0                    CPU1
+[  229.850788]        ----                    ----
+[  229.850788]   lock(&found->groups_sem);
+[  229.850788]                                lock(s_active#149);
+[  229.850788]                                lock(&found->groups_sem);
+[  229.850788]   lock(s_active#149);
+[  229.850788]
+[  229.850788]  *** DEADLOCK ***
+[  229.850788]
+[  229.850788] 5 locks held by btrfs/26558:
+[  229.850788]  #0:  (sb_writers#11){.+.+.+}, at: [<ffffffff8119a828>] mnt_want_write_file+0x28/0x60
+[  229.850788]  #1:  (&fs_info->volume_mutex){+.+.+.}, at: [<ffffffffa006afe1>] btrfs_ioctl_balance+0x131/0x350 [btrfs]
+[  229.850788]  #2:  (sb_internal){.+.+..}, at: [<ffffffffa0035436>] start_transaction+0x456/0x550 [btrfs]
+[  229.850788]  #3:  (&fs_info->chunk_mutex){+.+...}, at: [<ffffffffa005927e>] lock_chunks+0x1e/0x20 [btrfs]
+[  229.850788]  #4:  (&found->groups_sem){++++..}, at: [<ffffffffa0023abe>] btrfs_remove_block_group+0x24e/0x580 [btrfs]
+[  229.850788]
+[  229.850788] stack backtrace:
+[  229.850788] CPU: 1 PID: 26558 Comm: btrfs Tainted: G        W     3.15.0-rc7-default+ #146
+[  229.850788] Hardware name: Intel Corporation Santa Rosa platform/Matanzas, BIOS TSRSCRB1.86C.0047.B00.0610170821 10/17/06
+[  229.850788]  ffffffff8281faf0 ffff8800652a1818 ffffffff81a07898 0000000000000001
+[  229.850788]  ffffffff82827310 ffff8800652a1868 ffffffff810acb74 00000000001d4500
+[  229.850788]  ffff8800652a18e8 0000000000000004 ffff880075e0ac78 0000000000000004
+[  229.850788] Call Trace:
+[  229.850788]  [<ffffffff81a07898>] dump_stack+0x51/0x71
+[  229.850788]  [<ffffffff810acb74>] print_circular_bug+0x214/0x310
+[  229.850788]  [<ffffffff810afc5c>] __lock_acquire+0x1c4c/0x1fa0
+[  229.850788]  [<ffffffff811ee787>] ? kernfs_remove+0x27/0x40
+[  229.850788]  [<ffffffff810b0662>] lock_acquire+0x92/0x120
+[  229.850788]  [<ffffffff811ee787>] ? kernfs_remove+0x27/0x40
+[  229.850788]  [<ffffffff81a0bb39>] ? mutex_unlock+0x9/0x10
+[  229.850788]  [<ffffffff811edc07>] __kernfs_remove+0x2b7/0x380
+[  229.850788]  [<ffffffff811ee787>] ? kernfs_remove+0x27/0x40
+[  229.850788]  [<ffffffff811ee77f>] ? kernfs_remove+0x1f/0x40
+[  229.850788]  [<ffffffff811ee787>] kernfs_remove+0x27/0x40
+[  229.850788]  [<ffffffff811f0b3a>] sysfs_remove_dir+0x5a/0x90
+[  229.850788]  [<ffffffff813ba028>] kobject_del+0x18/0x90
+[  229.850788]  [<ffffffffa0023cb2>] btrfs_remove_block_group+0x442/0x580 [btrfs]
+[  229.850788]  [<ffffffff810b112d>] ? trace_hardirqs_on_caller+0x11d/0x1e0
+[  229.850788]  [<ffffffffa005caf4>] btrfs_relocate_chunk+0x624/0x770 [btrfs]
+[  229.850788]  [<ffffffffa0056ac6>] ? release_extent_buffer+0x36/0xe0 [btrfs]
+[  229.850788]  [<ffffffffa005706a>] ? free_extent_buffer+0x4a/0xc0 [btrfs]
+[  229.850788]  [<ffffffffa0057080>] ? free_extent_buffer+0x60/0xc0 [btrfs]
+[  229.850788]  [<ffffffffa005f652>] btrfs_balance+0x902/0xf50 [btrfs]
+[  229.850788]  [<ffffffffa006b090>] ? btrfs_ioctl_balance+0x1e0/0x350 [btrfs]
+[  229.850788]  [<ffffffff8116e3fa>] ? kmem_cache_alloc_trace+0x12a/0x180
+[  229.850788]  [<ffffffffa006b090>] btrfs_ioctl_balance+0x1e0/0x350 [btrfs]
+[  229.850788]  [<ffffffffa006c870>] ? update_ioctl_balance_args+0x130/0x130 [btrfs]
+[  229.850788]  [<ffffffffa006d4a9>] btrfs_ioctl+0xc39/0x1830 [btrfs]
+[  229.850788]  [<ffffffff8118c381>] do_vfs_ioctl+0x91/0x560
+[  229.850788]  [<ffffffff81197959>] ? __fget_light+0x9/0x70
+[  229.850788]  [<ffffffff811979c9>] ? __fdget+0x9/0x20
+[  229.850788]  [<ffffffff8118c8a3>] SyS_ioctl+0x53/0x80
+[  229.850788]  [<ffffffff81a16cd2>] system_call_fastpath+0x16/0x1b
 
-We can end up with memory corruption since the kobject hasn't
-been reinitialized properly and the name pointer was left set.
-
-The rationale behind allocating them statically was to avoid
-creating a separate kobject container that just contained the
-raid type. It used the index in the array to determine the index.
-
-Ultimately, though, this wastes more memory than it saves in all
-but the most complex scenarios and introduces kobject lifetime
-questions.
-
-This patch allocates the kobjects dynamically instead. Note that
-we also remove the kobject_get/put of the parent kobject since
-kobject_add and kobject_del do that internally.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h       |    8 +++++++-
- fs/btrfs/extent-tree.c |   39 ++++++++++++++++++++++++++-------------
- fs/btrfs/sysfs.c       |    5 +++--
- 3 files changed, 36 insertions(+), 16 deletions(-)
-
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1113,6 +1113,12 @@ struct btrfs_qgroup_limit_item {
- 	__le64 rsv_excl;
- } __attribute__ ((__packed__));
- 
-+/* For raid type sysfs entries */
-+struct raid_kobject {
-+	int raid_type;
-+	struct kobject kobj;
-+};
-+
- struct btrfs_space_info {
- 	spinlock_t lock;
- 
-@@ -1163,7 +1169,7 @@ struct btrfs_space_info {
- 	wait_queue_head_t wait;
- 
- 	struct kobject kobj;
--	struct kobject block_group_kobjs[BTRFS_NR_RAID_TYPES];
-+	struct kobject *block_group_kobjs[BTRFS_NR_RAID_TYPES];
- };
- 
- #define	BTRFS_BLOCK_RSV_GLOBAL		1
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3401,10 +3401,8 @@ static int update_space_info(struct btrf
- 		return ret;
- 	}
- 
--	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
-+	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
- 		INIT_LIST_HEAD(&found->block_groups[i]);
--		kobject_init(&found->block_group_kobjs[i], &btrfs_raid_ktype);
--	}
- 	init_rwsem(&found->groups_sem);
- 	spin_lock_init(&found->lock);
- 	found->flags = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
-@@ -8327,8 +8325,9 @@ int btrfs_free_block_groups(struct btrfs
- 		list_del(&space_info->list);
- 		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
- 			struct kobject *kobj;
--			kobj = &space_info->block_group_kobjs[i];
--			if (kobj->parent) {
-+			kobj = space_info->block_group_kobjs[i];
-+			space_info->block_group_kobjs[i] = NULL;
-+			if (kobj) {
- 				kobject_del(kobj);
- 				kobject_put(kobj);
- 			}
-@@ -8352,17 +8351,26 @@ static void __link_block_group(struct bt
- 	up_write(&space_info->groups_sem);
- 
- 	if (first) {
--		struct kobject *kobj = &space_info->block_group_kobjs[index];
-+		struct raid_kobject *rkobj;
- 		int ret;
- 
--		kobject_get(&space_info->kobj); /* put in release */
--		ret = kobject_add(kobj, &space_info->kobj, "%s",
--				  get_raid_name(index));
-+		rkobj = kzalloc(sizeof(*rkobj), GFP_KERNEL);
-+		if (!rkobj)
-+			goto out_err;
-+		rkobj->raid_type = index;
-+		kobject_init(&rkobj->kobj, &btrfs_raid_ktype);
-+		ret = kobject_add(&rkobj->kobj, &space_info->kobj,
-+				  "%s", get_raid_name(index));
- 		if (ret) {
--			pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
--			kobject_put(&space_info->kobj);
-+			kobject_put(&rkobj->kobj);
-+			goto out_err;
- 		}
-+		space_info->block_group_kobjs[index] = &rkobj->kobj;
- 	}
-+
-+	return;
-+out_err:
-+	pr_warn("BTRFS: failed to add kobject for block cache. ignoring.\n");
- }
- 
- static struct btrfs_block_group_cache *
-@@ -8697,6 +8705,7 @@ int btrfs_remove_block_group(struct btrf
- 	struct btrfs_root *tree_root = root->fs_info->tree_root;
- 	struct btrfs_key key;
- 	struct inode *inode;
-+	struct kobject *kobj = NULL;
- 	int ret;
- 	int index;
- 	int factor;
-@@ -8796,11 +8805,15 @@ int btrfs_remove_block_group(struct btrf
- 	 */
- 	list_del_init(&block_group->list);
- 	if (list_empty(&block_group->space_info->block_groups[index])) {
--		kobject_del(&block_group->space_info->block_group_kobjs[index]);
--		kobject_put(&block_group->space_info->block_group_kobjs[index]);
-+		kobj = block_group->space_info->block_group_kobjs[index];
-+		block_group->space_info->block_group_kobjs[index] = NULL;
- 		clear_avail_alloc_bits(root->fs_info, block_group->flags);
- 	}
- 	up_write(&block_group->space_info->groups_sem);
-+	if (kobj) {
-+		kobject_del(kobj);
-+		kobject_put(kobj);
-+	}
- 
- 	if (block_group->cached == BTRFS_CACHE_STARTED)
- 		wait_block_group_cache_done(block_group);
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -254,6 +254,7 @@ static ssize_t global_rsv_reserved_show(
- BTRFS_ATTR(global_rsv_reserved, 0444, global_rsv_reserved_show);
- 
- #define to_space_info(_kobj) container_of(_kobj, struct btrfs_space_info, kobj)
-+#define to_raid_kobj(_kobj) container_of(_kobj, struct raid_kobject, kobj)
- 
- static ssize_t raid_bytes_show(struct kobject *kobj,
- 			       struct kobj_attribute *attr, char *buf);
-@@ -266,7 +267,7 @@ static ssize_t raid_bytes_show(struct ko
- {
- 	struct btrfs_space_info *sinfo = to_space_info(kobj->parent);
- 	struct btrfs_block_group_cache *block_group;
--	int index = kobj - sinfo->block_group_kobjs;
-+	int index = to_raid_kobj(kobj)->raid_type;
- 	u64 val = 0;
- 
- 	down_read(&sinfo->groups_sem);
-@@ -288,7 +289,7 @@ static struct attribute *raid_attributes
- 
- static void release_raid_kobj(struct kobject *kobj)
- {
--	kobject_put(kobj->parent);
-+	kfree(to_raid_kobj(kobj));
- }
- 
- struct kobj_type btrfs_raid_ktype = {
-
--- 
-Jeff Mahoney
-SUSE Labs

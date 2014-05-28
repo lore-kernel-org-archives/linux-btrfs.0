@@ -1,52 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:21000 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752710AbaE1LYY (ORCPT
+	with ESMTP id S1752921AbaE1LYZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 May 2014 07:24:24 -0400
+	Wed, 28 May 2014 07:24:25 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4SBOMnf029419
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 May 2014 19:24:22 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4SBONVh029422
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 May 2014 19:24:23 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/4] Btrfs-progs: fsck: only allow partial opening under repair mode
-Date: Wed, 28 May 2014 19:20:38 +0800
-Message-ID: <1401276041-18349-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH 2/4] Btrfs-progs: fsck: disallow partial opening if critical roots corrupted
+Date: Wed, 28 May 2014 19:20:39 +0800
+Message-ID: <1401276041-18349-2-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1401276041-18349-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1401276041-18349-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+If btrfs tree root is corrupted, fsck will hit the following segmentation.
+
+enabling repair mode
+Check tree block failed, want=29376512, have=0
+Check tree block failed, want=29376512, have=0
+Check tree block failed, want=29376512, have=0
+Check tree block failed, want=29376512, have=0
+Check tree block failed, want=29376512, have=0
+read block failed check_tree_block
+Couldn't read tree root
+Checking filesystem on /dev/sda9
+UUID: 0e1a754d-04a5-4256-ae79-0f769751803e
+Critical roots corrupted, unable to fsck the FS
+Segmentation fault (core dumped)
+
+In btrfs_setup_all_roots(), we could tolerate some trees(extent tree, csum tree)
+corrupted, and we have did careful check inside that function, it will
+return NULL if critial roots corrupt(for example tree root).
+
+The problem is that we check @OPEN_CTREE_PARTIAL flag again after
+calling btrfs_setup_all_roots() which will successfully return
+@fs_info though critial roots corrupted.
+
+Fix this problem by removing @OPEN_CTREE_PARTIAL flag check outsize
+btrfs_setup_all_roots().
+
 Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ disk-io.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index db7df80..0e4e042 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6810,8 +6810,7 @@ int cmd_check(int argc, char **argv)
- 	int option_index = 0;
- 	int init_csum_tree = 0;
- 	int qgroup_report = 0;
--	enum btrfs_open_ctree_flags ctree_flags =
--		OPEN_CTREE_PARTIAL | OPEN_CTREE_EXCLUSIVE;
-+	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_EXCLUSIVE;
+diff --git a/disk-io.c b/disk-io.c
+index 58f3f07..63e153d 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1134,13 +1134,10 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
  
- 	while(1) {
- 		int c;
-@@ -6877,6 +6876,10 @@ int cmd_check(int argc, char **argv)
- 		goto err_out;
- 	}
+ 	ret = btrfs_setup_all_roots(fs_info, root_tree_bytenr, flags);
+ 	if (ret)
+-		goto out_failed;
++		goto out_chunk;
  
-+	/* only allow partial opening under repair mode */
-+	if (repair)
-+		ctree_flags |= OPEN_CTREE_PARTIAL;
-+
- 	info = open_ctree_fs_info(argv[optind], bytenr, 0, ctree_flags);
- 	if (!info) {
- 		fprintf(stderr, "Couldn't open file system\n");
+ 	return fs_info;
+ 
+-out_failed:
+-	if (flags & OPEN_CTREE_PARTIAL)
+-		return fs_info;
+ out_chunk:
+ 	btrfs_release_all_roots(fs_info);
+ 	btrfs_cleanup_all_caches(fs_info);
 -- 
 1.9.0
 

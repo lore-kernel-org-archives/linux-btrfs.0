@@ -1,41 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.54]:47502 "EHLO
-	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752060AbaE1O5K (ORCPT
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:38978 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751694AbaE1SjL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 May 2014 10:57:10 -0400
-Message-ID: <5385F938.9010009@skagestad.org>
-Date: Wed, 28 May 2014 16:56:56 +0200
-From: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+	Wed, 28 May 2014 14:39:11 -0400
+Received: by mail-ig0-f176.google.com with SMTP id hl10so2786505igb.15
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 May 2014 11:39:10 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: 3.15-rc6 - btrfs-transacti:4157 blocked for more than 120 seconds.
-References: <5384D53C.9070509@skagestad.org> <5384E2FA.1070509@fb.com> <5384F0B4.7040309@skagestad.org> <5384F8A4.1050206@skagestad.org> <5384FAB2.6000204@fb.com> <5385007A.4000301@fb.com> <538579F1.10106@skagestad.org> <5385E794.1030002@fb.com>
-In-Reply-To: <5385E794.1030002@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CAKZK7ux1Cm0tQFqFJtTPbL089DQR+4Ekv5Ef8L3BgUkyY+bLQA@mail.gmail.com>
+References: <CAKZK7uwZOZEjQ-T9z-KGSRpW1xpY911_QoDM26SBdmSViRtrZA@mail.gmail.com>
+	<08C16AE5-02A8-413B-B95C-EC2B5A1D32EC@colorremedies.com>
+	<CAKZK7ux1Cm0tQFqFJtTPbL089DQR+4Ekv5Ef8L3BgUkyY+bLQA@mail.gmail.com>
+Date: Wed, 28 May 2014 13:39:10 -0500
+Message-ID: <CAKZK7uy6Y7_+JQGrZp5yTpZ2kCsH8wGDhz+Oq4oGidYkQNcq1g@mail.gmail.com>
+Subject: Fwd: Failed Disk RAID10 Problems
+From: Justin Brown <justin.brown@fandingo.org>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/28/2014 03:41 PM, Chris Mason wrote:
-> On 05/28/2014 01:53 AM, Torbjørn wrote:
->
->> It's actually a raid10 array of 11 dm-crypt devices.
->> I'm able to read data from the array (accessing files), and also read
->> directly from all the underlying dm-crypt devices using dd, if that's
->> what you meant.
->>
->> I have not rebooted the system since that dmesg, so it's still stuck in
->> the same state.
->> I can keep it like that for some days. The system is not critical at all.
->>
-> Thanks,
->
-> Can you please capture the result of sysrq-t and sysrq-l?  Maybe the IO
-> is stuck in a thread that isn't in the D state.
->
-> -chris
-The output of sysrq-t was too much data for pastebin, will send both to 
-you as attachments outside of the list.
+Chris,
 
---
-Torbjørn
+Thanks for the tip. I was able to mount the drive as degraded and
+recovery. Then, I deleted the faulty drive, leaving me with the
+following array:
+
+
+Label: media  uuid: 7b7afc82-f77c-44c0-b315-669ebd82f0c5
+
+Total devices 6 FS bytes used 2.40TiB
+
+devid    1 size 931.51GiB used 919.88GiB path
+/dev/mapper/SAMSUNG_HD103SI_499431FS734755p1
+
+devid    2 size 931.51GiB used 919.38GiB path /dev/dm-8
+
+devid    3 size 1.82TiB used 1.19TiB path /dev/dm-6
+
+devid    4 size 931.51GiB used 919.88GiB path /dev/dm-5
+
+devid    5 size 0.00 used 918.38GiB path /dev/dm-11
+
+devid    6 size 1.82TiB used 3.88GiB path /dev/dm-9
+
+
+/dev/dm-11 is the failed drive. I take it that size 0 is a good sign.
+I'm not really sure where to go from here. I tried rebooting the
+system with the failed drive attached, and Btrfs re-adds it to the
+array. Should I physically remove the drive now? Is a balance
+recommended?
+
+
+Thanks,
+
+Justin

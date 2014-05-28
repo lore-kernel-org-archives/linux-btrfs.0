@@ -1,44 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33545 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:33622 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751268AbaE1Qxg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 May 2014 12:53:36 -0400
-Date: Wed, 28 May 2014 18:53:33 +0200
+	id S1751960AbaE1Q7H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 May 2014 12:59:07 -0400
+Date: Wed, 28 May 2014 18:59:06 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+To: Adam Buchbinder <abuchbinder@google.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: provide better error message for raid
- profile mismatch
-Message-ID: <20140528165333.GQ5346@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-image: Fix a data race in build_chunk_tree.
+Message-ID: <20140528165906.GR5346@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <5375CA68.4090808@jp.fujitsu.com>
+References: <1400478042-19837-1-git-send-email-abuchbinder@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5375CA68.4090808@jp.fujitsu.com>
+In-Reply-To: <1400478042-19837-1-git-send-email-abuchbinder@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 16, 2014 at 05:20:56PM +0900, Hidetoshi Seto wrote:
-> Current error messages are like following:
->   Error: unable to create FS with metadata profile 32 (have 2 devices)
->   Error: unable to create FS with metadata profile 256 (have 2 devices)
+On Sun, May 18, 2014 at 10:40:42PM -0700, Adam Buchbinder wrote:
+> A mdrestore_struct was being written to without its mutex being held.
+> This race was found with ThreadSanitizer; the relevant part of the report
+> looks like this:
 > 
-> Obviously it is hard for users to interpret "profile XX" to proper
-> meaning, such as "raidN". So use recongizable string instead of
-> internal numerical value. In case of "dup", use an explicit message.
+> WARNING: ThreadSanitizer: data race (pid=18828)
+>   Write of size 8 at 0x7fffffc3d088 by main thread:
+>     #0 build_chunk_tree .../btrfs-progs/btrfs-image.c:2233
+>     #1 __restore_metadump .../btrfs-progs/btrfs-image.c:2294
+>     #2 restore_metadump .../btrfs-progs/btrfs-image.c:2345
+>     #3 main .../btrfs-progs/btrfs-image.c:2545
 > 
-> Plus this patch fix a bug that message mistake metadata profile
-> for data profile.
+>   Previous read of size 8 at 0x7fffffc3d088 by thread T1 (mutexes: write M0):
+>     #0 restore_worker .../btrfs-progs/btrfs-image.c:1636
 > 
-> After applying this patch, messages will be like:
->   Error: dup is not allowed when FS have multiple devices
->   Error: unable to create FS with metadata profile RAID6 (have 2
->   devices but 3 devices are required)
+>   Location is stack of main thread.
+> 
+>   Mutex M0 created at:
+>     #0 pthread_mutex_init ??:0
+>     #1 mdrestore_init .../btrfs-progs/btrfs-image.c:1766
+>     #2 __restore_metadump .../btrfs-progs/btrfs-image.c:2286
+>     #3 restore_metadump .../btrfs-progs/btrfs-image.c:2345
+>     #4 main .../btrfs-progs/btrfs-image.c:2545
+> 
+>   Thread T1 (tid=18830, running) created by main thread at:
+>     #0 pthread_create ??:0
+>     #1 mdrestore_init .../btrfs-progs/btrfs-image.c:1784
+>     #2 __restore_metadump .../btrfs-progs/btrfs-image.c:2286
+>     #3 restore_metadump .../btrfs-progs/btrfs-image.c:2345
+>     #4 main .../btrfs-progs/btrfs-image.c:2545
+> ---
 
-Nice, thanks.
-
-Moving the group_profile_* functions to utils.c was done in "Enhance
-the command btrfs filesystem df", so your patch ends up a bit shorter.
-
-I've modified the 'dup' to be 'DUP' in the error message and changelog
-so it's consistent with spelling of the RAIDx names.
+Thanks. FYI, I've added your Signed-off-by line, same as in the other
+patch you've sent.

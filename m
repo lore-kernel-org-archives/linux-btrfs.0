@@ -1,116 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21324 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756380AbaEPPDx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 May 2014 11:03:53 -0400
-Message-ID: <5376297B.9000709@oracle.com>
-Date: Fri, 16 May 2014 23:06:35 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:33940 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751521AbaE1RUU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 May 2014 13:20:20 -0400
+Date: Wed, 28 May 2014 19:20:18 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Improve the parse_size() error message.
+Message-ID: <20140528172017.GS5346@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1400572305-19818-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Shilong Wang <wangshilong1991@gmail.com>
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: set right total device count for seeding support
-References: <1399971906-1237-1-git-send-email-wangsl.fnst@cn.fujitsu.com>	<1399971906-1237-2-git-send-email-wangsl.fnst@cn.fujitsu.com>	<53761D30.6080207@oracle.com>	<53762456.3050005@oracle.com> <CAP9B-Q=vSdr=ziM_N+Z1G2TioLqxXE_RH+Xe-VOwGwTUs++JTA@mail.gmail.com>
-In-Reply-To: <CAP9B-Q=vSdr=ziM_N+Z1G2TioLqxXE_RH+Xe-VOwGwTUs++JTA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1400572305-19818-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, May 20, 2014 at 03:51:45PM +0800, Qu Wenruo wrote:
+> When using parse_size(), even non-numeric value is passed, it will only
+> give error message "ERROR: size value is empty", which is quite
+> confusing for end users.
+> 
+> This patch will introduce more meaningful error message for the
+> following new cases
+> 1) Invalid size string (non-numeric string)
+> 2) Minus size value (like "-1K")
 
+That's great. A few things below
 
-On 16/05/14 22:50, Shilong Wang wrote:
-> 2014-05-16 22:44 GMT+08:00 Anand Jain <Anand.Jain@oracle.com>:
->>
->>
->> Wang,
->>
->>   when we unmount && mount (instead of remount) and followed
->>   with device del <seed> it ends up with null pointer deref at
->>   btrfs_shrink_dev. Thats because the btrfs_root is not set for
->>   seed disk as we mounted the writable sprout disk. I am writing
->>   a separate fix for that as its a new bug.
->
-> You means this one which was addressed by Liu few days ago?
-> https://patchwork.kernel.org/patch/4150471/
+>  u64 parse_size(char *s)
+>  {
+> -	int i;
+>  	char c;
+>  	u64 mult = 1;
+> -
+> -	for (i = 0; s && s[i] && isdigit(s[i]); i++) ;
+> -	if (!i) {
+> -		fprintf(stderr, "ERROR: size value is empty\n");
+> -		exit(50);
+> -	}
+> -
+> -	if (s[i]) {
+> -		c = tolower(s[i]);
+> +	long long int ret = 0;
+> +	char *endptr;
+> +
+> +	if (!s)
+> +		goto empty;
+> +	ret = strtoll(s, &endptr, 10);
 
-  Ah there is already a patch. yes thats the one. Thanks.
+> -	return strtoull(s, NULL, 10) * mult;
 
->>>> Thanks, Anand
->>
->>
->>
->> On 16/05/14 22:14, Anand Jain wrote:
->>>
->>>
->>> Wang,
->>>
->>>    There seems to be a problem - after we delete the seed
->>>    disk, the total_devices didn't decrement back to 1.
->>>    reproducer as in the below test case. (I used btrfs-devlist
->>>    (posted) to check fs_devices).
->>>
->>>    > # mkfs.btrfs -f /dev/sdb
->>>    > # btrfstune -S 1 /dev/sdb
->>>    > # mount /dev/sdb /mnt
->>>    > # btrfs device add -f /dev/sdc /mnt --->fs_devices->total_devices = 1
->>>    mount -o rw,remount /mnt
->>>    btrfs dev del /dev/sdb /mnt --> fs_devices->total_devices is still 2
->>>
->>> Thanks, Anand
->>>
->>>
->>> On 13/05/14 17:05, Wang Shilong wrote:
->>>>
->>>> Seeding device support allows us to create a new filesystem
->>>> based on existed filesystem.
->>>>
->>>> However newly created filesystem's @total_devices should include seed
->>>> devices. This patch fix the following problem:
->>>>
->>>>    # mkfs.btrfs -f /dev/sdb
->>>>    # btrfstune -S 1 /dev/sdb
->>>>    # mount /dev/sdb /mnt
->>>>    # btrfs device add -f /dev/sdc /mnt --->fs_devices->total_devices = 1
->>>>    # umount /mnt
->>>>    # mount /dev/sdc /mnt               --->fs_devices->total_devices = 2
->>>>
->>>> This is because we record right @total_devices in superblock, but
->>>> @fs_devices->total_devices is reset to be 0 in btrfs_prepare_sprout().
->>>>
->>>> Fix this problem by not resetting @fs_devices->total_devices.
->>>>
->>>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->>>> ---
->>>>    fs/btrfs/volumes.c | 1 -
->>>>    1 file changed, 1 deletion(-)
->>>>
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index 6fd7fe6..19b2d32 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1883,7 +1883,6 @@ static int btrfs_prepare_sprout(struct
->>>> btrfs_root *root)
->>>>        fs_devices->seeding = 0;
->>>>        fs_devices->num_devices = 0;
->>>>        fs_devices->open_devices = 0;
->>>> -    fs_devices->total_devices = 0;
->>>>        fs_devices->seed = seed_devices;
->>>>
->>>>        generate_random_uuid(fs_devices->fsid);
->>>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Now it does not parse sizes from the range LLONG_MAX to ULLONG_MAX (8EiB
+to 16EiB). Though we don't have problems with such sizes in real life,
+I'd rather keep strtoull so it matches the advertised maximum filesystem
+size.
+
+Negative numbers can be simply identified by leading '-'. The only case
+where negative number is allowed is in 'fi resize', but the string is
+passed to kernel as-is.
+
+> +empty:
+> +	fprintf(stderr, "ERROR: Size value is empty\n");
+> +	exit(50);
+> +suffix:
+> +	fprintf(stderr, "ERROR: Illegal suffix contains character '%c' in wrong position\n",
+> +		endptr[1]);
+> +	exit(51);
+> +descriptor:
+> +	fprintf(stderr, "ERROR: Unknown size descriptor '%c'\n", c);
+> +	exit(52);
+> +invalid:
+> +	fprintf(stderr, "ERROR: Size value '%s' is invalid\n", s);
+> +	exit(53);
+> +minus:
+> +	fprintf(stderr, "ERROR: Size value '%s' is less equal than 0\n", s);
+> +	exit(54);
+
+Please get rid of the error codes, use exit(1). The messages should be
+enough to find out what's wrong.

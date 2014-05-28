@@ -1,50 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:34005 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751752AbaEaVyi (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:31680 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751554AbaE1B1n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 17:54:38 -0400
-Date: Sat, 31 May 2014 14:54:24 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20140531215424.GG12384@merlins.org>
-References: <pan.2014.05.20.15.30.48@googlemail.com>
+	Tue, 27 May 2014 21:27:43 -0400
+Message-ID: <53853A9F.1020104@cn.fujitsu.com>
+Date: Wed, 28 May 2014 09:23:43 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <pan.2014.05.20.15.30.48@googlemail.com>
-Subject: Re: Better handling of stale scrub status
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>, <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: clear compress-force when remounting with compress
+ option
+References: <1400816212-2501-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140527162249.GM5346@twin.jikos.cz>
+In-Reply-To: <20140527162249.GM5346@twin.jikos.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 20, 2014 at 03:30:48PM +0000, Holger Hoffstätte wrote:
-> As Marc Merlin recently wrote in his blog [1] scrub can sometimes leave a 
-> stale state file behind, making cancel/resume complain. I took a peek at 
-> the code and found most of the scrub state file handling fairly 
-> straightforward, so before I go off and start hacking, what would a 
-> better behaviour look like?
-> 
-> - delete the stale file?
-> - fix the file by setting the "finished" flag?
-> - something else entirely?
+Hi David,
 
-So while writing the workaround I was also indeed thinking we should
-just fix the tool, I just haven't had time to look at it myself yet.
+On 05/28/2014 12:22 AM, David Sterba wrote:
+> On Fri, May 23, 2014 at 11:36:52AM +0800, Wang Shilong wrote:
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -513,6 +513,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>>   					btrfs_info(root->fs_info,
+>>   						   "btrfs: use %s compression",
+>>   						   compress_type);
+>> +				/*
+>> +				 * If we remount from compress-force=xxx to
+>> +				 * compress=xxx, we need clear FORCE_COMPRESS
+>> +				 * flag, otherwise, there is no way for users
+>> +				 * to disable forcible compression separately.
+>> +				 */
+>> +				btrfs_clear_and_info(root, FORCE_COMPRESS,
+>> +						     "compress is not forced anymore");
+> This adds another message and does not make sense if it's not during
+> remount.
+The message is output in the following cases:
 
-Basically once you have a way to confirm that indeed there is no scrub
-running, I'd say the best is to set the finished flag, as if someone has
-cancelled the scrub before shutting down the machine.
+case1:
+    # mount -o compress-force=lzo /dev/sdb /mnt
+    # mount -o remount,compress=lzo  /dev/sdb /mnt
 
-> I currently lean towards fixing (and not printing an error?), but maybe 
-> someone else has different ideas about how this should be handled.
-> Any suggestions welcome..
+case2:
+    # mount -o compress-force=lzo /dev/sdb /mnt
+    # mount -o remount,compress-force=no /dev/sdb /mnt
 
-Yeah, it's a spurious error, auto fixing is the right solution.
+Message won't be printed except remounting, any other case
+that i was missing?
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> The message "btrfs: use %s compression" could be printed
+> unconditionally, we want to see that the compression is requested via
+> mount option.
+>
+> Otherwise, the variable 'compress' does nothing useful and can be
+> removed as well.
+See many other mount options, if we change it, it will call
+btrfs_clear_and_info(....)...
+
+I don't have any taste that whether we need add or remove
+this message, if you dosen't like this,  i could remove it.
+
+Thanks,
+Wang
+>>   			}
+>>   			break;
+>>   		case Opt_ssd:
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+>
+

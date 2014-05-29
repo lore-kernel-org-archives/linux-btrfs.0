@@ -1,65 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41872 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932590AbaE2JPF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 May 2014 05:15:05 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: [PATCH] btrfs: print only if scanned device becomes part of the fs_devices
-Date: Thu, 29 May 2014 17:18:01 +0800
-Message-Id: <1401355081-12817-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:46364 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757332AbaE2MnK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 May 2014 08:43:10 -0400
+Date: Thu, 29 May 2014 14:43:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Karel Zak <kzak@redhat.com>
+Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device
+ add/remove.
+Message-ID: <20140529124308.GA29992@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-justification:
-  a deleted missing disk if reappears would end up with -EBUSY when
-  it undergoes btrfs dev scan. But the sys log indicates bringing the
-  disk back to the btrfs kernel was successful
+On Wed, Apr 16, 2014 at 05:02:32PM +0800, Qu Wenruo wrote:
+> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>  
+>  	ret = 0;
+>  
+> -	/* Notify udev that device has changed */
+> -	if (bdev)
+> +	if (bdev) {
+> +		/* Notify udev that device has changed */
+>  		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
+>  
+> +		/* Update ctime/mtime for device path for libblkid */
+> +		update_dev_time(device_path);
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c |   23 ++++++++++++-----------
- 1 files changed, 12 insertions(+), 11 deletions(-)
+The change on the device comes after the uevent notification, is it
+possible that the event is delivered and processed before the device
+times are updated? I would say so.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a1cb877..275e4d1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -911,20 +911,21 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	transid = btrfs_super_generation(disk_super);
- 	total_devices = btrfs_super_num_devices(disk_super);
- 
--	if (disk_super->label[0]) {
--		if (disk_super->label[BTRFS_LABEL_SIZE - 1])
--			disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
--		printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
--	} else {
--		printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
--	}
--
--	printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
--
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
--	if (!ret && fs_devices_ret)
-+	if (!ret && fs_devices_ret) {
- 		(*fs_devices_ret)->total_devices = total_devices;
- 
-+		if (disk_super->label[0]) {
-+			if (disk_super->label[BTRFS_LABEL_SIZE - 1])
-+				disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
-+			printk(KERN_INFO "BTRFS: device label %s ", disk_super->label);
-+		} else {
-+			printk(KERN_INFO "BTRFS: device fsid %pU ", disk_super->fsid);
-+		}
-+		printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
-+	}
-+
-+
- error_unmap:
- 	kunmap(page);
- 	page_cache_release(page);
--- 
-1.7.1
-
+> +	}
+> +
+>  error_brelse:
+>  	brelse(bh);
+>  	if (bdev)

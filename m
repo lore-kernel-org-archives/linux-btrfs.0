@@ -1,53 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56665 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:20719 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752002AbaEOBdx (ORCPT
+	with ESMTP id S1756539AbaE2KDb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 May 2014 21:33:53 -0400
+	Thu, 29 May 2014 06:03:31 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4F1XpeM007585
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 May 2014 09:33:51 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s4TA3Tr0005181
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 May 2014 18:03:29 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: use check_argc_exact to check arg number of btrfs-rescue
-Date: Thu, 15 May 2014 09:29:09 +0800
-Message-ID: <1400117349-2851-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1400117349-2851-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1400117349-2851-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 1/4] Btrfs-progs: fsck: only allow partial opening under repair mode
+Date: Thu, 29 May 2014 17:59:56 +0800
+Message-ID: <1401357597-9494-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The btrfs-rescue accepts exactly one arg for both
-chunk-recover & super-recover, use check_argc_exact clearly.
----
- cmds-rescue.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+The reason that we allow partial opening is that sometimes,
+we may have some corrupted trees.(for example extent tree), for
+fsck repair case, the broken tree may be rebuilt later.
 
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index 9491d0c..3629141 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -85,7 +85,7 @@ int cmd_chunk_recover(int argc, char *argv[])
+So if users only want to do check but not repair anything, this
+patch will make fsck return failure as soon as possible and
+tell users that some critial roots have been corrupted.
+
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+v1->v2: add necessary changelog.(Thanks to Eric)
+---
+ cmds-check.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index db7df80..0e4e042 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6810,8 +6810,7 @@ int cmd_check(int argc, char **argv)
+ 	int option_index = 0;
+ 	int init_csum_tree = 0;
+ 	int qgroup_report = 0;
+-	enum btrfs_open_ctree_flags ctree_flags =
+-		OPEN_CTREE_PARTIAL | OPEN_CTREE_EXCLUSIVE;
++	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_EXCLUSIVE;
+ 
+ 	while(1) {
+ 		int c;
+@@ -6877,6 +6876,10 @@ int cmd_check(int argc, char **argv)
+ 		goto err_out;
  	}
  
- 	argc = argc - optind;
--	if (argc == 0)
-+	if (check_argc_exact(argc, 1))
- 		usage(cmd_chunk_recover_usage);
- 
- 	file = argv[optind];
-@@ -141,7 +141,7 @@ int cmd_super_recover(int argc, char **argv)
- 		}
- 	}
- 	argc = argc - optind;
--	if (argc != 1)
-+	if (check_argc_exact(argc, 1))
- 		usage(cmd_super_recover_usage);
- 
- 	dname = argv[optind];
++	/* only allow partial opening under repair mode */
++	if (repair)
++		ctree_flags |= OPEN_CTREE_PARTIAL;
++
+ 	info = open_ctree_fs_info(argv[optind], bytenr, 0, ctree_flags);
+ 	if (!info) {
+ 		fprintf(stderr, "Couldn't open file system\n");
 -- 
-1.8.1.4
+1.9.0
 

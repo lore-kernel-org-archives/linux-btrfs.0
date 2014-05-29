@@ -1,43 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:46364 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:46462 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757332AbaE2MnK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 May 2014 08:43:10 -0400
-Date: Thu, 29 May 2014 14:43:08 +0200
+	id S1755960AbaE2MyY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 May 2014 08:54:24 -0400
+Date: Thu, 29 May 2014 14:54:22 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Karel Zak <kzak@redhat.com>
-Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device
- add/remove.
-Message-ID: <20140529124308.GA29992@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com, dsterba@suse.cz, clm@fb.com
+Subject: Re: [PATCH 4/4] btrfs: create sprout should rename fsid on the sysfs
+ as well
+Message-ID: <20140529125422.GB29992@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
+ <1401096626-13210-5-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1401096626-13210-5-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 16, 2014 at 05:02:32PM +0800, Qu Wenruo wrote:
-> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+On Mon, May 26, 2014 at 05:30:26PM +0800, Anand Jain wrote:
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2084,6 +2084,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>  	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
 >  
->  	ret = 0;
->  
-> -	/* Notify udev that device has changed */
-> -	if (bdev)
-> +	if (bdev) {
-> +		/* Notify udev that device has changed */
->  		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
->  
-> +		/* Update ctime/mtime for device path for libblkid */
-> +		update_dev_time(device_path);
+>  	if (seeding_dev) {
+> +		char fsid_buf[37];
 
-The change on the device comes after the uevent notification, is it
-possible that the event is delivered and processed before the device
-times are updated? I would say so.
+Is there a symbolic constant available? We have one in userspace, but I
+can't find one for kernel, only a few locally defined.
 
-> +	}
+>  		ret = init_first_rw_device(trans, root, device);
+>  		if (ret) {
+>  			btrfs_abort_transaction(trans, root, ret);
+> @@ -2094,6 +2095,13 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>  			btrfs_abort_transaction(trans, root, ret);
+>  			goto error_trans;
+>  		}
 > +
->  error_brelse:
->  	brelse(bh);
->  	if (bdev)
+> +		/* Sprouting would change fsid of the mounted root,
+> +		 * so rename the fsid on the sysfs
+> +		 */
+> +		sprintf(fsid_buf, "%pU", root->fs_info->fsid);
+
+Would be better do use snprintf explicitly.
+
+> +		if (kobject_rename(&root->fs_info->super_kobj, fsid_buf))
+> +			goto error_trans;
+>  	} else {
+
+Otherwise ok.

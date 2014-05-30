@@ -1,78 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20461 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755221AbaE3KRf (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51246 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933045AbaE3N11 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 06:17:35 -0400
-Message-ID: <53885B6D.5010604@oracle.com>
-Date: Fri, 30 May 2014 18:20:29 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
+	Fri, 30 May 2014 09:27:27 -0400
+Received: from babycakes.localnet (localhost [127.0.0.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 9A703206E3
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 23:27:23 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+Reply-To: russell@coker.com.au
 To: linux-btrfs@vger.kernel.org
-CC: dsterba@suse.cz, quwenruo@cn.fujitsu.com, clm@fb.com
-Subject: Re: [PATCH] btrfs: kobject_uevent should use bd_part instead of bd_disk
-References: <1401436259-17647-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1401436259-17647-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: optimising metadata location
+Date: Fri, 30 May 2014 23:27:17 +1000
+MIME-Version: 1.0
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201405302327.18068.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am I correct in believing that BTRFS has no support for locating metadata near 
+the data it refers to?  The way it allocates 256M chunks for metadata and 1G 
+chunks for data seems to work against the possibility of locating metadata 
+near the data it refers to.
 
-   Nack for this as of now. sorry. Qu finds, this doesn't fix.
-   my test case was dev delete and then ls -l dev by hand.
-   Qu's test case is same but a script. Looks like that time
-   gap is the key.
+If this is correct then would it be possible to pre-allocate metadata chunks 
+on the fastest sections of the disk?  On most disks the lower sector numbers 
+correspond to the outer tracks which have the fastest contiguous IO rates and 
+also should give shorter seek times (as seeking accross a given amount of data 
+would involve a shorter head movement).
 
-   Looking more.
+One example of where this could really help is mail servers.  For email that I 
+personally receive the average file size of the message files in Maildir 
+format is 22K for messages I've received in the last year.  For a mail server 
+that I run for a client the average size of stored mail is about 92K.
 
-Thanks,  Anand
+When the average size is 22K it seems that with compression most files will 
+fit in metadata when they are compressed and the filesystem has a 16K leaf 
+size (note that the average size would be a lot larger than the median size 
+due to the presence of a small number of very large messages).
 
+Even for the server with an average size of 92K there will still be a good 
+portion of the stored mail that would fit in a 16K leaf and the metadata 
+operations for Maildir servers are intensive (lots of file renames).  So 
+having this on the fastest part of the disk would be a good thing.
 
-On 30/05/14 15:50, Anand Jain wrote:
-> From: Anand Jain <Anand.Jain@oracle.com>
->
-> reproducer 1:
->   mkfs.btrfs -L test /dev/sdg1
->   mount LABEL=test /btrfs
->   btrfs dev add /dev/sdg2 /btrfs
->   btrfs dev del /dev/sdg1 /btrfs
->   umount /btrfs
->   mount LABEL=test /btrfs
->     mount: special device LABEL-test1 does not exist
->
->   It does not reproduce this problem when whole disk is used.
->   And when newer kernel is used not sure what change in udev
->   is doing the trick. But in any case reproducer2 below is
->   more compelling.
->
-> reproducer 2:
->   btrfs dev del /dev/sdh2 /btrfs
->   ls -l /dev/sdh1 /dev/sdh2 /dev/sdh3
->   mtime of deleted disk is stale.
->
->   Fix it by providing bd_part for the kobject_uevent().
->
->   I have tested to confirm it doesn't break on the same thing
->   when whole disk is used.
->
-> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-> ---
->   fs/btrfs/volumes.c |    2 +-
->   1 files changed, 1 insertions(+), 1 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index f58ea9e..1aba687 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -124,7 +124,7 @@ static void btrfs_kobject_uevent(struct block_device *bdev,
->   {
->   	int ret;
->
-> -	ret = kobject_uevent(&disk_to_dev(bdev->bd_disk)->kobj, action);
-> +	ret = kobject_uevent(&part_to_dev(bdev->bd_part)->kobj, action);
->   	if (ret)
->   		pr_warn("BTRFS: Sending event '%d' to kobject: '%s' (%p): failed\n",
->   			action,
->
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

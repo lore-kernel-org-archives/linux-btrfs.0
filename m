@@ -1,50 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51246 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933045AbaE3N11 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 09:27:27 -0400
-Received: from babycakes.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 9A703206E3
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 23:27:23 +1000 (EST)
-From: Russell Coker <russell@coker.com.au>
-Reply-To: russell@coker.com.au
-To: linux-btrfs@vger.kernel.org
-Subject: optimising metadata location
-Date: Fri, 30 May 2014 23:27:17 +1000
+Received: from cantor2.suse.de ([195.135.220.15]:36004 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933023AbaE3OKQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 May 2014 10:10:16 -0400
+Date: Fri, 30 May 2014 16:10:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
+Subject: Re: [PATCH 1/4] btrfs: dev delete should remove sysfs entry
+Message-ID: <20140530141014.GG29992@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
+ <1401096626-13210-2-git-send-email-anand.jain@oracle.com>
+ <20140529130428.GC29992@twin.jikos.cz>
+ <538820D4.3010808@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201405302327.18068.russell@coker.com.au>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <538820D4.3010808@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am I correct in believing that BTRFS has no support for locating metadata near 
-the data it refers to?  The way it allocates 256M chunks for metadata and 1G 
-chunks for data seems to work against the possibility of locating metadata 
-near the data it refers to.
+On Fri, May 30, 2014 at 02:10:28PM +0800, Anand Jain wrote:
+> >>@@ -572,6 +572,26 @@ static void init_feature_attrs(void)
+> >>  	}
+> >>  }
+> >>
+> >>+int rm_device_membership(struct btrfs_fs_info *fs_info,
+> >>+		struct btrfs_device *one_device)
+> >
+> >The name is too generic for a non-static function, so it would be good
+> >to add at least the btrfs_ prefix. Same applies to the change of
+> >'add_device_membership' in the next patch.
+> 
+>  Yes indeed. I wanted it to change as well. But the diff became
+>  unfriendly to read.  I shall do that in a separate patch.
 
-If this is correct then would it be possible to pre-allocate metadata chunks 
-on the fastest sections of the disk?  On most disks the lower sector numbers 
-correspond to the outer tracks which have the fastest contiguous IO rates and 
-also should give shorter seek times (as seeking accross a given amount of data 
-would involve a shorter head movement).
-
-One example of where this could really help is mail servers.  For email that I 
-personally receive the average file size of the message files in Maildir 
-format is 22K for messages I've received in the last year.  For a mail server 
-that I run for a client the average size of stored mail is about 92K.
-
-When the average size is 22K it seems that with compression most files will 
-fit in metadata when they are compressed and the filesystem has a 16K leaf 
-size (note that the average size would be a lot larger than the median size 
-due to the presence of a small number of very large messages).
-
-Even for the server with an average size of 92K there will still be a good 
-portion of the stored mail that would fit in a 16K leaf and the metadata 
-operations for Maildir servers are intensive (lots of file renames).  So 
-having this on the fastest part of the disk would be a good thing.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+No problem with doing the rename changes in a separate patch, but here
+you introduce a new function, that should get the right name from the
+beginning. If this would look inconsitent with the add_ counterpart,
+then do the rename of add_ in advance.

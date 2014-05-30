@@ -1,57 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46632 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932121AbaE3B0q convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:42588 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754973AbaE3GHd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 May 2014 21:26:46 -0400
-Message-ID: <5387DE92.3080103@cn.fujitsu.com>
-Date: Fri, 30 May 2014 09:27:46 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Fri, 30 May 2014 02:07:33 -0400
+Message-ID: <538820D4.3010808@oracle.com>
+Date: Fri, 30 May 2014 14:10:28 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Karel Zak <kzak@redhat.com>
-Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device add/remove.
-References: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com> <20140529124308.GA29992@twin.jikos.cz>
-In-Reply-To: <20140529124308.GA29992@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
+Subject: Re: [PATCH 1/4] btrfs: dev delete should remove sysfs entry
+References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com> <1401096626-13210-2-git-send-email-anand.jain@oracle.com> <20140529130428.GC29992@twin.jikos.cz>
+In-Reply-To: <20140529130428.GC29992@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
--------- Original Message --------
-Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device 
-add/remove.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年05月29日 20:43
-> On Wed, Apr 16, 2014 at 05:02:32PM +0800, Qu Wenruo wrote:
->> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->>   
->>   	ret = 0;
->>   
->> -	/* Notify udev that device has changed */
->> -	if (bdev)
->> +	if (bdev) {
->> +		/* Notify udev that device has changed */
->>   		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
->>   
->> +		/* Update ctime/mtime for device path for libblkid */
->> +		update_dev_time(device_path);
-> The change on the device comes after the uevent notification, is it
-> possible that the event is delivered and processed before the device
-> times are updated? I would say so.
-Yes, udev event is delivered before device times updated, but now 
-btrfs-progs still use libblkid to do device scan things
-as default, so I didn't catch the point.
+Thanks for the review David.
 
-Would you please tell me what the problem is?
-
-Thanks,
-Qu
+On 29/05/14 21:04, David Sterba wrote:
+> On Mon, May 26, 2014 at 05:30:23PM +0800, Anand Jain wrote:
+>> --- a/fs/btrfs/sysfs.c
+>> +++ b/fs/btrfs/sysfs.c
+>> @@ -572,6 +572,26 @@ static void init_feature_attrs(void)
+>>   	}
+>>   }
+>>
+>> +int rm_device_membership(struct btrfs_fs_info *fs_info,
+>> +		struct btrfs_device *one_device)
 >
+> The name is too generic for a non-static function, so it would be good
+> to add at least the btrfs_ prefix. Same applies to the change of
+> 'add_device_membership' in the next patch.
+
+  Yes indeed. I wanted it to change as well. But the diff became
+  unfriendly to read.  I shall do that in a separate patch.
+
+
+> As this is only a trivial change, consider this
+> Reviewed-by: David Sterba <dsterba@suse.cz>
+>
+>> +{
+>> +	struct hd_struct *disk;
+>> +	struct kobject *disk_kobj;
+>> +
+>> +	if (!fs_info->device_dir_kobj)
+>> +		return -EINVAL;
+>> +
+>> +	if (one_device) {
+>> +		disk = one_device->bdev->bd_part;
+>> +		disk_kobj = &part_to_dev(disk)->kobj;
+>> +
+>> +		sysfs_remove_link(fs_info->device_dir_kobj,
+>> +						disk_kobj->name);
 >> +	}
 >> +
->>   error_brelse:
->>   	brelse(bh);
->>   	if (bdev)
-
+>> +	return 0;
+>> +}
+>> +
+>>   static int add_device_membership(struct btrfs_fs_info *fs_info)
+>>   {
+>>   	int error = 0;
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

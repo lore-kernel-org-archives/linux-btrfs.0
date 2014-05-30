@@ -1,80 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40220 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751429AbaE3HhQ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:18590 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753109AbaE3HsK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 03:37:16 -0400
-Message-ID: <538835DB.5040900@oracle.com>
-Date: Fri, 30 May 2014 15:40:11 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
-Subject: Re: [PATCH 3/4] btrfs: dev replace should replace the sysfs entry
-References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com> <1401096626-13210-4-git-send-email-anand.jain@oracle.com> <20140529132939.GD29992@twin.jikos.cz>
-In-Reply-To: <20140529132939.GD29992@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Fri, 30 May 2014 03:48:10 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com, clm@fb.com
+Subject: [PATCH] btrfs: kobject_uevent should use bd_part instead of bd_disk
+Date: Fri, 30 May 2014 15:50:59 +0800
+Message-Id: <1401436259-17647-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <Anand.Jain@oracle.com>
 
+reproducer 1:
+ mkfs.btrfs -L test /dev/sdg1
+ mount LABEL=test /btrfs
+ btrfs dev add /dev/sdg2 /btrfs
+ btrfs dev del /dev/sdg1 /btrfs
+ umount /btrfs
+ mount LABEL=test /btrfs
+   mount: special device LABEL-test1 does not exist
 
+ It does not reproduce this problem when whole disk is used.
+ And when newer kernel is used not sure what change in udev
+ is doing the trick. But in any case reproducer2 below is
+ more compelling.
 
-On 29/05/14 21:29, David Sterba wrote:
-> On Mon, May 26, 2014 at 05:30:25PM +0800, Anand Jain wrote:
->> when we replace the device its corresponding sysfs
->> entry has to be replaced as well
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/dev-replace.c |    5 +++++
->>   1 files changed, 5 insertions(+), 0 deletions(-)
->>
->> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
->> index 9f22905..f4f8728 100644
->> --- a/fs/btrfs/dev-replace.c
->> +++ b/fs/btrfs/dev-replace.c
->> @@ -36,6 +36,7 @@
->>   #include "check-integrity.h"
->>   #include "rcu-string.h"
->>   #include "dev-replace.h"
->> +#include "sysfs.h"
->>
->>   static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->>   				       int scrub_ret);
->> @@ -562,6 +563,10 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
->>   		fs_info->fs_devices->latest_bdev = tgt_device->bdev;
->>   	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
->>
->> +	/* replace the sysfs entry */
->> +	rm_device_membership(fs_info, src_device);
->> +	add_device_membership(fs_info, tgt_device);
->> +
->>   	btrfs_rm_dev_replace_blocked(fs_info);
->>
->>   	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
->
-> 569         btrfs_rm_dev_replace_unblocked(fs_info);
-> 570
->
-> The comment that follows says
->
-> 571         /*
-> 572          * this is again a consistent state where no dev_replace procedure
-> 573          * is running, the target device is part of the filesystem, the
-> 574          * source device is not part of the filesystem anymore and its 1st
-> 575          * superblock is scratched out so that it is no longer marked to
-> 576          * belong to this filesystem.
-> 577          */
->
-> and I think this is the right place to put the sysfs updates, because the
-> srcdev is processed.
+reproducer 2:
+ btrfs dev del /dev/sdh2 /btrfs
+ ls -l /dev/sdh1 /dev/sdh2 /dev/sdh3
+ mtime of deleted disk is stale.
 
-Looking into this, will update. Thanks for the review.
+ Fix it by providing bd_part for the kobject_uevent().
 
+ I have tested to confirm it doesn't break on the same thing
+ when whole disk is used.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+---
+ fs/btrfs/volumes.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f58ea9e..1aba687 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -124,7 +124,7 @@ static void btrfs_kobject_uevent(struct block_device *bdev,
+ {
+ 	int ret;
+ 
+-	ret = kobject_uevent(&disk_to_dev(bdev->bd_disk)->kobj, action);
++	ret = kobject_uevent(&part_to_dev(bdev->bd_part)->kobj, action);
+ 	if (ret)
+ 		pr_warn("BTRFS: Sending event '%d' to kobject: '%s' (%p): failed\n",
+ 			action,
+-- 
+1.7.1
+

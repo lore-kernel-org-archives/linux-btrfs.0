@@ -1,108 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51083 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751665AbaE3Ixk (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:20461 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755221AbaE3KRf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 04:53:40 -0400
-From: Xing Gu <gux.fnst@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Xing Gu <gux.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: add regression test for remount with thread_pool resized
-Date: Fri, 30 May 2014 16:52:51 +0800
-Message-ID: <1401439971-18589-1-git-send-email-gux.fnst@cn.fujitsu.com>
+	Fri, 30 May 2014 06:17:35 -0400
+Message-ID: <53885B6D.5010604@oracle.com>
+Date: Fri, 30 May 2014 18:20:29 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+CC: dsterba@suse.cz, quwenruo@cn.fujitsu.com, clm@fb.com
+Subject: Re: [PATCH] btrfs: kobject_uevent should use bd_part instead of bd_disk
+References: <1401436259-17647-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1401436259-17647-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Regression test for resizing 'thread_pool' when remount the fs.
 
-Signed-off-by: Xing Gu <gux.fnst@cn.fujitsu.com>
----
- tests/btrfs/055     | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/055.out |  1 +
- tests/btrfs/group   |  1 +
- 3 files changed, 57 insertions(+)
- create mode 100755 tests/btrfs/055
- create mode 100644 tests/btrfs/055.out
+   Nack for this as of now. sorry. Qu finds, this doesn't fix.
+   my test case was dev delete and then ls -l dev by hand.
+   Qu's test case is same but a script. Looks like that time
+   gap is the key.
 
-diff --git a/tests/btrfs/055 b/tests/btrfs/055
-new file mode 100755
-index 0000000..0a0dd34
---- /dev/null
-+++ b/tests/btrfs/055
-@@ -0,0 +1,55 @@
-+#!/bin/bash
-+# FS QA Test No. btrfs/055
-+#
-+# Regression test for resizing 'thread_pool' when remount the fs.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2014 Fujitsu.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs > /dev/null 2>&1
-+
-+_scratch_mount "-o thread_pool=6"
-+
-+_scratch_mount "-o remount,thread_pool=10"
-+
-+status=0 ; exit
-diff --git a/tests/btrfs/055.out b/tests/btrfs/055.out
-new file mode 100644
-index 0000000..2fdd8f4
---- /dev/null
-+++ b/tests/btrfs/055.out
-@@ -0,0 +1 @@
-+QA output created by 055
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index b668485..2c10c5b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -57,3 +57,4 @@
- 052 auto quick
- 053 auto quick
- 054 auto quick
-+055 auto quick
--- 
-1.9.0
+   Looking more.
 
+Thanks,  Anand
+
+
+On 30/05/14 15:50, Anand Jain wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
+>
+> reproducer 1:
+>   mkfs.btrfs -L test /dev/sdg1
+>   mount LABEL=test /btrfs
+>   btrfs dev add /dev/sdg2 /btrfs
+>   btrfs dev del /dev/sdg1 /btrfs
+>   umount /btrfs
+>   mount LABEL=test /btrfs
+>     mount: special device LABEL-test1 does not exist
+>
+>   It does not reproduce this problem when whole disk is used.
+>   And when newer kernel is used not sure what change in udev
+>   is doing the trick. But in any case reproducer2 below is
+>   more compelling.
+>
+> reproducer 2:
+>   btrfs dev del /dev/sdh2 /btrfs
+>   ls -l /dev/sdh1 /dev/sdh2 /dev/sdh3
+>   mtime of deleted disk is stale.
+>
+>   Fix it by providing bd_part for the kobject_uevent().
+>
+>   I have tested to confirm it doesn't break on the same thing
+>   when whole disk is used.
+>
+> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+> ---
+>   fs/btrfs/volumes.c |    2 +-
+>   1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f58ea9e..1aba687 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -124,7 +124,7 @@ static void btrfs_kobject_uevent(struct block_device *bdev,
+>   {
+>   	int ret;
+>
+> -	ret = kobject_uevent(&disk_to_dev(bdev->bd_disk)->kobj, action);
+> +	ret = kobject_uevent(&part_to_dev(bdev->bd_part)->kobj, action);
+>   	if (ret)
+>   		pr_warn("BTRFS: Sending event '%d' to kobject: '%s' (%p): failed\n",
+>   			action,
+>

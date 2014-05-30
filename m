@@ -1,43 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yh0-f49.google.com ([209.85.213.49]:40132 "EHLO
-	mail-yh0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932496AbaE2PdH (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:54117 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752003AbaE3AhH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 May 2014 11:33:07 -0400
-Received: by mail-yh0-f49.google.com with SMTP id c41so417207yho.36
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 May 2014 08:33:06 -0700 (PDT)
+	Thu, 29 May 2014 20:37:07 -0400
+Received: by mail-lb0-f170.google.com with SMTP id w7so612139lbi.29
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 May 2014 17:37:04 -0700 (PDT)
 MIME-Version: 1.0
-From: Rasmus Eskola <fruitiex@gmail.com>
-Date: Thu, 29 May 2014 18:32:45 +0300
-Message-ID: <CADiq+R44LEu+x-UXWtKOm9Gp0-05bPhXKY=j19pFZ_YPr+_p+g@mail.gmail.com>
-Subject: btrfs-receive rename error
+Date: Thu, 29 May 2014 17:37:04 -0700
+Message-ID: <CANrUA6GSJPa-gzKuDAZCVxuO1QLXNZOXUQEtfjP2xZiTMKXgXQ@mail.gmail.com>
+Subject: Introducing Rockstor
+From: Suman Chakravartula <suman@rockstor.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Fellow BTRFS fans,
 
-I'm trying to send an incremental backup of a btrfs subvolume to
-another host using the command:
+I want to introduce Rockstor, a FOSS file storage product based on
+BTRFS that I've developed along with a couple of my friends. We have a
+small number of users and the product works reasonably well.
 
-sudo btrfs send -v /home/backup/2014-05-29_02:26:38 | ssh "root@s"
-"btrfs receive -v /btrfs/backup_bulky/home"
+If you are looking for a BTRFS based NAS, give it a try. It comes with
+a lot of useful features. Here are some links with more information.
 
-Eventually it stops with the following error:
-ERROR: rename o941570-199282-0 ->  failed. Not a directory
+http://rockstor.com
+http://rockstor.com/docs/faq.html
+https://github.com/rockstor/rockstor-core
 
-Seems like a bug to me, I tried searching for inodes '941570' or
-'199282' but came up with no results on either. btrfsck reports no
-problems.
-
-Any ideas on how to solve this or debug it further? The subvolume is
-around 400 gb large, and it's a few days since I made the previous
-incremental backup, so I unfortunately haven't been able to find any
-root cause or a way to reproduce the bug outside of this subvolume.
-
-At the time of writing I'm running the 3.15.0-rc1 kernel with
-btrfs-progs v3.14 on both machines.
-
-Best regards,
-Rasmus Eskola
+Suman

@@ -1,38 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19380 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751968AbaE3HuR (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:60108 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751665AbaE3Imv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 03:50:17 -0400
-Message-ID: <538838E8.1050900@oracle.com>
-Date: Fri, 30 May 2014 15:53:12 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Fri, 30 May 2014 04:42:51 -0400
+Message-ID: <538844C8.6060800@cn.fujitsu.com>
+Date: Fri, 30 May 2014 16:43:52 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+To: Anand Jain <Anand.Jain@oracle.com>, <linux-btrfs@vger.kernel.org>
 CC: Karel Zak <kzak@redhat.com>
 Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device add/remove.
 References: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com> <53883883.8020608@oracle.com>
 In-Reply-To: <53883883.8020608@oracle.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-I have sent this
-  [PATCH] btrfs: kobject_uevent should use bd_part instead of bd_disk
-
-which should fix. Could you try and update.
-
-Thanks, Anand
-
-On 30/05/14 15:51, Anand Jain wrote:
+-------- Original Message --------
+Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device 
+add/remove.
+From: Anand Jain <Anand.Jain@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: 2014年05月30日 15:51
 >
 >
 >
 >
 > Hi Qu,
 >
->   In line below...
+>  In line below...
 >
 > On 16/04/14 17:02, Qu Wenruo wrote:
 >> Btrfs will send uevent to udev inform the device change,
@@ -73,17 +71,59 @@ On 30/05/14 15:51, Anand Jain wrote:
 >> +}
 >> +
 >
->    IMO /(I might be wrong) I think its not a good idea to explicitly
->    achieve this. Since this thread would have already scratched the
->    device's SB, shouldn't that take care of updating the mtime ?
+>   IMO /(I might be wrong) I think its not a good idea to explicitly
+>   achieve this. Since this thread would have already scratched the
+>   device's SB, shouldn't that take care of updating the mtime ?
 >
 > Thanks, Anand
+Yes, scratching SB will update the time of the device's inode.
+But the problem is that, the *block file*'s ctime/mtime is not changed 
+according to the device's inode mtime/ctime.
+
+So in the patch, I use the device's *full path* not the *device's inode* 
+to update ctime/mtime since kernel operations
+will not update ctime/mtine of *device files under /dev*.
+
+About your fix patch ([PATCH] btrfs: kobject_uevent should use bd_part 
+instead of bd_disk )
+I am unable to reproduce the problem on 3.15-rc4 kernel with 3.14.1 
+btrfs-progs. :(
+
+But the ctime/mtime things will not change as the following example:
+------
+# btrfs dev scan;stat /dev/sdd ; btrfs dev del /dev/sdd 
+/mnt/scratch/;stat /dev/sdd ; btrfs dev scan
+Scanning for Btrfs filesystems
+   File: '/dev/sdd'
+   Size: 0             Blocks: 0          IO Block: 4096   block special 
+file
+Device: 5h/5d    Inode: 8569        Links: 1     Device type: 8,30
+Access: (0660/brw-rw----)  Uid: (    0/    root)   Gid: (    6/ disk)
+Access: 2014-05-30 16:39:06.104006687 +0800
+Modify: 2014-05-30 16:38:57.638006272 +0800 <<<ctime/mtime does not change
+Change: 2014-05-30 16:38:57.638006272 +0800
+  Birth: -
+   File: '/dev/sdd'
+   Size: 0             Blocks: 0          IO Block: 4096   block special 
+file
+Device: 5h/5d    Inode: 8569        Links: 1     Device type: 8,30
+Access: (0660/brw-rw----)  Uid: (    0/    root)   Gid: (    6/ disk)
+Access: 2014-05-30 16:39:06.104006687 +0800
+Modify: 2014-05-30 16:38:57.638006272 +0800 <<<ctime/mtime does not change
+Change: 2014-05-30 16:38:57.638006272 +0800
+  Birth: -
+Scanning for Btrfs filesystems
+^^^ But no error message now.... :(
+------
+
+Thanks,
+Qu
 >
 >
 >>   static int btrfs_rm_dev_item(struct btrfs_root *root,
 >>                    struct btrfs_device *device)
 >>   {
->> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root,
+>> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, 
 >> char *device_path)
 >>
 >>       ret = 0;
@@ -104,7 +144,7 @@ On 30/05/14 15:51, Anand Jain wrote:
 >>   error_brelse:
 >>       brelse(bh);
 >>       if (bdev)
->> @@ -2146,6 +2166,8 @@ int btrfs_init_new_device(struct btrfs_root
+>> @@ -2146,6 +2166,8 @@ int btrfs_init_new_device(struct btrfs_root 
 >> *root, char *device_path)
 >>           ret = btrfs_commit_transaction(trans, root);
 >>       }
@@ -115,7 +155,4 @@ On 30/05/14 15:51, Anand Jain wrote:
 >>
 >>   error_trans:
 >>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

@@ -1,75 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f182.google.com ([74.125.82.182]:45961 "EHLO
-	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753646AbaEaUUN (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:34005 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751752AbaEaVyi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 16:20:13 -0400
-Received: by mail-we0-f182.google.com with SMTP id t60so3480996wes.13
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 13:20:11 -0700 (PDT)
+	Sat, 31 May 2014 17:54:38 -0400
+Date: Sat, 31 May 2014 14:54:24 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20140531215424.GG12384@merlins.org>
+References: <pan.2014.05.20.15.30.48@googlemail.com>
 MIME-Version: 1.0
-In-Reply-To: <87bnvxasiu.fsf@maru2.md5i.com>
-References: <87bnvxasiu.fsf@maru2.md5i.com>
-Date: Sat, 31 May 2014 23:20:11 +0300
-Message-ID: <CAOcd+r3bNPbfTpVeHCcCBqcpFDQ2Y70qZL7PzyHt=xcZqb8Zqw@mail.gmail.com>
-Subject: Re: snapshot send with parent question
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: mwd@md5i.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan.2014.05.20.15.30.48@googlemail.com>
+Subject: Re: Better handling of stale scrub status
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Michael,
-btrfs-send doesn't really know or care how did you manage to get from
-a to c. It is able to compare any two RO subvolumes (not necessarily
-related by snapshot operations), and produce a stream of commands that
-transfer a-content into c-content.
+On Tue, May 20, 2014 at 03:30:48PM +0000, Holger Hoffstätte wrote:
+> As Marc Merlin recently wrote in his blog [1] scrub can sometimes leave a 
+> stale state file behind, making cancel/resume complain. I took a peek at 
+> the code and found most of the scrub state file handling fairly 
+> straightforward, so before I go off and start hacking, what would a 
+> better behaviour look like?
+> 
+> - delete the stale file?
+> - fix the file by setting the "finished" flag?
+> - something else entirely?
 
-Send assumes that at a receive side, you have a snapshot identical to
-"a". Then receive side locates the a-snapshot (by a "received_UUID"
-field) and creates a RW snapshot out of it. This snapshot would be
-identical to "c", after applying the stream of commands. Then receive
-side applies the stream of commands (in strict order), and at the end
-sets the RW snapshot to be RO. At this point, this snapshot should be
-identical to c.
+So while writing the workaround I was also indeed thinking we should
+just fix the tool, I just haven't had time to look at it myself yet.
 
-The stream of commands most probably will not be identical to
-operations that you did in order to get from "a" into "c". But it will
-transfer "a"-content into "c"-content (leave alone possible bugs),
-which is what's important.
+Basically once you have a way to confirm that indeed there is no scrub
+running, I'd say the best is to set the finished flag, as if someone has
+cancelled the scrub before shutting down the machine.
 
-Of course, if a and c are related via snapshot operations, then
-btrfs-send will be much more efficient, in terms that it will be able
-to skip entire btrfs subtrees (look at "btrfs_compare_trees"), thus
-avoiding many additional comparisons that some other tool like rsync
-would have done.
+> I currently lean towards fixing (and not printing an error?), but maybe 
+> someone else has different ideas about how this should be handled.
+> Any suggestions welcome..
 
-Thanks,
-Alex.
+Yeah, it's a spurious error, auto fixing is the right solution.
 
-
-
-On Sun, Apr 20, 2014 at 1:00 AM, Michael Welsh Duggan <mwd@md5i.com> wrote:
-> Assume the following scenario:
-> There exists a read-only snapshot called a.
-> A read-write snapshot called b is created from a, and is then modified.
-> A read-only snapshot of b is created, called c.
-> A btrfs send is done for c, with a marked as its parent.
->
-> Will the send data only contain the differences between a and c?  My
-> experiments seem to indicate no, but I have no confidence that I am not
-> doing something else correctly.
->
-> Also, when a btrfs receive gets a stream containing the differences
-> between a (parent) and c, does it only look at the relative pathname
-> differences between a and c in order to determine the matching parent on
-> the receiving side?
->
-> --
-> Michael Welsh Duggan
-> (md5i@md5i.com)
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,49 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:29075 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933479AbaE3Q3T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 12:29:19 -0400
-Received: from int-mx14.intmail.prod.int.phx2.redhat.com (int-mx14.intmail.prod.int.phx2.redhat.com [10.5.11.27])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s4UGTJ4n023705
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 12:29:19 -0400
-Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx14.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id s4UGTIv4030899
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 12:29:19 -0400
-Message-ID: <5388B1DF.9030307@redhat.com>
-Date: Fri, 30 May 2014 11:29:19 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: fix btrfs-fragments build
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-yk0-f169.google.com ([209.85.160.169]:55766 "EHLO
+	mail-yk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932340AbaEaBGQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 May 2014 21:06:16 -0400
+Received: by mail-yk0-f169.google.com with SMTP id 200so2163803ykr.28
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 18:06:15 -0700 (PDT)
+From: Augusto Mecking Caringi <augustocaringi@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Augusto Mecking Caringi <augustocaringi@gmail.com>
+Subject: [PATCH] Add information about libblkid requirement to INSTALL file
+Date: Fri, 30 May 2014 22:05:10 -0300
+Message-Id: <1401498310-9176-1-git-send-email-augustocaringi@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When I made all the btrfs-foo.c targets generic, I somehow
-managed to break the libs definition for btrfs-fragments by
-dropping the "s" off the end.
-
-Fix that, although apparently nobody is building this tool.  :)
-
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
+ INSTALL |    3 +++
+ 1 file changed, 3 insertions(+)
 
-As an aside, since it's not built by default, it seems at-risk
-for this kind of bitrot...
-
-diff --git a/Makefile b/Makefile
-index 76565e8..037a1c4 100644
---- a/Makefile
-+++ b/Makefile
-@@ -54,7 +54,7 @@ progs = mkfs.btrfs btrfs-debug-tree btrfsck \
- # specify btrfs_foo_libs = <list of libs>; see $($(subst...)) rules below
- btrfs_convert_libs = -lext2fs -lcom_err
- btrfs_image_libs = -lpthread
--btrfs_fragment_libs = -lgd -lpng -ljpeg -lfreetype
-+btrfs_fragments_libs = -lgd -lpng -ljpeg -lfreetype
+diff --git a/INSTALL b/INSTALL
+index 8ead607..2f15e5e 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -16,6 +16,9 @@ The Btrfs utility programs require libuuid to build.  This can be found
+ in the e2fsprogs sources, and is usually available as libuuid or
+ e2fsprogs-devel from various distros.
  
- SUBDIRS =
- BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS)) build-Documentation
++The Btrfs utility programs also require libblkid (block device identification
++library). This library is usually available as libblkid-dev or libblkid-devel.
++
+ Building the utilities is just make ; make install.  The programs go
+ into /usr/local/bin.  The mains commands available are:
+ 
+-- 
+1.7.10.4
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

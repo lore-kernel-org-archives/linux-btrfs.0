@@ -1,120 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f45.google.com ([209.85.216.45]:40046 "EHLO
-	mail-qa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752559AbaEaFzx (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:44804 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751708AbaEaHTH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 01:55:53 -0400
-Received: by mail-qa0-f45.google.com with SMTP id hw13so45458qab.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 22:55:52 -0700 (PDT)
+	Sat, 31 May 2014 03:19:07 -0400
+Received: by mail-wg0-f48.google.com with SMTP id k14so2929652wgh.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 00:19:05 -0700 (PDT)
+Received: from linux-suse.hu (540130F5.dsl.pool.telekom.hu. [84.1.48.245])
+        by mx.google.com with ESMTPSA id gd5sm16293861wjb.40.2014.05.31.00.19.04
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 31 May 2014 00:19:04 -0700 (PDT)
+From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: All free space eaten during defragmenting (3.14)
+Date: Sat, 31 May 2014 09:19:03 +0200
+Message-ID: <1703083.hLnNuPsKpY@linux-suse.hu>
 MIME-Version: 1.0
-In-Reply-To: <CAF1_xX2Prc60KtxB1dnwSZhvK7TpfCuGnaPjnD5Tg8LjFQXMvg@mail.gmail.com>
-References: <CAF1_xX2nVWGyq5s3hjDoJ6i9QM3LmocshPgrca1hkD0YsvCTcw@mail.gmail.com>
-	<CAF1_xX2Prc60KtxB1dnwSZhvK7TpfCuGnaPjnD5Tg8LjFQXMvg@mail.gmail.com>
-Date: Sat, 31 May 2014 07:55:52 +0200
-Message-ID: <CAF1_xX3ZornUtpah3NjgDc_1CaNxZObAm6juw4CkqTqA3Nkbbg@mail.gmail.com>
-Subject: Re: [regression] [v3.14] btrfs hangs while reading some files
-From: Ronald <ronald645@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is there anything else I can do? I still have the file and should be
-able to provide more data if needed.
+Dear list,
 
-2014-05-11 8:12 GMT+02:00 Ronald <ronald645@gmail.com>:
-> Forgot to mention that these btrfs partitions reside on an LVM.
->
-> 2014-05-11 7:56 GMT+02:00 Ronald <ronald645@gmail.com>:
->> Dear btrfs developers,
->>
->> Since v3.14, it has occasionally hapenned that reading some files from
->> a btrfs partition cause the process to hang. Right, a file has been
->> located that exhibits this behaviour.
->>
->> /home/gebruiker/.wine_office/drive_c/MSOCache/All
->> Users/{90120000-0030-0000-0000-0000000FF1CE}-C/EnterWW.cab
->>
->> This is what happens on v3.13:
->>
->> 08:46 gebruiker@delta ~ :)
->>  ==> FILE="$(cat fail)"
->> 08:46 gebruiker@delta ~ :)
->>  ==> dd if="$FILE" of=/dev/zero
->> 517229+1 records in
->> 517229+1 records out
->> 264821640 bytes (265 MB) copied, 7.57866 s, 34.9 MB/s
->>
->> This is what happens on v3.14:
->>
->> 08:46 gebruiker@delta ~ :)
->>  ==> FILE="$(cat fail)"
->> 08:46 gebruiker@delta ~ :)
->>  ==> dd if="$FILE" of=/dev/zero
->> Killed
->>
->> Eventually the process is killed by me, as nothing sems to be
->> hapenning. What I know is the following:
->>
->> - the bug has thus far consistently reproduced
->> - appears to happen mostly to big files (e.g. hundreds of megs or
->> several gigabyte's)
->> - probably only happens when reading files from a btrfs partition
->>
->> An attempt to bisect has been performed:
->> # bad: [455c6fdbd219161bd09b1165f11699d6d73de11c] Linux 3.14
->> # good: [d8ec26d7f8287f5788a494f56e8814210f0e64be] Linux 3.13
->> git bisect start 'v3.14' 'v3.13' '--' 'fs/btrfs'
->> # good: [bd0330ad2174d1a5f762eee2ee58f0148f10d575] btrfs: Add acl mount option.
->> git bisect good bd0330ad2174d1a5f762eee2ee58f0148f10d575
->> # skip: [95def2ede1a9dd12b164932eaf5fefb67aefc41c] Btrfs: fix to catch
->> all errors when resolving indirect ref
->> git bisect skip 95def2ede1a9dd12b164932eaf5fefb67aefc41c
->> # skip: [49fc647a2c558862145357f3a25892248042f6fe] Btrfs: do not
->> export ulist functions
->> git bisect skip 49fc647a2c558862145357f3a25892248042f6fe
->> # skip: [3a6d75e846224542151e9ff186cb89df5a6ca2c6] Btrfs: fix qgroup
->> rescan to work with skinny metadata
->> git bisect skip 3a6d75e846224542151e9ff186cb89df5a6ca2c6
->> # skip: [4c7a6f74ceeafd738b55d1c57349327f7ea8e895] Btrfs: rework ulist
->> with list+rb_tree
->> git bisect skip 4c7a6f74ceeafd738b55d1c57349327f7ea8e895
->> # bad: [f568849edac8611d603e00bd6cbbcfea09395ae6] Merge branch
->> 'for-3.14/core' of git://git.kernel.dk/linux-block
->> git bisect bad f568849edac8611d603e00bd6cbbcfea09395ae6
->> # good: [bf3d846b783327359ddc4bd4f52627b36abb4d1d] Merge branch
->> 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
->> git bisect good bf3d846b783327359ddc4bd4f52627b36abb4d1d
->> # skip: [4f024f3797c43cb4b73cd2c50cec728842d0e49e] block: Abstract out
->> bvec iterator
->> git bisect skip 4f024f3797c43cb4b73cd2c50cec728842d0e49e
->> # skip: [33879d4512c021ae65be9706608dacb36b4687b1] block:
->> submit_bio_wait() conversions
->> git bisect skip 33879d4512c021ae65be9706608dacb36b4687b1
->> # skip: [bc1e79acc13d70c5bb1b2a47bf0a580e6ae81fb6] block: fixup for
->> generic bio chaining
->> git bisect skip bc1e79acc13d70c5bb1b2a47bf0a580e6ae81fb6
->> # good: [b28bc9b38c52f63f43e3fd875af982f2240a2859] Merge tag
->> 'v3.13-rc6' into for-3.14/core
->> git bisect good b28bc9b38c52f63f43e3fd875af982f2240a2859
->> # bad: [c7b22bb19a24fef1a851a41e5c0657c0c4a41550] btrfs: fix missing
->> increment of bi_remaining
->> git bisect bad c7b22bb19a24fef1a851a41e5c0657c0c4a41550
->> # first bad commit: [c7b22bb19a24fef1a851a41e5c0657c0c4a41550] btrfs:
->> fix missing increment of bi_remaining
->>
->> Reverting this commit causes the resulting kernel to OOPS during boot.
->> Furthermore, the first batch of skipping is because this kernel would
->> not load (grub keeps displaying 'Loading 'ArchLinux''. The second
->> batch of skipping is because the resulting kernel would OOPS during
->> boot.
->>
->> The bisect failed, since the attempt to boot the latest marked good
->> kernel ended in an OOPS. So, testing this was not reliable.
->>
->> The machine is an 32bit UP box. ~10,5 years old. This bug has also
->> been observed on multicore 64bit machines.
->>
->> Would appreciate some pointers on how to debug this further.
->>
->>                                    Ronald
+A tried to make a full defragmenting on my $HOME directory (which doesn't 
+contain any snapshots). After some hours of running, it stopped with „No space 
+left on device” error.
+
+I checked and it ate about 50 GB of free space.
+Before: Data, single: total=433.83GiB, used=~380.00GiB
+After: Data, single: total=433.83GiB, used=~430.00GiB
+Both times: Metadata, DUP: total=8.00GiB, used=7.08GiB
+
+In the "btrfs fi df" man page I didn't find anything that is related to this 
+phenomenon.
+
+My questions are:
+- Is it a bug or some consequence of the defrag process?
+- Can I reclaim somehow the free space?
+
+Command used: 
+shopt -s dotglob
+for i in *; do echo "$i"; btrfs fi defrag -clzo -r "$i"; done
+
+Btrfs and kernel version:
+Btrfs v3.12+20131125
+Linux 3.14.4-1.gbebeb6f-desktop #1 SMP PREEMPT x86_64
+
+Best regards,
+Ákos

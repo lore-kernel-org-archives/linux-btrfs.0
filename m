@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f46.google.com ([74.125.82.46]:65384 "EHLO
-	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964845AbaE3P4w (ORCPT
+Received: from mail-wg0-f49.google.com ([74.125.82.49]:52182 "EHLO
+	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932699AbaEaANe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 May 2014 11:56:52 -0400
-Received: by mail-wg0-f46.google.com with SMTP id n12so2165844wgh.17
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 08:56:50 -0700 (PDT)
+	Fri, 30 May 2014 20:13:34 -0400
+Received: by mail-wg0-f49.google.com with SMTP id m15so2666859wgh.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 May 2014 17:13:33 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: avoid visiting all extent items when cloning a range
-Date: Fri, 30 May 2014 17:56:41 +0100
-Message-Id: <1401469001-26866-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: avoid visiting all extent items when cloning a range
+Date: Sat, 31 May 2014 02:13:25 +0100
+Message-Id: <1401498805-11034-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1401469001-26866-1-git-send-email-fdmanana@gmail.com>
+References: <1401469001-26866-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -23,11 +25,15 @@ for inodes that have a large number of file extent items in the btree.
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/ioctl.c | 23 ++++++++++++++++++++---
- 1 file changed, 20 insertions(+), 3 deletions(-)
+
+V2: Leave the loop as soon as we process the last extent, to avoid
+    one extra and unnecessary btree search.
+
+ fs/btrfs/ioctl.c | 26 ++++++++++++++++++++++----
+ 1 file changed, 22 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 603c036..f20d91d 100644
+index 603c036..ecf56af 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -3025,7 +3025,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
@@ -76,6 +82,23 @@ index 603c036..f20d91d 100644
  			}
  
  			size = btrfs_item_size_nr(leaf, slot);
+@@ -3296,6 +3313,8 @@ process_slot:
+ 				goto out;
+ 			}
+ 			ret = btrfs_end_transaction(trans, root);
++			if (ret || (new_key.offset + datal >= destoff + len))
++				break;
+ 		}
+ 		btrfs_release_path(path);
+ 		key.offset++;
+@@ -3303,7 +3322,6 @@ process_slot:
+ 	ret = 0;
+ 
+ out:
+-	btrfs_release_path(path);
+ 	btrfs_free_path(path);
+ 	vfree(buf);
+ 	return ret;
 -- 
 1.9.1
 

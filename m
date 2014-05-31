@@ -1,168 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:52245 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750793AbaEGTWE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 May 2014 15:22:04 -0400
-Received: by mail-lb0-f179.google.com with SMTP id c11so2097699lbj.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 May 2014 12:22:01 -0700 (PDT)
+Received: from fw5a-delaine.wadns.net ([196.220.39.203]:35315 "EHLO
+	fw5a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752609AbaEaXwI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 May 2014 19:52:08 -0400
+Message-ID: <538A6B15.3080609@swiftspirit.co.za>
+Date: Sun, 01 Jun 2014 01:51:49 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20140507152100.GA2702@localhost.localdomain>
-References: <1391989512-31797-1-git-send-email-fdmanana@gmail.com>
-	<20140507152100.GA2702@localhost.localdomain>
-Date: Wed, 7 May 2014 20:22:01 +0100
-Message-ID: <CAL3q7H7yzZq+W8Y69VO8k4TQMye3mueFeKuMz+p2_WqVR1+qMg@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: faster/more efficient insertion of file extent items
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>
-Content-Type: text/plain; charset=UTF-8
+To: Martin <m_btrfs@ml1.co.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: What to do about snapshot-aware defrag
+References: <5388ED6B.8000706@fb.com> <lmav1p$ih7$1@ger.gmane.org>
+In-Reply-To: <lmav1p$ih7$1@ger.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 7, 2014 at 4:21 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Sun, Feb 09, 2014 at 11:45:12PM +0000, Filipe David Borba Manana wrote:
->> This is an extension to my previous commit titled:
->>
->>   "Btrfs: faster file extent item replace operations"
->>   (hash 1acae57b161ef1282f565ef907f72aeed0eb71d9)
->>
->> Instead of inserting the new file extent item if we deleted existing
->> file extent items covering our target file range, also allow to insert
->> the new file extent item if we didn't find any existing items to delete
->> and replace_extent != 0, since in this case our caller would do another
->> tree search to insert the new file extent item anyway, therefore just
->> combine the two tree searches into a single one, saving cpu time, reducing
->> lock contention and reducing btree node/leaf COW operations.
->>
->> This covers the case where applications keep doing tail append writes to
->> files, which for example is the case of Apache CouchDB (its database and
->> view index files are always open with O_APPEND).
+On 2014/05/31 12:00 AM, Martin wrote:
+> OK... I'll jump in...
 >
-> (I'm tracking a bug which is very hard to reproduce and the stack seems to
-> locate on this area.)
+> On 30/05/14 21:43, Josef Bacik wrote:
+>> [snip]
+>> Option 1: Only relink inodes that haven't changed since the snapshot was
+>> taken.
+>>
+>> Pros:
+>> -Faster
+>> -Simpler
+>> -Less duplicated code, uses existing functions for tricky operations so
+>> less likely to introduce weird bugs.
+>>
+>> Cons:
+>> -Could possibly lost some of the snapshot-awareness of the defrag.  If
+>> you just touch a file we would not do the relinking and you'd end up
+>> with twice the space usage.
+> [...]
 >
-> Even I know that this has been merged, I still have to say that this just
-> makes the code nearly hard-to-maintained.
 >
-> __btrfs_drop_extents() has already been one of the most complex function since
-> it was written, but now it's become more and more complex!
+> Obvious way to go for fast KISS.
+
+I second this - KISS is better.
+
+Would in-band dedupe resolve the issue with losing the 
+"snapshot-awareness of the defrag"? I figure that if someone absolutely 
+wants everything deduped efficiently they'd put in the necessary 
+resources (memory/dedicated SSD/etc) to have in-band dedupe work well.
+> One question:
 >
-> I'm not sure whether the gained performance number deserves that kind of
-> complexity, man, to be honest, try to ask yourself how much time you'll spend in
-> re-understanding the code and all the details.
+> Will option one mean that we always need to mount with noatime or
+> read-only to allow snapshot defragging to do anything?
 
-The changes (this and the previous one mentioned in the change log)
-essentially only add an if statement at the end of the function, which
-has useful comments describing its purpose. It didn't change the logic
-in the big while loop, which is/was basically the whole function, that
-does the work of processing extent items and deleting them.
+That is a very good question. I very rarely have mounts without noatime 
+- and usually only because I hadn't thought of it.
 
-Therefore I disagree that it added such huge amount of complexity.
-
-Thanks, and sorry for the debugging frustration you are going through.
-
->
-> thanks,
-> -liubo
->
->>
->> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
->> ---
->>  fs/btrfs/file.c |   52 ++++++++++++++++++++++++++++++----------------------
->>  1 file changed, 30 insertions(+), 22 deletions(-)
->>
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index 0165b86..006af2f 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -720,7 +720,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
->>       if (drop_cache)
->>               btrfs_drop_extent_cache(inode, start, end - 1, 0);
->>
->> -     if (start >= BTRFS_I(inode)->disk_i_size)
->> +     if (start >= BTRFS_I(inode)->disk_i_size && !replace_extent)
->>               modify_tree = 0;
->>
->>       while (1) {
->> @@ -938,34 +938,42 @@ next_slot:
->>                * Set path->slots[0] to first slot, so that after the delete
->>                * if items are move off from our leaf to its immediate left or
->>                * right neighbor leafs, we end up with a correct and adjusted
->> -              * path->slots[0] for our insertion.
->> +              * path->slots[0] for our insertion (if replace_extent != 0).
->>                */
->>               path->slots[0] = del_slot;
->>               ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
->>               if (ret)
->>                       btrfs_abort_transaction(trans, root, ret);
->> +     }
->>
->> -             leaf = path->nodes[0];
->> -             /*
->> -              * leaf eb has flag EXTENT_BUFFER_STALE if it was deleted (that
->> -              * is, its contents got pushed to its neighbors), in which case
->> -              * it means path->locks[0] == 0
->> -              */
->> -             if (!ret && replace_extent && leafs_visited == 1 &&
->> -                 path->locks[0] &&
->> -                 btrfs_leaf_free_space(root, leaf) >=
->> -                 sizeof(struct btrfs_item) + extent_item_size) {
->> -
->> -                     key.objectid = ino;
->> -                     key.type = BTRFS_EXTENT_DATA_KEY;
->> -                     key.offset = start;
->> -                     setup_items_for_insert(root, path, &key,
->> -                                            &extent_item_size,
->> -                                            extent_item_size,
->> -                                            sizeof(struct btrfs_item) +
->> -                                            extent_item_size, 1);
->> -                     *key_inserted = 1;
->> +     leaf = path->nodes[0];
->> +     /*
->> +      * If btrfs_del_items() was called, it might have deleted a leaf, in
->> +      * which case it unlocked our path, so check path->locks[0] matches a
->> +      * write lock.
->> +      */
->> +     if (!ret && replace_extent && leafs_visited == 1 &&
->> +         (path->locks[0] == BTRFS_WRITE_LOCK_BLOCKING ||
->> +          path->locks[0] == BTRFS_WRITE_LOCK) &&
->> +         btrfs_leaf_free_space(root, leaf) >=
->> +         sizeof(struct btrfs_item) + extent_item_size) {
->> +
->> +             key.objectid = ino;
->> +             key.type = BTRFS_EXTENT_DATA_KEY;
->> +             key.offset = start;
->> +             if (!del_nr && path->slots[0] < btrfs_header_nritems(leaf)) {
->> +                     struct btrfs_key slot_key;
->> +
->> +                     btrfs_item_key_to_cpu(leaf, &slot_key, path->slots[0]);
->> +                     if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
->> +                             path->slots[0]++;
->>               }
->> +             setup_items_for_insert(root, path, &key,
->> +                                    &extent_item_size,
->> +                                    extent_item_size,
->> +                                    sizeof(struct btrfs_item) +
->> +                                    extent_item_size, 1);
->> +             *key_inserted = 1;
->>       }
->>
->>       if (!replace_extent || !(*key_inserted))
->> --
->> 1.7.9.5
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+> Regards,
+> Martin
 
 -- 
-Filipe David Manana,
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

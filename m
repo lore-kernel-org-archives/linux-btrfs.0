@@ -1,51 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f48.google.com ([74.125.82.48]:44804 "EHLO
-	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751708AbaEaHTH convert rfc822-to-8bit (ORCPT
+Received: from gproxy4-pub.mail.unifiedlayer.com ([69.89.23.142]:48174 "HELO
+	gproxy4-pub.mail.unifiedlayer.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1756662AbaEaObO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 03:19:07 -0400
-Received: by mail-wg0-f48.google.com with SMTP id k14so2929652wgh.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 00:19:05 -0700 (PDT)
-Received: from linux-suse.hu (540130F5.dsl.pool.telekom.hu. [84.1.48.245])
-        by mx.google.com with ESMTPSA id gd5sm16293861wjb.40.2014.05.31.00.19.04
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 31 May 2014 00:19:04 -0700 (PDT)
-From: =?utf-8?B?U3rFkXRzIMOBa29z?= <szotsaki@gmail.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: All free space eaten during defragmenting (3.14)
-Date: Sat, 31 May 2014 09:19:03 +0200
-Message-ID: <1703083.hLnNuPsKpY@linux-suse.hu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+	Sat, 31 May 2014 10:31:14 -0400
+Message-ID: <1401546649.2413.6.camel@slavad-CELSIUS-H720>
+Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
+From: Vyacheslav Dubeyko <slava@dubeyko.com>
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        joseph@codesourcery.com, john.stultz@linaro.org, hch@infradead.org,
+        tglx@linutronix.de, geert@linux-m68k.org, lftan@altera.com,
+        hpa@zytor.com, linux-fsdevel@vger.kernel.org,
+        ceph-devel@vger.kernel.org, cluster-devel@redhat.com, coda@cs.cmu.edu,
+        codalist@TELEMANN.coda.cs.cmu.edu, fuse-devel@lists.sourceforge.net,
+        linux-afs@lists.infradead.org, linux-btrfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
+        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        linux-scsi@vger.kernel.org, logfs@logfs.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        samba-technical@lists.samba.org, xfs@oss.sgi.com
+Date: Sat, 31 May 2014 18:30:49 +0400
+In-Reply-To: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
+References: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear list,
+Hi Arnd,
 
-A tried to make a full defragmenting on my $HOME directory (which doesn't 
-contain any snapshots). After some hours of running, it stopped with „No space 
-left on device” error.
+On Fri, 2014-05-30 at 22:01 +0200, Arnd Bergmann wrote:
 
-I checked and it ate about 50 GB of free space.
-Before: Data, single: total=433.83GiB, used=~380.00GiB
-After: Data, single: total=433.83GiB, used=~430.00GiB
-Both times: Metadata, DUP: total=8.00GiB, used=7.08GiB
+[snip]
+> 
+> Arnd Bergmann (32):
+>   fs: introduce new 'struct inode_time'
+>   uapi: add struct __kernel_timespec{32,64}
+>   fs: introduce sys_utimens64at
+>   fs: introduce sys_newfstat64/sys_newfstatat64
+>   arch: hook up new stat and utimes syscalls
+>   isofs: fix timestamps beyond 2027
+>   fs/nfs: convert to struct inode_time
+>   fs/ceph: convert to 'struct inode_time'
+>   fs/pstore: convert to struct inode_time
+>   fs/coda: convert to struct inode_time
+>   xfs: convert to struct inode_time
+>   btrfs: convert to struct inode_time
+>   ext3: convert to struct inode_time
+>   ext4: convert to struct inode_time
+>   cifs: convert to struct inode_time
+>   ntfs: convert to struct inode_time
+>   ubifs: convert to struct inode_time
+>   ocfs2: convert to struct inode_time
+>   fs/fat: convert to struct inode_time
+>   afs: convert to struct inode_time
+>   udf: convert to struct inode_time
+>   fs: convert simple fs to inode_time
+>   logfs: convert to struct inode_time
+>   hfs, hfsplus: convert to struct inode_time
+>   gfs2: convert to struct inode_time
+>   reiserfs: convert to struct inode_time
+>   jffs2: convert to struct inode_time
+>   adfs: convert to struct inode_time
+>   f2fs: convert to struct inode_time
+>   fuse: convert to struct inode_time
+>   scsi: fnic: use current_kernel_time() for timestamp
+>   fs: use new inode_time definition unconditionally
+> 
 
-In the "btrfs fi df" man page I didn't find anything that is related to this 
-phenomenon.
+By the way, what about NILFS2? Is NILFS2 ready for suggested approach
+without any changes?
 
-My questions are:
-- Is it a bug or some consequence of the defrag process?
-- Can I reclaim somehow the free space?
+Thanks,
+Vyacheslav Dubeyko.
 
-Command used: 
-shopt -s dotglob
-for i in *; do echo "$i"; btrfs fi defrag -clzo -r "$i"; done
 
-Btrfs and kernel version:
-Btrfs v3.12+20131125
-Linux 3.14.4-1.gbebeb6f-desktop #1 SMP PREEMPT x86_64
-
-Best regards,
-Ákos

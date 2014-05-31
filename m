@@ -1,112 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:36163 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752550AbaE0Cpl (ORCPT
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:47934 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934625AbaEaARv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 May 2014 22:45:41 -0400
-Date: Tue, 27 May 2014 12:44:37 +1000
-From: Dave Chinner <david@fromorbit.com>
+	Fri, 30 May 2014 20:17:51 -0400
+From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: fstests@vger.kernel.org
-Cc: linux-fsdevel@vger.kernel.org, xfs@oss.sgi.com, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: [ANNOUNCE] xfstests: master branch updated to 45d1fac
-Message-ID: <20140527024437.GC8554@dastard>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="AkbCVLjbJ9qUtAXD"
+Cc: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] xfstests: add test for btrfs cloning with file holes
+Date: Sat, 31 May 2014 02:17:33 +0100
+Message-Id: <1401499053-11162-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Regression test for the btrfs ioctl clone operation when the source range
+contains hole(s) and the FS has the NO_HOLES feature enabled (file holes
+don't need file extent items in the btree to represent them).
 
---AkbCVLjbJ9qUtAXD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This issue is fixed by the following linux kernel btrfs patch:
 
-Hi folks,
+    Btrfs: fix clone to deal with holes when NO_HOLES feature is enabled
 
-The xfstests repository at git://oss.sgi.com/xfs/cmds/xfstests has
-just been updated. Patches often get missed, so please check if your
-outstanding patches were in this update. If they have not been in
-this update, please resubmit them to fstests@vger.kernel.org so they
-can be picked up in the next update.
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ tests/btrfs/055     | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/055.out |  43 ++++++++++++++++++++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 144 insertions(+)
+ create mode 100755 tests/btrfs/055
+ create mode 100644 tests/btrfs/055.out
 
-I've sent this announcement to fstests, linux-fsdevel and the XFS,
-ext4 and btrfs lists. Future fstests announcements will only be
-directed to the fstests and linux-fsdevel lists.
+diff --git a/tests/btrfs/055 b/tests/btrfs/055
+new file mode 100755
+index 0000000..7241b66
+--- /dev/null
++++ b/tests/btrfs/055
+@@ -0,0 +1,100 @@
++#! /bin/bash
++# FS QA Test No. btrfs/055
++#
++# Regression test for the btrfs ioctl clone operation when the source range
++# contains hole(s) and the FS has the NO_HOLES feature enabled (file holes
++# don't need file extent items in the btree to represent them).
++#
++# This issue is fixed by the following linux kernel btrfs patch:
++#
++#    Btrfs: fix clone to deal with holes when NO_HOLES feature is enabled
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2014 Filipe Manana.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    rm -fr $tmp
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_cloner
++_need_to_be_root
++
++rm -f $seqres.full
++
++test_btrfs_clone_with_holes()
++{
++	_scratch_mkfs "$1" >/dev/null 2>&1
++	_scratch_mount $MOUNT_OPTIONS
++
++	# Create a file with 4 extents and 1 hole, all with a size of 8Kb each.
++	$XFS_IO_PROG -f -c "pwrite -S 0x01 -b 8192 0 8192" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	sync
++	$XFS_IO_PROG -c "pwrite -S 0x02 -b 8192 8192 8192" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	sync
++	# After the following write we get a hole in the range [16384, 24576[
++	$XFS_IO_PROG -c "pwrite -S 0x04 -b 8192 24576 8192" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	sync
++	$XFS_IO_PROG -c "pwrite -S 0x05 -b 8192 32768 8192" $SCRATCH_MNT/foo \
++		| _filter_xfs_io
++	sync
++
++	# Clone destination file, 1 extent of 64kb.
++	$XFS_IO_PROG -f -c "pwrite -S 0xff -b 64536 0 64536" $SCRATCH_MNT/bar \
++		| _filter_xfs_io
++	sync
++
++	# Clone 2nd extent, 8Kb hole and 3rd extent of foo into bar.
++	$CLONER_PROG -s 8192 -d 0 -l 24576 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++
++	# Verify both extents and the hole were cloned.
++	od -t x1 $SCRATCH_MNT/bar
++
++	# Verify that there are no consistency errors.
++	_check_scratch_fs
++}
++
++echo "Testing without the NO_HOLES feature"
++test_btrfs_clone_with_holes
++
++_scratch_unmount
++
++echo "Testing with the NO_HOLES feature enabled"
++test_btrfs_clone_with_holes "-O no-holes"
++
++status=0
++exit
+diff --git a/tests/btrfs/055.out b/tests/btrfs/055.out
+new file mode 100644
+index 0000000..faa0477
+--- /dev/null
++++ b/tests/btrfs/055.out
+@@ -0,0 +1,43 @@
++QA output created by 055
++Testing without the NO_HOLES feature
++wrote 8192/8192 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 8192
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 24576
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 32768
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 64536/64536 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0176020 ff ff ff ff ff ff ff ff
++0176030
++Testing with the NO_HOLES feature enabled
++wrote 8192/8192 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 8192
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 24576
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 8192/8192 bytes at offset 32768
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 64536/64536 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0176020 ff ff ff ff ff ff ff ff
++0176030
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index b668485..2c10c5b 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -57,3 +57,4 @@
+ 052 auto quick
+ 053 auto quick
+ 054 auto quick
++055 auto quick
+-- 
+1.9.1
 
-The new head of the master branch is commit:
-
-45d1fac btrfs: test for btrfs send when nested subvols/snapshots exist
-
-New Commits:
-
-Eryu Guan (2):
-      [82afae2] generic: new ENOSPC regression test
-      [caca581] xfs/005: filter _scratch_mount output to match golden image
-
-Filipe David Borba Manana (5):
-      [e7dd9f1] btrfs: add test for btrfs send with long paths
-      [86da66c] common: add helper require function _require_btrfs_cloner
-      [d140277] btrfs: add test for clone operation
-      [3318629] btrfs: add test for btrfs send with large xattrs
-      [45d1fac] btrfs: test for btrfs send when nested subvols/snapshots ex=
-ist
-
-
-Code Diffstat:
-
- common/rc             |   7 +
- tests/btrfs/035       |   4 +-
- tests/btrfs/051       |  85 +++++++++
- tests/btrfs/051.out   |   1 +
- tests/btrfs/052       | 171 +++++++++++++++++
- tests/btrfs/052.out   | 499 ++++++++++++++++++++++++++++++++++++++++++++++=
-++++
- tests/btrfs/053       | 109 +++++++++++
- tests/btrfs/053.out   |   1 +
- tests/btrfs/054       | 109 +++++++++++
- tests/btrfs/054.out   |   1 +
- tests/btrfs/group     |   4 +
- tests/generic/027     | 107 +++++++++++
- tests/generic/027.out |   2 +
- tests/generic/group   |   1 +
- tests/xfs/005         |   7 +-
- 15 files changed, 1104 insertions(+), 4 deletions(-)
- create mode 100755 tests/btrfs/051
- create mode 100644 tests/btrfs/051.out
- create mode 100755 tests/btrfs/052
- create mode 100644 tests/btrfs/052.out
- create mode 100755 tests/btrfs/053
- create mode 100644 tests/btrfs/053.out
- create mode 100755 tests/btrfs/054
- create mode 100644 tests/btrfs/054.out
- create mode 100755 tests/generic/027
- create mode 100644 tests/generic/027.out
---=20
-Dave Chinner
-david@fromorbit.com
-
---AkbCVLjbJ9qUtAXD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJTg/wUAAoJEK3oKUf0dfodUUgP/2Q2n/WpbhrwHtWRQkQgsQMO
-LNvYOMACzn9ayFqVZ0AZW+CmTprEim8tPSmO6F2Zfg8bHbJxl6dS1IU2Ff/ksT8b
-y52HNh4Co9rX6+0d9aat7+YmP1X8ZBbSc0uIbWeeGuWpZ1BPSiCCS///Th342qNm
-tg+cIhavASweeU/cXTk8711sTyfS2GZkrfOW6cPru96vlwg/g61nqLI7seLdfN5F
-qXY825WbQ1azI473JnvTXJ7aHY7iTO+O7lX2oMhRnHDhWVpaRmZLAKL1r398sAXV
-5hTUEw79KrfRlsFN371nK2eMzdHJ4XcUwtAOtz0g8CXhGEGEkP9CDPjXghHnBs3J
-mS3/uxQcm6BwD0iYJheW0r5kBHmIs0Rm36QrHVSSKPX/zekKYm2zjhxdUNXXWgIA
-FLAhhFijMv9Dz11xfV5EZmK1musjovBchtP8MX+ObUudVeiWmplhkkISVFH9DE0X
-2GqOxYCHMSuj1UuFe2/9vtZn22tBR/O09VRhLCB2iTYz0dgeaz4FJcil6lbrOROV
-ADlqbzX83B8jOJBEfCGw/anKCL4pIhe67NBxuj5Kl3o77GubXS6JN91E1VhXduR8
-AyzpB0QWkq/ymFMc+nKn+8rxA85SiFldaigRX7Y3X/Ob62xbpDzCN75KTpMzgFuA
-rWbLcEnPvkB+7C8Tslm8
-=yWMA
------END PGP SIGNATURE-----
-
---AkbCVLjbJ9qUtAXD--

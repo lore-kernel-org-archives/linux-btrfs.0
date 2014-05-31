@@ -1,63 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from terminus.zytor.com ([198.137.202.10]:58410 "EHLO mail.zytor.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751577AbaEaTgx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 15:36:53 -0400
-In-Reply-To: <20140531182237.GA5382@localhost.localdomain>
-References: <1401480116-1973111-1-git-send-email-arnd@arndb.de> <20140531145114.GA3721@localhost.localdomain> <6347520.8jMPlVsFjM@wuerfel> <20140531182237.GA5382@localhost.localdomain>
+Received: from mail-we0-f182.google.com ([74.125.82.182]:45961 "EHLO
+	mail-we0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753646AbaEaUUN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 May 2014 16:20:13 -0400
+Received: by mail-we0-f182.google.com with SMTP id t60so3480996wes.13
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 13:20:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=UTF-8
-Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Sat, 31 May 2014 12:34:12 -0700
-To: Richard Cochran <richardcochran@gmail.com>, Arnd Bergmann <arnd@arndb.de>
-CC: linux-kernel@vger.kernel.org, hch@infradead.org,
-        linux-mtd@lists.infradead.org, logfs@logfs.org,
-        linux-afs@lists.infradead.org, joseph@codesourcery.com,
-        linux-arch@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-scsi@vger.kernel.org, ceph-devel@vger.kernel.org,
-        codalist@TELEMANN.coda.cs.cmu.edu, cluster-devel@redhat.com,
-        coda@cs.cmu.edu, geert@linux-m68k.org, linux-ext4@vger.kernel.org,
-        fuse-devel@lists.sourceforge.net, reiserfs-devel@vger.kernel.org,
-        xfs@oss.sgi.com, john.stultz@linaro.org, tglx@linutronix.de,
-        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        samba-technical@lists.samba.org,
-        linux-f2fs-devel@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-        linux-fsdevel@vger.kernel.org, lftan@altera.com,
-        linux-btrfs@vger.kernel.org
-Message-ID: <57071155-5a08-4579-9189-92d442cd65e7@email.android.com>
+In-Reply-To: <87bnvxasiu.fsf@maru2.md5i.com>
+References: <87bnvxasiu.fsf@maru2.md5i.com>
+Date: Sat, 31 May 2014 23:20:11 +0300
+Message-ID: <CAOcd+r3bNPbfTpVeHCcCBqcpFDQ2Y70qZL7PzyHt=xcZqb8Zqw@mail.gmail.com>
+Subject: Re: snapshot send with parent question
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: mwd@md5i.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Typically they are using 64-bit signed seconds.
+Michael,
+btrfs-send doesn't really know or care how did you manage to get from
+a to c. It is able to compare any two RO subvolumes (not necessarily
+related by snapshot operations), and produce a stream of commands that
+transfer a-content into c-content.
 
-On May 31, 2014 11:22:37 AM PDT, Richard Cochran <richardcochran@gmail.com> wrote:
->On Sat, May 31, 2014 at 05:23:02PM +0200, Arnd Bergmann wrote:
->> 
->> It's an approximation:
->
->(Approximately never ;)
->
->> with 64-bit timestamps, you can represent close to 300 billion
->> years, which is way past the time that our planet can sustain
->> life of any form[1].
->
->Did you mean mean 64 bits worth of seconds?
->
->  2^64 / (3600*24*365) = 584,942,417,355
->
->That is more than 300 billion years, and still, it is not quite the
->same as "never".
->
->In any case, that term is not too helpful in the comparison table,
->IMHO. One could think that some sort of clever running count relative
->to the last mount time was implied.
->
->Thanks,
->Richard
->
->[1] You are forgetting the immortal robotic overlords.
+Send assumes that at a receive side, you have a snapshot identical to
+"a". Then receive side locates the a-snapshot (by a "received_UUID"
+field) and creates a RW snapshot out of it. This snapshot would be
+identical to "c", after applying the stream of commands. Then receive
+side applies the stream of commands (in strict order), and at the end
+sets the RW snapshot to be RO. At this point, this snapshot should be
+identical to c.
 
--- 
-Sent from my mobile phone.  Please pardon brevity and lack of formatting.
+The stream of commands most probably will not be identical to
+operations that you did in order to get from "a" into "c". But it will
+transfer "a"-content into "c"-content (leave alone possible bugs),
+which is what's important.
+
+Of course, if a and c are related via snapshot operations, then
+btrfs-send will be much more efficient, in terms that it will be able
+to skip entire btrfs subtrees (look at "btrfs_compare_trees"), thus
+avoiding many additional comparisons that some other tool like rsync
+would have done.
+
+Thanks,
+Alex.
+
+
+
+On Sun, Apr 20, 2014 at 1:00 AM, Michael Welsh Duggan <mwd@md5i.com> wrote:
+> Assume the following scenario:
+> There exists a read-only snapshot called a.
+> A read-write snapshot called b is created from a, and is then modified.
+> A read-only snapshot of b is created, called c.
+> A btrfs send is done for c, with a marked as its parent.
+>
+> Will the send data only contain the differences between a and c?  My
+> experiments seem to indicate no, but I have no confidence that I am not
+> doing something else correctly.
+>
+> Also, when a btrfs receive gets a stream containing the differences
+> between a (parent) and c, does it only look at the relative pathname
+> differences between a and c in order to determine the matching parent on
+> the receiving side?
+>
+> --
+> Michael Welsh Duggan
+> (md5i@md5i.com)
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

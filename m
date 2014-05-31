@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f176.google.com ([74.125.82.176]:35941 "EHLO
-	mail-we0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756382AbaEaNMV (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:63317 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751553AbaEaPU7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 09:12:21 -0400
-Received: by mail-we0-f176.google.com with SMTP id q59so3104419wes.7
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 06:12:20 -0700 (PDT)
+	Sat, 31 May 2014 11:20:59 -0400
+Received: by mail-wg0-f48.google.com with SMTP id k14so3190029wgh.31
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 08:20:58 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: fix clone to deal with holes when NO_HOLES feature is enabled
-Date: Sat, 31 May 2014 15:12:12 +0100
-Message-Id: <1401545532-6317-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: fix clone to deal with holes when NO_HOLES feature is enabled
+Date: Sat, 31 May 2014 17:20:50 +0100
+Message-Id: <1401553250-6408-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1401498977-11117-1-git-send-email-fdmanana@gmail.com>
 References: <1401498977-11117-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -31,11 +31,16 @@ V2: Deal with holes at the boundaries of the cloning range and that
     either overlap the boundary completely or partially.
     Test case for xfstests updated too to test these 2 cases.
 
- fs/btrfs/ioctl.c | 54 +++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 49 insertions(+), 5 deletions(-)
+V3: Deal with the case where the cloning range overlaps (partially or
+    completely) a hole at the end of the source file, and might increase
+    the size of the target file.
+    Updated the test for xfstests to cover these cases too.
+
+ fs/btrfs/ioctl.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 59 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 04ece8f..4a7a311 100644
+index 04ece8f..f508f5e 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -2995,7 +2995,8 @@ out:
@@ -48,7 +53,7 @@ index 04ece8f..4a7a311 100644
  {
  	struct btrfs_root *root = BTRFS_I(inode)->root;
  	struct btrfs_path *path = NULL;
-@@ -3007,8 +3008,10 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+@@ -3007,8 +3008,9 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
  	int slot;
  	int ret;
  	int no_quota;
@@ -56,11 +61,10 @@ index 04ece8f..4a7a311 100644
 +	const u64 len = olen_aligned;
  	u64 last_disko = 0;
 +	u64 last_dest_end = destoff;
-+	bool add_trailing_hole = false;
  
  	ret = -ENOMEM;
  	buf = vmalloc(btrfs_level_size(root, 0));
-@@ -3077,6 +3080,7 @@ process_slot:
+@@ -3077,6 +3079,7 @@ process_slot:
  			u64 datao = 0, datal = 0;
  			u8 comp;
  			u64 endoff;
@@ -68,29 +72,7 @@ index 04ece8f..4a7a311 100644
  
  			extent = btrfs_item_ptr(leaf, slot,
  						struct btrfs_file_extent_item);
-@@ -3106,7 +3110,20 @@ process_slot:
- 				path->slots[0]++;
- 				goto process_slot;
- 			} else if (key.offset >= off + len) {
--				break;
-+				if (last_dest_end < destoff + len) {
-+					/*
-+					 * We have an implicit hole (NO_HOLES
-+					 * feature is enabled) that fully or
-+					 * partially overlaps our cloning range
-+					 * at its end.
-+					 */
-+					btrfs_release_path(path);
-+					path->leave_spinning = 0;
-+					add_trailing_hole = true;
-+					goto start_trans;
-+				} else {
-+					break;
-+				}
- 			}
- 
- 			size = btrfs_item_size_nr(leaf, slot);
-@@ -3125,6 +3142,19 @@ process_slot:
+@@ -3125,6 +3128,18 @@ process_slot:
  				new_key.offset = destoff;
  
  			/*
@@ -105,32 +87,11 @@ index 04ece8f..4a7a311 100644
 +			else
 +				drop_start = new_key.offset;
 +
-+start_trans:
 +			/*
  			 * 1 - adjusting old extent (we may have to split it)
  			 * 1 - add new extent
  			 * 1 - inode update
-@@ -3135,6 +3165,19 @@ process_slot:
- 				goto out;
- 			}
- 
-+			if (add_trailing_hole) {
-+				ret = btrfs_drop_extents(trans, root, inode,
-+							 last_dest_end,
-+							 destoff + len, 1);
-+				if (ret && ret != -EOPNOTSUPP)
-+					btrfs_abort_transaction(trans, root,
-+								ret);
-+				btrfs_end_transaction(trans, root);
-+				if (ret)
-+					goto out;
-+				break;
-+			}
-+
- 			if (type == BTRFS_FILE_EXTENT_REG ||
- 			    type == BTRFS_FILE_EXTENT_PREALLOC) {
- 				/*
-@@ -3153,7 +3196,7 @@ process_slot:
+@@ -3153,7 +3168,7 @@ process_slot:
  				}
  
  				ret = btrfs_drop_extents(trans, root, inode,
@@ -139,7 +100,7 @@ index 04ece8f..4a7a311 100644
  							 new_key.offset + datal,
  							 1);
  				if (ret) {
-@@ -3254,7 +3297,7 @@ process_slot:
+@@ -3254,7 +3269,7 @@ process_slot:
  				aligned_end = ALIGN(new_key.offset + datal,
  						    root->sectorsize);
  				ret = btrfs_drop_extents(trans, root, inode,
@@ -148,7 +109,7 @@ index 04ece8f..4a7a311 100644
  							 aligned_end,
  							 1);
  				if (ret) {
-@@ -3301,6 +3344,7 @@ process_slot:
+@@ -3301,6 +3316,7 @@ process_slot:
  			 * but shouldn't round up the file size
  			 */
  			endoff = new_key.offset + datal;
@@ -156,6 +117,52 @@ index 04ece8f..4a7a311 100644
  			if (endoff > destoff+olen)
  				endoff = destoff+olen;
  			if (endoff > inode->i_size)
+@@ -3321,6 +3337,45 @@ process_slot:
+ 	}
+ 	ret = 0;
+ 
++	if (last_dest_end < destoff + len) {
++		/*
++		 * We have an implicit hole (NO_HOLES feature is enabled) that
++		 * fully or partially overlaps our cloning range at its end.
++		 */
++		btrfs_release_path(path);
++		path->leave_spinning = 0;
++
++		/*
++		 * 1 - remove extent(s)
++		 * 1 - inode update
++		 */
++		trans = btrfs_start_transaction(root, 2);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			goto out;
++		}
++		ret = btrfs_drop_extents(trans, root, inode,
++					 last_dest_end, destoff + len, 1);
++		if (ret) {
++			if (ret != -EOPNOTSUPP)
++				btrfs_abort_transaction(trans, root, ret);
++			btrfs_end_transaction(trans, root);
++			goto out;
++		}
++		last_dest_end = destoff + len;
++		if (last_dest_end > destoff + olen)
++			last_dest_end = destoff + olen;
++		if (last_dest_end > inode->i_size)
++			btrfs_i_size_write(inode, last_dest_end);
++		ret = btrfs_update_inode(trans, root, inode);
++		if (ret) {
++			btrfs_abort_transaction(trans, root, ret);
++			btrfs_end_transaction(trans, root);
++			goto out;
++		}
++		ret = btrfs_end_transaction(trans, root);
++	}
++
+ out:
+ 	btrfs_free_path(path);
+ 	vfree(buf);
 -- 
 1.9.1
 

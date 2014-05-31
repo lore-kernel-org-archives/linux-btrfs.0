@@ -1,42 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:42463 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753399AbaEaXsp (ORCPT
+Received: from mail-wg0-f48.google.com ([74.125.82.48]:49703 "EHLO
+	mail-wg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755761AbaEaXsu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 19:48:45 -0400
-Received: by mail-we0-f174.google.com with SMTP id k48so3638697wev.33
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 16:48:44 -0700 (PDT)
+	Sat, 31 May 2014 19:48:50 -0400
+Received: by mail-wg0-f48.google.com with SMTP id k14so3474754wgh.31
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 16:48:49 -0700 (PDT)
 From: Philip Worrall <philip.worrall@googlemail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Philip Worrall <philip.worrall@googlemail.com>
-Subject: [PATCH 1/8] Btrfs: Add kernel config options for LZ4
-Date: Sat, 31 May 2014 23:48:29 +0000
-Message-Id: <1401580116-10458-2-git-send-email-philip.worrall@googlemail.com>
+Subject: [PATCH 6/8] Btrfs: Ensure LZ4 feature flags are set when mounting with LZ4
+Date: Sat, 31 May 2014 23:48:34 +0000
+Message-Id: <1401580116-10458-7-git-send-email-philip.worrall@googlemail.com>
 In-Reply-To: <1401580116-10458-1-git-send-email-philip.worrall@googlemail.com>
 References: <1401580116-10458-1-git-send-email-philip.worrall@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add two kernel configuration options for LZ4 compress
-and decompress.
-
 Signed-off-by: Philip Worrall <philip.worrall@googlemail.com>
 ---
- fs/btrfs/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/disk-io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index a66768e..fb93d9e 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -6,6 +6,8 @@ config BTRFS_FS
- 	select ZLIB_DEFLATE
- 	select LZO_COMPRESS
- 	select LZO_DECOMPRESS
-+	select LZ4_COMPRESS
-+	select LZ4_DECOMPRESS
- 	select RAID6_PQ
- 	select XOR_BLOCKS
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 6d1ac7d..56bab54 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2479,7 +2479,8 @@ int open_ctree(struct super_block *sb,
+ 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
+ 	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
+ 		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+-
++	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZ4)
++		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZ4;
+ 	if (features & BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 		printk(KERN_ERR "BTRFS: has skinny extents\n");
  
 -- 
 1.9.1

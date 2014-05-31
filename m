@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.187]:57148 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750752AbaEaPXx (ORCPT
+Received: from mail-we0-f173.google.com ([74.125.82.173]:33788 "EHLO
+	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751329AbaEaSXO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 11:23:53 -0400
-From: Arnd Bergmann <arnd@arndb.de>
-To: Richard Cochran <richardcochran@gmail.com>
+	Sat, 31 May 2014 14:23:14 -0400
+Date: Sat, 31 May 2014 20:22:37 +0200
+From: Richard Cochran <richardcochran@gmail.com>
+To: Arnd Bergmann <arnd@arndb.de>
 Cc: linux-kernel@vger.kernel.org, hch@infradead.org,
         linux-mtd@lists.infradead.org, hpa@zytor.com, logfs@logfs.org,
         linux-afs@lists.infradead.org, joseph@codesourcery.com,
@@ -21,30 +22,38 @@ Cc: linux-kernel@vger.kernel.org, hch@infradead.org,
         linux-fsdevel@vger.kernel.org, lftan@altera.com,
         linux-btrfs@vger.kernel.org
 Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
-Date: Sat, 31 May 2014 17:23:02 +0200
-Message-ID: <6347520.8jMPlVsFjM@wuerfel>
-In-Reply-To: <20140531145114.GA3721@localhost.localdomain>
-References: <1401480116-1973111-1-git-send-email-arnd@arndb.de> <20140531145114.GA3721@localhost.localdomain>
+Message-ID: <20140531182237.GA5382@localhost.localdomain>
+References: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
+ <20140531145114.GA3721@localhost.localdomain>
+ <6347520.8jMPlVsFjM@wuerfel>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <6347520.8jMPlVsFjM@wuerfel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 31 May 2014 16:51:15 Richard Cochran wrote:
-> On Fri, May 30, 2014 at 10:01:24PM +0200, Arnd Bergmann wrote:
-> > 
-> > I picked this because it is a fairly isolated problem, as the
-> > inode time stamps are rarely assigned to any other time values.
-> > As a byproduct of this work, I documented for each of the file
-> > systems we support how long the on-disk format can work[1].
+On Sat, May 31, 2014 at 05:23:02PM +0200, Arnd Bergmann wrote:
 > 
-> Why are some of the time stamp expiration dates marked as "never"?
+> It's an approximation:
 
-It's an approximation:
-with 64-bit timestamps, you can represent close to 300 billion
-years, which is way past the time that our planet can sustain
-life of any form[1].
+(Approximately never ;)
 
-	Arnd
+> with 64-bit timestamps, you can represent close to 300 billion
+> years, which is way past the time that our planet can sustain
+> life of any form[1].
 
-[1] http://en.wikipedia.org/wiki/Timeline_of_the_far_future
+Did you mean mean 64 bits worth of seconds?
+
+  2^64 / (3600*24*365) = 584,942,417,355
+
+That is more than 300 billion years, and still, it is not quite the
+same as "never".
+
+In any case, that term is not too helpful in the comparison table,
+IMHO. One could think that some sort of clever running count relative
+to the last mount time was implied.
+
+Thanks,
+Richard
+
+[1] You are forgetting the immortal robotic overlords.

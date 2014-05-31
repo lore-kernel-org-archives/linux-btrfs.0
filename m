@@ -1,89 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:43216 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754234AbaFLGWl (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:38257 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752609AbaEaXso (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 02:22:41 -0400
-From: Anand Jain <Anand.Jain@oracle.com>
+	Sat, 31 May 2014 19:48:44 -0400
+Received: by mail-wi0-f173.google.com with SMTP id bs8so2848507wib.12
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 16:48:43 -0700 (PDT)
+From: Philip Worrall <philip.worrall@googlemail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: wangsl.fnst@cn.fujitsu.com, Anand Jain <Anand.Jain@oracle.com>
-Subject: [PATCH 1/1] btrfs: looping 'mkfs.btrfs -f <dev>' may fail with EBUSY
-Date: Thu, 12 Jun 2014 14:25:00 +0800
-Message-Id: <1402554300-13931-1-git-send-email-Anand.Jain@oracle.com>
+Cc: Philip Worrall <philip.worrall@googlemail.com>
+Subject: [PATCH 0/8] Add support for LZ4 compression
+Date: Sat, 31 May 2014 23:48:28 +0000
+Message-Id: <1401580116-10458-1-git-send-email-philip.worrall@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The thread holding the O_EXCL flag seems to be BTRFS_IOC_SCAN_DEV ioctl,
-which in turn calls btrfs_scan_one_device() to open dev with the O_EXCL flag.
+LZ4 is a lossless data compression algorithm that is focused on 
+compression and decompression speed. LZ4 gives a slightly worse
+compression ratio compared with LZO (and much worse than Zlib)
+but compression speeds are *generally* similar to LZO. 
+Decompression tends to be much faster under LZ4 compared 
+with LZO hence it makes more sense to use LZ4 compression
+when your workload involves a higher proportion of reads.
 
-But btrfs_scan_one_device() does not write anything to the disk.
-and it is called by
-      . An intermediary step (not the final open_ctree) in the
-        mount thread to read the SB and
-      . btrfs-control ioctls viz BTRFS_IOC_SCAN_DEV and
-        BTRFS_IOC_DEVICES_READY
-they don't need the O_EXCL.
+The following patch set adds LZ4 compression support to BTRFS
+using the existing kernel implementation. It is based on the 
+changeset for LZO support in 2011. Once a filesystem has been 
+mounted with LZ4 compression enabled older versions of BTRFS 
+will be unable to read it. This implementation is however 
+backwards compatible with filesystems that currently use 
+LZO or Zlib compression. Existing data will remain unchanged 
+but any new files that you create will be compressed with LZ4.
 
-test script: (run this in a loop)
-static int test_skip_this_disk(char *path)
-{
-    int fd;
-    char c;
+Usage:
+Apply the following 8 patches to the current git tree 
+(as of 20140531) and compile/load the btrfs module.
 
-    printf("%s ", path);
-    fd = open(path, O_RDWR|O_EXCL);
-    if (fd < 0) {
-        printf("Open failed\n");
-        return 1;
-    }
-    /*fflush(stdout);
-    printf("Open Fine press enter\n");
-    scanf("%c", &c);*/
-    close(fd);
-    return 0;
-}
+# mount -t btrfs -o compress=lz4 device mountpoint
 
-main(int arg, char **argv)
-{
-    int i;
+or
 
-    if (arg == 1) {
-        printf("usage: %s <dev-with-btrfs-sb> .. \n", argv[0]);
-        exit(1);
-    }
+# mount -t btrfs -o compress-force=lz4 device mountpoint
 
-    for (i = 1; i < arg; i++)
-        test_skip_this_disk(argv[i]);
-}
+Philip Worrall (8):
+  Btrfs: Add kernel config options for LZ4
+  Btrfs: Add lz4.c to the Makefile
+  Btrfs: Add lz4 compression to avaialble compression ops
+  Btrfs: Add definition for external lz4 compression struct
+  Btrfs: Add feature flags for LZ4 support
+  Btrfs: Ensure LZ4 feature flags are set when mounting with LZ4
+  Btrfs: Add lz4 compression/decompression struct ops
+  Btrfs: Check for compress=lz4 in mount options
 
-dump stack after the userland close(fd)
+ fs/btrfs/Kconfig       |   2 +
+ fs/btrfs/Makefile      |   2 +-
+ fs/btrfs/compression.c |   1 +
+ fs/btrfs/compression.h |   2 +-
+ fs/btrfs/ctree.h       |  10 +-
+ fs/btrfs/disk-io.c     |   3 +-
+ fs/btrfs/lz4.c         | 436 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/super.c       |  12 +-
+ 8 files changed, 461 insertions(+), 7 deletions(-)
+ create mode 100644 fs/btrfs/lz4.c
 
-dump_stack+0x9/0x60
-btrfs_scan_one_device+0x18d/0x1f0 [btrfs]
-btrfs_control_ioctl+0xb9/0x210 [btrfs]
-do_vfs_ioctl+0x84/0x4c0
-inode_has_perm+0x28/0x30
-file_has_perm+0x8a/0xa0
-SyS_ioctl+0x91/0xa0
-system_call_fastpath+0x16/0x1b
-
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/volumes.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 636faa0..c186b5e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -914,7 +914,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
- 	 */
- 	bytenr = btrfs_sb_offset(0);
--	flags |= FMODE_EXCL;
- 	mutex_lock(&uuid_mutex);
- 
- 	bdev = blkdev_get_by_path(path, flags, holder);
 -- 
-1.8.5.3
+1.9.1
 

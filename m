@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f49.google.com ([74.125.82.49]:42879 "EHLO
-	mail-wg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756382AbaEaNMz (ORCPT
+Received: from mail-wg0-f44.google.com ([74.125.82.44]:51374 "EHLO
+	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751321AbaEaPVX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 09:12:55 -0400
+	Sat, 31 May 2014 11:21:23 -0400
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] xfstests: add test for btrfs cloning with file holes
-Date: Sat, 31 May 2014 15:12:45 +0100
-Message-Id: <1401545565-6359-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] xfstests: add test for btrfs cloning with file holes
+Date: Sat, 31 May 2014 17:21:14 +0100
+Message-Id: <1401553274-6454-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1401499053-11162-1-git-send-email-fdmanana@gmail.com>
 References: <1401499053-11162-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -30,19 +30,22 @@ Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 V2: Increased test coverage by testing the cases where a hole overlaps
     the start and end of the cloning range.
 
- tests/btrfs/055     | 112 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/055.out | 117 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+V3: Test the case where the cloning range includes an hole at the end
+    of the source file and might increase the size of the target file.
+
+ tests/btrfs/055     | 141 ++++++++++++++++++++++++++++++++
+ tests/btrfs/055.out | 225 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/group   |   1 +
- 3 files changed, 230 insertions(+)
+ 3 files changed, 367 insertions(+)
  create mode 100755 tests/btrfs/055
  create mode 100644 tests/btrfs/055.out
 
 diff --git a/tests/btrfs/055 b/tests/btrfs/055
 new file mode 100755
-index 0000000..4a1614b
+index 0000000..fad4b1c
 --- /dev/null
 +++ b/tests/btrfs/055
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,141 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/055
 +#
@@ -130,7 +133,8 @@ index 0000000..4a1614b
 +	od -t x1 $SCRATCH_MNT/bar
 +
 +	# Cloning range starts at the middle of a hole.
-+	$CLONER_PROG -s 20480 -d 32768 -l 12288 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++	$CLONER_PROG -s 20480 -d 32768 -l 12288 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/bar
 +
 +	# Verify that half of the hole and the following 8Kb extent were cloned.
 +	od -t x1 $SCRATCH_MNT/bar
@@ -141,9 +145,37 @@ index 0000000..4a1614b
 +	# Verify that 2 extents of 8kb and a 4kb hole were cloned.
 +	od -t x1 $SCRATCH_MNT/bar
 +
++	# Create a 24Kb hole at the end of the source file (foo).
++	$XFS_IO_PROG -c "truncate 65536" $SCRATCH_MNT/foo
++	sync
++
++	# Now clone a range that overlaps that hole at the end of the foo file.
++	# It should clone the last 4Kb of the extent at offset 32768 and the
++	# first 8kb of the 24kb hole at the end of foo.
++	$CLONER_PROG -s 36864 -d 86016 -l 12288 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/bar
++
++	# Verify that the second half of the 8Kb extent at offset 32768 of foo
++	# and the first 8Kb of the 24kb hole of foo were cloned into bar.
++	od -t x1 $SCRATCH_MNT/bar
++
++	# Clone the same range as before, but clone it into a different offset
++	# of the target (bar) such that it increases the size of the target
++	# by 8Kb.
++	$CLONER_PROG -s 36864 -d 94208 -l 12288 $SCRATCH_MNT/foo \
++		$SCRATCH_MNT/bar
++
++	# Verify that the second half of the 8Kb extent at offset 32768 of foo
++	# and the first 8Kb of the 24kb hole of foo were cloned into bar at
++	# bar's offset 94208 and that bar's size increased by 8Kb.
++	od -t x1 $SCRATCH_MNT/bar
++
 +	# Verify that there are no consistency errors.
 +	_check_scratch_fs
 +}
++
++# Regardless of the NO_HOLES feature being enabled or not, the test results
++# should be exactly the same for both cases.
 +
 +echo "Testing without the NO_HOLES feature"
 +test_btrfs_clone_with_holes
@@ -157,10 +189,10 @@ index 0000000..4a1614b
 +exit
 diff --git a/tests/btrfs/055.out b/tests/btrfs/055.out
 new file mode 100644
-index 0000000..cd627ce
+index 0000000..795c8d1
 --- /dev/null
 +++ b/tests/btrfs/055.out
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,225 @@
 +QA output created by 055
 +Testing without the NO_HOLES feature
 +wrote 8192/8192 bytes at offset 0
@@ -220,6 +252,60 @@ index 0000000..cd627ce
 +0250000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++*
++0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0300000
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++*
++0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0320000
 +Testing with the NO_HOLES feature enabled
 +wrote 8192/8192 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
@@ -278,6 +364,60 @@ index 0000000..cd627ce
 +0250000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++*
++0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0300000
++0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++*
++0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++*
++0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++*
++0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++*
++0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0320000
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index b668485..2c10c5b 100644
 --- a/tests/btrfs/group

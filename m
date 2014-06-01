@@ -1,66 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from know-smtprelay-omc-6.server.virginmedia.net ([80.0.253.70]:45668
-	"EHLO know-smtprelay-omc-6.server.virginmedia.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751650AbaFAUpF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 1 Jun 2014 16:45:05 -0400
-Message-ID: <538B8F76.9090500@petezilla.co.uk>
-Date: Sun, 01 Jun 2014 21:39:18 +0100
-From: Peter Chant <pete@petezilla.co.uk>
+Received: from magic.merlins.org ([209.81.13.136]:42874 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751577AbaFAV3v (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Jun 2014 17:29:51 -0400
+Date: Sun, 1 Jun 2014 14:29:26 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: =?iso-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20140601212926.GH22161@merlins.org>
+References: <5384D53C.9070509@skagestad.org>
+ <5384E2FA.1070509@fb.com>
+ <5384F0B4.7040309@skagestad.org>
+ <5384F8A4.1050206@skagestad.org>
+ <5384FAB2.6000204@fb.com>
+ <5385007A.4000301@fb.com>
+ <538579F1.10106@skagestad.org>
+ <5385E794.1030002@fb.com>
+ <5385F938.9010009@skagestad.org>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: All free space eaten during defragmenting (3.14)
-References: <1703083.hLnNuPsKpY@linux-suse.hu> <pan$d1ec3$d22b3db$8681b9b1$d9742e40@cox.net>
-In-Reply-To: <pan$d1ec3$d22b3db$8681b9b1$d9742e40@cox.net>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <5385F938.9010009@skagestad.org>
+Subject: Re: 3.15-rc6 - btrfs-transacti:4157 blocked for more than 120
+ seconds.
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a question that has arisen from reading one of Duncan's posts:
+On Wed, May 28, 2014 at 04:56:56PM +0200, Torbjørn wrote:
+> On 05/28/2014 03:41 PM, Chris Mason wrote:
+> >On 05/28/2014 01:53 AM, Torbjørn wrote:
+> >
+> >>It's actually a raid10 array of 11 dm-crypt devices.
+> >>I'm able to read data from the array (accessing files), and also read
+> >>directly from all the underlying dm-crypt devices using dd, if that's
+> >>what you meant.
+> >>
+> >>I have not rebooted the system since that dmesg, so it's still stuck in
+> >>the same state.
+> >>I can keep it like that for some days. The system is not critical at all.
+> >>
+> >Thanks,
+> >
+> >Can you please capture the result of sysrq-t and sysrq-l?  Maybe the IO
+> >is stuck in a thread that isn't in the D state.
+> >
+> >-chris
+> The output of sysrq-t was too much data for pastebin, will send both
+> to you as attachments outside of the list.
 
-On 06/01/2014 01:56 AM, Duncan wrote:
+Considering I have experienced this with with 3.15rc but wasn't able to
+save a sysrq since my save file and syslog got lost, did you find out
+anything from that?
 
-> Here's the deal.  Due to scaling issues the original snapshot aware 
-> defrag code was recently disabled, so defrag now doesn't worry about 
-> snapshots, only defragging whatever is currently mounted.  If you have a 
-> lot of fragmentation and are using snapshots, the defrag will copy all 
-> those fragmented files in ordered to defrag them, thus duplicating their 
-> blocks and doubling their required space.  Based on the title alone, 
-> that's what I /thought/ happened, and given what you did /not/ say, I 
-> actually still think it is the case and the below assumes that, tho I'm 
-> no longer entirely sure.
-
-The above implies to me that snapshots should not normally be mounted?
-I may have misread the intent.
-
-* * *
-
-My thought is that I have a btrfs to hold data on my system, it contains
-/home in a subvolume and also subvolumes for various other things.  I
-take daily, hourly and weekly snapshots and my script does delete old
-ones after a while.
-
-I also mount the base/default btrfs file system on /mnt/data-pool.  This
-means that my snapshots are available in their own subdirectory, so I
-presume this means that they are mounted, if not in their own right, at
-least they are as part of the default subvolume.  Given the
-defragmentation discussion above should I be doing this or should my
-setup ensure that they are not normally mounted?
-
-I'm not aware of how you would create a subvolume that was outside of a
-mounted part of the file system 'tree' - so if I did not want my
-subvolumes mounted and I wanted snapshots then I'd have to mount the
-default subvolume, make snapshots, and then unmount it?  This seems a
-bit clumsy and I'm not convinced that this is a sensible plan.  I don't
-think this is right, can anyone confirm or deny?
-
-I do note I get pauses every so often for a second or two or three while
-I believe btrfs is doing 'stuff'.  Although annoying I do find I am
-prepared to live with this as the subvolumes and snap-shotting are
-valuable to me.
-
-Pete
-
-
+Thanks,
+Marc
 -- 
-Peter Chant
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

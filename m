@@ -1,45 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47374 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750793AbaFACAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 22:00:08 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wqv48-0004J2-GF
-	for linux-btrfs@vger.kernel.org; Sun, 01 Jun 2014 04:00:04 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Jun 2014 04:00:04 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Jun 2014 04:00:04 +0200
+Received: from mail-ob0-f169.google.com ([209.85.214.169]:37854 "EHLO
+	mail-ob0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751399AbaFADwH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 31 May 2014 23:52:07 -0400
+Received: by mail-ob0-f169.google.com with SMTP id vb8so3312534obc.14
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 20:52:06 -0700 (PDT)
+MIME-Version: 1.0
+From: Shaun Reich <sreich@kde.org>
+Date: Sat, 31 May 2014 23:51:26 -0400
+Message-ID: <CADVynFArng7kg9vgaeus_FbsQXXVUZa6kcNBYHxLER2RSbfPbQ@mail.gmail.com>
+Subject: superblock corruption, cannot obtain data
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: All free space eaten during defragmenting (3.14)
-Date: Sun, 1 Jun 2014 01:56:55 +0000 (UTC)
-Message-ID: <pan$26939$a2addb4c$9febc316$74bf1551@cox.net>
-References: <1703083.hLnNuPsKpY@linux-suse.hu>
-	<pan$d1ec3$d22b3db$8681b9b1$d9742e40@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Sun, 01 Jun 2014 00:56:09 +0000 as excerpted:
+at some point, my /home randomly(?) went into -ro as i noticed writes
+were not working. Checked dmesg which had some backtraces which i
+ignored. So I simply rebooted, only to find out it wouldn't come back.
 
-> As for reclaiming the space...
+so now my /home is stuck on here, I was literally going to do my round
+of backups tonight. It's not extremely critical..but to reproduce my
+data it'll still be several hours of lost time..and the annoyances of
+redoing it.
 
-One more option there I forgot to mention... There are various dedup 
-tools out there.  See the wiki ( https://btrfs.wiki.kernel.org ) and the 
-list archive for more as I've not used any of them myself, but in theory 
-at least, the dedup tools should help you recover the space, and I /
-think/ they'll do so without forcing either snapshot deletion or a fresh 
-mkfs.btrfs and restore from backup, too, those being the other options I 
-mentioned.
+mounting results in this, as below. mounting recovery doesn't help.
+mounting ro recovery doesn't help. btrfs fsck basically reaffirms what
+I know so far, that I'm screwed because my superblock is bad.
+
+show super: http://pastie.org/private/b1k2famcfmtquaqgpyfozg
+mount dmesg: http://pastie.org/private/8zsczfustrmeg6a2bbfxag
+
+btrfs-find-root: http://bpaste.net/show/326346
+
+it's a 250gb fs.
+
+so, how can i (a) extract my data, (b) try to get it working again,
+without needing to redo the filesystem?
+
+I could not understand how to use btrfs-recover with my problem. It
+mostly seems to hate me because of said superblock issue.
+
+I wasn't aware that the superblock was extremely critical (surely one
+can recreate such data from existing data, theoretically?)
+
+need any other info, just ask.
+
+(please keep me cc'd, not sub'ed)
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Shaun Reich,
+KDE Software Developer (kde.org)

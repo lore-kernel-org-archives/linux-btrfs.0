@@ -1,55 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f169.google.com ([209.85.214.169]:37854 "EHLO
-	mail-ob0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751399AbaFADwH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 May 2014 23:52:07 -0400
-Received: by mail-ob0-f169.google.com with SMTP id vb8so3312534obc.14
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 May 2014 20:52:06 -0700 (PDT)
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:36029 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750708AbaFAEpO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Jun 2014 00:45:14 -0400
+Date: Sun, 1 Jun 2014 06:44:36 +0200
+From: Richard Cochran <richardcochran@gmail.com>
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-kernel@vger.kernel.org, hch@infradead.org,
+        linux-mtd@lists.infradead.org, hpa@zytor.com, logfs@logfs.org,
+        linux-afs@lists.infradead.org, joseph@codesourcery.com,
+        linux-arch@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-scsi@vger.kernel.org, ceph-devel@vger.kernel.org,
+        codalist@TELEMANN.coda.cs.cmu.edu, cluster-devel@redhat.com,
+        coda@cs.cmu.edu, geert@linux-m68k.org, linux-ext4@vger.kernel.org,
+        fuse-devel@lists.sourceforge.net, reiserfs-devel@vger.kernel.org,
+        xfs@oss.sgi.com, john.stultz@linaro.org, tglx@linutronix.de,
+        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        samba-technical@lists.samba.org,
+        linux-f2fs-devel@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
+        linux-fsdevel@vger.kernel.org, lftan@altera.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
+Message-ID: <20140601044436.GC3722@localhost.localdomain>
+References: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
+ <20140531145114.GA3721@localhost.localdomain>
+ <6347520.8jMPlVsFjM@wuerfel>
 MIME-Version: 1.0
-From: Shaun Reich <sreich@kde.org>
-Date: Sat, 31 May 2014 23:51:26 -0400
-Message-ID: <CADVynFArng7kg9vgaeus_FbsQXXVUZa6kcNBYHxLER2RSbfPbQ@mail.gmail.com>
-Subject: superblock corruption, cannot obtain data
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <6347520.8jMPlVsFjM@wuerfel>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-at some point, my /home randomly(?) went into -ro as i noticed writes
-were not working. Checked dmesg which had some backtraces which i
-ignored. So I simply rebooted, only to find out it wouldn't come back.
+On Sat, May 31, 2014 at 05:23:02PM +0200, Arnd Bergmann wrote:
+> On Saturday 31 May 2014 16:51:15 Richard Cochran wrote:
+> > 
+> > Why are some of the time stamp expiration dates marked as "never"?
+> 
+> It's an approximation:
 
-so now my /home is stuck on here, I was literally going to do my round
-of backups tonight. It's not extremely critical..but to reproduce my
-data it'll still be several hours of lost time..and the annoyances of
-redoing it.
+Also, the term "never" might mean using arbitrarily long integers
+as in ASN.1.
 
-mounting results in this, as below. mounting recovery doesn't help.
-mounting ro recovery doesn't help. btrfs fsck basically reaffirms what
-I know so far, that I'm screwed because my superblock is bad.
-
-show super: http://pastie.org/private/b1k2famcfmtquaqgpyfozg
-mount dmesg: http://pastie.org/private/8zsczfustrmeg6a2bbfxag
-
-btrfs-find-root: http://bpaste.net/show/326346
-
-it's a 250gb fs.
-
-so, how can i (a) extract my data, (b) try to get it working again,
-without needing to redo the filesystem?
-
-I could not understand how to use btrfs-recover with my problem. It
-mostly seems to hate me because of said superblock issue.
-
-I wasn't aware that the superblock was extremely critical (surely one
-can recreate such data from existing data, theoretically?)
-
-need any other info, just ask.
-
-(please keep me cc'd, not sub'ed)
-
-
--- 
-Shaun Reich,
-KDE Software Developer (kde.org)
+Thanks,
+Richard

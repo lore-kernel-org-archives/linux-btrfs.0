@@ -1,82 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f170.google.com ([209.85.214.170]:43131 "EHLO
-	mail-ob0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753604AbaFBDHO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Jun 2014 23:07:14 -0400
-Received: by mail-ob0-f170.google.com with SMTP id uy5so4026002obc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Jun 2014 20:07:13 -0700 (PDT)
+Received: from ns2.affinityvision.com.au ([220.233.38.77]:48602 "EHLO
+	mail.affinityvision.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750733AbaFBERR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Jun 2014 00:17:17 -0400
+Message-ID: <538BF5A0.7050805@affinityvision.com.au>
+Date: Mon, 02 Jun 2014 13:55:12 +1000
+From: Andrew McGlashan <andrew.mcglashan@affinityvision.com.au>
 MIME-Version: 1.0
-In-Reply-To: <538A6B15.3080609@swiftspirit.co.za>
-References: <5388ED6B.8000706@fb.com>
-	<lmav1p$ih7$1@ger.gmane.org>
-	<538A6B15.3080609@swiftspirit.co.za>
-Date: Sun, 1 Jun 2014 22:07:13 -0500
-Message-ID: <CAKcLGm_Ou57upZUvUJT0RH3trVAH3DgWJp2k38q9P6vAkgjwKQ@mail.gmail.com>
-Subject: Re: What to do about snapshot-aware defrag
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Brendan Hide <brendan@swiftspirit.co.za>
-Cc: Martin <m_btrfs@ml1.co.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Marc MERLIN <marc@merlins.org>,
+        =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+CC: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5384D53C.9070509@skagestad.org> <5384E2FA.1070509@fb.com> <5384F0B4.7040309@skagestad.org> <5384F8A4.1050206@skagestad.org> <5384FAB2.6000204@fb.com> <5385007A.4000301@fb.com> <538579F1.10106@skagestad.org> <5385E794.1030002@fb.com> <5385F938.9010009@skagestad.org> <20140601212926.GH22161@merlins.org>
+In-Reply-To: <20140601212926.GH22161@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: 3.15-rc6 - btrfs-transacti:4157 blocked for more than 120 seconds.
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 31, 2014 at 6:51 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
-> On 2014/05/31 12:00 AM, Martin wrote:
->>
->> OK... I'll jump in...
->>
->> On 30/05/14 21:43, Josef Bacik wrote:
->>>
->>> [snip]
->>>
->>> Option 1: Only relink inodes that haven't changed since the snapshot was
->>> taken.
->>>
->>> Pros:
->>> -Faster
->>> -Simpler
->>> -Less duplicated code, uses existing functions for tricky operations so
->>> less likely to introduce weird bugs.
->>>
->>> Cons:
->>> -Could possibly lost some of the snapshot-awareness of the defrag.  If
->>> you just touch a file we would not do the relinking and you'd end up
->>> with twice the space usage.
->>
->> [...]
->>
->>
->> Obvious way to go for fast KISS.
->
->
-> I second this - KISS is better.
->
-> Would in-band dedupe resolve the issue with losing the "snapshot-awareness
-> of the defrag"? I figure that if someone absolutely wants everything deduped
-> efficiently they'd put in the necessary resources (memory/dedicated SSD/etc)
-> to have in-band dedupe work well.
->
->> One question:
->>
->> Will option one mean that we always need to mount with noatime or
->> read-only to allow snapshot defragging to do anything?
->
->
+Hi,
 
-When snapshot-aware defrag first came out, I was convinced it was a
-"must-have" capability for nearly everybody using btrfs.  But, the
-more I look at my work load and common practices with btrfs, the more
-I am wondering just how often snapshot-aware defrag was actually doing
-something for me.
+I'm getting "blocked for more than 120 seconds" messages too.
 
-I use a lot of snapshots.  But for the most part, once I touch a file
-in my current subvolume, the whole file needs to be COW-ed from it's
-previous version.
+In my case, it is for a simple RAID1 volume that is rebuilding for the
+first time (new volume), whilst mounted as a LUKS crypt volume and
+writing /dev/zero before actual deployment.
 
-Now that we have a working sysfs, I wonder if we could implement some
-counters to track how often snapshot-aware defrag would have run.  I
-might be surprised at how much it was doing.
 
----
-Regards,
-Mitch Harder
+I am running a stock Wheezy kernel:
+
+~ # uname -a
+Linux n4800eco-a 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3 x86_64 GNU/Linux
+
+
+As I am deliberately NOT running btrfs, the common link may be mdadm or
+LUKS.
+
+
+I'm also noticing btrfs modules being loaded on another box, even though
+I am not at all ready to trust btrfs for any file system at this time.
+
+There may be some bug with mdadm/crypt(LUKS)/btrfs -- or it may have
+nothing to do with btrfs.  My problem almost certainly isn't btrfs
+unless there is some kernel code giving me grief without loading the
+btrfs module.
+
+
+More details of my problem:
+
+ https://lists.debian.org/debian-user/2014/06/msg00070.html
+
+NB: working through my problem in a dropbear busybox environment that
+hasn't loaded btrfs module.  The kernel is the same as the /normal/
+system, compliments of mkinitramfs tool....
+
+
+Cheers
+A.
+

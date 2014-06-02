@@ -1,73 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from terminus.zytor.com ([198.137.202.10]:55028 "EHLO mail.zytor.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751157AbaFBT2F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Jun 2014 15:28:05 -0400
-Message-ID: <538CCFDE.2010107@zytor.com>
-Date: Mon, 02 Jun 2014 12:26:22 -0700
-From: "H. Peter Anvin" <hpa@zytor.com>
+Received: from mail-oa0-f50.google.com ([209.85.219.50]:47017 "EHLO
+	mail-oa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751390AbaFBTal (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jun 2014 15:30:41 -0400
+Received: by mail-oa0-f50.google.com with SMTP id i7so5108135oag.37
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jun 2014 12:30:41 -0700 (PDT)
 MIME-Version: 1.0
-To: Arnd Bergmann <arnd@arndb.de>, "Joseph S. Myers" <joseph@codesourcery.com>
-CC: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
-        john.stultz@linaro.org, hch@infradead.org, tglx@linutronix.de,
-        geert@linux-m68k.org, lftan@altera.com, linux-fsdevel@vger.kernel.org,
-        ceph-devel@vger.kernel.org, cluster-devel@redhat.com, coda@cs.cmu.edu,
-        codalist@TELEMANN.coda.cs.cmu.edu, fuse-devel@lists.sourceforge.net,
-        linux-afs@lists.infradead.org, linux-btrfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
-        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        linux-scsi@vger.kernel.org, logfs@logfs.org,
-        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
-        samba-technical@lists.samba.org, xfs@oss.sgi.com
-Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
-References: <1401480116-1973111-1-git-send-email-arnd@arndb.de> <Pine.LNX.4.64.1406021350030.19591@digraph.polyomino.org.uk> <4233989.Saca0ocOUr@wuerfel>
-In-Reply-To: <4233989.Saca0ocOUr@wuerfel>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CADVynFBKtAKUACDsmy2fmtBonkoscWSXD-WDr6RAcmxizE+5yQ@mail.gmail.com>
+References: <20140601020750.0283af6c@ws> <CADVynFBKtAKUACDsmy2fmtBonkoscWSXD-WDr6RAcmxizE+5yQ@mail.gmail.com>
+From: Shaun Reich <sreich@kde.org>
+Date: Mon, 2 Jun 2014 15:30:01 -0400
+Message-ID: <CADVynFAxdScpcnHV5tH5tEB2yp7Em64-XX53D6B=82LQGaxcAw@mail.gmail.com>
+Subject: Re: superblock corruption, cannot obtain data
+To: linux-btrfs@vger.kernel.org, Duncan <1i5t5.duncan@cox.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/02/2014 12:19 PM, Arnd Bergmann wrote:
-> On Monday 02 June 2014 13:52:19 Joseph S. Myers wrote:
->> On Fri, 30 May 2014, Arnd Bergmann wrote:
->>
->>> a) is this the right approach in general? The previous discussion
->>>    pointed this way, but there may be other opinions.
->>
->> The syscall changes seem like the sort of thing I'd expect, although 
->> patches adding new syscalls or otherwise affecting the kernel/userspace 
->> interface (as opposed to those relating to an individual filesystem) 
->> should go to linux-api as well as other relevant lists.
-> 
-> Ok. Sorry about missing linux-api, I confused it with linux-arch, which
-> may not be as relevant here, except for the one question whether we
-> actually want to have the new ABI on all 32-bit architectures or only
-> as an opt-in for those that expect to stay around for another 24 years.
-> 
-> Two more questions for you:
-> 
-> - are you (and others) happy with adding this type of stat syscall
->   (fstatat64/fstat64) as opposed to the more generic xstat that has
->   been discussed in the past and that never made it through the bike-
->   shedding discussion?
-> 
-> - once we have enough buy-in from reviewers to merge this initial
->   series, should we proceed to define rest of the syscall ABI
->   (minus driver ioctls) so glibc and kernel can do the conversion
->   on top of that, or should we better try to do things one syscall
->   family at a time and actually get the kernel to handle them
->   correctly internally?
-> 
+Tl;dr tried nearly everything, couldn't get it to recover, gave up and
+restored my old backup. I was running the newest Archlinux kernel
+release.
 
-The bit that is really going to hurt is every single ioctl that uses a
-timespec.
+.. Extracting data with Btrfs restore was quite useless, Btrfs find
+root didn't list any object id's either, which I was unsure why. I
+guess I was just unlucky or the utility got changed since all the
+other people I've seen had used it.
 
-Honestly, though, I really don't understand the point with "struct
-inode_time".  It seems like the zeroeth-order thing is to change the
-kernel internal version of struct timespec to have a 64-bit time... it
-isn't just about inodes.  We then should be explicit about the external
-uses of time, and use accessors.
-
-	-hpa
-
-
+Still have a full dd image of the disk that I'll keep for a week or
+so, and a Btrfs-image, if anyone is at all interested.

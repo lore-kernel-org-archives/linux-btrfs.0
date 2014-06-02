@@ -1,44 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay1.mentorg.com ([192.94.38.131]:37627 "EHLO
-	relay1.mentorg.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754438AbaFBNwf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jun 2014 09:52:35 -0400
-Date: Mon, 2 Jun 2014 13:52:19 +0000
-From: "Joseph S. Myers" <joseph@codesourcery.com>
-To: Arnd Bergmann <arnd@arndb.de>
-CC: <linux-kernel@vger.kernel.org>, <linux-arch@vger.kernel.org>,
-        <john.stultz@linaro.org>, <hch@infradead.org>, <tglx@linutronix.de>,
-        <geert@linux-m68k.org>, <lftan@altera.com>, <hpa@zytor.com>,
-        <linux-fsdevel@vger.kernel.org>, <ceph-devel@vger.kernel.org>,
-        <cluster-devel@redhat.com>, <coda@cs.cmu.edu>,
-        <codalist@TELEMANN.coda.cs.cmu.edu>,
-        <fuse-devel@lists.sourceforge.net>, <linux-afs@lists.infradead.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-cifs@vger.kernel.org>,
-        <linux-ext4@vger.kernel.org>, <linux-f2fs-devel@lists.sourceforge.net>,
-        <linux-mtd@lists.infradead.org>, <linux-nfs@vger.kernel.org>,
-        <linux-ntfs-dev@lists.sourceforge.net>, <linux-scsi@vger.kernel.org>,
-        <logfs@logfs.org>, <ocfs2-devel@oss.oracle.com>,
-        <reiserfs-devel@vger.kernel.org>, <samba-technical@lists.samba.org>,
-        <xfs@oss.sgi.com>
-Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
-In-Reply-To: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
-Message-ID: <Pine.LNX.4.64.1406021350030.19591@digraph.polyomino.org.uk>
-References: <1401480116-1973111-1-git-send-email-arnd@arndb.de>
+Received: from cantor2.suse.de ([195.135.220.15]:49031 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753635AbaFBPjq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Jun 2014 11:39:46 -0400
+Date: Mon, 2 Jun 2014 17:39:44 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
+Subject: Re: [PATCH 4/4] btrfs: create sprout should rename fsid on the sysfs
+ as well
+Message-ID: <20140602153944.GB22324@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
+ <1401096626-13210-5-git-send-email-anand.jain@oracle.com>
+ <20140529125422.GB29992@twin.jikos.cz>
+ <538C343C.20308@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <538C343C.20308@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 30 May 2014, Arnd Bergmann wrote:
+On Mon, Jun 02, 2014 at 04:22:20PM +0800, Anand Jain wrote:
+> >>--- a/fs/btrfs/volumes.c
+> >>+++ b/fs/btrfs/volumes.c
+> >>@@ -2084,6 +2084,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+> >>  	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+> >>
+> >>  	if (seeding_dev) {
+> >>+		char fsid_buf[37];
+> >
+> >Is there a symbolic constant available? We have one in userspace, but I
+> >can't find one for kernel, only a few locally defined.
+> 
+>  now defined the same (as in progs) in kernel as well.
 
-> a) is this the right approach in general? The previous discussion
->    pointed this way, but there may be other opinions.
+In progs it's in utils.h
 
-The syscall changes seem like the sort of thing I'd expect, although 
-patches adding new syscalls or otherwise affecting the kernel/userspace 
-interface (as opposed to those relating to an individual filesystem) 
-should go to linux-api as well as other relevant lists.
+ 40 #define BTRFS_UUID_UNPARSED_SIZE        37
 
--- 
-Joseph S. Myers
-joseph@codesourcery.com
+but I don't see where it's defined in kernel. Can you please give me a
+pointer?
+
+On the other hand, progs have a local define, we can do the same, I
+don't see any other potential users.

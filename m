@@ -1,69 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20650 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751796AbaFBIT2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jun 2014 04:19:28 -0400
-Message-ID: <538C343C.20308@oracle.com>
-Date: Mon, 02 Jun 2014 16:22:20 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37491 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754638AbaFBNTp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Jun 2014 09:19:45 -0400
+Message-ID: <538C79D9.5040305@fb.com>
+Date: Mon, 2 Jun 2014 09:19:21 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
-Subject: Re: [PATCH 4/4] btrfs: create sprout should rename fsid on the sysfs
- as well
-References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com> <1401096626-13210-5-git-send-email-anand.jain@oracle.com> <20140529125422.GB29992@twin.jikos.cz>
-In-Reply-To: <20140529125422.GB29992@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Mitch Harder <mitch.harder@sabayonlinux.org>,
+        Brendan Hide <brendan@swiftspirit.co.za>
+CC: Martin <m_btrfs@ml1.co.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: What to do about snapshot-aware defrag
+References: <5388ED6B.8000706@fb.com>	<lmav1p$ih7$1@ger.gmane.org>	<538A6B15.3080609@swiftspirit.co.za> <CAKcLGm_Ou57upZUvUJT0RH3trVAH3DgWJp2k38q9P6vAkgjwKQ@mail.gmail.com>
+In-Reply-To: <CAKcLGm_Ou57upZUvUJT0RH3trVAH3DgWJp2k38q9P6vAkgjwKQ@mail.gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-
-
-On 29/05/14 20:54, David Sterba wrote:
-> On Mon, May 26, 2014 at 05:30:26PM +0800, Anand Jain wrote:
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -2084,6 +2084,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->>   	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+On 06/01/2014 11:07 PM, Mitch Harder wrote:
+> On Sat, May 31, 2014 at 6:51 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
+>> On 2014/05/31 12:00 AM, Martin wrote:
+>>>
+>>> OK... I'll jump in...
+>>>
+>>> On 30/05/14 21:43, Josef Bacik wrote:
+>>>>
+>>>> [snip]
+>>>>
+>>>> Option 1: Only relink inodes that haven't changed since the snapshot was
+>>>> taken.
+>>>>
+>>>> Pros:
+>>>> -Faster
+>>>> -Simpler
+>>>> -Less duplicated code, uses existing functions for tricky operations so
+>>>> less likely to introduce weird bugs.
+>>>>
+>>>> Cons:
+>>>> -Could possibly lost some of the snapshot-awareness of the defrag.  If
+>>>> you just touch a file we would not do the relinking and you'd end up
+>>>> with twice the space usage.
+>>>
+>>> [...]
+>>>
+>>>
+>>> Obvious way to go for fast KISS.
 >>
->>   	if (seeding_dev) {
->> +		char fsid_buf[37];
+>>
+>> I second this - KISS is better.
+>>
+>> Would in-band dedupe resolve the issue with losing the "snapshot-awareness
+>> of the defrag"? I figure that if someone absolutely wants everything deduped
+>> efficiently they'd put in the necessary resources (memory/dedicated SSD/etc)
+>> to have in-band dedupe work well.
+>>
+>>> One question:
+>>>
+>>> Will option one mean that we always need to mount with noatime or
+>>> read-only to allow snapshot defragging to do anything?
+>>
+>>
 >
-> Is there a symbolic constant available? We have one in userspace, but I
-> can't find one for kernel, only a few locally defined.
-
-  now defined the same (as in progs) in kernel as well.
-
->>   		ret = init_first_rw_device(trans, root, device);
->>   		if (ret) {
->>   			btrfs_abort_transaction(trans, root, ret);
->> @@ -2094,6 +2095,13 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
->>   			btrfs_abort_transaction(trans, root, ret);
->>   			goto error_trans;
->>   		}
->> +
->> +		/* Sprouting would change fsid of the mounted root,
->> +		 * so rename the fsid on the sysfs
->> +		 */
->> +		sprintf(fsid_buf, "%pU", root->fs_info->fsid);
+> When snapshot-aware defrag first came out, I was convinced it was a
+> "must-have" capability for nearly everybody using btrfs.  But, the
+> more I look at my work load and common practices with btrfs, the more
+> I am wondering just how often snapshot-aware defrag was actually doing
+> something for me.
 >
-> Would be better do use snprintf explicitly.
-
-  added. Thanks for commenting.
-
-Anand
-
-
-
-
->> +		if (kobject_rename(&root->fs_info->super_kobj, fsid_buf))
->> +			goto error_trans;
->>   	} else {
+> I use a lot of snapshots.  But for the most part, once I touch a file
+> in my current subvolume, the whole file needs to be COW-ed from it's
+> previous version.
 >
-> Otherwise ok.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+
+The whole file doesn't need to be cow'ed, just the part that you touch. 
+  So old snapshot-aware defrag probably would have saved you quite a bit 
+of space.  Thanks,
+
+Josef

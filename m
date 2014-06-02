@@ -1,46 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49031 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753635AbaFBPjq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Jun 2014 11:39:46 -0400
-Date: Mon, 2 Jun 2014 17:39:44 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
-Subject: Re: [PATCH 4/4] btrfs: create sprout should rename fsid on the sysfs
- as well
-Message-ID: <20140602153944.GB22324@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
- <1401096626-13210-5-git-send-email-anand.jain@oracle.com>
- <20140529125422.GB29992@twin.jikos.cz>
- <538C343C.20308@oracle.com>
+Received: from mail-qg0-f46.google.com ([209.85.192.46]:64289 "EHLO
+	mail-qg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752621AbaFBQP4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Jun 2014 12:15:56 -0400
+Received: by mail-qg0-f46.google.com with SMTP id q108so10794448qgd.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Jun 2014 09:15:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <538C343C.20308@oracle.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CADiq+R44LEu+x-UXWtKOm9Gp0-05bPhXKY=j19pFZ_YPr+_p+g@mail.gmail.com>
+References: <CADiq+R44LEu+x-UXWtKOm9Gp0-05bPhXKY=j19pFZ_YPr+_p+g@mail.gmail.com>
+Date: Mon, 2 Jun 2014 17:15:55 +0100
+Message-ID: <CAL3q7H458iwJrz011hRqd_hDoKdzSyrnS-L+Z8kXeW9aefPybw@mail.gmail.com>
+Subject: Re: btrfs-receive rename error
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Rasmus Eskola <fruitiex@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 02, 2014 at 04:22:20PM +0800, Anand Jain wrote:
-> >>--- a/fs/btrfs/volumes.c
-> >>+++ b/fs/btrfs/volumes.c
-> >>@@ -2084,6 +2084,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
-> >>  	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
-> >>
-> >>  	if (seeding_dev) {
-> >>+		char fsid_buf[37];
-> >
-> >Is there a symbolic constant available? We have one in userspace, but I
-> >can't find one for kernel, only a few locally defined.
-> 
->  now defined the same (as in progs) in kernel as well.
+On Thu, May 29, 2014 at 4:32 PM, Rasmus Eskola <fruitiex@gmail.com> wrote:
+> Hi,
+>
+> I'm trying to send an incremental backup of a btrfs subvolume to
+> another host using the command:
+>
+> sudo btrfs send -v /home/backup/2014-05-29_02:26:38 | ssh "root@s"
+> "btrfs receive -v /btrfs/backup_bulky/home"
+>
+> Eventually it stops with the following error:
+> ERROR: rename o941570-199282-0 ->  failed. Not a directory
+>
+> Seems like a bug to me, I tried searching for inodes '941570' or
+> '199282' but came up with no results on either. btrfsck reports no
+> problems.
+>
+> Any ideas on how to solve this or debug it further? The subvolume is
+> around 400 gb large, and it's a few days since I made the previous
+> incremental backup, so I unfortunately haven't been able to find any
+> root cause or a way to reproduce the bug outside of this subvolume.
+>
+> At the time of writing I'm running the 3.15.0-rc1 kernel with
+> btrfs-progs v3.14 on both machines.
 
-In progs it's in utils.h
+Can you try the following patch and see it solves the issue?
 
- 40 #define BTRFS_UUID_UNPARSED_SIZE        37
+https://patchwork.kernel.org/patch/4217791/
 
-but I don't see where it's defined in kernel. Can you please give me a
-pointer?
+It affects only 3.15 (any of the 3.15 rc's).
 
-On the other hand, progs have a local define, we can do the same, I
-don't see any other potential users.
+>
+> Best regards,
+> Rasmus Eskola
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

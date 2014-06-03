@@ -1,113 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50177 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753180AbaFCG12 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jun 2014 02:27:28 -0400
-Message-ID: <538D6B0E.70903@cn.fujitsu.com>
-Date: Tue, 3 Jun 2014 14:28:30 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Should btrfs reuse the src_dev's dev UUID when doing dev replacing?
-References: <537D5468.3040808@cn.fujitsu.com> <537D6A58.5040907@oracle.com>
-In-Reply-To: <537D6A58.5040907@oracle.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:55003 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750892AbaFCKmZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jun 2014 06:42:25 -0400
+Received: by mail-wi0-f177.google.com with SMTP id f8so6295507wiw.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Jun 2014 03:42:24 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: update commit root on snapshot creation after orphan cleanup
+Date: Tue,  3 Jun 2014 12:41:44 +0100
+Message-Id: <1401795704-20668-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On snapshot creation (either writable or read-only), we do orphan cleanup
+against the root of the snapshot. If the cleanup did remove any orphans,
+then the current root node will be different from the commit root node
+until the next transaction commit happens.
 
--------- Original Message --------
-Subject: Re: Should btrfs reuse the src_dev's dev UUID when doing dev 
-replacing?
-From: Anand Jain <Anand.Jain@oracle.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs 
-<linux-btrfs@vger.kernel.org>
-Date: 2014年05月22日 11:09
->
->
->  Thanks Qu for bringing up this topic. We definitely need some focus
->  on the btrfs volume management related bugs/features/enhancements.
->
->  more inline..
->
-> On 22/05/14 09:35, Qu Wenruo wrote:
->> Hi,
->>
->> [Current dev replace]
->> As kernel codes show, 'btrfs dev replace' will swap tgt_dev's uuid with
->> src_dev's uuid.
->> This method works fine most of the time, since it doesn't need to change
->> the chunk tree.
->>
->> [Problem with re-appear missing device]
->> (Anand Jain reported the problem in Jan 2014)
->> Take the following suitiuation as example:
->> /dev/sda, /dev/sdb, /dev/sdc as btrfs RAID1.
->> 1, 2, 3 as their dev id.
->>
->> 1)/dev/sdb is missing,
->> Mount them in degraded mode.
->>
->> 2) 'btrfs dev replace start 2 /dev/sdd' will replace missing /dev/sdb.
->>
->> 3) /dev/sdb is online again.
->>
->> 4) umount /BTRFS/MOUNT/POINT; mount /dev/sda
->> After mount, btrfs will still use /dev/sdb but not /dev/sdd
->
->  Yeah its weird that grouping depends on the mercy of chronological
->  oder of device probing. The _last_ device probed stays in the list.
->  But the most weird is if FS is mounted and is followed with the dev
->  scan it would just overwrite the btrfs_device struct.
->  I have sent out interim fix to both of these bugs a long time back.
->
->> [Cause of the bug]
->> When this comes to missing device, since the src_dev is missing, neither
->> UUID swap nor superblock wipe will
->> work. So if the device reappears, next mount will scan the the fsid and
->> dev uuid, and if btrfs scan the re-appeared
->> device first, it will use the re-appeared device.
->>
->> [Method to fix]
->> IMO there are 2 possible method to fix the bug.
->> 1) Don't reuse the src_dev's dev UUID.
->> I don't think any of the UUID in btrfs should be reused, so if every
->> device in btrfs has its own UUID,
->> it is quite easy to distinguish different devices, and even don't need
->> to wipe the superblock of src_dev.
->> (But superblock wipe is still needed for other reasons)
->
->  Yep that the right way IMO too. UUID must be unique to disk, even in
->  the case of replace.
->
->> 2) Do generation check in device_list_add.
->> When multiple devices with same dev UUID is found, only add the one
->> whose generation is the same with
->> other deivces.
->> IMO this is just a workaround.
->
->  yes an interim fix, patch was sent out a long time back.
-BTW, I haven't seen a new version patch fixing device_list_add() 
-function after Wang's comment.
+A send operation always uses the commit root of a snapshot - this means
+it will see the orphans if it starts computing the send stream before the
+next transaction commit happens (triggered by a timer or sync() for .e.g),
+which is when the commit root gets assigned a reference to current root,
+where the orphans are not visible anymore. The consequence of send seeing
+the orphans is explained below.
 
-What is the process now?
+For example:
 
-If you are busy working on other bugs, would you mind me making the 
-device_list_add() check patch?
+    mkfs.btrfs -f /dev/sdd
+    mount -o commit=999 /dev/sdd /mnt
 
-Thanks,
-Qu
->
->> I think it is better to be decided before any related patch sent.
->>
->> Any suggestions?
->>
->> Thanks,
->> Qu
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
+    # open a file with O_TMPFILE and leave it open
+    # write some data to the file
+    btrfs subvolume snapshot -r /mnt /mnt/snap1
+
+    btrfs send /mnt/snap1 -f /tmp/send.data
+
+The send operation will fail with the following error:
+
+    ERROR: send ioctl failed with -116: Stale file handle
+
+What happens here is that our snapshot has an orphan inode still visible
+through the commit root, that corresponds to the tmpfile. However send
+will attempt to call inode.c:btrfs_iget(), with the goal of reading the
+file's data, which will return -ESTALE because it will use the current
+root (and not the commit root) of the snapshot.
+
+Of course, there are other cases where we can get orphans, but this
+example using a tmpfile makes it much easier to reproduce the issue.
+
+Therefore on snapshot creation, after calling btrfs_orphan_cleanup, if
+the commit root is different from the current root, just commit the
+transaction associated with the snapshot's root (if it exists), so that
+a send will not see any orphans that don't exist anymore. This also
+guarantees a send will always see the same content regardless of whether
+a transaction commit happened already before the send was requested and
+after the orphan cleanup (meaning the commit root and current roots are
+the same) or it hasn't happened yet (commit and current roots are
+different).
+
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ioctl.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 95194a9..6680ad9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -712,6 +712,35 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (ret)
+ 		goto fail;
+ 
++	/*
++	 * If orphan cleanup did remove any orphans, it means the tree was
++	 * modified and therefore the commit root is not the same as the
++	 * current root anymore. This is a problem, because send uses the
++	 * commit root and therefore can see inode items that don't exist
++	 * in the current root anymore, and for example make calls to
++	 * btrfs_iget, which will do tree lookups based on the current root
++	 * and not on the commit root. Those lookups will fail, returning a
++	 * -ESTALE error, and making send fail with that error. So make sure
++	 * a send does not see any orphans we have just removed, and that it
++	 * will see the same inodes regardless of whether a transaction
++	 * commit happened before it started (meaning that the commit root
++	 * will be the same as the current root) or not.
++	 */
++	if (readonly && pending_snapshot->snap->node !=
++	    pending_snapshot->snap->commit_root) {
++		trans = btrfs_join_transaction(pending_snapshot->snap);
++		if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
++			ret = PTR_ERR(trans);
++			goto fail;
++		}
++		if (!IS_ERR(trans)) {
++			ret = btrfs_commit_transaction(trans,
++						       pending_snapshot->snap);
++			if (ret)
++				goto fail;
++		}
++	}
++
+ 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+ 	if (IS_ERR(inode)) {
+ 		ret = PTR_ERR(inode);
+-- 
+1.9.1
 

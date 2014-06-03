@@ -1,59 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41449 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:41462 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754382AbaFCNjX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Jun 2014 09:39:23 -0400
-Date: Tue, 3 Jun 2014 15:39:21 +0200
+	id S1754425AbaFCNjn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Jun 2014 09:39:43 -0400
+Date: Tue, 3 Jun 2014 15:39:41 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, jeffm@suse.com, clm@fb.com
-Subject: Re: [PATCH 3/4] btrfs: dev replace should replace the sysfs entry
-Message-ID: <20140603133921.GL22324@twin.jikos.cz>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, jeffm@suse.com, dsterba@suse.cz, clm@fb.com
+Subject: Re: [PATCH 4/6 v2] btrfs: dev replace should replace the sysfs entry
+Message-ID: <20140603133941.GM22324@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1401096626-13210-1-git-send-email-anand.jain@oracle.com>
- <1401096626-13210-4-git-send-email-anand.jain@oracle.com>
- <20140529132939.GD29992@twin.jikos.cz>
- <538835DB.5040900@oracle.com>
- <538D455E.90507@oracle.com>
+References: <1401766564-7381-1-git-send-email-Anand.Jain@oracle.com>
+ <1401766564-7381-5-git-send-email-Anand.Jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <538D455E.90507@oracle.com>
+In-Reply-To: <1401766564-7381-5-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 03, 2014 at 11:47:42AM +0800, Anand Jain wrote:
-> >>>+    /* replace the sysfs entry */
-> >>>+    rm_device_membership(fs_info, src_device);
-> >>>+    add_device_membership(fs_info, tgt_device);
-> >>>+
-> >>>      btrfs_rm_dev_replace_blocked(fs_info);
-> >>>
-> >>>      btrfs_rm_dev_replace_srcdev(fs_info, src_device);
-> >>
-> >>569         btrfs_rm_dev_replace_unblocked(fs_info);
-> >>570
-> >>
-> >>The comment that follows says
-> >>
-> >>571         /*
-> >>572          * this is again a consistent state where no dev_replace
-> >>procedure
-> >>573          * is running, the target device is part of the
-> >>filesystem, the
-> >>574          * source device is not part of the filesystem anymore and
-> >>its 1st
-> >>575          * superblock is scratched out so that it is no longer
-> >>marked to
-> >>576          * belong to this filesystem.
-> >>577          */
-> >>
-> >>and I think this is the right place to put the sysfs updates, because the
-> >>srcdev is processed.
-> >
-> >Looking into this, will update. Thanks for the review.
+On Tue, Jun 03, 2014 at 11:36:02AM +0800, Anand Jain wrote:
+> when we replace the device its corresponding sysfs
+> entry has to be replaced as well
 > 
->  btrfs_rm_dev_replace_srcdev()  would destroy the btrfs_device of
->  src_device, and I am removing its sys/fs entry before we destroy
->  btrfs_device of src_device. Which is logically correct.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-I agree, my analysis was wrong.
+Reviewed-by: David Sterba <dsterba@suse.cz>

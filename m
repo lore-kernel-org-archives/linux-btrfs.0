@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49325 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755178AbaFDGUe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jun 2014 02:20:34 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ws4Yq-0003eS-Bs
-	for linux-btrfs@vger.kernel.org; Wed, 04 Jun 2014 08:20:32 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 08:20:32 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 08:20:32 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH] btrfs-progs: Documentation: Add filter section for
- btrfs-balance.
-Date: Wed, 4 Jun 2014 06:20:17 +0000 (UTC)
-Message-ID: <pan$7402f$cb6972d1$db2b852d$277f3bef@cox.net>
-References: <1401776408-32699-1-git-send-email-quwenruo@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:47995 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932279AbaFDGrY convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 02:47:24 -0400
+Message-ID: <538EC135.6060105@cn.fujitsu.com>
+Date: Wed, 4 Jun 2014 14:48:21 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Christian Hesse <mail@eworm.de>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/1] btrfs-progs: fix compiler warning
+References: <1401794959-25907-1-git-send-email-mail@eworm.de>
+In-Reply-To: <1401794959-25907-1-git-send-email-mail@eworm.de>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Tue, 03 Jun 2014 14:20:08 +0800 as excerpted:
 
-> Man page for 'btrfs-balance' mentioned <filters> but does not explain
-> them, which make end users hard to use '-d', '-m' or '-s options.
-> 
-> This patch will use the explanations from
-> https://btrfs.wiki.kernel.org/index.php/Balance_Filters to enrich the
-> man page.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+-------- Original Message --------
+Subject: [PATCH 1/1] btrfs-progs: fix compiler warning
+From: Christian Hesse <mail@eworm.de>
+To: linux-btrfs@vger.kernel.org
+Date: 2014年06月03日 19:29
+> gcc 4.9.0 gives a warning: array subscript is above array bounds
+>
+> Checking for "greater or equal" instead of just "equal" fixes this.
+>
+> Signed-off-by: Christian Hesse <mail@eworm.de>
+> ---
+>   cmds-restore.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/cmds-restore.c b/cmds-restore.c
+> index 96b97e1..534a49e 100644
+> --- a/cmds-restore.c
+> +++ b/cmds-restore.c
+> @@ -169,7 +169,7 @@ again:
+>   			break;
+>   	}
+>   
+> -	if (level == BTRFS_MAX_LEVEL)
+> +	if (level >= BTRFS_MAX_LEVEL)
+>   		return 1;
+>   
+>   	slot = path->slots[level] + 1;
+Also I faied to reproduce the bug.
+Using gcc-4.9.0-3 from Archlinux core repo.
 
-Thanks.  The wiki-only nature of the balance-filters documentation has 
-been a bit of a complication.  This should fix that. =:^)
+It seems to be related to default gcc flags from distribution?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks,
+Qu

@@ -1,43 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f178.google.com ([209.85.192.178]:53227 "EHLO
-	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751432AbaFDW1e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 18:27:34 -0400
-Received: by mail-pd0-f178.google.com with SMTP id v10so134656pde.23
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 15:27:34 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
-References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
-Date: Thu, 5 Jun 2014 05:27:33 +0700
-Message-ID: <CAG1y0sfrmSD31iKfqyR9jMJSBNvs=dihiHtd8nMwiawkhykUQw@mail.gmail.com>
+Received: from mari.romanrm.net ([157.7.203.202]:42542 "EHLO mari.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751413AbaFDWko (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Jun 2014 18:40:44 -0400
+Date: Thu, 5 Jun 2014 04:40:37 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: "Fajar A. Nugraha" <list@fajar.net>
+Cc: Igor M <igork20@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Very slow filesystem
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Igor M <igork20@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20140605044037.3e3a27b2@natsu>
+In-Reply-To: <CAG1y0sfrmSD31iKfqyR9jMJSBNvs=dihiHtd8nMwiawkhykUQw@mail.gmail.com>
+References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
+	<CAG1y0sfrmSD31iKfqyR9jMJSBNvs=dihiHtd8nMwiawkhykUQw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/HxB8Qse3YQcY5RTq1=AftTJ"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 5, 2014 at 5:15 AM, Igor M <igork20@gmail.com> wrote:
-> Hello,
->
-> Why btrfs becames EXTREMELY slow after some time (months) of usage ?
+--Sig_/HxB8Qse3YQcY5RTq1=AftTJ
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> # btrfs fi show
-> Label: none  uuid: b367812a-b91a-4fb2-a839-a3a153312eba
->         Total devices 1 FS bytes used 2.36TiB
->         devid    1 size 2.73TiB used 2.38TiB path /dev/sde
+On Thu, 5 Jun 2014 05:27:33 +0700
+"Fajar A. Nugraha" <list@fajar.net> wrote:
 
-> # btrfs fi df /mnt/old
-> Data, single: total=2.36TiB, used=2.35TiB
+> On Thu, Jun 5, 2014 at 5:15 AM, Igor M <igork20@gmail.com> wrote:
+> > Hello,
+> >
+> > Why btrfs becames EXTREMELY slow after some time (months) of usage ?
+>=20
+> > # btrfs fi show
+> > Label: none  uuid: b367812a-b91a-4fb2-a839-a3a153312eba
+> >         Total devices 1 FS bytes used 2.36TiB
+> >         devid    1 size 2.73TiB used 2.38TiB path /dev/sde
+>=20
+> > # btrfs fi df /mnt/old
+> > Data, single: total=3D2.36TiB, used=3D2.35TiB
+>=20
+> Is that the fs that is slow?
+>=20
+> It's almost full.
 
-Is that the fs that is slow?
+Really, is it? The device size is 2.75 TiB, while only 2.35 TiB is used. Ab=
+out
+400 GiB should be free. That's not "almost full". The "btrfs fi df" readings
+may be a little confusing, but usually it's those who ask questions on this
+list are confused by them, not those who (try to) answer. :)
 
-It's almost full. Most filesystems would exhibit really bad
-performance when close to full due to fragmentation issue (threshold
-vary, but 80-90% full usually means you need to start adding space).
-You should free up some space (e.g. add a new disk so it becomes
-multi-device, or delete some files) and rebalance/defrag.
+--=20
+With respect,
+Roman
 
--- 
-Fajar
+--Sig_/HxB8Qse3YQcY5RTq1=AftTJ
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlOPoGUACgkQTLKSvz+PZwioawCggUtTKLZabI9tomRMzXZX0h5m
+CgQAn2GzPrplwRV4XfcObKjjSSeG9G04
+=Uc9W
+-----END PGP SIGNATURE-----
+
+--Sig_/HxB8Qse3YQcY5RTq1=AftTJ--

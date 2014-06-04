@@ -1,87 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59308 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755028AbaFCXyb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Jun 2014 19:54:31 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WryXG-00017Q-3K
-	for linux-btrfs@vger.kernel.org; Wed, 04 Jun 2014 01:54:30 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 01:54:30 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 01:54:30 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: What to do about snapshot-aware defrag
-Date: Wed, 04 Jun 2014 00:54:14 +0100
-Message-ID: <lmln77$ee0$1@ger.gmane.org>
-References: <5388ED6B.8000706@fb.com> <lmav1p$ih7$1@ger.gmane.org> <538C7A79.8070407@fb.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <538C7A79.8070407@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:33351 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751510AbaFDBoH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jun 2014 21:44:07 -0400
+Message-ID: <538E7905.5070509@cn.fujitsu.com>
+Date: Wed, 4 Jun 2014 09:40:21 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: David Sterba <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: fsck: report each critical root corruption
+ separately
+References: <1401813467-31009-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1401813467-31009-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/06/14 14:22, Josef Bacik wrote:
-> On 05/30/2014 06:00 PM, Martin wrote:
->> OK... I'll jump in...
->>
->> On 30/05/14 21:43, Josef Bacik wrote:
->>> Hello,
->>>
->>> TL;DR: I want to only do snapshot-aware defrag on inodes in snapshots
->>> that haven't changed since the snapshot was taken.  Yay or nay (with a
->>> reason why for nay)
->>
->> [...]
->>>
->>> === Summary and what I need ===
->>>
->>> Option 1: Only relink inodes that haven't changed since the snapshot was
->>> taken.
-[...]
->> Obvious way to go for fast KISS.
->>
->>
->> One question:
->>
->> Will option one mean that we always need to mount with noatime or
->> read-only to allow snapshot defragging to do anything?
->>
-> 
-> Yeah atime would screw this up, I hadn't thought of that.  With that
-> being the case I think the only option is to keep the old behavior, we
-> don't want to screw up stuff like this just because users used a backup
-> program on their snapshot and didn't use noatime.  Thanks,
-
-Not so fast into non-KISS!
-
-
-The *ONLY* application that I know of that uses atime is Mutt and then
-*only* for mbox files!...
-
-NOTHING else uses atime as far as I know.
-
-We already have most distros enabling reltime by default as a
-just-in-case...
-
-
-Can we not have noatime as the default for btrfs? Also widely note that
-default in the man page and wiki and with why?...
-
-*And go KISS and move on faster* better?
-
-
-Myself, I still use Mutt sometimes, but no mbox, and all my filesystems
-have been noatime for many years now with good positive results. (Both
-home and work servers.)
-
-Regards,
-Martin
-
-
+On 06/04/2014 12:37 AM, David Sterba wrote:
+> Explicitly say which critical root is corrupted. It is possible to
+> repair or reset some of the roots with a special option.
+David, thanks for doing this:-)
+>
+> CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>
+> Patch based on the fsck branch from integration with other fsck fixes,
+> namely "Btrfs-progs: fsck: deal with corrupted csum root"
+>
+>   cmds-check.c | 24 ++++++++++++++++--------
+>   1 file changed, 16 insertions(+), 8 deletions(-)
+>
+> diff --git a/cmds-check.c b/cmds-check.c
+> index b62132f22e84..58e5322bfe96 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -6933,10 +6933,18 @@ int cmd_check(int argc, char **argv)
+>   	uuid_unparse(info->super_copy->fsid, uuidbuf);
+>   	printf("Checking filesystem on %s\nUUID: %s\n", argv[optind], uuidbuf);
+>   
+> -	if (!extent_buffer_uptodate(info->tree_root->node) ||
+> -	    !extent_buffer_uptodate(info->dev_root->node) ||
+> -	    !extent_buffer_uptodate(info->chunk_root->node)) {
+> -		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
+> +	if (!extent_buffer_uptodate(info->tree_root->node)) {
+> +		fprintf(stderr, "Critical root (tree_root) corrupted, unable to continue\n");
+> +		ret = -EIO;
+> +		goto close_out;
+> +	}
+> +	if (!extent_buffer_uptodate(info->dev_root->node)) {
+> +		fprintf(stderr, "Critical root (dev_root) corrupted, unable to continue\n");
+> +		ret = -EIO;
+> +		goto close_out;
+> +	}
+> +	if(!extent_buffer_uptodate(info->chunk_root->node)) {
+> +		fprintf(stderr, "Critical root (chunk_root) corrupted, unable to continue\n");
+>   		ret = -EIO;
+>   		goto close_out;
+>   	}
+> @@ -6959,10 +6967,10 @@ int cmd_check(int argc, char **argv)
+>   		}
+>   
+>   		if (init_csum_tree) {
+> -			fprintf(stderr, "Reinit crc root\n");
+> +			fprintf(stderr, "Reinitialize csum_root\n");
+>   			ret = btrfs_fsck_reinit_root(trans, info->csum_root, 0);
+>   			if (ret) {
+> -				fprintf(stderr, "crc root initialization failed\n");
+> +				fprintf(stderr, "ERROR: csum_root initialization failed\n");
+>   				ret = -EIO;
+>   				goto close_out;
+>   			}
+> @@ -6976,12 +6984,12 @@ int cmd_check(int argc, char **argv)
+>   			goto close_out;
+>   	}
+>   	if (!extent_buffer_uptodate(info->extent_root->node)) {
+> -		fprintf(stderr, "Critical roots corrupted, unable to fsck the FS\n");
+> +		fprintf(stderr, "Critical root (extent_root) corrupted, unable to continue\n");
+>   		ret = -EIO;
+>   		goto close_out;
+>   	}
+>   	if (!extent_buffer_uptodate(info->csum_root->node)) {
+> -		fprintf(stderr, "Checksum root corrupted, rerun with --init-csum-tree option\n");
+> +		fprintf(stderr, "Checksum root (csum_root) corrupted, unable to continue\n");
+>   		ret = -EIO;
+>   		goto close_out;
+>   	}
 

@@ -1,53 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f182.google.com ([209.85.220.182]:57337 "EHLO
-	mail-vc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753539AbaFDOIQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 10:08:16 -0400
-Received: by mail-vc0-f182.google.com with SMTP id id10so8681812vcb.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 07:08:15 -0700 (PDT)
+Received: from mout.kundenserver.de ([212.227.126.131]:55366 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752498AbaFDPG1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 11:06:27 -0400
+From: Arnd Bergmann <arnd@arndb.de>
+To: "Joseph S. Myers" <joseph@codesourcery.com>
+Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
+Date: Wed, 4 Jun 2014 17:05:27 +0200
+Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        john.stultz@linaro.org, hch@infradead.org, tglx@linutronix.de,
+        geert@linux-m68k.org, lftan@altera.com, hpa@zytor.com,
+        linux-fsdevel@vger.kernel.org, ceph-devel@vger.kernel.org,
+        cluster-devel@redhat.com, coda@cs.cmu.edu,
+        codalist@TELEMANN.coda.cs.cmu.edu, fuse-devel@lists.sourceforge.net,
+        linux-afs@lists.infradead.org, linux-btrfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
+        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        linux-scsi@vger.kernel.org, logfs@logfs.org,
+        ocfs2-devel@oss.oracle.com, reiserfs-devel@vger.kernel.org,
+        samba-technical@lists.samba.org, xfs@oss.sgi.com
+References: <1401480116-1973111-1-git-send-email-arnd@arndb.de> <4233989.Saca0ocOUr@wuerfel> <Pine.LNX.4.64.1406022044090.27099@digraph.polyomino.org.uk>
+In-Reply-To: <Pine.LNX.4.64.1406022044090.27099@digraph.polyomino.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <16894659.LPcZdlAJqm@xev>
-References: <20140604111916.GB1657@mars>
-	<16894659.LPcZdlAJqm@xev>
-Date: Wed, 4 Jun 2014 15:08:15 +0100
-Message-ID: <CAMU1PDg=mw7V5WkmNDOhtCHsD=H+gS8WWSGDRzXHTYBtwY-2GQ@mail.gmail.com>
-Subject: Re: Partition tables / Output of parted
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
-To: russell@coker.com.au
-Cc: Stefan Malte Schumacher <s.schumacher@netcologne.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201406041705.27599.arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4 June 2014 14:30, Russell Coker <russell@coker.com.au> wrote:
-> On Wed, 4 Jun 2014 13:19:16 Stefan Malte Schumacher wrote:
->> I have created multiple filesystems with btrfs, in all cases directly
->> on the devices themself without creating partitions beforehand.
->
-> I do that sometimes, it works well.  I've done the same thing with Ext2/3 in
-> the past as well, it's no big deal.
->
->> Now,
->> if I open the disks containing the multi-device filesystem in parted
->> it outputs the partion table as loop and shows one partition with
->> btrfs which covers the whole disk.
->
-> http://lists.alioth.debian.org/pipermail/parted-devel/2009-May/002840.html
->
-> A Google search on "Partition Table: loop" turned up the above explanation as
-> the third result.
->
->> I am unsure how to interpret this output. Two possible explanations
->> come to mind: a) Btrfs does create partitions, but only if a filesystem
->> spans multiple devices or b) the output of parted is faulty and no actual
->> partition is created in both cases.
->
-> BTRFS doesn't create partitions.
+On Monday 02 June 2014, Joseph S. Myers wrote:
+> On Mon, 2 Jun 2014, Arnd Bergmann wrote:
+> 
+> > Ok. Sorry about missing linux-api, I confused it with linux-arch, which
+> > may not be as relevant here, except for the one question whether we
+> > actually want to have the new ABI on all 32-bit architectures or only
+> > as an opt-in for those that expect to stay around for another 24 years.
+> 
+> For glibc I think it will make the most sense to add the support for 
+> 64-bit time_t across all architectures that currently have 32-bit time_t 
+> (with the new interfaces having fallback support to implementation in 
+> terms of the 32-bit kernel interfaces, if the 64-bit syscalls are 
+> unavailable either at runtime or in the kernel headers against which glibc 
+> is compiled - this fallback code will of course need to check for overflow 
+> when passing a time value to the kernel, hopefully with error handling 
+> consistent with whatever the kernel ends up doing when a filesystem can't 
+> support a timestamp).  If some architectures don't provide the new 
+> interfaces in the kernel then that will mean the fallback code in glibc 
+> can't be removed until glibc support for those architectures is removed 
+> (as opposed to removing it when glibc no longer supports kernels predating 
+> the kernel support).
 
-c) Parted (libparted) is merely displaying a pretend loop partition
-table as a way to represent the situation of a file system covering
-the whole disk in it's view of the world where all disks have a
-partition table.
+Ok, that's a good reason to just provide the new interfaces on all
+architectures right away. Thanks for the insight!
 
-Mike
+	Arnd

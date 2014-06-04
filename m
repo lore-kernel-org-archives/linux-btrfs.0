@@ -1,73 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52972 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62054 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751963AbaFDFui convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 01:50:38 -0400
-Message-ID: <538EB3EB.2080309@cn.fujitsu.com>
-Date: Wed, 4 Jun 2014 13:51:39 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	with ESMTP id S1751500AbaFDJQr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 05:16:47 -0400
+Message-ID: <538EE31B.8080701@cn.fujitsu.com>
+Date: Wed, 4 Jun 2014 17:12:59 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Karel Zak <kzak@redhat.com>
-Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device add/remove.
-References: <1397638952-16691-1-git-send-email-quwenruo@cn.fujitsu.com> <20140529124308.GA29992@twin.jikos.cz>
-In-Reply-To: <20140529124308.GA29992@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: "linux-btrfs@vger.kernel.org Btrfs" <linux-btrfs@vger.kernel.org>
+CC: "dsterba@suse.cz Sterba" <dsterba@suse.cz>,
+        Anand Jain <Anand.Jain@oracle.com>
+Subject: Race condition between btrfs and udev
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Originally this problem was reproduced by the following scripts:
 
--------- Original Message --------
-Subject: Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device 
-add/remove.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年05月29日 20:43
-> On Wed, Apr 16, 2014 at 05:02:32PM +0800, Qu Wenruo wrote:
->> @@ -1704,10 +1720,14 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->>   
->>   	ret = 0;
->>   
->> -	/* Notify udev that device has changed */
->> -	if (bdev)
->> +	if (bdev) {
->> +		/* Notify udev that device has changed */
->>   		btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
->>   
->> +		/* Update ctime/mtime for device path for libblkid */
->> +		update_dev_time(device_path);
-> The change on the device comes after the uevent notification, is it
-> possible that the event is delivered and processed before the device
-> times are updated? I would say so.
-If I understand the udev thing right, uevent notification is sent to 
-udevd and udevd process the notification.
-For btrfs_rm_device(), it will send KOBJ_CHANGE uevent to udevd, and 
-udevd will *update* the ctime/mtime in /dev.
+# dd if=/dev/zero of=data bs=1M  count=50
+# losetup /dev/loop1 data
+# i=1
+# while [ 1 ]
+    do
+            mkfs.btrfs -fK /dev/loop1 >& /dev/null || exit 1
+            i++
+            echo "loop $i"
+    done
 
-But the problems is, there is a time lag between uevent sending and 
-udevd updating the ctime/mtime,
-which makes the ctime/mtime updating later than next 'btrfs dev scan' 
-commands.
-Since the ctime/mtime is not changed, libblkid used by 'btrfs dev scan' 
-will still consider the removed disk as btrfs,
-causing the bug I reported.
+Further, a easy way to trigger this problem is by running the followng c 
+codes repeatedly:
 
-IMO the best method to deal the bug is to wait udevd processing the 
-uevent, but unfortunately, we can't even guarantee
-that there is a udevd processing the uevent(like some embedded system 
-without udevd).
+int main(int argc, char **argv)
+{
 
-So I use update_dev_time() as a workaround, which provide a completely 
-synchronize method to update device file ctime/mtime.
-And even the uevent is processed before the update_dev_time(), it makes 
-no harm except a new ctime/mtime.
+         int fd = open(argv[1], O_RDWR | O_EXCL);
+         if (fd < 0) {
+                 perror("fail to open");
+                 exit(1);
+         }
+         close(fd);
+         return 0;
+}
+here @argv[1] needs a btrfs block device.
+
+So the problem is RW opening would trigger udev event which will call 
+btrfs_scan_one_device()
+In btrfs_scan_one_device(), it would open the block device with EXCL 
+flag...meanwhile if another
+program try to open that device with O_EXCL, it would fail with EBUSY....
+
+I don't know whether this is a serious problem, now there are two places 
+in btrfs-progs that is
+trying to open device with O_EXCL:
+
+1. in utils.c: test_dev_for_mkfs()
+2. in disk-io.c: __open_ctree_fd()
+
+Any ideas on this? maybe we can remove @EXCL flag from btrfs-progs?
 
 Thanks,
-Qu
->
->> +	}
->> +
->>   error_brelse:
->>   	brelse(bh);
->>   	if (bdev)
+Wang
 

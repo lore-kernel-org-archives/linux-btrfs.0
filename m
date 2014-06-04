@@ -1,73 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47988 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752534AbaFDNPQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jun 2014 09:15:16 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WsB2A-0002Vc-94
-	for linux-btrfs@vger.kernel.org; Wed, 04 Jun 2014 15:15:14 +0200
-Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 15:15:14 +0200
-Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jun 2014 15:15:14 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: What to do about snapshot-aware defrag
-Date: Wed, 04 Jun 2014 14:15:01 +0100
-Message-ID: <lmn64l$s0g$1@ger.gmane.org>
-References: <5388ED6B.8000706@fb.com> <lmav1p$ih7$1@ger.gmane.org> <538C7A79.8070407@fb.com> <lmln77$ee0$1@ger.gmane.org> <m49fvjlghh2.fsf@coffee.modeemi.fi>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <m49fvjlghh2.fsf@coffee.modeemi.fi>
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:33362 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752886AbaFDNar (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 09:30:47 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Stefan Malte Schumacher <s.schumacher@netcologne.de>
+Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Partition tables / Output of parted
+Date: Wed, 04 Jun 2014 23:30:43 +1000
+Message-ID: <16894659.LPcZdlAJqm@xev>
+In-Reply-To: <20140604111916.GB1657@mars>
+References: <20140604111916.GB1657@mars>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/06/14 10:19, Erkki Seppala wrote:
-> Martin <m_btrfs@ml1.co.uk> writes:
-> 
->> The *ONLY* application that I know of that uses atime is Mutt and then
->> *only* for mbox files!...
-> 
-> However, users, such as myself :), can be interested in when a certain
-> file has been last accessed. With snapshots I can even get an idea of
-> all the times the file has been accessed.
-> 
->> *And go KISS and move on faster* better?
-> 
-> Well, it in uncertain to me if it truly is better that btrfs would after
-> that point no longer truly even support atime, if using it results in
-> blowing up snapshot sizes. They might at that point even consider just
-> using LVM2 snapshots (shudder) ;).
+On Wed, 4 Jun 2014 13:19:16 Stefan Malte Schumacher wrote:
+> I have created multiple filesystems with btrfs, in all cases directly
+> on the devices themself without creating partitions beforehand.
 
-Not quite... My emphasis is:
+I do that sometimes, it works well.  I've done the same thing with Ext2/3 in 
+the past as well, it's no big deal.
 
+> Now,
+> if I open the disks containing the multi-device filesystem in parted
+> it outputs the partion table as loop and shows one partition with
+> btrfs which covers the whole disk.
 
-1:
+http://lists.alioth.debian.org/pipermail/parted-devel/2009-May/002840.html
 
-Go KISS for the defrag and accept that any atime use will render the
-defrag ineffective. Give a note that the noatime mount option should be
-used.
+A Google search on "Partition Table: loop" turned up the above explanation as 
+the third result.
 
+> I am unsure how to interpret this output. Two possible explanations
+> come to mind: a) Btrfs does create partitions, but only if a filesystem
+> spans multiple devices or b) the output of parted is faulty and no actual
+> partition is created in both cases.
 
-2:
+BTRFS doesn't create partitions.
 
-Consider using noatime as a /default/ being as there are no known
-'must-use' use cases. Those users still wanting atime can add that as a
-mount option with the note that atime use reduces the snapshot defrag
-effectiveness.
-
-
-(The "for/against atime" is a good subject for another thread!)
-
-
-Go fast KISS!
-
-Regards,
-Martin
-
-
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

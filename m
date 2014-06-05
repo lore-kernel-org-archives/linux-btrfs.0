@@ -1,60 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mari.romanrm.net ([157.7.203.202]:42986 "EHLO mari.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752015AbaFEPLv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jun 2014 11:11:51 -0400
-Date: Thu, 5 Jun 2014 21:11:44 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: Marc MERLIN <marc@merlins.org>
-Cc: =?UTF-8?B?U3fDom1p?= Petaramesh <swami@petaramesh.org>,
-        linux-btrfs@vger.kernel.org
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:41351 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751065AbaFEPOg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 11:14:36 -0400
+Received: from mfilter7-d.gandi.net (mfilter7-d.gandi.net [217.70.178.136])
+	by relay5-d.mail.gandi.net (Postfix) with ESMTP id A141F41C086
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2014 17:14:34 +0200 (CEST)
+Received: from relay5-d.mail.gandi.net ([217.70.183.197])
+	by mfilter7-d.gandi.net (mfilter7-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id 4FB7+Ga-hN4V for <linux-btrfs@vger.kernel.org>;
+	Thu,  5 Jun 2014 17:14:33 +0200 (CEST)
+Received: from zafu.localnet (dhcp231.cr2i.univ-montp2.fr [162.38.105.231])
+	(Authenticated sender: michel@bouissou.net)
+	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 0DF7141C05D
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Jun 2014 17:14:32 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Using BTRFS on SSD now ?
-Message-ID: <20140605211144.5541fe9c@natsu>
-In-Reply-To: <20140605145632.GD14713@merlins.org>
-References: <2215647.hErg5R77lo@zafu>
-	<20140605145632.GD14713@merlins.org>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/31CN0tu/ZxLBdAO/jLHbV0Y"; protocol="application/pgp-signature"
+Date: Thu, 05 Jun 2014 17:14:29 +0200
+Message-ID: <1493894.GW2nr4reAA@zafu>
+In-Reply-To: <1693566.Q9bXme5jtu@xev>
+References: <2215647.hErg5R77lo@zafu> <1693566.Q9bXme5jtu@xev>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/31CN0tu/ZxLBdAO/jLHbV0Y
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Thanks for the reply Russell :-)
 
-On Thu, 5 Jun 2014 07:56:32 -0700
-Marc MERLIN <marc@merlins.org> wrote:
+Le vendredi 6 juin 2014 00:42:12 Russell Coker a écrit :
+> 
+> Also I think that laptops tend to have less use than workstations, so unless
+> your laptop is your main desktop system it should get less disk use than a
+> typical workstation.
 
-> However SSDs, especially at least earlier models of the one you got, still
-> randomly die, and take your data with them.
+My laptop (+ docking station) is going to be my daily main machine...
 
-Yeah, a PSA of sorts: take whatever SSDs you have and use, and go to the
-manufacturer's website (right *NOW* :) to check if they have a newer firmwa=
-re,
-or to ensure that you have the latest version. There are such horrible bugs
-being found and fixed in those, that upgrading the firmware is absolutely *=
-not*
-the case of "if it's not broken, don't fix it". Also your SSD may gain nice=
-ties
-such as a working TRIM support (that was sometimes disabled/broken in earli=
-er
-releases).
+> I don't believe that LVM offers any benefit if you use BTRFS.
 
---=20
-With respect,
-Roman
+BTRFS cannot handle swap. A full disk encryption needs the swap to be 
+encrypted as well. The only solution for getting both the swap and filesystems 
+encrypted using the same key is to put both of them on an LVM itself luks-
+encrypted using dm-crypt.
 
---Sig_/31CN0tu/ZxLBdAO/jLHbV0Y
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+All my machines have been made this way for *years*, so I know it works damn 
+well ;-)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+...And it also allows for hibernateing the system to (encrypted) swap space...
 
-iEYEARECAAYFAlOQiLAACgkQTLKSvz+PZwhXPwCaAruBU26bcbyPuzrHUBP0TCln
-pssAn3obo4ljWg202XyNJZoAzGLXm+qX
-=3RQw
------END PGP SIGNATURE-----
+That's a pretty fine setup :-)
 
---Sig_/31CN0tu/ZxLBdAO/jLHbV0Y--
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

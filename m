@@ -1,84 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:54647 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751221AbaFEQSJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 12:18:09 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
+Received: from magic.merlins.org ([209.81.13.136]:55381 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751000AbaFEQ0r (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 12:26:47 -0400
+Date: Thu, 5 Jun 2014 09:26:46 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Using BTRFS on SSD now ?
-Date: Thu, 05 Jun 2014 18:17:54 +0200
-Message-ID: <3972210.UmLM5TcfW1@merkaba>
-In-Reply-To: <2215647.hErg5R77lo@zafu>
-References: <2215647.hErg5R77lo@zafu>
+Message-ID: <20140605162646.GF14713@merlins.org>
+References: <2215647.hErg5R77lo@zafu> <1693566.Q9bXme5jtu@xev> <1493894.GW2nr4reAA@zafu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1493894.GW2nr4reAA@zafu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 5. Juni 2014, 15:30:26 schrieb Swâmi Petaramesh:
-> Hi,
+On Thu, Jun 05, 2014 at 05:14:29PM +0200, Swâmi Petaramesh wrote:
+> > your laptop is your main desktop system it should get less disk use than a
+> > typical workstation.
 > 
-> I just received a new laptop with a Micron 256GB SSD, and I plan to install 
-> Fedora 20 onto it.
+> My laptop (+ docking station) is going to be my daily main machine...
+ 
+My laptop is my workstation, it's running almost 24/7 on SSD with btrfs.
+The main thing is having a good SSD (right now Samsung 840 EVO 1TB for me).
+
+See:
+http://marc.merlins.org/perso/linux/post_2012-08-15_The-tale-of-SSDs_-Crucial-C300-early-Death_-Samsung-830-extreme-random-IO-slowness_-and-settling-with-OCZ-Vertex-4.html
+
+> > I don't believe that LVM offers any benefit if you use BTRFS.
 > 
-> I'm considering either BTRFS or ext4 (over LUKS-encrypted LVM) for this 
-> machine, but I'm afraid BTRFS might generate too much writes and shorten
-> the  SSD lifespan... Or am I mistaken ?
+> BTRFS cannot handle swap. A full disk encryption needs the swap to be 
+> encrypted as well. The only solution for getting both the swap and filesystems 
+> encrypted using the same key is to put both of them on an LVM itself luks-
+> encrypted using dm-crypt.
 
-Relax.
+Not at all.
+Again, you really want to avoid the LVM layer. It will only make things
+slower.
+This is my drive with encrypted swap
+Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *        2048     1050623      524288   83  Linux
+/dev/sda2         1050624    42993663    20971520   83  Linux
+/dev/sda3       105908224   139462655    16777216   82  Linux swap / Solaris
+/dev/sda4       139462656  1953525167   907031256   83  Linux
 
-I don´t know why you come to the conclusion BTRFS would create more writes
-than other filesystems, but here are facts:
+See
+https://btrfs.wiki.kernel.org/index.php/SysadminGuide#btrfs_on_top_of_dmcrypt
+and solutions like
+https://github.com/gebi/keyctl_keyscript
 
-BTRFS on Intel SSD 320, since about month or so as RAID 1 on Intel SSD 320
-and Crucial m5 mSATA. BTRFS on Intel SSD 320 since I think a bit more than
-three years for now.
+> All my machines have been made this way for *years*, so I know it works damn 
+> well ;-)
 
-SMART Attributes Data Structure revision number: 5
-Vendor Specific SMART Attributes with Thresholds:
-ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
-  3 Spin_Up_Time            0x0020   100   100   000    Old_age   Offline      -       0
-  4 Start_Stop_Count        0x0030   100   100   000    Old_age   Offline      -       0
-  5 Reallocated_Sector_Ct   0x0032   100   100   000    Old_age   Always       -       0
-  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       10289
- 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       2797
-170 Reserve_Block_Count     0x0033   100   100   010    Pre-fail  Always       -       0
-171 Program_Fail_Count      0x0032   100   100   000    Old_age   Always       -       0
-172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       169
-183 Runtime_Bad_Block       0x0030   100   100   000    Old_age   Offline      -       1
-184 End-to-End_Error        0x0032   100   100   090    Old_age   Always       -       0
-187 Reported_Uncorrect      0x0032   100   100   000    Old_age   Always       -       0
-192 Unsafe_Shutdown_Count   0x0032   100   100   000    Old_age   Always       -       241
-199 UDMA_CRC_Error_Count    0x0030   100   100   000    Old_age   Offline      -       0
-225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       449085
-226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       2204365
-227 Workld_Host_Reads_Perc  0x0032   100   100   000    Old_age   Always       -       49
-228 Workload_Minutes        0x0032   100   100   000    Old_age   Always       -       13212562
-232 Available_Reservd_Space 0x0033   100   100   010    Pre-fail  Always       -       0
-233 Media_Wearout_Indicator 0x0032   099   099   000    Old_age   Always       -       0
-241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       449085
-242 Host_Reads_32MiB        0x0032   100   100   000    Old_age   Always       -       1144183
-
-
-Media Wearout Indicator was 100 initially, now is 99. Thus the SSDs considers
-itself to be basically new. Use search machine to find PDF of Intel about
-that value.
-
-And 449085 32 MiB Host Writes with KDE session, desktop search Nepomuk, now
-Baloo, Akonadi setups with insanely sized mailbox and what not. Thats:
-
-irb(main):027:0> 449085 * 32 / 1024.0 / 1024.0
-=> 13.704986572265625
-
-13,7 TiB. This Intel SSD is specced for a useful life of 5 years with 20 GB
-host writes *each day*. Thats about 7 TiB per year, even if you use 1000 as
-base here. 3 years * 7 TiB = 21 TiB.
-
-
-So look at your SSD endurance specification and then just relax :)
-
-Ciao,
+I've used LVM for years too, it makes things slower and less reliable.
+ 
+Marc
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

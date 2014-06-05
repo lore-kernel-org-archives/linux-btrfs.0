@@ -1,31 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39008 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751437AbaFDQoj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jun 2014 12:44:39 -0400
-Date: Wed, 4 Jun 2014 18:44:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christian Hesse <mail@eworm.de>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/1] btrfs-progs: fix compiler warning
-Message-ID: <20140604164437.GA1903@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1401794959-25907-1-git-send-email-mail@eworm.de>
- <538EC135.6060105@cn.fujitsu.com>
- <20140604091926.37ad5ef2@leda.localdomain>
+Received: from cn.fujitsu.com ([59.151.112.132]:11405 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751409AbaFECH4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 22:07:56 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5527rf4016987
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Jun 2014 10:07:53 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs: replace EINVAL with EOPNOTSUPP for dev_replace raid56
+Date: Thu, 5 Jun 2014 10:02:51 +0800
+Message-ID: <1401933772-23447-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140604091926.37ad5ef2@leda.localdomain>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 04, 2014 at 09:19:26AM +0200, Christian Hesse wrote:
-> > It seems to be related to default gcc flags from distribution?
-> 
-> Probably. I did compile with optimization, so adding -O2 may do the trick:
-> 
-> make CFLAGS="${CFLAGS} -O2" all
+To return EOPNOTSUPP is more user friendly than to return EINVAL,
+and then user-space tool will show that the dev_replace operation
+for raid56 is not currently supported rather than showing that
+there is an invalid argument.
 
-The warning appears with -O2, so the question is if gcc is not able to
-reason about the values (ie. a false positive) or if there's a bug that
-I don't see.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/dev-replace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 9f22905..2af6e66 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -313,7 +313,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 
+ 	if (btrfs_fs_incompat(fs_info, RAID56)) {
+ 		btrfs_warn(fs_info, "dev_replace cannot yet handle RAID5/RAID6");
+-		return -EINVAL;
++		return -EOPNOTSUPP;
+ 	}
+ 
+ 	switch (args->start.cont_reading_from_srcdev_mode) {
+-- 
+1.8.1.4
+

@@ -1,51 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11405 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751591AbaFECH5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jun 2014 22:07:57 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5527tsP016994
-	for <linux-btrfs@vger.kernel.org>; Thu, 5 Jun 2014 10:07:55 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: show meaningful msgs for replace cmd upon raid56
-Date: Thu, 5 Jun 2014 10:02:52 +0800
-Message-ID: <1401933772-23447-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1401933772-23447-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1401933772-23447-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx.mylinuxtime.de ([148.251.109.235]:59918 "EHLO
+	mx.mylinuxtime.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751125AbaFEIOC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 04:14:02 -0400
+From: Christian Hesse <mail@eworm.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Christian Hesse <mail@eworm.de>
+Subject: [PATCH 1/1] btrfs-progs: fix compiler warning
+Date: Thu,  5 Jun 2014 10:13:39 +0200
+Message-Id: <1401956019-2175-1-git-send-email-mail@eworm.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This depends on the kernel patch:
-	[PATCH] btrfs:replace EINVAL with EOPNOTSUPP for dev_replace
+gcc 4.9.0 gives warnings about possibly uninitialized values when
+compiling with function inlining and optimization level two enabled
+(CFLAGS="-finline-functions -O2").
 
-This catches the EOPNOTSUPP and output msg that says dev_replace raid56
-is not currently supported. Note that the msg will only be shown when
-run dev_replace not in background.
+Initializing the values fixes the warning. Hope this is correct.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Christian Hesse <mail@eworm.de>
 ---
- cmds-replace.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ cmds-send.c   | 2 +-
+ send-stream.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 9eb981b..8b18110 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -301,6 +301,10 @@ static int cmd_start_replace(int argc, char **argv)
- 				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s, %s\n",
- 				path, strerror(errno),
- 				replace_dev_result2string(start_args.result));
-+
-+			if (errno == EOPNOTSUPP)
-+				fprintf(stderr, "WARNING: dev_replace cannot yet handle RAID5/RAID6\n");
-+
- 			goto leave_with_error;
- 		}
+diff --git a/cmds-send.c b/cmds-send.c
+index 1cd457d..0c3e96b 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -416,7 +416,7 @@ int cmd_send(int argc, char **argv)
+ 	u32 i;
+ 	char *mount_root = NULL;
+ 	char *snapshot_parent = NULL;
+-	u64 root_id;
++	u64 root_id = 0;
+ 	u64 parent_root_id = 0;
+ 	int full_send = 1;
+ 	int new_end_cmd_semantic = 0;
+diff --git a/send-stream.c b/send-stream.c
+index 88e18e2..54edafe 100644
+--- a/send-stream.c
++++ b/send-stream.c
+@@ -216,7 +216,7 @@ static int tlv_get_string(struct btrfs_send_stream *s, int attr, char **str)
+ {
+ 	int ret;
+ 	void *data;
+-	int len;
++	int len = 0;
+ 
+ 	TLV_GET(s, attr, &data, &len);
  
 -- 
-1.8.1.4
+2.0.0
 

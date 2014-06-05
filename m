@@ -1,44 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58470 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751125AbaFEIPK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jun 2014 04:15:10 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WsSpE-00039D-JX
-	for linux-btrfs@vger.kernel.org; Thu, 05 Jun 2014 10:15:04 +0200
-Received: from coffee.modeemi.fi ([130.230.72.140])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2014 10:15:04 +0200
-Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2014 10:15:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Erkki Seppala <flux-btrfs@inside.org>
-Subject: Re: Very slow filesystem
-Date: Thu, 05 Jun 2014 11:12:03 +0300
-Message-ID: <m491tv3hj1o.fsf@coffee.modeemi.fi>
-References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
-	<m498upbhj8f.fsf@coffee.modeemi.fi>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cn.fujitsu.com ([59.151.112.132]:12776 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750840AbaFEJcN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 05:32:13 -0400
+Message-ID: <1401958994.3962.2.camel@localhost.localdomain>
+Subject: Re: =?ISO-8859-1?Q?=B7=5Bping=5D=5BPATCH?= v3] lib: add size unit
+ t/p/e to memparse
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <akpm@linux-foundation.org>
+CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Date: Thu, 5 Jun 2014 17:03:14 +0800
+In-Reply-To: <1396428877-24089-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1396428877-24089-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Erkki Seppala <flux-btrfs@inside.org> writes:
+On Wed, 2014-04-02 at 16:54 +0800, Gui Hecheng wrote:
+> For modern filesystems such as btrfs, t/p/e size level operations
+> are common.
+> add size unit t/p/e parsing to memparse
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+> changelog
+> 	v1->v2: replace kilobyte with kibibyte, and others
+> 	v2->v3: add missing unit "bytes" in comment
+> ---
+>  lib/cmdline.c | 25 ++++++++++++++++++++-----
+>  1 file changed, 20 insertions(+), 5 deletions(-)
+> 
+> diff --git a/lib/cmdline.c b/lib/cmdline.c
+> index eb67911..511b9be 100644
+> --- a/lib/cmdline.c
+> +++ b/lib/cmdline.c
+> @@ -119,11 +119,17 @@ char *get_options(const char *str, int nints, int *ints)
+>   *	@retptr: (output) Optional pointer to next char after parse completes
+>   *
+>   *	Parses a string into a number.  The number stored at @ptr is
+> - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+> - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+> - *	1073741824).  If the number is suffixed with K, M, or G, then
+> - *	the return value is the number multiplied by one kilobyte, one
+> - *	megabyte, or one gigabyte, respectively.
+> + *	potentially suffixed with
+> + *	%K (for kibibytes, or 1024 bytes),
+> + *	%M (for mebibytes, or 1048576 bytes),
+> + *	%G (for gibibytes, or 1073741824 bytes),
+> + *	%T (for tebibytes, or 1099511627776 bytes),
+> + *	%P (for pebibytes, or 1125899906842624 bytes),
+> + *	%E (for exbibytes, or 1152921504606846976 bytes).
+> + *	If the number is suffixed with K, M, G, T, P, E, then
+> + *	the return value is the number multiplied by one kibibyte, one
+> + *	mebibyte, one gibibyte, one tebibyte, one pebibyte, one exbibyte,
+> + *	respectively.
+>   */
+>  
+>  unsigned long long memparse(const char *ptr, char **retptr)
+> @@ -133,6 +139,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+>  	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+>  
+>  	switch (*endptr) {
+> +	case 'E':
+> +	case 'e':
+> +		ret <<= 10;
+> +	case 'P':
+> +	case 'p':
+> +		ret <<= 10;
+> +	case 'T':
+> +	case 't':
+> +		ret <<= 10;
+>  	case 'G':
+>  	case 'g':
+>  		ret <<= 10;
 
-> If the number is hitting your seek rate (ie. 1/0.0075 for 7.5 ms seek =
-> 133), then fragmentation is sure to be blamed.
-
-Actually the number may very well be off by at least a factor of two (I
-tested that my device did 400 tps when I expected 200; perhaps bulk
-transfers cause more transactions than I expect), but it should be in
-the ballpark I think :).
-
--- 
-  _____________________________________________________________________
-     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
-    / /_ / // // /\ \/ /                                            \  /
-   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
 

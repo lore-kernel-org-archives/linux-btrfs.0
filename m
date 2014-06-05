@@ -1,47 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:62525 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751578AbaFEOvY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 10:51:24 -0400
-Received: by mail-pd0-f170.google.com with SMTP id g10so1186633pdj.15
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2014 07:51:24 -0700 (PDT)
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:12912 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751644AbaFEUIt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Jun 2014 16:08:49 -0400
+Received: from pps.filterd (m0044010 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s55K5XQq013590
+	for <linux-btrfs@vger.kernel.org>; Thu, 5 Jun 2014 13:08:49 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0a-00082601.pphosted.com with ESMTP id 1madf22tbp-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 05 Jun 2014 13:08:49 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't check nodes for extent items
+Date: Thu, 5 Jun 2014 16:08:45 -0400
+Message-ID: <1401998925-6179-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20140605144146.GC14713@merlins.org>
-References: <0f2f49c05a626f2f2e635a6db818e302@admin.virtall.com>
-	<20140605144146.GC14713@merlins.org>
-Date: Thu, 5 Jun 2014 21:51:23 +0700
-Message-ID: <CAG1y0sf8nGuhww7h4P+yGxOBVOV9aQRmLrUV3ZzZ2__5d3UYmw@mail.gmail.com>
-Subject: Re: latest btrfs-progs and asciidoc dependency
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Tomasz Chmielewski <tch@virtall.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 5, 2014 at 9:41 PM, Marc MERLIN <marc@merlins.org> wrote:
-> On Thu, Jun 05, 2014 at 12:52:04PM +0100, Tomasz Chmielewski wrote:
->> And it looks the dependency is ~1 GB of new packages? O_o
->
-> That seems painful, but at the same time, the alternative, nroff/troff sucks.
->
-> Part ofyour problem however seems to be runaway dependencies.
-> You are getting x11 and stuff like libdrm which clearly you shouldn't need.
-> If your disk space is more valuable than your time, I recommend you build
-> asciidoc yourself and you should hopefully end up with less.
->
-> Or you can also remove asciidoc from the makefile and read the raw files
-> which are readable.
+The backref code was looking at nodes as well as leaves when we tried to
+populate extent item entries.  This is not good, and although we go away with it
+for the most part because we'd skip where disk_bytenr != random_memory,
+sometimes random_memory would match and suddenly boom.  This fixes that problem.
+Thanks,
 
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/backref.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-... or try this
-
-# apt-get install --no-install-recommends asciidoc
-
-If that still doesn't work, AND you have lost of free time, AND
-familiar with debian packaging, then you can use latest available
-debian source, adapt it for latest version, and use opensuse build
-service to compile it.
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index f09aa18..84d0912 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -988,11 +988,12 @@ again:
+ 				goto out;
+ 		}
+ 		if (ref->count && ref->parent) {
+-			if (extent_item_pos && !ref->inode_list) {
++			if (extent_item_pos && !ref->inode_list &&
++			    ref->level == 0) {
+ 				u32 bsz;
+ 				struct extent_buffer *eb;
+ 				bsz = btrfs_level_size(fs_info->extent_root,
+-							info_level);
++							ref->level);
+ 				eb = read_tree_block(fs_info->extent_root,
+ 							   ref->parent, bsz, 0);
+ 				if (!eb || !extent_buffer_uptodate(eb)) {
 -- 
-Fajar
+1.8.3.1
+

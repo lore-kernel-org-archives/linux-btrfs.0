@@ -1,58 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39244 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:53761 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752117AbaFESNk convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751650AbaFESef convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jun 2014 14:13:40 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:65212 helo=[192.168.1.145])
+	Thu, 5 Jun 2014 14:34:35 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:65225 helo=[192.168.1.145])
 	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
 	(Exim 4.82)
 	(envelope-from <lists@colorremedies.com>)
-	id 1WscAU-001Uwb-F0
-	for linux-btrfs@vger.kernel.org; Thu, 05 Jun 2014 12:13:38 -0600
-Content-Type: text/plain; charset=US-ASCII
+	id 1WscUk-001gYA-BI
+	for linux-btrfs@vger.kernel.org; Thu, 05 Jun 2014 12:34:34 -0600
+Content-Type: text/plain; charset=windows-1252
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Using BTRFS on SSD now ?
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140605145632.GD14713@merlins.org>
-Date: Thu, 5 Jun 2014 12:13:37 -0600
-Message-Id: <FFF0E455-5905-47D4-A768-96CA2FEDF3B3@colorremedies.com>
-References: <2215647.hErg5R77lo@zafu> <20140605145632.GD14713@merlins.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <1493894.GW2nr4reAA@zafu>
+Date: Thu, 5 Jun 2014 12:34:33 -0600
+Message-Id: <9CF80319-DB4F-40A9-861D-86C23808EA5F@colorremedies.com>
+References: <2215647.hErg5R77lo@zafu> <1693566.Q9bXme5jtu@xev> <1493894.GW2nr4reAA@zafu>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jun 5, 2014, at 8:56 AM, Marc MERLIN <marc@merlins.org> wrote:
+On Jun 5, 2014, at 9:14 AM, Swâmi Petaramesh <swami@petaramesh.org> wrote:
+
+>> I don't believe that LVM offers any benefit if you use BTRFS.
 > 
-> compression: lzo, not zlib (zlib will slow down your SSD)
+> BTRFS cannot handle swap.
 
-I've had mixed results, where benchmarking suggests lzo is faster, but then zlib actually feels faster. For sure forced zlib compression can be dreadful, but I kinda expect that and therefore don't use it. These days I'm not using any compression. I think a lot of the benchmarks suggesting one way or the other are just the wrong benchmarks to look at for this sort of thing, as they aren't testing the actual workloads that are typical.
+Yes but Fedora's installer doesn't support swapfiles anyway. It only creates swap partitions (encrypted or not encrypted). And it does allow you to selectively only encrypt swap if you want.
 
+> A full disk encryption needs the swap to be 
+> encrypted as well.
 
+The Fedora installer will let you use regular partitions and encrypt them. LVM isn't necessary to achieve this.
 
-> snapshots:
-> http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-How-To-Setup-Netapp-Style-Snapshots
-> auto-defrag: not really (read the archives)
+> The only solution for getting both the swap and filesystems 
+> encrypted using the same key is to put both of them on an LVM itself luks-
+> encrypted using dm-crypt.
 
-Definitely there are some issues, it's probably why its not yet default. So I'd either not use it, or use it with the point of testing it to make it better.
+Why do they need to have the same key? The Fedora installer will let you do a Btrfs installation with swap as a separate partition, encrypt both partitions using one passphrase. Yes there are two LUKS device keys setup, but one passphrase unlocks both at the same time during boot.
 
+> All my machines have been made this way for *years*, so I know it works damn 
+> well ;-)
 
-> other options: leave default
-> add -o discard to mount options
+The Fedora installer won't even let you do this. Btrfs can't be put on LVM via anaconda.
 
-I disagree. The older the SSD almost certainly the worse its TRIM behavior will be, resulting in hangs possibly long hangs. There's a whole bunch of stuff written on lkml about non-queued TRIM ugliness. I think most users are better off issuing fstrim once a week until queued TRIM devices are in the wild and well tested.
+Best practices for SSDs has been to encrypt each LV separately because dmcrypt was one thread per logical device. For an SSD this can make a big difference because it's possible to pin that single encryption thread and turn it into a bottle neck. There are multithreaded dmcrypt patches but I have no idea if it's in mainline kernels and if it gets used by default.
 
-The one case were file system discard is useful is not so much to inform the physical device but the next lower layer logical block device like md raid or LVM thinp so that the right unused blocks are freed up.
 
 > 
-> Do not use LVM, it's totally unnecessary and will slow you down. Dmcrypt is
-> ok, however add discard to cryptsetup options too:
-> root2		 /dev/sda2		/pwd		luks,discard
+> …And it also allows for hibernateing the system to (encrypted) swap space...
 
-So again in this case I'd say don't use discard. Or at the very least, test it first. My SSD is reportedly not so bad in this regard, but I find even 2-3 second hang of *all* read/write events when deleting a bunch of files to be abhorrent. Some people report much, much longer delays as the SSD then also does immediate and aggressive GC.
+*shrug* that's hardware specific, whether it works or not. Right now hibernation in general, let alone encrypted, sucks on Linux right now. It and suspend are totally busted on all of my hardware right now, and forums are littered with people not able to get it to work, or having to become virtual experts getting it to work.
 
-I'd say, what slight additional wear occurs from not using discard, makes the SSD die sooner in order to justify getting a new SSD that maybe (?) doesn't have this problem anymore.
 
 Chris Murphy
 

@@ -1,75 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42397 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751376AbaFFG0K (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 02:26:10 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: levin.front@gmail.com
-Subject: [PATCH] Btrfs: fix leaf corruption after __btrfs_drop_extents
-Date: Fri,  6 Jun 2014 14:25:58 +0800
-Message-Id: <1402035958-30013-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11480 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750730AbaFFGhg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 02:37:36 -0400
+Message-ID: <1402036359.17740.33.camel@localhost.localdomain>
+Subject: Re: [PATCH] mount: add btrfs to mount.8
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: Karel Zak <kzak@redhat.com>
+CC: <util-linux@vger.kernel.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Fri, 6 Jun 2014 14:32:39 +0800
+In-Reply-To: <20140605080311.GW9000@x2.net.home>
+References: <1401933919-23608-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <20140605080311.GW9000@x2.net.home>
+Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Several reports about leaf corruption has been floating on the list, one of them
-points to __btrfs_drop_extents(), and we find that the leaf becomes corrupted
-after __btrfs_drop_extents(), it's really a rare case but it does exist.
+On Thu, 2014-06-05 at 10:03 +0200, Karel Zak wrote:
+> On Thu, Jun 05, 2014 at 10:05:19AM +0800, Gui Hecheng wrote:
+> > Based on Documentation/filesystems/btrfs.txt
+> > 
+> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> > ---
+> >  sys-utils/mount.8 | 186 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+> >  1 file changed, 186 insertions(+)
+> 
+>  Thanks, but I'm not sure this is the right way. It would be better to
+>  create BTRFS specific btrfs.5 man page and maintain it together with
+>  another BTRFS stuff rather then within util-linux. In the mount.8
+>  should be only a note about btrfs.5.
+> 
+>  My long time goal is to remove all FS specific sections (at least for
+>  mainstream filesystems) from mount.8, because we duplicate effort
+>  here. The primary and well maintained is usually kernel
+>  Documentation/filesystems/ and unfortunately FS developers don't care
+>  about mount.8 at all.
+> 
+>  The ideal solution would be to generate the FS man pages from kernel
+>  docs (for example from asciidoc etc.)
+> 
+>  See 6 years old discussions: http://marc.info/?t=122767310200002&r=1&w=2
+> 
+Hi Karel,
 
-The problem turns out to be btrfs_next_leaf() called in __btrfs_drop_extents().
+Thanks your comments. I do agree that this is *not* the best way. I
+think that your long time goal is really exciting to the FS developers.
 
-So in btrfs_next_leaf(), we release the current path to re-search the last key of
-the leaf for locating next leaf, and we've taken it into account that there might
-be balance operations between leafs during this 'unlock and re-lock' dance, so
-we check the path again and advance it if there are now more items available.
-But things are a bit different if that last key happens to be removed and balance
-gets a bigger key as the last one, and btrfs_search_slot will return it with
-ret > 0, IOW, nothing change in this leaf except the new last key, then we think
-we're okay because there is no more item balanced in, fine, we thinks we can
-go to the next leaf.
+But for now, there are btrfs *users* complaining that they cannot find
+any help by refering to the mount manpage when they want to mount their
+btrfs. Actually, not every btrfs user have the mood to check the
+Documentation/filesystems/btrfs.txt or anywhere else when they just want
+to use a simple mount cmd. 
 
-However, we should return that bigger key, otherwise we deserve leaf corruption,
-for example, in endio, skipping that key means that __btrfs_drop_extents() thinks
-it has dropped all extent matched the required range and finish_ordered_io can
-safely insert a new extent, but it actually doesn't and ends up a leaf
-corruption.
+I think that adding the btrfs stuff into mount.8 do a certain help to
+the common btrfs users. By the way, I've checked the recent commmits of
+util-linux tree and found that there are still enthusiastic contributers
+making really meaningful changes to the mount.8.
 
-This takes the special case into account.
+So, If it does not bother you much... 
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ctree.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+Our btrfs users are really looking forward to a more kind and helpful
+mount manpage for btrfs. And then they will feel really happy that they
+could mount their btrfs in various ways easily as they like *just as the
+ext4 users do*. And I think there are many btrfs developers who will be
+glad to continue helping correct the btrfs part.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 1bcfcdb..bbb256c 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5736,6 +5736,24 @@ again:
- 		ret = 0;
- 		goto done;
- 	}
-+	/*
-+	 * So the above check misses one case:
-+	 * - after releasing the path above, someone has removed the item that
-+	 *   used to be at the very end of the block, and balance between leafs
-+	 *   gets another one with bigger key.offset to replace it.
-+	 *
-+	 * This one should be returned as well, or we can get leaf corruption
-+	 * later(esp. in __btrfs_drop_extents()).
-+	 *
-+	 * And a bit more explanation about this check,
-+	 * with ret > 0, the key isn't found, the path points to the slot
-+	 * where it should be inserted, so the path->slots[0] item must be the
-+	 * bigger one.
-+	 */
-+	if (nritems > 0 && ret > 0 && path->slots[0] == nritems - 1) {
-+		ret = 0;
-+		goto done;
-+	}
- 
- 	while (level < BTRFS_MAX_LEVEL) {
- 		if (!path->nodes[level]) {
--- 
-1.8.1.4
+Thanks
+-Gui
+
+>     Karel
+> 
+
 

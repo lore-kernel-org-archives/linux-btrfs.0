@@ -1,91 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44680 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751609AbaFFUAL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Jun 2014 16:00:11 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wt0J7-0005Iz-O6
-	for linux-btrfs@vger.kernel.org; Fri, 06 Jun 2014 22:00:09 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 22:00:09 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 22:00:09 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Very slow filesystem
-Date: Fri, 6 Jun 2014 19:59:55 +0000 (UTC)
-Message-ID: <pan$8b124$462edb2f$89da01c1$20a210a8@cox.net>
-References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
-	<pan$765af$b28af9a8$903ce16b$940baf34@cox.net>
-	<CAEezp7sxyEP2Bmp9vWB843pb7VQvWyHmG+1uPU_Dk--hhu2LAw@mail.gmail.com>
-	<CAGqmi77dGTaZOT8u=XDMnYnDxhNoWhrhjZtHpD35OB28VvY8YQ@mail.gmail.com>
-	<pan$95296$7c52a8f8$5f80de1d$977b2dd9@cox.net>
-	<CAKcLGm8fFX-Hqz0iEgk2qtsUXrSNW=XsKMHiVWZvV4AoJCBGVQ@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:52306 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751877AbaFFUFn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 16:05:43 -0400
+Received: by mail-vc0-f174.google.com with SMTP id ik5so3690947vcb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 13:05:43 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20140607005317.077071e0@natsu>
+References: <20140606204009.261e8ec3@natsu>
+	<CAL3q7H7TD8FvFwVEx+A9ABEXhQW-C2yuNr6mga+XH9uMyMt+Qw@mail.gmail.com>
+	<CALOYprW2R7iN0j=M6py0pbOkibbyob5L7KXHtmT92-32wVYMdw@mail.gmail.com>
+	<20140607005317.077071e0@natsu>
+Date: Fri, 6 Jun 2014 21:05:42 +0100
+Message-ID: <CALOYprXzPMCGxmC5nwUiLAXSBXEBcPYwSkwKb_G2sNzapqvbxQ@mail.gmail.com>
+Subject: Re: btrfs module dependencies broken in 3.14?
+From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Filipe Manana <fdmanana@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mitch Harder posted on Fri, 06 Jun 2014 14:06:53 -0500 as excerpted:
+On 6 June 2014 19:53, Roman Mamedov <rm@romanrm.net> wrote:
+> On Fri, 6 Jun 2014 19:31:37 +0100
+> WorMzy Tykashi <wormzy.tykashi@gmail.com> wrote:
+>
+>> My solution was to write a patch for mkinitcpio (Arch initrd creation
+>> tool) [1] so that it explicitly adds the crc32c module to the initrd
+>> if btrfs is needed. I imagine it wouldn't be difficult to add the same
+>> logic to debian's initrd creation tool. IIRC it already does something
+>> similar in other cases where there's an invisible dependency like
+>> this.
+>
+> It was "visible" in 3.13, see the Debian bug link, there are modinfo of the
 
-> Every time you update your database, btrfs is going to update whichever
-> 128 KiB blocks need to be modified.
-> 
-> Even for a tiny modification, the new compressed block may be slightly
-> more or slightly less than 128 KiB.
+No, it wasn't -- libcrc32c is a different module. This confused me at
+first too. :)
 
-FWIW, I believe that's 128 KiB pre-compression.  And at least without 
-compress-force, btrfs will try the compression and if the compressed size 
-is larger than the uncompressed size, it simply won't compress that 
-block.  So 128 KiB is the largest amount of space that 128 KiB of data 
-could take with compression on, but it can be half that or less if the 
-compression happens to be good for that 128 KiB block.
+$ modinfo libcrc32c
+filename:       /lib/modules/3.15.0-rc8-mainline/kernel/lib/libcrc32c.ko.gz
+license:        GPL
+description:    CRC32c (Castagnoli) calculations
+author:         Clay Haapala <chaapala@cisco.com>
+depends:
+intree:         Y
+vermagic:       3.15.0-rc8-mainline SMP preempt mod_unload modversions
 
-> If you have a 1-2 GB database that is being updated with any frequency,
-> you can see how you will quickly end up with lots of metadata
-> fragmentation as well as inefficient data block utilization.
-> I think this will be the case even if you switch to NOCOW due to the
-> compression.
 
-That is one reason that, as I said, NOCOW turns off compression.  
-Compression simply doesn't work well with in-place updates, because as 
-you point out, the update may compress more or less well than the 
-original, and that won't work in-place.  So NOCOW turns off compression 
-to avoid the problem.  
+$ modinfo crc32c
+filename:
+/lib/modules/3.15.0-rc8-mainline/kernel/arch/x86/crypto/crc32c-intel.ko.gz
+alias:          crc32c-intel
+alias:          crc32c
+license:        GPL
+description:    CRC32c (Castagnoli) optimization using Intel Hardware.
+author:         Austin Zhang <austin.zhang@intel.com>, Kent Liu
+<kent.liu@intel.com>
+alias:          cpu:type:x86,ven*fam*mod*:feature:*0094*
+depends:
+intree:         Y
+vermagic:       3.15.0-rc8-mainline SMP preempt mod_unload modversions
+filename:
+/lib/modules/3.15.0-rc8-mainline/kernel/crypto/crc32c_generic.ko.gz
+softdep:        pre: crc32c
+alias:          crc32c
+license:        GPL
+description:    CRC32c (Castagnoli) calculations wrapper for lib/crc32c
+author:         Clay Haapala <chaapala@cisco.com>
+depends:
+intree:         Y
+vermagic:       3.15.0-rc8-mainline SMP preempt mod_unload modversions
 
-If its COW (that is, not NOCOW), then the COW-based out-of-place-updates 
-avoid the problem of fitting more data in the same space, because the new 
-write can take more space in the new location if it has to.
+Unfortunately, as you can see, libcrc32c doesn't depend on crc32c
+either, but this is covered up by initrd generating tools. See my
+patch above to see that mkinitcpio already had logic for libcrc32c. My
+post that Felipe linked to above has the code snippet that Debian's
+initramfs-tools uses to handle this. So before, when btrfs depended on
+libcrc32c, initrd creation tools automagically added crc32c as well.
 
-But you are correct that compression and large, frequently updated 
-databases don't play well together either.  Which is why turning off 
-compression when turning off COW isn't the big problem it would first 
-appear to be -- as it happens, the very same files where COW doesn't work 
-well, are also the ones where compression doesn't work well.
+> 3.13 and 3.14 modules compared side by side. I wonder is there really no way to
+> make it show up in the actual module dependencies as before?
+>
+> To me patching initrd creation tools to special-case "if btrfs then add crc32"
+> seems to be a really bizarre way of dealing with the issue.
 
-Similarly for checksumming.  When there are enough updates, in addition 
-to taking more time to calculate and write, checksumming simply invites 
-race conditions between the last then-valid checksum and the next update 
-invalidating it.  In addition, in many, perhaps most cases, the sorts of 
-apps that do constant internal updates, have already evolved their own 
-data integrity verification methods in ordered to cope with issues on the 
-after all way more common unverified filesystems, creating even more 
-possible race conditions and timing issues and making all that extra work 
-that btrfs normally does for verification unnecessary.  Trying to do all 
-that in-place due to NOCOW is a recipe for failure or insanity if not both
+I agree, it's a hacky workaround for a problem that shouldn't exist,
+but the only other solution (that I can see) would be to get crc32c to
+export a symbol that other modules can depend on. I don't know enough
+about kernel modules to say whether this is a good idea or not though.
 
-So when turning off COW, just turning off checksumming/verification and 
-compression along with it makes the most sense, and that's what btrfs 
-does.  To do otherwise is just asking for trouble, which is why you very 
-rarely see in-place-update-by-default filesystems offering either 
-transparent compression or data verification as features.
+>
+> --
+> With respect,
+> Roman
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Cheers,
 
+
+WorMzy

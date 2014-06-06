@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:43346 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751642AbaFFOgI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 10:36:08 -0400
-Received: by mail-wi0-f172.google.com with SMTP id ho1so1097157wib.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 07:36:06 -0700 (PDT)
+Received: from mail-we0-f170.google.com ([74.125.82.170]:65241 "EHLO
+	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750809AbaFFPMJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 11:12:09 -0400
+Received: by mail-we0-f170.google.com with SMTP id u57so3030747wes.15
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 08:12:08 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v2] Btrfs: make fsync work after cloning into a file
-Date: Fri,  6 Jun 2014 16:35:52 +0100
-Message-Id: <1402068952-10018-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v3] Btrfs: make fsync work after cloning into a file
+Date: Fri,  6 Jun 2014 17:12:01 +0100
+Message-Id: <1402071121-2282-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1402027551-9737-1-git-send-email-fdmanana@gmail.com>
 References: <1402027551-9737-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,11 +35,13 @@ V2: Factored out needed code from inode.c:btrfs_get_extent() into a
     avoiding some duplicated and non-trivial logic when populating
     an extent map from a file extent item.
 
+V3: Removed unused function parameter, leftover from V1.
+
  fs/btrfs/ctree.h     |  5 ++++
  fs/btrfs/file-item.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/inode.c     | 41 +++----------------------------
- fs/btrfs/ioctl.c     | 67 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 143 insertions(+), 38 deletions(-)
+ fs/btrfs/ioctl.c     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 141 insertions(+), 38 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
 index af523d6..a668fd9 100644
@@ -231,17 +233,16 @@ index 477e64a..7671cd9 100644
  not_found:
  	em->start = start;
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 44dcfd0..04216b6 100644
+index 44dcfd0..9334d50 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3043,6 +3043,57 @@ out:
+@@ -3043,6 +3043,56 @@ out:
  	return ret;
  }
  
 +static void clone_update_extent_map(struct inode *inode,
 +				    const struct btrfs_trans_handle *trans,
 +				    const struct btrfs_path *path,
-+				    const struct btrfs_key *key,
 +				    struct btrfs_file_extent_item *fi,
 +				    const u64 hole_offset,
 +				    const u64 hole_len)
@@ -292,7 +293,7 @@ index 44dcfd0..04216b6 100644
  /**
   * btrfs_clone() - clone a range from inode file to another
   *
-@@ -3361,8 +3412,19 @@ process_slot:
+@@ -3361,8 +3411,19 @@ process_slot:
  					    btrfs_item_ptr_offset(leaf, slot),
  					    size);
  				inode_add_bytes(inode, datal);
@@ -303,23 +304,22 @@ index 44dcfd0..04216b6 100644
 +			/* If we have an implicit hole (NO_HOLES feature). */
 +			if (drop_start < new_key.offset)
 +				clone_update_extent_map(inode, trans,
-+						path, NULL, NULL, drop_start,
++						path, NULL, drop_start,
 +						new_key.offset - drop_start);
 +
 +			clone_update_extent_map(inode, trans, path,
-+						&new_key, extent, 0, 0);
++						extent, 0, 0);
 +
  			btrfs_mark_buffer_dirty(leaf);
  			btrfs_release_path(path);
  
-@@ -3406,6 +3468,11 @@ process_slot:
+@@ -3406,6 +3467,10 @@ process_slot:
  		}
  		ret = clone_finish_inode_update(trans, inode, destoff + len,
  						destoff, olen);
 +		if (ret)
 +			goto out;
-+		clone_update_extent_map(inode, trans,
-+					path, NULL, NULL, last_dest_end,
++		clone_update_extent_map(inode, trans, path, NULL, last_dest_end,
 +					destoff + len - last_dest_end);
  	}
  

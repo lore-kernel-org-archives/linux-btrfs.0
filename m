@@ -1,60 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54333 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752291AbaFFBMh convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 21:12:37 -0400
-Message-ID: <539115C1.5020507@cn.fujitsu.com>
-Date: Fri, 6 Jun 2014 09:13:37 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: "Fajar A. Nugraha" <list@fajar.net>, Tomasz Chmielewski <tch@virtall.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: latest btrfs-progs and asciidoc dependency
-References: <0f2f49c05a626f2f2e635a6db818e302@admin.virtall.com>	<20140605144146.GC14713@merlins.org> <CAG1y0sf8nGuhww7h4P+yGxOBVOV9aQRmLrUV3ZzZ2__5d3UYmw@mail.gmail.com>
-In-Reply-To: <CAG1y0sf8nGuhww7h4P+yGxOBVOV9aQRmLrUV3ZzZ2__5d3UYmw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from userp1040.oracle.com ([156.151.31.81]:42397 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751376AbaFFG0K (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 02:26:10 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: levin.front@gmail.com
+Subject: [PATCH] Btrfs: fix leaf corruption after __btrfs_drop_extents
+Date: Fri,  6 Jun 2014 14:25:58 +0800
+Message-Id: <1402035958-30013-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Several reports about leaf corruption has been floating on the list, one of them
+points to __btrfs_drop_extents(), and we find that the leaf becomes corrupted
+after __btrfs_drop_extents(), it's really a rare case but it does exist.
 
--------- Original Message --------
-Subject: Re: latest btrfs-progs and asciidoc dependency
-From: Fajar A. Nugraha <list@fajar.net>
-To: Tomasz Chmielewski <tch@virtall.com>
-Date: 2014年06月05日 22:51
-> On Thu, Jun 5, 2014 at 9:41 PM, Marc MERLIN <marc@merlins.org> wrote:
->> On Thu, Jun 05, 2014 at 12:52:04PM +0100, Tomasz Chmielewski wrote:
->>> And it looks the dependency is ~1 GB of new packages? O_o
->> That seems painful, but at the same time, the alternative, nroff/troff sucks.
->>
->> Part ofyour problem however seems to be runaway dependencies.
->> You are getting x11 and stuff like libdrm which clearly you shouldn't need.
->> If your disk space is more valuable than your time, I recommend you build
->> asciidoc yourself and you should hopefully end up with less.
->>
->> Or you can also remove asciidoc from the makefile and read the raw files
->> which are readable.
->
-> ... or try this
->
-> # apt-get install --no-install-recommends asciidoc
->
-> If that still doesn't work, AND you have lost of free time, AND
-> familiar with debian packaging, then you can use latest available
-> debian source, adapt it for latest version, and use opensuse build
-> service to compile it.
->
-It seems to be distribution related problems. And I use debian seldom, 
-so I can't provide any help
-but such problem doesn't occur to me.
+The problem turns out to be btrfs_next_leaf() called in __btrfs_drop_extents().
 
-For my daily use distribution(Archlinux), asciidoc has python2,libxslt 
-and docbook-xsl as dependency.
-For my test environment distribution(RHEL7), I install xmlto by yum and 
-then I compile asciidoc manually.
+So in btrfs_next_leaf(), we release the current path to re-search the last key of
+the leaf for locating next leaf, and we've taken it into account that there might
+be balance operations between leafs during this 'unlock and re-lock' dance, so
+we check the path again and advance it if there are now more items available.
+But things are a bit different if that last key happens to be removed and balance
+gets a bigger key as the last one, and btrfs_search_slot will return it with
+ret > 0, IOW, nothing change in this leaf except the new last key, then we think
+we're okay because there is no more item balanced in, fine, we thinks we can
+go to the next leaf.
 
-Maybe dig more about the deb package things may help?
--If it does not help, a VM installed with Archlinux would be better?-
+However, we should return that bigger key, otherwise we deserve leaf corruption,
+for example, in endio, skipping that key means that __btrfs_drop_extents() thinks
+it has dropped all extent matched the required range and finish_ordered_io can
+safely insert a new extent, but it actually doesn't and ends up a leaf
+corruption.
 
-Thanks,
-Qu
+This takes the special case into account.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/ctree.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 1bcfcdb..bbb256c 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -5736,6 +5736,24 @@ again:
+ 		ret = 0;
+ 		goto done;
+ 	}
++	/*
++	 * So the above check misses one case:
++	 * - after releasing the path above, someone has removed the item that
++	 *   used to be at the very end of the block, and balance between leafs
++	 *   gets another one with bigger key.offset to replace it.
++	 *
++	 * This one should be returned as well, or we can get leaf corruption
++	 * later(esp. in __btrfs_drop_extents()).
++	 *
++	 * And a bit more explanation about this check,
++	 * with ret > 0, the key isn't found, the path points to the slot
++	 * where it should be inserted, so the path->slots[0] item must be the
++	 * bigger one.
++	 */
++	if (nritems > 0 && ret > 0 && path->slots[0] == nritems - 1) {
++		ret = 0;
++		goto done;
++	}
+ 
+ 	while (level < BTRFS_MAX_LEVEL) {
+ 		if (!path->nodes[level]) {
+-- 
+1.8.1.4
+

@@ -1,54 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60504 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752430AbaFFAfZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jun 2014 20:35:25 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Wsi7v-0000xN-2d
-	for linux-btrfs@vger.kernel.org; Fri, 06 Jun 2014 02:35:23 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 02:35:22 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 02:35:22 +0200
+Received: from aserp1040.oracle.com ([141.146.126.69]:36717 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752563AbaFFDYc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 23:24:32 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Using BTRFS on SSD now ?
-Date: Fri, 6 Jun 2014 00:35:08 +0000 (UTC)
-Message-ID: <pan$d0f6f$958f1e6e$ae08a321$8fc7bdc5@cox.net>
-References: <2215647.hErg5R77lo@zafu> <20140605145632.GD14713@merlins.org>
-	<FFF0E455-5905-47D4-A768-96CA2FEDF3B3@colorremedies.com>
-	<20140605190526.GS7210@merlins.org>
-	<pan$4b696$bb5c3db8$50f45a4e$fdad0f36@cox.net>
-	<yq14mzyzz6l.fsf@sermon.lab.mkp.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: dsterba@suse.cz, wangsl.fnst@cn.fujitsu.com, clm@fb.com, jbacik@fb.com,
+        quwenruo@cn.fujitsu.com
+Subject: [PATCH V3] Btrfs: device_list_add() should not update list when mounted
+Date: Fri,  6 Jun 2014 11:26:41 +0800
+Message-Id: <1402025201-17140-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin K. Petersen posted on Thu, 05 Jun 2014 19:58:26 -0400 as excerpted:
+(looks like there was some sendmail problem I don't see this in the btrfs list,
+sending again. sorry for multiple copies if any).
 
->>>>>> "Duncan" == Duncan  <1i5t5.duncan@cox.net> writes:
-> 
-> Duncan> OTOH, certain high-performance hardware goes beyond the current
-> Duncan> standard and does a queued trim, without forcing a flush of the
-> Duncan> queue in the process.  But this hardware tends to be rather rare
-> Duncan> and expensive,
-> 
-> Queued trim has started to appear in consumer SSDs. However, since we're
-> the only OS that supports it the feature has come off to a bumpy start.
-> We tried to enable it on a drive model that passed testing here but we
-> had to revert to unqueued when bug reports started rolling in this week.
+device_list_add() is called when user runs btrfs dev scan, which would add
+any btrfs device into the btrfs_fs_devices list.
 
-[more elided]
+Now think of a mounted btrfs. And a new device which contains the a SB
+from the mounted btrfs devices.
 
-Thanks. Fresher and better information than I had. =:^)
+In this situation when user runs btrfs dev scan, the current code would
+just replace existing device with the new device.
 
+Which is to note that old device is neither closed nor gracefully
+removed from the btrfs.
+
+The FS is still operational with the old bdev however the device name
+is the btrfs_device is new which is provided by the btrfs dev scan.
+
+reproducer:
+
+devmgt[1] detach /dev/sdc
+
+replace the missing disk /dev/sdc
+
+btrfs rep start -f 1 /dev/sde /btrfs
+Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+        Total devices 2 FS bytes used 32.00KiB
+        devid    1 size 958.94MiB used 115.88MiB path /dev/sde
+        devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+
+make /dev/sdc to reappear
+
+devmgt attach host2
+
+btrfs dev scan
+
+btrfs fi show -m
+Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120^M
+        Total devices 2 FS bytes used 32.00KiB^M
+        devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <- Wrong.
+        devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+
+since /dev/sdc has been replaced with /dev/sde, the /dev/sdc shouldn't be
+part of the btrfs-fsid when it reappears. If user want it to be part of it
+then sys admin should be using btrfs device add instead.
+
+[1] github.com/anajain/devmgt.git
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2->v3: simpler commit and comment message
+v1->v2: remove '---' in commit messages which conflict with git am
+
+ fs/btrfs/volumes.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bb2cd66..605d9ef 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -472,9 +472,12 @@ static noinline int device_list_add(const char *path,
+ 		device = __find_device(&fs_devices->devices, devid,
+ 				       disk_super->dev_item.uuid);
+ 	}
++
+ 	if (!device) {
+-		if (fs_devices->opened)
++		if (fs_devices->opened) {
++			printk(KERN_INFO "BTRFS: device list add failed, FS is open");
+ 			return -EBUSY;
++		}
+ 
+ 		device = btrfs_alloc_device(NULL, &devid,
+ 					    disk_super->dev_item.uuid);
+@@ -497,6 +500,34 @@ static noinline int device_list_add(const char *path,
+ 
+ 		device->fs_devices = fs_devices;
+ 	} else if (!device->name || strcmp(device->name->str, path)) {
++		/*
++		 * When FS is already mounted.
++		 * 1. If you are here and if the device->name is NULL that means
++		 *    this device was missing at time of FS mount.
++		 * 2. If you are here and if the device->name is different from 'path'
++		 *    that means either
++		 *      a. The same device disappeared and reappeared with different
++		 *         name. or
++		 *      b. The missing-disk-which-was-replaced, has reappeared now.
++		 *
++		 *  We must allow 1 and 2a above. But 2b would be a spurious and
++		 *  unintentional.
++		 *  Further in case of 1 and 2a above, the disk at 'path' would have
++		 *  missed some transaction when it was away and in case of 2a
++		 *  the stale bdev has to be updated as well.
++		 *  2b must not be allowed at all time.
++		 */
++
++		/*
++		 * As of now don't allow update to btrfs_fs_device through the
++		 * btrfs dev scan cli, after FS has been mounted.
++		 */
++
++		if (fs_devices->opened) {
++			printk(KERN_INFO "BTRFS: device list update failed, FS is open");
++			return -EBUSY;
++		}
++
+ 		name = rcu_string_strdup(path, GFP_NOFS);
+ 		if (!name)
+ 			return -ENOMEM;
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.0.0.153.g79dcccc
 

@@ -1,62 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mari.romanrm.net ([157.7.203.202]:43516 "EHLO mari.romanrm.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751818AbaFFSxZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Jun 2014 14:53:25 -0400
-Date: Sat, 7 Jun 2014 00:53:17 +0600
-From: Roman Mamedov <rm@romanrm.net>
-To: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-Cc: Filipe Manana <fdmanana@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs module dependencies broken in 3.14?
-Message-ID: <20140607005317.077071e0@natsu>
-In-Reply-To: <CALOYprW2R7iN0j=M6py0pbOkibbyob5L7KXHtmT92-32wVYMdw@mail.gmail.com>
-References: <20140606204009.261e8ec3@natsu>
-	<CAL3q7H7TD8FvFwVEx+A9ABEXhQW-C2yuNr6mga+XH9uMyMt+Qw@mail.gmail.com>
-	<CALOYprW2R7iN0j=M6py0pbOkibbyob5L7KXHtmT92-32wVYMdw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/i6yWROv/KjWEvEp_1_AGDF2"; protocol="application/pgp-signature"
+Received: from mail-ob0-f172.google.com ([209.85.214.172]:41987 "EHLO
+	mail-ob0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751856AbaFFTGx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 15:06:53 -0400
+Received: by mail-ob0-f172.google.com with SMTP id uy5so1352236obc.31
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 12:06:53 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$95296$7c52a8f8$5f80de1d$977b2dd9@cox.net>
+References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com>
+	<pan$765af$b28af9a8$903ce16b$940baf34@cox.net>
+	<CAEezp7sxyEP2Bmp9vWB843pb7VQvWyHmG+1uPU_Dk--hhu2LAw@mail.gmail.com>
+	<CAGqmi77dGTaZOT8u=XDMnYnDxhNoWhrhjZtHpD35OB28VvY8YQ@mail.gmail.com>
+	<pan$95296$7c52a8f8$5f80de1d$977b2dd9@cox.net>
+Date: Fri, 6 Jun 2014 14:06:53 -0500
+Message-ID: <CAKcLGm8fFX-Hqz0iEgk2qtsUXrSNW=XsKMHiVWZvV4AoJCBGVQ@mail.gmail.com>
+Subject: Re: Very slow filesystem
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/i6yWROv/KjWEvEp_1_AGDF2
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Thu, Jun 5, 2014 at 2:53 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Timofey Titovets posted on Thu, 05 Jun 2014 19:13:08 +0300 as excerpted:
+>
+>> 2014-06-05 18:52 GMT+03:00 Igor M <igork20@gmail.com>:
+>>> One more question. Is there any other way to find out file
+>>> fragmentation ?
+>>> I just copied 35Gb file on new btrfs filesystem (compressed) and
+>>> filefrag reports 282275 extents found. This can't be right ?
+>
+>> hes, because filefrag show compressed block (128kbite) as one extent.
+>
+> Correct.  Which is why my original answer had this:
+>
+>>>> While compression changes things up a bit (filefrag doesn't know
+>>>> how to deal with it yet and its report isn't reliable),
+>
+> I skipped over the "why" at the time as it wasn't necessary for the then-
+> current discussion, but indeed, the reason is because filefrag counts
+> each 128 KiB block as a separate fragment because it doesn't understand
+> them, and as a result, it's not (currently) usable for btrfs-compressed
+> files.
+>
 
-On Fri, 6 Jun 2014 19:31:37 +0100
-WorMzy Tykashi <wormzy.tykashi@gmail.com> wrote:
+In the context of a compressed database file, the 128 KiB compressed
+block size has more severe consequences.
 
-> My solution was to write a patch for mkinitcpio (Arch initrd creation
-> tool) [1] so that it explicitly adds the crc32c module to the initrd
-> if btrfs is needed. I imagine it wouldn't be difficult to add the same
-> logic to debian's initrd creation tool. IIRC it already does something
-> similar in other cases where there's an invisible dependency like
-> this.
+First, even if the 128 KiB blocks are contiguous, each 128 KiB block
+has it's own metadata entry.  So you already have much higher metadata
+utilization than without compression.  And the metadata can also get
+fragmented.
 
-It was "visible" in 3.13, see the Debian bug link, there are modinfo of the
-3.13 and 3.14 modules compared side by side. I wonder is there really no wa=
-y to
-make it show up in the actual module dependencies as before?
+Every time you update your database, btrfs is going to update
+whichever 128 KiB blocks need to be modified.
 
-To me patching initrd creation tools to special-case "if btrfs then add crc=
-32"
-seems to be a really bizarre way of dealing with the issue.
+Even for a tiny modification, the new compressed block may be slightly
+more or slightly less than 128 KiB.
 
---=20
-With respect,
-Roman
+If you have a 1-2 GB database that is being updated with any
+frequency, you can see how you will quickly end up with lots of
+metadata fragmentation as well as inefficient data block utilization.
+I think this will be the case even if you switch to NOCOW due to the
+compression.
 
---Sig_/i6yWROv/KjWEvEp_1_AGDF2
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlOSDh4ACgkQTLKSvz+PZwi+8gCgjhP4MnX+2VNaAXDSuKx5KWCs
-JHEAnj8yCzan4+y1oZ7/pkPFBfcHRXFO
-=Vr7/
------END PGP SIGNATURE-----
-
---Sig_/i6yWROv/KjWEvEp_1_AGDF2--
+On a very fundamental level, file system compression and large
+databases are two use cases that are difficult to reconcile.

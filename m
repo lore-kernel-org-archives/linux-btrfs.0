@@ -1,78 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:52815 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752299AbaFGC3M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 22:29:12 -0400
-Received: from xev.localnet (localhost [127.0.0.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 6D09220339
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Jun 2014 12:29:06 +1000 (EST)
-From: Russell Coker <russell@coker.com.au>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Reply-To: russell@coker.com.au
-Subject: Re: Very slow filesystem
-Date: Sat, 07 Jun 2014 12:29:05 +1000
-Message-ID: <1748350.S3klgLzlBt@xev>
-In-Reply-To: <CAKcLGm8fFX-Hqz0iEgk2qtsUXrSNW=XsKMHiVWZvV4AoJCBGVQ@mail.gmail.com>
-References: <CAEezp7uMXA3t8-GDVcVzx9An+hPBZmynYZ-wUXzhJuP93czs1w@mail.gmail.com> <pan$95296$7c52a8f8$5f80de1d$977b2dd9@cox.net> <CAKcLGm8fFX-Hqz0iEgk2qtsUXrSNW=XsKMHiVWZvV4AoJCBGVQ@mail.gmail.com>
+Received: from outrelay06.libero.it ([212.52.84.110]:55355 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752850AbaFGIVz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Jun 2014 04:21:55 -0400
+Message-ID: <5392CC86.3060009@libero.it>
+Date: Sat, 07 Jun 2014 10:25:42 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Christoph Anton Mitterer <calestyo@scientia.net>, kreijack@inwind.it
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: some project ideas: NFS4 ACLs, resilience on the same device,
+ allowing to specify which devices are "distinct" in a RAID
+References: <1401731056.4904.9.camel@heisenberg.scientia.net>	 <538DFFEB.105@libero.it> <1402104897.18904.12.camel@heisenberg.scientia.net>
+In-Reply-To: <1402104897.18904.12.camel@heisenberg.scientia.net>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 6 Jun 2014 14:06:53 Mitch Harder wrote:
-> Every time you update your database, btrfs is going to update
-> whichever 128 KiB blocks need to be modified.
+On 06/07/2014 03:34 AM, Christoph Anton Mitterer wrote:
+> On Tue, 2014-06-03 at 19:03 +0200, Goffredo Baroncelli wrote:
+>> There is (was ?) a project to address that: richacl
+>> http://www.bestbits.at/richacl/. This is not a btrfs project, but a
+>> linux kernel project because from a filesystem  POV the
+>> implementation requires to store some information in a extended
+>> attributes: the check is performed at the VFS level.
 > 
-> Even for a tiny modification, the new compressed block may be slightly
-> more or slightly less than 128 KiB.
+>>> Now one could create a RAID5 on them, but apparently sda1 and
+>>> sda2 are on the same disk... so I'd like a way to tell btrfs that
+>>> these are the "same" and not really that redundant.
+>> 
+>> Hugo Mill worked on something related to that [1]
+>> 
+>> [1] "Thoughts on RAID nomenclature"
+>> http://www.spinics.net/lists/linux-btrfs/msg33782.html
 > 
-> If you have a 1-2 GB database that is being updated with any
-> frequency, you can see how you will quickly end up with lots of
-> metadata fragmentation as well as inefficient data block utilization.
-> I think this will be the case even if you switch to NOCOW due to the
-> compression.
 > 
-> On a very fundamental level, file system compression and large
-> databases are two use cases that are difficult to reconcile.
+> Thanks for the info... should I put those 3 ideas to the 
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas page? Or is
+> that just meant to be edited by the developers?
+> 
 
-The ZFS approach of using a ZIL (write-back cache that caches before 
-allocation) and L2ARC (read-cache on SSD) mitigates these problems.  Samsung 
-1TB SSDs are $565 at my local computer store, if your database has a working 
-set of less than 2TB then SSDs with L2ARC should solve those performance 
-problems at low cost.  The vast majority of sysadmins have never seen a 
-database that's 2TB in size, let alone one with a 2TB working set.
+You can add new ideas to the wiki pages, supporting by link and other info were available. This is the real nature of the wiki pages.
 
-That said I've seen Oracle docs recommending against ZFS for large databases, 
-but the Oracle definition of "large database" is probably a lot larger than 
-anything that is likely to be stored on BTRFS in the near future.
+However I am still convinced richacl/nfs4 acl are not strictly related to a specific filesystem.
 
-Another thing to note is that there are a variety of ways of storing 
-compressed data in databases.  Presumably anyone who is storing so much data 
-that the working set exceeds the ability to attach lots of SSDs is going to be 
-using some form of compressed tables which will reduce the ability of 
-filesystem compression to do any good.
+BR
 
-On Fri, 6 Jun 2014 19:59:55 Duncan wrote:
-> Similarly for checksumming.  When there are enough updates, in addition 
-> to taking more time to calculate and write, checksumming simply invites 
-> race conditions between the last then-valid checksum and the next update 
-> invalidating it.  In addition, in many, perhaps most cases, the sorts of 
-> apps that do constant internal updates, have already evolved their own 
-> data integrity verification methods in ordered to cope with issues on the 
-> after all way more common unverified filesystems, creating even more 
-> possible race conditions and timing issues and making all that extra work 
-> that btrfs normally does for verification unnecessary.  Trying to do all 
-> that in-place due to NOCOW is a recipe for failure or insanity if not both
+> Cheers, Chris.
+> 
 
-http://www.strchr.com/crc32_popcnt
-
-The above URL has some interesting information about CRC32 speed.  In summary 
-if you have a Core i5 system then you are looking at less than a clock cycle 
-per byte on average.  So if your storage is capable of handling more than 
-4GB/s of data transfer then CRC32 might be a bottleneck.  But doing 4GB/s for 
-a database is a very different problem.
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

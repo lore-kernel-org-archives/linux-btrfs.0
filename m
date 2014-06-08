@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f170.google.com ([74.125.82.170]:65241 "EHLO
-	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750809AbaFFPMJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jun 2014 11:12:09 -0400
-Received: by mail-we0-f170.google.com with SMTP id u57so3030747wes.15
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Jun 2014 08:12:08 -0700 (PDT)
+Received: from mail-we0-f173.google.com ([74.125.82.173]:57564 "EHLO
+	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752837AbaFHLNY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 07:13:24 -0400
+Received: by mail-we0-f173.google.com with SMTP id u57so4593648wes.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Jun 2014 04:13:22 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH v3] Btrfs: make fsync work after cloning into a file
-Date: Fri,  6 Jun 2014 17:12:01 +0100
-Message-Id: <1402071121-2282-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v4] Btrfs: make fsync work after cloning into a file
+Date: Sun,  8 Jun 2014 13:13:12 +0100
+Message-Id: <1402229592-31366-1-git-send-email-fdmanana@gmail.com>
 In-Reply-To: <1402027551-9737-1-git-send-email-fdmanana@gmail.com>
 References: <1402027551-9737-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -37,11 +37,13 @@ V2: Factored out needed code from inode.c:btrfs_get_extent() into a
 
 V3: Removed unused function parameter, leftover from V1.
 
+V4: Simplified some code in mapping from file extent item to extent map.
+
  fs/btrfs/ctree.h     |  5 ++++
- fs/btrfs/file-item.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/inode.c     | 41 +++----------------------------
- fs/btrfs/ioctl.c     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 141 insertions(+), 38 deletions(-)
+ fs/btrfs/file-item.c | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/inode.c     | 41 +++-----------------------------
+ fs/btrfs/ioctl.c     | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 139 insertions(+), 38 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
 index af523d6..a668fd9 100644
@@ -60,10 +62,10 @@ index af523d6..a668fd9 100644
  struct btrfs_delalloc_work {
  	struct inode *inode;
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 609d56b..f8f2436 100644
+index 609d56b..9732b33 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -885,3 +885,71 @@ out:
+@@ -885,3 +885,69 @@ out:
  fail_unlock:
  	goto out;
  }
@@ -96,38 +98,36 @@ index 609d56b..f8f2436 100644
 +	}
 +
 +	em->ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
++	em->start = extent_start;
++	em->orig_block_len = btrfs_file_extent_disk_num_bytes(leaf, fi);
 +	em->compress_type = btrfs_file_extent_compression(leaf, fi);
 +	if (em->compress_type != BTRFS_COMPRESS_NONE)
 +		set_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
 +
 +	if (type == BTRFS_FILE_EXTENT_REG ||
 +	    type == BTRFS_FILE_EXTENT_PREALLOC) {
-+		em->start = extent_start;
 +		em->len = extent_end - extent_start;
 +		em->orig_start = extent_start -
 +			btrfs_file_extent_offset(leaf, fi);
-+		em->orig_block_len = btrfs_file_extent_disk_num_bytes(leaf, fi);
 +		bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
 +		if (bytenr == 0) {
 +			em->block_start = EXTENT_MAP_HOLE;
 +			return;
 +		}
 +		if (em->compress_type != BTRFS_COMPRESS_NONE) {
-+			em->block_start = bytenr;
 +			em->block_len = em->orig_block_len;
 +		} else {
 +			bytenr += btrfs_file_extent_offset(leaf, fi);
-+			em->block_start = bytenr;
 +			em->block_len = em->len;
 +			if (type == BTRFS_FILE_EXTENT_PREALLOC)
 +				set_bit(EXTENT_FLAG_PREALLOC, &em->flags);
 +		}
++		em->block_start = bytenr;
 +	} else if (type == BTRFS_FILE_EXTENT_INLINE) {
 +		em->block_start = EXTENT_MAP_INLINE;
-+		em->start = extent_start;
-+		em->orig_start = EXTENT_MAP_HOLE;
++		em->orig_start = em->start;
 +		em->len = extent_end - extent_start;
-+		em->block_len = (u64)-1;
++		em->block_len = em->orig_block_len;
 +	} else {
 +		btrfs_err(root->fs_info,
 +			  "unknown file extent item type %d, inode %llu, offset %llu, root %llu",

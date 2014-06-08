@@ -1,54 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:59259 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752615AbaFGNlx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Jun 2014 09:41:53 -0400
-Date: Sat, 7 Jun 2014 06:41:50 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: Karel Zak <kzak@redhat.com>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
-        util-linux@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] mount: add btrfs to mount.8
-Message-ID: <20140607134150.GA22076@infradead.org>
-References: <1401933919-23608-1-git-send-email-guihc.fnst@cn.fujitsu.com>
- <20140605080311.GW9000@x2.net.home>
- <1402036359.17740.33.camel@localhost.localdomain>
- <20140606094428.GA30975@x2.net.home>
- <20140606100302.GB30975@x2.net.home>
- <5391E3D0.8050608@redhat.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:24696 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752759AbaFHKyI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 06:54:08 -0400
+Date: Sun, 8 Jun 2014 18:54:00 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, levin.front@gmail.com
+Subject: Re: [PATCH] Btrfs: fix leaf corruption after __btrfs_drop_extents
+Message-ID: <20140608105359.GB9291@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1402035958-30013-1-git-send-email-bo.li.liu@oracle.com>
+ <CAL3q7H7pYVLzaoLM6Je6dnDoHiACBAA0r_n1DGAWDuQJzJ7n3Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5391E3D0.8050608@redhat.com>
+In-Reply-To: <CAL3q7H7pYVLzaoLM6Je6dnDoHiACBAA0r_n1DGAWDuQJzJ7n3Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 06, 2014 at 10:52:48AM -0500, Eric Sandeen wrote:
-> On 6/6/14, 5:03 AM, Karel Zak wrote:
-> > On Fri, Jun 06, 2014 at 11:44:28AM +0200, Karel Zak wrote:
-> >>  I personally have no problem to maintain information about arbitrary
-> >>  FS in mount.8, the problem are updates. Unfortunately, kernel FS developers
-> >>  don't care about the man page at all and it's very often not up to date.
-> > 
-> >  Hmm.. another possible way would be to create a script for util-linux
-> >  that will analyze kernel Documentation/filesystems/<fsname>.txt and
-> >  report changes that is necessary to make to mount.8. It should be
-> >  relative simple with git. I'll try it..
+On Fri, Jun 06, 2014 at 01:11:17PM +0100, Filipe David Manana wrote:
+> On Fri, Jun 6, 2014 at 7:25 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> > Several reports about leaf corruption has been floating on the list, one of them
+> > points to __btrfs_drop_extents(), and we find that the leaf becomes corrupted
+> > after __btrfs_drop_extents(), it's really a rare case but it does exist.
+> >
+> > The problem turns out to be btrfs_next_leaf() called in __btrfs_drop_extents().
+> >
+> > So in btrfs_next_leaf(), we release the current path to re-search the last key of
+> > the leaf for locating next leaf, and we've taken it into account that there might
+> > be balance operations between leafs during this 'unlock and re-lock' dance, so
+> > we check the path again and advance it if there are now more items available.
+> > But things are a bit different if that last key happens to be removed and balance
+> > gets a bigger key as the last one, and btrfs_search_slot will return it with
+> > ret > 0,
 > 
-> I like that idea.  Maybe <fsname.txt> will need a defined format, though,
-> right?  Maybe asciidoc?
+> Hi Liu,
 > 
-> I've still been meaning (in theory) to produce a mount manpage just for xfs.
-> I'm still willing to do that if the above doesn't pan out.  I just need
-> to get to it.  I'd be happy to do it for extN as well.
+> That makes a lot of sense outside the context of btrfs_drop_extents().
+> 
+> If I understand you correctly, you're saying that we have a file
+> extent item that gets deleted after we release the path in
+> btrfs_next_leaf and before btrfs_search_slot finishes for doing a
+> lookup for that item.
 
-Autogenerating man pages from an adhoc format sounds like the wrong
-approach.  I'd much rather have proper man paged for every filesystem.
-With those we could also drop all that information from the kernel
-Documentation directory, where users won't looks for them anyway.
+Hi Filipe,
 
-Eric, if you take care of xfs an extN I'll get started on man pages
-for the various "minor" filesystems that don't really have active
-maintainers.
+Not just "finishes", even before btrfs_search_slot "starts".
 
-Not sure if we should go for mount.<fstype>.8 man pages or just improve
-the <fstype>.5 pages, but I think the second one is more obvious.
+> 
+> But who calls btrfs_drop_extents(), is supposed to have locked the
+> file range in the inode's io tree, right? Isn't the goal of locking
+> ranges in the io tree to serialize manipulation of file extent items
+> within a certain range? Unless there's some caller of _drop_extents()
+> that isn't locking the range in the io tree, I'm not seeing how we can
+> get the file extent item deleted or updated by another task.
+
+Oh, good question!  I must admit I forget about that locking, just check the log,
+so here is the answer -- the locking range and the extent range is not
+consistent.
+
+In __btrfs_drop_extents(), there is such a case,
+
+                /*
+                 *       | ---- range to drop ----- |
+                 *  | -------- extent -------- |
+                 */
+                if (start > key.offset && end >= extent_end) {
+
+we do actually lock the range, but in this case, the extent is not included in
+our range, so this give a chance for others to hack in to do 'confusing-us' things.
+
+I can add these to the commit log if you want, others may also feel confused.
+
+thanks,
+-liubo
+
+> 
+> Thanks
+> 
+> > IOW, nothing change in this leaf except the new last key, then we think
+> > we're okay because there is no more item balanced in, fine, we thinks we can
+> > go to the next leaf.
+> >
+> > However, we should return that bigger key, otherwise we deserve leaf corruption,
+> > for example, in endio, skipping that key means that __btrfs_drop_extents() thinks
+> > it has dropped all extent matched the required range and finish_ordered_io can
+> > safely insert a new extent, but it actually doesn't and ends up a leaf
+> > corruption.
+> >
+> > This takes the special case into account.
+> >
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > ---
+> >  fs/btrfs/ctree.c | 18 ++++++++++++++++++
+> >  1 file changed, 18 insertions(+)
+> >
+> > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> > index 1bcfcdb..bbb256c 100644
+> > --- a/fs/btrfs/ctree.c
+> > +++ b/fs/btrfs/ctree.c
+> > @@ -5736,6 +5736,24 @@ again:
+> >                 ret = 0;
+> >                 goto done;
+> >         }
+> > +       /*
+> > +        * So the above check misses one case:
+> > +        * - after releasing the path above, someone has removed the item that
+> > +        *   used to be at the very end of the block, and balance between leafs
+> > +        *   gets another one with bigger key.offset to replace it.
+> > +        *
+> > +        * This one should be returned as well, or we can get leaf corruption
+> > +        * later(esp. in __btrfs_drop_extents()).
+> > +        *
+> > +        * And a bit more explanation about this check,
+> > +        * with ret > 0, the key isn't found, the path points to the slot
+> > +        * where it should be inserted, so the path->slots[0] item must be the
+> > +        * bigger one.
+> > +        */
+> > +       if (nritems > 0 && ret > 0 && path->slots[0] == nritems - 1) {
+> > +               ret = 0;
+> > +               goto done;
+> > +       }
+> >
+> >         while (level < BTRFS_MAX_LEVEL) {
+> >                 if (!path->nodes[level]) {
+> > --
+> > 1.8.1.4
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
+> -- 
+> Filipe David Manana,
+> 
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."

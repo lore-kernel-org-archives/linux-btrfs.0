@@ -1,56 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:55355 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752850AbaFGIVz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Jun 2014 04:21:55 -0400
-Message-ID: <5392CC86.3060009@libero.it>
-Date: Sat, 07 Jun 2014 10:25:42 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from luna.xtsubasa.org ([82.196.7.38]:46585 "EHLO luna.xtsubasa.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753301AbaFHOcc convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 10:32:32 -0400
+Received: from localhost (melforce.xtsubasa.org [IPv6:2a02:578:5002:8062::2])
+	by luna.xtsubasa.org (Postfix) with ESMTPSA id C004050A22
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Jun 2014 18:26:41 +0400 (MSK)
+From: Pavel Volkov <sailor@lists.xtsubasa.org>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Re: Using BTRFS on SSD now =?iso-8859-1?Q?=3F?=
+Date: Sun, 08 Jun 2014 18:26:38 +0400
 MIME-Version: 1.0
-To: Christoph Anton Mitterer <calestyo@scientia.net>, kreijack@inwind.it
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: some project ideas: NFS4 ACLs, resilience on the same device,
- allowing to specify which devices are "distinct" in a RAID
-References: <1401731056.4904.9.camel@heisenberg.scientia.net>	 <538DFFEB.105@libero.it> <1402104897.18904.12.camel@heisenberg.scientia.net>
-In-Reply-To: <1402104897.18904.12.camel@heisenberg.scientia.net>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <235dd10c-2595-4778-b6cb-6a2aa8bed686@lists.xtsubasa.org>
+In-Reply-To: <20140605211144.5541fe9c@natsu>
+References: <2215647.hErg5R77lo@zafu> <20140605145632.GD14713@merlins.org>
+ <20140605211144.5541fe9c@natsu>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/07/2014 03:34 AM, Christoph Anton Mitterer wrote:
-> On Tue, 2014-06-03 at 19:03 +0200, Goffredo Baroncelli wrote:
->> There is (was ?) a project to address that: richacl
->> http://www.bestbits.at/richacl/. This is not a btrfs project, but a
->> linux kernel project because from a filesystem  POV the
->> implementation requires to store some information in a extended
->> attributes: the check is performed at the VFS level.
-> 
->>> Now one could create a RAID5 on them, but apparently sda1 and
->>> sda2 are on the same disk... so I'd like a way to tell btrfs that
->>> these are the "same" and not really that redundant.
->> 
->> Hugo Mill worked on something related to that [1]
->> 
->> [1] "Thoughts on RAID nomenclature"
->> http://www.spinics.net/lists/linux-btrfs/msg33782.html
-> 
-> 
-> Thanks for the info... should I put those 3 ideas to the 
-> https://btrfs.wiki.kernel.org/index.php/Project_ideas page? Or is
-> that just meant to be edited by the developers?
-> 
+On Thursday, June 5, 2014 7:11:44 PM MSK, Roman Mamedov wrote:
+> Yeah, a PSA of sorts: take whatever SSDs you have and use, and go to the
+> manufacturer's website (right *NOW* :) to check if they have a 
+> newer firmware,
+> or to ensure that you have the latest version. There are such horrible 
+bugs
+> being found and fixed in those, that upgrading the firmware is 
+> absolutely *not*
+> the case of "if it's not broken, don't fix it". Also your SSD 
+> may gain niceties
+> such as a working TRIM support (that was sometimes 
+> disabled/broken in earlier
+> releases).
+>
 
-You can add new ideas to the wiki pages, supporting by link and other info were available. This is the real nature of the wiki pages.
-
-However I am still convinced richacl/nfs4 acl are not strictly related to a specific filesystem.
-
-BR
-
-> Cheers, Chris.
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Sometimes the latest firmware has isuues which were not present earlier 
+(like in my case with Crucial M4) so we have to be careful and listen to 
+other users,
+Maybe M4 is ok now, I'll have to check again,

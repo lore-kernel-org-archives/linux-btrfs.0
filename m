@@ -1,40 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from luna.xtsubasa.org ([82.196.7.38]:46585 "EHLO luna.xtsubasa.org"
+Received: from luna.xtsubasa.org ([82.196.7.38]:46646 "EHLO luna.xtsubasa.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753301AbaFHOcc convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 10:32:32 -0400
+	id S1753325AbaFHOsi convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 10:48:38 -0400
 Received: from localhost (melforce.xtsubasa.org [IPv6:2a02:578:5002:8062::2])
-	by luna.xtsubasa.org (Postfix) with ESMTPSA id C004050A22
-	for <linux-btrfs@vger.kernel.org>; Sun,  8 Jun 2014 18:26:41 +0400 (MSK)
+	by luna.xtsubasa.org (Postfix) with ESMTPSA id AAB2250A2A
+	for <linux-btrfs@vger.kernel.org>; Sun,  8 Jun 2014 18:48:36 +0400 (MSK)
 From: Pavel Volkov <sailor@lists.xtsubasa.org>
 To: <linux-btrfs@vger.kernel.org>
 Subject: Re: Using BTRFS on SSD now =?iso-8859-1?Q?=3F?=
-Date: Sun, 08 Jun 2014 18:26:38 +0400
+Date: Sun, 08 Jun 2014 18:48:35 +0400
 MIME-Version: 1.0
-Message-ID: <235dd10c-2595-4778-b6cb-6a2aa8bed686@lists.xtsubasa.org>
-In-Reply-To: <20140605211144.5541fe9c@natsu>
+Message-ID: <62fc4c32-37c4-4c4e-b027-761859a12df4@lists.xtsubasa.org>
+In-Reply-To: <yq14mzyzz6l.fsf@sermon.lab.mkp.net>
 References: <2215647.hErg5R77lo@zafu> <20140605145632.GD14713@merlins.org>
- <20140605211144.5541fe9c@natsu>
+ <FFF0E455-5905-47D4-A768-96CA2FEDF3B3@colorremedies.com>
+ <20140605190526.GS7210@merlins.org>
+ <pan$4b696$bb5c3db8$50f45a4e$fdad0f36@cox.net>
+ <yq14mzyzz6l.fsf@sermon.lab.mkp.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, June 5, 2014 7:11:44 PM MSK, Roman Mamedov wrote:
-> Yeah, a PSA of sorts: take whatever SSDs you have and use, and go to the
-> manufacturer's website (right *NOW* :) to check if they have a 
-> newer firmware,
-> or to ensure that you have the latest version. There are such horrible 
-bugs
-> being found and fixed in those, that upgrading the firmware is 
-> absolutely *not*
-> the case of "if it's not broken, don't fix it". Also your SSD 
-> may gain niceties
-> such as a working TRIM support (that was sometimes 
-> disabled/broken in earlier
-> releases).
+On Friday, June 6, 2014 3:58:26 AM MSK, Martin K. Petersen wrote:
+> Until then, the following command will give you the answer:
+>
+> # smartctl -l gplog,0x13 /dev/sda | grep 0000:
+> 0000000: 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 
+|................|
+>          ^^          ^^
+> These two 01 fields indicate that the drive supports queued trim.
 >
 
-Sometimes the latest firmware has isuues which were not present earlier 
-(like in my case with Crucial M4) so we have to be careful and listen to 
-other users,
-Maybe M4 is ok now, I'll have to check again,
+Is mine a dinosaur drive?
+
+# smartctl -l gplog,0x13 /dev/sda 
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.14.5-gentoo-r1melf] (local 
+build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+General Purpose Log 0x13 does not exist (override with '-T permissive' 
+option)
+

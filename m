@@ -1,36 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8969 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750813AbaFIGbH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jun 2014 02:31:07 -0400
-Message-ID: <1402295165.4585.1.camel@localhost.localdomain>
-Subject: Re: [PATCH] mount: add btrfs to mount.8
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Karel Zak <kzak@redhat.com>
-CC: <util-linux@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Date: Mon, 9 Jun 2014 14:26:05 +0800
-In-Reply-To: <20140606101720.GC30975@x2.net.home>
-References: <1401933919-23608-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20140606101720.GC30975@x2.net.home>
-Content-Type: text/plain; charset="UTF-8"
-MIME-Version: 1.0
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:63699 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932283AbaFILWv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jun 2014 07:22:51 -0400
+Received: by mail-wg0-f47.google.com with SMTP id k14so4582444wgh.18
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jun 2014 04:22:50 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: [PATCH] Btrfs: ensure btrfs_prev_leaf doesn't miss 1 item
+Date: Mon,  9 Jun 2014 13:22:13 +0100
+Message-Id: <1402316533-18089-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2014-06-06 at 12:17 +0200, Karel Zak wrote:
-> On Thu, Jun 05, 2014 at 10:05:19AM +0800, Gui Hecheng wrote:
-> > Based on Documentation/filesystems/btrfs.txt
-> > 
-> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> > ---
-> >  sys-utils/mount.8 | 186 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 186 insertions(+)
-> 
->  Applied, thanks.
-Thanks very much.
+We might have had an item with the previous key in the tree right
+before we released our path. And after we released our path, that
+item might have been pushed to the first slot (0) of the leaf we
+were holding due to a tree balance. Alternatively, an item with the
+previous key can exist as the only element of a leaf (big fat item).
+Therefore account for these 2 cases, so that our callers (like
+btrfs_previous_item) don't miss an existing item with a key matching
+the previous key we computed above.
 
--Gui
->     Karel
-> 
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+---
+ fs/btrfs/ctree.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d99d965..4eada52 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -5097,7 +5097,17 @@ int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path)
+ 		return ret;
+ 	btrfs_item_key(path->nodes[0], &found_key, 0);
+ 	ret = comp_keys(&found_key, &key);
+-	if (ret < 0)
++	/*
++	 * We might have had an item with the previous key in the tree right
++	 * before we released our path. And after we released our path, that
++	 * item might have been pushed to the first slot (0) of the leaf we
++	 * were holding due to a tree balance. Alternatively, an item with the
++	 * previous key can exist as the only element of a leaf (big fat item).
++	 * Therefore account for these 2 cases, so that our callers (like
++	 * btrfs_previous_item) don't miss an existing item with a key matching
++	 * the previous key we computed above.
++	 */
++	if (ret <= 0)
+ 		return 0;
+ 	return 1;
+ }
+-- 
+1.9.1
 

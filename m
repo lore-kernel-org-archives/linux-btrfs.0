@@ -1,192 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f41.google.com ([209.85.215.41]:60239 "EHLO
-	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753541AbaFHLQY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 07:16:24 -0400
-Received: by mail-la0-f41.google.com with SMTP id e16so2472122lan.14
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Jun 2014 04:16:22 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAL3q7H7P17Q9v_x_zN_R8e1B0n-mtZecQp1NV3MVrLNz_A68JQ@mail.gmail.com>
-References: <1402035958-30013-1-git-send-email-bo.li.liu@oracle.com>
-	<CAL3q7H7pYVLzaoLM6Je6dnDoHiACBAA0r_n1DGAWDuQJzJ7n3Q@mail.gmail.com>
-	<20140608105359.GB9291@localhost.localdomain>
-	<CAL3q7H7P17Q9v_x_zN_R8e1B0n-mtZecQp1NV3MVrLNz_A68JQ@mail.gmail.com>
-Date: Sun, 8 Jun 2014 12:16:22 +0100
-Message-ID: <CAL3q7H6+nqA2vUbu853cDuSs7dxW-9j_P=8nsPFfmmBqjVzmcA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix leaf corruption after __btrfs_drop_extents
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, levin.front@gmail.com
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:36299 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753649AbaFICyV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 22:54:21 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Subject: [PATCH v2] Btrfs: fix scrub_print_warning to handle skinny metadata extents
+Date: Mon,  9 Jun 2014 10:54:07 +0800
+Message-Id: <1402282447-1545-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 8, 2014 at 12:11 PM, Filipe David Manana <fdmanana@gmail.com> wrote:
-> On Sun, Jun 8, 2014 at 11:54 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> On Fri, Jun 06, 2014 at 01:11:17PM +0100, Filipe David Manana wrote:
->>> On Fri, Jun 6, 2014 at 7:25 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->>> > Several reports about leaf corruption has been floating on the list, one of them
->>> > points to __btrfs_drop_extents(), and we find that the leaf becomes corrupted
->>> > after __btrfs_drop_extents(), it's really a rare case but it does exist.
->>> >
->>> > The problem turns out to be btrfs_next_leaf() called in __btrfs_drop_extents().
->>> >
->>> > So in btrfs_next_leaf(), we release the current path to re-search the last key of
->>> > the leaf for locating next leaf, and we've taken it into account that there might
->>> > be balance operations between leafs during this 'unlock and re-lock' dance, so
->>> > we check the path again and advance it if there are now more items available.
->>> > But things are a bit different if that last key happens to be removed and balance
->>> > gets a bigger key as the last one, and btrfs_search_slot will return it with
->>> > ret > 0,
->>>
->>> Hi Liu,
->>>
->>> That makes a lot of sense outside the context of btrfs_drop_extents().
->>>
->>> If I understand you correctly, you're saying that we have a file
->>> extent item that gets deleted after we release the path in
->>> btrfs_next_leaf and before btrfs_search_slot finishes for doing a
->>> lookup for that item.
->>
->> Hi Filipe,
->>
->> Not just "finishes", even before btrfs_search_slot "starts".
->
-> Yes :)
->
->>
->>>
->>> But who calls btrfs_drop_extents(), is supposed to have locked the
->>> file range in the inode's io tree, right? Isn't the goal of locking
->>> ranges in the io tree to serialize manipulation of file extent items
->>> within a certain range? Unless there's some caller of _drop_extents()
->>> that isn't locking the range in the io tree, I'm not seeing how we can
->>> get the file extent item deleted or updated by another task.
->>
->> Oh, good question!  I must admit I forget about that locking, just check the log,
->> so here is the answer -- the locking range and the extent range is not
->> consistent.
->>
->> In __btrfs_drop_extents(), there is such a case,
->>
->>                 /*
->>                  *       | ---- range to drop ----- |
->>                  *  | -------- extent -------- |
->>                  */
->>                 if (start > key.offset && end >= extent_end) {
->>
->> we do actually lock the range, but in this case, the extent is not included in
->> our range, so this give a chance for others to hack in to do 'confusing-us' things.
->
-> Hum, yes. I thought about the cases where others split our extent
-> item, but that shouldn't remove the key.
->
-> There is one case (I thought about after)  where it's obvious the
-> issue you found in btrfs_next_leaf can affect btrfs_drop_extents: we
-> have NO_HOLES set, our first tree seach returns us an extent that ends
-> before our target range's start (therefore outside the range we locked
-> in the io tree) and that extent is the last item in a leaf. And then
-> the problem you described happens between the unlock and re-lock.
->
->>
->> I can add these to the commit log if you want, others may also feel confused.
->
-> It is fine for me as it is.
->
-> Thanks Liu
->
->>
->> thanks,
->> -liubo
->>
->>>
->>> Thanks
->>>
->>> > IOW, nothing change in this leaf except the new last key, then we think
->>> > we're okay because there is no more item balanced in, fine, we thinks we can
->>> > go to the next leaf.
->>> >
->>> > However, we should return that bigger key, otherwise we deserve leaf corruption,
->>> > for example, in endio, skipping that key means that __btrfs_drop_extents() thinks
->>> > it has dropped all extent matched the required range and finish_ordered_io can
->>> > safely insert a new extent, but it actually doesn't and ends up a leaf
->>> > corruption.
->>> >
->>> > This takes the special case into account.
->>> >
->>> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+The skinny extents are intepreted incorrectly in scrub_print_warning(),
+and end up hitting the BUG() in btrfs_extent_inline_ref_size.
 
-Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+Reported-by: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v2: Add a 'Reported-by' tag.
 
-Can affect other users of btrfs_next_leaf too that aren't necessarily
-modifying anything in tree (like _drop_extents), makes readers miss
-items.
+ fs/btrfs/backref.c | 30 +++++++++++++++++++-----------
+ fs/btrfs/backref.h |  4 ++--
+ fs/btrfs/scrub.c   |  5 +++--
+ 3 files changed, 24 insertions(+), 15 deletions(-)
 
->>> > ---
->>> >  fs/btrfs/ctree.c | 18 ++++++++++++++++++
->>> >  1 file changed, 18 insertions(+)
->>> >
->>> > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
->>> > index 1bcfcdb..bbb256c 100644
->>> > --- a/fs/btrfs/ctree.c
->>> > +++ b/fs/btrfs/ctree.c
->>> > @@ -5736,6 +5736,24 @@ again:
->>> >                 ret = 0;
->>> >                 goto done;
->>> >         }
->>> > +       /*
->>> > +        * So the above check misses one case:
->>> > +        * - after releasing the path above, someone has removed the item that
->>> > +        *   used to be at the very end of the block, and balance between leafs
->>> > +        *   gets another one with bigger key.offset to replace it.
->>> > +        *
->>> > +        * This one should be returned as well, or we can get leaf corruption
->>> > +        * later(esp. in __btrfs_drop_extents()).
->>> > +        *
->>> > +        * And a bit more explanation about this check,
->>> > +        * with ret > 0, the key isn't found, the path points to the slot
->>> > +        * where it should be inserted, so the path->slots[0] item must be the
->>> > +        * bigger one.
->>> > +        */
->>> > +       if (nritems > 0 && ret > 0 && path->slots[0] == nritems - 1) {
->>> > +               ret = 0;
->>> > +               goto done;
->>> > +       }
->>> >
->>> >         while (level < BTRFS_MAX_LEVEL) {
->>> >                 if (!path->nodes[level]) {
->>> > --
->>> > 1.8.1.4
->>> >
->>> > --
->>> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> > the body of a message to majordomo@vger.kernel.org
->>> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>>
->>> --
->>> Filipe David Manana,
->>>
->>> "Reasonable men adapt themselves to the world.
->>>  Unreasonable men adapt the world to themselves.
->>>  That's why all progress depends on unreasonable men."
->
->
->
-> --
-> Filipe David Manana,
->
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
-
-
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 10db21f..e9d9e52 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1404,9 +1404,10 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+  * returns <0 on error
+  */
+ static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
+-				struct btrfs_extent_item *ei, u32 item_size,
+-				struct btrfs_extent_inline_ref **out_eiref,
+-				int *out_type)
++				   struct btrfs_key *key,
++				   struct btrfs_extent_item *ei, u32 item_size,
++				   struct btrfs_extent_inline_ref **out_eiref,
++				   int *out_type)
+ {
+ 	unsigned long end;
+ 	u64 flags;
+@@ -1416,9 +1417,16 @@ static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
+ 		/* first call */
+ 		flags = btrfs_extent_flags(eb, ei);
+ 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+-			info = (struct btrfs_tree_block_info *)(ei + 1);
+-			*out_eiref =
+-				(struct btrfs_extent_inline_ref *)(info + 1);
++			if (key->type == BTRFS_METADATA_ITEM_KEY) {
++				/* a skinny metadata extent */
++				*out_eiref =
++				     (struct btrfs_extent_inline_ref *)(ei + 1);
++			} else {
++				WARN_ON(key->type != BTRFS_EXTENT_ITEM_KEY);
++				info = (struct btrfs_tree_block_info *)(ei + 1);
++				*out_eiref =
++				   (struct btrfs_extent_inline_ref *)(info + 1);
++			}
+ 		} else {
+ 			*out_eiref = (struct btrfs_extent_inline_ref *)(ei + 1);
+ 		}
+@@ -1428,7 +1436,7 @@ static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
+ 	}
+ 
+ 	end = (unsigned long)ei + item_size;
+-	*out_eiref = (struct btrfs_extent_inline_ref *)*ptr;
++	*out_eiref = (struct btrfs_extent_inline_ref *)(*ptr);
+ 	*out_type = btrfs_extent_inline_ref_type(eb, *out_eiref);
+ 
+ 	*ptr += btrfs_extent_inline_ref_size(*out_type);
+@@ -1447,8 +1455,8 @@ static int __get_extent_inline_ref(unsigned long *ptr, struct extent_buffer *eb,
+  * <0 on error.
+  */
+ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
+-				struct btrfs_extent_item *ei, u32 item_size,
+-				u64 *out_root, u8 *out_level)
++			    struct btrfs_key *key, struct btrfs_extent_item *ei,
++			    u32 item_size, u64 *out_root, u8 *out_level)
+ {
+ 	int ret;
+ 	int type;
+@@ -1459,8 +1467,8 @@ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
+ 		return 1;
+ 
+ 	while (1) {
+-		ret = __get_extent_inline_ref(ptr, eb, ei, item_size,
+-						&eiref, &type);
++		ret = __get_extent_inline_ref(ptr, eb, key, ei, item_size,
++					      &eiref, &type);
+ 		if (ret < 0)
+ 			return ret;
+ 
+diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
+index a910b27..519b49e 100644
+--- a/fs/btrfs/backref.h
++++ b/fs/btrfs/backref.h
+@@ -40,8 +40,8 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+ 			u64 *flags);
+ 
+ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
+-				struct btrfs_extent_item *ei, u32 item_size,
+-				u64 *out_root, u8 *out_level);
++			    struct btrfs_key *key, struct btrfs_extent_item *ei,
++			    u32 item_size, u64 *out_root, u8 *out_level);
+ 
+ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+ 				u64 extent_item_objectid,
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 0be7799..12afb0d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -588,8 +588,9 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 
+ 	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+ 		do {
+-			ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
+-							&ref_root, &ref_level);
++			ret = tree_backref_for_extent(&ptr, eb, &found_key, ei,
++						      item_size, &ref_root,
++						      &ref_level);
+ 			printk_in_rcu(KERN_WARNING
+ 				"BTRFS: %s at logical %llu on dev %s, "
+ 				"sector %llu: metadata %s (level %d) in tree "
 -- 
-Filipe David Manana,
+1.8.1.4
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

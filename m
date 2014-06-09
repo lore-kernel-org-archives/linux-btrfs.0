@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f180.google.com ([74.125.82.180]:36355 "EHLO
-	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751975AbaFFDIb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 23:08:31 -0400
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:50899 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753512AbaFIBtE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jun 2014 21:49:04 -0400
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org,
         Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] xfstests: add test for btrfs clone + fsync durability
-Date: Fri,  6 Jun 2014 05:08:20 +0100
-Message-Id: <1402027700-9813-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] xfstests: add test for btrfs clone + fsync durability
+Date: Mon,  9 Jun 2014 03:48:52 +0100
+Message-Id: <1402282132-618-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1402027700-9813-1-git-send-email-fdmanana@gmail.com>
+References: <1402027700-9813-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -27,19 +29,23 @@ This issue is fixed by the following linux kernel btrfs patch:
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- tests/btrfs/056     | 134 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/056.out |  89 ++++++++++++++++++++++++++++++++++
+
+V2: Test small files too, consisting of a single inline extent, as
+    it triggers different code paths.
+
+ tests/btrfs/056     | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/056.out | 129 ++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/group   |   1 +
- 3 files changed, 224 insertions(+)
+ 3 files changed, 280 insertions(+)
  create mode 100755 tests/btrfs/056
  create mode 100644 tests/btrfs/056.out
 
 diff --git a/tests/btrfs/056 b/tests/btrfs/056
 new file mode 100755
-index 0000000..cfe87cd
+index 0000000..e066442
 --- /dev/null
 +++ b/tests/btrfs/056
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,150 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/056
 +#
@@ -132,6 +138,18 @@ index 0000000..cfe87cd
 +
 +	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
 +
++	# Test small files too consisting of 1 inline extent
++	$XFS_IO_PROG -f -c "pwrite -S 0x00 -b 3500 0 3500" -c "fsync" \
++		$SCRATCH_MNT/foo2 | _filter_xfs_io
++
++	$XFS_IO_PROG -f -c "pwrite -S 0xcc -b 1000 0 1000" -c "fsync" \
++		$SCRATCH_MNT/bar2 | _filter_xfs_io
++
++	# Clone the entire foo2 file into bar2, overwriting all data in bar2
++	# and increasing its size.
++	$CLONER_PROG -s 0 -d 0 -l 3500 $SCRATCH_MNT/foo2 $SCRATCH_MNT/bar2
++	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar2
++
 +	_load_flakey_table $FLAKEY_DROP_WRITES
 +	_unmount_flakey
 +
@@ -143,7 +161,11 @@ index 0000000..cfe87cd
 +
 +	# Verify the cloned range was persisted by fsync and the log recovery
 +	# code did its work well.
++	echo "Verifying file bar content"
 +	od -t x1 $SCRATCH_MNT/bar
++
++	echo "Verifying file bar2 content"
++	od -t x1 $SCRATCH_MNT/bar2
 +
 +	_unmount_flakey
 +
@@ -176,10 +198,10 @@ index 0000000..cfe87cd
 +exit
 diff --git a/tests/btrfs/056.out b/tests/btrfs/056.out
 new file mode 100644
-index 0000000..45d280f
+index 0000000..1b77ae3
 --- /dev/null
 +++ b/tests/btrfs/056.out
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,129 @@
 +QA output created by 056
 +Testing without the NO_HOLES feature
 +wrote 8192/8192 bytes at offset 0
@@ -192,6 +214,11 @@ index 0000000..45d280f
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 98304/98304 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 3500/3500 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1000/1000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Verifying file bar content
 +0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
 +*
 +0010000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -203,6 +230,11 @@ index 0000000..45d280f
 +0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++Verifying file bar2 content
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0006640 00 00 00 00 00 00 00 00 00 00 00 00
++0006654
 +Testing without the NO_HOLES feature and compression (lzo)
 +wrote 8192/8192 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
@@ -214,6 +246,11 @@ index 0000000..45d280f
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 98304/98304 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 3500/3500 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1000/1000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Verifying file bar content
 +0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
 +*
 +0010000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -225,6 +262,11 @@ index 0000000..45d280f
 +0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++Verifying file bar2 content
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0006640 00 00 00 00 00 00 00 00 00 00 00 00
++0006654
 +Testing with the NO_HOLES feature enabled
 +wrote 8192/8192 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
@@ -236,6 +278,11 @@ index 0000000..45d280f
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 98304/98304 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 3500/3500 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1000/1000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Verifying file bar content
 +0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
 +*
 +0010000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -247,6 +294,11 @@ index 0000000..45d280f
 +0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++Verifying file bar2 content
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0006640 00 00 00 00 00 00 00 00 00 00 00 00
++0006654
 +Testing with the NO_HOLES feature enabled and compression (lzo)
 +wrote 8192/8192 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
@@ -258,6 +310,11 @@ index 0000000..45d280f
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 98304/98304 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 3500/3500 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1000/1000 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Verifying file bar content
 +0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
 +*
 +0010000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
@@ -269,6 +326,11 @@ index 0000000..45d280f
 +0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
 +*
 +0300000
++Verifying file bar2 content
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++0006640 00 00 00 00 00 00 00 00 00 00 00 00
++0006654
 diff --git a/tests/btrfs/group b/tests/btrfs/group
 index 2c10c5b..2da7127 100644
 --- a/tests/btrfs/group

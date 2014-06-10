@@ -1,72 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.187]:50740 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750788AbaFJJ4p (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jun 2014 05:56:45 -0400
-From: Arnd Bergmann <arnd@arndb.de>
-To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Nicolas Pitre <nicolas.pitre@linaro.org>,
-        Dave Chinner <david@fromorbit.com>, hch@infradead.org,
-        linux-mtd@lists.infradead.org, logfs@logfs.org,
-        linux-afs@lists.infradead.org,
-        "Joseph S. Myers" <joseph@codesourcery.com>,
-        linux-arch@vger.kernel.org, linux-cifs@vger.kernel.org,
-        linux-scsi@vger.kernel.org, ceph-devel@vger.kernel.org,
-        cluster-devel@redhat.com, coda@cs.cmu.edu, geert@linux-m68k.org,
-        linux-ext4@vger.kernel.org, codalist@telemann.coda.cs.cmu.edu,
-        fuse-devel@lists.sourceforge.net, reiserfs-devel@vger.kernel.org,
-        xfs@oss.sgi.com, john.stultz@linaro.org, tglx@linutronix.de,
-        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        samba-technical@lists.samba.org, linux-kernel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-        linux-fsdevel@vger.kernel.org, lftan@altera.com,
+Received: from mail001.aei.ca ([206.123.6.130]:36760 "EHLO mail001.aei.ca"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750840AbaFJLVG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Jun 2014 07:21:06 -0400
+From: Ed Tomlinson <edt@aei.ca>
+To: Sasha Levin <sasha.levin@oracle.com>
+Cc: Chris Mason <clm@fb.com>, jbacik@fb.com,
+        LKML <linux-kernel@vger.kernel.org>, Dave Jones <davej@redhat.com>,
         linux-btrfs@vger.kernel.org
-Subject: Re: [RFC 00/32] making inode time stamps y2038 ready
-Date: Tue, 10 Jun 2014 11:54:14 +0200
-Message-ID: <10173877.4plnjUiyX8@wuerfel>
-In-Reply-To: <538FB570.8000502@zytor.com>
-References: <1401480116-1973111-1-git-send-email-arnd@arndb.de> <8770583.6XeZxCxOY8@wuerfel> <538FB570.8000502@zytor.com>
+Subject: Re: btrfs: hang on boot due to tests
+Date: Tue, 10 Jun 2014 07:14:17 -0400
+Message-ID: <3216820.JOp565CquS@grover>
+In-Reply-To: <5395DE2E.7080700@oracle.com>
+References: <5395CFE6.10804@oracle.com> <5395D9D6.3080101@fb.com> <5395DE2E.7080700@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 04 June 2014 17:10:24 H. Peter Anvin wrote:
-> On 06/04/2014 12:24 PM, Arnd Bergmann wrote:
+On Monday 09 June 2014 12:17:50 Sasha Levin wrote:
+> On 06/09/2014 11:59 AM, Chris Mason wrote:
+> > On 06/09/2014 11:16 AM, Sasha Levin wrote:
+> >> > Hi all,
+> >> > 
+> >> > It seems that some recent changes to btrfs tests make it hang during boot:
+> >> > 
+> >> > [   49.730033] NMI watchdog: BUG: soft lockup - CPU#34 stuck for 23s! [swapper/0:1]
+> >> > [   49.730033] Modules linked in:
+> >> > [   49.730033] hardirqs last enabled at (6389143): restore_args (arch/x86/kernel/entry_64.S:829)
+> >> > [   49.730033] hardirqs last disabled at (6389144): apic_timer_interrupt (arch/x86/kernel/entry_64.S:1021)
+> >> > [   49.730033] softirqs last enabled at (6389142): __do_softirq (./arch/x86/include/asm/preempt.h:22 kernel/softirq.c:296)
+> >> > [   49.730033] softirqs last disabled at (6389139): irq_exit (kernel/softirq.c:346 kernel/softirq.c:387)
+> >> > [   49.730033] CPU: 34 PID: 1 Comm: swapper/0 Not tainted 3.15.0-rc8-next-20140606-sasha-00021-ga9d3a0b-dirty #597
 > > 
-> > For other timekeeping stuff in the kernel, I agree that using some
-> > 64-bit representation (nanoseconds, 32/32 unsigned seconds/nanoseconds,
-> > ...) has advantages, that's exactly the point I was making earlier
-> > against simply extending the internal time_t/timespec to 64-bit
-> > seconds for everything.
-> > 
+> > This is 3.15-rc8 + linux-next?  I'll try to reproduce here, but the
+> > tests were working for me.
 > 
-> How much of a performance issue is it to make time_t 64 bits, and for
-> the bits there are, how hard are they to fix?
+> Yes, it's the latest -next tree available.
+> 
+> Also note that it doesn't happen every time, so might be some sort of a race?
 
-Probably very little overhead for most uses, it's more the regression
-potential in the less common parts of the kernel I'm worried about.
+I've noticed that with -rc8 and now .15 btrfs fails to automount (or mount) about 1 in 2 times requiring a reboot to get it to work.
+I have not seen anything in logs.  Might this be related?
 
-There is a significant but not overwhelming number of uses of the
-main problematic types in the kernel:
+Thanks,
 
-arnd@wuerfel:~/arm-soc$ git grep -wl time_t | wc
-    188     188    5566
-arnd@wuerfel:~/arm-soc$ git grep -wl timeval | wc
-    320     320   10353
-arnd@wuerfel:~/arm-soc$ git grep -wl timespec | wc
-    406     406   10886
-
-I believe we have to audit all of them anyway if we want to change
-the kernel to less problematic types and introduce new user
-interfaces.
-
-IMHO this work is helped if we change the uses to a new type
-as we find the problems. This lets us do the work one subsystem
-at a time and avoid accidental ABI changes. I don't care much what
-type that will be, and having a 96-bit type will certainly work
-well in a lot of cases, but I don't see a strong reason to use
-that over other types, especially when they can be more efficient.
-
-	Arnd
+Ed Tomlinson

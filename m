@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f52.google.com ([74.125.82.52]:36603 "EHLO
-	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752205AbaFJRNF (ORCPT
+Received: from mail-we0-f170.google.com ([74.125.82.170]:57700 "EHLO
+	mail-we0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751851AbaFJRSV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jun 2014 13:13:05 -0400
-Received: by mail-wg0-f52.google.com with SMTP id b13so2940431wgh.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jun 2014 10:13:03 -0700 (PDT)
+	Tue, 10 Jun 2014 13:18:21 -0400
+Received: by mail-we0-f170.google.com with SMTP id w61so1038248wes.29
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jun 2014 10:18:19 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix RCU correctness warning when running sanity tests
-Date: Tue, 10 Jun 2014 19:12:41 +0100
-Message-Id: <1402423961-12169-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH v2] Btrfs: fix RCU correctness warning when running sanity tests
+Date: Tue, 10 Jun 2014 19:17:16 +0100
+Message-Id: <1402424236-13459-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1402423961-12169-1-git-send-email-fdmanana@gmail.com>
+References: <1402423961-12169-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -55,11 +57,14 @@ following was dumped in dmesg:
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/tests/btrfs-tests.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+
+V2: Added missing rcu read unlock if a retry is needed.
+
+ fs/btrfs/tests/btrfs-tests.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index a5dcacb..bbbfec9 100644
+index a5dcacb..bdb1f05 100644
 --- a/fs/btrfs/tests/btrfs-tests.c
 +++ b/fs/btrfs/tests/btrfs-tests.c
 @@ -130,8 +130,8 @@ static void btrfs_free_dummy_fs_info(struct btrfs_fs_info *fs_info)
@@ -72,8 +77,15 @@ index a5dcacb..bbbfec9 100644
  	radix_tree_for_each_slot(slot, &fs_info->buffer_radix, &iter, 0) {
  		struct extent_buffer *eb;
  
-@@ -144,11 +144,11 @@ restart:
+@@ -140,15 +140,17 @@ restart:
+ 			continue;
+ 		/* Shouldn't happen but that kind of thinking creates CVE's */
+ 		if (radix_tree_exception(eb)) {
+-			if (radix_tree_deref_retry(eb))
++			if (radix_tree_deref_retry(eb)) {
++				rcu_read_unlock();
  				goto restart;
++			}
  			continue;
  		}
 -		spin_unlock(&fs_info->buffer_lock);

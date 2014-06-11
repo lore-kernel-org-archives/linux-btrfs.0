@@ -1,56 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:22087 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752241AbaFJNYU (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51165 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753119AbaFKCGN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jun 2014 09:24:20 -0400
-Message-ID: <5397078B.9040206@fb.com>
-Date: Tue, 10 Jun 2014 09:26:35 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 10 Jun 2014 22:06:13 -0400
+Received: from athena.localnet (unknown [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id E784B2031F
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 12:06:05 +1000 (EST)
+From: Russell Coker <russell@coker.com.au>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Reply-To: russell@coker.com.au
+Subject: 3.13.6-1 user-space freeze on subvol removal - fixed in 3.14.4
+Date: Wed, 11 Jun 2014 12:05:59 +1000
+Message-ID: <2323799.KmhYrVNjAe@russell.coker.com.au>
 MIME-Version: 1.0
-To: Ed Tomlinson <edt@aei.ca>, Sasha Levin <sasha.levin@oracle.com>
-CC: <jbacik@fb.com>, LKML <linux-kernel@vger.kernel.org>,
-        Dave Jones <davej@redhat.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs: hang on boot due to tests
-References: <5395CFE6.10804@oracle.com> <5395D9D6.3080101@fb.com> <5395DE2E.7080700@oracle.com> <3216820.JOp565CquS@grover>
-In-Reply-To: <3216820.JOp565CquS@grover>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Last night I discovered a bug in my subvol removal script on one of my 
+servers.  I fixed the bug and ran the script to delete ~1500 subvols and the 
+system locked up.  It would respond to pings and accept TCP connections but 
+nothing else.  Existing ssh sessions didn't respond and connections to port 22 
+got a TCP connection but not even the start of the ssh handshake (IE sshd was 
+hung).
 
+Today I visited the server and connected a keyboard, I couldn't get a keyboard 
+response to even unblank the screen (it's at a virtual console and X isn't 
+installed.
 
-On 06/10/2014 07:14 AM, Ed Tomlinson wrote:
-> On Monday 09 June 2014 12:17:50 Sasha Levin wrote:
->> On 06/09/2014 11:59 AM, Chris Mason wrote:
->>> On 06/09/2014 11:16 AM, Sasha Levin wrote:
->>>>> Hi all,
->>>>>
->>>>> It seems that some recent changes to btrfs tests make it hang during boot:
->>>>>
->>>>> [   49.730033] NMI watchdog: BUG: soft lockup - CPU#34 stuck for 23s! [swapper/0:1]
->>>>> [   49.730033] Modules linked in:
->>>>> [   49.730033] hardirqs last enabled at (6389143): restore_args (arch/x86/kernel/entry_64.S:829)
->>>>> [   49.730033] hardirqs last disabled at (6389144): apic_timer_interrupt (arch/x86/kernel/entry_64.S:1021)
->>>>> [   49.730033] softirqs last enabled at (6389142): __do_softirq (./arch/x86/include/asm/preempt.h:22 kernel/softirq.c:296)
->>>>> [   49.730033] softirqs last disabled at (6389139): irq_exit (kernel/softirq.c:346 kernel/softirq.c:387)
->>>>> [   49.730033] CPU: 34 PID: 1 Comm: swapper/0 Not tainted 3.15.0-rc8-next-20140606-sasha-00021-ga9d3a0b-dirty #597
->>>
->>> This is 3.15-rc8 + linux-next?  I'll try to reproduce here, but the
->>> tests were working for me.
->>
->> Yes, it's the latest -next tree available.
->>
->> Also note that it doesn't happen every time, so might be some sort of a race?
-> 
-> I've noticed that with -rc8 and now .15 btrfs fails to automount (or mount) about 1 in 2 times requiring a reboot to get it to work.
-> I have not seen anything in logs.  Might this be related?
+I rebooted the system and found that the bug fix to the subvol removal script 
+was lost, the old version of the file was in place.  So all changes to the 
+filesystem from 10+ seconds before the subvol removal were discarded.
 
-It shouldn't be, the lockup Sasha hit is only in the self testing code,
-and he's triggering it in the qgroups self tests.
+INFO: rcu_sched self detected stall on CPU { 1}  (t=5250 jiffies g=7989 c=7988 
+q=3)
+BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
+BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
+BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
+BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
+INFO: rcu_sched self detected stall on CPU { 1}  (t=21003 jiffies g=7989 c=7988 
+q=3)
+BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
+BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
+BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
+BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
 
-Do you have CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y?
+After booting up I ran the new script and told it to delete only ~440 subvoles 
+and got the above messages on the console.  Those messages keep repeating with 
+the only differences being the value of the t= parameter and the number of 
+seconds (which varies between 22 and 23 seconds).  At that time the keyboard 
+didn't get any response from the system and sshd didn't even start it's 
+protocol (user-space seems dead).
 
-I'd love a sysrq-t or sysrq-w while you're stuck.
+I had to do a hardware reset as CTRL-ALT-DEL and briefly pressing the power 
+button had no affect.
 
--chris
+After that I installed kernel 3.14.4 and deleted 442 subvols and then soon 
+after another 1104 without any problems.
+
+I've noticed before that generally newer kernels have been fixing the various 
+crashes related to snapshot creation and removal, but this is the first time 
+I've done a clean repeatable test to show 3.14 working where 3.13 failed.
+
+I had been hesitant to upgrade to 3.14 because I've seen it fail horribly with 
+Xen, but in this case it worked well with Xen.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

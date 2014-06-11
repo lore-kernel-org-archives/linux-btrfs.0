@@ -1,42 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f176.google.com ([209.85.128.176]:42466 "EHLO
-	mail-ve0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750878AbaFZVNx (ORCPT
+Received: from e28smtp07.in.ibm.com ([122.248.162.7]:47618 "EHLO
+	e28smtp07.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755060AbaFKLdC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jun 2014 17:13:53 -0400
-Received: by mail-ve0-f176.google.com with SMTP id db12so4375349veb.35
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 14:13:52 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <E167B73E-CE42-459E-9171-C9CF1D001D79@colorremedies.com>
-References: <CACQTm-go5jGan9kP-dVq7Oi4b+AGWuFkb0Nudc2i9V1SG-oc3Q@mail.gmail.com>
-	<20140625074713.GE31096@carfax.org.uk>
-	<E167B73E-CE42-459E-9171-C9CF1D001D79@colorremedies.com>
-Date: Thu, 26 Jun 2014 23:13:52 +0200
-Message-ID: <CAK5rZE4Jm1w_WwvE8to0Mwg7=9V+_E=mUT+RxrxmVTz_zJC8Yw@mail.gmail.com>
-Subject: Re: btrfs data dup on single device?
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Wed, 11 Jun 2014 07:33:02 -0400
+Received: from /spool/local
+	by e28smtp07.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 11 Jun 2014 17:03:00 +0530
+Received: from d28relay01.in.ibm.com (d28relay01.in.ibm.com [9.184.220.58])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id BD0941258053
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 17:02:20 +0530 (IST)
+Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
+	by d28relay01.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s5BBXp9l59244600
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 17:03:51 +0530
+Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
+	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s5BBWuKF015546
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 17:02:57 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        aneesh.kumar@linux.vnet.ibm.com
+Subject: [RFC PATCH V2 3/8] Btrfs: subpagesize-blocksize: __btrfs_buffered_write: Reserve/release extents aligned to block size.
+Date: Wed, 11 Jun 2014 17:02:16 +0530
+Message-Id: <1402486341-592-4-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1402486341-592-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1402486341-592-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 6/25/14, Chris Murphy <lists@colorremedies.com> wrote:
-> On Jun 25, 2014, at 1:47 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>   The question is, why? If you have enough disk media errors to make
->> it worth using multiple copies, then your storage device is basically
->> broken and needs replacing, and it can't really be relied on for very
->> much longer.
+Currently, the code reserves/releases extents in multiples of PAGE_CACHE_SIZE
+units. Fix this.
 
-> Yeah basically -d dup tells me the user believes "I do not trust the media
-> that much". Specifically they believe the media surface variability is what
-> they are suspicious of, not the read/write head, actuator, or spindle, or
-> motor. And a.) I don't know how they can possibly have reliable information
-> to arrive at this kind of suspicion; b.) why bother with such crap
-> hardware?
-> Chris Murphy
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/file.c | 32 ++++++++++++++++++++------------
+ 1 file changed, 20 insertions(+), 12 deletions(-)
 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 006af2f..541e227 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1339,18 +1339,21 @@ fail:
+ static noinline int
+ lock_and_cleanup_extent_if_need(struct inode *inode, struct page **pages,
+ 				size_t num_pages, loff_t pos,
++				size_t write_bytes,
+ 				u64 *lockstart, u64 *lockend,
+ 				struct extent_state **cached_state)
+ {
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	u64 start_pos;
+ 	u64 last_pos;
+ 	int i;
+ 	int ret = 0;
+ 
+-	start_pos = pos & ~((u64)PAGE_CACHE_SIZE - 1);
+-	last_pos = start_pos + ((u64)num_pages << PAGE_CACHE_SHIFT) - 1;
++       start_pos = pos & ~((u64)root->sectorsize - 1);
++       last_pos = start_pos
++               + ALIGN(pos + write_bytes - start_pos, root->sectorsize) - 1;
+ 
+-	if (start_pos < inode->i_size) {
++       if (start_pos < inode->i_size) {
+ 		struct btrfs_ordered_extent *ordered;
+ 		lock_extent_bits(&BTRFS_I(inode)->io_tree,
+ 				 start_pos, last_pos, 0, cached_state);
+@@ -1468,6 +1471,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 
+ 	while (iov_iter_count(i) > 0) {
+ 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
++		size_t sector_offset;
+ 		size_t write_bytes = min(iov_iter_count(i),
+ 					 nrptrs * (size_t)PAGE_CACHE_SIZE -
+ 					 offset);
+@@ -1488,7 +1492,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 			break;
+ 		}
+ 
+-		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
++		sector_offset = pos & (root->sectorsize - 1);
++		reserve_bytes = ALIGN(write_bytes + sector_offset, root->sectorsize);
++
+ 		ret = btrfs_check_data_free_space(inode, reserve_bytes);
+ 		if (ret == -ENOSPC &&
+ 		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+@@ -1503,7 +1509,9 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 				num_pages = (write_bytes + offset +
+ 					     PAGE_CACHE_SIZE - 1) >>
+ 					PAGE_CACHE_SHIFT;
+-				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
++
++				reserve_bytes = ALIGN(write_bytes + sector_offset,
++						root->sectorsize);
+ 				ret = 0;
+ 			} else {
+ 				ret = -ENOSPC;
+@@ -1536,8 +1544,8 @@ again:
+ 			break;
+ 
+ 		ret = lock_and_cleanup_extent_if_need(inode, pages, num_pages,
+-						      pos, &lockstart, &lockend,
+-						      &cached_state);
++						pos, write_bytes, &lockstart, &lockend,
++						&cached_state);
+ 		if (ret < 0) {
+ 			if (ret == -EAGAIN)
+ 				goto again;
+@@ -1574,9 +1582,9 @@ again:
+ 		 * we still have an outstanding extent for the chunk we actually
+ 		 * managed to copy.
+ 		 */
+-		if (num_pages > dirty_pages) {
+-			release_bytes = (num_pages - dirty_pages) <<
+-				PAGE_CACHE_SHIFT;
++		if (write_bytes > copied) {
++			release_bytes = (write_bytes - copied)
++				& ~((u64)root->sectorsize - 1);
+ 			if (copied > 0) {
+ 				spin_lock(&BTRFS_I(inode)->lock);
+ 				BTRFS_I(inode)->outstanding_extents++;
+@@ -1590,7 +1598,7 @@ again:
+ 							     release_bytes);
+ 		}
+ 
+-		release_bytes = dirty_pages << PAGE_CACHE_SHIFT;
++		release_bytes = ALIGN(copied + sector_offset, root->sectorsize);
+ 
+ 		if (copied > 0)
+ 			ret = btrfs_dirty_pages(root, inode, pages,
+@@ -1609,7 +1617,7 @@ again:
+ 		if (only_release_metadata && copied > 0) {
+ 			u64 lockstart = round_down(pos, root->sectorsize);
+ 			u64 lockend = lockstart +
+-				(dirty_pages << PAGE_CACHE_SHIFT) - 1;
++				ALIGN(copied, root->sectorsize) - 1;
+ 
+ 			set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
+ 				       lockend, EXTENT_NORESERVE, NULL,
+-- 
+1.8.3.1
 
-Does "Dup Metadata" need to tell anything to anyone?
-
-Regards, Imran

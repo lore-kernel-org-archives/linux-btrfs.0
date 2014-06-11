@@ -1,56 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay08.libero.it ([212.52.84.112]:38411 "EHLO
-	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753811AbaFKVY7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 17:24:59 -0400
-Message-ID: <5398CA16.3030609@libero.it>
-Date: Wed, 11 Jun 2014 23:28:54 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from mx1.redhat.com ([209.132.183.28]:51824 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751797AbaFKWKD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Jun 2014 18:10:03 -0400
+Message-ID: <5398D3A4.9090108@redhat.com>
+Date: Wed, 11 Jun 2014 17:09:40 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Slow startup of systemd-journal on BTRFS
+To: Christoph Hellwig <hch@infradead.org>
+CC: Karel Zak <kzak@redhat.com>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
+        util-linux@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] mount: add btrfs to mount.8
+References: <1401933919-23608-1-git-send-email-guihc.fnst@cn.fujitsu.com> <20140605080311.GW9000@x2.net.home> <1402036359.17740.33.camel@localhost.localdomain> <20140606094428.GA30975@x2.net.home> <20140606100302.GB30975@x2.net.home> <5391E3D0.8050608@redhat.com> <20140607134150.GA22076@infradead.org>
+In-Reply-To: <20140607134150.GA22076@infradead.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On 6/7/14, 8:41 AM, Christoph Hellwig wrote:
+> On Fri, Jun 06, 2014 at 10:52:48AM -0500, Eric Sandeen wrote:
+>> On 6/6/14, 5:03 AM, Karel Zak wrote:
+>>> On Fri, Jun 06, 2014 at 11:44:28AM +0200, Karel Zak wrote:
+>>>>  I personally have no problem to maintain information about arbitrary
+>>>>  FS in mount.8, the problem are updates. Unfortunately, kernel FS developers
+>>>>  don't care about the man page at all and it's very often not up to date.
+>>>
+>>>  Hmm.. another possible way would be to create a script for util-linux
+>>>  that will analyze kernel Documentation/filesystems/<fsname>.txt and
+>>>  report changes that is necessary to make to mount.8. It should be
+>>>  relative simple with git. I'll try it..
+>>
+>> I like that idea.  Maybe <fsname.txt> will need a defined format, though,
+>> right?  Maybe asciidoc?
+>>
+>> I've still been meaning (in theory) to produce a mount manpage just for xfs.
+>> I'm still willing to do that if the above doesn't pan out.  I just need
+>> to get to it.  I'd be happy to do it for extN as well.
+> 
+> Autogenerating man pages from an adhoc format sounds like the wrong
+> approach.  I'd much rather have proper man paged for every filesystem.
+> With those we could also drop all that information from the kernel
+> Documentation directory, where users won't looks for them anyway.
+> 
+> Eric, if you take care of xfs an extN I'll get started on man pages
+> for the various "minor" filesystems that don't really have active
+> maintainers.
 
-I would like to share a my experience about a slowness of systemd when used on BTRFS.
+Ok, so I've sent xfs & extN and I am about to send btrfs.
 
-My boot time was very high (about ~50 seconds); most of time it was due to NetworkManager which took about 30-40 seconds to start (this data came from "systemd-analyze plot").
+But I still have the nagging feeling that it would be better to have these
+mount-option manpages distributed with the kernel, which is ultimately what
+they must match.
 
-I make several attempts to address this issue. Also I noticed that sometime this problem disappeared; but I was never able to understand why.
+So although I've sent them all, I'm still feeling unsure about it.  :)
 
-However this link
-
-	https://bugzilla.redhat.com/show_bug.cgi?id=1006386
-
-suggested me that the problem could be due to a bad interaction between systemd and btrfs. NetworkManager was innocent. 
-It seems that systemd-journal create a very hight fragmented files when it stores its log. And BTRFS it is know to behave slowly when a file is highly fragmented.
-This had caused a slow startup of systemd-journal, which in turn had blocked the services which depend by the loggin system.
-
-In fact after I de-fragmented the files under /var/log/journal [*], my boot time decreased of about 20second (from 50s to 30s).
-
-Unfortunately I don't have any data to show. The next time I will try to collect more information. But I am quite sure that when the log are highly fragmented systemd-journal becomes very slow on BTRFS.
-
-I don't know if the problem is more on the systemd side or btrfs side. What I know is that both the projects likely will be important in the near futures, and both must work well together.
-
-I know that I can "chattr +C" to avoid COW for some files; but I don't want to lost also the checksum protection. 
-
-If someone is able to suggest me how FRAGMENT the log file, I can try to collect more scientific data.
-
-
-BR
-G.Baroncelli
-
-[*] 
-# btrfs fi defrag /var/log/journal/*/*
-
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+-Eric

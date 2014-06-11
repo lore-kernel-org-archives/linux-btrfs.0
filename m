@@ -1,55 +1,299 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx.mylinuxtime.de ([148.251.109.235]:59918 "EHLO
-	mx.mylinuxtime.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751125AbaFEIOC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jun 2014 04:14:02 -0400
-From: Christian Hesse <mail@eworm.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Christian Hesse <mail@eworm.de>
-Subject: [PATCH 1/1] btrfs-progs: fix compiler warning
-Date: Thu,  5 Jun 2014 10:13:39 +0200
-Message-Id: <1401956019-2175-1-git-send-email-mail@eworm.de>
+Received: from mx1.redhat.com ([209.132.183.28]:10486 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752632AbaFKWOy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Jun 2014 18:14:54 -0400
+Received: from int-mx14.intmail.prod.int.phx2.redhat.com (int-mx14.intmail.prod.int.phx2.redhat.com [10.5.11.27])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s5BMEs8m030489
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 18:14:54 -0400
+Message-ID: <5398D4DF.9080508@redhat.com>
+Date: Wed, 11 Jun 2014 17:14:55 -0500
+From: Eric Sandeen <sandeen@redhat.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>, Karel Zak <kzak@redhat.com>
+Subject: [PATCH V2] btrfs-progs: add mount options to btrfs-mount.5
+References: <5398D475.4070309@redhat.com>
+In-Reply-To: <5398D475.4070309@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-gcc 4.9.0 gives warnings about possibly uninitialized values when
-compiling with function inlining and optimization level two enabled
-(CFLAGS="-finline-functions -O2").
+This is a straight cut and paste from the util-linux
+mount manpage into btrfs-mount.5
 
-Initializing the values fixes the warning. Hope this is correct.
+It's pretty much impossible for util-linux to keep up
+with every filesystem out there, and Karel has more than
+once expressed a wish that mount options move into fs-specific
+manpages.
 
-Signed-off-by: Christian Hesse <mail@eworm.de>
+So, here we go.
+
+The way btrfs asciidoc is generated, there's not a trivial
+way to have both btrfs(5) and btrfs(8) so I named it btrfs-mount(5)
+for now.  A bit ick and I'm open to suggestions.
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
- cmds-send.c   | 2 +-
- send-stream.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-send.c b/cmds-send.c
-index 1cd457d..0c3e96b 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -416,7 +416,7 @@ int cmd_send(int argc, char **argv)
- 	u32 i;
- 	char *mount_root = NULL;
- 	char *snapshot_parent = NULL;
--	u64 root_id;
-+	u64 root_id = 0;
- 	u64 parent_root_id = 0;
- 	int full_send = 1;
- 	int new_end_cmd_semantic = 0;
-diff --git a/send-stream.c b/send-stream.c
-index 88e18e2..54edafe 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -216,7 +216,7 @@ static int tlv_get_string(struct btrfs_send_stream *s, int attr, char **str)
- {
- 	int ret;
- 	void *data;
--	int len;
-+	int len = 0;
+V2: whoops, have to $(INSTALL) -d -m 755 $(DESTDIR)$(man5dir) too...
+
+diff --git a/Documentation/Makefile b/Documentation/Makefile
+index 03a5cd5..be95fda 100644
+--- a/Documentation/Makefile
++++ b/Documentation/Makefile
+@@ -31,13 +31,21 @@ MAN8_TXT += btrfs-replace.txt
+ MAN8_TXT += btrfs-restore.txt
+ MAN8_TXT += btrfs-property.txt
  
- 	TLV_GET(s, attr, &data, &len);
+-MAN_TXT = $(MAN8_TXT)
++# Mount manpage
++MAN5_TXT += btrfs-mount.txt
++
++MAN_TXT = $(MAN8_TXT) $(MAN5_TXT)
+ MAN_XML = $(patsubst %.txt,%.xml,$(MAN_TXT))
++
++DOC_MAN5 = $(patsubst %.txt,%.5,$(MAN5_TXT))
++GZ_MAN5 = $(patsubst %.txt,%.5.gz,$(MAN5_TXT))
++
+ DOC_MAN8 = $(patsubst %.txt,%.8,$(MAN8_TXT))
+ GZ_MAN8 = $(patsubst %.txt,%.8.gz,$(MAN8_TXT))
  
--- 
-2.0.0
+ mandir ?= $(prefix)/share/man
+ man8dir = $(mandir)/man8
++man5dir = $(mandir)/man5
+ 
+ ASCIIDOC = asciidoc
+ ASCIIDOC_EXTRA =
+@@ -67,25 +75,36 @@ endif
+ endif
+ 
+ all: man
+-man: man8
++man: man5 man8
++man5: $(GZ_MAN5)
+ man8: $(GZ_MAN8)
+ 
+ install: install-man
+ 
+ install-man: man
++	$(INSTALL) -d -m 755 $(DESTDIR)$(man5dir)
+ 	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
++	$(INSTALL) -m 644 $(GZ_MAN5) $(DESTDIR)$(man5dir)
+ 	$(INSTALL) -m 644 $(GZ_MAN8) $(DESTDIR)$(man8dir)
+ 	$(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)
+ 
+ clean:
+-	$(QUIET_RM)$(RM) *.xml *.xml+ *.8 *.8.gz
++	$(QUIET_RM)$(RM) *.xml *.xml+ *.5 *.5.gz *.8 *.8.gz
++
++%.5.gz : %.5
++	$(QUIET_GZIP)$(GZIP) -n -c $< > $@
+ 
+ %.8.gz : %.8
+ 	$(QUIET_GZIP)$(GZIP) -n -c $< > $@
+ 
++%.5 : %.xml 
++	$(QUIET_XMLTO)$(RM) $@ && \
++	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
++
+ %.8 : %.xml 
+ 	$(QUIET_XMLTO)$(RM) $@ && \
+ 	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
++
+ %.xml : %.txt asciidoc.conf
+ 	$(QUIET_ASCIIDOC)$(RM) $@.tmp[12] $@ && \
+ 	sed -e "s/\(<[^>]\+>\)/'\1'/g" < $< > $@.tmp1 && \
+diff --git a/Documentation/btrfs-mount.txt b/Documentation/btrfs-mount.txt
+new file mode 100644
+index 0000000..4433a78
+--- /dev/null
++++ b/Documentation/btrfs-mount.txt
+@@ -0,0 +1,186 @@
++btrfs-mount(5)
++==============
++
++NAME
++----
++btrfs-mount - mount options for the btrfs filesystem
++
++DESCRIPTION
++-----------
++This document describes mount options specific to the btrfs filesystem.
++Other generic mount options are available,and are described in the
++`mount`(8) manpage.
++
++MOUNT OPTIONS
++-------------
++*alloc_start='bytes'*::
++	Debugging option to force all block allocations above a certain
++	byte threshold on each block device.  The value is specified in
++	bytes, optionally with a K, M, or G suffix, case insensitive.
++	Default is 1MB.
++
++*autodefrag*::
++	Disable/enable auto defragmentation.
++	Auto defragmentation detects small random writes into files and queue
++	them up for the defrag process.  Works best for small files;
++	Not well suited for large database workloads.
++
++*check_int*|*check_int_data*|*check_int_print_mask='value'*::
++	These debugging options control the behavior of the integrity checking
++	module (the BTRFS_FS_CHECK_INTEGRITY config option required). +
++	+
++	`check_int` enables the integrity checker module, which examines all
++	block write requests to ensure on-disk consistency, at a large
++	memory and CPU cost. +
++	+
++	`check_int_data` includes extent data in the integrity checks, and
++	implies the check_int option. +
++	+
++	`check_int_print_mask` takes a bitmask of BTRFSIC_PRINT_MASK_* values
++	as defined in 'fs/btrfs/check-integrity.c', to control the integrity
++	checker module behavior. +
++	+
++	See comments at the top of 'fs/btrfs/check-integrity.c'
++	for more info.
++
++*commit='seconds'*::
++	Set the interval of periodic commit, 30 seconds by default. Higher
++	values defer data being synced to permanent storage with obvious
++	consequences when the system crashes. The upper bound is not forced,
++	but a warning is printed if it's more than 300 seconds (5 minutes).
++
++*compress*|*compress='type'*|*compress-force*|*compress-force='type'*::
++	Control BTRFS file data compression.  Type may be specified as "zlib"
++	"lzo" or "no" (for no compression, used for remounting).  If no type
++	is specified, zlib is used.  If compress-force is specified,
++	all files will be compressed, whether or not they compress well.
++	If compression is enabled, nodatacow and nodatasum are disabled.
++
++*degraded*::
++	Allow mounts to continue with missing devices.  A read-write mount may
++	fail with too many devices missing, for example if a stripe member
++	is completely missing.
++
++*device='devicepath'*::
++	Specify a device during mount so that ioctls on the control device
++	can be avoided.  Especially useful when trying to mount a multi-device
++	setup as root.  May be specified multiple times for multiple devices.
++
++*discard*::
++	Disable/enable discard mount option.
++	Discard issues frequent commands to let the block device reclaim space
++	freed by the filesystem.
++	This is useful for SSD devices, thinly provisioned
++	LUNs and virtual machine images, but may have a significant
++	performance impact.  (The fstrim command is also available to
++	initiate batch trims from userspace).
++
++*enospc_debug*::
++	Disable/enable debugging option to be more verbose in some ENOSPC conditions.
++
++*fatal_errors='action'*::
++	Action to take when encountering a fatal error. +
++		"bug" - BUG() on a fatal error.  This is the default. +
++		"panic" - panic() on a fatal error.
++
++*flushoncommit*::
++	The `flushoncommit` mount option forces any data dirtied by a write in a
++	prior transaction to commit as part of the current commit.  This makes
++	the committed state a fully consistent view of the file system from the
++	application's perspective (i.e., it includes all completed file system
++	operations).  This was previously the behavior only when a snapshot is
++	created.
++
++*inode_cache*:
++	Enable free inode number caching.   Defaults to off due to an overflow
++	problem when the free space crcs don't fit inside a single page.
++
++*max_inline='bytes'*::
++	Specify the maximum amount of space, in bytes, that can be inlined in
++	a metadata B-tree leaf.  The value is specified in bytes, optionally
++	with a K, M, or G suffix, case insensitive.  In practice, this value
++	is limited by the root sector size, with some space unavailable due
++	to leaf headers.  For a 4k sectorsize, max inline data is ~3900 bytes.
++
++*metadata_ratio='value'*::
++	Specify that 1 metadata chunk should be allocated after every
++	'value' data chunks.  Off by default.
++
++*noacl*::
++	Enable/disable support for Posix Access Control Lists (ACLs).  See the
++	`acl`(5) manual page for more information about ACLs.
++
++*nobarrier*::
++	ensure that certain IOs make it through the device cache and are on
++	persistent storage. If disabled on a device with a volatile
++	(non-battery-backed) write-back cache, nobarrier option will lead to
++	filesystem corruption on a system crash or power loss.
++
++*nodatacow*::
++	Enable/disable data copy-on-write for newly created files.
++	Nodatacow implies nodatasum, and disables all compression.
++
++*nodatasum*::
++	Enable/disable data checksumming for newly created files.
++	Datasum implies datacow.
++
++*notreelog*::
++	Enable/disable the tree logging used for fsync and O_SYNC writes.
++
++*recovery*::
++	Enable autorecovery attempts if a bad tree root is found at mount time.
++	Currently this scans a list of several previous tree roots and tries to
++	use the first readable.
++
++*rescan_uuid_tree*::
++	Force check and rebuild procedure of the UUID tree. This should not
++	normally be needed.
++
++*skip_balance*::
++	Skip automatic resume of interrupted balance operation after mount.
++	May be resumed with "btrfs balance resume."
++
++*nospace_cache*::
++	Disable freespace cache loading without clearing the cache.
++
++*clear_cache*::
++	Force clearing and rebuilding of the disk space cache if something
++	has gone wrong.
++
++*ssd*|*nossd*|*ssd_spread*::
++	Options to control ssd allocation schemes.  By default, BTRFS will
++	enable or disable ssd allocation heuristics depending on whether a
++	rotational or nonrotational disk is in use.  The ssd and nossd options
++	can override this autodetection. +
++	The ssd_spread mount option attempts to allocate into big chunks
++	of unused space, and may perform better on low-end ssds.  ssd_spread
++	implies ssd, enabling all other ssd heuristics as well.
++
++*subvol='path'*::
++	Mount subvolume at 'path' rather than the root subvolume. The
++	'path' is relative to the top level subvolume.
++
++*subvolid='ID'*::
++	Mount subvolume specified by an ID number rather than the root subvolume.
++	This allows mounting of subvolumes which are not in the root of the mounted
++	filesystem.
++	You can use "btrfs subvolume list" to see subvolume ID numbers.
++
++*subvolrootid='objectid' (deprecated)*::
++	Mount subvolume specified by 'objectid' rather than the root subvolume.
++	This allows mounting of subvolumes which are not in the root of the mounted
++	filesystem.
++	You can use "btrfs subvolume show" to see the object ID for a subvolume.
++
++*thread_pool='number'*::
++	The number of worker threads to allocate.  The default number is equal
++	to the number of CPUs + 2, or 8, whichever is smaller.
++
++*user_subvol_rm_allowed*::
++	Allow subvolumes to be deleted by a non-root user. Use with caution.
++
++SEE ALSO
++--------
++`mkfs.btrfs`(8),
++`mount`(8),
++`btrfs`(8)
 

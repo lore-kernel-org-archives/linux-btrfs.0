@@ -1,72 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51165 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753119AbaFKCGN (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:53423 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752290AbaFKC7a (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jun 2014 22:06:13 -0400
-Received: from athena.localnet (unknown [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id E784B2031F
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 12:06:05 +1000 (EST)
-From: Russell Coker <russell@coker.com.au>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Reply-To: russell@coker.com.au
-Subject: 3.13.6-1 user-space freeze on subvol removal - fixed in 3.14.4
-Date: Wed, 11 Jun 2014 12:05:59 +1000
-Message-ID: <2323799.KmhYrVNjAe@russell.coker.com.au>
+	Tue, 10 Jun 2014 22:59:30 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5B2xSAa032357
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Jun 2014 10:59:28 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix unfinished readahead thread for raid5/6 degraded mounting
+Date: Wed, 11 Jun 2014 10:55:22 +0800
+Message-ID: <1402455322-10471-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Last night I discovered a bug in my subvol removal script on one of my 
-servers.  I fixed the bug and ran the script to delete ~1500 subvols and the 
-system locked up.  It would respond to pings and accept TCP connections but 
-nothing else.  Existing ssh sessions didn't respond and connections to port 22 
-got a TCP connection but not even the start of the ssh handshake (IE sshd was 
-hung).
+Steps to reproduce:
 
-Today I visited the server and connected a keyboard, I couldn't get a keyboard 
-response to even unblank the screen (it's at a virtual console and X isn't 
-installed.
+ # mkfs.btrfs -f /dev/sd[b-f] -m raid5 -d raid5
+ # mkfs.ext4 /dev/sdc --->corrupt one of btrfs device
+ # mount /dev/sdb /mnt -o degraded
+ # btrfs scrub start -BRd /mnt
 
-I rebooted the system and found that the bug fix to the subvol removal script 
-was lost, the old version of the file was in place.  So all changes to the 
-filesystem from 10+ seconds before the subvol removal were discarded.
+This is because readahead would skip missing device, this is not true
+for RAID5/6, because REQ_GET_READ_MIRRORS return 1 for RAID5/6 block
+mapping. If expected data locates in missing device, readahead thread
+would not call __readahead_hook() which makes event @rc->elems=0
+wait forever.
 
-INFO: rcu_sched self detected stall on CPU { 1}  (t=5250 jiffies g=7989 c=7988 
-q=3)
-BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
-BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
-BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
-BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
-INFO: rcu_sched self detected stall on CPU { 1}  (t=21003 jiffies g=7989 c=7988 
-q=3)
-BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
-BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
-BUG: soft lockup - CPU#0 stuck for 23s! [sync:2424]
-BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:287]
+Fix this problem by checking return value of btrfs_map_block(),we
+can only skip missing device safely if there are several mirrors.
 
-After booting up I ran the new script and told it to delete only ~440 subvoles 
-and got the above messages on the console.  Those messages keep repeating with 
-the only differences being the value of the t= parameter and the number of 
-seconds (which varies between 22 and 23 seconds).  At that time the keyboard 
-didn't get any response from the system and sshd didn't even start it's 
-protocol (user-space seems dead).
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/reada.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-I had to do a hardware reset as CTRL-ALT-DEL and briefly pressing the power 
-button had no affect.
-
-After that I installed kernel 3.14.4 and deleted 442 subvols and then soon 
-after another 1104 without any problems.
-
-I've noticed before that generally newer kernels have been fixing the various 
-crashes related to snapshot creation and removal, but this is the first time 
-I've done a clean repeatable test to show 3.14 working where 3.13 failed.
-
-I had been hesitant to upgrade to 3.14 because I've seen it fail horribly with 
-Xen, but in this case it worked well with Xen.
-
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 30947f9..09230cf 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -428,8 +428,13 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
+ 			continue;
+ 		}
+ 		if (!dev->bdev) {
+-			/* cannot read ahead on missing device */
+-			continue;
++			/*
++			 * cannot read ahead on missing device, but for RAID5/6,
++			 * REQ_GET_READ_MIRRORS return 1. So don't skip missing
++			 * device for such case.
++			 */
++			if (nzones > 1)
++				continue;
+ 		}
+ 		if (dev_replace_is_ongoing &&
+ 		    dev == fs_info->dev_replace.tgtdev) {
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+1.8.2.1
 

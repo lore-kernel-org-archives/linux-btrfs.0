@@ -1,40 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51802 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932520AbaFKQAg (ORCPT
+Received: from outrelay08.libero.it ([212.52.84.112]:38411 "EHLO
+	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753811AbaFKVY7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 12:00:36 -0400
-From: Sasha Levin <sasha.levin@oracle.com>
-To: clm@fb.com, jbacik@fb.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Sasha Levin <sasha.levin@oracle.com>
-Subject: [PATCH] btrfs: prevent RCU warning when dereferencing radix tree slot
-Date: Wed, 11 Jun 2014 12:00:25 -0400
-Message-Id: <1402502425-17570-1-git-send-email-sasha.levin@oracle.com>
+	Wed, 11 Jun 2014 17:24:59 -0400
+Message-ID: <5398CA16.3030609@libero.it>
+Date: Wed, 11 Jun 2014 23:28:54 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Slow startup of systemd-journal on BTRFS
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mark the dereference as protected by lock. Not doing so triggers
-an RCU warning since the radix tree assumed that RCU is in use.
+Hi all,
 
-Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
----
- fs/btrfs/tests/btrfs-tests.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I would like to share a my experience about a slowness of systemd when used on BTRFS.
 
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index a5dcacb..9626252 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -135,7 +135,7 @@ restart:
- 	radix_tree_for_each_slot(slot, &fs_info->buffer_radix, &iter, 0) {
- 		struct extent_buffer *eb;
- 
--		eb = radix_tree_deref_slot(slot);
-+		eb = radix_tree_deref_slot_protected(slot, &fs_info->buffer_lock);
- 		if (!eb)
- 			continue;
- 		/* Shouldn't happen but that kind of thinking creates CVE's */
+My boot time was very high (about ~50 seconds); most of time it was due to NetworkManager which took about 30-40 seconds to start (this data came from "systemd-analyze plot").
+
+I make several attempts to address this issue. Also I noticed that sometime this problem disappeared; but I was never able to understand why.
+
+However this link
+
+	https://bugzilla.redhat.com/show_bug.cgi?id=1006386
+
+suggested me that the problem could be due to a bad interaction between systemd and btrfs. NetworkManager was innocent. 
+It seems that systemd-journal create a very hight fragmented files when it stores its log. And BTRFS it is know to behave slowly when a file is highly fragmented.
+This had caused a slow startup of systemd-journal, which in turn had blocked the services which depend by the loggin system.
+
+In fact after I de-fragmented the files under /var/log/journal [*], my boot time decreased of about 20second (from 50s to 30s).
+
+Unfortunately I don't have any data to show. The next time I will try to collect more information. But I am quite sure that when the log are highly fragmented systemd-journal becomes very slow on BTRFS.
+
+I don't know if the problem is more on the systemd side or btrfs side. What I know is that both the projects likely will be important in the near futures, and both must work well together.
+
+I know that I can "chattr +C" to avoid COW for some files; but I don't want to lost also the checksum protection. 
+
+If someone is able to suggest me how FRAGMENT the log file, I can try to collect more scientific data.
+
+
+BR
+G.Baroncelli
+
+[*] 
+# btrfs fi defrag /var/log/journal/*/*
+
+
+
 -- 
-1.7.10.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,89 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58509 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14818 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932111AbaFLHLf (ORCPT
+	with ESMTP id S932740AbaFLIcG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 03:11:35 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5C7BS3j007982
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Jun 2014 15:11:28 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Thu, 12 Jun 2014 04:32:06 -0400
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 1/2] btrfs-progs: Add human readable flags output string for extent flags.
-Date: Thu, 12 Jun 2014 15:12:31 +0800
-Message-ID: <1402557152-5495-1-git-send-email-quwenruo@cn.fujitsu.com>
+CC: <1i5t5.duncan@cox.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 1/3] btrfs-progs: fix missing parity stripe for raid6 in chunk-recover
+Date: Thu, 12 Jun 2014 16:26:56 +0800
+Message-ID: <1402561616-28949-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current btrfs-debug-tree outputs extent flags as numbers,
-which makes it hard to understand and need to check the source to
-understand the meaning.
+When deal with the p & q stripes for data profile raid6, chunk-recover
+forgets to insert them into the chunk record. Just insert them back
+freely.
+Also wrap the insert procedure into a new function, fill_chunk_up.
 
-This patch will convert numberic flags output to human readable strings.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
-changlog:
-v2: none
+changelog:
+	v1->v2: cleanup changelog, 'inert' changed to 'insert'
 ---
- print-tree.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
+ chunk-recover.c | 30 ++++++++++++++++++++----------
+ 1 file changed, 20 insertions(+), 10 deletions(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index 7263b09..7f831ad 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -242,6 +242,25 @@ static void print_file_extent_item(struct extent_buffer *eb,
- 	       btrfs_file_extent_compression(eb, fi));
+diff --git a/chunk-recover.c b/chunk-recover.c
+index dfa7ff6..9b46b0b 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -1785,6 +1785,23 @@ static inline int count_devext_records(struct list_head *record_list)
+ 	return num_of_records;
  }
  
-+/* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
-+static void extent_flags_to_str(u64 flags, char *ret)
++static int fill_chunk_up(struct chunk_record *chunk, struct list_head *devexts,
++			 struct recover_control *rc)
 +{
-+	int empty = 1;
++	int ret = 0;
++	int i;
 +
-+	if (flags & BTRFS_EXTENT_FLAG_DATA) {
-+		empty = 0;
-+		strcpy(ret, "DATA");
-+	}
-+	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+		if (!empty) {
-+			empty = 0;
-+			strcat(ret, "|");
++	for (i = 0; i < chunk->num_stripes; i++) {
++		if (!chunk->stripes[i].devid) {
++			ret = insert_stripe(devexts, rc, chunk, i);
++			if (ret)
++				break;
 +		}
-+		strcat(ret, "TREE_BLOCK");
 +	}
-+	return;
++
++	return ret;
 +}
 +
- static void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
- {
- 	struct btrfs_extent_item *ei;
-@@ -255,6 +274,7 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
- 	u32 item_size = btrfs_item_size_nr(eb, slot);
- 	u64 flags;
- 	u64 offset;
-+	char flags_str[32] = {0};
+ #define EQUAL_STRIPE (1 << 0)
  
- 	if (item_size < sizeof(*ei)) {
- #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
-@@ -271,11 +291,12 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
+ static int rebuild_raid_data_chunk_stripes(struct recover_control *rc,
+@@ -1919,9 +1936,9 @@ next_csum:
+ 		num_unordered = count_devext_records(&unordered);
+ 		if (chunk->type_flags & BTRFS_BLOCK_GROUP_RAID6
+ 					&& num_unordered == 2) {
+-			list_splice_init(&unordered, &chunk->dextents);
+ 			btrfs_release_path(&path);
+-			return 0;
++			ret = fill_chunk_up(chunk, &unordered, rc);
++			return ret;
+ 		}
  
- 	ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
- 	flags = btrfs_extent_flags(eb, ei);
-+	extent_flags_to_str(flags, flags_str);
- 
--	printf("\t\textent refs %llu gen %llu flags %llu\n",
-+	printf("\t\textent refs %llu gen %llu flags %s\n",
- 	       (unsigned long long)btrfs_extent_refs(eb, ei),
- 	       (unsigned long long)btrfs_extent_generation(eb, ei),
--	       (unsigned long long)flags);
-+	       flags_str);
- 
- 	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK && !metadata) {
- 		struct btrfs_tree_block_info *info;
+ 		goto next_stripe;
+@@ -1966,14 +1983,7 @@ out:
+ 			& BTRFS_BLOCK_GROUP_RAID5)
+ 		 || (num_unordered == 3 && chunk->type_flags
+ 			& BTRFS_BLOCK_GROUP_RAID6)) {
+-			for (i = 0; i < chunk->num_stripes; i++) {
+-				if (!chunk->stripes[i].devid) {
+-					ret = insert_stripe(&unordered, rc,
+-							chunk, i);
+-					if (ret)
+-						break;
+-				}
+-			}
++			ret = fill_chunk_up(chunk, &unordered, rc);
+ 		}
+ 	}
+ fail_out:
 -- 
-2.0.0
+1.8.1.4
 

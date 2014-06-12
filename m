@@ -1,89 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14818 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932740AbaFLIcG (ORCPT
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:56688 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933295AbaFLQIk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 04:32:06 -0400
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <1i5t5.duncan@cox.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2 1/3] btrfs-progs: fix missing parity stripe for raid6 in chunk-recover
-Date: Thu, 12 Jun 2014 16:26:56 +0800
-Message-ID: <1402561616-28949-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Thu, 12 Jun 2014 12:08:40 -0400
+Received: by mail-pd0-f169.google.com with SMTP id w10so1123113pde.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jun 2014 09:08:40 -0700 (PDT)
+From: Adam Buchbinder <abuchbinder@google.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dave@jikos.cz, Adam Buchbinder <abuchbinder@google.com>
+Subject: [PATCH] Use sparse files for filesystem conversion tests.
+Date: Thu, 12 Jun 2014 09:08:33 -0700
+Message-Id: <1402589313-15493-1-git-send-email-abuchbinder@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When deal with the p & q stripes for data profile raid6, chunk-recover
-forgets to insert them into the chunk record. Just insert them back
-freely.
-Also wrap the insert procedure into a new function, fill_chunk_up.
+On my system, this brings the FS conversion test suite's runtime from over
+ten seconds down to under two.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
-changelog:
-	v1->v2: cleanup changelog, 'inert' changed to 'insert'
----
- chunk-recover.c | 30 ++++++++++++++++++++----------
- 1 file changed, 20 insertions(+), 10 deletions(-)
+Thanks to Julien Muchembled for the suggestion.
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index dfa7ff6..9b46b0b 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1785,6 +1785,23 @@ static inline int count_devext_records(struct list_head *record_list)
- 	return num_of_records;
+Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
+---
+ tests/convert-tests.sh | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
+index 87369c5..9f7a5c8 100644
+--- a/tests/convert-tests.sh
++++ b/tests/convert-tests.sh
+@@ -13,15 +13,16 @@ _fail()
  }
  
-+static int fill_chunk_up(struct chunk_record *chunk, struct list_head *devexts,
-+			 struct recover_control *rc)
-+{
-+	int ret = 0;
-+	int i;
-+
-+	for (i = 0; i < chunk->num_stripes; i++) {
-+		if (!chunk->stripes[i].devid) {
-+			ret = insert_stripe(devexts, rc, chunk, i);
-+			if (ret)
-+				break;
-+		}
-+	}
-+
-+	return ret;
-+}
-+
- #define EQUAL_STRIPE (1 << 0)
+ rm -f convert-tests-results.txt
+-rm -f test.img
  
- static int rebuild_raid_data_chunk_stripes(struct recover_control *rc,
-@@ -1919,9 +1936,9 @@ next_csum:
- 		num_unordered = count_devext_records(&unordered);
- 		if (chunk->type_flags & BTRFS_BLOCK_GROUP_RAID6
- 					&& num_unordered == 2) {
--			list_splice_init(&unordered, &chunk->dextents);
- 			btrfs_release_path(&path);
--			return 0;
-+			ret = fill_chunk_up(chunk, &unordered, rc);
-+			return ret;
- 		}
+ test(){
+ 	echo "     [TEST]    $1"
+-        shift
+-        echo "creating ext image with: $*" >> convert-tests-results.txt
++	shift
++	echo "creating ext image with: $*" >> convert-tests-results.txt
+ 	# 256MB is the smallest acceptable btrfs image.
+-	dd if=/dev/zero of=$here/test.img bs=1024 count=$((256*1024)) \
+-		>> convert-tests-results.txt 2>&1 || _fail "dd failed"
++	rm -f $here/test.img >> convert-tests-results.txt 2>&1 \
++		|| _fail "could not remove test image file"
++	truncate -s 256M $here/test.img >> convert-tests-results.txt 2>&1 \
++		|| _fail "could not create test image file"
+ 	$* -F $here/test.img >> convert-tests-results.txt 2>&1 \
+ 		|| _fail "filesystem create failed"
+ 	$here/btrfs-convert $here/test.img >> convert-tests-results.txt 2>&1 \
+@@ -30,6 +31,7 @@ test(){
+ 		|| _fail "btrfsck detected errors"
+ }
  
- 		goto next_stripe;
-@@ -1966,14 +1983,7 @@ out:
- 			& BTRFS_BLOCK_GROUP_RAID5)
- 		 || (num_unordered == 3 && chunk->type_flags
- 			& BTRFS_BLOCK_GROUP_RAID6)) {
--			for (i = 0; i < chunk->num_stripes; i++) {
--				if (!chunk->stripes[i].devid) {
--					ret = insert_stripe(&unordered, rc,
--							chunk, i);
--					if (ret)
--						break;
--				}
--			}
-+			ret = fill_chunk_up(chunk, &unordered, rc);
- 		}
- 	}
- fail_out:
+-test "ext2, 4k blocksize" mke2fs -b 4096
+-test "ext3, 4k blocksize" mke2fs -j -b 4096
+-test "ext4, 4k blocksize" mke2fs -t ext4 -b 4096
++# btrfs-convert requires 4k blocksize.
++test "ext2" mke2fs -b 4096
++test "ext3" mke2fs -j -b 4096
++test "ext4" mke2fs -t ext4 -b 4096
 -- 
-1.8.1.4
+2.0.0.526.g5318336
 

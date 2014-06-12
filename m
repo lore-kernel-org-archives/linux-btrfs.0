@@ -1,36 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36671 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752921AbaFLAcr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 20:32:47 -0400
-Message-ID: <5398F5B9.3000207@fb.com>
-Date: Wed, 11 Jun 2014 20:35:05 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Filipe David Borba Manana <fdmanana@gmail.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix qgroups sanity test crash or hang
-References: <1402531956-27668-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1402531956-27668-1-git-send-email-fdmanana@gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49549 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752277AbaFLAkC convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Jun 2014 20:40:02 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Slow startup of systemd-journal on BTRFS
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <5398CA16.3030609@libero.it>
+Date: Wed, 11 Jun 2014 18:40:00 -0600
+Cc: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <32BBFA99-1503-4068-8C74-D6C46187A862@colorremedies.com>
+References: <5398CA16.3030609@libero.it>
+To: kreijack@inwind.it, Goffredo Baroncelli <kreijack@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/11/2014 08:12 PM, Filipe David Borba Manana wrote:
-> Often when running the qgroups sanity test, a crash or a hang happened.
-> This is because the extent buffer the test uses for the root node doesn't
-> have an header level explicitly set, making it have a random level value.
-> This is a problem when it's not zero for the btrfs_search_slot() calls
-> the test ends up doing, resulting in crashes or hangs such as the following:
-> 
 
-> Therefore initialize the extent buffer as an empty leaf (level 0).
+On Jun 11, 2014, at 3:28 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
 > 
-> Issue easy to reproduce when btrfs is built as a module via:
-> 
->     $ for ((i = 1; i <= 1000000; i++)); do rmmod btrfs; modprobe btrfs; done
+> If someone is able to suggest me how FRAGMENT the log file, I can try to collect more scientific data.
 
-Nice, thanks Filipe, I hadn't been able to trigger this yet.
+So long as you're not using compression, filefrag will show you fragments of systemd-journald journals. I can vouch for the behavior you experience without xattr +C or autodefrag, but further it also causes much slowness when reading journal contents. LIke if I want to search all boots for a particular error message to see how far back it started, this takes quite a bit longer than on other file systems. So far I'm not experiencing this problem with autodefrag or any other negative side effects, but my understanding is this code is still in flux.
 
--chris
+Since the journals have their own checksumming I'm not overly concerned about setting xattr +C.
+
+Chris Murphy

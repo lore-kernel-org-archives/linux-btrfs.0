@@ -1,66 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50536 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754435AbaFLGXW (ORCPT
+Received: from outrelay01.libero.it ([212.52.84.101]:57466 "EHLO
+	outrelay01.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754411AbaFLLFF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 02:23:22 -0400
-Message-ID: <5399474A.3040003@oracle.com>
-Date: Thu, 12 Jun 2014 14:23:06 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Thu, 12 Jun 2014 07:05:05 -0400
+Message-ID: <1008028489.2721751402571101092.JavaMail.defaultUser@defaultHost>
+Date: Thu, 12 Jun 2014 13:05:01 +0200 (CEST)
+From: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+Reply-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+To: <lists@colorremedies.com>
+Subject: R: Re: Slow startup of systemd-journal on BTRFS
+Cc: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: fix race condition between btrfs and udev
-References: <1402488698-12518-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-In-Reply-To: <1402488698-12518-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain;charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Wang,
 
-> Futher, a easy way to trigger this problem is by running the following
-> c codes repeatedly:
+>----Messaggio originale----
+>Da: lists@colorremedies.com
+>Data: 12/06/2014 2.40
+>A: <kreijack@inwind.it>, "Goffredo Baroncelli"<kreijack@libero.it>
+>Cc: "systemd Mailing List"<systemd-devel@lists.freedesktop.org>, "linux-btrfs"
+<linux-btrfs@vger.kernel.org>
+>Ogg: Re: Slow startup of systemd-journal on BTRFS
 >
->   int main(int argc, char **argv)
->   {
->   	/* pass a btrfs block device */
->   	int fd = open(argv[1], O_RDWR | O_EXCL);
-> 	if (fd < 0) {
-> 		perror("fail to open: %s", strerror(errno));
-> 		exit(1);
-> 	}
-> 	close(fd);
-> 	return 0;
->   }
 >
-> So the problem is RW opening would trigger udev event which will
-> call btrfs_scan_one_device().
+>On Jun 11, 2014, at 3:28 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
+>> 
+>> If someone is able to suggest me how FRAGMENT the log file, I can try to 
+collect more scientific data.
+>
+>So long as you're not using compression, filefrag will show you fragments of 
+systemd-journald journals. I can vouch for the behavior 
+> you experience without xattr +C or autodefrag, but further it also causes 
+much slowness when reading journal contents. LIke if I want to 
+> search all boots for a particular error message to see how far back it 
+started, this takes quite a bit longer than on other file systems. 
+> So far I'm not experiencing this problem with autodefrag or any other 
+negative side effects, but my understanding is this code is still in flux.
+>
+>Since the journals have their own checksumming I'm not overly concerned about 
+setting xattr +C.
+
+This is true; but it can be a general solution: the checksum of the data are 
+needed during a 
+scrub and/or a RAID rebuilding.
+
+I want to investigate doing an explicit defrag once a week.
 
 
-> In btrfs_scan_one_device(), it
-> would open the block device with EXCL flag..meanwhile if another
-> program try to open that device with O_EXCL, it would fail with
-> EBUSY.
-
-  Expected. But do we need O_EXCL in kernel:btrfs_scan_one_device()
-  at all ?
-
-> This happen seldomly in the real world, but if we use loop device
-> for test, we may hit this annoying problem.
-
-> A walkaround way to solve this problem is to wait kernel scanning
-> finished and then try it again.
-
-  I agree this happens seldom in production. But I don't agree on
-  something to fix as workaround.
-
-  Just sent out the patch:
-      btrfs: looping mkfs.btrfs -f <dev> may fail with EBUSY
-
-  which I believe can be a final fix. Your review / tests appreciated.
-
-
-Thanks, Anand
+>
+>Chris Murphy
+G.Baroncelli
 

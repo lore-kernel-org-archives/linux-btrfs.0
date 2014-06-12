@@ -1,39 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:58940 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754284AbaFLBSp (ORCPT
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:3337 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754488AbaFLBVb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 21:18:45 -0400
-From: Russell Coker <russell@coker.com.au>
+	Wed, 11 Jun 2014 21:21:31 -0400
+Date: Thu, 12 Jun 2014 11:21:04 +1000
+From: Dave Chinner <david@fromorbit.com>
 To: kreijack@inwind.it
-Reply-To: russell@coker.com.au
 Cc: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Slow startup of systemd-journal on BTRFS
-Date: Thu, 12 Jun 2014 11:18:37 +1000
-Message-ID: <1751055.d79eDl77JG@xev>
-In-Reply-To: <5398CA16.3030609@libero.it>
+Message-ID: <20140612012104.GO9508@dastard>
 References: <5398CA16.3030609@libero.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5398CA16.3030609@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 11 Jun 2014 23:28:54 Goffredo Baroncelli wrote:
->         https://bugzilla.redhat.com/show_bug.cgi?id=1006386
+On Wed, Jun 11, 2014 at 11:28:54PM +0200, Goffredo Baroncelli wrote:
+> Hi all,
 > 
-> suggested me that the problem could be due to a bad interaction between
-> systemd and btrfs. NetworkManager was innocent.  It seems that
-> systemd-journal create a very hight fragmented files when it stores its
-> log. And BTRFS it is know to behave slowly when a file is highly
-> fragmented. This had caused a slow startup of systemd-journal, which in
-> turn had blocked the services which depend by the loggin system.
+> I would like to share a my experience about a slowness of systemd when used on BTRFS.
+> 
+> My boot time was very high (about ~50 seconds); most of time it was due to NetworkManager which took about 30-40 seconds to start (this data came from "systemd-analyze plot").
+> 
+> I make several attempts to address this issue. Also I noticed that sometime this problem disappeared; but I was never able to understand why.
+> 
+> However this link
+> 
+> 	https://bugzilla.redhat.com/show_bug.cgi?id=1006386
+> 
+> suggested me that the problem could be due to a bad interaction between systemd and btrfs. NetworkManager was innocent. 
 
-On my BTRFS/systemd systems I edit /etc/systemd/journald.conf and put 
-"SystemMaxUse=50M".  That doesn't solve the fragmentation problem but reduces 
-it enough that it doesn't bother me.
+systemd has a very stupid journal write pattern. It checks if there
+is space in the file for the write, and if not it fallocates the
+small amount of space it needs (it does *4 byte* fallocate calls!)
+and then does the write to it.  All this does is fragment the crap
+out of the log files because the filesystems cannot optimise the
+allocation patterns.
+
+Yup, it fragments journal files on XFS, too.
+
+http://oss.sgi.com/archives/xfs/2014-03/msg00322.html
+
+IIRC, the systemd developers consider this a filesystem problem and
+so refused to change the systemd code to be nice to the filesystem
+allocators, even though they don't actually need to use fallocate...
+
+Cheers,
+
+Dave.
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+Dave Chinner
+david@fromorbit.com

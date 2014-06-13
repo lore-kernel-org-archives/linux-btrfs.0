@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from old.lon-b.elastichosts.com ([84.45.121.3]:48084 "EHLO
+Received: from old.lon-b.elastichosts.com ([84.45.121.3]:48109 "EHLO
 	lon-b.elastichosts.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751534AbaFMGr2 (ORCPT
+	with ESMTP id S1752847AbaFMGvj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Jun 2014 02:47:28 -0400
-Message-ID: <539A9E2F.1020209@elastichosts.com>
-Date: Fri, 13 Jun 2014 07:46:07 +0100
+	Fri, 13 Jun 2014 02:51:39 -0400
+Message-ID: <539A9F2B.3060308@elastichosts.com>
+Date: Fri, 13 Jun 2014 07:50:19 +0100
 From: Alin Dobre <alin.dobre@elastichosts.com>
 MIME-Version: 1.0
 To: bo.li.liu@oracle.com
@@ -22,7 +22,11 @@ On 13/06/14 04:37, Liu Bo wrote:
 > FS has entered into 'almost full' situation, and that may cause a bug that pages
 > are not marked with writeback tag and lead to processes's endless waiting.
 
-I'll send it as soon as it happens again, thanks!
+The output now (when the host is stable) is:
+Data, single: total=54.01GiB, used=24.48GiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=3.01GiB, used=1.31GiB
+unknown, single: total=464.00MiB, used=0.00
 
 Cheers,
 Alin.

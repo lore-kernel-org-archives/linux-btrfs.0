@@ -1,139 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5101 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750777AbaFMCy6 (ORCPT
+Received: from mail-pb0-f54.google.com ([209.85.160.54]:46582 "EHLO
+	mail-pb0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751811AbaFMVS6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 22:54:58 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v3] btrfs-progs: Improve the parse_size() error message.
-Date: Fri, 13 Jun 2014 10:55:57 +0800
-Message-ID: <1402628157-22320-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 13 Jun 2014 17:18:58 -0400
+Received: by mail-pb0-f54.google.com with SMTP id jt11so2519031pbb.27
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Jun 2014 14:18:58 -0700 (PDT)
+From: Adam Buchbinder <abuchbinder@google.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dave@jikos.cz, Adam Buchbinder <abuchbinder@google.com>
+Subject: [PATCH] Fix undefined behavior in radix-tree.c.
+Date: Fri, 13 Jun 2014 14:18:50 -0700
+Message-Id: <1402694330-21211-1-git-send-email-abuchbinder@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When using parse_size(), even non-numeric value is passed, it will only
-give error message "ERROR: size value is empty", which is quite
-confusing for end users.
+When running with UndefinedBehaviorSanitizer, the tests produce the following
+error:
 
-This patch will introduce more meaningful error message for the
-following new cases
-1) Invalid size string (non-numeric string)
-2) Minus size value (like "-1K")
+  radix-tree.c:836:30: runtime error: shift exponent 18446744073709551613
+  is too large for 64-bit type 'unsigned long'
 
-Also this patch will take full use of endptr returned by strtoll() to
-reduce unneeded loop.
+(That's a negative shift exponent represented as an unsigned long.)
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Even though the value is discarded in those cases, it's still undefined
+behavior; see the C99 standard, section 6.5.7, paragraph three: "If the
+value of the right operand is negative [...] the behavior is undefined."
+
+Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
 ---
-changlog:
-v2:
-   Remove uneeded return value
-   Avoid abuse of goto
-v3:
-   Don't reparse size twice
-   Better u64 overflow check
----
- utils.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 50 insertions(+), 16 deletions(-)
+ radix-tree.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 392c5cf..eab3a1b 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1610,20 +1610,53 @@ scan_again:
- 	return 0;
- }
- 
--u64 parse_size(char *s)
-+/* A not-so-good version fls64. No fascinating optimization since
-+ * no one except parse_size use it */
-+static int fls64(u64 x)
+diff --git a/radix-tree.c b/radix-tree.c
+index 4f295fc..7457944 100644
+--- a/radix-tree.c
++++ b/radix-tree.c
+@@ -833,10 +833,10 @@ int radix_tree_tagged(struct radix_tree_root *root, unsigned int tag)
+ static unsigned long __maxindex(unsigned int height)
  {
- 	int i;
-+
-+	for (i = 0; i <64; i++)
-+		if (x << i & (1UL << 63))
-+			return 64 - i;
-+	return 64 - i;
-+}
-+
-+u64 parse_size(char *s)
-+{
- 	char c;
-+	char *endptr;
- 	u64 mult = 1;
-+	u64 ret;
+ 	unsigned int tmp = height * RADIX_TREE_MAP_SHIFT;
+-	unsigned long index = (~0UL >> (RADIX_TREE_INDEX_BITS - tmp - 1)) >> 1;
++	unsigned long index = ~0UL;
  
--	for (i = 0; s && s[i] && isdigit(s[i]); i++) ;
--	if (!i) {
--		fprintf(stderr, "ERROR: size value is empty\n");
--		exit(50);
-+	if (!s) {
-+		fprintf(stderr, "ERROR: Size value is empty\n");
-+		exit(1);
- 	}
--
--	if (s[i]) {
--		c = tolower(s[i]);
-+	if (s[0] == '-') {
-+		fprintf(stderr,
-+			"ERROR: Size value '%s' is less equal than 0\n", s);
-+		exit(1);
-+	}
-+	ret = strtoull(s, &endptr, 10);
-+	if (endptr == s) {
-+		fprintf(stderr, "ERROR: Size value '%s' is invalid\n", s);
-+		exit(1);
-+	}
-+	if (endptr[0] && endptr[1]) {
-+		fprintf(stderr, "ERROR: Illegal suffix contains character '%c' in wrong position\n",
-+			endptr[1]);
-+		exit(1);
-+	}
-+	/* strtoll returns LLONG_MAX when overflow, if this happens,
-+	 * need to call strtoull to get the real size */
-+	if (errno == ERANGE && ret == ULLONG_MAX) {
-+		fprintf(stderr,
-+			"ERROR: Size value '%s' is too large for u64\n", s);
-+		exit(1);
-+	}
-+	if (endptr[0]) {
-+		c = tolower(endptr[0]);
- 		switch (c) {
- 		case 'e':
- 			mult *= 1024;
-@@ -1646,18 +1679,19 @@ u64 parse_size(char *s)
- 		case 'b':
- 			break;
- 		default:
--			fprintf(stderr, "ERROR: Unknown size descriptor "
--				"'%c'\n", c);
-+			fprintf(stderr, "ERROR: Unknown size descriptor '%c'\n",
-+				c);
- 			exit(1);
- 		}
- 	}
--	if (s[i] && s[i+1]) {
--		fprintf(stderr, "ERROR: Illegal suffix contains "
--			"character '%c' in wrong position\n",
--			s[i+1]);
--		exit(51);
-+	/* Check whether ret * mult overflow */
-+	if (fls64(ret) + fls64(mult) - 1 > 64) {
-+		fprintf(stderr,
-+			"ERROR: Size value '%s' is too large for u64\n", s);
-+		exit(1);
- 	}
--	return strtoull(s, NULL, 10) * mult;
-+	ret *= mult;
-+	return ret;
+-	if (tmp >= RADIX_TREE_INDEX_BITS)
+-		index = ~0UL;
++	if (tmp < RADIX_TREE_INDEX_BITS)
++		index = (index >> (RADIX_TREE_INDEX_BITS - tmp - 1)) >> 1;
+ 	return index;
  }
  
- int open_file_or_dir3(const char *fname, DIR **dirstream, int open_flags)
 -- 
-2.0.0
+2.0.0.526.g5318336
 

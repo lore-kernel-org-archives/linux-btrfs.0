@@ -1,81 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31686 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750855AbaFME0j (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35777 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750886AbaFMEgL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Jun 2014 00:26:39 -0400
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com, wangsl.fnst@cn.fujitsu.com
-Subject: [PATCH 2/2] btrfs: check generation as replace duplicates devid+uuid
-Date: Fri, 13 Jun 2014 12:26:21 +0800
-Message-Id: <1402633581-19265-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1402633581-19265-1-git-send-email-Anand.Jain@oracle.com>
-References: <1402633581-19265-1-git-send-email-Anand.Jain@oracle.com>
+	Fri, 13 Jun 2014 00:36:11 -0400
+Message-ID: <539A7FAC.60708@oracle.com>
+Date: Fri, 13 Jun 2014 12:35:56 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: When devices with same dev uuid occurs, only add
+ the one with largest generation.
+References: <1402390387-28730-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1402390387-28730-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
 
-When FS in unmounted we need to check generation number as well
-since devid+uuid combination could match with the missing replaced
-disk when it reappears, and without this patch it might pair with
-the replaced disk again.
 
- device_list_add() function is called in the following threads,
-	mount device option
-	mount argument
-	ioctl BTRFS_IOC_SCAN_DEV (btrfs dev scan)
-	ioctl BTRFS_IOC_DEVICES_READY (btrfs dev ready <dev>)
- they have been unit tested to work fine with this patch.
+Qu,
 
- If the user knows what he is doing and really want to pair with
- replaced disk (which is not a standard operation), then he should
- first clear the kernel btrfs device list in the memory by doing
- the module unload/load and followed with the mount -o device option.
+  Kindly note, device->generation is not updated when user scan the
+  device for the first time.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+  I have sent out patch:
+   [PATCH 2/2] btrfs: check generation as replace duplicates devid+uuid
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 56822f0..bb1b4bd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -523,6 +523,16 @@ static noinline int device_list_add(const char *path,
- 
- 		if (fs_devices->opened)
- 			return -EBUSY;
-+		else {
-+			/*
-+			 * That is if the FS is _not_ mounted and if you are here, that
-+			 * means there is more than one disk with same uuid and devid.
-+			 * We keep the one with larger generation number or the last-in
-+			 * if generation are equal.
-+			 */
-+			if (found_transid < device->generation)
-+				return -EINVAL;
-+		}
- 
- 		name = rcu_string_strdup(path, GFP_NOFS);
- 		if (!name)
-@@ -535,6 +545,15 @@ static noinline int device_list_add(const char *path,
- 		}
- 	}
- 
-+	/*
-+	 * Unmount does not free the btrfs_device struct but would zero
-+	 * generation along with most of the other members. So just update
-+	 * it back. We need it to pick the disk with largest generation
-+	 * (as above).
-+	 */
-+	if (!fs_devices->opened)
-+		device->generation = found_transid;
-+
- 	if (found_transid > fs_devices->latest_trans) {
- 		fs_devices->latest_devid = devid;
- 		fs_devices->latest_trans = found_transid;
--- 
-1.8.5.3
+  Please feel free to add your Signed-off-by, if you think so.
 
+  review comments are appreciated as usual.
+
+Thanks, Anand
+
+
+On 10/06/2014 16:53, Qu Wenruo wrote:
+> Since btrfs currently use dulicated dev uuid when doing device replace,
+> the following problem will happen:
+>
+> 1) mount with device A missing using degraded mode.
+> 2) replace device A with device B.
+> 3) device A reappears.
+> 4) umount btrfs fs.
+> 5) mount btrfs fs.
+>
+> After step 5), btrfs will still use device A even device B has a larger
+> generation.
+>
+> The patch will judge generation when difference device with same dev
+> uuid.
+> And the patch should be applied after Anand's patch:
+> https://patchwork.kernel.org/patch/4309651/
+>
+> Cc: Anand Jain <Anand.Jain@oracle.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/volumes.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 0a5017a..07f0cf7 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -508,7 +508,8 @@ static noinline int device_list_add(const char *path,
+>
+>   		ret = 1;
+>   		device->fs_devices = fs_devices;
+> -	} else if (!device->name || strcmp(device->name->str, path)) {
+> +	} else if (!device->name || (strcmp(device->name->str, path) &&
+> +		   found_transid > device->generation)) {
+>   		/*
+>   		 * When FS is already mounted.
+>   		 * 1. If you are here and if the device->name is NULL that means
+>

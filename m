@@ -1,57 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f178.google.com ([209.85.217.178]:33523 "EHLO
-	mail-lb0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753008AbaFLPnr (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:20594 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751078AbaFMBri (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 11:43:47 -0400
-Received: by mail-lb0-f178.google.com with SMTP id w7so792810lbi.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jun 2014 08:43:46 -0700 (PDT)
+	Thu, 12 Jun 2014 21:47:38 -0400
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-kernel@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <akpm@linux-foundation.org>,
+        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v4] lib: add size unit t/p/e to memparse
+Date: Fri, 13 Jun 2014 09:42:26 +0800
+Message-ID: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <5398F5B9.3000207@fb.com>
-References: <1402531956-27668-1-git-send-email-fdmanana@gmail.com>
-	<5398F5B9.3000207@fb.com>
-Date: Thu, 12 Jun 2014 16:43:45 +0100
-Message-ID: <CAL3q7H5+0MMXiqREDon8B5-m4tpp1uPvtrf4wwCo-6gOeCJN7A@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix qgroups sanity test crash or hang
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Chris Mason <clm@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 12, 2014 at 1:35 AM, Chris Mason <clm@fb.com> wrote:
-> On 06/11/2014 08:12 PM, Filipe David Borba Manana wrote:
->> Often when running the qgroups sanity test, a crash or a hang happened.
->> This is because the extent buffer the test uses for the root node doesn't
->> have an header level explicitly set, making it have a random level value.
->> This is a problem when it's not zero for the btrfs_search_slot() calls
->> the test ends up doing, resulting in crashes or hangs such as the following:
->>
->
->> Therefore initialize the extent buffer as an empty leaf (level 0).
->>
->> Issue easy to reproduce when btrfs is built as a module via:
->>
->>     $ for ((i = 1; i <= 1000000; i++)); do rmmod btrfs; modprobe btrfs; done
->
-> Nice, thanks Filipe, I hadn't been able to trigger this yet.
+For modern filesystems such as btrfs, t/p/e size level operations
+are common.
+add size unit t/p/e parsing to memparse
 
-It's a bit rare for me too, happens about 1/100 in my vm. Every time
-it fails root->node's header level is a non-zero value, usually way
-bigger than BTRFS_MAX_LEVEL (8), causing all sorts of badness in
-btrfs_search_slot() due to out of bounds accesses to the arrays
-path->{locks | nodes | slots}
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+changelog
+	v1->v2: replace kilobyte with kibibyte, and others
+	v2->v3: add missing unit "bytes" in comment
+	v3->v4: remove idiotic name for K,M,G,P,T,E
+---
+ lib/cmdline.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
->
-> -chris
-
-
-
+diff --git a/lib/cmdline.c b/lib/cmdline.c
+index d4932f7..76a712e 100644
+--- a/lib/cmdline.c
++++ b/lib/cmdline.c
+@@ -121,11 +121,7 @@ EXPORT_SYMBOL(get_options);
+  *	@retptr: (output) Optional pointer to next char after parse completes
+  *
+  *	Parses a string into a number.  The number stored at @ptr is
+- *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+- *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+- *	1073741824).  If the number is suffixed with K, M, or G, then
+- *	the return value is the number multiplied by one kilobyte, one
+- *	megabyte, or one gigabyte, respectively.
++ *	potentially suffixed with K, M, G, T, P, E.
+  */
+ 
+ unsigned long long memparse(const char *ptr, char **retptr)
+@@ -135,6 +131,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+ 	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+ 
+ 	switch (*endptr) {
++	case 'E':
++	case 'e':
++		ret <<= 10;
++	case 'P':
++	case 'p':
++		ret <<= 10;
++	case 'T':
++	case 't':
++		ret <<= 10;
+ 	case 'G':
+ 	case 'g':
+ 		ret <<= 10;
 -- 
-Filipe David Manana,
+1.8.1.4
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

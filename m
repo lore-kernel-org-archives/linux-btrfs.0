@@ -1,149 +1,318 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44661 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752108AbaFOFnU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Jun 2014 01:43:20 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ww3Dq-0006lX-Sf
-	for linux-btrfs@vger.kernel.org; Sun, 15 Jun 2014 07:43:18 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:43:18 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:43:18 +0200
+Received: from mail-yk0-f169.google.com ([209.85.160.169]:35769 "EHLO
+	mail-yk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751007AbaFOK1L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Jun 2014 06:27:11 -0400
+Received: by mail-yk0-f169.google.com with SMTP id q200so3340238ykb.14
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 03:27:11 -0700 (PDT)
+MIME-Version: 1.0
+Date: Sun, 15 Jun 2014 12:27:10 +0200
+Message-ID: <CAMdWP3HZPWTwAO+A9r+cX6rORphFVCt5WDrXk9KKmJ6w+NPiQw@mail.gmail.com>
+Subject: kernel BUG at fs/btrfs/ctree.h:2417
+From: Tobias Hunger <tobias.hunger@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Slow startup of systemd-journal on BTRFS
-Date: Sun, 15 Jun 2014 05:43:06 +0000 (UTC)
-Message-ID: <pan$c82aa$ea13b40$dc4fc67d$63d84512@cox.net>
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
-	<pan$22693$6b452195$976b783a$e4956372@cox.net>
-	<20140612232453.GR9508@dastard> <539B78F3.9070607@libero.it>
-	<pan$625ac$a8aa7477$d0179ebe$c66ba817@cox.net>
-	<539BFF47.8060006@libero.it>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: systemd-devel@lists.freedesktop.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli posted on Sat, 14 Jun 2014 09:52:39 +0200 as
-excerpted:
+I keep running into this bug on a 2.14.3 kernel from arch linux. It
+seems to be triggered by docker removing a machine. Docker is using
+the btrfs backend here, so doing so involves some btrfs subvolume
+magic (or so I guess:-).
 
-> On 06/14/2014 04:53 AM, Duncan wrote:
->> Goffredo Baroncelli posted on Sat, 14 Jun 2014 00:19:31 +0200 as
->> excerpted:
->> 
->>> thanks for pointing that. However I am performing my tests on a fedora
->>> 20 with systemd-208, which seems have this change
->>>
->>> I am reaching the conclusion that fallocate is not the problem. The
->>> fallocate increase the filesize of about 8MB, which is enough for some
->>> logging. So it is not called very often.
+Jun 14 22:18:05 ron kernel: ------------[ cut here ]------------
+Jun 14 22:18:05 ron kernel: kernel BUG at fs/btrfs/ctree.h:2417!
+Jun 14 22:18:06 ron kernel: invalid opcode: 0000 [#1] PREEMPT SMP
+Jun 14 22:18:06 ron kernel: Modules linked in: veth xt_nat xt_addrtype
+ipt_MASQUERADE iptable_nat nf_nat_ipv4 nf_nat xt_tcpudp xt_LOG
+xt_limit xt_physdev ip6t_REJECT nf_conntrack_ipv6 ipt_REJECT
+nf_conntrack_ipv4 nf_defrag_ipv6 nf_defrag_ipv4 bridge xt_conntrack
+stp nf_conntrack llc iptable_filter ip6table_filter ip_tables
+ip6_tables x_tables nls_iso8859_1 nls_cp437 vfat fat sha256_ssse3
+sha256_generic kvm_amd ppdev kvm radeon snd_hda_codec_hdmi microcode
+psmouse snd_hda_intel joydev serio_raw mousedev evdev pcspkr
+snd_hda_codec mac_hid k10temp i2c_piix4 r8169 ttm drm_kms_helper
+snd_hwdep snd_pcm drm mii snd_timer snd hwmon i2c_algo_bit parport_pc
+soundcore i2c_core acpi_cpufreq tpm_infineon parport tpm_tis shpchp
+tpm processor button btrfs raid6_pq xor dm_crypt hid_lenovo_tpkbd
+led_class usbhid hid dm_mod sd_mod
+Jun 14 22:18:06 ron kernel:  crc_t10dif atkbd libps2 crct10dif_pclmul
+crct10dif_common crc32_pclmul crc32c_intel ghash_clmulni_intel
+aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd
+ehci_pci ohci_pci ohci_hcd ehci_hcd xhci_hcd ahci libahci libata
+aacraid usbcore usb_common scsi_mod i8042 serio
+Jun 14 22:18:06 ron kernel: CPU: 3 PID: 463 Comm: btrfs-cleaner Not
+tainted 3.14.3-2-ARCH #1
+Jun 14 22:18:06 ron kernel: Hardware name: Gigabyte Technology Co.,
+Ltd. To be filled by O.E.M./F2A75M-D3H, BIOS F5 03/12/2013
+Jun 14 22:18:06 ron kernel: task: ffff880424df6bf0 ti:
+ffff880426b9c000 task.ti: ffff880426b9c000
+Jun 14 22:18:06 ron kernel: RIP: 0010:[<ffffffffa0555b37>]
+[<ffffffffa0555b37>] lookup_inline_extent_backref+0x427/0x5f0 [btrfs]
+Jun 14 22:18:06 ron kernel: RSP: 0018:ffff880426b9da88  EFLAGS: 00010297
+Jun 14 22:18:06 ron kernel: RAX: 0000000000000000 RBX:
+ffff8803dd7d0dc0 RCX: ffff880426b9da30
+Jun 14 22:18:06 ron kernel: RDX: ffff880000000000 RSI:
+0000000000003fe3 RDI: 0000000000000000
+Jun 14 22:18:06 ron kernel: RBP: ffff880426b9db28 R08:
+0000000000004000 R09: ffff880426b9da40
+Jun 14 22:18:06 ron kernel: R10: 0000000000000000 R11:
+0000000000000003 R12: 0000000000003fe3
+Jun 14 22:18:06 ron kernel: R13: 00000000000000b2 R14:
+0000000000000000 R15: 0000000000004000
+Jun 14 22:18:06 ron kernel: FS:  00007f7b38b4f700(0000)
+GS:ffff88043ed80000(0000) knlGS:0000000000000000
+Jun 14 22:18:06 ron kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Jun 14 22:18:06 ron kernel: CR2: 00007fea76104000 CR3:
+00000003fafcb000 CR4: 00000000000407e0
+Jun 14 22:18:06 ron kernel: Stack:
+Jun 14 22:18:06 ron kernel:  ffff88042468b800 ffff88042380a120
+0000000000000035 ffff880426b9dbb0
+Jun 14 22:18:06 ron kernel:  0000000000004000 ffff8804000000b2
+ffff8803dd7d0dc0 0000000100eff000
+Jun 14 22:18:06 ron kernel:  ffffffff00000850 f000880426b9db28
+00a80000000100ef ff00000000000800
+Jun 14 22:18:06 ron kernel: Call Trace:
+Jun 14 22:18:06 ron kernel:  [<ffffffffa054a26a>] ?
+btrfs_alloc_path+0x1a/0x20 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa0558a7b>]
+__btrfs_free_extent+0x10b/0xa90 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa055db72>]
+__btrfs_run_delayed_refs+0x442/0x1270 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffff812bcc3a>] ?
+__percpu_counter_add+0x5a/0x90
+Jun 14 22:18:06 ron kernel:  [<ffffffffa05570c6>] ?
+add_pinned_bytes+0x46/0x60 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa05628eb>]
+btrfs_run_delayed_refs.part.52+0x7b/0x260 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa0562ae7>]
+btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa0572ab8>]
+btrfs_should_end_transaction+0x58/0x60 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa056108a>]
+btrfs_drop_snapshot+0x44a/0x7e0 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa0574788>]
+btrfs_clean_one_deleted_snapshot+0xd8/0x160 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa056a850>]
+cleaner_kthread+0x150/0x1a0 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffffa056a700>] ?
+free_fs_root+0xd0/0xd0 [btrfs]
+Jun 14 22:18:06 ron kernel:  [<ffffffff8108f2ea>] kthread+0xea/0x100
+Jun 14 22:18:06 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:06 ron kernel:  [<ffffffff8151787c>] ret_from_fork+0x7c/0xb0
+Jun 14 22:18:06 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:06 ron kernel: Code: 48 39 45 10 74 74 0f 87 28 01 00 00
+41 81 fe b6 00 00 00 74 1f 41 81 fe b0 00 00 00 74 16 41 81 fe b8 00
+00 00 0f 84 69 01 00 00 <0f> 0b 0f 1f 80 00 00 00 00 b8 09 00 00 00 49
+01 c4 4d 39 e7 0f
+Jun 14 22:18:06 ron kernel: RIP  [<ffffffffa0555b37>]
+lookup_inline_extent_backref+0x427/0x5f0 [btrfs]
+Jun 14 22:18:06 ron kernel:  RSP <ffff880426b9da88>
+Jun 14 22:18:06 ron kernel: ---[ end trace 85afc2ecac52e6f6 ]---
+Jun 14 22:18:06 ron kernel: note: btrfs-cleaner[463] exited with preempt_count 2
+Jun 14 22:18:36 ron kernel: BUG: soft lockup - CPU#2 stuck for 22s!
+[btrfs-delalloc-:898]
+Jun 14 22:18:36 ron kernel: Modules linked in: veth xt_nat xt_addrtype
+ipt_MASQUERADE iptable_nat nf_nat_ipv4 nf_nat xt_tcpudp xt_LOG
+xt_limit xt_physdev ip6t_REJECT nf_conntrack_ipv6 ipt_REJECT
+nf_conntrack_ipv4 nf_defrag_ipv6 nf_defrag_ipv4 bridge xt_conntrack
+stp nf_conntrack llc iptable_filter ip6table_filter ip_tables
+ip6_tables x_tables nls_iso8859_1 nls_cp437 vfat fat sha256_ssse3
+sha256_generic kvm_amd ppdev kvm radeon snd_hda_codec_hdmi microcode
+psmouse snd_hda_intel joydev serio_raw mousedev evdev pcspkr
+snd_hda_codec mac_hid k10temp i2c_piix4 r8169 ttm drm_kms_helper
+snd_hwdep snd_pcm drm mii snd_timer snd hwmon i2c_algo_bit parport_pc
+soundcore i2c_core acpi_cpufreq tpm_infineon parport tpm_tis shpchp
+tpm processor button btrfs raid6_pq xor dm_crypt hid_lenovo_tpkbd
+led_class usbhid hid dm_mod sd_mod
+Jun 14 22:18:36 ron kernel:  crc_t10dif atkbd libps2 crct10dif_pclmul
+crct10dif_common crc32_pclmul crc32c_intel ghash_clmulni_intel
+aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd
+ehci_pci ohci_pci ohci_hcd ehci_hcd xhci_hcd ahci libahci libata
+aacraid usbcore usb_common scsi_mod i8042 serio
+Jun 14 22:18:36 ron kernel: CPU: 2 PID: 898 Comm: btrfs-delalloc-
+Tainted: G      D      3.14.3-2-ARCH #1
+Jun 14 22:18:36 ron kernel: Hardware name: Gigabyte Technology Co.,
+Ltd. To be filled by O.E.M./F2A75M-D3H, BIOS F5 03/12/2013
+Jun 14 22:18:36 ron kernel: task: ffff880424df2740 ti:
+ffff8803defe0000 task.ti: ffff8803defe0000
+Jun 14 22:18:36 ron kernel: BUG: soft lockup - CPU#3 stuck for 22s!
+[btrfs-endio-wri:908]
+Jun 14 22:18:36 ron kernel: Modules linked in: veth xt_nat xt_addrtype
+ipt_MASQUERADE iptable_nat nf_nat_ipv4 nf_nat xt_tcpudp xt_LOG
+xt_limit xt_physdev ip6t_REJECT nf_conntrack_ipv6 ipt_REJECT
+nf_conntrack_ipv4 nf_defrag_ipv6 nf_defrag_ipv4 bridge xt_conntrack
+stp nf_conntrack llc iptable_filter ip6table_filter ip_tables
+ip6_tables x_tables nls_iso8859_1 nls_cp437 vfat fat sha256_ssse3
+sha256_generic kvm_amd ppdev kvm radeon snd_hda_codec_hdmi microcode
+psmouse snd_hda_intel joydev serio_raw mousedev evdev pcspkr
+snd_hda_codec mac_hid k10temp i2c_piix4 r8169 ttm drm_kms_helper
+snd_hwdep snd_pcm drm mii snd_timer snd hwmon i2c_algo_bit parport_pc
+soundcore i2c_core acpi_cpufreq tpm_infineon parport tpm_tis shpchp
+tpm processor button btrfs raid6_pq xor dm_crypt hid_lenovo_tpkbd
+led_class usbhid hid dm_mod sd_mod
+Jun 14 22:18:36 ron kernel:  crc_t10dif atkbd libps2 crct10dif_pclmul
+crct10dif_common crc32_pclmul crc32c_intel ghash_clmulni_intel
+aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd
+ehci_pci ohci_pci ohci_hcd ehci_hcd xhci_hcd ahci libahci libata
+aacraid usbcore usb_common scsi_mod i8042 serio
+Jun 14 22:18:36 ron kernel: CPU: 3 PID: 908 Comm: btrfs-endio-wri
+Tainted: G      D      3.14.3-2-ARCH #1
+Jun 14 22:18:36 ron kernel: Hardware name: Gigabyte Technology Co.,
+Ltd. To be filled by O.E.M./F2A75M-D3H, BIOS F5 03/12/2013
+Jun 14 22:18:36 ron kernel: task: ffff880424df5850 ti:
+ffff8803dd338000 task.ti: ffff8803dd338000
+Jun 14 22:18:36 ron kernel: RIP: 0010:[<ffffffff812a51eb>]
+[<ffffffff812a51eb>] __write_lock_failed+0xb/0x20
+Jun 14 22:18:36 ron kernel: RSP: 0018:ffff8803dd339930  EFLAGS: 00000287
+Jun 14 22:18:36 ron kernel: RAX: 0000000000000000 RBX:
+0000000000004000 RCX: 0000000000000001
+Jun 14 22:18:36 ron kernel: RDX: 0000000000000000 RSI:
+00000003dee52000 RDI: ffff880401f44e30
+Jun 14 22:18:36 ron kernel: RBP: ffff8803dd339930 R08:
+0000000000000001 R09: ffff880401f44dc0
+Jun 14 22:18:36 ron kernel: R10: 0000000000000000 R11:
+0000000000000000 R12: ffff8803dd3399c8
+Jun 14 22:18:36 ron kernel: R13: 0000000000000086 R14:
+ffffffffa056d3b6 R15: ffff8803dd3398b8
+Jun 14 22:18:36 ron kernel: FS:  00007f2539d1c740(0000)
+GS:ffff88043ed80000(0000) knlGS:0000000000000000
+Jun 14 22:18:36 ron kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Jun 14 22:18:36 ron kernel: CR2: 00007fbc8c3112d0 CR3:
+00000003ebd44000 CR4: 00000000000407e0
+Jun 14 22:18:36 ron kernel: Stack:
+Jun 14 22:18:36 ron kernel:  ffff8803dd339940 ffffffff8150eb9f
+ffff8803dd339960 ffffffffa05abaae
+Jun 14 22:18:36 ron kernel:  ffff88042380a6c0 0000000000000001
+ffff8803dd339a00 ffffffffa054f5e0
+Jun 14 22:18:36 ron kernel:  ffff880000000000 0000160000000000
+ffff88042380a6c8 0000000200000000
+Jun 14 22:18:36 ron kernel: Call Trace:
+Jun 14 22:18:36 ron kernel:  [<ffffffff8150eb9f>] _raw_write_lock+0x1f/0x30
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05abaae>]
+btrfs_try_tree_write_lock+0x2e/0x80 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa054f5e0>]
+btrfs_search_slot+0x480/0xa10 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05557e6>]
+lookup_inline_extent_backref+0xd6/0x5f0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa054a26a>] ?
+btrfs_alloc_path+0x1a/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa0558a7b>]
+__btrfs_free_extent+0x10b/0xa90 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa055db72>]
+__btrfs_run_delayed_refs+0x442/0x1270 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa058f657>] ?
+merge_state.part.32+0x137/0x140 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05628eb>]
+btrfs_run_delayed_refs.part.52+0x7b/0x260 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa0562ae7>]
+btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05741a3>]
+__btrfs_end_transaction+0x243/0x380 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05742f0>]
+btrfs_end_transaction+0x10/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa057c368>]
+btrfs_finish_ordered_io+0x148/0x5d0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa057ca85>]
+finish_ordered_fn+0x15/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05a362d>]
+worker_loop+0x15d/0x5a0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffff810b3915>] ? __wake_up_common+0x55/0x90
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05a34d0>] ?
+btrfs_queue_worker+0x310/0x310 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f2ea>] kthread+0xea/0x100
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:36 ron kernel:  [<ffffffff8151787c>] ret_from_fork+0x7c/0xb0
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:36 ron kernel: Code: 48 89 01 31 c0 66 66 90 c3 b8 f2 ff
+ff ff 66 66 90 c3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 55 48 89
+e5 f0 81 07 00 00 10 00 <f3> 90 81 3f 00 00 10 00 75 f6 f0 81 2f 00 00
+10 00 75 e6 5d c3
+Jun 14 22:18:36 ron kernel: RIP: 0010:[<ffffffff812a5209>]
+[<ffffffff812a5209>] __read_lock_failed+0x9/0x20
+Jun 14 22:18:36 ron kernel: RSP: 0018:ffff8803defe17a8  EFLAGS: 00000297
+Jun 14 22:18:36 ron kernel: RAX: ffff8803defe17c8 RBX:
+ffff880425d27628 RCX: 0000000000000004
+Jun 14 22:18:36 ron kernel: RDX: 0000000000000004 RSI:
+0000000000000005 RDI: ffff8803e1056bb0
+Jun 14 22:18:36 ron kernel: RBP: ffff8803defe17a8 R08:
+00000000ffffffff R09: 0000000000000001
+Jun 14 22:18:36 ron kernel: R10: 0000057bddb759f7 R11:
+ffffea00108e0a40 R12: ffff880425d27628
+Jun 14 22:18:36 ron kernel: R13: 000000080041753f R14:
+ffffffff810a991c R15: ffff8803defe1738
+Jun 14 22:18:36 ron kernel: FS:  00007f7fb04af700(0000)
+GS:ffff88043ed00000(0000) knlGS:0000000000000000
+Jun 14 22:18:36 ron kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Jun 14 22:18:36 ron kernel: CR2: 00007fbc8c01e700 CR3:
+0000000425e26000 CR4: 00000000000407e0
+Jun 14 22:18:36 ron kernel: Stack:
+Jun 14 22:18:36 ron kernel:  ffff8803defe17b8 ffffffff8150eb0b
+ffff8803defe1820 ffffffffa05ab94f
+Jun 14 22:18:36 ron kernel:  ffffffff8109e12b ffff880425d275c0
+ffff8803defe1800 ffffffff8109e159
+Jun 14 22:18:36 ron kernel:  ffff880425d275c0 0000000006e050f1
+ffff8803e1056b40 ffff88042468b800
+Jun 14 22:18:36 ron kernel: Call Trace:
+Jun 14 22:18:36 ron kernel:  [<ffffffff8150eb0b>] _raw_read_lock+0x1b/0x20
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05ab94f>]
+btrfs_tree_read_lock+0x5f/0x120 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffff8109e12b>] ? check_preempt_curr+0x7b/0x90
+Jun 14 22:18:36 ron kernel:  [<ffffffff8109e159>] ? ttwu_do_wakeup+0x19/0xf0
+Jun 14 22:18:36 ron kernel:  [<ffffffffa054a4fb>]
+btrfs_read_lock_root_node+0x3b/0x50 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa054f8e9>]
+btrfs_search_slot+0x789/0xa10 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffff81086e0e>] ? insert_work+0x6e/0xb0
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05557e6>]
+lookup_inline_extent_backref+0xd6/0x5f0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa054a26a>] ?
+btrfs_alloc_path+0x1a/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa0558a7b>]
+__btrfs_free_extent+0x10b/0xa90 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa055db72>]
+__btrfs_run_delayed_refs+0x442/0x1270 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05512c9>] ?
+setup_items_for_insert+0x2e9/0x410 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05539fb>] ?
+block_rsv_add_bytes+0x4b/0x60 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05c8807>] ?
+btrfs_delayed_update_inode+0x167/0x4f0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05628eb>]
+btrfs_run_delayed_refs.part.52+0x7b/0x260 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa0562ae7>]
+btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05741a3>]
+__btrfs_end_transaction+0x243/0x380 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05742f0>]
+btrfs_end_transaction+0x10/0x20 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa0579e68>]
+cow_file_range_inline+0x258/0x310 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa057b8de>]
+compress_file_range.constprop.57+0x23e/0x6e0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa057bdc4>]
+async_cow_start+0x44/0x80 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05a362d>]
+worker_loop+0x15d/0x5a0 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffffa05a34d0>] ?
+btrfs_queue_worker+0x310/0x310 [btrfs]
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f2ea>] kthread+0xea/0x100
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:36 ron kernel:  [<ffffffff8151787c>] ret_from_fork+0x7c/0xb0
+Jun 14 22:18:36 ron kernel:  [<ffffffff8108f200>] ?
+kthread_create_on_node+0x1a0/0x1a0
+Jun 14 22:18:36 ron kernel: Code: 90 90 55 48 89 e5 f0 81 07 00 00 10
+00 f3 90 81 3f 00 00 10 00 75 f6 f0 81 2f 00 00 10 00 75 e6 5d c3 55
+48 89 e5 f0 ff 07 f3 90 <83> 3f 01 78 f9 f0 ff 0f 78 f1 5d c3 90 90 90
+90 90 90 90 90 90
 
-Right.
+Is there anything I can do to help debug this issue?
 
->> But...
-
-Exactly, _but_...
-
->> [A]n fallocate of 8 MiB will increase the file size
->> by 8 MiB and write that out.  So far so good as at that point the 8 MiB
->> should be a single extent.  But then, data gets written into 4 KiB
->> blocks of that 8 MiB one at a time, and because btrfs is COW, the new
->> data in the block must be written to a new location.
->> 
->> Which effectively means that by the time the 8 MiB is filled, each 4
->> KiB block has been rewritten to a new location and is now an extent
->> unto itself.  So now that 8 MiB is composed of 2048 new extents, each
->> one a single 4 KiB block in size.
-> 
-> Several people pointed fallocate as the problem. But I don't understand
-> the reason.
-> 1) 8MB is a quite huge value, so fallocate is called (at worst) 1 time
-> during the boot. Often never because the log are less than 8MB.
-> 2) it is true that btrfs "rewrite" almost 2 times each 4kb page with
-> fallocate. But the first time is a "big" write of 8MB; instead the
-> second write would happen in any case. What I mean is that without the
-> fallocate in any case journald would make small write.
-> 
-> To be honest, I fatigue to see the gain of having a fallocate on a COW
-> filesystem... may be that I don't understand very well the fallocate()
-> call.
-
-The base problem isn't fallocate per se, rather, tho it's the trigger in 
-this case.  The base problem is that for COW-based filesystems, *ANY* 
-rewriting of existing file content results in fragmentation.
-
-It just so happens that the only reason there's existing file content to 
-be rewritten (as opposed to simply appending) in this case, is because of 
-the fallocate.  The rewrite of existing file content is the problem, but 
-the existing file content is only there in this case because of the 
-fallocate.
-
-Taking a step back...
-
-On a non-COW filesystem, allocating 8 MiB ahead and writing into it 
-rewrites into the already allocated location, thus guaranteeing extents 
-of 8 MiB each, since once the space is allocated it's simply rewritten in-
-place.  Thus, on a non-COW filesystem, pre-allocating in something larger 
-than single filesystem blocks when an app knows the data is eventually 
-going to be written in to fill that space anyway is a GOOD thing, which 
-is why systemd is doing it.
-
-But on a COW-based filesystem fallocate is the exact opposite, a BAD 
-thing, because an fallocate forces the file to be written out at that 
-size, effectively filled with nulls/blanks.  Then the actual logging 
-comes along and rewrites those nulls/blanks with actual data, but it's 
-now a rewrite, which on a COW, copy-on-write, based filesystem, the 
-rewritten block is copied elsewhere, it does NOT overwrite the existing 
-null/blank block, and "elsewhere" by definition means detached from the 
-previous blocks, thus in an extent all by itself.
-
-Once the full 2048 original blocks composing that 8 MiB are filled in 
-with actual data, because they were rewrites from null/blank blocks that 
-fallocate had already forced to be allocated, that's now 2048 separate 
-extents, 2048 separate file fragments, where without the forced fallocate, 
-the writes would have all been appends, and there would have been at 
-least /some/ chance of some of those 2048 separate blocks being written 
-at close enough to the same time that they would have been written 
-together as a single extent.  So while the 8 MiB might not have been a 
-single extent as opposed to 2048 separate extents, it might have been 
-perhaps 512 or 1024 extents, instead of the 2048 that it ended up being 
-because fallocate meant that each block was a rewrite into an existing 
-file, not a new append-write at the end of an existing file.
-
-> [...]
->> Another alternative is that distros will start setting /var/log/journal
->> NOCOW in their setup scripts by default when it's btrfs, thus avoiding
->> the problem.  (Altho if they do automated snapshotting they'll also
->> have to set it as its own subvolume, to avoid the
->> first-write-after-snapshot-
->> is-COW problem.)  Well, that, and/or set autodefrag in the default
->> mount options.
-> 
-> Pay attention, that this remove also the checksum, which are very useful
-> in a RAID configuration.
-
-Well, it can be.  But this is only log data, not executable or the like 
-data, and (as Kai K points out) journald has its own checksumming method 
-in any case.
-
-Besides which, you still haven't explained why you can't either set the 
-autodefrag mount option and be done with it, or run a systemd-timer-
-triggered or cron-triggered defrag script to defrag them automatically at 
-hourly or daily or whatever intervals.  Those don't disable btrfs 
-checksumming, but /should/ solve the problem.
-
-(Tho if you're btrfs snapshotting the journals defrag has its own 
-implications, but they should be relatively limited in scope compared to 
-the fragmentation issues we're dealing with here.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Best Regards,
+Tobias

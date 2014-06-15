@@ -1,177 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55048 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:44661 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751250AbaFOFCt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Jun 2014 01:02:49 -0400
+	id S1752108AbaFOFnU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Jun 2014 01:43:20 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Ww2ad-0006iI-NF
-	for linux-btrfs@vger.kernel.org; Sun, 15 Jun 2014 07:02:47 +0200
+	id 1Ww3Dq-0006lX-Sf
+	for linux-btrfs@vger.kernel.org; Sun, 15 Jun 2014 07:43:18 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:02:47 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:43:18 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:02:47 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Jun 2014 07:43:18 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Slow startup of systemd-journal on BTRFS
-Date: Sun, 15 Jun 2014 05:02:34 +0000 (UTC)
-Message-ID: <pan$ad44b$2c1071b2$aca734b5$a4151968@cox.net>
+Date: Sun, 15 Jun 2014 05:43:06 +0000 (UTC)
+Message-ID: <pan$c82aa$ea13b40$dc4fc67d$63d84512@cox.net>
 References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
 	<pan$22693$6b452195$976b783a$e4956372@cox.net>
 	<20140612232453.GR9508@dastard> <539B78F3.9070607@libero.it>
 	<pan$625ac$a8aa7477$d0179ebe$c66ba817@cox.net>
-	<jhmt6b-j4j.ln1@hurikhan77.spdns.de>
+	<539BFF47.8060006@libero.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: systemd-devel@lists.freedesktop.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Sat, 14 Jun 2014 12:59:31 +0200 as excerpted:
+Goffredo Baroncelli posted on Sat, 14 Jun 2014 09:52:39 +0200 as
+excerpted:
 
-> Duncan <1i5t5.duncan@cox.net> schrieb:
-> 
->> As they say, "Whoosh!"
+> On 06/14/2014 04:53 AM, Duncan wrote:
+>> Goffredo Baroncelli posted on Sat, 14 Jun 2014 00:19:31 +0200 as
+>> excerpted:
 >> 
->> At least here, I interpreted that remark as primarily sarcastic
->> commentary on the systemd devs' apparent attitude, which can be
->> (controversially) summarized as: "Systemd doesn't have problems because
->> it's perfect.  Therefore, any problems you have with systemd must
->> instead be with other components which systemd depends on."
-> 
-> Come on, sorry, but this is fud. Really... ;-)
+>>> thanks for pointing that. However I am performing my tests on a fedora
+>>> 20 with systemd-208, which seems have this change
+>>>
+>>> I am reaching the conclusion that fallocate is not the problem. The
+>>> fallocate increase the filesize of about 8MB, which is enough for some
+>>> logging. So it is not called very often.
 
-I should make clear that did recently switch to systemd myself -- by 
-choice as I'm on gentoo and it defaults to openrc, so I'm obviously not 
-entirely anti-systemd.  And I _did_ say "(controversially)", which means 
-I do recognize that there are two sides to the story.
+Right.
 
-That said, I've certainly seen what happens when non-systemd devs are on 
-the receiving end of things -- including kernel devs, see the recent 
-hubbub over the debug kernel commandline option and the somewhat longer 
-ago firmware loading issue, among others.
+>> But...
 
-But sarcasm implies neither absolute truth, or it'd be speaking truth not 
-sarcasm, nor absolute untruth, because without a kernel of truth there 
-it'd be simply stupid, not sarcastic.
+Exactly, _but_...
 
-And certainly that's how I read the comment.
+>> [A]n fallocate of 8 MiB will increase the file size
+>> by 8 MiB and write that out.  So far so good as at that point the 8 MiB
+>> should be a single extent.  But then, data gets written into 4 KiB
+>> blocks of that 8 MiB one at a time, and because btrfs is COW, the new
+>> data in the block must be written to a new location.
+>> 
+>> Which effectively means that by the time the 8 MiB is filled, each 4
+>> KiB block has been rewritten to a new location and is now an extent
+>> unto itself.  So now that 8 MiB is composed of 2048 new extents, each
+>> one a single 4 KiB block in size.
+> 
+> Several people pointed fallocate as the problem. But I don't understand
+> the reason.
+> 1) 8MB is a quite huge value, so fallocate is called (at worst) 1 time
+> during the boot. Often never because the log are less than 8MB.
+> 2) it is true that btrfs "rewrite" almost 2 times each 4kb page with
+> fallocate. But the first time is a "big" write of 8MB; instead the
+> second write would happen in any case. What I mean is that without the
+> fallocate in any case journald would make small write.
+> 
+> To be honest, I fatigue to see the gain of having a fallocate on a COW
+> filesystem... may be that I don't understand very well the fallocate()
+> call.
 
-But in any case, I read it as not to be taken literally, which is what it 
-appeared to me the person to which I was directly replying was doing.  I 
-was simply warning him off of reading it too literally as at least from 
-here, it seemed more like sarcasm.
+The base problem isn't fallocate per se, rather, tho it's the trigger in 
+this case.  The base problem is that for COW-based filesystems, *ANY* 
+rewriting of existing file content results in fragmentation.
 
-Of course if DaveC wishes to clarify one way or another he certainly 
-can... tho I'd not expect it at this point since if it is sarcasm as I 
-believe, that's kind of having to explain the joke...
+It just so happens that the only reason there's existing file content to 
+be rewritten (as opposed to simply appending) in this case, is because of 
+the fallocate.  The rewrite of existing file content is the problem, but 
+the existing file content is only there in this case because of the 
+fallocate.
 
-> I think that systemd is even one of the early supporters of btrfs
-> because it will defragment readahead files on boot from btrfs. I'd
-> suggest the problem is to be found in the different semantics with COW
-> filesystems.
+Taking a step back...
 
-Which is actually what I was saying.  In reality it's an interaction 
-between the nature of COW filesystems, where fallocate tends to be a 
-problem, and an application using fallocate because of its benefits on 
-overwrite-in-place filesystems, which happen to be the norm at this 
-point.  So neither one is to blame, it's simply a bad interaction that 
-ultimately needs to be made better on one side or the other.
+On a non-COW filesystem, allocating 8 MiB ahead and writing into it 
+rewrites into the already allocated location, thus guaranteeing extents 
+of 8 MiB each, since once the space is allocated it's simply rewritten in-
+place.  Thus, on a non-COW filesystem, pre-allocating in something larger 
+than single filesystem blocks when an app knows the data is eventually 
+going to be written in to fill that space anyway is a GOOD thing, which 
+is why systemd is doing it.
 
-But btrfs is still relatively young and COW-based filesystems not that 
-widespread yet, so that the problem hasn't been worked out to be handled 
-automatically, just yet, isn't a big surprise.  Tho I think it'll come.
+But on a COW-based filesystem fallocate is the exact opposite, a BAD 
+thing, because an fallocate forces the file to be written out at that 
+size, effectively filled with nulls/blanks.  Then the actual logging 
+comes along and rewrites those nulls/blanks with actual data, but it's 
+now a rewrite, which on a COW, copy-on-write, based filesystem, the 
+rewritten block is copied elsewhere, it does NOT overwrite the existing 
+null/blank block, and "elsewhere" by definition means detached from the 
+previous blocks, thus in an extent all by itself.
 
-Meanwhile, as you point out below and as I've repeatedly said in this 
-thread already myself, NOCOW and/or autodefrag are tools available to an 
-admin faced with the problem, that together actually solve it reasonably 
-well.  All an admin has to do is make use of the tools already available. 
-=:^)
+Once the full 2048 original blocks composing that 8 MiB are filled in 
+with actual data, because they were rewrites from null/blank blocks that 
+fallocate had already forced to be allocated, that's now 2048 separate 
+extents, 2048 separate file fragments, where without the forced fallocate, 
+the writes would have all been appends, and there would have been at 
+least /some/ chance of some of those 2048 separate blocks being written 
+at close enough to the same time that they would have been written 
+together as a single extent.  So while the 8 MiB might not have been a 
+single extent as opposed to 2048 separate extents, it might have been 
+perhaps 512 or 1024 extents, instead of the 2048 that it ended up being 
+because fallocate meant that each block was a rewrite into an existing 
+file, not a new append-write at the end of an existing file.
 
-> So let's start with my journals, on btrfs:
+> [...]
+>> Another alternative is that distros will start setting /var/log/journal
+>> NOCOW in their setup scripts by default when it's btrfs, thus avoiding
+>> the problem.  (Altho if they do automated snapshotting they'll also
+>> have to set it as its own subvolume, to avoid the
+>> first-write-after-snapshot-
+>> is-COW problem.)  Well, that, and/or set autodefrag in the default
+>> mount options.
 > 
-> $ sudo filefrag *
-> system@0004fad12dae7676-98627a3d7df4e35e.journal~: 2 extents found
-> system@0004fae8ea4b84a4-3a2dc4a93c5f7dc9.journal~: 2 extents found
-> 
-system@806cd49faa074a49b6cde5ff6fca8adc-000000000008e4cc-0004f82580cdcb45.journal:
-> 5 extents found
-> 
-system@806cd49faa074a49b6cde5ff6fca8adc-0000000000097959-0004f89c2e8aff87.journal:
-> 5 extents found
-> 
-system@806cd49faa074a49b6cde5ff6fca8adc-00000000000a166d-0004f98d7e04157c.journal:
-> 5 extents found
-> 
-system@806cd49faa074a49b6cde5ff6fca8adc-00000000000aad59-0004fa379b9a1fdf.journal:
-> 5 extents found
-> 
-system@ec16f60db38f43619f8337153a1cc024-0000000000000001-0004fae8e5057259.journal:
-> 5 extents found
-> 
-system@ec16f60db38f43619f8337153a1cc024-00000000000092b1-0004fb59b1d034ad.journal:
-> 5 extents found system.journal: 9 extents found
-> 
-user-500@e4209c6628ed4a65954678b8011ad73f-0000000000085b7a-0004f77d25ebba04.journal:
-> 2 extents found
-> 
-user-500@e4209c6628ed4a65954678b8011ad73f-000000000008e7fb-0004f83c7bf18294.journal:
-> 2 extents found
-> 
-user-500@e4209c6628ed4a65954678b8011ad73f-0000000000097fe4-0004f8ae69c198ca.journal:
-> 2 extents found
-> 
-user-500@e4209c6628ed4a65954678b8011ad73f-00000000000a1a7e-0004f9966e9c69d8.journal:
-> 2 extents found user-500.journal: 2 extents found
-> 
-> I don't think these are too bad values, eh?
-> 
-> Well, how did I accomblish that?
-> 
-> First, I've set the journal directories nocow. Of course, systemd should
-> do this by default. I'm not sure if this is a packaging or systemd code
-> issue,
-> tho. But I think the systemd devs are in common that for cow fs, the
-> journal directories should be set nocow. After all, the journal is a
-> transactional database - it does not need cow protection at all costs.
-> And I think they have their own checksumming protection. So, why let
-> systemd bother with that? A lot of other software has the same semantic
-> problems with btrfs, too (ex. MySQL) where nobody shouts at the
-> "inabilities" of the programmers. So why for systemd? Just because it's
-> intrusive by its nature for being a radically and newly designed init
-> system and thus requires some learning by its users/admins/packagers?
-> Really? Come on... As admin and/or packager you have to stay with
-> current technologies and developments anyways. It's only important to
-> hide the details from the users.
-> 
-> Back to the extents counts: What I did next was implementing a defrag
-> job that regularly defrags the journal (actually, the complete log
-> directory as other log files suffer the same problem):
-> 
-> $ cat /usr/local/sbin/defrag-logs.rb #!/bin/sh exec btrfs filesystem
-> defragment -czlib -r /var/log
-> 
-> It can be easily converted into a timer job with systemd. This is left
-> as an excercise to the reader.
-> 
-> BTW: Actually, that job isn't currently executed on my system which
-> makes the numbers above pretty impressive... However, autodefrag is
-> turned on which may play into the mix. I'm not sure. I stopped
-> automatically running those defrag jobs a while ago (I have a few more).
+> Pay attention, that this remove also the checksum, which are very useful
+> in a RAID configuration.
 
-Thanks for the timer hint, BTW.  I actually already created an hourly and 
-a daily timer job here (turns out that's all I needed, no weekly/monthly/
-whatever needed so I didn't create those) as I switched over to systemd 
-and got rid of crond, and I'll definitely keep the defrag-journals timer 
-idea up my sleeve in case I decide to set journald back to keeping non-
-volatile journals as well, plus as a helpful hint for others.  Tho I 
-won't be using it myself currently as the volatile journals only while 
-handing off to syslog-ng for the longer term logs is working very well 
-for me ATM, a good sysadmin likes to have a set of tricks such as that 
-ready in case they're needed, and I'm certainly no exception! =:^)
+Well, it can be.  But this is only log data, not executable or the like 
+data, and (as Kai K points out) journald has its own checksumming method 
+in any case.
+
+Besides which, you still haven't explained why you can't either set the 
+autodefrag mount option and be done with it, or run a systemd-timer-
+triggered or cron-triggered defrag script to defrag them automatically at 
+hourly or daily or whatever intervals.  Those don't disable btrfs 
+checksumming, but /should/ solve the problem.
+
+(Tho if you're btrfs snapshotting the journals defrag has its own 
+implications, but they should be relatively limited in scope compared to 
+the fragmentation issues we're dealing with here.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

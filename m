@@ -1,61 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gitanes.rtfm.co.hu ([80.249.171.82]:48904 "EHLO
-	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751668AbaFPOCt (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1041 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932173AbaFPQG0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 10:02:49 -0400
-Received: from [10.32.0.10] (atom.chemaxon.com [91.120.7.54])
-	(using TLSv1 with cipher ECDHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: tamas.papp@rtfm.co.hu)
-	by gitanes.rtfm.co.hu (Postfix) with ESMTPSA id 3A8BC1042BF
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 16:02:47 +0200 (CEST)
-Message-ID: <539EF907.6010102@martos.bme.hu>
-Date: Mon, 16 Jun 2014 16:02:47 +0200
-From: Tamas Papp <tompos@martos.bme.hu>
+	Mon, 16 Jun 2014 12:06:26 -0400
+Message-ID: <539F15DC.4010600@fb.com>
+Date: Mon, 16 Jun 2014 09:05:48 -0700
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: open_ctree failed
-References: <539EF06A.4080803@martos.bme.hu>
-In-Reply-To: <539EF06A.4080803@martos.bme.hu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: Lennart Poettering <lennart@poettering.net>,
+        Russell Coker <russell@coker.com.au>
+CC: <kreijack@inwind.it>, Duncan <1i5t5.duncan@cox.net>,
+        <linux-btrfs@vger.kernel.org>, <systemd-devel@lists.freedesktop.org>
+Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
+References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost> <539BFF47.8060006@libero.it> <20140615221307.GE24386@tango.0pointer.de> <1709025.rRUgx5gMp1@xev> <20140616101448.GB18016@tango.0pointer.de>
+In-Reply-To: <20140616101448.GB18016@tango.0pointer.de>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 06/16/2014 03:26 PM, Tamas Papp wrote:
-> hi All,
->
-> There is a Dell XPS 13 laptop with and SSD.
->
-> System:
->
-> Ubuntu 14.04 amd64
-> Kernel is from the daily ppa, like 3.15rcX.
->
-> Now, it's running live system:
->
-> Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
-> 2014 x86_64 x86_64 x86_64 GNU/Linux
->
->
-> Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
-> 2014 x86_64 x86_64 x86_64 GNU/Linux
-> Label: none  uuid: 7cf95491-8ec6-48a2-b4c4-4b80650d169a
->     Total devices 1 FS bytes used 121.91GiB
->     devid    1 size 236.53GiB used 146.02GiB path /dev/sda4
->
-> Btrfs v3.14.1
->
->
->
-> I've attached all debug output, that I was able to get.
-> btrfs check exited with segfault.
->
->
-> Can you help me with this?
->
 
-I just fixed the subject.
+On 06/16/2014 03:14 AM, Lennart Poettering wrote:
+> On Mon, 16.06.14 10:17, Russell Coker (russell@coker.com.au) wrote:
+>
+>>> I am not really following though why this trips up btrfs though. I am
+>>> not sure I understand why this breaks btrfs COW behaviour. I mean,
+>>> fallocate() isn't necessarily supposed to write anything really, it's
+>>> mostly about allocating disk space in advance. I would claim that
+>>> journald's usage of it is very much within the entire reason why it
+>>> exists...
+>>
+>> I don't believe that fallocate() makes any difference to fragmentation on
+>> BTRFS.  Blocks will be allocated when writes occur so regardless of an
+>> fallocate() call the usage pattern in systemd-journald will cause
+>> fragmentation.
+>
+> journald's write pattern looks something like this: append something to
+> the end, make sure it is written, then update a few offsets stored at
+> the beginning of the file to point to the newly appended data. This is
+> of course not easy to handle for COW file systems. But then again, it's
+> probably not too different from access patterns of other database or
+> database-like engines...
 
-tamas
+Was waiting for you to show up before I said anything since most systemd 
+related emails always devolve into how evil you are rather than what is 
+actually happening.
+
+So you are doing all the right things from what I can tell, I'm just a 
+little confused about when you guys run fsync.  From what I can tell 
+it's only when you open the journal file and when you switch it to 
+"offline."  I didn't look too much past this point so I don't know how 
+often these things happen.  Are you taking an individual message, 
+writing it, updating the head of the file and then fsync'ing?  Or are 
+you getting a good bit of dirty log data and fsyncing occasionally?
+
+What would cause btrfs problems is if you fallocate(), write a small 
+chunk, fsync, write a small chunk again, fsync again etc.  Fallocate 
+saves you the first write around, but if the next write is within the 
+same block as the previous write we'll end up triggering cow and enter 
+fragmented territory.  If this is what is what journald is doing then 
+that would be good to know, if not I'd like to know what is happening 
+since we shouldn't be fragmenting this badly.
+
+Like I said what you guys are doing is fine, if btrfs falls on it's face 
+then its not your fault.  I'd just like an exact idea of when you guys 
+are fsync'ing so I can replicate in a smaller way.  Thanks,
+
+Josef

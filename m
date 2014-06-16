@@ -1,54 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:41601 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750823AbaFPHyH convert rfc822-to-8bit (ORCPT
+Received: from tango.0pointer.de ([85.214.72.216]:55135 "EHLO
+	tango.0pointer.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755060AbaFPKOw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 03:54:07 -0400
-Received: from mfilter20-d.gandi.net (mfilter20-d.gandi.net [217.70.178.148])
-	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 6EC6AA80D2
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 09:54:03 +0200 (CEST)
-Received: from relay3-d.mail.gandi.net ([217.70.183.195])
-	by mfilter20-d.gandi.net (mfilter20-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id NtKncxv6l+0G for <linux-btrfs@vger.kernel.org>;
-	Mon, 16 Jun 2014 09:54:01 +0200 (CEST)
-Received: from vajra.localnet (unknown [162.38.105.117])
-	(Authenticated sender: swami@petaramesh.org)
-	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id C598FA80B0
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 09:54:01 +0200 (CEST)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
-Subject: BTRFS, SSD and single metadata
-Date: Mon, 16 Jun 2014 09:54:01 +0200
-Message-ID: <1723493.aXdklhDgAK@vajra>
+	Mon, 16 Jun 2014 06:14:52 -0400
+Date: Mon, 16 Jun 2014 12:14:49 +0200
+From: Lennart Poettering <lennart@poettering.net>
+To: Russell Coker <russell@coker.com.au>
+Cc: kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs@vger.kernel.org, systemd-devel@lists.freedesktop.org
+Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
+Message-ID: <20140616101448.GB18016@tango.0pointer.de>
+References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
+ <539BFF47.8060006@libero.it>
+ <20140615221307.GE24386@tango.0pointer.de>
+ <1709025.rRUgx5gMp1@xev>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1709025.rRUgx5gMp1@xev>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, 16.06.14 10:17, Russell Coker (russell@coker.com.au) wrote:
 
-I created a BTRFS filesytem over LVM over LUKS encryption on an SSD [yes, I 
-know...], and I noticed that the FS got created with metadata in "DUP" mode, 
-contrary to what "man mkfs.btrfs" says for SSDs -> it would be supposed to be 
-"SINGLE"...
+> > I am not really following though why this trips up btrfs though. I am
+> > not sure I understand why this breaks btrfs COW behaviour. I mean,
+> > fallocate() isn't necessarily supposed to write anything really, it's
+> > mostly about allocating disk space in advance. I would claim that
+> > journald's usage of it is very much within the entire reason why it
+> > exists...
+> 
+> I don't believe that fallocate() makes any difference to fragmentation on 
+> BTRFS.  Blocks will be allocated when writes occur so regardless of an 
+> fallocate() call the usage pattern in systemd-journald will cause 
+> fragmentation.
 
-Well I don't know if my system didn't identify the SSD because of the LVM+LUKS 
-stack (however it mounts well by itself with the "ssd" flag and accepts the 
-"discard" option [yes, I know...]), or if the manpage is obsolete or if this 
-feature just doesn't work...?
+journald's write pattern looks something like this: append something to
+the end, make sure it is written, then update a few offsets stored at
+the beginning of the file to point to the newly appended data. This is
+of course not easy to handle for COW file systems. But then again, it's
+probably not too different from access patterns of other database or
+database-like engines...
 
-The SSD being a Micron RealSSD C400
-
-For both SSD preservation and data integrity, would it be advisable to change 
-metadata to "SINGLE" using a rebalance, or if I'd better just leave things the 
-way they are...?
-
-TIA for any insight.
+Lennart
 
 -- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
-Tout le malheur des hommes vient de ce qu'ils ne vivent pas dans _le_ monde,
-mais dans _leur_ monde.
--- Héraclite.
-
+Lennart Poettering, Red Hat

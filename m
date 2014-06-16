@@ -1,79 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:46785 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932309AbaFPSnt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 14:43:49 -0400
-Message-ID: <539F3BD5.6080700@libero.it>
-Date: Mon, 16 Jun 2014 20:47:49 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-CC: Lennart Poettering <lennart@poettering.net>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org, systemd-devel@lists.freedesktop.org,
-        Kai Krakow <hurikhan77@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:39818 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750953AbaFPTwW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Jun 2014 15:52:22 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wwcx2-0002xJ-Li
+	for linux-btrfs@vger.kernel.org; Mon, 16 Jun 2014 21:52:20 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 21:52:20 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 21:52:20 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
 Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost> <pan$22693$6b452195$976b783a$e4956372@cox.net> <20140612232453.GR9508@dastard> <539B78F3.9070607@libero.it> <pan$625ac$a8aa7477$d0179ebe$c66ba817@cox.net> <539BFF47.8060006@libero.it> <20140615221307.GE24386@tango.0pointer.de> <539F1C35.6060302@inwind.it>
-In-Reply-To: <539F1C35.6060302@inwind.it>
+Date: Mon, 16 Jun 2014 20:52:07 +0100
+Message-ID: <lnnht8$f3j$1@ger.gmane.org>
+References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost> <539BFF47.8060006@libero.it> <20140615221307.GE24386@tango.0pointer.de> <1709025.rRUgx5gMp1@xev> <20140616101448.GB18016@tango.0pointer.de> <539F15DC.4010600@fb.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: unlisted-recipients:; (no To-header on input)
+In-Reply-To: <539F15DC.4010600@fb.com>
+Cc: systemd-devel@lists.freedesktop.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-
-in this blog [1] I collected all the results of the tests which I performed in order to investigate a bit this performance problem between systemd and btrfs. I had to put these results in a blog, because there are several images. Below a brief summary.
-
-I took an old machine (a P4 2.5GHz with 512MB of ram) where was present a fresh installation of a Fedora 20 and I measured the boot time during several reboots (up to 70).  I tested the following scenarios
-
-1) standard (without defragmenting any file, without readahead)
-2) defragment the journal file at the end of the boot
-3) defragment the journal file before the flushing
-4) mark as NOCOW the journald log file
-5) enable the systemd-readahead
-6) remove the fsync(2) call from journald
-7) remove the posix_fallocate(3) call from journald
-8) do a defrag when posix_fallocate(3) is called
-9) do a defrag when the journal log file is opened
-
-The test #1 highlight the problem. It shows that the boot time may require up to 50 seconds. During the reboots the number of extents of the file system.journal increases up to 6000. De-fragmenting the system.journal file the boot time decreases by ~20 seconds. My conclusion is that in BTRFS the fragmentation of this file increases the boot time.
-
-The test #6 and #7 suggested that the fsync(2) amd posix_fallocate(3) calls aren't the root cause of the problem. Even without these the system.journal file still fragments.
-
-The test #4 suggested that marking NOCOW the system.journal file reduces its fragmentation and so the boot time.
-
-The test #2,#3,#9 suggested that performing a periodic defrag reduces significantly the fragmentation of system.journal and so the boot time.
-
-The test #5 revealed that the readahead capability of systemd was not efficacy because it seems that the system.journal file was unaffected (but other *.journal files were). Further investigation is required.
-
-BR
-G.Baroncelli
-
-
-
-[1] http://kreijack.blogspot.it/2014/06/btrfs-and-systemd-journal.html
-
-On 06/16/2014 06:32 PM, Goffredo Baroncelli wrote:
-> Hi Lennart,
+On 16/06/14 17:05, Josef Bacik wrote:
 > 
-> On 06/16/2014 12:13 AM, Lennart Poettering wrote:
->> I am not really following though why this trips up btrfs though. I am
->> not sure I understand why this breaks btrfs COW behaviour. I mean,
->> fallocate() isn't necessarily supposed to write anything really, it's
->> mostly about allocating disk space in advance. I would claim that
->> journald's usage of it is very much within the entire reason why it
->> exists...
-> 
-> I performed several tests, trying different setups [1]. One of these was replacing the posix_fallocate() with a truncate, to check where is the problem. The conclusion was that *posix_fallocate() is NOT the problem*.
-> 
-> In another reply you stated that systemd-journald appends some data at the end of file, then update some data in the middle. I think this is the reason because the file becomes quickly fragmented.
-> 
-> 
-> [1] Let me to revise the english, the I will post the results.
-> 
-> 
+> On 06/16/2014 03:14 AM, Lennart Poettering wrote:
+>> On Mon, 16.06.14 10:17, Russell Coker (russell@coker.com.au) wrote:
+>>
+>>>> I am not really following though why this trips up btrfs though. I am
+>>>> not sure I understand why this breaks btrfs COW behaviour. I mean,
+
+>>> I don't believe that fallocate() makes any difference to
+>>> fragmentation on
+>>> BTRFS.  Blocks will be allocated when writes occur so regardless of an
+>>> fallocate() call the usage pattern in systemd-journald will cause
+>>> fragmentation.
+>>
+>> journald's write pattern looks something like this: append something to
+>> the end, make sure it is written, then update a few offsets stored at
+>> the beginning of the file to point to the newly appended data. This is
+>> of course not easy to handle for COW file systems. But then again, it's
+>> probably not too different from access patterns of other database or
+>> database-like engines...
+
+Even though this appears to be a problem case for btrfs/COW, is there a
+more favourable write/access sequence possible that is easily
+implemented that is favourable for both ext4-like fs /and/ COW fs?
+
+Database-like writing is known 'difficult' for filesystems: Can a data
+log can be a simpler case?
 
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> Was waiting for you to show up before I said anything since most systemd
+> related emails always devolve into how evil you are rather than what is
+> actually happening.
+
+Ouch! Hope you two know each other!! :-P :-)
+
+
+[...]
+> since we shouldn't be fragmenting this badly.
+> 
+> Like I said what you guys are doing is fine, if btrfs falls on it's face
+> then its not your fault.  I'd just like an exact idea of when you guys
+> are fsync'ing so I can replicate in a smaller way.  Thanks,
+
+Good if COW can be so resilient. I have about 2GBytes of data logging
+files and I must defrag those as part of my backups to stop the system
+fragmenting to a stop (I use "cp -a" to defrag the files to a new area
+and restart the data software logger on that).
+
+
+Random thoughts:
+
+Would using a second small file just for the mmap-ed pointers help avoid
+repeated rewriting of random offsets in the log file causing excessive
+fragmentation?
+
+Align the data writes to 16kByte or 64kByte boundaries/chunks?
+
+Are mmap-ed files a similar problem to using a swap file and so should
+the same "btrfs file swap" code be used for both?
+
+
+Not looked over the code so all random guesses...
+
+Regards,
+Martin
+
+
+
+

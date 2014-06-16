@@ -1,48 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay5-d.mail.gandi.net ([217.70.183.197]:36333 "EHLO
-	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751216AbaFPM1F convert rfc822-to-8bit (ORCPT
+Received: from gitanes.rtfm.co.hu ([80.249.171.82]:48904 "EHLO
+	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751668AbaFPOCt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 08:27:05 -0400
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS, SSD and single metadata
-Date: Mon, 16 Jun 2014 14:26:59 +0200
-Message-ID: <5397989.Rnm13cYs7v@vajra>
-In-Reply-To: <pan$5075b$6568c7ca$c4158fb1$b65edba2@cox.net>
-References: <1723493.aXdklhDgAK@vajra> <pan$5075b$6568c7ca$c4158fb1$b65edba2@cox.net>
+	Mon, 16 Jun 2014 10:02:49 -0400
+Received: from [10.32.0.10] (atom.chemaxon.com [91.120.7.54])
+	(using TLSv1 with cipher ECDHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: tamas.papp@rtfm.co.hu)
+	by gitanes.rtfm.co.hu (Postfix) with ESMTPSA id 3A8BC1042BF
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 16:02:47 +0200 (CEST)
+Message-ID: <539EF907.6010102@martos.bme.hu>
+Date: Mon, 16 Jun 2014 16:02:47 +0200
+From: Tamas Papp <tompos@martos.bme.hu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
+Subject: Re: open_ctree failed
+References: <539EF06A.4080803@martos.bme.hu>
+In-Reply-To: <539EF06A.4080803@martos.bme.hu>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le lundi 16 juin 2014, 12:16:33 Duncan a écrit :
-> Does btrfs automatically add the ssd mount option or do you have to add 
-> it?  If you have to add it, that means btrfs isn't detecting the ssd, 
 
-First time I mounted the freshly created filesystem, it actually added the 
-"ssd" option by itself. Thus indeed, it could see this was a SSD...
+On 06/16/2014 03:26 PM, Tamas Papp wrote:
+> hi All,
+>
+> There is a Dell XPS 13 laptop with and SSD.
+>
+> System:
+>
+> Ubuntu 14.04 amd64
+> Kernel is from the daily ppa, like 3.15rcX.
+>
+> Now, it's running live system:
+>
+> Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
+> 2014 x86_64 x86_64 x86_64 GNU/Linux
+>
+>
+> Linux ubuntu 3.13.0-24-generic #46-Ubuntu SMP Thu Apr 10 19:11:08 UTC 
+> 2014 x86_64 x86_64 x86_64 GNU/Linux
+> Label: none  uuid: 7cf95491-8ec6-48a2-b4c4-4b80650d169a
+>     Total devices 1 FS bytes used 121.91GiB
+>     devid    1 size 236.53GiB used 146.02GiB path /dev/sda4
+>
+> Btrfs v3.14.1
+>
+>
+>
+> I've attached all debug output, that I was able to get.
+> btrfs check exited with segfault.
+>
+>
+> Can you help me with this?
+>
 
-> However, it occurs to me that with the LUKS encryption layer, I'm not 
-> entirely sure if duplication at the btrfs level would end up as the same 
-> encrypted stream headed to the hardware in any case.  If it would encrypt 
-> the two copies of the dup-mode metadata as different, then the hardware 
-> dedup/compression wouldn't work on it anyway.  OTOH, if it encrypts them 
-> as the same stream headed to hardware, then again, it would matter.
+I just fixed the subject.
 
-That makes an excellent point. 2 copies of the same binary data in different 
-filesystem sectors, process thru LUKS, will create entirely different binary 
-ciphertext, so for sure both metadata copies will always be different and 
-cannot be "deduped" by SSD firmware...
-
-Kind regards.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
-Les êtres humains, cernés par leurs besoins, s'agitent sans but comme des
-lapins pris au piège. Ainsi, moine, détourne-toi de ces besoins et trouve
-la liberté.
--- Buddha Shakyamuni
-
+tamas

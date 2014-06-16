@@ -1,97 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34642 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750953AbaFPUVK (ORCPT
+Received: from fgwmail.fujitsu.co.jp ([164.71.1.133]:51893 "EHLO
+	fgwmail.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751771AbaFPXaD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 16:21:10 -0400
-Message-ID: <539F51AB.1020604@fb.com>
-Date: Mon, 16 Jun 2014 13:20:59 -0700
-From: Josef Bacik <jbacik@fb.com>
+	Mon, 16 Jun 2014 19:30:03 -0400
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail.fujitsu.co.jp (Postfix) with ESMTP id 322D73EE0C8
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 08:30:01 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.nic.fujitsu.com [10.0.50.92])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 352B7AC05DB
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 08:30:00 +0900 (JST)
+Received: from m1001.s.css.fujitsu.com (m1001.s.css.fujitsu.com [10.240.81.139])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id E2C1C1DB8038
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 08:29:59 +0900 (JST)
+Message-ID: <539F7D8E.9010608@jp.fujitsu.com>
+Date: Tue, 17 Jun 2014 08:28:14 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Martin <m_btrfs@ml1.co.uk>, <linux-btrfs@vger.kernel.org>
-CC: <systemd-devel@lists.freedesktop.org>
-Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost> <539BFF47.8060006@libero.it> <20140615221307.GE24386@tango.0pointer.de> <1709025.rRUgx5gMp1@xev> <20140616101448.GB18016@tango.0pointer.de> <539F15DC.4010600@fb.com> <lnnht8$f3j$1@ger.gmane.org>
-In-Reply-To: <lnnht8$f3j$1@ger.gmane.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: Chris Mason <clm@fb.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [3.16-rc1] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
+References: <539E9026.1020406@jp.fujitsu.com> <539F2FEA.1060809@fb.com>
+In-Reply-To: <539F2FEA.1060809@fb.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Chris,
 
-
-On 06/16/2014 12:52 PM, Martin wrote:
-> On 16/06/14 17:05, Josef Bacik wrote:
+On 2014/06/17 2:56, Chris Mason wrote:
+> On 06/16/2014 02:35 AM, Tsutomu Itoh wrote:
+>> I encountered soft lockup when executing 'xfstests btrfs/042' on 3.16-rc1.
 >>
->> On 06/16/2014 03:14 AM, Lennart Poettering wrote:
->>> On Mon, 16.06.14 10:17, Russell Coker (russell@coker.com.au) wrote:
->>>
->>>>> I am not really following though why this trips up btrfs though. I am
->>>>> not sure I understand why this breaks btrfs COW behaviour. I mean,
->
->>>> I don't believe that fallocate() makes any difference to
->>>> fragmentation on
->>>> BTRFS.  Blocks will be allocated when writes occur so regardless of an
->>>> fallocate() call the usage pattern in systemd-journald will cause
->>>> fragmentation.
->>>
->>> journald's write pattern looks something like this: append something to
->>> the end, make sure it is written, then update a few offsets stored at
->>> the beginning of the file to point to the newly appended data. This is
->>> of course not easy to handle for COW file systems. But then again, it's
->>> probably not too different from access patterns of other database or
->>> database-like engines...
->
-> Even though this appears to be a problem case for btrfs/COW, is there a
-> more favourable write/access sequence possible that is easily
-> implemented that is favourable for both ext4-like fs /and/ COW fs?
->
-> Database-like writing is known 'difficult' for filesystems: Can a data
-> log can be a simpler case?
->
->
->> Was waiting for you to show up before I said anything since most systemd
->> related emails always devolve into how evil you are rather than what is
->> actually happening.
->
-> Ouch! Hope you two know each other!! :-P :-)
->
+> 
+> Did we recover, or was it stuck forever?
 
-Yup, I <3 Lennart, I'd rather deal with him directly than wade through 
-all the fud that flys around when systemd is brought up.
+The following messages are repeatedly output.
+And stuck forever.
 
->
-> [...]
->> since we shouldn't be fragmenting this badly.
->>
->> Like I said what you guys are doing is fine, if btrfs falls on it's face
->> then its not your fault.  I'd just like an exact idea of when you guys
->> are fsync'ing so I can replicate in a smaller way.  Thanks,
->
-> Good if COW can be so resilient. I have about 2GBytes of data logging
-> files and I must defrag those as part of my backups to stop the system
-> fragmenting to a stop (I use "cp -a" to defrag the files to a new area
-> and restart the data software logger on that).
->
->
-> Random thoughts:
->
-> Would using a second small file just for the mmap-ed pointers help avoid
-> repeated rewriting of random offsets in the log file causing excessive
-> fragmentation?
->
+[ 1147.942181] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
+[ 1147.967175] BUG: soft lockup - CPU#3 stuck for 23s! [kworker/u25:9:5194]
+[ 1147.979172] BUG: soft lockup - CPU#4 stuck for 23s! [kworker/u25:15:5200]
+[ 1147.991169] BUG: soft lockup - CPU#5 stuck for 23s! [kworker/u25:7:5192]
+[ 1148.064153] BUG: soft lockup - CPU#6 stuck for 23s! [kworker/u26:3:3182]
 
-Depends on when you fsync.  The problem isn't dirty'ing so much as writing.
+Thanks,
+Tsutomu
 
-> Align the data writes to 16kByte or 64kByte boundaries/chunks?
->
 
-Yes that would help the most, if journald would try to only fsync ever 
-blocksize amount of writes we'd suck less.
-
-> Are mmap-ed files a similar problem to using a swap file and so should
-> the same "btrfs file swap" code be used for both?
->
-
-Not sure what this special swap file code is you speak of.  Thanks,
-
-Josef

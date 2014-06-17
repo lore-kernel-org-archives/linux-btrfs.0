@@ -1,33 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:50160 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S966633AbaFQWVV (ORCPT
+Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:60710 "EHLO
+	fgwmail2.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755233AbaFQXKn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 18:21:21 -0400
-Received: by mail-ie0-f170.google.com with SMTP id tr6so3281ieb.29
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:21:20 -0700 (PDT)
-Date: Tue, 17 Jun 2014 15:21:18 -0700 (PDT)
-From: David Rientjes <rientjes@google.com>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        akpm@linux-foundation.org
-Subject: Re: [PATCH v4] lib: add size unit t/p/e to memparse
-In-Reply-To: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-Message-ID: <alpine.DEB.2.02.1406171520510.517@chino.kir.corp.google.com>
-References: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	Tue, 17 Jun 2014 19:10:43 -0400
+Message-ID: <53A0CAE6.9030805@jp.fujitsu.com>
+Date: Wed, 18 Jun 2014 08:10:30 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: David Rientjes <rientjes@google.com>,
+        Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+CC: <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <akpm@linux-foundation.org>
+Subject: Re: [PATCH v4] lib: add size unit t/p/e to memparse
+References: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com> <alpine.DEB.2.02.1406171520510.517@chino.kir.corp.google.com>
+In-Reply-To: <alpine.DEB.2.02.1406171520510.517@chino.kir.corp.google.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 13 Jun 2014, Gui Hecheng wrote:
+Hi Gui,
 
-> For modern filesystems such as btrfs, t/p/e size level operations
-> are common.
-> add size unit t/p/e parsing to memparse
-> 
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+(2014/06/18 7:21), David Rientjes wrote:
+> On Fri, 13 Jun 2014, Gui Hecheng wrote:
+>
+>> For modern filesystems such as btrfs, t/p/e size level operations
+>> are common.
+>> add size unit t/p/e parsing to memparse
+>>
+>> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+>
+> Acked-by: David Rientjes <rientjes@google.com>
 
-Acked-by: David Rientjes <rientjes@google.com>
+It looks good to me.
 
-Sorry, didn't do this before.  Good luck with the simple_strto*() work!
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+Thanks,
+Satoru
+
+>
+> Sorry, didn't do this before.  Good luck with the simple_strto*() work!
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+

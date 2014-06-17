@@ -1,85 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58413 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750942AbaFQEEi (ORCPT
+Received: from fgwmail3.fujitsu.co.jp ([164.71.1.134]:58711 "EHLO
+	fgwmail4.fujitsu.co.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754881AbaFQFLY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 00:04:38 -0400
-Message-ID: <1402977569.5755.3.camel@localhost.localdomain>
-Subject: Re: [PATCH v4] lib: add size unit t/p/e to memparse
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: David Rientjes <rientjes@google.com>
-CC: <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <akpm@linux-foundation.org>
-Date: Tue, 17 Jun 2014 11:59:29 +0800
-In-Reply-To: <alpine.DEB.2.02.1406161828180.21018@chino.kir.corp.google.com>
-References: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <alpine.DEB.2.02.1406131457480.31981@chino.kir.corp.google.com>
-	 <1402968140.9806.6.camel@localhost.localdomain>
-	 <alpine.DEB.2.02.1406161828180.21018@chino.kir.corp.google.com>
-Content-Type: text/plain; charset="UTF-8"
+	Tue, 17 Jun 2014 01:11:24 -0400
+Received: from fgwmail.fujitsu.co.jp (fgwmail.fujitsu.co.jp [164.71.1.133])
+	by fgwmail4.fujitsu.co.jp (Postfix) with ESMTP id ADE15178C261
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 14:03:10 +0900 (JST)
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail.fujitsu.co.jp (Postfix) with ESMTP id A39443EE0C2
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 14:02:59 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 61BE3AC0272
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 14:02:58 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 0F5021DB8050
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 14:02:58 +0900 (JST)
+Message-ID: <539FCBED.6010600@jp.fujitsu.com>
+Date: Tue, 17 Jun 2014 14:02:37 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
+To: Filipe David Borba Manana <fdmanana@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+CC: Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] Btrfs: remove unused wait queue in struct extent_buffer
+References: <1402920865-3120-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1402920865-3120-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-06-16 at 18:29 -0700, David Rientjes wrote:
-> On Tue, 17 Jun 2014, Gui Hecheng wrote:
-> 
-> > > > diff --git a/lib/cmdline.c b/lib/cmdline.c
-> > > > index d4932f7..76a712e 100644
-> > > > --- a/lib/cmdline.c
-> > > > +++ b/lib/cmdline.c
-> > > > @@ -121,11 +121,7 @@ EXPORT_SYMBOL(get_options);
-> > > >   *	@retptr: (output) Optional pointer to next char after parse completes
-> > > >   *
-> > > >   *	Parses a string into a number.  The number stored at @ptr is
-> > > > - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
-> > > > - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
-> > > > - *	1073741824).  If the number is suffixed with K, M, or G, then
-> > > > - *	the return value is the number multiplied by one kilobyte, one
-> > > > - *	megabyte, or one gigabyte, respectively.
-> > > > + *	potentially suffixed with K, M, G, T, P, E.
-> > > >   */
-> > > >  
-> > > >  unsigned long long memparse(const char *ptr, char **retptr)
-> > > > @@ -135,6 +131,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
-> > > >  	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
-> > > >  
-> > > >  	switch (*endptr) {
-> > > > +	case 'E':
-> > > > +	case 'e':
-> > > > +		ret <<= 10;
-> > > > +	case 'P':
-> > > > +	case 'p':
-> > > > +		ret <<= 10;
-> > > > +	case 'T':
-> > > > +	case 't':
-> > > > +		ret <<= 10;
-> > > >  	case 'G':
-> > > >  	case 'g':
-> > > >  		ret <<= 10;
-> > > 
-> > > Seems fine since unsigned long long is always at least 64 bits, but 
-> > > perhaps also change simple_strtoull() to use kstrtoull() at the same time 
-> > > since the former is deprecated?
-> > 
-> > Yes, that is a point. But the deprecated function is a separate problem
-> > and may not be included in this patch.
-> > Also, I find that simple_strtoull is used in many places in the kernel
-> > code, it is better to replace it globally?
-> > 
-> 
-> If you're going to have a go at replacing the simple_strto*() functions 
-> throughout the kernel, it's probably better to do it per subsystem (as 
-> defined by the separate sections of MAINTAINERS) and propose the patches 
-> individually to those maintainers.  Once it has been removed entirely, you 
-> can submit a patch to remove the functions themselves.
-> 
-> Be aware that there are many callers to the deprecated functions so it may 
-> take a significant amount of time.
+Hi Filipe,
 
-Hmmmm...It may really take a long time. But I am not sure whether this
-is really a good idea to do this big replacement. Let's see whether
-anyone would like to share his opinions.
+(2014/06/16 21:14), Filipe David Borba Manana wrote:
+> The lock_wq wait queue is not used anywhere, therefore just remove it.
+> On a x86_64 system, this reduced sizeof(struct extent_buffer) from 320
+> bytes down to 296 bytes, which means a 4Kb page can now be used for
+> 13 extent buffers instead of 12.
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 
--Gui
+It looks good to me. This field was once removed by bd681513.
+However, re-introduced in error by 727011e07c
+(both are Chris's patch).
+
+I consider it's better to fix the following comment too.
+
+===
+$ cat -n fs/btrfs/extent_io.h | grep -B 3 write_lock_wq
+   152          /* readers use lock_wq while they wait for the write
+   153           * lock holders to unlock
+   154           */
+   155          wait_queue_head_t write_lock_wq;
+===
+
+We should "s/ lock_wq / write_lock_wq /" here.
+
+Thanks,
+Satoru
+
+> ---
+>   fs/btrfs/extent_io.h | 1 -
+>   1 file changed, 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 8b63f2d..dbbea4f 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -158,7 +158,6 @@ struct extent_buffer {
+>   	 * to unlock
+>   	 */
+>   	wait_queue_head_t read_lock_wq;
+> -	wait_queue_head_t lock_wq;
+>   	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+>   #ifdef CONFIG_BTRFS_DEBUG
+>   	struct list_head leak_list;
+> 
 

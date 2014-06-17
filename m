@@ -1,48 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay07.libero.it ([212.52.84.111]:51717 "EHLO
-	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756480AbaFQTip (ORCPT
+Received: from tango.0pointer.de ([85.214.72.216]:41793 "EHLO
+	tango.0pointer.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S965215AbaFQVMx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 15:38:45 -0400
-Received: from venice.bhome (151.28.75.219) by outrelay07.libero.it (8.6.033) (authenticated as kreijack@libero.it)
-        id 53A050B3001414AA for linux-btrfs@vger.kernel.org; Tue, 17 Jun 2014 21:38:33 +0200
-Message-ID: <53A09A30.2030800@libero.it>
-Date: Tue, 17 Jun 2014 21:42:40 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+	Tue, 17 Jun 2014 17:12:53 -0400
+Date: Tue, 17 Jun 2014 23:12:44 +0200
+From: Lennart Poettering <lennart@poettering.net>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Russell Coker <russell@coker.com.au>, kreijack@inwind.it,
+        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
+        systemd-devel@lists.freedesktop.org
 Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost> <539BFF47.8060006@libero.it> <20140615221307.GE24386@tango.0pointer.de> <1709025.rRUgx5gMp1@xev> <20140616101448.GB18016@tango.0pointer.de> <539F15DC.4010600@fb.com> <lnnht8$f3j$1@ger.gmane.org> <CAE5mzvj6yA3FhZ-bpR29XLuuk8BbuOfW4HP9BKnxuuYN8L8_kw@mail.gmail.com> <CADU+-uCQe+ThvH8EOW0tn+Oh4ZNnSP0P743mF7NXNDuD2yokCA@mail.gmail.com>
-In-Reply-To: <CADU+-uCQe+ThvH8EOW0tn+Oh4ZNnSP0P743mF7NXNDuD2yokCA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20140617211244.GA2263@tango.0pointer.de>
+References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
+ <539BFF47.8060006@libero.it>
+ <20140615221307.GE24386@tango.0pointer.de>
+ <1709025.rRUgx5gMp1@xev>
+ <20140616101448.GB18016@tango.0pointer.de>
+ <539F15DC.4010600@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <539F15DC.4010600@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/17/2014 08:46 PM, Filipe Brandenburger wrote:
-> On Mon, Jun 16, 2014 at 6:13 PM, cwillu <cwillu@cwillu.com> wrote:
->> For the case of sequential writes (via write or mmap), padding writes
->> to page boundaries would help, if the wasted space isn't an issue.
->> Another approach, again assuming all other writes are appends, would
->> be to periodically (but frequently enough that the pages are still in
->> cache) read a chunk of the file and write it back in-place, with or
->> without an fsync. On the other hand, if you can afford to lose some
->> logs on a crash, not fsyncing/msyncing after each write will also
->> eliminate the fragmentation.
-> 
-> I was wondering if something could be done in btrfs to improve
-> performance under this workload... Something like a "defrag on demand"
-> for a case where mostly appends are happening.
+On Mon, 16.06.14 09:05, Josef Bacik (jbacik@fb.com) wrote:
 
-Instead of inventing a strategy smarter than the (already smart) filesystem, would be more simple make an explicit defrag ?
+> So you are doing all the right things from what I can tell, I'm just
+> a little confused about when you guys run fsync.  From what I can
+> tell it's only when you open the journal file and when you switch it
+> to "offline."  I didn't look too much past this point so I don't
+> know how often these things happen.  Are you taking an individual
+> message, writing it, updating the head of the file and then
+> fsync'ing?  Or are you getting a good bit of dirty log data and
+> fsyncing occasionally?
 
-In any case this "smart strategy" is filesystem specific, so it would be more simple (and less error prone) do an explicit defrag.
+The latter. Basically when opening a file for writing we mark it in the
+header as "online", then fsync() it. When we close a file we fsync() it,
+then change the header to "offline", ans sync() again. Also, 5min after
+each write we will also put things to offline, until the next write,
+when we will put things to online again. Finally, if something is logged
+at priorities EMERG, ALERT or CRIT we will sync immediately (which
+actually should never happen in real-life, unless something is really
+broken -- a simple way to check if anything like this got written is
+"journalctl -p crit").
 
-I tried this strategy with systemd-journald, getting good results (doing a ioctl BTRFS_IOC_DEFRAG during the journal opening).
+Also, we rotate and start a new file every now and then, when we hit a
+size limit, but that is usually very seldom.
 
-BR
-G.Baroncelli
+Putting this together: we should normally fsync() only very
+infrequently. 
+
+> What would cause btrfs problems is if you fallocate(), write a small
+> chunk, fsync, write a small chunk again, fsync again etc.  Fallocate
+> saves you the first write around, but if the next write is within
+> the same block as the previous write we'll end up triggering cow and
+> enter fragmented territory.  If this is what is what journald is
+> doing then that would be good to know, if not I'd like to know what
+> is happening since we shouldn't be fragmenting this badly.
+
+Hmm, the only way I see that that would happen is if a lot of stuff is
+logged at these super-high log levels mentioned above. But then again,
+that never really should happen in real-life.
+
+Could anyone who's expereiencing the slowdowns have a look on the
+journalctl output menionted above? Do you have more than a few lines
+printed like that?
+
+Lennart
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Lennart Poettering, Red Hat

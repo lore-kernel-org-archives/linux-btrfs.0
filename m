@@ -1,127 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:45792 "EHLO
+Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:40460 "EHLO
 	fgwmail2.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751429AbaFQEwn (ORCPT
+	with ESMTP id S1751127AbaFQG3u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 00:52:43 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail2.fujitsu.co.jp (Postfix) with ESMTP id 1CD343EE0B3
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:42 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.nic.fujitsu.com [10.0.50.93])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 179A6AC0A09
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:41 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id B094F1DB803B
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:40 +0900 (JST)
-Message-ID: <539FC98D.9080605@jp.fujitsu.com>
-Date: Tue, 17 Jun 2014 13:52:29 +0900
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+	Tue, 17 Jun 2014 02:29:50 -0400
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail2.fujitsu.co.jp (Postfix) with ESMTP id 37E533EE0CD
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:29:49 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.nic.fujitsu.com [10.0.50.92])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 65D36AC0920
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:29:48 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id E13E71DB803C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:29:47 +0900 (JST)
+Message-ID: <539FE03F.5030306@jp.fujitsu.com>
+Date: Tue, 17 Jun 2014 15:29:19 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [3.16-rc1] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
-References: <539E9026.1020406@jp.fujitsu.com> <539F2FEA.1060809@fb.com> <539F7D8E.9010608@jp.fujitsu.com> <539F8351.3010700@fb.com> <539F846A.4080608@jp.fujitsu.com> <539F9006.4090109@fb.com> <539FA395.5050704@jp.fujitsu.com> <539FB0AE.7010404@jp.fujitsu.com>
-In-Reply-To: <539FB0AE.7010404@jp.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
+Subject: Re: 3.15-rc5 deadlocked a 2nd time after I was copying photos from
+ an sdcard + common code path that deadlocks all btrfs filesystems
+References: <20140519134915.GA27432@merlins.org>
+In-Reply-To: <20140519134915.GA27432@merlins.org>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/06/17 12:06, Tsutomu Itoh wrote:
-> On 2014/06/17 11:10, Tsutomu Itoh wrote:
->> On 2014/06/17 9:47, Chris Mason wrote:
->>> On 06/16/2014 07:57 PM, Tsutomu Itoh wrote:
->>>> On 2014/06/17 8:52, Chris Mason wrote:
->>>>> On 06/16/2014 07:28 PM, Tsutomu Itoh wrote:
->>>>>> Hi Chris,
->>>>>>
->>>>>> On 2014/06/17 2:56, Chris Mason wrote:
->>>>>>> On 06/16/2014 02:35 AM, Tsutomu Itoh wrote:
->>>>>>>> I encountered soft lockup when executing 'xfstests btrfs/042' on 3.16-rc1.
->>>>>>>>
->>>>>>>
->>>>>>> Did we recover, or was it stuck forever?
->>>>>>
->>>>>> The following messages are repeatedly output.
->>>>>> And stuck forever.
->>>>>>
->>>>>> [ 1147.942181] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
->>>>>> [ 1147.967175] BUG: soft lockup - CPU#3 stuck for 23s! [kworker/u25:9:5194]
->>>>>> [ 1147.979172] BUG: soft lockup - CPU#4 stuck for 23s! [kworker/u25:15:5200]
->>>>>> [ 1147.991169] BUG: soft lockup - CPU#5 stuck for 23s! [kworker/u25:7:5192]
->>>>>> [ 1148.064153] BUG: soft lockup - CPU#6 stuck for 23s! [kworker/u26:3:3182]
->>>>>
->>>>> Can you please capture a stack trace from all the cpus?
->>>
->>> Very strange, please try to reproduce again, I'll dig through things here.
->>
->> I can reproduce it easily in my environment.
-> 
+Hi Marc,
 
-3.16-rc1 is slower than 3.15. And, 3.16-rc1 sometimes hang up.
+(2014/05/19 22:49), Marc MERLIN wrote:
+> Ok, that's 2 out of 2.
+>
+> I was copying pictures from an sdcard (through mmcblk0), and the
+> filesystem deadlocked.
+>
+> Unfortunately, when this happens, I copied my pictures (which were still
+> in RAM) to my 2nd drive which was also btrfs.
 
-===============
-- 3.15
+ From your sysrq capture, your sd card is formatted as VFAT, is it correct?
 
-WARNING! - Btrfs v3.14.2-50-gea6501b IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+===
+[194790.138156] FAT-fs (mmcblk0p1): utf8 is not a recommended IO charset for FAT filesystems, filesystem will be case sensitive!
+===
 
-Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-adding device /dev/sdc6 id 2
-fs created label (null) on /dev/sdb4
-        nodesize 16384 leafsize 16384 sectorsize 4096 size 65.19GiB
-Btrfs v3.14.2-50-gea6501b
+> I had to reboot, and of course the last pictures didn't get committed to
+> disk, but more annoyingly the copy I did to the second drive didn't work
+> either.
+> All the filenames got copied to the 2nd drive, some ended up with data,
+> and others ended up empty.
+> Why does a deadlock on drive 1 also cause btrfs to fail to write to
+> drive #2?
+> This is not the first time, there seem to be common codepaths across all
+> drives (just like disk array #1 having problems causing failure of
+> syslog to work on the boot drive with btrfs).
+>
+> I tried to capture sysrq+w, but it didn't make it to disk because of that bug.
+> I do have remote syslog of the hangs before that though, but the capture of sysrq+w
+> has too much missing data to be useful
+> http://marc.merlins.org/tmp/btrfs-hang.txt
 
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 luna 3.15.0
-MKFS_OPTIONS  -- /dev/sdc5
-MOUNT_OPTIONS -- /dev/sdc5 /test6
+quoted from btrfs-hang.txt:
+===
+[194790.140892] FAT-fs (mmcblk0p1): Volume was not properly unmounted. Some data may be corrupt. Please run fsck.
+===
 
-btrfs/042 2s ... 1s
-Ran: btrfs/042
-Passed all 1 tests
+Did you try mkfs.fsck? In addition, does this problem happen
+after that? Here try to reproduce with 3.16-rc1 is desirable.
 
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 luna 3.15.0
-MKFS_OPTIONS  -- /dev/sdc5
-MOUNT_OPTIONS -- /dev/sdc5 /test6
+If it's easy to reproduce,
 
-btrfs/042 1s ... 2s
-Ran: btrfs/042
-Passed all 1 tests
+  - run fsck.vfat (as I described before),
+  - change SD card,
+  - change copy target to other filesystem than btrfs
 
-...
-...
+is useful to find out the root cause.
 
----------------
+Thanks,
+Satoru
 
-- 3.16-rc1
-
-WARNING! - Btrfs v3.14.2-50-gea6501b IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-adding device /dev/sdc6 id 2
-fs created label (null) on /dev/sdb4
-        nodesize 16384 leafsize 16384 sectorsize 4096 size 65.19GiB
-Btrfs v3.14.2-50-gea6501b
-
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 luna 3.16.0-rc1
-MKFS_OPTIONS  -- /dev/sdc5
-MOUNT_OPTIONS -- /dev/sdc5 /test6
-
-btrfs/042 2s ... 6s
-Ran: btrfs/042
-Passed all 1 tests
-
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 luna 3.16.0-rc1
-MKFS_OPTIONS  -- /dev/sdc5
-MOUNT_OPTIONS -- /dev/sdc5 /test6
-
-btrfs/042 6s ...
-
-[  160.167530] BUG: soft lockup - CPU#1 ...
-===============
-
+>
+> Mmmh, maybe the deadlock is more complicated. I had a 2nd syslog stream
+> going to an ext4 filesystem, exactly to get around that btrfs master
+> deadlock, and now I see that didn't work either.
+>
+> If sync hangs, and logging to an ext4 filesystem didn't work, am I
+> hitting another bug/hardware problem?
+>
+> Here's what I got at the end?
+>
+>
+> [194790.138156] FAT-fs (mmcblk0p1): utf8 is not a recommended IO charset for FAT filesystems, filesystem will be case sensitive!
+> [194790.140892] FAT-fs (mmcblk0p1): Volume was not properly unmounted. Some data may be corrupt. Please run fsck.
+> [194932.445153] INFO: task IndexedDB:29612 blocked for more than 120 seconds.
+> [194932.445161]       Tainted: G        W     3.15.0-rc5-amd64-i915-preempt-20140216s1 #2
+> [194932.445163] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [194932.445166] IndexedDB       D ffff8800ccde8bc0     0 29612   5570 0x00000080
+> [194932.445172]  ffff8801b521fc30 0000000000000086 ffff8801b521fc00 ffff8801b521ffd8
+> [194932.445178]  ffff8801d622a450 00000000000141c0 ffff88041e3941c0 ffff8801d622a450
+> [194932.445182]  ffff8801b521fcd0 0000000000000002 ffffffff810fda1a ffff8801b521fc40
+> [194932.445188] Call Trace:
+> [194932.445198]  [<ffffffff810fda1a>] ? wait_on_page_read+0x3c/0x3c
+> [194932.445209]  [<ffffffff8161ca1b>] io_schedule+0x60/0x7a
+> [194932.445214]  [<ffffffff810fda28>] sleep_on_page+0xe/0x12
+> [194932.445219]  [<ffffffff8161cdab>] __wait_on_bit_lock+0x46/0x8a
+> [194932.445223]  [<ffffffff810fdae3>] __lock_page+0x69/0x6b
+> [194932.445228]  [<ffffffff81084771>] ? autoremove_wake_function+0x34/0x34
+> [194932.445232]  [<ffffffff81240c41>] lock_page+0x1e/0x21
+> [194932.445237]  [<ffffffff81244779>] extent_write_cache_pages.isra.16.constprop.32+0x10e/0x2c3
+> [194932.445243]  [<ffffffff8161d2d4>] ? mutex_unlock+0x16/0x18
+> [194932.445248]  [<ffffffff81239c74>] ? btrfs_file_aio_write+0x3e9/0x4b6
+> [194932.445251]  [<ffffffff81244bd4>] extent_writepages+0x4b/0x5c
+> [194932.445255]  [<ffffffff8122ee1f>] ? btrfs_submit_direct+0x3f4/0x3f4
+> [194932.445262]  [<ffffffff8122d3fa>] btrfs_writepages+0x28/0x2a
+> [194932.445267]  [<ffffffff811082b1>] do_writepages+0x1e/0x2c
+> [194932.445272]  [<ffffffff810ff179>] __filemap_fdatawrite_range+0x55/0x57
+> [194932.445277]  [<ffffffff810ff1ef>] filemap_fdatawrite_range+0x13/0x15
+> [194932.445280]  [<ffffffff8123885a>] btrfs_sync_file+0xa8/0x2b3
+> [194932.445286]  [<ffffffff8132048f>] ? __percpu_counter_add+0x8c/0xa6
+> [194932.445292]  [<ffffffff8117a1a7>] vfs_fsync_range+0x18/0x22
+> [194932.445296]  [<ffffffff8117a1cd>] vfs_fsync+0x1c/0x1e
+> [194932.445299]  [<ffffffff8117a3d9>] do_fsync+0x2c/0x4c
+> [194932.445303]  [<ffffffff8117a5f9>] SyS_fdatasync+0x13/0x17
+> [194932.445308]  [<ffffffff81625bad>] system_call_fastpath+0x1a/0x1f
+> [194932.445395] INFO: task kworker/u16:35:3812 blocked for more than 120 seconds.
+> [194932.445398]       Tainted: G        W     3.15.0-rc5-amd64-i915-preempt-20140216s1 #2
+> [194932.445400] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [194932.445403] kworker/u16:35  D 0000000000000000     0  3812      2 0x00000080
+> [194932.445410] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-1)
+> [194932.445414]  ffff88003b647a00 0000000000000046 ffff88003b6479d0 ffff88003b647fd8
+> [194932.445419]  ffff88003b8ca590 00000000000141c0 ffff88041e3941c0 ffff88003b8ca590
+> [194932.445423]  ffff88003b647aa0 0000000000000002 ffffffff810fda1a ffff88003b647a10
+> [194932.445427] Call Trace:
+> [194932.445432]  [<ffffffff810fda1a>] ? wait_on_page_read+0x3c/0x3c
+> [194932.445437]  [<ffffffff8161c876>] schedule+0x73/0x75
+> [194932.445441]  [<ffffffff8161ca1b>] io_schedule+0x60/0x7a
+> [194932.445445]  [<ffffffff810fda28>] sleep_on_page+0xe/0x12
+> [194932.445450]  [<ffffffff8161cdab>] __wait_on_bit_lock+0x46/0x8a
+> [194932.445454]  [<ffffffff810fdae3>] __lock_page+0x69/0x6b
+> [194932.445458]  [<ffffffff81084771>] ? autoremove_wake_function+0x34/0x34
+> [194932.445461]  [<ffffffff81240c41>] lock_page+0x1e/0x21
+> [194932.445465]  [<ffffffff81244779>] extent_write_cache_pages.isra.16.constprop.32+0x10e/0x2c3
+> [194932.445470]  [<ffffffff81244bd4>] extent_writepages+0x4b/0x5c
+> [194932.445473]  [<ffffffff8122ee1f>] ? btrfs_submit_direct+0x3f4/0x3f4
+> [194932.445479]  [<ffffffff8162280c>] ? preempt_count_add+0x77/0x8d
+> [194932.445483]  [<ffffffff8122d3fa>] btrfs_writepages+0x28/0x2a
+> [194932.445488]  [<ffffffff811082b1>] do_writepages+0x1e/0x2c
+> [194932.445492]  [<ffffffff81175ef2>] __writeback_single_inode+0x7d/0x238
+> [194932.445495]  [<ffffffff81176c2a>] writeback_sb_inodes+0x1eb/0x339
+> [194932.445499]  [<ffffffff81176dec>] __writeback_inodes_wb+0x74/0xb7
+> [194932.445503]  [<ffffffff81176f67>] wb_writeback+0x138/0x293
+> [194932.445507]  [<ffffffff8117759f>] bdi_writeback_workfn+0x19a/0x329
+> [194932.445513]  [<ffffffff8100d047>] ? load_TLS+0xb/0xf
+> [194932.445519]  [<ffffffff81065d2e>] process_one_work+0x195/0x2d2
+> [194932.445523]  [<ffffffff8106624a>] worker_thread+0x136/0x205
+> [194932.445526]  [<ffffffff81066114>] ? rescuer_thread+0x27a/0x27a
+> [194932.445530]  [<ffffffff8106b467>] kthread+0xae/0xb6
+> [194932.445534]  [<ffffffff8106b3b9>] ? __kthread_parkme+0x61/0x61
+> [194932.445537]  [<ffffffff81625afc>] ret_from_fork+0x7c/0xb0
+> [194932.445540]  [<ffffffff8106b3b9>] ? __kthread_parkme+0x61/0x61
+>
 

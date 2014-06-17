@@ -1,65 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:35784 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932966AbaFQS1r (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:30883 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755296AbaFQSab (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 14:27:47 -0400
-Date: Tue, 17 Jun 2014 11:27:45 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
-Subject: Re: frustrations with handling of crash reports
-Message-ID: <20140617182745.GO19071@merlins.org>
-References: <20140519134915.GA27432@merlins.org> <539FE03F.5030306@jp.fujitsu.com> <20140617145957.GH19071@merlins.org>
+	Tue, 17 Jun 2014 14:30:31 -0400
+Message-ID: <53A08925.8020700@fb.com>
+Date: Tue, 17 Jun 2014 11:29:57 -0700
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140617145957.GH19071@merlins.org>
+To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
+CC: <takeuchi_satoru@jp.fujitsu.com>
+Subject: Re: btrfs balance crash BUG ON fs/btrfs/relocation.c:1062 or RIP
+ build_backref_tree+0x9fc/0xcc4
+References: <20140609234007.GD19071@merlins.org>
+In-Reply-To: <20140609234007.GD19071@merlins.org>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 17, 2014 at 07:59:57AM -0700, Marc MERLIN wrote:
-> It is also ok to answer "Any FS created or used before kernel 3.x can be
-> corrupted due to bugs we fixed in 3.y, thank you for your report but it's
-> not a good use of our time to investigate this"
-> (although newer kernels should not just crash with BUG(xxx) on unexpected
-> data, they should remount the FS read only).
+On 06/09/2014 04:40 PM, Marc MERLIN wrote:
+> I did a balance on a system that had 3.11 (yes, I know, it's old). It hung.
+> So, I rebooted with 3.13, and it failed in fs/btrfs/relocation
+>
+> Problem #1: I cannot stop the relocation. It starts on its own as soon as I
+> mount the FS, and I can't stop it.
+> Is there a bug to fix that?
+>
+> Problem #2: I rebooted with 3.15rc5, and now it's worse.
+> [ 1569.598026] kernel BUG at fs/btrfs/relocation.c:1064!
+> then leads to
+> [ 1569.613240] RIP  [<ffffffff81267ef0>] build_backref_tree+0x9fc/0xcc4
+> [ 1569.613491]  RSP <ffff880fde599ad8>
+> [ 1569.614119] ---[ end trace da0f24875bbde960 ]---
+> [ 1569.614398] Kernel panic - not syncing: Fatal exception
+> (full trace below)
+>
+> I'm sure that filesystem is damaged in some way, but the kernel of course
+> should not crash.
+>
 
-I was thinking about this some more, and I know I have no right to tell
-others what to do, so take this as a mere suggestion :)
+I don't have this mail client setup right to send patches, can you just 
+go into relocation.c in build_backref_tree and remove the need_check = 
+false; statement and see if that fixes it.  Thanks,
 
-How about doing a release with cleanups and stabilization and better state
-reporting when things go wrong?
-
-This would give a good known version for users who have actual data and
-backups that can take many hours or days to restore (never mind downtime).
-
-A few things I was thinking about:
-1) Wouldn't it be a good time to replace all the BUG ON statements with
-appropriate error handling? Unexpected data can happen, the kernel shouldn't
-crash that.
-At the very least it should remount read only and give maybe a wiki link to
-the user on what to do next (some bu reporting and recovery page)
-
-2) On unexpected cases, output basic information on the filesystem or printk
-instructions to the user on how to gather data that would be sent to the
-list to be reviewed.
-This would include information on how old the filesystem is when it's
-possible to detect, and the instruction page could say "sorry, anything
-older than X, we don't want to hear about, we already fixed corruption bugs
-since then"
-
-3) getting printk data on an end user machine when it just started refusing
-to write to disk can be challenging and cause useful debug info to be lost.
-Things I thinking about:
-a) make sure most btrfs bugs do not just hang the kernel
-b) recommend to users to send kernel syslog messages to an ext4 partition
-
-How does that sound?
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Josef

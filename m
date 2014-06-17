@@ -1,98 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:34054 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933103AbaFQO76 (ORCPT
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:55661 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933574AbaFQR1w convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 10:59:58 -0400
-Date: Tue, 17 Jun 2014 07:59:57 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
-Subject: frustrations with handling of crash reports
-Message-ID: <20140617145957.GH19071@merlins.org>
-References: <20140519134915.GA27432@merlins.org> <539FE03F.5030306@jp.fujitsu.com>
+	Tue, 17 Jun 2014 13:27:52 -0400
+Received: from mfilter34-d.gandi.net (mfilter34-d.gandi.net [217.70.178.165])
+	by relay5-d.mail.gandi.net (Postfix) with ESMTP id EED7C41C06B
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 19:27:50 +0200 (CEST)
+Received: from relay5-d.mail.gandi.net ([217.70.183.197])
+	by mfilter34-d.gandi.net (mfilter34-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id 3OmFE-omeqHG for <linux-btrfs@vger.kernel.org>;
+	Tue, 17 Jun 2014 19:27:49 +0200 (CEST)
+Received: from zafu.localnet (AMontpellier-256-1-58-48.w90-28.abo.wanadoo.fr [90.28.25.48])
+	(Authenticated sender: michel@bouissou.net)
+	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id 9241141C062
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 19:27:49 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: No more snapshot aware defrag ?
+Date: Tue, 17 Jun 2014 19:27:48 +0200
+Message-ID: <1407090.0P4LdDZJ3g@zafu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <539FE03F.5030306@jp.fujitsu.com>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 17, 2014 at 03:29:19PM +0900, Satoru Takeuchi wrote:
-> after that? Here try to reproduce with 3.16-rc1 is desirable.
+Hi there,
 
-As for 3.16-rc1, my problem, and this is not targetted at you, just a
-general unfortunate observation of my last months of btrfs testing and
-reorts.
+Heck ! I discovered from the wiki
 
-I use btrfs on real systems. I have backups, but having crashes is both
-inconvenient and time consuming since it's my real data and systems I need
-and use, and where a crash at the wrong time can be quite inconvenient, as
-well as cost me hours of time to recover.
-I get to pick between staying 1 or 2 kernel versions back and being told
-that all my reports are useless because the kernel is too old, and running
-unstable kernels and unfortuantely still have at least 50% of my reports not
-looked at.
+https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_defragment_many_files.3F
 
-I signed up for that when using btrfs, but at least 50% of the time, when I
-went through this, and reported the problems (which took more time since
-it's not a test system in a VM or with serial console), the reports were
-ignored, or looked like they were.
-The other half of the time, I was indeed told to use an even more
-unstable/unproven version of btrfs, assuming the one I was running wasn't
-already unstable/unproven enough.
+...That defrag, which used to be snapshot-aware, isn't anymore :-/
 
-There is no right answer here, I understand that in their limited time
-developers are working on new code or maybe fixing existing code.
-However, if they are interested in real users with real data brave
-enough to run recent code, my wish would be for more support and timely
-interest when severe hang problems are reported, or corruption.
+...And /me am still defraggging my snapshotted system on a regular basis :-(
 
-Case in point: I just reported a FS last week that oopsed btrfs, and worse
-that crashed 3.15 (the problem is still there, but the symptom is worse in
-3.15), and got no answer from anyone carying about the filesystem.
-I asked a 2nd time before deleting it, no one answered.
+Is there any plan to re-enable the snapshot-awareness of defrag anytime soon ?
 
-It took me 2h during my work day (which isn't supposed to be related to
-testing btrfs) to even capture that, and now I regret even having bothered
-because it looks like no one cared.
-Next time it happens again, I likely won't waste my time to report it and
-get back to work, potentially reverting the FS to something other than btrfs
-:(
+TIA.
 
-Similarly I've seen other posts from people reporting corruption, data loss,
-and getting no answer or feedback at all.
-
-I realize that the developers can't put hours of personal time chasing each
-(sometimes incomplete) report sent to the list, but my point is that if user
-reports or crashes and data loss seemingly get so little attention, this is
-going to put off a lot of early users who will get burnt, remember the bad
-experience, and not come back. I already know some who have, some of which
-have even told me "why do you even still bother using btrfs for your data".
-
-Btrfs is labelled as experimental, no one has a right to complain if data is
-lost, but my suggestion is for developers to allocate a bit more time to
-looking at user reports, especially if they spent time getting the crash
-data and trying to give useful information.
-
-It is also ok to answer "Any FS created or used before kernel 3.x can be
-corrupted due to bugs we fixed in 3.y, thank you for your report but it's
-not a good use of our time to investigate this"
-(although newer kernels should not just crash with BUG(xxx) on unexpected
-data, they should remount the FS read only).
-
-Maybe it would make sense for some developers to clean those up, and do some
-kind of unofficial rotation of list monitoring to gather important reports
-from users and act on the ones that have useful data or at least get back to
-users who reported a crash on code that is known to have corruption or
-deadlock problems that were fixed in newer kernels.
-
-Again, this was not targeted at your answer, I do thank you for trying to
-help.
-Thanks to all for reading.
-
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

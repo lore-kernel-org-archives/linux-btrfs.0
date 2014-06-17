@@ -1,42 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f180.google.com ([74.125.82.180]:65453 "EHLO
-	mail-we0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751320AbaFPLVH (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:2781 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754078AbaFQB1a (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Jun 2014 07:21:07 -0400
-Received: by mail-we0-f180.google.com with SMTP id x48so5533001wes.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Jun 2014 04:21:05 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: remove unused wait queue in struct extent_buffer
-Date: Mon, 16 Jun 2014 13:14:25 +0100
-Message-Id: <1402920865-3120-1-git-send-email-fdmanana@gmail.com>
+	Mon, 16 Jun 2014 21:27:30 -0400
+Message-ID: <1402968140.9806.6.camel@localhost.localdomain>
+Subject: Re: [PATCH v4] lib: add size unit t/p/e to memparse
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: David Rientjes <rientjes@google.com>
+CC: <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <akpm@linux-foundation.org>
+Date: Tue, 17 Jun 2014 09:22:20 +0800
+In-Reply-To: <alpine.DEB.2.02.1406131457480.31981@chino.kir.corp.google.com>
+References: <1402623746-1171-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <alpine.DEB.2.02.1406131457480.31981@chino.kir.corp.google.com>
+Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The lock_wq wait queue is not used anywhere, therefore just remove it.
-On a x86_64 system, this reduced sizeof(struct extent_buffer) from 320
-bytes down to 296 bytes, which means a 4Kb page can now be used for
-13 extent buffers instead of 12.
+On Fri, 2014-06-13 at 14:58 -0700, David Rientjes wrote:
+> On Fri, 13 Jun 2014, Gui Hecheng wrote:
+> 
+> > diff --git a/lib/cmdline.c b/lib/cmdline.c
+> > index d4932f7..76a712e 100644
+> > --- a/lib/cmdline.c
+> > +++ b/lib/cmdline.c
+> > @@ -121,11 +121,7 @@ EXPORT_SYMBOL(get_options);
+> >   *	@retptr: (output) Optional pointer to next char after parse completes
+> >   *
+> >   *	Parses a string into a number.  The number stored at @ptr is
+> > - *	potentially suffixed with %K (for kilobytes, or 1024 bytes),
+> > - *	%M (for megabytes, or 1048576 bytes), or %G (for gigabytes, or
+> > - *	1073741824).  If the number is suffixed with K, M, or G, then
+> > - *	the return value is the number multiplied by one kilobyte, one
+> > - *	megabyte, or one gigabyte, respectively.
+> > + *	potentially suffixed with K, M, G, T, P, E.
+> >   */
+> >  
+> >  unsigned long long memparse(const char *ptr, char **retptr)
+> > @@ -135,6 +131,15 @@ unsigned long long memparse(const char *ptr, char **retptr)
+> >  	unsigned long long ret = simple_strtoull(ptr, &endptr, 0);
+> >  
+> >  	switch (*endptr) {
+> > +	case 'E':
+> > +	case 'e':
+> > +		ret <<= 10;
+> > +	case 'P':
+> > +	case 'p':
+> > +		ret <<= 10;
+> > +	case 'T':
+> > +	case 't':
+> > +		ret <<= 10;
+> >  	case 'G':
+> >  	case 'g':
+> >  		ret <<= 10;
+> 
+> Seems fine since unsigned long long is always at least 64 bits, but 
+> perhaps also change simple_strtoull() to use kstrtoull() at the same time 
+> since the former is deprecated?
 
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/extent_io.h | 1 -
- 1 file changed, 1 deletion(-)
+Yes, that is a point. But the deprecated function is a separate problem
+and may not be included in this patch.
+Also, I find that simple_strtoull is used in many places in the kernel
+code, it is better to replace it globally?
 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 8b63f2d..dbbea4f 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -158,7 +158,6 @@ struct extent_buffer {
- 	 * to unlock
- 	 */
- 	wait_queue_head_t read_lock_wq;
--	wait_queue_head_t lock_wq;
- 	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
- #ifdef CONFIG_BTRFS_DEBUG
- 	struct list_head leak_list;
--- 
-1.9.1
+-Gui
 

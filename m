@@ -1,23 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:62368 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751429AbaFQEnP (ORCPT
+Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:45792 "EHLO
+	fgwmail2.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751429AbaFQEwn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 00:43:15 -0400
-Message-ID: <539FC896.5010909@fb.com>
-Date: Tue, 17 Jun 2014 00:48:22 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 17 Jun 2014 00:52:43 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail2.fujitsu.co.jp (Postfix) with ESMTP id 1CD343EE0B3
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:42 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.nic.fujitsu.com [10.0.50.93])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 179A6AC0A09
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:41 +0900 (JST)
+Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id B094F1DB803B
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 13:52:40 +0900 (JST)
+Message-ID: <539FC98D.9080605@jp.fujitsu.com>
+Date: Tue, 17 Jun 2014 13:52:29 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+To: Chris Mason <clm@fb.com>
 CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [3.16-rc1] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
 References: <539E9026.1020406@jp.fujitsu.com> <539F2FEA.1060809@fb.com> <539F7D8E.9010608@jp.fujitsu.com> <539F8351.3010700@fb.com> <539F846A.4080608@jp.fujitsu.com> <539F9006.4090109@fb.com> <539FA395.5050704@jp.fujitsu.com> <539FB0AE.7010404@jp.fujitsu.com>
 In-Reply-To: <539FB0AE.7010404@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/16/2014 11:06 PM, Tsutomu Itoh wrote:
+On 2014/06/17 12:06, Tsutomu Itoh wrote:
 > On 2014/06/17 11:10, Tsutomu Itoh wrote:
 >> On 2014/06/17 9:47, Chris Mason wrote:
 >>> On 06/16/2014 07:57 PM, Tsutomu Itoh wrote:
@@ -47,19 +56,72 @@ On 06/16/2014 11:06 PM, Tsutomu Itoh wrote:
 >>
 >> I can reproduce it easily in my environment.
 > 
-> This is my reproducer.
-> 
 
-Great, I was able to trigger it here, but only with lockdep disabled.
-When called from this part of btrfs_search_slot, the code for
-btrfs_set_path_blocking goes through an extra step to set the lock on
-the extent buffer we just found blocking before it is put into the path.
+3.16-rc1 is slower than 3.15. And, 3.16-rc1 sometimes hang up.
 
-But this is only done with lockdep on.  With lockdep off, we assume the
-lock ordering inside the tree is protecting us and that we don't need to
-worry about blocks that are not in the path yet.
+===============
+- 3.15
 
-Something is breaking this rule, probably in the quota code.  I'll try
-to nail down what is going on.
+WARNING! - Btrfs v3.14.2-50-gea6501b IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
--chris
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+adding device /dev/sdc6 id 2
+fs created label (null) on /dev/sdb4
+        nodesize 16384 leafsize 16384 sectorsize 4096 size 65.19GiB
+Btrfs v3.14.2-50-gea6501b
+
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 luna 3.15.0
+MKFS_OPTIONS  -- /dev/sdc5
+MOUNT_OPTIONS -- /dev/sdc5 /test6
+
+btrfs/042 2s ... 1s
+Ran: btrfs/042
+Passed all 1 tests
+
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 luna 3.15.0
+MKFS_OPTIONS  -- /dev/sdc5
+MOUNT_OPTIONS -- /dev/sdc5 /test6
+
+btrfs/042 1s ... 2s
+Ran: btrfs/042
+Passed all 1 tests
+
+...
+...
+
+---------------
+
+- 3.16-rc1
+
+WARNING! - Btrfs v3.14.2-50-gea6501b IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
+adding device /dev/sdc6 id 2
+fs created label (null) on /dev/sdb4
+        nodesize 16384 leafsize 16384 sectorsize 4096 size 65.19GiB
+Btrfs v3.14.2-50-gea6501b
+
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 luna 3.16.0-rc1
+MKFS_OPTIONS  -- /dev/sdc5
+MOUNT_OPTIONS -- /dev/sdc5 /test6
+
+btrfs/042 2s ... 6s
+Ran: btrfs/042
+Passed all 1 tests
+
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 luna 3.16.0-rc1
+MKFS_OPTIONS  -- /dev/sdc5
+MOUNT_OPTIONS -- /dev/sdc5 /test6
+
+btrfs/042 6s ...
+
+[  160.167530] BUG: soft lockup - CPU#1 ...
+===============
+
+

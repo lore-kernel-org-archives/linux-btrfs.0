@@ -1,37 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:41360 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932135AbaFQR6y convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 13:58:54 -0400
-Content-Type: text/plain; charset=iso-8859-1
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: No more snapshot aware defrag ?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <1407090.0P4LdDZJ3g@zafu>
-Date: Tue, 17 Jun 2014 11:58:52 -0600
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <5DD4C2CF-FD94-449F-AA92-21B6F27F50BC@colorremedies.com>
-References: <1407090.0P4LdDZJ3g@zafu>
-To: =?iso-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from zougloub.eu ([198.27.83.45]:40568 "EHLO zougloub.eu"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932762AbaFQSUq convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Jun 2014 14:20:46 -0400
+Received: from Vantage.tamaggo.local (unknown [IPv6:2607:5300:60:242d:1::2])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by zougloub.eu (Postfix) with ESMTPSA id 5279C9676AA
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 14:07:19 -0400 (EDT)
+Date: Tue, 17 Jun 2014 14:12:19 -0400
+From: =?UTF-8?B?SsOpcsO0bWU=?= Carretero <cJ-ko@zougloub.eu>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [3.16-rc1] BUG: fsync not finishing during rootfs mount (getty
+ doesn't finish)
+Message-ID: <20140617141219.599097b1@Vantage.tamaggo.local>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-On Jun 17, 2014, at 11:27 AM, Sw�mi Petaramesh <swami@petaramesh.org> wrote:
 
-> Hi there,
-> 
-> Heck ! I discovered from the wiki
-> 
-> https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_defragment_many_files.3F
-> 
-> ...That defrag, which used to be snapshot-aware, isn't anymore :-/
-> 
-> ...And /me am still defraggging my snapshotted system on a regular basis :-(
-> 
-> Is there any plan to re-enable the snapshot-awareness of defrag anytime soon ?
+I updated 2 computers to 3.16-rc1 and they both did the same thing when
+mounting the rootfs: after entering the login/password, the shell didn't
+appear.
+120 seconds later, there is a message about a hung task, it's about
+fsync not finishing, with a traceback showing SyS_fsync / ... /
+btrfs_sync_file / btrfs_wait_ordered_range / ...
 
-Check the archive for "Snapshot aware defrag and qgroups thoughts" April 21st by Josef Bacik.
+The linux-btrfs/for-linus doesn't have this problem, so it looks like
+it's about integration in -rc1.
 
-Chris Murphy
+Side note: after that, the filesystem is not mountable if I
+forcibly reboot the computer or try to mount it elsewhere (with 3.15).
+We've had to use btrfs-select-super to allow it to mount.
+
+I'm on #btrfs, have gotten help from xaba and kdave.
+
+
+Regards,
+
+-- 
+Jérôme

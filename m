@@ -1,97 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:51682 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753356AbaFMXoB (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:37916 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752160AbaFQHOZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Jun 2014 19:44:01 -0400
-Received: by mail-pa0-f49.google.com with SMTP id lj1so2607117pab.22
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Jun 2014 16:44:01 -0700 (PDT)
-From: Adam Buchbinder <abuchbinder@google.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dave@jikos.cz, Adam Buchbinder <abuchbinder@google.com>
-Subject: [PATCH] Fix a use-after-free in the volumes code.
-Date: Fri, 13 Jun 2014 16:43:56 -0700
-Message-Id: <1402703036-2447-1-git-send-email-abuchbinder@google.com>
+	Tue, 17 Jun 2014 03:14:25 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5H7ELch026526
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:14:21 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v3] btrfs-progs: Add human readable flags output for chunk/block group type.
+Date: Tue, 17 Jun 2014 15:15:26 +0800
+Message-ID: <1402989326-14134-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a struct btrfs_fs_devices was being torn down by
-btrfs_close_devices(), there was an invalidated pointer in the global
-list fs_uuids which still pointed to it; if a device was closed and
-then reopened (which btrfs-convert does), freed memory would be
-accessed.
+Current btrfs-debug-tree output chunk/block group type as numbers,
+which makes it hard to understand and need to check the source to
+understand the meaning.
 
-This was found using ThreadSanitizer (pretty much doing what
-AddressSanitizer would, but not exiting after the first failure).
-To reproduce, build with -fsanitize=thread and run 'make test'.
-Representative output is below.
+This patch will convert numeric type output to human readable strings.
 
-This change makes the current tests TSan-clean.
-
-WARNING: ThreadSanitizer: heap-use-after-free (pid=29161)
-  Read of size 8 at 0x7d180000eee0 by main thread:
-    #0 memcmp ??:0
-    #1 find_fsid .../volumes.c:81
-    #2 device_list_add .../volumes.c:95
-    #3 btrfs_scan_one_device .../volumes.c:259
-    #4 btrfs_scan_fs_devices .../disk-io.c:1002
-    #5 __open_ctree_fd .../disk-io.c:1090
-    #6 open_ctree_fd .../disk-io.c:1191
-    #7 do_convert .../btrfs-convert.c:2317
-    #8 main .../btrfs-convert.c:2745
-
-  Previous write of size 8 at 0x7d180000eee0 by main thread:
-    #0 free ??:0
-    #1 btrfs_close_devices .../volumes.c:191
-    #2 close_ctree .../disk-io.c:1401
-    #3 do_convert .../btrfs-convert.c:2300
-    #4 main .../btrfs-convert.c:2745
-
-  Location is heap block of size 96 at 0x7d180000eee0 allocated by main thread:
-    #0 calloc ??:0 (exe+0x00000002acc6)
-    #1 device_list_add .../volumes.c:97
-    #2 btrfs_scan_one_device .../volumes.c:259
-    #3 btrfs_scan_fs_devices .../disk-io.c:1002
-    #4 __open_ctree_fd .../disk-io.c:1090
-    #5 open_ctree_fd .../disk-io.c:1191
-    #6 do_convert .../btrfs-convert.c:2256
-    #7 main .../btrfs-convert.c:2745
-
-Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- volumes.c | 1 +
- volumes.h | 2 +-
- 2 files changed, 2 insertions(+), 1 deletion(-)
+changelog:
+v2: allow mixed chunk
+v3: fix typo in commit message
+---
+ print-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 54 insertions(+), 5 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index a61928c..36f6050 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -188,6 +188,7 @@ again:
- 		goto again;
- 	}
- 
-+	list_del(&fs_devices->list);
- 	free(fs_devices);
+diff --git a/print-tree.c b/print-tree.c
+index 7f831ad..6cf59ca 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -160,15 +160,60 @@ static int print_inode_ref_item(struct extent_buffer *eb, struct btrfs_item *ite
  	return 0;
  }
-diff --git a/volumes.h b/volumes.h
-index b1ff3d0..2e960b5 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -67,7 +67,7 @@ struct btrfs_device {
- struct btrfs_fs_devices {
- 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
  
--	/* the device with this id has the most recent coyp of the super */
-+	/* the device with this id has the most recent copy of the super */
- 	u64 latest_devid;
- 	u64 latest_trans;
- 	u64 lowest_devid;
++/* Caller should ensure sizeof(*ret)>=21 "DATA|METADATA|RAID10" */
++static void bg_flags_to_str(u64 flags, char *ret)
++{
++	int empty = 1;
++
++	if (flags & BTRFS_BLOCK_GROUP_DATA) {
++		empty = 0;
++		strcpy(ret, "DATA");
++	}
++	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
++		if (!empty)
++			strcat(ret, "|");
++		strcat(ret, "METADATA");
++	}
++	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
++		if (!empty)
++			strcat(ret, "|");
++		strcat(ret, "SYSTEM");
++	}
++	switch (flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case BTRFS_BLOCK_GROUP_RAID0:
++		strcat(ret, "|RAID0");
++		break;
++	case BTRFS_BLOCK_GROUP_RAID1:
++		strcat(ret, "|RAID1");
++		break;
++	case BTRFS_BLOCK_GROUP_DUP:
++		strcat(ret, "|DUP");
++		break;
++	case BTRFS_BLOCK_GROUP_RAID10:
++		strcat(ret, "|RAID10");
++		break;
++	case BTRFS_BLOCK_GROUP_RAID5:
++		strcat(ret, "|RAID5");
++		break;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		strcat(ret, "|RAID6");
++		break;
++	default:
++		break;
++	}
++}
++
+ static void print_chunk(struct extent_buffer *eb, struct btrfs_chunk *chunk)
+ {
+ 	int num_stripes = btrfs_chunk_num_stripes(eb, chunk);
+ 	int i;
+-	printf("\t\tchunk length %llu owner %llu type %llu num_stripes %d\n",
++	char chunk_flags_str[32] = {0};
++
++	bg_flags_to_str(btrfs_chunk_type(eb, chunk), chunk_flags_str);
++	printf("\t\tchunk length %llu owner %llu type %s num_stripes %d\n",
+ 	       (unsigned long long)btrfs_chunk_length(eb, chunk),
+ 	       (unsigned long long)btrfs_chunk_owner(eb, chunk),
+-	       (unsigned long long)btrfs_chunk_type(eb, chunk),
+-	       num_stripes);
++	       chunk_flags_str, num_stripes);
+ 	for (i = 0 ; i < num_stripes ; i++) {
+ 		printf("\t\t\tstripe %d devid %llu offset %llu\n", i,
+ 		      (unsigned long long)btrfs_stripe_devid_nr(eb, chunk, i),
+@@ -744,6 +789,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	u32 nr = btrfs_header_nritems(l);
+ 	u64 objectid;
+ 	u32 type;
++	char bg_flags_str[32];
+ 
+ 	printf("leaf %llu items %d free space %d generation %llu owner %llu\n",
+ 		(unsigned long long)btrfs_header_bytenr(l), nr,
+@@ -858,10 +904,13 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 					    struct btrfs_block_group_item);
+ 			read_extent_buffer(l, &bg_item, (unsigned long)bi,
+ 					   sizeof(bg_item));
+-			printf("\t\tblock group used %llu chunk_objectid %llu flags %llu\n",
++			memset(bg_flags_str, 0, sizeof(bg_flags_str));
++			bg_flags_to_str(btrfs_block_group_flags(&bg_item),
++					bg_flags_str);
++			printf("\t\tblock group used %llu chunk_objectid %llu flags %s\n",
+ 			       (unsigned long long)btrfs_block_group_used(&bg_item),
+ 			       (unsigned long long)btrfs_block_group_chunk_objectid(&bg_item),
+-			       (unsigned long long)btrfs_block_group_flags(&bg_item));
++			       bg_flags_str);
+ 			break;
+ 		case BTRFS_CHUNK_ITEM_KEY:
+ 			print_chunk(l, btrfs_item_ptr(l, i, struct btrfs_chunk));
 -- 
-2.0.0.526.g5318336
+2.0.0
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+More majordomo info at  http://vger.kernel.org/majordomo

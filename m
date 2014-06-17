@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f172.google.com ([209.85.220.172]:41785 "EHLO
-	mail-vc0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932657AbaFQSqi (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:36030 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755372AbaFQSzu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 14:46:38 -0400
-Received: by mail-vc0-f172.google.com with SMTP id hy10so6914981vcb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 11:46:38 -0700 (PDT)
+	Tue, 17 Jun 2014 14:55:50 -0400
+Date: Tue, 17 Jun 2014 11:55:49 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        takeuchi_satoru@jp.fujitsu.com
+Subject: Re: btrfs balance crash BUG ON fs/btrfs/relocation.c:1062 or RIP build_backref_tree+0x9fc/0xcc4
+Message-ID: <20140617185549.GP19071@merlins.org>
+References: <20140609234007.GD19071@merlins.org> <53A08925.8020700@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAE5mzvj6yA3FhZ-bpR29XLuuk8BbuOfW4HP9BKnxuuYN8L8_kw@mail.gmail.com>
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
-	<539BFF47.8060006@libero.it>
-	<20140615221307.GE24386@tango.0pointer.de>
-	<1709025.rRUgx5gMp1@xev>
-	<20140616101448.GB18016@tango.0pointer.de>
-	<539F15DC.4010600@fb.com>
-	<lnnht8$f3j$1@ger.gmane.org>
-	<CAE5mzvj6yA3FhZ-bpR29XLuuk8BbuOfW4HP9BKnxuuYN8L8_kw@mail.gmail.com>
-Date: Tue, 17 Jun 2014 11:46:37 -0700
-Message-ID: <CADU+-uCQe+ThvH8EOW0tn+Oh4ZNnSP0P743mF7NXNDuD2yokCA@mail.gmail.com>
-Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
-From: Filipe Brandenburger <filbranden@google.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        systemd-devel@lists.freedesktop.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53A08925.8020700@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 16, 2014 at 6:13 PM, cwillu <cwillu@cwillu.com> wrote:
-> For the case of sequential writes (via write or mmap), padding writes
-> to page boundaries would help, if the wasted space isn't an issue.
-> Another approach, again assuming all other writes are appends, would
-> be to periodically (but frequently enough that the pages are still in
-> cache) read a chunk of the file and write it back in-place, with or
-> without an fsync. On the other hand, if you can afford to lose some
-> logs on a crash, not fsyncing/msyncing after each write will also
-> eliminate the fragmentation.
+On Tue, Jun 17, 2014 at 11:29:57AM -0700, Josef Bacik wrote:
+> >I'm sure that filesystem is damaged in some way, but the kernel of course
+> >should not crash.
+> >
+> 
+> I don't have this mail client setup right to send patches, can you just 
+> go into relocation.c in build_backref_tree and remove the need_check = 
+> false; statement and see if that fixes it.  Thanks,
 
-I was wondering if something could be done in btrfs to improve
-performance under this workload... Something like a "defrag on demand"
-for a case where mostly appends are happening.
+Sure, I'll try that tomorrow when I have access to that machine.
 
-When there are small appends with fsync/msync, they become new
-fragments (as expected), but once the writes go past a block boundary,
-btrfs could defragment the previous block in background, since it's
-not really expected to change again.
+Just to be clear
+1) You mean this one, right?
+				if (!upper->checked && need_check) {
+					need_check = false;   <-- delete this
+					list_add_tail(&edge->list[UPPER],
+						      &list);
+				} else
 
-That could potentially achieve performance close to chattr +C without
-the drawbacks of disabling copy-on-write.
+2) is your guess that the BUG_ON I'm getting shouldn't be triggered
+and your proposed patch could fix that, or that I do have an FS problem 
+but that we're just going to make the kernel more lenient and not crash on it?
 
-Cheers,
-Filipe
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

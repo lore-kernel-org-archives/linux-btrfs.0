@@ -1,68 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55036 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753982AbaFRFdj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 01:33:39 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5I5XaXO028408
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Jun 2014 13:33:36 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: clean fsck noise for free inode generation 0
-Date: Wed, 18 Jun 2014 13:28:22 +0800
-Message-ID: <1403069302-12057-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from smtp4-g21.free.fr ([212.27.42.4]:43397 "EHLO smtp4-g21.free.fr"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751888AbaFRQvw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Jun 2014 12:51:52 -0400
+From: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@laposte.net>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@laposte.net>
+Subject: [PATCH] btrfs-progs: restore: check lzo compress length
+Date: Wed, 18 Jun 2014 18:51:19 +0200
+Message-Id: <1403110279-28688-1-git-send-email-vincent.stehle@laposte.net>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we write a btrfs to full and then we have no space left for
-free space cache.
-The btrfs check will output msg as follows which is noise indeed:
-	# free space inode generation (0) did not match
-	  free space cache generation (XXX)
+When things go wrong for lzo-compressed btrfs, feeding lzo1x_decompress_safe()
+with corrupt data during restore can lead to crashes. Reduce the risk by adding
+a check on the input length.
 
-When the free space cache is not written out normally,
-the free inode generation will be 0.
-In this condition, no noise should be outputed.
-Also, check 0-sized inode eariler together with 0-generationed inode.
-
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
 ---
- free-space-cache.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/free-space-cache.c b/free-space-cache.c
-index bddde24..2440dd8 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -310,6 +310,13 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 	leaf = path->nodes[0];
- 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_inode_item);
-+
-+	inode_size = btrfs_inode_size(leaf, inode_item);
-+	if (!inode_size || !btrfs_inode_generation(leaf, inode_item)) {
-+		btrfs_release_path(path);
-+		return 0;
-+	}
-+
- 	if (btrfs_inode_generation(leaf, inode_item) != generation) {
- 		printf("free space inode generation (%llu) did not match "
- 		       "free space cache generation (%llu)\n",
-@@ -320,10 +327,7 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 		return 0;
- 	}
+Hi,
+
+This patch actually allowed me to finish a btrfs restore of a damaged
+filesystem, which was repeateadly crashing otherwise. This was with v3.12, but
+I think it still makes sense.
+
+Best regards,
+
+V.
+
+ cmds-restore.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 96b97e1..4338493 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -115,6 +115,12 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
  
--	inode_size = btrfs_inode_size(leaf, inode_item);
- 	btrfs_release_path(path);
--	if (inode_size == 0)
--		return 0;
+ 	while (tot_in < tot_len) {
+ 		in_len = read_compress_length(inbuf);
++
++		if ((tot_in + LZO_LEN + in_len) > tot_len) {
++			fprintf(stderr, "bad compress length %lu\n", in_len);
++			return -1;
++		}
++
+ 		inbuf += LZO_LEN;
+ 		tot_in += LZO_LEN;
  
- 	if (!num_entries)
- 		return 0;
 -- 
-1.8.1.4
+2.0.0
 

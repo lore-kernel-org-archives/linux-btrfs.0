@@ -1,184 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56337 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755637AbaFKOGH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 10:06:07 -0400
-From: David Disseldorp <ddiss@suse.de>
-To: fstests@vger.kernel.org
-Cc: linux-cifs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        David Disseldorp <ddiss@suse.de>
-Subject: [PATCH 2/2] src/cloner: add CIFS_IOC_COPYCHUNK_FILE support
-Date: Wed, 11 Jun 2014 16:05:44 +0200
-Message-Id: <1402495544-12865-3-git-send-email-ddiss@suse.de>
-In-Reply-To: <1402495544-12865-1-git-send-email-ddiss@suse.de>
-References: <1402495544-12865-1-git-send-email-ddiss@suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:36830 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933182AbaFRIkY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Jun 2014 04:40:24 -0400
+Message-ID: <53A14F86.9000506@cn.fujitsu.com>
+Date: Wed, 18 Jun 2014 16:36:22 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Josef Bacik <jbacik@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] xfstests/btrfs: add qgroup rescan stress test
+References: <1394423051-17356-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <1399615343-28544-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1399615343-28544-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cifs.ko supports server-side copy offloads via CIFS_IOC_COPYCHUNK_FILE.
-In handling the ioctl, the request is split into a series of
-SMB2 FSCTL_SRV_COPYCHUNK wire requests, which may be handled by the SMB
-server as a local read/write, or COW clone as is the case for Samba with
-vfs_btrfs.
+Hello Josef,
 
-Signed-off-by: David Disseldorp <ddiss@suse.de>
----
- configure.ac |  1 +
- src/cloner.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++---------
- 2 files changed, 68 insertions(+), 11 deletions(-)
+The lastest Qgroup code still break this test sometimes.
 
-diff --git a/configure.ac b/configure.ac
-index 53459d8..d038f95 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -31,6 +31,7 @@ AC_HEADER_STDC
- 			sys/fs/xfs_itable.h	\
- 			xfs/platform_defs.h	\
- 			btrfs/ioctl.h		\
-+			cifs/ioctl.h		\
-     ])
- 
- AC_CHECK_HEADERS([xfs/xfs_log_format.h],,,[#include <xfs/libxfs.h>])
-diff --git a/src/cloner.c b/src/cloner.c
-index 6fb40fa..18c44b9 100644
---- a/src/cloner.c
-+++ b/src/cloner.c
-@@ -1,6 +1,5 @@
- /*
-- *  Tiny program to perform file (range) clones using raw Btrfs ioctls.
-- *  It should only be needed until btrfs-progs has an xfs_io equivalent.
-+ *  Tiny program to perform file (range) clones using raw Btrfs and CIFS ioctls.
-  *
-  *  Copyright (C) 2014 SUSE Linux Products GmbH. All Rights Reserved.
-  *
-@@ -49,9 +48,21 @@ struct btrfs_ioctl_clone_range_args {
- 				   struct btrfs_ioctl_clone_range_args)
- #endif
- 
-+#ifdef HAVE_CIFS_IOCTL_H
-+#include <cifs/ioctl.h>
-+#else
-+
-+#define CIFS_IOCTL_MAGIC 0xCF
-+#define CIFS_IOC_COPYCHUNK_FILE _IOW(CIFS_IOCTL_MAGIC, 3, int)
-+
-+#endif
-+
- #ifndef BTRFS_SUPER_MAGIC
- #define BTRFS_SUPER_MAGIC    0x9123683E
- #endif
-+#ifndef CIFS_MAGIC_NUMBER
-+#define CIFS_MAGIC_NUMBER    0xFE534D42
-+#endif
- 
- static void
- usage(char *name, const char *msg)
-@@ -59,17 +70,19 @@ usage(char *name, const char *msg)
- 	printf("Fatal: %s\n"
- 	       "Usage:\n"
- 	       "%s [options] <src_file> <dest_file>\n"
--	       "\tA full file clone (reflink) is performed by default, "
--	       "unless any of the following are specified:\n"
-+	       "\tA full file clone is performed by default, "
-+	       "unless any of the following are specified (Btrfs only):\n"
- 	       "\t-s <offset>:	source file offset (default = 0)\n"
- 	       "\t-d <offset>:	destination file offset (default = 0)\n"
--	       "\t-l <length>:	length of clone (default = 0)\n",
-+	       "\t-l <length>:	length of clone (default = 0)\n\n"
-+	       "\tBoth Btrfs and CIFS are supported. On Btrfs, a COW clone "
-+	       "is attempted. On CIFS, a server-side copy is requested.\n",
- 	       msg, name);
- 	_exit(1);
- }
- 
- static int
--clone_file(int src_fd, int dst_fd)
-+clone_file_btrfs(int src_fd, int dst_fd)
- {
- 	int ret = ioctl(dst_fd, BTRFS_IOC_CLONE, src_fd);
- 	if (ret != 0)
-@@ -78,8 +91,33 @@ clone_file(int src_fd, int dst_fd)
- }
- 
- static int
--clone_file_range(int src_fd, int dst_fd, uint64_t src_off, uint64_t dst_off,
--		 uint64_t len)
-+clone_file_cifs(int src_fd, int dst_fd)
-+{
-+	int ret = ioctl(dst_fd, CIFS_IOC_COPYCHUNK_FILE, src_fd);
-+	if (ret != 0)
-+		ret = errno;
-+	return ret;
-+}
-+
-+static int
-+clone_file(unsigned int fs_type, int src_fd, int dst_fd)
-+{
-+	switch (fs_type) {
-+	case BTRFS_SUPER_MAGIC:
-+		return clone_file_btrfs(src_fd, dst_fd);
-+		break;
-+	case CIFS_MAGIC_NUMBER:
-+		return clone_file_cifs(src_fd, dst_fd);
-+		break;
-+	default:
-+		return ENOTSUP;
-+		break;
-+	}
-+}
-+
-+static int
-+clone_file_range_btrfs(int src_fd, int dst_fd, uint64_t src_off,
-+		       uint64_t dst_off, uint64_t len)
- {
- 	struct btrfs_ioctl_clone_range_args cr_args;
- 	int ret;
-@@ -96,6 +134,22 @@ clone_file_range(int src_fd, int dst_fd, uint64_t src_off, uint64_t dst_off,
- }
- 
- static int
-+clone_file_range(unsigned int fs_type, int src_fd, int dst_fd, uint64_t src_off,
-+		 uint64_t dst_off, uint64_t len)
-+{
-+	switch (fs_type) {
-+	case BTRFS_SUPER_MAGIC:
-+		return clone_file_range_btrfs(src_fd, dst_fd, src_off, dst_off,
-+					      len);
-+		break;
-+	case CIFS_MAGIC_NUMBER:	/* only supports full file server-side copies */
-+	default:
-+		return ENOTSUP;
-+		break;
-+	}
-+}
-+
-+static int
- cloner_check_fs_support(int src_fd, int dest_fd, unsigned int *fs_type)
- {
- 	int ret;
-@@ -107,7 +161,8 @@ cloner_check_fs_support(int src_fd, int dest_fd, unsigned int *fs_type)
- 		return errno;
- 	}
- 
--	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
-+	if ((sfs.f_type != BTRFS_SUPER_MAGIC)
-+	 && (sfs.f_type != CIFS_MAGIC_NUMBER)) {
- 		printf("unsupported source FS 0x%x\n",
- 		       (unsigned int)sfs.f_type);
- 		return ENOTSUP;
-@@ -210,9 +265,10 @@ main(int argc, char **argv)
- 	}
- 
- 	if (full_file) {
--		ret = clone_file(src_fd, dst_fd);
-+		ret = clone_file(fs_type, src_fd, dst_fd);
- 	} else {
--		ret = clone_file_range(src_fd, dst_fd, src_off, dst_off, len);
-+		ret = clone_file_range(fs_type, src_fd, dst_fd, src_off,
-+				       dst_off, len);
- 	}
- 	if (ret != 0) {
- 		printf("clone failed: %s\n", strerror(ret));
--- 
-1.8.4.5
+Ps: this test seems not merging into xfstests.
+
+On 05/09/2014 02:02 PM, Wang Shilong wrote:
+> Test flow is to run fsstress after triggering quota rescan.
+> the ruler is simple, we just remove all files and directories,
+> sync filesystem and see if qgroup's ref and excl are nodesize.
+>
+> Signed-off-by: Wang Shilong<wangsl.fnst@cn.fujitsu.com>
+> ---
+> v2->v3: addressed comments from josef:
+> 	- remove unnecessary redirections
+> 	- don't use _run_btrfs_util_prog() when capturing qgroup show output.
+> 	- turn off inode_cache mount option explicitly.
+>
+> v1->v2: switch to _run_btrfs_util_prog()
+> ---
+>   tests/btrfs/050     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/050.out |  3 ++
+>   tests/btrfs/group   |  1 +
+>   3 files changed, 85 insertions(+)
+>   create mode 100644 tests/btrfs/050
+>   create mode 100644 tests/btrfs/050.out
+>
+> diff --git a/tests/btrfs/050 b/tests/btrfs/050
+> new file mode 100644
+> index 0000000..81d953a
+> --- /dev/null
+> +++ b/tests/btrfs/050
+> @@ -0,0 +1,81 @@
+> +#! /bin/bash
+> +# FSQA Test No. btrfs/050
+> +#
+> +# Quota rescan stress test, we run fsstress and quota rescan concurrently
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (C) 2014 Fujitsu.  All rights reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_need_to_be_root
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +rm -f $seqres.full
+> +
+> +# use small leaf size to get higher btree height.
+> +run_check _scratch_mkfs "-b 1g --nodesize 4096"
+> +
+> +# inode cache is saved in the FS tree itself for every
+> +# individual FS tree,that affects the sizes reported by qgroup show
+> +# so we need to explicitly turn it off to get consistent values.
+> +run_check _scratch_mount "-o noinode_cache"
+> +
+> +# -w ensures that the only ops are ones which cause write I/O
+> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p 5 -n 1000 \
+> +		$FSSTRESS_AVOID >&/dev/null
+> +
+> +_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
+> +	$SCRATCH_MNT/snap1
+> +
+> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
+> +       $FSSTRESS_AVOID >&/dev/null
+> +
+> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
+> +_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+> +
+> +# ignore removing subvolume errors
+> +rm -rf $SCRATCH_MNT/* >& /dev/null
+> +
+> +_run_btrfs_util_prog filesystem sync $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG qgroup show $SCRATCH_MNT | $SED_PROG -n '/[0-9]/p' \
+> +	| $AWK_PROG '{print $2" "$3}'
+> +
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/050.out b/tests/btrfs/050.out
+> new file mode 100644
+> index 0000000..a388160
+> --- /dev/null
+> +++ b/tests/btrfs/050.out
+> @@ -0,0 +1,3 @@
+> +QA output created by 050
+> +4096 4096
+> +4096 4096
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 59b0c98..ee3e8a5 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -52,3 +52,4 @@
+>   047 auto quick
+>   048 auto quick
+>   049 auto quick
+> +050 auto quick
 

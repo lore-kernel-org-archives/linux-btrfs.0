@@ -1,133 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37916 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:55036 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752160AbaFQHOZ (ORCPT
+	with ESMTP id S1753982AbaFRFdj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Jun 2014 03:14:25 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5H7ELch026526
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jun 2014 15:14:21 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Wed, 18 Jun 2014 01:33:39 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5I5XaXO028408
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Jun 2014 13:33:36 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3] btrfs-progs: Add human readable flags output for chunk/block group type.
-Date: Tue, 17 Jun 2014 15:15:26 +0800
-Message-ID: <1402989326-14134-1-git-send-email-quwenruo@cn.fujitsu.com>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: clean fsck noise for free inode generation 0
+Date: Wed, 18 Jun 2014 13:28:22 +0800
+Message-ID: <1403069302-12057-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current btrfs-debug-tree output chunk/block group type as numbers,
-which makes it hard to understand and need to check the source to
-understand the meaning.
+When we write a btrfs to full and then we have no space left for
+free space cache.
+The btrfs check will output msg as follows which is noise indeed:
+	# free space inode generation (0) did not match
+	  free space cache generation (XXX)
 
-This patch will convert numeric type output to human readable strings.
+When the free space cache is not written out normally,
+the free inode generation will be 0.
+In this condition, no noise should be outputed.
+Also, check 0-sized inode eariler together with 0-generationed inode.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
-changelog:
-v2: allow mixed chunk
-v3: fix typo in commit message
----
- print-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 54 insertions(+), 5 deletions(-)
+ free-space-cache.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index 7f831ad..6cf59ca 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -160,15 +160,60 @@ static int print_inode_ref_item(struct extent_buffer *eb, struct btrfs_item *ite
- 	return 0;
- }
+diff --git a/free-space-cache.c b/free-space-cache.c
+index bddde24..2440dd8 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -310,6 +310,13 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
++
++	inode_size = btrfs_inode_size(leaf, inode_item);
++	if (!inode_size || !btrfs_inode_generation(leaf, inode_item)) {
++		btrfs_release_path(path);
++		return 0;
++	}
++
+ 	if (btrfs_inode_generation(leaf, inode_item) != generation) {
+ 		printf("free space inode generation (%llu) did not match "
+ 		       "free space cache generation (%llu)\n",
+@@ -320,10 +327,7 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 		return 0;
+ 	}
  
-+/* Caller should ensure sizeof(*ret)>=21 "DATA|METADATA|RAID10" */
-+static void bg_flags_to_str(u64 flags, char *ret)
-+{
-+	int empty = 1;
-+
-+	if (flags & BTRFS_BLOCK_GROUP_DATA) {
-+		empty = 0;
-+		strcpy(ret, "DATA");
-+	}
-+	if (flags & BTRFS_BLOCK_GROUP_METADATA) {
-+		if (!empty)
-+			strcat(ret, "|");
-+		strcat(ret, "METADATA");
-+	}
-+	if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
-+		if (!empty)
-+			strcat(ret, "|");
-+		strcat(ret, "SYSTEM");
-+	}
-+	switch (flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+	case BTRFS_BLOCK_GROUP_RAID0:
-+		strcat(ret, "|RAID0");
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+		strcat(ret, "|RAID1");
-+		break;
-+	case BTRFS_BLOCK_GROUP_DUP:
-+		strcat(ret, "|DUP");
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID10:
-+		strcat(ret, "|RAID10");
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+		strcat(ret, "|RAID5");
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID6:
-+		strcat(ret, "|RAID6");
-+		break;
-+	default:
-+		break;
-+	}
-+}
-+
- static void print_chunk(struct extent_buffer *eb, struct btrfs_chunk *chunk)
- {
- 	int num_stripes = btrfs_chunk_num_stripes(eb, chunk);
- 	int i;
--	printf("\t\tchunk length %llu owner %llu type %llu num_stripes %d\n",
-+	char chunk_flags_str[32] = {0};
-+
-+	bg_flags_to_str(btrfs_chunk_type(eb, chunk), chunk_flags_str);
-+	printf("\t\tchunk length %llu owner %llu type %s num_stripes %d\n",
- 	       (unsigned long long)btrfs_chunk_length(eb, chunk),
- 	       (unsigned long long)btrfs_chunk_owner(eb, chunk),
--	       (unsigned long long)btrfs_chunk_type(eb, chunk),
--	       num_stripes);
-+	       chunk_flags_str, num_stripes);
- 	for (i = 0 ; i < num_stripes ; i++) {
- 		printf("\t\t\tstripe %d devid %llu offset %llu\n", i,
- 		      (unsigned long long)btrfs_stripe_devid_nr(eb, chunk, i),
-@@ -744,6 +789,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 	u32 nr = btrfs_header_nritems(l);
- 	u64 objectid;
- 	u32 type;
-+	char bg_flags_str[32];
+-	inode_size = btrfs_inode_size(leaf, inode_item);
+ 	btrfs_release_path(path);
+-	if (inode_size == 0)
+-		return 0;
  
- 	printf("leaf %llu items %d free space %d generation %llu owner %llu\n",
- 		(unsigned long long)btrfs_header_bytenr(l), nr,
-@@ -858,10 +904,13 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 					    struct btrfs_block_group_item);
- 			read_extent_buffer(l, &bg_item, (unsigned long)bi,
- 					   sizeof(bg_item));
--			printf("\t\tblock group used %llu chunk_objectid %llu flags %llu\n",
-+			memset(bg_flags_str, 0, sizeof(bg_flags_str));
-+			bg_flags_to_str(btrfs_block_group_flags(&bg_item),
-+					bg_flags_str);
-+			printf("\t\tblock group used %llu chunk_objectid %llu flags %s\n",
- 			       (unsigned long long)btrfs_block_group_used(&bg_item),
- 			       (unsigned long long)btrfs_block_group_chunk_objectid(&bg_item),
--			       (unsigned long long)btrfs_block_group_flags(&bg_item));
-+			       bg_flags_str);
- 			break;
- 		case BTRFS_CHUNK_ITEM_KEY:
- 			print_chunk(l, btrfs_item_ptr(l, i, struct btrfs_chunk));
+ 	if (!num_entries)
+ 		return 0;
 -- 
-2.0.0
+1.8.1.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo

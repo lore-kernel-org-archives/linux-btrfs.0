@@ -1,59 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54195 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752417AbaFRP07 (ORCPT
+Received: from mail-oa0-f53.google.com ([209.85.219.53]:34694 "EHLO
+	mail-oa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752755AbaFRTaA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 11:26:59 -0400
-Message-ID: <53A1AFB6.40906@fb.com>
-Date: Wed, 18 Jun 2014 08:26:46 -0700
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 18 Jun 2014 15:30:00 -0400
+Received: by mail-oa0-f53.google.com with SMTP id l6so2945990oag.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jun 2014 12:29:59 -0700 (PDT)
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>
-CC: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        <takeuchi_satoru@jp.fujitsu.com>
-Subject: Re: btrfs balance crash BUG ON fs/btrfs/relocation.c:1062 or RIP
- build_backref_tree+0x9fc/0xcc4
-References: <20140609234007.GD19071@merlins.org> <53A08925.8020700@fb.com> <20140617185549.GP19071@merlins.org>
-In-Reply-To: <20140617185549.GP19071@merlins.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+From: =?UTF-8?Q?Daniel_Cegie=C5=82ka?= <daniel.cegielka@gmail.com>
+Date: Wed, 18 Jun 2014 21:29:39 +0200
+Message-ID: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
+Subject: btrfs on whole disk (no partitions)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+I created btrfs directly to disk using such a scheme (no partitions):
 
+dd if=/dev/zero of=/dev/sda bs=4096
+mkfs.btrfs -L dev_sda /dev/sda
+mount /dev/sda /mnt
 
-On 06/17/2014 11:55 AM, Marc MERLIN wrote:
-> On Tue, Jun 17, 2014 at 11:29:57AM -0700, Josef Bacik wrote:
->>> I'm sure that filesystem is damaged in some way, but the kernel of course
->>> should not crash.
->>>
->>
->> I don't have this mail client setup right to send patches, can you just
->> go into relocation.c in build_backref_tree and remove the need_check =
->> false; statement and see if that fixes it.  Thanks,
->
-> Sure, I'll try that tomorrow when I have access to that machine.
->
-> Just to be clear
-> 1) You mean this one, right?
-> 				if (!upper->checked && need_check) {
-> 					need_check = false;   <-- delete this
-> 					list_add_tail(&edge->list[UPPER],
-> 						      &list);
-> 				} else
->
+cd /mnt
+btrfs subvolume create __active
+btrfs subvolume create __active/rootvol
+btrfs subvolume create __active/usr
+btrfs subvolume create __active/home
+btrfs subvolume create __active/var
+btrfs subvolume create __snapshots
 
-Yup that one.
+cd /
+umount /mnt
+mount -o subvol=__active/rootvol /dev/sda /mnt
+mkdir /mnt/{usr,home,var}
+mount -o subvol=__active/usr /dev/sda /mnt/usr
+mount -o subvol=__active/home /dev/sda /mnt/home
+mount -o subvol=__active/var /dev/sda /mnt/var
 
-> 2) is your guess that the BUG_ON I'm getting shouldn't be triggered
-> and your proposed patch could fix that, or that I do have an FS problem
-> but that we're just going to make the kernel more lenient and not crash on it?
->
+# /etc/fstab
+UID=ID    /    btrfs rw,relative,space_cache,subvol=__active/rootvol    0 0
+UUID=ID    /usr    btrfs rw,relative,space_cache,subvol=__active/usr    0 0
+UUID=ID    /home    btrfs rw,relative,space_cache,subvol=__active/home    0 0
+UUID=ID    /var    btrfs rw,relative,space_cache,subvol=__active/var    0 0
 
-All of these BUG_ON(!uppper->checked) are logic errors, not problems 
-with the fs, which is why I haven't turned them into an abort or 
-something else yet.  I'm thinking about chucking this whole function 
-anyway and using the backref walking code, but that is going to be a job 
-for future josef, present josef doesn't seem to have any time to do 
-anything despite sleeping a lot less.  Thanks,
+Everything works fine. Is such a solution is recommended? In my
+opinion, the creation of the partitions seems to be completely
+unnecessary if you can use btrfs.
 
-Josef
+I will be grateful for your feedback.
+Best regards,
+Daniel

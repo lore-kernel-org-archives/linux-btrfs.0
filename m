@@ -1,80 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49342 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751768AbaFSEwh (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:51198 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757627AbaFSI5G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jun 2014 00:52:37 -0400
-From: Russell Coker <russell@coker.com.au>
-To: george@chinilu.com
-Reply-To: russell@coker.com.au
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs on whole disk (no partitions)
-Date: Thu, 19 Jun 2014 14:52:31 +1000
-Message-ID: <1588129.Lk34yRcVbz@xev>
-In-Reply-To: <53A23678.7070806@chinilu.com>
-References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com> <53A23678.7070806@chinilu.com>
+	Thu, 19 Jun 2014 04:57:06 -0400
+Received: by mail-wi0-f174.google.com with SMTP id bs8so8944676wib.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 01:57:04 -0700 (PDT)
+Message-ID: <53A2A5DB.40204@gmail.com>
+Date: Thu, 19 Jun 2014 11:56:59 +0300
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: frustrations with handling of crash reports
+References: <20140519134915.GA27432@merlins.org>	<539FE03F.5030306@jp.fujitsu.com> <20140617145957.GH19071@merlins.org>	<20140617182745.GO19071@merlins.org> <53A192B8.2040601@gmail.com> <pan$d2b51$8d2a30e2$29b90599$a8fc24d9@cox.net>
+In-Reply-To: <pan$d2b51$8d2a30e2$29b90599$a8fc24d9@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 18 Jun 2014 18:01:44 George Mitchell wrote:
-> A lot of good comments on this topic already.  I would just add that on 
-> large (TB) drives, not partitioning can result in some pretty slow mount 
-> and umount times (even applies to mounting subvolumes).
+On 19/6/2014 12:22 πμ, Duncan wrote:
+> Konstantinos Skarlatos posted on Wed, 18 Jun 2014 16:23:04 +0300 as
+> excerpted:
+>
+>> I guess that btrfs developers have put these BUG_ONs so that they get
+>> reports from users when btrfs gets in these unexpected situations. But
+>> if most of these reports are ignored or not resolved, then maybe there
+>> is no use for these BUG_ONs and they should be replaced with something
+>> more mild.
+>>
+>> Keep in mind that if a system panics, then the only way to get logs from
+>> it is with serial or netconsole, so BUG_ON really makes it much harder
+>> for users to know what happened and send reports, and only the most
+>> technical and determined users will manage to send reports here.
+> In terms of the BUGONs, they've been converting them to WARNONs recently,
+> exactly due to the point you and Marc have made.  Not being a dev and
+> simply based on the patch-flow I've seen as btrfs has been basically
+> behaving itself so far here[1], I had /thought/ that was more or less
+> done (perhaps some really bad bug-ons left but only a few, and basically
+> only where the kernel couldn't be sure it was in a logical enough state
+> to continue writing to other filesystems too, so bugon being logical in
+> that case), but based on you guys' comments there's apparently more to go.
+>
+> So at least for BUGONs they agree.  I guess it's simply a matter of
+> getting them all converted.
+Thats good to hear. But we should have a way to recover from these kinds 
+of problems, first of all having btrfs report the exact location, disk 
+and file name that is affected, and then make scrub fix or at least 
+report about it, and finaly make fsck work for this.
 
-If you mount a subvol then the kernel goes through the process of mounting the 
-filesystem and makes just the subvol visible.  Mounting a second subvol from 
-that filesystem while the first is mounted should be instant.
+My filesystem that consistently kernel panics when a specific logical 
+address is read, passes scrub without anything bad reported. What's the 
+use of scrub if it cant deal with this?
 
-Mounting multiple filesystems on separate partitions should take longer than 
-mounting a single large filesystem.  If mounting a 4TB filesystem takes longer 
-than 4*1TB filesystems then that would probably be a bug.
+>
+> Tho at least in Marc's case, he's running kernels a couple back in some
+> cases and they may still have BUGONs already replaced in the most current
+> kernel.
+>
+> As for experimental, they've been toning down and removing the warnings
+> recently.  Yes, the on-device format may come with some level of
+> compatibility guarantee now so I do agree with that bit, but IMO anyway,
+> that warning should be being replaced with a more explicit "on-device-
+> format is now stable but the code is not yet entirely so, so keep your
+> backups and be prepared to use them, and run current kernels", language,
+> and that's not happening, they're mostly just toning it down without the
+> still explicit warnings, ATM.
+>
+> ---
+> [1] Btrfs (so far) behaving itself here: Possibly because my filesystems
+> are relatively small and I don't use snapshots much and prefer several
+> smaller independent filesystems rather than doing subvolumes, thus
+> keeping the number of eggs in a single basket small.  Plus, with small
+> filesystems on SSD, I can balance reasonably regularly, and I do full
+> fresh mkfs.btrfs rounds every few kernels as well to take advantage of
+> newer features, which may well have the result of killing smaller
+> problems that aren't yet showing up before they get big enough to cause
+> real issues.  Anyway, I'm not complaining! =:^)
+Well my use case is about 25 filesystems on rotating disks, 20 of them 
+on single disks, and the rest are multiple disk filesystems, either 
+raid1 or single. I have many subvolumes and in some cases thousands of 
+snapshots, but no databases, systemd and the like on them. Of course I 
+have everything backed up, </nag mode on> but I believe that after all 
+those years of development I shouldnt still be forced to do mkfs every 6 
+monts or so, when i use no new features. </nag mode off>
+>
 
-> That is one of 
-> the frustrating side effects I have noticed with a non-partitioned 4TB 
-> drive on 32bit dual core pentium system.
-
-BTRFS can take a lot of CPU time (some of that is probably bugs in BTRFS).  I 
-wouldn't do anything serious with it on a 32bit system.  That said there might 
-be some performance bugs you are hitting so giving details about that on this 
-list might be useful.
-
-> Additionally, with one big 
-> partitionless drive, any serious defect on any part of the drive can 
-> cost you the whole shebang, while, if partitioned, your loss is limited 
-> to the affected partition.
-
-Backups are the first step to solving that problem.  The next step is RAID, 
-BTRFS allows you to convert to RAID-1 on the fly which is convenient for that 
-situation.
-
-If you want to have data survive after getting errors in one part of a disk 
-then you can run RAID-1 across 2 partitions on the same disk.  Performance 
-will be poor but it works well.  I have a BTRFS RAID-1 on 2*1.5TB partitions 
-on a 3TB disk that has ~100 bad sectors.  It's working well for me.
-
-> I would also re-emphasize something that has 
-> been mentioned by someone else already, which is that most partitioning 
-> tools see a non-partitioned drive as being EMPTY, which can pose dangers 
-> and risk costly mistakes with the push of a button.  So there are 
-> definitely some trade-offs.
-
-file(1) is one way of finding out what the disk is used for.  Admittedly a 
-Linux installation disk might have some problems, but it could mess up a 
-partitioned disk just as easily.
-
-# file -s /dev/sd?
-/dev/sda: sticky x86 boot sector; partition 1: ID=0x83, active, starthead 32, 
-startsector 2048, 997376 sectors; partition 2: ID=0x82, starthead 53, 
-startsector 999424, 1953792 sectors; partition 3: ID=0x83, starthead 211, 
-startsector 2953216, 231487488 sectors, code offset 0x63
-/dev/sdb: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 
-4096)
-/dev/sdc: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 
-4096)
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Konstantinos Skarlatos
 

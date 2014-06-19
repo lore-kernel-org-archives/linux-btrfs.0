@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ve0-f182.google.com ([209.85.128.182]:42354 "EHLO
-	mail-ve0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757612AbaFSI6V convert rfc822-to-8bit (ORCPT
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:37820 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757627AbaFSJLK convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jun 2014 04:58:21 -0400
-Received: by mail-ve0-f182.google.com with SMTP id oy12so2019377veb.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 01:58:20 -0700 (PDT)
+	Thu, 19 Jun 2014 05:11:10 -0400
+Received: by mail-vc0-f175.google.com with SMTP id hy4so1946580vcb.20
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 02:11:08 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <2316027.LZEnVG8laK@xev>
+In-Reply-To: <CAK5rZE4GVJ7qh4w=ecTZhZMANT0A6cU-6+jAbifNtoWFeYtf4Q@mail.gmail.com>
 References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
 	<2316027.LZEnVG8laK@xev>
-Date: Thu, 19 Jun 2014 10:58:20 +0200
-Message-ID: <CAK5rZE4GVJ7qh4w=ecTZhZMANT0A6cU-6+jAbifNtoWFeYtf4Q@mail.gmail.com>
+	<CAK5rZE4GVJ7qh4w=ecTZhZMANT0A6cU-6+jAbifNtoWFeYtf4Q@mail.gmail.com>
+Date: Thu, 19 Jun 2014 11:11:08 +0200
+Message-ID: <CAK5rZE4yA0PDR3S2RgTgXyQ=8ViRwSPg__DacPKXSpCmjzpW4w@mail.gmail.com>
 Subject: Re: btrfs on whole disk (no partitions)
 From: Imran Geriskovan <imran.geriskovan@gmail.com>
 To: linux-btrfs@vger.kernel.org
@@ -33,7 +34,7 @@ On 6/19/14, Russell Coker <russell@coker.com.au> wrote:
 Grub installs itself and boots from Partitionless Btrfs disk.
 It is handy for straight forward installations.
 
-However, you need boot partition (ie. initramfs and kernel to boot
+However, IF you need boot partition (ie. initramfs and kernel to boot
 from encrypted root) its another story.
 
 Swap is an issue. But you may try zram (compressed ram swap).

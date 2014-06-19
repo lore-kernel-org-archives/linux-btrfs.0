@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:39842 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756081AbaFSCl0 (ORCPT
+	with ESMTP id S1757036AbaFSCl2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 22:41:26 -0400
+	Wed, 18 Jun 2014 22:41:28 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fOaT024076
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:24 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fQEG024082
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:26 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 6/7] Btrfs: fix deadlock when mounting a degraded fs
-Date: Thu, 19 Jun 2014 10:42:54 +0800
-Message-ID: <1403145775-22641-7-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 7/7] Btrfs: fix wrong error handle when the device is missing or is not writeable
+Date: Thu, 19 Jun 2014 10:42:55 +0800
+Message-ID: <1403145775-22641-8-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,76 +19,66 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The deadlock happened when we mount degraded filesystem, the reproduced
-steps are following:
- # mkfs.btrfs -f -m raid1 -d raid1 <dev0> <dev1>
- # echo 1 > /sys/block/`basename <dev0>`/device/delete
- # mount -o degraded <dev1> <mnt>
-
-The reason was that the counter -- bi_remaining was wrong. If the missing
-or unwriteable device was the last device in the mapping array, we would
-not submit the original bio, so we shouldn't increase bi_remaining of it
-in btrfs_end_bio(), or we would skip the final endio handle.
-
-Fix this problem by adding a flag into btrfs bio structure. If we submit
-the original bio, we will set the flag, and we increase bi_remaining counter,
-or we don't.
-
-Though there is another way to fix it -- decrease bi_remaining counter of the
-original bio when we make sure the original bio is not submitted, this method
-need add more check and is easy to make mistake.
+The original bio might be submitted, so we shoud increase bi_remaining to
+account for it when we deal with the error that the device is missing or
+is not writeable, or we would skip the endio handle.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 7 ++++++-
- fs/btrfs/volumes.h | 3 +++
- 2 files changed, 9 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 31f9036..4ca3c92 100644
+index 4ca3c92..c83b242 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5415,8 +5415,12 @@ static void btrfs_end_bio(struct bio *bio, int err)
- 			set_bit(BIO_UPTODATE, &bio->bi_flags);
+@@ -5359,6 +5359,15 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 	return 0;
+ }
+ 
++static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio, int err)
++{
++	if (likely(bbio->flags & BTRFS_BIO_ORIG_BIO_SUBMITTED))
++		bio_endio_nodec(bio, err);
++	else
++		bio_endio(bio, err);
++	kfree(bbio);
++}
++
+ static void btrfs_end_bio(struct bio *bio, int err)
+ {
+ 	struct btrfs_bio *bbio = bio->bi_private;
+@@ -5416,11 +5425,7 @@ static void btrfs_end_bio(struct bio *bio, int err)
  			err = 0;
  		}
-+
-+		if (likely(bbio->flags & BTRFS_BIO_ORIG_BIO_SUBMITTED))
-+			bio_endio_nodec(bio, err);
-+		else
-+			bio_endio(bio, err);
- 		kfree(bbio);
--		bio_endio_nodec(bio, err);
+ 
+-		if (likely(bbio->flags & BTRFS_BIO_ORIG_BIO_SUBMITTED))
+-			bio_endio_nodec(bio, err);
+-		else
+-			bio_endio(bio, err);
+-		kfree(bbio);
++		btrfs_end_bbio(bbio, bio, err);
  	} else if (!is_orig_bio) {
  		bio_put(bio);
  	}
-@@ -5671,6 +5675,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 			BUG_ON(!bio); /* -ENOMEM */
- 		} else {
- 			bio = first_bio;
-+			bbio->flags |= BTRFS_BIO_ORIG_BIO_SUBMITTED;
- 		}
- 
- 		submit_stripe_bio(root, bbio, bio,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 1a15bbe..2aaa00c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -190,11 +190,14 @@ struct btrfs_bio_stripe {
- struct btrfs_bio;
- typedef void (btrfs_bio_end_io_t) (struct btrfs_bio *bio, int err);
- 
-+#define BTRFS_BIO_ORIG_BIO_SUBMITTED	0x1
+@@ -5583,12 +5588,15 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ {
+ 	atomic_inc(&bbio->error);
+ 	if (atomic_dec_and_test(&bbio->stripes_pending)) {
++		/* Shoud be the original bio. */
++		WARN_ON(bio != bbio->orig_bio);
 +
- struct btrfs_bio {
- 	atomic_t stripes_pending;
- 	struct btrfs_fs_info *fs_info;
- 	bio_end_io_t *end_io;
- 	struct bio *orig_bio;
-+	unsigned long flags;
- 	void *private;
- 	atomic_t error;
- 	int max_errors;
+ 		bio->bi_private = bbio->private;
+ 		bio->bi_end_io = bbio->end_io;
+ 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+ 		bio->bi_iter.bi_sector = logical >> 9;
+-		kfree(bbio);
+-		bio_endio(bio, -EIO);
++
++		btrfs_end_bbio(bbio, bio, -EIO);
+ 	}
+ }
+ 
 -- 
 1.9.3
 

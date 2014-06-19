@@ -1,85 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:6088 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753529AbaFSBNs (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49342 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751768AbaFSEwh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 21:13:48 -0400
-Date: Thu, 19 Jun 2014 11:13:33 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Lennart Poettering <lennart@poettering.net>
-Cc: kreijack@inwind.it, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org, systemd-devel@lists.freedesktop.org
-Subject: Re: [systemd-devel] Slow startup of systemd-journal on BTRFS
-Message-ID: <20140619011333.GH4453@dastard>
-References: <1346098950.2730051402571606829.JavaMail.defaultUser@defaultHost>
- <pan$22693$6b452195$976b783a$e4956372@cox.net>
- <20140612232453.GR9508@dastard>
- <539B78F3.9070607@libero.it>
- <pan$625ac$a8aa7477$d0179ebe$c66ba817@cox.net>
- <539BFF47.8060006@libero.it>
- <20140615221307.GE24386@tango.0pointer.de>
+	Thu, 19 Jun 2014 00:52:37 -0400
+From: Russell Coker <russell@coker.com.au>
+To: george@chinilu.com
+Reply-To: russell@coker.com.au
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs on whole disk (no partitions)
+Date: Thu, 19 Jun 2014 14:52:31 +1000
+Message-ID: <1588129.Lk34yRcVbz@xev>
+In-Reply-To: <53A23678.7070806@chinilu.com>
+References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com> <53A23678.7070806@chinilu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140615221307.GE24386@tango.0pointer.de>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 16, 2014 at 12:13:07AM +0200, Lennart Poettering wrote:
-> On Sat, 14.06.14 09:52, Goffredo Baroncelli (kreijack@libero.it) wrote:
-> 
-> > > Which effectively means that by the time the 8 MiB is filled, each 4 KiB 
-> > > block has been rewritten to a new location and is now an extent unto 
-> > > itself.  So now that 8 MiB is composed of 2048 new extents, each one a 
-> > > single 4 KiB block in size.
-> > 
-> > Several people pointed fallocate as the problem. But I don't
-> > understand the reason.
-> 
-> BTW, the reason we use fallocate() in journald is not about trying to
-> optimize anything. It's only used for one reason: to avoid SIGBUS on
-> disk/quota full, since we actually write everything to the files using
-> mmap().
+On Wed, 18 Jun 2014 18:01:44 George Mitchell wrote:
+> A lot of good comments on this topic already.  I would just add that on 
+> large (TB) drives, not partitioning can result in some pretty slow mount 
+> and umount times (even applies to mounting subvolumes).
 
-FWIW, fallocate() doesn't absolutely guarantee you that. When at
-ENOSPC, a write into that reserved range can still require
-un-reserved metadata blocks to be allocated. e.g. splitting a
-"reserved" data extent into two extents (used and reserved) requires
-an extra btree record, which can cause a split, which can require
-allocation. This tends to be pretty damn rare, though, and some
-filesystems have reserved block pools specifically for handling this
-sort of ENOSPC corner case. Hence, in practice the filesystems
-never actually fail with ENOSPC in ranges that have been
-fallocate()d.
+If you mount a subvol then the kernel goes through the process of mounting the 
+filesystem and makes just the subvol visible.  Mounting a second subvol from 
+that filesystem while the first is mounted should be instant.
 
-> I mean, writing things with mmap() is always problematic, and
-> handling write errors is awfully difficult, but at least two of the most
-> common reasons for failure we'd like protect against in advance, under
-> the assumption that disk/quota full will be reported immediately by the
-> fallocate(), and the mmap writes later on will then necessarily succeed.
-> 
-> I am not really following though why this trips up btrfs though. I am
-> not sure I understand why this breaks btrfs COW behaviour. I mean,
-> fallocate() isn't necessarily supposed to write anything really, it's
-> mostly about allocating disk space in advance. I would claim that
-> journald's usage of it is very much within the entire reason why it
-> exists...
-> 
-> Anyway, happy to change these things around if necesary, but first I'd
-> like to have a very good explanation why fallocate() wouldn't be the
-> right thing to invoke here, and a suggestion what we should do instead
-> to cover this usecase...
+Mounting multiple filesystems on separate partitions should take longer than 
+mounting a single large filesystem.  If mounting a 4TB filesystem takes longer 
+than 4*1TB filesystems then that would probably be a bug.
 
-fallocate() of 8MB should be more than sufficient for non-COW
-filesystems - 1MB would be enough to prevent performance degradation
-due to fragmentation in most cases. The current problems seem to be
-with the way btrfs does rewrites, not the use of fallocate() in
-systemd.
+> That is one of 
+> the frustrating side effects I have noticed with a non-partitioned 4TB 
+> drive on 32bit dual core pentium system.
 
-Thanks for explanation, Lennart.
+BTRFS can take a lot of CPU time (some of that is probably bugs in BTRFS).  I 
+wouldn't do anything serious with it on a 32bit system.  That said there might 
+be some performance bugs you are hitting so giving details about that on this 
+list might be useful.
 
-Cheers,
+> Additionally, with one big 
+> partitionless drive, any serious defect on any part of the drive can 
+> cost you the whole shebang, while, if partitioned, your loss is limited 
+> to the affected partition.
 
-Dave.
+Backups are the first step to solving that problem.  The next step is RAID, 
+BTRFS allows you to convert to RAID-1 on the fly which is convenient for that 
+situation.
+
+If you want to have data survive after getting errors in one part of a disk 
+then you can run RAID-1 across 2 partitions on the same disk.  Performance 
+will be poor but it works well.  I have a BTRFS RAID-1 on 2*1.5TB partitions 
+on a 3TB disk that has ~100 bad sectors.  It's working well for me.
+
+> I would also re-emphasize something that has 
+> been mentioned by someone else already, which is that most partitioning 
+> tools see a non-partitioned drive as being EMPTY, which can pose dangers 
+> and risk costly mistakes with the push of a button.  So there are 
+> definitely some trade-offs.
+
+file(1) is one way of finding out what the disk is used for.  Admittedly a 
+Linux installation disk might have some problems, but it could mess up a 
+partitioned disk just as easily.
+
+# file -s /dev/sd?
+/dev/sda: sticky x86 boot sector; partition 1: ID=0x83, active, starthead 32, 
+startsector 2048, 997376 sectors; partition 2: ID=0x82, starthead 53, 
+startsector 999424, 1953792 sectors; partition 3: ID=0x83, starthead 211, 
+startsector 2953216, 231487488 sectors, code offset 0x63
+/dev/sdb: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 
+4096)
+/dev/sdc: sticky BTRFS Filesystem sectorsize 4096, nodesize 4096, leafsize 
+4096)
+
 -- 
-Dave Chinner
-david@fromorbit.com
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

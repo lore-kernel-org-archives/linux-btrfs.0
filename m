@@ -1,57 +1,319 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:43019 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753422AbaFSClQ (ORCPT
+	with ESMTP id S1756081AbaFSClR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 22:41:16 -0400
+	Wed, 18 Jun 2014 22:41:17 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fDt9024051
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:13 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fFhK024054
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:15 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 0/7] random bugfixes
-Date: Thu, 19 Jun 2014 10:42:48 +0800
-Message-ID: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 1/7] Btrfs: make free space cache write out functions more readable
+Date: Thu, 19 Jun 2014 10:42:49 +0800
+Message-ID: <1403145775-22641-2-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
+References: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a random bugfix patchset. patch 0001, 0005, 0006, 0007 is new patch,
-patch 0002 is the third version of broken free space cache fix patch,
-patch 0003, 0004 is old ones which are not merged.
+This patch makes the free space cache write out functions more readable,
+and beisdes that, it also reduces the stack space that the function --
+__btrfs_write_out_cache uses from 194bytes to 144bytes.
 
-We can pull this patchset from the URL
-
-  https://github.com/miaoxie/linux-btrfs.git for-Chris
-
-Thanks
-Miao
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-Miao Xie (5):
-  Btrfs: make free space cache write out functions more readable
-  Btrfs: fix broken free space cache after the system crashed
-  Btrfs: use bio_endio_nodec instead of open code
-  Btrfs: fix deadlock when mounting a degraded fs
-  Btrfs: fix wrong error handle when the device is missing or is not writeable
+ fs/btrfs/free-space-cache.c | 159 ++++++++++++++++++++++++++------------------
+ 1 file changed, 93 insertions(+), 66 deletions(-)
 
-Qu Wenruo (1):
-  btrfs: Skip scrubbing removed chunks to avoid -ENOENT.
-
-Wang Shilong (1):
-  Btrfs: fix NULL pointer crash when running balance and scrub concurrently
-
- fs/btrfs/ctree.h            |  13 ++-
- fs/btrfs/extent-tree.c      | 143 ++++++++++++++++++++++++++-------
- fs/btrfs/extent_map.c       |   2 +
- fs/btrfs/extent_map.h       |   1 +
- fs/btrfs/free-space-cache.c | 192 +++++++++++++++++++++++++++++---------------
- fs/btrfs/inode.c            |  41 +++++++---
- fs/btrfs/scrub.c            |  19 +++--
- fs/btrfs/volumes.c          |  36 +++++----
- fs/btrfs/volumes.h          |   3 +
- 9 files changed, 313 insertions(+), 137 deletions(-)
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 372b05f..a852e15 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -274,18 +274,32 @@ struct io_ctl {
+ };
+ 
+ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+-		       struct btrfs_root *root)
++		       struct btrfs_root *root, int write)
+ {
++	int num_pages;
++	int check_crcs = 0;
++
++	num_pages = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
++		    PAGE_CACHE_SHIFT;
++
++	if (btrfs_ino(inode) != BTRFS_FREE_INO_OBJECTID)
++		check_crcs = 1;
++
++	/* Make sure we can fit our crcs into the first page */
++	if (write && check_crcs &&
++	    (num_pages * sizeof(u32)) >= PAGE_CACHE_SIZE)
++		return -ENOSPC;
++
+ 	memset(io_ctl, 0, sizeof(struct io_ctl));
+-	io_ctl->num_pages = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
+-		PAGE_CACHE_SHIFT;
+-	io_ctl->pages = kzalloc(sizeof(struct page *) * io_ctl->num_pages,
+-				GFP_NOFS);
++
++	io_ctl->pages = kzalloc(sizeof(struct page *) * num_pages, GFP_NOFS);
+ 	if (!io_ctl->pages)
+ 		return -ENOMEM;
++
++	io_ctl->num_pages = num_pages;
+ 	io_ctl->root = root;
+-	if (btrfs_ino(inode) != BTRFS_FREE_INO_OBJECTID)
+-		io_ctl->check_crcs = 1;
++	io_ctl->check_crcs = check_crcs;
++
+ 	return 0;
+ }
+ 
+@@ -677,7 +691,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	if (!num_entries)
+ 		return 0;
+ 
+-	ret = io_ctl_init(&io_ctl, inode, root);
++	ret = io_ctl_init(&io_ctl, inode, root, 0);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -957,19 +971,18 @@ fail:
+ }
+ 
+ static noinline_for_stack int
+-add_ioctl_entries(struct btrfs_root *root,
+-		  struct inode *inode,
+-		  struct btrfs_block_group_cache *block_group,
+-		  struct io_ctl *io_ctl,
+-		  struct extent_state **cached_state,
+-		  struct list_head *bitmap_list,
+-		  int *entries)
++write_pinned_extent_entries(struct btrfs_root *root,
++			    struct btrfs_block_group_cache *block_group,
++			    struct io_ctl *io_ctl,
++			    int *entries)
+ {
+ 	u64 start, extent_start, extent_end, len;
+-	struct list_head *pos, *n;
+ 	struct extent_io_tree *unpin = NULL;
+ 	int ret;
+ 
++	if (!block_group)
++		return 0;
++
+ 	/*
+ 	 * We want to add any pinned extents to our free space cache
+ 	 * so we don't leak the space
+@@ -979,23 +992,19 @@ add_ioctl_entries(struct btrfs_root *root,
+ 	 */
+ 	unpin = root->fs_info->pinned_extents;
+ 
+-	if (block_group)
+-		start = block_group->key.objectid;
++	start = block_group->key.objectid;
+ 
+-	while (block_group && (start < block_group->key.objectid +
+-			       block_group->key.offset)) {
++	while (start < block_group->key.objectid + block_group->key.offset) {
+ 		ret = find_first_extent_bit(unpin, start,
+ 					    &extent_start, &extent_end,
+ 					    EXTENT_DIRTY, NULL);
+-		if (ret) {
+-			ret = 0;
+-			break;
+-		}
++		if (ret)
++			return 0;
+ 
+ 		/* This pinned extent is out of our range */
+ 		if (extent_start >= block_group->key.objectid +
+ 		    block_group->key.offset)
+-			break;
++			return 0;
+ 
+ 		extent_start = max(extent_start, start);
+ 		extent_end = min(block_group->key.objectid +
+@@ -1005,11 +1014,20 @@ add_ioctl_entries(struct btrfs_root *root,
+ 		*entries += 1;
+ 		ret = io_ctl_add_entry(io_ctl, extent_start, len, NULL);
+ 		if (ret)
+-			goto out_nospc;
++			return -ENOSPC;
+ 
+ 		start = extent_end;
+ 	}
+ 
++	return 0;
++}
++
++static noinline_for_stack int
++write_bitmap_entries(struct io_ctl *io_ctl, struct list_head *bitmap_list)
++{
++	struct list_head *pos, *n;
++	int ret;
++
+ 	/* Write out the bitmaps */
+ 	list_for_each_safe(pos, n, bitmap_list) {
+ 		struct btrfs_free_space *entry =
+@@ -1017,36 +1035,24 @@ add_ioctl_entries(struct btrfs_root *root,
+ 
+ 		ret = io_ctl_add_bitmap(io_ctl, entry->bitmap);
+ 		if (ret)
+-			goto out_nospc;
++			return -ENOSPC;
+ 		list_del_init(&entry->list);
+ 	}
+ 
+-	/* Zero out the rest of the pages just to make sure */
+-	io_ctl_zero_remaining_pages(io_ctl);
+-
+-	ret = btrfs_dirty_pages(root, inode, io_ctl->pages, io_ctl->num_pages,
+-				0, i_size_read(inode), cached_state);
+-	io_ctl_drop_pages(io_ctl);
+-	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
+-			     i_size_read(inode) - 1, cached_state, GFP_NOFS);
++	return 0;
++}
+ 
+-	if (ret)
+-		goto fail;
++static int flush_dirty_cache(struct inode *inode)
++{
++	int ret;
+ 
+ 	ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
+-	if (ret) {
++	if (ret)
+ 		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, inode->i_size - 1,
+ 				 EXTENT_DIRTY | EXTENT_DELALLOC, 0, 0, NULL,
+ 				 GFP_NOFS);
+-		goto fail;
+-	}
+-	return 0;
+ 
+-fail:
+-	return -1;
+-
+-out_nospc:
+-	return -ENOSPC;
++	return ret;
+ }
+ 
+ static void noinline_for_stack
+@@ -1056,6 +1062,7 @@ cleanup_write_cache_enospc(struct inode *inode,
+ 			   struct list_head *bitmap_list)
+ {
+ 	struct list_head *pos, *n;
++
+ 	list_for_each_safe(pos, n, bitmap_list) {
+ 		struct btrfs_free_space *entry =
+ 			list_entry(pos, struct btrfs_free_space, list);
+@@ -1088,18 +1095,15 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ {
+ 	struct extent_state *cached_state = NULL;
+ 	struct io_ctl io_ctl;
+-	struct list_head bitmap_list;
++	LIST_HEAD(bitmap_list);
+ 	int entries = 0;
+ 	int bitmaps = 0;
+ 	int ret;
+-	int err = -1;
+-
+-	INIT_LIST_HEAD(&bitmap_list);
+ 
+ 	if (!i_size_read(inode))
+ 		return -1;
+ 
+-	ret = io_ctl_init(&io_ctl, inode, root);
++	ret = io_ctl_init(&io_ctl, inode, root, 1);
+ 	if (ret)
+ 		return -1;
+ 
+@@ -1109,42 +1113,65 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
+ 			 0, &cached_state);
+ 
+-
+-	/* Make sure we can fit our crcs into the first page */
+-	if (io_ctl.check_crcs &&
+-	    (io_ctl.num_pages * sizeof(u32)) >= PAGE_CACHE_SIZE)
+-		goto out_nospc;
+-
+ 	io_ctl_set_generation(&io_ctl, trans->transid);
+ 
++	/* Write out the extent entries in the free space cache */
+ 	ret = write_cache_extent_entries(&io_ctl, ctl,
+ 					 block_group, &entries, &bitmaps,
+ 					 &bitmap_list);
+ 	if (ret)
+ 		goto out_nospc;
+ 
+-	ret = add_ioctl_entries(root, inode, block_group, &io_ctl,
+-				&cached_state, &bitmap_list, &entries);
++	/*
++	 * Some spaces that are freed in the current transaction are pinned,
++	 * they will be added into free space cache after the transaction is
++	 * committed, we shouldn't lose them.
++	 */
++	ret = write_pinned_extent_entries(root, block_group, &io_ctl, &entries);
++	if (ret)
++		goto out_nospc;
++
++	/* At last, we write out all the bitmaps. */
++	ret = write_bitmap_entries(&io_ctl, &bitmap_list);
++	if (ret)
++		goto out_nospc;
+ 
+-	if (ret == -ENOSPC)
++	/* Zero out the rest of the pages just to make sure */
++	io_ctl_zero_remaining_pages(&io_ctl);
++
++	/* Everything is written out, now we dirty the pages in the file. */
++	ret = btrfs_dirty_pages(root, inode, io_ctl.pages, io_ctl.num_pages,
++				0, i_size_read(inode), &cached_state);
++	if (ret)
+ 		goto out_nospc;
+-	else if (ret)
++
++	/*
++	 * Release the pages and unlock the extent, we will flush
++	 * them out later
++	 */
++	io_ctl_drop_pages(&io_ctl);
++
++	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
++			     i_size_read(inode) - 1, &cached_state, GFP_NOFS);
++
++	/* Flush the dirty pages in the cache file. */
++	ret = flush_dirty_cache(inode);
++	if (ret)
+ 		goto out;
+ 
+-	err = update_cache_item(trans, root, inode, path, offset,
++	/* Update the cache item to tell everyone this cache file is valid. */
++	ret = update_cache_item(trans, root, inode, path, offset,
+ 				entries, bitmaps);
+-
+ out:
+ 	io_ctl_free(&io_ctl);
+-	if (err) {
++	if (ret) {
+ 		invalidate_inode_pages2(inode->i_mapping);
+ 		BTRFS_I(inode)->generation = 0;
+ 	}
+ 	btrfs_update_inode(trans, root, inode);
+-	return err;
++	return ret;
+ 
+ out_nospc:
+-
+ 	cleanup_write_cache_enospc(inode, &io_ctl, &cached_state, &bitmap_list);
+ 	goto out;
+ }
 -- 
 1.9.3
 

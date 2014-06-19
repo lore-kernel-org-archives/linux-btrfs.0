@@ -1,34 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15362 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753525AbaFSCGL (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:43019 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753422AbaFSClQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 22:06:11 -0400
-Message-ID: <53A246C6.5050408@fb.com>
-Date: Wed, 18 Jun 2014 22:11:18 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 18 Jun 2014 22:41:16 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fDt9024051
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:13 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/7] random bugfixes
+Date: Thu, 19 Jun 2014 10:42:48 +0800
+Message-ID: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Marc Dionne <marc.c.dionne@gmail.com>, Waiman Long <waiman.long@hp.com>
-CC: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>,
-        <t-itoh@jp.fujitsu.com>
-Subject: Re: Lockups with btrfs on 3.16-rc1 - bisected
-References: <CAB9dFdsyB40V2BGwdQKzSSz7YUWMh-C2AWdDNK=PMG9h+BO57w@mail.gmail.com>	<53A20FFF.3010807@hp.com>	<53A2125B.3050701@fb.com>	<53A21702.8090109@hp.com>	<53A21C78.1040809@fb.com>	<53A21E84.2050103@hp.com>	<53A22064.7080400@fb.com>	<53A2212E.7090907@hp.com>	<53A2268F.3080807@fb.com>	<CAB9dFds5J8Ti3CgtxHrgqM3j1TiwqYCnhP+A3Nb0q-FNgmQbXA@mail.gmail.com>	<53A22A01.7080505@hp.com>	<CAB9dFdvD9QMZ_rONhhP5ZD2E7+A7qxnsY978Snc3zHEbdPRszw@mail.gmail.com> <CAB9dFdtTFN+uQ8=WXVa0Y5GbBSYM5iVLgTaEeh_FqHt=XFKNvQ@mail.gmail.com>
-In-Reply-To: <CAB9dFdtTFN+uQ8=WXVa0Y5GbBSYM5iVLgTaEeh_FqHt=XFKNvQ@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/18/2014 10:03 PM, Marc Dionne wrote:
-> On Wed, Jun 18, 2014 at 8:41 PM, Marc Dionne <marc.c.dionne@gmail.com> wrote:
->> On Wed, Jun 18, 2014 at 8:08 PM, Waiman Long <waiman.long@hp.com> wrote:
->>> On 06/18/2014 08:03 PM, Marc Dionne wrote:
-> 
-> And for an additional data point, just removing those
-> CONFIG_DEBUG_LOCK_ALLOC ifdefs looks like it's sufficient to prevent
-> the symptoms when lockdep is not enabled.
+This is a random bugfix patchset. patch 0001, 0005, 0006, 0007 is new patch,
+patch 0002 is the third version of broken free space cache fix patch,
+patch 0003, 0004 is old ones which are not merged.
 
-Ok, somehow we've added a lock inversion here that wasn't here before.
-Thanks for confirming, I'll nail it down.
+We can pull this patchset from the URL
 
--chris
+  https://github.com/miaoxie/linux-btrfs.git for-Chris
+
+Thanks
+Miao
+---
+Miao Xie (5):
+  Btrfs: make free space cache write out functions more readable
+  Btrfs: fix broken free space cache after the system crashed
+  Btrfs: use bio_endio_nodec instead of open code
+  Btrfs: fix deadlock when mounting a degraded fs
+  Btrfs: fix wrong error handle when the device is missing or is not writeable
+
+Qu Wenruo (1):
+  btrfs: Skip scrubbing removed chunks to avoid -ENOENT.
+
+Wang Shilong (1):
+  Btrfs: fix NULL pointer crash when running balance and scrub concurrently
+
+ fs/btrfs/ctree.h            |  13 ++-
+ fs/btrfs/extent-tree.c      | 143 ++++++++++++++++++++++++++-------
+ fs/btrfs/extent_map.c       |   2 +
+ fs/btrfs/extent_map.h       |   1 +
+ fs/btrfs/free-space-cache.c | 192 +++++++++++++++++++++++++++++---------------
+ fs/btrfs/inode.c            |  41 +++++++---
+ fs/btrfs/scrub.c            |  19 +++--
+ fs/btrfs/volumes.c          |  36 +++++----
+ fs/btrfs/volumes.h          |   3 +
+ 9 files changed, 313 insertions(+), 137 deletions(-)
+
+-- 
+1.9.3
 

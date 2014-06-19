@@ -1,56 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp4-g21.free.fr ([212.27.42.4]:43397 "EHLO smtp4-g21.free.fr"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751888AbaFRQvw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 12:51:52 -0400
-From: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@laposte.net>
-To: linux-btrfs@vger.kernel.org
-Cc: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@laposte.net>
-Subject: [PATCH] btrfs-progs: restore: check lzo compress length
-Date: Wed, 18 Jun 2014 18:51:19 +0200
-Message-Id: <1403110279-28688-1-git-send-email-vincent.stehle@laposte.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:42711 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1756482AbaFSBb6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Jun 2014 21:31:58 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J1VGuB019653
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 09:31:16 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/6] Btrfs-progs: fsck: switch to is_fstree()
+Date: Thu, 19 Jun 2014 09:27:04 +0800
+Message-ID: <1403141229-25565-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When things go wrong for lzo-compressed btrfs, feeding lzo1x_decompress_safe()
-with corrupt data during restore can lead to crashes. Reduce the risk by adding
-a check on the input length.
-
-Signed-off-by: Vincent Stehlé <vincent.stehle@laposte.net>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
+ cmds-check.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-Hi,
-
-This patch actually allowed me to finish a btrfs restore of a damaged
-filesystem, which was repeateadly crashing otherwise. This was with v3.12, but
-I think it still makes sense.
-
-Best regards,
-
-V.
-
- cmds-restore.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 96b97e1..4338493 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -115,6 +115,12 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
+diff --git a/cmds-check.c b/cmds-check.c
+index c56da2a..26baab0 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -2049,13 +2049,10 @@ skip_walking:
  
- 	while (tot_in < tot_len) {
- 		in_len = read_compress_length(inbuf);
-+
-+		if ((tot_in + LZO_LEN + in_len) > tot_len) {
-+			fprintf(stderr, "bad compress length %lu\n", in_len);
-+			return -1;
-+		}
-+
- 		inbuf += LZO_LEN;
- 		tot_in += LZO_LEN;
+ static int fs_root_objectid(u64 objectid)
+ {
+-	if (objectid == BTRFS_FS_TREE_OBJECTID ||
+-	    objectid == BTRFS_TREE_RELOC_OBJECTID ||
+-	    objectid == BTRFS_DATA_RELOC_TREE_OBJECTID ||
+-	    (objectid >= BTRFS_FIRST_FREE_OBJECTID &&
+-	     objectid <= BTRFS_LAST_FREE_OBJECTID))
++	if (objectid == BTRFS_TREE_RELOC_OBJECTID ||
++	    objectid == BTRFS_DATA_RELOC_TREE_OBJECTID)
+ 		return 1;
+-	return 0;
++	return is_fstree(objectid);
+ }
  
+ static int check_fs_roots(struct btrfs_root *root,
 -- 
-2.0.0
+1.9.0
 

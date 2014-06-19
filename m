@@ -1,94 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f178.google.com ([74.125.82.178]:60132 "EHLO
-	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756577AbaFSLcw convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jun 2014 07:32:52 -0400
-Received: by mail-we0-f178.google.com with SMTP id x48so2153382wes.23
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 04:32:51 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140425191448.GJ2391@carfax.org.uk>
-References: <alpine.DEB.2.10.1404250842350.2320@cubia.leung>
-	<75D8579E-1284-4F12-A573-15D50EFC4614@colorremedies.com>
-	<535AA581.1080301@gmail.com>
-	<20140425191448.GJ2391@carfax.org.uk>
-Date: Thu, 19 Jun 2014 14:32:51 +0300
-Message-ID: <CAOcd+r0fo55dC2QbPwdwpCB+GD7HR7wrrn3s+srrsNSnrNECjA@mail.gmail.com>
-Subject: Re: safe/necessary to balance system chunks?
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>, Steve Leung <sjleung@shaw.ca>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:36221 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932893AbaFSPGS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jun 2014 11:06:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Wxdup-0003bR-U3
+	for linux-btrfs@vger.kernel.org; Thu, 19 Jun 2014 17:06:15 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 17:06:15 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 17:06:15 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: frustrations with handling of crash reports
+Date: Thu, 19 Jun 2014 15:06:00 +0000 (UTC)
+Message-ID: <pan$ac73e$751c79cd$27db22ed$aa34b841@cox.net>
+References: <20140519134915.GA27432@merlins.org>
+	<539FE03F.5030306@jp.fujitsu.com> <20140617145957.GH19071@merlins.org>
+	<20140617182745.GO19071@merlins.org> <53A192B8.2040601@gmail.com>
+	<pan$d2b51$8d2a30e2$29b90599$a8fc24d9@cox.net> <53A2A5DB.40204@gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 25, 2014 at 10:14 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Fri, Apr 25, 2014 at 02:12:17PM -0400, Austin S Hemmelgarn wrote:
->> On 2014-04-25 13:24, Chris Murphy wrote:
->> >
->> > On Apr 25, 2014, at 8:57 AM, Steve Leung <sjleung@shaw.ca> wrote:
->> >
->> >>
->> >> Hi list,
->> >>
->> >> I've got a 3-device RAID1 btrfs filesystem that started out life as single-device.
->> >>
->> >> btrfs fi df:
->> >>
->> >> Data, RAID1: total=1.31TiB, used=1.07TiB
->> >> System, RAID1: total=32.00MiB, used=224.00KiB
->> >> System, DUP: total=32.00MiB, used=32.00KiB
->> >> System, single: total=4.00MiB, used=0.00
->> >> Metadata, RAID1: total=66.00GiB, used=2.97GiB
->> >>
->> >> This still lists some system chunks as DUP, and not as RAID1.  Does this mean that if one device were to fail, some system chunks would be unrecoverable?  How bad would that be?
->> >
->> > Since it's "system" type, it might mean the whole volume is toast if the drive containing those 32KB dies. I'm not sure what kind of information is in system chunk type, but I'd expect it's important enough that if unavailable that mounting the file system may be difficult or impossible. Perhaps btrfs restore would still work?
->> >
->> > Anyway, it's probably a high penalty for losing only 32KB of data.  I think this could use some testing to try and reproduce conversions where some amount of "system" or "metadata" type chunks are stuck in DUP. This has come up before on the list but I'm not sure how it's happening, as I've never encountered it.
->> >
->> As far as I understand it, the system chunks are THE root chunk tree for
->> the entire system, that is to say, it's the tree of tree roots that is
->> pointed to by the superblock. (I would love to know if this
->> understanding is wrong).  Thus losing that data almost always means
->> losing the whole filesystem.
->
->    From a conversation I had with cmason a while ago, the System
-> chunks contain the chunk tree. They're special because *everything* in
-> the filesystem -- including the locations of all the trees, including
-> the chunk tree and the roots tree -- is positioned in terms of the
-> internal virtual address space. Therefore, when starting up the FS,
-> you can read the superblock (which is at a known position on each
-> device), which tells you the virtual address of the other trees... and
-> you still need to find out where that really is.
->
->    The superblock has (I think) a list of physical block addresses at
-> the end of it (sys_chunk_array), which allows you to find the blocks
-> for the chunk tree and work out this mapping, which allows you to find
-> everything else. I'm not 100% certain of the actual format of that
-> array -- it's declared as u8 [2048], so I'm guessing there's a load of
-> casting to something useful going on in the code somewhere.
-The format is just a list of pairs:
-struct btrfs_disk_key,  struct btrfs_chunk
-struct btrfs_disk_key,  struct btrfs_chunk
-...
+Konstantinos Skarlatos posted on Thu, 19 Jun 2014 11:56:59 +0300 as
+excerpted:
 
-For each SYSTEM block-group (btrfs_chunk), we need one entry in the
-sys_chunk_array. During mkfs the first SYSTEM block group is created,
-for me its 4MB. So only if the whole chunk tree grows over 4MB, we
-need to create an additional SYSTEM block group, and then we need to
-have a second entry in the sys_chunk_array. And so on.
+> Thats good to hear. But we should have a way to recover from these kinds
+> of problems, first of all having btrfs report the exact location, disk
+> and file name that is affected, and then make scrub fix or at least
+> report about it, and finaly make fsck work for this.
+> 
+> My filesystem that consistently kernel panics when a specific logical
+> address is read, passes scrub without anything bad reported. What's the
+> use of scrub if it cant deal with this?
 
-Alex.
+Scrub detects (and potentially fixes) exactly one sort of problem (tho 
+that one can definitely cause others), and that's not it.
 
+On btrfs, what scrub does is exactly this:  (a) Scrub calculates the 
+checksums for all data and metadata blocks and matches that against the 
+recorded checksum, reporting any no-match cases. (b) Where the checksums 
+don't match up, if there's another copy of the data that /does/ checksum-
+validate, scrub will "scrub" the bad copy, replacing it with a duplicate 
+of the good one.
 
->
->    Hugo.
->
-> --
-> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->     --- Is it still called an affair if I'm sleeping with my wife ---
->                         behind her lover's back?
+As it happens, on a (non-ssd) single-device filesystem, btrfs defaults to 
+single data, dup metadata.  In that case there's a second, hopefully 
+valid, copy of the metadata blocks that can be used to correct a bad 
+copy.  But there's only a single copy of data blocks so while scrub can 
+detect data-block errors, it won't be able to fix them.
+
+On a multi-device filesystem, btrfs defaults to raid1 metadata (with only 
+two copies regardless of the number of devices present, N-way-mirroring 
+is roadmapped but not yet implemented), single data, so again, hopefully 
+the second copy of a bad metadata block is valid and can be used to scrub 
+the bad one, but just as with the single-device case, it can detect but 
+not fix data checksum errors.
+
+Tho of course in the multi-device case it's possible to set data to raid1 
+as well, and that's what I've done here so it too can be error-corrected 
+from a hopefully good second copy.  (Raid10 is similarly protected.  
+Raid5/6 should work a bit differently, with parity, but last I knew raid56 
+scrub and recovery wasn't fully implemented yet, leaving raid1 and raid10, 
+along with dup mode for single-device metadata only, as the error-
+correcting choices.)
+
+But if the problem is a btrfs logic error, such that the (meta)data that 
+was actually checksummed and written out was bad before it was ever 
+checksummed in the first place, then scrub won't do a thing for it, 
+because the checksum validates just fine, it's just that it's a perfectly 
+valid checksum on perfectly invalid (meta)data.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

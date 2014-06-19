@@ -1,139 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50935 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41083 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751181AbaFMBSL convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1753529AbaFSDcA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jun 2014 21:18:11 -0400
-Message-ID: <539A5190.1020602@cn.fujitsu.com>
-Date: Fri, 13 Jun 2014 09:19:12 +0800
+	Wed, 18 Jun 2014 23:32:00 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J3HfKf026104
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 11:17:42 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: Add minimum device size check.
+Date: Thu, 19 Jun 2014 11:18:46 +0800
+Message-ID: <1403147926-5767-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs-progs: Improve the parse_size() error message.
-References: <1401327731-15769-1-git-send-email-quwenruo@cn.fujitsu.com> <20140612101505.GM1903@twin.jikos.cz>
-In-Reply-To: <20140612101505.GM1903@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Btrfs has global block reservation, so even mkfs.btrfs can execute
+without problem, there is still a possibility that the filesystem can't
+be mounted.
+For example when mkfs.btrfs on a 8M file on x86_64 platform, kernel will
+refuse to mount due to ENOSPC, since system block group takes 4M and
+mixed block group takes 4M, and global block reservation will takes all
+the 4M from mixed block group, which makes btrfs unable to create uuid
+tree.
 
--------- Original Message --------
-Subject: Re: [PATCH v2] btrfs-progs: Improve the parse_size() error message.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年06月12日 18:15
-> On Thu, May 29, 2014 at 09:42:11AM +0800, Qu Wenruo wrote:
->> When using parse_size(), even non-numeric value is passed, it will only
->> give error message "ERROR: size value is empty", which is quite
->> confusing for end users.
->>
->> This patch will introduce more meaningful error message for the
->> following new cases
->> 1) Invalid size string (non-numeric string)
->> 2) Minus size value (like "-1K")
->>
->> Also this patch will take full use of endptr returned by strtoll() to
->> reduce unneeded loop.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   utils.c | 56 +++++++++++++++++++++++++++++++++++++++-----------------
->>   1 file changed, 39 insertions(+), 17 deletions(-)
->>
->> diff --git a/utils.c b/utils.c
->> index 392c5cf..499f08f 100644
->> --- a/utils.c
->> +++ b/utils.c
->> @@ -1612,18 +1612,45 @@ scan_again:
->>   
->>   u64 parse_size(char *s)
->>   {
->> -	int i;
->>   	char c;
->> +	char *endptr;
->>   	u64 mult = 1;
->> +	long long int signed_ret;
->> +	u64 ret;
->>   
->> -	for (i = 0; s && s[i] && isdigit(s[i]); i++) ;
->> -	if (!i) {
->> -		fprintf(stderr, "ERROR: size value is empty\n");
->> -		exit(50);
->> +	if (!s) {
->> +		fprintf(stderr, "ERROR: Size value is empty\n");
->> +		exit(1);
-> We never pass a NULL pointer to parse_size so this check will be always
-> false. Previously it verified that there are at least some digits.
-Command like 'mkfs.btrfs -b /dev/sda' *WILL* pass NULL pointer to 
-parse_size(), so the check is needed.
+This patch will add minimum device size check before actually mkfs.
+The minimum size calculation uses a simplified one:
+minimum_size_for_each_dev = 2 * (system block group + global block rsv)
 
->
->>   	}
->> -
->> -	if (s[i]) {
->> -		c = tolower(s[i]);
->> +	signed_ret = strtoll(s, &endptr, 10);
->> +	if (endptr == s) {
->> +		fprintf(stderr, "ERROR: Size value '%s' is invalid\n", s);
->> +		exit(1);
->> +	}
->> +	if (endptr[0] && endptr[1]) {
->> +		fprintf(stderr, "ERROR: Illegal suffix contains character '%c' in wrong position\n",
->> +			endptr[1]);
->> +		exit(1);
->> +	}
->> +	if (signed_ret <= 0) {
->> +		fprintf(stderr,
->> +			"ERROR: Size value '%s' is less equal than 0\n", s);
->> +		exit(1);
->> +	}
->> +	/* strtoll returns LLONG_MAX when overflow, if this happens,
->> +	 * need to call strtoull to get the real size */
->> +	if (errno == ERANGE && signed_ret == LLONG_MAX) {
->> +		ret = strtoull(s, NULL, 10);
-> Why do you parse the number twice? Negative sizes are currently not used
-> so you can reject them.
-I will change the patch to judgement leading '-' and reject the value.
->
->> +		if (errno == ERANGE && ret == ULLONG_MAX) {
->> +			fprintf(stderr,
->> +				"ERROR: Size value '%s' is too large for u64\n",
->> +				s);
->> +			exit(1);
->> +		}
->> +	} else
->> +		ret = signed_ret;
->> +	if (endptr[0]) {
->> +		c = tolower(endptr[0]);
->>   		switch (c) {
->>   		case 'e':
->>   			mult *= 1024;
->> @@ -1646,18 +1673,13 @@ u64 parse_size(char *s)
->>   		case 'b':
->>   			break;
->>   		default:
->> -			fprintf(stderr, "ERROR: Unknown size descriptor "
->> -				"'%c'\n", c);
->> +			fprintf(stderr, "ERROR: Unknown size descriptor '%c'\n", c);
->>   			exit(1);
->>   		}
->>   	}
->> -	if (s[i] && s[i+1]) {
->> -		fprintf(stderr, "ERROR: Illegal suffix contains "
->> -			"character '%c' in wrong position\n",
->> -			s[i+1]);
->> -		exit(51);
->> -	}
->> -	return strtoull(s, NULL, 10) * mult;
->> +
->> +	ret *= mult;
-> Although there was no overflow check before, I think it should be here.
-> Eg. 12345678P is a valid size string but the result does not fit u64.
-Right, I will check the overflow here.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ mkfs.c  | 24 ++++++++++++++++++++++++
+ utils.c | 30 ++++++++++++++++++++++++++++++
+ utils.h | 13 +++++++++++++
+ 3 files changed, 67 insertions(+)
 
-Thanks,
-Qu
->
->> +	return ret;
->>   }
+diff --git a/mkfs.c b/mkfs.c
+index 16e9222..58c751c 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1337,6 +1337,15 @@ int main(int ac, char **av)
+ 					       "metadata/data groups\n");
+ 					mixed = 1;
+ 				}
++				if (block_count < BTRFS_MIN_SIZE_EACH) {
++					fprintf(stderr,
++						"Size '%llu' is too small to make a usable btrfs\n",
++						block_count);
++					fprintf(stderr,
++						"Recommended size for each device is %llu\n",
++						BTRFS_MIN_SIZE_EACH);
++					exit(1);
++				}
+ 				zero_end = 0;
+ 				break;
+ 			case 'V':
+@@ -1370,6 +1379,21 @@ int main(int ac, char **av)
+ 	}
+ 	while (dev_cnt-- > 0) {
+ 		file = av[optind++];
++		ret = test_minimum_size(file);
++		if (ret < 0) {
++			fprintf(stderr, "Failed to check size for '%s': %s\n",
++				file, strerror(-ret));
++			exit(1);
++		}
++		if (ret > 0) {
++			fprintf(stderr,
++				"'%s' is too small to make a usable btrfs\n",
++				file);
++			fprintf(stderr,
++				"Recommended size for each device is %llu\n",
++				BTRFS_MIN_SIZE_EACH);
++			exit(1);
++		}
+ 		if (is_block_device(file))
+ 			if (test_dev_for_mkfs(file, force_overwrite, estr)) {
+ 				fprintf(stderr, "Error: %s", estr);
+diff --git a/utils.c b/utils.c
+index e130849..6f47acc 100644
+--- a/utils.c
++++ b/utils.c
+@@ -719,6 +719,16 @@ int is_block_device(const char *path)
+ 	return S_ISBLK(statbuf.st_mode);
+ }
+ 
++int is_regular_file(const char *path)
++{
++	struct stat statbuf;
++
++	if (stat(path, &statbuf) < 0)
++		return -errno;
++
++	return S_ISREG(statbuf.st_mode);
++}
++
+ /*
+  * check if given path is a mount point
+  * return 1 if yes. 0 if no. -1 for error
+@@ -2206,3 +2216,23 @@ int find_mount_root(const char *path, char **mount_root)
+ 	free(longest_match);
+ 	return ret;
+ }
++
++int test_minimum_size(const char *file)
++{
++	int fd;
++	struct stat statbuf;
++
++	fd = open(file, O_RDONLY);
++	if (fd < 0)
++		return -errno;
++	if (stat(file, &statbuf) < 0) {
++		close(fd);
++		return -errno;
++	}
++	if (btrfs_device_size(fd, &statbuf) < BTRFS_MIN_SIZE_EACH) {
++		close(fd);
++		return 1;
++	}
++	close(fd);
++	return 0;
++}
+diff --git a/utils.h b/utils.h
+index db8d63c..7f30d12 100644
+--- a/utils.h
++++ b/utils.h
+@@ -101,5 +101,18 @@ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
+ int find_mount_root(const char *path, char **mount_root);
+ int get_device_info(int fd, u64 devid,
+ 		struct btrfs_ioctl_dev_info_args *di_args);
++int test_minimum_size(const char *file);
+ 
++/*
++ * Btrfs minimum size calculation is complicated, it should include at least:
++ * 1. system group size
++ * 2. minimum global block reserve
++ * 3. metadata used at mkfs
++ * 4. space reservation to create uuid for first mount.
++ * Also, raid factor should also be taken into consideration.
++ * To avoid the overkill calculation, (system group + global block rsv) * 2
++ * for *EACH* device should be good enough.
++ */
++#define BTRFS_MIN_SIZE_EACH	(2 * (BTRFS_MKFS_SYSTEM_GROUP_SIZE + \
++				      ((u64)sysconf(_SC_PAGESIZE) << 10)))
+ #endif
+-- 
+2.0.0
 

@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:39842 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756971AbaFSClX (ORCPT
+	with ESMTP id S1756081AbaFSCl0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 22:41:23 -0400
+	Wed, 18 Jun 2014 22:41:26 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fLLS024069
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:21 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fOaT024076
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:24 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Subject: [PATCH RESEND 4/7] Btrfs: fix NULL pointer crash when running balance and scrub concurrently
-Date: Thu, 19 Jun 2014 10:42:52 +0800
-Message-ID: <1403145775-22641-5-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 6/7] Btrfs: fix deadlock when mounting a degraded fs
+Date: Thu, 19 Jun 2014 10:42:54 +0800
+Message-ID: <1403145775-22641-7-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,138 +19,76 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+The deadlock happened when we mount degraded filesystem, the reproduced
+steps are following:
+ # mkfs.btrfs -f -m raid1 -d raid1 <dev0> <dev1>
+ # echo 1 > /sys/block/`basename <dev0>`/device/delete
+ # mount -o degraded <dev1> <mnt>
 
-While running balance, scrub, fsstress concurrently we hit the
-following kernel crash:
+The reason was that the counter -- bi_remaining was wrong. If the missing
+or unwriteable device was the last device in the mapping array, we would
+not submit the original bio, so we shouldn't increase bi_remaining of it
+in btrfs_end_bio(), or we would skip the final endio handle.
 
-[56561.448845] BTRFS info (device sde): relocating block group 11005853696 flags 132
-[56561.524077] BUG: unable to handle kernel NULL pointer dereference at 0000000000000078
-[56561.524237] IP: [<ffffffffa038956d>] scrub_chunk.isra.12+0xdd/0x130 [btrfs]
-[56561.524297] PGD 9be28067 PUD 7f3dd067 PMD 0
-[56561.524325] Oops: 0000 [#1] SMP
-[....]
-[56561.527237] Call Trace:
-[56561.527309]  [<ffffffffa038980e>] scrub_enumerate_chunks+0x24e/0x490 [btrfs]
-[56561.527392]  [<ffffffff810abe00>] ? abort_exclusive_wait+0x50/0xb0
-[56561.527476]  [<ffffffffa038add4>] btrfs_scrub_dev+0x1a4/0x530 [btrfs]
-[56561.527561]  [<ffffffffa0368107>] btrfs_ioctl+0x13f7/0x2a90 [btrfs]
-[56561.527639]  [<ffffffff811c82f0>] do_vfs_ioctl+0x2e0/0x4c0
-[56561.527712]  [<ffffffff8109c384>] ? vtime_account_user+0x54/0x60
-[56561.527788]  [<ffffffff810f768c>] ? __audit_syscall_entry+0x9c/0xf0
-[56561.527870]  [<ffffffff811c8551>] SyS_ioctl+0x81/0xa0
-[56561.527941]  [<ffffffff815707f7>] tracesys+0xdd/0xe2
-[...]
-[56561.528304] RIP  [<ffffffffa038956d>] scrub_chunk.isra.12+0xdd/0x130 [btrfs]
-[56561.528395]  RSP <ffff88004c0f5be8>
-[56561.528454] CR2: 0000000000000078
+Fix this problem by adding a flag into btrfs bio structure. If we submit
+the original bio, we will set the flag, and we increase bi_remaining counter,
+or we don't.
 
-This is because in btrfs_relocate_chunk(), we will free @bdev directly while
-scrub may still hold extent mapping, and may access freed memory.
+Though there is another way to fix it -- decrease bi_remaining counter of the
+original bio when we make sure the original bio is not submitted, this method
+need add more check and is easy to make mistake.
 
-Fix this problem by wrapping freeing @bdev work into free_extent_map() which
-is based on reference count.
-
-Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/extent_map.c |  2 ++
- fs/btrfs/extent_map.h |  1 +
- fs/btrfs/volumes.c    | 10 +++-------
- 3 files changed, 6 insertions(+), 7 deletions(-)
+ fs/btrfs/volumes.c | 7 ++++++-
+ fs/btrfs/volumes.h | 3 +++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 1874aee..225302b 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -75,6 +75,8 @@ void free_extent_map(struct extent_map *em)
- 	if (atomic_dec_and_test(&em->refs)) {
- 		WARN_ON(extent_map_in_tree(em));
- 		WARN_ON(!list_empty(&em->list));
-+		if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-+			kfree(em->bdev);
- 		kmem_cache_free(extent_map_cache, em);
- 	}
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index e7fd8a5..b2991fd 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -15,6 +15,7 @@
- #define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
- #define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
- #define EXTENT_FLAG_FILLING 5 /* Filling in a preallocated extent */
-+#define EXTENT_FLAG_FS_MAPPING 6 /* filesystem extent mapping type */
- 
- struct extent_map {
- 	struct rb_node rb_node;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ffeed6d..19c298a 100644
+index 31f9036..4ca3c92 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2543,9 +2543,6 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
- 	remove_extent_mapping(em_tree, em);
- 	write_unlock(&em_tree->lock);
- 
--	kfree(map);
--	em->bdev = NULL;
--
- 	/* once for the tree */
- 	free_extent_map(em);
- 	/* once for us */
-@@ -4301,9 +4298,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 
- 	em = alloc_extent_map();
- 	if (!em) {
-+		kfree(map);
- 		ret = -ENOMEM;
- 		goto error;
- 	}
-+	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
- 	em->bdev = (struct block_device *)map;
- 	em->start = start;
- 	em->len = num_bytes;
-@@ -4346,7 +4345,6 @@ error_del_extent:
- 	/* One for the tree reference */
- 	free_extent_map(em);
- error:
--	kfree(map);
- 	kfree(devices_info);
- 	return ret;
- }
-@@ -4558,7 +4556,6 @@ void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree)
- 		write_unlock(&tree->map_tree.lock);
- 		if (!em)
- 			break;
--		kfree(em->bdev);
- 		/* once for us */
- 		free_extent_map(em);
- 		/* once for the tree */
-@@ -5822,6 +5819,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 		return -ENOMEM;
- 	}
- 
-+	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
- 	em->bdev = (struct block_device *)map;
- 	em->start = logical;
- 	em->len = length;
-@@ -5846,7 +5844,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 		map->stripes[i].dev = btrfs_find_device(root->fs_info, devid,
- 							uuid, NULL);
- 		if (!map->stripes[i].dev && !btrfs_test_opt(root, DEGRADED)) {
--			kfree(map);
- 			free_extent_map(em);
- 			return -EIO;
+@@ -5415,8 +5415,12 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 			set_bit(BIO_UPTODATE, &bio->bi_flags);
+ 			err = 0;
  		}
-@@ -5854,7 +5851,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 			map->stripes[i].dev =
- 				add_missing_dev(root, devid, uuid);
- 			if (!map->stripes[i].dev) {
--				kfree(map);
- 				free_extent_map(em);
- 				return -EIO;
- 			}
++
++		if (likely(bbio->flags & BTRFS_BIO_ORIG_BIO_SUBMITTED))
++			bio_endio_nodec(bio, err);
++		else
++			bio_endio(bio, err);
+ 		kfree(bbio);
+-		bio_endio_nodec(bio, err);
+ 	} else if (!is_orig_bio) {
+ 		bio_put(bio);
+ 	}
+@@ -5671,6 +5675,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 			BUG_ON(!bio); /* -ENOMEM */
+ 		} else {
+ 			bio = first_bio;
++			bbio->flags |= BTRFS_BIO_ORIG_BIO_SUBMITTED;
+ 		}
+ 
+ 		submit_stripe_bio(root, bbio, bio,
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 1a15bbe..2aaa00c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -190,11 +190,14 @@ struct btrfs_bio_stripe {
+ struct btrfs_bio;
+ typedef void (btrfs_bio_end_io_t) (struct btrfs_bio *bio, int err);
+ 
++#define BTRFS_BIO_ORIG_BIO_SUBMITTED	0x1
++
+ struct btrfs_bio {
+ 	atomic_t stripes_pending;
+ 	struct btrfs_fs_info *fs_info;
+ 	bio_end_io_t *end_io;
+ 	struct bio *orig_bio;
++	unsigned long flags;
+ 	void *private;
+ 	atomic_t error;
+ 	int max_errors;
 -- 
 1.9.3
 

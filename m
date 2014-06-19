@@ -1,51 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:51469 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S933530AbaFSRhm convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jun 2014 13:37:42 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49408 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WxgHO-003sNv-3w
-	for linux-btrfs@vger.kernel.org; Thu, 19 Jun 2014 11:37:42 -0600
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: frustrations with handling of crash reports
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <53A2A5DB.40204@gmail.com>
-Date: Thu, 19 Jun 2014 11:37:41 -0600
-Message-Id: <6720DA04-9DDC-4612-8AC6-71B29B43E2EE@colorremedies.com>
-References: <20140519134915.GA27432@merlins.org>	<539FE03F.5030306@jp.fujitsu.com> <20140617145957.GH19071@merlins.org>	<20140617182745.GO19071@merlins.org> <53A192B8.2040601@gmail.com> <pan$d2b51$8d2a30e2$29b90599$a8fc24d9@cox.net> <53A2A5DB.40204@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-ie0-f179.google.com ([209.85.223.179]:33056 "EHLO
+	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933754AbaFST2N (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jun 2014 15:28:13 -0400
+Received: by mail-ie0-f179.google.com with SMTP id tr6so2314937ieb.24
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 12:28:12 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by mx.google.com with ESMTPSA id g3sm9469064igc.11.2014.06.19.12.28.10
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Thu, 19 Jun 2014 12:28:11 -0700 (PDT)
+Message-ID: <53A339A5.2080106@gmail.com>
+Date: Thu, 19 Jun 2014 15:27:33 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+MIME-Version: 1.0
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Questions about BTRFS_IOC_FILE_EXTENT_SAME
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms070506050208060507040903"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
-On Jun 19, 2014, at 2:56 AM, Konstantinos Skarlatos <k.skarlatos@gmail.com> wrote:
-> 
-> My filesystem that consistently kernel panics when a specific logical address is read, passes scrub without anything bad reported. What's the use of scrub if it cant deal with this?
+--------------ms070506050208060507040903
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-The myriad repair tools: automatic at mount, recovery mount option, scrub, check/repair, btrfs-zero-log, chunk-recover, super-recover certainly make Btrfs significantly more challenging to troubleshoot for the user familiar with other file systems. I think this is just a maturity issue, and as the necessary logic of repairing a file system reveals itself I think we'll see consolidation and more automation of these repair methods.
+I have a few questions about the BTRFS_IOC_FILE_EXTENT_SAME ioctl, and
+was hoping that I could get answers here without having to go source
+diving or trying to test things myself:
 
-fs/btrfs/scrub.c comments say what it does now and future enhancements. 
+1. What kind of overhead is there when it is called on a group of
+extents that aren't actually the same (aside from the obvious pair of
+context-switches that are required for an ioctl)?  I would think that it
+would bail at the first difference it finds, but I have learned that
+when it comes to kernel code, just because something seems obvious
+doesn't mean that's how it's done.
 
-" … reads all
- * extent and super block and verifies the checksums. In case a bad checksum
- * is found or the extent cannot be read, good data will be written back if
- * any can be found."
+2. Does it matter if the ranges passed in are actual extents, or can
+they be arbitrary ranges of equal bytes in the files?
 
-Scrub is pretty much just about checksum verification. It doesn't check file system consistency. So the file system could be inconsistent and a scrub still comes up clean.
+3. What happens if one of the ranges is truncated by the end of a file?
+ IOW, if I have files A and B, and file A is longer than file B, and
+file B is identical to the start of file A, what happens if I pass in
+both files starting at offset 0, but pass the length of file A instead
+of passing in the length of file B?
 
-> Well my use case is about 25 filesystems on rotating disks, 20 of them on single disks, and the rest are multiple disk filesystems, either raid1 or single. I have many subvolumes and in some cases thousands of snapshots, but no databases, systemd and the like on them.
+4. Does it matter if one of the extents passed in is compressed and the
+other is not?
 
-That's a lot of subvolumes and snapshots. I don't know this is expected to work really well right now (?), yes hundreds but with thousands there have been some known problems in the recent past at least.
-
-
-> Of course I have everything backed up, </nag mode on> but I believe that after all those years of development I shouldnt still be forced to do mkfs every 6 monts or so, when i use no new features. </nag mode off>
-
-The problem is that an old file system implies many kernels doing different kinds of reads and writes over time, making a given file system rather non-deterministic compared to any other. So the possible problems aren't all known and therefore the way to fix them may not be known yet either.
+Thanks in advance.
 
 
-Chris Murphy
+
+--------------ms070506050208060507040903
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIGuDCC
+BrQwggScoAMCAQICAw8BRDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA1
+MTIxNDEwMzJaFw0xNDExMDgxNDEwMzJaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDbLUaL
+Gs4JTdU7sgr0MzD57CMUAv307ddC9pxooDMN3PiUvzEd5kLtBCh8KDB1wbMdfm4hte2rDd+j
+hM1tIq67BvNbdDPztOcBZwT2/3OVyyG4B1ddCqUyt03zGKw6Y34eHNfapsZiiItX0GBNfjHU
+Wv+WDo+XNha/WmGSSMv21HkftF9XA1KC9Bpr9JJI23MKK7T2g/7b3KoGZlx3ekLIJsF5B7+B
+DMPPDqOHQbRnccyOHEMyhM13g6WoAbU+3aKYc+C/9UsYtDV+xlvBLWagky1acstD5wOA35V6
+uDRbUhD+vOjuMRMCj9jJOIYqa6AeSagBjxRnisJr0RFzQ4f+NjGCHPaFTvRvbkiXh4q22doT
+0SxbNBUm7B9ANugIOtS9/VQhTWKDi//WTqZQ7Ecl4yVJbMCUg/iaRHMCGS41vqMICPszRidW
+rL04NwS9D2cREEY1y/xrNo0ZvKPZu6tLhxhPf7w+5rsN3+wWxGaR1hNpnVUT9AeacLKZO6W9
+FsRT3Unkr91IhQATHTKYr4EAkjN/5lgvA+sxp5TxxsUnoJYrD8IHf8aYfJsAHMleBwx4xSeZ
+tw/n5iIjJjFZq9IRZ1zQhK62p+a5vJ2vlJHjTgavhQrfb1pUOjbqsnI4ndQ5hNosL9el4Kxq
+Yko+HsxVEmSwSsjq6cV2L3oz0z8NUwIDAQABo4IBWTCCAVUwDAYDVR0TAQH/BAIwADBWBglg
+hkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg
+b3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYDVR0PAQH/BAQDAgOoMEAGA1UdJQQ5
+MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYKKwYBBAGCNwoDAwYJYIZIAYb4
+QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3AuY2FjZXJ0Lm9y
+ZzAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vY3JsLmNhY2VydC5vcmcvcmV2b2tlLmNybDA0
+BgNVHREELTArgRRhaGZlcnJvaW43QGdtYWlsLmNvbYETYWhlbW1lbGdAb2hpb2d0LmNvbTAN
+BgkqhkiG9w0BAQ0FAAOCAgEAIokFPcW8+cO2Clu0Ei+ehAmQRBHfV5RWJ8aMVLXOCfiJX0ch
+IjVSIt6I3uQaR4J1ZIAjCSPkbpfZQDaLoGFI5j8aYEQhOeKxrvOMzY9/aSUYabCJIhE/sX64
+klFV0bzm+PR9cDMWeQ9BoZf0m8UROPSfDnrjEk+p04hGg3pAZMcSwCzxdb604NHjgHJmf2xG
+UQVzQgC6Ek/BKat0xuPTuPmtPv9OicK75CPmLZKYW3rFpCD6bhb1mm+ROcCNhniRY2LYm9YN
+QdlHQUzTFqj0tvuYrzNI3LNV4PjEfN8z6omPCT2Rq8/uKLseN+m8F0ioqm+cphqpmzKoDUpN
+nePLkqDFUFWCeWRxSjBTy4IMVUfdNXriVGihH8hyIICQiOfmmBOzhzUifdomJuTGtoXRuHVT
+R2f/YdrJrLnKI4f+Othdp7F3KhB4c6JiOnTEH5J8n9q3rFjt4MPRwcjIHMhmF5nZVQlgxEMo
+1cPCmvG1D9tcgXbH79jjqydo9SDXhzLQob7axkzGRY96IstNcvoQ/UNsdPPfFMYlHtGz4TxT
+DhBjv4ERskGmKBZrfmxkXkcuTV/gcykct6Xvw9YXb8WTL4qSYHSYk9fReVLgE/L4RBUpX2JJ
+QvIR0AJLER165/aZlQXZtuJjnfxJtJTJZZ+Gor9h0G2kuR5Dy0JuYdBO4t4xggShMIIEnQIB
+ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
+cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
+EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFEMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
+BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MDYxOTE5MjczM1owIwYJKoZIhvcNAQkE
+MRYEFMjFE7D2QSaU6Jyy93uwzroJru/5MGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
+MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
+AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
+VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
+GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
+ZXJ0Lm9yZwIDDwFEMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
+MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
+bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFE
+MA0GCSqGSIb3DQEBAQUABIICABughd3fHTtiv7IHBeSO+2Q6nBBpQYlVwuxICk2Hi9pVDFYs
+pEURS+jqxZLuDjxa/8k7wU33ZBMiIJ0bg3A69GcqlIP8ZHTQV9uL4e1mpNRkxRiFW09gl51O
+6GRTAWTPnKeqGJ6ow0h4QTlBTA9FeiUySU6+kz+t/PdedgsP9O41VVy6AUKgQtySmPWip3dp
+M3MxV2EPZbiMLSBwXU14l4SnvZf/8DJz+sVgdpO3UbJI9LJ2SpRsg85VwkpHrG20Xa/5aTQe
+mABdeQ9gzlItFwXtF9Gt7enhUGKB9aYboyqFxWhOjEB2sYp1W4W4q1SSw6O3QkqUYGumCrnP
+C8QCMVH33onZr7sQ0dK2TosZPCH4a/uCwf0SDoVgFwunrH5TKYOQ5XvfzBmObKxWLo8Sq926
+D9609nnNtMr+tUzIqWX8I5NE/qSAf5vGuPDKeQcvKLw/UpVdvbtEc8pXd9ipAOQO7vCPjYzJ
+V/1AZoiGmtNclAe3mi9rS/yHesuOyg4i1sQm0RhQDJ48csgGkDT743pYShvQTud1kvz4jXh2
+7eaSjnLy8e4U0VV1zv220qf/X8P/+nm+k5uYsNH3PczgjAJuKLuH92PM5F5F8Uu4M9QK7sVN
+2IxXh0YFB/k1zyryIWFAnC67eIoge5a7h3pCuTRnXB8zLzgl5hXTOP/l0fkdAAAAAAAA
+--------------ms070506050208060507040903--

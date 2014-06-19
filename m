@@ -1,84 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57162 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755305AbaFRVXJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 17:23:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WxNJx-0008LR-Gk
-	for linux-btrfs@vger.kernel.org; Wed, 18 Jun 2014 23:23:05 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jun 2014 23:23:05 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jun 2014 23:23:05 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: frustrations with handling of crash reports
-Date: Wed, 18 Jun 2014 21:22:50 +0000 (UTC)
-Message-ID: <pan$d2b51$8d2a30e2$29b90599$a8fc24d9@cox.net>
-References: <20140519134915.GA27432@merlins.org>
-	<539FE03F.5030306@jp.fujitsu.com> <20140617145957.GH19071@merlins.org>
-	<20140617182745.GO19071@merlins.org> <53A192B8.2040601@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:47841 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755787AbaFSAH2 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Jun 2014 20:07:28 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Daniel =?utf-8?B?Q2VnaWXFgmth?= <daniel.cegielka@gmail.com>
+Reply-To: russell@coker.com.au
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs on whole disk (no partitions)
+Date: Thu, 19 Jun 2014 10:07:24 +1000
+Message-ID: <2316027.LZEnVG8laK@xev>
+In-Reply-To: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
+References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Konstantinos Skarlatos posted on Wed, 18 Jun 2014 16:23:04 +0300 as
-excerpted:
+On Wed, 18 Jun 2014 21:29:39 Daniel Cegiełka wrote:
+> Everything works fine. Is such a solution is recommended? In my
+> opinion, the creation of the partitions seems to be completely
+> unnecessary if you can use btrfs.
 
-> I guess that btrfs developers have put these BUG_ONs so that they get
-> reports from users when btrfs gets in these unexpected situations. But
-> if most of these reports are ignored or not resolved, then maybe there
-> is no use for these BUG_ONs and they should be replaced with something
-> more mild.
-> 
-> Keep in mind that if a system panics, then the only way to get logs from
-> it is with serial or netconsole, so BUG_ON really makes it much harder
-> for users to know what happened and send reports, and only the most
-> technical and determined users will manage to send reports here.
+For boot disks I use the traditional partitioning system.  So far I don't run 
+any systems that have a boot disk larger than 2TB so I haven't needed to use 
+GPT.
 
-In terms of the BUGONs, they've been converting them to WARNONs recently, 
-exactly due to the point you and Marc have made.  Not being a dev and 
-simply based on the patch-flow I've seen as btrfs has been basically 
-behaving itself so far here[1], I had /thought/ that was more or less 
-done (perhaps some really bad bug-ons left but only a few, and basically 
-only where the kernel couldn't be sure it was in a logical enough state 
-to continue writing to other filesystems too, so bugon being logical in 
-that case), but based on you guys' comments there's apparently more to go.
+I have a BTRFS RAID-1 on 2*3TB disks which have no partition tables, when the 
+filesystem is going to use the entire device and there's no boot loader there 
+is no reason to have a partition table.
 
-So at least for BUGONs they agree.  I guess it's simply a matter of 
-getting them all converted.
+I also have some SATA disks I use for backup which have no partition table 
+because one filesystem is going to use all the space.
 
-Tho at least in Marc's case, he's running kernels a couple back in some 
-cases and they may still have BUGONs already replaced in the most current 
-kernel.
+If you don't need to have a boot loader or swap space on the disk then there's 
+no reason to have a partition table.  Note that it's often good to have some 
+swap space even if everything can fit in RAM because Linux sometimes pages 
+things out to make more space for cache.
 
-As for experimental, they've been toning down and removing the warnings 
-recently.  Yes, the on-device format may come with some level of 
-compatibility guarantee now so I do agree with that bit, but IMO anyway, 
-that warning should be being replaced with a more explicit "on-device-
-format is now stable but the code is not yet entirely so, so keep your 
-backups and be prepared to use them, and run current kernels", language, 
-and that's not happening, they're mostly just toning it down without the 
-still explicit warnings, ATM.
+While it's possible to boot a system without a partition table are you going 
+to get a real benefit from that?  Having a separate /boot filesystem may 
+"waste" 500M of disk space, but as it seems impossible to buy any new SATA 
+device smaller than a 60G SSD (and the 120G SSDs don't cost much more) is that 
+500M really an issue?
 
----
-[1] Btrfs (so far) behaving itself here: Possibly because my filesystems 
-are relatively small and I don't use snapshots much and prefer several 
-smaller independent filesystems rather than doing subvolumes, thus 
-keeping the number of eggs in a single basket small.  Plus, with small 
-filesystems on SSD, I can balance reasonably regularly, and I do full 
-fresh mkfs.btrfs rounds every few kernels as well to take advantage of 
-newer features, which may well have the result of killing smaller 
-problems that aren't yet showing up before they get big enough to cause 
-real issues.  Anyway, I'm not complaining! =:^)
+When a system fails to boot it's a major PITA and having an unusual boot setup 
+will make it much more difficult to Google for help if you boot in an unusual 
+way.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
 

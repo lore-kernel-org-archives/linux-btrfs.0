@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43019 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:39842 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756081AbaFSClV (ORCPT
+	with ESMTP id S1757036AbaFSClY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 22:41:21 -0400
+	Wed, 18 Jun 2014 22:41:24 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fJWJ024064
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:19 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J2fMbY024072
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 10:41:22 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH RESEND 3/7] btrfs: Skip scrubbing removed chunks to avoid -ENOENT.
-Date: Thu, 19 Jun 2014 10:42:51 +0800
-Message-ID: <1403145775-22641-4-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 5/7] Btrfs: use bio_endio_nodec instead of open code
+Date: Thu, 19 Jun 2014 10:42:53 +0800
+Message-ID: <1403145775-22641-6-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1403145775-22641-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,68 +19,37 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-When run scrub with balance, sometimes -ENOENT will be returned, since
-in scrub_enumerate_chunks() will search dev_extent in *COMMIT_ROOT*, but
-btrfs_lookup_block_group() will search block group in *MEMORY*, so if a
-chunk is removed but not committed, -ENOENT will be returned.
-
-However, there is no need to stop scrubbing since other chunks may be
-scrubbed without problem.
-
-So this patch changes the behavior to skip removed chunks and continue
-to scrub the rest.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 19 +++++++++----------
- 1 file changed, 9 insertions(+), 10 deletions(-)
+ fs/btrfs/volumes.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ac80188..b6d198f 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2725,11 +2725,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
- 		length = btrfs_dev_extent_length(l, dev_extent);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 19c298a..31f9036 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5399,12 +5399,6 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 			bio = bbio->orig_bio;
+ 		}
  
--		if (found_key.offset + length <= start) {
--			key.offset = found_key.offset + length;
--			btrfs_release_path(path);
--			continue;
--		}
-+		if (found_key.offset + length <= start)
-+			goto skip;
- 
- 		chunk_tree = btrfs_dev_extent_chunk_tree(l, dev_extent);
- 		chunk_objectid = btrfs_dev_extent_chunk_objectid(l, dev_extent);
-@@ -2740,10 +2737,12 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		 * the chunk from going away while we scrub it
- 		 */
- 		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
--		if (!cache) {
--			ret = -ENOENT;
--			break;
--		}
-+
-+		/* some chunks are removed but not committed to disk yet,
-+		 * continue scrubbing */
-+		if (!cache)
-+			goto skip;
-+
- 		dev_replace->cursor_right = found_key.offset + length;
- 		dev_replace->cursor_left = found_key.offset;
- 		dev_replace->item_needs_writeback = 1;
-@@ -2802,7 +2801,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 
- 		dev_replace->cursor_left = dev_replace->cursor_right;
- 		dev_replace->item_needs_writeback = 1;
+- 		/*
+-		 * We have original bio now. So increment bi_remaining to
+-		 * account for it in endio
+-		 */
+-		atomic_inc(&bio->bi_remaining);
 -
-+skip:
- 		key.offset = found_key.offset + length;
- 		btrfs_release_path(path);
+ 		bio->bi_private = bbio->private;
+ 		bio->bi_end_io = bbio->end_io;
+ 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+@@ -5422,8 +5416,7 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 			err = 0;
+ 		}
+ 		kfree(bbio);
+-
+-		bio_endio(bio, err);
++		bio_endio_nodec(bio, err);
+ 	} else if (!is_orig_bio) {
+ 		bio_put(bio);
  	}
 -- 
 1.9.3

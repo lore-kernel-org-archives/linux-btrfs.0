@@ -1,283 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52934 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52938 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966645AbaFTLC2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 07:02:28 -0400
+	id S966645AbaFTLCf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jun 2014 07:02:35 -0400
 From: David Sterba <dsterba@suse.cz>
 To: clm@fb.com
 Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 3/8] btrfs: cleanup ino cache members of btrfs_root
-Date: Fri, 20 Jun 2014 13:02:25 +0200
-Message-Id: <882947fd27713834ab2484cda0bc2fb36488efa2.1403260619.git.dsterba@suse.cz>
+Subject: [PATCH 4/8] btrfs: make close_ctree return void
+Date: Fri, 20 Jun 2014 13:02:33 +0200
+Message-Id: <eaf9b4abf66252b4b9bdbde2ba213e9ed58a2e4f.1403260619.git.dsterba@suse.cz>
 In-Reply-To: <cover.1403260619.git.dsterba@suse.cz>
 References: <cover.1403260619.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The naming is confusing, generic yet used for a specific cache. Add a
-prefix 'ino_' or rename appropriately.
+There's no user of the return value and we can get rid of the comment in
+put_super.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ctree.h            |   10 +++---
- fs/btrfs/disk-io.c          |    6 ++--
- fs/btrfs/free-space-cache.c |   14 ++++----
- fs/btrfs/inode-map.c        |   68 +++++++++++++++++++++---------------------
- fs/btrfs/ioctl.c            |    6 ++--
- 5 files changed, 52 insertions(+), 52 deletions(-)
+ fs/btrfs/disk-io.c |    4 +---
+ fs/btrfs/disk-io.h |    2 +-
+ fs/btrfs/super.c   |    8 +-------
+ 3 files changed, 3 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index be91397f4e92..d474694bb11d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1776,12 +1776,12 @@ struct btrfs_root {
- 
- 	/* free ino cache stuff */
- 	struct btrfs_free_space_ctl *free_ino_ctl;
--	enum btrfs_caching_type cached;
--	spinlock_t cache_lock;
--	wait_queue_head_t cache_wait;
-+	enum btrfs_caching_type ino_cache_state;
-+	spinlock_t ino_cache_lock;
-+	wait_queue_head_t ino_cache_wait;
- 	struct btrfs_free_space_ctl *free_ino_pinned;
--	u64 cache_progress;
--	struct inode *cache_inode;
-+	u64 ino_cache_progress;
-+	struct inode *ino_cache_inode;
- 
- 	struct mutex log_mutex;
- 	wait_queue_head_t log_writer_wait;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8bb4aa19898f..0ebcd9e8e8ec 100644
+index 0ebcd9e8e8ec..43217afbcaf7 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1569,8 +1569,8 @@ int btrfs_init_fs_root(struct btrfs_root *root)
- 	root->subv_writers = writers;
+@@ -3616,7 +3616,7 @@ int btrfs_commit_super(struct btrfs_root *root)
+ 	return btrfs_commit_transaction(trans, root);
+ }
  
- 	btrfs_init_free_ino_ctl(root);
--	spin_lock_init(&root->cache_lock);
--	init_waitqueue_head(&root->cache_wait);
-+	spin_lock_init(&root->ino_cache_lock);
-+	init_waitqueue_head(&root->ino_cache_wait);
- 
- 	ret = get_anon_bdev(&root->anon_dev);
- 	if (ret)
-@@ -3525,7 +3525,7 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 
- static void free_fs_root(struct btrfs_root *root)
+-int close_ctree(struct btrfs_root *root)
++void close_ctree(struct btrfs_root *root)
  {
--	iput(root->cache_inode);
-+	iput(root->ino_cache_inode);
- 	WARN_ON(!RB_EMPTY_ROOT(&root->inode_tree));
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	int ret;
+@@ -3704,8 +3704,6 @@ int close_ctree(struct btrfs_root *root)
+ 
  	btrfs_free_block_rsv(root, root->orphan_block_rsv);
  	root->orphan_block_rsv = NULL;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 2b0a627cb5f9..f181c9afe5f4 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3033,10 +3033,10 @@ struct inode *lookup_free_ino_inode(struct btrfs_root *root,
+-
+-	return 0;
+ }
+ 
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 23ce3ceba0a9..52a17db700fc 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -56,7 +56,7 @@ void clean_tree_block(struct btrfs_trans_handle *trans,
+ int open_ctree(struct super_block *sb,
+ 	       struct btrfs_fs_devices *fs_devices,
+ 	       char *options);
+-int close_ctree(struct btrfs_root *root);
++void close_ctree(struct btrfs_root *root);
+ int write_ctree_super(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int max_mirrors);
+ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4662d92a4b73..f8b64e8f97a1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -307,13 +307,7 @@ void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
+ 
+ static void btrfs_put_super(struct super_block *sb)
  {
- 	struct inode *inode = NULL;
- 
--	spin_lock(&root->cache_lock);
--	if (root->cache_inode)
--		inode = igrab(root->cache_inode);
--	spin_unlock(&root->cache_lock);
-+	spin_lock(&root->ino_cache_lock);
-+	if (root->ino_cache_inode)
-+		inode = igrab(root->ino_cache_inode);
-+	spin_unlock(&root->ino_cache_lock);
- 	if (inode)
- 		return inode;
- 
-@@ -3044,10 +3044,10 @@ struct inode *lookup_free_ino_inode(struct btrfs_root *root,
- 	if (IS_ERR(inode))
- 		return inode;
- 
--	spin_lock(&root->cache_lock);
-+	spin_lock(&root->ino_cache_lock);
- 	if (!btrfs_fs_closing(root->fs_info))
--		root->cache_inode = igrab(inode);
--	spin_unlock(&root->cache_lock);
-+		root->ino_cache_inode = igrab(inode);
-+	spin_unlock(&root->ino_cache_lock);
- 
- 	return inode;
- }
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 888fbe19079f..83d646bd2e4b 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -87,7 +87,7 @@ again:
- 				 */
- 				btrfs_item_key_to_cpu(leaf, &key, 0);
- 				btrfs_release_path(path);
--				root->cache_progress = last;
-+				root->ino_cache_progress = last;
- 				up_read(&fs_info->commit_root_sem);
- 				schedule_timeout(1);
- 				goto again;
-@@ -106,7 +106,7 @@ again:
- 		if (last != (u64)-1 && last + 1 != key.objectid) {
- 			__btrfs_add_free_space(ctl, last + 1,
- 					       key.objectid - last - 1);
--			wake_up(&root->cache_wait);
-+			wake_up(&root->ino_cache_wait);
- 		}
- 
- 		last = key.objectid;
-@@ -119,14 +119,14 @@ next:
- 				       root->highest_objectid - last - 1);
- 	}
- 
--	spin_lock(&root->cache_lock);
--	root->cached = BTRFS_CACHE_FINISHED;
--	spin_unlock(&root->cache_lock);
-+	spin_lock(&root->ino_cache_lock);
-+	root->ino_cache_state = BTRFS_CACHE_FINISHED;
-+	spin_unlock(&root->ino_cache_lock);
- 
--	root->cache_progress = (u64)-1;
-+	root->ino_cache_progress = (u64)-1;
- 	btrfs_unpin_free_ino(root);
- out:
--	wake_up(&root->cache_wait);
-+	wake_up(&root->ino_cache_wait);
- 	up_read(&fs_info->commit_root_sem);
- 
- 	btrfs_free_path(path);
-@@ -144,20 +144,20 @@ static void start_caching(struct btrfs_root *root)
- 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
- 		return;
- 
--	spin_lock(&root->cache_lock);
--	if (root->cached != BTRFS_CACHE_NO) {
--		spin_unlock(&root->cache_lock);
-+	spin_lock(&root->ino_cache_lock);
-+	if (root->ino_cache_state != BTRFS_CACHE_NO) {
-+		spin_unlock(&root->ino_cache_lock);
- 		return;
- 	}
- 
--	root->cached = BTRFS_CACHE_STARTED;
--	spin_unlock(&root->cache_lock);
-+	root->ino_cache_state = BTRFS_CACHE_STARTED;
-+	spin_unlock(&root->ino_cache_lock);
- 
- 	ret = load_free_ino_cache(root->fs_info, root);
- 	if (ret == 1) {
--		spin_lock(&root->cache_lock);
--		root->cached = BTRFS_CACHE_FINISHED;
--		spin_unlock(&root->cache_lock);
-+		spin_lock(&root->ino_cache_lock);
-+		root->ino_cache_state = BTRFS_CACHE_FINISHED;
-+		spin_unlock(&root->ino_cache_lock);
- 		return;
- 	}
- 
-@@ -196,11 +196,11 @@ again:
- 
- 	start_caching(root);
- 
--	wait_event(root->cache_wait,
--		   root->cached == BTRFS_CACHE_FINISHED ||
-+	wait_event(root->ino_cache_wait,
-+		   root->ino_cache_state == BTRFS_CACHE_FINISHED ||
- 		   root->free_ino_ctl->free_space > 0);
- 
--	if (root->cached == BTRFS_CACHE_FINISHED &&
-+	if (root->ino_cache_state == BTRFS_CACHE_FINISHED &&
- 	    root->free_ino_ctl->free_space == 0)
- 		return -ENOSPC;
- 	else
-@@ -214,17 +214,17 @@ void btrfs_return_ino(struct btrfs_root *root, u64 objectid)
- 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
- 		return;
- again:
--	if (root->cached == BTRFS_CACHE_FINISHED) {
-+	if (root->ino_cache_state == BTRFS_CACHE_FINISHED) {
- 		__btrfs_add_free_space(pinned, objectid, 1);
- 	} else {
- 		down_write(&root->fs_info->commit_root_sem);
--		spin_lock(&root->cache_lock);
--		if (root->cached == BTRFS_CACHE_FINISHED) {
--			spin_unlock(&root->cache_lock);
-+		spin_lock(&root->ino_cache_lock);
-+		if (root->ino_cache_state == BTRFS_CACHE_FINISHED) {
-+			spin_unlock(&root->ino_cache_lock);
- 			up_write(&root->fs_info->commit_root_sem);
- 			goto again;
- 		}
--		spin_unlock(&root->cache_lock);
-+		spin_unlock(&root->ino_cache_lock);
- 
- 		start_caching(root);
- 
-@@ -235,10 +235,10 @@ again:
+-	(void)close_ctree(btrfs_sb(sb)->tree_root);
+-	/* FIXME: need to fix VFS to return error? */
+-	/* AV: return it _where_?  ->put_super() can be triggered by any number
+-	 * of async events, up to and including delivery of SIGKILL to the
+-	 * last process that kept it busy.  Or segfault in the aforementioned
+-	 * process...  Whom would you report that to?
+-	 */
++	close_ctree(btrfs_sb(sb)->tree_root);
  }
  
- /*
-- * When a transaction is committed, we'll move those inode numbers which
-- * are smaller than root->cache_progress from pinned tree to free_ino tree,
-- * and others will just be dropped, because the commit root we were
-- * searching has changed.
-+ * When a transaction is committed, we'll move those inode numbers which are
-+ * smaller than root->ino_cache_progress from pinned tree to free_ino tree, and
-+ * others will just be dropped, because the commit root we were searching has
-+ * changed.
-  *
-  * Must be called with root->fs_info->commit_root_sem held
-  */
-@@ -261,10 +261,10 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
- 		info = rb_entry(n, struct btrfs_free_space, offset_index);
- 		BUG_ON(info->bitmap); /* Logic error */
- 
--		if (info->offset > root->cache_progress)
-+		if (info->offset > root->ino_cache_progress)
- 			goto free;
--		else if (info->offset + info->bytes > root->cache_progress)
--			count = root->cache_progress - info->offset + 1;
-+		else if (info->offset + info->bytes > root->ino_cache_progress)
-+			count = root->ino_cache_progress - info->offset + 1;
- 		else
- 			count = info->bytes;
- 
-@@ -462,13 +462,13 @@ again:
- 		}
- 	}
- 
--	spin_lock(&root->cache_lock);
--	if (root->cached != BTRFS_CACHE_FINISHED) {
-+	spin_lock(&root->ino_cache_lock);
-+	if (root->ino_cache_state != BTRFS_CACHE_FINISHED) {
- 		ret = -1;
--		spin_unlock(&root->cache_lock);
-+		spin_unlock(&root->ino_cache_lock);
- 		goto out_put;
- 	}
--	spin_unlock(&root->cache_lock);
-+	spin_unlock(&root->ino_cache_lock);
- 
- 	spin_lock(&ctl->tree_lock);
- 	prealloc = sizeof(struct btrfs_free_space) * ctl->free_extents;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6ea15469c63f..f74f740320e4 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2551,9 +2551,9 @@ out_unlock:
- 		ASSERT(dest->send_in_progress == 0);
- 
- 		/* the last ref */
--		if (dest->cache_inode) {
--			iput(dest->cache_inode);
--			dest->cache_inode = NULL;
-+		if (dest->ino_cache_inode) {
-+			iput(dest->ino_cache_inode);
-+			dest->ino_cache_inode = NULL;
- 		}
- 	}
- out_dput:
+ enum {
 -- 
 1.7.9
 

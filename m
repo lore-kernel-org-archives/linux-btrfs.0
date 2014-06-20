@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55126 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:55641 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966834AbaFTNEs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 09:04:48 -0400
+	id S966834AbaFTN3P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jun 2014 09:29:15 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 265D3ABB9
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 13:04:46 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 486C8AABA
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 13:29:13 +0000 (UTC)
 From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: adjust message levels in open_ctree
-Date: Fri, 20 Jun 2014 15:04:45 +0200
-Message-Id: <1403269485-13605-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH v2] btrfs: adjust message levels in open_ctree
+Date: Fri, 20 Jun 2014 15:29:12 +0200
+Message-Id: <1403270952-15384-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -21,11 +21,14 @@ and informative messages are INFO.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
+
+v2: s/btrfs_error/btrfs_err/, unrefreshed patch sent
+
  fs/btrfs/disk-io.c | 32 ++++++++++++++++----------------
  1 file changed, 16 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8bb4aa19898f..b29804467847 100644
+index 8bb4aa19898f..22fe7f85351c 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
 @@ -616,21 +616,21 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
@@ -49,7 +52,7 @@ index 8bb4aa19898f..b29804467847 100644
  	found_level = btrfs_header_level(eb);
  	if (found_level >= BTRFS_MAX_LEVEL) {
 -		btrfs_info(root->fs_info, "bad tree block level %d",
-+		btrfs_error(root->fs_info, "bad tree block level %d",
++		btrfs_err(root->fs_info, "bad tree block level %d",
  			   (int)btrfs_header_level(eb));
  		ret = -EIO;
  		goto err;

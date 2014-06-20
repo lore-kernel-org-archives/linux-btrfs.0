@@ -1,64 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:26529 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932193AbaFTPs2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 11:48:28 -0400
-Message-ID: <53A45909.50506@fb.com>
-Date: Fri, 20 Jun 2014 11:53:45 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:60165 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S934626AbaFTRSb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jun 2014 13:18:31 -0400
+Date: Fri, 20 Jun 2014 10:18:29 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Josef Bacik <jbacik@fb.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
+Subject: Re: btrfs: qgroup: account shared subtrees during snapshot delete
+Message-ID: <20140620171829.GS5484@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1403214567-3137-1-git-send-email-mfasheh@suse.de> <1403214567-3137-3-git-send-email-mfasheh@suse.de> <53A36348.4010106@fb.com> <20140619231626.GQ5484@wotan.suse.de> <53A36F85.60607@fb.com> <20140620112534.GB1553@twin.jikos.cz> <20140620152958.GR5484@wotan.suse.de> <53A456F3.4000500@fb.com>
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53A456F3.4000500@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Fri, Jun 20, 2014 at 08:44:51AM -0700, Josef Bacik wrote:
+> On 06/20/2014 08:29 AM, Mark Fasheh wrote:
+>> On Fri, Jun 20, 2014 at 01:25:34PM +0200, David Sterba wrote:
+>>> On Thu, Jun 19, 2014 at 04:17:25PM -0700, Josef Bacik wrote:
+>>>>>> We don't pay attention to the return value, we should probably abort the
+>>>>>> transaction if there is a problem.
+>>>>>
+>>>>> Abort or log an error and continue? I ask because technically we could
+>>>>> continue with the subvolume drop but obviously qgroup state will need to be
+>>>>> fixed via a future rescan. I guess the question is which is more 'friendly'
+>>>>> to the user.
+>>>>
+>>>> I'd be ok with log an error and tell the user to rescan.  Thanks,
+>>>
+>>> I agree.
+>>
+>> Great, I went ahead and did that. Below is patch #2 with all review comments
+>> implemented.
+>>
+>
+> Looks good, you can add
+>
+> Reviewed-by: Josef Bacik <jbacik@fb.com>
+>
+> However I'd like to see an xfstest or two for this case so we're sure to be
+> testing everything properly.  Once we have that we can merge it.  Thanks,
 
-Please pull my for-linus branch:
+Adding a test is no problem - I can just import a little script I
+have to make a shared tree. FYI though - btrfsck will still report some
+inconsistency until we fix the last bit of accounting problems so I guess it
+won't really 'pass' at first.
+	--Mark
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-
-This fixes some lockups in btrfs reported with rc1.  It probably has
-some performance impact because it is backing off our spinning locks
-more often and switching to a blocking lock.  I'll be able to nail that
-down next week, but for now I want to get the lockups taken care of.
-
-Otherwise some more stack reduction and assorted fixes.
-
-Miao Xie (5) commits (+304/-126):
-    Btrfs: fix wrong error handle when the device is missing or is not writeable (+15/-7)
-    Btrfs: make free space cache write out functions more readable (+93/-66)
-    Btrfs: fix broken free space cache after the system crashed (+186/-44)
-    Btrfs: fix deadlock when mounting a degraded fs (+9/-1)
-    Btrfs: use bio_endio_nodec instead of open code (+1/-8)
-
-Chris Mason (1) commits (+46/-34):
-    Btrfs: fix deadlocks with trylock on tree nodes
-
-Wang Shilong (1) commits (+6/-7):
-    Btrfs: fix NULL pointer crash when running balance and scrub concurrently
-
-Filipe Manana (1) commits (+0/-1):
-    Btrfs: remove unused wait queue in struct extent_buffer
-
-Qu Wenruo (1) commits (+9/-10):
-    btrfs: Skip scrubbing removed chunks to avoid -ENOENT.
-
-Total: (9) commits (+365/-178)
-
- fs/btrfs/ctree.h            |  13 ++-
- fs/btrfs/extent-tree.c      | 143 ++++++++++++++++++++++++++-------
- fs/btrfs/extent_io.h        |   1 -
- fs/btrfs/extent_map.c       |   2 +
- fs/btrfs/extent_map.h       |   1 +
- fs/btrfs/free-space-cache.c | 192 +++++++++++++++++++++++++++++---------------
- fs/btrfs/inode.c            |  41 +++++++---
- fs/btrfs/locking.c          |  80 ++++++++++--------
- fs/btrfs/scrub.c            |  19 +++--
- fs/btrfs/volumes.c          |  36 +++++----
- fs/btrfs/volumes.h          |   3 +
- 11 files changed, 359 insertions(+), 172 deletions(-)
+--
+Mark Fasheh

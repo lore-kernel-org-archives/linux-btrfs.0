@@ -1,83 +1,646 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52938 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52939 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966645AbaFTLCf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 07:02:35 -0400
+	id S966645AbaFTLCn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jun 2014 07:02:43 -0400
 From: David Sterba <dsterba@suse.cz>
 To: clm@fb.com
 Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 4/8] btrfs: make close_ctree return void
-Date: Fri, 20 Jun 2014 13:02:33 +0200
-Message-Id: <eaf9b4abf66252b4b9bdbde2ba213e9ed58a2e4f.1403260619.git.dsterba@suse.cz>
+Subject: [PATCH 5/8] btrfs: kill the key type accessor helpers
+Date: Fri, 20 Jun 2014 13:02:40 +0200
+Message-Id: <feb869296cd6a2842902fc1a23be627d7c81aca8.1403260619.git.dsterba@suse.cz>
 In-Reply-To: <cover.1403260619.git.dsterba@suse.cz>
 References: <cover.1403260619.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's no user of the return value and we can get rid of the comment in
-put_super.
+btrfs_set_key_type and btrfs_key_type are used inconsistently along with
+open coded variants. Other members of btrfs_key are accessed directly
+without any helpers anyway.
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c |    4 +---
- fs/btrfs/disk-io.h |    2 +-
- fs/btrfs/super.c   |    8 +-------
- 3 files changed, 3 insertions(+), 11 deletions(-)
+ fs/btrfs/backref.c       |    4 ++--
+ fs/btrfs/delayed-inode.c |    8 ++++----
+ fs/btrfs/dir-item.c      |   12 ++++++------
+ fs/btrfs/export.c        |    4 ++--
+ fs/btrfs/extent-tree.c   |    6 +++---
+ fs/btrfs/extent_io.c     |    2 +-
+ fs/btrfs/file-item.c     |   12 ++++++------
+ fs/btrfs/file.c          |    4 ++--
+ fs/btrfs/inode-item.c    |   12 ++++++------
+ fs/btrfs/inode.c         |   28 ++++++++++++++--------------
+ fs/btrfs/ioctl.c         |    6 +++---
+ fs/btrfs/orphan.c        |    4 ++--
+ fs/btrfs/print-tree.c    |    2 +-
+ fs/btrfs/scrub.c         |    2 +-
+ fs/btrfs/tree-log.c      |    6 +++---
+ fs/btrfs/volumes.c       |    4 ++--
+ fs/btrfs/xattr.c         |    4 ++--
+ 17 files changed, 60 insertions(+), 60 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0ebcd9e8e8ec..43217afbcaf7 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3616,7 +3616,7 @@ int btrfs_commit_super(struct btrfs_root *root)
- 	return btrfs_commit_transaction(trans, root);
- }
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index e25564bfcb46..9fe0deeddc31 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1191,7 +1191,7 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
+ 	unsigned long ptr;
  
--int close_ctree(struct btrfs_root *root)
-+void close_ctree(struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	key.objectid = inode_objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
++	key.type = BTRFS_INODE_EXTREF_KEY;
+ 	key.offset = start_off;
+ 
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+@@ -1231,7 +1231,7 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
+ 		ret = -ENOENT;
+ 		if (found_key.objectid != inode_objectid)
+ 			break;
+-		if (btrfs_key_type(&found_key) != BTRFS_INODE_EXTREF_KEY)
++		if (found_key.type != BTRFS_INODE_EXTREF_KEY)
+ 			break;
+ 
+ 		ret = 0;
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index da775bfdebc9..08168144aa52 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1042,7 +1042,7 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
  	int ret;
-@@ -3704,8 +3704,6 @@ int close_ctree(struct btrfs_root *root)
  
- 	btrfs_free_block_rsv(root, root->orphan_block_rsv);
- 	root->orphan_block_rsv = NULL;
--
--	return 0;
+ 	key.objectid = node->inode_id;
+-	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
++	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
+ 	if (test_bit(BTRFS_DELAYED_NODE_DEL_IREF, &node->flags))
+@@ -1099,7 +1099,7 @@ err_out:
+ search:
+ 	btrfs_release_path(path);
+ 
+-	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
++	key.type = BTRFS_INODE_EXTREF_KEY;
+ 	key.offset = -1;
+ 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+ 	if (ret < 0)
+@@ -1473,7 +1473,7 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	delayed_item->key.objectid = btrfs_ino(dir);
+-	btrfs_set_key_type(&delayed_item->key, BTRFS_DIR_INDEX_KEY);
++	delayed_item->key.type = BTRFS_DIR_INDEX_KEY;
+ 	delayed_item->key.offset = index;
+ 
+ 	dir_item = (struct btrfs_dir_item *)delayed_item->data;
+@@ -1542,7 +1542,7 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
+ 		return PTR_ERR(node);
+ 
+ 	item_key.objectid = btrfs_ino(dir);
+-	btrfs_set_key_type(&item_key, BTRFS_DIR_INDEX_KEY);
++	item_key.type = BTRFS_DIR_INDEX_KEY;
+ 	item_key.offset = index;
+ 
+ 	ret = btrfs_delete_delayed_insertion_item(root, node, &item_key);
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index a0691df5dcea..fc8df866e919 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -86,7 +86,7 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
+ 	BUG_ON(name_len + data_len > BTRFS_MAX_XATTR_SIZE(root));
+ 
+ 	key.objectid = objectid;
+-	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
++	key.type = BTRFS_XATTR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 
+ 	data_size = sizeof(*dir_item) + name_len + data_len;
+@@ -137,7 +137,7 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	u32 data_size;
+ 
+ 	key.objectid = btrfs_ino(dir);
+-	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
++	key.type = BTRFS_DIR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 
+ 	path = btrfs_alloc_path();
+@@ -204,7 +204,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+ 	int cow = mod != 0;
+ 
+ 	key.objectid = dir;
+-	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
++	key.type = BTRFS_DIR_ITEM_KEY;
+ 
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 
+@@ -234,7 +234,7 @@ int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+ 		return -ENOMEM;
+ 
+ 	key.objectid = dir;
+-	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
++	key.type = BTRFS_DIR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+@@ -297,7 +297,7 @@ btrfs_lookup_dir_index_item(struct btrfs_trans_handle *trans,
+ 	int cow = mod != 0;
+ 
+ 	key.objectid = dir;
+-	btrfs_set_key_type(&key, BTRFS_DIR_INDEX_KEY);
++	key.type = BTRFS_DIR_INDEX_KEY;
+ 	key.offset = objectid;
+ 
+ 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
+@@ -367,7 +367,7 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
+ 	int cow = mod != 0;
+ 
+ 	key.objectid = dir;
+-	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
++	key.type = BTRFS_XATTR_ITEM_KEY;
+ 	key.offset = btrfs_name_hash(name, name_len);
+ 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
+ 	if (ret < 0)
+diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+index 41422a3de8ed..37d164540c3a 100644
+--- a/fs/btrfs/export.c
++++ b/fs/btrfs/export.c
+@@ -70,7 +70,7 @@ static struct dentry *btrfs_get_dentry(struct super_block *sb, u64 objectid,
+ 		return ERR_PTR(-ESTALE);
+ 
+ 	key.objectid = root_objectid;
+-	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.type = BTRFS_ROOT_ITEM_KEY;
+ 	key.offset = (u64)-1;
+ 
+ 	index = srcu_read_lock(&fs_info->subvol_srcu);
+@@ -82,7 +82,7 @@ static struct dentry *btrfs_get_dentry(struct super_block *sb, u64 objectid,
+ 	}
+ 
+ 	key.objectid = objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
++	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
+ 	inode = btrfs_iget(sb, &key, root, NULL);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 99c253918208..30c3c5ee9ba2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3096,7 +3096,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 	for (i = 0; i < nritems; i++) {
+ 		if (level == 0) {
+ 			btrfs_item_key_to_cpu(buf, &key, i);
+-			if (btrfs_key_type(&key) != BTRFS_EXTENT_DATA_KEY)
++			if (key.type != BTRFS_EXTENT_DATA_KEY)
+ 				continue;
+ 			fi = btrfs_item_ptr(buf, i,
+ 					    struct btrfs_file_extent_item);
+@@ -6472,7 +6472,7 @@ static noinline int find_free_extent(struct btrfs_root *orig_root,
+ 	bool have_caching_bg = false;
+ 
+ 	WARN_ON(num_bytes < root->sectorsize);
+-	btrfs_set_key_type(ins, BTRFS_EXTENT_ITEM_KEY);
++	ins->type = BTRFS_EXTENT_ITEM_KEY;
+ 	ins->objectid = 0;
+ 	ins->offset = 0;
+ 
+@@ -8764,7 +8764,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 	root = info->extent_root;
+ 	key.objectid = 0;
+ 	key.offset = 0;
+-	btrfs_set_key_type(&key, BTRFS_BLOCK_GROUP_ITEM_KEY);
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 23398ad430a0..fd743ecd16a5 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4229,7 +4229,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	WARN_ON(!ret);
+ 	path->slots[0]--;
+ 	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
+-	found_type = btrfs_key_type(&found_key);
++	found_type = found_key.type;
+ 
+ 	/* No extents, but there might be delalloc bits */
+ 	if (found_key.objectid != btrfs_ino(inode) ||
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index f46cfe45d686..89d353999d8c 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -55,7 +55,7 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 	file_key.objectid = objectid;
+ 	file_key.offset = pos;
+-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_DATA_KEY);
++	file_key.type = BTRFS_EXTENT_DATA_KEY;
+ 
+ 	path->leave_spinning = 1;
+ 	ret = btrfs_insert_empty_item(trans, root, path, &file_key,
+@@ -100,7 +100,7 @@ btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+ 
+ 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+ 	file_key.offset = bytenr;
+-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_CSUM_KEY);
++	file_key.type = BTRFS_EXTENT_CSUM_KEY;
+ 	ret = btrfs_search_slot(trans, root, &file_key, path, 0, cow);
+ 	if (ret < 0)
+ 		goto fail;
+@@ -111,7 +111,7 @@ btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+ 			goto fail;
+ 		path->slots[0]--;
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-		if (btrfs_key_type(&found_key) != BTRFS_EXTENT_CSUM_KEY)
++		if (found_key.type != BTRFS_EXTENT_CSUM_KEY)
+ 			goto fail;
+ 
+ 		csum_offset = (bytenr - found_key.offset) >>
+@@ -148,7 +148,7 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
+ 
+ 	file_key.objectid = objectid;
+ 	file_key.offset = offset;
+-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_DATA_KEY);
++	file_key.type = BTRFS_EXTENT_DATA_KEY;
+ 	ret = btrfs_search_slot(trans, root, &file_key, path, ins_len, cow);
+ 	return ret;
  }
+@@ -720,7 +720,7 @@ again:
+ 	bytenr = sums->bytenr + total_bytes;
+ 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+ 	file_key.offset = bytenr;
+-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_CSUM_KEY);
++	file_key.type = BTRFS_EXTENT_CSUM_KEY;
  
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 23ce3ceba0a9..52a17db700fc 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -56,7 +56,7 @@ void clean_tree_block(struct btrfs_trans_handle *trans,
- int open_ctree(struct super_block *sb,
- 	       struct btrfs_fs_devices *fs_devices,
- 	       char *options);
--int close_ctree(struct btrfs_root *root);
-+void close_ctree(struct btrfs_root *root);
- int write_ctree_super(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root, int max_mirrors);
- struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4662d92a4b73..f8b64e8f97a1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -307,13 +307,7 @@ void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
+ 	item = btrfs_lookup_csum(trans, root, path, bytenr, 1);
+ 	if (!IS_ERR(item)) {
+@@ -790,7 +790,7 @@ again:
+ 	csum_offset = (bytenr - found_key.offset) >>
+ 			root->fs_info->sb->s_blocksize_bits;
  
- static void btrfs_put_super(struct super_block *sb)
- {
--	(void)close_ctree(btrfs_sb(sb)->tree_root);
--	/* FIXME: need to fix VFS to return error? */
--	/* AV: return it _where_?  ->put_super() can be triggered by any number
--	 * of async events, up to and including delivery of SIGKILL to the
--	 * last process that kept it busy.  Or segfault in the aforementioned
--	 * process...  Whom would you report that to?
--	 */
-+	close_ctree(btrfs_sb(sb)->tree_root);
- }
+-	if (btrfs_key_type(&found_key) != BTRFS_EXTENT_CSUM_KEY ||
++	if (found_key.type != BTRFS_EXTENT_CSUM_KEY ||
+ 	    found_key.objectid != BTRFS_EXTENT_CSUM_OBJECTID ||
+ 	    csum_offset >= MAX_CSUM_ITEMS(root, csum_size)) {
+ 		goto insert;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index ad7c05909a49..aa81897a7ecc 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -299,7 +299,7 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
  
- enum {
+ 	/* get the inode */
+ 	key.objectid = defrag->root;
+-	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.type = BTRFS_ROOT_ITEM_KEY;
+ 	key.offset = (u64)-1;
+ 
+ 	index = srcu_read_lock(&fs_info->subvol_srcu);
+@@ -311,7 +311,7 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	key.objectid = defrag->ino;
+-	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
++	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 	inode = btrfs_iget(fs_info->sb, &key, inode_root, NULL);
+ 	if (IS_ERR(inode)) {
+diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
+index 2be38df703c9..8ffa4783cbf4 100644
+--- a/fs/btrfs/inode-item.c
++++ b/fs/btrfs/inode-item.c
+@@ -135,7 +135,7 @@ static int btrfs_del_inode_extref(struct btrfs_trans_handle *trans,
+ 	u32 item_size;
+ 
+ 	key.objectid = inode_objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
++	key.type = BTRFS_INODE_EXTREF_KEY;
+ 	key.offset = btrfs_extref_hash(ref_objectid, name, name_len);
+ 
+ 	path = btrfs_alloc_path();
+@@ -209,7 +209,7 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+ 
+ 	key.objectid = inode_objectid;
+ 	key.offset = ref_objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_REF_KEY);
++	key.type = BTRFS_INODE_REF_KEY;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -337,7 +337,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
+ 
+ 	key.objectid = inode_objectid;
+ 	key.offset = ref_objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_REF_KEY);
++	key.type = BTRFS_INODE_REF_KEY;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -400,7 +400,7 @@ int btrfs_insert_empty_inode(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	int ret;
+ 	key.objectid = objectid;
+-	btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
++	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key,
+@@ -420,13 +420,13 @@ int btrfs_lookup_inode(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	struct btrfs_key found_key;
+ 
+ 	ret = btrfs_search_slot(trans, root, location, path, ins_len, cow);
+-	if (ret > 0 && btrfs_key_type(location) == BTRFS_ROOT_ITEM_KEY &&
++	if (ret > 0 && location->type == BTRFS_ROOT_ITEM_KEY &&
+ 	    location->offset == (u64)-1 && path->slots[0] != 0) {
+ 		slot = path->slots[0] - 1;
+ 		leaf = path->nodes[0];
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+ 		if (found_key.objectid == location->objectid &&
+-		    btrfs_key_type(&found_key) == btrfs_key_type(location)) {
++		    found_key.type == location->type) {
+ 			path->slots[0]--;
+ 			return 0;
+ 		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6b65fab27a1a..2f0a6e9bf8ed 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -153,7 +153,7 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 
+ 		key.objectid = btrfs_ino(inode);
+ 		key.offset = start;
+-		btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
++		key.type = BTRFS_EXTENT_DATA_KEY;
+ 
+ 		datasize = btrfs_file_extent_calc_inline_size(cur_size);
+ 		path->leave_spinning = 1;
+@@ -3133,7 +3133,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 	path->reada = -1;
+ 
+ 	key.objectid = BTRFS_ORPHAN_OBJECTID;
+-	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.type = BTRFS_ORPHAN_ITEM_KEY;
+ 	key.offset = (u64)-1;
+ 
+ 	while (1) {
+@@ -3160,7 +3160,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		/* make sure the item matches what we want */
+ 		if (found_key.objectid != BTRFS_ORPHAN_OBJECTID)
+ 			break;
+-		if (btrfs_key_type(&found_key) != BTRFS_ORPHAN_ITEM_KEY)
++		if (found_key.type != BTRFS_ORPHAN_ITEM_KEY)
+ 			break;
+ 
+ 		/* release the path since we're done with it */
+@@ -4059,7 +4059,7 @@ search_again:
+ 		fi = NULL;
+ 		leaf = path->nodes[0];
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-		found_type = btrfs_key_type(&found_key);
++		found_type = found_key.type;
+ 
+ 		if (found_key.objectid != ino)
+ 			break;
+@@ -5262,7 +5262,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 		btrfs_get_delayed_items(inode, &ins_list, &del_list);
+ 	}
+ 
+-	btrfs_set_key_type(&key, key_type);
++	key.type = key_type;
+ 	key.offset = ctx->pos;
+ 	key.objectid = btrfs_ino(inode);
+ 
+@@ -5287,7 +5287,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 		if (found_key.objectid != key.objectid)
+ 			break;
+-		if (btrfs_key_type(&found_key) != key_type)
++		if (found_key.type != key_type)
+ 			break;
+ 		if (found_key.offset < ctx->pos)
+ 			goto next;
+@@ -5499,7 +5499,7 @@ static int btrfs_set_inode_index_count(struct inode *inode)
+ 	int ret;
+ 
+ 	key.objectid = btrfs_ino(inode);
+-	btrfs_set_key_type(&key, BTRFS_DIR_INDEX_KEY);
++	key.type = BTRFS_DIR_INDEX_KEY;
+ 	key.offset = (u64)-1;
+ 
+ 	path = btrfs_alloc_path();
+@@ -5531,7 +5531,7 @@ static int btrfs_set_inode_index_count(struct inode *inode)
+ 	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+ 
+ 	if (found_key.objectid != btrfs_ino(inode) ||
+-	    btrfs_key_type(&found_key) != BTRFS_DIR_INDEX_KEY) {
++	    found_key.type != BTRFS_DIR_INDEX_KEY) {
+ 		BTRFS_I(inode)->index_cnt = 2;
+ 		goto out;
+ 	}
+@@ -5631,7 +5631,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(inode)->runtime_flags);
+ 
+ 	key[0].objectid = objectid;
+-	btrfs_set_key_type(&key[0], BTRFS_INODE_ITEM_KEY);
++	key[0].type = BTRFS_INODE_ITEM_KEY;
+ 	key[0].offset = 0;
+ 
+ 	sizes[0] = sizeof(struct btrfs_inode_item);
+@@ -5644,7 +5644,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 		 * add more hard links than can fit in the ref item.
+ 		 */
+ 		key[1].objectid = objectid;
+-		btrfs_set_key_type(&key[1], BTRFS_INODE_REF_KEY);
++		key[1].type = BTRFS_INODE_REF_KEY;
+ 		key[1].offset = ref_objectid;
+ 
+ 		sizes[1] = name_len + sizeof(*ref);
+@@ -5679,7 +5679,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	location = &BTRFS_I(inode)->location;
+ 	location->objectid = objectid;
+ 	location->offset = 0;
+-	btrfs_set_key_type(location, BTRFS_INODE_ITEM_KEY);
++	location->type = BTRFS_INODE_ITEM_KEY;
+ 
+ 	btrfs_inherit_iflags(inode, dir);
+ 
+@@ -5739,7 +5739,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 		memcpy(&key, &BTRFS_I(inode)->root->root_key, sizeof(key));
+ 	} else {
+ 		key.objectid = ino;
+-		btrfs_set_key_type(&key, BTRFS_INODE_ITEM_KEY);
++		key.type = BTRFS_INODE_ITEM_KEY;
+ 		key.offset = 0;
+ 	}
+ 
+@@ -6220,7 +6220,7 @@ again:
+ 			      struct btrfs_file_extent_item);
+ 	/* are we inside the extent that was found? */
+ 	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-	found_type = btrfs_key_type(&found_key);
++	found_type = found_key.type;
+ 	if (found_key.objectid != objectid ||
+ 	    found_type != BTRFS_EXTENT_DATA_KEY) {
+ 		/*
+@@ -8763,7 +8763,7 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+ 	}
+ 	key.objectid = btrfs_ino(inode);
+ 	key.offset = 0;
+-	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
++	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	datasize = btrfs_file_extent_calc_inline_size(name_len);
+ 	err = btrfs_insert_empty_item(trans, root, path, &key,
+ 				      datasize);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index f74f740320e4..32b9c4472e14 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -532,7 +532,7 @@ static noinline int create_subvol(struct inode *dir,
+ 
+ 	key.objectid = objectid;
+ 	key.offset = 0;
+-	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.type = BTRFS_ROOT_ITEM_KEY;
+ 	ret = btrfs_insert_root(trans, root->fs_info->tree_root, &key,
+ 				&root_item);
+ 	if (ret)
+@@ -3273,11 +3273,11 @@ process_slot:
+ 		slot = path->slots[0];
+ 
+ 		btrfs_item_key_to_cpu(leaf, &key, slot);
+-		if (btrfs_key_type(&key) > BTRFS_EXTENT_DATA_KEY ||
++		if (key.type > BTRFS_EXTENT_DATA_KEY ||
+ 		    key.objectid != btrfs_ino(src))
+ 			break;
+ 
+-		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
++		if (key.type == BTRFS_EXTENT_DATA_KEY) {
+ 			struct btrfs_file_extent_item *extent;
+ 			int type;
+ 			u32 size;
+diff --git a/fs/btrfs/orphan.c b/fs/btrfs/orphan.c
+index 65793edb38ca..47767d5b8f0b 100644
+--- a/fs/btrfs/orphan.c
++++ b/fs/btrfs/orphan.c
+@@ -27,7 +27,7 @@ int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 
+ 	key.objectid = BTRFS_ORPHAN_OBJECTID;
+-	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.type = BTRFS_ORPHAN_ITEM_KEY;
+ 	key.offset = offset;
+ 
+ 	path = btrfs_alloc_path();
+@@ -48,7 +48,7 @@ int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
+ 	int ret = 0;
+ 
+ 	key.objectid = BTRFS_ORPHAN_OBJECTID;
+-	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.type = BTRFS_ORPHAN_ITEM_KEY;
+ 	key.offset = offset;
+ 
+ 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index 6efd70d3b64f..b7ab8b01ef66 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -195,7 +195,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	for (i = 0 ; i < nr ; i++) {
+ 		item = btrfs_item_nr(i);
+ 		btrfs_item_key_to_cpu(l, &key, i);
+-		type = btrfs_key_type(&key);
++		type = key.type;
+ 		printk(KERN_INFO "\titem %d key (%llu %u %llu) itemoff %d "
+ 		       "itemsize %d\n",
+ 			i, key.objectid, type, key.offset,
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b6d198f5181e..95cbb2024a11 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2713,7 +2713,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		if (found_key.objectid != scrub_dev->devid)
+ 			break;
+ 
+-		if (btrfs_key_type(&found_key) != BTRFS_DEV_EXTENT_KEY)
++		if (found_key.type != BTRFS_DEV_EXTENT_KEY)
+ 			break;
+ 
+ 		if (found_key.offset >= end)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9e1f2cd5e67a..13cb636c420d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1496,7 +1496,7 @@ static noinline int link_to_fixup_dir(struct btrfs_trans_handle *trans,
+ 		return -EIO;
+ 
+ 	key.objectid = BTRFS_TREE_LOG_FIXUP_OBJECTID;
+-	btrfs_set_key_type(&key, BTRFS_ORPHAN_ITEM_KEY);
++	key.type = BTRFS_ORPHAN_ITEM_KEY;
+ 	key.offset = objectid;
+ 
+ 	ret = btrfs_insert_empty_item(trans, root, path, &key, 0);
+@@ -3363,7 +3363,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 		 * or deletes of this inode don't have to relog the inode
+ 		 * again
+ 		 */
+-		if (btrfs_key_type(ins_keys + i) == BTRFS_EXTENT_DATA_KEY &&
++		if (ins_keys[i].type == BTRFS_EXTENT_DATA_KEY &&
+ 		    !skip_csum) {
+ 			int found_type;
+ 			extent = btrfs_item_ptr(src, start_slot + i,
+@@ -4316,7 +4316,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ again:
+ 	key.objectid = BTRFS_TREE_LOG_OBJECTID;
+ 	key.offset = (u64)-1;
+-	btrfs_set_key_type(&key, BTRFS_ROOT_ITEM_KEY);
++	key.type = BTRFS_ROOT_ITEM_KEY;
+ 
+ 	while (1) {
+ 		ret = btrfs_search_slot(NULL, log_root_tree, &key, path, 0, 0);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c83b24251e53..8c36148baa05 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1004,7 +1004,7 @@ int btrfs_account_dev_extents_size(struct btrfs_device *device, u64 start,
+ 		if (key.objectid > device->devid)
+ 			break;
+ 
+-		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
++		if (key.type != BTRFS_DEV_EXTENT_KEY)
+ 			goto next;
+ 
+ 		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
+@@ -1156,7 +1156,7 @@ again:
+ 		if (key.objectid > device->devid)
+ 			break;
+ 
+-		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
++		if (key.type != BTRFS_DEV_EXTENT_KEY)
+ 			goto next;
+ 
+ 		if (key.offset > search_start) {
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index ad8328d797ea..dcf20131fbe4 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -237,7 +237,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+ 	 * first xattr that we find and walk forward
+ 	 */
+ 	key.objectid = btrfs_ino(inode);
+-	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
++	key.type = BTRFS_XATTR_ITEM_KEY;
+ 	key.offset = 0;
+ 
+ 	path = btrfs_alloc_path();
+@@ -273,7 +273,7 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+ 		/* check to make sure this item is what we want */
+ 		if (found_key.objectid != key.objectid)
+ 			break;
+-		if (btrfs_key_type(&found_key) != BTRFS_XATTR_ITEM_KEY)
++		if (found_key.type != BTRFS_XATTR_ITEM_KEY)
+ 			break;
+ 
+ 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
 -- 
 1.7.9
 

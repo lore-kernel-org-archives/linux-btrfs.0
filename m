@@ -1,156 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17799 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932228AbaFTPlJ (ORCPT
+Received: from old.lon-b.elastichosts.com ([84.45.121.3]:32907 "EHLO
+	lon-b.elastichosts.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932155AbaFTQVx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 11:41:09 -0400
-Message-ID: <53A45601.9070305@fb.com>
-Date: Fri, 20 Jun 2014 08:40:49 -0700
-From: Josef Bacik <jbacik@fb.com>
+	Fri, 20 Jun 2014 12:21:53 -0400
+Received: from [79.135.116.105] (helo=[192.168.0.88])
+	by lon-b.elastichosts.com with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.72)
+	(envelope-from <alin.dobre@elastichosts.com>)
+	id 1Wy1ZW-0004Hq-DS
+	for linux-btrfs@vger.kernel.org; Fri, 20 Jun 2014 17:21:51 +0100
+Message-ID: <53A45FBE.6040306@elastichosts.com>
+Date: Fri, 20 Jun 2014 17:22:22 +0100
+From: Alin Dobre <alin.dobre@elastichosts.com>
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>
-CC: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        <takeuchi_satoru@jp.fujitsu.com>
-Subject: Re: btrfs balance crash BUG ON fs/btrfs/relocation.c:1062 or RIP
- build_backref_tree+0x9fc/0xcc4
-References: <20140609234007.GD19071@merlins.org> <53A08925.8020700@fb.com> <20140617185549.GP19071@merlins.org> <53A1AFB6.40906@fb.com> <20140618202135.GE19071@merlins.org> <53A30BDD.6080309@fb.com> <20140619222518.GA20894@merlins.org> <53A36928.1030104@fb.com> <20140620005359.GA10485@merlins.org>
-In-Reply-To: <20140620005359.GA10485@merlins.org>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Deadlock/high load
+References: <5399C40F.3070509@elastichosts.com>
+In-Reply-To: <5399C40F.3070509@elastichosts.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/19/2014 05:53 PM, Marc MERLIN wrote:
-> On Thu, Jun 19, 2014 at 03:50:16PM -0700, Josef Bacik wrote:
->> Ok same drill as before, reset and apply this, hopefully no panic this time
->>
->>
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index 65245a0..bca5240 100644
->
+On 12/06/14 16:15, Alin Dobre wrote:
+> Hi all,
+> 
+> I have a problem that triggers quite often on our production machines. I
+> don't really know what's triggering this or how to reproduce it, but the
+> machine enters in some sort of deadlock state, where it consumes all the
+> i/o and the load average goes very high in seconds (it even gets to over
+> 200), sometimes in about a minute or even less, the machine is
+> unresponsive and we have to reset it. Rarely, the load just stays high
+> (~25) for hours, but it never gets down again, but this happens rarely,
+> as I said. In general, the machine is either already unresponsive or is
+> about to become unresponsive.
+> 
+> The last machine that encountered this has 40 cores and the btrfs
+> filesystem is running over SSDs. We encountered this on a plain 3.14
+> kernel, and also on the latest 3.14.6 kernel + all the patches whose
+> summary is marked "btrfs:" that made it in 3.15, straight forward
+> backported (cherry-picked) to 3.14.
+> 
+> Also, no suspicious (malicious) activity from the running processes either.
+> 
+> I noticed there was another report on 3.13 which was solved by a 3.15rc
+> patch, it doesn't seem to be the same thing.
+> 
+> Since the only chance to obtain something was via a SysRq dump, here's
+> what I could get from the last "w" trigger (tasks that are in
+> uninterruptable (blocked) state), showing only tasks that are related to
+> btrfs:
 
-Ok I see what it is but I want to get rid of the panicing so we're going to do
-this dance a few more times until it's just failing to mount instead of
-panicing, and then we'll fix the actual bug.  Give this a whirl, and I've added
-another printk just to make sure what I think is happening is actually what's
-happening, so same drill as before.  Thanks,
+I tried to reproduce this on a slower/older machine with older SSDs and
+couldn't get anywhere, the machine stood up. However, when I tried one
+of our faster/newer machine also with newer and faster SSDs, I managed
+to reproduce it twice.
 
-Josef
+I should mention that the disks are set up in a MD RAID6, and btrfs
+single for both data and metadata is on top of that. I ran bonnie++ to
+reproduce it (bonnie++ -d /home/bonnie -s 4g -m test -r 1024 -x 100 -u
+bonnie) inside a container that was memory capped to 1GB (hence the -r
+1024) with the help of cgroups.
 
+Just before the machine stopped being fully responsive I had 3 processes
+that were consuming 100% CPU: md128_raid6, btrfs-transact,
+kworker/u82:6. The load was fairly low, but atop stopped working at ~5
+load average.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 65245a0..21e8a57 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -702,6 +702,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
-  	int err = 0;
-  	bool need_check = true;
-  
-+	printk(KERN_ERR "running build_backref_tree\n");
-  	path1 = btrfs_alloc_path();
-  	path2 = btrfs_alloc_path();
-  	if (!path1 || !path2) {
-@@ -722,6 +723,8 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
-  	node->lowest = 1;
-  	cur = node;
-  again:
-+	printk(KERN_ERR "building backref for bytenr %llu level %d\n",
-+	       cur->bytenr, cur->level);
-  	end = 0;
-  	ptr = 0;
-  	key.objectid = cur->bytenr;
-@@ -757,6 +760,7 @@ again:
-  		 */
-  		if (!exist->checked)
-  			list_add_tail(&edge->list[UPPER], &list);
-+		printk(KERN_ERR "exist is %llu, checked %d\n", exist->bytenr, exist->checked);
-  	} else {
-  		exist = NULL;
-  	}
-@@ -807,6 +811,8 @@ again:
-  		      exist->owner == key.offset) ||
-  		     (key.type == BTRFS_SHARED_BLOCK_REF_KEY &&
-  		      exist->bytenr == key.offset))) {
-+			printk(KERN_ERR "exist is fucking us, bytenr %llu, "
-+			       "type %d\n", exist->bytenr, key.type);
-  			exist = NULL;
-  			goto next;
-  		}
-@@ -865,6 +871,7 @@ again:
-  				 *  cached, add the block to pending list
-  				 */
-  				list_add_tail(&edge->list[UPPER], &list);
-+				printk(KERN_ERR "found shared ref %llu, needs checking\n", upper->bytenr);
-  			} else {
-  				upper = rb_entry(rb_node, struct backref_node,
-  						 rb_node);
-@@ -958,14 +965,30 @@ again:
-  					      &root->state))
-  					upper->cowonly = 1;
-  
-+				printk(KERN_ERR "eb in path %llu, level %d, "
-+				       "cowonly %d, owner %llu, gen %llu, last "
-+				       "snap %llu, reloc %d, root %llu\n",
-+				       upper->bytenr, upper->level,
-+				       upper->cowonly, upper->owner,
-+				       btrfs_header_generation(eb),
-+				       btrfs_root_last_snapshot(&root->root_item),
-+				       btrfs_header_flag(eb,
-+							 BTRFS_HEADER_FLAG_RELOC),
-+				       root->objectid);
-+
-  				/*
-  				 * if we know the block isn't shared
-  				 * we can void checking its backrefs.
-  				 */
--				if (btrfs_block_can_be_shared(root, eb))
-+				if (btrfs_block_can_be_shared(root, eb)) {
-+					printk(KERN_ERR "is shared, need_check"
-+					       " %d\n", need_check);
-  					upper->checked = 0;
--				else
-+				} else {
-+					printk(KERN_ERR "isn't shared, "
-+					       "need_check %d\n", need_check);
-  					upper->checked = 1;
-+				}
-  
-  				/*
-  				 * add the block to pending list if we
-@@ -1019,6 +1042,7 @@ next:
-  		edge = list_entry(list.next, struct backref_edge, list[UPPER]);
-  		list_del_init(&edge->list[UPPER]);
-  		cur = edge->node[UPPER];
-+		printk(KERN_ERR "doing the checking for block %llu\n", cur->bytenr);
-  		goto again;
-  	}
-  
-@@ -1062,7 +1086,12 @@ next:
-  			continue;
-  		}
-  
--		BUG_ON(!upper->checked);
-+		if (!upper->checked) {
-+			printk(KERN_ERR "block %llu wasn't checked\n",
-+			       upper->bytenr);
-+			err = -EINVAL;
-+			goto out;
-+		}
-  		BUG_ON(cowonly != upper->cowonly);
-  		if (!cowonly) {
-  			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
-@@ -1114,6 +1143,7 @@ next:
-  		}
-  	}
-  out:
-+	printk(KERN_ERR "done building backref tree\n");
-  	btrfs_free_path(path1);
-  	btrfs_free_path(path2);
-  	if (err) {
-@@ -1123,7 +1153,6 @@ out:
-  			list_del_init(&lower->upper);
-  		}
-  		upper = node;
--		INIT_LIST_HEAD(&list);
-  		while (upper) {
-  			if (RB_EMPTY_NODE(&upper->rb_node)) {
-  				list_splice_tail(&upper->upper, &list);
+I couldn't dump the sysrq blocked processes this time, but the above 3
+processes are also in my initial report.
+
+As per Liu Bo's request, the output of the df command is:
+Data, single: total=73.01GiB, used=28.05GiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=3.01GiB, used=1.04GiB
+unknown, single: total=368.00MiB, used=0.00
+at the moment when atop was already unresponsive.
+
+Another thing to mention is that our production machines also have a
+fairly high traffic of snapshotting (or plain creation, more rarely) and
+deletion operations on subvolumes that are quota enabled.
+
+Cheers,
+Alin.

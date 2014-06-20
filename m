@@ -1,41 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52021 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52905 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965546AbaFTKHS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 06:07:18 -0400
+	id S965558AbaFTLBw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jun 2014 07:01:52 -0400
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/2] btrfs: use E2BIG instead of EIO if compression does not help
-Date: Fri, 20 Jun 2014 12:07:14 +0200
-Message-Id: <b934864cc8b08eb358748b06468b9cca64026c1e.1403258477.git.dsterba@suse.cz>
-In-Reply-To: <cover.1403258476.git.dsterba@suse.cz>
-References: <cover.1403258476.git.dsterba@suse.cz>
+To: clm@fb.com
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: [PULL] [PATCH 0/8] Cleanups, 3.16 or later
+Date: Fri, 20 Jun 2014 13:01:49 +0200
+Message-Id: <cover.1403260619.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Return codes got updated in 60e1975acb48fc3d74a3422b21dde74c977ac3d5
-(btrfs: return errno instead of -1 from compression)
-lzo wrapper returns E2BIG in this case, do the same for zlib.
+Hi Chris,
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/zlib.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+this is a set of whole-directory changes that have low impact on stability
+(xfstests passed), but touch almost all files aiming for simpler code.
 
-diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
-index 4f196314c0c1..b67d8fc81277 100644
---- a/fs/btrfs/zlib.c
-+++ b/fs/btrfs/zlib.c
-@@ -136,7 +136,7 @@ static int zlib_compress_pages(struct list_head *ws,
- 		if (workspace->def_strm.total_in > 8192 &&
- 		    workspace->def_strm.total_in <
- 		    workspace->def_strm.total_out) {
--			ret = -EIO;
-+			ret = -E2BIG;
- 			goto out;
- 		}
- 		/* we need another page for writing out.  Test this
+I did not catch the merge window train, so I'm leaving it to your consideration
+if you add it to the upcomming pull request(s).
+
+I'm sending this as a pull request combined with patches to mailinglist.
+
+Top commit cbe260e207c57843c1dcd550f9adbab7507945c6
+based on 8408c716d7a4ddd5954ce33f53a7d3cd2876cf65 (current for-linus)
+
+Available in the git repository at:
+
+  git://repo.or.cz/linux-2.6/btrfs-unstable.git cleanups-for-3.16
+
+Thanks.
+
+David Sterba (8):
+  btrfs: remove obsolete comment in btrfs_clean_one_deleted_snapshot
+  btrfs: clenaup: don't call btrfs_release_path before free_path
+  btrfs: cleanup ino cache members of btrfs_root
+  btrfs: make close_ctree return void
+  btrfs: kill the key type accessor helpers
+  btrfs: use nodesize everywhere, kill leafsize
+  btrfs: clean away stripe_align helper
+  btrfs: use DIV_ROUND_UP instead of open-coded variants
+
+ fs/btrfs/backref.c          |   12 +++---
+ fs/btrfs/check-integrity.c  |   16 +--------
+ fs/btrfs/compression.c      |   10 ++---
+ fs/btrfs/ctree.c            |   18 +++++-----
+ fs/btrfs/ctree.h            |   31 +++++-----------
+ fs/btrfs/delayed-inode.c    |    8 ++--
+ fs/btrfs/dir-item.c         |   12 +++---
+ fs/btrfs/disk-io.c          |   84 +++++++++++++++++++------------------------
+ fs/btrfs/disk-io.h          |    2 +-
+ fs/btrfs/export.c           |    4 +-
+ fs/btrfs/extent-tree.c      |   53 +++++++++++----------------
+ fs/btrfs/extent_io.c        |    2 +-
+ fs/btrfs/file-item.c        |   12 +++---
+ fs/btrfs/file.c             |   25 ++++++-------
+ fs/btrfs/free-space-cache.c |   17 ++++-----
+ fs/btrfs/inode-item.c       |   12 +++---
+ fs/btrfs/inode-map.c        |   68 +++++++++++++++++-----------------
+ fs/btrfs/inode.c            |   28 +++++++-------
+ fs/btrfs/ioctl.c            |   23 ++++++------
+ fs/btrfs/lzo.c              |    3 +-
+ fs/btrfs/orphan.c           |    4 +-
+ fs/btrfs/print-tree.c       |    4 +-
+ fs/btrfs/qgroup.c           |    6 +--
+ fs/btrfs/raid56.c           |    8 ++--
+ fs/btrfs/reada.c            |    2 +-
+ fs/btrfs/relocation.c       |   22 +++++------
+ fs/btrfs/scrub.c            |   19 +---------
+ fs/btrfs/super.c            |    8 +----
+ fs/btrfs/transaction.c      |    7 +---
+ fs/btrfs/tree-log.c         |    8 ++--
+ fs/btrfs/volumes.c          |    4 +-
+ fs/btrfs/xattr.c            |    4 +-
+ fs/btrfs/zlib.c             |    3 +-
+ 33 files changed, 228 insertions(+), 311 deletions(-)
+
 -- 
 1.7.9
 

@@ -1,36 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40718 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751904AbaFTTUg (ORCPT
+Received: from g6t1524.atlanta.hp.com ([15.193.200.67]:36416 "EHLO
+	g6t1524.atlanta.hp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756897AbaFUBM0 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 15:20:36 -0400
-Date: Fri, 20 Jun 2014 22:20:10 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, Sasha Levin <sasha.levin@oracle.com>,
-        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: [patch] Btrfs: fix error code in btrfs_init_test_fs()
-Message-ID: <20140620192010.GB19824@mwanda>
+	Fri, 20 Jun 2014 21:12:26 -0400
+From: "Long, Wai Man" <waiman.long@hp.com>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, Chris Mason <clm@fb.com>
+CC: Marc Dionne <marc.c.dionne@gmail.com>, Josef Bacik <jbacik@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Lockups with btrfs on 3.16-rc1 - bisected
+Date: Sat, 21 Jun 2014 01:09:47 +0000
+Message-ID: <401F72D6D1DFE3499766D25AA4EED18A356593C1@G5W2743.americas.hpqcorp.net>
+References: <CAB9dFdsyB40V2BGwdQKzSSz7YUWMh-C2AWdDNK=PMG9h+BO57w@mail.gmail.com>
+	<53A20FFF.3010807@hp.com>	<53A2125B.3050701@fb.com>
+	<53A21702.8090109@hp.com>	<53A21C78.1040809@fb.com>
+	<53A21E84.2050103@hp.com>	<53A22064.7080400@fb.com>
+	<53A2212E.7090907@hp.com>	<53A2268F.3080807@fb.com>
+	<CAB9dFds5J8Ti3CgtxHrgqM3j1TiwqYCnhP+A3Nb0q-FNgmQbXA@mail.gmail.com>
+	<53A22A01.7080505@hp.com>
+	<CAB9dFdvD9QMZ_rONhhP5ZD2E7+A7qxnsY978Snc3zHEbdPRszw@mail.gmail.com>
+ <CAB9dFdtTFN+uQ8=WXVa0Y5GbBSYM5iVLgTaEeh_FqHt=XFKNvQ@mail.gmail.com>
+ <53A246C6.5050408@fb.com> <53A2573B.1060901@hp.com>
+ <53A31514.8030308@fb.com> <53A32353.5000104@hp.com>
+ <53A343B9.3000900@fb.com> <53A35B31.4060203@fb.com>
+ <53A3708E.9060203@hp.com> <53A3A897.3050202@jp.fujitsu.com>
+In-Reply-To: <53A3A897.3050202@jp.fujitsu.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We had intended to return a negative error code here, but we use the
-wrong variable so it returns success.
+Hi,
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+It may be caused by an corrupted btrfs filesystem due to the repeating hanging during the test. As long as your guys don't any problem, I am happy with the patch.
 
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index 9626252..8e7225f 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -65,7 +65,7 @@ int btrfs_init_test_fs(void)
- 	if (IS_ERR(test_mnt)) {
- 		printk(KERN_ERR "btrfs: cannot mount test file system\n");
- 		unregister_filesystem(&test_type);
--		return ret;
-+		return PTR_ERR(test_mnt);
- 	}
- 	return 0;
- }
+Thank,
+Longman
+
+
+-----Original Message-----
+From: Tsutomu Itoh [mailto:t-itoh@jp.fujitsu.com] 
+Sent: Thursday, June 19, 2014 11:21 PM
+To: Chris Mason
+Cc: Long, Wai Man; Marc Dionne; Josef Bacik; linux-btrfs@vger.kernel.org
+Subject: Re: Lockups with btrfs on 3.16-rc1 - bisected
+
+On 2014/06/20 8:21, Waiman Long wrote:
+> On 06/19/2014 05:50 PM, Chris Mason wrote:
+>>>>
+>>>> I would like to take back my comments. I took out the read_lock, 
+>>>> but the process still hang while doing file activities on btrfs 
+>>>> filesystem. So the problem is trickier than I thought. Below are 
+>>>> the stack backtraces of some of the relevant processes.
+>>>>
+>>> You weren't wrong, but it was also the tree trylock code.  Our 
+>>> trylocks only back off if the blocking lock is held.  
+>>> btrfs_next_leaf needs it to be a true trylock.  The confusing part 
+>>> is this hasn't really changed, but one of the callers must be a spinner where we used to have a blocker.
+>> This is what I have queued up, it's working here.
+>>
+>> -chris
+>>
+>> commit ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
+>> Author: Chris Mason<clm@fb.com>
+>> Date:   Thu Jun 19 14:16:52 2014 -0700
+>>
+>>      Btrfs: fix deadlocks with trylock on tree nodes
+>>
+>>      The Btrfs tree trylock function is poorly named.  It always takes
+>>      the spinlock and backs off if the blocking lock is held.  This
+>>      can lead to surprising lockups because people expect it to really be a
+>>      trylock.
+>>
+>>      This commit makes it a pure trylock, both for the spinlock and the
+>>      blocking lock.  It also reworks the nested lock handling slightly to
+>>      avoid taking the read lock while a spinning write lock might be held.
+>>
+>>      Signed-off-by: Chris Mason<clm@fb.com>
+>
+> I didn't realize that those non-blocking lock functions are really trylocks. Yes, the patch did seem to fix the hanging problem that I saw when I just untar the kernel source files into a btrfs filesystem. However, when I tried did a kernel build on a 24-thread (-j 24) system, the build process hanged after a while. The following kind of stack trace messages were printed:
+>
+> INFO: task btrfs-transacti:16576 blocked for more than 120 seconds.
+>        Tainted: G            E 3.16.0-rc1 #5
+> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> btrfs-transacti D 000000000000000f     0 16576      2 0x00000000
+>   ffff88080eabbbf8 0000000000000046 ffff880803b98350 ffff88080eab8010
+>   0000000000012b80 0000000000012b80 ffff880805ed8f10 ffff88080d162310
+>   ffff88080eabbce8 ffff8807be170880 ffff8807be170888 7fffffffffffffff 
+> Call Trace:
+>   [<ffffffff81592de9>] schedule+0x29/0x70
+>   [<ffffffff815920bd>] schedule_timeout+0x13d/0x1d0
+>   [<ffffffff8106b474>] ? wake_up_worker+0x24/0x30
+>   [<ffffffff8106d595>] ? insert_work+0x65/0xb0
+>   [<ffffffff81593cc6>] wait_for_completion+0xc6/0x100
+>   [<ffffffff810868d0>] ? try_to_wake_up+0x220/0x220
+>   [<ffffffffa06bb9ba>] btrfs_wait_and_free_delalloc_work+0x1a/0x30 [btrfs]
+>   [<ffffffffa06d458d>] btrfs_run_ordered_operations+0x1dd/0x2c0 [btrfs]
+>   [<ffffffffa06b7fd5>] btrfs_flush_all_pending_stuffs+0x35/0x40 [btrfs]
+>   [<ffffffffa06ba099>] btrfs_commit_transaction+0x229/0xa30 [btrfs]
+>   [<ffffffff8105ef30>] ? lock_timer_base+0x70/0x70
+>   [<ffffffffa06b51db>] transaction_kthread+0x1eb/0x270 [btrfs]
+>   [<ffffffffa06b4ff0>] ? close_ctree+0x2d0/0x2d0 [btrfs]
+>   [<ffffffff8107544e>] kthread+0xce/0xf0
+>   [<ffffffff81075380>] ? kthread_freezable_should_stop+0x70/0x70
+>   [<ffffffff8159636c>] ret_from_fork+0x7c/0xb0
+>   [<ffffffff81075380>] ? kthread_freezable_should_stop+0x70/0x70
+>
+> It looks like some more work may still be needed. Or it could be a problem in my system configuration.
+>
+
+Umm, after applying Chris's patch to my environment, xfstests ran completely and the above messages were not output. (Are above messages another bug?)
+
+Thanks,
+Tsutomu
+
+

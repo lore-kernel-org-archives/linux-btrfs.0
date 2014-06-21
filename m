@@ -1,117 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from g6t1524.atlanta.hp.com ([15.193.200.67]:36416 "EHLO
-	g6t1524.atlanta.hp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756897AbaFUBM0 convert rfc822-to-8bit (ORCPT
+Received: from shadbolt.e.decadent.org.uk ([88.96.1.126]:53060 "EHLO
+	shadbolt.e.decadent.org.uk" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752139AbaFUMGD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 21:12:26 -0400
-From: "Long, Wai Man" <waiman.long@hp.com>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, Chris Mason <clm@fb.com>
-CC: Marc Dionne <marc.c.dionne@gmail.com>, Josef Bacik <jbacik@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Lockups with btrfs on 3.16-rc1 - bisected
-Date: Sat, 21 Jun 2014 01:09:47 +0000
-Message-ID: <401F72D6D1DFE3499766D25AA4EED18A356593C1@G5W2743.americas.hpqcorp.net>
-References: <CAB9dFdsyB40V2BGwdQKzSSz7YUWMh-C2AWdDNK=PMG9h+BO57w@mail.gmail.com>
-	<53A20FFF.3010807@hp.com>	<53A2125B.3050701@fb.com>
-	<53A21702.8090109@hp.com>	<53A21C78.1040809@fb.com>
-	<53A21E84.2050103@hp.com>	<53A22064.7080400@fb.com>
-	<53A2212E.7090907@hp.com>	<53A2268F.3080807@fb.com>
-	<CAB9dFds5J8Ti3CgtxHrgqM3j1TiwqYCnhP+A3Nb0q-FNgmQbXA@mail.gmail.com>
-	<53A22A01.7080505@hp.com>
-	<CAB9dFdvD9QMZ_rONhhP5ZD2E7+A7qxnsY978Snc3zHEbdPRszw@mail.gmail.com>
- <CAB9dFdtTFN+uQ8=WXVa0Y5GbBSYM5iVLgTaEeh_FqHt=XFKNvQ@mail.gmail.com>
- <53A246C6.5050408@fb.com> <53A2573B.1060901@hp.com>
- <53A31514.8030308@fb.com> <53A32353.5000104@hp.com>
- <53A343B9.3000900@fb.com> <53A35B31.4060203@fb.com>
- <53A3708E.9060203@hp.com> <53A3A897.3050202@jp.fujitsu.com>
-In-Reply-To: <53A3A897.3050202@jp.fujitsu.com>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+	Sat, 21 Jun 2014 08:06:03 -0400
+Message-ID: <1403352353.23472.67.camel@deadeye.wl.decadent.org.uk>
+Subject: Re: [v3.10.y][v3.11.y][v3.12.y][v3.13.y][v3.14.y][PATCH 1/1][V2]
+ ALSA: usb-audio: Prevent printk ratelimiting from spamming kernel log while
+ DEBUG not defined
+From: Ben Hutchings <ben@decadent.org.uk>
+To: Joseph Salisbury <joseph.salisbury@canonical.com>
+Cc: greg@kroah.com, kamal.mostafa@canonical.com, luis.henriques@canonical.com,
+        jslaby@suse.cz, clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Date: Sat, 21 Jun 2014 13:05:53 +0100
+In-Reply-To: <53A47BC4.8040406@canonical.com>
+References: <cover.1403113867.git.joseph.salisbury@canonical.com>
+		 <a377cdb51b1a98e9fa6bffaa124502fc15c47903.1403113867.git.joseph.salisbury@canonical.com>
+	 <1403142759.23472.28.camel@deadeye.wl.decadent.org.uk>
+	 <53A4515C.8090103@canonical.com> <53A47BC4.8040406@canonical.com>
+Content-Type: multipart/signed; micalg="pgp-sha512";
+	protocol="application/pgp-signature"; boundary="=-km7cYOiT9RrDw2QafFVk"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-It may be caused by an corrupted btrfs filesystem due to the repeating hanging during the test. As long as your guys don't any problem, I am happy with the patch.
+--=-km7cYOiT9RrDw2QafFVk
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Thank,
-Longman
+On Fri, 2014-06-20 at 14:21 -0400, Joseph Salisbury wrote:
+[...]
+> I looked at this some more.   It seems like my v2 backport may be the
+> most suitable for the releases mentioned in the subject line, but I'd
+> like to get additional feedback.
+>=20
+> The lines added by commit a5065eb just get removed by commit b7a77235.=
+=20
+> Also, if I apply commit a5065eb, it will also require a backport to pull
+> in just a piece of code(Remove snd_printk() and add dev_dbg()) from
+> another prior commit(0ba41d9).  No backport would be needed at all if I
+> cherry-pick 0ba41d9, but that commit seems to have too may changes for a
+> stable release.
 
+Keep the changes squashed together if you like, but do include both
+commit hashes and commit messages.
 
------Original Message-----
-From: Tsutomu Itoh [mailto:t-itoh@jp.fujitsu.com] 
-Sent: Thursday, June 19, 2014 11:21 PM
-To: Chris Mason
-Cc: Long, Wai Man; Marc Dionne; Josef Bacik; linux-btrfs@vger.kernel.org
-Subject: Re: Lockups with btrfs on 3.16-rc1 - bisected
+Ben.
 
-On 2014/06/20 8:21, Waiman Long wrote:
-> On 06/19/2014 05:50 PM, Chris Mason wrote:
->>>>
->>>> I would like to take back my comments. I took out the read_lock, 
->>>> but the process still hang while doing file activities on btrfs 
->>>> filesystem. So the problem is trickier than I thought. Below are 
->>>> the stack backtraces of some of the relevant processes.
->>>>
->>> You weren't wrong, but it was also the tree trylock code.  Our 
->>> trylocks only back off if the blocking lock is held.  
->>> btrfs_next_leaf needs it to be a true trylock.  The confusing part 
->>> is this hasn't really changed, but one of the callers must be a spinner where we used to have a blocker.
->> This is what I have queued up, it's working here.
->>
->> -chris
->>
->> commit ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
->> Author: Chris Mason<clm@fb.com>
->> Date:   Thu Jun 19 14:16:52 2014 -0700
->>
->>      Btrfs: fix deadlocks with trylock on tree nodes
->>
->>      The Btrfs tree trylock function is poorly named.  It always takes
->>      the spinlock and backs off if the blocking lock is held.  This
->>      can lead to surprising lockups because people expect it to really be a
->>      trylock.
->>
->>      This commit makes it a pure trylock, both for the spinlock and the
->>      blocking lock.  It also reworks the nested lock handling slightly to
->>      avoid taking the read lock while a spinning write lock might be held.
->>
->>      Signed-off-by: Chris Mason<clm@fb.com>
->
-> I didn't realize that those non-blocking lock functions are really trylocks. Yes, the patch did seem to fix the hanging problem that I saw when I just untar the kernel source files into a btrfs filesystem. However, when I tried did a kernel build on a 24-thread (-j 24) system, the build process hanged after a while. The following kind of stack trace messages were printed:
->
-> INFO: task btrfs-transacti:16576 blocked for more than 120 seconds.
->        Tainted: G            E 3.16.0-rc1 #5
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> btrfs-transacti D 000000000000000f     0 16576      2 0x00000000
->   ffff88080eabbbf8 0000000000000046 ffff880803b98350 ffff88080eab8010
->   0000000000012b80 0000000000012b80 ffff880805ed8f10 ffff88080d162310
->   ffff88080eabbce8 ffff8807be170880 ffff8807be170888 7fffffffffffffff 
-> Call Trace:
->   [<ffffffff81592de9>] schedule+0x29/0x70
->   [<ffffffff815920bd>] schedule_timeout+0x13d/0x1d0
->   [<ffffffff8106b474>] ? wake_up_worker+0x24/0x30
->   [<ffffffff8106d595>] ? insert_work+0x65/0xb0
->   [<ffffffff81593cc6>] wait_for_completion+0xc6/0x100
->   [<ffffffff810868d0>] ? try_to_wake_up+0x220/0x220
->   [<ffffffffa06bb9ba>] btrfs_wait_and_free_delalloc_work+0x1a/0x30 [btrfs]
->   [<ffffffffa06d458d>] btrfs_run_ordered_operations+0x1dd/0x2c0 [btrfs]
->   [<ffffffffa06b7fd5>] btrfs_flush_all_pending_stuffs+0x35/0x40 [btrfs]
->   [<ffffffffa06ba099>] btrfs_commit_transaction+0x229/0xa30 [btrfs]
->   [<ffffffff8105ef30>] ? lock_timer_base+0x70/0x70
->   [<ffffffffa06b51db>] transaction_kthread+0x1eb/0x270 [btrfs]
->   [<ffffffffa06b4ff0>] ? close_ctree+0x2d0/0x2d0 [btrfs]
->   [<ffffffff8107544e>] kthread+0xce/0xf0
->   [<ffffffff81075380>] ? kthread_freezable_should_stop+0x70/0x70
->   [<ffffffff8159636c>] ret_from_fork+0x7c/0xb0
->   [<ffffffff81075380>] ? kthread_freezable_should_stop+0x70/0x70
->
-> It looks like some more work may still be needed. Or it could be a problem in my system configuration.
->
+--=20
+Ben Hutchings
+Who are all these weirdos? - David Bowie, reading IRC for the first time
 
-Umm, after applying Chris's patch to my environment, xfstests ran completely and the above messages were not output. (Are above messages another bug?)
+--=-km7cYOiT9RrDw2QafFVk
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 
-Thanks,
-Tsutomu
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQIVAwUAU6V1Jue/yOyVhhEJAQqI1xAAvz7yt/S1TZw5QJB/QadDS3B8C6eJ3jh3
+gjhs2AnbU7DwujICfH+j75hrRlXXY13feZz2O4el3JJgnHmINixxgTvT6I8C+qKY
+3Azqi4iJRyk3pobeZz2OUUMrHQRSSKTgJafeWzrBwv9NewtMzC2+BWvfzk3VuivT
+XckHw/qRkAR5XETUHksWRHyMA7aJgXAt4zhlAxveAUvPBoQHJQALShP2GdLPFwCc
+9Yqx93BoQX8f4SAn+TaFgcVedROVCCLCzsG2y5NYP8dZTAgcDJ1dfnJYECZ8pb3L
+5fCjYVyqq1fO7q7v1X6qF6m4l0KYQdJNKZseDq9T6QKDoSYGV6tstxP7+n3H+OS5
+ti45HeiGDDpplMwoCWwSejCCl5UGPtlY47oagoSlDAskN6GTcENlL50S8Ol4lTkA
+he9pg4FNIho1qx+5SmlWS7MYjm4qbj/uTmwtVPSXp0eb3uZ4OZUCaHX/pK/II6YQ
+fHSquQb4zcmbRkQsTrT5PxDsP6oAuI3xne49wHm1vZJEyKqUV2cAxhz2iwSrQr7M
+SOJwfiYNTHUueHSH6T9AhyriwqJDxILXXHDxPfVbyndkPXbzl1+r+558VwYHyqm3
+2beXj9BwbNCZnJL6uJAGfPMnZl77NxMVSBGvjAHYDr7LVFr+ax0YlcGSagbTMbCZ
+R+abg2PZ02c=
+=i7Va
+-----END PGP SIGNATURE-----
 
+--=-km7cYOiT9RrDw2QafFVk--

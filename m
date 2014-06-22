@@ -1,61 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gitanes.rtfm.co.hu ([80.249.171.82]:48789 "EHLO
-	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751715AbaFVRKk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Jun 2014 13:10:40 -0400
-Message-ID: <53A70E0C.6000602@martos.bme.hu>
-Date: Sun, 22 Jun 2014 19:10:36 +0200
-From: Tamas Papp <tompos@martos.bme.hu>
-MIME-Version: 1.0
-To: george@chinilu.comHe, linux-btrfs@vger.kernel.org
-Subject: Re: open_ctree failed
-References: <539EF06A.4080803@martos.bme.hu> <539EF907.6010102@martos.bme.hu> <53A35B2D.4000606@martos.bme.hu> <53A37A9B.7020301@chinilu.com>
-In-Reply-To: <53A37A9B.7020301@chinilu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42574 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751572AbaFVSbs convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Jun 2014 14:31:48 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:62510 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1WymYN-002WIn-Me
+	for linux-btrfs@vger.kernel.org; Sun, 22 Jun 2014 12:31:48 -0600
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: btrfs on whole disk (no partitions)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAK5rZE6gfmQsZz3W_8t=pkKEk_rzqUn5hQVv0sbt8p7qbdhSdQ@mail.gmail.com>
+Date: Sun, 22 Jun 2014 12:31:44 -0600
+Message-Id: <DE35C679-30FE-44DB-9FD7-FD6DCD6FD615@colorremedies.com>
+References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com> <2316027.LZEnVG8laK@xev> <CAPLrYETdzeT_Yia-nnbZBMvGxU3x7tCFiJSv3rNJezMsjce3Zw@mail.gmail.com> <6CA8020B-EB92-4A44-8AA5-3F69709F81F2@colorremedies.com> <CAK5rZE6gfmQsZz3W_8t=pkKEk_rzqUn5hQVv0sbt8p7qbdhSdQ@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 06/20/2014 02:04 AM, George Mitchell wrote:
-> Hello Tamas,
->
-> I think it would help to provide more information than what you have 
-> posted.  "open_ctree" can cover a lot of territory.
->
-> 1)  I may be missing something, but I see no attachment.  I am not 
-> sure the mailing list can handle attachments?
+On Jun 22, 2014, at 1:49 AM, Imran Geriskovan <imran.geriskovan@gmail.com> wrote:
 
-Indeed, thanks!
+>> The 64KB Btrfs bootloader pad is 8 sector aligned, so for 512e AF disks
+>> there's no problem formatting the whole drive. The alignment problem
+>> actually happens when partitioning it, using old partition tools that don't
+>> align on 8 sector boundaries. There are some such tools still floating
+>> around.
+> 
+> A 'somewhat' related question:
+> 
+> So called Advanced Format drives has 4K physical sector size,
+> however they report 512B logical sector size.
+> 
+> How does linux kernel access those drives?
+> 512B or 4K at a time?
 
-chunk recover:
-http://pastebin.com/raw.php?i=01ZdbCDq
+Does anyone know if blktrace will intercept the actual SCSI commands sent to the drive? Or is there a better utility to use for this? When I use it unfiltered, I'm not seeing SCSI write commands at all.
 
-debug tree:
-http://pastebin.com/raw.php?i=LgKgEhiC
+This is the blktrace/blkparse for dd if=/dev/zero of=/dev/sda seek=430234064 count=8 oflag=direct
+https://docs.google.com/file/d/0B_2Asp8DGjJ9c3J0UXpzUEhNaGs/edit?pli=1
 
-dmesg:
-http://pastebin.com/raw.php?i=zZ5zVxue
+This is the blktrace/blkparse for dd if=/dev/zero of=/dev/sda bs=4096 seek=53779258 count=1
+https://docs.google.com/file/d/0B_2Asp8DGjJ9MnEwU0hDNE45dHc/edit?pli=1
 
-dmidecode:
-http://pastebin.com/raw.php?i=zZ5zVxue
+The dd command clearly shows a difference, but when I look at the ATA command set I'd expect the Linux SCSI layer to turn these dd commands into the same ATA command: basically a write start LBA and sector count. And the LBA and sector count can only be in 512 byte sector addresses because that's all a 512e type of AF disk understands.
 
-find root:
-http://pastebin.com/raw.php?i=zWdn56tR
+Chris Murphy
 
-show super:
-http://pastebin.com/raw.php?i=unqZECJ3
-
-super recover:
-http://pastebin.com/raw.php?i=y7fKtn3M
-
-> 2) I think it would help to include some sort of brief narrative as to 
-> what you are trying to do when you encounter the open_ctree failure.
-
-I'm just trying to mount the partition:
-
-mount -t btrfs /dev/sda4 /1
-
-
-Thanks,
-tamas

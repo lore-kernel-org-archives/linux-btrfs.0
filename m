@@ -1,42 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45349 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45634 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751358AbaFVBel convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1751605AbaFVBgw convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 Jun 2014 21:34:41 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59481 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1WyWfw-00303p-FK
-	for linux-btrfs@vger.kernel.org; Sat, 21 Jun 2014 19:34:32 -0600
+	Sat, 21 Jun 2014 21:36:52 -0400
 Content-Type: text/plain; charset=utf-8
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: btrfs on whole disk (no partitions)
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAPLrYETdzeT_Yia-nnbZBMvGxU3x7tCFiJSv3rNJezMsjce3Zw@mail.gmail.com>
-Date: Sat, 21 Jun 2014 19:34:30 -0600
-Message-Id: <6CA8020B-EB92-4A44-8AA5-3F69709F81F2@colorremedies.com>
-References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com> <2316027.LZEnVG8laK@xev> <CAPLrYETdzeT_Yia-nnbZBMvGxU3x7tCFiJSv3rNJezMsjce3Zw@mail.gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAPLrYET=97qfHWiDh0oKoYBU1r_RSkyma_mWKE=GSoTBFhm7GQ@mail.gmail.com>
+Date: Sat, 21 Jun 2014 19:36:47 -0600
+Cc: Imran Geriskovan <imran.geriskovan@gmail.com>, linux-btrfs@vger.kernel.org
+Message-Id: <1E0ACE08-C8A9-4E5C-8084-D3EB0E937B7B@colorremedies.com>
+References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com> <2316027.LZEnVG8laK@xev> <CAK5rZE4GVJ7qh4w=ecTZhZMANT0A6cU-6+jAbifNtoWFeYtf4Q@mail.gmail.com> <CAK5rZE4yA0PDR3S2RgTgXyQ=8ViRwSPg__DacPKXSpCmjzpW4w@mail.gmail.com> <CAPLrYET=97qfHWiDh0oKoYBU1r_RSkyma_mWKE=GSoTBFhm7GQ@mail.gmail.com>
+To: =?utf-8?Q?Daniel_Cegie=C5=82ka?= <daniel.cegielka@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jun 21, 2014, at 1:12 PM, Daniel Cegiełka <daniel.cegielka@gmail.com> wrote:
+On Jun 21, 2014, at 1:19 PM, Daniel Cegiełka <daniel.cegielka@gmail.com> wrote:
 
-> 2014-06-19 2:07 GMT+02:00 Russell Coker <russell@coker.com.au>:
+> 2014-06-19 11:11 GMT+02:00 Imran Geriskovan <imran.geriskovan@gmail.com>:
+>> On 6/19/14, Russell Coker <russell@coker.com.au> wrote:
 > 
->> For boot disks I use the traditional partitioning system.  So far I don't run
->> any systems that have a boot disk larger than 2TB so I haven't needed to use
->> GPT.
 >> 
->> I have a BTRFS RAID-1 on 2*3TB disks which have no partition tables, when the
->> filesystem is going to use the entire device and there's no boot loader there
->> is no reason to have a partition table.
+>> Grub installs itself and boots from Partitionless Btrfs disk.
+>> It is handy for straight forward installations.
+>> 
+>> However, IF you need boot partition (ie. initramfs and kernel to boot
+>> from encrypted root) its another story.
 > 
-> ok, but what about alignment? This can have a significant impact on performance.
+> zfs "solved" this problem in grub (libzfs). I think we can find a
+> solution to work around this problem.
 
-The 64KB Btrfs bootloader pad is 8 sector aligned, so for 512e AF disks there's no problem formatting the whole drive. The alignment problem actually happens when partitioning it, using old partition tools that don't align on 8 sector boundaries. There are some such tools still floating around.
+I don't know that this is a file system problem. There's some recent work being done in GRUB so that it's possible to use a dmcrypt+LUKS encrypted boot volume. Once that's working it shouldn't matter what the file system is.
 
 Chris Murphy

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob07.myregisteredsite.com ([209.17.115.45]:47851 "EHLO
-	atl4mhob07.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751545AbaFVOk2 (ORCPT
+Received: from atl4mhob14.myregisteredsite.com ([209.17.115.52]:41038 "EHLO
+	atl4mhob14.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751378AbaFVOp5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Jun 2014 10:40:28 -0400
-Received: from mailpod1.hostingplatform.com (atl4obmail01pod1.mgt.hosting.qts.netsol.com [10.30.71.113])
-	by atl4mhob07.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s5MEeR0c007312
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Jun 2014 10:40:27 -0400
-Message-ID: <53A6EB17.2090001@chinilu.com>
-Date: Sun, 22 Jun 2014 07:41:27 -0700
+	Sun, 22 Jun 2014 10:45:57 -0400
+Received: from mailpod1.hostingplatform.com (atl4obmail02pod1.mgt.hosting.qts.netsol.com [10.30.71.114])
+	by atl4mhob14.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s5MEjt43019085
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Jun 2014 10:45:55 -0400
+Message-ID: <53A6EC60.3030606@chinilu.com>
+Date: Sun, 22 Jun 2014 07:46:56 -0700
 From: George Mitchell <george@chinilu.com>
 Reply-To: george@chinilu.com
 MIME-Version: 1.0
@@ -57,7 +57,7 @@ On 06/22/2014 07:11 AM, Roman Mamedov wrote:
 > I'd be glad if you could support your Seagate 4K claim by any model names and
 > their smartctl output.
 >
-I am not sure I see anything wrong with that.  They are showing a 
-physical block size of 4096.  And it is the physical block size we care 
-about.  As I recall Western Digital drives, at least in the beginning, 
-were reporting 512 physical.  That was the problem.
+Here is the story:
+
+
+http://johannes-bauer.com/linux/wdc/?menuid=3

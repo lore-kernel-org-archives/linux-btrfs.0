@@ -1,105 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62179 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752565AbaFWKOo convert rfc822-to-8bit (ORCPT
+Received: from fgwmail.fujitsu.co.jp ([164.71.1.133]:38379 "EHLO
+	fgwmail.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752049AbaFWKse (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 06:14:44 -0400
-Message-ID: <53A7FE82.3070303@cn.fujitsu.com>
-Date: Mon, 23 Jun 2014 18:16:34 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+	Mon, 23 Jun 2014 06:48:34 -0400
+Message-ID: <53A805EF.6060906@jp.fujitsu.com>
+Date: Mon, 23 Jun 2014 19:48:15 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: Refactor btrfs_lock_cluster() to kill compiler
- warning
-References: <1403440209-13370-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1403440209-13370-1-git-send-email-geert@linux-m68k.org>
-Content-Type: text/plain; charset="UTF-8"
+To: Filipe David Borba Manana <fdmanana@gmail.com>, <fstests@vger.kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, <lczerner@redhat.com>
+Subject: Re: [PATCH] generic/017: skip invalid block sizes for btrfs
+References: <1403519280-24216-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1403519280-24216-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 22 Jun 2014 14:30:09 +0200, Geert Uytterhoeven wrote:
-> fs/btrfs/extent-tree.c: In function ‘btrfs_lock_cluster’:
-> fs/btrfs/extent-tree.c:6399: warning: ‘used_bg’ may be used uninitialized in this function
-> 
->   - Replace "again: ... goto again;" by standard C "while (1) { ... }",
->   - Move block not processed during the first iteration of the loop to the
->     end of the loop, which allows to kill the "locked" variable,
-> 
-> Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Hi Filipe,
 
-Looks good to me.
+(2014/06/23 19:28), Filipe David Borba Manana wrote:
+> In btrfs the block size (called sector size in btrfs) can not be
+> smaller then the page size. Therefore skip block sizes smaller
+> then page size if the fs is btrfs, so that the test can succeed
+> on btrfs (testing only with block sizes of 4kb on systems with a
+> page size of 4Kb).
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 
-Reviewed-and-Tested-by: Miao Xie <miaox@cn.fujitsu.com>
+I consider it doesn't work since this test is not for Btrfs.
+Please see the following code.
+
+tests/generic/017:
+===
+for (( BSIZE = 1024; BSIZE <= 4096; BSIZE *= 2 )); do
+
+	length=$(($BLOCKS * $BSIZE))
+	case $FSTYP in
+	xfs)
+	_scratch_mkfs -b size=$BSIZE >> $seqres.full 2>&1
+	;;
+	ext4)
+	_scratch_mkfs -b $BSIZE >> $seqres.full 2>&1
+	;;
+	esac
+	_scratch_mount >> $seqres.full 2>&1
+===
+
+There is no btrfs here.
+
+This test was moved to shared/005 to generic/017
+at 21723cdbf303e031d6429f67fec9768750a5db7d.
+
+Original supported fs is here.
+===============================================================================
+supported_fs xfs ext4
+===============================================================================
+
+I suspect that Lukas moved this test to generic/ by mistake or forgot to
+add "$FSTYP == btrfs" case.
+
+Thanks,
+Satoru
 
 > ---
-> Please review, compile tested only.
-> ---
->  fs/btrfs/extent-tree.c | 42 ++++++++++++++++++++----------------------
->  1 file changed, 20 insertions(+), 22 deletions(-)
+>   tests/generic/017 | 8 ++++++++
+>   1 file changed, 8 insertions(+)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 99c253918208..e151c4a73d7b 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6397,36 +6397,34 @@ btrfs_lock_cluster(struct btrfs_block_group_cache *block_group,
->  		   int delalloc)
->  {
->  	struct btrfs_block_group_cache *used_bg;
-> -	bool locked = false;
-> -again:
+> diff --git a/tests/generic/017 b/tests/generic/017
+> index 13b7254..6495be5 100755
+> --- a/tests/generic/017
+> +++ b/tests/generic/017
+> @@ -51,6 +51,14 @@ BLOCKS=10240
+>   
+>   for (( BSIZE = 1024; BSIZE <= 4096; BSIZE *= 2 )); do
+>   
+> +	# btrfs doesn't support block size smaller then page size
+> +	if [ "$FSTYP" == "btrfs" ]; then
+> +		if (( $BSIZE < `getconf PAGE_SIZE` )); then
+> +			echo "80"
+> +			continue
+> +		fi
+> +	fi
 > +
->  	spin_lock(&cluster->refill_lock);
-> -	if (locked) {
-> -		if (used_bg == cluster->block_group)
-> -			return used_bg;
-> +	while (1) {
-> +		used_bg = cluster->block_group;
-> +		if (!used_bg)
-> +			return NULL;
->  
-> -		up_read(&used_bg->data_rwsem);
-> -		btrfs_put_block_group(used_bg);
-> -	}
-> +		if (used_bg == block_group)
-> +			return used_bg;
->  
-> -	used_bg = cluster->block_group;
-> -	if (!used_bg)
-> -		return NULL;
-> +		btrfs_get_block_group(used_bg);
->  
-> -	if (used_bg == block_group)
-> -		return used_bg;
-> +		if (!delalloc)
-> +			return used_bg;
->  
-> -	btrfs_get_block_group(used_bg);
-> +		if (down_read_trylock(&used_bg->data_rwsem))
-> +			return used_bg;
->  
-> -	if (!delalloc)
-> -		return used_bg;
-> +		spin_unlock(&cluster->refill_lock);
-> +		down_read(&used_bg->data_rwsem);
->  
-> -	if (down_read_trylock(&used_bg->data_rwsem))
-> -		return used_bg;
-> +		spin_lock(&cluster->refill_lock);
-> +		if (used_bg == cluster->block_group)
-> +			return used_bg;
->  
-> -	spin_unlock(&cluster->refill_lock);
-> -	down_read(&used_bg->data_rwsem);
-> -	locked = true;
-> -	goto again;
-> +		up_read(&used_bg->data_rwsem);
-> +		btrfs_put_block_group(used_bg);
-> +	}
->  }
->  
->  static inline void
+>   	length=$(($BLOCKS * $BSIZE))
+>   	case $FSTYP in
+>   	xfs)
 > 
 

@@ -1,109 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:38711 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753473AbaFWLGM (ORCPT
+Received: from fw7a-t3e-f4f.wadns.net ([41.185.62.79]:36300 "EHLO
+	fw7a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752443AbaFWLrI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 07:06:12 -0400
-Received: by mail-wi0-f177.google.com with SMTP id r20so3951127wiv.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 04:06:07 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: fix crash when starting transaction
-Date: Mon, 23 Jun 2014 12:58:59 +0100
-Message-Id: <1403524739-28436-1-git-send-email-fdmanana@gmail.com>
+	Mon, 23 Jun 2014 07:47:08 -0400
+Message-ID: <53A81393.7000709@swiftspirit.co.za>
+Date: Mon, 23 Jun 2014 13:46:27 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
+        Filipe David Borba Manana <fdmanana@gmail.com>,
+        fstests@vger.kernel.org
+CC: linux-btrfs@vger.kernel.org, lczerner@redhat.com
+Subject: Re: [PATCH] generic/017: skip invalid block sizes for btrfs
+References: <1403519280-24216-1-git-send-email-fdmanana@gmail.com> <53A805EF.6060906@jp.fujitsu.com>
+In-Reply-To: <53A805EF.6060906@jp.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Often when starting a transaction we commit the currently running transaction,
-which can end up writing block group caches when the current process has its
-journal_info set to NULL (and not to a transaction). This makes our assertion
-at btrfs_check_data_free_space() (current_journal != NULL) fail, resulting
-in a crash/hang. Therefore fix it by setting journal_info.
+Not subscribed to fstests so not sure if this will reach that mailing 
+list...
 
-Two different traces of this issue follow below.
+I feel Takeuchi's instincts are right, even if the analysis *may* be 
+wrong. As is it looks like there should be a btrfs) selector inside the 
+case.
 
-1)
+On 23/06/14 12:48, Satoru Takeuchi wrote:
+> Hi Filipe,
+>
+> (2014/06/23 19:28), Filipe David Borba Manana wrote:
+>> In btrfs the block size (called sector size in btrfs) can not be
+>> smaller then the page size. Therefore skip block sizes smaller
+>> then page size if the fs is btrfs, so that the test can succeed
+>> on btrfs (testing only with block sizes of 4kb on systems with a
+>> page size of 4Kb).
+>>
+>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> I consider it doesn't work since this test is not for Btrfs.
+> Please see the following code.
+>
+> tests/generic/017:
+> ===
+> for (( BSIZE = 1024; BSIZE <= 4096; BSIZE *= 2 )); do
+>
+> 	length=$(($BLOCKS * $BSIZE))
+> 	case $FSTYP in
+> 	xfs)
+> 	_scratch_mkfs -b size=$BSIZE >> $seqres.full 2>&1
+> 	;;
+> 	ext4)
+> 	_scratch_mkfs -b $BSIZE >> $seqres.full 2>&1
+> 	;;
+> 	esac
+> 	_scratch_mount >> $seqres.full 2>&1
+> ===
+>
+> There is no btrfs here.
+>
+> This test was moved to shared/005 to generic/017
+> at 21723cdbf303e031d6429f67fec9768750a5db7d.
+>
+> Original supported fs is here.
+> ===============================================================================
+> supported_fs xfs ext4
+> ===============================================================================
+>
+> I suspect that Lukas moved this test to generic/ by mistake or forgot to
+> add "$FSTYP == btrfs" case.
+>
+> Thanks,
+> Satoru
+>
+>> ---
+>>    tests/generic/017 | 8 ++++++++
+>>    1 file changed, 8 insertions(+)
+>>
+>> diff --git a/tests/generic/017 b/tests/generic/017
+>> index 13b7254..6495be5 100755
+>> --- a/tests/generic/017
+>> +++ b/tests/generic/017
+>> @@ -51,6 +51,14 @@ BLOCKS=10240
+>>    
+>>    for (( BSIZE = 1024; BSIZE <= 4096; BSIZE *= 2 )); do
+>>    
+>> +	# btrfs doesn't support block size smaller then page size
+>> +	if [ "$FSTYP" == "btrfs" ]; then
+>> +		if (( $BSIZE < `getconf PAGE_SIZE` )); then
+>> +			echo "80"
+>> +			continue
+>> +		fi
+>> +	fi
+>> +
+>>    	length=$(($BLOCKS * $BSIZE))
+>>    	case $FSTYP in
+>>    	xfs)
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-    [51502.241936] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
-    [51502.242213] ------------[ cut here ]------------
-    [51502.242493] kernel BUG at fs/btrfs/ctree.h:3964!
-    [51502.242669] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
-    (...)
-    [51502.244010] Call Trace:
-    [51502.244010]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
-    [51502.244010]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
-    [51502.244010]  [<ffffffffa0357a6a>] commit_cowonly_roots+0x164/0x226 [btrfs]
-    [51502.244010]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
-    [51502.244010]  [<ffffffff8168ec7b>] ? _raw_spin_unlock+0x2b/0x40
-    [51502.244010]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
-    [51502.244010]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
-    [51502.244010]  [<ffffffffa02d73e1>] __unlink_start_trans+0x31/0xe0 [btrfs]
-    [51502.244010]  [<ffffffffa02dea67>] btrfs_unlink+0x37/0xc0 [btrfs]
-    [51502.244010]  [<ffffffff811bb054>] ? do_unlinkat+0x114/0x2a0
-    [51502.244010]  [<ffffffff811baebc>] vfs_unlink+0xcc/0x150
-    [51502.244010]  [<ffffffff811bb1a0>] do_unlinkat+0x260/0x2a0
-    [51502.244010]  [<ffffffff811a9ef4>] ? filp_close+0x64/0x90
-    [51502.244010]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
-    [51502.244010]  [<ffffffff81349cab>] ? trace_hardirqs_on_thunk+0x3a/0x3f
-    [51502.244010]  [<ffffffff811be9eb>] SyS_unlinkat+0x1b/0x40
-    [51502.244010]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
-    [51502.244010] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 71 13 36 a0 48 89 fe 31 c0 48 c7 c7 b8 43 36 a0 48 89 e5 e8 5d b0 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
-    [51502.244010] RIP  [<ffffffffa03575da>] assfail.constprop.88+0x1e/0x20 [btrfs]
 
-2)
-
-    [25405.097230] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
-    [25405.097488] ------------[ cut here ]------------
-    [25405.097767] kernel BUG at fs/btrfs/ctree.h:3964!
-    [25405.097940] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
-    (...)
-    [25405.100008] Call Trace:
-    [25405.100008]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
-    [25405.100008]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
-    [25405.100008]  [<ffffffffa035755a>] commit_cowonly_roots+0x164/0x226 [btrfs]
-    [25405.100008]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
-    [25405.100008]  [<ffffffff8109c170>] ? bit_waitqueue+0xc0/0xc0
-    [25405.100008]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
-    [25405.100008]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
-    [25405.100008]  [<ffffffffa02e3407>] btrfs_create+0x47/0x210 [btrfs]
-    [25405.100008]  [<ffffffffa02d74cc>] ? btrfs_permission+0x3c/0x80 [btrfs]
-    [25405.100008]  [<ffffffff811bc63b>] vfs_create+0x9b/0x130
-    [25405.100008]  [<ffffffff811bcf19>] do_last+0x849/0xe20
-    [25405.100008]  [<ffffffff811b9409>] ? link_path_walk+0x79/0x820
-    [25405.100008]  [<ffffffff811bd5b5>] path_openat+0xc5/0x690
-    [25405.100008]  [<ffffffff810ab07d>] ? trace_hardirqs_on+0xd/0x10
-    [25405.100008]  [<ffffffff811cdcd2>] ? __alloc_fd+0x32/0x1d0
-    [25405.100008]  [<ffffffff811be2a3>] do_filp_open+0x43/0xa0
-    [25405.100008]  [<ffffffff811cddf1>] ? __alloc_fd+0x151/0x1d0
-    [25405.100008]  [<ffffffff811abcfc>] do_sys_open+0x13c/0x230
-    [25405.100008]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
-    [25405.100008]  [<ffffffff811abe12>] SyS_open+0x22/0x30
-    [25405.100008]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
-    [25405.100008] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 51 13 36 a0 48 89 fe 31 c0 48 c7 c7 d0 43 36 a0 48 89 e5 e8 6d b5 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
-    [25405.100008] RIP  [<ffffffffa03570ca>] assfail.constprop.88+0x1e/0x20 [btrfs]
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
- fs/btrfs/transaction.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ac984a3..fe4abe9 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -491,7 +491,11 @@ again:
- 	smp_mb();
- 	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
- 	    may_wait_transaction(root, type)) {
-+		void *journal_info = current->journal_info;
-+	        if (!journal_info)
-+			current->journal_info = h;
- 		btrfs_commit_transaction(h, root);
-+		current->journal_info = journal_info;
- 		goto again;
- 	}
- 
 -- 
-1.9.1
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

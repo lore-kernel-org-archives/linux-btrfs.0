@@ -1,63 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49186 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:49272 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753886AbaFWOMQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 10:12:16 -0400
-Date: Mon, 23 Jun 2014 16:12:14 +0200
+	id S1753890AbaFWOP7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Jun 2014 10:15:59 -0400
+Date: Mon, 23 Jun 2014 16:15:57 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs-progs: deal with invalid option combinations
- for btrfs-image
-Message-ID: <20140623141214.GF1553@twin.jikos.cz>
+Subject: Re: [PATCH 3/4] btrfs-progs: delete invalid output file when
+ btrfs-image failed
+Message-ID: <20140623141557.GG1553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1403142363-29482-1-git-send-email-guihc.fnst@cn.fujitsu.com>
- <1403142363-29482-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+ <1403142363-29482-3-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1403142363-29482-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1403142363-29482-3-git-send-email-guihc.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 19, 2014 at 09:46:01AM +0800, Gui Hecheng wrote:
-> For btrfs-image,
-> 	dump 	may not come with option '-o'
-> 	-r	may not come with option '-c', '-s', '-w', dev_cnt != 1
-> 	-m	may not come with dev_cnt < 2
-> All of the above should be regarded as invalid combinations,
-> and the usage will show up.
+On Thu, Jun 19, 2014 at 09:46:02AM +0800, Gui Hecheng wrote:
+> When btrfs-image failed to create an image, the invalid output file
+> had better be deleted to prevent being used mistakenly in the future.
+> 
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  btrfs-image.c | 10 +++++++++-
+>  1 file changed, 9 insertions(+), 1 deletion(-)
+> 
+> diff --git a/btrfs-image.c b/btrfs-image.c
+> index 549722c..b235b87 100644
+> --- a/btrfs-image.c
+> +++ b/btrfs-image.c
+> @@ -2598,8 +2598,16 @@ int main(int argc, char *argv[])
+>  out:
+>  	if (out == stdout)
+>  		fflush(out);
+> -	else
+> +	else {
+>  		fclose(out);
+> +		if (ret && create) {
+> +			ret = unlink(target);
 
-The generic usage works, but is not very descriptive what really
-happened. Would be good to print a message as soon as an error is
-detectd. See below:
+The previous value is overwritten and in case of unlink() success it's
+returned as success of main(), which is not true. So a local variable
+has to be used instead.
 
-> @@ -2500,15 +2501,20 @@ int main(int argc, char *argv[])
->  		}
->  	}
+> +			if (ret)
+> +				fprintf(stderr,
+> +					"unlink output file failed : %s\n",
+> +					strerror(errno));
+> +		}
+> +	}
 >  
-> -	if ((old_restore) && create)
-> -		print_usage();
-
-In this case the old code makes more sense followed by the message that
-create and restore cannot be used at the same time.
-
-> -	if (multi_devices && dev_cnt < 2)
-> -		print_usage();
-
-Applies to both modes, eg. "not enoug devices specified for -m option".
-
-> -	if (!multi_devices && dev_cnt != 1)
-> +	if (create) {
-> +		usage_error = old_restore;
-> +	} else {
-> +		usage_error = walk_trees || sanitize || compress_level;
-
-Error message here if usage_error is set.
-
-> +		if (multi_devices)
-> +			usage_error = usage_error || (dev_cnt < 2);
-> +		else
-> +			usage_error = usage_error || (dev_cnt != 1);
-
-Could be merged with the multi_devices check above, accepts only one
-without -m option.
+>  	return !!ret;

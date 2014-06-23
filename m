@@ -1,69 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail.fujitsu.co.jp ([164.71.1.133]:54888 "EHLO
-	fgwmail.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965771AbaFSXvS (ORCPT
+Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:59279 "EHLO
+	fgwmail2.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751145AbaFWB5k (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jun 2014 19:51:18 -0400
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail.fujitsu.co.jp (Postfix) with ESMTP id 161B33EE0C8
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 08:51:17 +0900 (JST)
+	Sun, 22 Jun 2014 21:57:40 -0400
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail2.fujitsu.co.jp (Postfix) with ESMTP id 929BA3EE0BC
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 10:57:38 +0900 (JST)
 Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 10ECAAC058C
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 08:51:16 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id BBE421DB804B
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 08:51:15 +0900 (JST)
-Message-ID: <53A37765.7020206@jp.fujitsu.com>
-Date: Fri, 20 Jun 2014 08:51:01 +0900
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 8BD2BAC04B8
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 10:57:37 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 21E6A1DB8049
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 10:57:37 +0900 (JST)
+Message-ID: <53A78988.7050602@jp.fujitsu.com>
+Date: Mon, 23 Jun 2014 10:57:28 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, Adam Buchbinder <abuchbinder@google.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Fix undefined behavior in radix-tree.c.
-References: <1402694330-21211-1-git-send-email-abuchbinder@google.com> <53A12FAE.7060307@jp.fujitsu.com> <20140618144342.GV1903@twin.jikos.cz> <53A2389F.6050404@jp.fujitsu.com> <20140619132845.GC1903@suse.cz>
-In-Reply-To: <20140619132845.GC1903@suse.cz>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+To: Nils Steinger <git@n-st.de>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: Add uninstall targets to Makefiles.
+References: <1403293685-23536-1-git-send-email-git@n-st.de> <1403293685-23536-2-git-send-email-git@n-st.de>
+In-Reply-To: <1403293685-23536-2-git-send-email-git@n-st.de>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+Hi Nils,
 
-(2014/06/19 22:28), David Sterba wrote:
-> On Thu, Jun 19, 2014 at 10:10:55AM +0900, Satoru Takeuchi wrote:
->> It's fixed at 430d275a399.
->>
->> ===============================================================================
->> commit 430d275a399175c7c0673459738979287ec1fd22
->> Author: Peter Lund <firefly@vax64.dk>
->> Date:   Tue Oct 16 23:29:35 2007 -0700
->>
->>      avoid negative (and full-width) shifts in radix-tree.c
->> ...
->> ===============================================================================
->>
->> Adam, David, how about import this patch from kernel, rather than
->> writing btrfs-progs's own patch?
+(2014/06/21 4:48), Nils Steinger wrote:
+> Signed-off-by: Nils Steinger <git@n-st.de>
+> ---
+>   Documentation/Makefile | 4 ++++
+>   Makefile               | 9 +++++++++
+>   2 files changed, 13 insertions(+)
 >
-> Well, I think there's non-trivial time spent by Adam on the patch so I'd
-> rather keep the credit, even if a patch that backports the fix from
-> kernel would look cleaner in git log. Such things happen, sometimes it
-> makes sense to replace patches or do changes inline.
->
-> The progs development is moving forward quickly, a clean patch history
-> is most useful when there is a separate stable branch that receives
-> bugfixes as it helps the backporters to identify complete fixes. Not the
-> case for progs right now.
->
->> I consider It's better to regularly sync such utility code with
->> the newest kernel code for the long term...
->
-> Yes. The radix- or rb- tree code does not change often though, we can do
-> a sync now and be fine for some time.
+> diff --git a/Documentation/Makefile b/Documentation/Makefile
+> index 45299bb..5c9780b 100644
+> --- a/Documentation/Makefile
+> +++ b/Documentation/Makefile
+> @@ -76,6 +76,10 @@ install-man: man
+>   	$(INSTALL) -m 644 $(GZ_MAN8) $(DESTDIR)$(man8dir)
+>   	$(LNS) btrfs-check.8.gz $(DESTDIR)$(man8dir)
+>   
+> +uninstall:
+> +	cd $(DESTDIR)$(man8dir); rm -f btrfs-check.8.gz $(GZ_MAN8)
+> +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(man8dir)
+> +
 
-OK, I see. Thank you for your clear explanation.
+This code snippet looks good.
+
+>   clean:
+>   	$(RM) *.xml *.xml+ *.8 *.8.gz
+>   
+> diff --git a/Makefile b/Makefile
+> index 76565e8..4cafa37 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -257,6 +257,15 @@ $(INSTALLDIRS):
+>   	@echo "Making install in $(patsubst install-%,%,$@)"
+>   	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst install-%,%,$@) install
+>   
+> +uninstall:
+> +	$(Q)$(MAKE) $(MAKEOPTS) -C Documentation uninstall
+> +	cd $(DESTDIR)$(incdir); rm -f $(headers)
+> +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(incdir)
+> +	cd $(DESTDIR)$(libdir); rm -f $(lib_links)
+
+You forgot to remove $(libs) here.
 
 Thanks,
 Satoru
 
-
+> +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(libdir)
+> +	cd $(DESTDIR)$(bindir); rm -f btrfsck fsck.btrfs $(progs)
+> +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(bindir)
+> +
+>   ifneq ($(MAKECMDGOALS),clean)
+>   -include $(objects:.o=.o.d) $(cmd-objects:.o=.o.d) $(subst .btrfs,, $(filter-out btrfsck.o.d, $(progs:=.o.d)))
+>   endif
+>
 

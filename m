@@ -1,75 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:52489 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751767AbaFWLBa (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:61295 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752559AbaFWLBm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 07:01:30 -0400
-Received: by mail-wi0-f171.google.com with SMTP id n15so3990585wiw.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 04:01:27 -0700 (PDT)
+	Mon, 23 Jun 2014 07:01:42 -0400
+Received: by mail-wi0-f179.google.com with SMTP id cc10so4015562wib.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 04:01:41 -0700 (PDT)
 From: Filipe David Borba Manana <fdmanana@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH 5/6 v5] Btrfs: add missing cleanup on sysfs init failure
-Date: Mon, 23 Jun 2014 13:01:11 +0100
-Message-Id: <1403524871-2131-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1398002808-11080-1-git-send-email-fdmanana@gmail.com>
-References: <1398002808-11080-1-git-send-email-fdmanana@gmail.com>
+Subject: [PATCH 6/6 v5] Btrfs: add send_stream_version attribute to sysfs
+Date: Mon, 23 Jun 2014 13:01:22 +0100
+Message-Id: <1403524882-2173-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1398002847-11144-1-git-send-email-fdmanana@gmail.com>
+References: <1398002847-11144-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we failed during initialization of sysfs, we weren't unregistering the
-top level btrfs sysfs entry nor the debugfs stuff.
-Not unregistering the top level sysfs entry makes future attempts to reload
-the btrfs module impossible and the following is reported in dmesg:
+So that applications can find out what's the highest send stream
+version supported/implemented by the running kernel:
 
-[ 2246.451296] WARNING: CPU: 3 PID: 10999 at fs/sysfs/dir.c:486 sysfs_warn_dup+0x91/0xb0()
-[ 2246.451298] sysfs: cannot create duplicate filename '/fs/btrfs'
-[ 2246.451298] Modules linked in: btrfs(+) raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc parport psmouse serio_raw pcspkr evbug i2c_piix4 e1000 floppy [last unloaded: btrfs]
-[ 2246.451310] CPU: 3 PID: 10999 Comm: modprobe Tainted: G        W    3.13.0-fdm-btrfs-next-24+ #7
-[ 2246.451311] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
-[ 2246.451312]  0000000000000009 ffff8800d353fa08 ffffffff816f1da6 0000000000000410
-[ 2246.451314]  ffff8800d353fa58 ffff8800d353fa48 ffffffff8104a32c ffff88020821a290
-[ 2246.451316]  ffff88020821a290 ffff88020821a290 ffff8802148f0000 ffff8800d353fb80
-[ 2246.451318] Call Trace:
-[ 2246.451322]  [<ffffffff816f1da6>] dump_stack+0x4e/0x68
-[ 2246.451324]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
-[ 2246.451325]  [<ffffffff8104a416>] warn_slowpath_fmt+0x46/0x50
-[ 2246.451328]  [<ffffffff81367dc5>] ? strlcat+0x65/0x90
-(....)
+    $ cat /sys/fs/btrfs/send/stream_version
+    2
 
 Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
 
 V1..V4: There's no v1, v2, v3 and v4. Bumped directly to v5 to make all patches
     in the series have the same version.
 V5: Rebased against latest chris/integration branch.
 
- fs/btrfs/sysfs.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ fs/btrfs/send.h  |  1 +
+ fs/btrfs/sysfs.c | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
 
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 987936c..047fd6d 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -22,6 +22,7 @@
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+ #define BTRFS_SEND_STREAM_VERSION_1 1
+ #define BTRFS_SEND_STREAM_VERSION_2 2
++#define BTRFS_SEND_STREAM_VERSION_LATEST BTRFS_SEND_STREAM_VERSION_2
+ 
+ #define BTRFS_SEND_BUF_SIZE (1024 * 64)
+ #define BTRFS_SEND_READ_SIZE (1024 * 48)
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index df39458..06ad529 100644
+index 06ad529..9869d94 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -710,10 +710,18 @@ int btrfs_init_sysfs(void)
+@@ -31,6 +31,7 @@
+ #include "transaction.h"
+ #include "sysfs.h"
+ #include "volumes.h"
++#include "send.h"
  
- 	ret = btrfs_init_debugfs();
- 	if (ret)
--		return ret;
-+		goto out1;
+ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
  
- 	init_feature_attrs();
- 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
-+	if (ret)
-+		goto out2;
+@@ -700,6 +701,26 @@ static int btrfs_init_debugfs(void)
+ 	return 0;
+ }
+ 
++static ssize_t send_stream_version_show(struct kobject *kobj,
++					struct kobj_attribute *a,
++					char *buf)
++{
++	return snprintf(buf, PAGE_SIZE, "%d\n",
++			BTRFS_SEND_STREAM_VERSION_LATEST);
++}
 +
-+	return 0;
-+out2:
-+	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
-+out1:
-+	kset_unregister(btrfs_kset);
++BTRFS_ATTR(stream_version, 0444, send_stream_version_show);
++
++static struct attribute *btrfs_send_attrs[] = {
++	BTRFS_ATTR_PTR(stream_version),
++	NULL
++};
++
++static const struct attribute_group btrfs_send_attr_group = {
++	.name = "send",
++	.attrs = btrfs_send_attrs,
++};
++
+ int btrfs_init_sysfs(void)
+ {
+ 	int ret;
+@@ -716,8 +737,13 @@ int btrfs_init_sysfs(void)
+ 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ 	if (ret)
+ 		goto out2;
++	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_send_attr_group);
++	if (ret)
++		goto out3;
  
- 	return ret;
+ 	return 0;
++out3:
++	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ out2:
+ 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
+ out1:
+@@ -729,6 +755,7 @@ out1:
+ void btrfs_exit_sysfs(void)
+ {
+ 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
++	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_send_attr_group);
+ 	kset_unregister(btrfs_kset);
+ 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
  }
 -- 
 1.9.1

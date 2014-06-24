@@ -1,69 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16560 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S965558AbaFTLNT (ORCPT
+Received: from fgwmail2.fujitsu.co.jp ([164.71.1.135]:55706 "EHLO
+	fgwmail2.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751676AbaFXHcd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jun 2014 07:13:19 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5KBDEej017032
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Jun 2014 19:13:14 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fsck: reduce memory usage for extents check
-Date: Fri, 20 Jun 2014 19:09:07 +0800
-Message-ID: <1403262547-11963-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	Tue, 24 Jun 2014 03:32:33 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail2.fujitsu.co.jp (Postfix) with ESMTP id E85D93EE0C8
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 16:32:31 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 076C1AC015A
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 16:32:31 +0900 (JST)
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id B4EB91DB8048
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 16:32:30 +0900 (JST)
+Message-ID: <53A9290D.6090202@jp.fujitsu.com>
+Date: Tue, 24 Jun 2014 16:30:21 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: <linux-btrfs@vger.kernel.org>
+CC: Adam Buchbinder <abuchbinder@google.com>, <dave@jikos.cz>
+Subject: [PATCH] Avoid double-free of fs_devices->list.
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Steps to reproduce:
+I found the following patch is insufficient.
 
- # mkfs.btrfs -f /dev/sda9 -b 2g
- # mount /dev/sda9 /mnt
- # dd if=/dev/zero of=/mnt/data bs=4k oflag=direct
- # btrfs file df /mnt
+===============================================================================
+commit 6e6b32ddf58db54f714d0f263c2589f4859e8b5e
+Author: Adam Buchbinder <abuchbinder@google.com>
+Date:   Fri Jun 13 16:43:56 2014 -0700
 
-    Data, single: total=1.66GiB, used=1.66GiB
-    System, single: total=4.00MiB, used=16.00KiB
-    Metadata, single: total=200.00MiB, used=67.88MiB
+    btrfs-progs: Fix a use-after-free in the volumes code.
+===============================================================================
 
-For a filesystem without snapshots, 70M metadata, extent
-checking eats max memory about 110M, this is a nightmare
-for some system with low memory.
+"btrfs filesystem show <dev>" with this patch causes segmentation fault
+if "<dev>" is a not-mounted Btrfs filesystem.
 
-It is very likely that extent record can be freed quickly
-for a filesystem without snapshots, improve this by trying
-if it can free memory after adding data/tree backrefs.
+===============================================================================
+# ./btrfs filesystem show /dev/sdd1
+Label: none  uuid: <cut here>
+        Total devices 1 FS bytes used 112.00KiB
+        devid    1 size 59.12GiB used 2.04GiB path /dev/sdd1
+                                                                                                                             
+Segmentation fault (core dumped)
+===============================================================================
 
-This patch reduces max memory cost from 110M to 40M for
-extents checking for the above case.
+It's due to double-free of fs_devices->list as follows.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+===============================================================================
+cmd_show
+  -> list_del(&fs_devices->list)     # 1st one.
+  -> btrfs_close_devices(fs_devices)
+    -> list_del(&fs_devices->list)   # <- 2nd one introduced at 6e6b32dd.
+                                          Double-free happens here.
+===============================================================================
+
+First list_del() can safely be removed because fs_devices->list will be
+deleted by second one, soon.
+
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: Adam Buchbinder <abuchbinder@google.com>  
+
 ---
- cmds-check.c | 2 ++
- 1 file changed, 2 insertions(+)
+ cmds-filesystem.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 26baab0..ac97e48 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2980,6 +2980,7 @@ static int add_tree_backref(struct cache_tree *extent_cache, u64 bytenr,
- 		}
- 		back->node.found_extent_tree = 1;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index b1ba508..14cb6e0 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -716,7 +716,6 @@ devs_only:
+ 	while (!list_empty(all_uuids)) {
+ 		fs_devices = list_entry(all_uuids->next,
+ 					struct btrfs_fs_devices, list);
+-		list_del(&fs_devices->list);
+ 		btrfs_close_devices(fs_devices);
  	}
-+	maybe_free_extent_rec(extent_cache, rec);
- 	return 0;
- }
- 
-@@ -3046,6 +3047,7 @@ static int add_data_backref(struct cache_tree *extent_cache, u64 bytenr,
- 		back->num_refs = num_refs;
- 		back->node.found_extent_tree = 1;
- 	}
-+	maybe_free_extent_rec(extent_cache, rec);
- 	return 0;
- }
- 
+ out:
 -- 
-1.9.0
+1.9.3
 

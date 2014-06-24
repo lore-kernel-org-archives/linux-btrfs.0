@@ -1,66 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56708 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750712AbaFXEQC convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 00:16:02 -0400
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from mail-qc0-f169.google.com ([209.85.216.169]:59856 "EHLO
+	mail-qc0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750806AbaFXEte (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 00:49:34 -0400
+Received: by mail-qc0-f169.google.com with SMTP id c9so7027310qcz.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Jun 2014 21:49:33 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com>
+References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com>
+ <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
+ <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com>
+From: Mike Hartman <mike@hartmanipulation.com>
+Date: Tue, 24 Jun 2014 00:49:13 -0400
+Message-ID: <CAB=7dhm=rj4wQF5CE1FNKXKMnrcXkJWYYkLqvf0WnzaM810qkA@mail.gmail.com>
 Subject: Re: Btrfs suddenly unmountable, open_ctree failed
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
-Date: Mon, 23 Jun 2014 22:15:59 -0600
+To: Chris Murphy <lists@colorremedies.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com>
-References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com> <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
-To: Mike Hartman <mike@hartmanipulation.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+>> Of course it could just be a bug so it's worth trying David's integration branch.
+>
+>I'll try that shortly.
+>
+>>         * Firmware Version: 0006
+>>
+>> Firmware 0007 is current for this SSD.
+>
+>I assume that's probably not something I should mess with right now
+though, right?
+>
+>>  6  0x008  4             9821  Number of Hardware Resets
+>>
+>> Why is the hardware being reset so many times?
+>
+>What exactly is that stat measuring? This is a 3 year old laptop with
+>a 3 year old SSD. The whole system certainly gets restarted more often
+>than a desktop or server would, but not an average of 9 times a day.
+>Probably not even a maximum of 9 times a day. Could that reset be
+>something related to acpi?
 
-On Jun 23, 2014, at 8:58 PM, Mike Hartman <mike@hartmanipulation.com> wrote:
+Actually, now that I think about it, that may be related to the errors
+I saw months ago. I had some bad blocks or something, and when the
+system attempted to access them I would get a bunch of errors in the
+logs. I believe one of the things the system would do was attempt to
+reset the drive connection (maybe multiple times). So that could have
+driven that number up substantially. The "Lifetime Power-On Resets" is
+only 1033, which seems about right for the age of the drive.
 
-> I have a dd image, but not a btrfs-image. I ran the btrfs-image
-> command, but it threw the same errors as everything else and generated
-> a 0 byte file.
-> 
-> I agree that it SOUNDS like some kind of media failure, but if so it
-> seems odd to me that I was able to dd the entire partition with no
-> read errors. Even if there was something wrong with the drive that
-> prevented writing you'd think the ability to read it all would result
-> in a recoverable image.
+I zeroed out the drive and ran every smartctl test on it I could find
+and it never threw any more errors. I really pounded it, a good solid
+week or so of scans and data writes. Finally decided that perhaps
+those blocks went bad but didn't get properly marked as bad and
+removed from active duty until I zeroed everything out.
 
-I've read of too many SSD failure cases to trust a graceful failure of an SSD. I guess I don't really trust an HDD either but at least they don't self destruct upon reaching end of life as apparently some SSDs do:
-http://techreport.com/review/26523/the-ssd-endurance-experiment-casualties-on-the-way-to-a-petabyte
+Whatever the underlying issue was this time, I don't think it's
+exactly the same, because in that previous scenario the problem blocks
+would consistently throw errors. I couldn't get a clean dd image of
+the drive. I had to use ddrescue and live with a few small gaps. But I
+was still able to mount that rescued image (it was ext4) and get
+pretty much all of the data back. This time I'm encountering no read
+errors at the drive level and had no trouble creating the dd image.
 
-Anyway, it could be ECC failure where it says pass but it's actually corrupt, in which case it's silent data corruption which neither triggers ECC errors or read failures. You just get bad data. And really bad luck if this happens with Btrfs metadata that isn't DUP but is fundamental for mounting and/or repairing the system so it can be mounted.
-
-Of course it could just be a bug so it's worth trying David's integration branch.
-
-
-	• Firmware Version: 0006
-
-Firmware 0007 is current for this SSD.
-
-
-	• 173 Wear_Leveling_Count     PO--CK   086   086   000    -    728
-	•   1  0x018  6      49304625928  Logical Sectors Written
-	• 202 Perc_Rated_Life_Used    ---RC-   086   086   000    -    14
-
-Those are all reasonable.
-
-	• 181 Non4k_Aligned_Access    -O---K   100   100   000    -    36 0 35
-
-Probably unrelated, but that's a curious attribute and value.
-
-	• 199 UDMA_CRC_Error_Count    -OS-CK   100   100   000    -    15
-
-That's not good in that it means interface problems have happened at some point. But they can happen and just not get caught, which results in corruption. Drive ECC will not correct these problems. So how many good writes on the way to the drive but were corrupted by the time they got there? Obviously there's no way to know this from available information.
-
- 6  0x008  4             9821  Number of Hardware Resets
-
-Why is the hardware being reset so many times?
-
-
-Chris Murphy
-
+I'll see if I can track down any of the smartctl results from back
+then and compare the "Number of Hardware Resets" value, as well as
+UDMA_CRC_Error_Count.

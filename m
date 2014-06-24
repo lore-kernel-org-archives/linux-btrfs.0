@@ -1,86 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from omr-m05.mx.aol.com ([64.12.143.79]:59138 "EHLO
-	omr-m05.mx.aol.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751401AbaFXNtc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 09:49:32 -0400
-Received: from mtaout-mbb01.mx.aol.com (mtaout-mbb01.mx.aol.com [172.26.254.109])
-	by omr-m05.mx.aol.com (Outbound Mail Relay) with ESMTP id B5169702720F1
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 09:43:58 -0400 (EDT)
-Received: from [192.168.178.62] (port-92-195-21-33.dynamic.qsc.de [92.195.21.33])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	by mtaout-mbb01.mx.aol.com (MUA/Third Party Client Interface) with ESMTPSA id D49B23800008D
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 09:43:57 -0400 (EDT)
-Message-ID: <53A9809C.30705@aol.de>
-Date: Tue, 24 Jun 2014 15:43:56 +0200
-From: Karl-Philipp Richter <krichter722@aol.de>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Assertion `!(exist->nmirrors >= 2)' failed
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56843 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754579AbaFXPke convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 11:40:34 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Btrfs suddenly unmountable, open_ctree failed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAB=7dh=KejR8HH-uEt0-D8WffEJYOpRop_UVY_CDYQeM9UMZjQ@mail.gmail.com>
+Date: Tue, 24 Jun 2014 09:40:31 -0600
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <E57F7583-D093-4B00-B665-536130EB3C7F@colorremedies.com>
+References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com> <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <53A8E079.1060803@cn.fujitsu.com> <CAB=7dhm4wz7tXm7am0ezNvAiH+YjKBYrL53AQsn9DMQJwaus4Q@mail.gmail.com> <53A8EBEB.1030702@cn.fujitsu.com> <CAB=7dh=KejR8HH-uEt0-D8WffEJYOpRop_UVY_CDYQeM9UMZjQ@mail.gmail.com>
+To: Mike Hartman <mike@hartmanipulation.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: quoted-printable
 
-Hi together,
-I wondered whether
+On Jun 23, 2014, at 11:39 PM, Mike Hartman <mike@hartmanipulation.com> wrote:
+>> 
+>> https://github.com/kdave/btrfs-progs.git  integration-20140619
+> 
+> Thanks. I pulled that version and retried everything in my original
+> transcript, including the "btrfs check --init-csum-tree
+> --init-extent-tree". Results are identical across the board.
 
-    $ sudo btrfs rescue chunk-recover -y /dev/loop2p1
-    btrfs: chunk-recover.c:124: process_extent_buffer: Assertion
-`!(exist->nmirrors >=3D 2)' failed.
-    $ echo $?
-    134
-
-is an error in btrfs or an error message of (the correctly working)
-btrfs. Any ideas what this could mean? I'm having this trouble with a
-system which is so messed up that I even can't restore
-
-    $ sudo btrfs restore /dev/loop2p1 /mnt/data_extension/restore
-    parent transid verify failed on 1068982272 wanted 47618 found 47575
-    parent transid verify failed on 1068982272 wanted 47618 found 47575
-    parent transid verify failed on 1068982272 wanted 47618 found 47575
-    parent transid verify failed on 1068982272 wanted 47618 found 47575
-    Ignoring transid failure
-    leaf parent key incorrect 1068982272
-    Couldn't setup extent tree
-    parent transid verify failed on 1068982272 wanted 47618 found 47575
-    Ignoring transid failure
-    leaf parent key incorrect 1068982272
-    Couldn't read fs root: -1
-
-I'm issueing the command because it seems to be the last thing I can do
-to rescue any data of that partition.
-
-This occurs with v3.12 (output of `btrfs --version`) as well as the
-latest commit 24cf4d8c3ee924b474f68514e0167cc2e602a48d of btrfs-progs.
-
-Best regards,
-Kalle Richter
+Does this version's btrfs-image allow you to make an image of the file system?
 
 
---DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Chris Murphy
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQEcBAEBAgAGBQJTqYCcAAoJEGadKJ8eJ7ZGE64H/2n43QDo9dIuzzigWKW0LFoV
-syPWXRfify1lYhYM/rtgJ8RYNUY5ep4ISfj3/2PBI97FJncn+Z1GtKgu1DR8VUZo
-cYbU4YBFhFxWraXjObWMJMRQsaeQvNmdwEvSO2tDJVeKA354IeIzBvXJZY9qqXGx
-K01NOSCfbEfr7kGiuDxooWqgiosjJdvP6EwC+Y+g7MfEiMMcERF3smlUj95FRwZ0
-DLvyHgZfdY/uxS4EOiDQVYJORMG9b5UWGW5ra95FRiHA12PP/GLg09jSQJ50zBxf
-U0Z+GN59wlYZ4jbB5QV/9a5nMwbUay2fKE+fCZu5Slg+K1GiaW2aH9ARrR/istU=
-=fuv7
------END PGP SIGNATURE-----
-
---DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W--

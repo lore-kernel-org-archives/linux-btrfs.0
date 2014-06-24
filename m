@@ -1,78 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18789 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753100AbaFXMwB (ORCPT
+Received: from omr-m05.mx.aol.com ([64.12.143.79]:59138 "EHLO
+	omr-m05.mx.aol.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751401AbaFXNtc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 08:52:01 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s5OCq0Mc001130
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:52:01 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s5OCpxCY014595
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:52:00 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s5OCpxHI011332
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:51:59 GMT
-From: Anand Jain <Anand.Jain@oracle.com>
+	Tue, 24 Jun 2014 09:49:32 -0400
+Received: from mtaout-mbb01.mx.aol.com (mtaout-mbb01.mx.aol.com [172.26.254.109])
+	by omr-m05.mx.aol.com (Outbound Mail Relay) with ESMTP id B5169702720F1
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 09:43:58 -0400 (EDT)
+Received: from [192.168.178.62] (port-92-195-21-33.dynamic.qsc.de [92.195.21.33])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	by mtaout-mbb01.mx.aol.com (MUA/Third Party Client Interface) with ESMTPSA id D49B23800008D
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 09:43:57 -0400 (EDT)
+Message-ID: <53A9809C.30705@aol.de>
+Date: Tue, 24 Jun 2014 15:43:56 +0200
+From: Karl-Philipp Richter <krichter722@aol.de>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: we are not yet ready if device is missing
-Date: Tue, 24 Jun 2014 20:51:43 +0800
-Message-Id: <1403614303-4210-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1403614303-4210-1-git-send-email-Anand.Jain@oracle.com>
-References: <1403614303-4210-1-git-send-email-Anand.Jain@oracle.com>
+Subject: Assertion `!(exist->nmirrors >= 2)' failed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reproducer:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W
+Content-Type: text/plain; charset=ISO-8859-15
+Content-Transfer-Encoding: quoted-printable
 
-mkfs.btrfs -f -draid1 -mraid1 /dev/sdf /dev/sdd
-modprobe -r btrfs && modprobe btrfs
-mount -o degraded /dev/sdd /btrfs  <-- calls add_missing_dev() to add missing btrfs_device
-umount /btrfs
-btrfs dev ready /dev/sdd
-echo $?
-0
-mount /dev/sdd /btrfs
-mount: wrong fs type, bad option, bad superblock on /dev/sdd,
-       missing codepage or helper program, or other error
+Hi together,
+I wondered whether
 
-fix this by checking if the device name is present in the BTRFS_IOC_DEVICES_READY
-ioctl
+    $ sudo btrfs rescue chunk-recover -y /dev/loop2p1
+    btrfs: chunk-recover.c:124: process_extent_buffer: Assertion
+`!(exist->nmirrors >=3D 2)' failed.
+    $ echo $?
+    134
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/super.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+is an error in btrfs or an error message of (the correctly working)
+btrfs. Any ideas what this could mean? I'm having this trouble with a
+system which is so messed up that I even can't restore
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b9efe58..74ef9bf 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1857,6 +1857,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	struct btrfs_fs_devices *fs_devices;
- 	int ret = -ENOTTY;
- 	void __user *argp = (void __user *)arg;
-+	struct btrfs_device *dev;
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -1882,6 +1883,14 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 		kfree(vol);
- 		if (ret)
- 			break;
-+
-+		list_for_each_entry(dev, &fs_devices->devices, dev_list) {
-+			if (dev->name)
-+				continue;
-+
-+			return !0;
-+		}
-+
- 		ret = !(fs_devices->num_devices == fs_devices->total_devices);
- 		break;
- 	case BTRFS_IOC_GET_FSLIST:
--- 
-2.0.0.257.g75cc6c6
+    $ sudo btrfs restore /dev/loop2p1 /mnt/data_extension/restore
+    parent transid verify failed on 1068982272 wanted 47618 found 47575
+    parent transid verify failed on 1068982272 wanted 47618 found 47575
+    parent transid verify failed on 1068982272 wanted 47618 found 47575
+    parent transid verify failed on 1068982272 wanted 47618 found 47575
+    Ignoring transid failure
+    leaf parent key incorrect 1068982272
+    Couldn't setup extent tree
+    parent transid verify failed on 1068982272 wanted 47618 found 47575
+    Ignoring transid failure
+    leaf parent key incorrect 1068982272
+    Couldn't read fs root: -1
 
+I'm issueing the command because it seems to be the last thing I can do
+to rescue any data of that partition.
+
+This occurs with v3.12 (output of `btrfs --version`) as well as the
+latest commit 24cf4d8c3ee924b474f68514e0167cc2e602a48d of btrfs-progs.
+
+Best regards,
+Kalle Richter
+
+
+--DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
+
+iQEcBAEBAgAGBQJTqYCcAAoJEGadKJ8eJ7ZGE64H/2n43QDo9dIuzzigWKW0LFoV
+syPWXRfify1lYhYM/rtgJ8RYNUY5ep4ISfj3/2PBI97FJncn+Z1GtKgu1DR8VUZo
+cYbU4YBFhFxWraXjObWMJMRQsaeQvNmdwEvSO2tDJVeKA354IeIzBvXJZY9qqXGx
+K01NOSCfbEfr7kGiuDxooWqgiosjJdvP6EwC+Y+g7MfEiMMcERF3smlUj95FRwZ0
+DLvyHgZfdY/uxS4EOiDQVYJORMG9b5UWGW5ra95FRiHA12PP/GLg09jSQJ50zBxf
+U0Z+GN59wlYZ4jbB5QV/9a5nMwbUay2fKE+fCZu5Slg+K1GiaW2aH9ARrR/istU=
+=fuv7
+-----END PGP SIGNATURE-----
+
+--DcsmVRBSEtbh5uW6AttFpkoSMmPiNiq5W--

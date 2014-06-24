@@ -1,69 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62766 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:53492 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750775AbaFXBs0 (ORCPT
+	with ESMTP id S1751014AbaFXC5M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 21:48:26 -0400
-Message-ID: <1403574192.3826.2.camel@localhost.localdomain>
-Subject: Re: [PATCH 2/4] btrfs-progs: deal with invalid option combinations
- for btrfs-image
+	Mon, 23 Jun 2014 22:57:12 -0400
+Message-ID: <1403578314.6694.2.camel@localhost.localdomain>
+Subject: Re: [PATCH v2 2/4] btrfs-progs: deal with invalid option
+ combinations for btrfs-image
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <dsterba@suse.cz>
 CC: <linux-btrfs@vger.kernel.org>
-Date: Tue, 24 Jun 2014 09:43:12 +0800
-In-Reply-To: <20140623141214.GF1553@twin.jikos.cz>
-References: <1403142363-29482-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1403142363-29482-2-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20140623141214.GF1553@twin.jikos.cz>
+Date: Tue, 24 Jun 2014 10:51:54 +0800
+In-Reply-To: <1403577393-6096-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <20140623141214.GF1553@twin.jikos.cz>
+	 <1403577393-6096-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-06-23 at 16:12 +0200, David Sterba wrote:
-> On Thu, Jun 19, 2014 at 09:46:01AM +0800, Gui Hecheng wrote:
-> > For btrfs-image,
-> > 	dump 	may not come with option '-o'
-> > 	-r	may not come with option '-c', '-s', '-w', dev_cnt != 1
-> > 	-m	may not come with dev_cnt < 2
-> > All of the above should be regarded as invalid combinations,
-> > and the usage will show up.
+On Tue, 2014-06-24 at 10:36 +0800, Gui Hecheng wrote:
+> For btrfs-image,
+> 	dump 	may not come with option '-o'
+> 	-r	may not come with option '-c', '-s', '-w', dev_cnt != 1
+> 	-m	may not come with dev_cnt < 2
+> All of the above should be regarded as invalid combinations,
+> and the usage will show up.
 > 
-> The generic usage works, but is not very descriptive what really
-> happened. Would be good to print a message as soon as an error is
-> detectd. See below:
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+> changelog
+> 	v1->v2: add error messages for each case
+> ---
+>  btrfs-image.c | 24 ++++++++++++++++++------
+>  1 file changed, 18 insertions(+), 6 deletions(-)
 > 
-> > @@ -2500,15 +2501,20 @@ int main(int argc, char *argv[])
-> >  		}
-> >  	}
-> >  
-> > -	if ((old_restore) && create)
-> > -		print_usage();
-> 
-> In this case the old code makes more sense followed by the message that
-> create and restore cannot be used at the same time.
-> 
-> > -	if (multi_devices && dev_cnt < 2)
-> > -		print_usage();
-> 
-> Applies to both modes, eg. "not enoug devices specified for -m option".
-> 
-> > -	if (!multi_devices && dev_cnt != 1)
-> > +	if (create) {
-> > +		usage_error = old_restore;
-> > +	} else {
-> > +		usage_error = walk_trees || sanitize || compress_level;
-> 
-> Error message here if usage_error is set.
-> 
-> > +		if (multi_devices)
-> > +			usage_error = usage_error || (dev_cnt < 2);
-> > +		else
-> > +			usage_error = usage_error || (dev_cnt != 1);
-> 
-> Could be merged with the multi_devices check above, accepts only one
-> without -m option.
-
-Yes, I'll arrange the error messages well soon. Thanks.
-
+> diff --git a/btrfs-image.c b/btrfs-image.c
+> index db5d193..c18dff1 100644
+> --- a/btrfs-image.c
+> +++ b/btrfs-image.c
+> @@ -2462,6 +2462,7 @@ int main(int argc, char *argv[])
+>  	int ret;
+>  	int sanitize = 0;
+>  	int dev_cnt = 0;
+> +	int usage_error = 0;
+>  	FILE *out;
+>  
+>  	while (1) {
+> @@ -2500,15 +2501,26 @@ int main(int argc, char *argv[])
+>  		}
+>  	}
+>  
+> -	if ((old_restore) && create)
+> -		print_usage();
+> -
+>  	argc = argc - optind;
+>  	dev_cnt = argc - 1;
+>  
+> -	if (multi_devices && dev_cnt < 2)
+> -		print_usage();
+> -	if (!multi_devices && dev_cnt != 1)
+> +	if (create) {
+> +		usage_error = old_restore;
+> +		fprintf(stderr, "Usage error: create and restore cannot be used at the same time\n");
+> +	} else {
+> +		usage_error = walk_trees || sanitize || compress_level;
+> +		fprintf(stderr, "Usage error: use -w, -s, -c options for restore makes no sense\n");
+> +
+> +		if (multi_devices) {
+> +			usage_error = usage_error || (dev_cnt < 2);
+> +			fprintf(stderr, "Usage error: not enough devices specified for -m option\n");
+> +		} else {
+> +			usage_error = usage_error || (dev_cnt != 1);
+> +			fprintf(stderr, "Usage error: accepts only 1 device without -m option\n");
+> +		}
+> +	}
+> +
+> +	if (usage_error)
+>  		print_usage();
+>  
+>  	source = argv[optind];
+Ah, sorry, I forget about the if() judgement, please *ignore* this one.
 

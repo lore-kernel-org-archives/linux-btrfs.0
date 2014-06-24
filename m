@@ -1,62 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48510 "EHLO plane.gmane.org"
+Received: from m.nv-systems.net ([176.9.99.115]:41046 "EHLO m.nv-systems.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753134AbaFXKAd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 06:00:33 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1WzNWd-0000n8-Jr
-	for linux-btrfs@vger.kernel.org; Tue, 24 Jun 2014 12:00:27 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:00:27 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:00:27 +0200
+	id S1753541AbaFXKrm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 06:47:42 -0400
+Received: from [192.168.7.22] (p57BCF87A.dip0.t-ipconnect.de [87.188.248.122])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	by m.nv-systems.net (Postfix) with ESMTPSA id 3ECB67D1BB8
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:41:51 +0200 (CEST)
+Message-ID: <53A955F8.8090101@nv-systems.net>
+Date: Tue, 24 Jun 2014 12:42:00 +0200
+From: Gerald Hopf <gerald.hopf@nv-systems.net>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs suddenly unmountable, open_ctree failed
-Date: Tue, 24 Jun 2014 10:00:14 +0000 (UTC)
-Message-ID: <pan$240f5$66208982$352d3c2d$120cf64f@cox.net>
-References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com>
-	<ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com>
-	<CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
-	<144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com>
-	<CAB=7dhms_ehP4y+L_tMBrdUnJiwXAOn7E4Fa9u3euVBwBKHOKA@mail.gmail.com>
-	<27F042E8-CC94-497D-96B7-283AA1CBD296@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: "-d single" for data blocks on a multiple devices doesn't work as
+ it should
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Mon, 23 Jun 2014 23:19:37 -0600 as excerpted:
+Dear btrfs-developers,
 
->> I zeroed out the drive and ran every smartctl test on it I could find
->> and it never threw any more errors.
-> 
-> Zeroing SSDs isn't a good way to do it. Use ATA Secure Erase instead.
-> The drive is overprovisioned, so there are pages without LBAs assigned,
-> which means they can't be written to by software. Plus "zeros" make SSD
-> pages full of zeros, rather than being empty and ready to be written to.
-> ATA Secure Erase is supposed to make them empty (write ready) and does
-> it for all pages.
-> 
-> http://mackonsti.wordpress.com/2011/11/22/ssd-secure-erase-ata-command/
+thank you for making such a nice and innovative filesystem. I do have a 
+small complaint however :-)
 
-Tho in this case, the bad section was obviously assigned as it was 
-triggering errors, and writing zeros to the entire thing might just have 
-triggered the drive to cycle the bad area out of use, replacing it from 
-the reserves.
+I read the documentation and liked the idea of having a multiple-device 
+filesystem with mirrored metadata while having data in "single" mode. 
+This would be perfect for my backup purposes, where I don't want to have 
+a parity disk - but I also don't want to lose the _entire_ backup in the 
+worst case scenario of having already lost the main data RAID5 array and 
+then one of my backup HDDs refusing to spin up or failing while restoring).
 
-So while zeroing an SSD is a bad idea in general, it still might be 
-worthwhile to try in a case like this, particularly if after a a secure-
-erase command the media is still giving errors.
+For testing purposes, I therefore created a 2x 3TB btrfs filesystem as 
+described in the "Using BTRFS with Multiple Devices" Wiki:
+# Use full capacity of multiple drives with different sizes (metadata 
+mirrored, data not mirrored and not striped)
+mkfs.btrfs -d single /dev/sdh1 /dev/sdi1
 
-IOW, YMMV. =:^)
+and proceeded to copy about 5.5TB of data on it, about 800 
+subdirectories each containing a few small files (1-5KB), a medium sized 
+file (50-100MB) and a big file (3GB-15GB). The copy process was 
+completely sequential (only one task copying from source to destination, 
+no random writes, no simultaneous copies to the btrfs volume).
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+After copying, I then unmounted the filesystem, switched off one of the 
+two 3TB USB disks and mounted the remaining 3TB disk in recovery mode 
+(-o degraded,ro) and proceeded to check whether any data was still left 
+alive.
 
+Result:
+- the directories and files were there and looked good (metadata raid1 
+seems to work)
+- some small files I tested were fine (probably 50%?)
+- even some the medium sized files (50-100MB) were fine (not sure about 
+the percentage, might have been less than for the small files)
+- not a single one (!) of the big files (3GB-15GB) survived
+
+Conclusion:
+The "-d single" allocator is useless (or broken?). It seems to randomly 
+write data blocks to each of the multiple devices, thereby combining the 
+disadvantage of a single disk (low write speed) with the disadvantage of 
+raid0 (loss of all files when a device is missing), while not offering 
+any benefits.
+
+In my opinion to offer any benefit compared to raid0 for data, "-d 
+single" should never allocate blocks for a single file across multiple 
+disks unless you start to run ouf of contiguous space when the disk gets 
+almost full. Is there any chance that "-d single" will be fixed at some 
+point in the future?
+
+Thanks for listening,
+Gerald

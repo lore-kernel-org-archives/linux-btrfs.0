@@ -1,57 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13102 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:50319 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757158AbaFSBvT (ORCPT
+	with ESMTP id S1750827AbaFXDVf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jun 2014 21:51:19 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5J1pG38020925
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jun 2014 09:51:16 +0800
+	Mon, 23 Jun 2014 23:21:35 -0400
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/4] btrfs-progs: cleanup duplicate assignment of variable leaf for btrfs-image
-Date: Thu, 19 Jun 2014 09:46:00 +0800
-Message-ID: <1403142363-29482-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 2/4] btrfs-progs: deal with invalid option combinations for btrfs-image
+Date: Tue, 24 Jun 2014 11:16:12 +0800
+Message-ID: <1403579772-7795-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <20140623141214.GF1553@twin.jikos.cz>
+References: <20140623141214.GF1553@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The value of variable leaf in while loop don't have to be set
-for every round. Just move it outside.
+For btrfs-image,
+	dump 	may not come with option '-o'
+	-r	may not come with option '-c', '-s', '-w', dev_cnt != 1
+	-m	may not come with dev_cnt < 2
+All of the above should be regarded as invalid combinations,
+and the usage will show up.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- btrfs-image.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+changelog
+	v1->v2: add error messages for each case
+	v2->v3: add missing judgements
+---
+ btrfs-image.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
 
 diff --git a/btrfs-image.c b/btrfs-image.c
-index cf1fe2d..db5d193 100644
+index db5d193..9e5b8b3 100644
 --- a/btrfs-image.c
 +++ b/btrfs-image.c
-@@ -1090,8 +1090,9 @@ static int copy_space_cache(struct btrfs_root *root,
- 		return ret;
+@@ -2462,6 +2462,7 @@ int main(int argc, char *argv[])
+ 	int ret;
+ 	int sanitize = 0;
+ 	int dev_cnt = 0;
++	int usage_error = 0;
+ 	FILE *out;
+ 
+ 	while (1) {
+@@ -2500,15 +2501,30 @@ int main(int argc, char *argv[])
+ 		}
  	}
  
-+	leaf = path->nodes[0];
-+
- 	while (1) {
--		leaf = path->nodes[0];
- 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			ret = btrfs_next_leaf(root, path);
- 			if (ret < 0) {
-@@ -1157,8 +1158,9 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
- 	}
- 	ret = 0;
+-	if ((old_restore) && create)
+-		print_usage();
+-
+ 	argc = argc - optind;
+ 	dev_cnt = argc - 1;
  
-+	leaf = path->nodes[0];
+-	if (multi_devices && dev_cnt < 2)
+-		print_usage();
+-	if (!multi_devices && dev_cnt != 1)
++	if (create) {
++		if (old_restore) {
++			fprintf(stderr, "Usage error: create and restore cannot be used at the same time\n");
++			usage_error++;
++		}
++	} else {
++		if (walk_trees || sanitize || compress_level) {
++			fprintf(stderr, "Usage error: use -w, -s, -c options for restore makes no sense\n");
++			usage_error++;
++		}
++		if (multi_devices && dev_cnt < 2) {
++			fprintf(stderr, "Usage error: not enough devices specified for -m option\n");
++			usage_error++;
++		}
++		if (!multi_devices && dev_cnt != 1) {
++			fprintf(stderr, "Usage error: accepts only 1 device without -m option\n");
++			usage_error++;
++		}
++	}
 +
- 	while (1) {
--		leaf = path->nodes[0];
- 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			ret = btrfs_next_leaf(extent_root, path);
- 			if (ret < 0) {
++	if (usage_error)
+ 		print_usage();
+ 
+ 	source = argv[optind];
 -- 
 1.8.1.4
 

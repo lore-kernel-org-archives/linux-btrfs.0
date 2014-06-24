@@ -1,80 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58189 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2455 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751406AbaF0Cdx (ORCPT
+	with ESMTP id S1751066AbaFXBMG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jun 2014 22:33:53 -0400
+	Mon, 23 Jun 2014 21:12:06 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5R2XnSv021571
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 10:33:49 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5O1C3lp010398
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 09:12:03 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Check superblock's checksum in btrfs-progs.
-Date: Fri, 27 Jun 2014 10:34:54 +0800
-Message-ID: <1403836494-26904-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs-progs: Add minimum device size check.
+Date: Tue, 24 Jun 2014 09:13:04 +0800
+Message-ID: <1403572384-22541-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs-progs will read the superblock without checking the checksum.
-When all superblocks are corrupted, continuing will cause disaster.
+Btrfs has global block reservation, so even mkfs.btrfs can execute
+without problem, there is still a possibility that the filesystem can't
+be mounted.
+For example when mkfs.btrfs on a 8M file on x86_64 platform, kernel will
+refuse to mount due to ENOSPC, since system block group takes 4M and
+mixed block group takes 4M, and global block reservation will takes all
+the 4M from mixed block group, which makes btrfs unable to create uuid
+tree.
 
-So this patch will add checksum check for btrfs-progs when reading
-superblocks.
+This patch will add minimum device size check before actually mkfs.
+The minimum size calculation uses a simplified one:
+minimum_size_for_each_dev = 2 * (system block group + global block rsv)
+and global block rsv = leafsize << 10
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- disk-io.c | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+changelog:
+v2: Use leafsize to get consistent with kernel global_block_rsv
+calculation.
+v3: Change words in error string.
+    Use separate inline function to calculate global block rsv size.
+    Rename the minimum device size calculation function.
+---
+ mkfs.c  | 28 ++++++++++++++++++++++++++++
+ utils.c | 20 ++++++++++++++++++++
+ utils.h | 21 +++++++++++++++++++++
+ 3 files changed, 69 insertions(+)
 
-diff --git a/disk-io.c b/disk-io.c
-index 8db0335..3524834 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -990,7 +990,8 @@ int btrfs_scan_fs_devices(int fd, const char *path,
- 	ret = btrfs_scan_one_device(fd, path, fs_devices,
- 				    &total_devs, sb_bytenr);
- 	if (ret) {
--		fprintf(stderr, "No valid Btrfs found on %s\n", path);
-+		fprintf(stderr, "No valid Btrfs found or all superblock are corrupted on %s\n",
-+			path);
- 		return ret;
+diff --git a/mkfs.c b/mkfs.c
+index 16e9222..d384e91 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1431,6 +1431,34 @@ int main(int ac, char **av)
+ 		}
  	}
  
-@@ -1100,7 +1101,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	else
- 		ret = btrfs_read_dev_super(fp, disk_super, sb_bytenr);
++	/* Check device/block_count after the leafsize is determined */
++	if (block_count && block_count < btrfs_min_dev_size(leafsize)) {
++		fprintf(stderr,
++			"Size '%llu' is too small to make a usable btrfs\n",
++			block_count);
++		fprintf(stderr,
++			"Minimum size for btrfs filesystem is %llu\n",
++			btrfs_min_dev_size(leafsize));
++		exit(1);
++	}
++	for (i = saved_optind; i < saved_optind + dev_cnt; i++) {
++		file = av[i];
++		ret = test_minimum_size(file, leafsize);
++		if (ret < 0) {
++			fprintf(stderr, "Failed to check size for '%s': %s\n",
++				file, strerror(-ret));
++			exit (1);
++		}
++		if (ret > 0) {
++			fprintf(stderr,
++				"'%s' is too small to make a usable btrfs.\n",
++				file);
++			fprintf(stderr,
++				"Minimum size for each btrfs device is %llu.\n",
++				btrfs_min_dev_size(leafsize));
++			exit(1);
++		}
++	}
+ 	ret = test_num_disk_vs_raid(metadata_profile, data_profile,
+ 			dev_cnt, mixed, estr);
  	if (ret) {
--		printk("No valid btrfs found\n");
-+		fprintf(stderr, "No valid btrfs found or all super blocks are corrupted\n");
- 		goto out_devices;
- 	}
+diff --git a/utils.c b/utils.c
+index e130849..b078c95 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2206,3 +2206,23 @@ int find_mount_root(const char *path, char **mount_root)
+ 	free(longest_match);
+ 	return ret;
+ }
++
++int test_minimum_size(const char *file, u64 leafsize)
++{
++	int fd;
++	struct stat statbuf;
++
++	fd = open(file, O_RDONLY);
++	if (fd < 0)
++		return -errno;
++	if (stat(file, &statbuf) < 0) {
++		close(fd);
++		return -errno;
++	}
++	if (btrfs_device_size(fd, &statbuf) < btrfs_min_dev_size(leafsize)) {
++		close(fd);
++		return 1;
++	}
++	close(fd);
++	return 0;
++}
+diff --git a/utils.h b/utils.h
+index db8d63c..e1b6ff2 100644
+--- a/utils.h
++++ b/utils.h
+@@ -101,5 +101,26 @@ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
+ int find_mount_root(const char *path, char **mount_root);
+ int get_device_info(int fd, u64 devid,
+ 		struct btrfs_ioctl_dev_info_args *di_args);
++int test_minimum_size(const char *file, u64 leafsize);
++
++/*
++ * Btrfs minimum size calculation is complicated, it should include at least:
++ * 1. system group size
++ * 2. minimum global block reserve
++ * 3. metadata used at mkfs
++ * 4. space reservation to create uuid for first mount.
++ * Also, raid factor should also be taken into consideration.
++ * To avoid the overkill calculation, (system group + global block rsv) * 2
++ * for *EACH* device should be good enough.
++ */
++static inline u64 btrfs_min_global_blk_rsv_size(u32 leafsize)
++{
++	return leafsize << 10;
++}
++static inline u64 btrfs_min_dev_size(u32 leafsize)
++{
++	return 2 * (BTRFS_MKFS_SYSTEM_GROUP_SIZE +
++		    btrfs_min_global_blk_rsv_size(leafsize));
++}
  
-@@ -1191,6 +1192,8 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 	int ret;
- 	u64 transid = 0;
- 	u64 bytenr;
-+	u32 crc;
-+	char crc_result[BTRFS_CSUM_SIZE];
- 
- 	if (sb_bytenr != BTRFS_SUPER_INFO_OFFSET) {
- 		ret = pread64(fd, &buf, sizeof(buf), sb_bytenr);
-@@ -1226,6 +1229,14 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 		if (btrfs_super_magic(&buf) != BTRFS_MAGIC)
- 			continue;
- 
-+		/* check if the superblock is damaged */
-+		crc = ~(u32)0;
-+		crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
-+				      crc, BTRFS_SUPER_INFO_SIZE -
-+				      BTRFS_CSUM_SIZE);
-+		btrfs_csum_final(crc, crc_result);
-+		if (memcmp(crc_result, sb->csum, BTRFS_CSUM_SIZE))
-+			continue;
- 		if (!fsid_is_initialized) {
- 			memcpy(fsid, buf.fsid, sizeof(fsid));
- 			fsid_is_initialized = 1;
+ #endif
 -- 
 2.0.0
 

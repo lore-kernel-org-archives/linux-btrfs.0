@@ -1,74 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49146 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751014AbaFXDNe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Jun 2014 23:13:34 -0400
-Message-ID: <53A8EBEB.1030702@cn.fujitsu.com>
-Date: Tue, 24 Jun 2014 11:09:31 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Mike Hartman <mike@hartmanipulation.com>
-CC: Chris Murphy <lists@colorremedies.com>, <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56708 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750712AbaFXEQC convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 00:16:02 -0400
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Btrfs suddenly unmountable, open_ctree failed
-References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com> <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <53A8E079.1060803@cn.fujitsu.com> <CAB=7dhm4wz7tXm7am0ezNvAiH+YjKBYrL53AQsn9DMQJwaus4Q@mail.gmail.com>
-In-Reply-To: <CAB=7dhm4wz7tXm7am0ezNvAiH+YjKBYrL53AQsn9DMQJwaus4Q@mail.gmail.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
+Date: Mon, 23 Jun 2014 22:15:59 -0600
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com>
+References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com> <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
+To: Mike Hartman <mike@hartmanipulation.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mike,
 
-On 06/24/2014 11:04 AM, Mike Hartman wrote:
-> I have no particular desire to use it. I just tried everything else
-> first and thought it was worth a shot.
->
-> If you think that version would help, can you point me to the git
-> repo? The one I grabbed was
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git.
-Of course,  You could pull from the following url:
+On Jun 23, 2014, at 8:58 PM, Mike Hartman <mike@hartmanipulation.com> wrote:
 
-https://github.com/kdave/btrfs-progs.git  integration-20140619
+> I have a dd image, but not a btrfs-image. I ran the btrfs-image
+> command, but it threw the same errors as everything else and generated
+> a 0 byte file.
+> 
+> I agree that it SOUNDS like some kind of media failure, but if so it
+> seems odd to me that I was able to dd the entire partition with no
+> read errors. Even if there was something wrong with the drive that
+> prevented writing you'd think the ability to read it all would result
+> in a recoverable image.
 
->
-> On Mon, Jun 23, 2014 at 10:20 PM, Wang Shilong
-> <wangsl.fnst@cn.fujitsu.com> wrote:
->> On 06/24/2014 09:17 AM, Chris Murphy wrote:
->>> On Jun 23, 2014, at 4:18 PM, Mike Hartman <mike@hartmanipulation.com>
->>> wrote:
->>>
->>>> Can anyone offer any suggestions? Is this data really unrecoverable? I
->>>> have no idea what could have gone so severely wrong.
->>> "btrfs check --repair /media/mint/usb_data/sda6_check.img
->>> "btrfs check --repair --init-csum-tree --init-extent-tree
->>> /media/mint/usb_data/sda6_check.img
->> My two cents:-)
->>
->> If you really want to use btrfs check  --init-csum-tree --init-extent-tree,
->> i'd suggest you use
->> David Latest btrfs-progs branch which includes some latest bug fixes.
->>
->>> I think these things are going too far on actual file system without
->>> guidance, so it's superb you imaged the original drive first. Too many
->>> people get aggressive writing to the actual drive without backup images. You
->>> have both a dd image as well as btrfs-image which is really great. Hopefully
->>> someone can help find out what happened, it seems abruptly catastrophic, but
->>> also mixes messages where some information is being found but this one:
->>>          * read block failed check_tree_block
->>> makes me think of partial media failure. It would be damn bad luck if your
->>> metadata is set to DUP, yet both copies are toast. Is this an HDD or SSD?
->>>
->>> Can you post the result from smartctl -x /dev/sdX   #for the disk in
->>> question, maybe from a live system?
->>>
->>>
->>> Chris Murphy
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
-> .
->
+I've read of too many SSD failure cases to trust a graceful failure of an SSD. I guess I don't really trust an HDD either but at least they don't self destruct upon reaching end of life as apparently some SSDs do:
+http://techreport.com/review/26523/the-ssd-endurance-experiment-casualties-on-the-way-to-a-petabyte
+
+Anyway, it could be ECC failure where it says pass but it's actually corrupt, in which case it's silent data corruption which neither triggers ECC errors or read failures. You just get bad data. And really bad luck if this happens with Btrfs metadata that isn't DUP but is fundamental for mounting and/or repairing the system so it can be mounted.
+
+Of course it could just be a bug so it's worth trying David's integration branch.
+
+
+	• Firmware Version: 0006
+
+Firmware 0007 is current for this SSD.
+
+
+	• 173 Wear_Leveling_Count     PO--CK   086   086   000    -    728
+	•   1  0x018  6      49304625928  Logical Sectors Written
+	• 202 Perc_Rated_Life_Used    ---RC-   086   086   000    -    14
+
+Those are all reasonable.
+
+	• 181 Non4k_Aligned_Access    -O---K   100   100   000    -    36 0 35
+
+Probably unrelated, but that's a curious attribute and value.
+
+	• 199 UDMA_CRC_Error_Count    -OS-CK   100   100   000    -    15
+
+That's not good in that it means interface problems have happened at some point. But they can happen and just not get caught, which results in corruption. Drive ECC will not correct these problems. So how many good writes on the way to the drive but were corrupted by the time they got there? Obviously there's no way to know this from available information.
+
+ 6  0x008  4             9821  Number of Hardware Resets
+
+Why is the hardware being reset so many times?
+
+
+Chris Murphy
 

@@ -1,84 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43292 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751242AbaFXHjb (ORCPT
+Received: from mail-lb0-f182.google.com ([209.85.217.182]:42689 "EHLO
+	mail-lb0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751326AbaFXI3Z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 03:39:31 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s5O7dT14020465
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 07:39:30 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s5O7dSiD026791
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 07:39:29 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s5O7dS5e011149
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 07:39:28 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix crash when mounting raid5 btrfs with missing disks
-Date: Tue, 24 Jun 2014 15:39:16 +0800
-Message-Id: <1403595556-32753-1-git-send-email-bo.li.liu@oracle.com>
+	Tue, 24 Jun 2014 04:29:25 -0400
+Received: by mail-lb0-f182.google.com with SMTP id c11so6130416lbj.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 01:29:24 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <53A8E3BD.6000702@jp.fujitsu.com>
+References: <1403524739-28436-1-git-send-email-fdmanana@gmail.com>
+	<53A8E3BD.6000702@jp.fujitsu.com>
+Date: Tue, 24 Jun 2014 09:29:23 +0100
+Message-ID: <CAL3q7H4e9_nw1G+YzaaUcdPt46Lm_r_s7CwcegDqCXLgUmG6jg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix crash when starting transaction
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The reproducer is
+On Tue, Jun 24, 2014 at 3:34 AM, Satoru Takeuchi
+<takeuchi_satoru@jp.fujitsu.com> wrote:
+> Hi Filipe,
+>
+> (2014/06/23 20:58), Filipe David Borba Manana wrote:
+>> Often when starting a transaction we commit the currently running transaction,
+>> which can end up writing block group caches when the current process has its
+>> journal_info set to NULL (and not to a transaction). This makes our assertion
+>> at btrfs_check_data_free_space() (current_journal != NULL) fail, resulting
+>> in a crash/hang. Therefore fix it by setting journal_info.
+>
+> Do you have any reproducer?
 
-$ mkfs.btrfs D1 D2 D3 -mraid5
-$ mkfs.ext4 D2 && mkfs.ext4 D3
-$ mount D1 /btrfs -odegraded
+Just run xfstests in a loop. This depends on specific timings, and at
+least in my test machine it happens rarely. In 4 continuous days of
+running all xfstests in a loop, I got this 3 times in different tests:
+generic/083, generic/251 and generic/320.
 
--------------------
+Thanks.
 
-[   87.672992] ------------[ cut here ]------------
-[   87.673845] kernel BUG at fs/btrfs/raid56.c:1828!
-...
-[   87.673845] RIP: 0010:[<ffffffff813efc7e>]  [<ffffffff813efc7e>] __raid_recover_end_io+0x4ae/0x4d0
-...
-[   87.673845] Call Trace:
-[   87.673845]  [<ffffffff8116bbc6>] ? mempool_free+0x36/0xa0
-[   87.673845]  [<ffffffff813f0255>] raid_recover_end_io+0x75/0xa0
-[   87.673845]  [<ffffffff81447c5b>] bio_endio+0x5b/0xa0
-[   87.673845]  [<ffffffff81447cb2>] bio_endio_nodec+0x12/0x20
-[   87.673845]  [<ffffffff81374621>] end_workqueue_fn+0x41/0x50
-[   87.673845]  [<ffffffff813ad2aa>] normal_work_helper+0xca/0x2c0
-[   87.673845]  [<ffffffff8108ba2b>] process_one_work+0x1eb/0x530
-[   87.673845]  [<ffffffff8108b9c9>] ? process_one_work+0x189/0x530
-[   87.673845]  [<ffffffff8108c15b>] worker_thread+0x11b/0x4f0
-[   87.673845]  [<ffffffff8108c040>] ? rescuer_thread+0x290/0x290
-[   87.673845]  [<ffffffff810939c4>] kthread+0xe4/0x100
-[   87.673845]  [<ffffffff810938e0>] ? kthread_create_on_node+0x220/0x220
-[   87.673845]  [<ffffffff817e7c7c>] ret_from_fork+0x7c/0xb0
-[   87.673845]  [<ffffffff810938e0>] ? kthread_create_on_node+0x220/0x220
+>
+> Thanks,
+> Satoru
+>
+>>
+>> Two different traces of this issue follow below.
+>>
+>> 1)
+>>
+>>      [51502.241936] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>>      [51502.242213] ------------[ cut here ]------------
+>>      [51502.242493] kernel BUG at fs/btrfs/ctree.h:3964!
+>>      [51502.242669] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>>      (...)
+>>      [51502.244010] Call Trace:
+>>      [51502.244010]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>>      [51502.244010]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>>      [51502.244010]  [<ffffffffa0357a6a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>>      [51502.244010]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>>      [51502.244010]  [<ffffffff8168ec7b>] ? _raw_spin_unlock+0x2b/0x40
+>>      [51502.244010]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>>      [51502.244010]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>>      [51502.244010]  [<ffffffffa02d73e1>] __unlink_start_trans+0x31/0xe0 [btrfs]
+>>      [51502.244010]  [<ffffffffa02dea67>] btrfs_unlink+0x37/0xc0 [btrfs]
+>>      [51502.244010]  [<ffffffff811bb054>] ? do_unlinkat+0x114/0x2a0
+>>      [51502.244010]  [<ffffffff811baebc>] vfs_unlink+0xcc/0x150
+>>      [51502.244010]  [<ffffffff811bb1a0>] do_unlinkat+0x260/0x2a0
+>>      [51502.244010]  [<ffffffff811a9ef4>] ? filp_close+0x64/0x90
+>>      [51502.244010]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>>      [51502.244010]  [<ffffffff81349cab>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+>>      [51502.244010]  [<ffffffff811be9eb>] SyS_unlinkat+0x1b/0x40
+>>      [51502.244010]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>>      [51502.244010] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 71 13 36 a0 48 89 fe 31 c0 48 c7 c7 b8 43 36 a0 48 89 e5 e8 5d b0 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>>      [51502.244010] RIP  [<ffffffffa03575da>] assfail.constprop.88+0x1e/0x20 [btrfs]
+>>
+>> 2)
+>>
+>>      [25405.097230] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>>      [25405.097488] ------------[ cut here ]------------
+>>      [25405.097767] kernel BUG at fs/btrfs/ctree.h:3964!
+>>      [25405.097940] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>>      (...)
+>>      [25405.100008] Call Trace:
+>>      [25405.100008]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>>      [25405.100008]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>>      [25405.100008]  [<ffffffffa035755a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>>      [25405.100008]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>>      [25405.100008]  [<ffffffff8109c170>] ? bit_waitqueue+0xc0/0xc0
+>>      [25405.100008]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>>      [25405.100008]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>>      [25405.100008]  [<ffffffffa02e3407>] btrfs_create+0x47/0x210 [btrfs]
+>>      [25405.100008]  [<ffffffffa02d74cc>] ? btrfs_permission+0x3c/0x80 [btrfs]
+>>      [25405.100008]  [<ffffffff811bc63b>] vfs_create+0x9b/0x130
+>>      [25405.100008]  [<ffffffff811bcf19>] do_last+0x849/0xe20
+>>      [25405.100008]  [<ffffffff811b9409>] ? link_path_walk+0x79/0x820
+>>      [25405.100008]  [<ffffffff811bd5b5>] path_openat+0xc5/0x690
+>>      [25405.100008]  [<ffffffff810ab07d>] ? trace_hardirqs_on+0xd/0x10
+>>      [25405.100008]  [<ffffffff811cdcd2>] ? __alloc_fd+0x32/0x1d0
+>>      [25405.100008]  [<ffffffff811be2a3>] do_filp_open+0x43/0xa0
+>>      [25405.100008]  [<ffffffff811cddf1>] ? __alloc_fd+0x151/0x1d0
+>>      [25405.100008]  [<ffffffff811abcfc>] do_sys_open+0x13c/0x230
+>>      [25405.100008]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>>      [25405.100008]  [<ffffffff811abe12>] SyS_open+0x22/0x30
+>>      [25405.100008]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>>      [25405.100008] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 51 13 36 a0 48 89 fe 31 c0 48 c7 c7 d0 43 36 a0 48 89 e5 e8 6d b5 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>>      [25405.100008] RIP  [<ffffffffa03570ca>] assfail.constprop.88+0x1e/0x20 [btrfs]
+>>
+>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+>> ---
+>>   fs/btrfs/transaction.c | 4 ++++
+>>   1 file changed, 4 insertions(+)
+>>
+>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>> index ac984a3..fe4abe9 100644
+>> --- a/fs/btrfs/transaction.c
+>> +++ b/fs/btrfs/transaction.c
+>> @@ -491,7 +491,11 @@ again:
+>>       smp_mb();
+>>       if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+>>           may_wait_transaction(root, type)) {
+>> +             void *journal_info = current->journal_info;
+>> +             if (!journal_info)
+>> +                     current->journal_info = h;
+>>               btrfs_commit_transaction(h, root);
+>> +             current->journal_info = journal_info;
+>>               goto again;
+>>       }
+>>
+>>
+>
 
--------------------
 
-It's because that we miscalculate @rbio->bbio->error so that it doesn't
-reach maximum of tolerable errors while it should have.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/raid56.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 4055291..4a88f07 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1956,9 +1956,10 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
- 	 * pages are going to be uptodate.
- 	 */
- 	for (stripe = 0; stripe < bbio->num_stripes; stripe++) {
--		if (rbio->faila == stripe ||
--		    rbio->failb == stripe)
-+		if (rbio->faila == stripe || rbio->failb == stripe) {
-+			atomic_inc(&rbio->bbio->error);
- 			continue;
-+		}
- 
- 		for (pagenr = 0; pagenr < nr_pages; pagenr++) {
- 			struct page *p;
 -- 
-1.8.1.4
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

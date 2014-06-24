@@ -1,56 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57188 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751026AbaFXFTi convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 01:19:38 -0400
-Content-Type: text/plain; charset=US-ASCII
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Btrfs suddenly unmountable, open_ctree failed
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAB=7dhms_ehP4y+L_tMBrdUnJiwXAOn7E4Fa9u3euVBwBKHOKA@mail.gmail.com>
-Date: Mon, 23 Jun 2014 23:19:37 -0600
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-Id: <27F042E8-CC94-497D-96B7-283AA1CBD296@colorremedies.com>
-References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com> <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com> <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com> <CAB=7dhms_ehP4y+L_tMBrdUnJiwXAOn7E4Fa9u3euVBwBKHOKA@mail.gmail.com>
-To: Mike Hartman <mike@hartmanipulation.com>
+Received: from plane.gmane.org ([80.91.229.3]:43291 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750710AbaFXFhk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 01:37:40 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1WzJQI-0001Ns-BQ
+	for linux-btrfs@vger.kernel.org; Tue, 24 Jun 2014 07:37:38 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 07:37:38 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 07:37:38 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs on whole disk (no partitions)
+Date: Tue, 24 Jun 2014 05:37:24 +0000 (UTC)
+Message-ID: <pan$c3e0c$d2484a5b$564bbd55$afd82e0@cox.net>
+References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
+	<2316027.LZEnVG8laK@xev>
+	<CAPLrYETdzeT_Yia-nnbZBMvGxU3x7tCFiJSv3rNJezMsjce3Zw@mail.gmail.com>
+	<6CA8020B-EB92-4A44-8AA5-3F69709F81F2@colorremedies.com>
+	<CAK5rZE6gfmQsZz3W_8t=pkKEk_rzqUn5hQVv0sbt8p7qbdhSdQ@mail.gmail.com>
+	<53A6DDAD.8070804@chinilu.com>
+	<99AD3EFE-AF9A-44A1-912E-07B1E934239B@colorremedies.com>
+	<pan$600a2$3927cc39$ae007590$e90b8415@cox.net>
+	<yq1bntjizkr.fsf@sermon.lab.mkp.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Martin K. Petersen posted on Mon, 23 Jun 2014 08:24:04 -0400 as excerpted:
 
-On Jun 23, 2014, at 10:34 PM, Mike Hartman <mike@hartmanipulation.com> wrote:
+> Anyway. The short answer is that Linux will pretty much always do I/O in
+> multiples of the system page size regardless of the logical block size
+> of the underlying device. There are a few exceptions to this such as
+> direct I/O, legacy filesystems using bufferheads and raw block device
+> access.
 
->> 
->> Firmware 0007 is current for this SSD.
-> 
-> I assume that's probably not something I should mess with right now
-> though, right?
+Thank you.  Good to have that made clear. =:^)
 
-I would deal with that later. A firmware change now might make things worse if you care about this file system or any data on the drive. But seeing as it "improves reliability" I have no way of knowing if it's related.
-
-> Actually, now that I think about it, that may be related to the errors
-> I saw months ago. I had some bad blocks or something, and when the
-> system attempted to access them I would get a bunch of errors in the
-> logs. I believe one of the things the system would do was attempt to
-> reset the drive connection (maybe multiple times).
-
-Yes Ok that's normal.
-
-> I zeroed out the drive and ran every smartctl test on it I could find
-> and it never threw any more errors.
-
-Zeroing SSDs isn't a good way to do it. Use ATA Secure Erase instead. The drive is overprovisioned, so there are pages without LBAs assigned, which means they can't be written to by software. Plus "zeros" make SSD pages full of zeros, rather than being empty and ready to be written to. ATA Secure Erase is supposed to make them empty (write ready) and does it for all pages.
-
-http://mackonsti.wordpress.com/2011/11/22/ssd-secure-erase-ata-command/
-
-> I'll see if I can track down any of the smartctl results from back
-> then and compare the "Number of Hardware Resets" value, as well as
-> UDMA_CRC_Error_Count.
-
-It could be a loose or intermittent connection; maybe they are one off events as the laptop was in motion. Hard to say.
-
-
-
-
-Chris Murphy
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

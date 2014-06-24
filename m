@@ -1,70 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34773 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751256AbaFZUiY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jun 2014 16:38:24 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s5QKcNah025835
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 16:38:24 -0400
-Received: from Liberator-2.local (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id s5QKcMGY013028
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 16:38:23 -0400
-Message-ID: <53AC84C9.2080106@redhat.com>
-Date: Thu, 26 Jun 2014 15:38:33 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:46816 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751121AbaFXIsM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 04:48:12 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5O8m8bV006291
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 16:48:08 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Don't continue mounting when superblock csum mismatches even generation is less than 10.
+Date: Tue, 24 Jun 2014 16:49:13 +0800
+Message-ID: <1403599753-4072-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: add supported attr flags to btrfs(5)
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The chattr(1) manpage suffers from the same problems mount(1)
-had: many options listed, not kept up to date for various
-filesystems.
+Revert kernel commit 667e7d94a1683661cff5fe9a0fa0d7f8fdd2c007.
+(Btrfs: allow superblock mismatch from older mkfs by Chris Mason)
 
-I've submitted a manpage update for chattr(1) which says to
-refer to filesystem-specific manpages for supported attributes;
-this patch updates btrfs(5) to list the attributes supported
-by btrfs.
+Above commit will cause disaster if someone try to mount a newly created but
+later corrupted btrfs filesystem.
 
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+And before btrfs entered mainline, btrfs-progs has already superblock
+checksum. See btrfs-progs commit: 5ccd1715fa2eaad0b26037bb53706779c8c93b5f
+(superblock duplication by Yan Zheng).
+Before commit 5ccd17, mkfs.btrfs uses 16K as super offset, while current btrfs
+uses 64K super offset, anyway old btrfs without super csum will not be
+mountable due to the change of super offset.
+
+So backward compatibility is not a problem.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+ fs/btrfs/disk-io.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/Documentation/btrfs-mount.txt b/Documentation/btrfs-mount.txt
-index 4433a78..c38e80a 100644
---- a/Documentation/btrfs-mount.txt
-+++ b/Documentation/btrfs-mount.txt
-@@ -3,7 +3,7 @@ btrfs-mount(5)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8bb4aa1..dbfb2a3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -400,12 +400,6 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
  
- NAME
- ----
--btrfs-mount - mount options for the btrfs filesystem
-+btrfs-mount - mount options and supported file attributes for the btrfs filesystem
+ 		if (memcmp(raw_disk_sb, result, csum_size))
+ 			ret = 1;
+-
+-		if (ret && btrfs_super_generation(disk_sb) < 10) {
+-			printk(KERN_WARNING
+-				"BTRFS: super block crcs don't match, older mkfs detected\n");
+-			ret = 0;
+-		}
+ 	}
  
- DESCRIPTION
- -----------
-@@ -179,8 +179,20 @@ MOUNT OPTIONS
- *user_subvol_rm_allowed*::
- 	Allow subvolumes to be deleted by a non-root user. Use with caution.
- 
-+FILE ATTRIBUTES
-+---------------
-+The btrfs filesystem supports setting the following file
-+attributes the `chattr`(1) utility
-+append only (a), no atime updates (A), compressed (c), no copy on write (C),
-+no dump (d), synchronous directory updates (d), immutable (i),
-+synchronous updates (S), and no compression (X).
-+
-+For descriptions of these attribute flags, please refer to the
-+`chattr`(1) man page.
-+
- SEE ALSO
- --------
-+`chattr`(1),
- `mkfs.btrfs`(8),
- `mount`(8),
- `btrfs`(8)
+ 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+-- 
+2.0.0
 

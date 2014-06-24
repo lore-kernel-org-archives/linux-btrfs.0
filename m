@@ -1,73 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m.nv-systems.net ([176.9.99.115]:41046 "EHLO m.nv-systems.net"
+Received: from mari.romanrm.net ([157.7.203.202]:38399 "EHLO mari.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753541AbaFXKrm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 06:47:42 -0400
-Received: from [192.168.7.22] (p57BCF87A.dip0.t-ipconnect.de [87.188.248.122])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	by m.nv-systems.net (Postfix) with ESMTPSA id 3ECB67D1BB8
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 12:41:51 +0200 (CEST)
-Message-ID: <53A955F8.8090101@nv-systems.net>
-Date: Tue, 24 Jun 2014 12:42:00 +0200
-From: Gerald Hopf <gerald.hopf@nv-systems.net>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: "-d single" for data blocks on a multiple devices doesn't work as
- it should
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	id S1751676AbaFXLCn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 07:02:43 -0400
+Date: Tue, 24 Jun 2014 17:02:36 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Gerald Hopf <gerald.hopf@nv-systems.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: "-d single" for data blocks on a multiple devices doesn't work
+ as it should
+Message-ID: <20140624170236.28d5bfa9@natsu>
+In-Reply-To: <53A955F8.8090101@nv-systems.net>
+References: <53A955F8.8090101@nv-systems.net>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/yDIsUEa1IbrrnVSsilLxsoI"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear btrfs-developers,
+--Sig_/yDIsUEa1IbrrnVSsilLxsoI
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-thank you for making such a nice and innovative filesystem. I do have a 
-small complaint however :-)
+On Tue, 24 Jun 2014 12:42:00 +0200
+Gerald Hopf <gerald.hopf@nv-systems.net> wrote:
 
-I read the documentation and liked the idea of having a multiple-device 
-filesystem with mirrored metadata while having data in "single" mode. 
-This would be perfect for my backup purposes, where I don't want to have 
-a parity disk - but I also don't want to lose the _entire_ backup in the 
-worst case scenario of having already lost the main data RAID5 array and 
-then one of my backup HDDs refusing to spin up or failing while restoring).
+> The "-d single" allocator is useless (or broken?).
 
-For testing purposes, I therefore created a 2x 3TB btrfs filesystem as 
-described in the "Using BTRFS with Multiple Devices" Wiki:
-# Use full capacity of multiple drives with different sizes (metadata 
-mirrored, data not mirrored and not striped)
-mkfs.btrfs -d single /dev/sdh1 /dev/sdi1
+It's just not designed with your use case in mind. It operates on the level=
+ of
+allocation extents (if I'm not mistaken), not of whole files.
 
-and proceeded to copy about 5.5TB of data on it, about 800 
-subdirectories each containing a few small files (1-5KB), a medium sized 
-file (50-100MB) and a big file (3GB-15GB). The copy process was 
-completely sequential (only one task copying from source to destination, 
-no random writes, no simultaneous copies to the btrfs volume).
+If you want to join multiple devices with a per-file granularity (so that a
+single file is wholely stored on one given device), check out the FUSE
+filesystem called mhddfs; I wrote an article about it some time ago:
+https://romanrm.net/mhddfs
 
-After copying, I then unmounted the filesystem, switched off one of the 
-two 3TB USB disks and mounted the remaining 3TB disk in recovery mode 
-(-o degraded,ro) and proceeded to check whether any data was still left 
-alive.
+--=20
+With respect,
+Roman
 
-Result:
-- the directories and files were there and looked good (metadata raid1 
-seems to work)
-- some small files I tested were fine (probably 50%?)
-- even some the medium sized files (50-100MB) were fine (not sure about 
-the percentage, might have been less than for the small files)
-- not a single one (!) of the big files (3GB-15GB) survived
+--Sig_/yDIsUEa1IbrrnVSsilLxsoI
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-Conclusion:
-The "-d single" allocator is useless (or broken?). It seems to randomly 
-write data blocks to each of the multiple devices, thereby combining the 
-disadvantage of a single disk (low write speed) with the disadvantage of 
-raid0 (loss of all files when a device is missing), while not offering 
-any benefits.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-In my opinion to offer any benefit compared to raid0 for data, "-d 
-single" should never allocate blocks for a single file across multiple 
-disks unless you start to run ouf of contiguous space when the disk gets 
-almost full. Is there any chance that "-d single" will be fixed at some 
-point in the future?
+iEYEARECAAYFAlOpWswACgkQTLKSvz+PZwgiLwCeL3hyHq54Ctb+fR61YFMqL1PC
+X2sAn0/pjs5vmIj0lBs/q8+/YcW0Lbjb
+=r1qs
+-----END PGP SIGNATURE-----
 
-Thanks for listening,
-Gerald
+--Sig_/yDIsUEa1IbrrnVSsilLxsoI--

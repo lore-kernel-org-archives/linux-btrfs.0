@@ -1,74 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f47.google.com ([74.125.82.47]:34468 "EHLO
-	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752899AbaFYUgR (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:5251 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755121AbaFYUqG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jun 2014 16:36:17 -0400
-Received: by mail-wg0-f47.google.com with SMTP id k14so2642695wgh.18
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2014 13:36:16 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>
-Subject: [PATCH] Btrfs: atomically set inode->i_flags in btrfs_update_iflags
-Date: Wed, 25 Jun 2014 22:36:02 +0100
-Message-Id: <1403732162-22405-1-git-send-email-fdmanana@gmail.com>
+	Wed, 25 Jun 2014 16:46:06 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Josef Bacik <jbacik@fb.com>, <stable@vger.kernel.org>
+Subject: [PATCH] btrfs: only unlock block in verify_parent_transid if we locked it
+Date: Wed, 25 Jun 2014 13:45:41 -0700
+Message-ID: <1403729141-10434-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This change is based on the corresponding recent change for ext4:
+This is a regression from my patch a26e8c9f75b0bfd8cccc9e8f110737b136eb5994, we
+need to only unlock the block if we were the one who locked it.  Otherwise this
+will trip BUG_ON()'s in locking.c  Thanks,
 
-  ext4: atomically set inode->i_flags in ext4_set_inode_flags()
-
-That has the following commit message that applies to btrfs as well:
-
-  "Use cmpxchg() to atomically set i_flags instead of clearing out the
-   S_IMMUTABLE, S_APPEND, etc. flags and then setting them from the
-   EXT4_IMMUTABLE_FL, EXT4_APPEND_FL flags, since this opens up a race
-   where an immutable file has the immutable flag cleared for a brief
-   window of time."
-
-Replacing EXT4_IMMUTABLE_FL and EXT4_APPEND_FL with BTRFS_INODE_IMMUTABLE
-and BTRFS_INODE_APPEND, respectively.
-
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/ioctl.c | 17 ++++++++++-------
- 1 file changed, 10 insertions(+), 7 deletions(-)
+ fs/btrfs/disk-io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6ea1546..02dc64b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -136,19 +136,22 @@ static unsigned int btrfs_flags_to_ioctl(unsigned int flags)
- void btrfs_update_iflags(struct inode *inode)
- {
- 	struct btrfs_inode *ip = BTRFS_I(inode);
--
--	inode->i_flags &= ~(S_SYNC|S_APPEND|S_IMMUTABLE|S_NOATIME|S_DIRSYNC);
-+	unsigned int new_fl = 0;
- 
- 	if (ip->flags & BTRFS_INODE_SYNC)
--		inode->i_flags |= S_SYNC;
-+		new_fl |= S_SYNC;
- 	if (ip->flags & BTRFS_INODE_IMMUTABLE)
--		inode->i_flags |= S_IMMUTABLE;
-+		new_fl |= S_IMMUTABLE;
- 	if (ip->flags & BTRFS_INODE_APPEND)
--		inode->i_flags |= S_APPEND;
-+		new_fl |= S_APPEND;
- 	if (ip->flags & BTRFS_INODE_NOATIME)
--		inode->i_flags |= S_NOATIME;
-+		new_fl |= S_NOATIME;
- 	if (ip->flags & BTRFS_INODE_DIRSYNC)
--		inode->i_flags |= S_DIRSYNC;
-+		new_fl |= S_DIRSYNC;
-+
-+	set_mask_bits(&inode->i_flags,
-+		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC,
-+		      new_fl);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8bb4aa1..f00165d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -369,7 +369,8 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
+ out:
+ 	unlock_extent_cached(io_tree, eb->start, eb->start + eb->len - 1,
+ 			     &cached_state, GFP_NOFS);
+-	btrfs_tree_read_unlock_blocking(eb);
++	if (need_lock)
++		btrfs_tree_read_unlock_blocking(eb);
+ 	return ret;
  }
  
- /*
 -- 
-1.9.1
+2.0.0
 

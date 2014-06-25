@@ -1,53 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f182.google.com ([209.85.220.182]:50408 "EHLO
-	mail-vc0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752337AbaFYNBv (ORCPT
+Received: from gitanes.rtfm.co.hu ([80.249.171.82]:36410 "EHLO
+	gitanes.rtfm.co.hu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756147AbaFYNJ4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jun 2014 09:01:51 -0400
-Received: by mail-vc0-f182.google.com with SMTP id il7so1853969vcb.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2014 06:01:50 -0700 (PDT)
+	Wed, 25 Jun 2014 09:09:56 -0400
+Message-ID: <53AACA21.5060504@martos.bme.hu>
+Date: Wed, 25 Jun 2014 15:09:53 +0200
+From: Tamas Papp <tompos@martos.bme.hu>
 MIME-Version: 1.0
-In-Reply-To: <yq1bntjizkr.fsf@sermon.lab.mkp.net>
-References: <CAPLrYESSX+D5tnY_qWcz0B+xUyyT1Ut-ALM=b9TfehACUq82GA@mail.gmail.com>
-	<2316027.LZEnVG8laK@xev>
-	<CAPLrYETdzeT_Yia-nnbZBMvGxU3x7tCFiJSv3rNJezMsjce3Zw@mail.gmail.com>
-	<6CA8020B-EB92-4A44-8AA5-3F69709F81F2@colorremedies.com>
-	<CAK5rZE6gfmQsZz3W_8t=pkKEk_rzqUn5hQVv0sbt8p7qbdhSdQ@mail.gmail.com>
-	<53A6DDAD.8070804@chinilu.com>
-	<99AD3EFE-AF9A-44A1-912E-07B1E934239B@colorremedies.com>
-	<pan$600a2$3927cc39$ae007590$e90b8415@cox.net>
-	<yq1bntjizkr.fsf@sermon.lab.mkp.net>
-Date: Wed, 25 Jun 2014 15:01:49 +0200
-Message-ID: <CAK5rZE4Eo+e_wbyzqPauYO=9HC9CEEF8Dftnw0D6zr1+7Z+GBw@mail.gmail.com>
-Subject: Re: btrfs on whole disk (no partitions)
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Murphy <lists@colorremedies.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: open_ctree failed
+References: <539EF06A.4080803@martos.bme.hu> <539EF907.6010102@martos.bme.hu> <53A35B2D.4000606@martos.bme.hu> <53A37A9B.7020301@chinilu.com> <53A70E0C.6000602@martos.bme.hu> <53A92E2F.7090401@martos.bme.hu> <ABC6B241-0575-42D7-937D-BC472FD8BCA8@colorremedies.com>
+In-Reply-To: <ABC6B241-0575-42D7-937D-BC472FD8BCA8@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 6/23/14, Martin K. Petersen <martin.petersen@oracle.com> wrote:
-> Anyway. The short answer is that Linux will pretty much always do I/O in
-> multiples of the system page size regardless of the logical block size
-> of the underlying device. There are a few exceptions to this such as
-> direct I/O, legacy filesystems using bufferheads and raw block device
-> access.
 
-Thanks for the clarification.
+On 06/24/2014 06:37 PM, Chris Murphy wrote:
+> On Jun 24, 2014, at 1:52 AM, Tamas Papp <tompos@martos.bme.hu> wrote:
+>
+>> On 06/22/2014 07:10 PM, Tamas Papp wrote:
+>>> On 06/20/2014 02:04 AM, George Mitchell wrote:
+>>>> Hello Tamas,
+>>>>
+>>>> I think it would help to provide more information than what you have posted.  "open_ctree" can cover a lot of territory.
+>>>>
+>>>> 1)  I may be missing something, but I see no attachment.  I am not sure the mailing list can handle attachments?
+>>> Indeed, thanks!
+>>>
+>>> chunk recover:
+>>> http://pastebin.com/raw.php?i=01ZdbCDq
+>>>
+>>> debug tree:
+>>> http://pastebin.com/raw.php?i=LgKgEhiC
+>>>
+>>> dmesg:
+>>> http://pastebin.com/raw.php?i=zZ5zVxue
+>>>
+>>> dmidecode:
+>>> http://pastebin.com/raw.php?i=zZ5zVxue
+>>>
+>>> find root:
+>>> http://pastebin.com/raw.php?i=zWdn56tR
+>>>
+>>> show super:
+>>> http://pastebin.com/raw.php?i=unqZECJ3
+>>>
+>>> super recover:
+>>> http://pastebin.com/raw.php?i=y7fKtn3M
+>>>
+>>>> 2) I think it would help to include some sort of brief narrative as to what you are trying to do when you encounter the open_ctree failure.
+>>> I'm just trying to mount the partition:
+>>>
+>>> mount -t btrfs /dev/sda4 /1
+>>>
+>> dmesg after -o recovery:
+>>
+>> http://pastebin.com/raw.php?i=VAG9msx2
+> super-recover says supers are good, btrfs-find-tree finds tree root, but chunk-recover fails.
+>
+> Please post the result from smartctl -x <dev>
+>
+> I'd make sure you're on kernel 3.14 at the oldest, and same for btrfs-progs. Currently you're on v.3.12. And then also post the result of btrfs check (without --repair).
 
-And some random notes:
+smartctl -x:
 
-Note that gdisk gives default 8 sector alignment value for AF disks.
-That is 'sector' meant by gdisk is 'Logical Sector'!
-Sufficiently determined user may create misaligned
-partitions by playing with alignment value and partition start/end
-values.
+http://pastebin.com/raw.php?i=S3eaCb8b
 
-There are SSDs with 4K, 8K block/page sizes and
-512K, 1M, 1.5M Erase block sizes.
 
-Partitions should be aligned with Erase blocks.
-And filesystem block size (leafsize for btrfs. Default 16 K)
-should be in multiples of device block size.
+The machine was running 3.15rcX, when it failed. Unfortunately I have 
+only a live system now with this kernel versionI. I tried with the 
+latest btrfs-progs from git with no success.
 
-Regards, Imran
+btrfs check (with v3.12):
+
+Check tree block failed, want=325877760, have=0
+Check tree block failed, want=325877760, have=0
+Check tree block failed, want=325877760, have=0
+read block failed check_tree_block
+Couldn't setup extent tree
+Critical roots corrupted, unable to fsck the FS
+Checking filesystem on /dev/sda4
+UUID: 7cf95491-8ec6-48a2-b4c4-4b80650d169a
+
+
+tamas

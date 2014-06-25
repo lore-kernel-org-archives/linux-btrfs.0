@@ -1,111 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47622 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755157AbaFYHee (ORCPT
+Received: from mailrelay005.isp.belgacom.be ([195.238.6.171]:59029 "EHLO
+	mailrelay005.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750851AbaFYSf7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jun 2014 03:34:34 -0400
-Date: Wed, 25 Jun 2014 15:34:24 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix crash when mounting raid5 btrfs with missing
- disks
-Message-ID: <20140625073423.GB3642@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1403595556-32753-1-git-send-email-bo.li.liu@oracle.com>
- <53AA794D.2090407@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53AA794D.2090407@jp.fujitsu.com>
+	Wed, 25 Jun 2014 14:35:59 -0400
+From: Fabian Frederick <fabf@skynet.be>
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/1] FS/BTRFS: replace count*size kzalloc by kcalloc
+Date: Wed, 25 Jun 2014 20:35:43 +0200
+Message-Id: <1403721343-19383-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Satoru,
+kcalloc manages count*sizeof overflow.
 
-On Wed, Jun 25, 2014 at 04:25:01PM +0900, Satoru Takeuchi wrote:
-> Hi Liu,
-> 
-> (2014/06/24 16:39), Liu Bo wrote:
-> > The reproducer is
-> > 
-> > $ mkfs.btrfs D1 D2 D3 -mraid5
-> > $ mkfs.ext4 D2 && mkfs.ext4 D3
-> > $ mount D1 /btrfs -odegraded
-> 
-> Tested-by: Satoru Takeuchi<takeuchi_satoru@jp.fujitsu.com>
-> 
-> Here is the result of the last mount.
-> 
-> ===
-> ...
-> mount: wrong fs type, bad option, bad superblock on /dev/vdb1,
->        missing codepage or helper program, or other error
-> 
->        In some cases useful info is found in syslog - try
->        dmesg | tail or so.
-> ===
-> 
-> It "correctly" failed :-)
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
+ fs/btrfs/compression.c      | 2 +-
+ fs/btrfs/ctree.c            | 8 ++++----
+ fs/btrfs/disk-io.c          | 2 +-
+ fs/btrfs/free-space-cache.c | 2 +-
+ fs/btrfs/inode.c            | 2 +-
+ fs/btrfs/raid56.c           | 2 +-
+ fs/btrfs/volumes.c          | 4 ++--
+ 7 files changed, 11 insertions(+), 11 deletions(-)
 
-Thanks for testing it :)
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 92371c4..382430b 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -617,7 +617,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 	nr_pages = (compressed_len + PAGE_CACHE_SIZE - 1) /
+ 				 PAGE_CACHE_SIZE;
+-	cb->compressed_pages = kzalloc(sizeof(struct page *) * nr_pages,
++	cb->compressed_pages = kcalloc(nr_pages, sizeof(struct page *),
+ 				       GFP_NOFS);
+ 	if (!cb->compressed_pages)
+ 		goto fail1;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index aeab453..7473399 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -581,7 +581,7 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
+ 	if (!tree_mod_need_log(fs_info, eb))
+ 		return 0;
+ 
+-	tm_list = kzalloc(nr_items * sizeof(struct tree_mod_elem *), flags);
++	tm_list = kcalloc(nr_items, sizeof(struct tree_mod_elem *), flags);
+ 	if (!tm_list)
+ 		return -ENOMEM;
+ 
+@@ -680,7 +680,7 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
+ 
+ 	if (log_removal && btrfs_header_level(old_root) > 0) {
+ 		nritems = btrfs_header_nritems(old_root);
+-		tm_list = kzalloc(nritems * sizeof(struct tree_mod_elem *),
++		tm_list = kcalloc(nritems, sizeof(struct tree_mod_elem *),
+ 				  flags);
+ 		if (!tm_list) {
+ 			ret = -ENOMEM;
+@@ -817,7 +817,7 @@ tree_mod_log_eb_copy(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
+ 	if (btrfs_header_level(dst) == 0 && btrfs_header_level(src) == 0)
+ 		return 0;
+ 
+-	tm_list = kzalloc(nr_items * 2 * sizeof(struct tree_mod_elem *),
++	tm_list = kcalloc(nr_items * 2, sizeof(struct tree_mod_elem *),
+ 			  GFP_NOFS);
+ 	if (!tm_list)
+ 		return -ENOMEM;
+@@ -908,7 +908,7 @@ tree_mod_log_free_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
+ 		return 0;
+ 
+ 	nritems = btrfs_header_nritems(eb);
+-	tm_list = kzalloc(nritems * sizeof(struct tree_mod_elem *),
++	tm_list = kcalloc(nritems, sizeof(struct tree_mod_elem *),
+ 			  GFP_NOFS);
+ 	if (!tm_list)
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8bb4aa1..1af81f5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -285,7 +285,7 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 		offset += cur_len;
+ 	}
+ 	if (csum_size > sizeof(inline_result)) {
+-		result = kzalloc(csum_size * sizeof(char), GFP_NOFS);
++		result = kcalloc(csum_size, sizeof(char), GFP_NOFS);
+ 		if (!result)
+ 			return 1;
+ 	} else {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 2b0a627..ec77b84 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -292,7 +292,7 @@ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+ 
+ 	memset(io_ctl, 0, sizeof(struct io_ctl));
+ 
+-	io_ctl->pages = kzalloc(sizeof(struct page *) * num_pages, GFP_NOFS);
++	io_ctl->pages = kcalloc(num_pages, sizeof(struct page *), GFP_NOFS);
+ 	if (!io_ctl->pages)
+ 		return -ENOMEM;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3668048..549755a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -449,7 +449,7 @@ again:
+ 	     (BTRFS_I(inode)->force_compress) ||
+ 	     (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))) {
+ 		WARN_ON(pages);
+-		pages = kzalloc(sizeof(struct page *) * nr_pages, GFP_NOFS);
++		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+ 		if (!pages) {
+ 			/* just bail out to the uncompressed code */
+ 			goto cont;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 4055291..e8ab002 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1727,7 +1727,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ 	int err;
+ 	int i;
+ 
+-	pointers = kzalloc(rbio->bbio->num_stripes * sizeof(void *),
++	pointers = kcalloc(rbio->bbio->num_stripes, sizeof(void *),
+ 			   GFP_NOFS);
+ 	if (!pointers) {
+ 		err = -ENOMEM;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c83b242..784a820 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4140,7 +4140,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
+ 			     max_chunk_size);
+ 
+-	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
++	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
+ 			       GFP_NOFS);
+ 	if (!devices_info)
+ 		return -ENOMEM;
+@@ -5317,7 +5317,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		rmap_len = map->stripe_len * nr_data_stripes(map);
+ 	}
+ 
+-	buf = kzalloc(sizeof(u64) * map->num_stripes, GFP_NOFS);
++	buf = kcalloc(map->num_stripes, sizeof(u64), GFP_NOFS);
+ 	BUG_ON(!buf); /* -ENOMEM */
+ 
+ 	for (i = 0; i < map->num_stripes; i++) {
+-- 
+1.9.1
 
-thanks,
--liubo
-
-> 
-> Thanks,
-> Satoru
-> 
-> > 
-> > -------------------
-> > 
-> > [   87.672992] ------------[ cut here ]------------
-> > [   87.673845] kernel BUG at fs/btrfs/raid56.c:1828!
-> > ...
-> > [   87.673845] RIP: 0010:[<ffffffff813efc7e>]  [<ffffffff813efc7e>] __raid_recover_end_io+0x4ae/0x4d0
-> > ...
-> > [   87.673845] Call Trace:
-> > [   87.673845]  [<ffffffff8116bbc6>] ? mempool_free+0x36/0xa0
-> > [   87.673845]  [<ffffffff813f0255>] raid_recover_end_io+0x75/0xa0
-> > [   87.673845]  [<ffffffff81447c5b>] bio_endio+0x5b/0xa0
-> > [   87.673845]  [<ffffffff81447cb2>] bio_endio_nodec+0x12/0x20
-> > [   87.673845]  [<ffffffff81374621>] end_workqueue_fn+0x41/0x50
-> > [   87.673845]  [<ffffffff813ad2aa>] normal_work_helper+0xca/0x2c0
-> > [   87.673845]  [<ffffffff8108ba2b>] process_one_work+0x1eb/0x530
-> > [   87.673845]  [<ffffffff8108b9c9>] ? process_one_work+0x189/0x530
-> > [   87.673845]  [<ffffffff8108c15b>] worker_thread+0x11b/0x4f0
-> > [   87.673845]  [<ffffffff8108c040>] ? rescuer_thread+0x290/0x290
-> > [   87.673845]  [<ffffffff810939c4>] kthread+0xe4/0x100
-> > [   87.673845]  [<ffffffff810938e0>] ? kthread_create_on_node+0x220/0x220
-> > [   87.673845]  [<ffffffff817e7c7c>] ret_from_fork+0x7c/0xb0
-> > [   87.673845]  [<ffffffff810938e0>] ? kthread_create_on_node+0x220/0x220
-> > 
-> > -------------------
-> > 
-> > It's because that we miscalculate @rbio->bbio->error so that it doesn't
-> > reach maximum of tolerable errors while it should have.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> >   fs/btrfs/raid56.c | 5 +++--
-> >   1 file changed, 3 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> > index 4055291..4a88f07 100644
-> > --- a/fs/btrfs/raid56.c
-> > +++ b/fs/btrfs/raid56.c
-> > @@ -1956,9 +1956,10 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
-> >   	 * pages are going to be uptodate.
-> >   	 */
-> >   	for (stripe = 0; stripe < bbio->num_stripes; stripe++) {
-> > -		if (rbio->faila == stripe ||
-> > -		    rbio->failb == stripe)
-> > +		if (rbio->faila == stripe || rbio->failb == stripe) {
-> > +			atomic_inc(&rbio->bbio->error);
-> >   			continue;
-> > +		}
-> >   
-> >   		for (pagenr = 0; pagenr < nr_pages; pagenr++) {
-> >   			struct page *p;
-> > 
-> 

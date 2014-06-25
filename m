@@ -1,153 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f53.google.com ([209.85.216.53]:42828 "EHLO
-	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752955AbaFYFyN convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jun 2014 01:54:13 -0400
-Received: by mail-qa0-f53.google.com with SMTP id j15so1121824qaq.26
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jun 2014 22:54:12 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.15]:51161 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751483AbaFYJ51 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Jun 2014 05:57:27 -0400
+Received: from fb07-iapwap2.localnet ([134.176.19.122]) by mail.gmx.com
+ (mrgmx003) with ESMTPSA (Nemesis) id 0LgZRV-1WNOPQ1bwT-00nyLA for
+ <linux-btrfs@vger.kernel.org>; Wed, 25 Jun 2014 11:57:25 +0200
+From: Marc Dietrich <marvin24@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs hang in 3.16rc2
+Date: Wed, 25 Jun 2014 11:57:24 +0200
+Message-ID: <1942450.8TyUqUU8d3@fb07-iapwap2>
 MIME-Version: 1.0
-In-Reply-To: <9C02AC8A-68FE-4344-A59B-7580D9E0D0C5@colorremedies.com>
-References: <CAB=7dhnnfr_5bpkD5k29f0xHHMbyUy8EXPsE6RC3r=JgPbE7Gw@mail.gmail.com>
- <ECEE7DFB-E4E1-482D-929F-ABAF8133E1F4@colorremedies.com> <CAB=7dhk-HM-uT891yKo3-XO2Ko_eC7=qNkLrV_4uM_UmOR1Rmg@mail.gmail.com>
- <144BDE55-B4B9-405A-B106-F7681FBAF761@colorremedies.com> <CAB=7dhms_ehP4y+L_tMBrdUnJiwXAOn7E4Fa9u3euVBwBKHOKA@mail.gmail.com>
- <27F042E8-CC94-497D-96B7-283AA1CBD296@colorremedies.com> <CAB=7dh=yq-KjtHOjKPncvGziCEiJgVyMiAAY=4w=Za0Sr9geAg@mail.gmail.com>
- <9C02AC8A-68FE-4344-A59B-7580D9E0D0C5@colorremedies.com>
-From: Mike Hartman <mike@hartmanipulation.com>
-Date: Wed, 25 Jun 2014 01:53:52 -0400
-Message-ID: <CAB=7dhkRURCdaSjYvJfKUecfVt_q+_q26yyEpo2w9Wp1echLjQ@mail.gmail.com>
-Subject: Re: Btrfs suddenly unmountable, open_ctree failed
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Does this version's btrfs-image allow you to make an image of the file system?
+Hi,
 
-Nope, same errors and no output.
+I got these during heavy IO (fs indexing):
 
-> https://btrfs.wiki.kernel.org/index.php/Restore
->
-> Your superblocks are good according to btrfs rescue super-recover. And various tree roots are found by btrfs-find-root including a tree root that also matches the latest latest generation:
->         * Super think's the tree root is at 763420672, chunk root 20971520
->         * Found tree root at 763420672 gen 214454 level 1
->
-> And yet btrfs restore fails. I'm not sure why but try:
->
-> btrfs restore -t 763420672 /dev/mapper/sda6_crypt /media/mint/usb_data/sda6_btrfs_recovery/
->
+[175200.080150] INFO: task akonadi_baloo_i:6489 blocked for more than 480 seconds.
+[175200.080160]       Not tainted 3.16.0-rc2-12.gfc9498b-desktop+ #2
+[175200.080164] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[175200.080169] akonadi_baloo_i D ffff88011fc13a00     0  6489   6330 0x00000000
+[175200.080178]  ffff8800db70bc78 0000000000000086 ffff8800b3fd4390 0000000000013a00
+[175200.080186]  ffff8800db70bfd8 0000000000013a00 ffff8800b3fd4390 ffff88011fc14310
+[175200.080192]  ffff88011ffcb408 ffff8800db70bd00 0000000000000002 ffffffff81140710
+[175200.080198] Call Trace:
+[175200.080212]  [<ffffffff81140710>] ? wait_on_page_read+0x60/0x60
+[175200.080223]  [<ffffffff816101fa>] io_schedule+0xaa/0x140
+[175200.080230]  [<ffffffff81140719>] sleep_on_page+0x9/0x10
+[175200.080237]  [<ffffffff81610763>] __wait_on_bit_lock+0x43/0xa0
+[175200.080244]  [<ffffffff81140815>] __lock_page+0x65/0x70
+[175200.080251]  [<ffffffff810a3570>] ? autoremove_wake_function+0x30/0x30
+[175200.080322]  [<ffffffffc05001a9>] ? flush_write_bio+0x9/0x10 [btrfs]
+[175200.080367]  [<ffffffffc05041a8>] extent_write_cache_pages.isra.28.constprop.46+0x2d8/0x3e0 [btrfs]
+[175200.080411]  [<ffffffffc05060f8>] extent_writepages+0x48/0x60 [btrfs]
+[175200.080451]  [<ffffffffc04e9460>] ? btrfs_writepage_end_io_hook+0x1a0/0x1a0 [btrfs]
+[175200.080489]  [<ffffffffc04e6e83>] btrfs_writepages+0x23/0x30 [btrfs]
+[175200.080496]  [<ffffffff8114de79>] do_writepages+0x19/0x30
+[175200.080503]  [<ffffffff81142281>] __filemap_fdatawrite_range+0x51/0x60
+[175200.080510]  [<ffffffff8114233e>] filemap_fdatawrite_range+0xe/0x10
+[175200.080549]  [<ffffffffc04f53e9>] btrfs_sync_file+0x49/0x310 [btrfs]
+[175200.080558]  [<ffffffff8107c134>] ? task_work_run+0xb4/0xf0
+[175200.080564]  [<ffffffff811e302c>] do_fsync+0x4c/0x80
+[175200.080570]  [<ffffffff811e32ab>] SyS_fsync+0xb/0x10
+[175200.080577]  [<ffffffff816145ad>] system_call_fastpath+0x1a/0x1f
+[175200.080588] INFO: task kworker/u12:4:7346 blocked for more than 480 seconds.
+[175200.080592]       Not tainted 3.16.0-rc2-12.gfc9498b-desktop+ #2
+[175200.080595] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[175200.080599] kworker/u12:4   D ffff88011fcd3a00     0  7346      2 0x00000000
+[175200.080609] Workqueue: writeback bdi_writeback_workfn (flush-btrfs-5)
+[175200.080613]  ffff880060c5b9d8 0000000000000046 ffff88003ffec510 0000000000013a00
+[175200.080619]  ffff880060c5bfd8 0000000000013a00 ffff88003ffec510 ffff88011fcd4310
+[175200.080625]  ffff88011ffc9608 ffff880060c5ba60 0000000000000002 ffffffff81140710
+[175200.080630] Call Trace:
+[175200.080638]  [<ffffffff81140710>] ? wait_on_page_read+0x60/0x60
+[175200.080645]  [<ffffffff816101fa>] io_schedule+0xaa/0x140
+[175200.080652]  [<ffffffff81140719>] sleep_on_page+0x9/0x10
+[175200.080659]  [<ffffffff81610763>] __wait_on_bit_lock+0x43/0xa0
+[175200.080665]  [<ffffffff81140815>] __lock_page+0x65/0x70
+[175200.080671]  [<ffffffff810a3570>] ? autoremove_wake_function+0x30/0x30
+[175200.080713]  [<ffffffffc05001a9>] ? flush_write_bio+0x9/0x10 [btrfs]
+[175200.080754]  [<ffffffffc05041a8>] extent_write_cache_pages.isra.28.constprop.46+0x2d8/0x3e0 [btrfs]
+[175200.080797]  [<ffffffffc05060f8>] extent_writepages+0x48/0x60 [btrfs]
+[175200.080836]  [<ffffffffc04e9460>] ? btrfs_writepage_end_io_hook+0x1a0/0x1a0 [btrfs]
+[175200.080874]  [<ffffffffc04e6e83>] btrfs_writepages+0x23/0x30 [btrfs]
+[175200.080880]  [<ffffffff8114de79>] do_writepages+0x19/0x30
+[175200.080888]  [<ffffffff811dbacb>] __writeback_single_inode+0x3b/0x2c0
+[175200.080894]  [<ffffffff810a3180>] ? wake_up_bit+0x20/0x30
+[175200.081050]  [<ffffffff811dca87>] writeback_sb_inodes+0x247/0x3e0
+[175200.081059]  [<ffffffff811dccb7>] __writeback_inodes_wb+0x97/0xd0
+[175200.081072]  [<ffffffff811dcefb>] wb_writeback+0x20b/0x340
+[175200.081078]  [<ffffffff811df3b9>] bdi_writeback_workfn+0x1d9/0x490
+[175200.081086]  [<ffffffff81078333>] process_one_work+0x173/0x4c0
+[175200.081092]  [<ffffffff81078ba3>] worker_thread+0x63/0x540
+[175200.081100]  [<ffffffff81078b40>] ? create_and_start_worker+0x40/0x40
+[175200.081106]  [<ffffffff8107efb6>] kthread+0xd6/0xf0
+[175200.081112]  [<ffffffff8107eee0>] ? kthread_create_on_node+0x180/0x180
+[175200.081118]  [<ffffffff816144fc>] ret_from_fork+0x7c/0xb0
+[175200.081124]  [<ffffffff8107eee0>] ? kthread_create_on_node+0x180/0x180
+[175200.081136] INFO: task kworker/u12:10:9821 blocked for more than 480 seconds.
+[175200.081140]       Not tainted 3.16.0-rc2-12.gfc9498b-desktop+ #2
+[175200.081143] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[175200.081146] kworker/u12:10  D ffff88011fc13a00     0  9821      2 0x00000000
+[175200.081196] Workqueue: btrfs-delalloc normal_work_helper [btrfs]
+[175200.081200]  ffff88000392f858 0000000000000046 ffff8800039b2210 0000000000013a00
+[175200.081206]  ffff88000392ffd8 0000000000013a00 ffff8800039b2210 ffff88011fc14310
+[175200.081211]  ffff88011ffcd988 ffff88000392f8e0 0000000000000002 ffffffff81140710
+[175200.081217] Call Trace:
+[175200.081224]  [<ffffffff81140710>] ? wait_on_page_read+0x60/0x60
+[175200.081231]  [<ffffffff816101fa>] io_schedule+0xaa/0x140
+[175200.081237]  [<ffffffff81140719>] sleep_on_page+0x9/0x10
+[175200.081244]  [<ffffffff81610763>] __wait_on_bit_lock+0x43/0xa0
+[175200.081251]  [<ffffffff81140815>] __lock_page+0x65/0x70
+[175200.081257]  [<ffffffff810a3570>] ? autoremove_wake_function+0x30/0x30
+[175200.081264]  [<ffffffff811414bc>] pagecache_get_page+0xac/0x1d0
+[175200.081306]  [<ffffffffc0526017>] io_ctl_prepare_pages+0x67/0x180 [btrfs]
+[175200.081349]  [<ffffffffc0527d13>] __load_free_space_cache+0x1d3/0x680 [btrfs]
+[175200.081392]  [<ffffffffc05282b4>] load_free_space_cache+0xf4/0x1b0 [btrfs]
+[175200.081425]  [<ffffffffc04c6cd2>] cache_block_group+0x192/0x390 [btrfs]
+[175200.081431]  [<ffffffff810a3540>] ? prepare_to_wait_event+0x100/0x100
+[175200.081465]  [<ffffffffc04d1dea>] find_free_extent+0x95a/0xdb0 [btrfs]
+[175200.081500]  [<ffffffffc04d2400>] btrfs_reserve_extent+0x60/0x150 [btrfs]
+[175200.081539]  [<ffffffffc04eb4db>] cow_file_range+0x12b/0x400 [btrfs]
+[175200.081582]  [<ffffffffc04e9460>] ? btrfs_writepage_end_io_hook+0x1a0/0x1a0 [btrfs]
+[175200.081621]  [<ffffffffc04ec7b5>] submit_compressed_extents+0x1f5/0x460 [btrfs]
+[175200.081661]  [<ffffffffc04eca20>] ? submit_compressed_extents+0x460/0x460 [btrfs]
+[175200.081704]  [<ffffffffc04ecaa1>] async_cow_submit+0x81/0x90 [btrfs]
+[175200.081746]  [<ffffffffc05142c3>] normal_work_helper+0x1b3/0x340 [btrfs]
+[175200.081753]  [<ffffffff81078333>] process_one_work+0x173/0x4c0
+[175200.081760]  [<ffffffff81078ba3>] worker_thread+0x63/0x540
+[175200.081767]  [<ffffffff81078b40>] ? create_and_start_worker+0x40/0x40
+[175200.081773]  [<ffffffff8107efb6>] kthread+0xd6/0xf0
+[175200.081779]  [<ffffffff8107eee0>] ? kthread_create_on_node+0x180/0x180
+[175200.081785]  [<ffffffff816144fc>] ret_from_fork+0x7c/0xb0
+[175200.081791]  [<ffffffff8107eee0>] ? kthread_create_on_node+0x180/0x180
+[175200.081797] INFO: task baloo_file_extr:10005 blocked for more than 480 seconds.
+[175200.081801]       Not tainted 3.16.0-rc2-12.gfc9498b-desktop+ #2
+[175200.081803] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[175200.081806] baloo_file_extr D ffff88011fc93a00     0 10005   6266 0x00000004
+[175200.081812]  ffff8800c748fc78 0000000000000086 ffff8800a2a44390 0000000000013a00
+[175200.081821]  ffff8800c748ffd8 0000000000013a00 ffff8800a2a44390 ffff88011fc94310
+[175200.081826]  ffff88011ffcace8 ffff8800c748fd00 0000000000000002 ffffffff81140710
+[175200.081832] Call Trace:
+[175200.081839]  [<ffffffff81140710>] ? wait_on_page_read+0x60/0x60
+[175200.081846]  [<ffffffff816101fa>] io_schedule+0xaa/0x140
+[175200.081852]  [<ffffffff81140719>] sleep_on_page+0x9/0x10
+[175200.081859]  [<ffffffff81610763>] __wait_on_bit_lock+0x43/0xa0
+[175200.081866]  [<ffffffff81140815>] __lock_page+0x65/0x70
+[175200.081871]  [<ffffffff810a3570>] ? autoremove_wake_function+0x30/0x30
+[175200.081913]  [<ffffffffc05001a9>] ? flush_write_bio+0x9/0x10 [btrfs]
+[175200.082079]  [<ffffffffc05041a8>] extent_write_cache_pages.isra.28.constprop.46+0x2d8/0x3e0 [btrfs]
+[175200.082122]  [<ffffffffc05060f8>] extent_writepages+0x48/0x60 [btrfs]
+[175200.082160]  [<ffffffffc04e9460>] ? btrfs_writepage_end_io_hook+0x1a0/0x1a0 [btrfs]
+[175200.082198]  [<ffffffffc04e6e83>] btrfs_writepages+0x23/0x30 [btrfs]
+[175200.082205]  [<ffffffff8114de79>] do_writepages+0x19/0x30
+[175200.082212]  [<ffffffff81142281>] __filemap_fdatawrite_range+0x51/0x60
+[175200.082219]  [<ffffffff8114233e>] filemap_fdatawrite_range+0xe/0x10
+[175200.082259]  [<ffffffffc04f53e9>] btrfs_sync_file+0x49/0x310 [btrfs]
+[175200.082266]  [<ffffffff8107c134>] ? task_work_run+0xb4/0xf0
+[175200.082272]  [<ffffffff811e302c>] do_fsync+0x4c/0x80
+[175200.082278]  [<ffffffff811e32ab>] SyS_fsync+0xb/0x10
+[175200.082284]  [<ffffffff816145ad>] system_call_fastpath+0x1a/0x1f
 
-First of all, a new log of all my restore attempts is here:
-http://pastebin.com/7QcNMahG
+Marc
 
-This gives me the same output as omitting the -t parameter. (Which it
-should since that's the root it detects on its own.)
-
-> If that command doesn't quickly fail or spit out a bunch of messages, then it's probably restoring files. If you confirm in another shell that it is restoring, cancel the restore, and then figure out how to use the --path-regex option with the above command to just get the files you're looking for. If it fails, consider -i to ignore errors. Hopefully any errors stopping restore won't apply to the files you're looking for.
->
-
-Adding -i gets it a bit further. It doesn't quit when the @home volume
-throws an error. It proceeds to try the @ volume, which also throws an
-error. And then it mentions that it's skipping the snapshots since I
-didn't specify -s:
-
-.....
-read block failed check_tree_block
-Error reading subvolume
-/media/mint/usb_data/sda6_btrfs_restore_t_763420672/@home:
-18446744073709551611
-Check tree block failed, want=756572160, have=6711487709046970189
-Check tree block failed, want=756572160, have=6711487709046970189
-Check tree block failed, want=756572160, have=5305625995405044180
-Check tree block failed, want=756572160, have=5305625995405044180
-Check tree block failed, want=756572160, have=5305625995405044180
-read block failed check_tree_block
-Error reading subvolume
-/media/mint/usb_data/sda6_btrfs_restore_t_763420672/@:
-18446744073709551611
-Skipping snapshot @_2014-05-22_pre-Firefox-29-upgrade
-Skipping snapshot @home_2014-05-22_pre-Firefox-29-upgrade
-Skipping snapshot @_2014-05-29-pre-Add-Intel-Graphics-Repo
-
-> If this still fails, then go back up one generation in your btrfs-find-root list and use that tree root:
-> btrfs restore -t 762122240 -i --path-regex '<blah>' /dev/mapper/sda6_crypt /media/mint/usb_data/sda6_btrfs_recovery/
->
-> And so on up the list. Maybe one of them will work (?).
-
-Tried them all, but none worked. They all gave the same error, except
-the generation varied:
-
-parent transid verify failed on 761872384 wanted 214454 found 214447
-parent transid verify failed on 761872384 wanted 214454 found 214447
-parent transid verify failed on 761872384 wanted 214454 found 214447
-parent transid verify failed on 761872384 wanted 214454 found 214447
-Ignoring transid failure
-Couldn't setup extent tree
-Couldn't setup device tree
-Couldn't read fs root: -2
-
-It seems like even though I'm explicitly telling it to use tree X
-which is generation Y, it's failing because the generation isn't the Z
-it expects. Which seems odd, because if you're passing the -t
-parameter it's because you specifically DON'T want the most recent
-tree. In which case the generation of the -t you specify will never
-match the generation it's looking for. If it really does work that way
-(generation of the tree you specify must match the generation it
-thinks the system should be on) I don't see how the -t option could
-ever work at all.
-
-Anyway, I DID have some luck with "-is". It still refuses to load the
-current state of the volumes, but it's able to recover a lot of stuff
-from the 3 snapshots I have in there. Unfortunately, the recent
-content I'm most interested in rescuing is in @home, and the only
-snapshot I have of that is several weeks older than that content. I
-usually only snapshot the root when I'm upgrading something or making
-other system changes.
-
-To be clear, I have two goals:
-
-    - Retrieve an intact version of @ with as few errors as possible,
-even if it's quite old. This is my / partition, and if I can get it
-back on the drive I'll have a working system again. I can always
-re-upgrade/install whatever I've touched in the last few weeks. I
-think what I retrieved from the snapshots should suffice for this,
-assuming there's not too much missing.
-
-    - Retrieve as much of @home from the last week as possible. This
-can tolerate more errors than @ since it's mostly data files, but the
-data I'm looking for is also more recent.
-
-> I think you're in #btrfs channel on freenode territory. Try the above, and if all fail, head to #btrfs.
-
-I think that's the point I'm at with the @home retrieval. I've got the
-dd image, those files aren't going anywhere and I don't need them
-immediately. I will see if anyone in #btrfs can help. (Although if
-anyone on the list has further ideas, please chime in! I'm listening.)
-
-I do have a few more questions about how to leverage my recovered
-snapshots into a working root though.
-
-- Most of the output from "-isvvv" consists of "Restoring..." lines
-for various files it was able to recover. But I have 4264 lines that
-just look like "offset is <some number>". Do those represent files
-that should be there that it couldn't retrieve? Some other error? I'm
-trying to get a sense of what might be missing.
-
-- The output shows files that were recovered and (I assume this is
-what the "offset" lines are) recovery attempts that failed. Is there
-any possibility there were other files in there that it just plain
-didn't detect in the tree at all, so that it wouldn't even throw an
-error for them? Or does the fact that the tree is obviously intact
-enough to traverse rule that out? Again, trying to get a sense of how
-complete the recovery was.
-
-- Assuming I have a directory that represents an intact @ (whether
-it's a single one of the snapshots or a merged version of both of them
-to fill in missing files) how would I go about getting that back on
-the original drive so I can boot into it? Would I just
-delete/overwrite the existing btrfs fs on sda6, create a btrfs fs with
-@ and @home volumes from scratch, and then just copy my directory onto
-@?
-
-Thanks for all the help.

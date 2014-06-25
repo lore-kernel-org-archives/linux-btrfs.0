@@ -1,45 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37242 "EHLO mx2.suse.de"
+Received: from ny.voidptr.de ([5.45.110.253]:49587 "EHLO ny.voidptr.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751206AbaFXIuP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jun 2014 04:50:15 -0400
-Date: Tue, 24 Jun 2014 10:50:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: dsterba@suse.cz, Adam Buchbinder <abuchbinder@google.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Properly size the leafsize field in the mdrestore_struct
- struct.
-Message-ID: <20140624085013.GS1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1402613853-14956-1-git-send-email-abuchbinder@google.com>
- <53A12B3C.7020606@jp.fujitsu.com>
- <20140623134433.GD1553@twin.jikos.cz>
- <53A8B45E.7020809@jp.fujitsu.com>
+	id S1752271AbaFYTrG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Jun 2014 15:47:06 -0400
+Date: Wed, 25 Jun 2014 21:40:40 +0200
+From: Nils Steinger <git@n-st.de>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs-progs: Add uninstall targets to Makefiles.
+Message-ID: <20140625194040.GA8631@ny.voidptr.de>
+References: <53A78988.7050602@jp.fujitsu.com>
+ <1403490228-3513-1-git-send-email-git@n-st.de>
+ <20140623150442.GK1553@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53A8B45E.7020809@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20140623150442.GK1553@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 24, 2014 at 08:12:30AM +0900, Satoru Takeuchi wrote:
-> (2014/06/23 22:44), David Sterba wrote:
-> >On Wed, Jun 18, 2014 at 03:01:32PM +0900, Satoru Takeuchi wrote:
-> >>(2014/06/13 7:57), Adam Buchbinder wrote:
-> >>>It's 32 bits as defined in ctree.h, but the struct had it as 64 bits.
-> >>>
-> >>>Found using MemorySanitizer.
-> >>>
-> >>>Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
-> >>
-> >>It looks good to me.
-> >>
-> >>Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> >
-> >Sidned-off? Did you mean Reviewed-by ?
+On Mon, Jun 23, 2014 at 05:04:42PM +0200, David Sterba wrote:
+> On Mon, Jun 23, 2014 at 04:23:48AM +0200, Nils Steinger wrote:
+> > +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(man8dir)
 > 
-> Oops, sorry.
+> > +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(libdir)
 > 
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> > +	rmdir -p --ignore-fail-on-non-empty $(DESTDIR)$(bindir)
+> 
+> I don't think it's right to remove the systemwide directories: bindir,
+> libdir and man8dir. There rest are btrfs subdirs (eg. incdir), that's
+> fine.
 
-Thanks, patch updated.
+On my system, man8dir didn't exist prior to the installation, so I
+thought it would be reasonable to have the uninstallation routine remove
+it. bindir and libdir will exist by default on most systems, so that's a
+different case…
+So, should we really keep the directories around, even if they were
+created by the installation and are now empty (if they aren't, they
+won't be removed anyway)?

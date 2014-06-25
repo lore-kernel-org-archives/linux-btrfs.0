@@ -1,89 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33733 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755197AbaFLCaW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jun 2014 22:30:22 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5C2U8Dq024478
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Jun 2014 10:30:08 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs-progs: fix missing parity stripe for raid6 in chunk-recover
-Date: Thu, 12 Jun 2014 10:24:59 +0800
-Message-ID: <1402539901-22779-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:63437 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752565AbaFYCRe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jun 2014 22:17:34 -0400
+Message-ID: <53AA313C.9010802@redhat.com>
+Date: Tue, 24 Jun 2014 21:17:32 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs-progs: fix max mirror number error for chunk-recover
+References: <1402539901-22779-1-git-send-email-guihc.fnst@cn.fujitsu.com> <1402539901-22779-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1402539901-22779-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When deal with the p & q stripes for data profile raid6, chunk-recover
-forgets to insert them into the chunk record. Just insert them back
-freely.
-Also wrap the inert procedure into a new function, fill_chunk_up.
+On 6/11/14, 9:25 PM, Gui Hecheng wrote:
+> When run chunk-recover on a health btrfs(data profile raid0, with
+> plenty of data), the program has a chance to abort on the number
+> of mirrors of an extent.
+> 
+> According to the kernel code, the max mirror number of an extent
+> is 3 not 2:
+> 	ctree.h: 		BTRFS_MAX_MIRRORS	3
+> 	chunk-recover.c :	BTRFS_NUM_MIRRORS	2
+> just change BTRFS_NUM_MIRRORS to 3, and everything goes well.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
----
- chunk-recover.c | 30 ++++++++++++++++++++----------
- 1 file changed, 20 insertions(+), 10 deletions(-)
+Wouldn't it make a lot more sense, then, to change the userspace
+macro to be called BTRFS_MAX_MIRRORS as well?
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index dfa7ff6..9b46b0b 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1785,6 +1785,23 @@ static inline int count_devext_records(struct list_head *record_list)
- 	return num_of_records;
- }
- 
-+static int fill_chunk_up(struct chunk_record *chunk, struct list_head *devexts,
-+			 struct recover_control *rc)
-+{
-+	int ret = 0;
-+	int i;
-+
-+	for (i = 0; i < chunk->num_stripes; i++) {
-+		if (!chunk->stripes[i].devid) {
-+			ret = insert_stripe(devexts, rc, chunk, i);
-+			if (ret)
-+				break;
-+		}
-+	}
-+
-+	return ret;
-+}
-+
- #define EQUAL_STRIPE (1 << 0)
- 
- static int rebuild_raid_data_chunk_stripes(struct recover_control *rc,
-@@ -1919,9 +1936,9 @@ next_csum:
- 		num_unordered = count_devext_records(&unordered);
- 		if (chunk->type_flags & BTRFS_BLOCK_GROUP_RAID6
- 					&& num_unordered == 2) {
--			list_splice_init(&unordered, &chunk->dextents);
- 			btrfs_release_path(&path);
--			return 0;
-+			ret = fill_chunk_up(chunk, &unordered, rc);
-+			return ret;
- 		}
- 
- 		goto next_stripe;
-@@ -1966,14 +1983,7 @@ out:
- 			& BTRFS_BLOCK_GROUP_RAID5)
- 		 || (num_unordered == 3 && chunk->type_flags
- 			& BTRFS_BLOCK_GROUP_RAID6)) {
--			for (i = 0; i < chunk->num_stripes; i++) {
--				if (!chunk->stripes[i].devid) {
--					ret = insert_stripe(&unordered, rc,
--							chunk, i);
--					if (ret)
--						break;
--				}
--			}
-+			ret = fill_chunk_up(chunk, &unordered, rc);
- 		}
- 	}
- fail_out:
--- 
-1.8.1.4
+-Eric
+
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+> ---
+>  chunk-recover.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/chunk-recover.c b/chunk-recover.c
+> index 9b46b0b..d5a688e 100644
+> --- a/chunk-recover.c
+> +++ b/chunk-recover.c
+> @@ -42,7 +42,7 @@
+>  #include "btrfsck.h"
+>  #include "commands.h"
+>  
+> -#define BTRFS_NUM_MIRRORS			2
+> +#define BTRFS_NUM_MIRRORS			3
+>  
+>  struct recover_control {
+>  	int verbose;
+> 
 

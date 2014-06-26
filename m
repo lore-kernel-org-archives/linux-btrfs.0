@@ -1,37 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail.fujitsu.co.jp ([164.71.1.133]:55141 "EHLO
-	fgwmail.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755284AbaFZHRu (ORCPT
+Received: from mout.kundenserver.de ([212.227.17.10]:50910 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756509AbaFZLGi convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jun 2014 03:17:50 -0400
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail.fujitsu.co.jp (Postfix) with ESMTP id A68963EE0DD
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 16:17:48 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id A6474AC09DA
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 16:17:47 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 42477E0800A
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 16:17:47 +0900 (JST)
-Message-ID: <53ABC90A.9040800@jp.fujitsu.com>
-Date: Thu, 26 Jun 2014 16:17:30 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: <franziska.naepelt@hiperscan.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	Thu, 26 Jun 2014 07:06:38 -0400
+Message-ID: <1403780795.7657.7.camel@hsew-frn.HIPERSCAN>
 Subject: Re: cancel btrfs delete job
-References: <1403596252.4221.9.camel@hsew-frn.HIPERSCAN>
+From: Franziska =?ISO-8859-1?Q?N=E4pelt?=
+	<franziska.naepelt@hiperscan.com>
+Reply-To: franziska.naepelt@hiperscan.com
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Thu, 26 Jun 2014 13:06:35 +0200
 In-Reply-To: <1403596252.4221.9.camel@hsew-frn.HIPERSCAN>
-Content-Type: text/plain; charset="ISO-8859-15"; format=flowed
+References: <1403596252.4221.9.camel@hsew-frn.HIPERSCAN>
+Content-Type: text/plain; charset="ISO-8859-15"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Hello Satoru,
+
+here are your requested informations:
+
+environment:
+
+- four 2 TB disks: /dev/sd[c-f]
+- two 3 TB disks: /dev/sdg (but until now, only one is connected)
+
+filesystem consists of/dev/sd[c-f]
+
+I wanted to replace /dev/sdc by /dev/sdg ( with commands add and after
+that delete.
+In the second step, I wanted to replace the next disk.
+
+But it hanged during btrfs delete command (after successfull add).
+The delete process was still in progress, but with iotop it seems to me,
+that there is was no data transfer.
+
+
+Today in the morning the hole computer hangs and there was no other
+possibility than reset :(
+
+Until now, he tries to boot with a lot of erros. But I can see, that
+there are fileactions on the harddrive.
+
+There are a lot of following messages:
+btrfs free space inode generation (0) did not match free space cache
+generation
+
+
+best regards,
+Franziska
+
+-------- Weitergeleitete Nachricht --------
+Von: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+An: franziska.naepelt@hiperscan.com, linux-btrfs@vger.kernel.org
+<linux-btrfs@vger.kernel.org>
+Betreff: Re: cancel btrfs delete job
+Datum: Thu, 26 Jun 2014 16:17:30 +0900
 
 Hi Franziska,
 
 (2014/06/24 16:50), Franziska Näpelt wrote:
 > Hi,
 >
-> i want to expand a btrfs filesystem. In the moment I have four 2 TB HDDs
+> i want to expand a btrfs filesystem. In the moment I have four 2 TB
+HDDs
 > for one btrfs pool.
 > I want to replace two of the HDDs with 3 TB devices. For this reason i
 > added as first one 3 TB device. After that, i do the btrfs delete job.
@@ -67,8 +101,13 @@ Satoru
 >
 >
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
+
+
+
+
 

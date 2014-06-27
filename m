@@ -1,142 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55458 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750699AbaF0Atp (ORCPT
+Received: from mail-vc0-f179.google.com ([209.85.220.179]:44726 "EHLO
+	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751139AbaF0Bh3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jun 2014 20:49:45 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Duncan <1i5t5.duncan@cox.net>
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: cancel btrfs delete job
-Date: Fri, 27 Jun 2014 10:49:40 +1000
-Message-ID: <61052648.lopAtLMs1F@xev>
-In-Reply-To: <pan$6d335$5c2b9a29$9bcb428d$7e0aa9cc@cox.net>
-References: <1403783232.7657.25.camel@hsew-frn.HIPERSCAN> <pan$6d335$5c2b9a29$9bcb428d$7e0aa9cc@cox.net>
+	Thu, 26 Jun 2014 21:37:29 -0400
+Received: by mail-vc0-f179.google.com with SMTP id id10so4366532vcb.24
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jun 2014 18:37:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="nextPart2453759.S1Xx5MHKpT"
+Date: Thu, 26 Jun 2014 21:37:27 -0400
+Message-ID: <CAGfcS_kSiDOYCQ7XRE46W36Kygdpe=58xcax4FZPS9EHLRt9DA@mail.gmail.com>
+Subject: Blocked tasks on 3.15.1
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
+I've been getting blocked tasks on 3.15.1 generally at times when the
+filesystem is somewhat busy (such as doing a backup via scp/clonezilla
+writing to the disk).
 
---nextPart2453759.S1Xx5MHKpT
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+A week ago I had enabled snapper for a day which resulted in a daily
+cleanup of about 8 snapshots at once, which might have contributed,
+but I've been limping along since.
 
-On Thu, 26 Jun 2014 13:25:09 Duncan wrote:
-> properly.  And if you do automated snapshots, use a good thinning script 
-> to thin them down so you're well under 500. (I've posted figures where 
-> even starting with per-minute snapshots, thinning down to 10 minute, then 
-> to half hour within the day, then to say 4/day after two days, 1/day 
-> after a week, one a week after four weeks, one every 13 weeks aka 
-> quarterly after say six months, and clearing them all and relying on off-
-> machine backups after a year or 18 months, runs only 250-ish or so, under 
-> 300.)
+Here is a pastebin of my dmesg from the hung tasks and a subsequent Alt-SysRq-W:
 
-What scripts are people using for this?
+http://pastebin.com/yYdcxFTE
 
-I've attached the latest scripts I use for managing BTRFS, they assume that 
-the filesystem is mounted on root.  They use /backup for snapshots of root and 
-/backup-$DIR for snapshots of /$DIR.  I've also attached the scrub and 
-rebalance script I use.
+When this happens the system remains somewhat stable, but no writes to
+the disk succeed, and I start getting load averages in the dozens as
+tasks start blocking.
 
-These aren't the greatest scripts, I'll probably write something better 
-eventually if no-one else has done so.
+On reboot the system generally works fine, though it can hang a day or
+two later.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+I'm happy to try patches, or try to capture any other output that is
+helpful the next time this happens - the system is fairly stable as
+long as I capture things someplace other than my btrfs file systems.
+I didn't see anything quite like this on the list.  I updated my
+kernel around the time this behavior started, and was on 3.15.0
+previously (though I haven't tried reverting yet).
 
---nextPart2453759.S1Xx5MHKpT
-Content-Disposition: attachment; filename="btrfs-make-snapshot"
-Content-Transfer-Encoding: 7Bit
-Content-Type: application/x-shellscript; name="btrfs-make-snapshot"
-
-#!/bin/bash
-set -e
-
-# usage:
-# btrfs-make-snapshot [-d] minutes|days paths
-# example:
-# btrfs-make-snapshot minutes /home /mail
-
-if [ "$1" == "-d" ]; then
-  BTRFS="echo btrfs"
-  shift
-else
-  BTRFS=/sbin/btrfs
-fi
-
-if [ "$1" == "minutes" ]; then
-  DATE=$(date +%Y-%m-%d:%H:%M)
-else
-  DATE=$(date +%Y-%m-%d)
-fi
-shift
-
-
-for n in $* ; do
-  BASENAME=$(basename $n)
-  if [ "$BASENAME" == "/" ]; then
-    BACKUPDIR="/backup"
-  else
-    BACKUPDIR="/backup-$BASENAME"
-  fi
-  $BTRFS subvol snapshot -r $n $BACKUPDIR/$DATE
-done
-
---nextPart2453759.S1Xx5MHKpT
-Content-Disposition: attachment; filename="btrfs-remove-snapshots"
-Content-Transfer-Encoding: 7Bit
-Content-Type: application/x-shellscript; name="btrfs-remove-snapshots"
-
-#!/bin/bash
-set -e
-
-# usage:
-# btrfs-remove-snapshots [-d] MINSNAPS DAYSNAPS paths
-# example:
-# btrfs-remove-snapshots 100 100 /home /mail
-
-if [ "$1" == "-d" ]; then
-  BTRFS="echo btrfs"
-  shift
-else
-  BTRFS=/sbin/btrfs
-fi
-
-MINSNAPS=$1
-shift
-DAYSNAPS=$1
-shift
-
-for DIR in $* ; do
-  BASENAME=$(basename $DIR)
-  if [ "$BASENAME" == "/" ]; then
-    BACKUPDIR="backup"
-  else
-    BACKUPDIR="backup-$BASENAME"
-  fi
-
-  for n in $(/sbin/btrfs subvol list /|grep \ ${BACKUPDIR}/.*:|head -n -$MINSNAPS|sed -e "s/^.* //"); do
-    $BTRFS subvol delete /$n
-  done
-  for n in $(/sbin/btrfs subvol list /|grep \ ${BACKUPDIR}/|grep -v :|head -n -$DAYSNAPS|sed -e "s/^.* //"); do
-    $BTRFS subvol delete /$n
-  done
-done
-
---nextPart2453759.S1Xx5MHKpT
-Content-Disposition: attachment; filename="btrfs-scrub"
-Content-Transfer-Encoding: 7Bit
-Content-Type: application/x-shellscript; name="btrfs-scrub"
-
-#!/bin/bash
-set -e
-
-/sbin/btrfs scrub start -B /
-/sbin/btrfs fi balance start -dusage=30 -musage=30 /
-
---nextPart2453759.S1Xx5MHKpT--
-
+Rich

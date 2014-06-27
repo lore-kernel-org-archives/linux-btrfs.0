@@ -1,120 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:64837 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752678AbaF0Sdy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 14:33:54 -0400
-Received: from [0.0.0.0] ([37.0.123.207]) by mail.gmx.com (mrgmx103) with
- ESMTPSA (Nemesis) id 0LvlWS-1WbAnq3wTc-017Y2x for
- <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 20:33:51 +0200
-Message-ID: <53ADB90A.60502@gmx.net>
-Date: Fri, 27 Jun 2014 20:33:46 +0200
-From: "myLC@gmx.net" <myLC@gmx.net>
-MIME-Version: 1.0
+Received: from magic.merlins.org ([209.81.13.136]:57341 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750990AbaF0SuJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Jun 2014 14:50:09 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
+	id 1X0bDt-0000Vg-2e
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 11:50:09 -0700
+Date: Fri, 27 Jun 2014 11:50:09 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Cannot delete snapshot
-Content-Type: text/plain; charset=UTF-8
+Subject: Also seeing full deadlocks with 3.15.1
+Message-ID: <20140627185009.GA21428@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, =)
+My laptop deadlocked some more times (everything works until it needs to
+touch the filesystem, and then it's deadlocked).
+Unfortunately, I can trigger sysrq, but it doesn't get committed to disk and
+netconsole eats half of it because it goes too fast for UDP apparently
 
-I got a problem with a simple backup bash script. It creates a snapshot and then backs it up.
-The user (Ubuntu 12.04, 64-bit) interrupted the script with CTRL+C shortly after it started.
-Then the machine was rebooted several times. Now these snapshots cannot be deleted anymore
-and new ones can't be taken.
+Now, I just captured that on my server with serial console.
 
+11005  1-16:11:10 wait_current_trans.isra.15     /usr/bin/zma -m 3
+14441  1-16:07:44 wait_current_trans.isra.15     /usr/bin/zma -m 1
+17045  1-23:53:33 wait_current_trans.isra.15     /usr/bin/zma -m 9
+22261  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 6
+22292  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 8
 
-This is what the script does before it starts the backup process:
+19911    09:29:35 wait_current_trans.isra.15     rm -f -- /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13 /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13.gz
+22848  1-05:18:35 wait_current_trans.isra.15     rm -f -- mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11 mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11.gz
 
-mount /mnt/big -o remount -o rw # /mnt/big is a partition for backups, which is read-only
-mkdir /mnt/backup_root
-mount /dev/sda1 /mnt/backup_root # /dev/sda1 on /home type btrfs (rw,subvol=@home)
-btrfs subvolume snapshot /mnt/backup_root/@ /mnt/backup_root/@snapshot_backup_root
-btrfs subvolume snapshot /mnt/backup_root/@home /mnt/backup_root/@snapshot_backup_home
-mkdir /mnt/backup
-mount --bind /mnt/backup_root/@snapshot_backup_root /mnt/backup/
-mount --bind /mnt/backup_root/@snapshot_backup_home/ /mnt/backup/home/
-mount --bind /boot /mnt/backup/boot/
+Those are 2 different filesystems (one single device mapper disk, the other one is btrfs raid1), so I'm not sure which one of the 2 caused the problem, but I'm perplexed as to why one would than hang the other, unless they both hit the same bug?
 
-This is what it didn't do, as it was interrupted:
-umount /mnt/backup/boot/ 1> /dev/null 2> /dev/null
-umount /mnt/backup/home/ 1> /dev/null 2> /dev/null
-umount /mnt/backup 1> /dev/null 2> /dev/null
-rmdir /mnt/backup 1> /dev/null 2> /dev/null
-btrfs subvolume delete /mnt/backup_root/@snapshot_backup_home 1> /dev/null 2> /dev/null
-btrfs subvolume delete /mnt/backup_root/@snapshot_backup_root 1> /dev/null 2> /dev/null
-umount /mnt/backup_root 1> /dev/null 2> /dev/null
-rmdir /mnt/backup_root 1> /dev/null 2> /dev/null
-mount /mnt/big -o remount -o ro 1> /dev/null 2> /dev/null
+The sysrq-w output is here:
+http://marc.merlins.org/tmp/btrfs-hang.txt
 
+but here is one hung process:
+ zma		D 0000000000000003     0 22292	    1 0x20020084
+  ffff880074733bb0 0000000000000082 ffff8800c933f270 ffff880074733fd8
+  ffff8801853b4610 00000000000141c0 ffff8801aac60f00 ffff880036caa9e8
+  0000000000000000 ffff880036caa800 ffff8801db59f0c0 ffff880074733bc0
+ Call Trace:
+  [<ffffffff8161d3c6>] schedule+0x73/0x75
+  [<ffffffff8122a87b>] wait_current_trans.isra.15+0x98/0xf4
+  [<ffffffff810847ed>] ? finish_wait+0x65/0x65
+  [<ffffffff8122bd95>] start_transaction+0x498/0x4fc
+  [<ffffffff8122be14>] btrfs_start_transaction+0x1b/0x1d
+  [<ffffffff8123602a>] btrfs_create+0x3c/0x1ce
+  [<ffffffff81298985>] ? security_inode_permission+0x1c/0x23
+  [<ffffffff8115e93e>] ? __inode_permission+0x79/0xa4
+  [<ffffffff8115fbfc>] vfs_create+0x66/0x8c
+  [<ffffffff8116095e>] do_last+0x5af/0xa23
+  [<ffffffff81161009>] path_openat+0x237/0x4de
+  [<ffffffff81162408>] do_filp_open+0x3a/0x7f
+  [<ffffffff8161faeb>] ? _raw_spin_unlock+0x17/0x2a
+  [<ffffffff8116c3eb>] ? __alloc_fd+0xea/0xf9
+  [<ffffffff8115499d>] do_sys_open+0x70/0xff
+  [<ffffffff81194e20>] compat_SyS_open+0x1b/0x1d
+  [<ffffffff8162842c>] sysenter_dispatch+0x7/0x21
 
-This is what the file-system is supposed to look like:
-# btrfs subvolume list '/'
-ID 256 top level 5 path @
-ID 257 top level 5 path @home
+As per the other thread, I'm happy to test a patch against 3.15, but not hot about switching to a likely even less stable 3.16 since it's a real server with real data.
 
-and this is what it looks like instead:
-# btrfs subvolume list '/'
-ID 256 top level 5 path @
-ID 257 top level 5 path @home
-ID 258 top level 5 path @snapshot_backup_root
-ID 259 top level 5 path @snapshot_backup_home
-ID 260 top level 5 path @snapshot_backup_root/@
-ID 261 top level 5 path @snapshot_backup_home/@home
-# btrfs subvolume list '/mnt'
-ERROR: '/mnt' is not a subvolume
-# btrfs subvolume list '/mnt/backup_root'
-ERROR: error accessing '/mnt/backup_root'
-
-
-When running the script again, it prints:
-ERROR: cannot snapshot '/mnt/backup_root/@'
-and
-ERROR: cannot snapshot '/mnt/backup_root/@home'
-as they still seem to exist.
-
-But deleting the snapshots fails as well.
-
-btrfs subvolume delete  '/@snapshot_backup_root'
-btrfs subvolume delete  '/@snapshot_backup_home'
-btrfs subvolume delete  '/@snapshot_backup_root/@'
-btrfs subvolume delete  '/@snapshot_backup_home/@home'
-btrfs subvolume delete  '/@snapshot_backup_root'
-btrfs subvolume delete  '/@snapshot_backup_home'
-
-didn't work (ERROR: error accessing '/@snapshot_backup_root'.
-Simply running the unmount/delete snapshot part of the script didn't either.
-
-How can I get rid of those snapshots (ID 257-261)?
-
-I tried:
-# mkdir /tmp/t
-# mount /dev/sda1 /tmp/t  -o subvol=/
-# ls /tmp/t
-
-@
-@home
-@snapshot_backup_home
-@snapshot_backup_root
-
-# btrfs subvol delete /tmp/t/@snapshot_backup_home
-Delete subvolume '/tmp/t/@snapshot_backup_home'
-ERROR: cannot delete '/tmp/t/@snapshot_backup_home'
-
-
-Needless to say that such an error message isn't really helpful.
-
-
-I'd appreciate any help. As I'm NOT SUBSCRIBED TO THE MAILING LIST,
-please CC to
-                  myLC@gmx.net
-
-Thank you very much! :-)
-
-
-
-PS.: I didn't append any dmesg and such as they likely won't be of any use,
-     given the very specific problem. If needed I can supply them.
-
-
-
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

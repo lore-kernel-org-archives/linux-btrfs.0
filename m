@@ -1,59 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:59136 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750985AbaF0Wdt (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:21234 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750990AbaF0WgS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 18:33:49 -0400
-Date: Fri, 27 Jun 2014 15:33:40 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: ronnie sahlberg <ronniesahlberg@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <20140627223340.GC28692@merlins.org>
-References: <20140627185009.GA21428@merlins.org>
- <20140627204005.GB28692@merlins.org>
- <CAN05THQznt1=7yDTbJcwZqB149E3VueoTALmfyKJALQR9dPSAw@mail.gmail.com>
+	Fri, 27 Jun 2014 18:36:18 -0400
+Message-ID: <53ADF1D8.9060309@fb.com>
+Date: Fri, 27 Jun 2014 15:36:08 -0700
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAN05THQznt1=7yDTbJcwZqB149E3VueoTALmfyKJALQR9dPSAw@mail.gmail.com>
+To: Marc MERLIN <marc@merlins.org>, <linux-btrfs@vger.kernel.org>
 Subject: Re: Also seeing full deadlocks with 3.15.1
+References: <20140627185009.GA21428@merlins.org>
+In-Reply-To: <20140627185009.GA21428@merlins.org>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 27, 2014 at 02:50:10PM -0700, ronnie sahlberg wrote:
-> > If I don't hear anything by the end of today, I'll just delete the
-> > filesystem and start over.
-> 
-> At some stage it would be nice to see not only fixes but also changes
-> to fsck to make it able to repair these problems.
-> Blow it away and create a new filesystem from scratch is sub-optimal.
+On 06/27/2014 11:50 AM, Marc MERLIN wrote:
+> My laptop deadlocked some more times (everything works until it needs to
+> touch the filesystem, and then it's deadlocked).
+> Unfortunately, I can trigger sysrq, but it doesn't get committed to disk and
+> netconsole eats half of it because it goes too fast for UDP apparently
+>
+> Now, I just captured that on my server with serial console.
+>
+> 11005  1-16:11:10 wait_current_trans.isra.15     /usr/bin/zma -m 3
+> 14441  1-16:07:44 wait_current_trans.isra.15     /usr/bin/zma -m 1
+> 17045  1-23:53:33 wait_current_trans.isra.15     /usr/bin/zma -m 9
+> 22261  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 6
+> 22292  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 8
+>
+> 19911    09:29:35 wait_current_trans.isra.15     rm -f -- /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13 /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13.gz
+> 22848  1-05:18:35 wait_current_trans.isra.15     rm -f -- mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11 mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11.gz
+>
+> Those are 2 different filesystems (one single device mapper disk, the other one is btrfs raid1), so I'm not sure which one of the 2 caused the problem, but I'm perplexed as to why one would than hang the other, unless they both hit the same bug?
+>
+> The sysrq-w output is here:
+> https://urldefense.proofpoint.com/v1/url?u=http://marc.merlins.org/tmp/btrfs-hang.txt&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=CZ0ka0XcM6ZpRAF31LYBziutfoecu9ODO78jo5Kb2JQ%3D%0A&s=6213c6dc2c99166a71f262a1804bc7135ca17bffd8b9de175f655ed2a6a54f10
+>
+> but here is one hung process:
+>   zma		D 0000000000000003     0 22292	    1 0x20020084
+>    ffff880074733bb0 0000000000000082 ffff8800c933f270 ffff880074733fd8
+>    ffff8801853b4610 00000000000141c0 ffff8801aac60f00 ffff880036caa9e8
+>    0000000000000000 ffff880036caa800 ffff8801db59f0c0 ffff880074733bc0
+>   Call Trace:
+>    [<ffffffff8161d3c6>] schedule+0x73/0x75
+>    [<ffffffff8122a87b>] wait_current_trans.isra.15+0x98/0xf4
+>    [<ffffffff810847ed>] ? finish_wait+0x65/0x65
+>    [<ffffffff8122bd95>] start_transaction+0x498/0x4fc
+>    [<ffffffff8122be14>] btrfs_start_transaction+0x1b/0x1d
+>    [<ffffffff8123602a>] btrfs_create+0x3c/0x1ce
+>    [<ffffffff81298985>] ? security_inode_permission+0x1c/0x23
+>    [<ffffffff8115e93e>] ? __inode_permission+0x79/0xa4
+>    [<ffffffff8115fbfc>] vfs_create+0x66/0x8c
+>    [<ffffffff8116095e>] do_last+0x5af/0xa23
+>    [<ffffffff81161009>] path_openat+0x237/0x4de
+>    [<ffffffff81162408>] do_filp_open+0x3a/0x7f
+>    [<ffffffff8161faeb>] ? _raw_spin_unlock+0x17/0x2a
+>    [<ffffffff8116c3eb>] ? __alloc_fd+0xea/0xf9
+>    [<ffffffff8115499d>] do_sys_open+0x70/0xff
+>    [<ffffffff81194e20>] compat_SyS_open+0x1b/0x1d
+>    [<ffffffff8162842c>] sysenter_dispatch+0x7/0x21
+>
+> As per the other thread, I'm happy to test a patch against 3.15, but not hot about switching to a likely even less stable 3.16 since it's a real server with real data.
+>
 
-I don't think you'll find disagreement from me or anyone here :)
+A few other people have complained about this, I've not been able to reproduce
+it but I have a patch you can try.  It will make it so the box doesn't deadlock
+anymore but I still need the output, look for "timed out", thats when you need
+to dump the logs and send it to me.  The patch is here
 
-But I'd go one step further. The filesystem is not corrupted as far as I
-can tell, I'm happily copying data off it in ro,recovery mode (to
-prevent background btrfs code from trying to do stuff and trip over
-itself again).
 
-The problem in my experience so far is that btrfs isn't stabilizing at
-all. Some bugs are fixed, other things are changed, and new ones are
-added.
-I've not had a single version of btrfs in the last 4 kernels that didn't
-deadlock and/or trip over itself (apparently from evolving or
-balancing/filling filesystems into states where it can't handle them
-properly anymore).
+http://ur1.ca/hlj6d
 
-I really really wish we had a kernel release with only stabilizations
-and where all recent deadlock and corruption problems (on newly created
-filesystems) would be handled.
-Right now, general state is bad enough that you can't tell if you hit a
-new bug, or if it's an old bug that hasn't been fixed yet and developers
-can't easily know if newer kernels have introduced regressions or not
-since the general state of performance and stability isn't good across
-all recent kernel versions.
+Thanks,
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Josef

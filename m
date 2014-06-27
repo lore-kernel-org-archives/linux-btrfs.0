@@ -1,50 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:57288 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750980AbaF0WM3 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 18:12:29 -0400
-Content-Type: text/plain; charset=iso-8859-1
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Can't mount subvolume with ro option
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <B87E6AE0-F47D-4F75-9628-E1151BB7467D@colorremedies.com>
-Date: Fri, 27 Jun 2014 16:12:25 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <54D8214E-1C00-43AB-A68A-D450069D878C@colorremedies.com>
-References: <53ADCF0B.4010109@free.fr> <B87E6AE0-F47D-4F75-9628-E1151BB7467D@colorremedies.com>
-To: =?iso-8859-1?Q?S=E9bastien_ROHAUT?= <sebastien.rohaut@free.fr>
+Received: from magic.merlins.org ([209.81.13.136]:59136 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750985AbaF0Wdt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Jun 2014 18:33:49 -0400
+Date: Fri, 27 Jun 2014 15:33:40 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: ronnie sahlberg <ronniesahlberg@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <20140627223340.GC28692@merlins.org>
+References: <20140627185009.GA21428@merlins.org>
+ <20140627204005.GB28692@merlins.org>
+ <CAN05THQznt1=7yDTbJcwZqB149E3VueoTALmfyKJALQR9dPSAw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAN05THQznt1=7yDTbJcwZqB149E3VueoTALmfyKJALQR9dPSAw@mail.gmail.com>
+Subject: Re: Also seeing full deadlocks with 3.15.1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Jun 27, 2014, at 4:08 PM, Chris Murphy <lists@colorremedies.com> wrote:
-
+On Fri, Jun 27, 2014 at 02:50:10PM -0700, ronnie sahlberg wrote:
+> > If I don't hear anything by the end of today, I'll just delete the
+> > filesystem and start over.
 > 
-> On Jun 27, 2014, at 2:07 PM, Sébastien ROHAUT <sebastien.rohaut@free.fr> wrote:
-> 
->> Hi,
->> 
->> In the wiki, it's said we can mount subvolumes with different mount options. nosuid, nodev, rw and ro are listed, as valid generic mount options.
-> 
-> This might require 3.15. I don't recall it working with early 3.14 kernels, but by 3.14.3 I'd moved onto testing 3.15.
+> At some stage it would be nice to see not only fixes but also changes
+> to fsck to make it able to repair these problems.
+> Blow it away and create a new filesystem from scratch is sub-optimal.
 
+I don't think you'll find disagreement from me or anyone here :)
 
-[root@f20v ~]# mount /dev/sda3 /mnt
-[root@f20v ~]# btrfs subvol create /mnt/test
-Create subvolume '/mnt/test'
-[root@f20v ~]# umount /mnt
-[root@f20v ~]# mount -o ro,subvol=test /dev/sda3 /mnt
-mount: /dev/sda3 is already mounted or /mnt busy
-       /dev/sda3 is already mounted on /
-       /dev/sda3 is already mounted on /home
-       /dev/sda3 is already mounted on /var
-       /dev/sda3 is already mounted on /boot
-[root@f20v ~]# uname -r
-3.14.6-200.fc20.x86_64
+But I'd go one step further. The filesystem is not corrupted as far as I
+can tell, I'm happily copying data off it in ro,recovery mode (to
+prevent background btrfs code from trying to do stuff and trip over
+itself again).
 
+The problem in my experience so far is that btrfs isn't stabilizing at
+all. Some bugs are fixed, other things are changed, and new ones are
+added.
+I've not had a single version of btrfs in the last 4 kernels that didn't
+deadlock and/or trip over itself (apparently from evolving or
+balancing/filling filesystems into states where it can't handle them
+properly anymore).
 
-I don't know if this feature will be backported to stable kernels. If not, then probably the wiki should say it's a 3.15+ feature.
+I really really wish we had a kernel release with only stabilizations
+and where all recent deadlock and corruption problems (on newly created
+filesystems) would be handled.
+Right now, general state is bad enough that you can't tell if you hit a
+new bug, or if it's an old bug that hasn't been fixed yet and developers
+can't easily know if newer kernels have introduced regressions or not
+since the general state of performance and stability isn't good across
+all recent kernel versions.
 
-Chris Murphy
-
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

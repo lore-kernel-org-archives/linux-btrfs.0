@@ -1,35 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f171.google.com ([209.85.220.171]:51477 "EHLO
-	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752740AbaF0POw (ORCPT
+Received: from mail-qc0-f181.google.com ([209.85.216.181]:37607 "EHLO
+	mail-qc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754084AbaF0PoZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 11:14:52 -0400
-Received: by mail-vc0-f171.google.com with SMTP id id10so5218098vcb.16
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 08:14:51 -0700 (PDT)
+	Fri, 27 Jun 2014 11:44:25 -0400
+Received: by mail-qc0-f181.google.com with SMTP id x13so4608944qcv.26
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 08:44:24 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$81d96$8a4effae$94572f09$472a11ff@cox.net>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
-	<pan$81d96$8a4effae$94572f09$472a11ff@cox.net>
-Date: Fri, 27 Jun 2014 11:14:51 -0400
-Message-ID: <CAGfcS_khFRS3nMOtAD7srzHg6Q73LF1iogEzTy4YH1KW=qEu0g@mail.gmail.com>
-Subject: Re: Blocked tasks on 3.15.1
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+Date: Fri, 27 Jun 2014 11:44:24 -0400
+Message-ID: <CAMXuLLrhMv82LPveRemDU_v_Kru2US6sKVn377gS3t9p-VFrag@mail.gmail.com>
+Subject: [Question] Btrfs on iSCSI device
+From: Zhe Zhang <zhe.zhang.research@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 27, 2014 at 9:06 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Hopefully that problem's fixed on 3.16-rc2+, but as of yet there's not
-> enough 3.16-rc2+ reports out there from folks experiencing issues with
-> 3.15 blocked tasks to rightfully say.
+Hi,
 
-Any chance that it was backported to 3.15.2?  I'd rather not move to
-mainline just for btrfs.
+I setup 2 Linux servers to share the same device through iSCSI. Then I
+created a btrfs on the device. Then I saw the problem that the 2 Linux
+servers do not see a consistent file system image.
 
-I got another block this morning and failed to capture a log before my
-terminals gave out.  I switched back to 3.15.0 for the moment, and
-we'll see if that fares any better.
+Details:
+-- Server 1 running kernel 2.6.32, server 2 running 3.2.1
+-- Both running btrfs v0.20-rc1
+-- Server 2 has device /dev/vdc, exposed as iSCSI target
+ -- Server 1 mounts the device as /dev/sda
+-- Server 1 'mount /dev/sda /mnt/btrfs'; server 2 'mount /dev/vdc /mnt/btrfs',
+ -- When server 1 'touch /mnt/btrfs/foo', server 2 doesn't see any
+file under /mnt/btrfs
+-- I created /mnt/btrfs/foo on server 2 as well; then I added some
+content from both server 1 and server 2 to /mnt/btrfs/foo
+-- After that each server sees the content it adds, but not the
+content from the other server
+-- Both server 'umount /mnt/btrfs', and mount it again
+-- Then both servers see /mnt/btrfs/foo with the content added from
+server 2 (I guess it's because server 2 created the foo file later
+than server 1).
 
-Rich
+I did a similar test on ext4 and both servers see a consistent image
+of the file system. When server 1 creates a foo file server 2
+immediately sees it.
+
+Is this how btrfs is supposed to work?
+
+Thanks,
+
+Zhe

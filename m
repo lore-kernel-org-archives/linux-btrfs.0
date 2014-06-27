@@ -1,73 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57341 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750990AbaF0SuJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 14:50:09 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
-	id 1X0bDt-0000Vg-2e
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 11:50:09 -0700
-Date: Fri, 27 Jun 2014 11:50:09 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Also seeing full deadlocks with 3.15.1
-Message-ID: <20140627185009.GA21428@merlins.org>
+Received: from smtp2-g21.free.fr ([212.27.42.2]:57296 "EHLO smtp2-g21.free.fr"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750714AbaF0UHo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Jun 2014 16:07:44 -0400
+Received: from slyserver.local (unknown [IPv6:2a01:e35:2ed8:d4f0:cdbf:9101:b6c4:b7d1])
+	by smtp2-g21.free.fr (Postfix) with ESMTP id 0940F4B006D
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 22:07:39 +0200 (CEST)
+Message-ID: <53ADCF0B.4010109@free.fr>
+Date: Fri, 27 Jun 2014 22:07:39 +0200
+From: =?ISO-8859-1?Q?S=E9bastien_ROHAUT?= <sebastien.rohaut@free.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Subject: Can't mount subvolume with ro option
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My laptop deadlocked some more times (everything works until it needs to
-touch the filesystem, and then it's deadlocked).
-Unfortunately, I can trigger sysrq, but it doesn't get committed to disk and
-netconsole eats half of it because it goes too fast for UDP apparently
+Hi,
 
-Now, I just captured that on my server with serial console.
+In the wiki, it's said we can mount subvolumes with different mount 
+options. nosuid, nodev, rw and ro are listed, as valid generic mount 
+options.
 
-11005  1-16:11:10 wait_current_trans.isra.15     /usr/bin/zma -m 3
-14441  1-16:07:44 wait_current_trans.isra.15     /usr/bin/zma -m 1
-17045  1-23:53:33 wait_current_trans.isra.15     /usr/bin/zma -m 9
-22261  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 6
-22292  2-00:40:36 wait_current_trans.isra.15     /usr/bin/zma -m 8
+https://btrfs.wiki.kernel.org/index.php/FAQ#Can_I_mount_subvolumes_with_different_mount_options.3F
 
-19911    09:29:35 wait_current_trans.isra.15     rm -f -- /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13 /mnt/dshelf2/backup/0Notmachines/mysql//mysql.daily.sql.gz.13.gz
-22848  1-05:18:35 wait_current_trans.isra.15     rm -f -- mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11 mnt/dshelf2/backup/0Notmachines/jen//backup.tar.bz.11.gz
+But, when I try to mount my subvolume in read only I get an error.
 
-Those are 2 different filesystems (one single device mapper disk, the other one is btrfs raid1), so I'm not sure which one of the 2 caused the problem, but I'm perplexed as to why one would than hang the other, unless they both hit the same bug?
+# df
+/dev/sdb1             5242880     352    4689856   1% /my_btrfs
 
-The sysrq-w output is here:
-http://marc.merlins.org/tmp/btrfs-hang.txt
+# btrfs subvolume list /my_btrfs
+ID 257 gen 10 top level 5 path subvol1
 
-but here is one hung process:
- zma		D 0000000000000003     0 22292	    1 0x20020084
-  ffff880074733bb0 0000000000000082 ffff8800c933f270 ffff880074733fd8
-  ffff8801853b4610 00000000000141c0 ffff8801aac60f00 ffff880036caa9e8
-  0000000000000000 ffff880036caa800 ffff8801db59f0c0 ffff880074733bc0
- Call Trace:
-  [<ffffffff8161d3c6>] schedule+0x73/0x75
-  [<ffffffff8122a87b>] wait_current_trans.isra.15+0x98/0xf4
-  [<ffffffff810847ed>] ? finish_wait+0x65/0x65
-  [<ffffffff8122bd95>] start_transaction+0x498/0x4fc
-  [<ffffffff8122be14>] btrfs_start_transaction+0x1b/0x1d
-  [<ffffffff8123602a>] btrfs_create+0x3c/0x1ce
-  [<ffffffff81298985>] ? security_inode_permission+0x1c/0x23
-  [<ffffffff8115e93e>] ? __inode_permission+0x79/0xa4
-  [<ffffffff8115fbfc>] vfs_create+0x66/0x8c
-  [<ffffffff8116095e>] do_last+0x5af/0xa23
-  [<ffffffff81161009>] path_openat+0x237/0x4de
-  [<ffffffff81162408>] do_filp_open+0x3a/0x7f
-  [<ffffffff8161faeb>] ? _raw_spin_unlock+0x17/0x2a
-  [<ffffffff8116c3eb>] ? __alloc_fd+0xea/0xf9
-  [<ffffffff8115499d>] do_sys_open+0x70/0xff
-  [<ffffffff81194e20>] compat_SyS_open+0x1b/0x1d
-  [<ffffffff8162842c>] sysenter_dispatch+0x7/0x21
+# LANG=C mount -t btrfs -o subvol=subvol1,ro /dev/sdb1 /my_btrfs/subvol1_mnt
+mount: /dev/sdb1 is already mounted or /my_btrfs/subvol1_mnt busy
+        /dev/sdb1 is already mounted on /my_btrfs
 
-As per the other thread, I'm happy to test a patch against 3.15, but not hot about switching to a likely even less stable 3.16 since it's a real server with real data.
+nodev and nosuid are working.
+
+Is there an error in the wiki, or do I do something wrong ?
 
 Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+
+Sebastien ROHAUT
+
+Some infos :
+
+# cat /etc/redhat-release
+Fedora release 20 (Heisenbug)
+
+# uname -a
+Linux localhost.localdomain 3.14.7-200.fc20.x86_64 #1 SMP Wed Jun 11 
+22:38:05 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+
+# btrfs --version
+Btrfs v3.14.1
+
+# btrfs fi show
+Label: none  uuid: 66e0f120-e478-4cac-b04a-82a0ffc4d6ce
+     Total devices 1 FS bytes used 208.00KiB
+     devid    1 size 5.00GiB used 548.00MiB path /dev/sdb1
+
+Btrfs v3.14.1
+
+# dmesg|grep -i btrfs
+[    2.753052] Btrfs loaded
+[    2.766655] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 9 /dev/sdb1
+[   36.382921] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 9 /dev/sdb1
+[   36.389497] BTRFS info (device sdb1): disk space caching is enabled
+[   36.393462] SELinux: initialized (dev sdb1, type btrfs), uses xattr
+[  860.375237] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 9 /dev/sdb1
+[ 1141.451952] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 10 /dev/sdb1
+[ 1379.802221] BTRFS info (device sdb1): disk space caching is enabled
+[ 1513.815988] BTRFS info (device sdb1): disk space caching is enabled
+[ 1529.839598] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 11 /dev/sdb1
+[ 1624.310822] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 11 /dev/sdb1
+[ 1650.630700] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 11 /dev/sdb1
+[ 2297.318435] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 11 /dev/sdb1
+[ 2305.110964] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 11 /dev/sdb1
+[ 2332.863021] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 12 /dev/sdb1
+[ 2344.573903] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 12 /dev/sdb1
+[ 2348.597860] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 12 /dev/sdb1
+[ 2580.620032] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 13 /dev/sdb1
+[ 2645.162881] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 13 /dev/sdb1
+[ 2706.458681] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 13 /dev/sdb1
+[ 2727.745959] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 13 /dev/sdb1
+[ 2797.601678] BTRFS: device fsid 66e0f120-e478-4cac-b04a-82a0ffc4d6ce 
+devid 1 transid 13 /dev/sdb1

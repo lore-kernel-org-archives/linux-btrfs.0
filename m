@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41931 "EHLO
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:29339 "EHLO
 	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751273AbaF1ACl (ORCPT
+	by vger.kernel.org with ESMTP id S1754400AbaF1AFV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 20:02:41 -0400
+	Fri, 27 Jun 2014 20:05:21 -0400
 From: Josef Bacik <jbacik@fb.com>
 To: <linux-btrfs@vger.kernel.org>, <mfasheh@suse.de>
-Subject: [PATCH] Btrfs: make sure to use btrfs_header_owner when freeing tree block
-Date: Fri, 27 Jun 2014 17:02:30 -0700
-Message-ID: <1403913750-20135-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH] Btrfs: make sure to use btrfs_header_owner when freeing tree block V2
+Date: Fri, 27 Jun 2014 17:05:03 -0700
+Message-ID: <1403913903-21132-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -27,11 +27,13 @@ everything is working a-ok.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
+V1->V2: this one actually compiles.
+
  fs/btrfs/extent-tree.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7671b15..7f9bb7c 100644
+index 7671b15..abfd05e 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -6189,7 +6189,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
@@ -39,7 +41,7 @@ index 7671b15..7f9bb7c 100644
  		ret = btrfs_add_delayed_tree_ref(root->fs_info, trans,
  					buf->start, buf->len,
 -					parent, root->root_key.objectid,
-+					parent, btrfs_header_owner(eb),
++					parent, btrfs_header_owner(buf),
  					btrfs_header_level(buf),
  					BTRFS_DROP_DELAYED_REF, NULL, 0);
  		BUG_ON(ret); /* -ENOMEM */

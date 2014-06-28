@@ -1,91 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39458 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751079AbaF1HoM (ORCPT
+Received: from smtp2.ispfabriek.nl ([37.251.0.169]:36079 "EHLO
+	smtp2.ispfabriek.nl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751634AbaF1Hog (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 03:44:12 -0400
-Date: Sat, 28 Jun 2014 08:43:53 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: russell@coker.com.au, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: RAID1 3+ drives
-Message-ID: <20140628074353.GJ31096@carfax.org.uk>
-References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com>
- <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
- <1403953457.BS00mAsj6N@xev>
- <3863278.VRAxdhjX0B@merkaba>
+	Sat, 28 Jun 2014 03:44:36 -0400
+Received: from localhost (unknown [10.3.1.68])
+	by smtp2.ispfabriek.nl (Postfix) with ESMTP id D103B41AFF
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 07:37:10 +0000 (UTC)
+Received: from smtp2.ispfabriek.nl ([10.3.1.141])
+	by localhost (mailscan2.ispfabriek.nl [10.3.1.68]) (amavisd-new, port 10026)
+	with ESMTP id cT5dSgPuNXOl for <linux-btrfs@vger.kernel.org>;
+	Sat, 28 Jun 2014 09:36:56 +0200 (CEST)
+Received: from study.mannem.nl (77-175-145-86.FTTH.ispfabriek.nl [77.175.145.86])
+	by smtp2.ispfabriek.nl (Postfix) with ESMTP id 21B8541937
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 09:36:56 +0200 (CEST)
+From: Sebastiaan Mannem <sebas@mannem.nl>
+To: linux-btrfs@vger.kernel.org
+Subject: IO stripe size and other optimizations
+Date: Sat, 28 Jun 2014 09:36:55 +0200
+Message-ID: <14787157.YvXlcYQe2L@study.mannem.nl>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="gJNQRAHI5jiYqw2y"
-In-Reply-To: <3863278.VRAxdhjX0B@merkaba>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+I'm an Oracle DBA for the dutch government.
+In private I'm an enthousiastic btrfs user for some (2) years and I'm looking 
+forward to introducing it at work as as RedHat will support it (hopely with 
+RHEL7).
+Last couple of weeks i've been testing different storage options for Oracle 
+Database files:
+- LVMStriping with ext4
+- Software Raid with LVM and ext4
+- Software Raid directly with ext4 (without LVM)
+- btrfs (directly on partitions)
+- ASM
 
---gJNQRAHI5jiYqw2y
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+To optimize performance I've been actively looking at some IOstat numbers.
+Btrfs did not do really good and I think I know the main reason.
+Both with ext4 and ASM Oracle could do large 'multiple block writes' and large 
+'multiple block reads' (looking at avgrq-sz). With btrfs I found that the 
+latency was actually better, but the avgrq-sz was verry small. 
+So, much IO's but small IO's and therefore not so much MBPS. I think that this 
+is because the 'The stripe size is fixed to 64KB for now. '...
+Please be aware that this is the 'technology preview version of btrfs with 
+RH6'. This is not exactly bleeding edge, so some performance enhancements yet 
+comitted might not be part of this tests.
 
-On Sat, Jun 28, 2014 at 09:38:00AM +0200, Martin Steigerwald wrote:
-> Am Samstag, 28. Juni 2014, 16:28:23 schrieb Russell Coker:
-> > > So look for N-way-mirroring when you go RAID shopping, and no, btrfs does
-> > > not have it at this time, altho it is roadmapped for implementation after
-> > > completion of the raid5/6 code.
-> > >
-> > > 
-> > >
-> > > FWIW, N-way-mirroring is my #1 btrfs wish-list item too, not just for
-> > > device redundancy, but to take full advantage of btrfs data integrity
-> > > features, allowing to "scrub" a checksum-mismatch copy with the content
-> > > of a checksum-validated copy if available.  That's currently possible,
-> > > but due to the pair-mirroring-only restriction, there's only one
-> > > additional copy, and if it happens to be bad as well, there's no
-> > > possibility of a third copy to scrub from.  As it happens my personal
-> > > sweet-spot between cost/performance and reliability would be 3-way
-> > > mirroring, but once they code beyond N=2, N should go unlimited, so N=3,
-> > > N=4, N=50 if you have a way to hook them all up... should all be possible.
-> > 
-> > What I want is the ZFS copies= feature.
-> 
-> Something like this, even more flexible, was planned to be added. There were 
-> some discussion on how to specificy complex redundancy patterns totally flexibly 
-> exactly with how much redundancy, how much spares and so on.
-> 
-> I didn't read any of this since a long time. I wonder what happened to this 
-> idea.
+However, this got me thinking. 
+Thing is that I had to set a stripesize for both Software Raid and LVM 
+Striping. ASM is a little optimized in this part, being that it can set a 
+stripe size per filetype (datafiles 1MiB and redo 128k, as I recall).
+So large IO's can be written with large requests and small IO's can be striped 
+accross many disks.
+If there is a possibility to let the stripesize be dependent on the request 
+size for a write, you might have simmilar to as for ASM optimisation, and 
+better, sinds it is not depending on 'the filesystem knowing the filetype'. I 
+think that this would be a great enhancement for large files with big IO's. And 
+might give btrfs a lead to more conventional filesystems like ext4 and xfs.
 
-   It's moving slowly in fits and starts. I haven't forgotten it.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- But people have always eaten people,  / what else is there to ---  
-         eat?  / If the Juju had meant us not to eat people / he         
-                     wouldn't have made us of meat.                      
-
---gJNQRAHI5jiYqw2y
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU65yOVheFHXiqx3kAQLZbA//Y7UMHlZYyCF+/saiRsqHv4bpe3cC40Zz
-qStGeXA2HfFai9lQH4JHY69PlIMFyD/XNlBTtGHCtJdFmffvUcVfHjINdlNzqeWg
-BAXYKOnnCVS4HQi6WTjfEnOTSL5w8wpdlzcEbbx9DoXDotgZu1n/fZJjF+BUrNuu
-5r4HkO42b679DRmxcFPpajeJgxPh2TJJ2TyjBhyaTLQJBQ2a2g9HmagG8ZMRDxOX
-Ci7yE3XBYYEpXhzAWYYqxMgA1QTMHnE4GiB+dzuaOMGcsW1zMFiws9ePMkn1rBF6
-T1lasbECR51XMOJbbrGEGYjFK8ilC3ox00I2paLOA4q0i+yFECl1ItCl6vq/npdW
-CA8qlcp0b0NY472sh0ftuUGlv5SrTUcO4wfNeVNdCvbhwMADGjikxi6hrvtovFC/
-97ut0ft7Jf4VV9Z3w3gTABv0LUhNNqU2WsUSB4Jocq3skY7M9MS76CQd1KULb+HL
-EIuZflKjpsbsprtuOFC9euy2L3fnEUCx1ueRbh4ykXoDqT5Lz41zyph5YyJJqlSP
-EtiNLeS0+90PzBnK+79tYeDDZ33M88eKPIBaFE1bay3DM/QtaLsVB14SGSf+KlFz
-13CQTSAcMKbdUUan6DH4LTEzbUVphaJcmUCU5npCCw4Q1i9iSjBB5MZeAmpGui4A
-MIV7OVOEacE=
-=A/og
------END PGP SIGNATURE-----
-
---gJNQRAHI5jiYqw2y--
+Is there an option to bring this in development? Is it allready thought of, 
+planned? When could it be available?
+And if practical I could get involved somehow. Perhaps testing with workloads.
+Please let me know on your thoughts on this matter...

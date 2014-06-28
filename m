@@ -1,99 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:36791 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752570AbaF1NkG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 09:40:06 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Duncan <1i5t5.duncan@cox.net>
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55807 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1755907AbaF1SPn convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Jun 2014 14:15:43 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50777 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1X0xA6-002RxH-8y
+	for linux-btrfs@vger.kernel.org; Sat, 28 Jun 2014 12:15:42 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: RAID1 3+ drives
-Date: Sat, 28 Jun 2014 23:40 +1000
-Message-ID: <1428358.y4e5pb3mAe@xev>
-In-Reply-To: <pan$960c0$4afea28f$ba20e37d$eab767e1@cox.net>
-References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com> <1403953457.BS00mAsj6N@xev> <pan$960c0$4afea28f$ba20e37d$eab767e1@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1403953457.BS00mAsj6N@xev>
+Date: Sat, 28 Jun 2014 12:15:42 -0600
+Message-Id: <DC109384-A75B-4469-B043-4A6935BF9A76@colorremedies.com>
+References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com> <10572318.CAuhDIAMDU@xev> <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net> <1403953457.BS00mAsj6N@xev>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 28 Jun 2014 11:38:47 Duncan wrote:
-> And with the size of disks we have today, the statistics on multiple
-> whole device reliability are NOT good to us!  There's a VERY REAL chance,
-> even likelihood, that at least one block on the device is going to be
-> bad, and not be caught by its own error detection!
 
-http://research.cs.wisc.edu/adsl/Publications/corruption-fast08.html
-
-The above paper suggests that it's about 10% of SATA disks getting such errors 
-per year and that typically a disk that has such a problem has it for ~50 
-sectors.  The probability of having 2 disks randomly get such errors (if they 
-are truly random and independent) would be something like 1% per year.  The 
-probability that the ~50 sectors on each of 2*3TB disks happening to match up 
-is much lower.
-
-> > Also if you were REALLY paranoid you could have 2 BTRFS RAID-1
-> > filesystems that each contain a single large file.  Those 2 large files
-> > could be run via losetup and used for another BTRFS RAID-1 filesystem.
-> > That gets you redundancy at both levels.  Of course if you had 2 disks
-> > in one pair fail then the loopback BTRFS filesystem would still be OK.
+On Jun 28, 2014, at 12:28 AM, Russell Coker <russell@coker.com.au> wrote:
 > 
-> But the COW and fragmentation issues on the bottom level... OUCH!  And
-> you can't simply set NOCOW, because that turns off the checksumming as
-> well, leaving you right back where you were without the integrity
-> checking!
-
-It really depends on how much performance you need.  I've got some virtual 
-servers running BTRFS within BTRFS and with modern hardware and a light load 
-it works OK.
-
-> *BUT* at a cost of essentially *CONSTANT* scrubbing.  Constant because at
-> the multi-TBs we're talking, just completing a single scrub cycle could
-> well take more than a standard 8-hour work-day, so by the time you
-> finish, it's already about time to start the next scrub cycle.
-
-Scrubbing my BTRFS RAID-1 filesystem with 2.4TB of data stored on a pair of 
-3TB disks takes 5 hours.
-
-> That sort of constant scrubbing is going to take its toll both on device
-> life and on I/O thruput for whatever data you're actually storing on the
-> device, since a good share of the time it's going to be scrubbing as
-> well, slowing down the speed of the real I/O.
-
-Some years ago I asked an executive from a company that manufactured hard 
-drives about this.  The engineering manager who was directed to answer my 
-question told me that the drives were designed to perform any sequence of 
-legal operations continually for the warranty period.  So if a disk had a 3 
-year warranty then it should be able to survive a scrubbing loop for 3 years.
-
-But scrubbing a system that runs 24*7 is a problem.  Hopefully we will get a 
-speed limit feature for BTRFS scrubbing as there is for Linux software RAID 
-rebuild/scrub.
-
-> > No.  I have a RAID-1 array of 3TB disks that is 2/3 full which I scrub
-> > every Sunday night.  If I had an array of 4 disks then I could do scrubs
-> > on Saturday night as well.
+>> Tho if you ran a md/dmraid level scrub often enough, and then ran a btrfs
+>> scrub on top, one could be /reasonably/ assured of freedom from lower
+>> level corruption.
 > 
-> But are you scrubbing at both the btrfs and the md/dmraid level?  That'll
-> effectively double the scrub-time.
+> Not at all.  Linux software RAID scrub will copy data from one disk to the 
+> other.  
 
-It's a BTRFS RAID-1, there is no mdadm on that system.
+md supports two kinds of scrub: check and repair. Check is the same as btrfs read-only scrub with -r option.
 
-> And while that might not take a full 24 hours, it's likely to take a
-> significant enough portion of 24 hours, that if you're doing a full mdraid
-> and btrfs level both scrub every two days, some significant fraction (say
-> a third to a half) of the time will be spent scrubbing, during which
-> normal I/O speeds will be significantly reduced, while also reducing
-> device lifetime due to the relatively high duty cycle seek activity.
+> It may copy from the good disk to the bad or from the bad disk to the 
+> good - and it won't know which it's doing.
 
-When the expected error rate for SATA disks is ~10% of disks having errors per 
-year a scrub every second day seems rather paranoid.
+Yes.
 
-But if you are that paranoid then the wisc.edu paper suggests that you should 
-be buying "enterprise" disks that have a much lower error rate.
+> Also last time I checked a scrub of Linux software RAID-1 still reported large 
+> multiples of 128 sectors mismatching in normal operation.  So you won't even 
+> know if a disk is returning bogus data unless the bad data is copied to the 
+> good disk and exposed to BTRFS.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+For raid1,raid10 you need to zero the drives or you will get mismatches. And swap partition or swap file on an md device will also cause mismatches. Mismatches on raid1,10 are much less likely for other types of files, but man 4 md does say it's possible so mismatch_cnt isn't perfectly reliable on raid1,10.
 
+
+Chris Murphy

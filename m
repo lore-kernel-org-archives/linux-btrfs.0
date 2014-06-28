@@ -1,154 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3378 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4680 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750754AbaF1LKl (ORCPT
+	with ESMTP id S1751462AbaF1Ldb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 07:10:41 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5SBAbaI020846
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 19:10:37 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	Sat, 28 Jun 2014 07:33:31 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5SBXPYq021004
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 19:33:25 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC] Btrfs: make defragment work with nodatacow option
-Date: Sat, 28 Jun 2014 19:06:21 +0800
-Message-ID: <1403953581-5108-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Subject: [PATCH 00/12] Implement the data repair function for direct read
+Date: Sat, 28 Jun 2014 19:34:50 +0800
+Message-ID: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs defragment will utilize COW feature, which means this
-did not work for nodatacow option, this problem was detected
-by xfstests generic/018 with nodatacow mount option.
+This patchset implement the data repair function for the direct read, it
+is implemented like buffered read:
+- When we find the data is not right, we try to read the data from the other
+  mirror.
+- After we get right data, we write it back to the corrupted mirror.
+- And if the data on the new mirror is still corrupted, we will try next
+  mirror until we read right data or all the mirrors are traversed.
+- After the above work, we set the uptodate flag according to the result.
 
-Fix this problem by forcing cow for a extent with state
-@EXTETN_DEFRAG setting.
+The difference is that the direct read may be splited to several small io,
+in order to get the number of the mirror on which the io error happens. we
+have to do data check and repair on the end IO function of those sub-IO
+request.
 
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Besides that, we also fixed some bugs of direct io.
+
+We can pull this patchset from the URL
+
+  https://github.com/miaoxie/linux-btrfs.git for-Chris
+
+Thanks
+Miao
 ---
- fs/btrfs/btrfs_inode.h |  6 ++++++
- fs/btrfs/inode.c       | 39 ++++++++++++++++++++++++++++++++++++---
- 2 files changed, 42 insertions(+), 3 deletions(-)
+Miao Xie (12):
+  Btrfs: fix put dio bio twice when we submit dio bio fail
+  Btrfs: load checksum data once when submitting a direct read io
+  Btrfs: cleanup similar code of the buffered data data check and dio
+    read data check
+  Btrfs: do file data check by sub-bio's self
+  Btrfs: fix missing error handler if submiting re-read bio fails
+  Btrfs: Cleanup unused variant and argument of IO failure handlers
+  Btrfs: split bio_readpage_error into several functions
+  Btrfs: modify repair_io_failure and make it suit direct io
+  Btrfs: modify clean_io_failure and make it suit direct io
+  Btrfs: Set real mirror number for read operation on RAID0/5/6
+  Btrfs: implement repair function when direct read fails
+  Btrfs: cleanup the read failure record after write or when the inode
+    is freeing
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 4794923..4e9265a 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -127,6 +127,12 @@ struct btrfs_inode {
- 	u64 delalloc_bytes;
- 
- 	/*
-+	 * total number of bytes pending defrag, used by stat to check whether
-+	 * it needs COW.
-+	 */
-+	u64 defrag_bytes;
-+
-+	/*
- 	 * the size of the file stored in the metadata on disk.  data=ordered
- 	 * means the in-memory i_size might be larger than the size on disk
- 	 * because not all the blocks are written yet.
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3668048..4a203fb 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1425,6 +1425,26 @@ error:
- 	return ret;
- }
- 
-+static inline int need_force_cow(struct inode *inode, u64 start, u64 end)
-+{
-+
-+	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
-+	    !(BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC))
-+		return 0;
-+
-+	/*
-+	 * @defrag_bytes is a hint value, no spinlock held here,
-+	 * if is not zero, it means the file is defragging.
-+	 * Force cow if given extent needs to be defragged.
-+	 */
-+	if (BTRFS_I(inode)->defrag_bytes &&
-+	    test_range_bit(&BTRFS_I(inode)->io_tree, start, end,
-+			   EXTENT_DEFRAG, 0, NULL))
-+		return 1;
-+
-+	return 0;
-+}
-+
- /*
-  * extent_io.c call back to do delayed allocation processing
-  */
-@@ -1434,11 +1454,12 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- {
- 	int ret;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	int force_cow = need_force_cow(inode, start, end);
- 
--	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) {
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 1, nr_written);
--	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC) {
-+	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
- 	} else if (!btrfs_test_opt(root, COMPRESS) &&
-@@ -1535,6 +1556,8 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 			       struct extent_state *state, unsigned long *bits)
- {
- 
-+	if ((*bits & EXTENT_DEFRAG) && !(*bits & EXTENT_DELALLOC))
-+		WARN_ON(1);
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
- 	 * but in this case, we are only testing for the DELALLOC
-@@ -1557,6 +1580,8 @@ static void btrfs_set_bit_hook(struct inode *inode,
- 				     root->fs_info->delalloc_batch);
- 		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->delalloc_bytes += len;
-+		if (*bits & EXTENT_DEFRAG)
-+			BTRFS_I(inode)->defrag_bytes += len;
- 		if (do_list && !test_bit(BTRFS_INODE_IN_DELALLOC_LIST,
- 					 &BTRFS_I(inode)->runtime_flags))
- 			btrfs_add_delalloc_inodes(root, inode);
-@@ -1571,6 +1596,13 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 				 struct extent_state *state,
- 				 unsigned long *bits)
- {
-+	u64 len = state->end + 1 - state->start;
-+
-+	spin_lock(&BTRFS_I(inode)->lock);
-+	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG))
-+		BTRFS_I(inode)->defrag_bytes -= len;
-+	spin_unlock(&BTRFS_I(inode)->lock);
-+
- 	/*
- 	 * set_bit and clear bit hooks normally require _irqsave/restore
- 	 * but in this case, we are only testing for the DELALLOC
-@@ -1578,7 +1610,6 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 	 */
- 	if ((state->state & EXTENT_DELALLOC) && (*bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = BTRFS_I(inode)->root;
--		u64 len = state->end + 1 - state->start;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
- 
- 		if (*bits & EXTENT_FIRST_DELALLOC) {
-@@ -8078,6 +8109,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->last_sub_trans = 0;
- 	ei->logged_trans = 0;
- 	ei->delalloc_bytes = 0;
-+	ei->defrag_bytes = 0;
- 	ei->disk_i_size = 0;
- 	ei->flags = 0;
- 	ei->csum_bytes = 0;
-@@ -8137,6 +8169,7 @@ void btrfs_destroy_inode(struct inode *inode)
- 	WARN_ON(BTRFS_I(inode)->reserved_extents);
- 	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
- 	WARN_ON(BTRFS_I(inode)->csum_bytes);
-+	WARN_ON(BTRFS_I(inode)->defrag_bytes);
- 
- 	/*
- 	 * This can happen where we create an inode, but somebody else also
+ fs/btrfs/btrfs_inode.h |  10 +-
+ fs/btrfs/ctree.h       |   3 +-
+ fs/btrfs/disk-io.c     |  43 +++--
+ fs/btrfs/disk-io.h     |   1 +
+ fs/btrfs/extent_io.c   | 241 ++++++++++++++++----------
+ fs/btrfs/extent_io.h   |  38 ++++-
+ fs/btrfs/file-item.c   |  14 +-
+ fs/btrfs/inode.c       | 453 +++++++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/scrub.c       |   4 +-
+ fs/btrfs/volumes.c     |   5 +
+ fs/btrfs/volumes.h     |   5 +-
+ 11 files changed, 612 insertions(+), 205 deletions(-)
+
 -- 
-1.8.3.1
+1.9.3
 

@@ -1,66 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp2.ispfabriek.nl ([37.251.0.169]:36079 "EHLO
-	smtp2.ispfabriek.nl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751634AbaF1Hog (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 03:44:36 -0400
-Received: from localhost (unknown [10.3.1.68])
-	by smtp2.ispfabriek.nl (Postfix) with ESMTP id D103B41AFF
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 07:37:10 +0000 (UTC)
-Received: from smtp2.ispfabriek.nl ([10.3.1.141])
-	by localhost (mailscan2.ispfabriek.nl [10.3.1.68]) (amavisd-new, port 10026)
-	with ESMTP id cT5dSgPuNXOl for <linux-btrfs@vger.kernel.org>;
-	Sat, 28 Jun 2014 09:36:56 +0200 (CEST)
-Received: from study.mannem.nl (77-175-145-86.FTTH.ispfabriek.nl [77.175.145.86])
-	by smtp2.ispfabriek.nl (Postfix) with ESMTP id 21B8541937
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 09:36:56 +0200 (CEST)
-From: Sebastiaan Mannem <sebas@mannem.nl>
-To: linux-btrfs@vger.kernel.org
-Subject: IO stripe size and other optimizations
-Date: Sat, 28 Jun 2014 09:36:55 +0200
-Message-ID: <14787157.YvXlcYQe2L@study.mannem.nl>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mari.romanrm.net ([157.7.203.202]:39466 "EHLO mari.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752077AbaF1KN7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Jun 2014 06:13:59 -0400
+Date: Sat, 28 Jun 2014 16:13:47 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID1 3+ drives
+Message-ID: <20140628161347.2097d308@natsu>
+In-Reply-To: <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
+References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com>
+	<10572318.CAuhDIAMDU@xev>
+	<pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/fOD8gEmvktAyLQJysyHs9O0"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-I'm an Oracle DBA for the dutch government.
-In private I'm an enthousiastic btrfs user for some (2) years and I'm looking 
-forward to introducing it at work as as RedHat will support it (hopely with 
-RHEL7).
-Last couple of weeks i've been testing different storage options for Oracle 
-Database files:
-- LVMStriping with ext4
-- Software Raid with LVM and ext4
-- Software Raid directly with ext4 (without LVM)
-- btrfs (directly on partitions)
-- ASM
+--Sig_/fOD8gEmvktAyLQJysyHs9O0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-To optimize performance I've been actively looking at some IOstat numbers.
-Btrfs did not do really good and I think I know the main reason.
-Both with ext4 and ASM Oracle could do large 'multiple block writes' and large 
-'multiple block reads' (looking at avgrq-sz). With btrfs I found that the 
-latency was actually better, but the avgrq-sz was verry small. 
-So, much IO's but small IO's and therefore not so much MBPS. I think that this 
-is because the 'The stripe size is fixed to 64KB for now. '...
-Please be aware that this is the 'technology preview version of btrfs with 
-RH6'. This is not exactly bleeding edge, so some performance enhancements yet 
-comitted might not be part of this tests.
+On Sat, 28 Jun 2014 04:26:43 +0000 (UTC)
+Duncan <1i5t5.duncan@cox.net> wrote:
 
-However, this got me thinking. 
-Thing is that I had to set a stripesize for both Software Raid and LVM 
-Striping. ASM is a little optimized in this part, being that it can set a 
-stripe size per filetype (datafiles 1MiB and redo 128k, as I recall).
-So large IO's can be written with large requests and small IO's can be striped 
-accross many disks.
-If there is a possibility to let the stripesize be dependent on the request 
-size for a write, you might have simmilar to as for ASM optimisation, and 
-better, sinds it is not depending on 'the filesystem knowing the filetype'. I 
-think that this would be a great enhancement for large files with big IO's. And 
-might give btrfs a lead to more conventional filesystems like ext4 and xfs.
+> Russell Coker posted on Sat, 28 Jun 2014 10:51:00 +1000 as excerpted:
+>=20
+> > On Fri, 27 Jun 2014 20:30:32 Zack Coffey wrote:
+> >> Can I get more protection by using more than 2 drives?
+> >>=20
+> >> I had an onboard RAID a few years back that would let me use RAID1
+> >> across up to 4 drives.
+> >>=20
+> > Currently the only RAID level that fully works in BTRFS is RAID-1 with
+> > data on 2 disks.
+>=20
+> Not /quite/ correct.  Raid0 works, but of course that isn't exactly=20
+> "RAID" as it's not "redundant".  And raid10 works.  But that's simply=20
+> raid0 over raid1.  So depending on whether you consider raid0 actually=20
+> "RAID" or not, which in turn depends on how strict you are with the=20
+> "redundant" part, there is or is not more than btrfs raid1 working.
 
-Is there an option to bring this in development? Is it allready thought of, 
-planned? When could it be available?
-And if practical I could get involved somehow. Perhaps testing with workloads.
-Please let me know on your thoughts on this matter...
+Also depending on what you consider "fully works", RAID1 may not qualify to=
+o,
+as neither the read-balancing, nor write-submission algorithms are ready for
+production use, performance-wise.
+
+(RAID1 writes to two disks sequentially, not at the same time; and reads are
+satisfied from in effect a random device, not from the least-busy device).
+
+--=20
+With respect,
+Roman
+
+--Sig_/fOD8gEmvktAyLQJysyHs9O0
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlOulVsACgkQTLKSvz+PZwh3/gCaAkvqrCaZMgyoqiOVF7aRr0xj
+ZA8Ani/NeUPukO98T8vHvZxnwNcFLzD6
+=45JM
+-----END PGP SIGNATURE-----
+
+--Sig_/fOD8gEmvktAyLQJysyHs9O0--

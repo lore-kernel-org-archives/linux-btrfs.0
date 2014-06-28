@@ -1,134 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:52962 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751158AbaF1D2a (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jun 2014 23:28:30 -0400
-Received: by mail-qc0-f174.google.com with SMTP id x13so5160631qcv.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jun 2014 20:28:29 -0700 (PDT)
-Message-ID: <53AE365B.10105@gmail.com>
-Date: Fri, 27 Jun 2014 23:28:27 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: russell@coker.com.au, linux-btrfs@vger.kernel.org
-Subject: Re: [Question] Btrfs on iSCSI device
-References: <CAMXuLLrhMv82LPveRemDU_v_Kru2US6sKVn377gS3t9p-VFrag@mail.gmail.com> <53AD9D1A.4050703@libero.it> <2173101.6G0fsERxkf@xev>
-In-Reply-To: <2173101.6G0fsERxkf@xev>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms060504020207010906020105"
+Received: from plane.gmane.org ([80.91.229.3]:46252 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750720AbaF1E1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Jun 2014 00:27:01 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X0kE7-0006v6-Fg
+	for linux-btrfs@vger.kernel.org; Sat, 28 Jun 2014 06:26:59 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 06:26:59 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 06:26:59 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID1 3+ drives
+Date: Sat, 28 Jun 2014 04:26:43 +0000 (UTC)
+Message-ID: <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
+References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com>
+	<10572318.CAuhDIAMDU@xev>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Russell Coker posted on Sat, 28 Jun 2014 10:51:00 +1000 as excerpted:
 
---------------ms060504020207010906020105
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+> On Fri, 27 Jun 2014 20:30:32 Zack Coffey wrote:
+>> Can I get more protection by using more than 2 drives?
+>> 
+>> I had an onboard RAID a few years back that would let me use RAID1
+>> across up to 4 drives.
+>> 
+> Currently the only RAID level that fully works in BTRFS is RAID-1 with
+> data on 2 disks.
 
-On 06/27/2014 07:40 PM, Russell Coker wrote:
-> On Fri, 27 Jun 2014 18:34:34 Goffredo Baroncelli wrote:
->> I don't think that it is possible to mount the _same device_ at the _s=
-ame
->> time_ on two different machines. And this doesn't depend by the filesy=
-stem.
->=20
-> If you use a clustered filesystem then you can safely mount it on multi=
-ple=20
-> machines.
->=20
-> If you use a non-clustered filesystem it can still mount and even appea=
-r to=20
-> work for a while.  It's surprising how many writes you can make to a du=
-al-
-> mounted filesystem that's not designed for such things before you get a=
-=20
-> totally broken filesystem.
->=20
-> On Fri, 27 Jun 2014 13:15:16 Austin S Hemmelgarn wrote:
->> The reason it appears to work when using iSCSI and not with directly
->> connected parallel SCSI or SAS is that iSCSI doesn't provide low level=
+Not /quite/ correct.  Raid0 works, but of course that isn't exactly 
+"RAID" as it's not "redundant".  And raid10 works.  But that's simply 
+raid0 over raid1.  So depending on whether you consider raid0 actually 
+"RAID" or not, which in turn depends on how strict you are with the 
+"redundant" part, there is or is not more than btrfs raid1 working.
 
->> hardware access.
->=20
-> I've tried this with dual-attached FC and had no problems mounting.  In=
- what=20
-> way is directly connected SCSI different from FC?
->=20
-FC is actually it's own networking stack (and you can even run (in
-theory) other protocols like IP and ATM on top of it), whereas parallel
-SCSI is just a multi-drop bus, and SAS is just a tree-structured bus
-with point-to-point communications emulated on top of it.  In other
-words, parallel SCSI has topological constraints like RS-485, SAS has
-topology constraints like USB, and FC has topology constraints like
-Ethernet.
+> If you have 4 disks in the array then each block will
+> be on 2 of the disks.
 
-Secondarily, most filesystems on Linux will let you mount them multiple
-times on separate hosts (ext4 has features to prevent this, but they are
-expensive and therefore turned off by default, I think XFS might have
-similar features, but I'm not sure).  BTRFS should in theory be more
-resilient than most because of the COW nature (as long as it's only a
-few commit cycles, you should still be able to recover most of the data
-just fine).
+Correct.
 
+FWIW I'm told that the paper that laid out the original definition of 
+RAID (which was linked on this list in a similar discussion some months 
+ago) defined RAID-1 as paired redundancy, no matter the number of 
+devices.  Various implementations (including Linux' own mdraid soft-raid, 
+and I believe dmraid as well) feature multi-way-mirroring aka N-way-
+mirroring such that N devices equals N way mirroring, but that's an 
+implementation extension and isn't actually necessary to claim RAID-1 
+support.
 
---------------ms060504020207010906020105
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+So look for N-way-mirroring when you go RAID shopping, and no, btrfs does 
+not have it at this time, altho it is roadmapped for implementation after 
+completion of the raid5/6 code.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIGuDCC
-BrQwggScoAMCAQICAw8BRDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA1
-MTIxNDEwMzJaFw0xNDExMDgxNDEwMzJaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDbLUaL
-Gs4JTdU7sgr0MzD57CMUAv307ddC9pxooDMN3PiUvzEd5kLtBCh8KDB1wbMdfm4hte2rDd+j
-hM1tIq67BvNbdDPztOcBZwT2/3OVyyG4B1ddCqUyt03zGKw6Y34eHNfapsZiiItX0GBNfjHU
-Wv+WDo+XNha/WmGSSMv21HkftF9XA1KC9Bpr9JJI23MKK7T2g/7b3KoGZlx3ekLIJsF5B7+B
-DMPPDqOHQbRnccyOHEMyhM13g6WoAbU+3aKYc+C/9UsYtDV+xlvBLWagky1acstD5wOA35V6
-uDRbUhD+vOjuMRMCj9jJOIYqa6AeSagBjxRnisJr0RFzQ4f+NjGCHPaFTvRvbkiXh4q22doT
-0SxbNBUm7B9ANugIOtS9/VQhTWKDi//WTqZQ7Ecl4yVJbMCUg/iaRHMCGS41vqMICPszRidW
-rL04NwS9D2cREEY1y/xrNo0ZvKPZu6tLhxhPf7w+5rsN3+wWxGaR1hNpnVUT9AeacLKZO6W9
-FsRT3Unkr91IhQATHTKYr4EAkjN/5lgvA+sxp5TxxsUnoJYrD8IHf8aYfJsAHMleBwx4xSeZ
-tw/n5iIjJjFZq9IRZ1zQhK62p+a5vJ2vlJHjTgavhQrfb1pUOjbqsnI4ndQ5hNosL9el4Kxq
-Yko+HsxVEmSwSsjq6cV2L3oz0z8NUwIDAQABo4IBWTCCAVUwDAYDVR0TAQH/BAIwADBWBglg
-hkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg
-b3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYDVR0PAQH/BAQDAgOoMEAGA1UdJQQ5
-MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYKKwYBBAGCNwoDAwYJYIZIAYb4
-QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3AuY2FjZXJ0Lm9y
-ZzAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vY3JsLmNhY2VydC5vcmcvcmV2b2tlLmNybDA0
-BgNVHREELTArgRRhaGZlcnJvaW43QGdtYWlsLmNvbYETYWhlbW1lbGdAb2hpb2d0LmNvbTAN
-BgkqhkiG9w0BAQ0FAAOCAgEAIokFPcW8+cO2Clu0Ei+ehAmQRBHfV5RWJ8aMVLXOCfiJX0ch
-IjVSIt6I3uQaR4J1ZIAjCSPkbpfZQDaLoGFI5j8aYEQhOeKxrvOMzY9/aSUYabCJIhE/sX64
-klFV0bzm+PR9cDMWeQ9BoZf0m8UROPSfDnrjEk+p04hGg3pAZMcSwCzxdb604NHjgHJmf2xG
-UQVzQgC6Ek/BKat0xuPTuPmtPv9OicK75CPmLZKYW3rFpCD6bhb1mm+ROcCNhniRY2LYm9YN
-QdlHQUzTFqj0tvuYrzNI3LNV4PjEfN8z6omPCT2Rq8/uKLseN+m8F0ioqm+cphqpmzKoDUpN
-nePLkqDFUFWCeWRxSjBTy4IMVUfdNXriVGihH8hyIICQiOfmmBOzhzUifdomJuTGtoXRuHVT
-R2f/YdrJrLnKI4f+Othdp7F3KhB4c6JiOnTEH5J8n9q3rFjt4MPRwcjIHMhmF5nZVQlgxEMo
-1cPCmvG1D9tcgXbH79jjqydo9SDXhzLQob7axkzGRY96IstNcvoQ/UNsdPPfFMYlHtGz4TxT
-DhBjv4ERskGmKBZrfmxkXkcuTV/gcykct6Xvw9YXb8WTL4qSYHSYk9fReVLgE/L4RBUpX2JJ
-QvIR0AJLER165/aZlQXZtuJjnfxJtJTJZZ+Gor9h0G2kuR5Dy0JuYdBO4t4xggShMIIEnQIB
-ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
-cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
-EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFEMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MDYyODAzMjgyN1owIwYJKoZIhvcNAQkE
-MRYEFCc1VbOus3+Xtjh2f9Qkyj1if6AAMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
-MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
-AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
-VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
-GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
-ZXJ0Lm9yZwIDDwFEMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
-MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
-bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFE
-MA0GCSqGSIb3DQEBAQUABIICAKaiWzUr0TfOIwfkq4ndzwRlJQeR0cjQu8WW+U5SeVYoEbKI
-tr2S4yf7VVhxu1NSeMxSKm8St22r7p3lwi6TsfmKffUABGY7A/W/qi9nl/SjrZQ27L6oanwu
-w2Qt+0AKtKIXHcicp0xlGQdGcHbMSMTJRXONULggZOSF0HTXhb1fdHJpj7r1RqqNJp9Hm42w
-rkbrhy7EKDbWlKjdXybrlPA2LyyEUCkZPlWfoCmdkOXwOPboFYhctPs+itEZorjbIKF/+hY6
-/0j9CBeuxQMWZfQjgyGsjKh8+Y8SX1JoExiuGyRhhzs+J+FmaoKYNzy93ZLObKi4OY31TJOw
-W4FOXLDDSQdRWn49MhWpSu+shg9etMilqqsLHP84Tuqg+vz07S+pufEzihTlWei7D7roihr+
-QxmHTU1L5QHJXLvYFJk7wBNA6ikGYTwQJI28ZLtvhzngTliOwRNOXs5U/u/BbJkAAIuvVuGx
-c3DD4BF+sfqPln1s21ayHTUXDW8nEq5Q4vJ9Mn6zDh8QO/EFQbIdsqaIM3xKmpATWUBFDACa
-90wgrueHTpv/IpFoc/hTRu8vlZCaGWOI7XA0qOI4Jug2NOoMS+KEp0cc63nce/CRjqKzb/t9
-5QBQ1LGuflWtWQaR2SxtYfiomnxaYEh61ERgNfgLuRp4/oTwfXDPJ+UJlnS4AAAAAAAA
---------------ms060504020207010906020105--
+FWIW, N-way-mirroring is my #1 btrfs wish-list item too, not just for 
+device redundancy, but to take full advantage of btrfs data integrity 
+features, allowing to "scrub" a checksum-mismatch copy with the content 
+of a checksum-validated copy if available.  That's currently possible, 
+but due to the pair-mirroring-only restriction, there's only one 
+additional copy, and if it happens to be bad as well, there's no 
+possibility of a third copy to scrub from.  As it happens my personal 
+sweet-spot between cost/performance and reliability would be 3-way 
+mirroring, but once they code beyond N=2, N should go unlimited, so N=3, 
+N=4, N=50 if you have a way to hook them all up... should all be possible.
+
+But...
+
+> RAID-5/6 code mostly works but the last report I
+> read indicated that some situations for recovery and disk replacement
+> didn't work - presumably anyone who's afraid of multiple disks failing
+> isn't going to want to trust BTRFS RAID-6 code at the moment.
+
+The raid5/6 code was on the list to be introduced in the next kernel or 
+two something like two years ago, when I originally looked into it, and 
+likely before that.  Like many of the btrfs features, it actually took 
+rather longer to cook than was in the original plan -- it's actually 
+rather more complicated than anticipated, and additionally it has been 
+put off a few times to work on bugfixing currently supported feature 
+bugs.  An incomplete raid56 implementation, normal runtime but not scrub 
+or recovery, was introduced several kernels ago now, but it's still not 
+complete.
+
+So N-way-mirroring, which is supposed to build on several bits of the 
+raid5/6 implementation and therefore is roadmapped for after it, 
+continues to look about the same 3-5 kernels off, after raid5/6, as it 
+did two years ago.  Except, having seen the raid5/6 timing, and having 
+looked back at btrfs feature history going back rather longer, even if 
+raid5/6 was declared finished for kernel 3.17 (since 3.16 is past the 
+commit window), I'd guess it'd probably take another five kernels (a 
+year's worth) or so, at /least/, for N-way-mirroring to properly cook.
+
+So in actuality I'd be surprised to see any N-way-mirroring code at all 
+before next spring, and would /not/ be surprised at all to see it take 
+all of next year to fully cook to "completion".
+
+Not that I'm complaining /too/ much.  We work with what we have and btrfs 
+as it is is quite beyond the features of most filesystems (just the data 
+integrity and multi-device filesystem stuff at all, is great to work 
+with, besides the stuff like subvolumes and snapshotting that doesn't fit 
+my use-case that well =:^), even if it /is/ all presently limited to two-
+way-mirroring! =:^\ ).  But it will sure be nice when I /can/ count on 
+that third copy to scrub two bad copies, if two copies /do/ happen to be 
+bad.
+
+> If you want to have 4 disks in a fully redundant configuration (IE you
+> could lose 3 disks without losing any data) then the thing to do is to
+> have 2 RAID-1 arrays with Linux software RAID and then run BTRFS RAID-1
+> on top of that.
+
+The caveat with that is that at least mdraid1/dmraid1 has no verified 
+data integrity, and while mdraid5/6 does have 1/2-way-parity calculation, 
+it's only used in recovery, NOT cross-verified in ordinary use.
+
+So it's not a proper substitute, tho I guess some big-money hardware 
+raids might do it.
+
+In fact, with md/dmraid and its reasonable possibility of silent 
+corruption since at that level any of the copies could be returned and 
+there's no data integrity checking, if whatever md/dmraid level copy /is/ 
+returned ends up being bad, then btrfs will consider that side of the 
+pair bad, without any way to check additional copies at the underlying md/
+dmraid level.  Effectively you only have two verified copies no matter 
+how many ways the dm/mdraid level is mirrored, since there's no 
+verification at the dm/mdraid level at all.
+
+Tho if you ran a md/dmraid level scrub often enough, and then ran a btrfs 
+scrub on top, one could be /reasonably/ assured of freedom from lower 
+level corruption.  But with both levels of scrub together very possibly 
+taking a couple days, and various ongoing write activity in the mean 
+time, by the time one run was done it'd be time to start the next one, so 
+you'd effectively be running scrub at one level or the other *ALL* the 
+time!
+
+So... I'd suggest either forgetting about data integrity for the time 
+being and just running md/dmraid without worrying about it, or just 
+running btrfs with pairs, and backing up to another btrfs of pairs.  
+Btrfs send/receive could even be used as the primary syncing method 
+between the main and backup set, altho I'd suggest having a fallback such 
+as rsync setup and tested to work as well, in case there's a bug in send/
+receive that stalls that method for awhile.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

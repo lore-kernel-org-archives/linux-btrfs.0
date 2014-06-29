@@ -1,62 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58666 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:41596 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750856AbaF2Ca6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 22:30:58 -0400
+	id S1752770AbaF2RPE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Jun 2014 13:15:04 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X14tM-0006G4-Ua
-	for linux-btrfs@vger.kernel.org; Sun, 29 Jun 2014 04:30:56 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+	id 1X1Igw-0000LX-AA
+	for linux-btrfs@vger.kernel.org; Sun, 29 Jun 2014 19:15:02 +0200
+Received: from hsi-kbw-109-192-123-063.hsi6.kabel-badenwuerttemberg.de ([109.192.123.63])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 04:30:56 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 19:15:02 +0200
+Received: from mailinglists by hsi-kbw-109-192-123-063.hsi6.kabel-badenwuerttemberg.de with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 04:30:56 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 19:15:02 +0200
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID1 3+ drives
-Date: Sun, 29 Jun 2014 02:30:43 +0000 (UTC)
-Message-ID: <pan$851b1$4b6a3090$beaa984b$707a921a@cox.net>
-References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com>
-	<10572318.CAuhDIAMDU@xev> <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
-	<20140628161347.2097d308@natsu>
+From: Florian Lindner <mailinglists@xgm.de>
+Subject: Scrub being stuck
+Date: Sun, 29 Jun 2014 19:14:28 +0200
+Message-ID: <lophhk$nj1$2@ger.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Roman Mamedov posted on Sat, 28 Jun 2014 16:13:47 +0600 as excerpted:
+Hello,
 
-> Also depending on what you consider "fully works", RAID1 may not qualify
-> too,
-> as neither the read-balancing, nor write-submission algorithms are ready
-> for production use, performance-wise.
-> 
-> (RAID1 writes to two disks sequentially, not at the same time; and reads
-> are satisfied from in effect a random device, not from the least-busy
-> device).
+I've just completed a scrub on my home filesystem and now I wanted to start 
+on my Archiv btrfs RAID 0.
 
-Good point.  The current algorithms were designed as "good enough" stand-
-ins for testing.  They were /not/ designed as highly efficient
-parallel-I/O on parallel devices and cores implementations, as that was 
-to come later.
+root@horus ~ # uname -
+a                                                                                                                                                                                                                 
+Linux horus 3.15.2-1-ARCH #1 SMP PREEMPT Fri Jun 27 07:41:19 CEST 2014 
+x86_64 GNU/Linux
 
-Of course part of /that/ problem is that often enough, the I/O channel 
-is /not/ the bottleneck, the bottleneck is still the horrible scaling 
-issues due to calculating the interplay between all those snapshots and 
-quotas and massive internal-rewrite-pattern-VM-images, thus the reason we 
-have snapshot-aware-defrag disabled ATM, so arguably focusing on the most 
-efficient I/O queues algorithm at this point would be premature 
-optimization, which would mean it's a /good/ thing they haven't focused 
-on updating them yet.  Once these horrible scaling issues are addressed 
-and snapshot-aware-defrag and the like can be enabled again without 
-triggering week-going-and-it's-still-not-half-done issues, /then/ perhaps 
-it's time to look at the parallel I/O queuing and balancing algorithms.
+root@horus ~ # btrfs --version        
+Btrfs v3.14.2-dirty
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+root@horus ~ # btrfs fi show          
+Label: 'home'  uuid: 571009c0-6cc4-4598-a77b-f175501d23fd
+        Total devices 1 FS bytes used 2.03TiB
+        devid    1 size 2.73TiB used 2.04TiB path /dev/sdb1
+
+Label: 'Archiv'  uuid: b2504193-efeb-4ef3-8797-a8d73536a416
+        Total devices 2 FS bytes used 5.14TiB
+        devid    1 size 2.73TiB used 2.73TiB path /dev/sdd1
+        devid    2 size 2.73TiB used 2.73TiB path /dev/sde1
+
+Btrfs v3.14.2-dirty
+
+root@horus ~ # btrfs fi df /mnt/Archiv
+Data, RAID0: total=5.44TiB, used=5.13TiB
+Data, single: total=8.00MiB, used=244.00KiB
+System, RAID1: total=32.00MiB, used=396.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, RAID1: total=10.94GiB, used=8.71GiB
+unknown, single: total=512.00MiB, used=0.00
+
+root@horus ~ # btrfs scrub status /mnt/Archiv 
+scrub status for b2504193-efeb-4ef3-8797-a8d73536a416
+        scrub started at Thu Jan  2 21:13:35 2014, running for 1336 seconds
+        total bytes scrubbed: 473.28GiB with 0 errors
+
+root@horus ~ # btrfs scrub cancel /mnt/Archiv
+ERROR: scrub cancel failed on /mnt/Archiv: not running
+
+root@horus ~ # btrfs scrub resume 
+/mnt/Archiv                                                                                                                                                                                           
+ERROR: scrub is already running.
+To cancel use 'btrfs scrub cancel /mnt/Archiv'.
+To see the status use 'btrfs scrub status [-d] /mnt/Archiv'.
+
+root@horus ~ # btrfs scrub start 
+/mnt/Archiv                                                                                                                                                                                            
+ERROR: scrub is already running.
+To cancel use 'btrfs scrub cancel /mnt/Archiv'.
+To see the status use 'btrfs scrub status [-d] /mnt/Archiv'.
+
+
+A scrub I started at Jan 02 seems to be stuck somehow. The command outputs 
+above were generated right now.
+
+I'll be hapy to provide any more information.
+
+Thx!
+
+Florian
 

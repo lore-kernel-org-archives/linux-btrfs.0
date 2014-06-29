@@ -1,64 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:56707 "EHLO
-	out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753259AbaF2RyJ (ORCPT
+Received: from mail-la0-f45.google.com ([209.85.215.45]:55185 "EHLO
+	mail-la0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752999AbaF2UCR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jun 2014 13:54:09 -0400
-Received: from [192.168.1.72] (unknown [87.81.212.47])
-	by mail.messagingengine.com (Postfix) with ESMTPA id A5A8A6800BC
-	for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 13:54:07 -0400 (EDT)
-Message-ID: <1404064438.2907.3.camel@s-Air>
-Subject: btrfs send/receive test failing
-From: Sam Bull <sam.hacking@sent.com>
-To: linux-btrfs@vger.kernel.org
-Date: Sun, 29 Jun 2014 18:53:58 +0100
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
-	boundary="=-fMVCxXzpVpNbjfXqFsWM"
-Mime-Version: 1.0
+	Sun, 29 Jun 2014 16:02:17 -0400
+Received: by mail-la0-f45.google.com with SMTP id hr17so4246072lab.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 13:02:15 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <3081460.dX0cLeJPhK@quad>
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
+	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>
+	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>
+	<3081460.dX0cLeJPhK@quad>
+Date: Sun, 29 Jun 2014 15:02:15 -0500
+Message-ID: <CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>
+Subject: Re: Blocked tasks on 3.15.1
+From: Cody P Schafer <dev@codyps.com>
+To: Chris Samuel <chris@csamuel.org>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 27, 2014 at 7:22 PM, Chris Samuel <chris@csamuel.org> wrote:
+> On Fri, 27 Jun 2014 05:20:41 PM Duncan wrote:
+>
+>> If I'm not mistaken the fix for the 3.16 series bug was:
+>>
+>> ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
+>>
+>> Btrfs: fix deadlocks with trylock on tree nodes.
+>
+> That patch applies cleanly to 3.15.2 so if it is indeed the fix it should
+> probably go to -stable for the next 3.15 release..
+>
+> Unfortunately my test system died a while ago (hardware problem) and I've not
+> been able to resurrect it yet.
 
---=-fMVCxXzpVpNbjfXqFsWM
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+I'm also seeing stuck tasks on btrfs (3.14.4, 3.15.1, 3.15.2).
+I've also tried 3.15.2 with ea4ebde02e08558b020c4b61bb9a4c applied on
+top with similar results.
+I've been triggering the hang with 'rsync -hPaHAXx --del /mnt/home/a/
+/home/a/' where /mnt/home and /home are 2 separate btrfs filesystems
+on 2 separate disks.
 
-I'm trying out the btrfs send|receive command as shown on the
-incremental backup wiki page, but the command is failing. I've tried it
-with sudo as it had not permitted errors, but still no luck. The output
-is:
-
-        s@s-Air:~$ btrfs send /home/BACKUP | btrfs receive /media/s/99b1c51=
-d-b3bb-4179-a621-9d5a27acc385/Air
-        ERROR: failed to determine mount point for /home/BACKUP
-        ERROR: failed to open destination directory /media/s/99b1c51d-b3bb-=
-4179-a621-9d5a27acc385/Air. Operation not permitted
-       =20
-        s@s-Air:~$ sudo btrfs send /home/BACKUP | btrfs receive /media/s/99=
-b1c51d-b3bb-4179-a621-9d5a27acc385/Air
-        ERROR: failed to open destination directory /media/s/99b1c51d-b3bb-=
-4179-a621-9d5a27acc385/Air. Operation not permitted
-        [sudo] password for s:=20
-        At subvol /home/BACKUP
-        ERROR: open @home/BACKUP failed. No such file or directory
-       =20
-        s@s-Air:~$ sudo btrfs send /home/BACKUP | sudo btrfs receive /media=
-/s/99b1c51d-b3bb-4179-a621-9d5a27acc385/Air
-        At subvol /home/BACKUP
-        ERROR: open @home/BACKUP failed. No such file or directory
-
---=-fMVCxXzpVpNbjfXqFsWM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iEYEABECAAYFAlOwUroACgkQX+kozZYmzisKOACguKMbt4Dd68v6PZW2e9fZKBor
-tmoAoKf/DdZroQDfwSHr8pLR8czzH4Cq
-=UG3s
------END PGP SIGNATURE-----
-
---=-fMVCxXzpVpNbjfXqFsWM--
-
+dmesg with w-trigger: http://bpaste.net/show/419555/ (3.15.2 + ea4ebde)

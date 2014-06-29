@@ -1,124 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26782 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752021AbaF1Ldj (ORCPT
+Received: from mail-we0-f181.google.com ([74.125.82.181]:56043 "EHLO
+	mail-we0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753312AbaF2Snq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 07:33:39 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s5SBXaDY021044
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Jun 2014 19:33:36 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 12/12] Btrfs: cleanup the read failure record after write or when the inode is freeing
-Date: Sat, 28 Jun 2014 19:35:02 +0800
-Message-ID: <1403955302-22396-13-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com>
-References: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Sun, 29 Jun 2014 14:43:46 -0400
+Received: by mail-we0-f181.google.com with SMTP id q59so7392484wes.12
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 11:43:44 -0700 (PDT)
+From: Filipe David Borba Manana <fdmanana@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe David Borba Manana <fdmanana@gmail.com>, Chris Mason <clm@fb.com>
+Subject: [PATCH] Btrfs: fix use-after-free when cloning a trailing file hole
+Date: Sun, 29 Jun 2014 20:43:24 +0100
+Message-Id: <1404071004-20724-1-git-send-email-fdmanana@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After the data is written successfully, we should cleanup the read failure record
-in that range because
-- If we set data COW for the file, the range that the failure record pointed to is
-  mapped to a new place, so it is invalid.
-- If we set no data COW for the file, and if there is no error during writting,
-  the corrupted data is corrected, so the failure record can be removed. And if
-  some errors happen on the mirrors, we also needn't worry about it because the
-  failure record will be recreated if we read the same place again.
+The transaction handle was being used after being freed.
 
-Sometimes, we may fail to correct the data, so the failure records will be left
-in the tree, we need free them when we free the inode or the memory leak happens.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Chris Mason <clm@fb.com>
+Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 ---
- fs/btrfs/extent_io.c | 34 ++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |  1 +
- fs/btrfs/inode.c     |  6 ++++++
- 3 files changed, 41 insertions(+)
+ fs/btrfs/ioctl.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index edbc3b6..7535978 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2135,6 +2135,40 @@ out:
- 	return 0;
- }
- 
-+/*
-+ * Can be called when
-+ * - hold extent lock
-+ * - under ordered extent
-+ * - the inode is freeing
-+ */
-+void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
-+{
-+	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
-+	struct io_failure_record *failrec;
-+	struct extent_state *state, *next;
-+
-+	if (RB_EMPTY_ROOT(&failure_tree->state))
-+		return;
-+
-+	spin_lock(&failure_tree->lock);
-+	state = find_first_extent_bit_state(failure_tree, start, EXTENT_DIRTY);
-+	while (state) {
-+		if (state->start > end)
-+			break;
-+
-+		ASSERT(state->end <= end);
-+
-+		next = next_state(state);
-+
-+		failrec = (struct io_failure_record *)state->private;
-+		free_extent_state(state);
-+		kfree(failrec);
-+
-+		state = next;
-+	}
-+	spin_unlock(&failure_tree->lock);
-+}
-+
- int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 				struct io_failure_record **failrec_ret)
- {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b23c7c2..5c48eda 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -369,6 +369,7 @@ struct io_failure_record {
- 	int in_validation;
- };
- 
-+void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end);
- int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 				struct io_failure_record **failrec_ret);
- int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d6b7048..801fb40 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2639,6 +2639,10 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		goto out;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 02dc64b..2562dc7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3565,12 +3565,10 @@ process_slot:
+ 			btrfs_end_transaction(trans, root);
+ 			goto out;
+ 		}
+-		ret = clone_finish_inode_update(trans, inode, destoff + len,
+-						destoff, olen);
+-		if (ret)
+-			goto out;
+ 		clone_update_extent_map(inode, trans, path, NULL, last_dest_end,
+ 					destoff + len - last_dest_end);
++		ret = clone_finish_inode_update(trans, inode, destoff + len,
++						destoff, olen);
  	}
  
-+	btrfs_free_io_failure_record(inode, ordered_extent->file_offset,
-+				     ordered_extent->file_offset +
-+				     ordered_extent->len - 1);
-+
- 	if (test_bit(BTRFS_ORDERED_TRUNCATED, &ordered_extent->flags)) {
- 		truncated = true;
- 		logical_len = ordered_extent->truncated_len;
-@@ -4723,6 +4727,8 @@ void btrfs_evict_inode(struct inode *inode)
- 	/* do we really want it for ->i_nlink > 0 and zero btrfs_root_refs? */
- 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
- 
-+	btrfs_free_io_failure_record(inode, 0, (u64)-1);
-+
- 	if (root->fs_info->log_root_recovering) {
- 		BUG_ON(test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 				 &BTRFS_I(inode)->runtime_flags));
+ out:
 -- 
-1.9.3
+1.9.1
 

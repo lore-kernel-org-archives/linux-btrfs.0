@@ -1,50 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55807 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755907AbaF1SPn convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jun 2014 14:15:43 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50777 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1X0xA6-002RxH-8y
-	for linux-btrfs@vger.kernel.org; Sat, 28 Jun 2014 12:15:42 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:58666 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750856AbaF2Ca6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Jun 2014 22:30:58 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X14tM-0006G4-Ua
+	for linux-btrfs@vger.kernel.org; Sun, 29 Jun 2014 04:30:56 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 04:30:56 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 04:30:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: RAID1 3+ drives
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <1403953457.BS00mAsj6N@xev>
-Date: Sat, 28 Jun 2014 12:15:42 -0600
-Message-Id: <DC109384-A75B-4469-B043-4A6935BF9A76@colorremedies.com>
-References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com> <10572318.CAuhDIAMDU@xev> <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net> <1403953457.BS00mAsj6N@xev>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Sun, 29 Jun 2014 02:30:43 +0000 (UTC)
+Message-ID: <pan$851b1$4b6a3090$beaa984b$707a921a@cox.net>
+References: <CAA8KC9J4M+Vsk0Wjs+vbgQVrcgMfznwE9WwqapHKhH82g_-hBA@mail.gmail.com>
+	<10572318.CAuhDIAMDU@xev> <pan$b64f$b234655e$f16fd679$34acdd2f@cox.net>
+	<20140628161347.2097d308@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Roman Mamedov posted on Sat, 28 Jun 2014 16:13:47 +0600 as excerpted:
 
-On Jun 28, 2014, at 12:28 AM, Russell Coker <russell@coker.com.au> wrote:
+> Also depending on what you consider "fully works", RAID1 may not qualify
+> too,
+> as neither the read-balancing, nor write-submission algorithms are ready
+> for production use, performance-wise.
 > 
->> Tho if you ran a md/dmraid level scrub often enough, and then ran a btrfs
->> scrub on top, one could be /reasonably/ assured of freedom from lower
->> level corruption.
-> 
-> Not at all.  Linux software RAID scrub will copy data from one disk to the 
-> other.  
+> (RAID1 writes to two disks sequentially, not at the same time; and reads
+> are satisfied from in effect a random device, not from the least-busy
+> device).
 
-md supports two kinds of scrub: check and repair. Check is the same as btrfs read-only scrub with -r option.
+Good point.  The current algorithms were designed as "good enough" stand-
+ins for testing.  They were /not/ designed as highly efficient
+parallel-I/O on parallel devices and cores implementations, as that was 
+to come later.
 
-> It may copy from the good disk to the bad or from the bad disk to the 
-> good - and it won't know which it's doing.
+Of course part of /that/ problem is that often enough, the I/O channel 
+is /not/ the bottleneck, the bottleneck is still the horrible scaling 
+issues due to calculating the interplay between all those snapshots and 
+quotas and massive internal-rewrite-pattern-VM-images, thus the reason we 
+have snapshot-aware-defrag disabled ATM, so arguably focusing on the most 
+efficient I/O queues algorithm at this point would be premature 
+optimization, which would mean it's a /good/ thing they haven't focused 
+on updating them yet.  Once these horrible scaling issues are addressed 
+and snapshot-aware-defrag and the like can be enabled again without 
+triggering week-going-and-it's-still-not-half-done issues, /then/ perhaps 
+it's time to look at the parallel I/O queuing and balancing algorithms.
 
-Yes.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-> Also last time I checked a scrub of Linux software RAID-1 still reported large 
-> multiples of 128 sectors mismatching in normal operation.  So you won't even 
-> know if a disk is returning bogus data unless the bad data is copied to the 
-> good disk and exposed to BTRFS.
-
-For raid1,raid10 you need to zero the drives or you will get mismatches. And swap partition or swap file on an md device will also cause mismatches. Mismatches on raid1,10 are much less likely for other types of files, but man 4 md does say it's possible so mismatch_cnt isn't perfectly reliable on raid1,10.
-
-
-Chris Murphy

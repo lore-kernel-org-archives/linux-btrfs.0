@@ -1,50 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f176.google.com ([209.85.220.176]:41755 "EHLO
-	mail-vc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753890AbaF3Cdc (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:44346 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753815AbaF3C4e convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jun 2014 22:33:32 -0400
-Received: by mail-vc0-f176.google.com with SMTP id ik5so6901302vcb.35
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 19:33:31 -0700 (PDT)
+	Sun, 29 Jun 2014 22:56:34 -0400
+Message-ID: <53B0D220.3070608@cn.fujitsu.com>
+Date: Mon, 30 Jun 2014 10:57:36 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <3081460.dX0cLeJPhK@quad>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
-	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>
-	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>
-	<3081460.dX0cLeJPhK@quad>
-Date: Sun, 29 Jun 2014 22:33:31 -0400
-Message-ID: <CAGfcS_nO-Cu986JRvUR_Ny9oq=VmMNLfeUOs0AtfCSMw=Q9WQw@mail.gmail.com>
-Subject: Re: Blocked tasks on 3.15.1
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Chris Samuel <chris@csamuel.org>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: =?UTF-8?B?U8OpYmFzdGllbiBST0hBVVQ=?= <sebastien.rohaut@free.fr>,
+        Chris Murphy <lists@colorremedies.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: Can't mount subvolume with ro option
+References: <53ADCF0B.4010109@free.fr> <B87E6AE0-F47D-4F75-9628-E1151BB7467D@colorremedies.com> <54D8214E-1C00-43AB-A68A-D450069D878C@colorremedies.com> <53AEA0D3.8080905@free.fr> <53B0C93E.8050500@cn.fujitsu.com>
+In-Reply-To: <53B0C93E.8050500@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 27, 2014 at 8:22 PM, Chris Samuel <chris@csamuel.org> wrote:
-> On Fri, 27 Jun 2014 05:20:41 PM Duncan wrote:
+
+-------- Original Message --------
+Subject: Re: Can't mount subvolume with ro option
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Sébastien ROHAUT <sebastien.rohaut@free.fr>, Chris Murphy 
+<lists@colorremedies.com>
+Date: 2014年06月30日 10:19
 >
->> If I'm not mistaken the fix for the 3.16 series bug was:
+> -------- Original Message --------
+> Subject: Re: Can't mount subvolume with ro option
+> From: Sébastien ROHAUT <sebastien.rohaut@free.fr>
+> To: Chris Murphy <lists@colorremedies.com>
+> Date: 2014年06月28日 19:02
+>> Le 28/06/2014 00:12, Chris Murphy a écrit :
+>>> On Jun 27, 2014, at 4:08 PM, Chris Murphy <lists@colorremedies.com> 
+>>> wrote:
+>>>
+>>>> On Jun 27, 2014, at 2:07 PM, Sébastien ROHAUT 
+>>>> <sebastien.rohaut@free.fr> wrote:
+>>>>
+>>>>> Hi,
+>>>>>
+>>>>> In the wiki, it's said we can mount subvolumes with different 
+>>>>> mount options. nosuid, nodev, rw and ro are listed, as valid 
+>>>>> generic mount options.
+>>>> This might require 3.15. I don't recall it working with early 3.14 
+>>>> kernels, but by 3.14.3 I'd moved onto testing 3.15.
+>>>
+>>> [root@f20v ~]# mount /dev/sda3 /mnt
+>>> [root@f20v ~]# btrfs subvol create /mnt/test
+>>> Create subvolume '/mnt/test'
+>>> [root@f20v ~]# umount /mnt
+>>> [root@f20v ~]# mount -o ro,subvol=test /dev/sda3 /mnt
+>>> mount: /dev/sda3 is already mounted or /mnt busy
+>>>         /dev/sda3 is already mounted on /
+>>>         /dev/sda3 is already mounted on /home
+>>>         /dev/sda3 is already mounted on /var
+>>>         /dev/sda3 is already mounted on /boot
+>>> [root@f20v ~]# uname -r
+>>> 3.14.6-200.fc20.x86_64
+>>>
+>>>
+>>> I don't know if this feature will be backported to stable kernels. 
+>>> If not, then probably the wiki should say it's a 3.15+ feature.
+>>> Chris Murphy
+>>>
+>>>
+>> Thank you for your answer. I'm actually moving to a Fedora Rawhide 
+>> (3.16 kernel).
 >>
->> ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
->>
->> Btrfs: fix deadlocks with trylock on tree nodes.
+>> Sebastien Rohaut
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
+> When testing on 3.15.2-ARCH alone with 3.16-rc2, the problem can also 
+> be reproduced.
 >
-> That patch applies cleanly to 3.15.2 so if it is indeed the fix it should
-> probably go to -stable for the next 3.15 release..
+> But I can't always reproduce it, sometimes I was able to mount subvol 
+> with ro,
+> somtimes not.
+>
+> So I think the problem needs to be investigated further.
+>
+> Thanks,
+> Qu
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Finally find the stable method to reproduce the problem on 3.16-rc2,
+the point is if we mount subvol,ro first, then you can't mount the hole 
+device:
 
-I can confirm that 3.15.2 definitely has the deadlock problem.  I
-tried upgrading just to convince myself of this before patching it and
-it only took a few hours before it stopped syncing with the usual
-errors.
+# mkfs.btrfs  -f /dev/sda6
+# mount /dev/sda6  /mnt/btrfs/
+# btrfs sub create /mnt/btrfs/subv
+Create subvolume '/mnt/btrfs/subv'
+# umount /mnt/btrfs
+# mount -o subvol=subv,ro /dev/sda6  /mnt/other/
+# LANG=C mount /dev/sda6  /mnt/btrfs/
+mount: /dev/sda6 is already mounted or /mnt/btrfs busy
+        /dev/sda6 is already mounted on /mnt/other
 
-I applied the patch on Jun 28 around 20:00UTC.  I haven't had a
-deadlock since, despite having the file system fairly active with a
-few reboots, some deleted snapshots, being assimilated by the new
-sysvinit replacement, etc.  That doesn't really prove anything though
-- for all I know it will hang a week from now.
+Thanks,
+Qu
 
-However, the patch seems stable so far on 3.15.2.
-
-Rich

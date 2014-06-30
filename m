@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47045 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:44937 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751757AbaF3Dtx (ORCPT
+	with ESMTP id S1752370AbaF3KqZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jun 2014 23:49:53 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s5U3nqg5024809
+	Mon, 30 Jun 2014 06:46:25 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s5UAkO2o014113
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 03:49:53 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 10:46:25 GMT
 Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s5U3nqdh016160
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s5UAkNaE017434
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 03:49:52 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s5U3npVt016874
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 03:49:51 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 10:46:23 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s5UAkDm9009808
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jun 2014 10:46:14 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix race of using total_bytes_pinned
-Date: Mon, 30 Jun 2014 11:49:43 +0800
-Message-Id: <1404100183-9618-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: fix race of using total_bytes_pinned
+Date: Mon, 30 Jun 2014 18:46:07 +0800
+Message-Id: <1404125167-3185-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -43,11 +43,13 @@ run out of space.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: add missing brakets of if statement.
+
  fs/btrfs/extent-tree.c | 22 ++++++++++++++--------
  1 file changed, 14 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 99c2539..35c68cd 100644
+index 99c2539..57793da 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -3685,7 +3685,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
@@ -66,9 +68,9 @@ index 99c2539..35c68cd 100644
 -					   bytes) < 0)
 -			committed = 1;
 +					   bytes) < 0) {
-+			if (check_pinned)
++			if (check_pinned) {
 +				committed = 1;	/* really run out of space. */
-+			else {
++			} else {
 +				check_pinned = 1;
 +				spin_unlock(&data_sinfo->lock);
 +				goto again;

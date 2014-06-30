@@ -1,95 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:32789 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753315AbaF2Tqq (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:47823 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753407AbaF3B4h convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jun 2014 15:46:46 -0400
-Received: by mail-wg0-f42.google.com with SMTP id z12so7140017wgg.13
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jun 2014 12:46:45 -0700 (PDT)
-From: Filipe David Borba Manana <fdmanana@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe David Borba Manana <fdmanana@gmail.com>, Chris Mason <clm@fb.com>
-Subject: [PATCH v2] Btrfs: fix use-after-free when cloning a trailing file hole
-Date: Sun, 29 Jun 2014 21:45:40 +0100
-Message-Id: <1404074740-32112-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1404071004-20724-1-git-send-email-fdmanana@gmail.com>
-References: <1404071004-20724-1-git-send-email-fdmanana@gmail.com>
+	Sun, 29 Jun 2014 21:56:37 -0400
+Message-ID: <53B0C412.1030207@cn.fujitsu.com>
+Date: Mon, 30 Jun 2014 09:57:38 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: Roman Mamedov <rm@romanrm.net>
+Subject: Re: [PATCH] btrfs: fix nossd and ssd_spread mount option regression
+References: <53ADE727.5000400@redhat.com>
+In-Reply-To: <53ADE727.5000400@redhat.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The transaction handle was being used after being freed.
 
-Cc: Chris Mason <clm@fb.com>
-Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
----
+Oh, my bad, sorry for the SSD related mount options mess.
 
-V2: Removed file extent item argument to clone_update_extent_map() for
-    more clarity.
+Thanks for the patch fixing the bug, comments inlined below.
+-------- Original Message --------
+Subject: [PATCH] btrfs: fix nossd and ssd_spread mount option regression
+From: Eric Sandeen <sandeen@redhat.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: 2014年06月28日 05:50
+> The commit
+>
+> 0780253 btrfs: Cleanup the btrfs_parse_options for remount.
+>
+> broke ssd options quite badly; it stopped making ssd_spread
+> imply ssd, and it made "nossd" unsettable.
+>
+> Put things back at least as well as they were before
+> (though ssd mount option handling is still pretty odd:
+> # mount -o "nossd,ssd_spread" works?)
+>
+> Reported-by: Roman Mamedov <rm@romanrm.net>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> ---
+>
+> I've tested this insofar as I was actually able to mount with
+> nossd,and see it reflected in /proc/mounts.
+>
+> If SSD_SPREAD is set, show_options() won't show you the ssd
+> option, so that's not totally obvious.  Still, this is what
+> the code did before the regression.
+>
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 4662d92..0e8edcc 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -522,9 +522,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>   		case Opt_ssd_spread:
+>   			btrfs_set_and_info(root, SSD_SPREAD,
+>   					   "use spread ssd allocation scheme");
+> +			btrfs_set_opt(info->mount_opt, SSD);
+>   			break;
+>   		case Opt_nossd:
+> -			btrfs_clear_and_info(root, NOSSD,
+> +			btrfs_set_and_info(root, NOSSD,
+>   					     "not using ssd allocation scheme");
+>   			btrfs_clear_opt(info->mount_opt, SSD);
+Since ssd_spread implies ssd, so nossd should also clear ssd_spread.
+So btrfs_clear_opt(info->mount_opt, SSD_SPREAD) is also needed.
 
- fs/btrfs/ioctl.c | 20 +++++++++-----------
- 1 file changed, 9 insertions(+), 11 deletions(-)
+Thanks,
+Qu
+>   			break;
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 02dc64b..2a99f49 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3142,7 +3142,6 @@ out:
- static void clone_update_extent_map(struct inode *inode,
- 				    const struct btrfs_trans_handle *trans,
- 				    const struct btrfs_path *path,
--				    struct btrfs_file_extent_item *fi,
- 				    const u64 hole_offset,
- 				    const u64 hole_len)
- {
-@@ -3157,7 +3156,11 @@ static void clone_update_extent_map(struct inode *inode,
- 		return;
- 	}
- 
--	if (fi) {
-+	if (path) {
-+		struct btrfs_file_extent_item *fi;
-+
-+		fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				    struct btrfs_file_extent_item);
- 		btrfs_extent_item_to_extent_map(inode, path, fi, false, em);
- 		em->generation = -1;
- 		if (btrfs_file_extent_type(path->nodes[0], fi) ==
-@@ -3511,18 +3514,15 @@ process_slot:
- 					    btrfs_item_ptr_offset(leaf, slot),
- 					    size);
- 				inode_add_bytes(inode, datal);
--				extent = btrfs_item_ptr(leaf, slot,
--						struct btrfs_file_extent_item);
- 			}
- 
- 			/* If we have an implicit hole (NO_HOLES feature). */
- 			if (drop_start < new_key.offset)
- 				clone_update_extent_map(inode, trans,
--						path, NULL, drop_start,
-+						NULL, drop_start,
- 						new_key.offset - drop_start);
- 
--			clone_update_extent_map(inode, trans, path,
--						extent, 0, 0);
-+			clone_update_extent_map(inode, trans, path, 0, 0);
- 
- 			btrfs_mark_buffer_dirty(leaf);
- 			btrfs_release_path(path);
-@@ -3565,12 +3565,10 @@ process_slot:
- 			btrfs_end_transaction(trans, root);
- 			goto out;
- 		}
-+		clone_update_extent_map(inode, trans, NULL, last_dest_end,
-+					destoff + len - last_dest_end);
- 		ret = clone_finish_inode_update(trans, inode, destoff + len,
- 						destoff, olen);
--		if (ret)
--			goto out;
--		clone_update_extent_map(inode, trans, path, NULL, last_dest_end,
--					destoff + len - last_dest_end);
- 	}
- 
- out:
--- 
-1.9.1
 

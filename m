@@ -1,108 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44346 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753815AbaF3C4e convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jun 2014 22:56:34 -0400
-Message-ID: <53B0D220.3070608@cn.fujitsu.com>
-Date: Mon, 30 Jun 2014 10:57:36 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: =?UTF-8?B?U8OpYmFzdGllbiBST0hBVVQ=?= <sebastien.rohaut@free.fr>,
-        Chris Murphy <lists@colorremedies.com>
-CC: <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42931 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751283AbaF3DbG convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Jun 2014 23:31:06 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Can't mount subvolume with ro option
-References: <53ADCF0B.4010109@free.fr> <B87E6AE0-F47D-4F75-9628-E1151BB7467D@colorremedies.com> <54D8214E-1C00-43AB-A68A-D450069D878C@colorremedies.com> <53AEA0D3.8080905@free.fr> <53B0C93E.8050500@cn.fujitsu.com>
-In-Reply-To: <53B0C93E.8050500@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <53B0D220.3070608@cn.fujitsu.com>
+Date: Sun, 29 Jun 2014 21:31:03 -0600
+Cc: =?iso-8859-1?Q?S=E9bastien_ROHAUT?= <sebastien.rohaut@free.fr>,
+        <linux-btrfs@vger.kernel.org>
+Message-Id: <91D02487-0FB9-4EA5-87B0-C904EA8B6347@colorremedies.com>
+References: <53ADCF0B.4010109@free.fr> <B87E6AE0-F47D-4F75-9628-E1151BB7467D@colorremedies.com> <54D8214E-1C00-43AB-A68A-D450069D878C@colorremedies.com> <53AEA0D3.8080905@free.fr> <53B0C93E.8050500@cn.fujitsu.com> <53B0D220.3070608@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
--------- Original Message --------
-Subject: Re: Can't mount subvolume with ro option
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: Sébastien ROHAUT <sebastien.rohaut@free.fr>, Chris Murphy 
-<lists@colorremedies.com>
-Date: 2014年06月30日 10:19
->
-> -------- Original Message --------
-> Subject: Re: Can't mount subvolume with ro option
-> From: Sébastien ROHAUT <sebastien.rohaut@free.fr>
-> To: Chris Murphy <lists@colorremedies.com>
-> Date: 2014年06月28日 19:02
->> Le 28/06/2014 00:12, Chris Murphy a écrit :
->>> On Jun 27, 2014, at 4:08 PM, Chris Murphy <lists@colorremedies.com> 
->>> wrote:
->>>
->>>> On Jun 27, 2014, at 2:07 PM, Sébastien ROHAUT 
->>>> <sebastien.rohaut@free.fr> wrote:
->>>>
->>>>> Hi,
->>>>>
->>>>> In the wiki, it's said we can mount subvolumes with different 
->>>>> mount options. nosuid, nodev, rw and ro are listed, as valid 
->>>>> generic mount options.
->>>> This might require 3.15. I don't recall it working with early 3.14 
->>>> kernels, but by 3.14.3 I'd moved onto testing 3.15.
->>>
->>> [root@f20v ~]# mount /dev/sda3 /mnt
->>> [root@f20v ~]# btrfs subvol create /mnt/test
->>> Create subvolume '/mnt/test'
->>> [root@f20v ~]# umount /mnt
->>> [root@f20v ~]# mount -o ro,subvol=test /dev/sda3 /mnt
->>> mount: /dev/sda3 is already mounted or /mnt busy
->>>         /dev/sda3 is already mounted on /
->>>         /dev/sda3 is already mounted on /home
->>>         /dev/sda3 is already mounted on /var
->>>         /dev/sda3 is already mounted on /boot
->>> [root@f20v ~]# uname -r
->>> 3.14.6-200.fc20.x86_64
->>>
->>>
->>> I don't know if this feature will be backported to stable kernels. 
->>> If not, then probably the wiki should say it's a 3.15+ feature.
->>> Chris Murphy
->>>
->>>
->> Thank you for your answer. I'm actually moving to a Fedora Rawhide 
->> (3.16 kernel).
->>
->> Sebastien Rohaut
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
-> When testing on 3.15.2-ARCH alone with 3.16-rc2, the problem can also 
-> be reproduced.
->
-> But I can't always reproduce it, sometimes I was able to mount subvol 
-> with ro,
-> somtimes not.
->
-> So I think the problem needs to be investigated further.
->
-> Thanks,
-> Qu
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Finally find the stable method to reproduce the problem on 3.16-rc2,
-the point is if we mount subvol,ro first, then you can't mount the hole 
-device:
+On Jun 29, 2014, at 8:57 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> 
+> Finally find the stable method to reproduce the problem on 3.16-rc2,
+> the point is if we mount subvol,ro first, then you can't mount the hole device:
+> 
+> # mkfs.btrfs  -f /dev/sda6
+> # mount /dev/sda6  /mnt/btrfs/
+> # btrfs sub create /mnt/btrfs/subv
+> Create subvolume '/mnt/btrfs/subv'
+> # umount /mnt/btrfs
+> # mount -o subvol=subv,ro /dev/sda6  /mnt/other/
+> # LANG=C mount /dev/sda6  /mnt/btrfs/
+> mount: /dev/sda6 is already mounted or /mnt/btrfs busy
+>       /dev/sda6 is already mounted on /mnt/other
 
-# mkfs.btrfs  -f /dev/sda6
-# mount /dev/sda6  /mnt/btrfs/
-# btrfs sub create /mnt/btrfs/subv
-Create subvolume '/mnt/btrfs/subv'
-# umount /mnt/btrfs
-# mount -o subvol=subv,ro /dev/sda6  /mnt/other/
-# LANG=C mount /dev/sda6  /mnt/btrfs/
-mount: /dev/sda6 is already mounted or /mnt/btrfs busy
-        /dev/sda6 is already mounted on /mnt/other
+Similar problem: if you mount subvol,rw and then subvol,ro it succeeds, but then mount another subvol,rw it fails.
 
-Thanks,
-Qu
 
+Chris Murphy

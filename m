@@ -1,63 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail.fujitsu.co.jp ([164.71.1.133]:44549 "EHLO
-	fgwmail.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751412AbaGAFnn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 01:43:43 -0400
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail.fujitsu.co.jp (Postfix) with ESMTP id 83ACE3EE0B6
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Jul 2014 14:43:42 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 949DCAC05B4
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Jul 2014 14:43:41 +0900 (JST)
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 4DCAFE08001
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Jul 2014 14:43:41 +0900 (JST)
-Received: from G01JPEXCHKW15.g01.fujitsu.local (G01JPEXCHKW15.g01.fujitsu.local [10.0.194.54])
-	by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 9578A6923A2
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Jul 2014 14:43:40 +0900 (JST)
-Message-ID: <53B24A86.1050802@jp.fujitsu.com>
-Date: Tue, 1 Jul 2014 14:43:34 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: build failure with mason/for-linus tree
-Content-Type: text/plain; charset="ISO-2022-JP"
+Received: from e23smtp07.au.ibm.com ([202.81.31.140]:46373 "EHLO
+	e23smtp07.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752003AbaGAGex (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 02:34:53 -0400
+Received: from /spool/local
+	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 1 Jul 2014 16:34:50 +1000
+Received: from d23relay04.au.ibm.com (d23relay04.au.ibm.com [9.190.234.120])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 6F55F2BB0040
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Jul 2014 16:34:49 +1000 (EST)
+Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
+	by d23relay04.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s616IJTp60424336
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 16:18:20 +1000
+Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
+	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s616YmTa027486
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 16:34:48 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        aneesh.kumar@linux.vnet.ibm.com
+Subject: [PATCH] Btrfs: fill_holes: Fix slot number passed to hole_mergeable() call.
+Date: Tue,  1 Jul 2014 12:04:28 +0530
+Message-Id: <1404196468-2007-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+For a non-existent key, btrfs_search_slot() sets path->slots[0] to the slot
+where the key could have been present, which in this case would be the slot
+containing the extent item which would be the next neighbor of the file range
+being punched. The current code passes an incremented path->slots[0] and we
+skip to the wrong file extent item. This would mean that we would fail to
+merge the "yet to be created" hole with the next neighboring hole (if one
+exists). Fix this.
 
-FYI, today I failed to build mason/for-linus tree as follows.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/file.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-===============================================================================
-...
-/home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'record_root_in_trans':
-/home/sat/src/linux-2.6/fs/btrfs/transaction.c:293:3: error: implicit declaration of function 'smp_mb__before_atomic' [-Werror=implicit-function-declaration]
-   smp_mb__before_atomic();
-   ^
-/home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'commit_fs_roots':
-/home/sat/src/linux-2.6/fs/btrfs/transaction.c:1065:4: error: implicit declaration of function 'smp_mb__after_atomic' [-Werror=implicit-function-declaration]
-    smp_mb__after_atomic();
-    ^
-cc1: some warnings being treated as errors
-...
-===============================================================================
-
-It can be solved by cherry-picking febdbfe.
-
-===
-commit febdbfe8a91ce0d11939d4940b592eb0dba8d663
-Author: Peter Zijlstra <peterz@infradead.org>
-Date:   Thu Feb 6 18:16:07 2014 +0100
-
-    arch: Prepare for smp_mb__{before,after}_atomic()
-    
-    Since the smp_mb__{before,after}*() ops are fundamentally dependent on
-    how an arch can implement atomics it doesn't make sense to have 3
-    variants of them. They must all be the same.
-===
-
-Thanks,
-Satoru
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index ad7c059..3cd7997 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2126,10 +2126,9 @@ static int fill_holes(struct btrfs_trans_handle *trans, struct inode *inode,
+ 		goto out;
+ 	}
+ 
+-	if (hole_mergeable(inode, leaf, path->slots[0]+1, offset, end)) {
++	if (hole_mergeable(inode, leaf, path->slots[0], offset, end)) {
+ 		u64 num_bytes;
+ 
+-		path->slots[0]++;
+ 		key.offset = offset;
+ 		btrfs_set_item_key_safe(root, path, &key);
+ 		fi = btrfs_item_ptr(leaf, path->slots[0],
+-- 
+1.8.3.1
 

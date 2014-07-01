@@ -1,116 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:25580 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751908AbaGAJ2z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 05:28:55 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s619SsJj026472
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 09:28:55 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s619SrwL001307
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 09:28:54 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s619Srl2001300
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 09:28:53 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3] Btrfs: fix race of using total_bytes_pinned
-Date: Tue,  1 Jul 2014 17:28:46 +0800
-Message-Id: <1404206926-7953-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:51742 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1757419AbaGAJ27 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 05:28:59 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s619Su73013464
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 17:28:56 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with different ro/rw options"
+Date: Tue, 1 Jul 2014 17:30:01 +0800
+Message-ID: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This percpu counter @total_bytes_pinned is introduced to skip unnecessary
-operations of 'commit transaction', it accounts for those space we may free
-but are stuck in delayed refs.
+This reverts commit 0723a0473fb48a1c93b113a28665b64ce5faf35a.
+This commit has the following problem:
+1) Break the ro mount rule.
+When users mount the whole btrfs ro, it is still possible to mount
+subvol rw and change the contents. Which make the whole fs ro mount
+non-sense.
 
-And we zero out @space_info->total_bytes_pinned every transaction period so
-we have a better idea of how much space we'll actually free up by committing
-this transaction.  However, we do the 'zero out' part a little earlier, before
-we actually unpin space, so we end up returning ENOSPC when we actually have
-free space that's just unpinned from committing transaction.
+2) Cause whole btrfs ro/rw mount change fails.
+When mount a subvol ro first, when you can't mount the whole fs mounted
+rw. This is due to the check in btrfs_mount() which returns -EBUSY,
+which is OK for single fs to prevent mount fs ro in one mount point and
+mount the same fs rw in other mount point.
+Step to reproduce:
+mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
+mount -o rw /dev/sda6 /mnt/btrfs	<-this will fail
 
-xfstests/generic/074 complained then.
+3) Kernel warn in vfs.
+When mount the whole fs ro, and mount a subvol ro, kernel warning will
+show in fs/sync.c complaining s_umount rwsem is not locked.
+Since this remount is not called by VFS, so s_mounts rwsem is not
+correctly locked.
 
-This fixes it by actually accounting the percpu pinned number when 'unpin',
-and when finding space for writing, if it finds that pinned bytes is less
-than needed, we first try again to check if we have space now, as someone
-may have committed transaction, yes means we're good, while no means we
-really have run out of space.
+4) Lacks ro/rw conflicint check.
+The commit uses a trick to 'cheat' vfs about ro/rw flags to allow
+different ro/rw mount options, however this breaks the original ro/rw
+conflicting rule: one fs(even subvolume) can't be mounted rw in one place
+and mounted ro in someplace else.
+This can be triggered quite easily:
+mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
+mount -o subvol=subv,rw /dev/sda6 /mnt/other
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Also the check logical about checking the ro/rw needed to be investigated
+further. e.g. When the subvolume is mounted ro, the whole btrfs fs is mounted
+rw, so one can change the ro mounted subvolume from the mounted whole btrfs.
+
+Due to the above reasons, the per-subvolume ro/rw mount options should be
+investigated further to ensure the correctness and better reverting it
+before correct implement
+(It may takes a lone time to find the right logic about ro/rw option in
+subvolume)
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Conflicts:
+	fs/btrfs/super.c
 ---
-v3: Really account the percpu pinned number when unpin, instead of zeroing
-    it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
-    out may end up with messing percpu pinned number(suggested by Miao).
-v2: Add missing brakets for if statement
+ fs/btrfs/super.c | 26 --------------------------
+ 1 file changed, 26 deletions(-)
 
- fs/btrfs/extent-tree.c | 20 ++++++++++++--------
- 1 file changed, 12 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 99c2539..f36fb13 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3685,7 +3685,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 used;
--	int ret = 0, committed = 0, alloc_chunk = 1;
-+	int ret = 0, committed = 0, alloc_chunk = 1, check_pinned = 0;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4662d92..4a088f8 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -66,8 +66,6 @@
+ static const struct super_operations btrfs_super_ops;
+ static struct file_system_type btrfs_fs_type;
  
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = ALIGN(bytes, root->sectorsize);
-@@ -3756,11 +3756,18 @@ alloc:
- 		 * allocation don't bother committing the transaction.
- 		 */
- 		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
--					   bytes) < 0)
--			committed = 1;
-+					   bytes) < 0) {
-+			if (check_pinned) {
-+				committed = 1;	/* really run out of space. */
-+			} else {
-+				check_pinned = 1;
-+				spin_unlock(&data_sinfo->lock);
-+				goto again;
-+			}
-+		}
- 		spin_unlock(&data_sinfo->lock);
- 
--		/* commit the current transaction and try again */
-+	/* commit the current transaction and try again */
- commit_trans:
- 		if (!committed &&
- 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
-@@ -5678,7 +5685,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
- 	struct btrfs_caching_control *next;
- 	struct btrfs_caching_control *caching_ctl;
- 	struct btrfs_block_group_cache *cache;
--	struct btrfs_space_info *space_info;
- 
- 	down_write(&fs_info->commit_root_sem);
- 
-@@ -5701,9 +5707,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
- 
- 	up_write(&fs_info->commit_root_sem);
- 
--	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
--		percpu_counter_set(&space_info->total_bytes_pinned, 0);
+-static int btrfs_remount(struct super_block *sb, int *flags, char *data);
 -
- 	update_global_block_rsv(fs_info);
- }
+ static const char *btrfs_decode_error(int errno)
+ {
+ 	char *errstr = "unknown";
+@@ -1179,31 +1177,7 @@ static struct dentry *mount_subvol(const char *subvol_name, int flags,
+ 		return ERR_PTR(-ENOMEM);
+ 	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name,
+ 			     newargs);
+-
+-	if (PTR_RET(mnt) == -EBUSY) {
+-		if (flags & MS_RDONLY) {
+-			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY, device_name,
+-					     newargs);
+-		} else {
+-			int r;
+-			mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY, device_name,
+-					     newargs);
+-			if (IS_ERR(mnt)) {
+-				kfree(newargs);
+-				return ERR_CAST(mnt);
+-			}
+-
+-			r = btrfs_remount(mnt->mnt_sb, &flags, NULL);
+-			if (r < 0) {
+-				/* FIXME: release vfsmount mnt ??*/
+-				kfree(newargs);
+-				return ERR_PTR(r);
+-			}
+-		}
+-	}
+-
+ 	kfree(newargs);
+-
+ 	if (IS_ERR(mnt))
+ 		return ERR_CAST(mnt);
  
-@@ -5741,6 +5744,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
- 		spin_lock(&cache->lock);
- 		cache->pinned -= len;
- 		space_info->bytes_pinned -= len;
-+		percpu_counter_add(&space_info->total_bytes_pinned, -len);
- 		if (cache->ro) {
- 			space_info->bytes_readonly += len;
- 			readonly = true;
 -- 
-1.8.1.4
+2.0.1
 

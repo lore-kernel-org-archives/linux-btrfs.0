@@ -1,42 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37658 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:39077 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757036AbaGAOoR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Jul 2014 10:44:17 -0400
-Date: Tue, 1 Jul 2014 16:44:15 +0200
+	id S1754348AbaGAQFA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Jul 2014 12:05:00 -0400
+Date: Tue, 1 Jul 2014 18:04:57 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs compression: merge inflate and deflate z_streams
-Message-ID: <20140701144415.GJ1553@suse.cz>
+To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: clear compress-force when remounting with
+ compress option
+Message-ID: <20140701160457.GM1553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1404142330-1621-1-git-send-email-sergey.senozhatsky@gmail.com>
+References: <1404096685-10591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1404142330-1621-1-git-send-email-sergey.senozhatsky@gmail.com>
+In-Reply-To: <1404096685-10591-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 01, 2014 at 12:32:10AM +0900, Sergey Senozhatsky wrote:
-> `struct workspace' used for zlib compression contains two zlib
-> z_stream-s: `def_strm' used in zlib_compress_pages(), and `inf_strm'
-> used in zlib_decompress/zlib_decompress_biovec(). None of these
-> functions use `inf_strm' and `def_strm' simultaniously, meaning that
-> for every compress/decompress operation we need only one z_stream
-> (out of two available).
+On Mon, Jun 30, 2014 at 10:51:25AM +0800, Wang Shilong wrote:
+> Steps to reproduce:
+>  # mkfs.btrfs -f /dev/sdb
+>  # mount /dev/sdb /mnt -o compress-force=lzo
+>  # mount /dev/sdb /mnt -o remount,compress=zlib
+>  # cat /proc/mounts
 > 
-> `inf_strm' and `def_strm' are different in size of ->workspace. For
-> inflate stream we vmalloc() zlib_inflate_workspacesize() bytes, for
-> deflate stream - zlib_deflate_workspacesize() bytes. On my system zlib
-> returns the following workspace sizes, correspondingly: 42312 and 268104
-> (+ guard pages).
+> Remounting from compress-force to compress could not clear compress-force
+> option. The problem is there is no way for users to clear compress-force
+> option separately.
 > 
-> Keep only one `z_stream' in `struct workspace' and use it for both
-> compression and decompression. Hence, instead of vmalloc() of two
-> z_stream->worskpace-s, allocate only one of size:
-> 	max(zlib_deflate_workspacesize(), zlib_inflate_workspacesize())
+> Fix this problem by clearing @FORCE_COMPRESS flag when remounting to
+> compress=xxx.
 > 
-> Signed-off-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+> Suggested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+
+I'm sorry for lack of answer in the V1 thread, V2 is the minimal bugfix
+and I'm fine with it right away.
 
 Reviewed-by: David Sterba <dsterba@suse.cz>

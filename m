@@ -1,115 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51742 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757419AbaGAJ27 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 05:28:59 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s619Su73013464
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Jul 2014 17:28:56 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with different ro/rw options"
-Date: Tue, 1 Jul 2014 17:30:01 +0800
-Message-ID: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from santino.mail.tiscali.it ([213.205.33.245]:50834 "EHLO
+	santino.mail.tiscali.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751571AbaGAKWW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 06:22:22 -0400
+Message-ID: <53B28A82.2000907@assyoma.it>
+Date: Tue, 01 Jul 2014 12:16:34 +0200
+From: Gionatan Danti <g.danti@assyoma.it>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+CC: g.danti@assyoma.it
+Subject: Question about fallocate
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit 0723a0473fb48a1c93b113a28665b64ce5faf35a.
-This commit has the following problem:
-1) Break the ro mount rule.
-When users mount the whole btrfs ro, it is still possible to mount
-subvol rw and change the contents. Which make the whole fs ro mount
-non-sense.
+Hi all,
+I'm doing some test using a small BTRFS volume on CentOS 6.5 x86_64 (I 
+know that CentOS 6 use an old kernel and btrfs version and I plan to 
+replicate the same test on Fedora 20).
 
-2) Cause whole btrfs ro/rw mount change fails.
-When mount a subvol ro first, when you can't mount the whole fs mounted
-rw. This is due to the check in btrfs_mount() which returns -EBUSY,
-which is OK for single fs to prevent mount fs ro in one mount point and
-mount the same fs rw in other mount point.
-Step to reproduce:
-mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
-mount -o rw /dev/sda6 /mnt/btrfs	<-this will fail
+ From my understanding, disabling CoW and fallocate a file should give a 
+non-fragmented file. The followind commands show that:
 
-3) Kernel warn in vfs.
-When mount the whole fs ro, and mount a subvol ro, kernel warning will
-show in fs/sync.c complaining s_umount rwsem is not locked.
-Since this remount is not called by VFS, so s_mounts rwsem is not
-correctly locked.
+[root@blackhole test]# fallocate test.img -l 1G
+[root@blackhole test]# sync
+[root@blackhole test]# filefrag -v test.img
+Filesystem type is: 9123683e
+File size of test.img is 1073741824 (262144 blocks, blocksize 4096)
+  ext logical physical expected length flags
+    0       0   269312          262144 eof
+test.img: 1 extent found
 
-4) Lacks ro/rw conflicint check.
-The commit uses a trick to 'cheat' vfs about ro/rw flags to allow
-different ro/rw mount options, however this breaks the original ro/rw
-conflicting rule: one fs(even subvolume) can't be mounted rw in one place
-and mounted ro in someplace else.
-This can be triggered quite easily:
-mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
-mount -o subvol=subv,rw /dev/sda6 /mnt/other
+As you can see, I have a single, continuous block stream.
 
-Also the check logical about checking the ro/rw needed to be investigated
-further. e.g. When the subvolume is mounted ro, the whole btrfs fs is mounted
-rw, so one can change the ro mounted subvolume from the mounted whole btrfs.
+However, write some 4k blocks into the file leads to fragmentation:
 
-Due to the above reasons, the per-subvolume ro/rw mount options should be
-investigated further to ensure the correctness and better reverting it
-before correct implement
-(It may takes a lone time to find the right logic about ro/rw option in
-subvolume)
+[root@blackhole test]# for id in `seq 1 32`; do dd if=/dev/zero 
+of=test.img bs=4k count=1 seek=$id conv=notrunc,nocreat 
+oflag=direct,sync; done
+...
+[root@blackhole test]# filefrag -v test.img
+Filesystem type is: 9123683e
+File size of test.img is 1073741824 (262144 blocks, blocksize 4096)
+  ext logical physical expected length flags
+    0       0   269312               1
+    1       1   269313               1
+    2       2   531456   269314     31
+    3      33   269345   531487 262111 eof
+test.img: 3 extents found
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+If I don't use fallocate to reserve space, using a simple dd to write 0s 
+to the target file, the fragmentation do not occour:
+[root@blackhole test]# dd if=/dev/zero of=test.img bs=2M count=512
+[root@blackhole test]# sync
+[root@blackhole test]# for id in `seq 1 32`; do dd if=/dev/zero 
+of=test.img bs=4k count=1 seek=$id conv=notrunc,nocreat 
+oflag=direct,sync; done
+...
+[root@blackhole test]# filefrag -v test.img
+Filesystem type is: 9123683e
+File size of test.img is 1073741824 (262144 blocks, blocksize 4096)
+  ext logical physical expected length flags
+    0       0   269312          262144 eof
+test.img: 1 extent found
 
-Conflicts:
-	fs/btrfs/super.c
----
- fs/btrfs/super.c | 26 --------------------------
- 1 file changed, 26 deletions(-)
+So, my question is: why writing to a fallocated file produce 
+fragmentation, even with CoW disabled?
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 4662d92..4a088f8 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -66,8 +66,6 @@
- static const struct super_operations btrfs_super_ops;
- static struct file_system_type btrfs_fs_type;
- 
--static int btrfs_remount(struct super_block *sb, int *flags, char *data);
--
- static const char *btrfs_decode_error(int errno)
- {
- 	char *errstr = "unknown";
-@@ -1179,31 +1177,7 @@ static struct dentry *mount_subvol(const char *subvol_name, int flags,
- 		return ERR_PTR(-ENOMEM);
- 	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name,
- 			     newargs);
--
--	if (PTR_RET(mnt) == -EBUSY) {
--		if (flags & MS_RDONLY) {
--			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~MS_RDONLY, device_name,
--					     newargs);
--		} else {
--			int r;
--			mnt = vfs_kern_mount(&btrfs_fs_type, flags | MS_RDONLY, device_name,
--					     newargs);
--			if (IS_ERR(mnt)) {
--				kfree(newargs);
--				return ERR_CAST(mnt);
--			}
--
--			r = btrfs_remount(mnt->mnt_sb, &flags, NULL);
--			if (r < 0) {
--				/* FIXME: release vfsmount mnt ??*/
--				kfree(newargs);
--				return ERR_PTR(r);
--			}
--		}
--	}
--
- 	kfree(newargs);
--
- 	if (IS_ERR(mnt))
- 		return ERR_CAST(mnt);
- 
+Regards.
+
 -- 
-2.0.1
-
+Danti Gionatan
+Supporto Tecnico
+Assyoma S.r.l. - www.assyoma.it
+email: g.danti@assyoma.it - info@assyoma.it
+GPG public key ID: FF5F32A8

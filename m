@@ -1,147 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21802 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:30732 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751956AbaGAGu1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 02:50:27 -0400
-Message-ID: <53B25931.2030200@cn.fujitsu.com>
-Date: Tue, 1 Jul 2014 14:46:09 +0800
+	with ESMTP id S1752578AbaGAHVM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 03:21:12 -0400
+Message-ID: <53B26066.1060505@cn.fujitsu.com>
+Date: Tue, 1 Jul 2014 15:16:54 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, <sandeen@redhat.com>, <rm@romanrm.net>,
-        <koen@dominion.thruhere.net>
-Subject: Re: [PATCH v5] btrfs: label should not contain return char
-References: <1400519071-5580-1-git-send-email-anand.jain@oracle.com> <1400813402-27474-1-git-send-email-anand.jain@oracle.com> <53B245AA.6060209@jp.fujitsu.com>
-In-Reply-To: <53B245AA.6060209@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: Anand Jain <Anand.Jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+CC: <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH 1/2 v3 RESEND] Btrfs: device_list_add() should not update
+ list when mounted
+References: <1402633581-19265-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1402633581-19265-1-git-send-email-Anand.Jain@oracle.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Satoru and all,
+Hi Anand,
 
-I think there maybe a leftover issue.
-That is if we don't set label, in default it will output a blank line.
+Sorry for delay reply, more comments below:
 
-Steps to reproduce:
+On 06/13/2014 12:26 PM, Anand Jain wrote:
+> From: Anand Jain <anand.jain@oracle.com>
+>
+> device_list_add() is called when user runs btrfs dev scan, which would add
+> any btrfs device into the btrfs_fs_devices list.
+>
+> Now think of a mounted btrfs. And a new device which contains the a SB
+> from the mounted btrfs devices.
+>
+> In this situation when user runs btrfs dev scan, the current code would
+> just replace existing device with the new device.
+>
+> Which is to note that old device is neither closed nor gracefully
+> removed from the btrfs.
+>
+> The FS is still operational with the old bdev however the device name
+> is the btrfs_device is new which is provided by the btrfs dev scan.
+>
+> reproducer:
+>
+> devmgt[1] detach /dev/sdc
+>
+> replace the missing disk /dev/sdc
+>
+> btrfs rep start -f 1 /dev/sde /btrfs
+> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120
+>          Total devices 2 FS bytes used 32.00KiB
+>          devid    1 size 958.94MiB used 115.88MiB path /dev/sde
+>          devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+>
+> make /dev/sdc to reappear
+>
+> devmgt attach host2
+>
+> btrfs dev scan
+>
+> btrfs fi show -m
+> Label: none  uuid: 5dc0aaf4-4683-4050-b2d6-5ebe5f5cd120^M
+>          Total devices 2 FS bytes used 32.00KiB^M
+>          devid    1 size 958.94MiB used 115.88MiB path /dev/sdc <- Wrong.
+>          devid    2 size 958.94MiB used 103.88MiB path /dev/sdd
+>
+> since /dev/sdc has been replaced with /dev/sde, the /dev/sdc shouldn't be
+> part of the btrfs-fsid when it reappears. If user want it to be part of it
+> then sys admin should be using btrfs device add instead.
+>
+> [1] github.com/anajain/devmgt.git
+>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2->v3: simpler commit and comment message
+> v1->v2: remove '---' in commit messages which conflict with git am
+>
+>   fs/btrfs/volumes.c | 27 +++++++++++++++++++++++++++
+>   1 file changed, 27 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bb2cd66..56822f0 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -472,6 +472,7 @@ static noinline int device_list_add(const char *path,
+>   		device = __find_device(&fs_devices->devices, devid,
+>   				       disk_super->dev_item.uuid);
+>   	}
+> +
+You add an extra line here.
+>   	if (!device) {
+>   		if (fs_devices->opened)
+>   			return -EBUSY;
+> @@ -497,6 +498,32 @@ static noinline int device_list_add(const char *path,
+>   
+>   		device->fs_devices = fs_devices;
+>   	} else if (!device->name || strcmp(device->name->str, path)) {
+> +		/*
+> +		 * When FS is already mounted.
+> +		 * 1. If you are here and if the device->name is NULL that means
+> +		 *    this device was missing at time of FS mount.
+> +		 * 2. If you are here and if the device->name is different from 'path'
+> +		 *    that means either
+> +		 *      a. The same device disappeared and reappeared with different
+> +		 *         name. or
+> +		 *      b. The missing-disk-which-was-replaced, has reappeared now.
+> +		 *
+> +		 *  We must allow 1 and 2a above. But 2b would be a spurious and
+> +		 *  unintentional.
+> +		 *  Further in case of 1 and 2a above, the disk at 'path' would have
+> +		 *  missed some transaction when it was away and in case of 2a
+> +		 *  the stale bdev has to be updated as well.
+> +		 *  2b must not be allowed at all time.
+> +		 */
+> +
+> +		/*
+> +		 * As of now don't allow update to btrfs_fs_device through the
+> +		 * btrfs dev scan cli, after FS has been mounted.
+> +		 */
+> +
+> +		if (fs_devices->opened)
+> +			return -EBUSY;
+> +
+I agree we don't allow to update device list when mounted, i tested this 
+patch, it worked but
+it will output the following message:
 
-# mkfs.btrfs -f /dev/sdb
-# mount /dev/sdb
-# cat /sys/fs/btrfs/<uuid>/label -->an extra line will be outputed.
+Scanning for Btrfs filesystems in '/dev/sdc'
+ERROR: unable to scan the device '/dev/sdc' - Device or resource busy
 
-This is because in btrfs_label_show(), we did something like this directly:
-
-return snprintf(buf, PAGE_SIZE, "%s\n", fs_info->super_copy->label);
-
-Maybe we can have a check whether label is NULL before we output?
-otherwise,the
-extra blank line is outputed, IMO this is not so nice thing!
+I think this is a little confusing for common users. Maybe don't return 
+error but output
+some log message into kernel buffer, better?
 
 Thanks,
 Wang
-
-On 07/01/2014 01:22 PM, Satoru Takeuchi wrote:
-> Although Anand once sent the following two patches,
->
->  - [PATCH 1/2 v4] btrfs: label should not contain return char
->  - [PATCH 2/2 v4] btrfs: usage error should not be logged into system log
->
-> only the latter patch was merged to mason/for-linus and 3.16-rc3
-> as 402a0f4 (by accident?). It results in that the former patch can't
-> be cleanly applied to 3.16-rc3.
->
-> I fixed this problem, wrote a reproducer, and tested it.
->
-> Test Result:
-> 3.16-rc3 w/o this patch: fail
-> 3.16-rc3 w/ this patch:  pass
->
->
->
-> Subject: [PATCH v5] btrfs: label should not contain return char
->
-> From: Anand Jain <Anand.Jain@oracle.com>
->
-> generally if you use
->   echo "test" > /sys/fs/btrfs/<fsid>/label
-> it would introduce return char at the end and it can not
-> be part of the label. The correct command is
->   echo -n "test" > /sys/fs/btrfs/<fsid>/label
->
-> This patch will check for this user error
->
-> reproducer.sh:
-> ===============================================================================
-> #!/bin/bash
->
-> TEST_DEV=/dev/vdb
-> TEST_DIR=/home/sat/mnt
->
-> umount /home/sat/mnt
->
-> mkfs.btrfs -f $TEST_DEV
-> UUID=$(btrfs fi show $TEST_DEV | head -1 | sed -e 's/.*uuid: \([-0-9a-z]*\)$/\1/')
-> mount $TEST_DEV $TEST_DIR
-> LABELFILE=/sys/fs/btrfs/$UUID/label
->
-> echo testlabel >$LABELFILE
-> LINES="$(cat $LABELFILE | wc -l | awk '{print $1}')"
->
-> RET=1
-> if [ $LINES -eq 1 ] ; then
->     echo '[PASS] Trailing \n is removed correctly.' >&2
->     RET=0
-> else
->     echo '[FAIL] Trailing \n still exists.' >&2
-> fi
->
-> exit $RET
-> ===============================================================================
->
-> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> ---
->  v5: tweak to be able to apply on the top of 402a0f4.
->      add test program.
->  v4: used memcpy and memset. Thanks David again
->  v3: accepts review comments. Thanks David and Eric again
->  v2: accepts review comments. Thanks Eric and Roman
->
-> ---
->  fs/btrfs/sysfs.c | 12 ++++++++++--
->  1 file changed, 10 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index df39458..dcae61a 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -374,8 +374,15 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
->  	struct btrfs_trans_handle *trans;
->  	struct btrfs_root *root = fs_info->fs_root;
->  	int ret;
-> +	size_t p_len;
->  
-> -	if (len >= BTRFS_LABEL_SIZE)
-> +	/*
-> +	 * p_len is the len until the first occurrence of either
-> +	 * '\n' or '\0'
-> +	 */
-> +	p_len = strcspn(buf, "\n");
-> +
-> +	if (p_len >= BTRFS_LABEL_SIZE)
->  		return -EINVAL;
->  
->  	trans = btrfs_start_transaction(root, 0);
-> @@ -383,7 +390,8 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
->  		return PTR_ERR(trans);
->  
->  	spin_lock(&root->fs_info->super_lock);
-> -	strcpy(fs_info->super_copy->label, buf);
-> +	memset(fs_info->super_copy->label, 0, BTRFS_LABEL_SIZE);
-> +	memcpy(fs_info->super_copy->label, buf, p_len);
->  	spin_unlock(&root->fs_info->super_lock);
->  	ret = btrfs_commit_transaction(trans, root);
->  
+>   		name = rcu_string_strdup(path, GFP_NOFS);
+>   		if (!name)
+>   			return -ENOMEM;
 

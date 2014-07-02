@@ -1,50 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23747 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751297AbaGBN6Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 09:58:25 -0400
-Message-ID: <53B40FEC.4030902@fb.com>
-Date: Wed, 2 Jul 2014 09:58:04 -0400
-From: Chris Mason <clm@fb.com>
+Received: from michael.mail.tiscali.it ([213.205.33.246]:56858 "EHLO
+	michael.mail.tiscali.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753793AbaGBOEb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 10:04:31 -0400
+Message-ID: <53B4116D.9090504@assyoma.it>
+Date: Wed, 02 Jul 2014 16:04:29 +0200
+From: Gionatan Danti <g.danti@assyoma.it>
 MIME-Version: 1.0
-To: Cody P Schafer <dev@codyps.com>
-CC: Chris Samuel <chris@csamuel.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Blocked tasks on 3.15.1
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>	<3081460.dX0cLeJPhK@quad>	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>	<53B1A862.50503@fb.com>	<53B1ACAA.5040505@fb.com>	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>	<53B32275.6010200@fb.com>	<CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com> <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
-In-Reply-To: <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+To: Maurizio Lombardi <mlombard@redhat.com>, linux-btrfs@vger.kernel.org
+CC: Duncan <1i5t5.duncan@cox.net>, g.danti@assyoma.it
+Subject: Re: Question about fallocate
+References: <20140702014130.47a5ba75@ws> <53B3E0C6.3030803@assyoma.it> <53B3E471.2010101@redhat.com>
+In-Reply-To: <53B3E471.2010101@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2014 08:27 AM, Cody P Schafer wrote:
 
->> Will do. The rsync I'm running is processing a lot of chromium cache
->> files when it hangs (just for a reference), and ends up triggering a
->> bunch of deletes as well.
-> 
-> Still a problem with your v3.15.y (eb97581), here's the log with
-> sysrq-t and sysrq-l
-> https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/428234/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=9lRzEuxWeyHtsDXvFJNWlf2CgKZWZ1w%2FScqbUMy1jII%3D%0A&s=0daa1232bef652c4f16c9d12cdad408909feaa5069ba3c1888fa4895e01ec3a2
-> 
-> Also, correction, it's a firefox cache dir rsync that seems to trigger
-> it (stalls pretty early on and very consistently):
-> 
-> [... snip ...]
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/1F/F43F9d01
->           5.23M 100%   17.82MB/s    0:00:00 (xfr#452, ir-chk=1201/6659)
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/23A66d01
->         116.82K 100%  376.50kB/s    0:00:00 (xfr#453, ir-chk=1200/6659)
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/21/
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/23/
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/24/
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/
-> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/7C836d01
-> [... stall here ...]
-> 
+> I am unable to reproduce the problem on kernel version 3.16.0-rc2
+> using nodatacow.
 
-Ok, and just to clarify, are you actively using the files on the
-destination outside of rsync?
+I all,
+I can confirm that with Fedora 20 x86_64 (kernel 3.14.9-200.fc20.x86_64) 
+the problem do not occour: using the nodatacow option leads to 
+un-fragmented file.
 
--chris
+Sorry for the noise.
+
+-- 
+Danti Gionatan
+Supporto Tecnico
+Assyoma S.r.l. - www.assyoma.it
+email: g.danti@assyoma.it - info@assyoma.it
+GPG public key ID: FF5F32A8

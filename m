@@ -1,80 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49805 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:23342 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752146AbaGBJOe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 05:14:34 -0400
-Message-ID: <53B3CDE8.10603@cn.fujitsu.com>
-Date: Wed, 2 Jul 2014 17:16:24 +0800
+	with ESMTP id S1752146AbaGBJUi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 05:20:38 -0400
+Message-ID: <53B3CF53.7000005@cn.fujitsu.com>
+Date: Wed, 2 Jul 2014 17:22:27 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v4] Btrfs: fix race of using total_bytes_pinned
-References: <1404291481-31773-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1404291481-31773-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, Chris Mason <clm@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: build failure with mason/for-linus tree
+References: <53B24A86.1050802@jp.fujitsu.com> <53B2C5FA.1090808@fb.com> <53B34742.9020108@jp.fujitsu.com>
+In-Reply-To: <53B34742.9020108@jp.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2 Jul 2014 16:58:01 +0800, Liu Bo wrote:
-> This percpu counter @total_bytes_pinned is introduced to skip unnecessary
-> operations of 'commit transaction', it accounts for those space we may free
-> but are stuck in delayed refs.
+On Wed, 2 Jul 2014 08:41:54 +0900, Satoru Takeuchi wrote:
+> Hi Chris,
 > 
-> And we zero out @space_info->total_bytes_pinned every transaction period so
-> we have a better idea of how much space we'll actually free up by committing
-> this transaction.  However, we do the 'zero out' part a little earlier, before
-> we actually unpin space, so we end up returning ENOSPC when we actually have
-> free space that's just unpinned from committing transaction.
+> (2014/07/01 23:30), Chris Mason wrote:
+>> On 07/01/2014 01:43 AM, Satoru Takeuchi wrote:
+>>> Hi Chris,
+>>>
+>>> FYI, today I failed to build mason/for-linus tree as follows.
+>>>
+>>
+>> You were building for 3.15?
 > 
-> xfstests/generic/074 complained then.
+> I just run the following command to confirm whether the latest
+> for-linux tree can build or not.
 > 
-> This fixes it by actually accounting the percpu pinned number when 'unpin',
-> and since it's protected by space_info->lock, the race is gone now.
+> $ git checkout -b mason-for-linus mason/for-linus
+> $ make
 > 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> v4: Remove unnecessary check in btrfs_check_data_free_space.
-> v3: Really account the percpu pinned number when unpin, instead of zeroing
->     it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
->     out may end up with messing percpu pinned number(suggested by Miao).
-> v2: Add missing brakets for if statement
+> Then that error happens and It's just FYI.
 
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+It is because for-linus was built on v3.15 kernel, but the code of for-linus
+is based on v3.16-rc1.
+
+If you merge for-linus to upstream kernel, then you will compile the kernel successfully.
+
+Thanks
+Miao
 
 > 
->  fs/btrfs/extent-tree.c | 5 +----
->  1 file changed, 1 insertion(+), 4 deletions(-)
+> Thanks,
+> Satoru
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 99c2539..813537f 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5678,7 +5678,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
->  	struct btrfs_caching_control *next;
->  	struct btrfs_caching_control *caching_ctl;
->  	struct btrfs_block_group_cache *cache;
-> -	struct btrfs_space_info *space_info;
->  
->  	down_write(&fs_info->commit_root_sem);
->  
-> @@ -5701,9 +5700,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
->  
->  	up_write(&fs_info->commit_root_sem);
->  
-> -	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
-> -		percpu_counter_set(&space_info->total_bytes_pinned, 0);
-> -
->  	update_global_block_rsv(fs_info);
->  }
->  
-> @@ -5741,6 +5737,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
->  		spin_lock(&cache->lock);
->  		cache->pinned -= len;
->  		space_info->bytes_pinned -= len;
-> +		percpu_counter_add(&space_info->total_bytes_pinned, -len);
->  		if (cache->ro) {
->  			space_info->bytes_readonly += len;
->  			readonly = true;
+>>
+>>> ===============================================================================
+>>> ...
+>>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'record_root_in_trans':
+>>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c:293:3: error: implicit declaration of function 'smp_mb__before_atomic' [-Werror=implicit-function-declaration]
+>>>     smp_mb__before_atomic();
+>>>     ^
+>>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'commit_fs_roots':
+>>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c:1065:4: error: implicit declaration of function 'smp_mb__after_atomic' [-Werror=implicit-function-declaration]
+>>>      smp_mb__after_atomic();
+>>>      ^
+>>> cc1: some warnings being treated as errors
+>>> ...
+>>> ===============================================================================
+>>>
+>>> It can be solved by cherry-picking febdbfe.
+>>>
+>>> ===
+>>> commit febdbfe8a91ce0d11939d4940b592eb0dba8d663
+>>> Author: Peter Zijlstra <peterz@infradead.org>
+>>> Date:   Thu Feb 6 18:16:07 2014 +0100
+>>>
+>>>      arch: Prepare for smp_mb__{before,after}_atomic()
+>>>      
+>>>      Since the smp_mb__{before,after}*() ops are fundamentally dependent on
+>>>      how an arch can implement atomics it doesn't make sense to have 3
+>>>      variants of them. They must all be the same.
+>>
+>> Yes, or revert:
+>>
+>> commit c7548af69d9ef71512eb52d8009521eba3e768fd
+>> Author: Chris Mason <clm@fb.com>
+>> Date:   Tue Jun 10 13:06:56 2014 -0700
+>>
+>>      Btrfs: convert smp_mb__{before,after}_clear_bit
+>>
+>>      The new call is smp_mb__{before,after}_atomic.  The __ gives us extra
+>>      protection from the atomic rays.
+>>
+>>      Signed-off-by: Chris Mason <clm@fb.com>
+>>
+>> Which is only needed on 3.16+
+>>
+>> I should have put this one into a 3.16 only branch, it was a mistake on
+>> my end.
+>>
+>> -chris
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 

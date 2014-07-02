@@ -1,138 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19047 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750982AbaGBHxJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 03:53:09 -0400
-Date: Wed, 2 Jul 2014 15:52:55 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3] Btrfs: fix race of using total_bytes_pinned
-Message-ID: <20140702075254.GA20612@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1404206926-7953-1-git-send-email-bo.li.liu@oracle.com>
- <53B36E41.4030601@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:42398 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750991AbaGBH7Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 03:59:25 -0400
+Message-ID: <53B3BBD3.4070004@redhat.com>
+Date: Wed, 02 Jul 2014 09:59:15 +0200
+From: Harald Hoyer <harald@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53B36E41.4030601@cn.fujitsu.com>
+To: Chris Mason <clm@fb.com>, dsterba@suse.cz,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
+ different ro/rw options"
+References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com> <20140701153240.GL1553@twin.jikos.cz> <53B2E371.6030504@fb.com>
+In-Reply-To: <53B2E371.6030504@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 02, 2014 at 10:28:17AM +0800, Miao Xie wrote:
-> On Tue, 1 Jul 2014 17:28:46 +0800, Liu Bo wrote:
-> > This percpu counter @total_bytes_pinned is introduced to skip unnecessary
-> > operations of 'commit transaction', it accounts for those space we may free
-> > but are stuck in delayed refs.
-> > 
-> > And we zero out @space_info->total_bytes_pinned every transaction period so
-> > we have a better idea of how much space we'll actually free up by committing
-> > this transaction.  However, we do the 'zero out' part a little earlier, before
-> > we actually unpin space, so we end up returning ENOSPC when we actually have
-> > free space that's just unpinned from committing transaction.
-> > 
-> > xfstests/generic/074 complained then.
-> > 
-> > This fixes it by actually accounting the percpu pinned number when 'unpin',
-> > and when finding space for writing, if it finds that pinned bytes is less
-> > than needed, we first try again to check if we have space now, as someone
-> > may have committed transaction, yes means we're good, while no means we
-> > really have run out of space.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> > v3: Really account the percpu pinned number when unpin, instead of zeroing
-> >     it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
-> >     out may end up with messing percpu pinned number(suggested by Miao).
-> > v2: Add missing brakets for if statement
-> > 
-> >  fs/btrfs/extent-tree.c | 20 ++++++++++++--------
-> >  1 file changed, 12 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 99c2539..f36fb13 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -3685,7 +3685,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
-> >  	struct btrfs_root *root = BTRFS_I(inode)->root;
-> >  	struct btrfs_fs_info *fs_info = root->fs_info;
-> >  	u64 used;
-> > -	int ret = 0, committed = 0, alloc_chunk = 1;
-> > +	int ret = 0, committed = 0, alloc_chunk = 1, check_pinned = 0;
-> >  
-> >  	/* make sure bytes are sectorsize aligned */
-> >  	bytes = ALIGN(bytes, root->sectorsize);
-> > @@ -3756,11 +3756,18 @@ alloc:
-> >  		 * allocation don't bother committing the transaction.
-> >  		 */
-> >  		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
-> > -					   bytes) < 0)
-> > -			committed = 1;
-> > +					   bytes) < 0) {
-> > +			if (check_pinned) {
-> > +				committed = 1;	/* really run out of space. */
-> > +			} else {
-> > +				check_pinned = 1;
-> > +				spin_unlock(&data_sinfo->lock);
-> > +				goto again;
-> > +			}
-> > +		}
+On 01.07.2014 18:36, Chris Mason wrote:
+> On 07/01/2014 11:32 AM, David Sterba wrote:
+>> (adding Harald to CC)
+>>
+>> On Tue, Jul 01, 2014 at 05:30:01PM +0800, Qu Wenruo wrote:
+>>> This reverts commit 0723a0473fb48a1c93b113a28665b64ce5faf35a.
+>>> This commit has the following problem:
+>>> 1) Break the ro mount rule.
+>>> When users mount the whole btrfs ro, it is still possible to mount
+>>> subvol rw and change the contents. Which make the whole fs ro mount
+>>> non-sense.
+>>
+>> The proposed usecase was to allow mounting subvolumes with different
+>> ro/rw flags, and this makes sense to me (provided that the whole
+>> filesystem is mounted rw).
+>>
+>> Anything else seems to lead to all the internal problems you point
+>> below. I'm not even sure if mounting the first subvolume 'ro' should
+>> imply that the whole filesystem is ro or not.
+>>
+>>> 2) Cause whole btrfs ro/rw mount change fails.
+>>> When mount a subvol ro first, when you can't mount the whole fs mounted
+>>> rw. This is due to the check in btrfs_mount() which returns -EBUSY,
+>>> which is OK for single fs to prevent mount fs ro in one mount point and
+>>> mount the same fs rw in other mount point.
+>>> Step to reproduce:
+>>> mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
+>>> mount -o rw /dev/sda6 /mnt/btrfs	<-this will fail
+>>
+>> Yeah, so first ro means whole filesystem is ro.
+>>
+>>> 3) Kernel warn in vfs.
+>>> When mount the whole fs ro, and mount a subvol ro, kernel warning will
+>>> show in fs/sync.c complaining s_umount rwsem is not locked.
+>>> Since this remount is not called by VFS, so s_mounts rwsem is not
+>>> correctly locked.
+>>
+>> That's serious.
 > 
-> Is there anything wrong in the original code? I think we needn't change the code here
-> because we are not sure anyone would commit the transaction, and though someone is
-> committing the transaction, the process is slow, we still need commit the transaction
-> by ourselves mostly(In fact, this commit is just to wait the transaction to complete)
-> (The above analysis has not been confirmed)
-
-oops, I agree that they're no more needed.
-
-I made these changes based on zeroing pinned number in
-btrfs_prepare_extent_commit(), if someone has committed the transaction and
-been running btrfs_prepare_extent_commit(), the pinned number is here 0 byte
-but we'll own free space as soon as finishing btrfs_finish_extent_commit()
-later, so I made it 'goto again' to see if we can skip committing transaction.
-
-However, we don't need it any more, now pinned number is calculated within
-@sinfo->lock in unpin_extent_range(), (its value < bytes) means we have no
-enough space for this write.
-
--liubo
-
+> Agreed, we'll pull this out until we get a better handle on things.
+> Thanks for spending time on it.
 > 
-> Thanks
-> Miao
+> -chris
 > 
-> >  		spin_unlock(&data_sinfo->lock);
-> >  
-> > -		/* commit the current transaction and try again */
-> > +	/* commit the current transaction and try again */
-> >  commit_trans:
-> >  		if (!committed &&
-> >  		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
-> > @@ -5678,7 +5685,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
-> >  	struct btrfs_caching_control *next;
-> >  	struct btrfs_caching_control *caching_ctl;
-> >  	struct btrfs_block_group_cache *cache;
-> > -	struct btrfs_space_info *space_info;
-> >  
-> >  	down_write(&fs_info->commit_root_sem);
-> >  
-> > @@ -5701,9 +5707,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
-> >  
-> >  	up_write(&fs_info->commit_root_sem);
-> >  
-> > -	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
-> > -		percpu_counter_set(&space_info->total_bytes_pinned, 0);
-> > -
-> >  	update_global_block_rsv(fs_info);
-> >  }
-> >  
-> > @@ -5741,6 +5744,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
-> >  		spin_lock(&cache->lock);
-> >  		cache->pinned -= len;
-> >  		space_info->bytes_pinned -= len;
-> > +		percpu_counter_add(&space_info->total_bytes_pinned, -len);
-> >  		if (cache->ro) {
-> >  			space_info->bytes_readonly += len;
-> >  			readonly = true;
-> > 
-> 
+
+My patch was initially only a request for comments:
+- patch pointed out the problem
+- provided a possible solution/workaround
+- even has "FIXME" in the code :)
+
+So, what I was hoping, that somebody else with more VFS knowledge than me would
+step up and come up with a sane solution.
+
+Pull it out, if the patch causes problems, but _please_ think about the problem
+and come up with a solution, so that "mount -a" works with a normal fstab.

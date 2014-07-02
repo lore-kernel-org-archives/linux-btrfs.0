@@ -1,76 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38897 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750861AbaGBFlC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 01:41:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X2DHw-0007iq-T5
-	for linux-btrfs@vger.kernel.org; Wed, 02 Jul 2014 07:41:00 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 07:41:00 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 07:41:00 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Corrupt filesystem after hardware failure: Scrub causes kernel
- GPF
-Date: Wed, 2 Jul 2014 05:40:48 +0000 (UTC)
-Message-ID: <pan$84417$648ac343$a399577a$88d87100@cox.net>
-References: <53B2DF4B.4080708@fos4x.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from userp1040.oracle.com ([156.151.31.81]:19047 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750982AbaGBHxJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 03:53:09 -0400
+Date: Wed, 2 Jul 2014 15:52:55 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] Btrfs: fix race of using total_bytes_pinned
+Message-ID: <20140702075254.GA20612@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1404206926-7953-1-git-send-email-bo.li.liu@oracle.com>
+ <53B36E41.4030601@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53B36E41.4030601@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Philipp Tölke posted on Tue, 01 Jul 2014 18:18:19 +0200 as excerpted:
+On Wed, Jul 02, 2014 at 10:28:17AM +0800, Miao Xie wrote:
+> On Tue, 1 Jul 2014 17:28:46 +0800, Liu Bo wrote:
+> > This percpu counter @total_bytes_pinned is introduced to skip unnecessary
+> > operations of 'commit transaction', it accounts for those space we may free
+> > but are stuck in delayed refs.
+> > 
+> > And we zero out @space_info->total_bytes_pinned every transaction period so
+> > we have a better idea of how much space we'll actually free up by committing
+> > this transaction.  However, we do the 'zero out' part a little earlier, before
+> > we actually unpin space, so we end up returning ENOSPC when we actually have
+> > free space that's just unpinned from committing transaction.
+> > 
+> > xfstests/generic/074 complained then.
+> > 
+> > This fixes it by actually accounting the percpu pinned number when 'unpin',
+> > and when finding space for writing, if it finds that pinned bytes is less
+> > than needed, we first try again to check if we have space now, as someone
+> > may have committed transaction, yes means we're good, while no means we
+> > really have run out of space.
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > ---
+> > v3: Really account the percpu pinned number when unpin, instead of zeroing
+> >     it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
+> >     out may end up with messing percpu pinned number(suggested by Miao).
+> > v2: Add missing brakets for if statement
+> > 
+> >  fs/btrfs/extent-tree.c | 20 ++++++++++++--------
+> >  1 file changed, 12 insertions(+), 8 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 99c2539..f36fb13 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -3685,7 +3685,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+> >  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> >  	struct btrfs_fs_info *fs_info = root->fs_info;
+> >  	u64 used;
+> > -	int ret = 0, committed = 0, alloc_chunk = 1;
+> > +	int ret = 0, committed = 0, alloc_chunk = 1, check_pinned = 0;
+> >  
+> >  	/* make sure bytes are sectorsize aligned */
+> >  	bytes = ALIGN(bytes, root->sectorsize);
+> > @@ -3756,11 +3756,18 @@ alloc:
+> >  		 * allocation don't bother committing the transaction.
+> >  		 */
+> >  		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+> > -					   bytes) < 0)
+> > -			committed = 1;
+> > +					   bytes) < 0) {
+> > +			if (check_pinned) {
+> > +				committed = 1;	/* really run out of space. */
+> > +			} else {
+> > +				check_pinned = 1;
+> > +				spin_unlock(&data_sinfo->lock);
+> > +				goto again;
+> > +			}
+> > +		}
+> 
+> Is there anything wrong in the original code? I think we needn't change the code here
+> because we are not sure anyone would commit the transaction, and though someone is
+> committing the transaction, the process is slow, we still need commit the transaction
+> by ourselves mostly(In fact, this commit is just to wait the transaction to complete)
+> (The above analysis has not been confirmed)
 
+oops, I agree that they're no more needed.
 
-> root@filer:~# btrfs fi df /home
-> Data, single: total=9.61TiB, used=9.32TiB
-> System, single: total=32.00MiB, used=1.04MiB
-> Metadata, single: total=19.00GiB, used=17.37GiB
-> unknown, single: total=512.00MiB, used=0.00
-> root@filer:~# uname -a
-> Linux filer 3.15-trunk-amd64 #1 SMP Debian
-> 3.15.1-1~exp1 (2014-06-20) x86_64 GNU/Linux
+I made these changes based on zeroing pinned number in
+btrfs_prepare_extent_commit(), if someone has committed the transaction and
+been running btrfs_prepare_extent_commit(), the pinned number is here 0 byte
+but we'll own free space as soon as finishing btrfs_finish_extent_commit()
+later, so I made it 'goto again' to see if we can skip committing transaction.
 
-> Doing a scrub scrubs over the first TiB of the filesystem and then
-> caused this OOPS:
+However, we don't need it any more, now pinned number is calculated within
+@sinfo->lock in unpin_extent_range(), (its value < bytes) means we have no
+enough space for this write.
 
-Well, it shouldn't GPF and there's obviously other more complex problems 
-that I won't attempt to address, but as a btrfs user and list regular I 
-can pick off the the low hanging fruit for you...
+-liubo
 
-Btrfs scrub is designed to detect and possibly fix exactly one sort of 
-problem: bad checksums.  Since btrfs does checksumming by default, btrfs 
-scrub should detect bad checksums whenever the calculated checksum 
-doesn't match the recorded one, but it can only /correct/ the problem if 
-there's another copy of the data available that still has a /valid/ 
-checksum.
-
-And your filesystem, as reported above, is all single, data single, 
-metadata single, system single, and "unknown" (kernel 3.15 split out, I 
-believe it was the free-space cache-tree, into its own type, but there's 
-no corresponding btrfs-progs release to label it, and it's simply listed 
-as "unknown" in current userspace) single.
-
-Single means there's only the one copy, so scrub couldn't correct any 
-invalid checksums it detected anyway, altho at least it should detect 
-them, and it should NOT segfault.
-
-So as I said there's obviously a more complex problem as well, well at 
-least one, but scrub wouldn't/couldn't fix anything for you anyway, since 
-the only way it can fix is if there's a second copy (single-device dup 
-mode or multi-device raid1/10 mode, etc), and you have single mode for 
-everything so there's no further copy to checksum verify and restore the 
-bad copy from, assuming checksum verification of the second.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> 
+> Thanks
+> Miao
+> 
+> >  		spin_unlock(&data_sinfo->lock);
+> >  
+> > -		/* commit the current transaction and try again */
+> > +	/* commit the current transaction and try again */
+> >  commit_trans:
+> >  		if (!committed &&
+> >  		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
+> > @@ -5678,7 +5685,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+> >  	struct btrfs_caching_control *next;
+> >  	struct btrfs_caching_control *caching_ctl;
+> >  	struct btrfs_block_group_cache *cache;
+> > -	struct btrfs_space_info *space_info;
+> >  
+> >  	down_write(&fs_info->commit_root_sem);
+> >  
+> > @@ -5701,9 +5707,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+> >  
+> >  	up_write(&fs_info->commit_root_sem);
+> >  
+> > -	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
+> > -		percpu_counter_set(&space_info->total_bytes_pinned, 0);
+> > -
+> >  	update_global_block_rsv(fs_info);
+> >  }
+> >  
+> > @@ -5741,6 +5744,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+> >  		spin_lock(&cache->lock);
+> >  		cache->pinned -= len;
+> >  		space_info->bytes_pinned -= len;
+> > +		percpu_counter_add(&space_info->total_bytes_pinned, -len);
+> >  		if (cache->ro) {
+> >  			space_info->bytes_readonly += len;
+> >  			readonly = true;
+> > 
+> 

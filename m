@@ -1,295 +1,246 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46654 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751215AbaGPEFl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 00:05:41 -0400
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs-progs: use check_argc_* to check arg number for all tools
-Date: Wed, 16 Jul 2014 11:59:46 +0800
-Message-ID: <1405483186-10908-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1404954405-16290-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1404954405-16290-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:50865 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752704AbaGBUen (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 16:34:43 -0400
+Date: Wed, 2 Jul 2014 13:34:41 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: show extent state for a subvolume
+Message-ID: <20140702203441.GY5484@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since this patch:
-	btrfs-progs: move the check_argc_* functions into utils.c
+The qgroup verification code can trivially be extended to provide
+extended information on the extents which a subvolume root
+references. Along with qgroup-verify, I have found this tool to be
+invaluable when tracking down extent references.
 
-All tools including the independent tools(e.g. btrfs-image, btrfs-convert)
-can share the convenience of the check_argc_* functions, so this patch
-adopt the argc check functions globally.
+The patch adds a switch to the check subcommand '--subvol-extents'
+which takes as args a single subvolume id. When run with the switch,
+we'll print out each extent that the subvolume references. The extent
+printout gives standard extent info you would expect along with
+information on which other roots reference it.
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Sample output follows - this is a few lines from a run on a subvolume
+I've been testing qgroup changes on:
+
+Print extent state for subvolume 281 on /dev/vdb2
+UUID: 8203ca66-9858-4e3f-b447-5bbaacf79c02
+Offset		Len	Root Refs	Roots
+12582912	20480	12	257 279 280 281 282 283 284 285 286 287 288 289
+12603392	8192	12	257 279 280 281 282 283 284 285 286 287 288 289
+12611584	12288	12	257 279 280 281 282 283 284 285 286 287 288 289
+ <snip a bunch of extents to show some variety>
+124583936	16384	4	281 282 283 280
+125075456	16384	4	280 281 282 283
+126255104	16384	11	257 280 281 282 283 284 285 286 287 288 289
+4763508736	4096	3	279 280 281
+
+In case it wasn't clear, this applies on top of my qgroup verify patch:
+"btrfs-progs: add quota group verify code"
+
+A branch with all this can be found on github:
+
+https://github.com/markfasheh/btrfs-progs-patches/tree/qgroup-verify
+
+Please apply,
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
-changelog
-        v1->v2: make show-super, check and send cmds work correctly
----
- btrfs-calc-size.c     | 4 +++-
- btrfs-convert.c       | 3 ++-
- btrfs-corrupt-block.c | 3 ++-
- btrfs-crc.c           | 7 ++++---
- btrfs-debug-tree.c    | 3 ++-
- btrfs-find-root.c     | 4 +++-
- btrfs-fragments.c     | 8 +++++---
- btrfs-map-logical.c   | 3 ++-
- btrfs-select-super.c  | 3 ++-
- btrfs-show-super.c    | 3 ++-
- btrfs-zero-log.c      | 3 ++-
- btrfstune.c           | 3 ++-
- cmds-check.c          | 2 +-
- cmds-restore.c        | 5 +++--
- cmds-send.c           | 2 +-
- 15 files changed, 36 insertions(+), 20 deletions(-)
+ cmds-check.c    | 12 +++++++++
+ qgroup-verify.c | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ qgroup-verify.h |  2 ++
+ 3 files changed, 92 insertions(+), 3 deletions(-)
 
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-index 5eabdfc..501111c 100644
---- a/btrfs-calc-size.c
-+++ b/btrfs-calc-size.c
-@@ -452,7 +452,9 @@ int main(int argc, char **argv)
- 		}
- 	}
- 
--	if (optind >= argc) {
-+	set_argv0(argv);
-+	argc = argc - optind;
-+	if (check_argc_min(argc, 1)) {
- 		usage();
- 		exit(1);
- 	}
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index d62d4f8..952e3e6 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2723,7 +2723,8 @@ int main(int argc, char *argv[])
- 		}
- 	}
- 	argc = argc - optind;
--	if (argc != 1) {
-+	set_argv0(argv);
-+	if (check_argc_exact(argc, 1)) {
- 		print_usage();
- 		return 1;
- 	}
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 6ecbe47..1a3ac35 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -865,8 +865,9 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
-+	set_argv0(av);
- 	ac = ac - optind;
--	if (ac == 0)
-+	if (check_argc_min(ac, 1))
- 		print_usage();
- 	dev = av[optind];
- 
-diff --git a/btrfs-crc.c b/btrfs-crc.c
-index 1990534..723e0b7 100644
---- a/btrfs-crc.c
-+++ b/btrfs-crc.c
-@@ -20,6 +20,7 @@
- #include <stdlib.h>
- #include <unistd.h>
- #include "crc32c.h"
-+#include "utils.h"
- 
- void usage(void)
- {
-@@ -62,13 +63,13 @@ int main(int argc, char **argv)
- 		}
- 	}
- 
-+	set_argv0(argv);
- 	str = argv[optind];
- 
- 	if (!loop) {
--		if (optind >= argc) {
--			fprintf(stderr, "not enough arguments\n");
-+		if (check_argc_min(argc - optind, 1))
- 			return 255;
--		}
-+
- 		printf("%12u - %s\n", crc32c(~1, str, strlen(str)), str);
- 		return 0;
- 	}
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index 36e1115..e46500d 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -174,8 +174,9 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
-+	set_argv0(av);
- 	ac = ac - optind;
--	if (ac != 1)
-+	if (check_argc_exact(ac, 1))
- 		print_usage();
- 
- 	info = open_ctree_fs_info(av[optind], 0, 0, OPEN_CTREE_PARTIAL);
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 7932308..6fe4b7b 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -305,7 +305,9 @@ int main(int argc, char **argv)
- 		}
- 	}
- 
--	if (optind >= argc) {
-+	set_argv0(argv);
-+	argc = argc - optind;
-+	if (check_argc_min(argc, 1)) {
- 		usage();
- 		exit(1);
- 	}
-diff --git a/btrfs-fragments.c b/btrfs-fragments.c
-index 160429a..d03c2c3 100644
---- a/btrfs-fragments.c
-+++ b/btrfs-fragments.c
-@@ -425,13 +425,15 @@ int main(int argc, char **argv)
- 		}
- 	}
- 
--	if (optind < argc) {
--		path = argv[optind++];
--	} else {
-+	set_argv0(argv);
-+	argc = argc - optind;
-+	if (check_argc_min(argc, 1)) {
- 		usage();
- 		exit(1);
- 	}
- 
-+	path = argv[optind++];
-+
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
- 		fprintf(stderr, "ERROR: can't access '%s'\n", path);
-diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index e47a1ae..6b475fc 100644
---- a/btrfs-map-logical.c
-+++ b/btrfs-map-logical.c
-@@ -148,8 +148,9 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
-+	set_argv0(av);
- 	ac = ac - optind;
--	if (ac == 0)
-+	if (check_argc_min(ac, 1))
- 		print_usage();
- 	if (logical == 0)
- 		print_usage();
-diff --git a/btrfs-select-super.c b/btrfs-select-super.c
-index d7cd187..6231d42 100644
---- a/btrfs-select-super.c
-+++ b/btrfs-select-super.c
-@@ -66,9 +66,10 @@ int main(int ac, char **av)
- 				print_usage();
- 		}
- 	}
-+	set_argv0(av);
- 	ac = ac - optind;
- 
--	if (ac != 1)
-+	if (check_argc_exact(ac, 1))
- 		print_usage();
- 
- 	if (bytenr == 0) {
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index ed0311f..38c5d26 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -95,7 +95,8 @@ int main(int argc, char **argv)
- 		}
- 	}
- 
--	if (argc < optind + 1) {
-+	set_argv0(argv);
-+	if (check_argc_min(argc - optind, 1)) {
- 		print_usage();
- 		exit(1);
- 	}
-diff --git a/btrfs-zero-log.c b/btrfs-zero-log.c
-index ab7f418..88998e9 100644
---- a/btrfs-zero-log.c
-+++ b/btrfs-zero-log.c
-@@ -46,7 +46,8 @@ int main(int ac, char **av)
- 	struct btrfs_trans_handle *trans;
- 	int ret;
- 
--	if (ac != 2)
-+	set_argv0(av);
-+	if (check_argc_exact(ac, 2))
- 		print_usage();
- 
- 	radix_tree_init();
-diff --git a/btrfstune.c b/btrfstune.c
-index 3f2f0cd..b43c2f0 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -137,9 +137,10 @@ int main(int argc, char *argv[])
- 		}
- 	}
- 
-+	set_argv0(argv);
- 	argc = argc - optind;
- 	device = argv[optind];
--	if (argc != 1) {
-+	if (check_argc_exact(argc, 1)) {
- 		print_usage();
- 		return 1;
- 	}
 diff --git a/cmds-check.c b/cmds-check.c
-index 6d3388f..078882b 100644
+index 5401ad9..18d4341 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -7020,7 +7020,7 @@ int cmd_check(int argc, char **argv)
+@@ -6428,6 +6428,7 @@ static struct option long_options[] = {
+ 	{ "init-csum-tree", 0, NULL, 0 },
+ 	{ "init-extent-tree", 0, NULL, 0 },
+ 	{ "backup", 0, NULL, 0 },
++	{ "subvol-extents", 1, NULL, 'E' },
+ 	{ "qgroup-report", 0, NULL, 'Q' },
+ 	{ NULL, 0, NULL, 0}
+ };
+@@ -6442,6 +6443,7 @@ const char * const cmd_check_usage[] = {
+ 	"--init-csum-tree            create a new CRC tree",
+ 	"--init-extent-tree          create a new extent tree",
+ 	"--qgroup-report             print a report on qgroup consistency",
++	"--subvol-extents            print subvolume extents and sharing state",
+ 	NULL
+ };
+ 
+@@ -6451,6 +6453,7 @@ int cmd_check(int argc, char **argv)
+ 	struct btrfs_root *root;
+ 	struct btrfs_fs_info *info;
+ 	u64 bytenr = 0;
++	u64 subvolid = 0;
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	int ret;
+ 	u64 num;
+@@ -6486,6 +6489,9 @@ int cmd_check(int argc, char **argv)
+ 			case 'Q':
+ 				qgroup_report = 1;
+ 				break;
++			case 'E':
++				subvolid = arg_strtou64(optarg);
++				break;
+ 			case '?':
+ 			case 'h':
+ 				usage(cmd_check_usage);
+@@ -6541,6 +6547,12 @@ int cmd_check(int argc, char **argv)
+ 			print_qgroup_report(1);
+ 		goto close_out;
  	}
- 	argc = argc - optind;
++	if (subvolid) {
++		printf("Print extent state for subvolume %llu on %s\nUUID: %s\n",
++		       subvolid, argv[optind], uuidbuf);
++		ret = print_extent_state(info, subvolid);
++		goto close_out;
++	}
+ 	printf("Checking filesystem on %s\nUUID: %s\n", argv[optind], uuidbuf);
  
--	if (argc != 1)
-+	if (check_argc_exact(argc, 1))
- 		usage(cmd_check_usage);
+ 	if (!extent_buffer_uptodate(info->tree_root->node) ||
+diff --git a/qgroup-verify.c b/qgroup-verify.c
+index f7692f9..81a1651 100644
+--- a/qgroup-verify.c
++++ b/qgroup-verify.c
+@@ -296,6 +296,8 @@ static void find_parent_roots(struct ulist *roots, u64 parent)
+ 	} while (node && ref->bytenr == parent);
+ }
  
- 	radix_tree_init();
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 3465f84..8e8afc5 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -1214,9 +1214,10 @@ int cmd_restore(int argc, char **argv)
++static void print_subvol_info(u64 subvolid, u64 bytenr, u64 num_bytes,
++			      struct ulist *roots);
+ /*
+  * Account each ref. Walk the refs, for each set of refs in a
+  * given bytenr:
+@@ -308,7 +310,7 @@ static void find_parent_roots(struct ulist *roots, u64 parent)
+  * - Walk ref_roots ulist, adding extent bytes to each qgroup count that
+  *    cooresponds to a found root.
+  */
+-static void account_all_refs(void)
++static void account_all_refs(int do_qgroups, u64 search_subvol)
+ {
+ 	int exclusive;
+ 	struct ref *ref;
+@@ -358,11 +360,15 @@ static void account_all_refs(void)
+ 		else
+ 			exclusive = 0;
+ 
++		if (search_subvol)
++			print_subvol_info(search_subvol, bytenr, num_bytes,
++					  roots);
++
+ 		ULIST_ITER_INIT(&uiter);
+ 		while ((unode = ulist_next(roots, &uiter))) {
+ 			BUG_ON(unode->val == 0ULL);
+ 			/* We only want to account fs trees */
+-			if (is_fstree(unode->val))
++			if (is_fstree(unode->val) && do_qgroups)
+ 				add_bytes(unode->val, num_bytes, exclusive);
  		}
  	}
- 
--	if (!list_roots && optind + 1 >= argc)
-+	set_argv0(argv);
-+	if (!list_roots && check_argc_min(argc - optind, 2))
- 		usage(cmd_restore_usage);
--	else if (list_roots && optind >= argc)
-+	else if (list_roots && check_argc_min(argc - optind, 1))
- 		usage(cmd_restore_usage);
- 
- 	if (fs_location && root_objectid) {
-diff --git a/cmds-send.c b/cmds-send.c
-index 9a73b32..cbc21f8 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -556,7 +556,7 @@ int cmd_send(int argc, char **argv)
- 		}
+@@ -1072,7 +1078,7 @@ int qgroup_verify_all(struct btrfs_fs_info *info)
+ 		goto out;
  	}
  
--	if (optind == argc)
-+	if (check_argc_min(argc - optind, 1))
- 		usage(cmd_send_usage);
+-	account_all_refs();
++	account_all_refs(1, 0);
  
- 	if (g_total_data_size &&
+ out:
+ 	/*
+@@ -1083,3 +1089,72 @@ out:
+ 	free_ref_tree(&by_bytenr);
+ 	return ret;
+ }
++
++static void __print_subvol_info(u64 bytenr, u64 num_bytes, struct ulist *roots)
++{
++	int n = roots->nnodes;
++	struct ulist_iterator uiter;
++	struct ulist_node *unode;
++
++	printf("%llu\t%llu\t%d\t", bytenr, num_bytes, n);
++
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(roots, &uiter))) {
++		printf("%llu ", unode->val);
++	}
++	printf("\n");
++}
++
++static void print_subvol_info(u64 subvolid, u64 bytenr, u64 num_bytes,
++			      struct ulist *roots)
++{
++	struct ulist_iterator uiter;
++	struct ulist_node *unode;
++
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(roots, &uiter))) {
++		BUG_ON(unode->val == 0ULL);
++		if (unode->val == subvolid) {
++			__print_subvol_info(bytenr, num_bytes, roots);
++			return;
++		}
++	}
++
++
++}
++
++int print_extent_state(struct btrfs_fs_info *info, u64 subvol)
++{
++	int ret;
++
++	tree_blocks = ulist_alloc(0);
++	if (!tree_blocks) {
++		fprintf(stderr,
++			"ERROR: Out of memory while allocating ulist.\n");
++		return ENOMEM;
++	}
++
++	/*
++	 * Put all extent refs into our rbtree
++	 */
++	ret = scan_extents(info, 0, ~0ULL);
++	if (ret) {
++		fprintf(stderr, "ERROR: while scanning extent tree: %d\n", ret);
++		goto out;
++	}
++
++	ret = map_implied_refs(info);
++	if (ret) {
++		fprintf(stderr, "ERROR: while mapping refs: %d\n", ret);
++		goto out;
++	}
++
++	printf("Offset\t\tLen\tRoot Refs\tRoots\n");
++	account_all_refs(0, subvol);
++
++out:
++	free_tree_blocks();
++	free_ref_tree(&by_bytenr);
++	return ret;
++}
++
+diff --git a/qgroup-verify.h b/qgroup-verify.h
+index a222c17..9201407 100644
+--- a/qgroup-verify.h
++++ b/qgroup-verify.h
+@@ -22,4 +22,6 @@
+ int qgroup_verify_all(struct btrfs_fs_info *info);
+ void print_qgroup_report(int all);
+ 
++int print_extent_state(struct btrfs_fs_info *info, u64 subvol);
++
+ #endif	/* _BTRFS_QGROUP_VERIFY_H */
 -- 
-1.8.1.4
+1.8.4.5
 

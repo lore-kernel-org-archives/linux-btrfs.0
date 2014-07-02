@@ -1,74 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42398 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:43968 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750991AbaGBH7Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 03:59:25 -0400
-Message-ID: <53B3BBD3.4070004@redhat.com>
-Date: Wed, 02 Jul 2014 09:59:15 +0200
-From: Harald Hoyer <harald@redhat.com>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, dsterba@suse.cz,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
- different ro/rw options"
-References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com> <20140701153240.GL1553@twin.jikos.cz> <53B2E371.6030504@fb.com>
-In-Reply-To: <53B2E371.6030504@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1750852AbaGBIEX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 04:04:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X2FWe-0003NA-Ds
+	for linux-btrfs@vger.kernel.org; Wed, 02 Jul 2014 10:04:20 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 10:04:20 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 10:04:20 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Question about fallocate
+Date: Wed, 2 Jul 2014 08:04:08 +0000 (UTC)
+Message-ID: <pan$60dc4$de126478$afa9e0e8$68269820@cox.net>
+References: <53B28A82.2000907@assyoma.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01.07.2014 18:36, Chris Mason wrote:
-> On 07/01/2014 11:32 AM, David Sterba wrote:
->> (adding Harald to CC)
->>
->> On Tue, Jul 01, 2014 at 05:30:01PM +0800, Qu Wenruo wrote:
->>> This reverts commit 0723a0473fb48a1c93b113a28665b64ce5faf35a.
->>> This commit has the following problem:
->>> 1) Break the ro mount rule.
->>> When users mount the whole btrfs ro, it is still possible to mount
->>> subvol rw and change the contents. Which make the whole fs ro mount
->>> non-sense.
->>
->> The proposed usecase was to allow mounting subvolumes with different
->> ro/rw flags, and this makes sense to me (provided that the whole
->> filesystem is mounted rw).
->>
->> Anything else seems to lead to all the internal problems you point
->> below. I'm not even sure if mounting the first subvolume 'ro' should
->> imply that the whole filesystem is ro or not.
->>
->>> 2) Cause whole btrfs ro/rw mount change fails.
->>> When mount a subvol ro first, when you can't mount the whole fs mounted
->>> rw. This is due to the check in btrfs_mount() which returns -EBUSY,
->>> which is OK for single fs to prevent mount fs ro in one mount point and
->>> mount the same fs rw in other mount point.
->>> Step to reproduce:
->>> mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
->>> mount -o rw /dev/sda6 /mnt/btrfs	<-this will fail
->>
->> Yeah, so first ro means whole filesystem is ro.
->>
->>> 3) Kernel warn in vfs.
->>> When mount the whole fs ro, and mount a subvol ro, kernel warning will
->>> show in fs/sync.c complaining s_umount rwsem is not locked.
->>> Since this remount is not called by VFS, so s_mounts rwsem is not
->>> correctly locked.
->>
->> That's serious.
-> 
-> Agreed, we'll pull this out until we get a better handle on things.
-> Thanks for spending time on it.
-> 
-> -chris
-> 
+Gionatan Danti posted on Tue, 01 Jul 2014 12:16:34 +0200 as excerpted:
 
-My patch was initially only a request for comments:
-- patch pointed out the problem
-- provided a possible solution/workaround
-- even has "FIXME" in the code :)
+> So, my question is: why writing to a fallocated file produce
+> fragmentation, even with CoW disabled?
 
-So, what I was hoping, that somebody else with more VFS knowledge than me would
-step up and come up with a sane solution.
+Good question.
 
-Pull it out, if the patch causes problems, but _please_ think about the problem
-and come up with a solution, so that "mount -a" works with a normal fstab.
+But how did you disable COW?  The nodatacow mount option?  Setting the 
+NOCOW attribute on the file or parent-dir (chattr +C)?  Something else?
+
+Because there are caveats to both the mount option and the file attribute 
+methods.
+
+For the nodatacow mount option, the caveat is that to the best of my 
+knowledge, that option is one of several btrfs-specific options that's 
+still whole-filesystem-based.  So if you are mounting multiple subvolumes 
+from the same filesystem, nodatacow will toggle together for all of them 
+-- you can't use it for just one.
+
+The possible explanation there is thus that if multiple subvolumes are 
+mounted and not all of them have the same nodatacow option applied, you 
+might not have nodatacow set on that subvolume after all.
+
+For the nocow file attribute case, there's two possibilities.  First, 
+it's critical how the file attribute was set.  If it was set on a file 
+with existing data, nocow behavior isn't guaranteed.  The nocow attribute 
+must be set on the file while it is zero-sized, before it has any data in 
+it.  The easiest way to do that is to set the attribute on the directory, 
+such that newly created files (and subdirs) in it inherit the attribute.  
+Nocow doesn't affect the directory itself and thus only determines 
+inheritance.
+
+Second, there's the snapshotting exception.  Because a btrfs snapshot 
+locks the existing file data in place with the snapshot, the first 
+modification to a fileblock after a snapshot will force a COW for that 
+block, even on an otherwise nocow file.  The nocow attribute remains in 
+effect, however, and further writes to the same block will modify it in-
+place... until the next snapshot of course.  This becomes a real issue 
+for people running automated snapshotting scripts, particularly if 
+they've set it to something extreme like once a minute, since in that 
+case the existing file content is locked in place once a minute, meaning 
+the nocow attribute is effectively worthless for them.  The 
+recommendation in that case is to put the nocow files in a dedicated 
+subvolume, since snapshots stop at subvolume boundaries, and to use 
+conventional backup instead of snapshotting for that subvolume.
+
+So the possible explanations for the file attribute case is either that 
+the file attribute wasn't applied correctly (the file already had content 
+when the attribute was set), or that a snapshot intervened between file 
+creation and modification, locking the existing file data in-place and 
+thus forcing a cow for the first post-snapshot modification per-block.
+
+Other than that, I don't know, but it'd be interesting to see if the 
+behavior replicates on a current kernel.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

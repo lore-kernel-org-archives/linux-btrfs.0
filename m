@@ -1,106 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23342 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752146AbaGBJUi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 05:20:38 -0400
-Message-ID: <53B3CF53.7000005@cn.fujitsu.com>
-Date: Wed, 2 Jul 2014 17:22:27 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+Received: from mail-pd0-f169.google.com ([209.85.192.169]:52931 "EHLO
+	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752212AbaGBM5M (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 08:57:12 -0400
+Received: by mail-pd0-f169.google.com with SMTP id g10so11884853pdj.14
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 05:57:11 -0700 (PDT)
+Received: from mail2.smcindiaonline.com ([59.144.72.226])
+        by mx.google.com with ESMTPSA id pz10sm37228960pbb.33.2014.07.02.05.57.09
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 02 Jul 2014 05:57:10 -0700 (PDT)
+Date: Wed, 2 Jul 2014 18:27:04 +0530
+From: Vikram Goyal <vikigoyal@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs fi df <mount point> outputs info instead of error even
+ when <mount-point> is just a directory
+Message-ID: <20140702125704.GA26359@mail2.smcindiaonline.com>
+References: <20140702051444.GA5459@mail2.smcindiaonline.com>
+ <53B3A488.4030406@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, Chris Mason <clm@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: build failure with mason/for-linus tree
-References: <53B24A86.1050802@jp.fujitsu.com> <53B2C5FA.1090808@fb.com> <53B34742.9020108@jp.fujitsu.com>
-In-Reply-To: <53B34742.9020108@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <53B3A488.4030406@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2 Jul 2014 08:41:54 +0900, Satoru Takeuchi wrote:
-> Hi Chris,
-> 
-> (2014/07/01 23:30), Chris Mason wrote:
->> On 07/01/2014 01:43 AM, Satoru Takeuchi wrote:
->>> Hi Chris,
->>>
->>> FYI, today I failed to build mason/for-linus tree as follows.
->>>
->>
->> You were building for 3.15?
-> 
-> I just run the following command to confirm whether the latest
-> for-linux tree can build or not.
-> 
-> $ git checkout -b mason-for-linus mason/for-linus
-> $ make
-> 
-> Then that error happens and It's just FYI.
+On Wed, Jul 02, 2014 at 02:19:52PM +0800, Qu Wenruo wrote:
+>
+>-------- Original Message --------
+>Subject: btrfs fi df <mount point> outputs info instead of error even 
+>when <mount-point> is just a directory
+>From: Vikram Goyal <vikigoyal@gmail.com>
+>To: linux-btrfs@vger.kernel.org
+>Date: 2014年07月02日 13:14
+>>Hi,
 
-It is because for-linus was built on v3.15 kernel, but the code of for-linus
-is based on v3.16-rc1.
+<snip>
 
-If you merge for-linus to upstream kernel, then you will compile the kernel successfully.
+>Although this should be fixed by checking whether the parameter is a 
+>mountpoint.
+>I'll also try to fix this too.
+>>
+>> [ivikram@localhost ~]# btrfs fi show
+>> Label: 'fedora'  uuid: d2b3420c-99c1-44cc-a922-ac266072c7fb
+>>         Total devices 2 FS bytes used 33.33GiB
+>>         devid    2 size 73.51GiB used 44.03GiB path /dev/sdb6
+>>         devid    3 size 73.30GiB used 44.03GiB path /dev/sda2
+>>
+>> Label: 'Vikram'  uuid: 0809b072-35f3-4866-92b8-af4772b23ed6
+>>         Total devices 2 FS bytes used 109.68GiB
+>>         devid    1 size 158.03GiB used 157.00GiB path /dev/dm-0
+>>         devid    2 size 157.00GiB used 157.00GiB path /dev/mapper/sdb1
+>>
+>I'm very sorry that I did catch the point why 'btrfs fi show' is used 
+>here and what's the problem.
+>It would be very nice if you can explain what's wrong with 'btrfs fi show'.
+>
 
-Thanks
-Miao
+Sorry for the confusion. It inadvertently got added. Please ignore the
+same.
 
-> 
-> Thanks,
-> Satoru
-> 
->>
->>> ===============================================================================
->>> ...
->>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'record_root_in_trans':
->>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c:293:3: error: implicit declaration of function 'smp_mb__before_atomic' [-Werror=implicit-function-declaration]
->>>     smp_mb__before_atomic();
->>>     ^
->>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c: In function 'commit_fs_roots':
->>> /home/sat/src/linux-2.6/fs/btrfs/transaction.c:1065:4: error: implicit declaration of function 'smp_mb__after_atomic' [-Werror=implicit-function-declaration]
->>>      smp_mb__after_atomic();
->>>      ^
->>> cc1: some warnings being treated as errors
->>> ...
->>> ===============================================================================
->>>
->>> It can be solved by cherry-picking febdbfe.
->>>
->>> ===
->>> commit febdbfe8a91ce0d11939d4940b592eb0dba8d663
->>> Author: Peter Zijlstra <peterz@infradead.org>
->>> Date:   Thu Feb 6 18:16:07 2014 +0100
->>>
->>>      arch: Prepare for smp_mb__{before,after}_atomic()
->>>      
->>>      Since the smp_mb__{before,after}*() ops are fundamentally dependent on
->>>      how an arch can implement atomics it doesn't make sense to have 3
->>>      variants of them. They must all be the same.
->>
->> Yes, or revert:
->>
->> commit c7548af69d9ef71512eb52d8009521eba3e768fd
->> Author: Chris Mason <clm@fb.com>
->> Date:   Tue Jun 10 13:06:56 2014 -0700
->>
->>      Btrfs: convert smp_mb__{before,after}_clear_bit
->>
->>      The new call is smp_mb__{before,after}_atomic.  The __ gives us extra
->>      protection from the atomic rays.
->>
->>      Signed-off-by: Chris Mason <clm@fb.com>
->>
->> Which is only needed on 3.16+
->>
->> I should have put this one into a 3.16 only branch, it was a mistake on
->> my end.
->>
->> -chris
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+The mail was only in context to btrfs fi df. Many thanks for your
+kind attention to this mail. Hope the change will help everybody.
 
+Regards,
+
+-- 
+vikram...
+         ||||||||
+         ||||||||
+^^'''''^^||root||^^^'''''''^^
+        // \\   ))
+       //(( \\// \\
+      // /\\ ||   \\
+     || / )) ((    \\
+-- 
+"If you are beginning to doubt what I am saying, you are
+ probably hallucinating."
+-- The Firesign Theatre, _Everything you know is Wrong_
+-- 
+  o
+ ~|~
+  =

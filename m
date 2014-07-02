@@ -1,194 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60643 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751540AbaGBRyk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 13:54:40 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s62HrsFp024926
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Jul 2014 10:54:40 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0b-00082601.pphosted.com with ESMTP id 1mv4dgk7jr-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 10:54:39 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: __btrfs_mod_ref should always use no_quota
-Date: Wed, 2 Jul 2014 10:54:25 -0700
-Message-ID: <1404323665-29524-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from victor.provo.novell.com ([137.65.250.26]:34590 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756807AbaGBSaQ (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Wed, 2 Jul 2014 14:30:16 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: read lock extent buffer while walking backrefs
+Date: Wed,  2 Jul 2014 20:07:54 +0100
+Message-Id: <1404328074-3751-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before I extended the no_quota arg to btrfs_dec/inc_ref because I didn't
-understand how snapshot delete was using it and assumed that we needed the
-quota operations there.  With Mark's work this has turned out to be not the
-case, we _always_ need to use no_quota for btrfs_dec/inc_ref, so just drop the
-argument and make __btrfs_mod_ref call it's process function with no_quota set
-always.  Thanks,
+Before processing the extent buffer, acquire a read lock on it, so
+that we're safe against concurrent updates on the extent buffer.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c       | 20 ++++++++++----------
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/extent-tree.c | 24 +++++++++++-------------
- 3 files changed, 23 insertions(+), 25 deletions(-)
+ fs/btrfs/backref.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index aeab453..44ee5d2 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -280,9 +280,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
- 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
--		ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 1);
- 	else
--		ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 0);
- 
- 	if (ret)
- 		return ret;
-@@ -1035,14 +1035,14 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if ((owner == root->root_key.objectid ||
- 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
- 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
--			ret = btrfs_inc_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_inc_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID) {
--				ret = btrfs_dec_ref(trans, root, buf, 0, 1);
-+				ret = btrfs_dec_ref(trans, root, buf, 0);
- 				BUG_ON(ret); /* -ENOMEM */
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
-@@ -1050,9 +1050,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		if (new_flags != 0) {
-@@ -1069,11 +1069,11 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
--			ret = btrfs_dec_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_dec_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		clean_tree_block(trans, root, buf);
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index be91397..8e29b61 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3326,9 +3326,9 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 num_bytes,
- 			 u64 min_alloc_size, u64 empty_size, u64 hint_byte,
- 			 struct btrfs_key *ins, int is_data, int delalloc);
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				u64 bytenr, u64 num_bytes, u64 flags,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7671b15..d321eff 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3057,7 +3057,7 @@ out:
- static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct extent_buffer *buf,
--			   int full_backref, int inc, int no_quota)
-+			   int full_backref, int inc)
- {
- 	u64 bytenr;
- 	u64 num_bytes;
-@@ -3111,7 +3111,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			key.offset -= btrfs_file_extent_offset(buf, fi);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, key.objectid,
--					   key.offset, no_quota);
-+					   key.offset, 1);
- 			if (ret)
- 				goto fail;
- 		} else {
-@@ -3119,7 +3119,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			num_bytes = btrfs_level_size(root, level - 1);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, level - 1, 0,
--					   no_quota);
-+					   1);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -3130,15 +3130,15 @@ fail:
- }
- 
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 1, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 1);
- }
- 
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 0, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 0);
- }
- 
- static int write_one_cache_group(struct btrfs_trans_handle *trans,
-@@ -7758,9 +7758,9 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
- 	/* wc->stage == UPDATE_BACKREF */
- 	if (!(wc->flags[level] & flag)) {
- 		BUG_ON(!path->locks[level]);
--		ret = btrfs_inc_ref(trans, root, eb, 1, wc->for_reloc);
-+		ret = btrfs_inc_ref(trans, root, eb, 1);
- 		BUG_ON(ret); /* -ENOMEM */
--		ret = btrfs_dec_ref(trans, root, eb, 0, wc->for_reloc);
-+		ret = btrfs_dec_ref(trans, root, eb, 0);
- 		BUG_ON(ret); /* -ENOMEM */
- 		ret = btrfs_set_disk_extent_flags(trans, root, eb->start,
- 						  eb->len, flag,
-@@ -8004,11 +8004,9 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 	if (wc->refs[level] == 1) {
- 		if (level == 0) {
- 			if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
--				ret = btrfs_dec_ref(trans, root, eb, 1,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 1);
- 			else
--				ret = btrfs_dec_ref(trans, root, eb, 0,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		/* make block locked assertion in clean_tree_block happy */
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index e25564b..a1efd39 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1001,8 +1001,11 @@ again:
+ 					ret = -EIO;
+ 					goto out;
+ 				}
++				btrfs_tree_read_lock(eb);
++				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 				ret = find_extent_in_eb(eb, bytenr,
+ 							*extent_item_pos, &eie);
++				btrfs_tree_read_unlock_blocking(eb);
+ 				free_extent_buffer(eb);
+ 				if (ret < 0)
+ 					goto out;
 -- 
-2.0.0
+1.9.1
 

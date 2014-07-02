@@ -1,137 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:42849 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750742AbaGBHG2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 03:06:28 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id B0C7D3EE0AE
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 16:06:27 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id BA2A4AC0371
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 16:06:26 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 6B5D31DB8032
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 16:06:26 +0900 (JST)
-Message-ID: <53B3AF67.9080906@jp.fujitsu.com>
-Date: Wed, 2 Jul 2014 16:06:15 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: Re: [PATCH 1/2 v2] btrfs: device add must be sysloged
-References: <1404147537-19873-1-git-send-email-Anand.Jain@oracle.com> <1404265052-29424-1-git-send-email-Anand.Jain@oracle.com> <53B3AE6F.4070009@jp.fujitsu.com>
-In-Reply-To: <53B3AE6F.4070009@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Received: from userp1040.oracle.com ([156.151.31.81]:51957 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751535AbaGBI6P (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 04:58:15 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s628wDHn012765
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Jul 2014 08:58:14 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s628wCvd023450
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Jul 2014 08:58:13 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s628wA3P012416
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Jul 2014 08:58:11 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v4] Btrfs: fix race of using total_bytes_pinned
+Date: Wed,  2 Jul 2014 16:58:01 +0800
+Message-Id: <1404291481-31773-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/07/02 16:02), Satoru Takeuchi wrote:
-> (2014/07/02 10:37), Anand Jain wrote:
->> when we add a new disk to the mounted btrfs we don't record it
->> as of now, disk add is a critical change of btrfs configuration,
->> it must be recorded in the syslog to help offline investigations
->> of customer problems when reported.
->>
->> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->> Reviewed-by: David Sterba <dsterba@suse.cz>
-> 
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> 
-> test result:
->    3.16-rc3: failed
->    3.16-rc3 with this patch: success
+This percpu counter @total_bytes_pinned is introduced to skip unnecessary
+operations of 'commit transaction', it accounts for those space we may free
+but are stuck in delayed refs.
 
-Please let me correct.
+And we zero out @space_info->total_bytes_pinned every transaction period so
+we have a better idea of how much space we'll actually free up by committing
+this transaction.  However, we do the 'zero out' part a little earlier, before
+we actually unpin space, so we end up returning ENOSPC when we actually have
+free space that's just unpinned from committing transaction.
 
-> 
-> ===============================================================================
-> #!/bin/sh
-> 
-> TEST_DEV1=/dev/vdb
-> TEST_DEV2=/dev/vdc
-> TEST_MNT=/home/sat/mnt
-> 
-> umount $TEST_MNT
-> mkfs.btrfs -f $TEST_DEV1
-> dmesg >dmesg.old
-> 
-> mount $TEST_DEV1 $TEST_MNT
-> btrfs dev add -f $TEST_DEV2 $TEST_MNT
-> if [ $? -ne 0 ] ; then
->      echo "[ERROR] failed to btrfs dev add." >&2
->      exit 1
-> fi
-> 
-> btrfs dev del $TEST_DEV2 $TEST_MNT
-> if [ $? -ne 0 ] ; then
->      echo "[ERROR] failed to btrfs dev delete" >&2
->      exit 1
-> fi
-> 
-> dmesg >dmesg.new
-> diff dmesg.old dmesg.new | grep '^>' >dmesg.diff
-> 
-> RET=0
-> TEST_DEV1_BASE=$(basename $TEST_DEV1)
-> if grep -q "BTRFS info (device $TEST_DEV1_BASE): device added $TEST_DEV2" dmesg.diff ; then
->      echo "[PASS] btrfs device add is logged." >&2
-> else
->      echo "[FAIL] btrfs device add is not logged." >&2
->      RET=1
-> fi
+xfstests/generic/074 complained then.
 
-[PASS] here,
+This fixes it by actually accounting the percpu pinned number when 'unpin',
+and since it's protected by space_info->lock, the race is gone now.
 
->      
-> if grep -q "BTRFS info (device $TEST_DEV1_BASE): device deleted $TEST_DEV2" dmesg.diff ; then
->      echo "[PASS] btrfs device delete is logged." >&2
-> else
->      echo "[FAIL] btrfs device delete is not logged." >&2
->      RET=1
-> fi
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v4: Remove unnecessary check in btrfs_check_data_free_space.
+v3: Really account the percpu pinned number when unpin, instead of zeroing
+    it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
+    out may end up with messing percpu pinned number(suggested by Miao).
+v2: Add missing brakets for if statement
 
-And [FAIL] here since 2/2 is not applied yet at this test.
+ fs/btrfs/extent-tree.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-Thanks,
-Satoru
-
-> 
-> rm dmesg.{new,old,diff}
-> umount $TEST_MNT
-> 
-> exit $RET
-> ===============================================================================
-> 
-> Thanks,
-> Satoru
-> 
->> ---
->>    v2: Accepts David's review comment, thanks
->>
->>    fs/btrfs/ioctl.c | 4 ++++
->>    1 file changed, 4 insertions(+)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 86d5474..4e10259 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -2488,6 +2488,10 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
->>    	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
->>    	ret = btrfs_init_new_device(root, vol_args->name);
->>    
->> +	if (!ret)
->> +		btrfs_info(root->fs_info, "device added %s",
->> +						vol_args->name);
->> +
->>    	kfree(vol_args);
->>    out:
->>    	mutex_unlock(&root->fs_info->volume_mutex);
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 99c2539..813537f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5678,7 +5678,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 	struct btrfs_caching_control *next;
+ 	struct btrfs_caching_control *caching_ctl;
+ 	struct btrfs_block_group_cache *cache;
+-	struct btrfs_space_info *space_info;
+ 
+ 	down_write(&fs_info->commit_root_sem);
+ 
+@@ -5701,9 +5700,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 
+ 	up_write(&fs_info->commit_root_sem);
+ 
+-	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
+-		percpu_counter_set(&space_info->total_bytes_pinned, 0);
+-
+ 	update_global_block_rsv(fs_info);
+ }
+ 
+@@ -5741,6 +5737,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ 		spin_lock(&cache->lock);
+ 		cache->pinned -= len;
+ 		space_info->bytes_pinned -= len;
++		percpu_counter_add(&space_info->total_bytes_pinned, -len);
+ 		if (cache->ro) {
+ 			space_info->bytes_readonly += len;
+ 			readonly = true;
+-- 
+1.8.1.4
 

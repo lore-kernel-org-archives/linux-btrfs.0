@@ -1,83 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:52931 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752212AbaGBM5M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 08:57:12 -0400
-Received: by mail-pd0-f169.google.com with SMTP id g10so11884853pdj.14
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 05:57:11 -0700 (PDT)
-Received: from mail2.smcindiaonline.com ([59.144.72.226])
-        by mx.google.com with ESMTPSA id pz10sm37228960pbb.33.2014.07.02.05.57.09
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 02 Jul 2014 05:57:10 -0700 (PDT)
-Date: Wed, 2 Jul 2014 18:27:04 +0530
-From: Vikram Goyal <vikigoyal@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs fi df <mount point> outputs info instead of error even
- when <mount-point> is just a directory
-Message-ID: <20140702125704.GA26359@mail2.smcindiaonline.com>
-References: <20140702051444.GA5459@mail2.smcindiaonline.com>
- <53B3A488.4030406@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:32384 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750920AbaGBQND (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 12:13:03 -0400
+Message-ID: <53B42F8B.8090600@redhat.com>
+Date: Wed, 02 Jul 2014 11:12:59 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-In-Reply-To: <53B3A488.4030406@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: fix nossd and ssd_spread mount option regression
+References: <1404274747-20036-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1404274747-20036-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 02, 2014 at 02:19:52PM +0800, Qu Wenruo wrote:
->
->-------- Original Message --------
->Subject: btrfs fi df <mount point> outputs info instead of error even 
->when <mount-point> is just a directory
->From: Vikram Goyal <vikigoyal@gmail.com>
->To: linux-btrfs@vger.kernel.org
->Date: 2014年07月02日 13:14
->>Hi,
+On 7/1/14, 11:19 PM, Qu Wenruo wrote:
+> From: Eric Sandeen <sandeen@redhat.com>
+> 
+> The commit
+> 
+> 0780253 btrfs: Cleanup the btrfs_parse_options for remount.
+> 
+> broke ssd options quite badly; it stopped making ssd_spread
+> imply ssd, and it made "nossd" unsettable.
+> 
+> Put things back at least as well as they were before
+> (though ssd mount option handling is still pretty odd:
+> 
+> Reported-by: Roman Mamedov <rm@romanrm.net>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> v2(By Qu):
+>   Make nossd disable ssd and ssd_spread.
+>   Add notes in Documentation/btrfs.txt
 
-<snip>
+Ok, thanks for fixing up a little bit more.
 
->Although this should be fixed by checking whether the parameter is a 
->mountpoint.
->I'll also try to fix this too.
->>
->> [ivikram@localhost ~]# btrfs fi show
->> Label: 'fedora'  uuid: d2b3420c-99c1-44cc-a922-ac266072c7fb
->>         Total devices 2 FS bytes used 33.33GiB
->>         devid    2 size 73.51GiB used 44.03GiB path /dev/sdb6
->>         devid    3 size 73.30GiB used 44.03GiB path /dev/sda2
->>
->> Label: 'Vikram'  uuid: 0809b072-35f3-4866-92b8-af4772b23ed6
->>         Total devices 2 FS bytes used 109.68GiB
->>         devid    1 size 158.03GiB used 157.00GiB path /dev/dm-0
->>         devid    2 size 157.00GiB used 157.00GiB path /dev/mapper/sdb1
->>
->I'm very sorry that I did catch the point why 'btrfs fi show' is used 
->here and what's the problem.
->It would be very nice if you can explain what's wrong with 'btrfs fi show'.
->
+But option handling is still strange even with your changes:
 
-Sorry for the confusion. It inadvertently got added. Please ignore the
-same.
+# mount -o ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+/dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,ssd,space_cache 0 0
 
-The mail was only in context to btrfs fi df. Many thanks for your
-kind attention to this mail. Hope the change will help everybody.
+# mount -o remount,nossd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+/dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,space_cache 0 0
 
-Regards,
+# mount -o remount,ssd_spread /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+/dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
 
--- 
-vikram...
-         ||||||||
-         ||||||||
-^^'''''^^||root||^^^'''''''^^
-        // \\   ))
-       //(( \\// \\
-      // /\\ ||   \\
-     || / )) ((    \\
--- 
-"If you are beginning to doubt what I am saying, you are
- probably hallucinating."
--- The Firesign Theatre, _Everything you know is Wrong_
--- 
-  o
- ~|~
-  =
+# mount -o remount,ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+/dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
+
+I'd rather just commit my first patch to fix the regression ASAP, and
+fix the ssd option mess with a second patch which has received careful testing.
+
+-Eric
+
+> ---
+>  Documentation/filesystems/btrfs.txt | 3 +++
+>  fs/btrfs/super.c                    | 4 +++-
+>  2 files changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+> index d11cc2f..f7d0878 100644
+> --- a/Documentation/filesystems/btrfs.txt
+> +++ b/Documentation/filesystems/btrfs.txt
+> @@ -201,6 +201,9 @@ Options with (*) are default options and will not show in the mount options.
+>  	of unused space, and may perform better on low-end ssds.  ssd_spread
+>  	implies ssd, enabling all other ssd heuristics as well.
+>  
+> +	Option nossd removes all ssd allocation heuristics, disabling
+> +	ssd_spread or ssd mount option.
+> +
+>    subvol=<path>
+>  	Mount subvolume at <path> rather than the root subvolume.  <path> is
+>  	relative to the top level subvolume.
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 4662d92..cfe377a 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -522,10 +522,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  		case Opt_ssd_spread:
+>  			btrfs_set_and_info(root, SSD_SPREAD,
+>  					   "use spread ssd allocation scheme");
+> +			btrfs_set_opt(info->mount_opt, SSD);
+>  			break;
+>  		case Opt_nossd:
+> -			btrfs_clear_and_info(root, NOSSD,
+> +			btrfs_set_and_info(root, NOSSD,
+>  					     "not using ssd allocation scheme");
+> +			btrfs_clear_opt(info->mount_opt, SSD_SPREAD);
+>  			btrfs_clear_opt(info->mount_opt, SSD);
+>  			break;
+>  		case Opt_barrier:
+> 
+

@@ -1,70 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21685 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:35600 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751639AbaGBC0L (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 22:26:11 -0400
-Message-ID: <53B36CBF.6020608@cn.fujitsu.com>
-Date: Wed, 2 Jul 2014 10:21:51 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	with ESMTP id S1750871AbaGBESH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 00:18:07 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Eric Sandeen <sandeen@redhat.com>
+Subject: [PATCH v2] btrfs: fix nossd and ssd_spread mount option regression
+Date: Wed, 2 Jul 2014 12:19:07 +0800
+Message-ID: <1404274747-20036-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, <dsterba@suse.cz>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] Btrfs: clear compress-force when remounting with compress
- option
-References: <1404096685-10591-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140701160457.GM1553@twin.jikos.cz> <53B36756.5030601@jp.fujitsu.com>
-In-Reply-To: <53B36756.5030601@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2014 09:58 AM, Satoru Takeuchi wrote:
-> (2014/07/02 1:04), David Sterba wrote:
->> On Mon, Jun 30, 2014 at 10:51:25AM +0800, Wang Shilong wrote:
->>> Steps to reproduce:
->>>   # mkfs.btrfs -f /dev/sdb
->>>   # mount /dev/sdb /mnt -o compress-force=lzo
->>>   # mount /dev/sdb /mnt -o remount,compress=zlib
->>>   # cat /proc/mounts
->>>
->>> Remounting from compress-force to compress could not clear 
->>> compress-force
->>> option. The problem is there is no way for users to clear 
->>> compress-force
->>> option separately.
->>>
->>> Fix this problem by clearing @FORCE_COMPRESS flag when remounting to
->>> compress=xxx.
->>>
->>> Suggested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
->>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->>
->> I'm sorry for lack of answer in the V1 thread, V2 is the minimal bugfix
->> and I'm fine with it right away.
->>
->> Reviewed-by: David Sterba <dsterba@suse.cz>
->
-> Test result (I used your reproducer):
->   3.16-rc3:               FAIL
->   3.16-rc3 w/ your patch: PASS
->
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+From: Eric Sandeen <sandeen@redhat.com>
 
-Satoru, Thanks for doing this. ^_^
+The commit
 
-Regards,
-Wang
->
-> Thanks,
-> Satoru
->
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at http://vger.kernel.org/majordomo-info.html
->>
->
-> .
->
+0780253 btrfs: Cleanup the btrfs_parse_options for remount.
+
+broke ssd options quite badly; it stopped making ssd_spread
+imply ssd, and it made "nossd" unsettable.
+
+Put things back at least as well as they were before
+(though ssd mount option handling is still pretty odd:
+
+Reported-by: Roman Mamedov <rm@romanrm.net>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v2(By Qu):
+  Make nossd disable ssd and ssd_spread.
+  Add notes in Documentation/btrfs.txt
+---
+ Documentation/filesystems/btrfs.txt | 3 +++
+ fs/btrfs/super.c                    | 4 +++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+index d11cc2f..f7d0878 100644
+--- a/Documentation/filesystems/btrfs.txt
++++ b/Documentation/filesystems/btrfs.txt
+@@ -201,6 +201,9 @@ Options with (*) are default options and will not show in the mount options.
+ 	of unused space, and may perform better on low-end ssds.  ssd_spread
+ 	implies ssd, enabling all other ssd heuristics as well.
+ 
++	Option nossd removes all ssd allocation heuristics, disabling
++	ssd_spread or ssd mount option.
++
+   subvol=<path>
+ 	Mount subvolume at <path> rather than the root subvolume.  <path> is
+ 	relative to the top level subvolume.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4662d92..cfe377a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -522,10 +522,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_ssd_spread:
+ 			btrfs_set_and_info(root, SSD_SPREAD,
+ 					   "use spread ssd allocation scheme");
++			btrfs_set_opt(info->mount_opt, SSD);
+ 			break;
+ 		case Opt_nossd:
+-			btrfs_clear_and_info(root, NOSSD,
++			btrfs_set_and_info(root, NOSSD,
+ 					     "not using ssd allocation scheme");
++			btrfs_clear_opt(info->mount_opt, SSD_SPREAD);
+ 			btrfs_clear_opt(info->mount_opt, SSD);
+ 			break;
+ 		case Opt_barrier:
+-- 
+2.0.1
 

@@ -1,115 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f45.google.com ([209.85.215.45]:35356 "EHLO
-	mail-la0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751134AbaGBM1Q convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 08:27:16 -0400
-Received: by mail-la0-f45.google.com with SMTP id hr17so6948262lab.18
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 05:27:14 -0700 (PDT)
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:23747 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751297AbaGBN6Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 09:58:25 -0400
+Message-ID: <53B40FEC.4030902@fb.com>
+Date: Wed, 2 Jul 2014 09:58:04 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
-	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>
-	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>
-	<3081460.dX0cLeJPhK@quad>
-	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>
-	<53B1A862.50503@fb.com>
-	<53B1ACAA.5040505@fb.com>
-	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>
-	<53B32275.6010200@fb.com>
-	<CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com>
-Date: Wed, 2 Jul 2014 07:27:14 -0500
-Message-ID: <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
+To: Cody P Schafer <dev@codyps.com>
+CC: Chris Samuel <chris@csamuel.org>, <linux-btrfs@vger.kernel.org>
 Subject: Re: Blocked tasks on 3.15.1
-From: Cody P Schafer <dev@codyps.com>
-To: Chris Mason <clm@fb.com>
-Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>	<3081460.dX0cLeJPhK@quad>	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>	<53B1A862.50503@fb.com>	<53B1ACAA.5040505@fb.com>	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>	<53B32275.6010200@fb.com>	<CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com> <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
+In-Reply-To: <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 1, 2014 at 6:05 PM, Cody P Schafer <dev@codyps.com> wrote:
-> On Tue, Jul 1, 2014 at 4:04 PM, Chris Mason <clm@fb.com> wrote:
->> On 06/30/2014 07:42 PM, Cody P Schafer wrote:
->>> On Mon, Jun 30, 2014 at 1:30 PM, Chris Mason <clm@fb.com> wrote:
->>>> On 06/30/2014 02:11 PM, Chris Mason wrote:
->>>>> On 06/29/2014 04:02 PM, Cody P Schafer wrote:
->>>>>> On Fri, Jun 27, 2014 at 7:22 PM, Chris Samuel <chris@csamuel.org> wrote:
->>>>>>> On Fri, 27 Jun 2014 05:20:41 PM Duncan wrote:
->>>>>>>
->>>>>>>> If I'm not mistaken the fix for the 3.16 series bug was:
->>>>>>>>
->>>>>>>> ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
->>>>>>>>
->>>>>>>> Btrfs: fix deadlocks with trylock on tree nodes.
->>>>>>>
->>>>>>> That patch applies cleanly to 3.15.2 so if it is indeed the fix it should
->>>>>>> probably go to -stable for the next 3.15 release..
->>>>>>>
->>>>>>> Unfortunately my test system died a while ago (hardware problem) and I've not
->>>>>>> been able to resurrect it yet.
->>>>>>
->>>>>> I'm also seeing stuck tasks on btrfs (3.14.4, 3.15.1, 3.15.2).
->>>>>> I've also tried 3.15.2 with ea4ebde02e08558b020c4b61bb9a4c applied on
->>>>>> top with similar results.
->>>>>> I've been triggering the hang with 'rsync -hPaHAXx --del /mnt/home/a/
->>>>>> /home/a/' where /mnt/home and /home are 2 separate btrfs filesystems
->>>>>> on 2 separate disks.
->>>>>>
->>>>>> dmesg with w-trigger: https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/419555&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=SAjzDO8AnhJBEWtUi6s8VGVQd2sORQ%2FJz5tWH4nOYWg%3D%0A&s=2c4ff3f7f39b2e6d3dcd4947905df54d6a534b35adf63c55d8c50e28ef5781b6
->>>>>> --
->>>>>
->>>>> These traces show us waiting for IO, but it doesn't show anyone doing
->>>>> the IO.  Either we're failing to kick off our work queues or they are
->>>>> stuck on something else.
->>>>>
->>>>> Could you please send a sysrq-t and sysrq-l while you're stuck?  That
->>>>> will show us all the procs and all the CPUs.
->>>>
->>>> Also, do you have any nodatacow files in here?  Please say yes.
->>>>
->>>
->>> kernel log from 3.15.2 + ea4ebde02 showing the blocked tasks,
->>> sysrq-{w,t,l} included
->>> https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/423296/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=SAjzDO8AnhJBEWtUi6s8VGVQd2sORQ%2FJz5tWH4nOYWg%3D%0A&s=5af8bc75059925af242b0eef1f4b94348d233d79968d53ff36b7c2594c9dd6b9
->>>
->>> I haven't explicitely created any nodatacow files, is there a quick
->>> way to tell if there are any? Right now I'm doing
->>> `lsattr -R /mnt/home/a/ 2>/dev/null | grep -- '^-*C-* '` to try and check.
->>>
->>> (2>/dev/null is hiding lots of "Operation not supported While reading
->>> flags on" warnings)
->>>
->>
->> If you haven't turned nodatacow on intentionally, you don't have any
->> nodatacow files ;)  I have been trying to reproduce this with rsync and
->> other code that hammers on the ordered writeback, but no luck yet.
->>
->> Before we spend too much time triggering it again, I'd like you to
->> please try a patch from Filipe that is in current mainline.  I've cherry
->> picked on top of 3.15.3 in a branch called v3.15.y:
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git v3.15.y
->
-> Will do. The rsync I'm running is processing a lot of chromium cache
-> files when it hangs (just for a reference), and ends up triggering a
-> bunch of deletes as well.
+On 07/02/2014 08:27 AM, Cody P Schafer wrote:
 
-Still a problem with your v3.15.y (eb97581), here's the log with
-sysrq-t and sysrq-l
-http://bpaste.net/show/428234/
+>> Will do. The rsync I'm running is processing a lot of chromium cache
+>> files when it hangs (just for a reference), and ends up triggering a
+>> bunch of deletes as well.
+> 
+> Still a problem with your v3.15.y (eb97581), here's the log with
+> sysrq-t and sysrq-l
+> https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/428234/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=9lRzEuxWeyHtsDXvFJNWlf2CgKZWZ1w%2FScqbUMy1jII%3D%0A&s=0daa1232bef652c4f16c9d12cdad408909feaa5069ba3c1888fa4895e01ec3a2
+> 
+> Also, correction, it's a firefox cache dir rsync that seems to trigger
+> it (stalls pretty early on and very consistently):
+> 
+> [... snip ...]
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/1F/F43F9d01
+>           5.23M 100%   17.82MB/s    0:00:00 (xfr#452, ir-chk=1201/6659)
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/23A66d01
+>         116.82K 100%  376.50kB/s    0:00:00 (xfr#453, ir-chk=1200/6659)
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/21/
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/23/
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/24/
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/
+> .cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/7C836d01
+> [... stall here ...]
+> 
 
-Also, correction, it's a firefox cache dir rsync that seems to trigger
-it (stalls pretty early on and very consistently):
+Ok, and just to clarify, are you actively using the files on the
+destination outside of rsync?
 
-[... snip ...]
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/1F/F43F9d01
-          5.23M 100%   17.82MB/s    0:00:00 (xfr#452, ir-chk=1201/6659)
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/20/23A66d01
-        116.82K 100%  376.50kB/s    0:00:00 (xfr#453, ir-chk=1200/6659)
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/21/
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/23/
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/24/
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/
-.cache/mozilla/firefox/kqtl1tlc.test/Cache/7/25/7C836d01
-[... stall here ...]
+-chris

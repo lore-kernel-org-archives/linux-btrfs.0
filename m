@@ -1,50 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3502 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:57337 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752163AbaGBCgl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 22:36:41 -0400
-Message-ID: <53B370A7.6050108@cn.fujitsu.com>
-Date: Wed, 2 Jul 2014 10:38:31 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+	with ESMTP id S1751306AbaGBDEN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 23:04:13 -0400
+Message-ID: <53B375A8.9000802@cn.fujitsu.com>
+Date: Wed, 2 Jul 2014 10:59:52 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Anand Jain <anand.jain@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs: fix null pointer dereference in clone_fs_devices
- when name is null
-References: <1404119568-4097-1-git-send-email-Anand.Jain@oracle.com> <53B135B2.5060405@cn.fujitsu.com> <53B17D0E.2050302@oracle.com>
-In-Reply-To: <53B17D0E.2050302@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+CC: <linux-btrfs@vger.kernel.org>, <quwenruo@cn.fujitsu.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH 1/2 v3 RESEND] Btrfs: device_list_add() should not update
+ list when mounted
+References: <1402633581-19265-1-git-send-email-Anand.Jain@oracle.com> <53B26066.1060505@cn.fujitsu.com> <53B2E27D.2030609@oracle.com>
+In-Reply-To: <53B2E27D.2030609@oracle.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 30 Jun 2014 23:06:54 +0800, Anand Jain wrote:
-> 
->> The primary reason of this problem is that we didn't scan the system and
->> find all the devices in the filesystem, if we scan the system, we can
->> mount the filesystem successfully, needn't mount it with degraded option.
->> so I think the right way to fix is to scan the system and find the device
->> that is not registered into the fs device list.
-> 
-> Thanks for commenting. Right. But I am testing the error
-> scenario. that is, when one of the disk is missing in the system.
+On 07/02/2014 12:31 AM, Anand Jain wrote:
+>
+>
+> Thanks for the commenting Wang.
+> inline below.
+>
+>
+> On 01/07/2014 15:16, Wang Shilong wrote:
+>> Hi Anand,
+>>
+>> Sorry for delay reply, more comments below:
+>>
+>> On 06/13/2014 12:26 PM, Anand Jain wrote:
+>>> From: Anand Jain <anand.jain@oracle.com>
+>>>
+[...]
+>> I agree we don't allow to update device list when mounted, i tested this
+>> patch, it worked but
+>
+> Thanks for testing this patch set.
+>
+>> it will output the following message:
+>>
+>> Scanning for Btrfs filesystems in '/dev/sdc'
+>> ERROR: unable to scan the device '/dev/sdc' - Device or resource busy
+>>
+>> I think this is a little confusing for common users. Maybe don't return
+>> error but output
+>> some log message into kernel buffer, better?
+>
+>
+>  the Other choices are:
+>
+>  display the error only when specific device is used
+>  by the user like 'btrfs dev scan /dev/sdc' And don't print busy /
+>  invalid error when a system wide scan is used like 'btrfs dev scan'.
+>  To achieve this we have to tweak btrfs-progs.
 
-In fact, the disk is still in the system, but is not added into btrfs device list
-(we can add it by "btrfs device scan" command), and after you mount the fs with
-degraded option, the fs adds that disk as a missing device, so it doesn't has its
-name.
+Maybe return EEXIST value here is better.
 
-Though avoiding access a null pointer is right, you didn't consider the missing
-device and forgot to set the missing device counter. I think the following code
-is better.
+Also for your second patch, if we replace one disk with existed disk,
+printk that info is good.:-)
 
-if (orig_dev->missing) {
-	device->missing = 1;
-	fs_devices->missing_devices++;
-} else {
-	ASSERT(orig_dev->name);
-	......
-}
+Regard,
+Wang
+>
+>  or put the error under the verbose option in the btrfs-progs.
+>
+>
+>
+>
+>> Thanks,
+>> Wang
+>>>           name = rcu_string_strdup(path, GFP_NOFS);
+>>>           if (!name)
+>>>               return -ENOMEM;
+>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
+> .
+>
 
-Thanks
-Miao

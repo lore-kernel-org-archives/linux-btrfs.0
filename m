@@ -1,87 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:56258 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753994AbaGBBIc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:08:32 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id C8AE83EE0BB
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:31 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id D0409AC0159
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:30 +0900 (JST)
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 7FFE71DB8045
-	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:30 +0900 (JST)
-Message-ID: <53B35B7F.1090703@jp.fujitsu.com>
-Date: Wed, 2 Jul 2014 10:08:15 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:46051 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751748AbaGBC03 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 22:26:29 -0400
+Message-ID: <53B36E41.4030601@cn.fujitsu.com>
+Date: Wed, 2 Jul 2014 10:28:17 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Filipe David Borba Manana <fdmanana@gmail.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 5/6 v5] Btrfs: add missing cleanup on sysfs init failure
-References: <1398002808-11080-1-git-send-email-fdmanana@gmail.com> <1403524871-2131-1-git-send-email-fdmanana@gmail.com>
-In-Reply-To: <1403524871-2131-1-git-send-email-fdmanana@gmail.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] Btrfs: fix race of using total_bytes_pinned
+References: <1404206926-7953-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1404206926-7953-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/06/23 21:01), Filipe David Borba Manana wrote:
-> If we failed during initialization of sysfs, we weren't unregistering the
-> top level btrfs sysfs entry nor the debugfs stuff.
-> Not unregistering the top level sysfs entry makes future attempts to reload
-> the btrfs module impossible and the following is reported in dmesg:
+On Tue, 1 Jul 2014 17:28:46 +0800, Liu Bo wrote:
+> This percpu counter @total_bytes_pinned is introduced to skip unnecessary
+> operations of 'commit transaction', it accounts for those space we may free
+> but are stuck in delayed refs.
 > 
-> [ 2246.451296] WARNING: CPU: 3 PID: 10999 at fs/sysfs/dir.c:486 sysfs_warn_dup+0x91/0xb0()
-> [ 2246.451298] sysfs: cannot create duplicate filename '/fs/btrfs'
-> [ 2246.451298] Modules linked in: btrfs(+) raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc parport psmouse serio_raw pcspkr evbug i2c_piix4 e1000 floppy [last unloaded: btrfs]
-> [ 2246.451310] CPU: 3 PID: 10999 Comm: modprobe Tainted: G        W    3.13.0-fdm-btrfs-next-24+ #7
-> [ 2246.451311] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
-> [ 2246.451312]  0000000000000009 ffff8800d353fa08 ffffffff816f1da6 0000000000000410
-> [ 2246.451314]  ffff8800d353fa58 ffff8800d353fa48 ffffffff8104a32c ffff88020821a290
-> [ 2246.451316]  ffff88020821a290 ffff88020821a290 ffff8802148f0000 ffff8800d353fb80
-> [ 2246.451318] Call Trace:
-> [ 2246.451322]  [<ffffffff816f1da6>] dump_stack+0x4e/0x68
-> [ 2246.451324]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
-> [ 2246.451325]  [<ffffffff8104a416>] warn_slowpath_fmt+0x46/0x50
-> [ 2246.451328]  [<ffffffff81367dc5>] ? strlcat+0x65/0x90
-> (....)
+> And we zero out @space_info->total_bytes_pinned every transaction period so
+> we have a better idea of how much space we'll actually free up by committing
+> this transaction.  However, we do the 'zero out' part a little earlier, before
+> we actually unpin space, so we end up returning ENOSPC when we actually have
+> free space that's just unpinned from committing transaction.
 > 
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
+> xfstests/generic/074 complained then.
+> 
+> This fixes it by actually accounting the percpu pinned number when 'unpin',
+> and when finding space for writing, if it finds that pinned bytes is less
+> than needed, we first try again to check if we have space now, as someone
+> may have committed transaction, yes means we're good, while no means we
+> really have run out of space.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
+> v3: Really account the percpu pinned number when unpin, instead of zeroing
+>     it out, as we set transaction with UNBLOCKED before 'unpin', zeroing it
+>     out may end up with messing percpu pinned number(suggested by Miao).
+> v2: Add missing brakets for if statement
 > 
-> V1..V4: There's no v1, v2, v3 and v4. Bumped directly to v5 to make all patches
->      in the series have the same version.
-> V5: Rebased against latest chris/integration branch.
+>  fs/btrfs/extent-tree.c | 20 ++++++++++++--------
+>  1 file changed, 12 insertions(+), 8 deletions(-)
 > 
->   fs/btrfs/sysfs.c | 10 +++++++++-
->   1 file changed, 9 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index df39458..06ad529 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -710,10 +710,18 @@ int btrfs_init_sysfs(void)
->   
->   	ret = btrfs_init_debugfs();
->   	if (ret)
-> -		return ret;
-> +		goto out1;
->   
->   	init_feature_attrs();
->   	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
-> +	if (ret)
-> +		goto out2;
-> +
-> +	return 0;
-> +out2:
-> +	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
-> +out1:
-> +	kset_unregister(btrfs_kset);
->   
->   	return ret;
->   }
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 99c2539..f36fb13 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3685,7 +3685,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>  	u64 used;
+> -	int ret = 0, committed = 0, alloc_chunk = 1;
+> +	int ret = 0, committed = 0, alloc_chunk = 1, check_pinned = 0;
+>  
+>  	/* make sure bytes are sectorsize aligned */
+>  	bytes = ALIGN(bytes, root->sectorsize);
+> @@ -3756,11 +3756,18 @@ alloc:
+>  		 * allocation don't bother committing the transaction.
+>  		 */
+>  		if (percpu_counter_compare(&data_sinfo->total_bytes_pinned,
+> -					   bytes) < 0)
+> -			committed = 1;
+> +					   bytes) < 0) {
+> +			if (check_pinned) {
+> +				committed = 1;	/* really run out of space. */
+> +			} else {
+> +				check_pinned = 1;
+> +				spin_unlock(&data_sinfo->lock);
+> +				goto again;
+> +			}
+> +		}
+
+Is there anything wrong in the original code? I think we needn't change the code here
+because we are not sure anyone would commit the transaction, and though someone is
+committing the transaction, the process is slow, we still need commit the transaction
+by ourselves mostly(In fact, this commit is just to wait the transaction to complete)
+(The above analysis has not been confirmed)
+
+Thanks
+Miao
+
+>  		spin_unlock(&data_sinfo->lock);
+>  
+> -		/* commit the current transaction and try again */
+> +	/* commit the current transaction and try again */
+>  commit_trans:
+>  		if (!committed &&
+>  		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
+> @@ -5678,7 +5685,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+>  	struct btrfs_caching_control *next;
+>  	struct btrfs_caching_control *caching_ctl;
+>  	struct btrfs_block_group_cache *cache;
+> -	struct btrfs_space_info *space_info;
+>  
+>  	down_write(&fs_info->commit_root_sem);
+>  
+> @@ -5701,9 +5707,6 @@ void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+>  
+>  	up_write(&fs_info->commit_root_sem);
+>  
+> -	list_for_each_entry_rcu(space_info, &fs_info->space_info, list)
+> -		percpu_counter_set(&space_info->total_bytes_pinned, 0);
+> -
+>  	update_global_block_rsv(fs_info);
+>  }
+>  
+> @@ -5741,6 +5744,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+>  		spin_lock(&cache->lock);
+>  		cache->pinned -= len;
+>  		space_info->bytes_pinned -= len;
+> +		percpu_counter_add(&space_info->total_bytes_pinned, -len);
+>  		if (cache->ro) {
+>  			space_info->bytes_readonly += len;
+>  			readonly = true;
 > 
 

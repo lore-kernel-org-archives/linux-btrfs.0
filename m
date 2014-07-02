@@ -1,55 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47260 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751995AbaGBBjS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:39:18 -0400
-Message-ID: <53B362B6.6000903@oracle.com>
-Date: Wed, 02 Jul 2014 09:39:02 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:46644 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932463AbaGBB7B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:59:01 -0400
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 64E643EE0B6
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:58:59 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 64EC0AC03B8
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:58:58 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 1777D1DB8040
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:58:58 +0900 (JST)
+Message-ID: <53B36756.5030601@jp.fujitsu.com>
+Date: Wed, 2 Jul 2014 10:58:46 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: device add must be sysloged
-References: <1404147537-19873-1-git-send-email-Anand.Jain@oracle.com> <20140701174621.GQ1553@twin.jikos.cz>
-In-Reply-To: <20140701174621.GQ1553@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: <dsterba@suse.cz>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] Btrfs: clear compress-force when remounting with compress
+ option
+References: <1404096685-10591-1-git-send-email-wangsl.fnst@cn.fujitsu.com> <20140701160457.GM1553@twin.jikos.cz>
+In-Reply-To: <20140701160457.GM1553@twin.jikos.cz>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 02/07/2014 01:46, David Sterba wrote:
-> On Tue, Jul 01, 2014 at 12:58:56AM +0800, Anand Jain wrote:
->> when we add a new disk to the mounted btrfs we don't record it
->> as of now, disk add is a critical change of btrfs configuration,
->> it must be recorded in the syslog to help offline investigations
->> of customer problems when reported.
+(2014/07/02 1:04), David Sterba wrote:
+> On Mon, Jun 30, 2014 at 10:51:25AM +0800, Wang Shilong wrote:
+>> Steps to reproduce:
+>>   # mkfs.btrfs -f /dev/sdb
+>>   # mount /dev/sdb /mnt -o compress-force=lzo
+>>   # mount /dev/sdb /mnt -o remount,compress=zlib
+>>   # cat /proc/mounts
 >>
->> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->> ---
->>   fs/btrfs/ioctl.c | 3 +++
->>   1 file changed, 3 insertions(+)
+>> Remounting from compress-force to compress could not clear compress-force
+>> option. The problem is there is no way for users to clear compress-force
+>> option separately.
 >>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 86d5474..16d20df 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -2488,6 +2488,9 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
->>   	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
->>   	ret = btrfs_init_new_device(root, vol_args->name);
+>> Fix this problem by clearing @FORCE_COMPRESS flag when remounting to
+>> compress=xxx.
 >>
->> +	if (!ret)
->> +		btrfs_info(root->fs_info, "disk added %s",vol_args->name);
+>> Suggested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+>> Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 >
-> Please use 'device' instead, I think we're moving away from 'disk'
-> everywhere else. Nitpick: space after the ,
-
-yes, you are right. Thanks for commenting.
-
-> Otherwise good,
+> I'm sorry for lack of answer in the V1 thread, V2 is the minimal bugfix
+> and I'm fine with it right away.
 >
 > Reviewed-by: David Sterba <dsterba@suse.cz>
+
+Test result (I used your reproducer):
+   3.16-rc3:               FAIL
+   3.16-rc3 w/ your patch: PASS
+
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+Thanks,
+Satoru
+
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
+

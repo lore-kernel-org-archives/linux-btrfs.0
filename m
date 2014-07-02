@@ -1,35 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f41.google.com ([209.85.219.41]:36152 "EHLO
-	mail-oa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752002AbaGBKua (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 06:50:30 -0400
-Received: by mail-oa0-f41.google.com with SMTP id l6so12124689oag.28
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jul 2014 03:50:30 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:40152 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751228AbaGBLPg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Jul 2014 07:15:36 -0400
+Date: Wed, 2 Jul 2014 13:15:34 +0200
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, Eric Sandeen <sandeen@redhat.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: add supported attr flags to btrfs(5)
+Message-ID: <20140702111534.GA1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <53AC84C9.2080106@redhat.com>
+ <20140627134257.GE1553@twin.jikos.cz>
+ <53AD860A.8090804@redhat.com>
+ <20140627153017.GF1553@suse.cz>
+ <53AD8F96.4060401@redhat.com>
+ <20140627161025.GG1553@suse.cz>
+ <53AD9DF2.9030200@redhat.com>
+ <20140701174346.GP1553@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20140702093436.GX1553@suse.cz>
-References: <20140627123528.GC1553@twin.jikos.cz>
-	<1404100452-8894-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	<20140701231101.GT1553@twin.jikos.cz>
-	<CALOYprWCwP0o0of0FCzrZSw8B5cU8kZT=TQB8RPJ0hXu5fF8nQ@mail.gmail.com>
-	<20140702093436.GX1553@suse.cz>
-Date: Wed, 2 Jul 2014 11:50:29 +0100
-Message-ID: <CALOYprW2iy40SdQMkBdwyQPj5ppouuZcCoNiV00nNa_uWRcZCw@mail.gmail.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: move the check_argc_* functions into utils.c
-From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
-To: dsterba@suse.cz, WorMzy Tykashi <wormzy.tykashi@gmail.com>,
-        Gui Hecheng <guihc.fnst@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140701174346.GP1553@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2 July 2014 10:34, David Sterba <dsterba@suse.cz> wrote:
->
-> Oh sorry, fixed branch pushed. I've added the utils.h inlucde into
-> cmds-property.c as well, fixes "implicit declaration of function"
-> warnings.
+On Tue, Jul 01, 2014 at 07:43:46PM +0200, David Sterba wrote:
+> > (only nitpick: is 'X' ever reported by lsattr on btrfs?  If so,
+> > it could/should still be included)
+> 
+> I'll take a look and will keep 'X' if it's visible somewher.
 
-Great stuff, thanks.
-
-
-WorMzy
+For the record, with sufficiently new e2fsprogs 'X' appears if the file
+has the NOCMPRESS bit set.

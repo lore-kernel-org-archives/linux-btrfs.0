@@ -1,46 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46966 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:47260 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751995AbaGBBh7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:37:59 -0400
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2 v2] btrfs: device delete must be sysloged
-Date: Wed,  2 Jul 2014 09:37:32 +0800
-Message-Id: <1404265052-29424-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1404265052-29424-1-git-send-email-Anand.Jain@oracle.com>
-References: <1404147537-19873-1-git-send-email-Anand.Jain@oracle.com>
- <1404265052-29424-1-git-send-email-Anand.Jain@oracle.com>
+	with ESMTP id S1751995AbaGBBjS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:39:18 -0400
+Message-ID: <53B362B6.6000903@oracle.com>
+Date: Wed, 02 Jul 2014 09:39:02 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: device add must be sysloged
+References: <1404147537-19873-1-git-send-email-Anand.Jain@oracle.com> <20140701174621.GQ1553@twin.jikos.cz>
+In-Reply-To: <20140701174621.GQ1553@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-as in the disk add patch, disk detached from the volume must be
-recorded in the syslog as well for the same reason.
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
----
- v2: Accepts David's review comments, thanks
 
- fs/btrfs/ioctl.c | 4 ++++
- 1 file changed, 4 insertions(+)
+On 02/07/2014 01:46, David Sterba wrote:
+> On Tue, Jul 01, 2014 at 12:58:56AM +0800, Anand Jain wrote:
+>> when we add a new disk to the mounted btrfs we don't record it
+>> as of now, disk add is a critical change of btrfs configuration,
+>> it must be recorded in the syslog to help offline investigations
+>> of customer problems when reported.
+>>
+>> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+>> ---
+>>   fs/btrfs/ioctl.c | 3 +++
+>>   1 file changed, 3 insertions(+)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 86d5474..16d20df 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -2488,6 +2488,9 @@ static long btrfs_ioctl_add_dev(struct btrfs_root *root, void __user *arg)
+>>   	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+>>   	ret = btrfs_init_new_device(root, vol_args->name);
+>>
+>> +	if (!ret)
+>> +		btrfs_info(root->fs_info, "disk added %s",vol_args->name);
+>
+> Please use 'device' instead, I think we're moving away from 'disk'
+> everywhere else. Nitpick: space after the ,
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4e10259..016a5eb 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2531,6 +2531,10 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 	mutex_unlock(&root->fs_info->volume_mutex);
- 	atomic_set(&root->fs_info->mutually_exclusive_operation_running, 0);
- 
-+	if (!ret)
-+		btrfs_info(root->fs_info, "device deleted %s",
-+							vol_args->name);
-+
- out:
- 	kfree(vol_args);
- 	mnt_drop_write_file(file);
--- 
-2.0.0.257.g75cc6c6
+yes, you are right. Thanks for commenting.
 
+> Otherwise good,
+>
+> Reviewed-by: David Sterba <dsterba@suse.cz>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

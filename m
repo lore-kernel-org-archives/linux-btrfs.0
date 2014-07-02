@@ -1,96 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f53.google.com ([209.85.215.53]:46442 "EHLO
-	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752980AbaGAXGA convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 19:06:00 -0400
-Received: by mail-la0-f53.google.com with SMTP id b8so6338420lan.40
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Jul 2014 16:05:59 -0700 (PDT)
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:56258 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753994AbaGBBIc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jul 2014 21:08:32 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id C8AE83EE0BB
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:31 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id D0409AC0159
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:30 +0900 (JST)
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 7FFE71DB8045
+	for <linux-btrfs@vger.kernel.org>; Wed,  2 Jul 2014 10:08:30 +0900 (JST)
+Message-ID: <53B35B7F.1090703@jp.fujitsu.com>
+Date: Wed, 2 Jul 2014 10:08:15 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <53B32275.6010200@fb.com>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
-	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>
-	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>
-	<3081460.dX0cLeJPhK@quad>
-	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>
-	<53B1A862.50503@fb.com>
-	<53B1ACAA.5040505@fb.com>
-	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>
-	<53B32275.6010200@fb.com>
-Date: Tue, 1 Jul 2014 18:05:59 -0500
-Message-ID: <CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com>
-Subject: Re: Blocked tasks on 3.15.1
-From: Cody P Schafer <dev@codyps.com>
-To: Chris Mason <clm@fb.com>
-Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Filipe David Borba Manana <fdmanana@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 5/6 v5] Btrfs: add missing cleanup on sysfs init failure
+References: <1398002808-11080-1-git-send-email-fdmanana@gmail.com> <1403524871-2131-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1403524871-2131-1-git-send-email-fdmanana@gmail.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 1, 2014 at 4:04 PM, Chris Mason <clm@fb.com> wrote:
-> On 06/30/2014 07:42 PM, Cody P Schafer wrote:
->> On Mon, Jun 30, 2014 at 1:30 PM, Chris Mason <clm@fb.com> wrote:
->>> On 06/30/2014 02:11 PM, Chris Mason wrote:
->>>> On 06/29/2014 04:02 PM, Cody P Schafer wrote:
->>>>> On Fri, Jun 27, 2014 at 7:22 PM, Chris Samuel <chris@csamuel.org> wrote:
->>>>>> On Fri, 27 Jun 2014 05:20:41 PM Duncan wrote:
->>>>>>
->>>>>>> If I'm not mistaken the fix for the 3.16 series bug was:
->>>>>>>
->>>>>>> ea4ebde02e08558b020c4b61bb9a4c0fcf63028e
->>>>>>>
->>>>>>> Btrfs: fix deadlocks with trylock on tree nodes.
->>>>>>
->>>>>> That patch applies cleanly to 3.15.2 so if it is indeed the fix it should
->>>>>> probably go to -stable for the next 3.15 release..
->>>>>>
->>>>>> Unfortunately my test system died a while ago (hardware problem) and I've not
->>>>>> been able to resurrect it yet.
->>>>>
->>>>> I'm also seeing stuck tasks on btrfs (3.14.4, 3.15.1, 3.15.2).
->>>>> I've also tried 3.15.2 with ea4ebde02e08558b020c4b61bb9a4c applied on
->>>>> top with similar results.
->>>>> I've been triggering the hang with 'rsync -hPaHAXx --del /mnt/home/a/
->>>>> /home/a/' where /mnt/home and /home are 2 separate btrfs filesystems
->>>>> on 2 separate disks.
->>>>>
->>>>> dmesg with w-trigger: https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/419555&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=SAjzDO8AnhJBEWtUi6s8VGVQd2sORQ%2FJz5tWH4nOYWg%3D%0A&s=2c4ff3f7f39b2e6d3dcd4947905df54d6a534b35adf63c55d8c50e28ef5781b6
->>>>> --
->>>>
->>>> These traces show us waiting for IO, but it doesn't show anyone doing
->>>> the IO.  Either we're failing to kick off our work queues or they are
->>>> stuck on something else.
->>>>
->>>> Could you please send a sysrq-t and sysrq-l while you're stuck?  That
->>>> will show us all the procs and all the CPUs.
->>>
->>> Also, do you have any nodatacow files in here?  Please say yes.
->>>
->>
->> kernel log from 3.15.2 + ea4ebde02 showing the blocked tasks,
->> sysrq-{w,t,l} included
->> https://urldefense.proofpoint.com/v1/url?u=http://bpaste.net/show/423296/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=SAjzDO8AnhJBEWtUi6s8VGVQd2sORQ%2FJz5tWH4nOYWg%3D%0A&s=5af8bc75059925af242b0eef1f4b94348d233d79968d53ff36b7c2594c9dd6b9
->>
->> I haven't explicitely created any nodatacow files, is there a quick
->> way to tell if there are any? Right now I'm doing
->> `lsattr -R /mnt/home/a/ 2>/dev/null | grep -- '^-*C-* '` to try and check.
->>
->> (2>/dev/null is hiding lots of "Operation not supported While reading
->> flags on" warnings)
->>
->
-> If you haven't turned nodatacow on intentionally, you don't have any
-> nodatacow files ;)  I have been trying to reproduce this with rsync and
-> other code that hammers on the ordered writeback, but no luck yet.
->
-> Before we spend too much time triggering it again, I'd like you to
-> please try a patch from Filipe that is in current mainline.  I've cherry
-> picked on top of 3.15.3 in a branch called v3.15.y:
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git v3.15.y
->
-> -chris
->
+(2014/06/23 21:01), Filipe David Borba Manana wrote:
+> If we failed during initialization of sysfs, we weren't unregistering the
+> top level btrfs sysfs entry nor the debugfs stuff.
+> Not unregistering the top level sysfs entry makes future attempts to reload
+> the btrfs module impossible and the following is reported in dmesg:
+> 
+> [ 2246.451296] WARNING: CPU: 3 PID: 10999 at fs/sysfs/dir.c:486 sysfs_warn_dup+0x91/0xb0()
+> [ 2246.451298] sysfs: cannot create duplicate filename '/fs/btrfs'
+> [ 2246.451298] Modules linked in: btrfs(+) raid6_pq xor bnep rfcomm bluetooth binfmt_misc nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache sunrpc parport_pc parport psmouse serio_raw pcspkr evbug i2c_piix4 e1000 floppy [last unloaded: btrfs]
+> [ 2246.451310] CPU: 3 PID: 10999 Comm: modprobe Tainted: G        W    3.13.0-fdm-btrfs-next-24+ #7
+> [ 2246.451311] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+> [ 2246.451312]  0000000000000009 ffff8800d353fa08 ffffffff816f1da6 0000000000000410
+> [ 2246.451314]  ffff8800d353fa58 ffff8800d353fa48 ffffffff8104a32c ffff88020821a290
+> [ 2246.451316]  ffff88020821a290 ffff88020821a290 ffff8802148f0000 ffff8800d353fb80
+> [ 2246.451318] Call Trace:
+> [ 2246.451322]  [<ffffffff816f1da6>] dump_stack+0x4e/0x68
+> [ 2246.451324]  [<ffffffff8104a32c>] warn_slowpath_common+0x8c/0xc0
+> [ 2246.451325]  [<ffffffff8104a416>] warn_slowpath_fmt+0x46/0x50
+> [ 2246.451328]  [<ffffffff81367dc5>] ? strlcat+0x65/0x90
+> (....)
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
 
-Will do. The rsync I'm running is processing a lot of chromium cache
-files when it hangs (just for a reference), and ends up triggering a
-bunch of deletes as well.
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+> ---
+> 
+> V1..V4: There's no v1, v2, v3 and v4. Bumped directly to v5 to make all patches
+>      in the series have the same version.
+> V5: Rebased against latest chris/integration branch.
+> 
+>   fs/btrfs/sysfs.c | 10 +++++++++-
+>   1 file changed, 9 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index df39458..06ad529 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -710,10 +710,18 @@ int btrfs_init_sysfs(void)
+>   
+>   	ret = btrfs_init_debugfs();
+>   	if (ret)
+> -		return ret;
+> +		goto out1;
+>   
+>   	init_feature_attrs();
+>   	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+> +	if (ret)
+> +		goto out2;
+> +
+> +	return 0;
+> +out2:
+> +	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
+> +out1:
+> +	kset_unregister(btrfs_kset);
+>   
+>   	return ret;
+>   }
+> 
+

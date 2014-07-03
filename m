@@ -1,71 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28599 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63066 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752151AbaGDCEh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 22:04:37 -0400
-Message-ID: <1404439153.22279.10.camel@localhost.localdomain>
-Subject: Re: [PATCH 1/2] btrfs-progs: add ask_user confirmation for
- btrfstune clear seeding flag
+	with ESMTP id S1754536AbaGCCMI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 22:12:08 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s632C4wA013408
+	for <linux-btrfs@vger.kernel.org>; Thu, 3 Jul 2014 10:12:04 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Fri, 4 Jul 2014 09:59:13 +0800
-In-Reply-To: <20140703165145.GG1553@twin.jikos.cz>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: add mount status check for btrfs-image
+Date: Thu, 3 Jul 2014 10:06:34 +0800
+Message-ID: <1404353196-10914-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1404353196-10914-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 References: <1404353196-10914-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20140703165145.GG1553@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-07-03 at 18:51 +0200, David Sterba wrote:
-> On Thu, Jul 03, 2014 at 10:06:33AM +0800, Gui Hecheng wrote:
-> > Clear the seeding flag may cause the original filesystem to be writable,
-> > which is dangerous.
-> 
-> Can you please describe the dangerous scenario a bit more? This would
-> also go to the documentation so it's not only to satisfy my curiosity.
+The btrfs-image tool should not be run on a mounted filesystem.
+The undergoing fs operations may change what you have imaged a while ago,
+this makes the image meanmingless.
 
-Yes, I'll include a certain scenario in the changelog of a v2 patch.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ btrfs-image.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-> Dropping the seeding flag could be dangerous if the filesystem starts in
-> seeding mode, a new device is added, some writes are done, then
-> filesystem is unmounted.
-> 
-> Now it's a 2 device filesystem, where the orignal holds some data and
-> without the seeding flag it would accept new writes. Still ok for me,
-> though this is probably the time where some user assumptions may break.
-> 
-> > In this case, add user confirmation check when clearing seeding flag.
-> > Also warn the user that the fs is in a dangerous condition when
-> > the seeding flag is cleared if it it forced to.
-> 
-> The -y option is tied only to the seeding option, but it should IMO be
-> more general and called --force.
-
-I agree.
-
-> > Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-> > ---
-> >  btrfstune.c | 24 +++++++++++++++++++++++-
-> >  1 file changed, 23 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/btrfstune.c b/btrfstune.c
-> > index 3f2f0cd..0e18088 100644
-> > --- a/btrfstune.c
-> > +++ b/btrfstune.c
-> > @@ -103,6 +104,7 @@ static void print_usage(void)
-> >  	fprintf(stderr, "\t-S value\tpositive value will enable seeding, zero to disable, negative is not allowed\n");
-> >  	fprintf(stderr, "\t-r \t\tenable extended inode refs\n");
-> >  	fprintf(stderr, "\t-x \t\tenable skinny metadata extent refs\n");
-> > +	fprintf(stderr, "\t-y \t\tsay yes to clear the seeding flag, make sure that you are aware of the danger\n");
-> 
-> The help text could say someting like
-> 
-> 		"--force\tallow dangerous changes\n"
-> 
-> btrfstune only allows setting the bit for extref and skinny-metadata,
-> unsetting would be dangerous as well.
-On my part, I don't find any scenarioes for these two, could you please
-remind me more?
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 985aa26..9719d1c 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -2570,10 +2570,20 @@ int main(int argc, char *argv[])
+ 			num_threads = 1;
+ 	}
+ 
+-	if (create)
++	if (create) {
++		ret = check_mounted(source);
++		if (ret < 0) {
++			fprintf(stderr, "Could not check mount status: %s\n",
++			strerror(-ret));
++			exit(1);
++		} else if (ret) {
++			fprintf(stderr, "The device is busy\n");
++			exit(1);
++		}
++
+ 		ret = create_metadump(source, out, num_threads,
+ 				      compress_level, sanitize, walk_trees);
+-	else
++	} else
+ 		ret = restore_metadump(source, out, old_restore, 1,
+ 				       multi_devices);
+ 	if (ret) {
+-- 
+1.8.1.4
 

@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43967 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56580 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1759135AbaGCKUw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 06:20:52 -0400
+	with ESMTP id S1755959AbaGCKUt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 06:20:49 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s63AKl9g013563
+	for <linux-btrfs@vger.kernel.org>; Thu, 3 Jul 2014 18:20:47 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 9/9] Btrfs: fix writing data into the seed filesystem
-Date: Thu, 3 Jul 2014 18:22:13 +0800
-Message-ID: <1404382933-26672-9-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH RESEND 6/9] Btrfs: cleanup the read failure record after write or when the inode is freeing
+Date: Thu, 3 Jul 2014 18:22:10 +0800
+Message-ID: <1404382933-26672-6-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,119 +18,106 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we mounted a seed filesystem with degraded option, and then added a new
-device into the seed filesystem, then we found adding device failed because
-of the IO failure.
+After the data is written successfully, we should cleanup the read failure record
+in that range because
+- If we set data COW for the file, the range that the failure record pointed to is
+  mapped to a new place, so it is invalid.
+- If we set no data COW for the file, and if there is no error during writting,
+  the corrupted data is corrected, so the failure record can be removed. And if
+  some errors happen on the mirrors, we also needn't worry about it because the
+  failure record will be recreated if we read the same place again.
 
-Steps to reproduce:
- # mkfs.btrfs -d raid1 -m raid1 <dev0> <dev1>
- # btrfstune -S 1 <dev0>
- # mount <dev0> -o degraded <mnt>
- # btrfs device add -f <dev2> <mnt>
+Sometimes, we may fail to correct the data, so the failure records will be left
+in the tree, we need free them when we free the inode or the memory leak happens.
 
-It is because the original didn't set the chunk on the seed device to be
-read-only if the degraded flag was set. It was introduced by patch f48b90756,
-which fixed the problem the raid1 filesystem became read-only after one device
-of it was missing. But this fix method was not right, we should set the read-only
-flag according to the number of the missing devices, not the degraded mount
-option, if the number of the missing devices is less than the max error number
-that the profile of the chunk tolerates, we don't set it to be read-only.
-
-Cc: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 52 ++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 36 insertions(+), 16 deletions(-)
+ fs/btrfs/extent_io.c | 34 ++++++++++++++++++++++++++++++++++
+ fs/btrfs/extent_io.h |  1 +
+ fs/btrfs/inode.c     |  6 ++++++
+ 3 files changed, 41 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 73a82e5..daecfa5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4584,12 +4584,31 @@ out:
- 	return ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 3a64354..d67bb4f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2003,6 +2003,40 @@ static int free_io_failure(struct inode *inode, struct io_failure_record *rec,
  }
  
-+static inline int btrfs_chunk_max_errors(struct map_lookup *map)
+ /*
++ * Can be called when
++ * - hold extent lock
++ * - under ordered extent
++ * - the inode is freeing
++ */
++void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end)
 +{
-+	int max_errors;
++	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
++	struct io_failure_record *failrec;
++	struct extent_state *state, *next;
 +
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
-+			 BTRFS_BLOCK_GROUP_RAID10 |
-+			 BTRFS_BLOCK_GROUP_RAID5 |
-+			 BTRFS_BLOCK_GROUP_DUP)) {
-+		max_errors = 1;
-+	} else if (map->type & BTRFS_BLOCK_GROUP_RAID6) {
-+		max_errors = 2;
-+	} else {
-+		max_errors = 0;
++	if (RB_EMPTY_ROOT(&failure_tree->state))
++		return;
++
++	spin_lock(&failure_tree->lock);
++	state = find_first_extent_bit_state(failure_tree, start, EXTENT_DIRTY);
++	while (state) {
++		if (state->start > end)
++			break;
++
++		ASSERT(state->end <= end);
++
++		next = next_state(state);
++
++		failrec = (struct io_failure_record *)state->private;
++		free_extent_state(state);
++		kfree(failrec);
++
++		state = next;
 +	}
-+
-+	return max_errors;
++	spin_unlock(&failure_tree->lock);
 +}
 +
- int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
- {
- 	struct extent_map *em;
- 	struct map_lookup *map;
- 	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
- 	int readonly = 0;
-+	int miss_ndevs = 0;
- 	int i;
- 
- 	read_lock(&map_tree->map_tree.lock);
-@@ -4598,18 +4617,27 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
- 	if (!em)
- 		return 1;
- 
--	if (btrfs_test_opt(root, DEGRADED)) {
--		free_extent_map(em);
--		return 0;
--	}
--
- 	map = (struct map_lookup *)em->bdev;
- 	for (i = 0; i < map->num_stripes; i++) {
-+		if (map->stripes[i].dev->missing) {
-+			miss_ndevs++;
-+			continue;
-+		}
-+
- 		if (!map->stripes[i].dev->writeable) {
- 			readonly = 1;
--			break;
-+			goto end;
- 		}
- 	}
-+
-+	/*
-+	 * If the number of missing devices is larger than max errors,
-+	 * we can not write the data into that chunk successfully, so
-+	 * set it readonly.
-+	 */
-+	if (miss_ndevs > btrfs_chunk_max_errors(map))
-+		readonly = 1;
-+end:
- 	free_extent_map(em);
- 	return readonly;
- }
-@@ -5220,16 +5248,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		}
++/*
+  * this bypasses the standard btrfs submit functions deliberately, as
+  * the standard behavior is to write all copies in a raid setup. here we only
+  * want to write the one bad copy. so we do the mapping for ourselves and issue
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index ccc264e..d06780b 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -347,6 +347,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
+ int end_extent_writepage(struct page *page, int err, u64 start, u64 end);
+ int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
+ 			 int mirror_num);
++void btrfs_free_io_failure_record(struct inode *inode, u64 start, u64 end);
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ noinline u64 find_lock_delalloc_range(struct inode *inode,
+ 				      struct extent_io_tree *tree,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 15902eb..b431c58 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2670,6 +2670,10 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		goto out;
  	}
  
--	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) {
--		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
--				 BTRFS_BLOCK_GROUP_RAID10 |
--				 BTRFS_BLOCK_GROUP_RAID5 |
--				 BTRFS_BLOCK_GROUP_DUP)) {
--			max_errors = 1;
--		} else if (map->type & BTRFS_BLOCK_GROUP_RAID6) {
--			max_errors = 2;
--		}
--	}
-+	if (rw & (REQ_WRITE | REQ_GET_READ_MIRRORS))
-+		max_errors = btrfs_chunk_max_errors(map);
++	btrfs_free_io_failure_record(inode, ordered_extent->file_offset,
++				     ordered_extent->file_offset +
++				     ordered_extent->len - 1);
++
+ 	if (test_bit(BTRFS_ORDERED_TRUNCATED, &ordered_extent->flags)) {
+ 		truncated = true;
+ 		logical_len = ordered_extent->truncated_len;
+@@ -4745,6 +4749,8 @@ void btrfs_evict_inode(struct inode *inode)
+ 	/* do we really want it for ->i_nlink > 0 and zero btrfs_root_refs? */
+ 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
  
- 	if (dev_replace_is_ongoing && (rw & (REQ_WRITE | REQ_DISCARD)) &&
- 	    dev_replace->tgtdev != NULL) {
++	btrfs_free_io_failure_record(inode, 0, (u64)-1);
++
+ 	if (root->fs_info->log_root_recovering) {
+ 		BUG_ON(test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 				 &BTRFS_I(inode)->runtime_flags));
 -- 
 1.9.3
 

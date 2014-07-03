@@ -1,92 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:7743 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750828AbaGCB0u convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 21:26:50 -0400
-From: Chris Mason <clm@fb.com>
-To: Harald Hoyer <harald@redhat.com>, "dsterba@suse.cz" <dsterba@suse.cz>,
-        "Qu Wenruo" <quwenruo@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
- different ro/rw options"
-Date: Thu, 3 Jul 2014 01:26:38 +0000
-Message-ID: <CFDA29A4.5D86%clm@fb.com>
-References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20140701153240.GL1553@twin.jikos.cz> <53B2E371.6030504@fb.com>
- <53B3BBD3.4070004@redhat.com>
-In-Reply-To: <53B3BBD3.4070004@redhat.com>
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:48385 "EHLO
+	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751492AbaGCFq0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 01:46:26 -0400
+Received: from /spool/local
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 3 Jul 2014 15:46:23 +1000
+Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 917E62BB0047
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Jul 2014 15:46:21 +1000 (EST)
+Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
+	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s635k4qX6422986
+	for <linux-btrfs@vger.kernel.org>; Thu, 3 Jul 2014 15:46:05 +1000
+Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
+	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s635kKdg003134
+	for <linux-btrfs@vger.kernel.org>; Thu, 3 Jul 2014 15:46:20 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org,
+        Filipe David Borba Manana <fdmanana@gmail.com>
+Subject: Re: [PATCH] Btrfs: implement support for fallocate collapse range
+Date: Thu, 03 Jul 2014 11:16:18 +0630
+Message-ID: <2201007.I7dgLZVjz9@localhost.localdomain>
+In-Reply-To: <1403519147-19520-1-git-send-email-fdmanana@gmail.com>
+References: <1403519147-19520-1-git-send-email-fdmanana@gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/2/14, 3:59 AM, "Harald Hoyer" <harald@redhat.com> wrote:
+On Monday 23 Jun 2014 11:25:47 Filipe David Borba Manana wrote:
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index aeab453..8f1a371 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2825,12 +2825,12 @@ cow_done:
+>  		 * It is safe to drop the lock on our parent before we
+>  		 * go through the expensive btree search on b.
+>  		 *
+> -		 * If we're inserting or deleting (ins_len != 0), then we might
+> -		 * be changing slot zero, which may require changing the parent.
+> -		 * So, we can't drop the lock until after we know which slot
+> -		 * we're operating on.
+> +		 * If we're inserting, deleting or updating a key (cow != 0),
+> +		 * then we might be changing slot zero, which may require
+> +		 * changing the parent. So, we can't drop the lock until after
+> +		 * we know which slot we're operating on.
+>  		 */
+> -		if (!ins_len && !p->keep_locks) {
+> +		if (!cow && !p->keep_locks) {
+>  			int u = level + 1;
 
->On 01.07.2014 18:36, Chris Mason wrote:
->> On 07/01/2014 11:32 AM, David Sterba wrote:
->>> (adding Harald to CC)
->>>
->>> On Tue, Jul 01, 2014 at 05:30:01PM +0800, Qu Wenruo wrote:
->>>> This reverts commit 0723a0473fb48a1c93b113a28665b64ce5faf35a.
->>>> This commit has the following problem:
->>>> 1) Break the ro mount rule.
->>>> When users mount the whole btrfs ro, it is still possible to mount
->>>> subvol rw and change the contents. Which make the whole fs ro mount
->>>> non-sense.
->>>
->>> The proposed usecase was to allow mounting subvolumes with different
->>> ro/rw flags, and this makes sense to me (provided that the whole
->>> filesystem is mounted rw).
->>>
->>> Anything else seems to lead to all the internal problems you point
->>> below. I'm not even sure if mounting the first subvolume 'ro' should
->>> imply that the whole filesystem is ro or not.
->>>
->>>> 2) Cause whole btrfs ro/rw mount change fails.
->>>> When mount a subvol ro first, when you can't mount the whole fs
->>>>mounted
->>>> rw. This is due to the check in btrfs_mount() which returns -EBUSY,
->>>> which is OK for single fs to prevent mount fs ro in one mount point
->>>>and
->>>> mount the same fs rw in other mount point.
->>>> Step to reproduce:
->>>> mount -o subvol=subv,ro /dev/sda6 /mnt/btrfs
->>>> mount -o rw /dev/sda6 /mnt/btrfs	<-this will fail
->>>
->>> Yeah, so first ro means whole filesystem is ro.
->>>
->>>> 3) Kernel warn in vfs.
->>>> When mount the whole fs ro, and mount a subvol ro, kernel warning will
->>>> show in fs/sync.c complaining s_umount rwsem is not locked.
->>>> Since this remount is not called by VFS, so s_mounts rwsem is not
->>>> correctly locked.
->>>
->>> That's serious.
->> 
->> Agreed, we'll pull this out until we get a better handle on things.
->> Thanks for spending time on it.
->> 
->> -chris
->> 
->
->My patch was initially only a request for comments:
->- patch pointed out the problem
->- provided a possible solution/workaround
->- even has "FIXME" in the code :)
->
->So, what I was hoping, that somebody else with more VFS knowledge than me
->would
->step up and come up with a sane solution.
->
->Pull it out, if the patch causes problems, but _please_ think about the
->problem
->and come up with a solution, so that "mount -a" works with a normal fstab.
+For the "key update" case (i.e. (ins_len == 0) and (cow == 1)), maybe
+we could optimize by having a variable to hold the return value of
+should_cow_block(), i.e. it keeps track of whether the current
+metadata block was COWed. If the variable indicates that the block was
+*not* COWed, then we could release the lock on the parent block since
+the update operation (even on slot 0) isn't going to change the
+corresponding entry in the parent block.
 
-
-Definitely, we don¹t want to drop this functionality over the long term.
-The biggest problem here is the vfs warning.  Let me take another look and
-see if I can get the locking right.
-
--chris
+Thanks,
+chandan
 

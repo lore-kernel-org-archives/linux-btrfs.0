@@ -1,76 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:38659 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750822AbaGCAtR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 20:49:17 -0400
-Message-ID: <53B4A886.70106@fb.com>
-Date: Wed, 2 Jul 2014 20:49:10 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:22468 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750817AbaGCI3C (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 04:29:02 -0400
+Message-ID: <53B514BB.40601@cn.fujitsu.com>
+Date: Thu, 3 Jul 2014 16:30:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Eric Sandeen <sandeen@redhat.com>,
+To: Filipe David Borba Manana <fdmanana@gmail.com>,
         <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: fix nossd and ssd_spread mount option regression
-References: <1404274747-20036-1-git-send-email-quwenruo@cn.fujitsu.com> <53B42F8B.8090600@redhat.com> <53B4A2AD.2010506@cn.fujitsu.com>
-In-Reply-To: <53B4A2AD.2010506@cn.fujitsu.com>
+Subject: Re: [PATCH v2] Btrfs: fix crash when starting transaction
+References: <1403524739-28436-1-git-send-email-fdmanana@gmail.com> <1403628418-28442-1-git-send-email-fdmanana@gmail.com>
+In-Reply-To: <1403628418-28442-1-git-send-email-fdmanana@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2014 08:24 PM, Qu Wenruo wrote:
+On Tue, 24 Jun 2014 17:46:58 +0100, Filipe David Borba Manana wrote:
+> Often when starting a transaction we commit the currently running transaction,
+> which can end up writing block group caches when the current process has its
+> journal_info set to NULL (and not to a transaction). This makes our assertion
+> at btrfs_check_data_free_space() (current_journal != NULL) fail, resulting
+> in a crash/hang. Therefore fix it by setting journal_info.
 > 
-> -------- Original Message --------
-> Subject: Re: [PATCH v2] btrfs: fix nossd and ssd_spread mount option
-> regression
-> From: Eric Sandeen <sandeen@redhat.com>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-> Date: 2014年07月03日 00:12
->> On 7/1/14, 11:19 PM, Qu Wenruo wrote:
->>> From: Eric Sandeen <sandeen@redhat.com>
->>>
->>> The commit
->>>
->>> 0780253 btrfs: Cleanup the btrfs_parse_options for remount.
->>>
->>> broke ssd options quite badly; it stopped making ssd_spread
->>> imply ssd, and it made "nossd" unsettable.
->>>
->>> Put things back at least as well as they were before
->>> (though ssd mount option handling is still pretty odd:
->>>
->>> Reported-by: Roman Mamedov <rm@romanrm.net>
->>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> ---
->>> v2(By Qu):
->>>    Make nossd disable ssd and ssd_spread.
->>>    Add notes in Documentation/btrfs.txt
->> Ok, thanks for fixing up a little bit more.
->>
->> But option handling is still strange even with your changes:
->>
->> # mount -o ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
->> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,ssd,space_cache 0 0
->>
->> # mount -o remount,nossd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
->> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,space_cache 0 0
->>
->> # mount -o remount,ssd_spread /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
->> /dev/sdc3 /mnt/test btrfs
->> rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
->>
->> # mount -o remount,ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
->> /dev/sdc3 /mnt/test btrfs
->> rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
->>
->> I'd rather just commit my first patch to fix the regression ASAP, and
->> fix the ssd option mess with a second patch which has received careful
->> testing.
->>
->> -Eric
-> OK, please merge the v1 patch only.
-> I'll fix the ssd dependency things later.
+> Two different traces of this issue follow below.
+> 
+> 1)
+> 
+>     [51502.241936] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>     [51502.242213] ------------[ cut here ]------------
+>     [51502.242493] kernel BUG at fs/btrfs/ctree.h:3964!
+>     [51502.242669] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>     (...)
+>     [51502.244010] Call Trace:
+>     [51502.244010]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>     [51502.244010]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>     [51502.244010]  [<ffffffffa0357a6a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>     [51502.244010]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>     [51502.244010]  [<ffffffff8168ec7b>] ? _raw_spin_unlock+0x2b/0x40
+>     [51502.244010]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>     [51502.244010]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>     [51502.244010]  [<ffffffffa02d73e1>] __unlink_start_trans+0x31/0xe0 [btrfs]
+>     [51502.244010]  [<ffffffffa02dea67>] btrfs_unlink+0x37/0xc0 [btrfs]
+>     [51502.244010]  [<ffffffff811bb054>] ? do_unlinkat+0x114/0x2a0
+>     [51502.244010]  [<ffffffff811baebc>] vfs_unlink+0xcc/0x150
+>     [51502.244010]  [<ffffffff811bb1a0>] do_unlinkat+0x260/0x2a0
+>     [51502.244010]  [<ffffffff811a9ef4>] ? filp_close+0x64/0x90
+>     [51502.244010]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>     [51502.244010]  [<ffffffff81349cab>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+>     [51502.244010]  [<ffffffff811be9eb>] SyS_unlinkat+0x1b/0x40
+>     [51502.244010]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>     [51502.244010] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 71 13 36 a0 48 89 fe 31 c0 48 c7 c7 b8 43 36 a0 48 89 e5 e8 5d b0 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>     [51502.244010] RIP  [<ffffffffa03575da>] assfail.constprop.88+0x1e/0x20 [btrfs]
+> 
+> 2)
+> 
+>     [25405.097230] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>     [25405.097488] ------------[ cut here ]------------
+>     [25405.097767] kernel BUG at fs/btrfs/ctree.h:3964!
+>     [25405.097940] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>     (...)
+>     [25405.100008] Call Trace:
+>     [25405.100008]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>     [25405.100008]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>     [25405.100008]  [<ffffffffa035755a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>     [25405.100008]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>     [25405.100008]  [<ffffffff8109c170>] ? bit_waitqueue+0xc0/0xc0
+>     [25405.100008]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>     [25405.100008]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>     [25405.100008]  [<ffffffffa02e3407>] btrfs_create+0x47/0x210 [btrfs]
+>     [25405.100008]  [<ffffffffa02d74cc>] ? btrfs_permission+0x3c/0x80 [btrfs]
+>     [25405.100008]  [<ffffffff811bc63b>] vfs_create+0x9b/0x130
+>     [25405.100008]  [<ffffffff811bcf19>] do_last+0x849/0xe20
+>     [25405.100008]  [<ffffffff811b9409>] ? link_path_walk+0x79/0x820
+>     [25405.100008]  [<ffffffff811bd5b5>] path_openat+0xc5/0x690
+>     [25405.100008]  [<ffffffff810ab07d>] ? trace_hardirqs_on+0xd/0x10
+>     [25405.100008]  [<ffffffff811cdcd2>] ? __alloc_fd+0x32/0x1d0
+>     [25405.100008]  [<ffffffff811be2a3>] do_filp_open+0x43/0xa0
+>     [25405.100008]  [<ffffffff811cddf1>] ? __alloc_fd+0x151/0x1d0
+>     [25405.100008]  [<ffffffff811abcfc>] do_sys_open+0x13c/0x230
+>     [25405.100008]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>     [25405.100008]  [<ffffffff811abe12>] SyS_open+0x22/0x30
+>     [25405.100008]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>     [25405.100008] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 51 13 36 a0 48 89 fe 31 c0 48 c7 c7 d0 43 36 a0 48 89 e5 e8 6d b5 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>     [25405.100008] RIP  [<ffffffffa03570ca>] assfail.constprop.88+0x1e/0x20 [btrfs]
+> 
+> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+> ---
+> 
+> V2: Removed test for current->journal_info == NULL. At this point it's
+>     always expected to be NULL.
 
-The v1 patch is already queued ;)
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
--chris
+> 
+>  fs/btrfs/transaction.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index ac984a3..614eac3 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -491,6 +491,7 @@ again:
+>  	smp_mb();
+>  	if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+>  	    may_wait_transaction(root, type)) {
+> +		current->journal_info = h;
+>  		btrfs_commit_transaction(h, root);
+>  		goto again;
+>  	}
+> 
+

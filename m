@@ -1,47 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:58868 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755972AbaGCNoc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 09:44:32 -0400
-Date: Thu, 3 Jul 2014 06:44:21 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
-Message-ID: <20140703134421.GS26932@merlins.org>
-References: <20140702204152.GI20961@merlins.org>
- <20140703081318.GB20612@localhost.localdomain>
- <53B5125F.4070707@cn.fujitsu.com>
+Received: from outrelay06.libero.it ([212.52.84.110]:59587 "EHLO
+	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751285AbaGCRdK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 13:33:10 -0400
+Message-ID: <53B594E7.9070500@inwind.it>
+Date: Thu, 03 Jul 2014 19:37:43 +0200
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53B5125F.4070707@cn.fujitsu.com>
-Subject: Re: 3.15.1: kernel BUG at fs/btrfs/locking.c:269
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
+ different ro/rw options"
+References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com> <53B445F5.6060709@libero.it> <53B4A3C7.1020805@cn.fujitsu.com>
+In-Reply-To: <53B4A3C7.1020805@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the patch. Hopefully this will make it to the next 3.15.x
-kernel.
+On 07/03/2014 02:28 AM, Qu Wenruo wrote:
+> 
+> -------- Original Message --------
+> Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with different ro/rw options"
+> From: Goffredo Baroncelli <kreijack@libero.it>
+> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+> Date: 2014年07月03日 01:48
+>> On 07/01/2014 11:30 AM, Qu Wenruo wrote:
+>>> This commit has the following problem:
+>>> 1) Break the ro mount rule.
+>>> When users mount the whole btrfs ro, it is still possible to mount
+>>> subvol rw and change the contents. Which make the whole fs ro mount
+>>> non-sense.
+>> Where is the problem ? I see an use case when I want a conservative default: mount all ro except some subvolumes.
+>>
+>> In any case it is not a security problem because if the user has the capability to mount a subvolume, also he has the capability to remount,rw the whole filesystem.
+>>
+>>
+>>
+> Not security problem but behavior not consistent.
+> If user mount the whole disk ro, he or she want the fs read only and nothing will change in it.
+> If you mount a subvol rw, then the whole disk ro expectation is broken. Things will change even the whole
+> disk is readonly.
 
-I also went back to 3.14 anyway since the 'blocked for 120 seconds' look
-like another instance of deadlocks we've been discussing here.
+Sorry for bother you again, but there is a thing not clear to me:
 
-But just curious:
+If
 
-> >>[160562.925463] parent transid verify failed on 2776298520576 wanted 41015 found 18120
+    # mount -o subvolid=5,ro /dev/sda1 /mnt/root
+    # mount -o subvol=subvolname,rw /dev/sda1 /mnt/subvolname
 
-What should I be doing about this?
-Does it mean that I do have some kind of corruption/damage on my
-filesystem?
+I suppose that 
 
-Also, is it possible to have all these messages state which devid they
-occurred on? I don't even know which device I should be worrying about
-right now, and although I'm running scrub now, my understanding is that
-scrub doesn't actually look at FS structures and is likely to miss this
-anyway.
+    # touch /mnt/root/touch-test 		# 1
 
-Thanks,
-Marc
+fails, and
+
+    # touch /mnt/subvolname/touch-test		# 2
+
+succeeded. I understood correctly ? If so this behaviour seems to me correctly.
+Different is after mounting the subvolume "subvolumename", also the whole filesystem results rw (eg: #1 succeeded).
+
+G.Baroncelli
+
+
+
+
+
+> 
+> The problem also happens when a parent subvol is mounted rw but child subvol is mounted ro.
+> User can still modify the child subvol through parent subvol, still broke the readonly rule.
+> 
+> Thanks,
+> Qu
+> 
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,215 +1,260 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.10]:50881 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755621AbaGCHA4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 03:00:56 -0400
-Message-ID: <53B4FFA5.4060608@hiperscan.com>
-Date: Thu, 03 Jul 2014 09:00:53 +0200
-From: Florian Stuelpner <florian.stuelpner@hiperscan.com>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:57847 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752009AbaGCHrO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Jul 2014 03:47:14 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X2bjc-00066q-Ao
+	for linux-btrfs@vger.kernel.org; Thu, 03 Jul 2014 09:47:12 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Jul 2014 09:47:12 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Jul 2014 09:47:12 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: System freeze caused by  fs/btrfs/super.c:259
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 3.15.1: kernel BUG at fs/btrfs/locking.c:269
+Date: Thu, 3 Jul 2014 07:47:00 +0000 (UTC)
+Message-ID: <pan$cc322$c9ff4b20$3248418d$bde8209@cox.net>
+References: <20140702204152.GI20961@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Marc MERLIN posted on Wed, 02 Jul 2014 13:41:52 -0700 as excerpted:
 
-2 days ago our server was frozen.
-Can anyone tell me what happened with my btrfs?
-Should I create a bug report or is this a known issue?
+> This got triggered by an rsync I think. I'm not sure which of my btrfs
+> FS has the issue yet since BUG_ON isn't very helpful as discussed
+> earlier.
+> 
+> [160562.925463] parent transid verify failed on 2776298520576
+> wanted 41015 found 18120
+> [160562.950297] ------------[ cut here ]------------
+> [160562.965904] kernel BUG at fs/btrfs/locking.c:269!
+> 
+> But shouldn't messages like 'parent transid verify failed' print which
+> device this happened on to give the operator a hint on where the problem
+> is?
+> 
+> Could someone do a pass at those and make sure they all print the device
+> ID/name?
 
-Our specifications are:
-- kernel version: 3.15.2
-- distribution: debian 7.5
-- 2 btrfs-pools (RAID 1) with  2x3TB and 4x2TB
+kernel 3.16 series here, rc2+ when this happened, rc3+ now.  IOW it's 
+3.15 series (Marc) and 3.16 series (me) both known affected.
 
-we get the first error messages at 22:48:
+FWIW, I'm not sure what originally triggered it, but I recently had a 
+couple bad shutdowns -- systemd would say it was turning off the system 
+but it wouldn't shut off, and on manual shutoff and later reboot, the 
+read-write-mounted btrfs (two separate filesystems, home and log, root, 
+including the rest of the system, is read-only by default, here) failed 
+to mount.
 
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009695] ------------[ cut 
-here ]------------
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009716] WARNING: CPU: 6 PID: 
-2494 at fs/btrfs/super.c:259 __btrfs_abort_transaction+0x46/0xf8 [btrfs]()
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009718] Modules linked in: 
-xts gf128mul tun parport_pc ppdev lp parport bnep rfcomm bluetooth 
-rfkill pci_stub vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O) 
-cpufreq_powersave cpufreq_userspace cpufreq_stats cpufreq_conservative 
-binfmt_misc fuse nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache 
-sunrpc ext2 dm_crypt hwmon_vid loop firewire_sbp2 snd_hda_codec_hdmi 
-snd_hda_intel snd_hda_controller snd_hda_codec snd_hwdep snd_pcm 
-iTCO_wdt iTCO_vendor_support snd_timer joydev psmouse snd evdev coretemp 
-kvm_intel radeon kvm ttm acpi_cpufreq drm_kms_helper mxm_wmi processor 
-microcode drm pcspkr wmi i2c_i801 i2c_algo_bit soundcore i2c_core 
-serio_raw lpc_ich mfd_core i7core_edac edac_core ehci_pci thermal_sys 
-asus_atk0110 button ext4 crc16 jbd2 mbcache btrfs xor raid6_pq dm_mod 
-raid1 md_mod sg sd_mod crct10dif_generic crc_t10dif crct10dif_common 
-hid_generic usbhid hid crc32c_intel r8169 mii firewire_ohci 
-firewire_core crc_itu_t sata_sil ahci libahci sata_mv libata scsi_mod u
-Jul  1 22:44:28 hsad-srv-03 kernel: hci_hcd xhci_hcd ehci_hcd usbcore 
-usb_common
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009759] CPU: 6 PID: 2494 
-Comm: btrfs-transacti Tainted: G           O  3.15.2 #1
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009760] Hardware name: 
-System manufacturer System Product Name/SABERTOOTH X58, BIOS 1304 08/02/2011
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009761] 0000000000000000 
-0000000000000009 ffffffff8138b56a ffff88061c2e7d48
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009763] ffffffff81039583 
-ffff880622e2f000 ffffffffa01c4123 0000000000172a20
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009765] 00000000ffffffe4 
-ffff88061efa3000 ffff8800172c4c00 ffffffffa0243a80
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009767] Call Trace:
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009771] [<ffffffff8138b56a>] 
-? dump_stack+0x41/0x51
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009774] [<ffffffff81039583>] 
-? warn_slowpath_common+0x78/0x90
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009782] [<ffffffffa01c4123>] 
-? __btrfs_abort_transaction+0x46/0xf8 [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009785] [<ffffffff81039633>] 
-? warn_slowpath_fmt+0x45/0x4a
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009792] [<ffffffffa01c4123>] 
-? __btrfs_abort_transaction+0x46/0xf8 [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009801] [<ffffffffa01d888d>] 
-? btrfs_run_delayed_refs+0x9c/0x17e [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009812] [<ffffffffa01e5bce>] 
-? btrfs_commit_transaction+0x392/0x887 [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009815] [<ffffffff8106661f>] 
-? bit_waitqueue+0x82/0x82
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009826] [<ffffffffa01e4154>] 
-? transaction_kthread+0xf4/0x1ac [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009836] [<ffffffffa01e4060>] 
-? open_ctree+0x1b30/0x1b30 [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009846] [<ffffffffa01e4060>] 
-? open_ctree+0x1b30/0x1b30 [btrfs]
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009852] [<ffffffff81051dd2>] 
-? kthread+0x99/0xa1
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009854] [<ffffffff81051d39>] 
-? __kthread_parkme+0x59/0x59
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009856] [<ffffffff813944bc>] 
-? ret_from_fork+0x7c/0xb0
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009858] [<ffffffff81051d39>] 
-? __kthread_parkme+0x59/0x59
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009859] ---[ end trace 
-2b7eba103ecfc19e ]---
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009865] BTRFS info (device 
-sdk): forced readonly
-Jul  1 22:44:28 hsad-srv-03 kernel: [101279.009867] BTRFS warning 
-(device sdk): Skipping commit of aborted transaction.
+The mount failures triggered on the above parent transid failed errors 
+with kernel BUG at fs/btrs/locking.c -- I /believe/ 269, but I couldn't 
+swear to it.
 
-After that there are many errors. The last messages:
+The biggest difference here (other than the fact that it happened on 
+mount of critical filesystems at boot, so probably double-digit seconds 
+in since boot at most) was that the parent transid numbers were only a 
+few off, something like wanted nnnn, found nnnn-2.
 
-Jul  2 00:14:19 hsad-srv-03 kernel: [106667.979906] Code: 08 c3 48 8b 07 
-48 39 f8 74 1c 48 8b 16 48 8b 4f 08 48 89 70 08 48 89 06 48 89 11 48 89 
-4a 08 48 89 3f 48 89 7f 08 c3 66 83 07 01 <c3> f0 ff 47 34 c3 48 8b 87 
-60 fe ff ff 48 85 c0 74 09 80 bf 68
-Jul  2 00:14:24 hsad-srv-03 dhcpd: DHCPREQUEST for 192.168.2.222 from 
-08:00:27:c5:1c:b9 (HSAD-SRV-V02) via eth0
-Jul  2 00:14:24 hsad-srv-03 dhcpd: DHCPACK on 192.168.2.222 to 
-08:00:27:c5:1c:b9 (HSAD-SRV-V02) via eth0
-Jul  2 00:14:43 hsad-srv-03 dhcpd: DHCPREQUEST for 192.168.2.40 from 
-08:00:27:8c:b9:8e via eth0
-Jul  2 00:14:43 hsad-srv-03 dhcpd: DHCPACK on 192.168.2.40 to 
-08:00:27:8c:b9:8e via eth0
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965910] Modules linked in: 
-xts gf128mul tun parport_pc ppdev lp parport bnep rfcomm bluetooth 
-rfkill pci_stub vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O) 
-cpufreq_powersave cpufreq_userspace cpufreq_stats cpufreq_conservative 
-binfmt_misc fuse nfsd auth_rpcgss oid_registry nfs_acl nfs lockd fscache 
-sunrpc ext2 dm_crypt hwmon_vid loop firewire_sbp2 snd_hda_codec_hdmi 
-snd_hda_intel snd_hda_controller snd_hda_codec snd_hwdep snd_pcm 
-iTCO_wdt iTCO_vendor_support snd_timer joydev psmouse snd evdev coretemp 
-kvm_intel radeon kvm ttm acpi_cpufreq drm_kms_helper mxm_wmi processor 
-microcode drm pcspkr wmi i2c_i801 i2c_algo_bit soundcore i2c_core 
-serio_raw lpc_ich mfd_core i7core_edac edac_core ehci_pci thermal_sys 
-asus_atk0110 button ext4 crc16 jbd2 mbcache btrfs xor raid6_pq dm_mod 
-raid1 md_mod sg sd_mod crct10dif_generic crc_t10dif crct10dif_common 
-hid_generic usbhid hid crc32c_intel r8169 mii firewire_ohci 
-firewire_core crc_itu_t sata_sil ahci libahci sata_mv libata scsi_mod u
-Jul  2 00:14:47 hsad-srv-03 kernel: hci_hcd xhci_hcd ehci_hcd usbcore 
-usb_common
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965958] CPU: 3 PID: 9335 
-Comm: btrfs Tainted: G        W  O  3.15.2 #1
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965959] Hardware name: 
-System manufacturer System Product Name/SABERTOOTH X58, BIOS 1304 08/02/2011
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965961] task: 
-ffff88002c4be090 ti: ffff88003f9d4000 task.ti: ffff88003f9d4000
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965962] RIP: 
-0010:[<ffffffff81069bfe>]  [<ffffffff81069bfe>] do_raw_spin_lock+0x9/0x23
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965966] RSP: 
-0018:ffff88003f9d7a50  EFLAGS: 00000286
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965968] RAX: 
-00000000887e887e RBX: 000000000000b876 RCX: 0000000000000078
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965969] RDX: 
-000000000000887d RSI: 000002a4e6fb5000 RDI: ffff880172317570
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965970] RBP: 
-00000000ffffffe2 R08: 0000000000000000 R09: ffff88063fc72e80
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965971] R10: 
-ffff88063fc72e80 R11: ffff88063fc72e80 R12: 0000000000000282
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965972] R13: 
-0000000000000000 R14: 00000000ffffffe2 R15: ffffffffffffffe2
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965974] FS: 
-00007f0e64f20840(0000) GS:ffff88063fc60000(0000) knlGS:0000000000000000
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965975] CS:  0010 DS: 0000 
-ES: 0000 CR0: 000000008005003b
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965976] CR2: 
-0000000000fbec30 CR3: 000000035cf0a000 CR4: 00000000000027e0
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965977] Stack:
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965978] ffffffffa021f3b3 
-ffff88063fc72e80 ffff88003f9d7aa8 00000000ffffffe2
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965980] ffff880172317000 
-ffff88003f9d7aa8 ffffffffa021f44a ffff88061b6a1800
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965982] ffffffffa0223187 
-0000000000000000 ffff880172317578 ffff8802ba27d438
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965983] Call Trace:
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.965999] [<ffffffffa021f3b3>] 
-? __del_reloc_root+0x2f/0xb4 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966010] [<ffffffffa021f44a>] 
-? free_reloc_roots+0x12/0x1c [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966021] [<ffffffffa0223187>] 
-? merge_reloc_roots+0x165/0x1ca [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966032] [<ffffffffa02237fd>] 
-? relocate_block_group+0x455/0x4cd [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966043] [<ffffffffa02239c4>] 
-? btrfs_relocate_block_group+0x14f/0x267 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966054] [<ffffffffa0203106>] 
-? btrfs_relocate_chunk.isra.58+0x59/0x5fb [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966057] [<ffffffff810a4b5b>] 
-? delayacct_end+0x73/0x7e
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966068] [<ffffffffa0210b84>] 
-? btrfs_set_lock_blocking_rw+0xc9/0xdd [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966075] [<ffffffffa01c5751>] 
-? btrfs_item_key_to_cpu+0x12/0x30 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966086] [<ffffffffa01f816f>] 
-? btrfs_get_token_64+0x76/0xc6 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966097] [<ffffffffa01ff13d>] 
-? release_extent_buffer+0x9d/0xa4 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966108] [<ffffffffa02050a6>] 
-? btrfs_shrink_device+0x1f8/0x35e [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966120] [<ffffffffa0207422>] 
-? btrfs_rm_device+0x2a0/0x692 [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966131] [<ffffffffa020ee58>] 
-? btrfs_ioctl+0xa4a/0x206e [btrfs]
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966133] [<ffffffff810e4bc4>] 
-? handle_mm_fault+0x200/0x839
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966135] [<ffffffff81117d3c>] 
-? user_path_at_empty+0x7b/0xa8
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966138] [<ffffffff81392354>] 
-? __do_page_fault+0x33a/0x3e0
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966140] [<ffffffff811194a8>] 
-? do_vfs_ioctl+0x3ed/0x436
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966142] [<ffffffff8110f978>] 
-? SYSC_newstat+0x25/0x2d
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966144] [<ffffffff8111953a>] 
-? SyS_ioctl+0x49/0x77
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966146] [<ffffffff8138f9a2>] 
-? page_fault+0x22/0x30
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966148] [<ffffffff81394562>] 
-? system_call_fastpath+0x16/0x1b
-Jul  2 00:14:47 hsad-srv-03 kernel: [106695.966149] Code: 0f 39 d0 0f 94 
-c0 0f b6 c0 c3 31 c0 48 81 ff f8 f2 38 81 72 0c 31 c0 48 81 ff 5e f6 38 
-81 0f 92 c0 c3 b8 00 00 01 00 f0 0f c1 07 <89> c2 c1 ea 10 66 39 c2 74 
-0c 66 8b 07 66 39 d0 74 04 f3 90 eb
+[End of technical stuff.  The rest is discussion of my recovery 
+experience, both because it might be of help to others and because it 
+lets me tell my experience. =:^) ]
 
-After that the system was frozen. There was no responding of Keyboard Input.
+I have backups but they weren't as current as I would have liked, so I 
+decided to try recovery.
 
-Best regards,
-Florian
+My rootfs is btrfs as well, a /separate/ btrfs, but it remains mounted 
+read-only by default and is only mounted read-write for updates, so 
+wasn't damaged.  That includes the bits of /var that I can get away with 
+being read-only, with various /var/lib/* subdirs being symlinks to
+/home/var/lib/* subdirs, where they need to be writable, and of course 
+/var/log being a separate dedicated filesystem -- one of the two that was 
+damaged, and the usual /var/run and /var/lock symlinks to /run and 
+/run/lock (with /run being a tmpfs mount on standard systemd 
+configurations).  As a result, the rootfs mounted from the initramfs and 
+systemd on it was invoked as the new PID 1 init in the transfer from 
+initramfs.  Systemd was in turn able to start early boot services and 
+anything that didn't have a dependency on home (including the bits of /
+var/lib symlinked into home) or log being mounted.  But that of course 
+left a number of critical services failing due to dependency on the home 
+and/or log mounts, since those mounts were failing.
+
+Fortunately, while some of the time the errors would trigger a full 
+kernel lockup with the above parent transid and locking BUG, other times 
+the mount attempt would simply error out, and systemd would drop me to 
+the emergency-mode root-login prompt.  (If it hadn't, I'd have had to 
+switch to booting the backup.)
+
+Since the main rootfs including /usr, /etc and much of /var was already 
+mounted and safely read-only so I wasn't too worried about damaging it, 
+that left me with only a partly working system, but access to all the 
+normal recovery tools, manpages, etc, I'd normally have.  The only big 
+thing (other than X/kde, of course) initially was network access, due to 
+dependencies on the unmountable filesystems for local DNS and I think 
+iptables logging.  I could have reconfigured that if I had to, but after 
+I got log back up, I found I had network access (presumably with fallback 
+to the ISP DNS), and was able to get to the wiki to research recovery of 
+home a bit further.
+
+I decided to tackle log (/var/log) before home since it was smaller and I 
+figured I could use anything I learned in that process to help me save 
+more of home.  My policy is no backup log partition, since I don't do 
+backups regularly enough for the logs thereon to be of much likely 
+usefulness.  That left me trying to repair or recover what I could and 
+then doing a mkfs.btrfs on it.  The various repair options I tried didn't 
+help -- they either died without helpful output or triggered the same 
+lockup.  Mount with the recovery or recovery,ro wouldn't work, and 
+neither would btrfs check.
+
+Btrfs rescue didn't look useful, as I couldn't find useful documentation 
+on chunk-recover and the supers looked fine (btrfs-show-super) so super-
+recover was unnecessary.  I tried btrfs-zero-log on the log partition, 
+but it didn't make the problem better and might have made it worse, so 
+didn't try it on home.
+
+That left btrfs restore.  I used it on log without really understanding 
+what I was doing, and lost an entire directory worth of logs.
+=:^(  Fortunately, I was able to learn a bit, however, and the home 
+restore went rather better, with no permanent loss AFAIK.
+
+FWIW I also tried btrfs-image but it couldn't get anywhere at all -- the 
+result was a zero-byte image.
+
+The *OTHER* thing I learned, which in hind sight I should have known but 
+didn't think about until after I was beyond fixing it, was that if one 
+wants to experiment with a filesystem and thus does a direct dd image of 
+the device to a file for later dd back, if necessary, for btrfs raid1, dd 
+*ALL* devices to separate images, not just one of two, figuring the other 
+is raid1-identical anyway, because it's NOT.
+
+I had dd-ed one device of the btrfs raid1 log btrfs and verified matching 
+md5sums on the device and image to be sure, before I tried btrfs-zero-
+log, figuring I could simply dd the image back if that didn't help.  But 
+since it was raid1 and the images were of course somewhat large being 
+whole-partition images, I thought I only needed one of the two, and made 
+the mistake of neither dd-ing the second one, nor md5sum verifying my it-
+turned-out-invalid assumption that the second device matched the first 
+(which of course it doesn't, the data and metadata may or may not be 
+identical but there's device specific info I suppose in the supers, at 
+least).  So after I found out btrfs-zero-log wasn't going to help, I had 
+only one image of the two to dd back in ordered to try something 
+different.
+
+It's possible that had I actually dd-ed both images and could thus have 
+dd-ed both back after btrfs-zero-log didn't help, I could have recovered 
+more of the log files on that filesystem than I did, because I'd have had 
+the raid1 second copy to work from as well.  But anyway, logs have only a 
+certain value to me, and if I'm to lose files, log files are what I'd 
+choose to lose.  And I learned to dd *BOTH* images next time and indeed 
+did just that for home, so all in all, I'm prepared to say that it was a 
+worthwhile trade, a few log files destroyed for the knowledge and 
+experience gained. =:^)
+
+Moving on... After I btrfs restored what I could from the damaged log 
+btrfs, I mkfs.btrfs-ed it and copied what log files I had recovered back 
+to the new filesystem.  A reboot later and I had confirmed that systemd 
+could mount the new filesystem at boot again now, and I tackled home.  
+Except by this time I was sleepy and I had work the next day, so shut 
+back down and went to bed, saving the home challenge for a day later.
+
+Upon reboot after work the next day, I found that the network was working 
+again, and I could access the wiki to reread about btrfs-find-root and 
+btrfs restore, on the wiki.
+
+While it took me a bit of experimentation (I'm going to try to update the 
+wiki to reflect what I learned, as the page covering restore and fine-
+root is still a bit vague, mentioning information it isn't exactly clear 
+how to get, maybe this'll be what it takes to actually get me to get a 
+wiki account so I /can/ do such updates), eventually I figured out that  
+generation and transid effectively refer to the same thing (which the 
+wiki does suggest), and that the tree roots which the wiki mentions you 
+should look to see that there are as many as possible of, are enumerated 
+on the restore -l (list tree roots) report.  That last bit the wiki 
+currently doesn't mention at all -- I had to find -l by myself.
+
+Meanwhile, at this point the pieces began to all fall together, and I 
+figured out that the very same parent transid verify failed numbers 
+mentioned in the found/wanted as output by the kernel traces, were the 
+generation numbers as well, AND how btrfs-find-root and btrfs restore as 
+well as the kernel traces all fit together on this generation/transid 
+thing.  Further, this generation/transid thing increases serially as it 
+is in effect tracking the root-tree-root commit count -- the times the 
+filesystem has actually been fully atomically updated and had a new root-
+tree-root committed.
+
+These transaction ID verify faileds I was seeing in the logs referred to 
+these same transid/generation numbers (simple enough to infer when the 
+found/wanted were only a couple commits different, as I was seeing but as 
+is NOT the case above), and I could actually tell restore to look for 
+different roots that it could still find, based on the associated bytenr 
+reported by btrfs-find-root.
+
+Suddenly a lot of those logs I've seen posted with found/wanted 
+generation/transid numbers actually make some sort of sense!
+
+So after figuring all that out, it turned out that both the generation/
+transid recorded in the supers as current, and the one 1-commit back, 
+were both nearly entirely whole.  Only a handful of found/wanted errors 
+on the restore, tho I had to run it several times to fill in additional 
+files as it kept deciding it was looping too much in the big dirs and 
+wasn't making progress.
+
+And as far as I can tell, the only missing files in the restore are the 
+last few rss/atom feed updates that my feed reader pulled.  The other 
+possibilities would be news (nntp) updates, but my client would show the 
+messages as unread again if it lost them and that didn't happen, and 
+mail, but while my servers are POP3 only, my client is configured to 
+download but not delete for a week, just in case something like this 
+/does/ happen and I lose a few messages locally, so again, I'd get 
+messages shown as new again, and I didn't.  So AFAIK, the rss/atom feed 
+was the only thing affected, and like the logs, that's only of limited 
+value to me and no big loss.
+
+So after the restore, again I did a new mkfs.btrfs to recreate a new 
+filesystem, mounted and copied everything back from the restore.
+
+**BUT**  One OTHER thing I learned about btrfs restore!  The --help 
+output (and manpage) suggest that -x is used to restore extended 
+attributes.  What it does *NOT* say is that evidently, "extended 
+attributes" in this case includes file ownership and standard *ix 
+permissions.  Either that or restore never restores those in any case, 
+I'm not sure which.
+
+Anyway, while restore seemed to give me back nearly all my files, they 
+were all root/root ownership, root umask-modified perms (644, 744 for 
+dirs).  THAT metadata was a HEADACHE to restore -- manually!
+
+Fortunately I was able to hack up a find -exec script to compare 
+ownership and perms on the backup (which as I mentioned I had tho it was 
+a bit less current than I would have liked), doing a
+chown/chmod --reference to the file in the backup, where the file existed 
+in the backup.  That covered most files, but there were still a few left 
+root/root/644.  But a bit of admin time with mc to find and figure out 
+appropriate ownership/perms for each (recursive) case and those were  
+corrected as well.
+
+So, umm... while I hope there isn't a next time, at least I actually have 
+some idea/experience how restore works now, and I know a couple things 
+NOT to do next time, as well to try -x on btrfs restore and hope that 
+restores ownership/perms too.  If not, then I guess we need an improved 
+restore that can, because having everything restored as root/root/644 
+SUCKS, tho obviously not as much as not having it restored AT ALL would 
+suck!.
+
+And, hopefully some users find this experience helpful.  I know if 
+someone would have posted it before, I'd have definitely read it with 
+interest, retaining at least some of it, and would have likely saved it 
+for later reference, just in case.  So it would have helped me, and 
+here's hoping it can help someone else as well.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

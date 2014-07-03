@@ -1,56 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45837 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756924AbaGXKsB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 06:48:01 -0400
-Date: Thu, 24 Jul 2014 12:47:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zach Brown <zab@zabbo.net>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: feature request: consider rw subvols ro for send when volume is
- mounted ro
-Message-ID: <20140724104758.GP1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <EAC867F7-CBB2-4714-9917-A29566167A21@colorremedies.com>
- <20140723204736.GD17798@lenny.home.zabbo.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:9771 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1030624AbaGCJfF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 05:35:05 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s639Z0wF009492
+	for <linux-btrfs@vger.kernel.org>; Thu, 3 Jul 2014 17:35:00 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/4] Add superblock checksum check for btrfs-progs
+Date: Thu, 3 Jul 2014 17:35:59 +0800
+Message-ID: <1404380164-25325-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140723204736.GD17798@lenny.home.zabbo.net>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 23, 2014 at 01:47:36PM -0700, Zach Brown wrote:
-> On Wed, Jul 23, 2014 at 02:10:29PM -0600, Chris Murphy wrote:
-> > The use case is when it's possible to mount a Btrfs volume ro, but not rw. Example, a situation where
-> > 
-> > # mount -o degraded /dev/sdb /mnt
-> > [   71.064352] BTRFS info (device sdb): allowing degraded mounts
-> > [   71.064812] BTRFS info (device sdb): enabling auto recovery
-> > [   71.065210] BTRFS info (device sdb): disk space caching is enabled
-> > [   71.072068] BTRFS warning (device sdb): devid 2 missing
-> > [   71.097320] BTRFS: too many missing devices, writeable mount is not allowed
-> > [   71.116616] BTRFS: open_ctree failed
-> > 
-> > Yet this works:
-> > # mount -o degraded,ro /dev/sdb /mnt
-> > 
-> > It would be great if it were possible to send/receive subvolumes to a
-> > different btrfs volume. Currently it's not possible because those
-> > subvols aren't ro, and because the mount is ro I can't make ro
-> > snapshots first.
-> 
-> I wonder if that's as easy as the following totally untested hack.  I
-> have no idea if a read-only mount would still allow background
-> modification that might violate the send code's assumptions.
+Before this patchset, btrfs-progs will overall ignore the superblock
+checksum and continue the routine.
+Sometimes this may cause disasters like checking a btrfs with corrupted
+superblock will lead to crash in btrfs-progs.
 
-RO mount tries hard not to do any writes (eg. the from the background
-threads), however a remount to RW during send would succeed and any
-writes to the sent subvolume may (and most probably will) cause lots of
-fun.
+This patch introduces superblock checksum check into btrfs_read_dev_super(),
+making btrfs-progs much more restricted and robust.
+To allow super-recover to open devices, add options to scan all 3
+superblocks when using super-recover.
+Also updated the related error string and fix a bug in chunk-recover that
+will not be triggered until superblock csum is calculated.
 
-This could use similar protection as the subvolumes, the usecase 'allow
-to send any subvolume on a RO mount' seems valid to me. The failure of
-remount,rw is not silent and the user is able to decide what to do next
-(stop send, or postpone remount). Remount may fail for other reasons so
-I think we're not adding some unexpected surprises.
+Qu Wenruo (4):
+  btrfs-progs: Check superblock's checsum when read dev super
+  btrfs-progs: Allow btrfs_read_dev_super() to read all 3 super for    
+    super_recover.
+  btrfs-progs: Add more meaningful return value for
+    btrfs_read_dev_super()     and corresponding error string.
+  btrfs-progs: Fix size for malloc for superblock checksum.
+
+ btrfs-find-root.c |  9 ++++--
+ chunk-recover.c   | 18 +++++++----
+ cmds-filesystem.c |  9 ++++--
+ disk-io.c         | 91 +++++++++++++++++++++++++++++++++++++------------------
+ disk-io.h         |  5 +--
+ super-recover.c   |  2 +-
+ utils.c           | 16 ++++++----
+ volumes.c         |  8 ++---
+ volumes.h         |  2 +-
+ 9 files changed, 104 insertions(+), 56 deletions(-)
+
+-- 
+2.0.1
+

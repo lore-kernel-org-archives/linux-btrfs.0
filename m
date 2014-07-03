@@ -1,43 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20481 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751285AbaGCRc2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 13:32:28 -0400
-Message-ID: <53B5939B.2050808@oracle.com>
-Date: Fri, 04 Jul 2014 01:32:11 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:54474 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755124AbaGCXOL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 19:14:11 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 523983EE0C0
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 08:14:09 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.nic.fujitsu.com [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 8B342AC0A19
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 08:14:08 +0900 (JST)
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 3A4D71DB8032
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 08:14:08 +0900 (JST)
+Message-ID: <53B5E398.8010904@jp.fujitsu.com>
+Date: Fri, 4 Jul 2014 08:13:28 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix wrong uevent target
-References: <1404291834-11113-1-git-send-email-miaox@cn.fujitsu.com> <53B539CE.7070201@cn.fujitsu.com> <53B56211.4060403@fb.com>
-In-Reply-To: <53B56211.4060403@fb.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: <miaox@cn.fujitsu.com>, Filipe David Borba Manana <fdmanana@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] Btrfs: fix crash when starting transaction
+References: <1403524739-28436-1-git-send-email-fdmanana@gmail.com> <1403628418-28442-1-git-send-email-fdmanana@gmail.com> <53B514BB.40601@cn.fujitsu.com> <53B53132.4040601@jp.fujitsu.com> <53B53973.9070302@cn.fujitsu.com>
+In-Reply-To: <53B53973.9070302@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
-
-   This fix is theoretically correct but my guess that this would
-   solve problem as reported by Qu Wenruo was wrong [1].
-   Patch is good to integrate.
-
-Thanks, Anand
-
-[1] Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device 
-add/remove.
-
-
-On 03/07/2014 22:00, Chris Mason wrote:
-> On 07/03/2014 07:09 AM, Miao Xie wrote:
->> CC Anand Jain
+(2014/07/03 20:07), Miao Xie wrote:
+> On Thu, 3 Jul 2014 19:32:18 +0900, Satoru Takeuchi wrote:
+>> (2014/07/03 17:30), Miao Xie wrote:
+>>> On Tue, 24 Jun 2014 17:46:58 +0100, Filipe David Borba Manana wrote:
+>>>> Often when starting a transaction we commit the currently running transaction,
+>>>> which can end up writing block group caches when the current process has its
+>>>> journal_info set to NULL (and not to a transaction). This makes our assertion
+>>>> at btrfs_check_data_free_space() (current_journal != NULL) fail, resulting
+>>>> in a crash/hang. Therefore fix it by setting journal_info.
+>>>>
+>>>> Two different traces of this issue follow below.
+>>>>
+>>>> 1)
+>>>>
+>>>>       [51502.241936] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>>>>       [51502.242213] ------------[ cut here ]------------
+>>>>       [51502.242493] kernel BUG at fs/btrfs/ctree.h:3964!
+>>>>       [51502.242669] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>>>>       (...)
+>>>>       [51502.244010] Call Trace:
+>>>>       [51502.244010]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa0357a6a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>>>>       [51502.244010]  [<ffffffff8168ec7b>] ? _raw_spin_unlock+0x2b/0x40
+>>>>       [51502.244010]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa02d73e1>] __unlink_start_trans+0x31/0xe0 [btrfs]
+>>>>       [51502.244010]  [<ffffffffa02dea67>] btrfs_unlink+0x37/0xc0 [btrfs]
+>>>>       [51502.244010]  [<ffffffff811bb054>] ? do_unlinkat+0x114/0x2a0
+>>>>       [51502.244010]  [<ffffffff811baebc>] vfs_unlink+0xcc/0x150
+>>>>       [51502.244010]  [<ffffffff811bb1a0>] do_unlinkat+0x260/0x2a0
+>>>>       [51502.244010]  [<ffffffff811a9ef4>] ? filp_close+0x64/0x90
+>>>>       [51502.244010]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>>>>       [51502.244010]  [<ffffffff81349cab>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+>>>>       [51502.244010]  [<ffffffff811be9eb>] SyS_unlinkat+0x1b/0x40
+>>>>       [51502.244010]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>>>>       [51502.244010] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 71 13 36 a0 48 89 fe 31 c0 48 c7 c7 b8 43 36 a0 48 89 e5 e8 5d b0 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>>>>       [51502.244010] RIP  [<ffffffffa03575da>] assfail.constprop.88+0x1e/0x20 [btrfs]
+>>>>
+>>>> 2)
+>>>>
+>>>>       [25405.097230] BTRFS: assertion failed: current->journal_info, file: fs/btrfs/extent-tree.c, line: 3670
+>>>>       [25405.097488] ------------[ cut here ]------------
+>>>>       [25405.097767] kernel BUG at fs/btrfs/ctree.h:3964!
+>>>>       [25405.097940] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC
+>>>>       (...)
+>>>>       [25405.100008] Call Trace:
+>>>>       [25405.100008]  [<ffffffffa02bc025>] btrfs_check_data_free_space+0x395/0x3a0 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa02c3bdc>] btrfs_write_dirty_block_groups+0x4ac/0x640 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa035755a>] commit_cowonly_roots+0x164/0x226 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa02d53cd>] btrfs_commit_transaction+0x4ed/0xab0 [btrfs]
+>>>>       [25405.100008]  [<ffffffff8109c170>] ? bit_waitqueue+0xc0/0xc0
+>>>>       [25405.100008]  [<ffffffffa02d6259>] start_transaction+0x459/0x620 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa02d67ab>] btrfs_start_transaction+0x1b/0x20 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa02e3407>] btrfs_create+0x47/0x210 [btrfs]
+>>>>       [25405.100008]  [<ffffffffa02d74cc>] ? btrfs_permission+0x3c/0x80 [btrfs]
+>>>>       [25405.100008]  [<ffffffff811bc63b>] vfs_create+0x9b/0x130
+>>>>       [25405.100008]  [<ffffffff811bcf19>] do_last+0x849/0xe20
+>>>>       [25405.100008]  [<ffffffff811b9409>] ? link_path_walk+0x79/0x820
+>>>>       [25405.100008]  [<ffffffff811bd5b5>] path_openat+0xc5/0x690
+>>>>       [25405.100008]  [<ffffffff810ab07d>] ? trace_hardirqs_on+0xd/0x10
+>>>>       [25405.100008]  [<ffffffff811cdcd2>] ? __alloc_fd+0x32/0x1d0
+>>>>       [25405.100008]  [<ffffffff811be2a3>] do_filp_open+0x43/0xa0
+>>>>       [25405.100008]  [<ffffffff811cddf1>] ? __alloc_fd+0x151/0x1d0
+>>>>       [25405.100008]  [<ffffffff811abcfc>] do_sys_open+0x13c/0x230
+>>>>       [25405.100008]  [<ffffffff810aaea6>] ? trace_hardirqs_on_caller+0x16/0x1e0
+>>>>       [25405.100008]  [<ffffffff811abe12>] SyS_open+0x22/0x30
+>>>>       [25405.100008]  [<ffffffff81698452>] system_call_fastpath+0x16/0x1b
+>>>>       [25405.100008] Code: 0b 55 48 89 e5 0f 0b 55 48 89 e5 0f 0b 55 89 f1 48 c7 c2 51 13 36 a0 48 89 fe 31 c0 48 c7 c7 d0 43 36 a0 48 89 e5 e8 6d b5 32 e1 <0f> 0b 0f 1f 44 00 00 55 b9 11 00 00 00 48 89 e5 41 55 49 89 f5
+>>>>       [25405.100008] RIP  [<ffffffffa03570ca>] assfail.constprop.88+0x1e/0x20 [btrfs]
+>>>>
+>>>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+>>>> ---
+>>>>
+>>>> V2: Removed test for current->journal_info == NULL. At this point it's
+>>>>       always expected to be NULL.
+>>>
+>>> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 >>
->> Sorry, please ignore this patch.
->> Anand wrote the same patch several days ago, so this bug fix belongs to Anand
->> though he NACKed his patch at that time.
+>> Let me clarify my understanding since I'm not good at the transaction code.
+>>
+>> * What is the route cause?
+>>
+>>    When start_transaction() is called with current->journal_transaction == NULL,
+>>    we hit BUG() in the following path.
+>>
+>>    start_transaction
+>>      -> btrfs_commit_transaction
+>>        -> commit_cowonly_roots
+>>          -> update_cowonly_root
+>>            -> btrfs_write_dirty_block_groups
+>>              -> cache_save_setup
+>>                -> btrfs_check_data_free_space
+>>                   ASSERT(current->journal_info) # it fails and hits BUG()!
 >
-> It certainly looks right, but Anand had mentioned that he had a few
-> questions on testing.  I've pulled it out for now, but I'll take Anand's
-> version when you're both happy.
+> Yes, you are right.
 >
-> -chris
+>>
+>> * Why NULL check is not necessary?
+>>
+>> fs/btrfs/transaction.c:
+>> ===============================================================================
+>> start_transaction(...) {
+>>          if (current->journal_info &&
+>>              current->journal_info != (void *)BTRFS_SEND_TRANS_STUB) {
+>>                  ...
+>>                  goto got_it;
+>> ===============================================================================
+>>       To begin with, if current->journal_info == BTRFS_SEND_TRANS_STUB,
+>>    start_transaction() should not be called. Filipe's another patch
+>>    ([PATCH] Btrfs: assert send doesn't attempt to start) is to change
+>>    the second condition to ASSERT().
+>>
+>>    If current->journal_transaction is a "real" transaction, the
+>>    above-mentioned code path is skipped because of "goto got_it".
+>>
+>> Is my understanding correct?
+>
+> Yes, you are right.
+> And only JOIN/JOIN_NOLOCK can join the current transaction handle, the others is
+> forbidden.
+
+Thank your for your explanation!
+
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+Satoru
+
+>
+> Thanks
+> Miao
+>
+>>
+>> BTW, Filipe, although I've tried to reproduce this problem for two days
+>> by running xfstests loop, it didn't happen yet with my environment ;-(
+>> So all I can do seems to be code review.
+>>
+>> Thanks,
+>> Satoru
+>>
+>>>>
+>>>>    fs/btrfs/transaction.c | 1 +
+>>>>    1 file changed, 1 insertion(+)
+>>>>
+>>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>>>> index ac984a3..614eac3 100644
+>>>> --- a/fs/btrfs/transaction.c
+>>>> +++ b/fs/btrfs/transaction.c
+>>>> @@ -491,6 +491,7 @@ again:
+>>>>        smp_mb();
+>>>>        if (cur_trans->state >= TRANS_STATE_BLOCKED &&
+>>>>            may_wait_transaction(root, type)) {
+>>>> +        current->journal_info = h;
+>>>>            btrfs_commit_transaction(h, root);
+>>>>            goto again;
+>>>>        }
+>>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>> .
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+

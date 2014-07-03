@@ -1,193 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51503 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752349AbaGBVgn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Jul 2014 17:36:43 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/3] Btrfs: __btrfs_mod_ref should always use no_quota
-Date: Wed,  2 Jul 2014 14:35:19 -0700
-Message-Id: <1404336919-26766-4-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1404336919-26766-1-git-send-email-mfasheh@suse.de>
-References: <1404336919-26766-1-git-send-email-mfasheh@suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:35002 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753153AbaGCAXP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jul 2014 20:23:15 -0400
+Message-ID: <53B4A2AD.2010506@cn.fujitsu.com>
+Date: Thu, 3 Jul 2014 08:24:13 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Eric Sandeen <sandeen@redhat.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs: fix nossd and ssd_spread mount option regression
+References: <1404274747-20036-1-git-send-email-quwenruo@cn.fujitsu.com> <53B42F8B.8090600@redhat.com>
+In-Reply-To: <53B42F8B.8090600@redhat.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
 
->From Josef Bacik <jbacik@fb.com>
-
-Before I extended the no_quota arg to btrfs_dec/inc_ref because I didn't
-understand how snapshot delete was using it and assumed that we needed the
-quota operations there.  With Mark's work this has turned out to be not the
-case, we _always_ need to use no_quota for btrfs_dec/inc_ref, so just drop the
-argument and make __btrfs_mod_ref call it's process function with no_quota set
-always.  Thanks,
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/ctree.c       | 20 ++++++++++----------
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/extent-tree.c | 24 +++++++++++-------------
- 3 files changed, 23 insertions(+), 25 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d99d965..d9e0ce0 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -280,9 +280,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
- 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
--		ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 1);
- 	else
--		ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 0);
- 
- 	if (ret)
- 		return ret;
-@@ -1035,14 +1035,14 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if ((owner == root->root_key.objectid ||
- 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
- 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
--			ret = btrfs_inc_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_inc_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID) {
--				ret = btrfs_dec_ref(trans, root, buf, 0, 1);
-+				ret = btrfs_dec_ref(trans, root, buf, 0);
- 				BUG_ON(ret); /* -ENOMEM */
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
-@@ -1050,9 +1050,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		if (new_flags != 0) {
-@@ -1069,11 +1069,11 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
--			ret = btrfs_dec_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_dec_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		clean_tree_block(trans, root, buf);
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4896d7a..56f280f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3307,9 +3307,9 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 num_bytes,
- 			 u64 min_alloc_size, u64 empty_size, u64 hint_byte,
- 			 struct btrfs_key *ins, int is_data);
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				u64 bytenr, u64 num_bytes, u64 flags,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3f43e9a..e0e8c3f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2977,7 +2977,7 @@ out:
- static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct extent_buffer *buf,
--			   int full_backref, int inc, int no_quota)
-+			   int full_backref, int inc)
- {
- 	u64 bytenr;
- 	u64 num_bytes;
-@@ -3031,7 +3031,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			key.offset -= btrfs_file_extent_offset(buf, fi);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, key.objectid,
--					   key.offset, no_quota);
-+					   key.offset, 1);
- 			if (ret)
- 				goto fail;
- 		} else {
-@@ -3039,7 +3039,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			num_bytes = btrfs_level_size(root, level - 1);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, level - 1, 0,
--					   no_quota);
-+					   1);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -3050,15 +3050,15 @@ fail:
- }
- 
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 1, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 1);
- }
- 
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 0, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 0);
- }
- 
- static int write_one_cache_group(struct btrfs_trans_handle *trans,
-@@ -7592,9 +7592,9 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
- 	/* wc->stage == UPDATE_BACKREF */
- 	if (!(wc->flags[level] & flag)) {
- 		BUG_ON(!path->locks[level]);
--		ret = btrfs_inc_ref(trans, root, eb, 1, wc->for_reloc);
-+		ret = btrfs_inc_ref(trans, root, eb, 1);
- 		BUG_ON(ret); /* -ENOMEM */
--		ret = btrfs_dec_ref(trans, root, eb, 0, wc->for_reloc);
-+		ret = btrfs_dec_ref(trans, root, eb, 0);
- 		BUG_ON(ret); /* -ENOMEM */
- 		ret = btrfs_set_disk_extent_flags(trans, root, eb->start,
- 						  eb->len, flag,
-@@ -7841,11 +7841,9 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 	if (wc->refs[level] == 1) {
- 		if (level == 0) {
- 			if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
--				ret = btrfs_dec_ref(trans, root, eb, 1,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 1);
- 			else
--				ret = btrfs_dec_ref(trans, root, eb, 0,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 			ret = account_leaf_items(trans, root, eb);
- 			if (ret) {
--- 
-1.8.4.5
+-------- Original Message --------
+Subject: Re: [PATCH v2] btrfs: fix nossd and ssd_spread mount option 
+regression
+From: Eric Sandeen <sandeen@redhat.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: 2014年07月03日 00:12
+> On 7/1/14, 11:19 PM, Qu Wenruo wrote:
+>> From: Eric Sandeen <sandeen@redhat.com>
+>>
+>> The commit
+>>
+>> 0780253 btrfs: Cleanup the btrfs_parse_options for remount.
+>>
+>> broke ssd options quite badly; it stopped making ssd_spread
+>> imply ssd, and it made "nossd" unsettable.
+>>
+>> Put things back at least as well as they were before
+>> (though ssd mount option handling is still pretty odd:
+>>
+>> Reported-by: Roman Mamedov <rm@romanrm.net>
+>> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>> v2(By Qu):
+>>    Make nossd disable ssd and ssd_spread.
+>>    Add notes in Documentation/btrfs.txt
+> Ok, thanks for fixing up a little bit more.
+>
+> But option handling is still strange even with your changes:
+>
+> # mount -o ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,ssd,space_cache 0 0
+>
+> # mount -o remount,nossd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,space_cache 0 0
+>
+> # mount -o remount,ssd_spread /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
+>
+> # mount -o remount,ssd /dev/sdc3 /mnt/test; grep sdc3 /proc/mounts
+> /dev/sdc3 /mnt/test btrfs rw,seclabel,relatime,nossd,ssd_spread,space_cache 0 0
+>
+> I'd rather just commit my first patch to fix the regression ASAP, and
+> fix the ssd option mess with a second patch which has received careful testing.
+>
+> -Eric
+OK, please merge the v1 patch only.
+I'll fix the ssd dependency things later.
+>
+>> ---
+>>   Documentation/filesystems/btrfs.txt | 3 +++
+>>   fs/btrfs/super.c                    | 4 +++-
+>>   2 files changed, 6 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+>> index d11cc2f..f7d0878 100644
+>> --- a/Documentation/filesystems/btrfs.txt
+>> +++ b/Documentation/filesystems/btrfs.txt
+>> @@ -201,6 +201,9 @@ Options with (*) are default options and will not show in the mount options.
+>>   	of unused space, and may perform better on low-end ssds.  ssd_spread
+>>   	implies ssd, enabling all other ssd heuristics as well.
+>>   
+>> +	Option nossd removes all ssd allocation heuristics, disabling
+>> +	ssd_spread or ssd mount option.
+>> +
+>>     subvol=<path>
+>>   	Mount subvolume at <path> rather than the root subvolume.  <path> is
+>>   	relative to the top level subvolume.
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index 4662d92..cfe377a 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -522,10 +522,12 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>>   		case Opt_ssd_spread:
+>>   			btrfs_set_and_info(root, SSD_SPREAD,
+>>   					   "use spread ssd allocation scheme");
+>> +			btrfs_set_opt(info->mount_opt, SSD);
+>>   			break;
+>>   		case Opt_nossd:
+>> -			btrfs_clear_and_info(root, NOSSD,
+>> +			btrfs_set_and_info(root, NOSSD,
+>>   					     "not using ssd allocation scheme");
+>> +			btrfs_clear_opt(info->mount_opt, SSD_SPREAD);
+>>   			btrfs_clear_opt(info->mount_opt, SSD);
+>>   			break;
+>>   		case Opt_barrier:
+>>
 

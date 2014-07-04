@@ -1,51 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f171.google.com ([209.85.192.171]:49262 "EHLO
-	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754701AbaGDRAd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 13:00:33 -0400
-Received: by mail-pd0-f171.google.com with SMTP id fp1so2188654pdb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jul 2014 10:00:33 -0700 (PDT)
-Message-ID: <53B6DDAD.20504@gmail.com>
-Date: Fri, 04 Jul 2014 10:00:29 -0700
-From: Konstantin Svist <fry.kun@gmail.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs partition remounted read-only
-Content-Type: text/plain; charset=UTF-8
+Received: from mailrelay001.isp.belgacom.be ([195.238.6.51]:29635 "EHLO
+	mailrelay001.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752821AbaGDTKb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Jul 2014 15:10:31 -0400
+From: Fabian Frederick <fabf@skynet.be>
+To: linux-kernel@vger.kernel.org
+Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/1] btrfs: use PTR_ERR_OR_ZERO
+Date: Fri,  4 Jul 2014 21:10:27 +0200
+Message-Id: <1404501027-22752-1-git-send-email-fabf@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have an overnight cron job with
+replace IS_ERR/PTR_ERR
 
-/sbin/fstrim -v /
-/bin/bedup dedup --defrag
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
+ fs/btrfs/hash.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-Every once in a while, it causes the FS to be remounted read-only.
-Problem is pretty intermittent so far (aside from a few kernel revisions
-a while ago).
-
-Please advise.
-
-
-Corresponding bugs:
-https://bugzilla.kernel.org/show_bug.cgi?id=71311
-https://bugzilla.redhat.com/show_bug.cgi?id=1071408
-
-Addtl info:
-
-# uname -a
-Linux mireille.svist.net 3.14.9-200.fc20.x86_64 #1 SMP Thu Jun 26
-21:40:51 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-# btrfs --version
-Btrfs v3.14.2
-# btrfs fi show
-Label: none  uuid: 5ac56e7d-3d04-4ffa-8160-5a47f46c2939
-    Total devices 1 FS bytes used 151.77GiB
-    devid    1 size 465.76GiB used 282.02GiB path /dev/sda2
-
-Btrfs v3.14.2
-# btrfs fi df /
-Data, single: total=277.01GiB, used=148.86GiB
-System, single: total=4.00MiB, used=48.00KiB
-Metadata, single: total=5.01GiB, used=2.91GiB
+diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
+index 85889aa..64f15bb 100644
+--- a/fs/btrfs/hash.c
++++ b/fs/btrfs/hash.c
+@@ -20,10 +20,8 @@ static struct crypto_shash *tfm;
+ int __init btrfs_hash_init(void)
+ {
+ 	tfm = crypto_alloc_shash("crc32c", 0, 0);
+-	if (IS_ERR(tfm))
+-		return PTR_ERR(tfm);
+ 
+-	return 0;
++	return PTR_ERR_OR_ZERO(tfm);
+ }
+ 
+ void btrfs_hash_exit(void)
+-- 
+1.9.1
 

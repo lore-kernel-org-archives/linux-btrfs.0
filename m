@@ -1,64 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41890 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750839AbaGDEQu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 00:16:50 -0400
-Message-ID: <53B62B22.3060404@cn.fujitsu.com>
-Date: Fri, 4 Jul 2014 12:18:42 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>, Chris Mason <clm@fb.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix wrong uevent target
-References: <1404291834-11113-1-git-send-email-miaox@cn.fujitsu.com> <53B539CE.7070201@cn.fujitsu.com> <53B56211.4060403@fb.com> <53B5939B.2050808@oracle.com>
-In-Reply-To: <53B5939B.2050808@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from plane.gmane.org ([80.91.229.3]:49252 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751554AbaGDNWU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Jul 2014 09:22:20 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X33RQ-0004nq-S8
+	for linux-btrfs@vger.kernel.org; Fri, 04 Jul 2014 15:22:16 +0200
+Received: from p5b0045d7.dip0.t-ipconnect.de ([91.0.69.215])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jul 2014 15:22:16 +0200
+Received: from holger.hoffstaette by p5b0045d7.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jul 2014 15:22:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: More candidates for 3.14 longterm fixes?
+Date: Fri, 4 Jul 2014 13:22:02 +0000 (UTC)
+Message-ID: <pan.2014.07.04.13.22.02@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 4 Jul 2014 01:32:11 +0800, Anand Jain wrote:
-> Chris,
-> 
->   This fix is theoretically correct but my guess that this would
->   solve problem as reported by Qu Wenruo was wrong [1].
->   Patch is good to integrate.
-> 
-> Thanks, Anand
-> 
-> [1] Re: [PATCH RFC] btrfs: Add ctime/mtime update for btrfs device add/remove.
 
-I have merged this patch(just change the changelog) and other important bug fix patches
-into my tree to make it easier to be merged into Chris's for-linus branch. The URL is
+Hi,
 
-  https://github.com/miaoxie/linux-btrfs.git for-3.16-rcX
+As Greg announced that 3.14 will be longterm I was wondering if we
+can find a few more candidates for backported fixes.
 
-But because there are some old patches in the current for-linus branch, if someone want to
-merge my branch to for-linus, he/she must reset for-linus branch to
+So far I've had a couple handpicked and in (admittedly light) use
+without problems, which apply cleanly to 3.14.10. 
 
-  commit 2aa06a35d06a34b3109bdbf1d653de1695dc8f12
-  Author: Eric Sandeen <sandeen@redhat.com>
-  Date:   Fri Jun 27 16:50:31 2014 -0500
+Can we/should we find more?
 
-    btrfs: fix nossd and ssd_spread mount option regression
+My candidates so far:
 
-then can pull my branch and merge it into for-linus branch directly.
+Fix hang on error (such as ENOSPC) when writing extent pages:
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/fs/btrfs?id=61391d562229ed94899ed4b4973dc2f0c015292a
 
-Thanks
-Miao
+Ensure btrfs_prev_leaf doesn't miss 1 item:
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/fs/btrfs?id=337c6f6830a5ceb650eaf10d38ed8e8f496c8f61
 
-> On 03/07/2014 22:00, Chris Mason wrote:
->> On 07/03/2014 07:09 AM, Miao Xie wrote:
->>> CC Anand Jain
->>>
->>> Sorry, please ignore this patch.
->>> Anand wrote the same patch several days ago, so this bug fix belongs to Anand
->>> though he NACKed his patch at that time.
->>
->> It certainly looks right, but Anand had mentioned that he had a few
->> questions on testing.  I've pulled it out for now, but I'll take Anand's
->> version when you're both happy.
->>
->> -chris
-> 
+Fix leaf corruption after __btrfs_drop_extents:
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/fs/btrfs?id=0b43e04f700bce8eecf3581612e9d3e15bf258bc
+
+There may be more, but these are ones I picked off the list and
+managed to apply without fixing up.
+
+Since 3.14 will see continued use I think it would be great to
+get a few more known knowns into a release that works reasonably well,
+unlike (say) 3.15 so far.. :/
+
+Any other suggestions or is this a terrible idea? :)
+
+thanks
+Holger
 

@@ -1,62 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42358 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751554AbaGDPHV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 11:07:21 -0400
-Date: Fri, 4 Jul 2014 08:07:10 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Russell Coker <russell@coker.com.au>
-Cc: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Message-ID: <20140704150710.GM26932@merlins.org>
-References: <20140704011938.GO11539@merlins.org>
- <53B6486D.9010006@jp.fujitsu.com>
- <20140704142416.GI26932@merlins.org>
- <3262371.bchVJ2xl3c@xev>
+Received: from outrelay07.libero.it ([212.52.84.111]:56827 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755999AbaGDRhB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 13:37:01 -0400
+Message-ID: <53B6E744.1060204@inwind.it>
+Date: Fri, 04 Jul 2014 19:41:24 +0200
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3262371.bchVJ2xl3c@xev>
-Subject: Re: Is btrfs related to OOM death problems on my 8GB server with
- both 3.15.1 and 3.14?
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
+ different ro/rw options"
+References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com> <53B445F5.6060709@libero.it> <53B4A3C7.1020805@cn.fujitsu.com> <53B594E7.9070500@inwind.it> <53B6032D.6090207@cn.fujitsu.com>
+In-Reply-To: <53B6032D.6090207@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 05, 2014 at 12:45:55AM +1000, Russell Coker wrote:
-> > But the last times I had this OOM problem with 3.15.1 it was happening
-> > within 6 hours sometimes, and I was not starting scrub every time the
-> > system booted, so scrub may be partially responsible but it's not the
-> > core problem.
+Hi Qu
+On 07/04/2014 03:28 AM, Qu Wenruo wrote:
 > 
-> It would be a good idea to run a few scrubs and see if this is a repeatable 
-> problem.  If it's a repeatable problem then it's something to fix regardless 
-> of whether it's the only issue you have.
+> -------- Original Message -------- Subject: Re: [RFC PATCH] Revert
+> "btrfs: allow mounting btrfs subvolumes with different ro/rw
+> options" From: Goffredo Baroncelli <kreijack@inwind.it> To: Qu Wenruo
+> <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org Date: 2014年07月
+> 04日 01:37
+>> On 07/03/2014 02:28 AM, Qu Wenruo wrote:
+>>> -------- Original Message -------- Subject: Re: [RFC PATCH]
+>>> Revert "btrfs: allow mounting btrfs subvolumes with different
+>>> ro/rw options" From: Goffredo Baroncelli <kreijack@libero.it> To:
+>>> Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org 
+>>> Date: 2014年07月03日 01:48
+>>>> On 07/01/2014 11:30 AM, Qu Wenruo wrote:
+>>>>> This commit has the following problem: 1) Break the ro mount
+>>>>> rule. When users mount the whole btrfs ro, it is still
+>>>>> possible to mount subvol rw and change the contents. Which
+>>>>> make the whole fs ro mount non-sense.
+>>>> Where is the problem ? I see an use case when I want a
+>>>> conservative default: mount all ro except some subvolumes.
+>>>> 
+>>>> In any case it is not a security problem because if the user
+>>>> has the capability to mount a subvolume, also he has the
+>>>> capability to remount,rw the whole filesystem.
+>>>> 
+>>>> 
+>>>> 
+>>> Not security problem but behavior not consistent. If user mount
+>>> the whole disk ro, he or she want the fs read only and nothing
+>>> will change in it. If you mount a subvol rw, then the whole disk
+>>> ro expectation is broken. Things will change even the whole disk
+>>> is readonly.
+>> Sorry for bother you again, but there is a thing not clear to me:
+>> 
+>> If
+>> 
+>> # mount -o subvolid=5,ro /dev/sda1 /mnt/root # mount -o
+>> subvol=subvolname,rw /dev/sda1 /mnt/subvolname
+>> 
+>> I suppose that
+>> 
+>> # touch /mnt/root/touch-test         # 1
+>> 
+>> fails, and
+>> 
+>> # touch /mnt/subvolname/touch-test        # 2
+>> 
+>> succeeded. I understood correctly ?
+> Your understanding is right and that is current behavior.
+> 
+> But that should not be the correct behavior.
+> 
+> If you mount fs_tree ro, btrfs should ensure the whole
+> fs_tree(including all the subvolumes) ro. Or the whole fs_tree is not
+> restricted readonly since you can modify contents inside the rw
+> subvolume, and it's part of the fs_tree.(partly ro and partly rw
+> status)
+> 
+> IMO the perfect logical should be like the following: 1) ro mounted
+> subvolume will force all the children subvolumes only ro mountable
+> 
+> subvol 5 (mounted ro /) ├── subvol 257 (mounted rw /mnt/btrfrs) So
+> above mounted should not be allowed.
+> 
+> But the following mount should be OK: subvol 5 (mounted rw /) ├──
+> subvol 257 (mounted ro /mnt/btrfrs)
+> 
+> 2) ro mounted subvolume will not be modified even through the rw
+> mounted parent subvolume.
+> 
+> Only this will ensure restricted ro mount option.
+> 
+> If anyone has any other ideas about it, I'm happy to listen.
 
-Fair point. Re-running scrub now. That will take 36H or so :)
- 
-> If a scrub can reliably trigger the problem it would be good to test 3.14 for 
-> the same behavior.  Knowing whether it's a regression would help the 
-> developers.
- 
-I'm already back to 3.14. 3.15 was dying about once a day without scrub,
-enough that this was causing me real problems (it's a server that is
-supposed to do work :) ).
+Usually I mount both the subvolume as root filesystem and the root of the btrfs filesystem in a subdir . This allow me to perform action like snapshot of the root filesystem.
 
-> Even without much swap 8G should be a plenty.  My main workstation has 4G of 
-> RAM and 6G of swap.  I almost never use more than 3G of swap because the 
-> system becomes so slow as to be almost unusable when swap gets to 4G (Chromium 
-> is to blame).  However that is for a 120G non-RAID filesystem.  Presumably a 
-> RAID array will need some more kernel memory and a larger filesystem will also 
-> need a little more, but it still shouldn't be that much.
+So to me it seems reasonable to have different rw/ro status between btrfs root and btrfs subvolume. As use case think a system which hosts several guests in container. Each guest has its own subvolume as root filesystem. An user would mount the btrfs root RO in order to see all the subvolume but at the same time he avoids to change a file for error; when a guest has to be started, its root filesystem/subvolume can be mounted RW.
 
-You're correct. I only have more swap than ram, both as a habit in case
-I ever want to hibernate a system (I don't with this one) and in case
-some userland stuff leaks a lot (I've had versions of Xorg leak and that
-would improve the time between which I had to restart X and lose all my
-window state :) ).
+On the other side, I understand that this could lead to an unexpected behaviour because with the other filesystem it is impossible to mount only a part as RW. In this BTRFS would be different.
 
-Marc
+Following the "least surprise" principle, I prefer that the *mount* RO/RW flag acts globally: the filesystem has only one status. It is possible to change it only globally.
+
+In order to having a subvolumes with different RO/RW status we should rely on different flag. I have to point out that the subvolume has already the concept of read-only status.
+
+We could adopt the following rules:
+- if the filesystem is mounted RO then all the subvolumes (event the id=5) are RO
+- if a subvolume is marked RO, the it is RO
+- otherwise a subvolume is RW
+
+Moreover we can add further rules to inherit the subvolume RO/RW status at the creation time (even tough it makes sense only for the snapshot). We could use an xattr for that.
+
+Finally I would like to point out that relying on the relationship parent/child between the subvolumes is very dangerous. With the exception if the subvolid=5 which is the only root one, it is very easy to move up and down the subvolume. I have to point out this because I read on another email that someone likes the idea to having a RO subvolume because its parent is marked RO.
+But a subvolume may be mounted also by id and not by its path (and or name). So relying on the relationship parent/child would lead to break the "least surprise principle".
+
+My 2 ¢
+BR
+G.Baroncelli
+
+> 
+> Thanks, Qu
+>> If so this behaviour seems to me correctly. Different is after
+>> mounting the subvolume "subvolumename", also the whole filesystem
+>> results rw (eg: #1 succeeded).
+>> 
+>> G.Baroncelli
+>> 
+>> 
+>> 
+>> 
+>> 
+>>> The problem also happens when a parent subvol is mounted rw but
+>>> child subvol is mounted ro. User can still modify the child
+>>> subvol through parent subvol, still broke the readonly rule.
+>>> 
+>>> Thanks, Qu
+>>> 
+>> 
+> 
+> 
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,32 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40831 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752864AbaGCSKZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Jul 2014 14:10:25 -0400
-Date: Thu, 3 Jul 2014 20:10:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com
-Subject: Re: [PATCH] btrfs-progs: prevent select invalid dev super after dev
- replace
-Message-ID: <20140703181020.GL1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1404353196-10914-1-git-send-email-guihc.fnst@cn.fujitsu.com>
- <1404353196-10914-3-git-send-email-guihc.fnst@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:51436 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755557AbaGDBJu convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 21:09:50 -0400
+Message-ID: <53B5FF18.7060801@cn.fujitsu.com>
+Date: Fri, 4 Jul 2014 09:10:48 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1404353196-10914-3-git-send-email-guihc.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/4] Add superblock checksum check for btrfs-progs
+References: <1404380198-25948-1-git-send-email-quwenruo@cn.fujitsu.com> <20140703175727.GK1553@twin.jikos.cz>
+In-Reply-To: <20140703175727.GK1553@twin.jikos.cz>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 03, 2014 at 10:06:35AM +0800, Gui Hecheng wrote:
-> After dev replace, we should not select the superblock of the
-> replaced dev. Otherwise, all the superblokcs will be overwritten
-> by this invalid superblock.
-> 
-> To prevent this case, let btrfs-select-super check the first
-> superblock on the selected dev. If the magic doesn't match,
-> then the dev is a replaced dev and error message will show up.
 
-Is this patch needed if Qu's superblock checksum patches are applied?
-Thanks.
+-------- Original Message --------
+Subject: Re: [PATCH 0/4] Add superblock checksum check for btrfs-progs
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年07月04日 01:57
+> On Thu, Jul 03, 2014 at 05:36:34PM +0800, Qu Wenruo wrote:
+>> Before this patchset, btrfs-progs will overall ignore the superblock
+>> checksum and continue the routine.
+>> Sometimes this may cause disasters like checking a btrfs with corrupted
+>> superblock will lead to crash in btrfs-progs.
+>>
+>> This patch introduces superblock checksum check into btrfs_read_dev_super(),
+>> making btrfs-progs much more restricted and robust.
+>> To allow super-recover to open devices, add options to scan all 3
+>> superblocks when using super-recover.
+>> Also updated the related error string and fix a bug in chunk-recover that
+>> will not be triggered until superblock csum is calculated.
+>>
+>> Qu Wenruo (4):
+>>    btrfs-progs: Check superblock's checsum when read dev super
+>>    btrfs-progs: Allow btrfs_read_dev_super() to read all 3 super for
+>>      super_recover.
+>>    btrfs-progs: Add more meaningful return value for
+>>      btrfs_read_dev_super()     and corresponding error string.
+>>    btrfs-progs: Fix size for malloc for superblock checksum.
+> Nice work. I've added 1, 2 and 4 it to integration. Please update the
+> patch 3 (printf/fprintf).
+Thanks for the review and minor tweak for patch 2.
+
+I'll send v2 version of patch 3 soon.
+
+Thank,
+Qu

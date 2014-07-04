@@ -1,111 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60279 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751850AbaGDB1L convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 21:27:11 -0400
-Message-ID: <53B6032D.6090207@cn.fujitsu.com>
-Date: Fri, 4 Jul 2014 09:28:13 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:46668 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755286AbaGDB6e (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jul 2014 21:58:34 -0400
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 29C163EE1B0
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 10:58:33 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 27F40AC0A80
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 10:58:32 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id CC1661DB8032
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 10:58:31 +0900 (JST)
+Received: from g01jpexchkw33.g01.fujitsu.local (unknown [10.0.193.4])
+	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 7752D328542
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 10:58:29 +0900 (JST)
+Message-ID: <53B60A38.9090102@jp.fujitsu.com>
+Date: Fri, 4 Jul 2014 10:58:16 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: <kreijack@inwind.it>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
- different ro/rw options"
-References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com> <53B445F5.6060709@libero.it> <53B4A3C7.1020805@cn.fujitsu.com> <53B594E7.9070500@inwind.it>
-In-Reply-To: <53B594E7.9070500@inwind.it>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RESEND 4/9] Btrfs: fix put dio bio twice when we submit
+ dio bio fail
+References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com> <1404382933-26672-4-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1404382933-26672-4-git-send-email-miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Miao,
 
--------- Original Message --------
-Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes 
-with different ro/rw options"
-From: Goffredo Baroncelli <kreijack@inwind.it>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Date: 2014年07月04日 01:37
-> On 07/03/2014 02:28 AM, Qu Wenruo wrote:
->> -------- Original Message --------
->> Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with different ro/rw options"
->> From: Goffredo Baroncelli <kreijack@libero.it>
->> To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
->> Date: 2014年07月03日 01:48
->>> On 07/01/2014 11:30 AM, Qu Wenruo wrote:
->>>> This commit has the following problem:
->>>> 1) Break the ro mount rule.
->>>> When users mount the whole btrfs ro, it is still possible to mount
->>>> subvol rw and change the contents. Which make the whole fs ro mount
->>>> non-sense.
->>> Where is the problem ? I see an use case when I want a conservative default: mount all ro except some subvolumes.
->>>
->>> In any case it is not a security problem because if the user has the capability to mount a subvolume, also he has the capability to remount,rw the whole filesystem.
->>>
->>>
->>>
->> Not security problem but behavior not consistent.
->> If user mount the whole disk ro, he or she want the fs read only and nothing will change in it.
->> If you mount a subvol rw, then the whole disk ro expectation is broken. Things will change even the whole
->> disk is readonly.
-> Sorry for bother you again, but there is a thing not clear to me:
->
-> If
->
->      # mount -o subvolid=5,ro /dev/sda1 /mnt/root
->      # mount -o subvol=subvolname,rw /dev/sda1 /mnt/subvolname
->
-> I suppose that
->
->      # touch /mnt/root/touch-test 		# 1
->
-> fails, and
->
->      # touch /mnt/subvolname/touch-test		# 2
->
-> succeeded. I understood correctly ?
-Your understanding is right and that is current behavior.
+(2014/07/03 19:22), Miao Xie wrote:
+> The caller of btrfs_submit_direct_hook() will put the original dio bio
+> when btrfs_submit_direct_hook() return a error number, so we needn't
+> put the original bio in btrfs_submit_direct_hook().
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 
-But that should not be the correct behavior.
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-If you mount fs_tree ro, btrfs should ensure the whole fs_tree(including 
-all the subvolumes) ro.
-Or the whole fs_tree is not restricted readonly since you can modify 
-contents inside the rw subvolume,
-and it's part of the fs_tree.(partly ro and partly rw status)
+Here is the review result, CMIIW.
 
-IMO the perfect logical should be like the following:
-1) ro mounted subvolume will force all the children subvolumes only ro 
-mountable
+call trace:
+  btrfs_submit_direct
+    -> btrfs_submit_direct_hook
 
-subvol 5 (mounted ro /)
-├── subvol 257 (mounted rw /mnt/btrfrs)
-So above mounted should not be allowed.
+fs/btrfs/inode.c:
+===============================================================================
+static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+				    int skip_sum)
+{
+	...
+	struct bio *orig_bio = dip->orig_bio;
+	...
+	map_length = orig_bio->bi_iter.bi_size;
+	ret = btrfs_map_block(root->fs_info, rw, start_sector << 9,
+			      &map_length, NULL, 0);
+	if (ret) {
+		bio_put(orig_bio); # (1)
+		return -EIO;
+	}
+	...
+}
+...
+static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+				struct inode *inode, loff_t file_offset)
+{
+	dip = kmalloc(sizeof(*dip) + sum_len, GFP_NOFS);
+	if (!dip) {
+		ret = -ENOMEM;
+		goto free_io_bio; # (2)
+	}
+	...
+	ret = btrfs_submit_direct_hook(rw, dip, skip_sum);
+	if (!ret)
+		return;
 
-But the following mount should be OK:
-subvol 5 (mounted rw /)
-├── subvol 257 (mounted ro /mnt/btrfrs)
+free_io_bio:
+	bio_put(io_bio); # (3)
+	...
+}
+===============================================================================
 
-2) ro mounted subvolume will not be modified even through the rw mounted 
-parent subvolume.
-
-Only this will ensure restricted ro mount option.
-
-If anyone has any other ideas about it, I'm happy to listen.
+If btrfs_map_block() fails in btrfs_submit_direct_hook(), it put
+orig_bio at (1) and return -EIO. Then caller, btrfs_submit_direct()
+free the same bio at (3). Since (3) is also used for other error
+handling (2), I consider your way, removing (1), is better.
 
 Thanks,
-Qu
->   If so this behaviour seems to me correctly.
-> Different is after mounting the subvolume "subvolumename", also the whole filesystem results rw (eg: #1 succeeded).
->
-> G.Baroncelli
->
->
->
->
->
->> The problem also happens when a parent subvol is mounted rw but child subvol is mounted ro.
->> User can still modify the child subvol through parent subvol, still broke the readonly rule.
->>
->> Thanks,
->> Qu
->>
->
+Satoru
+
+> ---
+>   fs/btrfs/inode.c | 5 ++---
+>   1 file changed, 2 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a616fa4..15902eb 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7325,10 +7325,8 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+>   	map_length = orig_bio->bi_iter.bi_size;
+>   	ret = btrfs_map_block(root->fs_info, rw, start_sector << 9,
+>   			      &map_length, NULL, 0);
+> -	if (ret) {
+> -		bio_put(orig_bio);
+> +	if (ret)
+>   		return -EIO;
+> -	}
+>   
+>   	if (map_length >= orig_bio->bi_iter.bi_size) {
+>   		bio = orig_bio;
+> @@ -7345,6 +7343,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+>   	bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev, start_sector, GFP_NOFS);
+>   	if (!bio)
+>   		return -ENOMEM;
+> +
+>   	bio->bi_private = dip;
+>   	bio->bi_end_io = btrfs_end_dio_bio;
+>   	atomic_inc(&dip->pending_bios);
+> 
 

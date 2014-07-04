@@ -1,109 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:26639 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750714AbaGDLY6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 07:24:58 -0400
-Message-ID: <53B68EFC.2050104@oracle.com>
-Date: Fri, 04 Jul 2014 19:24:44 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55325 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752129AbaGDNw2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Jul 2014 09:52:28 -0400
+Date: Fri, 4 Jul 2014 15:52:26 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs-progs: Add mount point check for 'btrfs fi df'
+ command
+Message-ID: <20140704135226.GO1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1404463129-28350-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1404463129-28350-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com, Chris Mason <clm@fb.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: fix null pointer dereference in clone_fs_devices
- when name is null
-References: <1404119568-4097-1-git-send-email-Anand.Jain@oracle.com> <53B135B2.5060405@cn.fujitsu.com> <53B17D0E.2050302@oracle.com> <53B370A7.6050108@cn.fujitsu.com> <53B68E42.1050109@oracle.com>
-In-Reply-To: <53B68E42.1050109@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1404463129-28350-2-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(now used correct email id for Chris)
+On Fri, Jul 04, 2014 at 04:38:49PM +0800, Qu Wenruo wrote:
+> 'btrfs fi df' command is currently able to be executed on any file/dir
+> inside btrfs since it uses btrfs ioctl to get disk usage info.
+> 
+> However it is somewhat confusing for some end users since normally such
+> command should only be executed on a mount point.
 
-On 04/07/2014 19:21, Anand Jain wrote:
->
-> Miao, Chris,
->
-> I appreciate your review comments, Miao. I am sorry for the delay,
-> was stuck on this issue for a long time. more below.
->
-> On 02/07/2014 10:38, Miao Xie wrote:
->> On Mon, 30 Jun 2014 23:06:54 +0800, Anand Jain wrote:
->>>
->>>> The primary reason of this problem is that we didn't scan the system
->>>> and
->>>> find all the devices in the filesystem, if we scan the system, we can
->>>> mount the filesystem successfully, needn't mount it with degraded
->>>> option.
->>>> so I think the right way to fix is to scan the system and find the
->>>> device
->>>> that is not registered into the fs device list.
->>>
->>> Thanks for commenting. Right. But I am testing the error
->>> scenario. that is, when one of the disk is missing in the system.
->>
->> In fact, the disk is still in the system, but is not added into btrfs
->> device list
->> (we can add it by "btrfs device scan" command), and after you mount
->> the fs with
->> degraded option, the fs adds that disk as a missing device, so it
->> doesn't has its
->> name.
->
-> Correct.
->
->> Though avoiding access a null pointer is right,
->
->   yes. that would tightly plug the problem demonstrated in the reproducer
->   with minimal changes.
->
->> you didn't consider the missing
->> device and forgot to set the missing device counter. I think the
->> following code
->> is better.
->>
->> if (orig_dev->missing) {
->>     device->missing = 1;
->>     fs_devices->missing_devices++;
->> } else {
->>     ASSERT(orig_dev->name);
->>     ......
->> }
->
->   Yes we need to associate the device->missing flag and
->   device->name==NULL together, not just here but at quite a number of
->   functions. As such there is no code which would mark
->   device missing after its being mounted (there were some patch
->   but those are yet to be reviewed).
->
->   So for now this patch will address problem as in the reproducer.
->   BUT BUT it would enable sections of code (with new parameters) which
->   was _never_ run before due to this bug. That is in the following
->   scenario..
->     - A mounted (missing) degraded seed btrfs FS.
->     - Add a seed disk.
->     - For seeding purpose we would "clone a degraded seed FS".
->       (before this patch - the code will panic here so rest of the
->        code was never run).
->
->   I have very intermittent null pointer deference issue as the code
->   runs further, (with or without Miao suggested), more precisely at
->
->   btrfs_run_dev_stats()
-> ::
->    list_for_each_entry(device, &fs_devices->devices, dev_list) the list
->
->   device is NULL.
->
->   looks like its time to comprehensively handle the missing device.
->
->   So as of now NACK for this patch. Very Sorry.
->
-> Thanks, Anand
->
->> Thanks
->> Miao
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
+I disagree here, it's much more convenient to run 'fi df' anywhere and
+get the output. The system 'df' command works the same way.
+
+The 'fi df' command itself is not that user friendly and the numbers
+need further interpretation. I'm using it heavily during debugging and
+restricting it to the mountpoint seems too artifical, the tool can cope
+with that.
+
+The 'fi usage' is supposed to give the user-friendly overview, but the
+patchset is stuck because I found the numbers wrong or misleading under
+some circumstances.
+
+I'll reread the thread that motivated this patch to see if there's
+something to address.

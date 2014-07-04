@@ -1,60 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outbound-queue-2.mail.thdo.gradwell.net ([212.11.70.35]:57004
-	"EHLO outbound-queue-2.mail.thdo.gradwell.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751104AbaGDOqr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Jul 2014 10:46:47 -0400
-Received: from outbound-edge-1.mail.thdo.gradwell.net (bonnie.gradwell.net [212.11.70.2])
-	by outbound-queue-2.mail.thdo.gradwell.net (Postfix) with ESMTP id 0A60622AD3
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Jul 2014 15:38:30 +0100 (BST)
-Message-ID: <53B6BC65.3080302@barrowhillfarm.org.uk>
-Date: Fri, 04 Jul 2014 15:38:29 +0100
-From: Bob Williams <linux@barrowhillfarm.org.uk>
+Received: from mail-pd0-f171.google.com ([209.85.192.171]:49262 "EHLO
+	mail-pd0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754701AbaGDRAd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 13:00:33 -0400
+Received: by mail-pd0-f171.google.com with SMTP id fp1so2188654pdb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jul 2014 10:00:33 -0700 (PDT)
+Message-ID: <53B6DDAD.20504@gmail.com>
+Date: Fri, 04 Jul 2014 10:00:29 -0700
+From: Konstantin Svist <fry.kun@gmail.com>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: A question about subvolumes
+Subject: btrfs partition remounted read-only
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+I have an overnight cron job with
 
-I have a disc formatted as btrfs, on which is mounted /home.
+/sbin/fstrim -v /
+/bin/bedup dedup --defrag
 
-/home/bob is a regular directory.
+Every once in a while, it causes the FS to be remounted read-only.
+Problem is pretty intermittent so far (aside from a few kernel revisions
+a while ago).
 
-/home/bob/Documents is a btrfs subvolume
+Please advise.
 
-/home is btrfs root
 
-If I do
+Corresponding bugs:
+https://bugzilla.kernel.org/show_bug.cgi?id=71311
+https://bugzilla.redhat.com/show_bug.cgi?id=1071408
 
-# mv /home/bob /home/bob_original
-# btrfs subvolume create /home/bob
-# mv /home/bob_original/* /home/bob/
-# rm /home/bob_original
+Addtl info:
 
-will the original subvolume /home/bob/Documents survive this
-operation, and will it now exist as a subvolume under the new
-subvolume /home/bob?
+# uname -a
+Linux mireille.svist.net 3.14.9-200.fc20.x86_64 #1 SMP Thu Jun 26
+21:40:51 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
+# btrfs --version
+Btrfs v3.14.2
+# btrfs fi show
+Label: none  uuid: 5ac56e7d-3d04-4ffa-8160-5a47f46c2939
+    Total devices 1 FS bytes used 151.77GiB
+    devid    1 size 465.76GiB used 282.02GiB path /dev/sda2
 
-I realise it's best to create subvolumes progressively from the top of
-the filesystem tree, but this system originated as an ext4fs which was
-migrated to btrfs, and some sensible things got missed in all the
-excitement. ;-)
+Btrfs v3.14.2
+# btrfs fi df /
+Data, single: total=277.01GiB, used=148.86GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=5.01GiB, used=2.91GiB
 
-Bob
-- -- 
-Bob Williams
-System:  Linux 3.11.10-17-desktop
-Distro:  openSUSE 13.1 (x86_64) with KDE Development Platform: 4.13.2
-Uptime:  06:00am up 5 days 20:14, 3 users, load average: 0.00, 0.04, 0.08
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iEYEARECAAYFAlO2vGQACgkQ0Sr7eZJrmU6CPACgoLTFUxx68+z/H30C5wd/MPe4
-6rcAoKpqxoETgkbgMd+MAbHEL7BWpLBs
-=Cbmm
------END PGP SIGNATURE-----

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43274 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43937 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754722AbaGDGRB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 02:17:01 -0400
-Message-ID: <53B645D4.1060003@cn.fujitsu.com>
-Date: Fri, 4 Jul 2014 14:12:36 +0800
+	with ESMTP id S1754722AbaGDGXN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 02:23:13 -0400
+Message-ID: <53B64746.1000105@cn.fujitsu.com>
+Date: Fri, 4 Jul 2014 14:18:46 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Marc MERLIN <marc@merlins.org>
@@ -30,6 +30,16 @@ On 07/04/2014 02:02 PM, Marc MERLIN wrote:
 > would be harder to get from that point in the code.
 > Ideally scrub should be able to find that problem and report it, at least I
 > would know which filesystem to rescan for errors:
+So there is a problem, ususally such generation verifications errors is 
+related to
+Btrfs metdata block.it is maybe just a Btrfs node , not related to any 
+actually files,
+or even a leaf that contains more that one file....
+
+If this is a read/write path from normal fs/file root, we may output 
+its' root..but if this is
+something like extent root...i think it helps little....
+
 >
 >>> Back to the original problem, would you agree that
 >>> find / -type f -print0 | xargs grep . >/dev/nul?
@@ -40,25 +50,6 @@ On 07/04/2014 02:02 PM, Marc MERLIN wrote:
 >> +                       eb->fs_info->sb->s_id, eb->start,
 >> +                       parent_transid, btrfs_header_generation(eb));
 > That looks great. Ideally all such errors would look like this.
-OK,  i found there is a mirror num recorded  in struct @extent_buffer, 
-so it is not diffcult
-to locate the real physical address that this corrupt metadata block 
-locates.
-
-But another question is that if such problems happen, it should also 
-help little, because
-usually other mirrors maybe have the same errors...
-
-Looking at btrfs codes, if it found such error which means checksum has 
-passed but generation
-verification fails it  dosen't even try other mirrors if existed, so i 
-supposed such kinds of errors
-is fatal and could be corrected by btrfs itself..
-
-Anyway, let me see if there are any other output even dose not output 
-btrfs specific info.
-
-Thanks,
 >
 > Thanks for looking into this, I appreciate it.
 >

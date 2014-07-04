@@ -1,62 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f179.google.com ([209.85.223.179]:48056 "EHLO
-	mail-ie0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752576AbaGDUEa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 16:04:30 -0400
-Received: by mail-ie0-f179.google.com with SMTP id lx4so844800iec.24
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jul 2014 13:04:29 -0700 (PDT)
-Received: from [192.168.1.2] ([216.26.106.6])
-        by mx.google.com with ESMTPSA id y8sm64999641igg.5.2014.07.04.13.04.28
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
-        Fri, 04 Jul 2014 13:04:29 -0700 (PDT)
-Message-ID: <53B708CC.5020306@gmail.com>
-Date: Fri, 04 Jul 2014 15:04:28 -0500
-From: Kevin Brandstatter <icarusthecow@gmail.com>
+Received: from outrelay07.libero.it ([212.52.84.111]:55681 "EHLO
+	outrelay07.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752918AbaGDUd4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jul 2014 16:33:56 -0400
+Message-ID: <53B710C9.9020601@libero.it>
+Date: Fri, 04 Jul 2014 22:38:33 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs_qgroup_create unused parameter
-Content-Type: text/plain; charset=ISO-8859-1
+To: Bob Williams <linux@barrowhillfarm.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: A question about subvolumes
+References: <53B6BC65.3080302@barrowhillfarm.org.uk>
+In-Reply-To: <53B6BC65.3080302@barrowhillfarm.org.uk>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-|The code is pasted below for convenience of reference, but in the function to 
-create a qgruop, it taks a 4th parameter (char * name). I assume this is the name
-of the path to limit, however, i don't see where its used anywhere in the function.
+On 07/04/2014 04:38 PM, Bob Williams wrote:
+> I have a disc formatted as btrfs, on which is mounted /home.
+> 
+> /home/bob is a regular directory.
+> 
+> /home/bob/Documents is a btrfs subvolume
+> 
+> /home is btrfs root
+> 
+> If I do
+> 
+> # mv /home/bob /home/bob_original
+> # btrfs subvolume create /home/bob
+> # mv /home/bob_original/* /home/bob/
+> # rm /home/bob_original
+> 
+> will the original subvolume /home/bob/Documents survive this
+> operation, and will it now exist as a subvolume under the new
+> subvolume /home/bob?
 
--Kevin Brandstatter
+Yes. 
 
-int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
-			struct btrfs_fs_info *fs_info, u64 qgroupid, *char** *****name**)*
-{
-	struct btrfs_root *quota_root;
-	struct btrfs_qgroup *qgroup;
-	int ret = 0;
+A subvolume is a way to partition a btrfs file-system. You can think a subvolume like a filesystem. 
+For objects like files and directory a move command between *different* subvolumes is equal to a copy+remove. If fact is like you are moving data between different file-systems.
 
-	mutex_lock(&fs_info->qgroup_ioctl_lock);
-	quota_root = fs_info->quota_root;
-	if (!quota_root) {
-		ret = -EINVAL;
-		goto out;
-	}
-	qgroup = find_qgroup_rb(fs_info, qgroupid);
-	if (qgroup) {
-		ret = -EEXIST;
-		goto out;
-	}
+Instead moving a subvolume  in *its btrfs filesystem* is a cheap operation (is like moving a link); this is true even if you move a subvolume between different subvolumes.
 
-	ret = add_qgroup_item(trans, quota_root, qgroupid);
-	if (ret)
-		goto out;
+To increase the speed when you move files between subvolumes (of the *same* btrfs filesystem), you could do a "cp --reflink" + "rm" instead of a "mv"; eg
 
-	spin_lock(&fs_info->qgroup_lock);
-	qgroup = add_qgroup_rb(fs_info, qgroupid);
-	spin_unlock(&fs_info->qgroup_lock);
+	# mv subvolume-A/* subvolume-B/
 
-	if (IS_ERR(qgroup))
-		ret = PTR_ERR(qgroup);
-out:
-	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-	return ret;
-}|
+is equal to
 
+	# cp -rf  subvolume-A/* subvolume-B/
+	# rm -rf subvolume-A/*
+
+but 
+	# cp --reflink -R  subvolume-A/* subvolume-B/
+	# rm -rf subvolume-A/
+
+is faster  because "cp --reflink" shared the data between source and destination. This means that you are doing a copy (and a delete) of metadata only.
+
+
+
+
+> 
+> I realise it's best to create subvolumes progressively from the top of
+> the filesystem tree, but this system originated as an ext4fs which was
+> migrated to btrfs, and some sensible things got missed in all the
+> excitement. ;-)
+> 
+> Bob
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

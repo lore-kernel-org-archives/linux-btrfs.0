@@ -1,57 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55519 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753617AbaGDWOC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Jul 2014 18:14:02 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X3Bk1-0000C2-2T
-	for linux-btrfs@vger.kernel.org; Sat, 05 Jul 2014 00:14:01 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Jul 2014 00:14:01 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Jul 2014 00:14:01 +0200
+Received: from 206-248-167-68.dsl.teksavvy.com ([206.248.167.68]:56174 "EHLO
+	mail.isoar.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751309AbaGEOSk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 5 Jul 2014 10:18:40 -0400
+Received: from [172.16.0.130]
+	by mail.isoar.ca with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+	(Exim 4.80.1 #2)
+	id 1X3QJF-0003vC-BB
+	for linux-btrfs@vger.kernel.org; Sat, 05 Jul 2014 09:47:21 -0400
+Message-ID: <53B801DD.5040704@isoar.ca>
+Date: Sat, 05 Jul 2014 09:47:09 -0400
+From: "Andrew E. Mileski" <andrewm@isoar.ca>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Is btrfs related to OOM death problems on my 8GB server with
  both 3.15.1 and 3.14?
-Date: Fri, 4 Jul 2014 22:13:48 +0000 (UTC)
-Message-ID: <pan$949f5$8b3f51a1$835d96eb$bb9ec3bc@cox.net>
-References: <20140704011938.GO11539@merlins.org> <1937402.nCIA16QR35@xev>
-	<53B6486D.9010006@jp.fujitsu.com> <20140704142416.GI26932@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <20140704011938.GO11539@merlins.org>
+In-Reply-To: <20140704011938.GO11539@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Fri, 04 Jul 2014 07:24:16 -0700 as excerpted:
+On 2014-07-03 9:19 PM, Marc MERLIN wrote:
+> I upgraded my server from 3.14 to 3.15.1 last week, and since then it's been
+> running out of memory and deadlocking (panic= doesn't even work).
+> I downgraded back to 3.14, but I already had the problem once since then.
 
-> So, should I understand that 1) I have enough RAM in my system but all
-> of it disappears, apparently
->    claimed by the kernel and not released
-> 
-> 2) this could be a kernel memory leak in btrfs or somewhere else, there
->    is no good way to know
->
+I didn't see any mention of the btrfs utility version in this thread (I 
+may be blind though).
 
-Generally speaking if you're running out of RAM and swap is unused, it's 
-because something is leaking memory that cannot be swapped.  The kernel 
-is the most likely suspect as kernel memory doesn't swap, especially so 
-if the OOM-killer kills everything it can and the problem is still there.
+My server was suffering from frequent panics upon scrub / defrag / 
+balance, until I updated the btrfs utility.  That resolved all my issues.
 
-So it's almost certainly the kernel, and btrfs is a good candidate, but 
-I'm not a dev, and at least from that vantage point I didn't see enough 
-information to conclusively pin it on btrfs.  If the devs can't either, 
-then either turning on additional debugging options or further debugging 
-patches would seem to be in order.
+My server has two filesystems of ~25 TiB, and 4 GB of RAM (15% used).  A 
+hardware upgrade is imminent, just waiting for the backup to complete.
 
-So the above seems correct from here, yes.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+~~
+Andrew E. Mileski
 

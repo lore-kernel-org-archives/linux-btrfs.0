@@ -1,52 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from exchange-west-ht02.tripadvisor.com ([192.170.138.102]:45525
-	"EHLO exchange-west.tripadvisor.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751169AbaGGQpb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Jul 2014 12:45:31 -0400
-Message-ID: <53BACD77.8090200@tripadvisor.com>
-Date: Mon, 7 Jul 2014 12:40:23 -0400
-From: "Benjamin O'Connor" <boconnor@tripadvisor.com>
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:36429 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751424AbaGGQ5N (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 12:57:13 -0400
+Received: by mail-wg0-f42.google.com with SMTP id n12so2901588wgh.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jul 2014 09:57:12 -0700 (PDT)
+Message-ID: <53BAD165.808@lianse.eu>
+Date: Mon, 07 Jul 2014 18:57:09 +0200
+From: =?UTF-8?B?QW5kcsOpLVNlYmFzdGlhbiBMaWViZQ==?= <andre@lianse.eu>
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>
-CC: <linux-btrfs@vger.kernel.org>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Konstantinos Skarlatos <k.skarlatos@gmail.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: mount time of multi-disk arrays
-References: <53BAA2E5.2090801@lianse.eu> <53BAA67D.1050101@gmail.com> <pan$e34e1$34425a38$28d282d8$6ffde053@cox.net>
-In-Reply-To: <pan$e34e1$34425a38$28d282d8$6ffde053@cox.net>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+References: <53BAA2E5.2090801@lianse.eu> <53BAA67D.1050101@gmail.com> <53BAAB37.7030800@gmail.com>
+In-Reply-To: <53BAAB37.7030800@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As a point of reference, my BTRFS filesystem with 11 x 21TB devices in 
-RAID0 with space cache enabled takes about 4 minutes to mount after a 
-clean unmount.
-
-There is a decent amount of variation in the amount of time (has been as 
-low as 3 minutes or taken 5 minutes or longer).  These devices are all 
-connected via 10gb iscsi.
-
-Mount time seems to have not increased relative to the number of devices 
-(so far).  I think that back when we had only 6 devices, it still took 
-roughly that amount of time.
-
--ben
-
--- 
------------------------------
-Benjamin O'Connor
-TechOps Systems Administrator
-TripAdvisor Media Group
-
-benoc@tripadvisor.com
-c. 617-312-9072
------------------------------
-
-
-Duncan wrote:
-> Konstantinos Skarlatos posted on Mon, 07 Jul 2014 16:54:05 +0300 as
-> excerpted:
->
+On 07/07/2014 04:14 PM, Austin S Hemmelgarn wrote:
+> On 2014-07-07 09:54, Konstantinos Skarlatos wrote:
 >> On 7/7/2014 4:38 μμ, André-Sebastian Liebe wrote:
+>>> Hello List,
+>>>
 >>> can anyone tell me how much time is acceptable and assumable for a
 >>> multi-disk btrfs array with classical hard disk drives to mount?
 >>>
@@ -56,81 +33,61 @@ Duncan wrote:
 >>> everytime because the default timeout of 1m 30s is reached and mount is
 >>> aborted.
 >>> My last 10 manual mounts took between 1m57s and 2m12s to finish.
->
 >> I have the exact same problem, and have to manually mount my large
 >> multi-disk btrfs filesystems, so I would be interested in a solution as
 >> well.
+>>
+>>> My hardware setup contains a
+>>> - Intel Core i7 4770
+>>> - Kernel 3.15.2-1-ARCH
+>>> - 32GB RAM
+>>> - dev 1-4 are 4TB Seagate ST4000DM000 (5900rpm)
+>>> - dev 5 is a 4TB Wstern Digital WDC WD40EFRX (5400rpm)
+>>>
+>>> Thanks in advance
+>>>
+>>> André-Sebastian Liebe
+>>> --------------------------------------------------------------------------------------------------
+>>>
+>>>
+>>> # btrfs fi sh
+>>> Label: 'apc01_pool0'  uuid: 066141c6-16ca-4a30-b55c-e606b90ad0fb
+>>>          Total devices 5 FS bytes used 14.21TiB
+>>>          devid    1 size 3.64TiB used 2.86TiB path /dev/sdd
+>>>          devid    2 size 3.64TiB used 2.86TiB path /dev/sdc
+>>>          devid    3 size 3.64TiB used 2.86TiB path /dev/sdf
+>>>          devid    4 size 3.64TiB used 2.86TiB path /dev/sde
+>>>          devid    5 size 3.64TiB used 2.88TiB path /dev/sdb
+>>>
+>>> Btrfs v3.14.2-dirty
+>>>
+>>> # btrfs fi df /data/pool0/
+>>> Data, single: total=14.28TiB, used=14.19TiB
+>>> System, RAID1: total=8.00MiB, used=1.54MiB
+>>> Metadata, RAID1: total=26.00GiB, used=20.20GiB
+>>> unknown, single: total=512.00MiB, used=0.00
+> This is interesting, I actually did some profiling of the mount timings
+> for a bunch of different configurations of 4 (identical other than
+> hardware age) 1TB Seagate disks.  One of the arrangements I tested was
+> Data using single profile and Metadata/System using RAID1.  Based on the
+> results I got, and what you are reporting, the mount time doesn't scale
+> linearly in proportion to the amount of storage space.
 >
-> I don't have a direct answer, as my btrfs devices are all SSD, but...
+> You might want to try the RAID10 profile for Metadata, of the
+> configurations I tested, the fastest used Single for Data and RAID10 for
+> Metadata/System.
+Switching Metadata from raid1 to raid10 reduced mount times from roughly
+120s to 38s!
 >
-> a) Btrfs, like some other filesystems, is designed not to need a
-> pre-mount (or pre-rw-mount) fsck, because it does what /should/ be a
-> quick-scan at mount-time.  However, that isn't always as quick as it
-> might be for a number of reasons:
->
-> a1) Btrfs is still a relatively immature filesystem and certain
-> operations are not yet optimized.  In particular, multi-device btrfs
-> operations tend to still be using a first-working-implementation type of
-> algorithm instead of a well optimized for parallel operation algorithm,
-> and thus often serialize access to multiple devices where a more
-> optimized algorithm would parallelize operations across multiple devices
-> at the same time.  That will come, but it's not there yet.
->
-> a2) Certain operations such as orphan cleanup ("orphans" are files that
-> were deleted while they were in use and thus weren't fully deleted at the
-> time; if they were still in use at unmount (remount-read-only), cleanup
-> is done at mount-time) can delay mount as well.
->
-> a3) Inode_cache mount option:  Don't use this unless you can explain
-> exactly WHY you are using it, preferably backed up with benchmark
-> numbers, etc.  It's useful only on 32-bit, generally high-file-activity
-> server systems and has general-case problems, including long mount times
-> and possible overflow issues that make it inappropriate for normal use.
-> Unfortunately there's a lot of people out there using it that shouldn't
-> be, and I even saw it listed on at least one distro (not mine!) wiki. =:^(
->
-> a4) The space_cache mount option OTOH *IS* appropriate for normal use
-> (and is in fact enabled by default these days), but particularly in
-> improper shutdown cases can require rebuilding at mount time -- altho
-> this should happen /after/ mount, the system will just be busy for some
-> minutes, until the space-cache is rebuilt.  But the IO from a space_cache
-> rebuild on one filesystem could slow down the mounting of filesystems
-> that mount after it, as well as the boot-time launching of other post-
-> mount launched services.
->
-> If you're seeing the time go up dramatically with the addition of more
-> filesystem devices, however, and you do /not/ have inode_cache active,
-> I'd guess it's mainly the not-yet-optimized multi-device operations.
->
->
-> b) As with any systemd launched unit, however, there's systemd
-> configuration mechanisms for working around specific unit issues,
-> including timeout issues.  Of course most systems continue to use fstab
-> and let systemd auto-generate the mount units, and in fact that is
-> recommended, but either with fstab or directly created mount units,
-> there's a timeout configuration option that can be set.
->
-> b1) The general systemd *.mount unit [Mount] section option appears to be
-> TimeoutSec=.  As is usual with systemd times, the default is seconds, or
-> pass the unit(s, like "5min 20s").
->
-> b2) I don't see it /specifically/ stated, but with a bit of reading
-> between the lines, the corresponding fstab option appears to be either
-> x-systemd.timeoutsec= or x-systemd.TimeoutSec= (IOW I'm not sure of the
-> case).  You may also want to try x-systemd.device-timeout=, which /is/
-> specifically mentioned, altho that appears to be specifically the timeout
-> for the device to appear, NOT for the filesystem to mount after it does.
->
-> b3) See the systemd.mount (5) and systemd-fstab-generator (8) manpages
-> for more, that being what the above is based on.
->
-> So it might take a bit of experimentation to find the exact command, but
-> based on the above anyway, it /should/ be pretty easy to tell systemd to
-> wait a bit longer for that filesystem.
->
-> When you find the right invocation, please reply with it here, as I'm
-> sure there's others who will benefit as well.  FWIW, I'm still on
-> reiserfs for my spinning rust (only btrfs on my ssds), but I expect I'll
-> switch them to btrfs at some point, so I may well use the information
-> myself.  =:^)
->
+> Also, based on the System chunk usage, I'm guessing that you have a LOT
+> of subvolumes/snapshots, and I do know that having very large (100+)
+> numbers of either does slow down the mount command (I don't think that
+> we cache subvolume information between mount invocations, so it has to
+> re-parse the system chunks for each individual mount).
+No, I had to remove the one and only snapshot to recover from a 'no
+space left on device' to regain metadata space
+(http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html)
+
+-- 
+André-Sebastian Liebe
+

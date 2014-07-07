@@ -1,83 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:54483 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751392AbaGGJvs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 05:51:48 -0400
-Received: by mail-pa0-f53.google.com with SMTP id ey11so5107666pad.26
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jul 2014 02:51:48 -0700 (PDT)
-Date: Mon, 7 Jul 2014 15:21:40 +0530
-From: Vikram Goyal <vikigoyal@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: Re: [PATCH 2/2] btrfs-progs: Add mount point check for 'btrfs fi df'
- command
-Message-ID: <20140707095140.GA7732@mail2.smcindiaonline.com>
-References: <1404463129-28350-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1404463129-28350-2-git-send-email-quwenruo@cn.fujitsu.com>
- <20140704135226.GO1553@twin.jikos.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:38924 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751706AbaGGJ4P (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 05:56:15 -0400
+Message-ID: <53BA6EBD.9060004@oracle.com>
+Date: Mon, 07 Jul 2014 17:56:13 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-In-Reply-To: <20140704135226.GO1553@twin.jikos.cz>
+To: miaox@cn.fujitsu.com
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2 7/9] btrfs: fix null pointer dereference in clone_fs_devices
+ when name is null
+References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com> <1404382933-26672-7-git-send-email-miaox@cn.fujitsu.com> <53BA1C39.9090407@oracle.com> <53BA206D.4040301@cn.fujitsu.com>
+In-Reply-To: <53BA206D.4040301@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 04, 2014 at 03:52:26PM +0200, David Sterba wrote:
->On Fri, Jul 04, 2014 at 04:38:49PM +0800, Qu Wenruo wrote:
->> 'btrfs fi df' command is currently able to be executed on any file/dir
->> inside btrfs since it uses btrfs ioctl to get disk usage info.
+
+
+On 07/07/2014 12:22, Miao Xie wrote:
+> On Mon, 7 Jul 2014 12:04:09 +0800, Anand Jain wrote:
+>>> when one of the device path is missing btrfs_device name is null. So this
+>>> patch will check for that.
+>>>
+>>> stack:
+>>> BUG: unable to handle kernel NULL pointer dereference at 0000000000000010
+>>> IP: [<ffffffff812e18c0>] strlen+0x0/0x30
+>>> [<ffffffffa01cd92a>] ? clone_fs_devices+0xaa/0x160 [btrfs]
+>>> [<ffffffffa01cdcf7>] btrfs_init_new_device+0x317/0xca0 [btrfs]
+>>> [<ffffffff81155bca>] ? __kmalloc_track_caller+0x15a/0x1a0
+>>> [<ffffffffa01d6473>] btrfs_ioctl+0xaa3/0x2860 [btrfs]
+>>> [<ffffffff81132a6c>] ? handle_mm_fault+0x48c/0x9c0
+>>> [<ffffffff81192a61>] ? __blkdev_put+0x171/0x180
+>>> [<ffffffff817a784c>] ? __do_page_fault+0x4ac/0x590
+>>> [<ffffffff81193426>] ? blkdev_put+0x106/0x110
+>>> [<ffffffff81179175>] ? mntput+0x35/0x40
+>>> [<ffffffff8116d4b0>] do_vfs_ioctl+0x460/0x4a0
+>>> [<ffffffff8115c72e>] ? ____fput+0xe/0x10
+>>> [<ffffffff81068033>] ? task_work_run+0xb3/0xd0
+>>> [<ffffffff8116d547>] SyS_ioctl+0x57/0x90
+>>> [<ffffffff817a793e>] ? do_page_fault+0xe/0x10
+>>> [<ffffffff817abe52>] system_call_fastpath+0x16/0x1b
+>>>
+>>> reproducer:
+>>> mkfs.btrfs -draid1 -mraid1 /dev/sdg1 /dev/sdg2
+>>> btrfstune -S 1 /dev/sdg1
+>>> modprobe -r btrfs && modprobe btrfs
+>>> mount -o degraded /dev/sdg1 /btrfs
+>>> btrfs dev add /dev/sdg3 /btrfs
+>>>
+>>> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>>> ---
+>>> Changelog v1->v2:
+>>> - Fix the problem that we forgot to set the missing flag for the cloned device
+>>> ---
+>>>    fs/btrfs/volumes.c | 25 ++++++++++++++++---------
+>>>    1 file changed, 16 insertions(+), 9 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>> index 1891541..4731bd6 100644
+>>> --- a/fs/btrfs/volumes.c
+>>> +++ b/fs/btrfs/volumes.c
+>>> @@ -598,16 +598,23 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+>>>            if (IS_ERR(device))
+>>>                goto error;
+>>>
+>>> -        /*
+>>> -         * This is ok to do without rcu read locked because we hold the
+>>> -         * uuid mutex so nothing we touch in here is going to disappear.
+>>> -         */
+>>> -        name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
+>>> -        if (!name) {
+>>> -            kfree(device);
+>>> -            goto error;
+>>> +        if (orig_dev->missing) {
+>>> +            device->missing = 1;
+>>> +            fs_devices->missing_devices++;
 >>
->> However it is somewhat confusing for some end users since normally such
->> command should only be executed on a mount point.
+>>   as mentioned in some places we just check name (for missing device)
+>>   and  don't set the missing flag so it better to ..
+>>
+>>   if (orig_dev->missing || !orig_dev->name) {
+>>              device->missing = 1;
+>>              fs_devices->missing_devices++;
 >
->I disagree here, it's much more convenient to run 'fi df' anywhere and
->get the output. The system 'df' command works the same way.
+> I don't think we need check name pointer here because only missing device
+> doesn't have its own name. Or there is something wrong in the code, so
+> I add assert in else branch. Am I right?
 
-Just to clarify, in case my earlier mail did not convey the idea
-properly.
+At few critical code, the below and I guess in the chunk/strips
+function as well, we don't make use of missing flag, but rather
+->name.
 
-The basic difference between traditional df & btrfs fi df is that
-traditional df does not errors out when no arg is given & <without an
-arg> outputs all the mounted FSes with their mount points. So to be
-consistent, btrfs fi df should output all BTRFSes with mount points if
-no arg is given.
+-----
+btrfsic_process_superblock
+::
+                 if (!device->bdev || !device->name)
+                         continue;
+-----
 
-Btrfs fi df insists for an arg <path> but does not clarifies in its
-output if the given arg is a path inside of a mount point or is the
-mount point itself, which can become transparent, if the mount point is
-also shown in the output.
+  But here without !orig_dev->name check, is also good enough.
 
-This is a just a request & a pointer to an oversight/anomaly but if the
-developers do not feel in resonance with it right now then I just wish
-that they keep it in mind, think about it & remove this confusion caused
-by btrfs fi df as,when & how they feel fit.
+Thanks, Anand
 
+
+>>> +        } else {
+>>> +            ASSERT(orig_dev->name);
+>>> +            /*
+>>> +             * This is ok to do without rcu read locked because
+>>> +             * we hold the uuid mutex so nothing we touch in here
+>>> +             * is going to disappear.
+>>> +             */
+>>> +            name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
+>>> +            if (!name) {
+>>> +                kfree(device);
+>>> +                goto error;
+>>> +            }
+>>> +            rcu_assign_pointer(device->name, name);
+>>>            }
+>>> -        rcu_assign_pointer(device->name, name);
+>>>
+>>>            list_add(&device->dev_list, &fs_devices->devices);
+>>>            device->fs_devices = fs_devices;
+>>>
+>>
+>> Thanks, Anand
+>> .
+>>
 >
->The 'fi df' command itself is not that user friendly and the numbers
->need further interpretation. I'm using it heavily during debugging and
->restricting it to the mountpoint seems too artifical, the tool can cope
->with that.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
->The 'fi usage' is supposed to give the user-friendly overview, but the
->patchset is stuck because I found the numbers wrong or misleading under
->some circumstances.
->
->I'll reread the thread that motivated this patch to see if there's
->something to address.
-
-Thanks
-
--- 
-vikram...
-         ||||||||
-         ||||||||
-^^'''''^^||root||^^^'''''''^^
-        // \\   ))
-       //(( \\// \\
-      // /\\ ||   \\
-     || / )) ((    \\
--- 
-Rule of Life #1 -- Never get separated from your luggage.
--- 
-  _
- ~|~
-  =

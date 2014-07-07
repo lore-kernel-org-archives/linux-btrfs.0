@@ -1,117 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46777 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750758AbaGGDDi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jul 2014 23:03:38 -0400
-Message-ID: <53BA0E77.6040804@cn.fujitsu.com>
-Date: Mon, 7 Jul 2014 11:05:27 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:31241 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750705AbaGGEEY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 00:04:24 -0400
+Message-ID: <53BA1C39.9090407@oracle.com>
+Date: Mon, 07 Jul 2014 12:04:09 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>, Chris Mason <clm@fb.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs: fix null pointer dereference in clone_fs_devices
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2 7/9] btrfs: fix null pointer dereference in clone_fs_devices
  when name is null
-References: <1404119568-4097-1-git-send-email-Anand.Jain@oracle.com> <53B135B2.5060405@cn.fujitsu.com> <53B17D0E.2050302@oracle.com> <53B370A7.6050108@cn.fujitsu.com> <53B68E42.1050109@oracle.com> <53B68EFC.2050104@oracle.com>
-In-Reply-To: <53B68EFC.2050104@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com> <1404382933-26672-7-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1404382933-26672-7-git-send-email-miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 4 Jul 2014 19:24:44 +0800, Anand Jain wrote:
-> (now used correct email id for Chris)
-> 
-> On 04/07/2014 19:21, Anand Jain wrote:
->>
->> Miao, Chris,
->>
->> I appreciate your review comments, Miao. I am sorry for the delay,
->> was stuck on this issue for a long time. more below.
->>
->> On 02/07/2014 10:38, Miao Xie wrote:
->>> On Mon, 30 Jun 2014 23:06:54 +0800, Anand Jain wrote:
->>>>
->>>>> The primary reason of this problem is that we didn't scan the system
->>>>> and
->>>>> find all the devices in the filesystem, if we scan the system, we can
->>>>> mount the filesystem successfully, needn't mount it with degraded
->>>>> option.
->>>>> so I think the right way to fix is to scan the system and find the
->>>>> device
->>>>> that is not registered into the fs device list.
->>>>
->>>> Thanks for commenting. Right. But I am testing the error
->>>> scenario. that is, when one of the disk is missing in the system.
->>>
->>> In fact, the disk is still in the system, but is not added into btrfs
->>> device list
->>> (we can add it by "btrfs device scan" command), and after you mount
->>> the fs with
->>> degraded option, the fs adds that disk as a missing device, so it
->>> doesn't has its
->>> name.
->>
->> Correct.
->>
->>> Though avoiding access a null pointer is right,
->>
->>   yes. that would tightly plug the problem demonstrated in the reproducer
->>   with minimal changes.
->>
->>> you didn't consider the missing
->>> device and forgot to set the missing device counter. I think the
->>> following code
->>> is better.
->>>
->>> if (orig_dev->missing) {
->>>     device->missing = 1;
->>>     fs_devices->missing_devices++;
->>> } else {
->>>     ASSERT(orig_dev->name);
->>>     ......
->>> }
->>
->>   Yes we need to associate the device->missing flag and
->>   device->name==NULL together, not just here but at quite a number of
->>   functions. As such there is no code which would mark
->>   device missing after its being mounted (there were some patch
->>   but those are yet to be reviewed).
->>
->>   So for now this patch will address problem as in the reproducer.
->>   BUT BUT it would enable sections of code (with new parameters) which
->>   was _never_ run before due to this bug. That is in the following
->>   scenario..
->>     - A mounted (missing) degraded seed btrfs FS.
->>     - Add a seed disk.
->>     - For seeding purpose we would "clone a degraded seed FS".
->>       (before this patch - the code will panic here so rest of the
->>        code was never run).
->>
->>   I have very intermittent null pointer deference issue as the code
->>   runs further, (with or without Miao suggested), more precisely at
->>
->>   btrfs_run_dev_stats()
->> ::
->>    list_for_each_entry(device, &fs_devices->devices, dev_list) the list
->>
->>   device is NULL.
->>
->>   looks like its time to comprehensively handle the missing device.
->>
->>   So as of now NACK for this patch. Very Sorry.
 
-It's a pity that the patch has been merged into the upstream kernel.
-Let's correct our miss before the next merge.
 
-BTW, I sent some patches to fix the problems about seed device(including
-the updated patch of this one), could you try them and confirm that they
-can fix the problems you said above or not?
+On 03/07/2014 18:22, Miao Xie wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
+>
+> when one of the device path is missing btrfs_device name is null. So this
+> patch will check for that.
+>
+> stack:
+> BUG: unable to handle kernel NULL pointer dereference at 0000000000000010
+> IP: [<ffffffff812e18c0>] strlen+0x0/0x30
+> [<ffffffffa01cd92a>] ? clone_fs_devices+0xaa/0x160 [btrfs]
+> [<ffffffffa01cdcf7>] btrfs_init_new_device+0x317/0xca0 [btrfs]
+> [<ffffffff81155bca>] ? __kmalloc_track_caller+0x15a/0x1a0
+> [<ffffffffa01d6473>] btrfs_ioctl+0xaa3/0x2860 [btrfs]
+> [<ffffffff81132a6c>] ? handle_mm_fault+0x48c/0x9c0
+> [<ffffffff81192a61>] ? __blkdev_put+0x171/0x180
+> [<ffffffff817a784c>] ? __do_page_fault+0x4ac/0x590
+> [<ffffffff81193426>] ? blkdev_put+0x106/0x110
+> [<ffffffff81179175>] ? mntput+0x35/0x40
+> [<ffffffff8116d4b0>] do_vfs_ioctl+0x460/0x4a0
+> [<ffffffff8115c72e>] ? ____fput+0xe/0x10
+> [<ffffffff81068033>] ? task_work_run+0xb3/0xd0
+> [<ffffffff8116d547>] SyS_ioctl+0x57/0x90
+> [<ffffffff817a793e>] ? do_page_fault+0xe/0x10
+> [<ffffffff817abe52>] system_call_fastpath+0x16/0x1b
+>
+> reproducer:
+> mkfs.btrfs -draid1 -mraid1 /dev/sdg1 /dev/sdg2
+> btrfstune -S 1 /dev/sdg1
+> modprobe -r btrfs && modprobe btrfs
+> mount -o degraded /dev/sdg1 /btrfs
+> btrfs dev add /dev/sdg3 /btrfs
+>
+> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> Changelog v1->v2:
+> - Fix the problem that we forgot to set the missing flag for the cloned device
+> ---
+>   fs/btrfs/volumes.c | 25 ++++++++++++++++---------
+>   1 file changed, 16 insertions(+), 9 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 1891541..4731bd6 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -598,16 +598,23 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+>   		if (IS_ERR(device))
+>   			goto error;
+>
+> -		/*
+> -		 * This is ok to do without rcu read locked because we hold the
+> -		 * uuid mutex so nothing we touch in here is going to disappear.
+> -		 */
+> -		name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
+> -		if (!name) {
+> -			kfree(device);
+> -			goto error;
+> +		if (orig_dev->missing) {
+> +			device->missing = 1;
+> +			fs_devices->missing_devices++;
 
-[PATCH V2 7/9] btrfs: fix null pointer dereference in clone_fs_devices when name is null
-[PATCH 8/9] Btrfs: fix unzeroed members in fs_devices when creating a fs from seed fs
-[PATCH 9/9] Btrfs: fix writing data into the seed filesystem
+  as mentioned in some places we just check name (for missing device)
+  and  don't set the missing flag so it better to ..
 
-This first one is the updated patch of this one.
+  if (orig_dev->missing || !orig_dev->name) {
+			device->missing = 1;
+			fs_devices->missing_devices++;
 
-Thanks
-Miao
+> +		} else {
+> +			ASSERT(orig_dev->name);
+> +			/*
+> +			 * This is ok to do without rcu read locked because
+> +			 * we hold the uuid mutex so nothing we touch in here
+> +			 * is going to disappear.
+> +			 */
+> +			name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
+> +			if (!name) {
+> +				kfree(device);
+> +				goto error;
+> +			}
+> +			rcu_assign_pointer(device->name, name);
+>   		}
+> -		rcu_assign_pointer(device->name, name);
+>
+>   		list_add(&device->dev_list, &fs_devices->devices);
+>   		device->fs_devices = fs_devices;
+>
+
+Thanks, Anand

@@ -1,137 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38924 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751706AbaGGJ4P (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 05:56:15 -0400
-Message-ID: <53BA6EBD.9060004@oracle.com>
-Date: Mon, 07 Jul 2014 17:56:13 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:52859 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752563AbaGGNiv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 09:38:51 -0400
+Received: by mail-wi0-f172.google.com with SMTP id hi2so16021878wib.17
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jul 2014 06:38:49 -0700 (PDT)
+Received: from [192.168.2.3] (p4FF78E2A.dip0.t-ipconnect.de. [79.247.142.42])
+        by mx.google.com with ESMTPSA id de6sm8669542wjc.16.2014.07.07.06.38.46
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Mon, 07 Jul 2014 06:38:47 -0700 (PDT)
+Message-ID: <53BAA2E5.2090801@lianse.eu>
+Date: Mon, 07 Jul 2014 15:38:45 +0200
+From: =?UTF-8?B?QW5kcsOpLVNlYmFzdGlhbiBMaWViZQ==?= <andre@lianse.eu>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2 7/9] btrfs: fix null pointer dereference in clone_fs_devices
- when name is null
-References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com> <1404382933-26672-7-git-send-email-miaox@cn.fujitsu.com> <53BA1C39.9090407@oracle.com> <53BA206D.4040301@cn.fujitsu.com>
-In-Reply-To: <53BA206D.4040301@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: mount time of multi-disk arrays
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello List,
+
+can anyone tell me how much time is acceptable and assumable for a
+multi-disk btrfs array with classical hard disk drives to mount?
+
+I'm having a bit of trouble with my current systemd setup, because it
+couldn't mount my btrfs raid anymore after adding the 5th drive. With
+the 4 drive setup it failed to mount once in a few times. Now it fails
+everytime because the default timeout of 1m 30s is reached and mount is
+aborted.
+My last 10 manual mounts took between 1m57s and 2m12s to finish.
+
+My hardware setup contains a
+- Intel Core i7 4770
+- Kernel 3.15.2-1-ARCH
+- 32GB RAM
+- dev 1-4 are 4TB Seagate ST4000DM000 (5900rpm)
+- dev 5 is a 4TB Wstern Digital WDC WD40EFRX (5400rpm)
+
+Thanks in advance
+
+André-Sebastian Liebe
+--------------------------------------------------------------------------------------------------
+
+# btrfs fi sh
+Label: 'apc01_pool0'  uuid: 066141c6-16ca-4a30-b55c-e606b90ad0fb
+        Total devices 5 FS bytes used 14.21TiB
+        devid    1 size 3.64TiB used 2.86TiB path /dev/sdd
+        devid    2 size 3.64TiB used 2.86TiB path /dev/sdc
+        devid    3 size 3.64TiB used 2.86TiB path /dev/sdf
+        devid    4 size 3.64TiB used 2.86TiB path /dev/sde
+        devid    5 size 3.64TiB used 2.88TiB path /dev/sdb
+
+Btrfs v3.14.2-dirty
+
+# btrfs fi df /data/pool0/
+Data, single: total=14.28TiB, used=14.19TiB
+System, RAID1: total=8.00MiB, used=1.54MiB
+Metadata, RAID1: total=26.00GiB, used=20.20GiB
+unknown, single: total=512.00MiB, used=0.00
 
 
-On 07/07/2014 12:22, Miao Xie wrote:
-> On Mon, 7 Jul 2014 12:04:09 +0800, Anand Jain wrote:
->>> when one of the device path is missing btrfs_device name is null. So this
->>> patch will check for that.
->>>
->>> stack:
->>> BUG: unable to handle kernel NULL pointer dereference at 0000000000000010
->>> IP: [<ffffffff812e18c0>] strlen+0x0/0x30
->>> [<ffffffffa01cd92a>] ? clone_fs_devices+0xaa/0x160 [btrfs]
->>> [<ffffffffa01cdcf7>] btrfs_init_new_device+0x317/0xca0 [btrfs]
->>> [<ffffffff81155bca>] ? __kmalloc_track_caller+0x15a/0x1a0
->>> [<ffffffffa01d6473>] btrfs_ioctl+0xaa3/0x2860 [btrfs]
->>> [<ffffffff81132a6c>] ? handle_mm_fault+0x48c/0x9c0
->>> [<ffffffff81192a61>] ? __blkdev_put+0x171/0x180
->>> [<ffffffff817a784c>] ? __do_page_fault+0x4ac/0x590
->>> [<ffffffff81193426>] ? blkdev_put+0x106/0x110
->>> [<ffffffff81179175>] ? mntput+0x35/0x40
->>> [<ffffffff8116d4b0>] do_vfs_ioctl+0x460/0x4a0
->>> [<ffffffff8115c72e>] ? ____fput+0xe/0x10
->>> [<ffffffff81068033>] ? task_work_run+0xb3/0xd0
->>> [<ffffffff8116d547>] SyS_ioctl+0x57/0x90
->>> [<ffffffff817a793e>] ? do_page_fault+0xe/0x10
->>> [<ffffffff817abe52>] system_call_fastpath+0x16/0x1b
->>>
->>> reproducer:
->>> mkfs.btrfs -draid1 -mraid1 /dev/sdg1 /dev/sdg2
->>> btrfstune -S 1 /dev/sdg1
->>> modprobe -r btrfs && modprobe btrfs
->>> mount -o degraded /dev/sdg1 /btrfs
->>> btrfs dev add /dev/sdg3 /btrfs
->>>
->>> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->>> ---
->>> Changelog v1->v2:
->>> - Fix the problem that we forgot to set the missing flag for the cloned device
->>> ---
->>>    fs/btrfs/volumes.c | 25 ++++++++++++++++---------
->>>    1 file changed, 16 insertions(+), 9 deletions(-)
->>>
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index 1891541..4731bd6 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -598,16 +598,23 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
->>>            if (IS_ERR(device))
->>>                goto error;
->>>
->>> -        /*
->>> -         * This is ok to do without rcu read locked because we hold the
->>> -         * uuid mutex so nothing we touch in here is going to disappear.
->>> -         */
->>> -        name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
->>> -        if (!name) {
->>> -            kfree(device);
->>> -            goto error;
->>> +        if (orig_dev->missing) {
->>> +            device->missing = 1;
->>> +            fs_devices->missing_devices++;
->>
->>   as mentioned in some places we just check name (for missing device)
->>   and  don't set the missing flag so it better to ..
->>
->>   if (orig_dev->missing || !orig_dev->name) {
->>              device->missing = 1;
->>              fs_devices->missing_devices++;
->
-> I don't think we need check name pointer here because only missing device
-> doesn't have its own name. Or there is something wrong in the code, so
-> I add assert in else branch. Am I right?
-
-At few critical code, the below and I guess in the chunk/strips
-function as well, we don't make use of missing flag, but rather
-->name.
-
------
-btrfsic_process_superblock
-::
-                 if (!device->bdev || !device->name)
-                         continue;
------
-
-  But here without !orig_dev->name check, is also good enough.
-
-Thanks, Anand
-
-
->>> +        } else {
->>> +            ASSERT(orig_dev->name);
->>> +            /*
->>> +             * This is ok to do without rcu read locked because
->>> +             * we hold the uuid mutex so nothing we touch in here
->>> +             * is going to disappear.
->>> +             */
->>> +            name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
->>> +            if (!name) {
->>> +                kfree(device);
->>> +                goto error;
->>> +            }
->>> +            rcu_assign_pointer(device->name, name);
->>>            }
->>> -        rcu_assign_pointer(device->name, name);
->>>
->>>            list_add(&device->dev_list, &fs_devices->devices);
->>>            device->fs_devices = fs_devices;
->>>
->>
->> Thanks, Anand
->> .
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

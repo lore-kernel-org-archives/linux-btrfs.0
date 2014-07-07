@@ -1,186 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53378 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751653AbaGFSL6 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sun, 6 Jul 2014 14:11:58 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: reduce size of struct extent_state
-Date: Sun,  6 Jul 2014 20:09:59 +0100
-Message-Id: <1404673799-25752-1-git-send-email-fdmanana@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:37574 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752131AbaGGCCU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jul 2014 22:02:20 -0400
+Message-ID: <53B9FE9A.7030205@cn.fujitsu.com>
+Date: Mon, 7 Jul 2014 09:57:46 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Kevin Brandstatter <icarusthecow@gmail.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: qgroup destroy / assign
+References: <53B7185F.4040307@gmail.com>
+In-Reply-To: <53B7185F.4040307@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The tree field of struct extent_state was only used to figure out if
-an extent state was connected to an inode's io tree or not. For this
-we can just use the rb_node field itself.
+Hi Kevin,
 
-On a x86_64 system with this change the sizeof(struct extent_state) is
-reduced from 96 bytes down to 88 bytes, meaning that with a page size
-of 4096 bytes we can now store 46 extent states per page instead of 42.
+On 07/05/2014 05:10 AM, Kevin Brandstatter wrote:
+> how are qgroups accounted for? Are they specifially tied to one
+> subvolume on creation?
+Qgroup implementation is aslo a little confusing for me at first:-) .
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent_io.c | 37 ++++++++++++++++++++-----------------
- fs/btrfs/extent_io.h |  1 -
- 2 files changed, 20 insertions(+), 18 deletions(-)
+Yes, a qgroup is created automatically tied to one subvolume on creation
+with the same objectid.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 23398ad..7e44e18 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -25,6 +25,11 @@ static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
- static struct bio_set *btrfs_bioset;
- 
-+static inline bool extent_state_in_tree(const struct extent_state *state)
-+{
-+	return !RB_EMPTY_NODE(&state->rb_node);
-+}
-+
- #ifdef CONFIG_BTRFS_DEBUG
- static LIST_HEAD(buffers);
- static LIST_HEAD(states);
-@@ -59,9 +64,9 @@ void btrfs_leak_debug_check(void)
- 
- 	while (!list_empty(&states)) {
- 		state = list_entry(states.next, struct extent_state, leak_list);
--		printk(KERN_ERR "BTRFS: state leak: start %llu end %llu "
--		       "state %lu in tree %p refs %d\n",
--		       state->start, state->end, state->state, state->tree,
-+		pr_err("BTRFS: state leak: start %llu end %llu state %lu in tree %d refs %d\n",
-+		       state->start, state->end, state->state,
-+		       extent_state_in_tree(state),
- 		       atomic_read(&state->refs));
- 		list_del(&state->leak_list);
- 		kmem_cache_free(extent_state_cache, state);
-@@ -209,7 +214,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- 		return state;
- 	state->state = 0;
- 	state->private = 0;
--	state->tree = NULL;
-+	RB_CLEAR_NODE(&state->rb_node);
- 	btrfs_leak_debug_add(&state->leak_list, &states);
- 	atomic_set(&state->refs, 1);
- 	init_waitqueue_head(&state->wq);
-@@ -222,7 +227,7 @@ void free_extent_state(struct extent_state *state)
- 	if (!state)
- 		return;
- 	if (atomic_dec_and_test(&state->refs)) {
--		WARN_ON(state->tree);
-+		WARN_ON(extent_state_in_tree(state));
- 		btrfs_leak_debug_del(&state->leak_list);
- 		trace_free_extent_state(state, _RET_IP_);
- 		kmem_cache_free(extent_state_cache, state);
-@@ -371,8 +376,8 @@ static void merge_state(struct extent_io_tree *tree,
- 		    other->state == state->state) {
- 			merge_cb(tree, state, other);
- 			state->start = other->start;
--			other->tree = NULL;
- 			rb_erase(&other->rb_node, &tree->state);
-+			RB_CLEAR_NODE(&other->rb_node);
- 			free_extent_state(other);
- 		}
- 	}
-@@ -383,8 +388,8 @@ static void merge_state(struct extent_io_tree *tree,
- 		    other->state == state->state) {
- 			merge_cb(tree, state, other);
- 			state->end = other->end;
--			other->tree = NULL;
- 			rb_erase(&other->rb_node, &tree->state);
-+			RB_CLEAR_NODE(&other->rb_node);
- 			free_extent_state(other);
- 		}
- 	}
-@@ -442,7 +447,6 @@ static int insert_state(struct extent_io_tree *tree,
- 		       found->start, found->end, start, end);
- 		return -EEXIST;
- 	}
--	state->tree = tree;
- 	merge_state(tree, state);
- 	return 0;
- }
-@@ -486,7 +490,6 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
- 		free_extent_state(prealloc);
- 		return -EEXIST;
- 	}
--	prealloc->tree = tree;
- 	return 0;
- }
- 
-@@ -524,9 +527,9 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 		wake_up(&state->wq);
- 	if (state->state == 0) {
- 		next = next_state(state);
--		if (state->tree) {
-+		if (extent_state_in_tree(state)) {
- 			rb_erase(&state->rb_node, &tree->state);
--			state->tree = NULL;
-+			RB_CLEAR_NODE(&state->rb_node);
- 			free_extent_state(state);
- 		} else {
- 			WARN_ON(1);
-@@ -606,8 +609,8 @@ again:
- 			cached_state = NULL;
- 		}
- 
--		if (cached && cached->tree && cached->start <= start &&
--		    cached->end > start) {
-+		if (cached && extent_state_in_tree(cached) &&
-+		    cached->start <= start && cached->end > start) {
- 			if (clear)
- 				atomic_dec(&cached->refs);
- 			state = cached;
-@@ -843,7 +846,7 @@ again:
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
- 		if (state->start <= start && state->end > start &&
--		    state->tree) {
-+		    extent_state_in_tree(state)) {
- 			node = &state->rb_node;
- 			goto hit_next;
- 		}
-@@ -1069,7 +1072,7 @@ again:
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
- 		if (state->start <= start && state->end > start &&
--		    state->tree) {
-+		    extent_state_in_tree(state)) {
- 			node = &state->rb_node;
- 			goto hit_next;
- 		}
-@@ -1459,7 +1462,7 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- 	spin_lock(&tree->lock);
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
--		if (state->end == start - 1 && state->tree) {
-+		if (state->end == start - 1 && extent_state_in_tree(state)) {
- 			n = rb_next(&state->rb_node);
- 			while (n) {
- 				state = rb_entry(n, struct extent_state,
-@@ -1905,7 +1908,7 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int bitset = 0;
- 
- 	spin_lock(&tree->lock);
--	if (cached && cached->tree && cached->start <= start &&
-+	if (cached && extent_state_in_tree(cached) && cached->start <= start &&
- 	    cached->end > start)
- 		node = &cached->rb_node;
- 	else
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ccc264e..1f60816 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -108,7 +108,6 @@ struct extent_state {
- 	struct rb_node rb_node;
- 
- 	/* ADD NEW ELEMENTS AFTER THIS */
--	struct extent_io_tree *tree;
- 	wait_queue_head_t wq;
- 	atomic_t refs;
- 	unsigned long state;
--- 
-1.9.1
+To implement qgroup group, you may want to do something like following:
+
+                     [1/1]
+                     /       \
+                    /         \
+              sub1(5)   subv2(257)
+
+> 		
+> If so, is it possible to auto delete relavant qgroups on deletion of the
+> subvolume?
+I supposed so, according to latest qgroup patches flighting on, a subvolume
+qgroup should be destroyed safely, when it finished sub-tree space 
+accounting.
+
+>
+> also, how exactly does qgroup assign work? I havent been able to get it
+> to work at all.
+> in btrfsprogs cmds-cgroup.c
+> if ((args.src >> 48) >= (args.dst >> 48)) {
+>        fprintf(stderr, "ERROR: bad relation requested '%s'\n", path);
+>        return 1;
+>     }
+Oh, this is to implement a strict level qgroup group, which means a u64 is
+divided into two parts, 16bits for level and the rest for id.
+
+So we ask parent qgroup's level must be greater than child's qgroup.that
+is the code you see above.
+
+You could create a qgroup relation like this:
+
+# btrfs qgroup assign 256 1/1 <mnt>
+
+Hopely, this could help you.
+> always seems to fail. I tried creating another qgroup id 1000, and
+> assigning it to as sub, and vice versa, as well as assigning the sub to
+> the root, and vice versa, as well as one subvol to another.
+> The fixme comment leads me to believe that the src should be a path not
+> a qgroup ("FIXME src should accept subvol path")
+> but the progs let me create a qgroup without a subvol, which makes sense
+> if you want to be able to have some meta-qgroup for a bunch of subvols.
+> Further on noticing that a sub create also creates a qgroup with the
+> same id as the subvol, it would seem that the qgroup is tied to the
+> subvol via this shared id.
+>
+> -Kevin Brandstatter
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 

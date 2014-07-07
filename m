@@ -1,49 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51981 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750869AbaGGSlx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 14:41:53 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s67IfqhG013692
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Jul 2014 18:41:53 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s67Ifp53029672
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Jul 2014 18:41:52 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s67IfpX9029660
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Jul 2014 18:41:51 GMT
-From: Anand Jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: syslog when quota is disabled
-Date: Tue,  8 Jul 2014 02:41:29 +0800
-Message-Id: <1404758489-7085-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1404758489-7085-1-git-send-email-Anand.Jain@oracle.com>
-References: <1404758489-7085-1-git-send-email-Anand.Jain@oracle.com>
+Received: from out2-smtp.messagingengine.com ([66.111.4.26]:44726 "EHLO
+	out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751167AbaGGWVk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jul 2014 18:21:40 -0400
+Received: from compute5.internal (compute5.nyi.mail.srv.osa [10.202.2.45])
+	by gateway1.nyi.mail.srv.osa (Postfix) with ESMTP id 04BB721BB4
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Jul 2014 18:21:40 -0400 (EDT)
+Date: Mon, 7 Jul 2014 15:26:02 -0700
+From: Greg KH <greg@kroah.com>
+To: Ben Hutchings <ben@decadent.org.uk>
+Cc: Joseph Salisbury <joseph.salisbury@canonical.com>,
+        kamal.mostafa@canonical.com, luis.henriques@canonical.com,
+        jslaby@suse.cz, clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [v3.10.y][v3.11.y][v3.12.y][v3.13.y][v3.14.y][PATCH 1/1][V2]
+ ALSA: usb-audio: Prevent printk ratelimiting from spamming kernel log while
+ DEBUG not defined
+Message-ID: <20140707222602.GB11171@kroah.com>
+References: <cover.1403113867.git.joseph.salisbury@canonical.com>
+ <a377cdb51b1a98e9fa6bffaa124502fc15c47903.1403113867.git.joseph.salisbury@canonical.com>
+ <1403142759.23472.28.camel@deadeye.wl.decadent.org.uk>
+ <53A4515C.8090103@canonical.com>
+ <53A47BC4.8040406@canonical.com>
+ <1403352353.23472.67.camel@deadeye.wl.decadent.org.uk>
+ <20140621194827.GA5128@kroah.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140621194827.GA5128@kroah.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Offline investigations of the issues would need to know when quota is disabled.
+On Sat, Jun 21, 2014 at 12:48:27PM -0700, Greg KH wrote:
+> On Sat, Jun 21, 2014 at 01:05:53PM +0100, Ben Hutchings wrote:
+> > On Fri, 2014-06-20 at 14:21 -0400, Joseph Salisbury wrote:
+> > [...]
+> > > I looked at this some more.   It seems like my v2 backport may be the
+> > > most suitable for the releases mentioned in the subject line, but I'd
+> > > like to get additional feedback.
+> > > 
+> > > The lines added by commit a5065eb just get removed by commit b7a77235. 
+> > > Also, if I apply commit a5065eb, it will also require a backport to pull
+> > > in just a piece of code(Remove snd_printk() and add dev_dbg()) from
+> > > another prior commit(0ba41d9).  No backport would be needed at all if I
+> > > cherry-pick 0ba41d9, but that commit seems to have too may changes for a
+> > > stable release.
+> > 
+> > Keep the changes squashed together if you like, but do include both
+> > commit hashes and commit messages.
+> 
+> No, I don't want to see "squashed together" patches, please keep them as
+> close to the original patch as possible.  It saves time in the long run,
+> trust me...
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- fs/btrfs/ioctl.c | 2 ++
- 1 file changed, 2 insertions(+)
+And since no one did this work for me, I had to do it myself...
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index bb4a498..fd29978 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4221,6 +4221,8 @@ static long btrfs_ioctl_quota_ctl(struct file *file, void __user *arg)
- 		break;
- 	case BTRFS_QUOTA_CTL_DISABLE:
- 		ret = btrfs_quota_disable(trans, root->fs_info);
-+		if (!ret)
-+			btrfs_info(root->fs_info, "quota is disabled");
- 		break;
- 	default:
- 		ret = -EINVAL;
--- 
-2.0.0.257.g75cc6c6
-
+{grumble}

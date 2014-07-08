@@ -1,53 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f51.google.com ([209.85.219.51]:55321 "EHLO
-	mail-oa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754266AbaGHUTK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 16:19:10 -0400
-Received: by mail-oa0-f51.google.com with SMTP id j17so7112453oag.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jul 2014 13:19:09 -0700 (PDT)
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:48157 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751660AbaGHWVs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 18:21:48 -0400
+Date: Wed, 9 Jul 2014 03:51:41 +0530
+From: Himangi Saraogi <himangi774@gmail.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: julia.lawall@lip6.fr
+Subject: [PATCH] Btrfs: use BUG_ON
+Message-ID: <20140708222141.GA11854@himangi-Dell>
 MIME-Version: 1.0
-In-Reply-To: <CAMqPLXUHJ8Gtc9r9cNVaaijp6VcEy_nLoeFxSWR_2ajevi+jcg@mail.gmail.com>
-References: <btrfswiki.52f1178eb44ca2.65163100@btrfs.wiki.kernel.org>
-	<CAMqPLXUHJ8Gtc9r9cNVaaijp6VcEy_nLoeFxSWR_2ajevi+jcg@mail.gmail.com>
-Date: Tue, 8 Jul 2014 22:19:08 +0200
-Message-ID: <CAK_tfuY3cnPyrsTVvKVCcDsSC1SvchKmyc6tq7T8=+ErRhnbFQ@mail.gmail.com>
-Subject: Fwd: btrfs Wiki account request
-From: Sjon Hortensius <sjon@hortensius.net>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wrote a simple alternative for a script that is currently on the
-btrfs wiki (for showing quotas) in bash instead of Python. I have
-attempted to add this to the page but after entering the captcha 15
-times my account was rejected because of a missing bio. Maybe someone
-can add this to https://btrfs.wiki.kernel.org/index.php/Quota_support:
+Use BUG_ON(x) rather than if(x) BUG();
 
-#!/bin/bash
+The semantic patch that fixes this problem is as follows:
 
-[[ ! -d $1 ]] && { echo Please pass mountpoint as first argument >&2 ;
-exit 1 ; }
+// <smpl>
+@@ identifier x; @@
+-if (x) BUG();
++BUG_ON(x);
+// </smpl>
 
-while read x i x g x x l x p
-do
-    volName[i]=$p
-done < <(btrfs subvolume list $1)
+Signed-off-by: Himangi Saraogi <himangi774@gmail.com>
+Acked-by: Julia Lawall <julia.lawall@lip6.fr>
+---
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-while read g r e
-do
-    [[ -z $name ]] && echo -e "subvol\tqgroup\ttotal\tunshared"
-    group=${g##*/}
-    [[ ! -z ${volName[group]} ]] && name=${volName[group]} || name='(unknown)'
-    echo $name $g `numfmt --to=iec $r` `numfmt --to=iec $e`
-done < <(btrfs qgroup show $1 | tail -n+3) | column -t
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6104676..63e746e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2623,8 +2623,8 @@ again:
+ 						   found_key.offset);
+ 			if (ret == -ENOSPC)
+ 				failed++;
+-			else if (ret)
+-				BUG();
++			else
++				BUG_ON(ret);
+ 		}
+ 
+ 		if (found_key.offset == 0)
+-- 
+1.9.1
 
-Thanks,
-Sjon
-
-On Tue, Feb 4, 2014 at 5:38 PM, MediaWiki Mail <wikiadmin@kernel.org> wrote:
-> Sorry, your request for an account "Sjon Hortensius" has been rejected on btrfs Wiki.
->
-> try again with a useful bio
->
-> There may be contact lists on site that you can use if you want to know more about user account policy.

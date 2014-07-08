@@ -1,142 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27125 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752334AbaGHEWy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 00:22:54 -0400
-Message-ID: <53BB7289.4040807@cn.fujitsu.com>
-Date: Tue, 8 Jul 2014 12:24:41 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
+Received: from mail-oa0-f51.google.com ([209.85.219.51]:55321 "EHLO
+	mail-oa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754266AbaGHUTK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 16:19:10 -0400
+Received: by mail-oa0-f51.google.com with SMTP id j17so7112453oag.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jul 2014 13:19:09 -0700 (PDT)
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>, Anand Jain <Anand.Jain@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC] btrfs: code optimize use btrfs_get_bdev_and_sb()
- at btrfs_scan_one_device
-References: <1404758317-7000-1-git-send-email-Anand.Jain@oracle.com> <20140708040818.GA20810@localhost.localdomain>
-In-Reply-To: <20140708040818.GA20810@localhost.localdomain>
-Content-Type: text/plain; charset="ISO-8859-1"
+In-Reply-To: <CAMqPLXUHJ8Gtc9r9cNVaaijp6VcEy_nLoeFxSWR_2ajevi+jcg@mail.gmail.com>
+References: <btrfswiki.52f1178eb44ca2.65163100@btrfs.wiki.kernel.org>
+	<CAMqPLXUHJ8Gtc9r9cNVaaijp6VcEy_nLoeFxSWR_2ajevi+jcg@mail.gmail.com>
+Date: Tue, 8 Jul 2014 22:19:08 +0200
+Message-ID: <CAK_tfuY3cnPyrsTVvKVCcDsSC1SvchKmyc6tq7T8=+ErRhnbFQ@mail.gmail.com>
+Subject: Fwd: btrfs Wiki account request
+From: Sjon Hortensius <sjon@hortensius.net>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 8 Jul 2014 12:08:19 +0800, Liu Bo wrote:
-> On Tue, Jul 08, 2014 at 02:38:37AM +0800, Anand Jain wrote:
->> (for review comments pls).
->>
->> btrfs_scan_one_device() needs SB, instead of doing it from scratch could
->> use btrfs_get_bdev_and_sb()
->>
->> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->> ---
->>  fs/btrfs/volumes.c | 51 ++++++---------------------------------------------
->>  1 file changed, 6 insertions(+), 45 deletions(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index c166355..94e6131 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1053,14 +1053,11 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->>  {
->>  	struct btrfs_super_block *disk_super;
->>  	struct block_device *bdev;
->> -	struct page *page;
->> -	void *p;
->>  	int ret = -EINVAL;
->>  	u64 devid;
->>  	u64 transid;
->>  	u64 total_devices;
->> -	u64 bytenr;
->> -	pgoff_t index;
->> +	struct buffer_head *bh;
->>  
->>  	/*
->>  	 * we would like to check all the supers, but that would make
->> @@ -1068,44 +1065,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->>  	 * So, we need to add a special mount option to scan for
->>  	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
->>  	 */
->> -	bytenr = btrfs_sb_offset(0);
->>  	mutex_lock(&uuid_mutex);
->>  
->> -	bdev = blkdev_get_by_path(path, flags, holder);
->> -
->> -	if (IS_ERR(bdev)) {
->> -		ret = PTR_ERR(bdev);
->> +	ret = btrfs_get_bdev_and_sb(path, flags, holder, 0, &bdev, &bh);
->> +	if (ret)
->>  		goto error;
->> -	}
->> -
->> -	/* make sure our super fits in the device */
->> -	if (bytenr + PAGE_CACHE_SIZE >= i_size_read(bdev->bd_inode))
->> -		goto error_bdev_put;
->> -
->> -	/* make sure our super fits in the page */
->> -	if (sizeof(*disk_super) > PAGE_CACHE_SIZE)
->> -		goto error_bdev_put;
->> -
->> -	/* make sure our super doesn't straddle pages on disk */
->> -	index = bytenr >> PAGE_CACHE_SHIFT;
->> -	if ((bytenr + sizeof(*disk_super) - 1) >> PAGE_CACHE_SHIFT != index)
->> -		goto error_bdev_put;
-> 
-> Apparently btrfs_get_bdev_and_sb() lacks the above two checks, otherwise looks good.
+I wrote a simple alternative for a script that is currently on the
+btrfs wiki (for showing quotas) in bash instead of Python. I have
+attempted to add this to the page but after entering the captcha 15
+times my account was rejected because of a missing bio. Maybe someone
+can add this to https://btrfs.wiki.kernel.org/index.php/Quota_support:
 
-In fact, our disk_super size is constant and <= min page size (4K), and we are sure that
-it is impossible that the super block is cross the block, so the above two checks are unnecessary.
+#!/bin/bash
 
-Thanks
-Miao
+[[ ! -d $1 ]] && { echo Please pass mountpoint as first argument >&2 ;
+exit 1 ; }
 
-> 
-> thanks,
-> -liubo
-> 
->> -
->> -	/* pull in the page with our super */
->> -	page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
->> -				   index, GFP_NOFS);
->> -
->> -	if (IS_ERR_OR_NULL(page))
->> -		goto error_bdev_put;
->> -
->> -	p = kmap(page);
->> -
->> -	/* align our pointer to the offset of the super block */
->> -	disk_super = p + (bytenr & ~PAGE_CACHE_MASK);
->> -
->> -	if (btrfs_super_bytenr(disk_super) != bytenr ||
->> -	    btrfs_super_magic(disk_super) != BTRFS_MAGIC)
->> -		goto error_unmap;
->> +	disk_super = (struct btrfs_super_block *) bh->b_data;
->>  
->>  	devid = btrfs_stack_device_id(&disk_super->dev_item);
->>  	transid = btrfs_super_generation(disk_super);
->> @@ -1125,13 +1090,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->>  		printk(KERN_CONT "devid %llu transid %llu %s\n", devid, transid, path);
->>  	}
->>  
->> -
->> -error_unmap:
->> -	kunmap(page);
->> -	page_cache_release(page);
->> -
->> -error_bdev_put:
->> +	brelse(bh);
->>  	blkdev_put(bdev, flags);
->> +
->>  error:
->>  	mutex_unlock(&uuid_mutex);
->>  	return ret;
->> -- 
->> 2.0.0.257.g75cc6c6
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+while read x i x g x x l x p
+do
+    volName[i]=$p
+done < <(btrfs subvolume list $1)
 
+while read g r e
+do
+    [[ -z $name ]] && echo -e "subvol\tqgroup\ttotal\tunshared"
+    group=${g##*/}
+    [[ ! -z ${volName[group]} ]] && name=${volName[group]} || name='(unknown)'
+    echo $name $g `numfmt --to=iec $r` `numfmt --to=iec $e`
+done < <(btrfs qgroup show $1 | tail -n+3) | column -t
+
+Thanks,
+Sjon
+
+On Tue, Feb 4, 2014 at 5:38 PM, MediaWiki Mail <wikiadmin@kernel.org> wrote:
+> Sorry, your request for an account "Sjon Hortensius" has been rejected on btrfs Wiki.
+>
+> try again with a useful bio
+>
+> There may be contact lists on site that you can use if you want to know more about user account policy.

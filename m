@@ -1,23 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52575 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751271AbaGHDcN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 23:32:13 -0400
-Message-ID: <53BB66A8.5070804@cn.fujitsu.com>
-Date: Tue, 8 Jul 2014 11:34:00 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC] btrfs: code optimize use btrfs_get_bdev_and_sb()
- at btrfs_scan_one_device
+Received: from aserp1040.oracle.com ([141.146.126.69]:29559 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750927AbaGHEIa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 00:08:30 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s6848TEB009279
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jul 2014 04:08:29 GMT
+Received: from userz7022.oracle.com (userz7022.oracle.com [156.151.31.86])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s6848S50007425
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jul 2014 04:08:28 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+	by userz7022.oracle.com (8.14.5+Sun/8.14.4) with ESMTP id s6848RkC025019
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Jul 2014 04:08:27 GMT
+Date: Tue, 8 Jul 2014 12:08:19 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: code optimize use btrfs_get_bdev_and_sb() at
+ btrfs_scan_one_device
+Message-ID: <20140708040818.GA20810@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1404758317-7000-1-git-send-email-Anand.Jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1404758317-7000-1-git-send-email-Anand.Jain@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 8 Jul 2014 02:38:37 +0800, Anand Jain wrote:
+On Tue, Jul 08, 2014 at 02:38:37AM +0800, Anand Jain wrote:
 > (for review comments pls).
 > 
 > btrfs_scan_one_device() needs SB, instead of doing it from scratch could
@@ -67,12 +79,6 @@ On Tue, 8 Jul 2014 02:38:37 +0800, Anand Jain wrote:
 > -	/* make sure our super fits in the device */
 > -	if (bytenr + PAGE_CACHE_SIZE >= i_size_read(bdev->bd_inode))
 > -		goto error_bdev_put;
-
-I think moving this check into btrfs_get_bdev_and_sb is better. The other is OK.
-
-Thanks
-Miao
-
 > -
 > -	/* make sure our super fits in the page */
 > -	if (sizeof(*disk_super) > PAGE_CACHE_SIZE)
@@ -82,6 +88,12 @@ Miao
 > -	index = bytenr >> PAGE_CACHE_SHIFT;
 > -	if ((bytenr + sizeof(*disk_super) - 1) >> PAGE_CACHE_SHIFT != index)
 > -		goto error_bdev_put;
+
+Apparently btrfs_get_bdev_and_sb() lacks the above two checks, otherwise looks good.
+
+thanks,
+-liubo
+
 > -
 > -	/* pull in the page with our super */
 > -	page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
@@ -118,5 +130,10 @@ Miao
 >  error:
 >  	mutex_unlock(&uuid_mutex);
 >  	return ret;
+> -- 
+> 2.0.0.257.g75cc6c6
 > 
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

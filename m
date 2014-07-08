@@ -1,153 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12406 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753532AbaGHCJy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jul 2014 22:09:54 -0400
-Message-ID: <53BB535B.508@cn.fujitsu.com>
-Date: Tue, 8 Jul 2014 10:11:39 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Anand Jain <anand.jain@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V2 7/9] btrfs: fix null pointer dereference in clone_fs_devices
- when name is null
-References: <1404382933-26672-1-git-send-email-miaox@cn.fujitsu.com> <1404382933-26672-7-git-send-email-miaox@cn.fujitsu.com> <53BA1C39.9090407@oracle.com> <53BA206D.4040301@cn.fujitsu.com> <53BA6EBD.9060004@oracle.com>
-In-Reply-To: <53BA6EBD.9060004@oracle.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from plane.gmane.org ([80.91.229.3]:52003 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751245AbaGHCoG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Jul 2014 22:44:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X4LNz-0001ed-Tc
+	for linux-btrfs@vger.kernel.org; Tue, 08 Jul 2014 04:44:03 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jul 2014 04:44:03 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jul 2014 04:44:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
+ different ro/rw options"
+Date: Tue, 8 Jul 2014 02:43:51 +0000 (UTC)
+Message-ID: <pan$5e578$d83c9a0b$aad1fa2b$9a41848@cox.net>
+References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<53B445F5.6060709@libero.it> <53B4A3C7.1020805@cn.fujitsu.com>
+	<53B594E7.9070500@inwind.it> <53B6032D.6090207@cn.fujitsu.com>
+	<53B6E744.1060204@inwind.it> <53B9FBE4.6040300@cn.fujitsu.com>
+	<53BADAF1.80803@inwind.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 7 Jul 2014 17:56:13 +0800, Anand Jain wrote:
-> 
-> 
-> On 07/07/2014 12:22, Miao Xie wrote:
->> On Mon, 7 Jul 2014 12:04:09 +0800, Anand Jain wrote:
->>>> when one of the device path is missing btrfs_device name is null. So this
->>>> patch will check for that.
->>>>
->>>> stack:
->>>> BUG: unable to handle kernel NULL pointer dereference at 0000000000000010
->>>> IP: [<ffffffff812e18c0>] strlen+0x0/0x30
->>>> [<ffffffffa01cd92a>] ? clone_fs_devices+0xaa/0x160 [btrfs]
->>>> [<ffffffffa01cdcf7>] btrfs_init_new_device+0x317/0xca0 [btrfs]
->>>> [<ffffffff81155bca>] ? __kmalloc_track_caller+0x15a/0x1a0
->>>> [<ffffffffa01d6473>] btrfs_ioctl+0xaa3/0x2860 [btrfs]
->>>> [<ffffffff81132a6c>] ? handle_mm_fault+0x48c/0x9c0
->>>> [<ffffffff81192a61>] ? __blkdev_put+0x171/0x180
->>>> [<ffffffff817a784c>] ? __do_page_fault+0x4ac/0x590
->>>> [<ffffffff81193426>] ? blkdev_put+0x106/0x110
->>>> [<ffffffff81179175>] ? mntput+0x35/0x40
->>>> [<ffffffff8116d4b0>] do_vfs_ioctl+0x460/0x4a0
->>>> [<ffffffff8115c72e>] ? ____fput+0xe/0x10
->>>> [<ffffffff81068033>] ? task_work_run+0xb3/0xd0
->>>> [<ffffffff8116d547>] SyS_ioctl+0x57/0x90
->>>> [<ffffffff817a793e>] ? do_page_fault+0xe/0x10
->>>> [<ffffffff817abe52>] system_call_fastpath+0x16/0x1b
->>>>
->>>> reproducer:
->>>> mkfs.btrfs -draid1 -mraid1 /dev/sdg1 /dev/sdg2
->>>> btrfstune -S 1 /dev/sdg1
->>>> modprobe -r btrfs && modprobe btrfs
->>>> mount -o degraded /dev/sdg1 /btrfs
->>>> btrfs dev add /dev/sdg3 /btrfs
->>>>
->>>> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->>>> ---
->>>> Changelog v1->v2:
->>>> - Fix the problem that we forgot to set the missing flag for the cloned device
->>>> ---
->>>>    fs/btrfs/volumes.c | 25 ++++++++++++++++---------
->>>>    1 file changed, 16 insertions(+), 9 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index 1891541..4731bd6 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -598,16 +598,23 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
->>>>            if (IS_ERR(device))
->>>>                goto error;
->>>>
->>>> -        /*
->>>> -         * This is ok to do without rcu read locked because we hold the
->>>> -         * uuid mutex so nothing we touch in here is going to disappear.
->>>> -         */
->>>> -        name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
->>>> -        if (!name) {
->>>> -            kfree(device);
->>>> -            goto error;
->>>> +        if (orig_dev->missing) {
->>>> +            device->missing = 1;
->>>> +            fs_devices->missing_devices++;
->>>
->>>   as mentioned in some places we just check name (for missing device)
->>>   and  don't set the missing flag so it better to ..
->>>
->>>   if (orig_dev->missing || !orig_dev->name) {
->>>              device->missing = 1;
->>>              fs_devices->missing_devices++;
->>
->> I don't think we need check name pointer here because only missing device
->> doesn't have its own name. Or there is something wrong in the code, so
->> I add assert in else branch. Am I right?
-> 
-> At few critical code, the below and I guess in the chunk/strips
-> function as well, we don't make use of missing flag, but rather
-> ->name.
-> 
-> -----
-> btrfsic_process_superblock
-> ::
->                 if (!device->bdev || !device->name)
->                         continue;
-> -----
-> 
->  But here without !orig_dev->name check, is also good enough.
+Goffredo Baroncelli posted on Mon, 07 Jul 2014 19:37:53 +0200 as
+excerpted:
 
-Right.
-According to the code, only missing device doesn't have its own name,
-that is we can check the device is a missing device or not by missing flag
-or its name pointer. Maybe we can remove missing flag, check the device
-just by its name pointer(In order to make the code be more readable, maybe
-we need introduce a function to wrap the missing device check)
+> For "mounted RO" I mean the VFS flag, the "one" passed via the mount
+> command. I say "one" as 1, because I am convinced that it has to act
+> globally,
+> e.g. on the whole filesystem; the flag should be set at the first mount,
+> then it can be changed (only ?) issuing a "mount -o remount,rw/ro"
+[...]
+> So for each filesystem, there is a "globally" flag ro/rw which acts on
+> the whole filesystem. Clear and simple.
+> 
+> Step 2: a more fine grained control of the subvolumes.
+> We have already the capability to make a subvolume read-only/read-write
+> doing
+> 
+>    # btrfs property set -t s /path/to/subvolume ro true
+> 
+> or
+> 
+>    # btrfs property set -t s /path/to/subvolume ro false
+> 
+> My idea is to use this flag. It could be done at the mount time for
+> example:
+> 
+>   # mount -o subvolmode=ro,subvol=subvolname /dev/sda1 /
+> 
+> (this example doesn't work, it is only a my idea)
+> 
+> So:
+> - we should not add further code
+> - the semantic is simple
+> - the property is linked to the subvolume in a understandable way
+> 
+> We should only add the subvolmode=ro option to the mount command.
+> 
+> Further discussion need to investigate the following cases:
+> - if the filesystem is mounted as ro (mount -o ro....), does mounting a
+> subvolume rw ( mount -o subvolmode=rw...) should raise an error ? 
+> (IMHO yes)
+> - if the filesystem is mounted as ro (mount -o ro....), does mounting
+> the filesystem a 2nd time rw ( mount -o rw...) should raise an error ? 
+> (IMHO yes)
+> - if a subvolume is mounter rw (or ro), does mounting the same subvolume
+> a 2nd time as ro (or rw) should raise an error ?
+> (IMHO yes)
 
-Thanks
-Miao
+Makes sense.
 
-> 
-> Thanks, Anand
-> 
-> 
->>>> +        } else {
->>>> +            ASSERT(orig_dev->name);
->>>> +            /*
->>>> +             * This is ok to do without rcu read locked because
->>>> +             * we hold the uuid mutex so nothing we touch in here
->>>> +             * is going to disappear.
->>>> +             */
->>>> +            name = rcu_string_strdup(orig_dev->name->str, GFP_NOFS);
->>>> +            if (!name) {
->>>> +                kfree(device);
->>>> +                goto error;
->>>> +            }
->>>> +            rcu_assign_pointer(device->name, name);
->>>>            }
->>>> -        rcu_assign_pointer(device->name, name);
->>>>
->>>>            list_add(&device->dev_list, &fs_devices->devices);
->>>>            device->fs_devices = fs_devices;
->>>>
->>>
->>> Thanks, Anand
->>> .
->>>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> .
-> 
+Assuming I'm following you correctly, then, no subvolumes could be rw if 
+the filesystem/vfs flag was set ro.
+
+Which would mean that in ordered to mount any particular subvolume rw, 
+the whole filesystem would have to be rw.
+
+Extending now:
+
+For simplicity and backward compatibility, if subvolmode isn't set, it 
+corresponds to the whole-fs/vfs mode.  That way, setting mount -o ro,... 
+(or -o rw,...) with the first mount would naturally propagate to all 
+subsequent subvolume mounts, unless of course (1) all subvolumes and the 
+filesystem itself are umounted, after which a new mount would be the 
+first one again, or (2) a mount -o remount,... is done that changes the 
+whole-fs mode.
+
+Further, if it happened that one wanted the first subvolume mounted to be 
+ro, but the filesystem as a whole rw so that other subvolumes could be 
+mounted rw, the following would accomplish that:
+
+mount -o rw,subvolmode=ro
+
+That way, the subvol would be ro as desired, but the filesystem as a 
+whole would be rw, so other subvolumes could be successfully mounted rw.
+
+I like the concept. =:^)
+
+The remaining problem to deal with is that if say the root subvol (id=5) 
+is mounted rw,subvolmode=rw, while a subvolume below it is mounted 
+subvolmode=ro, then what happens if someone tries to make an edit in the 
+portion of the filesystem visible in the subvolume, but from the parent, 
+id=5/root in this case?  Obviously if that modification is allowed from 
+the parent, it'll change what's visible in the child subvolume as well, 
+which would be rather unexpected.
+
+I'd suggest that the snapshotting border rule should apply to writes as 
+well.  Snapshots stop at subvolume borders, and writes should as well.  
+Attempting to write in a child subvolume should error out -- child 
+subvolumes are not part of a parent snapshot and shouldn't be writable 
+from the parent subvolume, either.  Child-subvolume content should be 
+read-only because it's beyond the subvolume border.
+
+That would seem to be the safest.  Altho I believe it's a change from 
+current behavior, where it's possible to write into any subvolume visible 
+from the parent (that is, not covered by an over-mount, perhaps even of 
+the same subvolume that would otherwise be visible in the same location 
+from the parent subvolume), provided the parent is writable.
+
+Regardless, my biggest take-away from the discussion so far is that I'm 
+glad I decided to go with entirely separate filesystems, each on their 
+own partitions, so my ro vs writable mounts do exactly what I expect them 
+to do without me having to worry or think about it too much!  That wasn't 
+the reason I did it -- I did it because I didn't want all my data eggs in 
+the same whole-filesystem basket such that if a filesystem was damaged, 
+the damage was compartmentalized -- but now that see all the subvolume rw/
+ro implications discussed in this thread, I'm VERY glad I personally 
+don't have to worry about it, and it all simply "just works" for me, 
+because each filesystem is independent of the others, not simply a 
+subvolume!
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

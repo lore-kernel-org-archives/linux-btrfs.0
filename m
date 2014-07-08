@@ -1,56 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outrelay06.libero.it ([212.52.84.110]:47291 "EHLO
-	outrelay06.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751931AbaGHECj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 00:02:39 -0400
-Message-ID: <53BB6E7B.6080205@libero.it>
-Date: Tue, 08 Jul 2014 06:07:23 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from postler.lichtfels.com ([78.46.92.195]:58080 "EHLO
+	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756119AbaGHTNh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 15:13:37 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by postler.lichtfels.com (Postfix) with ESMTP id 7CCEB123E0
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Jul 2014 21:07:33 +0200 (CEST)
+Received: from postler.lichtfels.com ([127.0.0.1])
+ by localhost (postler.lichtfels.com [127.0.0.1]) (amavisd-maia, port 10024)
+ with LMTP id 23934-04 for <linux-btrfs@vger.kernel.org>;
+ Tue,  8 Jul 2014 21:07:31 +0200 (CEST)
+Received: from [IPv6:2001:15c0:65ff:8742:18e:166d:2c2c:c1be] (unknown [IPv6:2001:15c0:65ff:8742:18e:166d:2c2c:c1be])
+	(using TLSv1 with cipher ECDHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	by postler.lichtfels.com (Postfix) with ESMTPSA id 10721123CA
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Jul 2014 21:07:30 +0200 (CEST)
+Message-ID: <53BC4172.8080300@xunil.at>
+Date: Tue, 08 Jul 2014 21:07:30 +0200
+From: "Stefan G. Weichinger" <lists@xunil.at>
+Reply-To: lists@xunil.at
 MIME-Version: 1.0
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH] Revert "btrfs: allow mounting btrfs subvolumes with
- different ro/rw options"
-References: <1404207001-7510-1-git-send-email-quwenruo@cn.fujitsu.com>	<53B445F5.6060709@libero.it> <53B4A3C7.1020805@cn.fujitsu.com>	<53B594E7.9070500@inwind.it> <53B6032D.6090207@cn.fujitsu.com>	<53B6E744.1060204@inwind.it> <53B9FBE4.6040300@cn.fujitsu.com>	<53BADAF1.80803@inwind.it> <pan$5e578$d83c9a0b$aad1fa2b$9a41848@cox.net>
-In-Reply-To: <pan$5e578$d83c9a0b$aad1fa2b$9a41848@cox.net>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs and mount in gentoo linux
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/08/2014 04:43 AM, Duncan wrote:
-> The remaining problem to deal with is that if say the root subvol (id=5) 
-> is mounted rw,subvolmode=rw, while a subvolume below it is mounted 
-> subvolmode=ro, then what happens if someone tries to make an edit in the 
-> portion of the filesystem visible in the subvolume, but from the parent, 
-> id=5/root in this case?  Obviously if that modification is allowed from 
-> the parent, it'll change what's visible in the child subvolume as well, 
-> which would be rather unexpected.
 
-The ro/rw status is a subvolume flag.
-So if a subvolume is marked rw (or ro), is writable (not writable) in all
-the mount(S)
-This flag is not inheritable.
+Hello, btrfs-mailing-list,
 
-What could be strange is the following:
+I already tried to contact Chris Mason via pm but so far I didn't get a
+reply so I taking this approach now:
 
-      # mount -o subvolid=5,rw /dev/sda1 /mnt/btrfs-root
-      # btrfs subvol create /mnt/btrfs-root/subvolname/
-then
-      # touch /mnt/btrfs-root/subvolname/touch-file
+I am a happy btrfs-user with gentoo linux for some time now and noticed
+that the command "mount" does not show me which subvolid is mounted where.
 
-succeeds; but
+eg.
 
-      # mount -o subvolid=5,rw /dev/sda1 /mnt/btrfs-root
-      # btrfs subvol create /mnt/btrfs-root/subvolname/
-      # mount -o subvol=subvolname,ro /dev/sda1 /mnt/btrfs-subvol
-then
-      # touch /mnt/btrfs-root/subvolname/touch-file2
+# mount | grep sda2
 
-fails.
+/dev/sda2 on /mnt/btrfs_pool1 type btrfs
+(rw,noatime,compress=lzo,ssd,space_cache)
+
+/dev/sda2 on /mnt/oopsfiles type btrfs
+(rw,noatime,compress=lzo,ssd,space_cache)
+
+/dev/sda2 on /home type btrfs (rw,noatime,compress=lzo,ssd,space_cache)
+
+See?
+
+I filed a bug against util-linux at bugs.gentoo.org:
+
+https://bugs.gentoo.org/show_bug.cgi?id=510148
+
+but as you see from Comment 5 it isn't resolved yet due to "don't know" ;-)
 
 
+Can you tell me where the problem/solution might be located?
+Is it a known behavior in a way ... ?
 
+Thanks for looking into it, I appreciate it ... I will then see to
+report things back at the gentoo bugzilla to help improving btrfs
+support in gentoo!
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Regards, Stefan

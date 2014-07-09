@@ -1,65 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:52149 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753402AbaGHV1G convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Jul 2014 17:27:06 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:58569 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1X4cun-003MOS-R2
-	for linux-btrfs@vger.kernel.org; Tue, 08 Jul 2014 15:27:05 -0600
-Content-Type: text/plain; charset=windows-1252
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from cn.fujitsu.com ([59.151.112.132]:28939 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751150AbaGIB5U convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 21:57:20 -0400
+Message-ID: <53BCA17D.9060301@cn.fujitsu.com>
+Date: Wed, 9 Jul 2014 09:57:17 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: <lists@xunil.at>, <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs and mount in gentoo linux
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <53BC597D.3030107@xunil.at>
-Date: Tue, 8 Jul 2014 15:27:04 -0600
-Message-Id: <BB94E56C-6089-4691-A4D2-F8A812B4581A@colorremedies.com>
-References: <53BC4172.8080300@xunil.at> <A8D31CAA-14AC-407E-96BB-34E0ACF7F452@colorremedies.com> <53BC597D.3030107@xunil.at>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <53BC4172.8080300@xunil.at> <pan.2014.07.08.20.19.04@googlemail.com> <53BC5A1A.7020403@xunil.at>
+In-Reply-To: <53BC5A1A.7020403@xunil.at>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Jul 8, 2014, at 2:50 PM, Stefan G. Weichinger <lists@xunil.at> wrote:
+-------- Original Message --------
+Subject: Re: btrfs and mount in gentoo linux
+From: Stefan G. Weichinger <lists@xunil.at>
+To: linux-btrfs@vger.kernel.org
+Date: 2014年07月09日 04:52
+> Am 08.07.2014 22:19, schrieb Holger Hoffstätte:
+>> On Tue, 08 Jul 2014 21:07:30 +0200, Stefan G. Weichinger wrote:
+>>
+>>> I am a happy btrfs-user with gentoo linux for some time now and noticed
+>>> that the command "mount" does not show me which subvolid is mounted where.
+>> Interestingly I just found that this came up in Fedora some time ago:
+>> https://bugzilla.redhat.com/show_bug.cgi?id=743118
+>>
+>> findmnt seems to do the trick, so the underlying functionality in
+>> libmnt seems to work. Maybe Debian's mount does something differently?
+> findmnt does not fully show the subvolids or names:
+>
+>
+> # findmnt  | grep btrfs
+> /                                /dev/sda3[/rootfs]    btrfs
+> rw,noatime,compress=lzo,ssd,space_cache
+> ├─/mnt/uncow                     /dev/sda3             btrfs
+> rw,noatime,compress=lzo,ssd,space_cache
+> └─/home/sgw                      /dev/mapper/_dev_sda4 btrfs
+> rw,noatime,compress=lzo,ssd,space_cache
+>
+> The "[/rootfs]" is something in the right direction ...
+The bug is that, if you don't use 'subvol=' mount option but use default 
+subvolume or 'subvolid=' mount option,
+findmnt will not give the output.
 
-> Am 08.07.2014 22:20, schrieb Chris Murphy:
->> 
->> On Jul 8, 2014, at 1:07 PM, Stefan G. Weichinger <lists@xunil.at> wrote:
->>> 
->>> Can you tell me where the problem/solution might be located?
->>> Is it a known behavior in a way � ?
->> 
->> It's known. Ubuntu has a patch so that mount shows subvolume names. 
->> This information is probably available on Gentoo with cat /proc/self/mountinfo.
-> 
-> 
-> Unfortunately no.
-> 
-> See example from my laptop:
-> 
-> # grep btrfs /proc/self/mountinfo
-> 14 0 0:14 /rootfs / rw,noatime shared:1 - btrfs /dev/sda3
-> rw,compress=lzo,ssd,space_cache
-> 
-> 51 14 0:14 / /mnt/uncow rw,noatime shared:19 - btrfs /dev/sda3
-> rw,compress=lzo,ssd,space_cache
-> 
-> 156 14 0:35 / /home/sgw rw,noatime shared:117 - btrfs
-> /dev/mapper/_dev_sda4 rw,compress=lzo,ssd,space_cache
+Since 'subvol=' mount option differs from default subvolume mount or 
+'subvolid=' mount option in calling behavior,
+'subvol=' uses mount_subtree() vfs call, which records subtree mount info.
+On the other hand, default subvolume mount or 'subvolid=' mount does not 
+go through the vfs subtree mount
+but use btrfs's implement, which does not report vfs submount.
 
-Well it looks to me you have used mount -o subvol=rootfs for the first instance, but you've not mounted a subvolume at /mnt/uncow and /home/sgw.
+I'll try to investigate further and find whether we can fix it to show 
+more info.
 
-What kernel version is this? And I thought the kernel was entirely responsible for the contents of /proc?
+Thanks,
+Qu
+>
+> S
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-http://ur1.ca/hpk57
-The fourth column lists subvol names.
-
-> 
-> What does the Ubuntu patch apply to? util-linux?
-
-No idea.
-
-Chris Murphy

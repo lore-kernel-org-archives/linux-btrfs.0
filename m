@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50548 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51343 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751852AbaGHFn1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jul 2014 01:43:27 -0400
+	with ESMTP id S1755001AbaGIG5B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 02:57:01 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: Add mount point output for 'btrfs fi df' command.
-Date: Tue, 8 Jul 2014 13:43:23 +0800
-Message-ID: <1404798203-17122-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] btrfs-progs: Add mount point output for 'btrfs fi df' command.
+Date: Wed, 9 Jul 2014 14:56:57 +0800
+Message-ID: <1404889017-31426-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,20 +21,21 @@ non-btrfs path.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-This patch needs to be merged after the following path:
-btrfs-progs: Check fstype in find_mount_root()
+v2:
+  Call realpath() before find_mount_root() to deal with relative path
 ---
- cmds-filesystem.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ cmds-filesystem.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 4b2d27e..d571765 100644
+index 4b2d27e..77e1db0 100644
 --- a/cmds-filesystem.c
 +++ b/cmds-filesystem.c
-@@ -187,12 +187,22 @@ static int cmd_filesystem_df(int argc, char **argv)
+@@ -187,12 +187,31 @@ static int cmd_filesystem_df(int argc, char **argv)
         int ret;
         int fd;
         char *path;
++       char *real_path = NULL;
 +       char *mount_point = NULL;
         DIR *dirstream = NULL;
  
@@ -42,13 +43,21 @@ index 4b2d27e..d571765 100644
                 usage(cmd_filesystem_df_usage);
  
         path = argv[1];
-+       ret = find_mount_root(path, &mount_point);
++       real_path = realpath(path, NULL);
++       if (!real_path) {
++	       fprintf(stderr, "ERROR: Failed to resolve real path for %s: %s\n",
++		       path, strerror(errno));
++	       return 1;
++       }
++       ret = find_mount_root(real_path, &mount_point);
 +       if (ret < 0) {
++	       free(real_path);
 +	       if (ret != -ENOENT)
 +		       fprintf(stderr, "ERROR: Failed to find mount root for path %s: %s\n",
 +			       path, strerror(-ret));
 +		return 1;
 +       }
++       free(real_path);
 +       printf("Mounted on: %s\n", mount_point);
 +       free(mount_point);
  

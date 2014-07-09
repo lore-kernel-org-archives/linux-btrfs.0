@@ -1,43 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postler.lichtfels.com ([78.46.92.195]:47557 "EHLO
-	postler.lichtfels.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751345AbaGIJPo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 05:15:44 -0400
-Message-ID: <53BD0839.7030907@xunil.at>
-Date: Wed, 09 Jul 2014 11:15:37 +0200
-From: "Stefan G. Weichinger" <lists@xunil.at>
-Reply-To: lists@xunil.at
+Received: from ore.jhcloos.com ([198.147.23.85]:45201 "EHLO ore.jhcloos.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755868AbaGIRan (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Jul 2014 13:30:43 -0400
+From: James Cloos <cloos@jhcloos.com>
+To: Chris Mason <clm@fb.com>
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [3.16-rc1] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
+In-Reply-To: <539FC896.5010909@fb.com> (Chris Mason's message of "Tue, 17 Jun
+	2014 00:48:22 -0400")
+References: <539E9026.1020406@jp.fujitsu.com> <539F2FEA.1060809@fb.com>
+	<539F7D8E.9010608@jp.fujitsu.com> <539F8351.3010700@fb.com>
+	<539F846A.4080608@jp.fujitsu.com> <539F9006.4090109@fb.com>
+	<539FA395.5050704@jp.fujitsu.com> <539FB0AE.7010404@jp.fujitsu.com>
+	<539FC896.5010909@fb.com>
+Date: Wed, 09 Jul 2014 13:14:53 -0400
+Message-ID: <m3egxu314i.fsf@carbon.jhcloos.org>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs and mount in gentoo linux
-References: <53BC4172.8080300@xunil.at> <pan.2014.07.08.20.19.04@googlemail.com> <53BC5A1A.7020403@xunil.at> <53BCA17D.9060301@cn.fujitsu.com>
-In-Reply-To: <53BCA17D.9060301@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 09.07.2014 03:57, schrieb Qu Wenruo:
+It looks like I just hit this on rc4.  (I compiled the earlier rc
+versions, but hadn't rebooted until yesterday.)
 
->> The "[/rootfs]" is something in the right direction ...
-> The bug is that, if you don't use 'subvol=' mount option but use default
-> subvolume or 'subvolid=' mount option,
-> findmnt will not give the output.
+I don't think I see anything in the git log since rc1 which is relevant,
+but just in case one of those tried to fix this, its still there.
 
-Yes, that sounds true as I switched to mostly using 'subvolid=' over
-times. I also use that in my fstab.
+The stuck processes are:
 
-> Since 'subvol=' mount option differs from default subvolume mount or
-> 'subvolid=' mount option in calling behavior,
-> 'subvol=' uses mount_subtree() vfs call, which records subtree mount info.
-> On the other hand, default subvolume mount or 'subvolid=' mount does not
-> go through the vfs subtree mount
-> but use btrfs's implement, which does not report vfs submount.
+]btrfs-transacti] btrfs_wait_and_free_delalloc_work
+rsync             writeback_inodes_sb_nr
+rsync             reserve_metadata_bytes
+git-merge         sleep_on_page_killable
+/bin/sync         sync_inodes_sb
 
-OK, good explanation ;-)
+(The two rsync processes are separate; each to its one directory.)
 
-> I'll try to investigate further and find whether we can fix it to show
-> more info.
+The fs with those processes is mounted with noatime,compress.
 
-Thanks a lot, I think this would be a more expectable behavior in the end.
+Interestingly, I also use btrfs /var/log, also with noatime,compress,
+but that one is fine.
 
-Stefan
+-JimC
+-- 
+James Cloos <cloos@jhcloos.com>         OpenPGP: 0x997A9F17ED7DAEA6

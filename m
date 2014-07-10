@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8796 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4524 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751082AbaGJBRK convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 21:17:10 -0400
-Message-ID: <53BDE991.3050400@cn.fujitsu.com>
-Date: Thu, 10 Jul 2014 09:17:05 +0800
+	with ESMTP id S1751082AbaGJBSW convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 21:18:22 -0400
+Message-ID: <53BDE9D8.4070208@cn.fujitsu.com>
+Date: Thu, 10 Jul 2014 09:18:16 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
@@ -105,6 +105,8 @@ Date: 2014年07月10日 08:59
 P.S. I prefer to integrate all fprintf() into find_mount_root(), since 
 that will make the error message more specific
 and more easy to understandable.
+So I'll remove the caller fprintf.
+Would this be OK for you?
 
 Thanks,
 Qu

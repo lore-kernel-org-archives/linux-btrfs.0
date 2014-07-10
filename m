@@ -1,77 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:52636 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751119AbaGJVU5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jul 2014 17:20:57 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X5Llw-0008BL-6t
-	for linux-btrfs@vger.kernel.org; Thu, 10 Jul 2014 23:20:56 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 23:20:56 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 23:20:56 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: File server structure suggestion
-Date: Thu, 10 Jul 2014 21:20:44 +0000 (UTC)
-Message-ID: <pan$3fa75$98459e65$9560b016$e99b83a7@cox.net>
-References: <CAGTBuzTWV2jVqy4uScevHbMi-kp4_TRdeR21ZoA3-yOtCXPA=g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from p02c12o148.mxlogic.net ([208.65.145.81]:42694 "EHLO
+	p02c12o148.mxlogic.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753411AbaGJWI5 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jul 2014 18:08:57 -0400
+From: David Player <dplayer@seagullscientific.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Using serialized BTRFS snapshots as a backup
+Date: Thu, 10 Jul 2014 22:08:45 +0000
+Message-ID: <B2E8CD86330BEF41BB6ED95EFC9EBBEE58814D@SRVEX2.corp.seagullscientific.com>
+Content-Type: text/plain; charset="iso-8859-1"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andrew Flerchinger posted on Thu, 10 Jul 2014 10:41:02 -0400 as excerpted:
+I'm trying to use serialized BTRFS snapshots as a backup system. The problem is that I don't know how to avoid sending duplicate data and also have the ability to prune old backups.
 
-> Enter btrfs. Unfortunately, it's newer than ZFS and isn't as robust, but
-> it does support online capacity expansion, and the on disk format is
-> expect to be stable. It has data checksums and COW, which are the
-> primary things I'm after. RAID10 seems pretty stable, but RAID56 isn't.
-> 
-> So I'm looking for a suggestion. My end goal is RAID6 and expand it a
-> drive at a time as needed. For right now, I can either:
-> 
-> 1) Run RAID6, but be aware of its limitations. I can manually remove and
-> add drives in separate steps if needed. Keep the server on a UPS to
-> limit unexpected shutdowns and any corruption there. The whole array
-> can't be scrubbed, but if there is a chechsum problem when reading
-> individual data, will that still be corrected and/or logged? This will
-> be a temporary situation, as over time, more features will be built out,
-> and the existing file system will be better supported.
-> 
-> 2) Run RAID10, and convert the file system to RAID6 later once it is
-> stable. Since RAID10 is far more stable and feature complete than RAID56
-> right now, all features will work okay, I'm just buying more
-> drives/running at lower capacity for the moment. If I have to grow the
-> array, I'd have to buy two drives. In the future, once RAID6 is better
-> supported, I can convert in-place to RAID6.
+Specifically I've considered the following:
 
-I'd personally consider btrfs raid5/6 to be in practice a slow and lower 
-capacity raid0, at this point, except that you'll get raid5/6 for "free" 
-when that's fully supported, since it has been doing the writing for that 
-all along, it just couldn't properly restore.  IOW, I wouldn't consider 
-it trustworthy at all against loss of a device, which based on your 
-suggestion, isn't appropriate for your usage.
+#snapshot
+btrfs subvolume snapshot -r  live-volume  volume-date
 
-That leaves either raid10 or raid1.  It's worth noting that btrfs raid1 
-is at this point paired mirrors only, so no matter how many devices, you 
-still have exactly two mirrors of all (meta)data.  N-way-mirroring is 
-planned for after raid5/6 completion.  Which could put raid1 in the 
-running for you, and as the simplest redundant raid, it might be easier 
-to convert to raid5/6 later.
+#serialize snapshot for transmission to remote machine
+btrfs send -f backup.date volume-date -p volume-yesterday
 
-Then there's raid10, which takes more drives and is faster, but is still 
-limited to two mirrors.  But while I haven't actually used raid10 myself, 
-I do /not/ believe it's limited to pair-at-a-time additions.  I believe 
-it'll take, for instance five devices, just fine, staggering chunk 
-allocation as necessary to fill all at about the same rate.
+However this means I have to keep every serialized snapshot forever. I've tried unpacking these incremental snapshots, deleting intermediate volumes, and repacking the latest version. Unfortunately, deleting an intermediate snapshot appears to change the IDs for later snapshots, and future serialized snapshots can't be unpacked. In other words, I have incremental snapshots 1-4, I unpack 1-3, erase 2, and now I can't unpack 4 due to: "ERROR: could not find parent subvolume".
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+I've also considered keeping a chain of incremental monthly backups, and basing daily backups on both the monthly and previous daily. This would allow me to delete daily backups in the future, but now I have to send twice as much data to the backup machine.
+
+What bothers me is that subvolume 3 (from the example above) really has all the same data before and after I delete subvolume 2. The IDs of the volume change, preventing me from unpacking incremental 4, and that's causing my problems.
+
+Are there any better ideas I haven't thought of?
+
+Currently running BTRFS 3.12 on kernel 3.13 (Ubuntu 14.04).
+
+Thanks,
+David Player
 

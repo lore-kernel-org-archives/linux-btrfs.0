@@ -1,48 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ore.jhcloos.com ([198.147.23.85]:45201 "EHLO ore.jhcloos.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755868AbaGIRan (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Jul 2014 13:30:43 -0400
-From: James Cloos <cloos@jhcloos.com>
-To: Chris Mason <clm@fb.com>
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [3.16-rc1] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u25:4:5189]
-In-Reply-To: <539FC896.5010909@fb.com> (Chris Mason's message of "Tue, 17 Jun
-	2014 00:48:22 -0400")
-References: <539E9026.1020406@jp.fujitsu.com> <539F2FEA.1060809@fb.com>
-	<539F7D8E.9010608@jp.fujitsu.com> <539F8351.3010700@fb.com>
-	<539F846A.4080608@jp.fujitsu.com> <539F9006.4090109@fb.com>
-	<539FA395.5050704@jp.fujitsu.com> <539FB0AE.7010404@jp.fujitsu.com>
-	<539FC896.5010909@fb.com>
-Date: Wed, 09 Jul 2014 13:14:53 -0400
-Message-ID: <m3egxu314i.fsf@carbon.jhcloos.org>
+Received: from mail-lb0-f177.google.com ([209.85.217.177]:36884 "EHLO
+	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752527AbaGJOlY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Jul 2014 10:41:24 -0400
+Received: by mail-lb0-f177.google.com with SMTP id u10so6101069lbd.22
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 07:41:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+From: Andrew Flerchinger <lorax3@gmail.com>
+Date: Thu, 10 Jul 2014 10:41:02 -0400
+Message-ID: <CAGTBuzTWV2jVqy4uScevHbMi-kp4_TRdeR21ZoA3-yOtCXPA=g@mail.gmail.com>
+Subject: File server structure suggestion
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It looks like I just hit this on rc4.  (I compiled the earlier rc
-versions, but hadn't rebooted until yesterday.)
+I am going to be building a new file server in a couple weeks and am
+deciding on how to structure it. Previously, I ran RAID5 through mdadm
+and XFS on Debian, but I had a silently bad drive that corrupted data
+without dropping from the array. I suspected this was happening, and
+changed over to ZFS on FreeNAS and the monthly scrub told me exactly
+what was going on. That sold me on the idea of data checksums, but I'd
+rather stay in linux than BSD, and I previously made use of online
+capacity expansion as needed, which ZFS doesn't support.
 
-I don't think I see anything in the git log since rc1 which is relevant,
-but just in case one of those tried to fix this, its still there.
+Enter btrfs. Unfortunately, it's newer than ZFS and isn't as robust,
+but it does support online capacity expansion, and the on disk format
+is expect to be stable. It has data checksums and COW, which are the
+primary things I'm after. RAID10 seems pretty stable, but RAID56
+isn't.
 
-The stuck processes are:
+So I'm looking for a suggestion. My end goal is RAID6 and expand it a
+drive at a time as needed. For right now, I can either:
 
-]btrfs-transacti] btrfs_wait_and_free_delalloc_work
-rsync             writeback_inodes_sb_nr
-rsync             reserve_metadata_bytes
-git-merge         sleep_on_page_killable
-/bin/sync         sync_inodes_sb
+1) Run RAID6, but be aware of its limitations. I can manually remove
+and add drives in separate steps if needed. Keep the server on a UPS
+to limit unexpected shutdowns and any corruption there. The whole
+array can't be scrubbed, but if there is a chechsum problem when
+reading individual data, will that still be corrected and/or logged?
+This will be a temporary situation, as over time, more features will
+be built out, and the existing file system will be better supported.
 
-(The two rsync processes are separate; each to its one directory.)
+2) Run RAID10, and convert the file system to RAID6 later once it is
+stable. Since RAID10 is far more stable and feature complete than
+RAID56 right now, all features will work okay, I'm just buying more
+drives/running at lower capacity for the moment. If I have to grow the
+array, I'd have to buy two drives. In the future, once RAID6 is better
+supported, I can convert in-place to RAID6.
 
-The fs with those processes is mounted with noatime,compress.
+What do you think?
 
-Interestingly, I also use btrfs /var/log, also with noatime,compress,
-but that one is fine.
-
--JimC
--- 
-James Cloos <cloos@jhcloos.com>         OpenPGP: 0x997A9F17ED7DAEA6
+Thanks,
+Andrew

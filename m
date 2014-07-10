@@ -1,156 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:42635 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751743AbaGJHde (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:59247 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750804AbaGJHee (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jul 2014 03:33:34 -0400
+	Thu, 10 Jul 2014 03:34:34 -0400
 Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 8769E3EE1DF
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:33:32 +0900 (JST)
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 9B02B3EE0BD
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:34:32 +0900 (JST)
 Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 91B33AC08B0
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:33:31 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 40BD81DB8037
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:33:31 +0900 (JST)
-Received: from G01JPEXCHKW13.g01.fujitsu.local (G01JPEXCHKW13.g01.fujitsu.local [10.0.194.52])
-	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 657D3BD68BB
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:33:30 +0900 (JST)
-Message-ID: <53BE41C3.1050804@jp.fujitsu.com>
-Date: Thu, 10 Jul 2014 16:33:23 +0900
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id AB024AC07E3
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:34:31 +0900 (JST)
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 432E71DB8032
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:34:31 +0900 (JST)
+Received: from G01JPEXCHKW15.g01.fujitsu.local (G01JPEXCHKW15.g01.fujitsu.local [10.0.194.54])
+	by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 43D16692785
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 16:34:30 +0900 (JST)
+Message-ID: <53BE4200.1080707@jp.fujitsu.com>
+Date: Thu, 10 Jul 2014 16:34:24 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/4] btrfs-progs: Integrate error message output into
- find_mount_root().
-References: <1404961513-14614-1-git-send-email-quwenruo@cn.fujitsu.com> <1404961513-14614-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1404961513-14614-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH 3/4] btrfs-progs: Fix wrong indent in btrfs-progs.
+References: <1404961513-14614-1-git-send-email-quwenruo@cn.fujitsu.com> <1404961513-14614-3-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1404961513-14614-3-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
-
 (2014/07/10 12:05), Qu Wenruo wrote:
-> Before this patch, find_mount_root() and the caller both output error
-> message, which sometimes make the output duplicated and hard to judge
-> what the problem is.
+> When editing cmds-filesystem.c, I found cmd_filesystem_df() uses 7
+> spaces as indent instead of 1 tab (or 8 spaces). which makes indent
+> quite embarrassing.
+> Such problem is especillay hard to detect when reviewing patches,
+> since the leading '+' makes a tab only 7 spaces long, makeing 7 spaces
+> look the same with a tab.
 > 
-> This pathh will integrate all the error messages output into
-> find_mount_root() to give more meaning error prompt and remove the
-> unneeded caller error messages.
+> This patch fixes all the 7 spaces indent.
 > 
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
 > ---
->   cmds-receive.c   |  2 --
->   cmds-send.c      |  8 +-------
->   cmds-subvolume.c |  5 +----
->   utils.c          | 15 ++++++++++++---
->   4 files changed, 14 insertions(+), 16 deletions(-)
+>   cmds-filesystem.c | 79 +++++++++++++++++++++++++++----------------------------
+>   ctree.h           | 15 ++++++-----
+>   utils.c           | 10 +++----
+>   3 files changed, 52 insertions(+), 52 deletions(-)
 > 
-> diff --git a/cmds-receive.c b/cmds-receive.c
-> index 48380a5..084d97d 100644
-> --- a/cmds-receive.c
-> +++ b/cmds-receive.c
-> @@ -981,8 +981,6 @@ static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd,
->   	ret = find_mount_root(dest_dir_full_path, &r->root_path);
->   	if (ret < 0) {
->   		ret = -EINVAL;
-> -		fprintf(stderr, "ERROR: failed to determine mount point "
-> -			"for %s\n", dest_dir_full_path);
->   		goto out;
->   	}
->   	r->mnt_fd = open(r->root_path, O_RDONLY | O_NOATIME);
-> diff --git a/cmds-send.c b/cmds-send.c
-> index 9a73b32..091f32b 100644
-> --- a/cmds-send.c
-> +++ b/cmds-send.c
-> @@ -357,8 +357,6 @@ static int init_root_path(struct btrfs_send *s, const char *subvol)
->   	ret = find_mount_root(subvol, &s->root_path);
->   	if (ret < 0) {
->   		ret = -EINVAL;
-> -		fprintf(stderr, "ERROR: failed to determine mount point "
-> -				"for %s\n", subvol);
->   		goto out;
->   	}
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 4b2d27e..0a9b62a 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -114,23 +114,23 @@ static const char * const filesystem_cmd_group_usage[] = {
+>   };
 >   
-> @@ -622,12 +620,8 @@ int cmd_send(int argc, char **argv)
->   		}
+>   static const char * const cmd_filesystem_df_usage[] = {
+> -       "btrfs filesystem df <path>",
+> -       "Show space usage information for a mount point",
+> -       NULL
+> +	"btrfs filesystem df <path>",
+> +	"Show space usage information for a mount point",
+> +	NULL
+>   };
 >   
->   		ret = find_mount_root(subvol, &mount_root);
-> -		if (ret < 0) {
-> -			fprintf(stderr, "ERROR: find_mount_root failed on %s: "
-> -					"%s\n", subvol,
-> -				strerror(-ret));
-> +		if (ret < 0)
->   			goto out;
-> -		}
->   		if (strcmp(send.root_path, mount_root) != 0) {
->   			ret = -EINVAL;
->   			fprintf(stderr, "ERROR: all subvols must be from the "
-> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-> index 639fb10..b252eab 100644
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -981,11 +981,8 @@ static int cmd_subvol_show(int argc, char **argv)
->   	}
+>   static void print_df(struct btrfs_ioctl_space_args *sargs)
+>   {
+> -       u64 i;
+> -       struct btrfs_ioctl_space_info *sp = sargs->spaces;
+> -
+> -       for (i = 0; i < sargs->total_spaces; i++, sp++) {
+> -               printf("%s, %s: total=%s, used=%s\n",
+> -                       group_type_str(sp->flags),
+> -                       group_profile_str(sp->flags),
+> -                       pretty_size(sp->total_bytes),
+> -                       pretty_size(sp->used_bytes));
+> -       }
+> +	u64 i;
+> +	struct btrfs_ioctl_space_info *sp = sargs->spaces;
+> +
+> +	for (i = 0; i < sargs->total_spaces; i++, sp++) {
+> +		printf("%s, %s: total=%s, used=%s\n",
+> +		       group_type_str(sp->flags),
+> +		       group_profile_str(sp->flags),
+> +		       pretty_size(sp->total_bytes),
+> +		       pretty_size(sp->used_bytes));
+> +	}
+>   }
 >   
->   	ret = find_mount_root(fullpath, &mnt);
-> -	if (ret < 0) {
-> -		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
-> -				"%s\n", fullpath, strerror(-ret));
-> +	if (ret < 0)
->   		goto out;
-> -	}
->   	ret = 1;
->   	svpath = get_subvol_name(mnt, fullpath);
+>   static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
+> @@ -183,33 +183,32 @@ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
 >   
+>   static int cmd_filesystem_df(int argc, char **argv)
+>   {
+> -       struct btrfs_ioctl_space_args *sargs = NULL;
+> -       int ret;
+> -       int fd;
+> -       char *path;
+> -       DIR *dirstream = NULL;
+> -
+> -       if (check_argc_exact(argc, 2))
+> -               usage(cmd_filesystem_df_usage);
+> -
+> -       path = argv[1];
+> -
+> -       fd = open_file_or_dir(path, &dirstream);
+> -       if (fd < 0) {
+> -               fprintf(stderr, "ERROR: can't access '%s'\n", path);
+> -               return 1;
+> -       }
+> -       ret = get_df(fd, &sargs);
+> -
+> -       if (!ret && sargs) {
+> -               print_df(sargs);
+> -               free(sargs);
+> -       } else {
+> -               fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
+> -       }
+> -
+> -       close_file_or_dir(fd, dirstream);
+> -       return !!ret;
+> +	struct btrfs_ioctl_space_args *sargs = NULL;
+> +	int ret;
+> +	int fd;
+> +	char *path;
+> +	DIR *dirstream = NULL;
+> +
+> +	if (check_argc_exact(argc, 2))
+> +		usage(cmd_filesystem_df_usage);
+> +
+> +	path = argv[1];
+> +
+> +	fd = open_file_or_dir(path, &dirstream);
+> +	if (fd < 0) {
+> +		fprintf(stderr, "ERROR: can't access '%s'\n", path);
+> +		return 1;
+> +	}
+> +	ret = get_df(fd, &sargs);
+> +	if (!ret && sargs) {
+> +		print_df(sargs);
+> +		free(sargs);
+> +	} else {
+> +		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
+> +	}
+> +
+> +	close_file_or_dir(fd, dirstream);
+> +	return !!ret;
+>   }
+>   
+>   static int match_search_item_kernel(__u8 *fsid, char *mnt, char *label,
+> diff --git a/ctree.h b/ctree.h
+> index 35d3633..83d85b3 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -939,10 +939,10 @@ struct btrfs_block_group_cache {
+>   };
+>   
+>   struct btrfs_extent_ops {
+> -       int (*alloc_extent)(struct btrfs_root *root, u64 num_bytes,
+> -		           u64 hint_byte, struct btrfs_key *ins);
+> -       int (*free_extent)(struct btrfs_root *root, u64 bytenr,
+> -		          u64 num_bytes);
+> +	int (*alloc_extent)(struct btrfs_root *root, u64 num_bytes,
+> +			    u64 hint_byte, struct btrfs_key *ins);
+> +	int (*free_extent)(struct btrfs_root *root, u64 bytenr,
+> +			   u64 num_bytes);
+>   };
+>   
+>   struct btrfs_device;
+> @@ -2117,9 +2117,10 @@ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_rsv_exclusive,
+>   static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
+>   						    struct btrfs_item *e)
+>   {
+> -       unsigned long offset;
+> -       offset = offsetof(struct btrfs_file_extent_item, disk_bytenr);
+> -       return btrfs_item_size(eb, e) - offset;
+> +	unsigned long offset;
+> +
+> +	offset = offsetof(struct btrfs_file_extent_item, disk_bytenr);
+> +	return btrfs_item_size(eb, e) - offset;
+>   }
+>   
+>   /* this returns the number of file bytes represented by the inline item.
 > diff --git a/utils.c b/utils.c
-> index 507ec6c..07173ee 100644
+> index 07173ee..356bdce 100644
 > --- a/utils.c
 > +++ b/utils.c
-> @@ -2417,13 +2417,19 @@ int find_mount_root(const char *path, char **mount_root)
->   	char *longest_match = NULL;
+> @@ -1485,15 +1485,15 @@ char *__strncpy__null(char *dest, const char *src, size_t n)
+>    */
+>   static int check_label(const char *input)
+>   {
+> -       int len = strlen(input);
+> +	int len = strlen(input);
 >   
->   	fd = open(path, O_RDONLY | O_NOATIME);
-> -	if (fd < 0)
-> +	if (fd < 0) {
-> +		fprintf(stderr, "ERROR: Failed to open %s: %s\n",
-> +			path, strerror(errno));
-
-It drops part of original messages. It doesn't show this error
-is from find_mount_root(). I consider the original meaning keep as is.
-How do you think?
-
-Thanks,
-Satoru
-
->   		return -errno;
-> +	}
->   	close(fd);
->   
->   	mnttab = setmntent("/proc/self/mounts", "r");
-> -	if (!mnttab)
-> +	if (!mnttab) {
-> +		fprintf(stderr, "ERROR: Failed to setmntent: %s\n",
-> +			strerror(errno));
->   		return -errno;
+> -       if (len > BTRFS_LABEL_SIZE - 1) {
+> +	if (len > BTRFS_LABEL_SIZE - 1) {
+>   		fprintf(stderr, "ERROR: Label %s is too long (max %d)\n",
+>   			input, BTRFS_LABEL_SIZE - 1);
+> -               return -1;
+> -       }
+> +		return -1;
 > +	}
 >   
->   	while ((ent = getmntent(mnttab))) {
->   		len = strlen(ent->mnt_dir);
-> @@ -2457,8 +2463,11 @@ int find_mount_root(const char *path, char **mount_root)
+> -       return 0;
+> +	return 0;
+>   }
 >   
->   	ret = 0;
->   	*mount_root = realpath(longest_match, NULL);
-> -	if (!*mount_root)
-> +	if (!*mount_root) {
-> +		fprintf(stderr, "Failed to resolve path %s: %s\n",
-> +			longest_match, strerror(errno));
->   		ret = -errno;
-> +	}
->   
->   	free(longest_match);
->   	return ret;
+>   static int set_label_unmounted(const char *dev, const char *label)
 > 
 

@@ -1,31 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:60078 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753172AbaGKMgd (ORCPT
+Received: from mail-vc0-f180.google.com ([209.85.220.180]:57238 "EHLO
+	mail-vc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755174AbaGKT32 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jul 2014 08:36:33 -0400
-From: Russell Coker <russell@coker.com.au>
-To: constantine <costas.magnuse@gmail.com>
-Reply-To: russell@coker.com.au
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs and LBA errors
-Date: Fri, 11 Jul 2014 22:36:30 +1000
-Message-ID: <5907875.Oun3LlLFiV@xev>
-In-Reply-To: <CANcfdL3ZUwOGPf2YQpyXYSd8ZoNntyaX8rdQXdciSADGCsb-Sg@mail.gmail.com>
-References: <CANcfdL3ZUwOGPf2YQpyXYSd8ZoNntyaX8rdQXdciSADGCsb-Sg@mail.gmail.com>
+	Fri, 11 Jul 2014 15:29:28 -0400
+Received: by mail-vc0-f180.google.com with SMTP id im17so2988644vcb.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jul 2014 12:29:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <5907875.Oun3LlLFiV@xev>
+References: <CANcfdL3ZUwOGPf2YQpyXYSd8ZoNntyaX8rdQXdciSADGCsb-Sg@mail.gmail.com>
+ <5907875.Oun3LlLFiV@xev>
+From: constantine <costas.magnuse@gmail.com>
+Date: Fri, 11 Jul 2014 21:29:07 +0200
+Message-ID: <CANcfdL1Ldf0-Bbe16bRyUtA+cpupTzqYLdzmHrsOJacE5c92Lw@mail.gmail.com>
+Subject: Re: Btrfs and LBA errors
+To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 11 Jul 2014 13:42:40 constantine wrote:
-> Btrfs filesystem could not be mounted because /dev/sdc1 had unreadable
-> sectors. It is/was  a single filesystem (not raid1 or raid0) over /dev/sda1
-> and /dev/sdc1.
+Thank you very much for your response:
 
-What does "file -s /dev/sda1 /dev/sdc1" report?
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+# file -s /dev/sda1 /dev/sdc1
+/dev/sda1: BTRFS Filesystem label "partition", sectorsize 4096,
+nodesize 4096, leafsize 4096,
+UUID=c1eb1aaf-665a-4337-9d04-3c3921aa67e0, 1683870334976/3010310701056
+bytes used, 2 devices
+/dev/sdc1: data

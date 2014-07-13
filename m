@@ -1,65 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p02c11o141.mxlogic.net ([208.65.144.74]:52459 "EHLO
-	p02c11o141.mxlogic.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752011AbaGLCE7 convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:46972 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753381AbaGMO32 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Jul 2014 22:04:59 -0400
-From: David Player <dplayer@seagullscientific.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Modify UUID/CTRANSID for incremental backups
-Date: Sat, 12 Jul 2014 01:56:01 +0000
-Message-ID: <B2E8CD86330BEF41BB6ED95EFC9EBBEE5881CB@SRVEX2.corp.seagullscientific.com>
-Content-Type: text/plain; charset="us-ascii"
+	Sun, 13 Jul 2014 10:29:28 -0400
+Date: Sun, 13 Jul 2014 07:29:18 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: "Andrew E. Mileski" <andrewm@isoar.ca>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20140713142918.GH10641@merlins.org>
+References: <20140704011938.GO11539@merlins.org>
+ <53B801DD.5040704@isoar.ca>
+ <20140705144318.GT26932@merlins.org>
+ <20140706145815.GD15009@merlins.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140706145815.GD15009@merlins.org>
+Subject: Re: btrfs is  related to OOM death problems on my 8GB server with
+ both 3.15.1 and 3.14?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Given the situation explained below, it appears I can fix my btrfs send datastream by updating the UUID and CTRANSID of alternate_sv2. Specifically, Command 1 TLV 1 and 2, or Command 2 TLV 1 and 2. The CRC32 would also be updated.
+On Sun, Jul 06, 2014 at 07:58:15AM -0700, Marc MERLIN wrote:
+> > As an update, after 1.7 days of scrubbing, the system has started
+> > getting sluggish, I'm getting synchronization problems/crashes in some of
+> > my tools that talk to serial ports (likely due to mini deadlocks in the
+> > kernel), and I'm now getting a few btrfs hangs.
+> 
+> Predictably, it died yesterday afternoon after going into memory death
+> (it was answering pings, but userspace was dead, and even sysrq-o did
+> not respond, I had to power cycle the power outlet).
+> 
+> This happened just before my 3rd scrub finished, so I'm now 2 out of 2:
+> running scrub on my 3 filesystems kills the system half way through the
+> 3rd scrub.
 
-This would make incremental btrfs "send" backups markedly more useful because it allows me to erase intermediate backups after a time.
+Ok, I now changed the subject line to confirm that btrfs is to blame.
 
-It's trivial to write a program to do this, so I plan to start testing next week unless anyone has concerns.
+I had my system booted 6 days and it held steady at 6.4GB free.
+I mounted 2 of my 4 btrfs filesystems (one by one) and waited a few
+days, and no problems with RAM going down.
 
+Then I mounted my 3rd btrfs filesystem, the one that holds many files
+that has rsync backups running, and I lost 1.4GB of RAM overnight.
+I've just umounted one of its mountpoints, the one where all the backups
+happen while leaving its main pool mounted and will see if RAM keeps
+going down or not (i.e. whether the memory leak is due to rsync activity
+or some other background btrfs process).
 
+But generally, is there a tool to locate which kernel function allocated
+all that RAM that seems to get allocated and forgotten?
 
-btrfs subvolume snapshot -r real v1
-#later...
-btrfs subvolume snapshot -r real v2
-#later...
-btrfs subvolume snapshot -r real v3
+Is /proc/slabinfo supposed to show anything useful?
 
-btrfs send -f sv1 v1
-btrfs send -f sv2 v2 -p v1
-btrfs send -f sv3 v3 -p v2
-
-btrfs subvolume delete v?
-
-btrfs receive -vf sv1 .
-btrfs receive -vf sv2 .
-btrfs subvolume delete v1
-btrfs send -f alternate_sv2 v2
-btrfs subvolume delete v?
-
-
-#Scenario 1 should work (and does)
-btrfs receive -vf sv1 .
-btrfs receive -vf sv2 .
-btrfs receive -vf sv3 .
+This is the filesystem in question:
+gargamel:~# btrfs fi df /mnt/btrfs_pool2/
+Data, single: total=3.34TiB, used=3.32TiB
+System, DUP: total=8.00MiB, used=400.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, DUP: total=77.50GiB, used=59.87GiB
+Metadata, single: total=8.00MiB, used=0.00
 
 
-#Scenario 2 should work (but doesn't)
-btrfs receive -vf alternate_sv2 .
-btrfs receive -vf sv3 .		# "ERROR: could not find parent subvolume"
-
-
-
-To solve the problem, I plan to update the data for TLV ops 1 and 2 in alternate_sv2.
-
-Packet: op 2    SNAPSHOT        length 46       crc32 36A251CC
-   TLV: op F    PATH            length 2        "v2"
-   TLV: op 1    UUID            length 10       81A4010723F85C4E996371EE73A413AC
-   TLV: op 2    CTRANSID        length 8        EB01000000000000
-   TLV: op 14   CLONE_UUID      length 10       FA2E1AEC25CFD540B7CA404D6584F4AA
-   TLV: op 15   CLONE_CTRANSID  length 8        EA01000000000000
-
-It also appears possible to combine two data streams without "btrfs receive", but that's more complicated.
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

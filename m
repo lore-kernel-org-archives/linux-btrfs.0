@@ -1,51 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailrelay008.isp.belgacom.be ([195.238.6.174]:39153 "EHLO
-	mailrelay008.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932798AbaGOTRE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 15:17:04 -0400
-From: Fabian Frederick <fabf@skynet.be>
-To: linux-kernel@vger.kernel.org
-Cc: Fabian Frederick <fabf@skynet.be>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] Btrfs: fix sparse warning
-Date: Tue, 15 Jul 2014 21:17:17 +0200
-Message-Id: <1405451837-8235-1-git-send-email-fabf@skynet.be>
+Received: from cantor2.suse.de ([195.135.220.15]:60115 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751576AbaGOVHo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Jul 2014 17:07:44 -0400
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 0/4] btrfs: qgroup fixes for btrfs_drop_snapshot V4
+Date: Tue, 15 Jul 2014 14:06:20 -0700
+Message-Id: <1405458384-17516-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix the following sparse warning:
-fs/btrfs/send.c:518:51: warning: incorrect type in argument 2 (different address spaces)
-fs/btrfs/send.c:518:51:    expected char const [noderef] <asn:1>*<noident>
-fs/btrfs/send.c:518:51:    got char *
+Hi, the following patches try to fix a long outstanding issue with qgroups
+and snapshot deletion. The core problem is that btrfs_drop_snapshot will
+skip shared extents during it's tree walk. This results in an inconsistent
+qgroup state once the drop is processed. We also have a bug where qgroup
+items are not deleted after drop_snapshot. The orphaned items will cause
+btrfs to go readonly when a snapshot is created with the same id as the
+deleted one.
 
-We can safely use (const char __user *) with set_fs(KERNEL_DS)
+The first patch adds some tracing which I found very useful in debugging
+qgroup operations. The second patch is an actual fix to the problem. A third
+patch, from Josef is also added. We need this because it fixes at least one
+set of inconsistencies qgroups can get to via drop_snapshot. The fourth
+patch adds code to delete qgroup items from disk once drop_snapshot has
+completed.
 
-__force added to avoid sparse-all warning:
-fs/btrfs/send.c:518:40: warning: cast adds address space to expression (<asn:1>)
+With this version of the patch series, I can no longer reproduce
+qgroup inconsistencies via drop_snapshot on my test disks.
 
-Signed-off-by: Fabian Frederick <fabf@skynet.be>
----
+Change from last patch set:
 
-This is untested.
+- Added patch 'btrfs: delete qgroup items in drop_snapshot'
 
- fs/btrfs/send.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Changes from V2-V3:
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6528aa6..b67e12e 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -515,7 +515,8 @@ static int write_buf(struct file *filp, const void *buf, u32 len, loff_t *off)
- 	set_fs(KERNEL_DS);
- 
- 	while (pos < len) {
--		ret = vfs_write(filp, (char *)buf + pos, len - pos, off);
-+		ret = vfs_write(filp, (__force const char __user *)buf + pos,
-+				len - pos, off);
- 		/* TODO handle that correctly */
- 		/*if (ret == -ERESTARTSYS) {
- 			continue;
--- 
-1.8.4.5
+- search on bytenr and root, but not seq in btrfs_record_ref when
+  we're looking for existing qgroup operations.
 
+Changes before that (V1-V2):
+
+- remove extra extent_buffer_uptodate call from account_shared_subtree()
+
+- catch return values for the accounting calls now and do the right thing
+  (log an error and tell the user to rescan)
+
+- remove the loop on roots in qgroup_subtree_accounting and just use the
+  nnodes member to make our first decision.
+
+- Don't queue up the subtree root for a change (the code in drop_snapshot
+  handkles qgroup updates for this block).
+
+- only walk subtrees if we're actually in DROP_REFERENCE stage and we're
+  going to call free_extent
+
+- account leaf items for level zero blocks that we are dropping in
+  walk_up_proc
+
+Please review, thanks. Diffstat follows,
+	--Mark
+
+ fs/btrfs/ctree.c             |   20 +-
+ fs/btrfs/ctree.h             |    4 
+ fs/btrfs/extent-tree.c       |  291 +++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/qgroup.c            |  282 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h            |    4 
+ fs/btrfs/super.c             |    1 
+ include/trace/events/btrfs.h |   57 ++++++++
+ 7 files changed, 631 insertions(+), 28 deletions(-)

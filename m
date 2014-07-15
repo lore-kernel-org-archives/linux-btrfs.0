@@ -1,54 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail7.fujitsu.co.jp ([192.51.44.37]:57922 "EHLO
-	fgwmail7.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751213AbaGNCp2 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:48277 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757871AbaGOHEq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Jul 2014 22:45:28 -0400
-Received: from fgwmail6.fujitsu.co.jp (fgwmail6.fujitsu.co.jp [192.51.44.36])
-	by fgwmail7.fujitsu.co.jp (Postfix) with ESMTP id E8A9E1795800
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Jul 2014 11:37:09 +0900 (JST)
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id D42C53EE0C2
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Jul 2014 11:36:55 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.nic.fujitsu.com [10.0.50.94])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id D06BDAC0563
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Jul 2014 11:36:54 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 81814EF8001
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Jul 2014 11:36:54 +0900 (JST)
-Received: from WIN-R1VKH1IH438.jp.fujitsu.com (unknown [10.124.102.85])
-	by m1000.s.css.fujitsu.com (Postfix) with SMTP id 236E0620AF
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Jul 2014 11:36:54 +0900 (JST)
-Message-Id: <201407140227.AA00004@WIN-R1VKH1IH438.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Mon, 14 Jul 2014 11:27:43 +0900
+	Tue, 15 Jul 2014 03:04:46 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s6F74jW5010597
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 07:04:46 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s6F74iWZ007713
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 07:04:45 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s6F74iFg012724
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 07:04:44 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: doc: fix incorrect subvol name
+Subject: [PATCH 1/1] btrfs-progs: fix compilation warning in function btrfs_read_dev_super
+Date: Tue, 15 Jul 2014 15:25:41 +0800
+Message-Id: <1405409141-7573-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Subvolume name is wrong. Fix it.
+disk-io.c: In function ‘btrfs_read_dev_super’:
+disk-io.c:1217: warning: ‘ret’ may be used uninitialized in this function
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- Documentation/btrfs-convert.txt | 2 +-
+ disk-io.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
-index ed61d14..1eff0bf 100644
---- a/Documentation/btrfs-convert.txt
-+++ b/Documentation/btrfs-convert.txt
-@@ -13,7 +13,7 @@ DESCRIPTION
- -----------
- *btrfs-convert* is used to convert existed ext2/3/4 to btrfs filesystem,
- and the original filesystem image is accessible as from separate subvolume
--named 'ext2_subvol' as file image.
-+named 'ext2_saved' as file image.
- 
- OPTIONS
- -------
+diff --git a/disk-io.c b/disk-io.c
+index 142197a..d10d647 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1214,7 +1214,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
+ 	u8 data[BTRFS_SUPER_INFO_SIZE];
+ 	struct btrfs_super_block *buf = (struct btrfs_super_block *) data;
+ 	int i;
+-	int ret;
++	int ret = -ENOENT;
+ 	int max_super = super_recover ? BTRFS_SUPER_MIRROR_MAX : 1;
+ 	u64 transid = 0;
+ 	u64 bytenr;
 -- 
-1.8.5.5
+2.0.0.153.g79dcccc
 

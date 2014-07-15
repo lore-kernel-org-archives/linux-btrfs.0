@@ -1,63 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:56846 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751374AbaGOPI3 convert rfc822-to-8bit (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:45759 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759571AbaGOVrE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 11:08:29 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS hang with 3.16-rc5
-Date: Tue, 15 Jul 2014 17:08:27 +0200
-Message-ID: <1984661.CMGGdWA6Ux@merkaba>
-In-Reply-To: <53C52AE4.6010803@fb.com>
-References: <1502954.OtX3SzjMKZ@merkaba> <29286605.flGgbBIpOj@merkaba> <53C52AE4.6010803@fb.com>
+	Tue, 15 Jul 2014 17:47:04 -0400
+Date: Tue, 15 Jul 2014 22:47:01 +0100
+From: Hugo Mills <hugo-lkml@carfax.org.uk>
+To: Norbert Preining <preining@logic.at>
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        linux-kernel@vger.kernel.org
+Subject: Re: btrfs hanging since 3.16-rc3 or so
+Message-ID: <20140715214701.GD4834@carfax.org.uk>
+References: <20140715134046.GX23620@auth.logic.tuwien.ac.at>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="DiL7RhKs8rK9YGuF"
+In-Reply-To: <20140715134046.GX23620@auth.logic.tuwien.ac.at>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
-> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
-> > Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
-> >> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
-> >>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
-> >>>> Hi!
-> >>>> 
-> >>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several days
-> >>>> of
-> >>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since booting
-> >>>> it.
-> >>>> 
-> >>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2 usually
-> >>>> didn´t happen that quickly after boot and since backtrace looks a bit
-> >>>> different from what I have in memory, I post this in a new thread.
-> >>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous hang
-> >>>> issues.
-> >>> 
-> >>> Probably good to add some basic information on the filesystem:
-> >> Do you have compression enabled?  I wasn't able to nail down the 3.15.1
-> >> hang before vacation attacked me, but I'm hoping to track it down today.
-> > 
-> > Yes. I have.
-> > 
-> > It just hung again while I was playing PlaneShift.
-> > 
-> > Back to 3.16-rc4 as rc5 seems to be broke here.
+
+--DiL7RhKs8rK9YGuF
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+cc linux-btrfs list
+
+On Tue, Jul 15, 2014 at 10:40:46PM +0900, Norbert Preining wrote:
+> Dear all
 > 
-> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
-> shouldn't be a factor.  Are you hitting other problems with 3.16?
-
-So far for this day 3.16-rc4 behaves nicely. With 3.16-rc5 I had a BTRFS hang 
-twice yesterday. 3.16-rc4 before also behaved nicely for several days or well 
-about a week here.
-
-So what I see here for now is: 3.15 until 3-16-rc2 an occassional hang, 3.16-
-rc3 and 3.16-rc4 okay, 3.16-rc5 two hangs in one day and then I stopped using 
-it as I use this laptop for production :).
-
-This is on ThinkPad T520 with Sandybrige and 16 GiB RAM.
+> (please keep Cc)
+> 
+> Since 3.16-rc3 or so I regularly get btrfs hanging in some transations.
+> 
+> Usually during apt-get upgrade or some other large file operations
+> (cowbuilder building of packages).
+> 
+> The log files give me for loads of processes things like:
+> [ 6236.746546] INFO: task aptitude:22775 blocked for more than 120 seconds.
+> [ 6236.746547]       Tainted: G        W  O  3.16.0-rc5 #27
+> [ 6236.746548] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [ 6236.746549] aptitude        D ffff8800b21a3868     0 22775  22709 0x00000000
+> [ 6236.746550]  ffff88003644fd10 0000000000000082 ffffffff81a15500 ffff88003644ffd8
+> [ 6236.746552]  ffff8800b21a3430 0000000000011c00 ffff880147da9c30 ffff880147da9c30
+> [ 6236.746553]  ffff88003644fd58 ffff880034b3ed48 ffff880034b3ed38 ffff88003644fd20
+> [ 6236.746555] Call Trace:
+> [ 6236.746557]  [<ffffffff81585b4a>] schedule+0x64/0x66
+> [ 6236.746560]  [<ffffffff811bb22e>] btrfs_wait_logged_extents+0xa4/0xdc
+> [ 6236.746561]  [<ffffffff810635c1>] ? finish_wait+0x5d/0x5d
+> [ 6236.746564]  [<ffffffff811d9489>] btrfs_sync_log+0x5ef/0x8a2
+> [ 6236.746567]  [<ffffffff811b43cf>] btrfs_sync_file+0x21b/0x24d
+> [ 6236.746569]  [<ffffffff811b43cf>] ? btrfs_sync_file+0x21b/0x24d
+> [ 6236.746571]  [<ffffffff8110db8a>] vfs_fsync_range+0x1c/0x1e
+> [ 6236.746574]  [<ffffffff810d1681>] SyS_msync+0x15d/0x1ea
+> [ 6236.746575]  [<ffffffff81588712>] system_call_fastpath+0x16/0x1b
+> 
+> THis is aptitude, but I have all the other tasks accessing the disk
+> hanging, too.
+> 
+> This time, issueing a Sysrq-s for emergency syncing did the laptop
+> out of the hang.
+> 
+> Hardware: Sonly VAIO Pro 13
+> Distribution: Debian/sid
+> self compiled kernel, config on request.
+> 
+> Please let me know if there is anything else I can provide.
+> 
+> Thanks a lot
+> 
+> Norbert
+> 
+> ------------------------------------------------------------------------
+> PREINING, Norbert                               http://www.preining.info
+> JAIST, Japan                                 TeX Live & Debian Developer
+> GPG: 0x860CDC13   fp: F7D8 A928 26E3 16A1 9FA0  ACF0 6CAC A448 860C DC13
+> ------------------------------------------------------------------------
 
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- Normaliser unix c'est comme pasteuriser le Camembert ---       
+
+--DiL7RhKs8rK9YGuF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIVAwUBU8WhVFheFHXiqx3kAQLpDA/+LwB+ZZW22GlcWaUlTkNxkVWGGQ7UmOS7
+SZNzDvwdl2edBE2E4gbiHjJwXU0DL7EKPZqRmvIotXd+h6MAq+CW97MPj4kVp+sW
+Cwgq2C6RyAuzkjoovnxO7GLOkW8Fyj/4Vq61x1kKCBGhLYWBrZMEM+PKr63YMRED
+Pa9ng++bK8D522pMlZ/i66GRmuezpJH5oHCGv8zexAQ+GxwisfHn5iiDs4RMnK8I
+v/dirWaZLkssIZzDSGDiI6lRv5EPorrndWu/4VMMQ07W4lIRQKhbiJPzCKu+WrOf
+POM9dnjkxu7agzajIDXPwEwo96G6edBES+JRPrmSG5cy+bP/tF+lhQi73Drnc6YK
+54sDiI8fTB7++AJBh+0GJGz0jh2ww3u6zmfZItN5nkgPzzZh1kWcG/de7VQ//9/f
+varn0myUKUAVtroZ9SITnp01sMUB2r1ae0SEp/9DeRLb8psFxkmcDCGEx9tdiogc
+Uny37zrfmI1BKhuylErqKEuMiEjFi1VsswtI+F5IXRFA4wsEUB40MiIzNYaJjxvf
+pLJohPt1oCtZStc7lj/dwRcia95a4+T4+cVo+YrAVbBx30P4RExTcfRyLfIEDizK
+iir+mJyJSPJ26GwfurQUo8nsew3IaAMmbL4u1HmFglJzw1PmgeRJ6/GLgscHIsez
+E0/Auva6KNw=
+=ml6g
+-----END PGP SIGNATURE-----
+
+--DiL7RhKs8rK9YGuF--

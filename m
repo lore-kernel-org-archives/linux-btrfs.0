@@ -1,90 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:52008 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757868AbaGOJnp convert rfc822-to-8bit (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:53588 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758038AbaGOJvr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 05:43:45 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+	Tue, 15 Jul 2014 05:51:47 -0400
+From: Russell Coker <russell@coker.com.au>
+To: constantine <costas.magnuse@gmail.com>
+Reply-To: russell@coker.com.au
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS claims that empty directory is not empty and refuses to delete it
-Date: Tue, 15 Jul 2014 11:43:43 +0200
-Message-ID: <1581772.8S1dX1MXOq@merkaba>
-In-Reply-To: <53C4F37B.9090806@skagestad.org>
-References: <5988448.153L8540y0@merkaba> <53C4F37B.9090806@skagestad.org>
+Subject: Re: Btrfs and LBA errors
+Date: Tue, 15 Jul 2014 19:51:43 +1000
+Message-ID: <1462970.GnvBtDSB5Z@xev>
+In-Reply-To: <CANcfdL0E+gFkVQWkzy+MJ5PZhB2y51_k3OQF+Ygekhbw=_ZrKg@mail.gmail.com>
+References: <CANcfdL3ZUwOGPf2YQpyXYSd8ZoNntyaX8rdQXdciSADGCsb-Sg@mail.gmail.com> <3431118.WpiWX9X6ip@xev> <CANcfdL0E+gFkVQWkzy+MJ5PZhB2y51_k3OQF+Ygekhbw=_ZrKg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 15. Juli 2014, 11:25:15 schrieb Torbjørn:
-> On 15. juli 2014 11:09, Martin Steigerwald wrote:
-> > Hello!
-> > 
-> > This is with 3.16-rc4 – stepped back to this one after having two hangs in
-> > one day with 3.16-rc5, see other thread started by me:
-> > 
-> > martin@merkaba:~/Zeit/undeletable/db_data> ls -lid akonadi
-> > 450598 drwx------ 1 martin martin 1232 Jun 22 14:11 akonadi
-> > martin@merkaba:~/Zeit/undeletable/db_data> ls -lai akonadi
-> > insgesamt 0
-> > 450598 drwx------ 1 martin martin 1232 Jun 22 14:11 .
-> > 450595 drwxr-xr-x 1 martin martin   14 Jun 22 14:11 ..
-> > martin@merkaba:~/Zeit/undeletable/db_data> LANG=C rmdir akonadi
-> > rmdir: failed to remove 'akonadi': Directory not empty
-> > martin@merkaba:~/Zeit/undeletable/db_data#1> LANG=C rm -r akonadi
-> > rm: cannot remove 'akonadi': Directory not empty
-> > martin@merkaba:~/Zeit/undeletable/db_data#1> LANG=C rm -rf akonadi
-> > rm: cannot remove 'akonadi': Directory not empty
-> > martin@merkaba:~/Zeit/undeletable/db_data#1>
-> > 
-> > 
-> > Whats this?
-> > 
-> > I had this weeks ago already and just moved it out of the way at that
-> > time,
-> > just now stumbled upon it again.
-> > 
-> > 
-> > This is the same BTRFS Dual SSD RAID as mentioned in the other post:
-> > 
-> > 
-> > merkaba:~> btrfs fi sh /home
-> > Label: 'home'  uuid: […]
-> > 
-> >          Total devices 2 FS bytes used 123.20GiB
-> >          devid    1 size 160.00GiB used 159.98GiB path
-> >          /dev/mapper/msata-home
-> >          devid    2 size 160.00GiB used 159.98GiB path /dev/dm-3
-> > 
-> > Btrfs v3.14.1
-> > merkaba:~#1> btrfs fi df /home
-> > Data, RAID1: total=154.95GiB, used=120.61GiB
-> > System, RAID1: total=32.00MiB, used=48.00KiB
-> > Metadata, RAID1: total=5.00GiB, used=2.59GiB
-> > unknown, single: total=512.00MiB, used=0.00
-> > merkaba:~> df -hT /home
-> > Dateisystem            Typ   Größe Benutzt Verf. Verw% Eingehängt auf
-> > /dev/mapper/msata-home btrfs  320G    247G   69G   79% /home
-> > 
-> > merkaba:~> file -sk /dev/sata/home
-> > /dev/sata/home: symbolic link to `../dm-3'
-> > merkaba:~> file -sk /dev/dm-3
-> > /dev/dm-3: BTRFS Filesystem label "home", sectorsize 4096, nodesize 16384,
-> > leafsize 16384, UUID=b96c4f72- 523-45ac-a401-f7be73dd624a,
-> > 132303151104/343597383680 bytes used, 2 devices
-[…]
-> I have seen that behavior as well. It turned out that the directory was
-> actually a subvolume.
-> Are you sure it is a directory?
+On Tue, 15 Jul 2014 11:42:05 constantine wrote:
+> Thank you very much for your advice. It worked!
 
-Currently I have only one subvolume called /home (to make snapshots of /home 
-outside of /home)
+Great!
 
-merkaba:~> btrfs subvol list /home
-ID 256 gen 147145 top level 5 path home
+> I verified that the superblocks 1 and 2 had similar information with
+> btrfs-show-super -i 1 /dev/sdc1 (and -i 2) and then with crossed
+> fingers:
+> btrfs-select-super  -s 2 /dev/sdc1
+> which restored my btrfs filesystem.
+> 
+> Then I runned scrub. For future reference, scrub was "stuck":
+> "
+> # btrfs scrub status partition/
+> scrub status for c1eb1aaf-665a-4337-9d04-3c3921aa67e0
+> scrub started at Thu Jul 10 21:30:41 2014, running for 2743 seconds
+>    total bytes scrubbed: 193.47GiB with 0 errors
+> "
+> and could not cancel it:
+> "
+> btrfs scrub cancel partition/
+> ERROR: scrub cancel failed on Downloads/: not running
+> "
+> After deleting
+> /var/lib/btrfs/scrub.status.c1eb1aaf-665a-4337-9d04-3c3921aa67e0 it was
+> completed successfully.
 
-Thanks,
+That's a known bug.
+
+Now I hope you have made a good backup, the next problem you encounter may not 
+be as easy to solve.
+
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

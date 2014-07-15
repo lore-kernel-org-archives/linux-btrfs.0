@@ -1,229 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60129 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755185AbaGOVH6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 17:07:58 -0400
-From: Mark Fasheh <mfasheh@suse.de>
+Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:54359 "EHLO
+	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752252AbaGOVZT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Jul 2014 17:25:19 -0400
+Received: from [192.168.0.62] (p5B0A154B.dip0.t-ipconnect.de [91.10.21.75])
+	by postfix.iai.uni-bonn.de (Postfix) with ESMTP id 530605C44E
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 23:17:27 +0200 (MEST)
+	(envelope-from ochmann@informatik.uni-bonn.de)
+	(envelope-to linux-btrfs@vger.kernel.org) (1)
+	(internal use: ta=1, tu=1, te=1, am=P, au=ochmann)
+Message-ID: <53C59A66.7010107@informatik.uni-bonn.de>
+Date: Tue, 15 Jul 2014 23:17:26 +0200
+From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 4/4] btrfs: delete qgroup items in drop_snapshot
-Date: Tue, 15 Jul 2014 14:06:24 -0700
-Message-Id: <1405458384-17516-5-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1405458384-17516-1-git-send-email-mfasheh@suse.de>
-References: <1405458384-17516-1-git-send-email-mfasheh@suse.de>
+Subject: Why does btrfs defrag work worse than making a copy of a file?
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_drop_snapshot() leaves subvolume qgroup items on disk after
-completion. This wastes space and also can cause problems with snapshot
-creation. If a new snapshot tries to claim the deleted subvolumes id,
-btrfs will get -EEXIST from add_qgroup_item() and go read-only.
+Hello,
 
-We can partially fix this by catching -EEXIST in add_qgroup_item() and
-initializing the existing items. This will leave orphaned relation items
-(BTRFS_QGROUP_RELATION_KEY) around however would be confusing to the end
-user. Also this does nothing to fix the wasted space taken up by orphaned
-qgroup items.
+I have a VirtualBox hard drive image which is quite fragmented even 
+after very light use; it is 1.6 GB in size and has around 5000 fragments 
+(I'm using "filefrag" to determine the number of fragments). Doing a 
+"btrfs fi defrag -f image.vdi" reduced the number of fragments to 3749. 
+Even doing a "btrfs fi defrag -f -t 1 image.vdi" which should make sure 
+every extent is rewritten (according to the btrfs-progs 3.14.2 manpage) 
+does not yield any better result and seems to return immediately. 
+Copying the file, however, yields a copy which has only 5 fragments 
+(simply doing a cp image.vdi image2.vdi; sync; filefrag image2.vdi).
 
-So the full fix is to delete all qgroup items related to the deleted
-snapshot in btrfs_drop_snapshot.  If an item persists (either due to a
-previous drop_snapshot without the fix, or some error) we can still continue
-with snapshot create instead of throwing the whole filesystem readonly.
+What do I have to do to defrag the file to the minimal number of 
+fragments possible? Am I missing something?
 
-In the very small chance that some relation items persist, they will not
-affect functioning of our level 0 subvolume qgroup.
+Kernel version 3.15.5, btrfs progs 3.14.2, Arch Linux.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/extent-tree.c |   6 +++
- fs/btrfs/qgroup.c      | 114 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/qgroup.h      |   3 ++
- 3 files changed, 120 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ed9e13c..2dad701 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8296,6 +8296,12 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	if (err)
- 		goto out_end_trans;
- 
-+	ret = btrfs_del_qgroup_items(trans, root);
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto out_end_trans;
-+	}
-+
- 	ret = btrfs_del_root(trans, tree_root, &root->root_key);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, tree_root, ret);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1569338..2ec2432 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -35,7 +35,6 @@
- #include "qgroup.h"
- 
- /* TODO XXX FIXME
-- *  - subvol delete -> delete when ref goes to 0? delete limits also?
-  *  - reorganize keys
-  *  - compressed
-  *  - sync
-@@ -99,6 +98,16 @@ struct btrfs_qgroup_list {
- 	struct btrfs_qgroup *member;
- };
- 
-+/*
-+ * used in remove_qgroup_relations() to track qgroup relations that
-+ * need deleting
-+ */
-+struct relation_rec {
-+	struct list_head list;
-+	u64 src;
-+	u64 dst;
-+};
-+
- #define ptr_to_u64(x) ((u64)(uintptr_t)x)
- #define u64_to_ptr(x) ((struct btrfs_qgroup *)(uintptr_t)x)
- 
-@@ -551,9 +560,15 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_INFO_KEY;
- 	key.offset = qgroupid;
- 
-+	/*
-+	 * Avoid a transaction abort by catching -EEXIST here. In that
-+	 * case, we proceed by re-initializing the existing structure
-+	 * on disk.
-+	 */
-+
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_info));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
-@@ -572,7 +587,7 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_LIMIT_KEY;
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_limit));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
-@@ -2817,3 +2832,96 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
- 		btrfs_queue_work(fs_info->qgroup_rescan_workers,
- 				 &fs_info->qgroup_rescan_work);
- }
-+
-+static struct relation_rec *
-+qlist_to_relation_rec(struct btrfs_qgroup_list *qlist, struct list_head *all)
-+{
-+	u64 group, member;
-+	struct relation_rec *rec;
-+
-+	BUILD_BUG_ON(sizeof(struct btrfs_qgroup_list) < sizeof(struct relation_rec));
-+
-+	list_del(&qlist->next_group);
-+	list_del(&qlist->next_member);
-+	group = qlist->group->qgroupid;
-+	member = qlist->member->qgroupid;
-+	rec = (struct relation_rec *)qlist;
-+	rec->src = group;
-+	rec->dst = member;
-+
-+	list_add(&rec->list, all);
-+	return rec;
-+}
-+
-+static int remove_qgroup_relations(struct btrfs_trans_handle *trans,
-+				   struct btrfs_fs_info *fs_info, u64 qgroupid)
-+{
-+	int ret, err;
-+	struct btrfs_root *quota_root = fs_info->quota_root;
-+	struct relation_rec *rec;
-+	struct btrfs_qgroup_list *qlist;
-+	struct btrfs_qgroup *qgroup;
-+	LIST_HEAD(relations);
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	qgroup = find_qgroup_rb(fs_info, qgroupid);
-+
-+	while (!list_empty(&qgroup->groups)) {
-+		qlist = list_first_entry(&qgroup->groups,
-+					 struct btrfs_qgroup_list, next_group);
-+		rec = qlist_to_relation_rec(qlist, &relations);
-+	}
-+
-+	while (!list_empty(&qgroup->members)) {
-+		qlist = list_first_entry(&qgroup->members,
-+					 struct btrfs_qgroup_list, next_member);
-+		rec = qlist_to_relation_rec(qlist, &relations);
-+	}
-+
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	ret = 0;
-+	list_for_each_entry(rec, &relations, list) {
-+		ret = del_qgroup_relation_item(trans, quota_root, rec->src, rec->dst);
-+		err = del_qgroup_relation_item(trans, quota_root, rec->dst, rec->src);
-+		if (err && !ret)
-+			ret = err;
-+		if (ret && ret != -ENOENT)
-+			break;
-+		ret = 0;
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_del_qgroup_items(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root)
-+{
-+	int ret;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root *quota_root = fs_info->quota_root;
-+	u64 qgroupid = root->root_key.objectid;
-+
-+	if (!fs_info->quota_enabled)
-+		return 0;
-+
-+	mutex_lock(&fs_info->qgroup_ioctl_lock);
-+
-+	ret = remove_qgroup_relations(trans, fs_info, qgroupid);
-+	if (ret)
-+		goto out_unlock;
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	del_qgroup_rb(quota_root->fs_info, qgroupid);
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	ret = del_qgroup_item(trans, quota_root, qgroupid);
-+	if (ret && ret != -ENOENT)
-+		goto out_unlock;
-+
-+	ret = 0;
-+out_unlock:
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+
-+	return ret;
-+}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 18cc68c..b22a2ce 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -98,6 +98,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
- void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
- 
-+int btrfs_del_qgroup_items(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root);
-+
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
--- 
-1.8.4.5
-
+Best regards,
+Sebastian

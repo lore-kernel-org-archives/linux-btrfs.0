@@ -1,57 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21753 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752862AbaGPHyh (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:1991 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750717AbaGPJeV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 03:54:37 -0400
-Date: Wed, 16 Jul 2014 15:53:48 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Why does btrfs defrag work worse than making a copy of a file?
-Message-ID: <20140716075345.GB29931@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <53C59A66.7010107@informatik.uni-bonn.de>
+	Wed, 16 Jul 2014 05:34:21 -0400
+Message-ID: <53C64787.70700@cn.fujitsu.com>
+Date: Wed, 16 Jul 2014 17:36:07 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53C59A66.7010107@informatik.uni-bonn.de>
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] Btrfs: fix abnormal long waiting in fsync
+References: <1405416674-17208-1-git-send-email-bo.li.liu@oracle.com> <1405496225-22416-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1405496225-22416-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 15, 2014 at 11:17:26PM +0200, Sebastian Ochmann wrote:
-> Hello,
+On Wed, 16 Jul 2014 15:37:05 +0800, Liu Bo wrote:
+> xfstests generic/127 detected this problem.
 > 
-> I have a VirtualBox hard drive image which is quite fragmented even
-> after very light use; it is 1.6 GB in size and has around 5000
-> fragments (I'm using "filefrag" to determine the number of
-> fragments). Doing a "btrfs fi defrag -f image.vdi" reduced the
-> number of fragments to 3749. Even doing a "btrfs fi defrag -f -t 1
-> image.vdi" which should make sure every extent is rewritten
-> (according to the btrfs-progs 3.14.2 manpage) does not yield any
-> better result and seems to return immediately. Copying the file,
-> however, yields a copy which has only 5 fragments (simply doing a cp
-> image.vdi image2.vdi; sync; filefrag image2.vdi).
+> With commit 7fc34a62ca4434a79c68e23e70ed26111b7a4cf8, now fsync will only flush
+> data within the passed range.  This is the cause of the above problem,
+> -- btrfs's fsync has a stage called 'sync log' which will wait for all the
+> ordered extents it've recorded to finish.
 > 
-> What do I have to do to defrag the file to the minimal number of
-> fragments possible? Am I missing something?
-
-So usually btrfs thinks of an extent whose size is bigger than 256K as a big
-enough extent.
-
-Another possible reason is that there is something wrong with btrfs_fiemap which
-gives filefrag' a wrong output.
-
-Would you please show us the 'filefrag -v' output?
-
-thanks,
--liubo
-
+> In xfstests/generic/127, with mixed operations such as truncate, fallocate,
+> punch hole, and mapwrite, we get some pre-allocated extents, and mapwrite will
+> mmap, and then msync.  And I find that msync will wait for quite a long time
+> (about 20s in my case), thanks to ftrace, it turns out that the previous
+> fallocate calls 'btrfs_wait_ordered_range()' to flush dirty pages, but as the
+> range of dirty pages may be larger than 'btrfs_wait_ordered_range()' wants,
+> there can be some ordered extents created but not getting corresponding pages
+> flushed, then they're left in memory until we fsync which runs into the
+> stage 'sync log', and fsync will just wait for the system writeback thread
+> to flush those pages and get ordered extents finished, so the latency is
+> inevitable.
 > 
-> Kernel version 3.15.5, btrfs progs 3.14.2, Arch Linux.
+> This adds a flush similar to btrfs_start_ordered_extent() in
+> btrfs_wait_logged_extents() to fix that.
 > 
-> Best regards,
-> Sebastian
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> v2: 
+>    Move flush part into btrfs_wait_logged_extents() to get the flush range
+>    more precise.
+> 
+>  fs/btrfs/ordered-data.c | 8 ++++++++
+>  1 file changed, 8 insertions(+)
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index e12441c..3b52a76 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -484,8 +484,16 @@ void btrfs_wait_logged_extents(struct btrfs_root *log, u64 transid)
+>  					   log_list);
+>  		list_del_init(&ordered->log_list);
+>  		spin_unlock_irq(&log->log_extents_lock[index]);
+> +
+> +		WARN_ON(!ordered->inode);
+> +		if (!test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags))
+> +			filemap_fdatawrite_range(ordered->inode->i_mapping,
+> +				ordered->file_offset,
+> +				ordered->file_offset + ordered->len - 1);
+
+I can use bytes_left to filter the ordered extents that have been written out.
+
+The other is OK.
+
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+
+> +
+>  		wait_event(ordered->wait, test_bit(BTRFS_ORDERED_IO_DONE,
+>  						   &ordered->flags));
+> +
+>  		btrfs_put_ordered_extent(ordered);
+>  		spin_lock_irq(&log->log_extents_lock[index]);
+>  	}
+> 
+

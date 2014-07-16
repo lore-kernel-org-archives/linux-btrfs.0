@@ -1,55 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:50073 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752579AbaGPWRS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 18:17:18 -0400
-Received: from [192.168.0.57] (p5B0A04FC.dip0.t-ipconnect.de [91.10.4.252])
-	by postfix.iai.uni-bonn.de (Postfix) with ESMTP id 422805C442
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 00:17:15 +0200 (MEST)
-	(envelope-from ochmann@informatik.uni-bonn.de)
-	(envelope-to linux-btrfs@vger.kernel.org) (1)
-	(internal use: ta=1, tu=1, te=1, am=P, au=ochmann)
-Message-ID: <53C6FA3D.9010803@informatik.uni-bonn.de>
-Date: Thu, 17 Jul 2014 00:18:37 +0200
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Is it safe to mount subvolumes of already-mounted volumes (even with
- different options)?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:38474 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754292AbaGPXS4 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Jul 2014 19:18:56 -0400
+Content-Type: text/plain; charset=US-ASCII
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Is it safe to mount subvolumes of already-mounted volumes (even with different options)?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <53C6FA3D.9010803@informatik.uni-bonn.de>
+Date: Wed, 16 Jul 2014 17:18:53 -0600
+Message-Id: <E49EC0AC-DD96-4D7F-9B36-9E28CEC0CD2A@colorremedies.com>
+References: <53C6FA3D.9010803@informatik.uni-bonn.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I'm sharing a btrfs-formatted drive between multiple computers and each 
-of the machines has a separate home directory on that drive. The root of 
-the drive is mounted at /mnt/tray and the home directory for machine 
-{hostname} is under /mnt/tray/Homes/{hostname}. Up until now, I have 
-mounted /mnt/tray like a normal volume and then did an additional 
-bind-mount of /mnt/tray/Homes/{hostname} to /home.
+On Jul 16, 2014, at 4:18 PM, Sebastian Ochmann <ochmann@informatik.uni-bonn.de> wrote:
 
-Now I have a new drive and wanted to do things a bit more advanced by 
-creating subvolumes for each of the machines' home directories so that I 
-can also do independent snapshotting. I guess I could use the bind-mount 
-method like before but my question is if it is considered safe to do an 
-additional, "regular" mount of one of the subvolumes to /home instead, like
+> Hello,
+> 
+> I'm sharing a btrfs-formatted drive between multiple computers and each of the machines has a separate home directory on that drive.
 
-mount /dev/sdxN /mnt/tray
-mount -o subvol=/Homes/{hostname} /dev/sdxN /home
+2+ computers writing to the same block device? I don't see how this is safe. Seems possibly a bug that the 1st mount event isn't setting some metadata so that another kernel instance knows not to allow another mount.
 
-When I experimented with such additional mounts of subvolumes of 
-already-mounted volumes, I noticed that the mount options of the 
-additional subvolume mount might differ from the "original" mount. For 
-instance, the root volume might be mounted with "noatime" while the 
-subvolume mount may have "relatime".
 
-So my questions are: Is mounting a subvolume of an already mounted 
-volume considered safe and are there any combinations of possibly 
-conflicting mount options one should be aware of (compression, 
-autodefrag, cache clearing)? Is it advisable to use the same mount 
-options for all mounts pointing to the same physical device?
-
-Best regards,
-Sebastian
+Chris Murphy

@@ -1,16 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:35632 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46654 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751263AbaGJBMb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 21:12:31 -0400
+	with ESMTP id S1751215AbaGPEFl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Jul 2014 00:05:41 -0400
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <dsterba@suse.cz>
 CC: <linux-btrfs@vger.kernel.org>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: use check_argc_* to check arg number for all tools
-Date: Thu, 10 Jul 2014 09:06:45 +0800
-Message-ID: <1404954405-16290-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <20140701231101.GT1553@twin.jikos.cz>
-References: <20140701231101.GT1553@twin.jikos.cz>
+Subject: [PATCH v2] btrfs-progs: use check_argc_* to check arg number for all tools
+Date: Wed, 16 Jul 2014 11:59:46 +0800
+Message-ID: <1405483186-10908-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1404954405-16290-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1404954405-16290-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,6 +26,9 @@ adopt the argc check functions globally.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
+changelog
+        v1->v2: make show-super, check and send cmds work correctly
+---
  btrfs-calc-size.c     | 4 +++-
  btrfs-convert.c       | 3 ++-
  btrfs-corrupt-block.c | 3 ++-
@@ -34,13 +38,13 @@ Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
  btrfs-fragments.c     | 8 +++++---
  btrfs-map-logical.c   | 3 ++-
  btrfs-select-super.c  | 3 ++-
- btrfs-show-super.c    | 4 +++-
+ btrfs-show-super.c    | 3 ++-
  btrfs-zero-log.c      | 3 ++-
  btrfstune.c           | 3 ++-
- cmds-check.c          | 3 ++-
+ cmds-check.c          | 2 +-
  cmds-restore.c        | 5 +++--
- cmds-send.c           | 4 +++-
- 15 files changed, 40 insertions(+), 20 deletions(-)
+ cmds-send.c           | 2 +-
+ 15 files changed, 36 insertions(+), 20 deletions(-)
 
 diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
 index 5eabdfc..501111c 100644
@@ -200,17 +204,16 @@ index d7cd187..6231d42 100644
  
  	if (bytenr == 0) {
 diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index ed0311f..0401344 100644
+index ed0311f..38c5d26 100644
 --- a/btrfs-show-super.c
 +++ b/btrfs-show-super.c
-@@ -95,7 +95,9 @@ int main(int argc, char **argv)
+@@ -95,7 +95,8 @@ int main(int argc, char **argv)
  		}
  	}
  
 -	if (argc < optind + 1) {
 +	set_argv0(argv);
-+	argc = argc - optind;
-+	if (check_argc_min(argc, 1)) {
++	if (check_argc_min(argc - optind, 1)) {
  		print_usage();
  		exit(1);
  	}
@@ -245,14 +248,11 @@ index 3f2f0cd..b43c2f0 100644
  		return 1;
  	}
 diff --git a/cmds-check.c b/cmds-check.c
-index 6d3388f..18bebb0 100644
+index 6d3388f..078882b 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -7018,9 +7018,10 @@ int cmd_check(int argc, char **argv)
- 			check_data_csum = 1;
- 		}
+@@ -7020,7 +7020,7 @@ int cmd_check(int argc, char **argv)
  	}
-+	set_argv0(argv);
  	argc = argc - optind;
  
 -	if (argc != 1)
@@ -278,17 +278,15 @@ index 3465f84..8e8afc5 100644
  
  	if (fs_location && root_objectid) {
 diff --git a/cmds-send.c b/cmds-send.c
-index 9a73b32..8263f72 100644
+index 9a73b32..cbc21f8 100644
 --- a/cmds-send.c
 +++ b/cmds-send.c
-@@ -556,7 +556,9 @@ int cmd_send(int argc, char **argv)
+@@ -556,7 +556,7 @@ int cmd_send(int argc, char **argv)
  		}
  	}
  
 -	if (optind == argc)
-+	set_argv0(argv);
-+	argc = argc - optind;
-+	if (check_argc_min(argc, 1))
++	if (check_argc_min(argc - optind, 1))
  		usage(cmd_send_usage);
  
  	if (g_total_data_size &&

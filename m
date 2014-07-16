@@ -1,191 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40423 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751578AbaGGWLW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Jul 2014 18:11:22 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH] Btrfs: __btrfs_mod_ref should always use no_quota
-Date: Mon,  7 Jul 2014 15:10:00 -0700
-Message-Id: <1404771000-30940-4-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1404771000-30940-1-git-send-email-mfasheh@suse.de>
-References: <1404771000-30940-1-git-send-email-mfasheh@suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:9425 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751427AbaGPEHQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Jul 2014 00:07:16 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6G47DKL002176
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Jul 2014 12:07:13 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/2] btrfs: allow findmnt(8) to find which subvol of btrfs is
+Date: Wed, 16 Jul 2014 12:07:09 +0800
+Message-ID: <1405483631-23037-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+Before this patchset, btrfs has 2 different routine to handle subvolume mount:
+1) "subvol=" routine
+When subvol name is given by "subvol=" mount option, btrfs will mount the fs
+and then use mount_subtree() to mount the subvolume.
+This routine is good since vfs layer is aware of which subtree is mounted.
+So findmnt(8) can show the source subvol of a btrfs mount.
 
-Before I extended the no_quota arg to btrfs_dec/inc_ref because I didn't
-understand how snapshot delete was using it and assumed that we needed the
-quota operations there.  With Mark's work this has turned out to be not the
-case, we _always_ need to use no_quota for btrfs_dec/inc_ref, so just drop the
-argument and make __btrfs_mod_ref call it's process function with no_quota set
-always.  Thanks,
+2) "subvolid=" and default subvolume routine
+When "subvolid=" or mounting default subvolume, btrfs will call
+get_default_root() to find subvolid or default subvolume.
+The problem is that, all the subvol searching are done internally,
+vfs is unaware of the return dentry is just a subtree.
+So findmnt(8) can't show the source subvol of a btrfs mount.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/ctree.c       | 20 ++++++++++----------
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/extent-tree.c | 24 +++++++++++-------------
- 3 files changed, 23 insertions(+), 25 deletions(-)
+This patchset will merge all this routine into 1) "subvol=" routine
+and make findmnt(8) able to show source subvol of a btrfs mount.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d99d965..d9e0ce0 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -280,9 +280,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 
- 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
- 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
--		ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 1);
- 	else
--		ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+		ret = btrfs_inc_ref(trans, root, cow, 0);
- 
- 	if (ret)
- 		return ret;
-@@ -1035,14 +1035,14 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if ((owner == root->root_key.objectid ||
- 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
- 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
--			ret = btrfs_inc_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_inc_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID) {
--				ret = btrfs_dec_ref(trans, root, buf, 0, 1);
-+				ret = btrfs_dec_ref(trans, root, buf, 0);
- 				BUG_ON(ret); /* -ENOMEM */
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
-@@ -1050,9 +1050,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		if (new_flags != 0) {
-@@ -1069,11 +1069,11 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
- 			if (root->root_key.objectid ==
- 			    BTRFS_TREE_RELOC_OBJECTID)
--				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 1);
- 			else
--				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
-+				ret = btrfs_inc_ref(trans, root, cow, 0);
- 			BUG_ON(ret); /* -ENOMEM */
--			ret = btrfs_dec_ref(trans, root, buf, 1, 1);
-+			ret = btrfs_dec_ref(trans, root, buf, 1);
- 			BUG_ON(ret); /* -ENOMEM */
- 		}
- 		clean_tree_block(trans, root, buf);
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4896d7a..56f280f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3307,9 +3307,9 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 num_bytes,
- 			 u64 min_alloc_size, u64 empty_size, u64 hint_byte,
- 			 struct btrfs_key *ins, int is_data);
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota);
-+		  struct extent_buffer *buf, int full_backref);
- int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				u64 bytenr, u64 num_bytes, u64 flags,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3f43e9a..e0e8c3f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2977,7 +2977,7 @@ out:
- static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct extent_buffer *buf,
--			   int full_backref, int inc, int no_quota)
-+			   int full_backref, int inc)
- {
- 	u64 bytenr;
- 	u64 num_bytes;
-@@ -3031,7 +3031,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			key.offset -= btrfs_file_extent_offset(buf, fi);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, key.objectid,
--					   key.offset, no_quota);
-+					   key.offset, 1);
- 			if (ret)
- 				goto fail;
- 		} else {
-@@ -3039,7 +3039,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			num_bytes = btrfs_level_size(root, level - 1);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, level - 1, 0,
--					   no_quota);
-+					   1);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -3050,15 +3050,15 @@ fail:
- }
- 
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 1, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 1);
- }
- 
- int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		  struct extent_buffer *buf, int full_backref, int no_quota)
-+		  struct extent_buffer *buf, int full_backref)
- {
--	return __btrfs_mod_ref(trans, root, buf, full_backref, 0, no_quota);
-+	return __btrfs_mod_ref(trans, root, buf, full_backref, 0);
- }
- 
- static int write_one_cache_group(struct btrfs_trans_handle *trans,
-@@ -7592,9 +7592,9 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
- 	/* wc->stage == UPDATE_BACKREF */
- 	if (!(wc->flags[level] & flag)) {
- 		BUG_ON(!path->locks[level]);
--		ret = btrfs_inc_ref(trans, root, eb, 1, wc->for_reloc);
-+		ret = btrfs_inc_ref(trans, root, eb, 1);
- 		BUG_ON(ret); /* -ENOMEM */
--		ret = btrfs_dec_ref(trans, root, eb, 0, wc->for_reloc);
-+		ret = btrfs_dec_ref(trans, root, eb, 0);
- 		BUG_ON(ret); /* -ENOMEM */
- 		ret = btrfs_set_disk_extent_flags(trans, root, eb->start,
- 						  eb->len, flag,
-@@ -7841,11 +7841,9 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 	if (wc->refs[level] == 1) {
- 		if (level == 0) {
- 			if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
--				ret = btrfs_dec_ref(trans, root, eb, 1,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 1);
- 			else
--				ret = btrfs_dec_ref(trans, root, eb, 0,
--						    wc->for_reloc);
-+				ret = btrfs_dec_ref(trans, root, eb, 0);
- 			BUG_ON(ret); /* -ENOMEM */
- 			ret = account_leaf_items(trans, root, eb);
- 			if (ret) {
+After the patchset, btrfs will:
+1) mount fs root under all situation first.
+If user gives "subvolid=5" mount option, then the mount is done.
+Or mount continues.
+
+2) If no subvolume id or name is given, do default subvolume search.
+
+3) If subvolume id is given(or searched by 2), do backref walk.
+Search backref in tree root to generate the subvolume path.
+
+4) call mount_subtree()
+Whatever the subvolume path is generated by backref walk or just given by
+"subvol=" mount option, just call mount_subtree() to finish the mount.
+
+Qu Wenruo (2):
+  btrfs: Call mount_subtree() even 'subvolid=' mount option is given.
+  btrfs: Merge default subvolume mount codes into btrfs_mount_subvol().
+
+ fs/btrfs/super.c | 324 ++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 250 insertions(+), 74 deletions(-)
+
 -- 
-1.8.4.5
+2.0.1
 

@@ -1,87 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:64935 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756244AbaGPKw1 (ORCPT
+Received: from e23smtp09.au.ibm.com ([202.81.31.142]:35517 "EHLO
+	e23smtp09.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934622AbaGPOr0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 06:52:27 -0400
-Message-ID: <53C658F6.1070301@informatik.uni-bonn.de>
-Date: Wed, 16 Jul 2014 12:50:30 +0200
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-MIME-Version: 1.0
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Why does btrfs defrag work worse than making a copy of a file?
-References: <53C59A66.7010107@informatik.uni-bonn.de> <20140716075345.GB29931@localhost.localdomain>
-In-Reply-To: <20140716075345.GB29931@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Wed, 16 Jul 2014 10:47:26 -0400
+Received: from /spool/local
+	by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Thu, 17 Jul 2014 00:47:24 +1000
+Received: from d23relay03.au.ibm.com (d23relay03.au.ibm.com [9.190.235.21])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 44BC52BB0057
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 00:47:22 +1000 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay03.au.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s6GEl5uN11338034
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 00:47:06 +1000
+Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s6GElLST007237
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 00:47:21 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH V4 01/12] Btrfs: subpagesize-blocksize: Get rid of whole page reads.
+Date: Wed, 16 Jul 2014 20:15:59 +0530
+Message-Id: <1405521970-8119-2-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1405521970-8119-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1405521970-8119-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16.07.2014 09:53, Liu Bo wrote:
-> On Tue, Jul 15, 2014 at 11:17:26PM +0200, Sebastian Ochmann wrote:
->> Hello,
->>
->> I have a VirtualBox hard drive image which is quite fragmented even
->> after very light use; it is 1.6 GB in size and has around 5000
->> fragments (I'm using "filefrag" to determine the number of
->> fragments). Doing a "btrfs fi defrag -f image.vdi" reduced the
->> number of fragments to 3749. Even doing a "btrfs fi defrag -f -t 1
->> image.vdi" which should make sure every extent is rewritten
->> (according to the btrfs-progs 3.14.2 manpage) does not yield any
->> better result and seems to return immediately. Copying the file,
->> however, yields a copy which has only 5 fragments (simply doing a cp
->> image.vdi image2.vdi; sync; filefrag image2.vdi).
->>
->> What do I have to do to defrag the file to the minimal number of
->> fragments possible? Am I missing something?
->
-> So usually btrfs thinks of an extent whose size is bigger than 256K as a big
-> enough extent.
->
-> Another possible reason is that there is something wrong with btrfs_fiemap which
-> gives filefrag' a wrong output.
->
-> Would you please show us the 'filefrag -v' output?
+Based on original patch from Aneesh Kumar K.V <aneesh.kumar@linux.vnet.ibm.com>
 
-Sure, I have pasted the output of "filefrag -v" here:
+bio_vec->{bv_offset, bv_len} cannot be relied upon by the end bio functions
+to track the file offset range operated on by the bio. Hence this patch adds
+two new members to 'struct btrfs_io_bio' to track the file offset range.
 
-http://pastebin.com/kcZhVhkc
+This patch also brings back check_page_locked() to reliably unlock pages in
+readpage's end bio function.
 
-However, I think the problem is merely in the documentation (manpage of 
-btrfs-filesystem). The description of the "-t" option is different in 
-two locations and doesn't make sense in general, I think. It is first 
-described as follows:
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/extent_io.c | 120 +++++++++++++++++++++++++++++++++------------------
+ fs/btrfs/volumes.h   |   3 ++
+ 2 files changed, 80 insertions(+), 43 deletions(-)
 
-"Any extent bigger than threshold given by -t option, will be considered 
-already defragged. Use 0 to take the kernel default, and use 1 to say 
-every single extent must be rewritten."
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fbe501d..fd6f011 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1943,15 +1943,29 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+  * helper function to set a given page up to date if all the
+  * extents in the tree for that page are up to date
+  */
+-static void check_page_uptodate(struct extent_io_tree *tree, struct page *page)
++static void check_page_uptodate(struct extent_io_tree *tree, struct page *page,
++				struct extent_state *cached)
+ {
+ 	u64 start = page_offset(page);
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+-	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, NULL))
++	if (test_range_bit(tree, start, end, EXTENT_UPTODATE, 1, cached))
+ 		SetPageUptodate(page);
+ }
+ 
+ /*
++ * helper function to unlock a page if all the extents in the tree
++ * for that page are unlocked
++ */
++static void check_page_locked(struct extent_io_tree *tree, struct page *page)
++{
++	u64 start = page_offset(page);
++	u64 end = start + PAGE_CACHE_SIZE - 1;
++
++	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL)) {
++		unlock_page(page);
++	}
++}
++
+  * When IO fails, either with EIO or csum verification fails, we
+  * try other mirrors that might have a good copy of the data.  This
+  * io_failure_record is used to record state as we go through all the
+@@ -2414,16 +2428,33 @@ static void end_bio_extent_writepage(struct bio *bio, int err)
+ 	bio_put(bio);
+ }
+ 
+-static void
+-endio_readpage_release_extent(struct extent_io_tree *tree, u64 start, u64 len,
+-			      int uptodate)
++static void unlock_extent_and_page(struct address_space *mapping,
++				   struct extent_io_tree *tree,
++				   struct btrfs_io_bio *io_bio)
+ {
+-	struct extent_state *cached = NULL;
+-	u64 end = start + len - 1;
++	pgoff_t index;
++	u64 offset, len;
++	/*
++	 * This btrfs_io_bio may span multiple pages.
++	 * We need to unlock the pages convered by them
++	 * if we got endio callback for all the blocks in the page.
++	 * btrfs_io_bio also contain "contigous blocks of the file"
++	 * look at submit_extent_page for more details.
++	 */
+ 
+-	if (uptodate && tree->track_uptodate)
+-		set_extent_uptodate(tree, start, end, &cached, GFP_ATOMIC);
+-	unlock_extent_cached(tree, start, end, &cached, GFP_ATOMIC);
++	offset = io_bio->start_offset;
++	len    = io_bio->len;
++	unlock_extent(tree, offset, offset + len - 1);
++
++	index = offset >> PAGE_CACHE_SHIFT;
++	while (offset < io_bio->start_offset + len) {
++		struct page *page;
++		page = find_get_page(mapping, index);
++		check_page_locked(tree, page);
++		page_cache_release(page);
++		index++;
++		offset += PAGE_CACHE_SIZE;
++	}
+ }
+ 
+ /*
+@@ -2443,13 +2474,13 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 	struct bio_vec *bvec_end = bio->bi_io_vec + bio->bi_vcnt - 1;
+ 	struct bio_vec *bvec = bio->bi_io_vec;
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
++	struct address_space *mapping = bio->bi_io_vec->bv_page->mapping;
+ 	struct extent_io_tree *tree;
++	struct extent_state *cached = NULL;
+ 	u64 offset = 0;
+ 	u64 start;
+ 	u64 end;
+ 	u64 len;
+-	u64 extent_start = 0;
+-	u64 extent_len = 0;
+ 	int mirror;
+ 	int ret;
+ 
+@@ -2482,8 +2513,8 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 					bvec->bv_offset, bvec->bv_len);
+ 		}
+ 
+-		start = page_offset(page);
+-		end = start + bvec->bv_offset + bvec->bv_len - 1;
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
+ 		len = bvec->bv_len;
+ 
+ 		if (++bvec <= bvec_end)
+@@ -2540,40 +2571,24 @@ readpage_ok:
+ 			offset = i_size & (PAGE_CACHE_SIZE-1);
+ 			if (page->index == end_index && offset)
+ 				zero_user_segment(page, offset, PAGE_CACHE_SIZE);
+-			SetPageUptodate(page);
++			if (tree->track_uptodate)
++				set_extent_uptodate(tree, start, end, &cached,
++						    GFP_ATOMIC);
+ 		} else {
+ 			ClearPageUptodate(page);
+ 			SetPageError(page);
+ 		}
+-		unlock_page(page);
+-		offset += len;
+ 
+-		if (unlikely(!uptodate)) {
+-			if (extent_len) {
+-				endio_readpage_release_extent(tree,
+-							      extent_start,
+-							      extent_len, 1);
+-				extent_start = 0;
+-				extent_len = 0;
+-			}
+-			endio_readpage_release_extent(tree, start,
+-						      end - start + 1, 0);
+-		} else if (!extent_len) {
+-			extent_start = start;
+-			extent_len = end + 1 - start;
+-		} else if (extent_start + extent_len == start) {
+-			extent_len += end + 1 - start;
+-		} else {
+-			endio_readpage_release_extent(tree, extent_start,
+-						      extent_len, uptodate);
+-			extent_start = start;
+-			extent_len = end + 1 - start;
+-		}
++		offset += len;
++		/*
++		 * Check whether the page in the bvec can be marked uptodate
++		 */
++		check_page_uptodate(tree, page, cached);
+ 	} while (bvec <= bvec_end);
+-
+-	if (extent_len)
+-		endio_readpage_release_extent(tree, extent_start, extent_len,
+-					      uptodate);
++	/*
++	 * Unlock the btrfs_bio and associated page
++	 */
++	unlock_extent_and_page(mapping, tree, io_bio);
+ 	if (io_bio->end_io)
+ 		io_bio->end_io(io_bio, err);
+ 	bio_put(bio);
+@@ -2700,6 +2715,18 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 		else
+ 			contig = bio_end_sector(bio) == sector;
+ 
++		if (contig) {
++			/*
++			 * Check whether we are contig if file offsets.
++			 * We should mostly be for readpage/readpages
++			 * We need to do this because we use btrfs_io_bio
++			 * start_offset and len to unlock in endio routines.
++			 */
++			if ((page_offset(page) + offset) !=
++					(btrfs_io_bio(bio)->start_offset +
++					 btrfs_io_bio(bio)->len))
++				contig = 0;
++		}
+ 		if (prev_bio_flags != bio_flags || !contig ||
+ 		    merge_bio(rw, tree, page, offset, page_size, bio, bio_flags) ||
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+@@ -2709,6 +2736,11 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 				return ret;
+ 			bio = NULL;
+ 		} else {
++			/*
++			 * update btrfs_io_bio len. So that we can unlock
++			 * correctly in end_io callback.
++			 */
++			btrfs_io_bio(bio)->len += page_size;
+ 			return 0;
+ 		}
+ 	}
+@@ -2724,6 +2756,8 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 	bio_add_page(bio, page, page_size, offset);
+ 	bio->bi_end_io = end_io_func;
+ 	bio->bi_private = tree;
++	btrfs_io_bio(bio)->start_offset = page_offset(page) + offset;
++	btrfs_io_bio(bio)->len = page_size;
+ 
+ 	if (bio_ret)
+ 		*bio_ret = bio;
+@@ -2914,7 +2948,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		/* the get_extent function already copied into the page */
+ 		if (test_range_bit(tree, cur, cur_end,
+ 				   EXTENT_UPTODATE, 1, NULL)) {
+-			check_page_uptodate(tree, page);
++			check_page_uptodate(tree, page, NULL);
+ 			if (!parent_locked)
+ 				unlock_extent(tree, cur, cur + iosize - 1);
+ 			cur = cur + iosize;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 80754f9..fb2dbdc 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -173,6 +173,9 @@ struct btrfs_io_bio {
+ 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+ 	u8 *csum_allocated;
+ 	btrfs_io_bio_end_io_t *end_io;
++	/* Track file offset range operated on by the bio.*/
++	u64 start_offset;
++	u64 len;
+ 	struct bio bio;
+ };
+ 
+-- 
+1.8.3.1
 
-So I used "-t 1" because I thought it will defrag as much as possible. 
-However when thinking about it, any extent at least 1 byte (or 2 bytes?) 
-in size will be ignored this way, am I correct?
-
-Further below, the "-t" option is described as follows:
-
-"-t <size>  defragment only files at least <size> bytes big"
-
-Here, the option suddenly refers to the file size. In any case, doing a 
-"btrfs fi defrag -f -t 10G image.vdi" defragged my file to the 5 extents 
-I also get by simply copying the file. I think the documentation should 
-be updated to reflect what the -t option actually does.
-
-Best regards
-Sebastian
-
-
-> thanks,
-> -liubo
->
->>
->> Kernel version 3.15.5, btrfs progs 3.14.2, Arch Linux.
->>
->> Best regards,
->> Sebastian
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html

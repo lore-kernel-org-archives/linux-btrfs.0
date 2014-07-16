@@ -1,146 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:62403 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758393AbaGPAps (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:51678 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752719AbaGPHmC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 20:45:48 -0400
-Received: by mail-pa0-f48.google.com with SMTP id et14so244947pad.21
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 17:45:48 -0700 (PDT)
+	Wed, 16 Jul 2014 03:42:02 -0400
+Date: Wed, 16 Jul 2014 15:41:21 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Hugo Mills <hugo-lkml@carfax.org.uk>, Norbert Preining <preining@logic.at>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        linux-kernel@vger.kernel.org
+Subject: Re: btrfs hanging since 3.16-rc3 or so
+Message-ID: <20140716074120.GA29931@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20140715134046.GX23620@auth.logic.tuwien.ac.at>
+ <20140715214701.GD4834@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <20140706145815.GD15009@merlins.org>
-References: <20140704011938.GO11539@merlins.org>
-	<53B801DD.5040704@isoar.ca>
-	<20140705144318.GT26932@merlins.org>
-	<20140706145815.GD15009@merlins.org>
-Date: Tue, 15 Jul 2014 20:45:47 -0400
-Message-ID: <CALJXSJr=PayTcA9z0dsuBu0KRoOKMNRRJfqE4mWAgP8cxopdfg@mail.gmail.com>
-Subject: Re: Is btrfs related to OOM death problems on my 8GB server with both
- 3.15.1 and 3.14?
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: "Andrew E. Mileski" <andrewm@isoar.ca>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140715214701.GD4834@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-For this same problem I once got into single user after 2 weeks of
-utilisation and killed all, umounted all FS except root which is ext4,
-rmmod'ed all modules and see by yourself:
-http://i39.tinypic.com/2rrrjtl.jpg
+On Tue, Jul 15, 2014 at 10:47:01PM +0100, Hugo Mills wrote:
+> cc linux-btrfs list
+> 
+> On Tue, Jul 15, 2014 at 10:40:46PM +0900, Norbert Preining wrote:
+> > Dear all
+> > 
+> > (please keep Cc)
+> > 
+> > Since 3.16-rc3 or so I regularly get btrfs hanging in some transations.
+> > 
+> > Usually during apt-get upgrade or some other large file operations
+> > (cowbuilder building of packages).
+> > 
+> > The log files give me for loads of processes things like:
+> > [ 6236.746546] INFO: task aptitude:22775 blocked for more than 120 seconds.
+> > [ 6236.746547]       Tainted: G        W  O  3.16.0-rc5 #27
+> > [ 6236.746548] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > [ 6236.746549] aptitude        D ffff8800b21a3868     0 22775  22709 0x00000000
+> > [ 6236.746550]  ffff88003644fd10 0000000000000082 ffffffff81a15500 ffff88003644ffd8
+> > [ 6236.746552]  ffff8800b21a3430 0000000000011c00 ffff880147da9c30 ffff880147da9c30
+> > [ 6236.746553]  ffff88003644fd58 ffff880034b3ed48 ffff880034b3ed38 ffff88003644fd20
+> > [ 6236.746555] Call Trace:
+> > [ 6236.746557]  [<ffffffff81585b4a>] schedule+0x64/0x66
+> > [ 6236.746560]  [<ffffffff811bb22e>] btrfs_wait_logged_extents+0xa4/0xdc
+> > [ 6236.746561]  [<ffffffff810635c1>] ? finish_wait+0x5d/0x5d
+> > [ 6236.746564]  [<ffffffff811d9489>] btrfs_sync_log+0x5ef/0x8a2
+> > [ 6236.746567]  [<ffffffff811b43cf>] btrfs_sync_file+0x21b/0x24d
+> > [ 6236.746569]  [<ffffffff811b43cf>] ? btrfs_sync_file+0x21b/0x24d
+> > [ 6236.746571]  [<ffffffff8110db8a>] vfs_fsync_range+0x1c/0x1e
+> > [ 6236.746574]  [<ffffffff810d1681>] SyS_msync+0x15d/0x1ea
+> > [ 6236.746575]  [<ffffffff81588712>] system_call_fastpath+0x16/0x1b
+> > 
+> > THis is aptitude, but I have all the other tasks accessing the disk
+> > hanging, too.
+> > 
+> > This time, issueing a Sysrq-s for emergency syncing did the laptop
+> > out of the hang.
+> > 
+> > Hardware: Sonly VAIO Pro 13
+> > Distribution: Debian/sid
+> > self compiled kernel, config on request.
+> > 
+> > Please let me know if there is anything else I can provide.
 
-For those who want it textually:
-15 days uptime
-10 user mode processes (systemd, top and bash)
-2 GB memory usage, 4 GB total memory, 17 MB cache, 32 KB buffers.
+Would you please try this patch?
 
-On Sun, Jul 6, 2014 at 10:58 AM, Marc MERLIN <marc@merlins.org> wrote:
-> On Sat, Jul 05, 2014 at 07:43:18AM -0700, Marc MERLIN wrote:
->> On Sat, Jul 05, 2014 at 09:47:09AM -0400, Andrew E. Mileski wrote:
->> > On 2014-07-03 9:19 PM, Marc MERLIN wrote:
->> > >I upgraded my server from 3.14 to 3.15.1 last week, and since then it's been
->> > >running out of memory and deadlocking (panic= doesn't even work).
->> > >I downgraded back to 3.14, but I already had the problem once since then.
->> >
->> > I didn't see any mention of the btrfs utility version in this thread
->> > (I may be blind though).
->> >
->> > My server was suffering from frequent panics upon scrub / defrag /
->> > balance, until I updated the btrfs utility.  That resolved all my
->> > issues.
->>
->> Really? The userland tool should only send ioctls to the kernel, I
->> really can't see how it would cause the kernel code to panic or not.
->>
->> gargamel:~# btrfs --version
->> Btrfs v3.14.1
->> which is the latest in debian unstable.
->>
->> As an update, after 1.7 days of scrubbing, the system has started
->> getting sluggish, I'm getting synchronization problems/crashes in some of
->> my tools that talk to serial ports (likely due to mini deadlocks in the
->> kernel), and I'm now getting a few btrfs hangs.
->
-> Predictably, it died yesterday afternoon after going into memory death
-> (it was answering pings, but userspace was dead, and even sysrq-o did
-> not respond, I had to power cycle the power outlet).
->
-> This happened just before my 3rd scrub finished, so I'm now 2 out of 2:
-> running scrub on my 3 filesystems kills the system half way through the
-> 3rd scrub.
->
-> This is the last memory log that reached the disk:
-> http://marc.merlins.org/tmp/btrfs-oom2.txt
->
-> Do those logs point to any possible culprit, or a kernel memory leak
-> cannot be pointed to its source because the kernel loses track of who
-> requested the memory that leaked?
->
->
-> Excerpt here:
-> Sat Jul  5 14:25:04 PDT 2014
->              total       used       free     shared    buffers     cached
-> Mem:       7894792    7712384     182408          0         28     227480
-> -/+ buffers/cache:    7484876     409916
-> Swap:     15616764     463732   15153032
->
-> Userspace is using 345MB according to ps
->
-> Sat Jul  5 14:25:04 PDT 2014
-> MemTotal:        7894792 kB
-> MemFree:          184556 kB
-> MemAvailable:     269568 kB
-> Buffers:              28 kB
-> Cached:           228164 kB
-> SwapCached:        18296 kB
-> Active:           178196 kB
-> Inactive:         187016 kB
-> Active(anon):      70068 kB
-> Inactive(anon):    71100 kB
-> Active(file):     108128 kB
-> Inactive(file):   115916 kB
-> Unevictable:        5624 kB
-> Mlocked:            5624 kB
-> SwapTotal:      15616764 kB
-> SwapFree:       15152768 kB
-> Dirty:             17716 kB
-> Writeback:           516 kB
-> AnonPages:        140588 kB
-> Mapped:            21940 kB
-> Shmem:               688 kB
-> Slab:             181708 kB
-> SReclaimable:      59808 kB
-> SUnreclaim:       121900 kB
-> KernelStack:        4728 kB
-> PageTables:         8480 kB
-> NFS_Unstable:          0 kB
-> Bounce:                0 kB
-> WritebackTmp:          0 kB
-> CommitLimit:    19564160 kB
-> Committed_AS:    1633204 kB
-> VmallocTotal:   34359738367 kB
-> VmallocUsed:      358996 kB
-> VmallocChunk:   34359281468 kB
-> HardwareCorrupted:     0 kB
-> AnonHugePages:         0 kB
-> HugePages_Total:       0
-> HugePages_Free:        0
-> HugePages_Rsvd:        0
-> HugePages_Surp:        0
-> Hugepagesize:       2048 kB
-> DirectMap4k:      144920 kB
-> DirectMap2M:     7942144 kB
->
-> Thanks,
-> Marc
-> --
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[PATCH] Btrfs: fix abnormal long waiting in fsync
+https://patchwork.kernel.org/patch/4564961/
+
+thanks,
+-liubo
+
+
+> > 
+> > Thanks a lot
+> > 
+> > Norbert
+> > 
+> > ------------------------------------------------------------------------
+> > PREINING, Norbert                               http://www.preining.info
+> > JAIST, Japan                                 TeX Live & Debian Developer
+> > GPG: 0x860CDC13   fp: F7D8 A928 26E3 16A1 9FA0  ACF0 6CAC A448 860C DC13
+> > ------------------------------------------------------------------------
+> 
+> -- 
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>       --- Normaliser unix c'est comme pasteuriser le Camembert ---       

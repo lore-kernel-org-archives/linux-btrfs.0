@@ -1,107 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:45759 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759571AbaGOVrE (ORCPT
+Received: from mail-pa0-f47.google.com ([209.85.220.47]:62698 "EHLO
+	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752252AbaGPAgR convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Jul 2014 17:47:04 -0400
-Date: Tue, 15 Jul 2014 22:47:01 +0100
-From: Hugo Mills <hugo-lkml@carfax.org.uk>
-To: Norbert Preining <preining@logic.at>
-Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-        linux-kernel@vger.kernel.org
-Subject: Re: btrfs hanging since 3.16-rc3 or so
-Message-ID: <20140715214701.GD4834@carfax.org.uk>
-References: <20140715134046.GX23620@auth.logic.tuwien.ac.at>
+	Tue, 15 Jul 2014 20:36:17 -0400
+Received: by mail-pa0-f47.google.com with SMTP id kx10so231245pab.34
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jul 2014 17:36:16 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="DiL7RhKs8rK9YGuF"
-In-Reply-To: <20140715134046.GX23620@auth.logic.tuwien.ac.at>
+In-Reply-To: <53C3313B.1080500@cn.fujitsu.com>
+References: <20140704011938.GO11539@merlins.org>
+	<53B801DD.5040704@isoar.ca>
+	<20140705144318.GT26932@merlins.org>
+	<20140706145815.GD15009@merlins.org>
+	<20140713142918.GH10641@merlins.org>
+	<53C3313B.1080500@cn.fujitsu.com>
+Date: Tue, 15 Jul 2014 20:36:16 -0400
+Message-ID: <CALJXSJpBX7iA90+pqtrq6FB4wxOVkdfLQWP3ZNEsV8Rid=F9vw@mail.gmail.com>
+Subject: Re: btrfs is related to OOM death problems on my 8GB server with both
+ 3.15.1 and 3.14?
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Marc MERLIN <marc@merlins.org>, "Andrew E. Mileski" <andrewm@isoar.ca>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi
 
---DiL7RhKs8rK9YGuF
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I'd just like to comment that I currently have the same problem, quota
+are enabled, server can't stay up more than 15 days without hogging
+all of its memory. Use case is a torrent server which has more read
+than writes and a desktop. Kmemleak does not detect this leak after 10
+days and at least 2 GB used.
 
-cc linux-btrfs list
+On my system, only leaks found were from Nvidia and AppArmor (Ubuntu
+14.04 kernel 3.13 with Nvidia proprietary driver).
 
-On Tue, Jul 15, 2014 at 10:40:46PM +0900, Norbert Preining wrote:
-> Dear all
-> 
-> (please keep Cc)
-> 
-> Since 3.16-rc3 or so I regularly get btrfs hanging in some transations.
-> 
-> Usually during apt-get upgrade or some other large file operations
-> (cowbuilder building of packages).
-> 
-> The log files give me for loads of processes things like:
-> [ 6236.746546] INFO: task aptitude:22775 blocked for more than 120 seconds.
-> [ 6236.746547]       Tainted: G        W  O  3.16.0-rc5 #27
-> [ 6236.746548] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [ 6236.746549] aptitude        D ffff8800b21a3868     0 22775  22709 0x00000000
-> [ 6236.746550]  ffff88003644fd10 0000000000000082 ffffffff81a15500 ffff88003644ffd8
-> [ 6236.746552]  ffff8800b21a3430 0000000000011c00 ffff880147da9c30 ffff880147da9c30
-> [ 6236.746553]  ffff88003644fd58 ffff880034b3ed48 ffff880034b3ed38 ffff88003644fd20
-> [ 6236.746555] Call Trace:
-> [ 6236.746557]  [<ffffffff81585b4a>] schedule+0x64/0x66
-> [ 6236.746560]  [<ffffffff811bb22e>] btrfs_wait_logged_extents+0xa4/0xdc
-> [ 6236.746561]  [<ffffffff810635c1>] ? finish_wait+0x5d/0x5d
-> [ 6236.746564]  [<ffffffff811d9489>] btrfs_sync_log+0x5ef/0x8a2
-> [ 6236.746567]  [<ffffffff811b43cf>] btrfs_sync_file+0x21b/0x24d
-> [ 6236.746569]  [<ffffffff811b43cf>] ? btrfs_sync_file+0x21b/0x24d
-> [ 6236.746571]  [<ffffffff8110db8a>] vfs_fsync_range+0x1c/0x1e
-> [ 6236.746574]  [<ffffffff810d1681>] SyS_msync+0x15d/0x1ea
-> [ 6236.746575]  [<ffffffff81588712>] system_call_fastpath+0x16/0x1b
-> 
-> THis is aptitude, but I have all the other tasks accessing the disk
-> hanging, too.
-> 
-> This time, issueing a Sysrq-s for emergency syncing did the laptop
-> out of the hang.
-> 
-> Hardware: Sonly VAIO Pro 13
-> Distribution: Debian/sid
-> self compiled kernel, config on request.
-> 
-> Please let me know if there is anything else I can provide.
-> 
-> Thanks a lot
-> 
-> Norbert
-> 
-> ------------------------------------------------------------------------
-> PREINING, Norbert                               http://www.preining.info
-> JAIST, Japan                                 TeX Live & Debian Developer
-> GPG: 0x860CDC13   fp: F7D8 A928 26E3 16A1 9FA0  ACF0 6CAC A448 860C DC13
-> ------------------------------------------------------------------------
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Normaliser unix c'est comme pasteuriser le Camembert ---       
-
---DiL7RhKs8rK9YGuF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU8WhVFheFHXiqx3kAQLpDA/+LwB+ZZW22GlcWaUlTkNxkVWGGQ7UmOS7
-SZNzDvwdl2edBE2E4gbiHjJwXU0DL7EKPZqRmvIotXd+h6MAq+CW97MPj4kVp+sW
-Cwgq2C6RyAuzkjoovnxO7GLOkW8Fyj/4Vq61x1kKCBGhLYWBrZMEM+PKr63YMRED
-Pa9ng++bK8D522pMlZ/i66GRmuezpJH5oHCGv8zexAQ+GxwisfHn5iiDs4RMnK8I
-v/dirWaZLkssIZzDSGDiI6lRv5EPorrndWu/4VMMQ07W4lIRQKhbiJPzCKu+WrOf
-POM9dnjkxu7agzajIDXPwEwo96G6edBES+JRPrmSG5cy+bP/tF+lhQi73Drnc6YK
-54sDiI8fTB7++AJBh+0GJGz0jh2ww3u6zmfZItN5nkgPzzZh1kWcG/de7VQ//9/f
-varn0myUKUAVtroZ9SITnp01sMUB2r1ae0SEp/9DeRLb8psFxkmcDCGEx9tdiogc
-Uny37zrfmI1BKhuylErqKEuMiEjFi1VsswtI+F5IXRFA4wsEUB40MiIzNYaJjxvf
-pLJohPt1oCtZStc7lj/dwRcia95a4+T4+cVo+YrAVbBx30P4RExTcfRyLfIEDizK
-iir+mJyJSPJ26GwfurQUo8nsew3IaAMmbL4u1HmFglJzw1PmgeRJ6/GLgscHIsez
-E0/Auva6KNw=
-=ml6g
------END PGP SIGNATURE-----
-
---DiL7RhKs8rK9YGuF--
+On Sun, Jul 13, 2014 at 9:24 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+> -------- Original Message --------
+> Subject: Re: btrfs is related to OOM death problems on my 8GB server with
+> both 3.15.1 and 3.14?
+> From: Marc MERLIN <marc@merlins.org>
+> To: Andrew E. Mileski <andrewm@isoar.ca>
+> Date: 2014年07月13日 22:29
+>>
+>> On Sun, Jul 06, 2014 at 07:58:15AM -0700, Marc MERLIN wrote:
+>>>>
+>>>> As an update, after 1.7 days of scrubbing, the system has started
+>>>> getting sluggish, I'm getting synchronization problems/crashes in some
+>>>> of
+>>>> my tools that talk to serial ports (likely due to mini deadlocks in the
+>>>> kernel), and I'm now getting a few btrfs hangs.
+>>>
+>>> Predictably, it died yesterday afternoon after going into memory death
+>>> (it was answering pings, but userspace was dead, and even sysrq-o did
+>>> not respond, I had to power cycle the power outlet).
+>>>
+>>> This happened just before my 3rd scrub finished, so I'm now 2 out of 2:
+>>> running scrub on my 3 filesystems kills the system half way through the
+>>> 3rd scrub.
+>>
+>> Ok, I now changed the subject line to confirm that btrfs is to blame.
+>>
+>> I had my system booted 6 days and it held steady at 6.4GB free.
+>> I mounted 2 of my 4 btrfs filesystems (one by one) and waited a few
+>> days, and no problems with RAM going down.
+>>
+>> Then I mounted my 3rd btrfs filesystem, the one that holds many files
+>> that has rsync backups running, and I lost 1.4GB of RAM overnight.
+>> I've just umounted one of its mountpoints, the one where all the backups
+>> happen while leaving its main pool mounted and will see if RAM keeps
+>> going down or not (i.e. whether the memory leak is due to rsync activity
+>> or some other background btrfs process).
+>>
+>> But generally, is there a tool to locate which kernel function allocated
+>> all that RAM that seems to get allocated and forgotten?
+>
+> This can be done by kernel memleak detection.
+> Location:
+> -> Kernel hacking
+>     -> Memory Debugging
+>         -> Kernel memory leak detector
+>
+> Then you can check /sys/kernel/debug/memleak to see which function call
+> caused the problem.
+>
+> Thanks,
+> Qu
+>
+>>
+>> Is /proc/slabinfo supposed to show anything useful?
+>>
+>> This is the filesystem in question:
+>> gargamel:~# btrfs fi df /mnt/btrfs_pool2/
+>> Data, single: total=3.34TiB, used=3.32TiB
+>> System, DUP: total=8.00MiB, used=400.00KiB
+>> System, single: total=4.00MiB, used=0.00
+>> Metadata, DUP: total=77.50GiB, used=59.87GiB
+>> Metadata, single: total=8.00MiB, used=0.00
+>>
+>>
+>> Thanks,
+>> Marc
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

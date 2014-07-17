@@ -1,90 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58765 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754866AbaGQIsc convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:28075 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932129AbaGQNSO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 04:48:32 -0400
-Message-ID: <53C78DDE.6040009@cn.fujitsu.com>
-Date: Thu, 17 Jul 2014 16:48:30 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Thu, 17 Jul 2014 09:18:14 -0400
+Message-ID: <53C7CD0F.7070603@fb.com>
+Date: Thu, 17 Jul 2014 09:18:07 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>,
-        Chris Murphy <lists@colorremedies.com>, <zhe.zhang.research@gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Is it safe to mount subvolumes of already-mounted volumes (even
- with different options)?
-References: <53C6FA3D.9010803@informatik.uni-bonn.de> <E49EC0AC-DD96-4D7F-9B36-9E28CEC0CD2A@colorremedies.com> <53C78212.2070204@informatik.uni-bonn.de>
-In-Reply-To: <53C78212.2070204@informatik.uni-bonn.de>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: Cody P Schafer <dev@codyps.com>
+CC: Chris Samuel <chris@csamuel.org>, <linux-btrfs@vger.kernel.org>
+Subject: Re: Blocked tasks on 3.15.1
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>	<3081460.dX0cLeJPhK@quad>	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>	<53B1A862.50503@fb.com>	<53B1ACAA.5040505@fb.com>	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>	<53B32275.6010200@fb.com>	<CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com> <CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com> <53B40FEC.4030902@fb.com> <53B4140C.8060406@fb.com>
+In-Reply-To: <53B4140C.8060406@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
--------- Original Message --------
-Subject: Re: Is it safe to mount subvolumes of already-mounted volumes 
-(even with different options)?
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-To: Chris Murphy <lists@colorremedies.com>, zhe.zhang.research@gmail.com
-Date: 2014年07月17日 15:58
-> Hello,
->
-> I need to clarify, I'm _not_ sharing a drive between multiple 
-> computers at the _same_ time. It's a portable device which I use at 
-> different locations with different computers. I just wanted to give a 
-> rationale for mounting the whole drive to some mountpoint and then 
-> also part of that drive (a subvolume) to the respective computer's 
-> /home mountpoint. So it's controlled by the same kernel in the same 
-> computer, it's just that part of the filesystem is mounted at multiple 
-> mountpoints, much like a bind-mount, but I'm interested in mounting a 
-> subvolume of the already-mounted volume to some other mountpoint. 
-> Sorry for the confusion.
->
-> Best regards
-> Sebastian
-If you mean something like the following use case:
-# mount /dev/sdb1 -o subvolid=257 /home
-# mount /dev/sdb1 -o subvolid=5 /some/other/place
+[ deadlocks during rsync in 3.15 with compression enabled ]
 
-That is completly OK.
+Hi everyone,
 
-But when it comes to different mount option, especially different ro/rw 
-mount option,
-although it is working for 3.16-rc*, the ro/rw mount option is still 
-under disscussion and the current rc implement
-will cause a kernel warning mounting a subvolume rw when it's first 
-mounted as ro.
+I still haven't been able to reproduce this one here, but I'm going
+through a series of tests with lzo compression foraced and every
+operation forced to ordered.  Hopefully it'll kick it out soon.
 
-So in short:
-1) mount subvolumes when the btrfs fs is already mounted.
-Completly OK.
+While I'm hammering away, could you please try this patch.  If this is
+the buy you're hitting, the deadlock will go away and you'll see this
+printk in the log.
 
-2) different mount option for different subvolume in one btrfs fs.
-For most mount option including ro/rw, No.
+thanks!
 
-Thanks,
-Qu
->
->
-> On 17.07.2014 01:18, Chris Murphy wrote:
->>
->> On Jul 16, 2014, at 4:18 PM, Sebastian Ochmann 
->> <ochmann@informatik.uni-bonn.de> wrote:
->>
->>> Hello,
->>>
->>> I'm sharing a btrfs-formatted drive between multiple computers and 
->>> each of the machines has a separate home directory on that drive.
->>
->> 2+ computers writing to the same block device? I don't see how this 
->> is safe. Seems possibly a bug that the 1st mount event isn't setting 
->> some metadata so that another kernel instance knows not to allow 
->> another mount.
->>
->>
->> Chris Murphy
->>
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3668048..8ab56df 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8157,6 +8157,13 @@ void btrfs_destroy_inode(struct inode *inode)
+ 		spin_unlock(&root->fs_info->ordered_root_lock);
+ 	}
+ 
++	spin_lock(&root->fs_info->ordered_root_lock);
++	if (!list_empty(&BTRFS_I(inode)->ordered_operations)) {
++		list_del_init(&BTRFS_I(inode)->ordered_operations);
++printk(KERN_CRIT "racing inode deletion with ordered operations!!!!!!!!!!!\n");
++	}
++	spin_unlock(&root->fs_info->ordered_root_lock);
++
+ 	if (test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 		     &BTRFS_I(inode)->runtime_flags)) {
+ 		btrfs_info(root->fs_info, "inode %llu still on the orphan list",

@@ -1,89 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:56132 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755274AbaGQIm4 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:58765 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754866AbaGQIsc convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 04:42:56 -0400
-Date: Thu, 17 Jul 2014 09:42:54 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs fi df shows "unknown" ?
-Message-ID: <20140717084254.GH4834@carfax.org.uk>
-References: <2344973.5NRcZetHsX@vajra>
+	Thu, 17 Jul 2014 04:48:32 -0400
+Message-ID: <53C78DDE.6040009@cn.fujitsu.com>
+Date: Thu, 17 Jul 2014 16:48:30 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="4LFBTxd4L5NLO6ly"
-In-Reply-To: <2344973.5NRcZetHsX@vajra>
+To: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>,
+        Chris Murphy <lists@colorremedies.com>, <zhe.zhang.research@gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Is it safe to mount subvolumes of already-mounted volumes (even
+ with different options)?
+References: <53C6FA3D.9010803@informatik.uni-bonn.de> <E49EC0AC-DD96-4D7F-9B36-9E28CEC0CD2A@colorremedies.com> <53C78212.2070204@informatik.uni-bonn.de>
+In-Reply-To: <53C78212.2070204@informatik.uni-bonn.de>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---4LFBTxd4L5NLO6ly
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+-------- Original Message --------
+Subject: Re: Is it safe to mount subvolumes of already-mounted volumes 
+(even with different options)?
+From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+To: Chris Murphy <lists@colorremedies.com>, zhe.zhang.research@gmail.com
+Date: 2014年07月17日 15:58
+> Hello,
+>
+> I need to clarify, I'm _not_ sharing a drive between multiple 
+> computers at the _same_ time. It's a portable device which I use at 
+> different locations with different computers. I just wanted to give a 
+> rationale for mounting the whole drive to some mountpoint and then 
+> also part of that drive (a subvolume) to the respective computer's 
+> /home mountpoint. So it's controlled by the same kernel in the same 
+> computer, it's just that part of the filesystem is mounted at multiple 
+> mountpoints, much like a bind-mount, but I'm interested in mounting a 
+> subvolume of the already-mounted volume to some other mountpoint. 
+> Sorry for the confusion.
+>
+> Best regards
+> Sebastian
+If you mean something like the following use case:
+# mount /dev/sdb1 -o subvolid=257 /home
+# mount /dev/sdb1 -o subvolid=5 /some/other/place
 
-On Thu, Jul 17, 2014 at 10:02:01AM +0200, Sw=E2mi Petaramesh wrote:
-> Hi there,
->=20
-> Since a few days, I have noticed that "btrfs fi df /" displays an entry a=
-bout=20
-> "unknown" used space, and I can see this on several Fedora machines, so i=
-t is=20
-> not an issue related to a given system...
->=20
-> Does anybody know what these "unknown" data are ?
+That is completly OK.
 
-   It's the block reserve, which used to be part of metadata, but is
-now split out to its own type. An updated userspace should be able to
-show it properly.
+But when it comes to different mount option, especially different ro/rw 
+mount option,
+although it is working for 3.16-rc*, the ro/rw mount option is still 
+under disscussion and the current rc implement
+will cause a kernel warning mounting a subvolume rw when it's first 
+mounted as ro.
 
-   Hugo.
+So in short:
+1) mount subvolumes when the btrfs fs is already mounted.
+Completly OK.
 
-> i.e:
->=20
-> # btrfs fi df /
-> Data, single: total=3D106.00GiB, used=3D88.28GiB
-> System, DUP: total=3D32.00MiB, used=3D24.00KiB
-> Metadata, DUP: total=3D1.00GiB, used=3D520.36MiB
-> unknown, single: total=3D176.00MiB, used=3D0.00
->=20
-> # btrfs --version
-> Btrfs v3.14.2
->=20
-> # uname -r
-> 3.15.5-200.fc20.x86_64
->=20
-> TIA, kind regards.
->=20
+2) different mount option for different subvolume in one btrfs fs.
+For most mount option including ro/rw, No.
 
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- Try everything once,  except incest and folk-dancing. ---     =20
+Thanks,
+Qu
+>
+>
+> On 17.07.2014 01:18, Chris Murphy wrote:
+>>
+>> On Jul 16, 2014, at 4:18 PM, Sebastian Ochmann 
+>> <ochmann@informatik.uni-bonn.de> wrote:
+>>
+>>> Hello,
+>>>
+>>> I'm sharing a btrfs-formatted drive between multiple computers and 
+>>> each of the machines has a separate home directory on that drive.
+>>
+>> 2+ computers writing to the same block device? I don't see how this 
+>> is safe. Seems possibly a bug that the 1st mount event isn't setting 
+>> some metadata so that another kernel instance knows not to allow 
+>> another mount.
+>>
+>>
+>> Chris Murphy
+>>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---4LFBTxd4L5NLO6ly
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU8eMjlheFHXiqx3kAQJiSRAAromuZDERDJ1h3fls0trTu7R01cFxR5z0
-wf21F22qt5zurfg0QpgRW674OrrWUL4NaDe47yM6+WpD/YFJPYRe5QGoGWE1cuqQ
-KqnroEuIb8UzeQlLIEvsUtzXQRBRXQM3jYArjeye54vmky7Exj5lj4jWNz6U/cU7
-7H4rS/uZX03CSiQc+t25esHUzMtbi0jTKGMv+kXEeFwtC7c8DuKjdeBLt3lKzXbR
-SQhPXXxhcWiRrVlAxtHdj/wraq4jwsh9QbToFzY9IE0lvG+PVMCNM4jrK7LymmaB
-sVkbQkXMNZrAum4XOC+1C5VxgXO5HXCmVqDYJfLFwJeHK9uspkY/XxgqIrxGRpQt
-LluFLh0QTSyI06Gf1QfxeisL1McIYazjBciXsr+v0GNgNd//NNy2y/+JUV3lUnZa
-sZBFfO6Im4yhaZ7FG1T88BZKMx9IakH+FftlqxCN3MrOvW40gKXkGOXuMoreUQ32
-EeCtT1sjg3sCjVxn+pAY6Y/VS1eK2xdoX9BdnqjexKFH7KyAgnNsSkSKjOGL5Gwn
-zpGhcCHO3HiMLiRFyqKOEFItDDWC786OcNGDzuj1EMgvKnT8yJBTEhXz53gy1QXf
-jIJ/7cpKUxWwy3wGKcKQ5mhngsBHuDlrc+358UjsVihbisWMZ7U1f7oI2W7X6vDC
-dMpR6s+AKPo=
-=pJNm
------END PGP SIGNATURE-----
-
---4LFBTxd4L5NLO6ly--

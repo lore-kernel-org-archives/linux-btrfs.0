@@ -1,49 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:56910 "EHLO
-	postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753536AbaGQIAL (ORCPT
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:44603 "EHLO
+	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753536AbaGQICH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 04:00:11 -0400
-Message-ID: <53C78212.2070204@informatik.uni-bonn.de>
-Date: Thu, 17 Jul 2014 09:58:10 +0200
-From: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+	Thu, 17 Jul 2014 04:02:07 -0400
+Received: from mfilter9-d.gandi.net (mfilter9-d.gandi.net [217.70.178.138])
+	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 19E61A811B
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 10:02:03 +0200 (CEST)
+Received: from relay3-d.mail.gandi.net ([217.70.183.195])
+	by mfilter9-d.gandi.net (mfilter9-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id jfQL2f04fk+P for <linux-btrfs@vger.kernel.org>;
+	Thu, 17 Jul 2014 10:02:02 +0200 (CEST)
+Received: from vajra.localnet (unknown [162.38.105.117])
+	(Authenticated sender: swami@petaramesh.org)
+	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 97CCFA8175
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 10:02:02 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs fi df shows "unknown" ?
+Date: Thu, 17 Jul 2014 10:02:01 +0200
+Message-ID: <2344973.5NRcZetHsX@vajra>
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>, zhe.zhang.research@gmail.com
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Is it safe to mount subvolumes of already-mounted volumes (even
- with different options)?
-References: <53C6FA3D.9010803@informatik.uni-bonn.de> <E49EC0AC-DD96-4D7F-9B36-9E28CEC0CD2A@colorremedies.com>
-In-Reply-To: <E49EC0AC-DD96-4D7F-9B36-9E28CEC0CD2A@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi there,
 
-I need to clarify, I'm _not_ sharing a drive between multiple computers 
-at the _same_ time. It's a portable device which I use at different 
-locations with different computers. I just wanted to give a rationale 
-for mounting the whole drive to some mountpoint and then also part of 
-that drive (a subvolume) to the respective computer's /home mountpoint. 
-So it's controlled by the same kernel in the same computer, it's just 
-that part of the filesystem is mounted at multiple mountpoints, much 
-like a bind-mount, but I'm interested in mounting a subvolume of the 
-already-mounted volume to some other mountpoint. Sorry for the confusion.
+Since a few days, I have noticed that "btrfs fi df /" displays an entry about 
+"unknown" used space, and I can see this on several Fedora machines, so it is 
+not an issue related to a given system...
 
-Best regards
-Sebastian
+Does anybody know what these "unknown" data are ?
 
+i.e:
 
-On 17.07.2014 01:18, Chris Murphy wrote:
->
-> On Jul 16, 2014, at 4:18 PM, Sebastian Ochmann <ochmann@informatik.uni-bonn.de> wrote:
->
->> Hello,
->>
->> I'm sharing a btrfs-formatted drive between multiple computers and each of the machines has a separate home directory on that drive.
->
-> 2+ computers writing to the same block device? I don't see how this is safe. Seems possibly a bug that the 1st mount event isn't setting some metadata so that another kernel instance knows not to allow another mount.
->
->
-> Chris Murphy
->
+# btrfs fi df /
+Data, single: total=106.00GiB, used=88.28GiB
+System, DUP: total=32.00MiB, used=24.00KiB
+Metadata, DUP: total=1.00GiB, used=520.36MiB
+unknown, single: total=176.00MiB, used=0.00
+
+# btrfs --version
+Btrfs v3.14.2
+
+# uname -r
+3.15.5-200.fc20.x86_64
+
+TIA, kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

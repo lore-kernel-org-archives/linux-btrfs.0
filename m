@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4426 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752717AbaGQCqe (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:19237 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754473AbaGQKqq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 22:46:34 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6H2kV4R028199
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 10:46:31 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/4] btrfs-progs: replace a confusing raw number with a macro
-Date: Thu, 17 Jul 2014 10:40:38 +0800
-Message-ID: <1405564839-28702-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1405564839-28702-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1405564839-28702-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Thu, 17 Jul 2014 06:46:46 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+Subject: [PATCH] Btrfs: fix wrong manpage of defrag command
+Date: Thu, 17 Jul 2014 18:46:01 +0800
+Message-Id: <1405593961-10423-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The raw number 36 for the uuid string length is somewhat confusing,
-use a macro to define replace it.
+'btrfs filesystem defrag' has an option '-t', whose manpage says
 
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+"Any extent bigger than threshold given by -t option, will be
+considered already defragged. Use 0 to take the kernel default, and
+use 1 to say every single extent must be rewritten."
+
+Here 'use 0' still works, it refers to the default value(256K), however,
+'use 1' is an obvious typo, it should be -1, which means the largest value
+it can be.
+
+Right now, we use parse_size() which no more allow value '-1', so in
+order to keep the manpage correct, this updates it to only keep value '0'.
+
+If you want to make sure every single extent is rewritten, please use a fairly
+large size, say 1G.
+
+Reported-by: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- cmds-scrub.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ Documentation/btrfs-filesystem.txt | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index a604b25..03eb9ba 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -48,6 +48,8 @@ static const char * const scrub_cmd_group_usage[] = {
- 	NULL
- };
- 
-+#define UUID_LEN_STR 36
-+
- #define SCRUB_DATA_FILE "/var/lib/btrfs/scrub.status"
- #define SCRUB_PROGRESS_SOCKET_PATH "/var/lib/btrfs/scrub.progress"
- #define SCRUB_FILE_VERSION_PREFIX "scrub status"
-@@ -550,7 +552,7 @@ again:
- 				;
- 			if (i + j + 1 >= avail)
- 				_SCRUB_INVALID;
--			if (j != 36)
-+			if (j != UUID_LEN_STR)
- 				_SCRUB_INVALID;
- 			l[i + j] = '\0';
- 			ret = uuid_parse(l + i, p[curr]->fsid);
+diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+index 0ee79cb..c9c0b00 100644
+--- a/Documentation/btrfs-filesystem.txt
++++ b/Documentation/btrfs-filesystem.txt
+@@ -41,8 +41,7 @@ The start position and the number of bytes to defragment can be specified by
+ start and len using '-s' and '-l' options below.
+ Any extent bigger than threshold given by '-t' option, will be considered
+ already defragged.
+-Use 0 to take the kernel default, and use 1 to
+-say every single extent must be rewritten.
++Use 0 to take the kernel default.
+ You can also turn on compression in defragment operations.
+ +
+ `Options`
 -- 
 1.8.1.4
 

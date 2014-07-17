@@ -1,52 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38833 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750791AbaGJVbW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Jul 2014 17:31:22 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X5Lw1-0002Bz-Hl
-	for linux-btrfs@vger.kernel.org; Thu, 10 Jul 2014 23:31:21 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 23:31:21 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 23:31:21 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH] xfstests/btrfs: add test for quota groups and drop
-	snapshot
-Date: Thu, 10 Jul 2014 21:31:07 +0000 (UTC)
-Message-ID: <pan$ca5c$23031d50$378e40$86a123f0@cox.net>
-References: <20140709224150.GA5484@wotan.suse.de>
-	<20140710004330.GG4453@dastard> <20140710173614.GB5484@wotan.suse.de>
-	<20140710183228.GD17201@lenny.home.zabbo.net>
-	<20140710190055.GC5484@wotan.suse.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:45023 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753658AbaGQG4t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Jul 2014 02:56:49 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] xfstests/btrfs: _devmgt_add() to check if the device is back online
+Date: Thu, 17 Jul 2014 15:17:41 +0800
+Message-Id: <1405581461-12379-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mark Fasheh posted on Thu, 10 Jul 2014 12:00:55 -0700 as excerpted:
+btrfs/003 uses a method to remove the device as part of the test
+case, and after the test completes the removed device is added
+back to the system. However on certain system, albeit the slow
+running system the device comes back a bit later, and so the
+latter occurring sub-test with in the btrfs/003 fails.
 
-> Given something like that, you'd just replace the calls to sleep with
-> 'btrfs fi synctheworldandwait' and know that on return, the actions you
-> just queued up completed.
+This patch adds script to wait and test if the device is back online,
+and thus report the same to to the full log.
 
-I'll admit to not really knowing what I'm talking about here, but on 
-first intuition, What about either btrfs filesystem sync calls, or 
-mounting with the synctime (don't have time to look up the specific 
-option ATM) mount option?  Normal sync is 30 seconds, but the mount 
-option can be used to make that 5 seconds or whatever.  And I don't know 
-whether btrfs filesystem sync is synchronous or not.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ common/rc | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-But that might help reduce it below 30 and 45 seconds, anyway, even if 
-some sleep is still required.
-
+diff --git a/common/rc b/common/rc
+index 2c83340..4a6511f 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2054,6 +2054,31 @@ _devmgt_add()
+ 	tdl=`echo ${1} | cut -d":" -f 2-|sed 's/:/ /g'`
+ 
+ 	echo ${tdl} >  /sys/class/scsi_host/host${h}/scan || _fail "Add disk failed"
++
++	# ensure the device comes online
++	dev_back_oneline=0
++	for i in `seq 1 10`; do
++		if [ -d /sys/class/scsi_device/${1}/device/block ]; then
++			dev=`ls /sys/class/scsi_device/${1}/device/block`
++			for j in `seq 1 10`;
++			do
++				stat /dev/$dev > /dev/null 2>&1
++				if [ $? -eq 0 ]; then
++					dev_back_oneline=1
++					break
++				fi
++				sleep 1
++			done
++			break
++		else
++			sleep 1
++		fi
++	done
++	if [ $dev_back_oneline -eq 0 ]; then
++		echo "/dev/$dev online failed" >> $seqres.full
++	else
++		echo "/dev/$dev is back online" >> $seqres.full
++	fi
+ }
+ 
+ _require_fstrim()
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.0.0.153.g79dcccc
 

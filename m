@@ -1,137 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52277 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52281 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752950AbaGQTkZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 15:40:25 -0400
+	id S1752510AbaGQTk3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Jul 2014 15:40:29 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 1/5] btrfs: add trace for qgroup accounting
-Date: Thu, 17 Jul 2014 12:39:00 -0700
-Message-Id: <1405625944-4883-2-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 3/5] Btrfs: __btrfs_mod_ref should always use no_quota
+Date: Thu, 17 Jul 2014 12:39:02 -0700
+Message-Id: <1405625944-4883-4-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1405625944-4883-1-git-send-email-mfasheh@suse.de>
 References: <1405625944-4883-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want this to debug qgroup changes on live systems.
+From: Josef Bacik <jbacik@fb.com>
 
+Before I extended the no_quota arg to btrfs_dec/inc_ref because I didn't
+understand how snapshot delete was using it and assumed that we needed the
+quota operations there.  With Mark's work this has turned out to be not the
+case, we _always_ need to use no_quota for btrfs_dec/inc_ref, so just drop the
+argument and make __btrfs_mod_ref call it's process function with no_quota set
+always.  Thanks,
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/qgroup.c            |  3 +++
- fs/btrfs/super.c             |  1 +
- include/trace/events/btrfs.h | 56 ++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 60 insertions(+)
+ fs/btrfs/ctree.c       | 20 ++++++++++----------
+ fs/btrfs/ctree.h       |  4 ++--
+ fs/btrfs/extent-tree.c | 24 +++++++++++-------------
+ 3 files changed, 23 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 98cb6b2..6a6dc62 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1290,6 +1290,7 @@ int btrfs_qgroup_record_ref(struct btrfs_trans_handle *trans,
- 	oper->seq = atomic_inc_return(&fs_info->qgroup_op_seq);
- 	INIT_LIST_HEAD(&oper->elem.list);
- 	oper->elem.seq = 0;
-+	trace_btrfs_qgroup_record_ref(oper);
- 	ret = insert_qgroup_oper(fs_info, oper);
- 	if (ret) {
- 		/* Shouldn't happen so have an assert for developers */
-@@ -1911,6 +1912,8 @@ static int btrfs_qgroup_account(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index aeab453..44ee5d2 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -280,9 +280,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
  
- 	ASSERT(is_fstree(oper->ref_root));
+ 	WARN_ON(btrfs_header_generation(buf) > trans->transid);
+ 	if (new_root_objectid == BTRFS_TREE_RELOC_OBJECTID)
+-		ret = btrfs_inc_ref(trans, root, cow, 1, 1);
++		ret = btrfs_inc_ref(trans, root, cow, 1);
+ 	else
+-		ret = btrfs_inc_ref(trans, root, cow, 0, 1);
++		ret = btrfs_inc_ref(trans, root, cow, 0);
  
-+	trace_btrfs_qgroup_account(oper);
-+
- 	switch (oper->type) {
- 	case BTRFS_QGROUP_OPER_ADD_EXCL:
- 	case BTRFS_QGROUP_OPER_SUB_EXCL:
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8e16bca..38b8bd8 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -60,6 +60,7 @@
- #include "backref.h"
- #include "tests/btrfs-tests.h"
+ 	if (ret)
+ 		return ret;
+@@ -1035,14 +1035,14 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 		if ((owner == root->root_key.objectid ||
+ 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
+ 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
+-			ret = btrfs_inc_ref(trans, root, buf, 1, 1);
++			ret = btrfs_inc_ref(trans, root, buf, 1);
+ 			BUG_ON(ret); /* -ENOMEM */
  
-+#include "qgroup.h"
- #define CREATE_TRACE_POINTS
- #include <trace/events/btrfs.h>
+ 			if (root->root_key.objectid ==
+ 			    BTRFS_TREE_RELOC_OBJECTID) {
+-				ret = btrfs_dec_ref(trans, root, buf, 0, 1);
++				ret = btrfs_dec_ref(trans, root, buf, 0);
+ 				BUG_ON(ret); /* -ENOMEM */
+-				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
++				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 				BUG_ON(ret); /* -ENOMEM */
+ 			}
+ 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
+@@ -1050,9 +1050,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
  
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 4ee4e30..b8774b3 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -23,6 +23,7 @@ struct map_lookup;
- struct extent_buffer;
- struct btrfs_work;
- struct __btrfs_workqueue;
-+struct btrfs_qgroup_operation;
+ 			if (root->root_key.objectid ==
+ 			    BTRFS_TREE_RELOC_OBJECTID)
+-				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
++				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+-				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
++				ret = btrfs_inc_ref(trans, root, cow, 0);
+ 			BUG_ON(ret); /* -ENOMEM */
+ 		}
+ 		if (new_flags != 0) {
+@@ -1069,11 +1069,11 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
+ 			if (root->root_key.objectid ==
+ 			    BTRFS_TREE_RELOC_OBJECTID)
+-				ret = btrfs_inc_ref(trans, root, cow, 1, 1);
++				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+-				ret = btrfs_inc_ref(trans, root, cow, 0, 1);
++				ret = btrfs_inc_ref(trans, root, cow, 0);
+ 			BUG_ON(ret); /* -ENOMEM */
+-			ret = btrfs_dec_ref(trans, root, buf, 1, 1);
++			ret = btrfs_dec_ref(trans, root, buf, 1);
+ 			BUG_ON(ret); /* -ENOMEM */
+ 		}
+ 		clean_tree_block(trans, root, buf);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index be91397..8e29b61 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3326,9 +3326,9 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 num_bytes,
+ 			 u64 min_alloc_size, u64 empty_size, u64 hint_byte,
+ 			 struct btrfs_key *ins, int is_data, int delalloc);
+ int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		  struct extent_buffer *buf, int full_backref, int no_quota);
++		  struct extent_buffer *buf, int full_backref);
+ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		  struct extent_buffer *buf, int full_backref, int no_quota);
++		  struct extent_buffer *buf, int full_backref);
+ int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				u64 bytenr, u64 num_bytes, u64 flags,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1aa4325..ed9e13c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3057,7 +3057,7 @@ out:
+ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct extent_buffer *buf,
+-			   int full_backref, int inc, int no_quota)
++			   int full_backref, int inc)
+ {
+ 	u64 bytenr;
+ 	u64 num_bytes;
+@@ -3111,7 +3111,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 			key.offset -= btrfs_file_extent_offset(buf, fi);
+ 			ret = process_func(trans, root, bytenr, num_bytes,
+ 					   parent, ref_root, key.objectid,
+-					   key.offset, no_quota);
++					   key.offset, 1);
+ 			if (ret)
+ 				goto fail;
+ 		} else {
+@@ -3119,7 +3119,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 			num_bytes = btrfs_level_size(root, level - 1);
+ 			ret = process_func(trans, root, bytenr, num_bytes,
+ 					   parent, ref_root, level - 1, 0,
+-					   no_quota);
++					   1);
+ 			if (ret)
+ 				goto fail;
+ 		}
+@@ -3130,15 +3130,15 @@ fail:
+ }
  
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
-@@ -1119,6 +1120,61 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
- 	TP_ARGS(wq)
- );
+ int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		  struct extent_buffer *buf, int full_backref, int no_quota)
++		  struct extent_buffer *buf, int full_backref)
+ {
+-	return __btrfs_mod_ref(trans, root, buf, full_backref, 1, no_quota);
++	return __btrfs_mod_ref(trans, root, buf, full_backref, 1);
+ }
  
-+#define show_oper_type(type)						\
-+	__print_symbolic(type,						\
-+		{ BTRFS_QGROUP_OPER_ADD_EXCL, 	"OPER_ADD_EXCL" },	\
-+		{ BTRFS_QGROUP_OPER_ADD_SHARED, "OPER_ADD_SHARED" },	\
-+		{ BTRFS_QGROUP_OPER_SUB_EXCL, 	"OPER_SUB_EXCL" },	\
-+		{ BTRFS_QGROUP_OPER_SUB_SHARED,	"OPER_SUB_SHARED" })
-+
-+DECLARE_EVENT_CLASS(btrfs_qgroup_oper,
-+
-+	TP_PROTO(struct btrfs_qgroup_operation *oper),
-+
-+	TP_ARGS(oper),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  ref_root		)
-+		__field(	u64,  bytenr		)
-+		__field(	u64,  num_bytes		)
-+		__field(	u64,  seq		)
-+		__field(	int,  type		)
-+		__field(	u64,  elem_seq		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->ref_root	= oper->ref_root;
-+		__entry->bytenr		= oper->bytenr,
-+		__entry->num_bytes	= oper->num_bytes;
-+		__entry->seq 		= oper->seq;
-+		__entry->type		= oper->type;
-+		__entry->elem_seq	= oper->elem.seq;
-+	),
-+
-+	TP_printk("ref_root = %llu, bytenr = %llu, num_bytes = %llu, "
-+		  "seq = %llu, elem.seq = %llu, type = %s",
-+		  (unsigned long long)__entry->ref_root,
-+		  (unsigned long long)__entry->bytenr,
-+		  (unsigned long long)__entry->num_bytes,
-+		  (unsigned long long)__entry->seq,
-+		  (unsigned long long)__entry->elem_seq,
-+		  show_oper_type(__entry->type))
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_oper, btrfs_qgroup_account,
-+
-+	TP_PROTO(struct btrfs_qgroup_operation *oper),
-+
-+	TP_ARGS(oper)
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_oper, btrfs_qgroup_record_ref,
-+
-+	TP_PROTO(struct btrfs_qgroup_operation *oper),
-+
-+	TP_ARGS(oper)
-+);
-+
- #endif /* _TRACE_BTRFS_H */
+ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+-		  struct extent_buffer *buf, int full_backref, int no_quota)
++		  struct extent_buffer *buf, int full_backref)
+ {
+-	return __btrfs_mod_ref(trans, root, buf, full_backref, 0, no_quota);
++	return __btrfs_mod_ref(trans, root, buf, full_backref, 0);
+ }
  
- /* This part must be outside protection */
+ static int write_one_cache_group(struct btrfs_trans_handle *trans,
+@@ -7746,9 +7746,9 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
+ 	/* wc->stage == UPDATE_BACKREF */
+ 	if (!(wc->flags[level] & flag)) {
+ 		BUG_ON(!path->locks[level]);
+-		ret = btrfs_inc_ref(trans, root, eb, 1, wc->for_reloc);
++		ret = btrfs_inc_ref(trans, root, eb, 1);
+ 		BUG_ON(ret); /* -ENOMEM */
+-		ret = btrfs_dec_ref(trans, root, eb, 0, wc->for_reloc);
++		ret = btrfs_dec_ref(trans, root, eb, 0);
+ 		BUG_ON(ret); /* -ENOMEM */
+ 		ret = btrfs_set_disk_extent_flags(trans, root, eb->start,
+ 						  eb->len, flag,
+@@ -7995,11 +7995,9 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 	if (wc->refs[level] == 1) {
+ 		if (level == 0) {
+ 			if (wc->flags[level] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
+-				ret = btrfs_dec_ref(trans, root, eb, 1,
+-						    wc->for_reloc);
++				ret = btrfs_dec_ref(trans, root, eb, 1);
+ 			else
+-				ret = btrfs_dec_ref(trans, root, eb, 0,
+-						    wc->for_reloc);
++				ret = btrfs_dec_ref(trans, root, eb, 0);
+ 			BUG_ON(ret); /* -ENOMEM */
+ 			ret = account_leaf_items(trans, root, eb);
+ 			if (ret) {
 -- 
 1.8.4.5
 

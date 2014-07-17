@@ -1,76 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56188 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51298 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752455AbaGQDnX (ORCPT
+	with ESMTP id S1752455AbaGQDtf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 23:43:23 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6H3gZ5m031450
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 11:42:35 +0800
-Message-ID: <53C7469A.8070906@cn.fujitsu.com>
-Date: Thu, 17 Jul 2014 11:44:26 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-MIME-Version: 1.0
+	Wed, 16 Jul 2014 23:49:35 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6H3nLZs031823
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Jul 2014 11:49:21 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Btrfs: fix wrong total device counter after removing
- a seed device
-References: <1405507117-8880-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1405507117-8880-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
+Subject: [PATCH 3/6] Btrfs: fix off-by-one in cow_file_range_inline()
+Date: Thu, 17 Jul 2014 11:44:11 +0800
+Message-ID: <1405568654-22120-3-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <1405568654-22120-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+References: <1405568654-22120-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore this patch, the fix is not right.
+Btrfs could still inline file data if its size is same as
+page size, so don't skip max value here.
 
-Thanks
-Miao
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-On Wed, 16 Jul 2014 18:38:37 +0800, Miao Xie wrote:
-> The total device counters of all the descendant filesystem account the seed
-> device, so after removing a seed device, we need decrease all those counters.
-> 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c | 12 ++++++++----
->  1 file changed, 8 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 4cfbe76..184e1c4 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1715,12 +1715,16 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->  	 * (super_copy) should hold the device list mutex.
->  	 */
->  
-> -	cur_devices = device->fs_devices;
->  	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
->  	list_del_rcu(&device->dev_list);
->  
->  	device->fs_devices->num_devices--;
-> -	device->fs_devices->total_devices--;
-> +
-> +	cur_devices = root->fs_info->fs_devices;
-> +	do {
-> +		cur_devices->total_devices--;
-> +		cur_devices = cur_devices->seed;
-> +	} while (device->fs_devices != cur_devices);
->  
->  	if (device->missing)
->  		device->fs_devices->missing_devices--;
-> @@ -1738,12 +1742,12 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
->  	/* remove sysfs entry */
->  	btrfs_kobj_rm_device(root->fs_info, device);
->  
-> -	call_rcu(&device->rcu, free_device);
-> -
->  	num_devices = btrfs_super_num_devices(root->fs_info->super_copy) - 1;
->  	btrfs_set_super_num_devices(root->fs_info->super_copy, num_devices);
->  	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
->  
-> +	call_rcu(&device->rcu, free_device);
-> +
->  	if (cur_devices->open_devices == 0) {
->  		struct btrfs_fs_devices *fs_devices;
->  		fs_devices = root->fs_info->fs_devices;
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e678391..e2c3d63 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -249,8 +249,8 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 		data_len = compressed_size;
+ 
+ 	if (start > 0 ||
+-	    actual_end >= PAGE_CACHE_SIZE ||
+-	    data_len >= BTRFS_MAX_INLINE_DATA_SIZE(root) ||
++	    actual_end > PAGE_CACHE_SIZE ||
++	    data_len > BTRFS_MAX_INLINE_DATA_SIZE(root) ||
+ 	    (!compressed_size &&
+ 	    (actual_end & (root->sectorsize - 1)) == 0) ||
+ 	    end + 1 < isize ||
+-- 
+1.8.2.1
 

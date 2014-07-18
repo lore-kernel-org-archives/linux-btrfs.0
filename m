@@ -1,75 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:59616 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932995AbaGRM5F (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jul 2014 08:57:05 -0400
-Message-ID: <1405688218.3085.16.camel@s-Air>
-Subject: Re: Questions on incremental backups
-From: Sam Bull <sam.hacking@sent.com>
-To: Russell Coker <russell@coker.com.au>
+Received: from mari.romanrm.net ([157.7.203.202]:37178 "EHLO mari.romanrm.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751376AbaGRNFb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Jul 2014 09:05:31 -0400
+Date: Fri, 18 Jul 2014 19:05:24 +0600
+From: Roman Mamedov <rm@romanrm.net>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
-Date: Fri, 18 Jul 2014 13:56:58 +0100
-In-Reply-To: <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
+Subject: Re: Questions on incremental backups
+Message-ID: <20140718190524.143439e1@natsu>
+In-Reply-To: <20140718053422.78784982@ws>
 References: <1405627978.2630.39.camel@s-Air>
-	 <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
-	boundary="=-fxAZKq/udPBDXu5EUU+i"
+	<e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
+	<pan$b430d$ca43159e$977364a9$ed50906b@cox.net>
+	<TmvW1o01t4NXQGV01mvYsU>
+	<20140718053422.78784982@ws>
 Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/WiVpGdKG6Q7RppV3SNxO4cD"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---=-fxAZKq/udPBDXu5EUU+i
-Content-Type: text/plain; charset="UTF-8"
+--Sig_/WiVpGdKG6Q7RppV3SNxO4cD
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-Thanks for the replies, I think that's most of the questions answered.
-I'll not bother backing up any VMs, as they won't contain anything worth
-backing up. Can anybody answer the last couple of remaining questions?
+On Fri, 18 Jul 2014 05:34:22 -0700
+Duncan <1i5t5.duncan@cox.net> wrote:
 
-On ven, 2014-07-18 at 14:35 +1000, Russell Coker wrote:
-> Ignoring directories in send/recv is done by subvol. Even if you use
-> rsync it's a good idea to have different subvols for directory trees
-> with different backup requirements.
+> Effectively, admins can choose NOCOW XOR frequent-snapshotting, altho
+> the fact that snapshots stop at subvolume borders can be used as a
+> partial workaround, by putting NOCOW files on a dedicated partition and
+> not snapshotting it, exactly as I mentioned.
 
-So, an inner subvol won't be backed up? If I wanted a full backup, I
-would presumably get snapshots of each subvol separately, right?
+You can't backup running VM images and datafiles of an active database using
+"traditional" backup techniques such as file copy or rsync. The tail of a f=
+ile
+you're copying for a backup will be long-inconsistent with the overall state
+or the head of the file when you started copying. Snapshots on the other ha=
+nd
+are atomic, and can very much be used to create a static copy of the files =
+for
+the purposes of compressing/copying away somewhere. And at worst, the
+"restored from backup" state of such a backed up VM or DB will be equivalent
+to it just having had a power-loss. Journalling FSes and databases can deal
+with that with no major problems.
 
-> Displaying backups is an issue of backup software. It is above the
-> level that BTRFS development touches. While people here can probably
-> offer generic advice on backup software it's not the topic of the
-> list.
+So just exercise moderation, snapshot e.g. once an hour or even a day, the
+result will still be better than not using NOCOW, and will deliver most of =
+the
+benefits you get by snapshotting.
 
-As said, I don't mind developing the software. But, is the required
-information easily available? Is there a way to get a diff, something
-like a list of changed/added/removed files between snapshots?
+Another option is to snapshot->backup->delete snapshot.
 
-If I want to create a backup view, I could start with just a file view
-of the most recent snapshot, but is there a way I can quickly get a list
-of additional files in the other snapshots that are not present in the
-most recent one (files that have been deleted)?
+--=20
+With respect,
+Roman
 
-
-
-And, finally, nobody has mentioned on the possibility of merging
-multiple snapshots into a single snapshot. Would this be possible, to
-create a snapshot that contains the most recent version of each file
-present across all of the snapshots (including files which may be
-present in only one of the snapshots)?
-
---=-fxAZKq/udPBDXu5EUU+i
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
+--Sig_/WiVpGdKG6Q7RppV3SNxO4cD
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iEYEABECAAYFAlPJGZ8ACgkQX+kozZYmzisf6wCfVb+IPf82fRgv9m/+JYhC+Zkw
-NzwAni8ihd0dJo43+cQbp8l7cAnmCbgr
-=lSpk
+iEYEARECAAYFAlPJG5QACgkQTLKSvz+PZwgZTwCfdEgpiCZ63LOhVQfRtQfCrOKo
+M7cAn1p1L6izOkE38N8JXqy5O/8HG9s8
+=fxzo
 -----END PGP SIGNATURE-----
 
---=-fxAZKq/udPBDXu5EUU+i--
-
+--Sig_/WiVpGdKG6Q7RppV3SNxO4cD--

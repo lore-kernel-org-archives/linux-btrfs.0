@@ -1,94 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:53574 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1761738AbaGRMNG convert rfc822-to-8bit (ORCPT
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:59616 "EHLO
+	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932995AbaGRM5F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jul 2014 08:13:06 -0400
-Received: by mail-pa0-f50.google.com with SMTP id et14so5328427pad.37
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 05:13:05 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.2 \(1499\))
-Subject: Re: `btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags & 1)' failed.` in `btrfsck`
-From: Wang Shilong <wangshilong1991@gmail.com>
-In-Reply-To: <53C90CA8.2000104@aol.de>
-Date: Fri, 18 Jul 2014 20:13:04 +0800
+	Fri, 18 Jul 2014 08:57:05 -0400
+Message-ID: <1405688218.3085.16.camel@s-Air>
+Subject: Re: Questions on incremental backups
+From: Sam Bull <sam.hacking@sent.com>
+To: Russell Coker <russell@coker.com.au>
 Cc: linux-btrfs@vger.kernel.org
-Message-Id: <0BC9DE69-A088-4B5A-95F5-DF863C87C803@gmail.com>
-References: <53C90CA8.2000104@aol.de>
-To: Karl-Philipp Richter <krichter722@aol.de>
+Date: Fri, 18 Jul 2014 13:56:58 +0100
+In-Reply-To: <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
+References: <1405627978.2630.39.camel@s-Air>
+	 <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
+	boundary="=-fxAZKq/udPBDXu5EUU+i"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi,
+--=-fxAZKq/udPBDXu5EUU+i
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-There are some patches for fsck flighting, they  are integrated  in David's branches.
-You can pull from David's latest branch, and see if it helps:
+Thanks for the replies, I think that's most of the questions answered.
+I'll not bother backing up any VMs, as they won't contain anything worth
+backing up. Can anybody answer the last couple of remaining questions?
 
-https://github.com/kdave/btrfs-progs  integration-20140704
+On ven, 2014-07-18 at 14:35 +1000, Russell Coker wrote:
+> Ignoring directories in send/recv is done by subvol. Even if you use
+> rsync it's a good idea to have different subvols for directory trees
+> with different backup requirements.
 
-Have a try and see if it helps anyway.
+So, an inner subvol won't be backed up? If I wanted a full backup, I
+would presumably get snapshots of each subvol separately, right?
 
-Thanks,
-Wang
+> Displaying backups is an issue of backup software. It is above the
+> level that BTRFS development touches. While people here can probably
+> offer generic advice on backup software it's not the topic of the
+> list.
 
-> Hi together,
-> I'm experiencing the following issues when I invoke `btrfsck` on a
-> sparse file image with a GPT and one (the only) btrfs partition attached
-> to a loop device
-> 
->    $ sudo btrfsck --repair --init-csum-tree --init-extent-tree -b
-> /dev/loop0p1
->    Incorrect local backref count on 128510738432 root 5 owner 3849475
-> offset 0 found 1 wanted 0 back 0xbab41270
->    backpointer mismatch on [128510738432 4096]
->    ref mismatch on [128510742528 12288] extent item 0, found 1
->    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags
-> & 1)' failed.
-> 
->    $ sudo btrfsck --repair --init-csum-tree --init-extent-tree /dev/loop0p1
->    Incorrect local backref count on 128510726144 root 5 owner 3849470
-> offset 0 found 1 wanted 0 back 0xbbcb9500
->    backpointer mismatch on [128510726144 12288]
->    ref mismatch on [128510738432 4096] extent item 0, found 1
->    adding new data backref on 128510738432 root 5 owner 3849475 offset
-> 0 found 1
->    Backref 128510738432 root 5 owner 3849475 offset 0 num_refs 0 not
-> found in extent tree
->    Incorrect local backref count on 128510738432 root 5 owner 3849475
-> offset 0 found 1 wanted 0 back 0xbbcb9630
->    backpointer mismatch on [128510738432 4096]
->    ref mismatch on [128510742528 12288] extent item 0, found 1
->    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags
-> & 1)' failed.
-> 
->    $ sudo btrfsck --repair /dev/loop0p1
->    Incorrect local backref count on 130861096960 root 5 owner 22733727
-> offset 0 found 1 wanted 0 back 0xc7c7d170
->    backpointer mismatch on [130861096960 8192]
->    ref mismatch on [130861105152 8192] extent item 0, found 1
->    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags
-> & 1)' failed.
-> 
->    $ sudo btrfsck --repair /dev/loop0p1
->    Backref 130861096960 root 5 owner 22733727 offset 0 num_refs 0 not
-> found in extent tree
->    Incorrect local backref count on 130861096960 root 5 owner 22733727
-> offset 0 found 1 wanted 0 back 0xc7f31170
->    backpointer mismatch on [130861096960 8192]
->    ref mismatch on [130861105152 8192] extent item 0, found 1
->    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags
-> & 1)' failed.
-> 
-> I'm using `btrfs-progs` 24cf4d8c3ee924b474f68514e0167cc2e602a48d on
-> Linux 3.16-rc5 (anything else, i.e. older versions, give me immediate
-> error after start because errornous file system)
-> 
-> I'd like to know whether this (assertion) error is related to a bug or
-> missing feature in btrfs-progs and might be fixed at some point or
-> whether this might indicate a completely messed up btrfs.
-> 
-> Best regards,
-> Karl-P. Richter
-> 
+As said, I don't mind developing the software. But, is the required
+information easily available? Is there a way to get a diff, something
+like a list of changed/added/removed files between snapshots?
+
+If I want to create a backup view, I could start with just a file view
+of the most recent snapshot, but is there a way I can quickly get a list
+of additional files in the other snapshots that are not present in the
+most recent one (files that have been deleted)?
+
+
+
+And, finally, nobody has mentioned on the possibility of merging
+multiple snapshots into a single snapshot. Would this be possible, to
+create a snapshot that contains the most recent version of each file
+present across all of the snapshots (including files which may be
+present in only one of the snapshots)?
+
+--=-fxAZKq/udPBDXu5EUU+i
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iEYEABECAAYFAlPJGZ8ACgkQX+kozZYmzisf6wCfVb+IPf82fRgv9m/+JYhC+Zkw
+NzwAni8ihd0dJo43+cQbp8l7cAnmCbgr
+=lSpk
+-----END PGP SIGNATURE-----
+
+--=-fxAZKq/udPBDXu5EUU+i--
 

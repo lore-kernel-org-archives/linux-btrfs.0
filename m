@@ -1,49 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:41933 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934407AbaGRO2u (ORCPT
+Received: from mail6.webfaction.com ([74.55.86.74]:33943 "EHLO
+	smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030448AbaGRRzm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jul 2014 10:28:50 -0400
-Received: by mail-vc0-f174.google.com with SMTP id la4so7513559vcb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 07:28:48 -0700 (PDT)
+	Fri, 18 Jul 2014 13:55:42 -0400
+Received: from [172.17.0.4] (unknown [76.14.35.15])
+	by smtp.webfaction.com (Postfix) with ESMTP id 6386066EC3D2
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 17:31:20 +0000 (UTC)
+Message-ID: <53C959FE.7070808@glidelink.net>
+Date: Fri, 18 Jul 2014 10:31:42 -0700
+From: Daniel Mizyrycki <mzdaniel@glidelink.net>
+Reply-To: mzdaniel@glidelink.net
 MIME-Version: 1.0
-In-Reply-To: <20140718190524.143439e1@natsu>
-References: <1405627978.2630.39.camel@s-Air>
-	<e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
-	<pan$b430d$ca43159e$977364a9$ed50906b@cox.net>
-	<20140718053422.78784982@ws>
-	<20140718190524.143439e1@natsu>
-Date: Fri, 18 Jul 2014 16:28:48 +0200
-Message-ID: <CAK5rZE40vzf3F54Xks8PeGaD6fJFXGF9_+tKYnNXYmHnu06FSQ@mail.gmail.com>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: Questions on incremental backups
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+References: <1405627978.2630.39.camel@s-Air> <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com> <1405688218.3085.16.camel@s-Air> <1483007.OXNgJN24dh@xev>
+In-Reply-To: <1483007.OXNgJN24dh@xev>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's not about snapshots but here is an other incremental
-backup recipe for optical mediums like DVDs, BlueRays:
 
-Base Backup:
-1) Create encrypted loopback devices of DVD or BlueRay sizes.
-2) Create a compressed multi device Btrfs spanning these
-    loopback devices. (To save space, you may use single
-    metadata if this is not your only backup)
-3) Rsync your data into this fs.
-4) Unmount it and make it SEED fs (btrfstune -S 1..)
-5) Burn loopback device files to DVDs, Bluerays.
+On 07/18/14 06:40, Russell Coker wrote:
+>>> Displaying backups is an issue of backup software. It is above the
+>>> level that BTRFS development touches. While people here can probably
+>>> offer generic advice on backup software it's not the topic of the
+>>> list.
+>>
+>> As said, I don't mind developing the software. But, is the required
+>> information easily available? Is there a way to get a diff, something
+>> like a list of changed/added/removed files between snapshots?
+>
+> Your usual diff utility will do it.  I guess you could parse the output of
+> btrfs send.
+Following this thought, one step closer in getting a text diff can be to 
+use fardump. It takes a btrfs send binary stream and outputs the send 
+instructions in plaintext. 
+(https://kernel.googlesource.com/pub/scm/linux/kernel/git/arne/far-progs).
+It certainly would be awesome if btrfs-progs could have an extra 
+parameter to just generate the list of changed/added/removed files 
+between snapshots as all the needed infrastructure is already in place.
 
-Incremental Part:
-a) Before your next backup, create additional encrypted
-   loopback devices as needed.
-b) Mount your base backup. (It will mount as read-only)
-c) Add devices created at (a) to your base backup fs.
-d) Rsync into your fs. (Note that incremental data
-    will only go into the devices at (a)
-e) Unmount all.
-f) Only burn devices at (a) to DVDs, Bluerays. These
-   are your incremental disks.
-
-Regards,
-Imran
+>
+>> And, finally, nobody has mentioned on the possibility of merging
+>> multiple snapshots into a single snapshot. Would this be possible, to
+>> create a snapshot that contains the most recent version of each file
+>> present across all of the snapshots (including files which may be
+>> present in only one of the snapshots)?
+>
+> There is no btrfs functionality for that.  But I'm sure you could do something
+> with standard Unix utilities and copying files around.
+Sure, but the management of data deduplication is left to the user 
+(presumably using cp --reflink) which is not trivial.
+Does anybody knows how safe it is to use duperemove or bedup?
+Any recommendations on how to effectively deduplicate btrfs at this point?

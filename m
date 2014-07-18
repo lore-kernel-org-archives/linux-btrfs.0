@@ -1,229 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52283 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752510AbaGQTka (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 15:40:30 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 4/5] btrfs: delete qgroup items in drop_snapshot
-Date: Thu, 17 Jul 2014 12:39:03 -0700
-Message-Id: <1405625944-4883-5-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1405625944-4883-1-git-send-email-mfasheh@suse.de>
-References: <1405625944-4883-1-git-send-email-mfasheh@suse.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:29730 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1758835AbaGRBzo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Jul 2014 21:55:44 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6I1tedD014499
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 09:55:40 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Return right extent when fiemap gives unaligned offset and len.
+Date: Fri, 18 Jul 2014 09:55:43 +0800
+Message-ID: <1405648543-8966-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_drop_snapshot() leaves subvolume qgroup items on disk after
-completion. This wastes space and also can cause problems with snapshot
-creation. If a new snapshot tries to claim the deleted subvolumes id,
-btrfs will get -EEXIST from add_qgroup_item() and go read-only.
+When page aligned start and len passed to extent_fiemap(), the result is
+good, but when start and len is not aligned, e.g. start = 1 and len =
+4095 is passed to extent_fiemap(), it returns no extent.
 
-We can partially fix this by catching -EEXIST in add_qgroup_item() and
-initializing the existing items. This will leave orphaned relation items
-(BTRFS_QGROUP_RELATION_KEY) around however would be confusing to the end
-user. Also this does nothing to fix the wasted space taken up by orphaned
-qgroup items.
+The problem is that start and len is all rounded down which causes the
+problem. This patch will round down start and round up (start + len) to
+return right extent.
 
-So the full fix is to delete all qgroup items related to the deleted
-snapshot in btrfs_drop_snapshot.  If an item persists (either due to a
-previous drop_snapshot without the fix, or some error) we can still continue
-with snapshot create instead of throwing the whole filesystem readonly.
-
-In the very small chance that some relation items persist, they will not
-affect functioning of our level 0 subvolume qgroup.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |   6 +++
- fs/btrfs/qgroup.c      | 114 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/qgroup.h      |   3 ++
- 3 files changed, 120 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ed9e13c..2dad701 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8296,6 +8296,12 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	if (err)
- 		goto out_end_trans;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a389820..1c70cff 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4213,8 +4213,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		return -ENOMEM;
+ 	path->leave_spinning = 1;
  
-+	ret = btrfs_del_qgroup_items(trans, root);
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto out_end_trans;
-+	}
-+
- 	ret = btrfs_del_root(trans, tree_root, &root->root_key);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, tree_root, ret);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1569338..2ec2432 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -35,7 +35,6 @@
- #include "qgroup.h"
+-	start = ALIGN(start, BTRFS_I(inode)->root->sectorsize);
+-	len = ALIGN(len, BTRFS_I(inode)->root->sectorsize);
++	start = round_down(start, BTRFS_I(inode)->root->sectorsize);
++	len = round_up(max, BTRFS_I(inode)->root->sectorsize) - start;
  
- /* TODO XXX FIXME
-- *  - subvol delete -> delete when ref goes to 0? delete limits also?
-  *  - reorganize keys
-  *  - compressed
-  *  - sync
-@@ -99,6 +98,16 @@ struct btrfs_qgroup_list {
- 	struct btrfs_qgroup *member;
- };
- 
-+/*
-+ * used in remove_qgroup_relations() to track qgroup relations that
-+ * need deleting
-+ */
-+struct relation_rec {
-+	struct list_head list;
-+	u64 src;
-+	u64 dst;
-+};
-+
- #define ptr_to_u64(x) ((u64)(uintptr_t)x)
- #define u64_to_ptr(x) ((struct btrfs_qgroup *)(uintptr_t)x)
- 
-@@ -551,9 +560,15 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_INFO_KEY;
- 	key.offset = qgroupid;
- 
-+	/*
-+	 * Avoid a transaction abort by catching -EEXIST here. In that
-+	 * case, we proceed by re-initializing the existing structure
-+	 * on disk.
-+	 */
-+
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_info));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
-@@ -572,7 +587,7 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_LIMIT_KEY;
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_limit));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
-@@ -2817,3 +2832,96 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
- 		btrfs_queue_work(fs_info->qgroup_rescan_workers,
- 				 &fs_info->qgroup_rescan_work);
- }
-+
-+static struct relation_rec *
-+qlist_to_relation_rec(struct btrfs_qgroup_list *qlist, struct list_head *all)
-+{
-+	u64 group, member;
-+	struct relation_rec *rec;
-+
-+	BUILD_BUG_ON(sizeof(struct btrfs_qgroup_list) < sizeof(struct relation_rec));
-+
-+	list_del(&qlist->next_group);
-+	list_del(&qlist->next_member);
-+	group = qlist->group->qgroupid;
-+	member = qlist->member->qgroupid;
-+	rec = (struct relation_rec *)qlist;
-+	rec->src = group;
-+	rec->dst = member;
-+
-+	list_add(&rec->list, all);
-+	return rec;
-+}
-+
-+static int remove_qgroup_relations(struct btrfs_trans_handle *trans,
-+				   struct btrfs_fs_info *fs_info, u64 qgroupid)
-+{
-+	int ret, err;
-+	struct btrfs_root *quota_root = fs_info->quota_root;
-+	struct relation_rec *rec;
-+	struct btrfs_qgroup_list *qlist;
-+	struct btrfs_qgroup *qgroup;
-+	LIST_HEAD(relations);
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	qgroup = find_qgroup_rb(fs_info, qgroupid);
-+
-+	while (!list_empty(&qgroup->groups)) {
-+		qlist = list_first_entry(&qgroup->groups,
-+					 struct btrfs_qgroup_list, next_group);
-+		rec = qlist_to_relation_rec(qlist, &relations);
-+	}
-+
-+	while (!list_empty(&qgroup->members)) {
-+		qlist = list_first_entry(&qgroup->members,
-+					 struct btrfs_qgroup_list, next_member);
-+		rec = qlist_to_relation_rec(qlist, &relations);
-+	}
-+
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	ret = 0;
-+	list_for_each_entry(rec, &relations, list) {
-+		ret = del_qgroup_relation_item(trans, quota_root, rec->src, rec->dst);
-+		err = del_qgroup_relation_item(trans, quota_root, rec->dst, rec->src);
-+		if (err && !ret)
-+			ret = err;
-+		if (ret && ret != -ENOENT)
-+			break;
-+		ret = 0;
-+	}
-+
-+	return ret;
-+}
-+
-+int btrfs_del_qgroup_items(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root)
-+{
-+	int ret;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root *quota_root = fs_info->quota_root;
-+	u64 qgroupid = root->root_key.objectid;
-+
-+	if (!fs_info->quota_enabled)
-+		return 0;
-+
-+	mutex_lock(&fs_info->qgroup_ioctl_lock);
-+
-+	ret = remove_qgroup_relations(trans, fs_info, qgroupid);
-+	if (ret)
-+		goto out_unlock;
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	del_qgroup_rb(quota_root->fs_info, qgroupid);
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	ret = del_qgroup_item(trans, quota_root, qgroupid);
-+	if (ret && ret != -ENOENT)
-+		goto out_unlock;
-+
-+	ret = 0;
-+out_unlock:
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+
-+	return ret;
-+}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 18cc68c..b22a2ce 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -98,6 +98,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
- void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
- 
-+int btrfs_del_qgroup_items(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root);
-+
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ 	/*
+ 	 * lookup the last file extent.  We're not using i_size here
 -- 
-1.8.4.5
+2.0.1
 

@@ -1,80 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56303 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1030283AbaGRNgS (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:46157 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1761966AbaGRNkL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Jul 2014 09:36:18 -0400
-Message-ID: <53C922C6.1020406@fb.com>
-Date: Fri, 18 Jul 2014 09:36:06 -0400
-From: Chris Mason <clm@fb.com>
+	Fri, 18 Jul 2014 09:40:11 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Sam Bull <sam.hacking@sent.com>
+Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Questions on incremental backups
+Date: Fri, 18 Jul 2014 23:40:07 +1000
+Message-ID: <1483007.OXNgJN24dh@xev>
+In-Reply-To: <1405688218.3085.16.camel@s-Air>
+References: <1405627978.2630.39.camel@s-Air> <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com> <1405688218.3085.16.camel@s-Air>
 MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS hang with 3.16-rc5
-References: <1502954.OtX3SzjMKZ@merkaba> <29286605.flGgbBIpOj@merkaba> <53C52AE4.6010803@fb.com> <25104768.pskoHShbKc@merkaba>
-In-Reply-To: <25104768.pskoHShbKc@merkaba>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/18/2014 03:51 AM, Martin Steigerwald wrote:
-> Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
->> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
->>> Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
->>>> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
->>>>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
->>>>>> Hi!
->>>>>>
->>>>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several days
->>>>>> of
->>>>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since booting
->>>>>> it.
->>>>>>
->>>>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2 usually
->>>>>> didn´t happen that quickly after boot and since backtrace looks a bit
->>>>>> different from what I have in memory, I post this in a new thread.
->>>>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous hang
->>>>>> issues.
->>>>>
->>>>> Probably good to add some basic information on the filesystem:
->>>> Do you have compression enabled?  I wasn't able to nail down the 3.15.1
->>>> hang before vacation attacked me, but I'm hoping to track it down today.
->>>
->>> Yes. I have.
->>>
->>> It just hung again while I was playing PlaneShift.
->>>
->>> Back to 3.16-rc4 as rc5 seems to be broke here.
->>
->> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
->> shouldn't be a factor.  Are you hitting other problems with 3.16?
+On Fri, 18 Jul 2014 13:56:58 Sam Bull wrote:
+> On ven, 2014-07-18 at 14:35 +1000, Russell Coker wrote:
+> > Ignoring directories in send/recv is done by subvol. Even if you use
+> > rsync it's a good idea to have different subvols for directory trees
+> > with different backup requirements.
 > 
-> On this system it is a matter.
-> 
-> 3.16-rc5: Two hangs in one day
-> 
-> 3.16-rc4: No hang so far with three days uptime (well with hibernation cycles 
-> in between)
-> 
-> So easy observation for me: 3.16-rc4 fine, 3.16-rc5 broke.
+> So, an inner subvol won't be backed up? If I wanted a full backup, I
+> would presumably get snapshots of each subvol separately, right?
 
-Can you please try this patch on rc5 and look for the printk:
+If you use btrfs send/recv then it won't get the inner subvol.  If you use 
+rsync then by default it goes through the entire directory tree unless you use 
+the -x option.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3668048..8ab56df 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8157,6 +8157,13 @@ void btrfs_destroy_inode(struct inode *inode)
- 		spin_unlock(&root->fs_info->ordered_root_lock);
- 	}
- 
-+	spin_lock(&root->fs_info->ordered_root_lock);
-+	if (!list_empty(&BTRFS_I(inode)->ordered_operations)) {
-+		list_del_init(&BTRFS_I(inode)->ordered_operations);
-+printk(KERN_CRIT "racing inode deletion with ordered operations!!!!!!!!!!!\n");
-+	}
-+	spin_unlock(&root->fs_info->ordered_root_lock);
-+
- 	if (test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 		     &BTRFS_I(inode)->runtime_flags)) {
- 		btrfs_info(root->fs_info, "inode %llu still on the orphan list",
+> > Displaying backups is an issue of backup software. It is above the
+> > level that BTRFS development touches. While people here can probably
+> > offer generic advice on backup software it's not the topic of the
+> > list.
+> 
+> As said, I don't mind developing the software. But, is the required
+> information easily available? Is there a way to get a diff, something
+> like a list of changed/added/removed files between snapshots?
+
+Your usual diff utility will do it.  I guess you could parse the output of 
+btrfs send.
+
+> And, finally, nobody has mentioned on the possibility of merging
+> multiple snapshots into a single snapshot. Would this be possible, to
+> create a snapshot that contains the most recent version of each file
+> present across all of the snapshots (including files which may be
+> present in only one of the snapshots)?
+
+There is no btrfs functionality for that.  But I'm sure you could do something 
+with standard Unix utilities and copying files around.
+
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

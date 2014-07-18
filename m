@@ -1,214 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9425 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751521AbaGPEHU (ORCPT
+Received: from e28smtp03.in.ibm.com ([122.248.162.3]:48115 "EHLO
+	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750777AbaGRHZe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Jul 2014 00:07:20 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6G47G4f002182
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Jul 2014 12:07:16 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs: Merge default subvolume mount codes into btrfs_mount_subvol().
-Date: Wed, 16 Jul 2014 12:07:11 +0800
-Message-ID: <1405483631-23037-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1405483631-23037-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1405483631-23037-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Fri, 18 Jul 2014 03:25:34 -0400
+Received: from /spool/local
+	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 18 Jul 2014 12:55:29 +0530
+Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id F21B63940048
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 12:55:25 +0530 (IST)
+Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
+	by d28relay05.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s6I7Pjhr12648746
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 12:55:46 +0530
+Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s6I7PO18019680
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Jul 2014 12:55:24 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: Call mount_subtree() even 'subvolid=' mount option is given.
+Date: Fri, 18 Jul 2014 12:55:22 +0630
+Message-ID: <1765714.GbaOmBTt1L@localhost.localdomain>
+In-Reply-To: <1405483631-23037-2-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1405483631-23037-1-git-send-email-quwenruo@cn.fujitsu.com> <1405483631-23037-2-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Old btrfs codes do the default subvolume search in get_default_root(),
-which makes default subvolume mount will not info vfs that it's a
-subtree mount.
+On Wednesday 16 Jul 2014 12:07:10 Qu Wenruo wrote:
+> +/* Find the path for given subvol_objectid.
+> + * Caller needs to readlock the root tree and kzalloc PATH_MAX for
+> + * subvol_name and namebuf */
+> +static char *find_subvol_by_id(struct btrfs_root *root, u64 subvol_objectid)
+> +{
+> +	struct btrfs_key key;
+> +	struct btrfs_key found_key;
+> +	struct btrfs_root_ref *ref;
+> +	struct btrfs_path *path;
+> +	char *namebuf = NULL;
+> +	char *new_buf = NULL;
+> +	char *subvol_ret = NULL;
+> +	int ret = 0;
+> +	u16 namelen = 0;
+> +
+> +	path = btrfs_alloc_path();
+> +	/* Alloc 1 byte for later strlen() calls */
+> +	subvol_ret = kzalloc(1, GFP_NOFS);
+> +	if (!path || !subvol_ret) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	key.objectid = subvol_objectid;
+> +	key.type = BTRFS_ROOT_BACKREF_KEY;
+> +	key.offset = 0;
+> +	/* We don't need to lock the tree_root,
+> +	 * if when we do the backref walking, some one deleted/moved
+> +	 * the subvol, we just return -ENOENT or let mount_subtree
+> +	 * return -ENOENT and no disaster will happen.
+> +	 * User should not modify subvolume when trying to mount it */
+> +	while (key.objectid != BTRFS_FS_TREE_OBJECTID) {
+> +		ret = btrfs_search_slot_for_read(root, &key, path, 1, 1);
+> +		if (ret < 0)
+> +			goto out;
+> +		if (ret) {
+> +			ret = -ENOENT;
+> +			goto out;
+> +		}
+> +		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
+> +				      path->slots[0]);
+> +		if (found_key.objectid != key.objectid ||
+> +		    found_key.type != BTRFS_ROOT_BACKREF_KEY) {
+> +			ret = -ENOENT;
+> +			goto out;
+> +		}
+> +		key.objectid = found_key.offset;
+> +		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +				     struct btrfs_root_ref);
+> +		namelen = btrfs_root_ref_name_len(path->nodes[0], ref);
+> +		/* One for ending '\0' One for '/' */
+> +		new_buf = krealloc(namebuf, namelen + 2, GFP_NOFS);
+> +		if (!new_buf) {
+> +			ret = -ENOMEM;
+> +			goto out;
+> +		}
+> +		namebuf = new_buf;
+> +		read_extent_buffer(path->nodes[0], namebuf,
+> +				   (unsigned long)(ref + 1), namelen);
+> +		btrfs_release_path(path);
+> +		*(namebuf + namelen) = '/';
+> +		*(namebuf + namelen + 1) = '\0';
+> +
+> +		new_buf = krealloc(subvol_ret, strlen(subvol_ret) + namelen + 2,
+> +				   GFP_NOFS);
+> +		if (!new_buf) {
+> +			ret = -ENOMEM;
+> +			goto out;
+> +		}
+> +		subvol_ret = new_buf;
+> +		str_append_head(subvol_ret, namebuf);
+> +	}
+> +out:
+> +	kfree(namebuf);
+> +	btrfs_free_path(path);
+> +	if (ret < 0) {
+> +		kfree(subvol_ret);
+> +		return ERR_PTR(ret);
+> +	} else
+> +		return subvol_ret;
+> +
+> +}
 
-Now since btrfs_mount_subvol() will mount all btrfs subvolume throught
-mount_subtree() vfs API, merge the default subvolume searching codes
-into it, and now btrfs handles all 3 types of subvolume mount in one
-place.('subvol=' 'subvolid=' and default subvolume mount).
+Hello Qu Wenruo,
 
-This is done by reuse the old dir_id->root_objectid search routine and
-then reuse the subvolume_object mount routine in previous patch.
+If the subvolume being mounted exists in a sub-directory of the parent's
+subvolume, then the find_subvol_by_id() fails to contruct the correct
+path to the subvolume. Hence mount would fail.
 
-Reported-by: Stefan G.Weichinger <lists@xunil.at>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/super.c | 101 +++++++++++++++++++++++++++++--------------------------
- 1 file changed, 53 insertions(+), 48 deletions(-)
+For e.g.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 23363a2..7bed7a1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -842,14 +842,10 @@ out:
- 	return error;
- }
- 
--static struct dentry *get_default_root(struct super_block *sb,
--				       u64 subvol_objectid)
-+static struct dentry *get_default_root(struct super_block *sb)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
--	struct btrfs_root *root = fs_info->tree_root;
- 	struct btrfs_root *new_root;
--	struct btrfs_dir_item *di;
--	struct btrfs_path *path;
- 	struct btrfs_key location;
- 	struct inode *inode;
- 	struct dentry *dentry;
-@@ -860,51 +856,15 @@ static struct dentry *get_default_root(struct super_block *sb,
- 	 * We have a specific subvol we want to mount, just setup location and
- 	 * go look up the root.
- 	 */
--	if (subvol_objectid) {
--		location.objectid = subvol_objectid;
--		location.type = BTRFS_ROOT_ITEM_KEY;
--		location.offset = (u64)-1;
--		goto find_root;
--	}
--
--	path = btrfs_alloc_path();
--	if (!path)
--		return ERR_PTR(-ENOMEM);
--	path->leave_spinning = 1;
--
--	/*
--	 * Find the "default" dir item which points to the root item that we
--	 * will mount by default if we haven't been given a specific subvolume
--	 * to mount.
--	 */
--	dir_id = btrfs_super_root_dir(fs_info->super_copy);
--	di = btrfs_lookup_dir_item(NULL, root, path, dir_id, "default", 7, 0);
--	if (IS_ERR(di)) {
--		btrfs_free_path(path);
--		return ERR_CAST(di);
--	}
--	if (!di) {
--		/*
--		 * Ok the default dir item isn't there.  This is weird since
--		 * it's always been there, but don't freak out, just try and
--		 * mount to root most subvolume.
--		 */
--		btrfs_free_path(path);
--		dir_id = BTRFS_FIRST_FREE_OBJECTID;
--		new_root = fs_info->fs_root;
--		goto setup_root;
--	}
--
--	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &location);
--	btrfs_free_path(path);
-+	location.objectid = BTRFS_FS_TREE_OBJECTID;
-+	location.type = BTRFS_ROOT_ITEM_KEY;
-+	location.offset = (u64)-1;
- 
--find_root:
- 	new_root = btrfs_read_fs_root_no_name(fs_info, &location);
- 	if (IS_ERR(new_root))
- 		return ERR_CAST(new_root);
- 
- 	dir_id = btrfs_root_dirid(&new_root->root_item);
--setup_root:
- 	location.objectid = dir_id;
- 	location.type = BTRFS_INODE_ITEM_KEY;
- 	location.offset = 0;
-@@ -1137,7 +1097,7 @@ static int u64_to_strlen(u64 number)
- #define CLEAR_SUBVOLID		2
- /*
-  * This will strip out the subvol=%s or subvolid=%s argument for an argumen
-- * string and add subvolid=0 to make sure we get the actual tree root for path
-+ * string and add subvolid=5 to make sure we get the actual tree root for path
-  * walking to the subvol we want.
-  */
- static char *setup_root_args(char *args, int flags, u64 subvol_objectid)
-@@ -1198,6 +1158,14 @@ static char *setup_root_args(char *args, int flags, u64 subvol_objectid)
- 	if (!buf)
- 		return NULL;
- 
-+	if (!src) {
-+		strcpy(dst, args);
-+		strcpy(dst, ",");
-+		strcpy(dst, subvol_string);
-+		return dst;
-+	}
-+
-+
- 	/*
- 	 * If the subvol= arg is not at the start of the string,
- 	 * copy whatever precedes it into buf.
-@@ -1311,6 +1279,37 @@ out:
- 
- }
- 
-+static int find_default_subvol_objectid(struct btrfs_root *root,
-+					u64 *subvol_objectid)
-+{
-+	struct btrfs_super_block *super = root->fs_info->super_copy;
-+	struct btrfs_dir_item *di;
-+	struct btrfs_key key;
-+	struct btrfs_path *path;
-+	u64 dir_id;
-+	int ret = 0;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+	path->leave_spinning = 1;
-+	dir_id = btrfs_super_root_dir(super);
-+	di = btrfs_lookup_dir_item(NULL, root, path, dir_id, "defaults", 7, 0);
-+	if (IS_ERR(di)) {
-+		ret = PTR_ERR(di);
-+		goto out;
-+	}
-+	if (!di) {
-+		*subvol_objectid = BTRFS_FS_TREE_OBJECTID;
-+		goto out;
-+	}
-+	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
-+	*subvol_objectid = key.objectid;
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 				   int flags, const char *device_name,
- 				   char *data)
-@@ -1359,8 +1358,15 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 
- 	if (IS_ERR(mnt))
- 		return ERR_CAST(mnt);
-+
- 	tree_root = btrfs_sb(mnt->mnt_sb)->tree_root;
- 
-+	if (!subvol_name && !subvol_objectid) {
-+		/* default subvolume mount */
-+		ret = find_default_subvol_objectid(tree_root, &subvol_objectid);
-+		if (ret < 0)
-+			goto out;
-+	}
- 	if (!subvol_name) {
- 		subvol_ret = find_subvol_by_id(tree_root, subvol_objectid);
- 		if (IS_ERR(subvol_ret)) {
-@@ -1421,8 +1427,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 		return ERR_PTR(error);
- 	}
- 
--	if (subvol_name || (subvol_objectid != 0 &&
--			    subvol_objectid != BTRFS_FS_TREE_OBJECTID)) {
-+	if (subvol_objectid != BTRFS_FS_TREE_OBJECTID) {
- 		root = mount_subvol(subvol_name, subvol_objectid, flags,
- 				    device_name, data);
- 		kfree(subvol_name);
-@@ -1483,7 +1488,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 					 flags & MS_SILENT ? 1 : 0);
- 	}
- 
--	root = !error ? get_default_root(s, subvol_objectid) : ERR_PTR(error);
-+	root = !error ? get_default_root(s) : ERR_PTR(error);
- 	if (IS_ERR(root))
- 		deactivate_locked_super(s);
- 
+[root@guest0 ~]# btrfs subvolume list /mnt/btrfs/
+ID 257 gen 7 top level 5 path dir1/sub1
+[root@guest0 ~]# umount /mnt/btrfs
+[root@guest0 ~]# mount -o subvolid=257 /dev/loop0 /mnt/btrfs/
+mount: mount(2) failed: No such file or directory
+
 -- 
-2.0.1
+chandan
 

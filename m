@@ -1,82 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:64273 "EHLO mout.gmx.net"
+Received: from tur.go2.pl ([193.17.41.50]:55145 "EHLO tur.go2.pl"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750785AbaGSU6V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Jul 2014 16:58:21 -0400
-Received: from marcec ([77.22.138.176]) by mail.gmx.com (mrgmx102) with
- ESMTPSA (Nemesis) id 0M2nfO-1WI9iH1vGA-00sgZ8 for
- <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 22:58:19 +0200
-Date: Sat, 19 Jul 2014 22:58:10 +0200
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
+	id S1751191AbaGSV05 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 Jul 2014 17:26:57 -0400
+Received: from moh2-ve1.go2.pl (moh2-ve1.go2.pl [193.17.41.186])
+	by tur.go2.pl (Postfix) with ESMTP id 28F0E699F3F
+	for <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 23:07:01 +0200 (CEST)
+Received: from moh2-ve1.go2.pl (unknown [10.0.0.186])
+	by moh2-ve1.go2.pl (Postfix) with ESMTP id 8A52944CF2C
+	for <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 23:06:14 +0200 (CEST)
+Received: from unknown (unknown [10.0.0.142])
+	by moh2-ve1.go2.pl (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 23:06:14 +0200 (CEST)
+Date: Sat, 19 Jul 2014 23:06:11 +0200
+From: Piotr Szymaniak <szarpaj@grubelek.pl>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Marc Joliet <marcec@gmx.de>, linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC errors during balance
-Message-ID: <20140719225810.7a28d13b@marcec>
-In-Reply-To: <20140719221051.57378a41@marcec>
-References: <20140719221051.57378a41@marcec>
+Message-ID: <20140719210609.GR8330@wloczykij>
+References: <20140719172605.445e8445@marcec>
+ <39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/Y++r+mtarFXkqfOW7JEjLfl"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="GYaKytDE8aa4+VVK"
+In-Reply-To: <39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/Y++r+mtarFXkqfOW7JEjLfl
-Content-Type: text/plain; charset=US-ASCII
+
+--GYaKytDE8aa4+VVK
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Am Sat, 19 Jul 2014 22:10:51 +0200
-schrieb Marc Joliet <marcec@gmx.de>:
+On Sat, Jul 19, 2014 at 11:38:08AM -0600, Chris Murphy wrote:
+> [96241.882138] ata2.00: exception Emask 0x1 SAct 0x7ffe0fff SErr 0x0 acti=
+on 0x6 frozen
+> [96241.882139] ata2.00: Ata error. fis:0x21
+> [96241.882142] ata2.00: failed command: READ FPDMA QUEUED
+> [96241.882148] ata2.00: cmd 60/08:00:68:0a:2d/00:00:18:00:00/40 tag 0 ncq=
+ 4096 in
+>          res 41/00:58:40:5c:2c/00:00:18:00:00/40 Emask 0x1 (device error)
 
-[...]
-> Another random idea:  the number of errors decreased the second time I ran
-> balance (from 4 to 2), I could run another full balance and see if it kee=
-ps
-> decreasing.
+Afair those are somehow related to NCQ.
 
-Well, this time there were still 2 ENOSPC errors.  But I can show the df ou=
-tput
-after such an ENOSPC error, to illustrate what I meant with the sudden surge
-in total usage:
 
-# btrfs filesystem df /run/media/marcec/MARCEC_BACKUP=20
-Data, single: total=3D236.00GiB, used=3D229.04GiB
-System, DUP: total=3D32.00MiB, used=3D36.00KiB
-Metadata, DUP: total=3D4.00GiB, used=3D3.20GiB
-unknown, single: total=3D512.00MiB, used=3D0.00
-
-And then after running a balance and (almost) immediately cancelling:
-
-# btrfs filesystem df /run/media/marcec/MARCEC_BACKUP=20
-Data, single: total=3D230.00GiB, used=3D229.04GiB
-System, DUP: total=3D32.00MiB, used=3D36.00KiB
-Metadata, DUP: total=3D4.00GiB, used=3D3.20GiB
-unknown, single: total=3D512.00MiB, used=3D0.00
-
+Piotr Szymaniak.
 --=20
-Marc Joliet
---
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
+Komnata  audiencyjna  zlotego  Bruna  przerastala  wszystko,  co  dotad
+widzialem.  Musial  zatrudnic  dziesiatki  programistow i kreatorow, by
+stworzyc tak wyuzdane i wysmakowane  wnetrze.  Dzwieki, barwy, ksztalty
+i zapachy wywolywaly erekcje.
+  -- Marcin Przybylek, "Gamedec: Syndrom Adelheima"
 
---Sig_/Y++r+mtarFXkqfOW7JEjLfl
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
+--GYaKytDE8aa4+VVK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQIcBAEBAgAGBQJTytvqAAoJEL/Q5oYsiHj0LYUP/3Ng05erAaRlAgwU2L742qV/
-8lWiOiCg1gJ4uPXXSR7i1FiAE4RH2ZJ390Zl+rHrWf50WR+v8tNcHBKYVVgzwnMe
-fm3+SwAYwk3Kdr9UPVuKRXYO+PITR/7noMvA6U1Z+kOjx4Tfh0FMbioPMp9V5GJh
-4hSFR/QRVUnMnMvA4BJcNAWziWwkqL3Bw0lyKRiHTGABHwlyeN0liOboBrO86MbN
-8YLuNRkYzWxa7BGEVJl9g7hAnAiTQ6PZ5O+rELsinyUAHIT6f0KelccaYWPt49wI
-Hds00jtJR7ofVfcFlTaS0Q31YAc9IF+cY1B/N2vo/+tqVE1lgHSbQErq+RUTDoH3
-4D8hhZx5rOUDpqrAWaOyDR7ow3QgAkvebVlAIAGXE+G+3SjUWsklRna5F98lZcuM
-Ftx1XQRga2S8UpVt/5QWdm8hfX/p4JVpgt7fiNqKK9NDXDhlcN3gF1U8Qr5mgf36
-N9U9aoOrogpgZPu1HkSmNNGOa2/OE9g1JVyPsyK/DF6+fjY7bPLa/hxS7yUB8DD1
-/lslrFswCLlyhsKb+vWqCOF+rXHFKtR/guO6KxosbaraLtr6JvgUfMOx3jIesZAP
-Nu//0oZq0g+UnQBf2QM/4qlzR8kQoUmIi/D0VmtDTaBDlWVNFmkvyrPdkwcQlG3o
-MtO3T+Gig8tchSASdeQ+
-=a/Al
+iQIcBAEBCAAGBQJTyt3BAAoJEEMpAov1cw9lUhAP/jGPPNY92gmI3YhwAmYFDGU6
+p4XO2jI5yXO50Is64Xx/52jpKnbwg9yDiPA7vPcP5Hz2UahH+2MtE5KM3MpKbPYM
+C7h/igpt+jrpNk2rf41JWdvDWjU6S+j/8/1VRhKyPbiaU4Er5L4KzBFPjQhVFihR
+9SEJhaLEhwh7krZ2gL9UZqEa5Tng4AocGRsOUJsbq29O9JsyE+HrcVa3OrbLjcMh
+vjzqgmdwiKdapCFWMce+NNRFmmP5dCNX9Mib+QHpWAOLnMysYFFDIiV05TAhRr0r
+IL2cUgwHVCcQbHmSfW99KrZ7MJ2twHMUafmFLaWFduMfynUsoX5RVGJxST5LRwFy
+Cs6VbNU63fLuzrwp3Onc4aKapNeoUytZfqewZLiN/lodDYR9G9CPu+WcVtgbVhFy
+Z/cfeIGQz9dFlJ+0alP2YemYOQRWNM/Q1kVhbeWPE5O3EAPr4kdxqul1NHJORwCY
+7D/doNVu/VaarZjQBc+GGeKn3yDl5N/9HqhfWQHjkK4GiPeAySbItr0Rfxlw7gvF
+VVIgYb2FI+NLnsIkHfDQWPV2yhEpM9I5XrCM/ouxjd4YDcM5xsH0MUB+goDnzGPn
+gdC/lAgNG+tRDIgPGxCLHQwsIDdjQ/1p41lQviuo3iKxSonaEnQ6ruxgwML/5F65
+c2nmk38sneCssrMP/yZh
+=rxx/
 -----END PGP SIGNATURE-----
 
---Sig_/Y++r+mtarFXkqfOW7JEjLfl--
+--GYaKytDE8aa4+VVK--

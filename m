@@ -1,147 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f177.google.com ([74.125.82.177]:37332 "EHLO
-	mail-we0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755776AbaGSTLO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Jul 2014 15:11:14 -0400
-Received: by mail-we0-f177.google.com with SMTP id w62so5893285wes.36
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 12:11:13 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.17.20]:51917 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755617AbaGSUK7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 Jul 2014 16:10:59 -0400
+Received: from marcec ([77.22.138.176]) by mail.gmx.com (mrgmx102) with
+ ESMTPSA (Nemesis) id 0M03qC-1WGVLh3J6a-00uKI4 for
+ <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 22:10:57 +0200
+Date: Sat, 19 Jul 2014 22:10:51 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Fw: ENOSPC errors during balance
+Message-ID: <20140719221051.57378a41@marcec>
 MIME-Version: 1.0
-In-Reply-To: <1401795704-20668-1-git-send-email-fdmanana@gmail.com>
-References: <1401795704-20668-1-git-send-email-fdmanana@gmail.com>
-Date: Sat, 19 Jul 2014 22:11:12 +0300
-Message-ID: <CAOcd+r1VqCogBa+S4C3ZejsNsAiWgOkVAJjSWttJbJcqKfBwpQ@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: update commit root on snapshot creation after
- orphan cleanup
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Filipe David Borba Manana <fdmanana@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/BFGblOPVc=nL5xvKaK.lchG"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Filipe,
-It's quite possible I don't fully understand the issue. It seems that
-we are creating a read-only snapshot, commit a transaction, and then
-go and modify the snapshot once again, by deleting all the
-ORPHAN_ITEMs we have in its file tree (btrfs_orphan_cleanup).
-Shouldn't all this be part of snapshot creation, so that after we
-commit, we have a clean file tree with no orphans there? (not sure if
-this makes sense though).
-
-With your patch we do this additional commit after the cleanup. But
-nothing prevents "send" from starting before this additional commit,
-correct? And it would still see the orphans through the commit root.
-You say that it is not a problem, but I am not sure why (probably I am
-missing something here). So for me it looks like your patch closes a
-race window significantly (at the cost of an additional commit), but
-does not close it fully.
-
-But most important: perhaps "send" should look for ORPHAN_ITEMs and
-treat those inodes as "deleted"?
-
-Thanks,
-Alex.
+--Sig_/BFGblOPVc=nL5xvKaK.lchG
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
 
 
-On Tue, Jun 3, 2014 at 2:41 PM, Filipe David Borba Manana
-<fdmanana@gmail.com> wrote:
-> On snapshot creation (either writable or read-only), we do orphan cleanup
-> against the root of the snapshot. If the cleanup did remove any orphans,
-> then the current root node will be different from the commit root node
-> until the next transaction commit happens.
->
-> A send operation always uses the commit root of a snapshot - this means
-> it will see the orphans if it starts computing the send stream before the
-> next transaction commit happens (triggered by a timer or sync() for .e.g),
-> which is when the commit root gets assigned a reference to current root,
-> where the orphans are not visible anymore. The consequence of send seeing
-> the orphans is explained below.
->
-> For example:
->
->     mkfs.btrfs -f /dev/sdd
->     mount -o commit=999 /dev/sdd /mnt
->
->     # open a file with O_TMPFILE and leave it open
->     # write some data to the file
->     btrfs subvolume snapshot -r /mnt /mnt/snap1
->
->     btrfs send /mnt/snap1 -f /tmp/send.data
->
-> The send operation will fail with the following error:
->
->     ERROR: send ioctl failed with -116: Stale file handle
->
-> What happens here is that our snapshot has an orphan inode still visible
-> through the commit root, that corresponds to the tmpfile. However send
-> will attempt to call inode.c:btrfs_iget(), with the goal of reading the
-> file's data, which will return -ESTALE because it will use the current
-> root (and not the commit root) of the snapshot.
->
-> Of course, there are other cases where we can get orphans, but this
-> example using a tmpfile makes it much easier to reproduce the issue.
->
-> Therefore on snapshot creation, after calling btrfs_orphan_cleanup, if
-> the commit root is different from the current root, just commit the
-> transaction associated with the snapshot's root (if it exists), so that
-> a send will not see any orphans that don't exist anymore. This also
-> guarantees a send will always see the same content regardless of whether
-> a transaction commit happened already before the send was requested and
-> after the orphan cleanup (meaning the commit root and current roots are
-> the same) or it hasn't happened yet (commit and current roots are
-> different).
->
-> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
-> ---
->  fs/btrfs/ioctl.c | 29 +++++++++++++++++++++++++++++
->  1 file changed, 29 insertions(+)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 95194a9..6680ad9 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -712,6 +712,35 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
->         if (ret)
->                 goto fail;
->
-> +       /*
-> +        * If orphan cleanup did remove any orphans, it means the tree was
-> +        * modified and therefore the commit root is not the same as the
-> +        * current root anymore. This is a problem, because send uses the
-> +        * commit root and therefore can see inode items that don't exist
-> +        * in the current root anymore, and for example make calls to
-> +        * btrfs_iget, which will do tree lookups based on the current root
-> +        * and not on the commit root. Those lookups will fail, returning a
-> +        * -ESTALE error, and making send fail with that error. So make sure
-> +        * a send does not see any orphans we have just removed, and that it
-> +        * will see the same inodes regardless of whether a transaction
-> +        * commit happened before it started (meaning that the commit root
-> +        * will be the same as the current root) or not.
-> +        */
-> +       if (readonly && pending_snapshot->snap->node !=
-> +           pending_snapshot->snap->commit_root) {
-> +               trans = btrfs_join_transaction(pending_snapshot->snap);
-> +               if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
-> +                       ret = PTR_ERR(trans);
-> +                       goto fail;
-> +               }
-> +               if (!IS_ERR(trans)) {
-> +                       ret = btrfs_commit_transaction(trans,
-> +                                                      pending_snapshot->snap);
-> +                       if (ret)
-> +                               goto fail;
-> +               }
-> +       }
-> +
->         inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
->         if (IS_ERR(inode)) {
->                 ret = PTR_ERR(inode);
-> --
-> 1.9.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Start weitergeleitete Nachricht:
+Huh, turns out the Reply-To was to Chris Murphy, so here it is again for the
+whole list.
+
+Datum: Sat, 19 Jul 2014 20:34:34 +0200
+Von: Marc Joliet <marcec@gmx.de>
+An: Chris Murphy <lists@colorremedies.com>
+Betreff: Re: ENOSPC errors during balance
+
+
+Am Sat, 19 Jul 2014 11:38:08 -0600
+schrieb Chris Murphy <lists@colorremedies.com>:
+
+> The 2nd dmesg (didn't look at the 1st), has many instances like this;
+>=20
+> [96241.882138] ata2.00: exception Emask 0x1 SAct 0x7ffe0fff SErr 0x0 acti=
+on 0x6 frozen
+> [96241.882139] ata2.00: Ata error. fis:0x21
+> [96241.882142] ata2.00: failed command: READ FPDMA QUEUED
+> [96241.882148] ata2.00: cmd 60/08:00:68:0a:2d/00:00:18:00:00/40 tag 0 ncq=
+ 4096 in
+>          res 41/00:58:40:5c:2c/00:00:18:00:00/40 Emask 0x1 (device error)
+>=20
+> I'm not sure what this error is, it acts like an unrecoverable read error=
+ but I'm not seeing UNC reported. It looks like ata 2.00 is sdb, which is a=
+ member of a btrfs raid10 volume. So this isn't related to your sdg2 and en=
+ospc error, it's a different problem.
+
+Yeah, from what I remember reading it's related to nforce2 chipsets, but I
+never pursued it, since I never really noticed any consequences (this is an=
+ old
+computer that I originally build in 2006).  IIRC one workaround is to switc=
+h to
+1.5gpbs instead of 3gbps (but then, it already is at 1.5 Gbps, but none of =
+the
+other ports are?  Might be the hard drive, I *think* it's older than the
+others.), another is related to irqbalance (which I forgot about, I've just
+switched it off and will see if the messages stop, but then again, my first
+dmesg didn't have any of those messages).
+
+Anyway, yes, it's unrelated to my problem :-) .
+
+> I'm not sure of the reason for the "BTRFS info (device sdg2): 2 enospc er=
+rors during balance" but it seems informational rather than either a warnin=
+g or problem. I'd treat ext4->btrfs converted file systems to be something =
+of an odd duck, in that it's uncommon, therefore isn't getting as much test=
+ing and extra caution is a good idea. Make frequent backups.
+
+Well, I *could* just recreate the file system.  Since these are my only bac=
+kups
+(no offsite backup as of yet), I wanted to keep the existing ones.  So
+btrfs-convert was a convenient way to upgrade.
+
+But since I ended up deleting those backups anyway, I would only be losing =
+my
+hourly and a few daily backups.  But it's not as if the file system is othe=
+rwise
+misbehaving.
+
+Another random idea:  the number of errors decreased the second time I ran
+balance (from 4 to 2), I could run another full balance and see if it keeps
+decreasing.
+
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--Sig_/BFGblOPVc=nL5xvKaK.lchG
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJTytDQAAoJEL/Q5oYsiHj04NUP/icZGevGjfWrHNkOVSEncvrs
+tftQ2W2fcmgwq9oBABCq/NfN6wbx26JvP0V/NCyyVBe+Pu/vfExvr3hrImt3U4Vf
+Any26M1TI9BCiLqnFEi/o6EpZiMGFJCmrPRHSOhEt2qv/usalhEJduhNseDxU0kc
+gyKdwRMCNBA+JHs8+w18NANo55Pu4l74IuDFqpgEAciPMF88fQWfjtxvCKncsJTr
+K1+EPnUeAQkjBNRrgM4A1z6Zd165aKKXp0N0NO3H52qSvepY9Gb2gEv2KsDsWU0B
+QVdXXvFhMVm4ypIkqgTjCGhpCrDJDDa62lgIAv652LwHsoBHPxvBJIcHbUPKF4ur
+YG236ArenoYmxHXOBbo3+kWbmdKf+ZK+SiGQOtV3gVpR5U7kfSpE7xC0SvwAyEa7
+OWyNdDnUelE+VOVc734Mn5IF6H8mTloLF5HcHBb9H8QCTn+TKwxB8eich0bdRciC
+1JO1/sHG7rR2NsvEScZtfcVQ7tfAhrU/CrAnokt2+/Y9tWUPFX4aRLsd/+7Vm7oZ
+AHZsewpzTUd4j8r3JOaUf76M4i7Egv/kuDZDnx+YZx023wZgwM2WA16wRSqPKYpd
+gauCajmQCOofDfghfZjB/nnByVBiJu3xhA8hdrU64NYXOH1F7l2jz1rRd0f42P5a
+3bQA2XArp9qjfoyDC6dp
+=Dl8f
+-----END PGP SIGNATURE-----
+
+--Sig_/BFGblOPVc=nL5xvKaK.lchG--

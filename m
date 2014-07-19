@@ -1,33 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36573 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932183AbaGSRiM convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Jul 2014 13:38:12 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: ENOSPC errors during balance
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <20140719172605.445e8445@marcec>
-Date: Sat, 19 Jul 2014 11:38:08 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>
-References: <20140719172605.445e8445@marcec>
-To: Marc Joliet <marcec@gmx.de>
+Received: from mail-lb0-f179.google.com ([209.85.217.179]:41137 "EHLO
+	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932192AbaGSRiz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 Jul 2014 13:38:55 -0400
+Received: by mail-lb0-f179.google.com with SMTP id v6so3653414lbi.24
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Jul 2014 10:38:53 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <53C7CD0F.7070603@fb.com>
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
+	<4623589E-3298-4980-A257-665CFA9FB61B@colorremedies.com>
+	<pan$26aa0$13a0ca68$c41d00a9$e8c14640@cox.net>
+	<3081460.dX0cLeJPhK@quad>
+	<CAPoQQ-093rEw6mRRDCS4bq8oGOvmuR_a6UAVOjK_ytb=Yq2BSw@mail.gmail.com>
+	<53B1A862.50503@fb.com>
+	<53B1ACAA.5040505@fb.com>
+	<CAPoQQ-14VPzzwTDDXmLSmEUs2Rm_HyukoYjeFfOi9LOjqaRCWw@mail.gmail.com>
+	<53B32275.6010200@fb.com>
+	<CAPoQQ-3DmAg=s0eBKirGmkfMhaC1bEyJu8fSJc-6fV-EvUbmxQ@mail.gmail.com>
+	<CAPoQQ-1kn+UNfcE4+qeO4yKaX43PenqxBtMXABuP=Ot8=ZB2Gw@mail.gmail.com>
+	<53B40FEC.4030902@fb.com>
+	<53B4140C.8060406@fb.com>
+	<53C7CD0F.7070603@fb.com>
+Date: Sat, 19 Jul 2014 12:38:53 -0500
+Message-ID: <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
+Subject: Re: Blocked tasks on 3.15.1
+From: Cody P Schafer <dev@codyps.com>
+To: Chris Mason <clm@fb.com>
+Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 2nd dmesg (didn't look at the 1st), has many instances like this;
+On Thu, Jul 17, 2014 at 8:18 AM, Chris Mason <clm@fb.com> wrote:
+>
+> [ deadlocks during rsync in 3.15 with compression enabled ]
+>
+> Hi everyone,
+>
+> I still haven't been able to reproduce this one here, but I'm going
+> through a series of tests with lzo compression foraced and every
+> operation forced to ordered.  Hopefully it'll kick it out soon.
+>
+> While I'm hammering away, could you please try this patch.  If this is
+> the buy you're hitting, the deadlock will go away and you'll see this
+> printk in the log.
+>
+> thanks!
+>
+> -chris
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 3668048..8ab56df 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -8157,6 +8157,13 @@ void btrfs_destroy_inode(struct inode *inode)
+>                 spin_unlock(&root->fs_info->ordered_root_lock);
+>         }
+>
+> +       spin_lock(&root->fs_info->ordered_root_lock);
+> +       if (!list_empty(&BTRFS_I(inode)->ordered_operations)) {
+> +               list_del_init(&BTRFS_I(inode)->ordered_operations);
+> +printk(KERN_CRIT "racing inode deletion with ordered operations!!!!!!!!!!!\n");
+> +       }
+> +       spin_unlock(&root->fs_info->ordered_root_lock);
+> +
+>         if (test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+>                      &BTRFS_I(inode)->runtime_flags)) {
+>                 btrfs_info(root->fs_info, "inode %llu still on the orphan list",
 
-[96241.882138] ata2.00: exception Emask 0x1 SAct 0x7ffe0fff SErr 0x0 action 0x6 frozen
-[96241.882139] ata2.00: Ata error. fis:0x21
-[96241.882142] ata2.00: failed command: READ FPDMA QUEUED
-[96241.882148] ata2.00: cmd 60/08:00:68:0a:2d/00:00:18:00:00/40 tag 0 ncq 4096 in
-         res 41/00:58:40:5c:2c/00:00:18:00:00/40 Emask 0x1 (device error)
+Thanks Chris.
 
-I'm not sure what this error is, it acts like an unrecoverable read error but I'm not seeing UNC reported. It looks like ata 2.00 is sdb, which is a member of a btrfs raid10 volume. So this isn't related to your sdg2 and enospc error, it's a different problem.
+Running 3.15.6 with this patch applied on top:
+ - still causes a hang with `rsync -hPaHAXx --del /mnt/home/nyx/ /home/nyx/`
+ - no extra error messages printed (`dmesg | grep racing`) compared to
+without the patch
 
-
-I'm not sure of the reason for the "BTRFS info (device sdg2): 2 enospc errors during balance" but it seems informational rather than either a warning or problem. I'd treat ext4->btrfs converted file systems to be something of an odd duck, in that it's uncommon, therefore isn't getting as much testing and extra caution is a good idea. Make frequent backups.
-
-Chris Murphy
+To recap some details (so I can have it all in one place):
+ - /home/ is btrfs with compress=lzo
+ - /mnt/home is btrfs with no compression enabled.
+ - I have _not_ created any nodatacow files.
+ - Both filesystems are on different physical disks.
+ - Full stack is: sata <-> dmcrypt <-> lvm <-> btrfs (I noticed others
+mentioning the use of dmcrypt)

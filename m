@@ -1,49 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:60147 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751601AbaGTQ4y (ORCPT
+Received: from lb1.pop2.wanet.net ([65.244.248.2]:45413 "EHLO
+	serv004.pop2.wanet.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751401AbaGTRZD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jul 2014 12:56:54 -0400
-Received: from [192.168.0.6] (unknown [81.106.117.111])
-	by mail.messagingengine.com (Postfix) with ESMTPA id B5D6E680108
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Jul 2014 12:56:50 -0400 (EDT)
-Message-ID: <1405875405.2789.4.camel@s-Air>
-Subject: Re: Questions on incremental backups
-From: Sam Bull <sam.hacking@sent.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Sun, 20 Jul 2014 17:56:45 +0100
-In-Reply-To: <CAB=7dhkcbfGrwSwq=7f_ML-DjPZY56VX08_Xz15MSG_4ygDk7A@mail.gmail.com>
-References: <1405627978.2630.39.camel@s-Air>
-	 <e1b3b459-ea44-4272-9320-4cb5218b3966@email.android.com>
-	 <1405688218.3085.16.camel@s-Air> <1483007.OXNgJN24dh@xev>
-	 <CAB=7dhkcbfGrwSwq=7f_ML-DjPZY56VX08_Xz15MSG_4ygDk7A@mail.gmail.com>
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature";
-	boundary="=-cyAOWvLQh2s2ALyM7fTk"
-Mime-Version: 1.0
+	Sun, 20 Jul 2014 13:25:03 -0400
+Message-ID: <9781519da9ccf1c860a49d3b7954d00d.squirrel@webmail.wanet.net>
+In-Reply-To: <20140720140044.GB7469@mother.pipebreaker.pl>
+References: <loom.20140720T102642-239@post.gmane.org>
+    <pan$67ea$f06610e9$914a341d$b38b0b32@cox.net>
+    <20140720140044.GB7469@mother.pipebreaker.pl>
+Date: Sun, 20 Jul 2014 10:15:43 -0700
+Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
+From: ashford@whisperpc.com
+To: "Tomasz Torcz" <tomek@pipebreaker.pl>
+Cc: linux-btrfs@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain;charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Tomasz,
 
---=-cyAOWvLQh2s2ALyM7fTk
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> On Sun, Jul 20, 2014 at 01:53:34PM +0000, Duncan wrote:
+>> TM posted on Sun, 20 Jul 2014 08:45:51 +0000 as excerpted:
+>>
+>>> One week for a raid10 rebuild 4x3TB drives is a very long time.
+>>> Any thoughts?
+>>> Can you share any statistics from your RAID10 rebuilds?
+>>
+>> At a week, that's nearly 5 MiB per second, which isn't great, but isn't
+>> entirely out of the realm of reason either, given all the processing
+>> it's
+>> doing.  A day would be 33.11+, reasonable thruput for a straight copy,
+>> and a raid rebuild is rather more complex than a straight copy, so...
+>
+>   Uhm, sorry, but 5MBps is _entirely_ unreasonable.  It is
+> order-of-magnitude
+> unreasonable.  And "all the processing" shouldn't even show as a blip
+> on modern CPUs.
+>   This "speed" is undefendable.
 
-Thanks everyone for the responses. I'll start setting up my backup
-strategy in 2 or 3 weeks. I'll give the diff and unionFS tips a go, and
-report back on any progress.
+Maybe and maybe not.  It's already been discussed that BTRFS serializes
+its disk I/O, instead of performing it in parallel.  That can have a
+significant impact on overall throughput.
 
---=-cyAOWvLQh2s2ALyM7fTk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
+In addition, depending on how BTRFS does a reconstruct, it's possible that
+there's another problem.  Most low-level RAID implementations (MD driver
+and RAID controller cards) reconstruct a segment at a time (or possibly
+multiple segments), and reconstruct the entire disk, even the unused
+portions.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+ZFS is different, in that it reconstructs only the used sections.  This
+behavior will read/write less to the disk, but it will have more random
+I/O.  The random I/O can result in more seeks (depending on how busy the
+system is), which could slow down the reconstruction, especially on an
+idle system.  As ZFS was designed for high usage environments, where it's
+likely that a seek would be needed to get the head back to the data being
+reconstructed, the randomness of the reconstruct would have no significant
+impact on a reconstruct.
 
-iEYEABECAAYFAlPL9NEACgkQX+kozZYmziuaCQCg39tHz2Z3yn6wgJuJ+Y7httCU
-GjUAoLc+XNahBCA2QO1rhAu1B5LXLyM3
-=gMC2
------END PGP SIGNATURE-----
+The question implied above is which method of reconstruction BTRFS uses. 
+Could someone please inform us?
 
---=-cyAOWvLQh2s2ALyM7fTk--
+As BTRFS is verifying the checksum on the read, and possibly generating a
+new checksum on write, the CPU time used will be significantly greater
+than for a "dumb" RAID-10 array.  If it's not a sequential segment
+reconstruction, the CPU time needed would be greater still.  WRT CPU
+performance, we should remember that TM's system is far from a speed
+demon.
+
+Finally, TM didn't mention anything about other I/O activity on the array,
+which, regardless of the method of reconstruction, could have a
+significant impact on the speed of a reconstruction.
+
+There are a LOT of parameters here that could impact throughput.  Some are
+designed in (the checksum computations), some are "temporary" (the single
+I/O path) and some are end-user issues (slow CPU and other activity on the
+array).  I'm sure that there are other parameters, possibly including soft
+read errors on the other disks, that could be impacting the overall
+throughput.
+
+As all the information that could affect performance hasn’t been provided
+yet, it is premature to make a blanket statement that the performance of a
+reconstruction is "unreasonable".  For the circumstances, it's possible
+that the performance is just fine.  We have not yet been provided with
+enough data to verify this, one way or another.
+
+Peter Ashford
 

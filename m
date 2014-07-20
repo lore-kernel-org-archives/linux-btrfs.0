@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38245 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:38382 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752463AbaGTSVs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jul 2014 14:21:48 -0400
+	id S1753957AbaGTSZH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Jul 2014 14:25:07 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X8vk1-0002sR-JH
-	for linux-btrfs@vger.kernel.org; Sun, 20 Jul 2014 20:21:45 +0200
+	id 1X8vnE-0005G0-QP
+	for linux-btrfs@vger.kernel.org; Sun, 20 Jul 2014 20:25:04 +0200
 Received: from athedsl-372136.home.otenet.gr ([79.131.5.166])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jul 2014 20:21:45 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jul 2014 20:25:04 +0200
 Received: from tmjuju by athedsl-372136.home.otenet.gr with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jul 2014 20:21:45 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jul 2014 20:25:04 +0200
 To: linux-btrfs@vger.kernel.org
 From: TM <tmjuju@yahoo.com>
 Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
-Date: Sun, 20 Jul 2014 18:21:34 +0000 (UTC)
-Message-ID: <loom.20140720T200946-593@post.gmane.org>
+Date: Sun, 20 Jul 2014 18:23:29 +0000 (UTC)
+Message-ID: <loom.20140720T202250-546@post.gmane.org>
 References: <loom.20140720T102642-239@post.gmane.org>    <pan$67ea$f06610e9$914a341d$b38b0b32@cox.net>    <20140720140044.GB7469@mother.pipebreaker.pl> <9781519da9ccf1c860a49d3b7954d00d.squirrel@webmail.wanet.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -47,6 +47,8 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > 
 > Peter Ashford
 
+
+
 Hi Peter,
 
   I am monitoring closely, I do not have any 'soft-errors' or anything else.
@@ -66,8 +68,4 @@ unexpected failures.
 
 TM
 
-
-
-
- 
 

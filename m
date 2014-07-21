@@ -1,63 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54233 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S933219AbaGUSb6 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 14:31:58 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:57008 helo=[192.168.1.145])
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1X9INR-003KKc-8f
-	for linux-btrfs@vger.kernel.org; Mon, 21 Jul 2014 12:31:57 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CAN05THTSG9czwpM7AYEPWg5hpZuJ=vjJrjz8yn5V0rXe5oguxA@mail.gmail.com>
-Date: Mon, 21 Jul 2014 12:31:55 -0600
-Message-Id: <07A98FF5-6EE9-4C93-B34B-17EDCC61FA15@colorremedies.com>
-References: <loom.20140720T102642-239@post.gmane.org> <53CC1553.1020908@shiftmail.org> <20140721013609.6d99c399@natsu> <37e3a8cf8b7439d5cd2745b5efb9d37f.squirrel@webmail.wanet.net> <pan$7b757$4788e010$b65976c7$4d1c0bad@cox.net> <CAN05THTSG9czwpM7AYEPWg5hpZuJ=vjJrjz8yn5V0rXe5oguxA@mail.gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mout.gmx.net ([212.227.15.19]:52242 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753179AbaGUWbG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jul 2014 18:31:06 -0400
+Received: from marcec ([77.22.138.176]) by mail.gmx.com (mrgmx002) with
+ ESMTPSA (Nemesis) id 0LanoO-1Wgf7Q1dTE-00kOEn for
+ <linux-btrfs@vger.kernel.org>; Tue, 22 Jul 2014 00:31:04 +0200
+Date: Tue, 22 Jul 2014 00:30:57 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: ENOSPC errors during balance
+Message-ID: <20140722003057.0f3b89f0@marcec>
+In-Reply-To: <20140721152216.27d8a4c4@marcec>
+References: <20140719172605.445e8445@marcec>
+	<39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>
+	<pan$c685d$4bb40507$f2be4604$15619074@cox.net>
+	<20140720122233.4ef06751@marcec>
+	<20140720134054.3cd6cef3@marcec>
+	<20140720214440.398e7e68@marcec>
+	<20140721152216.27d8a4c4@marcec>
+Reply-To: linux-btrfs@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/EWZ+L=XK/94m9w_m=z4nSPK"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/EWZ+L=XK/94m9w_m=z4nSPK
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-On Jul 21, 2014, at 10:46 AM, ronnie sahlberg <ronniesahlberg@gmail.com> wrote:
+Am Mon, 21 Jul 2014 15:22:16 +0200
+schrieb Marc Joliet <marcec@gmx.de>:
 
-> On Sun, Jul 20, 2014 at 7:48 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> ashford posted on Sun, 20 Jul 2014 12:59:21 -0700 as excerpted:
->> 
->>> If you assume a 12ms average seek time (normal for 7200RPM SATA drives),
->>> an 8.3ms rotational latency (half a rotation), an average 64kb write and
->>> a 100MB/S streaming write speed, each write comes in at ~21ms, which
->>> gives us ~47 IOPS.  With the 64KB write size, this comes out to ~3MB/S,
->>> DISK LIMITED.
->> 
->>> The 5MB/S that TM is seeing is fine, considering the small files he says
->>> he has.
->> 
->> Thanks for the additional numbers supporting my point. =:^)
->> 
->> I had run some of the numbers but not to the extent you just did, so I
->> didn't know where 5 MiB/s fit in, only that it wasn't entirely out of the
->> range of expectation for spinning rust, given the current state of
->> optimization... or more accurately the lack thereof, due to the focus
->> still being on features.
->> 
-> 
-> That is actually nonsense.
-> Raid rebuild operates on the block/stripe layer and not on the filesystem layer.
+> Am Sun, 20 Jul 2014 21:44:40 +0200
+> schrieb Marc Joliet <marcec@gmx.de>:
+>=20
+> [...]
+> > What I did:
+> >=20
+> > - delete the single largest file on the file system, a 12 GB VM image, =
+along
+> >   with all subvolumes that contained it
+> > - rsync it over again
+> [...]
+>=20
+> I want to point out at this point, though, that doing those two steps fre=
+ed a
+> disproportionate amount of space.  The image file is only 12 GB, and it h=
+adn't
+> changed in any of the snapshots (I haven't used this VM since June), so t=
+hat
+> "subvolume delete -c <snapshots>" returned after a few seconds. Yet delet=
+ing it
+> seems to have freed up twice as much. You can see this from the "filesyst=
+em df"
+> output: before, "used" was at 229.04 GiB, and after deleting it and copyi=
+ng it
+> back (and after a day's worth of backups) went down to 218 GiB.
+>=20
+> Does anyone have any idea how this happened?
+>=20
+> Actually, now I remember something that is probably related: when I first
+> moved to my current backup scheme last week, I first copied the data from=
+ the
+> last rsnapshot based backup with "cp --reflink" to the new backup locatio=
+n, but
+> forgot to use "-a".  I interrupted it and ran "cp -a -u --reflink", but i=
+t had
+> already copied a lot, and I was too impatient to start over; after all, t=
+he
+> data hadn't changed.  Then, when rsync (with --inplace) ran for the first=
+ time,
+> all of these files with wrong permissions and different time stamps were =
+copied
+> over, but for some reason, the space used increased *greatly*; *much* mor=
+e than
+> I would expect from changed metadata.
+>=20
+> The total size of the file system data should be around 142 GB (+ snapsho=
+ts),
+> but, well, it's more than 1.5 times as much.
+>=20
+> Perhaps cp --reflink treats hard links differently than expected?  I woul=
+d have
+> expected the data pointed to by the hard link to have been referenced, but
+> maybe something else happened?
 
-Not on Btrfs. It is on the filesystem layer. However, a rebuild is about replicating metadata (up to 256MB) and data (up to 1GB) chunks. For raid10, those are further broken down into 64KB strips. So the smallest size "unit" for replication during a rebuild on Btrfs would be 64KB.
+Hah, OK, apparently when my daily backup removed the oldest daily snapshot,=
+ it
+freed up whatever was taking up so much space, so as of now the file system
+uses only 169.14 GiB (from 218).  Weird.
 
-Anyway 5MB/s seems really low to me, so I'm suspicious something else is going on. I haven't done a rebuild in a couple months, but my recollection is it's always been as fast as the write performance of a single device in the btrfs volume.
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
 
-I'd be looking in dmesg for any of the physical drives being reset, having read or write errors, and I'd do some individual drive testing to see if the problem can be isolated. And if that's not helpful, well, this is really tedious and verbose amounts of information but it might reveal some issue is to capture actual commands going to physical devices:
+--Sig_/EWZ+L=XK/94m9w_m=z4nSPK
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg34886.html
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-My expectation (i.e. I'm guessing) based on previous testing is that whether raid1 or raid10, the actual read/write commands will each be 256KB in size. Btrfs rebuild is basically designed to be a sequential operation. This could maybe fall apart if there were somehow many minimally full chunks, which is probably unlikely.
+iQIcBAEBAgAGBQJTzZSmAAoJEL/Q5oYsiHj0Nq4P/1lyNC638XIZ/m835vEYDx41
+V/bWxdS3ZDTwzK9G1n3YayBtFoolTMSHvKI6VIBmY9O5Lo/vg9Z1AW5LjHEuXGxk
+UFJJ8x1mjJvFPKZ67HPy5ROInW9SdHGWGhMByuHnygfDAJ2Bg7VUMP8YwQBNisdv
+xoY/hfaHpPOY7+/DjtUK7PueMsh7Op0l3gxT9neCin4aeh9FdX8CLA2na9p2VsIk
+V4g965S9yikGlas5ZiwGKte8liQUU8x4EG4KGM7wSN73ryVpl1ZjMiRhGypsC2PR
+JRxLVNFMprcnkzh/i4tUck4MrA3rDbZtL0eVkjm8/+/zVtiqYfH2CatKl7UsSg2/
+yU8TcPAvSNSenH6o9aBoNQdZ/2LosqYhp1BZrUL8dUfsHqkTMnOJD0Pz3/+L9QhH
+1bWqXmpTLdQKpGJzyUkB1lzdejNflyvtXLavfucTJNpTsTHzSB4/W3iY6H0eQpuo
+AHDN+qp5VtrUo6OgtkQZc09MuNQnlbyYvdg45pu+nioX3GHFZ+p5ZZsmyOvyFADg
+9B9rhXXwzuYtCpxoC6VuMm/45bvppRGd/bKZz40ZyTldFvTrdACxXRXEgM8KnP3A
+ECs7os1ugPaCTuwrliimuVUF4eWTlvA1c7ydoohk88ndCM53hlZwDWFP/uXaJHzI
+kWS6DIdeY82t9AKVUTz2
+=7HTg
+-----END PGP SIGNATURE-----
 
-Chris Murphy
-
+--Sig_/EWZ+L=XK/94m9w_m=z4nSPK--

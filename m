@@ -1,61 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50730 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932230AbaGUOAh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 10:00:37 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1X9E8n-0007OO-OF
-	for linux-btrfs@vger.kernel.org; Mon, 21 Jul 2014 16:00:33 +0200
-Received: from athedsl-372136.home.otenet.gr ([79.131.5.166])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 16:00:33 +0200
-Received: from tmjuju by athedsl-372136.home.otenet.gr with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 16:00:33 +0200
+Received: from mail-wg0-f43.google.com ([74.125.82.43]:33081 "EHLO
+	mail-wg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932230AbaGUOBC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jul 2014 10:01:02 -0400
+Received: by mail-wg0-f43.google.com with SMTP id l18so6423818wgh.26
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 07:00:58 -0700 (PDT)
+MIME-Version: 1.0
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Mon, 21 Jul 2014 17:00:37 +0300
+Message-ID: <CAGqmi77KNXYSM_jV-4b_4+nazMxDaFTmSo0Zdw+NZ4Hk8=MCgQ@mail.gmail.com>
+Subject: Q: BTRFS_IOC_DEFRAG_RANGE and START_IO
 To: linux-btrfs@vger.kernel.org
-From: TM <tmjuju@yahoo.com>
-Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
-Date: Mon, 21 Jul 2014 14:00:20 +0000 (UTC)
-Message-ID: <loom.20140721T155907-291@post.gmane.org>
-References: <loom.20140720T102642-239@post.gmane.org> <53CC6B39.1060705@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wang Shilong <wangsl.fnst <at> cn.fujitsu.com> writes:
+I working on readahead in systemd and try to complete todo for it.
+One of todos it is:
+ readahead: use BTRFS_IOC_DEFRAG_RANGE instead of BTRFS_IOC_DEFRAG
+ioctl, with START_IO
 
-> Just my two cents:
-> 
-> Since 'btrfs replace' support RADI10, I suppose using replace
-> operation is better than 'device removal and add'.
-> 
-> Another Question is related to btrfs snapshot-aware balance.
-> How many snapshots did you have in your system?
-> 
-> Of course, During balance/resize/device removal operations,
-> you could still snapshot, but fewer snapshots should speed things up!
-> 
-> Anyway 'btrfs replace' is implemented more effective than
-> 'device remova and add'.
-> 
+Can someone explain what start_io flag in BTRFS_IOC_DEFRAG_RANGE do?
+Just force write data after defragment or do something else?
+This flag mean what btrfs can guarantee data consistency after defragment?
 
+Thanks for any explanation!
 
-Hi Wang,
-just one subvolume, no snaphots or anything else.
-
-device replace: to tell you the truth I have not used it in the past. Most
-of my testing was done 2 years ago. So in this 'kind of production' system I
-did not try it. But if I knew that it was faster, perhaps I could have used
-it. Anyone has statistics for such a replace and the time it takes?
-
-Also, can replace be used when one device is missing? Cant find
-documentation. eg.
-btrfs replace start missing /dev/sdXX
-
-
-TM
-
-
+-- 
+Best regards,
+Timofey.

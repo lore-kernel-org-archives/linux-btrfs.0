@@ -1,75 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28800 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751586AbaGUB1O convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Jul 2014 21:27:14 -0400
-Message-ID: <53CC6B39.1060705@cn.fujitsu.com>
-Date: Mon, 21 Jul 2014 09:22:01 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-To: TM <tmjuju@yahoo.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
-References: <loom.20140720T102642-239@post.gmane.org>
-In-Reply-To: <loom.20140720T102642-239@post.gmane.org>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:40433 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751378AbaGUCl4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Jul 2014 22:41:56 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X93Y2-0003QX-Lw
+	for linux-btrfs@vger.kernel.org; Mon, 21 Jul 2014 04:41:54 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 04:41:54 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 04:41:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ENOSPC errors during balance
+Date: Mon, 21 Jul 2014 02:41:42 +0000 (UTC)
+Message-ID: <pan$e47c$3cfacec6$ed70480f$6a4a2ac0@cox.net>
+References: <20140719172605.445e8445@marcec>
+	<39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>
+	<pan$c685d$4bb40507$f2be4604$15619074@cox.net>
+	<20140720122233.4ef06751@marcec> <20140720134054.3cd6cef3@marcec>
+	<20140720214440.398e7e68@marcec>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Marc Joliet posted on Sun, 20 Jul 2014 21:44:40 +0200 as excerpted:
 
-On 07/20/2014 04:45 PM, TM wrote:
-> Hi,
->
-> I have a raid10 with 4x 3TB disks on a microserver
-> http://n40l.wikia.com/wiki/Base_Hardware_N54L , 8Gb RAM
->
-> Recently one disk started to fail (smart errors), so I replaced it
-> Mounted as degraded, added new disk, removed old
-> Started yesterday
-> I am monitoring /var/log/messages and it seems it will take a long time
-> Started at about 8010631739392
-> And 20 hours later I am at 6910631739392
-> btrfs: relocating block group 6910631739392 flags 65
->
-> At this rate it will take a week to complete the raid rebuild!!!
-Just my two cents:
+> Am Sun, 20 Jul 2014 13:40:54 +0200 schrieb Marc Joliet <marcec@gmx.de>:
+> 
+>> Am Sun, 20 Jul 2014 12:22:33 +0200 schrieb Marc Joliet <marcec@gmx.de>:
+>> 
+>> [...]
+>> > I'll try this and see, but I think I have more files >1GB than would
+>> > account for this error (which comes towards the end of the balance
+>> > when only a few chunks are left).  I'll see what "find /mnt -type f
+>> > -size +1G" finds :) .
 
-Since 'btrfs replace' support RADI10, I suppose using replace
-operation is better than 'device removal and add'.
+Note that it's extent's over 1 GiB on the converted former ext4, not 
+necessarily files over 1 GiB.  You may have files over a GiB that were 
+already broken into extents that are all less than a GiB, and btrfs would 
+be able to deal with them fine.  It's only when a single extent ended up 
+larger than a GiB on the former ext4 that btrfs can't deal with it.
 
-Another Question is related to btrfs snapshot-aware balance.
-How many snapshots did you have in your system?
+>> Now that I think about it, though, it sounds like it could explain the
+>> sudden surge in total data size: for one very big file, several
+>> chunks/extents are created, but the data cannot be copied from the
+>> original ext4 extent.
 
-Of course, During balance/resize/device removal operations,
-you could still snapshot, but fewer snapshots should speed things up!
+I hadn't thought about that effect, but good deductive reasoning. =:^)
 
-Anyway 'btrfs replace' is implemented more effective than
-'device remova and add'.:-)
+> Well, turns out that was it!
+> 
+> What I did:
+> 
+> - delete the single largest file on the file system, a 12 GB VM image,
+> along with all subvolumes that contained it
+> - rsync it over again - start a full balance
+> 
+> This time, the balance finished successfully :-) .
 
-Thanks,
-Wang
->
-> Furthermore it seems that the operation is getting slower and slower
-> When the rebuild started I had a new message every half a minute, now it’s
-> getting to OneAndHalf minutes
-> Most files are small files like flac/jpeg
->
-> One week for a raid10 rebuild 4x3TB drives is a very long time.
-> Any thoughts?
-> Can you share any statistics from your RAID10 rebuilds?
->
-> If I shut down the system, before the rebuild, what is the proper procedure
-> to remount it? Again degraded? Or normally? Can the process of rebuilding
-> the raid continue after a reboot? Will it survive, and continue rebuilding?
->
-> Thanks in advance
-> TM
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Good to read!
+
+We're now two for two on this technique working around this problem! =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

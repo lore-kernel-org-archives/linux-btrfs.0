@@ -1,143 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from omr-m09.mx.aol.com ([64.12.143.82]:50497 "EHLO
-	omr-m09.mx.aol.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932320AbaGUSC4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 14:02:56 -0400
-Message-ID: <53CD55CB.5050105@aol.de>
-Date: Mon, 21 Jul 2014 20:02:51 +0200
-From: Karl-Philipp Richter <krichter722@aol.de>
-MIME-Version: 1.0
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: `btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags
- & 1)' failed.` in `btrfsck`
-References: <53C90CA8.2000104@aol.de> <0BC9DE69-A088-4B5A-95F5-DF863C87C803@gmail.com>
-In-Reply-To: <0BC9DE69-A088-4B5A-95F5-DF863C87C803@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="VBU7elsDNe9bRoFRdPCjhncODgrR6eq9F"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54233 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S933219AbaGUSb6 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Jul 2014 14:31:58 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:57008 helo=[192.168.1.145])
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1X9INR-003KKc-8f
+	for linux-btrfs@vger.kernel.org; Mon, 21 Jul 2014 12:31:57 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAN05THTSG9czwpM7AYEPWg5hpZuJ=vjJrjz8yn5V0rXe5oguxA@mail.gmail.com>
+Date: Mon, 21 Jul 2014 12:31:55 -0600
+Message-Id: <07A98FF5-6EE9-4C93-B34B-17EDCC61FA15@colorremedies.com>
+References: <loom.20140720T102642-239@post.gmane.org> <53CC1553.1020908@shiftmail.org> <20140721013609.6d99c399@natsu> <37e3a8cf8b7439d5cd2745b5efb9d37f.squirrel@webmail.wanet.net> <pan$7b757$4788e010$b65976c7$4d1c0bad@cox.net> <CAN05THTSG9czwpM7AYEPWg5hpZuJ=vjJrjz8yn5V0rXe5oguxA@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VBU7elsDNe9bRoFRdPCjhncODgrR6eq9F
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
 
-Hi,
-I could `btrfsck --repair` the sparse file with Linux 3.15.6-utopic from
-http://kernel.ubuntu.com/~kernel-ppa/mainline/ and btrfsck 3.12-1 (from
-btrfs-tools package in Ubuntu 14.04).
+On Jul 21, 2014, at 10:46 AM, ronnie sahlberg <ronniesahlberg@gmail.com> wrote:
 
-Thanks for your hints, Wang!
+> On Sun, Jul 20, 2014 at 7:48 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> ashford posted on Sun, 20 Jul 2014 12:59:21 -0700 as excerpted:
+>> 
+>>> If you assume a 12ms average seek time (normal for 7200RPM SATA drives),
+>>> an 8.3ms rotational latency (half a rotation), an average 64kb write and
+>>> a 100MB/S streaming write speed, each write comes in at ~21ms, which
+>>> gives us ~47 IOPS.  With the 64KB write size, this comes out to ~3MB/S,
+>>> DISK LIMITED.
+>> 
+>>> The 5MB/S that TM is seeing is fine, considering the small files he says
+>>> he has.
+>> 
+>> Thanks for the additional numbers supporting my point. =:^)
+>> 
+>> I had run some of the numbers but not to the extent you just did, so I
+>> didn't know where 5 MiB/s fit in, only that it wasn't entirely out of the
+>> range of expectation for spinning rust, given the current state of
+>> optimization... or more accurately the lack thereof, due to the focus
+>> still being on features.
+>> 
+> 
+> That is actually nonsense.
+> Raid rebuild operates on the block/stripe layer and not on the filesystem layer.
 
-All the best,
-Karl
+Not on Btrfs. It is on the filesystem layer. However, a rebuild is about replicating metadata (up to 256MB) and data (up to 1GB) chunks. For raid10, those are further broken down into 64KB strips. So the smallest size "unit" for replication during a rebuild on Btrfs would be 64KB.
 
-Am 18.07.2014 14:13, schrieb Wang Shilong:
->=20
-> Hi,
->=20
-> There are some patches for fsck flighting, they  are integrated  in Dav=
-id's branches.
-> You can pull from David's latest branch, and see if it helps:
->=20
-> https://github.com/kdave/btrfs-progs  integration-20140704
->=20
-> Have a try and see if it helps anyway.
->=20
-> Thanks,
-> Wang
->=20
->> Hi together,
->> I'm experiencing the following issues when I invoke `btrfsck` on a
->> sparse file image with a GPT and one (the only) btrfs partition attach=
-ed
->> to a loop device
->>
->>    $ sudo btrfsck --repair --init-csum-tree --init-extent-tree -b
->> /dev/loop0p1
->>    Incorrect local backref count on 128510738432 root 5 owner 3849475
->> offset 0 found 1 wanted 0 back 0xbab41270
->>    backpointer mismatch on [128510738432 4096]
->>    ref mismatch on [128510742528 12288] extent item 0, found 1
->>    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flag=
-s
->> & 1)' failed.
->>
->>    $ sudo btrfsck --repair --init-csum-tree --init-extent-tree /dev/lo=
-op0p1
->>    Incorrect local backref count on 128510726144 root 5 owner 3849470
->> offset 0 found 1 wanted 0 back 0xbbcb9500
->>    backpointer mismatch on [128510726144 12288]
->>    ref mismatch on [128510738432 4096] extent item 0, found 1
->>    adding new data backref on 128510738432 root 5 owner 3849475 offset=
+Anyway 5MB/s seems really low to me, so I'm suspicious something else is going on. I haven't done a rebuild in a couple months, but my recollection is it's always been as fast as the write performance of a single device in the btrfs volume.
 
->> 0 found 1
->>    Backref 128510738432 root 5 owner 3849475 offset 0 num_refs 0 not
->> found in extent tree
->>    Incorrect local backref count on 128510738432 root 5 owner 3849475
->> offset 0 found 1 wanted 0 back 0xbbcb9630
->>    backpointer mismatch on [128510738432 4096]
->>    ref mismatch on [128510742528 12288] extent item 0, found 1
->>    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flag=
-s
->> & 1)' failed.
->>
->>    $ sudo btrfsck --repair /dev/loop0p1
->>    Incorrect local backref count on 130861096960 root 5 owner 22733727=
+I'd be looking in dmesg for any of the physical drives being reset, having read or write errors, and I'd do some individual drive testing to see if the problem can be isolated. And if that's not helpful, well, this is really tedious and verbose amounts of information but it might reveal some issue is to capture actual commands going to physical devices:
 
->> offset 0 found 1 wanted 0 back 0xc7c7d170
->>    backpointer mismatch on [130861096960 8192]
->>    ref mismatch on [130861105152 8192] extent item 0, found 1
->>    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flag=
-s
->> & 1)' failed.
->>
->>    $ sudo btrfsck --repair /dev/loop0p1
->>    Backref 130861096960 root 5 owner 22733727 offset 0 num_refs 0 not
->> found in extent tree
->>    Incorrect local backref count on 130861096960 root 5 owner 22733727=
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg34886.html
 
->> offset 0 found 1 wanted 0 back 0xc7f31170
->>    backpointer mismatch on [130861096960 8192]
->>    ref mismatch on [130861105152 8192] extent item 0, found 1
->>    btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flag=
-s
->> & 1)' failed.
->>
->> I'm using `btrfs-progs` 24cf4d8c3ee924b474f68514e0167cc2e602a48d on
->> Linux 3.16-rc5 (anything else, i.e. older versions, give me immediate
->> error after start because errornous file system)
->>
->> I'd like to know whether this (assertion) error is related to a bug or=
+My expectation (i.e. I'm guessing) based on previous testing is that whether raid1 or raid10, the actual read/write commands will each be 256KB in size. Btrfs rebuild is basically designed to be a sequential operation. This could maybe fall apart if there were somehow many minimally full chunks, which is probably unlikely.
 
->> missing feature in btrfs-progs and might be fixed at some point or
->> whether this might indicate a completely messed up btrfs.
->>
->> Best regards,
->> Karl-P. Richter
->>
->=20
+Chris Murphy
 
-
---VBU7elsDNe9bRoFRdPCjhncODgrR6eq9F
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQEcBAEBAgAGBQJTzVXLAAoJEGadKJ8eJ7ZGaVQH/18xhONHgmlnob1UU8gtib8J
-hH0+WEVCwGE8j6PqD6af01KuiS2a0Cv5qQHmAKeI0idFLfgMPs3A6YU/k6oAA5Rg
-gkVvZgnfwEgHYEKnyN8BUOdgydP/+MKC/uBjyYm6bW9YY6GGSAIxfOQ9eSMyg8wN
-WAd1vjJnK7nNAUH1ZP+M/zzT/ILbjB95+Lfc4cVy7x5a6xx9+Qb6d0hlv9Mjcs3w
-TM8JuN++fOM7iLn21oO6CS+NPYTJvJhI8s646v4lr1pGHS/Z7lDd4nBzDRij8MNR
-7hKDSHl1bbyuppIkvJFf7qGzQX8gQOduVrs0FhmOszEVm6KA1/ujmSooR3sZx20=
-=/uOa
------END PGP SIGNATURE-----
-
---VBU7elsDNe9bRoFRdPCjhncODgrR6eq9F--

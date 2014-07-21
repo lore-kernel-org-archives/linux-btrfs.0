@@ -1,206 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41404 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753031AbaGUJC2 (ORCPT
+Received: from fw6a-t3e-f34.wadns.net ([41.185.62.52]:25376 "EHLO
+	fw6a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754350AbaGULB4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 05:02:28 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6L92OhT021081
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Jul 2014 17:02:24 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: Add show_path function for btrfs_super_ops.
-Date: Mon, 21 Jul 2014 17:02:29 +0800
-Message-ID: <1405933349-6215-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Mon, 21 Jul 2014 07:01:56 -0400
+Message-ID: <53CCF307.3060704@swiftspirit.co.za>
+Date: Mon, 21 Jul 2014 13:01:27 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs Mailing list <linux-btrfs@vger.kernel.org>
+CC: Marc Joliet <marcec@gmx.de>
+Subject: Re: ENOSPC errors during balance
+References: <20140719172605.445e8445@marcec>	<39E33553-3073-483E-9A2A-088212B40D0B@colorremedies.com>	<pan$c685d$4bb40507$f2be4604$15619074@cox.net>	<20140720122233.4ef06751@marcec> <pan$5b352$6e6542cd$e89d31d4$5e60498b@cox.net>
+In-Reply-To: <pan$5b352$6e6542cd$e89d31d4$5e60498b@cox.net>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-show_path() function in struct super_operations is used to output
-subtree mount info for mountinfo.
-Without the implement of show_path() function, user can not found where
-each subvolume is mounted if using 'subvolid=' mount option.
-(When mounted with 'subvol=' mount option, vfs is aware of subtree mount
-and can to the path resolve by vfs itself)
+On 20/07/14 14:59, Duncan wrote:
+> Marc Joliet posted on Sun, 20 Jul 2014 12:22:33 +0200 as excerpted:
+>
+>> On the other hand, the wiki [0] says that defragmentation (and
+>> balancing) is optional, and the only reason stated for doing either is
+>> because they "will have impact on performance".
+> Yes.  That's what threw off the other guy as well.  He decided to skip it
+> for the same reason.
+>
+> If I had a wiki account I'd change it, but for whatever reason I tend to
+> be far more comfortable writing list replies, sometimes repeatedly, than
+> writing anything on the web, which I tend to treat as read-only.  So I've
+> never gotten a wiki account and thus haven't changed it, and apparently
+> the other guy with the problem and anyone else that knows hasn't changed
+> it either, so the conversion page still continues to underemphasize the
+> importance of completing the conversion steps, including the defrag, in
+> proper order.
+>
+I've inserted information specific to this in the wiki. Others with wiki 
+accounts, feel free to review:
+https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3#Before_first_use
 
-With this patch, end users will be able to use findmnt(8) or other
-programs reading mountinfo to find which btrfs subvolume is mounted.
-
-Though we use fs_info->subvol_sem to protect show_path() from subvolume
-destroying/creating, if user renames/moves the parent non-subvolume
-dir of a subvolume, it is still possible that concurrency may happen and
-cause btrfs_search_slot() fails to find the desired key.
-In that case, we just return -EBUSY and info user to try again since
-extra locking like locking the whole subvolume tree is too expensive for
-such usage.
-
-Reported-by: Stefan G.Weichinger <lists@xunil.at>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h |   2 +
- fs/btrfs/ioctl.c |   4 +-
- fs/btrfs/super.c | 112 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 116 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index be91397..63fba05 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3881,6 +3881,8 @@ void btrfs_get_block_group_info(struct list_head *groups_list,
- 				struct btrfs_ioctl_space_info *space);
- void update_ioctl_balance_args(struct btrfs_fs_info *fs_info, int lock,
- 			       struct btrfs_ioctl_balance_args *bargs);
-+int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
-+			      u64 tree_id, u64 dirid, char *name);
- 
- 
- /* file.c */
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 47aceb4..c2bd6b5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2218,8 +2218,8 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
-  * Search INODE_REFs to identify path name of 'dirid' directory
-  * in a 'tree_id' tree. and sets path name to 'name'.
-  */
--static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
--				u64 tree_id, u64 dirid, char *name)
-+int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
-+			      u64 tree_id, u64 dirid, char *name)
- {
- 	struct btrfs_root *root;
- 	struct btrfs_key key;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8e16bca..b5ece81 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1831,6 +1831,117 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
- 	return 0;
- }
- 
-+static char *str_prepend(char *dest, char *src)
-+{
-+	memmove(dest + strlen(src), dest, strlen(dest) + 1);
-+	memcpy(dest, src, strlen(src));
-+	return dest;
-+}
-+
-+static int alloc_mem_if_needed(char **dest, char *src, int *len)
-+{
-+	char *tmp;
-+
-+	if (unlikely(strlen(*dest) + strlen(src) > *len)) {
-+		*len *= 2;
-+		tmp = krealloc(*dest, *len, GFP_NOFS);
-+		if (!tmp) {
-+			return -ENOMEM;
-+		}
-+		*dest = tmp;
-+	}
-+	return 0;
-+}
-+
-+static int btrfs_show_path(struct seq_file *m, struct dentry *mount_root)
-+{
-+	struct inode *inode = mount_root->d_inode;
-+	struct btrfs_root *subv_root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = subv_root->fs_info;
-+	struct btrfs_root *tree_root = fs_info->tree_root;
-+	struct btrfs_root_ref *ref;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_path *path = NULL;
-+	char *name = NULL;
-+	char *buf = NULL;
-+	int ret = 0;
-+	int len;
-+	u64 dirid = 0;
-+	u16 namelen;
-+
-+	name = kmalloc(PAGE_SIZE, GFP_NOFS);
-+	len = PAGE_SIZE;
-+	buf = kmalloc(BTRFS_INO_LOOKUP_PATH_MAX, GFP_NOFS);
-+	path = btrfs_alloc_path();
-+	if (!name || !buf || !path) {
-+		ret = -ENOMEM;
-+		goto out_free;
-+	}
-+	*name = '/';
-+	*(name + 1) = '\0';
-+
-+	key.objectid = subv_root->root_key.objectid;
-+	key.type = BTRFS_ROOT_BACKREF_KEY;
-+	key.offset = 0;
-+	down_read(&fs_info->subvol_sem);
-+	while (key.objectid != BTRFS_FS_TREE_OBJECTID) {
-+		ret = btrfs_search_slot_for_read(tree_root, &key, path, 1, 1);
-+		if (ret < 0)
-+			goto out;
-+		if (ret) {
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
-+				      path->slots[0]);
-+		if (found_key.objectid != key.objectid ||
-+		    found_key.type != BTRFS_ROOT_BACKREF_KEY) {
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+		/* append the subvol name first */
-+		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				     struct btrfs_root_ref);
-+		dirid = btrfs_root_ref_dirid(path->nodes[0], ref);
-+		namelen = btrfs_root_ref_name_len(path->nodes[0], ref);
-+		read_extent_buffer(path->nodes[0], buf,
-+				   (unsigned long)(ref + 1), namelen);
-+		*(buf + namelen) = '/';
-+		*(buf + namelen + 1) = '\0';
-+		ret = alloc_mem_if_needed(&name, buf, &len);
-+		if (ret < 0)
-+			goto out;
-+		str_prepend(name + 1, buf);
-+
-+		/* then append path name inside the subvole */
-+		ret = btrfs_search_path_in_tree(fs_info, found_key.offset,
-+						dirid, buf);
-+		if (ret < 0) {
-+			if (ret == -ENOENT)
-+				/* parent dir may be under rename/moving,
-+				 * info user to try again other than
-+				 * "No such file or directory" */
-+				ret = -EBUSY;
-+			goto out;
-+		}
-+		btrfs_release_path(path);
-+		key.objectid = found_key.offset;
-+		ret = alloc_mem_if_needed(&name, buf, &len);
-+		if (ret < 0)
-+			goto out;
-+		str_prepend(name + 1, buf);
-+	}
-+	seq_puts(m, name);
-+out:
-+	up_read(&fs_info->subvol_sem);
-+out_free:
-+	btrfs_free_path(path);
-+	kfree(buf);
-+	kfree(name);
-+	return ret;
-+}
-+
- static const struct super_operations btrfs_super_ops = {
- 	.drop_inode	= btrfs_drop_inode,
- 	.evict_inode	= btrfs_evict_inode,
-@@ -1845,6 +1956,7 @@ static const struct super_operations btrfs_super_ops = {
- 	.remount_fs	= btrfs_remount,
- 	.freeze_fs	= btrfs_freeze,
- 	.unfreeze_fs	= btrfs_unfreeze,
-+	.show_path	= btrfs_show_path,
- };
- 
- static const struct file_operations btrfs_ctl_fops = {
 -- 
-2.0.2
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
 

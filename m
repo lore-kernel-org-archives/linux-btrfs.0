@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58305 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33130 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751619AbaGVBPR (ORCPT
+	with ESMTP id S1751721AbaGVBXN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 21:15:17 -0400
-Message-ID: <53CDB9EA.4020705@cn.fujitsu.com>
-Date: Tue, 22 Jul 2014 09:10:02 +0800
+	Mon, 21 Jul 2014 21:23:13 -0400
+Message-ID: <53CDBBC7.6000609@cn.fujitsu.com>
+Date: Tue, 22 Jul 2014 09:17:59 +0800
 From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 To: TM <tmjuju@yahoo.com>, <linux-btrfs@vger.kernel.org>
@@ -44,11 +44,21 @@ On 07/21/2014 10:00 PM, TM wrote:
 I don't have specific statistics about this. The conclusion come from
 implementation differences between replace and 'device removal'.
 
-
 >
 > Also, can replace be used when one device is missing? Cant find
 > documentation. eg.
 > btrfs replace start missing /dev/sdXX
+The latest btrfs-progs include man page of btrfs-replace. Actually, you 
+could use it
+something like:
+
+btrfs replace start  <srcdev>|<devid> <targetdev> <mnt>
+
+You could use 'btrfs file show' to see missing device id. and then run 
+btrfs replace.
+
+Thanks,
+Wang
 >
 >
 > TM

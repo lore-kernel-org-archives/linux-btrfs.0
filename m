@@ -1,69 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38118 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755481AbaGJDFS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 23:05:18 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6A35FQm026114
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Jul 2014 11:05:15 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 RESEND 4/4] btrfs-progs: Add mount point output for 'btrfs fi df'
-Date: Thu, 10 Jul 2014 11:05:13 +0800
-Message-ID: <1404961513-14614-4-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1404961513-14614-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:52073 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751185AbaGVTQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jul 2014 15:16:01 -0400
+Date: Tue, 22 Jul 2014 21:15:59 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RESEND 1/4] btrfs-progs: Check fstype in find_mount_root()
+Message-ID: <20140722191559.GJ1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1404961513-14614-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1404961513-14614-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add mount point output for 'btrfs fi df'.
-Also since the patch uses find_mount_root() to find mount point,
-now 'btrfs fi df' can output more meaningful error message when given a
-non-btrfs path.
+On Thu, Jul 10, 2014 at 11:05:10AM +0800, Qu Wenruo wrote:
+> When calling find_mount_root(), caller in fact wants to find the mount
+> point of *BTRFS*.
+> 
+> So also check ent->fstype in find_mount_root() and output proper error
+> messages if needed.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2:
-  Call realpath() before find_mount_root() to deal with relative path
----
- cmds-filesystem.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+The utils.c functions should be mostly silent about the errors as this
+this the common code and it's up to the callers to print the messages.
+The existing printf in find_mount_root had appeared before the function
+was moved to utils.c.
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 0a9b62a..d76a1a5 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -187,12 +187,28 @@ static int cmd_filesystem_df(int argc, char **argv)
- 	int ret;
- 	int fd;
- 	char *path;
-+	char *real_path = NULL;
-+	char *mount_point = NULL;
- 	DIR *dirstream = NULL;
- 
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_filesystem_df_usage);
- 
- 	path = argv[1];
-+	real_path = realpath(path, NULL);
-+	if (!real_path) {
-+		fprintf(stderr, "ERROR: Failed to resolve real path for %s: %s\n",
-+			path, strerror(errno));
-+		return 1;
-+	}
-+	ret = find_mount_root(real_path, &mount_point);
-+	if (ret < 0) {
-+		free(real_path);
-+		return 1;
-+	}
-+	printf("Mounted on: %s\n", mount_point);
-+	free(real_path);
-+	free(mount_point);
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
--- 
-2.0.1
+> This will suppress a lot of "Inapproiate ioctl for device" error
+> message.
 
+Catching the error early is a good thing of course.

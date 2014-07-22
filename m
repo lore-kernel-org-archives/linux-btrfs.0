@@ -1,80 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.54]:42756 "EHLO
-	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756693AbaGVUKg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 16:10:36 -0400
-Message-ID: <53CEC52A.4020708@skagestad.org>
-Date: Tue, 22 Jul 2014 22:10:18 +0200
-From: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
-MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Blocked tasks on 3.15.1
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com> <53C7CD0F.7070603@fb.com> <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com> <1745216.hDa4tC2HJJ@merkaba> <53CE7ACF.7070109@fb.com> <53CEBEAB.3010206@skagestad.org> <53CEC09B.4050309@fb.com>
-In-Reply-To: <53CEC09B.4050309@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:43753 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751462AbaGVUVf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jul 2014 16:21:35 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1X9gZ0-0007J1-HM
+	for linux-btrfs@vger.kernel.org; Tue, 22 Jul 2014 22:21:30 +0200
+Received: from athedsl-370925.home.otenet.gr ([79.131.0.235])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jul 2014 22:21:30 +0200
+Received: from tmjuju by athedsl-370925.home.otenet.gr with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jul 2014 22:21:30 +0200
+To: linux-btrfs@vger.kernel.org
+From: TM <tmjuju@yahoo.com>
+Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
+Date: Tue, 22 Jul 2014 20:21:16 +0000 (UTC)
+Message-ID: <loom.20140722T221814-497@post.gmane.org>
+References: <loom.20140720T102642-239@post.gmane.org> <53CC6B39.1060705@cn.fujitsu.com> <loom.20140721T155907-291@post.gmane.org> <53CDBBC7.6000609@cn.fujitsu.com> <loom.20140722T164042-111@post.gmane.org> <53CE8394.9010903@giantdisaster.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/22/2014 09:50 PM, Chris Mason wrote:
-> On 07/22/2014 03:42 PM, Torbjørn wrote:
->> On 07/22/2014 04:53 PM, Chris Mason wrote:
->>> On 07/19/2014 02:23 PM, Martin Steigerwald wrote:
->>>
->>>>> Running 3.15.6 with this patch applied on top:
->>>>>    - still causes a hang with `rsync -hPaHAXx --del /mnt/home/nyx/
->>>>> /home/nyx/`
->>>>> - no extra error messages printed (`dmesg | grep racing`) compared to
->>>>> without the patch
->>>> I got same results with 3.16-rc5 + this patch (see thread BTRFS hang
->>>> with
->>>> 3.16-rc5). 3.16-rc4 still is fine with me. No hang whatsoever so far.
->>>>
->>>>> To recap some details (so I can have it all in one place):
->>>>>    - /home/ is btrfs with compress=lzo
->>>> BTRFS RAID 1 with lzo.
->>>>
->>>>>    - I have _not_ created any nodatacow files.
->>>> Me neither.
->>>>
->>>>>    - Full stack is: sata <-> dmcrypt <-> lvm <-> btrfs (I noticed others
->>>>> mentioning the use of dmcrypt)
->>>> Same, except no dmcrypt.
->>>>
->>> Thanks for the help in tracking this down everyone.  We'll get there!
->>> Are you all running multi-disk systems (from a btrfs POV, more than one
->>> device?)  I don't care how many physical drives this maps to, just does
->>> btrfs think there's more than one drive.
->>>
->>> -chris
->> 3.16-rc6 with your patch on top still causes hangs here.
->> No traces of "racing" in dmesg
->> Hang is on a btrfs raid 0 consisting of 3 drives.
->> Full stack is: sata <-> dmcrypt <-> btrfs raid0
->>
->> Hang was caused by
->> 1. Several rsync -av --inplace --delete <source> <backup subvol>
->> 2. btrfs subvolume snapshot -r <backup subvol> <bacup snap>
->>
->> The rsync jobs are done one at a time
->> btrfs is stuck when trying to create the read only snapshot
-> The trace is similar, but you're stuck trying to read the free space
-> cache.  This one I saw earlier this morning, but I haven't seen these
-> parts from the 3.15 bug reports.
->
-> Maybe they are related though, I'll dig into the 3.15 bug reports again.
->
-> -chris
-In case it was not clear, this hang was on a different btrfs volume than 
-the 3.15 hang (but the same server).
-Earlier the affected volume was readable during the hang. This time the 
-volume is not readable either.
+Stefan Behrens <sbehrens <at> giantdisaster.de> writes:
 
-I'll keep the patched 3.16 running and see if I can trigger something 
-similar to the 3.15 hang.
 
-Thanks
+> TM, Just read the man-page. You could have used the replace tool after
+> physically removing the failing device.
+> 
+> Quoting the man page:
+> "If the source device is not available anymore, or if the -r option is
+> set, the data is built only using the RAID redundancy mechanisms.
+> 
+> Options
+> -r   only read from <srcdev> if no other zero-defect mirror
+>      exists (enable this if your drive has lots of read errors,
+>      the access would be very slow)"
+> 
+> Concerning the rebuild performance, the access to the disk is linear for
+> both reading and writing, I measured above 75 MByte/s at that time with
+> regular 7200 RPM disks, which would be less than 10 hours to replace a
+> 3TB disk (in worst case, if it is completely filled up).
+> Unused/unallocated areas are skipped and additionally improve the
+> rebuild speed.
+> 
+> For missing disks, unfortunately the command invocation is not using the
+> term "missing" but the numerical device-id instead of the device name.
+> "missing" _is_ implemented in the kernel part of the replace code, but
+> was simply forgotten in the user mode part, at least it was forgotten in
+> the man page.
+> 
 
---
-Torbjørn
+Hi Stefan,
+thank you very much, for the comprehensive info, I will opt to use replace
+next time.
+
+Breaking news :-) 
+from Jul 19 14:41:36 microserver kernel: [ 1134.244007] btrfs: relocating
+block group 8974430633984 flags 68
+to  Jul 22 16:54:54 microserver kernel: [268419.463433] btrfs: relocating
+block group 2991474081792 flags 65
+
+Rebuild ended before counting down to 00000000
+So flight time was 3 days, and I see no more messages or btrfs processes
+utilizing cpu. So rebuild seams ready.
+Just a few hours ago another disk showed some earlly touble accumulating
+Current_Pending_Sector but no Reallocated_Sector_Ct yet.
+
+
+TM
+

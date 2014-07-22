@@ -1,70 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.54]:58647 "EHLO
-	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752751AbaGVPPT (ORCPT
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.216]:10058 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751391AbaGVPad (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 11:15:19 -0400
-Message-ID: <53CE7FF3.3040501@skagestad.org>
-Date: Tue, 22 Jul 2014 17:14:59 +0200
-From: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+	Tue, 22 Jul 2014 11:30:33 -0400
+Message-ID: <53CE8394.9010903@giantdisaster.de>
+Date: Tue, 22 Jul 2014 17:30:28 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Blocked tasks on 3.15.1
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com> <53C7CD0F.7070603@fb.com> <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com> <1745216.hDa4tC2HJJ@merkaba> <53CE7ACF.7070109@fb.com>
-In-Reply-To: <53CE7ACF.7070109@fb.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: TM <tmjuju@yahoo.com>, linux-btrfs@vger.kernel.org
+Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
+References: <loom.20140720T102642-239@post.gmane.org> <53CC6B39.1060705@cn.fujitsu.com> <loom.20140721T155907-291@post.gmane.org> <53CDBBC7.6000609@cn.fujitsu.com> <loom.20140722T164042-111@post.gmane.org>
+In-Reply-To: <loom.20140722T164042-111@post.gmane.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/22/2014 04:53 PM, Chris Mason wrote:
->
-> On 07/19/2014 02:23 PM, Martin Steigerwald wrote:
->
->>> Running 3.15.6 with this patch applied on top:
->>>   - still causes a hang with `rsync -hPaHAXx --del /mnt/home/nyx/ /home/nyx/`
->>> - no extra error messages printed (`dmesg | grep racing`) compared to
->>> without the patch
->> I got same results with 3.16-rc5 + this patch (see thread BTRFS hang with
->> 3.16-rc5). 3.16-rc4 still is fine with me. No hang whatsoever so far.
+On Tue, 22 Jul 2014 14:43:45 +0000 (UTC), Tm wrote:
+> Wang Shilong <wangsl.fnst <at> cn.fujitsu.com> writes:
+> 
+> 
+>> The latest btrfs-progs include man page of btrfs-replace. Actually, you 
+>> could use it
+>> something like:
 >>
->>> To recap some details (so I can have it all in one place):
->>>   - /home/ is btrfs with compress=lzo
->> BTRFS RAID 1 with lzo.
+>> btrfs replace start  <srcdev>|<devid> <targetdev> <mnt>
 >>
->>>   - I have _not_ created any nodatacow files.
->> Me neither.
+>> You could use 'btrfs file show' to see missing device id. and then run 
+>> btrfs replace.
 >>
->>>   - Full stack is: sata <-> dmcrypt <-> lvm <-> btrfs (I noticed others
->>> mentioning the use of dmcrypt)
->> Same, except no dmcrypt.
->>
-> Thanks for the help in tracking this down everyone.  We'll get there!
-> Are you all running multi-disk systems (from a btrfs POV, more than one
-> device?)  I don't care how many physical drives this maps to, just does
-> btrfs think there's more than one drive.
->
-> -chris
-Hi,
+> 
+> Hi Wang,
+> 
+>   I physically removed the drive before the rebuild, having a failing device
+> as a source is not a good idea anyway.
+>   Without the device in place, the device name is not showing up, since the
+> missing device is not under /dev/sdXX or anything else. 
+> 
+>   That is why I asked if the special parameter 'missing' may be used in a
+> replace. I can't say if it is supported. But I guess not, since I found no
+> documentation on this matter.
+> 
+>   So I guess replace is not aimed at fault tolerance / rebuilding. It's just
+> a convenient way to lets lay replace the disks with larger disks , to extend
+> your array. A convenience tool, not an emergency tool.
 
-In case it's interesting:
- From an earlier email thread with subject: 3.15-rc6 - 
-btrfs-transacti:4157 blocked for more than 120
+TM, Just read the man-page. You could have used the replace tool after
+physically removing the failing device.
 
-TLDR: yes, btrfs sees multiple devices.
+Quoting the man page:
+"If the source device is not available anymore, or if the -r option is
+set, the data is built only using the RAID redundancy mechanisms.
 
-sata <-> dmcrypt <-> btrfs raid10
-btrfs raid10 consist of multiple dmcrypt devices from multiple sata devices.
+Options
+-r   only read from <srcdev> if no other zero-defect mirror
+     exists (enable this if your drive has lots of read errors,
+     the access would be very slow)"
 
-Mount: /dev/mapper/sdu on /mnt/storage type btrfs 
-(rw,noatime,space_cache,compress=lzo,inode_cache,subvol=storage)
-(yes I know inode_cache is not recommended for general use)
 
-I have a nocow directory in a separate subvolume containing vm-images 
-used by kvm.
-The same kvm-vms are reading/writing data from that array over nfs.
+Concerning the rebuild performance, the access to the disk is linear for
+both reading and writing, I measured above 75 MByte/s at that time with
+regular 7200 RPM disks, which would be less than 10 hours to replace a
+3TB disk (in worst case, if it is completely filled up).
+Unused/unallocated areas are skipped and additionally improve the
+rebuild speed.
 
-I'm still holding that system on 3.14. Anything above causes blocks.
+For missing disks, unfortunately the command invocation is not using the
+term "missing" but the numerical device-id instead of the device name.
+"missing" _is_ implemented in the kernel part of the replace code, but
+was simply forgotten in the user mode part, at least it was forgotten in
+the man page.
 
---
-Torbjørn
+

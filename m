@@ -1,68 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51343 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755001AbaGIG5B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jul 2014 02:57:01 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v2] btrfs-progs: Add mount point output for 'btrfs fi df' command.
-Date: Wed, 9 Jul 2014 14:56:57 +0800
-Message-ID: <1404889017-31426-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from cantor2.suse.de ([195.135.220.15]:51260 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751317AbaGVR4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jul 2014 13:56:20 -0400
+Date: Tue, 22 Jul 2014 19:56:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2] btrfs-progs: Add mount point output for 'btrfs fi df'
+ command.
+Message-ID: <20140722175617.GF1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1404889017-31426-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1404889017-31426-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add mount point output for 'btrfs fi df'.
-Also since the patch uses find_mount_root() to find mount point,
-now 'btrfs fi df' can output more meaningful error message when given a
-non-btrfs path.
+On Wed, Jul 09, 2014 at 02:56:57PM +0800, Qu Wenruo wrote:
+> Add mount point output for 'btrfs fi df'.
+> Also since the patch uses find_mount_root() to find mount point,
+> now 'btrfs fi df' can output more meaningful error message when given a
+> non-btrfs path.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2:
-  Call realpath() before find_mount_root() to deal with relative path
----
- cmds-filesystem.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 4b2d27e..77e1db0 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -187,12 +187,31 @@ static int cmd_filesystem_df(int argc, char **argv)
-        int ret;
-        int fd;
-        char *path;
-+       char *real_path = NULL;
-+       char *mount_point = NULL;
-        DIR *dirstream = NULL;
- 
-        if (check_argc_exact(argc, 2))
-                usage(cmd_filesystem_df_usage);
- 
-        path = argv[1];
-+       real_path = realpath(path, NULL);
-+       if (!real_path) {
-+	       fprintf(stderr, "ERROR: Failed to resolve real path for %s: %s\n",
-+		       path, strerror(errno));
-+	       return 1;
-+       }
-+       ret = find_mount_root(real_path, &mount_point);
-+       if (ret < 0) {
-+	       free(real_path);
-+	       if (ret != -ENOENT)
-+		       fprintf(stderr, "ERROR: Failed to find mount root for path %s: %s\n",
-+			       path, strerror(-ret));
-+		return 1;
-+       }
-+       free(real_path);
-+       printf("Mounted on: %s\n", mount_point);
-+       free(mount_point);
- 
-        fd = open_file_or_dir(path, &dirstream);
-        if (fd < 0) {
--- 
-2.0.1
-
+If a non-btrfs path is passed, the "Mounted on" line is printed,
+followed by 2 ERROR: lines. I suggest to print it only if get_df
+succeeds, ie. right before print_df.

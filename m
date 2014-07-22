@@ -1,74 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.216]:10058 "EHLO
-	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751391AbaGVPad (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:52436 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754581AbaGVQr1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 11:30:33 -0400
-Message-ID: <53CE8394.9010903@giantdisaster.de>
-Date: Tue, 22 Jul 2014 17:30:28 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Tue, 22 Jul 2014 12:47:27 -0400
+Date: Tue, 22 Jul 2014 09:46:46 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Mason <clm@fb.com>
+Cc: Martin Steigerwald <Martin@lichtvoll.de>, Cody P Schafer <dev@codyps.com>,
+        Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+Subject: Re: Blocked tasks on 3.15.1
+Message-ID: <20140722164646.GB27916@merlins.org>
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
+ <53C7CD0F.7070603@fb.com>
+ <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
+ <1745216.hDa4tC2HJJ@merkaba>
+ <53CE7ACF.7070109@fb.com>
 MIME-Version: 1.0
-To: TM <tmjuju@yahoo.com>, linux-btrfs@vger.kernel.org
-Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
-References: <loom.20140720T102642-239@post.gmane.org> <53CC6B39.1060705@cn.fujitsu.com> <loom.20140721T155907-291@post.gmane.org> <53CDBBC7.6000609@cn.fujitsu.com> <loom.20140722T164042-111@post.gmane.org>
-In-Reply-To: <loom.20140722T164042-111@post.gmane.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53CE7ACF.7070109@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 22 Jul 2014 14:43:45 +0000 (UTC), Tm wrote:
-> Wang Shilong <wangsl.fnst <at> cn.fujitsu.com> writes:
-> 
-> 
->> The latest btrfs-progs include man page of btrfs-replace. Actually, you 
->> could use it
->> something like:
->>
->> btrfs replace start  <srcdev>|<devid> <targetdev> <mnt>
->>
->> You could use 'btrfs file show' to see missing device id. and then run 
->> btrfs replace.
->>
-> 
-> Hi Wang,
-> 
->   I physically removed the drive before the rebuild, having a failing device
-> as a source is not a good idea anyway.
->   Without the device in place, the device name is not showing up, since the
-> missing device is not under /dev/sdXX or anything else. 
-> 
->   That is why I asked if the special parameter 'missing' may be used in a
-> replace. I can't say if it is supported. But I guess not, since I found no
-> documentation on this matter.
-> 
->   So I guess replace is not aimed at fault tolerance / rebuilding. It's just
-> a convenient way to lets lay replace the disks with larger disks , to extend
-> your array. A convenience tool, not an emergency tool.
+On Tue, Jul 22, 2014 at 10:53:03AM -0400, Chris Mason wrote:
+> Thanks for the help in tracking this down everyone.  We'll get there!
+> Are you all running multi-disk systems (from a btrfs POV, more than one
+> device?)  I don't care how many physical drives this maps to, just does
+> btrfs think there's more than one drive.
 
-TM, Just read the man-page. You could have used the replace tool after
-physically removing the failing device.
+In the bugs I sent you, it was a mix of arrays that were
+mdraid / dmcrypt / btrfs
 
-Quoting the man page:
-"If the source device is not available anymore, or if the -r option is
-set, the data is built only using the RAID redundancy mechanisms.
+I have also one array with:
+disk1 / dmcrypt \
+                 - btrfs (2 drives visible by btrfs)
+disk2 / dmcrypt /
 
-Options
--r   only read from <srcdev> if no other zero-defect mirror
-     exists (enable this if your drive has lots of read errors,
-     the access would be very slow)"
+The multidrive setup seemed a bit worse, I just destroyed it and went
+back to putting all the drives together with mdadm and showing a single
+dmcrypted device to btrfs.
 
+But that is still super unstable on my server with 3.15, while being
+somewhat usable with my laptop (it still hangs, but more rarely)
+The one difference is that my laptop actually does
+disk > dmcrypt > btrfs
+while my server does 
+disks > mdadm > dmcrypt > btrfs
 
-Concerning the rebuild performance, the access to the disk is linear for
-both reading and writing, I measured above 75 MByte/s at that time with
-regular 7200 RPM disks, which would be less than 10 hours to replace a
-3TB disk (in worst case, if it is completely filled up).
-Unused/unallocated areas are skipped and additionally improve the
-rebuild speed.
-
-For missing disks, unfortunately the command invocation is not using the
-term "missing" but the numerical device-id instead of the device name.
-"missing" _is_ implemented in the kernel part of the replace code, but
-was simply forgotten in the user mode part, at least it was forgotten in
-the man page.
-
-
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

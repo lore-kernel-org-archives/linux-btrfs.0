@@ -1,154 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:52737 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753191AbaGWAyt (ORCPT
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:39619 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751977AbaGWBGQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 20:54:49 -0400
-Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 5A93A3EE1D5
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Jul 2014 09:54:47 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 1651DAC03C7
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Jul 2014 09:54:46 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id ACC58E08005
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Jul 2014 09:54:45 +0900 (JST)
-Message-ID: <53CF077D.4000106@jp.fujitsu.com>
-Date: Wed, 23 Jul 2014 09:53:17 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Tue, 22 Jul 2014 21:06:16 -0400
+Received: by mail-vc0-f175.google.com with SMTP id hu12so869298vcb.20
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jul 2014 18:06:15 -0700 (PDT)
 MIME-Version: 1.0
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Kevin Brandstatter <icarusthecow@gmail.com>
-Subject: Re: [BUG] "Quota Ignored On write" problem still exist with 3.16-rc5
-References: <53C8DEB0.1060404@jp.fujitsu.com> <53C8F720.4040803@cn.fujitsu.com>
-In-Reply-To: <53C8F720.4040803@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+In-Reply-To: <53CE7ACF.7070109@fb.com>
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
+	<53C7CD0F.7070603@fb.com>
+	<CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
+	<1745216.hDa4tC2HJJ@merkaba>
+	<53CE7ACF.7070109@fb.com>
+Date: Tue, 22 Jul 2014 21:06:15 -0400
+Message-ID: <CAGfcS_==i3_6AeqBKefJgQC+nuGerwKxd5uNAhvu0SZZdZwYKA@mail.gmail.com>
+Subject: Re: Blocked tasks on 3.15.1
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Chris Mason <clm@fb.com>
+Cc: Martin Steigerwald <Martin@lichtvoll.de>, Cody P Schafer <dev@codyps.com>,
+        Chris Samuel <chris@csamuel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Wang,
+On Tue, Jul 22, 2014 at 10:53 AM, Chris Mason <clm@fb.com> wrote:
+>
+> Thanks for the help in tracking this down everyone.  We'll get there!
+> Are you all running multi-disk systems (from a btrfs POV, more than one
+> device?)  I don't care how many physical drives this maps to, just does
+> btrfs think there's more than one drive.
 
-(2014/07/18 19:29), Wang Shilong wrote:
-> On 07/18/2014 04:45 PM, Satoru Takeuchi wrote:
->> Hi Josef, Chris,
->>
->> I found "Quota Ignored On write" problem still exist with 3.16-rc5,
->> which Kevin reported before.
->>
->> Kevin's report:
->> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35292.html
->>
->> The result of bisect:
->> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35304.html
-> I guess this is because Josef's patch delayed qgroup accounting, it will
-> cause @refer and @excl updating very late...
-> 
-> The patch maybe optimize to merge some delayed refs(for example), but
-> it updates qgroup accounting when commiting transaction which will be
-> very late,
-> we may have accumulated many data..
+I've been away on vacation so I haven't been able to try your latest
+patch, but I can try whatever is out there starting this weekend.
 
-Thank you for your comment. I know of the code logic which caused
-this problem. However, what I want to say here is that this
-problem should be fixed as soon as possible. It is a important
-regression problem and we've already know the root cause.
+I was getting fairly consistent hangs during heavy IO (especially
+rsync) on 3.15 with lzo enabled.  This is on raid1 across 5 drives,
+directly against the partitions themselves (no dmcrypt, mdadm, lvm,
+etc).  I disabled lzo and haven't had problems since.  I'm now running
+on mainline without issue, but I think I did see the hang on mainline
+when I tried enabling lzo again briefly.
 
-If it's impossible to fix it by releasing 3.16, I consider this
-patch should be reverted.
-
-Thanks,
-Satoru
-
-> 
-> Thanks,
-> Wang
->>
->>> I bisected and found the bad commit is the following patch.
->>>
->>> ===============================================================================
->>> commit fcebe4562dec83b3f8d3088d77584727b09130b2
->>> Author: Josef Bacik <jba...@fb.com>
->>> Date:   Tue May 13 17:30:47 2014 -0700
->>>
->>>      Btrfs: rework qgroup accounting
->>> ===============================================================================
->>>
->>> Josef, please take a look at this patch.
->> Reproducer:
->> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35299.html
->>
->> Could you tell me the progress of fixing this bug?
->> In addition, could you fix it by 3.16?
->>
->> command log:
->> ===============================================================================
->> # ./test.sh
->> + uname -a
->> Linux luna.soft.fujitsu.com 3.16.0-rc5 #2 SMP Tue Jul 15 13:39:46 JST 2014 x86_64 x86_64 x86_64 GNU/Linux
->> + df -T /test7
->> Filesystem     Type  1K-blocks  Used Available Use% Mounted on
->> /dev/sdc7      btrfs  29296640  1536  27169536   1% /test7
->> + btrfs quota ena /test7
->> + cd /test7
->> + btrfs sub cre test
->> Create subvolume './test'
->> + btrfs sub l -a /test7
->> ID 270 gen 66 top level 5 path test
->> + btrfs qg lim 1G test                          # limit test subvol to 1GB
->> + btrfs qg show -pcre /test7
->> qgroupid rfer  excl  max_rfer   max_excl parent  child
->> -------- ----  ----  --------   -------- ------  -----
->> 0/5      16384 16384 0          0        ---     ---
->> 0/270    16384 16384 1073741824 0        ---     ---
->> + dd if=/dev/zero of=test/file0 bs=1M count=2000
->> 2000+0 records in
->> 2000+0 records out
->> 2097152000 bytes (2.1 GB) copied, 9.67876 s, 217 MB/s   # write 2GB. It's a bug!
->> + sync
->> + ls -lisaR /test7
->> /test7:
->> total 20
->> 256 16 drwxr-xr-x   1 root root    8 Jul 18 15:12 .
->>    2  4 drwxr-xr-x. 43 root root 4096 Jul 16 08:34 ..
->> 256  0 drwxr-xr-x   1 root root   10 Jul 18 15:17 test
->>
->> /test7/test:
->> total 2048016
->> 256       0 drwxr-xr-x 1 root root         10 Jul 18 15:17 .
->> 256      16 drwxr-xr-x 1 root root          8 Jul 18 15:12 ..
->> 257 2048000 -rw-r--r-- 1 root root 2097152000 Jul 18 15:17 file0
->> + btrfs qg show -pcre /test7
->> qgroupid rfer       excl       max_rfer   max_excl parent  child
->> -------- ----       ----       --------   -------- ------  -----
->> 0/5      16384      16384      0          0        ---     ---
->> 0/270    2097168384 2097168384 1073741824 0        ---     ---
->> + btrfs quota dis /test7
->> + btrfs sub del test
->> Transaction commit: none (default)
->> Delete subvolume '/test7/test'
->> + set +x
->> #
->> ===============================================================================
->>
->>    NOTE:
->>    The reproducer here (./test.sh) is a bit different from above-mentioned
->>    one because of some reason.
->>
->> Thanks,
->> Satoru
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> .
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Rich

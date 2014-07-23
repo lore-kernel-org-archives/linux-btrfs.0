@@ -1,41 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:20212 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753918AbaGWCwS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 22:52:18 -0400
-Message-ID: <53CF235D.1040703@redhat.com>
-Date: Tue, 22 Jul 2014 21:52:13 -0500
-From: Eric Sandeen <sandeen@redhat.com>
-MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:28210 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756062AbaGWDCA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jul 2014 23:02:00 -0400
+Date: Wed, 23 Jul 2014 11:01:44 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: BUGS: bogus out of space reported when mounted raid1 degraded,
  btrfs replace failure, then oops
+Message-ID: <20140723030142.GA4955@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <3823A5F4-169B-4EAC-A548-B0E4FE782F0E@colorremedies.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <3823A5F4-169B-4EAC-A548-B0E4FE782F0E@colorremedies.com>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This one (your bug #4) was likely caused by:
-
-commit 99994cde9c59c2b8bb67d46d531b26cc73e39747
-Author: Anand Jain <Anand.Jain@oracle.com>
-Date:   Tue Jun 3 11:36:00 2014 +0800
-
-    btrfs: dev delete should remove sysfs entry
-
-and hopefully fixed by:
-
-commit 0bfaa9c5cb479cebc24979b384374fe47500b4c9
-Author: Eric Sandeen <sandeen@redhat.com>
-Date:   Mon Jul 7 12:34:49 2014 -0500
-
-    btrfs: test for valid bdev before kobj removal in btrfs_rm_device
-
--Eric
-
-On 7/22/14, 8:34 PM, Chris Murphy wrote:
+On Tue, Jul 22, 2014 at 07:34:58PM -0600, Chris Murphy wrote:
+> 3.16.0-0.rc6.git0.1.fc21.1.x86_64
+> btfs-progs 3.14.2
+> 
+> Fortunately this is a test system so it is dispensable. But in just an hour I ran into 5 bugs, and managed to apparently completely destroy a btrfs file system beyond repair, and it wasn't intentional. 
+> 
+> 
+> 1. mkfs.btrfs /dev/sda6  ## volume's life starts as single device, on an SSD
+> 2. btrfs device add /dev/sdb1 /  ## added an HDD partition
+> 3. btrfs balance start -dconvert=raid1 -mconvert=raid1
+> 4. clean shutdown, remove device 1 (leaving device 0)
+> 5. poweron, mount degraded
+> 6. gdm/gnome comes up very slowly, then I see a sad face graphic, with a message that there's only 60MB of space left.
+> 
+> # df -h
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/sda6        26G   13G   20M 100% /
+> /dev/sda6        26G   13G   20M 100% /home
+> /dev/sda6        26G   13G   20M 100% /var
+> /dev/sda6        26G   13G   20M 100% /boot
+> 
+> # btrfs fi df
+> Data, RAID1: total=6.00GiB, used=5.99GiB
+> System, RAID1: total=32.00MiB, used=32.00KiB
+> Metadata, RAID1: total=768.00MiB, used=412.41MiB
+> unknown, single: total=160.00MiB, used=0.00
+> 
+> # btrfs fi show
+> Label: 'Rawhide2'  uuid: f857c336-b8f5-4f5d-9500-a705ee1b6977
+> 	Total devices 2 FS bytes used 6.39GiB
+> 	devid    1 size 12.58GiB used 6.78GiB path /dev/sda6
+> 	*** Some devices missing
+> 
+> Btrfs v3.14.2
+> 
+> BUG 1: The df command is clearly bogus six ways to Sunday. It's a 12.58 GiB partition, only 6.78GiB used, thus 5.8GiB free, yet df and apparently gvfs think it's full, maybe systemd too because the journal wigged out and stopped logging events while also kept stopping and starting. So whatever changes occurred to clean up the df reporting, are very problematic at best when mounting degraded.
+> 
+> 
+> 
+> ============so then he gets curious about replacing the missing disk==============
+> 
+> 
+> 7. btrfs replace start 2 /dev/sdb1 /   ## this is a ~13GB partition that matches the size of the missing device
+> 
+> This completes, no disk activity for a little over a minute, and then I see a call trace with btrfs_replace implicated. Unfortunately the system becomes so unstable at this point, I can't even capture a dmesg to a separate volume. After 30 minutes of unresponsive local shells, I force a poweroff.
+> 
+> 8. Power on. Dropped to a dracut shell, as the btrfs volume  will not mount:
+> [   53.890761] rawhide kernel: BTRFS: failed to read the system array on sda6
+> [   53.905058] rawhide kernel: BTRFS: open_ctree failed
+> 
+> 9. mount with -o recovery, same message
+> 
+> 10. Reboot using vbox pointed to these partitions as raw devices so I can better capture data, and not use a degraded fs as root; the devices are sdb and sdc.
+> 
+> # mount -o ro /dev/sdb /mnt
+> mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+>        missing codepage or helper program, or other error
+> 
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+> 
+> [  216.819927] BTRFS: failed to read the system array on sdc
+> [  216.835570] BTRFS: open_ctree failed
+> 
+> So it's the same message as in dracut shell. Same message with ro,recovery.
+> 
+> 11.  mount -o degraded,ro /dev/sdb /mnt
+> 
+> This works. Somehow the replace hasn't completed on some level. Very weird. And not intuitive.
+> 
+> [root@localhost ~]# btrfs fi show
+> Label: 'Rawhide2'  uuid: f857c336-b8f5-4f5d-9500-a705ee1b6977
+> 	Total devices 2 FS bytes used 6.39GiB
+> 	devid    0 size 12.58GiB used 6.78GiB path /dev/sdc
+> 	devid    1 size 12.58GiB used 6.78GiB path /dev/sdb
+> 
+> Btrfs v3.14.2
+> 
+> Does not show any missing devices.  I vaguely recall in the dracut shell when booted baremetal that btrfs fi show did still show a missing devices along with the original and replacement devices, i.e. the replace didn't complete. I suspect that my 'btrfs replace start 2' is wrong, that devid 2 did not exist, it was actually devid 0 and 1 like above; but the problem is that btrfs fi show does not show devid for missing devices. I only saw the devid 1 for the remaining device, and assumed the missing one was 2. So that's why I did 'btrfs replace start 2' yet I didn't get an error message. The replace started, but apparently didn't complete.
+> 
+> 
+> BUG 2: btrfs fi show needs to show the devid of the missing device.
+> BUG 3: btrfs replace start should fail when specifying a non-existent devid.
+> BUG 4: btrfs replace start can fail to complete (possibly related to bug 2 and 3). 
+> 
 > BUG 4: When mounting -degraded (rw), I get a major oops resulting in a completely unresponsive system.
 > 
 > # mount -o degraded /dev/sdb /mnt
@@ -82,3 +150,62 @@ On 7/22/14, 8:34 PM, Chris Murphy wrote:
 > [   55.533087] CR2: 0000000000000088
 > [   55.533087] ---[ end trace a34670f31a1db59e ]---
 
+Looks like src_dev->bdev is NULL, and btrfs_kobj_rm_device() gets there.
+
+thanks,
+-liubo
+
+> 
+> 
+> [root@localhost ~]# btrfs check /dev/sdb
+> warning, device 2 is missing
+> warning devid 2 not found already
+> Checking filesystem on /dev/sdb
+> UUID: f857c336-b8f5-4f5d-9500-a705ee1b6977
+> checking extents
+> checking free space cache
+> Error reading 22597402624, -1
+> failed to load free space cache for block group 21619867648
+> Error reading 25839001600, -1
+> failed to load free space cache for block group 22693609472
+> free space inode generation (0) did not match free space cache generation (858)
+> Error reading 22597664768, -1
+> failed to load free space cache for block group 24841093120
+> Error reading 28045934592, -1
+> failed to load free space cache for block group 25914834944
+> Error reading 25849696256, -1
+> failed to load free space cache for block group 26988576768
+> Error reading 22595305472, -1
+> failed to load free space cache for block group 28095873024
+> Error reading 25688473600, -1
+> failed to load free space cache for block group 28364308480
+> checking fs roots
+> checking csums
+> checking root refs
+> found 1449851186 bytes used err is 0
+> total csum bytes: 6233932
+> total tree bytes: 432472064
+> total fs tree bytes: 415531008
+> total extent tree bytes: 9240576
+> btree space waste bytes: 68632283
+> file data blocks allocated: 10542505984
+>  referenced 8114642944
+> Btrfs v3.14.2
+> 
+> 
+> BUG 5:
+> 
+> # btrfs-image -c9 -t3 /dev/sdb image.bin
+> warning, device 2 is missing
+> warning devid 2 not found already
+> btrfs-image: disk-io.c:155: readahead_tree_block: Assertion `!(ret)' failed.
+> Aborted (core dumped)
+> 
+> 
+> Chris Murphy
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,54 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19237 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754473AbaGQKqq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Jul 2014 06:46:46 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-Subject: [PATCH] Btrfs: fix wrong manpage of defrag command
-Date: Thu, 17 Jul 2014 18:46:01 +0800
-Message-Id: <1405593961-10423-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:39624 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751974AbaGWNQY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jul 2014 09:16:24 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 2D3F3AB07
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Jul 2014 13:16:23 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: fix build of static target
+Date: Wed, 23 Jul 2014 15:16:21 +0200
+Message-Id: <1406121381-18611-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'btrfs filesystem defrag' has an option '-t', whose manpage says
+A user repoted that static buid fails with
 
-"Any extent bigger than threshold given by -t option, will be
-considered already defragged. Use 0 to take the kernel default, and
-use 1 to say every single extent must be rewritten."
+utils-lib.static.o: In function `arg_strtou64':
+/home/dsterba/labs/btrfs-progs/utils-lib.c:17: multiple definition of `arg_strtou64'
+utils-lib.static.o:/home/dsterba/labs/btrfs-progs/utils-lib.c:17: first defined here
 
-Here 'use 0' still works, it refers to the default value(256K), however,
-'use 1' is an obvious typo, it should be -1, which means the largest value
-it can be.
+utils-lib.o was mistakenly added to linker twice.
 
-Right now, we use parse_size() which no more allow value '-1', so in
-order to keep the manpage correct, this updates it to only keep value '0'.
-
-If you want to make sure every single extent is rewritten, please use a fairly
-large size, say 1G.
-
-Reported-by: Sebastian Ochmann <ochmann@informatik.uni-bonn.de>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- Documentation/btrfs-filesystem.txt | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index 0ee79cb..c9c0b00 100644
---- a/Documentation/btrfs-filesystem.txt
-+++ b/Documentation/btrfs-filesystem.txt
-@@ -41,8 +41,7 @@ The start position and the number of bytes to defragment can be specified by
- start and len using '-s' and '-l' options below.
- Any extent bigger than threshold given by '-t' option, will be considered
- already defragged.
--Use 0 to take the kernel default, and use 1 to
--say every single extent must be rewritten.
-+Use 0 to take the kernel default.
- You can also turn on compression in defragment operations.
- +
- `Options`
+diff --git a/Makefile b/Makefile
+index 8e14d4837520..3853b8734568 100644
+--- a/Makefile
++++ b/Makefile
+@@ -10,7 +10,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
+-	  utils-lib.o ulist.o qgroup-verify.o
++	  ulist.o qgroup-verify.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
 -- 
-1.8.1.4
+1.9.0
 

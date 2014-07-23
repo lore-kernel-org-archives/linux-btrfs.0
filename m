@@ -1,37 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35123 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38783 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757601AbaGWJ5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 05:57:37 -0400
-Date: Wed, 23 Jul 2014 11:57:34 +0200
+	id S1751047AbaGWMjj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jul 2014 08:39:39 -0400
 From: David Sterba <dsterba@suse.cz>
-To: ronnie sahlberg <ronniesahlberg@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Testing with flaky disk
-Message-ID: <20140723095734.GK1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAN05THRDjQ0eM4n=4kO61C3aEf06ZGQKu8ABCtO1MK5vZjDQEQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAN05THRDjQ0eM4n=4kO61C3aEf06ZGQKu8ABCtO1MK5vZjDQEQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: mfasheh@suse.de, zab@zabbo.net, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: wake up transaction thread from SYNC_FS ioctl
+Date: Wed, 23 Jul 2014 14:39:35 +0200
+Message-Id: <1406119175-29530-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 21, 2014 at 01:34:04PM -0700, ronnie sahlberg wrote:
-> I started working on a test tool for SCSI initiators and filesystem folks.
-> It is a iSCSI target that implements a bad flaky disks where you
-> can set precise controls of how/what is broken which you can use to test
-> error and recovery paths in the initiator/filesystem.
-> 
-> The tool is available at :
-> https://github.com/rsahlberg/flaky-stgt.git
-> and is a modified version of the TGTD iscsi target.
+The transaction thread may want to do more work, namely it pokes the
+cleaner ktread that will start processing uncleaned subvols.
 
-Looks interesting and more flexible than dm-flakey. I like the
-possibility to inject all sorts of low-level scsi errors.
+This can be triggered by user via the 'btrfs fi sync' command, otherwise
+there was a delay up to 30 seconds before the cleaner started to clean
+old snapshots.
 
-> Right now it is just an initial prototype and it needs more work to
-> add more types of errors as well as making it more userfriendly.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ioctl.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-It would be good to add a way to simulate silent data corruption,
-both random or for given block offset, reads and writes.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 47aceb494d1d..33ba5d0445b5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5309,6 +5309,12 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		if (ret)
+ 			return ret;
+ 		ret = btrfs_sync_fs(file->f_dentry->d_sb, 1);
++		/*
++		 * The transaction thread may want to do more work,
++		 * namely it pokes the cleaner ktread that will start
++		 * processing uncleaned subvols.
++		 */
++		wake_up_process(root->fs_info->transaction_kthread);
+ 		return ret;
+ 	}
+ 	case BTRFS_IOC_START_SYNC:
+-- 
+1.8.4.5
+

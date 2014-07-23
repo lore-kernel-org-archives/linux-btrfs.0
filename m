@@ -1,83 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:43459 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751549AbaGWNd0 (ORCPT
+Received: from mail-oa0-f52.google.com ([209.85.219.52]:54163 "EHLO
+	mail-oa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755382AbaGWQEI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 09:33:26 -0400
-Message-ID: <53CFB99F.1050705@fb.com>
-Date: Wed, 23 Jul 2014 09:33:19 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 23 Jul 2014 12:04:08 -0400
+Received: by mail-oa0-f52.google.com with SMTP id o6so1916758oag.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Jul 2014 09:04:08 -0700 (PDT)
 MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>
-CC: Morten Stevens <mstevens@fedoraproject.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs kernel workqueues performance regression
-References: <CAKSJeFKteZNUnJmN3dnYaHLnayQhZNNTKX5co_smMqwy1JgQNA@mail.gmail.com> <53C5673F.6010702@fb.com> <20140722233955.GU4453@dastard>
-In-Reply-To: <20140722233955.GU4453@dastard>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20140722141526.GZ1553@twin.jikos.cz>
+References: <CALOYprVQDbA1jGgaMmJrM7tOJKRSpfgbHF88=ccaKLRzsNs7vQ@mail.gmail.com>
+	<20140722141526.GZ1553@twin.jikos.cz>
+Date: Wed, 23 Jul 2014 17:04:08 +0100
+Message-ID: <CALOYprUcvJdOm=foeauXzNt3jRGd_c6=2TzXz+WAeLB4AtKRVA@mail.gmail.com>
+Subject: Re: Unstable v3.15-rc tags
+From: WorMzy Tykashi <wormzy.tykashi@gmail.com>
+To: dsterba@suse.cz, WorMzy Tykashi <wormzy.tykashi@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/22/2014 07:39 PM, Dave Chinner wrote:
-> On Tue, Jul 15, 2014 at 01:39:11PM -0400, Chris Mason wrote:
->> On 07/15/2014 11:26 AM, Morten Stevens wrote:
->>> Hi,
->>>
->>> I see that btrfs is using kernel workqueues since linux 3.15. After
->>> some tests I noticed performance regressions with fs_mark.
->>>
->>> mount options: rw,relatime,compress=lzo,space_cache
->>>
->>> fs_mark on Kernel 3.14.9:
->>>
->>> # fs_mark  -d  /mnt/btrfs/fsmark  -D  512  -t  16  -n  4096  -s  51200  -L5  -S0
->>> FSUse%        Count         Size    Files/sec     App Overhead
->>>      1        65536        51200      17731.4           723894
->>>      1       131072        51200      16832.6           685444
->>>      1       196608        51200      19604.5           652294
->>>      1       262144        51200      18663.6           630067
->>>      1       327680        51200      20112.2           692769
->>>
->>> The results are really nice! compress=lzo performs very good.
->>>
->>> fs_mark after upgrading to Kernel 3.15.4:
->>>
->>> # fs_mark  -d  /mnt/btrfs/fsmark  -D  512  -t  16  -n  4096  -s  51200  -L5  -S0
->>> FSUse%        Count         Size    Files/sec     App Overhead
->>>      0        65536        51200      10718.1           749540
->>>      0       131072        51200       8601.2           853050
->>>      0       196608        51200      11623.2           558546
->>>      0       262144        51200      11534.2           536342
->>>      0       327680        51200      11167.4           578562
->>>
->>> That's really a big performance regression :(
->>>
->>> What do you think? It's easy to reproduce with fs_mark.
->>
->> I wasn't able to trigger regressions here when we first merged it, but I
->> was sure that something would pop up.  fs_mark is sensitive to a few
->> different factors outside just the worker threads, so it could easily be
->> another change as well.
->>
->> With 16 threads, the btree locking also has a huge impact, and we've
->> made change there too.
-> 
-> FWIW, I ran my usual 16-way fsmark test last week on my sparse 500TB
-> perf test rig on btrfs. It sucked, big time, much worse than it's
-> sucked in the past. It didn't scale past a single thread - 1 thread
-> got 24,000 files/s, 2 threads got 25,000 files/s 16 threads got
-> 22,000 files/s.
+On 22 July 2014 15:15, David Sterba <dsterba@suse.cz> wrote:
+> The tags were meant to mark the points in time where different groups of
+> patches were added to the to-be-v3.15, but then I noticed that one of
+> the patches had my note in the subject and Qu sent an updated version
+> anyway. So I had rebased the branch and all the tags became stale. I did
+> not bother to move them as they did not work as expected.
 
-We had a trylock in the btree search code that always took the spinlock
-but did a trylock on the blocking lock.  This was changed to a trylock
-on the spinlock too because some of the callers were using trylock
-differently than in the past.
+Ah, thanks for clarifying. I wasn't particularly attached to the tags,
+it just seemed odd that we got to rc4, then dropped back down to rc1.
+I'll not pay too much attention to them in future.
 
-It's a regression for this kind of run, but makes the btrfs locking much
-less mystical.  I'm fixing up the performance regression part for the
-next merge window, but I didn't want to mess around too much with it in
-3.16 with all the other locking churn.
+>
+> The patch flux is the good and bad habit of the integration repository.
 
-For this kind of fsmark run the best results still come from one subvol
-per thread.
+It certainly makes for an interesting chart in gitk --all. :-D
 
--chris
+Cheers,
+
+
+WorMzy

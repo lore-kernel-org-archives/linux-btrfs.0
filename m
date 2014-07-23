@@ -1,62 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:42364 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750930AbaGWBwL convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Jul 2014 21:52:11 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49365 helo=ming.hsd1.co.comcast.net)
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1X9lj0-002IuJ-Ll
-	for linux-btrfs@vger.kernel.org; Tue, 22 Jul 2014 19:52:10 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: BUGS: bogus out of space reported when mounted raid1 degraded, btrfs replace failure, then oops
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <3823A5F4-169B-4EAC-A548-B0E4FE782F0E@colorremedies.com>
-Date: Tue, 22 Jul 2014 19:52:09 -0600
-Message-Id: <39C6221B-35AB-49FC-AD46-4641BFE16D63@colorremedies.com>
-References: <3823A5F4-169B-4EAC-A548-B0E4FE782F0E@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:40783 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751692AbaGWB7n (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Jul 2014 21:59:43 -0400
+Message-ID: <53CF15D0.5030104@cn.fujitsu.com>
+Date: Wed, 23 Jul 2014 09:54:24 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kevin Brandstatter <icarusthecow@gmail.com>
+Subject: Re: [BUG] "Quota Ignored On write" problem still exist with 3.16-rc5
+References: <53C8DEB0.1060404@jp.fujitsu.com> <53C8F720.4040803@cn.fujitsu.com> <53CF077D.4000106@jp.fujitsu.com>
+In-Reply-To: <53CF077D.4000106@jp.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Interesting, if I remove /dev/sdc (the hdd), then this command works:
+Hi Satoru-san,
 
-[root@localhost ~]# mount -o degraded,recovery /dev/sdb /mnt
-[root@localhost ~]# btrfs replace status /mnt
-72.1% done, 0 write errs, 0 uncorr. read errs
-72.1% done, 0 write errs, 0 uncorr. read errs^C
+On 07/23/2014 08:53 AM, Satoru Takeuchi wrote:
+> Hi Wang,
+>
+> (2014/07/18 19:29), Wang Shilong wrote:
+>> On 07/18/2014 04:45 PM, Satoru Takeuchi wrote:
+>>> Hi Josef, Chris,
+>>>
+>>> I found "Quota Ignored On write" problem still exist with 3.16-rc5,
+>>> which Kevin reported before.
+>>>
+>>> Kevin's report:
+>>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35292.html
+>>>
+>>> The result of bisect:
+>>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35304.html
+>> I guess this is because Josef's patch delayed qgroup accounting, it will
+>> cause @refer and @excl updating very late...
+>>
+>> The patch maybe optimize to merge some delayed refs(for example), but
+>> it updates qgroup accounting when commiting transaction which will be
+>> very late,
+>> we may have accumulated many data..
+> Thank you for your comment. I know of the code logic which caused
+> this problem. However, what I want to say here is that this
+> problem should be fixed as soon as possible. It is a important
+> regression problem and we've already know the root cause.
+>
+> If it's impossible to fix it by releasing 3.16, I consider this
+> patch should be reverted.
+Since Btrfs Quota function is under heavy development, and should be
+considered as *broken*.
 
-## above command hangs, but cancels with control-c
+I think we'd better close Btrfs quota function(Like snapshot-aware function)
+until we really sit down and solve everything.
 
-[root@localhost ~]# btrfs replace cancel /mnt
-[root@localhost ~]# btrfs replace status /mnt
-Started on 22.Jul 16:10:37, canceled on 22.Jul 19:41:23 at 0.0%, 0 write errs, 0 uncorr. read errs
-[root@localhost ~]# btrfs balance start -dconvert=single -mconvert=single /mnt -f
-Done, had to relocate 10 out of 10 chunks
-[root@localhost ~]# btrfs fi show
-Label: 'Rawhide2'  uuid: f857c336-b8f5-4f5d-9500-a705ee1b6977
-	Total devices 2 FS bytes used 6.39GiB
-	devid    1 size 12.58GiB used 7.03GiB path /dev/sdb
-	*** Some devices missing
+Thanks,
+Wang
+>
+> Thanks,
+> Satoru
+>
+>> Thanks,
+>> Wang
+>>>> I bisected and found the bad commit is the following patch.
+>>>>
+>>>> ===============================================================================
+>>>> commit fcebe4562dec83b3f8d3088d77584727b09130b2
+>>>> Author: Josef Bacik <jba...@fb.com>
+>>>> Date:   Tue May 13 17:30:47 2014 -0700
+>>>>
+>>>>      Btrfs: rework qgroup accounting
+>>>> ===============================================================================
+>>>>
+>>>> Josef, please take a look at this patch.
+>>> Reproducer:
+>>> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35299.html
+>>>
+>>> Could you tell me the progress of fixing this bug?
+>>> In addition, could you fix it by 3.16?
+>>>
+>>> command log:
+>>> ===============================================================================
+>>> # ./test.sh
+>>> + uname -a
+>>> Linux luna.soft.fujitsu.com 3.16.0-rc5 #2 SMP Tue Jul 15 13:39:46 JST 2014 x86_64 x86_64 x86_64 GNU/Linux
+>>> + df -T /test7
+>>> Filesystem     Type  1K-blocks  Used Available Use% Mounted on
+>>> /dev/sdc7      btrfs  29296640  1536  27169536   1% /test7
+>>> + btrfs quota ena /test7
+>>> + cd /test7
+>>> + btrfs sub cre test
+>>> Create subvolume './test'
+>>> + btrfs sub l -a /test7
+>>> ID 270 gen 66 top level 5 path test
+>>> + btrfs qg lim 1G test                          # limit test subvol to 1GB
+>>> + btrfs qg show -pcre /test7
+>>> qgroupid rfer  excl  max_rfer   max_excl parent  child
+>>> -------- ----  ----  --------   -------- ------  -----
+>>> 0/5      16384 16384 0          0        ---     ---
+>>> 0/270    16384 16384 1073741824 0        ---     ---
+>>> + dd if=/dev/zero of=test/file0 bs=1M count=2000
+>>> 2000+0 records in
+>>> 2000+0 records out
+>>> 2097152000 bytes (2.1 GB) copied, 9.67876 s, 217 MB/s   # write 2GB. It's a bug!
+>>> + sync
+>>> + ls -lisaR /test7
+>>> /test7:
+>>> total 20
+>>> 256 16 drwxr-xr-x   1 root root    8 Jul 18 15:12 .
+>>>    2  4 drwxr-xr-x. 43 root root 4096 Jul 16 08:34 ..
+>>> 256  0 drwxr-xr-x   1 root root   10 Jul 18 15:17 test
+>>>
+>>> /test7/test:
+>>> total 2048016
+>>> 256       0 drwxr-xr-x 1 root root         10 Jul 18 15:17 .
+>>> 256      16 drwxr-xr-x 1 root root          8 Jul 18 15:12 ..
+>>> 257 2048000 -rw-r--r-- 1 root root 2097152000 Jul 18 15:17 file0
+>>> + btrfs qg show -pcre /test7
+>>> qgroupid rfer       excl       max_rfer   max_excl parent  child
+>>> -------- ----       ----       --------   -------- ------  -----
+>>> 0/5      16384      16384      0          0        ---     ---
+>>> 0/270    2097168384 2097168384 1073741824 0        ---     ---
+>>> + btrfs quota dis /test7
+>>> + btrfs sub del test
+>>> Transaction commit: none (default)
+>>> Delete subvolume '/test7/test'
+>>> + set +x
+>>> #
+>>> ===============================================================================
+>>>
+>>>    NOTE:
+>>>    The reproducer here (./test.sh) is a bit different from above-mentioned
+>>>    one because of some reason.
+>>>
+>>> Thanks,
+>>> Satoru
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> .
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> .
+>
 
-Btrfs v3.14.2
-[root@localhost ~]# btrfs fi df /mnt
-Data, single: total=6.00GiB, used=5.99GiB
-System, single: total=32.00MiB, used=32.00KiB
-Metadata, single: total=1.00GiB, used=412.00MiB
-unknown, single: total=160.00MiB, used=0.00
-[root@localhost ~]# btrfs device delete missing /mnt
-[root@localhost ~]# btrfs fi show
-Label: 'Rawhide2'  uuid: f857c336-b8f5-4f5d-9500-a705ee1b6977
-	Total devices 1 FS bytes used 6.39GiB
-	devid    1 size 12.58GiB used 7.03GiB path /dev/sdb
-
-Btrfs v3.14.2
-
-So it's recovered and back to normal.
-
-
-Chris Murphy

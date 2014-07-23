@@ -1,39 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:27418 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756428AbaGWJIG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 05:08:06 -0400
-Message-ID: <53CF7C41.5050408@oracle.com>
-Date: Wed, 23 Jul 2014 17:11:29 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:35123 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757601AbaGWJ5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jul 2014 05:57:37 -0400
+Date: Wed, 23 Jul 2014 11:57:34 +0200
+From: David Sterba <dsterba@suse.cz>
+To: ronnie sahlberg <ronniesahlberg@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Testing with flaky disk
+Message-ID: <20140723095734.GK1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAN05THRDjQ0eM4n=4kO61C3aEf06ZGQKu8ABCtO1MK5vZjDQEQ@mail.gmail.com>
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC] btrfs: code optimize use btrfs_get_bdev_and_sb()
- at btrfs_scan_one_device
-References: <1404758317-7000-1-git-send-email-Anand.Jain@oracle.com> <20140722174241.GC1553@twin.jikos.cz>
-In-Reply-To: <20140722174241.GC1553@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAN05THRDjQ0eM4n=4kO61C3aEf06ZGQKu8ABCtO1MK5vZjDQEQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jul 21, 2014 at 01:34:04PM -0700, ronnie sahlberg wrote:
+> I started working on a test tool for SCSI initiators and filesystem folks.
+> It is a iSCSI target that implements a bad flaky disks where you
+> can set precise controls of how/what is broken which you can use to test
+> error and recovery paths in the initiator/filesystem.
+> 
+> The tool is available at :
+> https://github.com/rsahlberg/flaky-stgt.git
+> and is a modified version of the TGTD iscsi target.
 
+Looks interesting and more flexible than dm-flakey. I like the
+possibility to inject all sorts of low-level scsi errors.
 
-On 07/23/2014 01:42 AM, David Sterba wrote:
-> On Tue, Jul 08, 2014 at 02:38:37AM +0800, Anand Jain wrote:
->> (for review comments pls).
->>
->> btrfs_scan_one_device() needs SB, instead of doing it from scratch could
->> use btrfs_get_bdev_and_sb()
->
-> Please see
-> http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=6f60cbd3ae442cb35861bb522f388db123d42ec1
->
-> your patch actually reverts the changes. btrfs_get_bdev_and_sb does not
-> work and it was a pretty nasty bug, we've spent a long afternoon
-> catching it.
+> Right now it is just an initial prototype and it needs more work to
+> add more types of errors as well as making it more userfriendly.
 
-  Ah! It explains why we had a different btrfs_read_dev_super().
-
-  Thanks.
-Anand
+It would be good to add a way to simulate silent data corruption,
+both random or for given block offset, reads and writes.

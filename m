@@ -1,38 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from detritus.pyropus.ca ([64.5.53.58]:36473 "HELO
-	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752810AbaGWNV1 (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6241 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750722AbaGWNXe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 09:21:27 -0400
-Date: Wed, 23 Jul 2014 07:20:54 -0600
-From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Blocked tasks on 3.15.1
-Message-ID: <20140723132054.GB28679@pyropus.ca>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
- <53C7CD0F.7070603@fb.com>
- <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
- <1745216.hDa4tC2HJJ@merkaba> <53CE7ACF.7070109@fb.com>
+	Wed, 23 Jul 2014 09:23:34 -0400
+Message-ID: <53CFB74B.8080607@fb.com>
+Date: Wed, 23 Jul 2014 09:23:23 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53CE7ACF.7070109@fb.com>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>, Chris Mason <clm@fb.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kevin Brandstatter <icarusthecow@gmail.com>
+Subject: Re: [BUG] "Quota Ignored On write" problem still exist with 3.16-rc5
+References: <53C8DEB0.1060404@jp.fujitsu.com> <53C8F720.4040803@cn.fujitsu.com> <53CF077D.4000106@jp.fujitsu.com>
+In-Reply-To: <53CF077D.4000106@jp.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason <clm@fb.com> wrote:
+On 07/22/2014 08:53 PM, Satoru Takeuchi wrote:
+> Hi Wang,
 > 
-> Thanks for the help in tracking this down everyone.  We'll get there!
-> Are you all running multi-disk systems (from a btrfs POV, more than one
-> device?)  I don't care how many physical drives this maps to, just does
-> btrfs think there's more than one drive.
+> (2014/07/18 19:29), Wang Shilong wrote:
+>> On 07/18/2014 04:45 PM, Satoru Takeuchi wrote:
+>>> Hi Josef, Chris,
+>>>
+>>> I found "Quota Ignored On write" problem still exist with 3.16-rc5,
+>>> which Kevin reported before.
+>>>
+>>> Kevin's report:
+>>> https://urldefense.proofpoint.com/v1/url?u=https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg35292.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=HiJFypfWVhg2Jy2US%2BNG1tF8q4%2BYUryNKec6yPkYJM4%3D%0A&s=9d1740f5e1701e4906fc04b77d9117052e84d6e16c30971b261d1acf41c10910
+>>>
+>>> The result of bisect:
+>>> https://urldefense.proofpoint.com/v1/url?u=https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg35304.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=HiJFypfWVhg2Jy2US%2BNG1tF8q4%2BYUryNKec6yPkYJM4%3D%0A&s=75ca6ce24c6d8e64fccdb8f61e519c59b1c6d027140c4f0f5eac24942a53a55d
+>> I guess this is because Josef's patch delayed qgroup accounting, it will
+>> cause @refer and @excl updating very late...
+>>
+>> The patch maybe optimize to merge some delayed refs(for example), but
+>> it updates qgroup accounting when commiting transaction which will be
+>> very late,
+>> we may have accumulated many data..
+> 
+> Thank you for your comment. I know of the code logic which caused
+> this problem. However, what I want to say here is that this
+> problem should be fixed as soon as possible. It is a important
+> regression problem and we've already know the root cause.
+> 
+> If it's impossible to fix it by releasing 3.16, I consider this
+> patch should be reverted.
+> 
 
-Not me, at least - I'm doing the device aggregation down at the LVM level
-(sata-dmcrypt-lvm-btrfs stack), so it's presented to btrfs as a single logical
-device.
+That's not happening.  Qgroups have always been broken in one way or
+another, now with my stuff the accounting is always correct and we don't
+have a huge performance impact with or without qgroups.  We'll fix it
+but there's no way we're reverting this work.  Thanks,
 
-Charles
--- 
------------------------------------------------------------------------
-Charles Cazabon
-GPL'ed software available at:               http://pyropus.ca/software/
------------------------------------------------------------------------
+Josef
+

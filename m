@@ -1,136 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:40758 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759059AbaGXStj convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 14:49:39 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, Cody P Schafer <dev@codyps.com>,
-        Marc MERLIN <marc@merlins.org>
-Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
-Date: Thu, 24 Jul 2014 20:49:37 +0200
-Message-ID: <1557956.045aK4K0qS@merkaba>
-In-Reply-To: <53D11F2B.1070008@fb.com>
-References: <1502954.OtX3SzjMKZ@merkaba> <1809953.ithLVmijbn@merkaba> <53D11F2B.1070008@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55589 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S934246AbaGXTWt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jul 2014 15:22:49 -0400
+Date: Thu, 24 Jul 2014 21:22:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Andreas Dilger <adilger@dilger.ca>
+Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>, linux-nilfs@vger.kernel.org,
+        xfs@oss.sgi.com, Btrfs Developer List <linux-btrfs@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 2/4 v3] fiemap: add EXTENT_DATA_COMPRESSED flag
+Message-ID: <20140724192245.GG1553@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1386778302.git.dsterba@suse.cz>
+ <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz>
+ <20131212232443.GL31386@dastard>
+ <9520AB36-B728-423A-8EA1-FDD22B79AE90@dilger.ca>
+ <B58DEEA8-561A-4173-B9F5-528B73E06C6D@dilger.ca>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <B58DEEA8-561A-4173-B9F5-528B73E06C6D@dilger.ca>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 24. Juli 2014, 10:58:51 schrieb Chris Mason:
-> On 07/23/2014 06:47 PM, Martin Steigerwald wrote:
-> > Am Dienstag, 15. Juli 2014, 17:08:27 schrieb Martin Steigerwald:
-> >> Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
-> >>> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
-> >>>> Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
-> >>>>> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
-> >>>>>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
-> >>>>>>> Hi!
-> >>>>>>> 
-> >>>>>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several
-> >>>>>>> days
-> >>>>>>> of
-> >>>>>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since
-> >>>>>>> booting
-> >>>>>>> it.
-> >>>>>>> 
-> >>>>>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2
-> >>>>>>> usually
-> >>>>>>> didn´t happen that quickly after boot and since backtrace looks a
-> >>>>>>> bit
-> >>>>>>> different from what I have in memory, I post this in a new thread.
-> >>>>>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous
-> >>>>>>> hang
-> >>>>>>> issues.
-> >>>>>> 
-> >>>>>> Probably good to add some basic information on the filesystem:
-> >>>>> Do you have compression enabled?  I wasn't able to nail down the
-> >>>>> 3.15.1
-> >>>>> hang before vacation attacked me, but I'm hoping to track it down
-> >>>>> today.
-> >>>> 
-> >>>> Yes. I have.
-> >>>> 
-> >>>> It just hung again while I was playing PlaneShift.
-> >>>> 
-> >>>> Back to 3.16-rc4 as rc5 seems to be broke here.
-> >>> 
-> >>> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
-> >>> shouldn't be a factor.  Are you hitting other problems with 3.16?
-> >> 
-> >> So far for this day 3.16-rc4 behaves nicely. With 3.16-rc5 I had a BTRFS
-> >> hang twice yesterday. 3.16-rc4 before also behaved nicely for several
-> >> days
-> >> or well about a week here.
-> > 
-> > 3.16-rc4 now hung as well…
+On Thu, Jul 17, 2014 at 12:07:57AM -0600, Andreas Dilger wrote:
+> any progress on this patch series?
+
+I'm sorry I got distracted at the end of year and did not finish the
+series.
+
+> I never saw an updated version of this patch series after the last round of
+> reviews, but it would be great to move it forward.  I have filefrag patches
+> in my e2fsprogs tree waiting for an updated version of your patch.
 > 
-> Liu Bo has a promising patch:
+> I recall the main changes were:
+> - add FIEMAP_EXTENT_PHYS_LENGTH flag to indicate if fe_phys_length was valid
+
+fe_phys_length will be always valid, so other the flags are set only if it's
+not equal to the logical length.
+
+> - rename fe_length to fe_logi_length and #define fe_length fe_logi_length
+> - always fill in fe_phys_length (= fe_logi_length for uncompressed files)
+>   and set FIEMAP_EXTENT_PHYS_LENGTH whether the extent is compressed or not
+
+This is my understanding and contradicts the first point.
+
+> - add WARN_ONCE() in fiemap_fill_next_extent() as described below
+>
+> I don't know if there was any clear statement about whether there should be
+> separate FIEMAP_EXTENT_PHYS_LENGTH and FIEMAP_EXTENT_DATA_COMPRESSED flags,
+> or if the latter should be implicit?  Probably makes sense to have separate
+> flags.  It should be fine to use:
+>
+> #define FIEMAP_EXTENT_PHYS_LENGTH	0x00000010
 > 
-> https://patchwork.kernel.org/patch/4618421/
-> 
-> Please give it a shot.  There's a second deadlock reading the free space
-> cache, I'm still working on that one too.
+> since this flag was never used.
 
-Now running 3.16-rc6 + current git + this patch.
+I've kept only FIEMAP_EXTENT_DATA_COMPRESSED, I don't see a need for
+FIEMAP_EXTENT_PHYS_LENGTH and this would be yet another flag because the
+FIEMAP_EXTENT_DATA_ENCODED is also implied.
 
-It may take some time tough cause during compiling the kernel BTRFS hung 
-again, which caused loss of KDE Baloo desktop search file index and parts of a 
-mail I wrote in KMail.
-
-Since the patch mentioned ENOSPC issues but the filesystem has enough free 
-space according to df I shrunk the trees with
-
-btrfs balance start -musage=50 /home
-btrfs balance start -musage=50 /home
-
-
-merkaba:~> btrfs fi sh /home                   
-Label: 'home'  uuid: […]
-        Total devices 2 FS bytes used 124.05GiB
-        devid    1 size 160.00GiB used 150.00GiB path /dev/mapper/msata-home
-        devid    2 size 160.00GiB used 150.00GiB path /dev/dm-3
-
-
-As I bet that the error is more likely to happen when trees occupy all space, 
-it may take some time till it happens again.
-
-Well its growing slowly already:
-
-merkaba:~> btrfs fi df /home
-Data, RAID1: total=146.97GiB, used=121.84GiB
-System, RAID1: total=32.00MiB, used=48.00KiB
-Metadata, RAID1: total=4.00GiB, used=2.62GiB
-unknown, single: total=512.00MiB, used=0.00
-merkaba:~> btrfs fi sh /home
-Label: 'home'  uuid: […]
-        Total devices 2 FS bytes used 124.46GiB
-        devid    1 size 160.00GiB used 151.00GiB path /dev/dm-0
-        devid    2 size 160.00GiB used 151.00GiB path /dev/mapper/sata-home
-
-Btrfs v3.14.1
-
-
-I wonder why ENOSPC conditions happens with that much space inside trees free. 
-Were they just too fragmented?
-
-To me
-
-merkaba:~> LANG=C df -hT /home
-Filesystem     Type   Size  Used Avail Use% Mounted on
-/dev/dm-0      btrfs  320G  249G   69G  79% /home
-
-is a quite healthy free space margin.
-
-
-Well, lets see how this goes.
-
-I hope it can be fixed soon as it causes loss of recently saved data and 
-generally locks up a machine running KDE desktop quite quickly on a BTRFS 
-hang.
-
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+I'll send V4, we can discuss the PHYS_LENGTH flag then.

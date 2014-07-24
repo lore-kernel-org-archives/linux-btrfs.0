@@ -1,50 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:17907 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751174AbaGXV2r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 17:28:47 -0400
-Message-ID: <53D17A88.5090905@fb.com>
-Date: Thu, 24 Jul 2014 17:28:40 -0400
-From: Chris Mason <clm@fb.com>
+Received: from mx1.redhat.com ([209.132.183.28]:14865 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750862AbaGXWi6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jul 2014 18:38:58 -0400
+Message-ID: <53D18AFE.30907@redhat.com>
+Date: Thu, 24 Jul 2014 17:38:54 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC] btrfs: Use backup superblocks if and only if the
- first superblock is valid but corrupted.
-References: <1403841234-10393-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1403841234-10393-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH, RFC] btrfs: refactor open_ctree()
+References: <53AB6185.9060109@redhat.com> <53D179B3.6010800@fb.com>
+In-Reply-To: <53D179B3.6010800@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 06/26/2014 11:53 PM, Qu Wenruo wrote:
-> Current btrfs will only use the first superblock, making the backup
-> superblocks only useful for 'btrfs rescue super' command.
+On 7/24/14, 4:25 PM, Chris Mason wrote:
+> On 06/25/2014 07:55 PM, Eric Sandeen wrote:
+>> First off: total RFC, don't merge this; it builds, but
+>> is totally untested.
+>>
+>> open_ctree() is almost 1000 lines long.  I've started trying
+>> to refactor it, primarily into helper functions, and also
+>> simplifying (?) things a bit at the beginning by removing the
+>> ret = func(); if (ret) { err = ret; goto ... } dance where it's not
+>> needed.
+>>
+>> Does this look like a reasonable thing to do?  Have I cut
+>> things into the right chunks?  Would you rather see it as
+>> as series of patches, moving one hunk of code at a time?
 > 
-> The old problem is that if we use backup superblocks when the first
-> superblock is not valid, we will be able to mount a none btrfs
-> filesystem, which used to contains btrfs but other fs is made on it.
-> 
-> The old problem can be solved related easily by checking the first
-> superblock in a special way:
-> 1) If the magic number in the first superblock does not match:
->    This filesystem is not btrfs anymore, just exit.
->    If end-user consider it's really btrfs, then old 'btrfs rescue super'
->    method is still available.
-> 
-> 2) If the magic number in the first superblock matches but checksum does
->    not match:
->    This filesystem is btrfs but first superblock is corrupted, use
->    backup roots. Just continue searching remaining superblocks.
+> I do love this patch, either as a series or one big patch.  Whatever
+> makes it easiest for you to test is fine with me.
 
-I do agree that in these cases we can trust that the backup superblock
-comes from the same filesystem.
+Oh right!  I remember this thing!  Let me try to get back to it... ;)
 
-But, for right now I'd prefer the admin get involved in using the backup
-supers.  I think silently using the backups is going to lead to surprises.
+Thanks,
+-Eric
 
-Thanks!
-
--chris

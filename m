@@ -1,82 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:57206 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759002AbaGXQYn convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 12:24:43 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, Cody P Schafer <dev@codyps.com>,
-        Marc MERLIN <marc@merlins.org>
-Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
-Date: Thu, 24 Jul 2014 18:24:40 +0200
-Message-ID: <2270420.7Gkuf5KIN8@merkaba>
-In-Reply-To: <53D11F2B.1070008@fb.com>
-References: <1502954.OtX3SzjMKZ@merkaba> <1809953.ithLVmijbn@merkaba> <53D11F2B.1070008@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:54963 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S933790AbaGXRTj convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jul 2014 13:19:39 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49993 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XAMg6-0022nz-5p
+	for linux-btrfs@vger.kernel.org; Thu, 24 Jul 2014 11:19:38 -0600
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: 1 week to rebuid 4x 3TB raid10 is a long time!
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <2C76C454-2B09-4E3B-92C2-4EE6A1ED7EA8@colorremedies.com>
+Date: Thu, 24 Jul 2014 11:19:36 -0600
+Message-Id: <C53139CC-2FC6-49B0-8315-61FB0D534063@colorremedies.com>
+References: <loom.20140720T102642-239@post.gmane.org> <53CC1553.1020908@shiftmail.org> <20140721013609.6d99c399@natsu> <37e3a8cf8b7439d5cd2745b5efb9d37f.squirrel@webmail.wanet.net> <pan$7b757$4788e010$b65976c7$4d1c0bad@cox.net> <CAN05THTSG9czwpM7AYEPWg5hpZuJ=vjJrjz8yn5V0rXe5oguxA@mail.gmail.com> <pan$6f72e$34416d71$688a2a2$980c8acd@cox.net> <2C76C454-2B09-4E3B-92C2-4EE6A1ED7EA8@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 24. Juli 2014, 10:58:51 schrieb Chris Mason:
-> On 07/23/2014 06:47 PM, Martin Steigerwald wrote:
-> > Am Dienstag, 15. Juli 2014, 17:08:27 schrieb Martin Steigerwald:
-> >> Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
-> >>> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
-> >>>> Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
-> >>>>> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
-> >>>>>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
-> >>>>>>> Hi!
-> >>>>>>> 
-> >>>>>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several
-> >>>>>>> days
-> >>>>>>> of
-> >>>>>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since
-> >>>>>>> booting
-> >>>>>>> it.
-> >>>>>>> 
-> >>>>>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2
-> >>>>>>> usually
-> >>>>>>> didn´t happen that quickly after boot and since backtrace looks a
-> >>>>>>> bit
-> >>>>>>> different from what I have in memory, I post this in a new thread.
-> >>>>>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous
-> >>>>>>> hang
-> >>>>>>> issues.
-> >>>>>> 
-> >>>>>> Probably good to add some basic information on the filesystem:
-> >>>>> Do you have compression enabled?  I wasn't able to nail down the
-> >>>>> 3.15.1
-> >>>>> hang before vacation attacked me, but I'm hoping to track it down
-> >>>>> today.
-> >>>> 
-> >>>> Yes. I have.
-> >>>> 
-> >>>> It just hung again while I was playing PlaneShift.
-> >>>> 
-> >>>> Back to 3.16-rc4 as rc5 seems to be broke here.
-> >>> 
-> >>> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
-> >>> shouldn't be a factor.  Are you hitting other problems with 3.16?
-> >> 
-> >> So far for this day 3.16-rc4 behaves nicely. With 3.16-rc5 I had a BTRFS
-> >> hang twice yesterday. 3.16-rc4 before also behaved nicely for several
-> >> days
-> >> or well about a week here.
-> > 
-> > 3.16-rc4 now hung as well…
-> 
-> Liu Bo has a promising patch:
-> 
-> https://patchwork.kernel.org/patch/4618421/
-> 
-> Please give it a shot.  There's a second deadlock reading the free space
-> cache, I'm still working on that one too.
 
-Okay, I reverted your printk patch and applied this on on git linus git.
+On Jul 22, 2014, at 11:13 AM, Chris Murphy <lists@colorremedies.com> wrote:
+> 
+> It's been a while since I did a rebuild on HDDs, 
 
-Lets see how this works.
+So I did this yesterday and day before with an SSD and HDD in raid1, and made the HDD do the rebuild. 
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+
+Baseline for this hard drive:
+hdparm -t
+35.68 MB/sec
+
+dd if=/dev/zero of=/dev/rdisk2s1 bs=256k
+13508091392 bytes transferred in 521.244920 secs (25915056 bytes/sec)
+
+I don't know why hdparm gets such good reads, and dd writes are 75% of that, but the 26MB/s write speed is realistic (this is a Firewire 400 external device) and what I typically get with long sequential writes. It's probable this is interface limited to mode S200, not a drive limitation since on SATA Rev 2 or 3 interface I get 100+MB/s transfers.
+
+During the rebuild, iotop reports actual write averaging in the 24MB/s range, and the total data to restore divided by total time for the replace command comes out to 23MB/s. The source data is a Fedora 21 install with no meaningful user data (cache files and such), so mostly a bunch of libraries, programs, and documentation. Therefore it's not exclusively small files, yet the iotop rate was very stable throughout the 4 minute rebuild.
+
+So I still think 5MB/s for a SATA connected (?) drive is to be unexpected.
+
+ 
+Chris Murphy

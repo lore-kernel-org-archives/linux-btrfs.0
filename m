@@ -1,114 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23303 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41603 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758482AbaGXD1q (ORCPT
+	with ESMTP id S1753215AbaGXJf6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 23:27:46 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O3RiA0016910
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 11:27:44 +0800
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+	Thu, 24 Jul 2014 05:35:58 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O9ZYK4006084
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 17:35:34 +0800
+From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: fix improper output msg for btrfs-fi-usage
-Date: Thu, 24 Jul 2014 11:21:54 +0800
-Message-ID: <1406172114-10793-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1406172114-10793-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-References: <1406172114-10793-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: remove author and copyright info from man page
+Date: Thu, 24 Jul 2014 17:30:15 +0800
+Message-ID: <1406194215-7774-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even if run as root:
-	# su
-	# btrfs file usage <path> <== path exits outside the mnt point
-We get the output:
-	WARNING: ..., run as root
-	WARNING: ..., run as root
-	ERROR:...
+>From:
+http://man7.org/linux/man-pages/man7/man-pages.7.html
+...
+AUTHORS lists authors of the documentation or program.Use of
+an AUTHORS section is strongly discouraged. Generally,
+it is better not to clutter every page with a list of
+(over time potentially numerous) authors; if you write
+or significantly amend a page, add a copyright notice
+as a comment in the source file.  If you are the author
+of a device driver and want to include an address for
+reporting bugs, place this under the BUGS section.
+...
 
-It is because in load_chunk_info, the errno of ioctl is not judged
-but rather the ret value of ioctl is judged. And the ret value of
-ioctl is -1 which happens to match -EPERM exactly.
-So the outer warning is printed.
-
-Just judge the errno of ioctl and prevent the ret value of load_chunk_info
-to be -1 in other error conditions.
-
-For load_device_info, the problem and fix is the same.
-After the fix, the 'run as root' WARNINGs will not show up in this condition.
-
-Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Suggested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
 ---
- cmds-fi-disk_usage.c | 22 ++++++++++++----------
- 1 file changed, 12 insertions(+), 10 deletions(-)
+ Documentation/btrfs-convert.txt     | 12 ------------
+ Documentation/btrfs-debug-tree.txt  | 12 ------------
+ Documentation/btrfs-find-root.txt   | 12 ------------
+ Documentation/btrfs-image.txt       | 12 ------------
+ Documentation/btrfs-map-logical.txt | 12 ------------
+ Documentation/btrfs-show-super.txt  | 12 ------------
+ Documentation/btrfs-zero-log.txt    | 12 ------------
+ Documentation/btrfstune.txt         | 12 ------------
+ 8 files changed, 96 deletions(-)
 
-diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
-index 1f4c88e..7c5c0cc 100644
---- a/cmds-fi-disk_usage.c
-+++ b/cmds-fi-disk_usage.c
-@@ -156,14 +156,14 @@ static int load_chunk_info(int fd, struct chunk_info **info_ptr, int *info_count
- 	while (1) {
- 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
- 		e = errno;
--		if (ret == -EPERM)
--			return ret;
-+		if (e == EPERM)
-+			return -e;
+diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
+index 1eff0bf..11d6044 100644
+--- a/Documentation/btrfs-convert.txt
++++ b/Documentation/btrfs-convert.txt
+@@ -31,18 +31,6 @@ EXIT STATUS
+ *btrfs-convert* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
- 		if (ret < 0) {
- 			fprintf(stderr,
- 				"ERROR: can't perform the search - %s\n",
- 				strerror(e));
--			return ret;
-+			return 1;
- 		}
- 		/* the ioctl returns the number of item it found in nr_items */
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-debug-tree.txt b/Documentation/btrfs-debug-tree.txt
+index bfc8aa4..23fc115 100644
+--- a/Documentation/btrfs-debug-tree.txt
++++ b/Documentation/btrfs-debug-tree.txt
+@@ -33,18 +33,6 @@ EXIT STATUS
+ *btrfs-debug-tree* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
-@@ -182,7 +182,7 @@ static int load_chunk_info(int fd, struct chunk_info **info_ptr, int *info_count
- 			ret = add_info_to_list(info_ptr, info_count, item);
- 			if (ret) {
- 				*info_ptr = 0;
--				return ret;
-+				return 1;
- 			}
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-find-root.txt b/Documentation/btrfs-find-root.txt
+index a360f8f..c934b4c 100644
+--- a/Documentation/btrfs-find-root.txt
++++ b/Documentation/btrfs-find-root.txt
+@@ -28,18 +28,6 @@ EXIT STATUS
+ *btrfs-find-root* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
- 			off += sh->len;
-@@ -442,7 +442,7 @@ static int cmp_device_info(const void *a, const void *b)
- static int load_device_info(int fd, struct device_info **device_info_ptr,
- 			   int *device_info_count)
- {
--	int ret, i, ndevs;
-+	int ret, i, ndevs, e;
- 	struct btrfs_ioctl_fs_info_args fi_args;
- 	struct btrfs_ioctl_dev_info_args dev_info;
- 	struct device_info *info;
-@@ -451,17 +451,19 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
- 	*device_info_ptr = 0;
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-image.txt b/Documentation/btrfs-image.txt
+index 155194a..b7751f9 100644
+--- a/Documentation/btrfs-image.txt
++++ b/Documentation/btrfs-image.txt
+@@ -56,18 +56,6 @@ EXIT STATUS
+ *btrfs-image* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
- 	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
--	if (ret == -EPERM)
--		return ret;
-+	e = errno;
-+	if (e == EPERM)
-+		return -e;
- 	if (ret < 0) {
--		fprintf(stderr, "ERROR: cannot get filesystem info\n");
--		return ret;
-+		fprintf(stderr, "ERROR: cannot get filesystem info - %s\n",
-+				strerror(e));
-+		return 1;
- 	}
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-map-logical.txt b/Documentation/btrfs-map-logical.txt
+index a8710bf..a3d110c 100644
+--- a/Documentation/btrfs-map-logical.txt
++++ b/Documentation/btrfs-map-logical.txt
+@@ -32,18 +32,6 @@ EXIT STATUS
+ *btrfs-map-logical* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
- 	info = calloc(fi_args.num_devices, sizeof(struct device_info));
- 	if (!info) {
- 		fprintf(stderr, "ERROR: not enough memory\n");
--		return ret;
-+		return 1;
- 	}
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-show-super.txt b/Documentation/btrfs-show-super.txt
+index 6fee0f1..1646be3 100644
+--- a/Documentation/btrfs-show-super.txt
++++ b/Documentation/btrfs-show-super.txt
+@@ -45,18 +45,6 @@ EXIT STATUS
+ *btrfs-show-super* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
  
- 	for (i = 0, ndevs = 0 ; i <= fi_args.max_id ; i++) {
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfs-zero-log.txt b/Documentation/btrfs-zero-log.txt
+index 0a8d3e3..498ecd6 100644
+--- a/Documentation/btrfs-zero-log.txt
++++ b/Documentation/btrfs-zero-log.txt
+@@ -40,18 +40,6 @@ EXIT STATUS
+ *btrfs-zero-log* will return 0 if no error happened.
+ Other exit code means some problems happened.
+ 
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
+diff --git a/Documentation/btrfstune.txt b/Documentation/btrfstune.txt
+index bf44bdf..56cf66b 100644
+--- a/Documentation/btrfstune.txt
++++ b/Documentation/btrfstune.txt
+@@ -31,18 +31,6 @@ EXIT STATUS
+ *btrfstune* will return 0 if no error happened.
+ If any problems happened, 1 will be returned.
+ 
+-AUTHOR
+-------
+-Written by Shilong Wang and Wenruo Qu.
+-
+-COPYRIGHT
+----------
+-Copyright (C) 2013 FUJITSU LIMITED.
+-
+-License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
+-
+-This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
+-
+ SEE ALSO
+ --------
+ `mkfs.btrfs`(8)
 -- 
-1.8.1.4
+1.9.0
 

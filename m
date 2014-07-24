@@ -1,58 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:39757 "EHLO tetsuo.zabbo.net"
+Received: from plane.gmane.org ([80.91.229.3]:47438 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932847AbaGWUri (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 16:47:38 -0400
-Date: Wed, 23 Jul 2014 13:47:36 -0700
-From: Zach Brown <zab@zabbo.net>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	id S1756134AbaGXBis (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Jul 2014 21:38:48 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XA7zZ-0002ua-SQ
+	for linux-btrfs@vger.kernel.org; Thu, 24 Jul 2014 03:38:45 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 03:38:45 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 03:38:45 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: feature request: consider rw subvols ro for send when volume is
  mounted ro
-Message-ID: <20140723204736.GD17798@lenny.home.zabbo.net>
+Date: Thu, 24 Jul 2014 01:38:32 +0000 (UTC)
+Message-ID: <pan$9782b$83bda3f0$b4a4f489$5c1b675f@cox.net>
 References: <EAC867F7-CBB2-4714-9917-A29566167A21@colorremedies.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <EAC867F7-CBB2-4714-9917-A29566167A21@colorremedies.com>
+	<20140723204736.GD17798@lenny.home.zabbo.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 23, 2014 at 02:10:29PM -0600, Chris Murphy wrote:
-> The use case is when it's possible to mount a Btrfs volume ro, but not rw. Example, a situation where
-> 
-> # mount -o degraded /dev/sdb /mnt
-> [   71.064352] BTRFS info (device sdb): allowing degraded mounts
-> [   71.064812] BTRFS info (device sdb): enabling auto recovery
-> [   71.065210] BTRFS info (device sdb): disk space caching is enabled
-> [   71.072068] BTRFS warning (device sdb): devid 2 missing
-> [   71.097320] BTRFS: too many missing devices, writeable mount is not allowed
-> [   71.116616] BTRFS: open_ctree failed
-> 
-> Yet this works:
-> # mount -o degraded,ro /dev/sdb /mnt
-> 
-> It would be great if it were possible to send/receive subvolumes to a
-> different btrfs volume. Currently it's not possible because those
-> subvols aren't ro, and because the mount is ro I can't make ro
-> snapshots first.
+Zach Brown posted on Wed, 23 Jul 2014 13:47:36 -0700 as excerpted:
 
-I wonder if that's as easy as the following totally untested hack.  I
-have no idea if a read-only mount would still allow background
-modification that might violate the send code's assumptions.
+> On Wed, Jul 23, 2014 at 02:10:29PM -0600, Chris Murphy wrote:
+>> The use case is when it's possible to mount a Btrfs volume ro, but not
+>> rw. Example, a situation where
+>> 
+>> # mount -o degraded /dev/sdb /mnt
+>> [...] BTRFS: too many missing devices, writeable mount is not allowed 
+>> 
+>> Yet this works:
+>> # mount -o degraded,ro /dev/sdb /mnt
+>> 
+>> It would be great if it were possible to send/receive subvolumes to a
+>> different btrfs volume. Currently it's not possible because those
+>> subvols aren't ro, and because the mount is ro I can't make ro
+>> snapshots first.
 
-- z
+In general, btrfs send/receive is great when it works, but because 
+there's still corner-cases like this as well as simply broken send/
+receive cases popping up from time to time, I strongly recommend not 
+relying on it working, and keeping a more conventional backup option 
+(like rsync) tested-working and usable as well.
+ 
+> I wonder if that's as easy as the following totally untested hack.  I
+> have no idea if a read-only mount would still allow background
+> modification that might violate the send code's assumptions.
 
-$ git diff fs/btrfs/send.c
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6528aa6..3528210 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5536,7 +5536,7 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 	 * Userspace tools do the checks and warn the user if it's
- 	 * not RO.
- 	 */
--	if (!btrfs_root_readonly(send_root)) {
-+	if (!(btrfs_root_readonly(send_root) || (sb->s_flags & MS_RDONLY))) {
- 		ret = -EPERM;
- 		goto out;
- 	}
+Hopefully that hack works.
+
+Meanwhile, AFAIK, yes, there's still cases where a read-only mount can 
+still allow background mods that would violate send's assumptions.  Tho I 
+don't believe they apply in this case.  But certainly, there has been 
+recent discussion on the subvolume mount situation, since it's possible 
+to access child subvolumes from writable-mount parent (including root/
+id5) subvolumes, and currently nothing stops writing into the read-only-
+child's mount from the parent's writable mount.
+
+Even without that situation, however, there's bind-mounts, which start 
+out with the same mount options as the original, but with a remount allow 
+one of the views to be read-only while the other is writable, regardless 
+of the filesystem.  Obviously that allows changing the view on the read-
+only side from the writable side.
+
+So while having the ability to do a send from a read-only mount is indeed 
+a good thing to have in emergency cases such as this, I'd suggest 
+requiring a --force option or the like to enable it, since the full 
+immutable-read-only guarantees simply aren't there.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,44 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:49306 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758612AbaGXDTf (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:2560 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1758463AbaGXDfd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 23:19:35 -0400
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id B47F33EE1D6
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:19:34 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id C73BCAC04EC
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:19:33 +0900 (JST)
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 540581DB8037
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:19:33 +0900 (JST)
-Message-ID: <53D07B3C.8000804@jp.fujitsu.com>
-Date: Thu, 24 Jul 2014 12:19:24 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Wed, 23 Jul 2014 23:35:33 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O3ZUf5017384
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 11:35:30 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 01/10] Btrfs: Fix the problem that the replace destroys the seed filesystem
+Date: Thu, 24 Jul 2014 11:37:06 +0800
+Message-ID: <1406173035-29478-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, Anand Jain <Anand.Jain@oracle.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs: syslog when quota is disabled
-References: <1404758489-7085-1-git-send-email-Anand.Jain@oracle.com> <1404758489-7085-2-git-send-email-Anand.Jain@oracle.com> <20140722174722.GE1553@twin.jikos.cz>
-In-Reply-To: <20140722174722.GE1553@twin.jikos.cz>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/07/23 2:47), David Sterba wrote:
-> On Tue, Jul 08, 2014 at 02:41:29AM +0800, Anand Jain wrote:
->> Offline investigations of the issues would need to know when quota is disabled.
->>
->> Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
->
-> Reviewed-by: David Sterba <dsterba@suse.cz>
+The seed filesystem was destroyed by the device replace, the reproduce
+method is:
+ # mkfs.btrfs -f <dev0>
+ # btrfstune -S 1 <dev0>
+ # mount <dev0> <mnt>
+ # btrfs device add <dev1> <mnt>
+ # umount <mnt>
+ # mount <dev1> <mnt>
+ # btrfs replace start -f <dev0> <dev2> <mnt>
+ # umount <mnt>
+ # mount <dev0> <mnt>
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+It is because we erase the super block on the seed device. It is wrong,
+we should not change anything on the seed device.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2776070f..19188df 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1853,8 +1853,12 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+ 	if (srcdev->bdev) {
+ 		fs_info->fs_devices->open_devices--;
+ 
+-		/* zero out the old super */
+-		btrfs_scratch_superblock(srcdev);
++		/*
++		 * zero out the old super if it is not writable
++		 * (e.g. seed device)
++		 */
++		if (srcdev->writeable)
++			btrfs_scratch_superblock(srcdev);
+ 	}
+ 
+ 	call_rcu(&srcdev->rcu, free_device);
+-- 
+1.9.3
 

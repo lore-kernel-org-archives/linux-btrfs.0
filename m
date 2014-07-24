@@ -1,92 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:32115 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S934311AbaGXUFV (ORCPT
+Received: from mail-pd0-f177.google.com ([209.85.192.177]:35939 "EHLO
+	mail-pd0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751745AbaGXWek (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 16:05:21 -0400
-Message-ID: <53D166C6.2070403@fb.com>
-Date: Thu, 24 Jul 2014 16:04:22 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: <linux-btrfs@vger.kernel.org>, Cody P Schafer <dev@codyps.com>,
-        Marc MERLIN <marc@merlins.org>
-Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
-References: <1502954.OtX3SzjMKZ@merkaba> <1809953.ithLVmijbn@merkaba> <53D11F2B.1070008@fb.com> <1557956.045aK4K0qS@merkaba>
-In-Reply-To: <1557956.045aK4K0qS@merkaba>
-Content-Type: text/plain; charset="UTF-8"
+	Thu, 24 Jul 2014 18:34:40 -0400
+Received: by mail-pd0-f177.google.com with SMTP id p10so4457643pdj.22
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 15:34:40 -0700 (PDT)
+Content-Type: multipart/signed; boundary="Apple-Mail=_EE49BFE3-FECB-40D9-B2D2-AD63AA8C9172"; protocol="application/pgp-signature"; micalg=pgp-sha1
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Subject: Re: [PATCH 2/4 v3] fiemap: add EXTENT_DATA_COMPRESSED flag
+From: Andreas Dilger <adilger@dilger.ca>
+In-Reply-To: <20140724192245.GG1553@suse.cz>
+Date: Thu, 24 Jul 2014 16:34:35 -0600
+Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>, linux-nilfs@vger.kernel.org,
+        xfs@oss.sgi.com, Btrfs Developer List <linux-btrfs@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Message-Id: <5B4825C3-F47E-48B7-8DA4-6D79F53B73B1@dilger.ca>
+References: <cover.1386778302.git.dsterba@suse.cz> <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz> <20131212232443.GL31386@dastard> <9520AB36-B728-423A-8EA1-FDD22B79AE90@dilger.ca> <B58DEEA8-561A-4173-B9F5-528B73E06C6D@dilger.ca> <20140724192245.GG1553@suse.cz>
+To: dsterba@suse.cz
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--Apple-Mail=_EE49BFE3-FECB-40D9-B2D2-AD63AA8C9172
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=us-ascii
 
-On 07/24/2014 02:49 PM, Martin Steigerwald wrote:
-> Am Donnerstag, 24. Juli 2014, 10:58:51 schrieb Chris Mason:
->> On 07/23/2014 06:47 PM, Martin Steigerwald wrote:
->>> Am Dienstag, 15. Juli 2014, 17:08:27 schrieb Martin Steigerwald:
->>>> Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
->>>>> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
->>>>>> Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
->>>>>>> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
->>>>>>>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
->>>>>>>>> Hi!
->>>>>>>>>
->>>>>>>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several
->>>>>>>>> days
->>>>>>>>> of
->>>>>>>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since
->>>>>>>>> booting
->>>>>>>>> it.
->>>>>>>>>
->>>>>>>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2
->>>>>>>>> usually
->>>>>>>>> didn´t happen that quickly after boot and since backtrace looks a
->>>>>>>>> bit
->>>>>>>>> different from what I have in memory, I post this in a new thread.
->>>>>>>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous
->>>>>>>>> hang
->>>>>>>>> issues.
->>>>>>>>
->>>>>>>> Probably good to add some basic information on the filesystem:
->>>>>>> Do you have compression enabled?  I wasn't able to nail down the
->>>>>>> 3.15.1
->>>>>>> hang before vacation attacked me, but I'm hoping to track it down
->>>>>>> today.
->>>>>>
->>>>>> Yes. I have.
->>>>>>
->>>>>> It just hung again while I was playing PlaneShift.
->>>>>>
->>>>>> Back to 3.16-rc4 as rc5 seems to be broke here.
->>>>>
->>>>> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
->>>>> shouldn't be a factor.  Are you hitting other problems with 3.16?
->>>>
->>>> So far for this day 3.16-rc4 behaves nicely. With 3.16-rc5 I had a BTRFS
->>>> hang twice yesterday. 3.16-rc4 before also behaved nicely for several
->>>> days
->>>> or well about a week here.
->>>
->>> 3.16-rc4 now hung as well…
->>
->> Liu Bo has a promising patch:
->>
->> https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/patch/4618421/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2BQyA%3D%3D%0A&m=CJPREifRDOxlzhYeURx75h33LGU7YemJsNeLP%2FvXCv8%3D%0A&s=8fb0a70afce09530f16ea66a47d2af07966706b21281a7142d86256979013bab
->>
->> Please give it a shot.  There's a second deadlock reading the free space
->> cache, I'm still working on that one too.
-> 
-> Now running 3.16-rc6 + current git + this patch.
-> 
-> It may take some time tough cause during compiling the kernel BTRFS hung 
-> again, which caused loss of KDE Baloo desktop search file index and parts of a 
-> mail I wrote in KMail.
-> 
-> Since the patch mentioned ENOSPC issues but the filesystem has enough free 
-> space according to df I shrunk the trees with
 
-Thanks for giving it a try.  The ENOSPC mentioned here is looking for a
-contiguous extent, so it's easily possible to trigger that enospc
-without actually being full.
+On Jul 24, 2014, at 1:22 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Thu, Jul 17, 2014 at 12:07:57AM -0600, Andreas Dilger wrote:
+>> any progress on this patch series?
+>=20
+> I'm sorry I got distracted at the end of year and did not finish the
+> series.
+>=20
+>> I never saw an updated version of this patch series after the last =
+round of
+>> reviews, but it would be great to move it forward.  I have filefrag =
+patches
+>> in my e2fsprogs tree waiting for an updated version of your patch.
+>>=20
+>> I recall the main changes were:
+>> - add FIEMAP_EXTENT_PHYS_LENGTH flag to indicate if fe_phys_length =
+was valid
+>=20
+> fe_phys_length will be always valid, so other the flags are set only =
+if it's
+> not equal to the logical length.
+>=20
+>> - rename fe_length to fe_logi_length and #define fe_length =
+fe_logi_length
+>> - always fill in fe_phys_length (=3D fe_logi_length for uncompressed =
+files)
+>>  and set FIEMAP_EXTENT_PHYS_LENGTH whether the extent is compressed =
+or not
+>=20
+> This is my understanding and contradicts the first point.
 
--chris
+I think Dave Chinner's former point was that having fe_phys_length =
+validity
+depend on FIEMAP_EXTENT_DATA_COMPRESSED is a non-intuitive interface.  =
+It is
+not true that fe_phys_length would always be valid, since that is not =
+the
+case for older kernels that currently always set this field to 0, so =
+they
+need some flag to indicate if fe_phys_length is valid.  Alternately,
+userspace could do:
+
+	if (ext->fe_phys_length =3D=3D 0)
+		ext->fe_phys_length =3D ext->fe_logi_length;
+
+but that pre-supposes that fe_phys_length =3D=3D 0 is never a valid =
+value when
+fe_logi_length is non-zero, and this might introduce errors in some =
+cases.
+I could imagine that some compression methods might not allocate any =
+space
+at all if it was all zeroes, and just store a bit in the blockpointer or
+extent, so having a separate FIEMAP_EXTENT_PHYS_LENGTH is probably safer
+in the long run.  That opens up the question of whether a written zero
+filled space that gets compressed away is different from a hole, but I'd
+prefer to just return whatever the file mapping is than interpret it.
+
+Cheers, Andreas
+
+>> - add WARN_ONCE() in fiemap_fill_next_extent() as described below
+>>=20
+>> I don't know if there was any clear statement about whether there =
+should be
+>> separate FIEMAP_EXTENT_PHYS_LENGTH and FIEMAP_EXTENT_DATA_COMPRESSED =
+flags,
+>> or if the latter should be implicit?  Probably makes sense to have =
+separate
+>> flags.  It should be fine to use:
+>>=20
+>> #define FIEMAP_EXTENT_PHYS_LENGTH	0x00000010
+>>=20
+>> since this flag was never used.
+>=20
+> I've kept only FIEMAP_EXTENT_DATA_COMPRESSED, I don't see a need for
+> FIEMAP_EXTENT_PHYS_LENGTH and this would be yet another flag because =
+the
+> FIEMAP_EXTENT_DATA_ENCODED is also implied.
+>=20
+> I'll send V4, we can discuss the PHYS_LENGTH flag then.
+
+
+Cheers, Andreas
+
+
+
+
+
+
+--Apple-Mail=_EE49BFE3-FECB-40D9-B2D2-AD63AA8C9172
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP using GPGMail
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIVAwUBU9GJ+3Kl2rkXzB/gAQL14w/9E/WENH/RddgvYvMI0mPiMkdxzFK++PEH
+dsaix22ddMjmnP7cRHt/Ty5ZfcnydZqFG/FNta9ZOcfTDaUOXGw3C7U7X93MAorx
+s+q6ISAO81cYTLKvxFJDXzYzo/QxB219+oByPSdutEOYvANM1x/2vY5QYPVwjg4g
+dxTAmoChCCbGEn96VZOG0M93kugQn7n4EzMjjK/5niUOiQiT4GCsTCFGyXuieXf+
+PifblnRrNgQVRCzOimY+lXbXgL0+huGFw0okgx1/QCz176s60yFweEktWPuHdrZ1
+8cDp97T5EwLXe9NYH+tyR6aw6yURzx8BSLMMscQWXs12lceuV0c5tBQ9l8RKtlEo
+cLJJwPXHt7BS/CWsLpjyEz3zNTkvX88rmV0kPZIdVeseI3yP7GLLTdJ5TWXeR3Jb
+BS9RQlXXU+1dZET3Lab22uEkUted8qH0sKyACbcwGRitJNx6aDpu5ByV4MyCjKPm
+HnJAmTbADVpJRVTaPmgQbs4MrEgZm9PxAG/JWm7Qi+KythnZVFG1DVocvmE9ZWSK
+FCkyBKEwDR/7KiFy3EBm1v0nwVetoHVOykTLBu6jCW8BU70o5BwAp5gVfGYEj2x8
+9lx6QZWKDSRH2YyVjh2q7s0DrNosPpejxwT5ZxdKNOAUTcw+m4HO5LzD6WYbkU5W
+nvpdaVUDRbc=
+=Z7dA
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_EE49BFE3-FECB-40D9-B2D2-AD63AA8C9172--

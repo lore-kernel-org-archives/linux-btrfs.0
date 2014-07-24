@@ -1,71 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23303 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:18381 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758482AbaGXD1p (ORCPT
+	with ESMTP id S1758463AbaGXDdQ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 23:27:45 -0400
+	Wed, 23 Jul 2014 23:33:16 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O3Rf1O016902
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 11:27:41 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O3XD8T017254
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 11:33:13 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs-progs: fix wrong data ratio for raid56 in btrfs-file-usage
-Date: Thu, 24 Jul 2014 11:21:52 +0800
-Message-ID: <1406172114-10793-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 2/3] btrfs-progs: output the correct path when fi-usage failed
+Date: Thu, 24 Jul 2014 11:27:28 +0800
+Message-ID: <1406172448-11454-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1406172114-10793-2-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1406172114-10793-2-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When run btrfs-file-usage on a btrfs with data profile raid5/6,
-the output message for "Free" & "Data to device ratio" seems wrong
-as follows:
-    ...
-    Device size:		 100.00GiB
-    Device allocated:		   2.04GiB
-    Device unallocated:		  97.96GiB
-    Used:			   1.12MiB
-    Free (Estimated):		 197.89GiB <== Free > Device size
-    Data to device ratio:	     198 % <== > 100%
-    Global reserve:		     0.00B
-    ...
+When we exec the following cmd:
+	# btrfs file usage -t <path>  <-- an invalid path
+output:
+	# ERROR： can't access '-t'
+should be:
+	# ERROR: can't access 'path'
 
-It is because the function get_raid56_used() is not iterating the
-chunk_info array correctly, it is just repeating adding the first
-chunk_info statistics.
-Just add a ptr to iterate over the array.
+Just replace the static 'argv[1]' with 'argv[i]'.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 ---
- cmds-fi-disk_usage.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+changelog
+	v1->v2: add missing signoff-by
+---
+ cmds-fi-disk_usage.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/cmds-fi-disk_usage.c b/cmds-fi-disk_usage.c
-index 453410f..78dc414 100644
+index 78dc414..1f4c88e 100644
 --- a/cmds-fi-disk_usage.c
 +++ b/cmds-fi-disk_usage.c
-@@ -293,14 +293,16 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
- static void get_raid56_used(int fd, struct chunk_info *chunks, int chunkcount,
- 		u64 *raid5_used, u64 *raid6_used)
- {
-+	struct chunk_info *info_ptr = chunks;
- 	*raid5_used = 0;
- 	*raid6_used = 0;
- 
- 	while (chunkcount-- > 0) {
--		if (chunks->type & BTRFS_BLOCK_GROUP_RAID5)
--			(*raid5_used) += chunks->size / (chunks->num_stripes - 1);
--		if (chunks->type & BTRFS_BLOCK_GROUP_RAID6)
--			(*raid6_used) += chunks->size / (chunks->num_stripes - 2);
-+		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID5)
-+			(*raid5_used) += info_ptr->size / (info_ptr->num_stripes - 1);
-+		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID6)
-+			(*raid6_used) += info_ptr->size / (info_ptr->num_stripes - 2);
-+		info_ptr++;
- 	}
- }
- 
+@@ -835,7 +835,7 @@ int cmd_filesystem_usage(int argc, char **argv)
+ 		fd = open_file_or_dir(argv[i], &dirstream);
+ 		if (fd < 0) {
+ 			fprintf(stderr, "ERROR: can't access '%s'\n",
+-				argv[1]);
++				argv[i]);
+ 			ret = 1;
+ 			goto out;
+ 		}
 -- 
 1.8.1.4
 

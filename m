@@ -1,89 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29024 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756909AbaGYIQk convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jul 2014 04:16:40 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6P8G47D024852
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 16:16:05 +0800
-Message-ID: <53D21248.1040102@cn.fujitsu.com>
-Date: Fri, 25 Jul 2014 16:16:08 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: Return right extent when fiemap gives unaligned
- offset and len.
-References: <1406252943-5834-1-git-send-email-quwenruo@cn.fujitsu.com> <53D20CB4.3000409@jp.fujitsu.com>
-In-Reply-To: <53D20CB4.3000409@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from cantor2.suse.de ([195.135.220.15]:34894 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759868AbaGYIbb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Jul 2014 04:31:31 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-fsdevel@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, adilger@dilger.ca, hch@infradead.org,
+        mfasheh@suse.com, viro@zeniv.linux.org.uk, david@fromorbit.com,
+        xfs@oss.sgi.com, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/5 v4] fiemap: introduce EXTENT_DATA_COMPRESSED flag
+Date: Fri, 25 Jul 2014 10:31:28 +0200
+Message-Id: <cover.1406229792.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The original FIEMAP patch did not define this bit, btrfs will make use of
+it.  The defined constant maintains the same value as originally proposed.
 
--------- Original Message --------
-Subject: Re: [PATCH v2] btrfs: Return right extent when fiemap gives 
-unaligned offset and len.
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Date: 2014年07月25日 15:52
-> Hi Qu,
->
-> (2014/07/25 10:49), Qu Wenruo wrote:
->> When page aligned start and len passed to extent_fiemap(), the result is
->> good, but when start and len is not aligned, e.g. start = 1 and len =
->> 4095 is passed to extent_fiemap(), it returns no extent.
->>
->> The problem is that start and len is all rounded up which causes the
->> problem. This patch will round down start and round up (start + len) to
->> return right extent.
->>
->> Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->> changelog:
->> v2: reword the description(ALIGN rounds up, not rounds down).
->> ---
->>    fs/btrfs/extent_io.c | 4 ++--
->>    1 file changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index a389820..1c70cff 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -4213,8 +4213,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->>    		return -ENOMEM;
->>    	path->leave_spinning = 1;
->>    
->> -	start = ALIGN(start, BTRFS_I(inode)->root->sectorsize);
->> -	len = ALIGN(len, BTRFS_I(inode)->root->sectorsize);
->> +	start = round_down(start, BTRFS_I(inode)->root->sectorsize);
->> +	len = round_up(max, BTRFS_I(inode)->root->sectorsize) - start;
-> I have one question.
->
-> Why isn't it "len = round_up(len, BTRFS_I(inode)->root->sectorsize);" ?
-> Old behavior make len sectorsize aligned. However, if start is not
-> aligned to sectorsize, new bahavior make len not sectorsize aligned.
-> Does it an expected behavior?
-In fact, in my code, len is also aligned.
-The calculation is somewhat easy, round_down original 'start' and 
-round_up original end(in the code, max is original
-unaligned end position),
-then calculate 'len' by minus aligned end with aligned 'start'.
-Since the *new* 'start' is already aligned and the new end is aligned, 
-the len will also be aligned.
+Currently, the 'filefrag' utility has no way to recognize and denote a
+compressed extent. As implemented in btrfs right now, the compression step
+splits a big extent into smaller chunks and this is reported as a heavily
+fragmented file. Adding the flag to filefrag will at least give some
+explanation why, this has been confusing users for some time already.
 
-Thanks,
-Qu
->
-> CMIIW. I'm not good at extent code.
->
-> Thanks,
-> Satoru
->
->>    
->>    	/*
->>    	 * lookup the last file extent.  We're not using i_size here
->>
+fiemap_fill_next_extent is extended and takes argument to fill the physical
+length.
+
+V4:
+The physical length is always set and equal to logical, or different and
+then sets the COMPRESSED flag.
+fiemap_extent::fe_length renamed to fe_logi_length
+
+V3:
+Based on feedback from Andreas, implement #1 from V2, current users of
+fiemap_fill_next_extent (fs/, ext4, gfs2, ocfs2, nilfs2, xfs) updated
+accordingly, no functional change.
+
+V2:
+Based on feedback from Andreas, the fiemap_extent is now able to hold the
+physical extent length, to be filled by the filesystem callback.
+
+
+1) extend fiemap_fill_next_extent to take phys_length and update all
+   users (ext4, gfs2, ocfs2, nilfs2, xfs)
+
+David Sterba (5):
+  fiemap: fix comment at EXTENT_DATA_ENCRYPTED
+  fiemap: add EXTENT_DATA_COMPRESSED flag
+  btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
+  Documentation/fiemap: Document the DATA_COMPRESSED flag
+  fiemap: rename fe_length to fe_logi_length
+
+ Documentation/filesystems/fiemap.txt | 19 +++++++++++++++----
+ fs/btrfs/extent_io.c                 |  8 ++++++--
+ fs/ext4/extents.c                    |  3 ++-
+ fs/ext4/inline.c                     |  2 +-
+ fs/gfs2/inode.c                      |  2 +-
+ fs/ioctl.c                           | 29 ++++++++++++++++++++++-------
+ fs/nilfs2/inode.c                    |  8 +++++---
+ fs/ocfs2/extent_map.c                |  4 ++--
+ fs/xfs/xfs_iops.c                    |  2 +-
+ include/linux/fs.h                   |  2 +-
+ include/uapi/linux/fiemap.h          | 13 ++++++++++---
+ 11 files changed, 66 insertions(+), 26 deletions(-)
+
+-- 
+1.8.4.5
 

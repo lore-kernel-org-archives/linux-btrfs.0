@@ -1,60 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f181.google.com ([209.85.217.181]:63529 "EHLO
-	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758296AbaGYC1o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 22:27:44 -0400
-Received: by mail-lb0-f181.google.com with SMTP id 10so2853703lbg.40
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 19:27:42 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <53CE7ACF.7070109@fb.com>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
-	<53C7CD0F.7070603@fb.com>
-	<CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
-	<1745216.hDa4tC2HJJ@merkaba>
-	<53CE7ACF.7070109@fb.com>
-Date: Thu, 24 Jul 2014 21:27:42 -0500
-Message-ID: <CAPoQQ-3ceufwBNUOGsObwX8AMC5LZBDy6imZD3BaX+8B2_=W-w@mail.gmail.com>
-Subject: Re: Blocked tasks on 3.15.1
-From: Cody P Schafer <dev@codyps.com>
-To: Chris Mason <clm@fb.com>
-Cc: Martin Steigerwald <Martin@lichtvoll.de>, Chris Samuel <chris@csamuel.org>,
-        linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:32832 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757343AbaGYCcb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Jul 2014 22:32:31 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XAVJ8-00068U-EQ
+	for linux-btrfs@vger.kernel.org; Fri, 25 Jul 2014 04:32:30 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 04:32:30 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 04:32:30 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
+Date: Fri, 25 Jul 2014 02:32:17 +0000 (UTC)
+Message-ID: <pan$aa09d$75e2870b$4abbbcef$7f21a37d@cox.net>
+References: <1502954.OtX3SzjMKZ@merkaba> <1809953.ithLVmijbn@merkaba>
+	<53D11F2B.1070008@fb.com> <1557956.045aK4K0qS@merkaba>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 22, 2014 at 9:53 AM, Chris Mason <clm@fb.com> wrote:
->
->
-> On 07/19/2014 02:23 PM, Martin Steigerwald wrote:
->
->>> Running 3.15.6 with this patch applied on top:
->>>  - still causes a hang with `rsync -hPaHAXx --del /mnt/home/nyx/ /home/nyx/`
->>> - no extra error messages printed (`dmesg | grep racing`) compared to
->>> without the patch
->>
->> I got same results with 3.16-rc5 + this patch (see thread BTRFS hang with
->> 3.16-rc5). 3.16-rc4 still is fine with me. No hang whatsoever so far.
->>
->>> To recap some details (so I can have it all in one place):
->>>  - /home/ is btrfs with compress=lzo
->>
->> BTRFS RAID 1 with lzo.
->>
->>>  - I have _not_ created any nodatacow files.
->>
->> Me neither.
->>
->>>  - Full stack is: sata <-> dmcrypt <-> lvm <-> btrfs (I noticed others
->>> mentioning the use of dmcrypt)
->>
->> Same, except no dmcrypt.
->>
->
-> Thanks for the help in tracking this down everyone.  We'll get there!
-> Are you all running multi-disk systems (from a btrfs POV, more than one
-> device?)  I don't care how many physical drives this maps to, just does
-> btrfs think there's more than one drive.
+Martin Steigerwald posted on Thu, 24 Jul 2014 20:49:37 +0200 as excerpted:
 
-No, both of my btrfs filesystems are single disk.
+> It may take some time tough cause during compiling the kernel BTRFS hung
+> again, which caused loss of KDE Baloo desktop search file index and
+> parts of a mail I wrote in KMail.
+
+Heh.  While I do run a kde(-lite) desktop, at least I don't have those 
+problems to deal with.  As a gentooer I have the option to build kde 
+without the semantic-desktop junk and I've taken that option, so no baloo 
+or the like here.  And after the akonadified kmail lost one too many 
+mails and I was going to need to reset the data store to retrieve them 
+once again, I asked myself why I was putting up with it, after all, email 
+is a decades old technology that should NOT be rocket-science any longer, 
+and soon enough I was NOT putting up with it any longer, as I'd switched 
+to claws-mail.  Actually, killing with fire kdepim and anything akonadi 
+related was what allowed me to kill semantic-desktop as well instead of 
+just run-time disabling it, since akonadi is part of the steaming pile.
+
+And claws-mail has this nice option I didn't even know could be done on 
+pop3 mail servers, too.  It downloads the mail for local reading, but 
+keeps it on the server for a week (configurable) before final pop3 server-
+side deletion, just in case you do crash after download and lose the 
+local copy.  I've not actually had to take advantage of that feature yet, 
+but it's sure nice to have, just in case. =:^)
+
+Interesting this came up here just now, too, as there's a current xmodulo 
+post about baloo and milou in kde4 and the carryover to kde-frameworks5 
+and plasma5, too, with an ongoing discussion.
+
+http://xmodulo.com/2014/07/kde-semantic-desktop-nepomuk-baloo.html
+
+So fortunately, while I am a development version tester for of both kde 
+and btrfs, the akonadi and semantic-desktop steaming-pile-of-.... is not 
+something I have to worry about the stability of (or more precisely the 
+lack thereof), while also testing a not yet fully stable btrfs at the 
+same time.  Hopefully that'll continue to be the case in the claimed more 
+modular kde-frameworks-5 era, because there's more than one way to ensure 
+that I don't have to deal with that pile, and just as I suddenly found 
+some other option for mail after using kmail since the kde2 era when it 
+semantic-desktop-integrated without option, so my kde/plasma desktop, 
+also since the kde2 era, can find itself going the same route locally, 
+should it insist on going the same route globally.
+
+Tho just as I did the akonadified kmail, I'll likely keep an open enough 
+mind to try it.  <shrug>  Maybe it'll actually work this time, without 
+eating up gigs of indexing space that has to be reset frequently due to 
+something going wrong, to do it.  Time will tell...
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

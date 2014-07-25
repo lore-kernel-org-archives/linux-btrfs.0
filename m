@@ -1,95 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10905 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:9031 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758584AbaGYBWm (ORCPT
+	with ESMTP id S1753813AbaGYB3I convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 21:22:42 -0400
-Message-ID: <53D1B021.6040501@cn.fujitsu.com>
-Date: Fri, 25 Jul 2014 09:17:21 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	Thu, 24 Jul 2014 21:29:08 -0400
+Message-ID: <53D1B2E1.60008@cn.fujitsu.com>
+Date: Fri, 25 Jul 2014 09:29:05 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Kevin Brandstatter <icarusthecow@gmail.com>,
-        Wang Shilong <wangshilong1991@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs_qgroup_create unused parameter
-References: <53B708CC.5020306@gmail.com> <474060AA-5D86-40F9-BD9C-27A68F732D63@gmail.com> <53D1958D.1070202@gmail.com>
-In-Reply-To: <53D1958D.1070202@gmail.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Return right extent when fiemap gives unaligned
+ offset and len.
+References: <1405648543-8966-1-git-send-email-quwenruo@cn.fujitsu.com> <20140724121721.GW1553@twin.jikos.cz>
+In-Reply-To: <20140724121721.GW1553@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Kevin,
 
-On 07/25/2014 07:23 AM, Kevin Brandstatter wrote:
-> I submitted a patch for this a week or two ago
-> (https://patchwork.kernel.org/patch/4486121/), but latest for-linus
-> doesn't have it merged, is it just being put of as minor, or is there a
-> problem with it?
-I believe your patch will be picked up by Chris and sent to Linus
-when next merge window is open.
-
-Since Chris is sometimes busy, patch merging is always
-delayed for some time.
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: Return right extent when fiemap gives 
+unaligned offset and len.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年07月24日 20:17
+> On Fri, Jul 18, 2014 at 09:55:43AM +0800, Qu Wenruo wrote:
+>> When page aligned start and len passed to extent_fiemap(), the result is
+>> good, but when start and len is not aligned, e.g. start = 1 and len =
+>> 4095 is passed to extent_fiemap(), it returns no extent.
+>>
+>> The problem is that start and len is all rounded down which causes the
+>> problem.
+> ALIGN rounds up, not down. So the wrong rounding will use incorrect start
+> (4096) and finds no extents if there's eg. only one [0,4095].
+Sorry for the wrong description in patch.
+Should I reword the patch and send a v2 patch?
 
 Thanks,
-Wang
+Qu
 >
-> -Kevin
->
-> On 07/04/2014 09:09 PM, Wang Shilong wrote:
->> Hi
+>> This patch will round down start and round up (start + len) to
+>> return right extent.
 >>
->> I think you are right,  @name here is unneeded..
->> You can give a patch for that.^_^
->>
->> Wang
->>> |The code is pasted below for convenience of reference, but in the function to
->>> create a qgruop, it taks a 4th parameter (char * name). I assume this is the name
->>> of the path to limit, however, i don't see where its used anywhere in the function.
->>>
->>> -Kevin Brandstatter
->>>
->>> int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
->>> 			struct btrfs_fs_info *fs_info, u64 qgroupid, *char** *****name**)*
->>> {
->>> 	struct btrfs_root *quota_root;
->>> 	struct btrfs_qgroup *qgroup;
->>> 	int ret = 0;
->>>
->>> 	mutex_lock(&fs_info->qgroup_ioctl_lock);
->>> 	quota_root = fs_info->quota_root;
->>> 	if (!quota_root) {
->>> 		ret = -EINVAL;
->>> 		goto out;
->>> 	}
->>> 	qgroup = find_qgroup_rb(fs_info, qgroupid);
->>> 	if (qgroup) {
->>> 		ret = -EEXIST;
->>> 		goto out;
->>> 	}
->>>
->>> 	ret = add_qgroup_item(trans, quota_root, qgroupid);
->>> 	if (ret)
->>> 		goto out;
->>>
->>> 	spin_lock(&fs_info->qgroup_lock);
->>> 	qgroup = add_qgroup_rb(fs_info, qgroupid);
->>> 	spin_unlock(&fs_info->qgroup_lock);
->>>
->>> 	if (IS_ERR(qgroup))
->>> 		ret = PTR_ERR(qgroup);
->>> out:
->>> 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
->>> 	return ret;
->>> }|
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+>> Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Reviewed-by: David Sterba <dsterba@suse.cz>
 

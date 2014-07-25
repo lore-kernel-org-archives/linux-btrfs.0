@@ -1,60 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:56809 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:20293 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753254AbaGYSED (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jul 2014 14:04:03 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s6PI43S9001485
+	id S1752087AbaGYE1e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Jul 2014 00:27:34 -0400
+Received: from int-mx13.intmail.prod.int.phx2.redhat.com (int-mx13.intmail.prod.int.phx2.redhat.com [10.5.11.26])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id s6P4RXdW020846
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 14:04:03 -0400
-Message-ID: <53D29C11.1090800@redhat.com>
-Date: Fri, 25 Jul 2014 13:04:01 -0500
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 00:27:33 -0400
+Received: from liberator.sandeen.net (ovpn01.gateway.prod.ext.phx2.redhat.com [10.5.9.1])
+	by int-mx13.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id s6P4RWAV030851
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 00:27:33 -0400
+Message-ID: <53D1DCB4.8090409@redhat.com>
+Date: Thu, 24 Jul 2014 23:27:32 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: Zach Brown <zab@redhat.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] mkfs.btrfs: round all device sizes to sectorsize
-References: <53D1DCB4.8090409@redhat.com> <20140725171236.GJ17798@lenny.home.zabbo.net> <53D292FF.7030500@redhat.com>
-In-Reply-To: <53D292FF.7030500@redhat.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] mkfs.btrfs: round all device sizes to sectorsize
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/25/14, 12:25 PM, Eric Sandeen wrote:
-> On 7/25/14, 12:12 PM, Zach Brown wrote:
->> On Thu, Jul 24, 2014 at 11:27:32PM -0500, Eric Sandeen wrote:
->>> make_btrfs() rounds down the first device size to a multiple of sectorsize:
->>
->>                ^^^^^^^^^^^
->>
->>> -	device->total_bytes = block_count;
->>> +	device->total_bytes = (block_count / sectorsize) * sectorsize;
->>
->> kerncompat.h:#define round_down(x, y) ((x) & ~__round_mask(x, y))
->>
->> - z
->>
-> 
-> yeah yeah ;) this isn't copied kernel code but sure, that'd be better.
-> 
-> I'm trying to clean up this whole "we say blocks when we mean bytes!"
-> thing, and I'll include round_down() as well.
+make_btrfs() rounds down the first device size to a multiple of sectorsize:
 
-meh.  And half this is done in kernelspace for device add/replace
-(device size setting etc) so TBH I'm increasingly inclined to
-just back away slowly here.  :(
+	num_bytes = (num_bytes / sectorsize) * sectorsize;
 
-(IOWs device_add calls btrfs_prepare_device(), but the size
-it finds is never used; the kernel does:
+but subsequent device adds don't.
 
-	device->total_bytes = i_size_read(bdev->bd_inode);
+This seems a bit odd & inconsistent, and it makes xfstest btrfs/011
+_notrun(), because it explicitly checks that devices are the same size.
 
-so changing prepare_device doesn't catch add/replace cases...)
+I don't know that there is anything inherently wrong with having
+a few device bytes extend past the last block, but to be consistent,
+it seems like btrfs_add_to_fsid() should round the size in the same
+way.
 
-Perhaps the simpler option is to remove the rounding which is
-only done on the first device added in userspace, but I honestly
-don't know what the design plan is, or what the ramifications of
-that might be ...
+And now btrfs/011 runs more consistently; the test devices don't
+have to be sectorsize multiples in order for all mkfs'd device
+sizes to match.
 
--Eric
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+---
+
+ideally this might go into btrfs_device_size(), but we don't have
+the chosen sector size anywhere near there...
+
+diff --git a/utils.c b/utils.c
+index e130849..4d7ee35 100644
+--- a/utils.c
++++ b/utils.c
+@@ -554,7 +554,7 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 	device->sector_size = sectorsize;
+ 	device->fd = fd;
+ 	device->writeable = 1;
+-	device->total_bytes = block_count;
++	device->total_bytes = (block_count / sectorsize) * sectorsize;
+ 	device->bytes_used = 0;
+ 	device->total_ios = 0;
+ 	device->dev_root = root->fs_info->dev_root;
 

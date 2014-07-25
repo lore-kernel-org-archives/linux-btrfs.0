@@ -1,73 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43414 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758889AbaGYCQl (ORCPT
+Received: from mail-lb0-f181.google.com ([209.85.217.181]:63529 "EHLO
+	mail-lb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758296AbaGYC1o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 22:16:41 -0400
-Message-ID: <53D1BCC9.9030808@cn.fujitsu.com>
-Date: Fri, 25 Jul 2014 10:11:21 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+	Thu, 24 Jul 2014 22:27:44 -0400
+Received: by mail-lb0-f181.google.com with SMTP id 10so2853703lbg.40
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 19:27:42 -0700 (PDT)
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
-References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <53D1B8A7.6070302@cn.fujitsu.com> <20140725020824.GB25859@localhost.localdomain>
-In-Reply-To: <20140725020824.GB25859@localhost.localdomain>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+In-Reply-To: <53CE7ACF.7070109@fb.com>
+References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
+	<53C7CD0F.7070603@fb.com>
+	<CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
+	<1745216.hDa4tC2HJJ@merkaba>
+	<53CE7ACF.7070109@fb.com>
+Date: Thu, 24 Jul 2014 21:27:42 -0500
+Message-ID: <CAPoQQ-3ceufwBNUOGsObwX8AMC5LZBDy6imZD3BaX+8B2_=W-w@mail.gmail.com>
+Subject: Re: Blocked tasks on 3.15.1
+From: Cody P Schafer <dev@codyps.com>
+To: Chris Mason <clm@fb.com>
+Cc: Martin Steigerwald <Martin@lichtvoll.de>, Chris Samuel <chris@csamuel.org>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/25/2014 10:08 AM, Liu Bo wrote:
-> On Fri, Jul 25, 2014 at 09:53:43AM +0800, Wang Shilong wrote:
->> On 07/24/2014 10:48 PM, Liu Bo wrote:
->>> When failing to allocate space for the whole compressed extent, we'll
->>> fallback to uncompressed IO, but we've forgotten to redirty the pages
->>> which belong to this compressed extent, and these 'clean' pages will
->>> simply skip 'submit' part and go to endio directly, at last we got data
->>> corruption as we write nothing.
->>>
->>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->>> ---
->>>   fs/btrfs/inode.c | 12 ++++++++++++
->>>   1 file changed, 12 insertions(+)
->>>
->>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>> index 3668048..8ea7610 100644
->>> --- a/fs/btrfs/inode.c
->>> +++ b/fs/btrfs/inode.c
->>> @@ -709,6 +709,18 @@ retry:
->>>   				unlock_extent(io_tree, async_extent->start,
->>>   					      async_extent->start +
->>>   					      async_extent->ram_size - 1);
->>> +
->>> +				/*
->>> +				 * we need to redirty the pages if we decide to
->>> +				 * fallback to uncompressed IO, otherwise we
->>> +				 * will not submit these pages down to lower
->>> +				 * layers.
->>> +				 */
->>> +				extent_range_redirty_for_io(inode,
->>> +						async_extent->start,
->>> +						async_extent->start +
->>> +						async_extent->ram_size - 1);
->>> +
->>>   				goto retry;
->> BTW, if such ENOSPC happens, it means we could not reserve compressed space.
->> So we retry with nocompression codes, it will try to reserve more
->> space. Any reason
->> we do such things?
-> Compressed extents needs continuous space while uncompressed extents can have
-> more choices.
-Yeah, that is reasonable. Thanks for your answer.^_^
+On Tue, Jul 22, 2014 at 9:53 AM, Chris Mason <clm@fb.com> wrote:
+>
+>
+> On 07/19/2014 02:23 PM, Martin Steigerwald wrote:
+>
+>>> Running 3.15.6 with this patch applied on top:
+>>>  - still causes a hang with `rsync -hPaHAXx --del /mnt/home/nyx/ /home/nyx/`
+>>> - no extra error messages printed (`dmesg | grep racing`) compared to
+>>> without the patch
+>>
+>> I got same results with 3.16-rc5 + this patch (see thread BTRFS hang with
+>> 3.16-rc5). 3.16-rc4 still is fine with me. No hang whatsoever so far.
+>>
+>>> To recap some details (so I can have it all in one place):
+>>>  - /home/ is btrfs with compress=lzo
+>>
+>> BTRFS RAID 1 with lzo.
+>>
+>>>  - I have _not_ created any nodatacow files.
+>>
+>> Me neither.
+>>
+>>>  - Full stack is: sata <-> dmcrypt <-> lvm <-> btrfs (I noticed others
+>>> mentioning the use of dmcrypt)
+>>
+>> Same, except no dmcrypt.
+>>
+>
+> Thanks for the help in tracking this down everyone.  We'll get there!
+> Are you all running multi-disk systems (from a btrfs POV, more than one
+> device?)  I don't care how many physical drives this maps to, just does
+> btrfs think there's more than one drive.
 
->
-> thanks,
-> -liubo
->
->> Thanks,
->> Wang
->>>   			}
->>>   			goto out_free;
-> .
->
-
+No, both of my btrfs filesystems are single disk.

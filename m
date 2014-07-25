@@ -1,36 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36641 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751614AbaGYLrv (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23613 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758075AbaGYMa2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jul 2014 07:47:51 -0400
-Message-ID: <53D243E1.9070607@fb.com>
-Date: Fri, 25 Jul 2014 07:47:45 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: integration tree updated
-References: <53D1B595.7070908@fb.com> <53D1BE15.1080000@cn.fujitsu.com>
-In-Reply-To: <53D1BE15.1080000@cn.fujitsu.com>
-Content-Type: text/plain; charset="UTF-8"
+	Fri, 25 Jul 2014 08:30:28 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s6PCURWE010797
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 12:30:28 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s6PCUQi5010970
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 12:30:27 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s6PCUQvs008611
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 12:30:26 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH not for integration] btrfs-devlist: dumps btrfs_device and btrfs_fs_devices from kernel
+Date: Fri, 25 Jul 2014 20:33:50 +0800
+Message-Id: <1406291632-29582-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/24/2014 10:16 PM, Qu Wenruo wrote:
-> Hi chris,
-> 
-> It seems that two of my wrong patches got merged in integration branch:
-> 6068d17c8ab5bce946e9678ed2064e9f966cbe62 btrfs: Merge default subvolume
-> mount codes into btrfs_mount_subvol().
-> 8a2166332e332541f13b34b7248c0f14f575731e btrfs: Call mount_subtree()
-> even 'subvolid=' mount option is given.
-> 
-> These two patches does not completely work, and the successor patch is
-> under review.(the show_path one)
-> 
-> If it is OK for you, please remove these two patches.
+This would dump the following info:
 
-Thanks! these are removed.
+fs_address dev_address dev_root_addr root_fsid
+fsid name uuid (seed_fsid@seed_addr sprout_fsid@sprout_addr) 
+	(fs_num_devices fs_open_devices fs_rw_devices fs_missing_devices fs_total_devices) fs_total_rw_bytes fs_num_can_discard
+	devid gen total_bytes disk_total_bytes bytes_used type io_align io_width sector_size fmode 
+	not_fs_Mounted|not_fs_Seeding|not_fs_Rotating
+	not_Writable|not_MD|not_Missing|not_Discard|not_Replace_tgt|not_Run_pending|not_Nobarriers|not_Stat_valid|not_Bdev
 
--chris
+
+Applies on Chris integration branch now
+
+Anand Jain (1):
+  btrfs: introduce BTRFS_IOC_GET_DEVS
+
+ fs/btrfs/super.c           |  86 +++++++++++++++++++++++++++
+ fs/btrfs/volumes.c         | 145 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h         |   3 +
+ include/uapi/linux/btrfs.h |  53 ++++++++++++++++-
+ 4 files changed, 286 insertions(+), 1 deletion(-)
+
+Anand Jain (1):
+  btrfs-progs: introduce btrfs-devlist
+
+ .gitignore      |   1 +
+ Makefile        |   4 +-
+ btrfs-devlist.c | 268 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h         |  52 +++++++++++
+ 4 files changed, 323 insertions(+), 2 deletions(-)
+ create mode 100644 btrfs-devlist.c
+-- 
+2.0.0.153.g79dcccc
+

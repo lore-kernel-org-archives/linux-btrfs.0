@@ -1,69 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48292 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757022AbaGYHxS (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:59864 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759487AbaGYIH7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Jul 2014 03:53:18 -0400
-Message-ID: <53D20DBC.5030108@oracle.com>
-Date: Fri, 25 Jul 2014 15:56:44 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Fri, 25 Jul 2014 04:07:59 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 0A9243EE147
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 17:07:58 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 25E9AAC0A02
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 17:07:57 +0900 (JST)
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id C36E3E08001
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 17:07:56 +0900 (JST)
+Received: from G01JPEXCHYT15.g01.fujitsu.local (G01JPEXCHYT15.g01.fujitsu.local [10.128.194.54])
+	by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 210A06D64A5
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 17:07:56 +0900 (JST)
+Message-ID: <53D21054.6050107@jp.fujitsu.com>
+Date: Fri, 25 Jul 2014 17:07:48 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/10] Btrfs: Fix the problem that the replace destroys
- the seed filesystem
-References: <1406173035-29478-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1406173035-29478-1-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: use IS_ALIGNED() for assertion in btrfs_lookup_csums_range()
+ for simplicity
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-  Thanks for nailing down most of the seed related bugs, scratching
-  off few from my list.
+btrfs_lookup_csums_range() uses ALIGN() to check if "start"
+and "end + 1" are aligned to "root->sectorsize". It's better to
+replace these with IS_ALIGNED() for simplicity.
 
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-On 07/24/2014 11:37 AM, Miao Xie wrote:
-> The seed filesystem was destroyed by the device replace, the reproduce
-> method is:
->   # mkfs.btrfs -f <dev0>
->   # btrfstune -S 1 <dev0>
->   # mount <dev0> <mnt>
->   # btrfs device add <dev1> <mnt>
->   # umount <mnt>
->   # mount <dev1> <mnt>
->   # btrfs replace start -f <dev0> <dev2> <mnt>
->   # umount <mnt>
->   # mount <dev0> <mnt>
->
-> It is because we erase the super block on the seed device. It is wrong,
-> we should not change anything on the seed device.
+---
+ fs/btrfs/file-item.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-nice fix.
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index f46cfe4..4b9e40f 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -329,8 +329,8 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 	u64 csum_end;
+ 	u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+ 
+-	ASSERT(start == ALIGN(start, root->sectorsize) &&
+-	       (end + 1) == ALIGN(end + 1, root->sectorsize));
++	ASSERT(IS_ALIGNED(start, root->sectorsize) &&
++	       IS_ALIGNED(end + 1, root->sectorsize));
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-- 
+1.9.3
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->   fs/btrfs/volumes.c | 8 ++++++--
->   1 file changed, 6 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 2776070f..19188df 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1853,8 +1853,12 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
->   	if (srcdev->bdev) {
->   		fs_info->fs_devices->open_devices--;
->
-> -		/* zero out the old super */
-> -		btrfs_scratch_superblock(srcdev);
-> +		/*
-> +		 * zero out the old super if it is not writable
-> +		 * (e.g. seed device)
-> +		 */
-> +		if (srcdev->writeable)
-> +			btrfs_scratch_superblock(srcdev);
->   	}
->
->   	call_rcu(&srcdev->rcu, free_device);
->

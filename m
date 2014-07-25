@@ -1,48 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9031 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753813AbaGYB3I convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:52662 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752677AbaGYBkl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 21:29:08 -0400
-Message-ID: <53D1B2E1.60008@cn.fujitsu.com>
-Date: Fri, 25 Jul 2014 09:29:05 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Thu, 24 Jul 2014 21:40:41 -0400
+Received: from pps.filterd (m0044010 [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s6P1de3S021332
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 18:40:40 -0700
+Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
+	by mx0a-00082601.pphosted.com with ESMTP id 1nav4h3k9a-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 18:40:40 -0700
+Message-ID: <53D1B595.7070908@fb.com>
+Date: Thu, 24 Jul 2014 21:40:37 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Return right extent when fiemap gives unaligned
- offset and len.
-References: <1405648543-8966-1-git-send-email-quwenruo@cn.fujitsu.com> <20140724121721.GW1553@twin.jikos.cz>
-In-Reply-To: <20140724121721.GW1553@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: integration tree updated
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi everyone,
 
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: Return right extent when fiemap gives 
-unaligned offset and len.
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年07月24日 20:17
-> On Fri, Jul 18, 2014 at 09:55:43AM +0800, Qu Wenruo wrote:
->> When page aligned start and len passed to extent_fiemap(), the result is
->> good, but when start and len is not aligned, e.g. start = 1 and len =
->> 4095 is passed to extent_fiemap(), it returns no extent.
->>
->> The problem is that start and len is all rounded down which causes the
->> problem.
-> ALIGN rounds up, not down. So the wrong rounding will use incorrect start
-> (4096) and finds no extents if there's eg. only one [0,4095].
-Sorry for the wrong description in patch.
-Should I reword the patch and send a v2 patch?
+I've pushed out my current integration branch.  It does have a few of
+Miao Xie's patches missing because there were some rejects.  I think
+this was just because some things got pulled in out of order, and I'll
+get it fixed up.
 
-Thanks,
-Qu
->
->> This patch will round down start and round up (start + len) to
->> return right extent.
->>
->> Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Reviewed-by: David Sterba <dsterba@suse.cz>
+Also missing is Mark's quota snapshot deletion fixes.  They were
+crashing during btrfs/011 with CONFIG_DEBUG_PAGE_ALLOC on.  We'll get
+that nailed down.
+
+integration is subject to rebasing, so please treat it more like a patch
+queue.  It is very lightly tested, the goal is just to show which
+patches are already applied and which ones are still pending.
+
+Thanks!
+
+-chris
+
 

@@ -1,43 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:52662 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752677AbaGYBkl (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:61984 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752186AbaGYBtG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 21:40:41 -0400
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id s6P1de3S021332
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 18:40:40 -0700
-Received: from mail.thefacebook.com (mailwest.thefacebook.com [173.252.71.148])
-	by mx0a-00082601.pphosted.com with ESMTP id 1nav4h3k9a-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 18:40:40 -0700
-Message-ID: <53D1B595.7070908@fb.com>
-Date: Thu, 24 Jul 2014 21:40:37 -0400
-From: Chris Mason <clm@fb.com>
+	Thu, 24 Jul 2014 21:49:06 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6P1n1ZW004688
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 09:49:01 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2] btrfs: Return right extent when fiemap gives unaligned offset and len.
+Date: Fri, 25 Jul 2014 09:49:03 +0800
+Message-ID: <1406252943-5834-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: integration tree updated
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+When page aligned start and len passed to extent_fiemap(), the result is
+good, but when start and len is not aligned, e.g. start = 1 and len =
+4095 is passed to extent_fiemap(), it returns no extent.
 
-I've pushed out my current integration branch.  It does have a few of
-Miao Xie's patches missing because there were some rejects.  I think
-this was just because some things got pulled in out of order, and I'll
-get it fixed up.
+The problem is that start and len is all rounded up which causes the
+problem. This patch will round down start and round up (start + len) to
+return right extent.
 
-Also missing is Mark's quota snapshot deletion fixes.  They were
-crashing during btrfs/011 with CONFIG_DEBUG_PAGE_ALLOC on.  We'll get
-that nailed down.
+Reported-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+changelog:
+v2: reword the description(ALIGN rounds up, not rounds down).
+---
+ fs/btrfs/extent_io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-integration is subject to rebasing, so please treat it more like a patch
-queue.  It is very lightly tested, the goal is just to show which
-patches are already applied and which ones are still pending.
-
-Thanks!
-
--chris
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a389820..1c70cff 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4213,8 +4213,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		return -ENOMEM;
+ 	path->leave_spinning = 1;
+ 
+-	start = ALIGN(start, BTRFS_I(inode)->root->sectorsize);
+-	len = ALIGN(len, BTRFS_I(inode)->root->sectorsize);
++	start = round_down(start, BTRFS_I(inode)->root->sectorsize);
++	len = round_up(max, BTRFS_I(inode)->root->sectorsize) - start;
+ 
+ 	/*
+ 	 * lookup the last file extent.  We're not using i_size here
+-- 
+2.0.2
 

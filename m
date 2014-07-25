@@ -1,104 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6367 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751730AbaG2CMB convert rfc822-to-8bit (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:37934 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751939AbaGYGRd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 22:12:01 -0400
-Message-ID: <53D702EE.1030707@cn.fujitsu.com>
-Date: Tue, 29 Jul 2014 10:11:58 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Fri, 25 Jul 2014 02:17:33 -0400
+Received: from kw-mxauth.gw.nic.fujitsu.com (unknown [10.0.237.134])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id A9FCA3EE0B6
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 15:17:31 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 9DB6CAC08AE
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 15:17:30 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 4D7CB1DB803B
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 15:17:30 +0900 (JST)
+Received: from g01jpexchkw37.g01.fujitsu.local (unknown [10.0.193.4])
+	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 499D7BD67D5
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Jul 2014 15:17:29 +0900 (JST)
+Message-ID: <53D1F661.1030504@jp.fujitsu.com>
+Date: Fri, 25 Jul 2014 15:17:05 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-To: Justin Maggard <jmaggard10@gmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs-progs: add always option to restore's looping
- prompt
-References: <1406598909-9658-1-git-send-email-jmaggard10@gmail.com>
-In-Reply-To: <1406598909-9658-1-git-send-email-jmaggard10@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
--------- Original Message --------
-Subject: [PATCH v2] btrfs-progs: add always option to restore's looping 
-prompt
-From: Justin Maggard <jmaggard10@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: 2014年07月29日 09:55
-> If you are using btrfs restore to try to recover a very large or
-> fragmented file, you may encounter _lots_ of prompts requiring
-> you to press 'y' to continue because we are looping a lot.
->
-> Add the option to press 'a', to supress these prompts for the rest
-> of the file.
->
-> Signed-off-by: Justin Maggard <jmaggard10@gmail.com>
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+- There are many format to show snapshot name in error messages,
+  "'%s'", "'%s", "%s", "('%s')", and "('%s)". Since it's messy,
+  unify these to "'%s'" format.
+- Fix a type: s/uncorrect/incorrect/
 
-Thanks,
-Qu
-> ---
->   cmds-restore.c |   31 ++++++++++++++++++++++---------
->   1 file changed, 22 insertions(+), 9 deletions(-)
->
-> diff --git a/cmds-restore.c b/cmds-restore.c
-> index 3465f84..059194d 100644
-> --- a/cmds-restore.c
-> +++ b/cmds-restore.c
-> @@ -410,23 +410,31 @@ out:
->   	return ret;
->   }
->   
-> -static int ask_to_continue(const char *file)
-> +enum loop_response {
-> +	LOOP_STOP,
-> +	LOOP_CONTINUE,
-> +	LOOP_DONTASK
-> +};
-> +
-> +static enum loop_response ask_to_continue(const char *file)
->   {
->   	char buf[2];
->   	char *ret;
->   
->   	printf("We seem to be looping a lot on %s, do you want to keep going "
-> -	       "on ? (y/N): ", file);
-> +	       "on ? (y/N/a): ", file);
->   again:
->   	ret = fgets(buf, 2, stdin);
->   	if (*ret == '\n' || tolower(*ret) == 'n')
-> -		return 1;
-> +		return LOOP_STOP;
-> +	if (tolower(*ret) == 'a')
-> +		return LOOP_DONTASK;
->   	if (tolower(*ret) != 'y') {
-> -		printf("Please enter either 'y' or 'n': ");
-> +		printf("Please enter one of 'y', 'n', or 'a': ");
->   		goto again;
->   	}
->   
-> -	return 0;
-> +	return LOOP_CONTINUE;
->   }
->   
->   
-> @@ -594,11 +602,16 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
->   	}
->   
->   	while (1) {
-> -		if (loops++ >= 1024) {
-> -			ret = ask_to_continue(file);
-> -			if (ret)
-> +		if (loops >= 0 && loops++ >= 1024) {
-> +			enum loop_response resp;
-> +
-> +			resp = ask_to_continue(file);
-> +			if (resp == LOOP_STOP)
->   				break;
-> -			loops = 0;
-> +			else if (resp == LOOP_CONTINUE)
-> +				loops = 0;
-> +			else if (resp == LOOP_DONTASK)
-> +				loops = -1;
->   		}
->   		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
->   			do {
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
+---
+ cmds-subvolume.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index b7bfb3e..ce38503 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -140,14 +140,14 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	dstdir = dirname(dupdir);
+ 
+ 	if (!test_issubvolname(newname)) {
+-		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+ 			newname);
+ 		goto out;
+ 	}
+ 
+ 	len = strlen(newname);
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
++		fprintf(stderr, "ERROR: subvolume name too long '%s'\n",
+ 			newname);
+ 		goto out;
+ 	}
+@@ -314,7 +314,7 @@ again:
+ 	free(cpath);
+ 
+ 	if (!test_issubvolname(vname)) {
+-		fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+ 			vname);
+ 		ret = 1;
+ 		goto out;
+@@ -322,7 +322,7 @@ again:
+ 
+ 	len = strlen(vname);
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
++		fprintf(stderr, "ERROR: too long snapshot name '%s'\n",
+ 			vname);
+ 		ret = 1;
+ 		goto out;
+@@ -722,14 +722,14 @@ static int cmd_snapshot(int argc, char **argv)
+ 	}
+ 
+ 	if (!test_issubvolname(newname)) {
+-		fprintf(stderr, "ERROR: incorrect snapshot name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect snapshot name '%s'\n",
+ 			newname);
+ 		goto out;
+ 	}
+ 
+ 	len = strlen(newname);
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
++		fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+ 			newname);
+ 		goto out;
+ 	}
+@@ -778,7 +778,7 @@ static int cmd_snapshot(int argc, char **argv)
+ 	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
+ 
+ 	if (res < 0) {
+-		fprintf( stderr, "ERROR: cannot snapshot %s - %s\n",
++		fprintf( stderr, "ERROR: cannot snapshot '%s' - %s\n",
+ 			subvol_descr, strerror(errno));
+ 		goto out;
+ 	}
+@@ -991,7 +991,7 @@ static int cmd_subvol_show(int argc, char **argv)
+ 
+ 	ret = find_mount_root(fullpath, &mnt);
+ 	if (ret < 0) {
+-		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
++		fprintf(stderr, "ERROR: find_mount_root failed on '%s': "
+ 				"%s\n", fullpath, strerror(-ret));
+ 		goto out;
+ 	}
+-- 
+1.9.3
+

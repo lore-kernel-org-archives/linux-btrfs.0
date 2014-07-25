@@ -1,59 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:54311 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758463AbaGXDW5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Jul 2014 23:22:57 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 9C20D3EE0AE
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:22:55 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id A9A2AAC082D
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:22:54 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 59D861DB803B
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 12:22:54 +0900 (JST)
-Message-ID: <53D07C07.2090302@jp.fujitsu.com>
-Date: Thu, 24 Jul 2014 12:22:47 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from ny.voidptr.de ([5.45.110.253]:58912 "EHLO ny.voidptr.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1760522AbaGYNst (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Jul 2014 09:48:49 -0400
+Date: Fri, 25 Jul 2014 15:48:48 +0200
+From: Nils Steinger <git@n-st.de>
+To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] btrfs-progs: Add uninstall targets to Makefiles.
+Message-ID: <20140725134848.GA14867@ny.voidptr.de>
+References: <53A78988.7050602@jp.fujitsu.com>
+ <1403490228-3513-1-git-send-email-git@n-st.de>
+ <20140623150442.GK1553@twin.jikos.cz>
+ <20140625194040.GA8631@ny.voidptr.de>
+ <20140627123201.GB1553@twin.jikos.cz>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: fix build of static target
-References: <1406121381-18611-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1406121381-18611-1-git-send-email-dsterba@suse.cz>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20140627123201.GB1553@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/07/23 22:16), David Sterba wrote:
-> A user repoted that static buid fails with
-> 
-> utils-lib.static.o: In function `arg_strtou64':
-> /home/dsterba/labs/btrfs-progs/utils-lib.c:17: multiple definition of `arg_strtou64'
-> utils-lib.static.o:/home/dsterba/labs/btrfs-progs/utils-lib.c:17: first defined here
-> 
-> utils-lib.o was mistakenly added to linker twice.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.cz>
+I apologize for the long hiatus.
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
-> ---
->   Makefile | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
+On Fri, Jun 27, 2014 at 02:32:01PM +0200, David Sterba wrote:
+> On Wed, Jun 25, 2014 at 09:40:40PM +0200, Nils Steinger wrote:
+> > On my system, man8dir didn't exist prior to the installation, so I
+> > thought it would be reasonable to have the uninstallation routine remove
+> > it.
 > 
-> diff --git a/Makefile b/Makefile
-> index 8e14d4837520..3853b8734568 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -10,7 +10,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
->   	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
->   	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
->   	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
-> -	  utils-lib.o ulist.o qgroup-verify.o
-> +	  ulist.o qgroup-verify.o
->   cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
->   	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
->   	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+> According to the FHS [1] the manX directories do not have to exsit, so
+> this part shall stay.
 > 
+> [1] http://www.pathname.com/fhs/pub/fhs-2.3.html#USRSHAREMANMANUALPAGES
+> and then note #32
+> 
+> > bindir and libdir will exist by default on most systems, so that's a
+> > different case…
+> > So, should we really keep the directories around, even if they were
+> > created by the installation and are now empty (if they aren't, they
+> > won't be removed anyway)?
+> 
+> But we don't track if the directories were created by the installation
+> or not.  Normally the directories would exist anyway (/usr or /usr/local
+> as prefix) and are expected to exist at the locations. Installation to
+> arbitraty directory works, but managing the directories is IMO up to the
+> user.
+> 
+> So are you ok with keeping bindir and libdir only (ie. removing only
+> man8dir)?
 
+Yes, that should be sensible. I've updated my patch accordingly and
+resubmitted it few minutes ago.
+
+Regards,
+Nils

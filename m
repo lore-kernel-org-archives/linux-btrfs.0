@@ -1,75 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:48994 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751586AbaG1KJR (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:16559 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751365AbaG1Nml (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 06:09:17 -0400
-Date: Mon, 28 Jul 2014 11:09:14 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Nick Krause <xerofoify@gmail.com>
-Cc: josef@toxicpanda.com,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
-	<linux-btrfs@vger.kernel.org>
-Subject: Re: Help with Brtfs Bugs
-Message-ID: <20140728100914.GH31950@carfax.org.uk>
-References: <CAPDOMVhP=peGRPb37Mu_BEy4KJ4CJ9ka2rST_o==W_n7cdwqQg@mail.gmail.com>
+	Mon, 28 Jul 2014 09:42:41 -0400
+Message-ID: <53D64D40.80606@fb.com>
+Date: Mon, 28 Jul 2014 09:16:48 -0400
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="xQmOcGOVkeO43v2v"
-In-Reply-To: <CAPDOMVhP=peGRPb37Mu_BEy4KJ4CJ9ka2rST_o==W_n7cdwqQg@mail.gmail.com>
+To: Takashi Iwai <tiwai@suse.de>, Chris Mason <clm@fb.com>
+CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: Fix memory corruption by ulist_add_merge() on
+ 32bit arch
+References: <1406537824-2376-1-git-send-email-tiwai@suse.de>
+In-Reply-To: <1406537824-2376-1-git-send-email-tiwai@suse.de>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 07/28/2014 04:57 AM, Takashi Iwai wrote:
+> We've got bug reports that btrfs crashes when quota is enabled on
+> 32bit kernel, typically with the Oops like below:
+>   BUG: unable to handle kernel NULL pointer dereference at 00000004
+>   IP: [<f9234590>] find_parent_nodes+0x360/0x1380 [btrfs]
+>   *pde = 00000000
+>   Oops: 0000 [#1] SMP
+>   CPU: 0 PID: 151 Comm: kworker/u8:2 Tainted: G S      W 3.15.2-1.gd43d97e-default #1
+>   Workqueue: btrfs-qgroup-rescan normal_work_helper [btrfs]
+>   task: f1478130 ti: f147c000 task.ti: f147c000
+>   EIP: 0060:[<f9234590>] EFLAGS: 00010213 CPU: 0
+>   EIP is at find_parent_nodes+0x360/0x1380 [btrfs]
+>   EAX: f147dda8 EBX: f147ddb0 ECX: 00000011 EDX: 00000000
+>   ESI: 00000000 EDI: f147dda4 EBP: f147ddf8 ESP: f147dd38
+>    DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+>   CR0: 8005003b CR2: 00000004 CR3: 00bf3000 CR4: 00000690
+>   Stack:
+>    00000000 00000000 f147dda4 00000050 00000001 00000000 00000001 00000050
+>    00000001 00000000 d3059000 00000001 00000022 000000a8 00000000 00000000
+>    00000000 000000a1 00000000 00000000 00000001 00000000 00000000 11800000
+>   Call Trace:
+>    [<f923564d>] __btrfs_find_all_roots+0x9d/0xf0 [btrfs]
+>    [<f9237bb1>] btrfs_qgroup_rescan_worker+0x401/0x760 [btrfs]
+>    [<f9206148>] normal_work_helper+0xc8/0x270 [btrfs]
+>    [<c025e38b>] process_one_work+0x11b/0x390
+>    [<c025eea1>] worker_thread+0x101/0x340
+>    [<c026432b>] kthread+0x9b/0xb0
+>    [<c0712a71>] ret_from_kernel_thread+0x21/0x30
+>    [<c0264290>] kthread_create_on_node+0x110/0x110
+>
+> This indicates a NULL corruption in prefs_delayed list.  The further
+> investigation and bisection pointed that the call of ulist_add_merge()
+> results in the corruption.
+>
+> ulist_add_merge() takes u64 as aux and writes a 64bit value into
+> old_aux.  The callers of this function in backref.c, however, pass a
+> pointer of a pointer to old_aux.  That is, the function overwrites
+> 64bit value on 32bit pointer.  This caused a NULL in the adjacent
+> variable, in this case, prefs_delayed.
+>
+> Here is a quick attempt to band-aid over this: a new function,
+> ulist_add_merge_ptr() is introduced to pass/store properly a pointer
+> value instead of u64.  There are still ugly void ** cast remaining
+> in the callers because void ** cannot be taken implicitly.  But, it's
+> safer than explicit cast to u64, anyway.
+>
+> Bugzilla: https://urldefense.proofpoint.com/v1/url?u=https://bugzilla.novell.com/show_bug.cgi?id%3D887046&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=m3qrbo6ngjqKO%2B7ofuwRfQflb9Cx%2FXrF8TKejkPjxfA%3D%0A&s=199a5b6f0ed181925e9ba2c1060fe20d1c8ad2831dd1d96cc7eddd2a343fa72b
+> Cc: <stable@vger.kernel.org> [v3.11+]
+> Signed-off-by: Takashi Iwai <tiwai@suse.de>
+> ---
+>
+> Alternatively, we can change the argument of aux and old_aux to a
+> pointer from u64, as backref.c is the only user of ulist_add_merge()
+> function.  I'll cook up another patch if it's the preferred way.
+>
 
---xQmOcGOVkeO43v2v
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Yeah lets just use a pointer and see how that works out.  Thanks,
 
-On Mon, Jul 28, 2014 at 12:00:03AM -0400, Nick Krause wrote:
-> Hey Josef,
-> Seems there are a lot of brtfs bugs open on the kernel Bugzilla. I am
-> new to the brtfs
-> side of development so please let me known if you want help cleaning
-> up some of the
-> bugs here that are actually valid and still open.
+Josef
 
-   Make up your mind... this is the third unrelated idea you've had
-about working in the area of btrfs. You're bouncing around all over
-the place like a hyperactive puppy. Pick *one* thing, and just do it.
-Put in the effort to learn about the subsystem (read my earlier emails
-for a good approach here). Accept that there are no easy one-liners in
-the kernel. The path to writing your first kernel patch is *hard*.
-Don't give up at the first hint that each thing isn't going to be
-solved in 5 minutes.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- What part of "gestalt" don't you understand? ---           
-
---xQmOcGOVkeO43v2v
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU9YhSlheFHXiqx3kAQLx3w/+IsZCIhCiUgQ0ic0sSi4o5T68w+3/4G/K
-LYA5OEvlHysUo94DhtQDxFOx2x5F+djpewyQ0X++aSVzS6h829ylll+CTdlG6Zbt
-2A7FhdX/2YULxmcB6MbFCYr/UlOCSXmS+7FKsYy3vJ2W019HZ/mm1zTVzcIFF16W
-aUNaBk1QqDvXhhsAWBCeIU7Gx0maO04s0t6jhnQ6l6eYZEHciYcH8zdMxCwLCMpC
-L8kF/228Lg8dNXqcpVGoKD1xcIC1DYpQLU1/xI3c9ubDoXss5/rt5QSJ34vybn/+
-dTlXCMB5DwXmMor1rTXI8xkWdv/UEdCgN3mZTqAX6o8YRUXKf6TA8Am8Ll2UbZBk
-J4s8T9CHkaeGtEGgAjMY+BtDdxBRCkzclnm1sgeofWvmWepznoVHkPPP1xfb3c5p
-1ub7+7cJtBb0si8pf4ttLIr1M05JEdvzQAAfjJkF5P0ZgBimEWQSn4f+ZO5/4fsr
-jI1euHbPD+pRGpwkVdBwawQ3ixtn9pfoHnB1MZihKmDwd9SymeGyBFUUUOBPPNLq
-02AJkooqf/1NuJLBgRT6Q655warRgeyzFGwGOZ6NOJPucEI3GVVvOmvuxh+RilGr
-XCyYgN4wCO/dgkwu7jkn8+TAznInvt8pG3WvFw0VcZsVpoVJfwbMgeT0jwpj6m7f
-leeAmMYblTk=
-=WLBI
------END PGP SIGNATURE-----
-
---xQmOcGOVkeO43v2v--

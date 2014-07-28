@@ -1,58 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:57717 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:33128 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750867AbaG1Rgz (ORCPT
+	with ESMTP id S1751061AbaG1Rhq (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 28 Jul 2014 13:36:55 -0400
+	Mon, 28 Jul 2014 13:37:46 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: unlock nodes earlier when inserting items in a btree
-Date: Mon, 28 Jul 2014 19:34:35 +0100
-Message-Id: <1406572475-8681-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH] Btrfs: avoid unnecessary switch of path locks to blocking mode
+Date: Mon, 28 Jul 2014 19:37:17 +0100
+Message-Id: <1406572637-13766-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In ctree.c:setup_items_for_insert(), we can unlock all nodes in our
-path before we process the leaf (shift items and data, adjust data
-offsets, etc). This allows for better btree concurrency, as we're
-often holding a write lock on at least the node at level 1.
+If we need to cow a node, increase the write lock level and retry the
+tree search, there's no point of changing the node locks in our path
+to blocking mode, as we only waste time and unnecessarily wake up other
+tasks waiting on the spinning locks (just to block them again shortly
+after) because we release our path before repeating the tree search.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 263145b..bd0ae3e 100644
+index bd0ae3e..783ea3b 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -4738,6 +4738,12 @@ void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
- 	int slot;
- 	struct btrfs_map_token token;
+@@ -2792,8 +2792,6 @@ again:
+ 			if (!should_cow_block(trans, root, b))
+ 				goto cow_done;
  
-+	if (path->slots[0] == 0) {
-+		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
-+		fixup_low_keys(root, path, &disk_key, 1);
-+	}
-+	btrfs_unlock_up_safe(path, 1);
-+
- 	btrfs_init_map_token(&token);
- 
- 	leaf = path->nodes[0];
-@@ -4798,12 +4804,6 @@ void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
- 	}
- 
- 	btrfs_set_header_nritems(leaf, nritems + nr);
+-			btrfs_set_path_blocking(p);
 -
--	if (slot == 0) {
--		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		fixup_low_keys(root, path, &disk_key, 1);
--	}
--	btrfs_unlock_up_safe(path, 1);
- 	btrfs_mark_buffer_dirty(leaf);
+ 			/*
+ 			 * must have write locks on this node and the
+ 			 * parent
+@@ -2807,6 +2805,7 @@ again:
+ 				goto again;
+ 			}
  
- 	if (btrfs_leaf_free_space(root, leaf) < 0) {
++			btrfs_set_path_blocking(p);
+ 			err = btrfs_cow_block(trans, root, b,
+ 					      p->nodes[level + 1],
+ 					      p->slots[level + 1], &b);
 -- 
 1.9.1
 

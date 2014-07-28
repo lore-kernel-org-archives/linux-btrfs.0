@@ -1,66 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43774 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750795AbaG1A3D convert rfc822-to-8bit (ORCPT
+Received: from mail-qa0-f48.google.com ([209.85.216.48]:65029 "EHLO
+	mail-qa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750727AbaG1CxK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Jul 2014 20:29:03 -0400
-Message-ID: <53D5994F.4010605@cn.fujitsu.com>
-Date: Mon, 28 Jul 2014 08:29:03 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Sun, 27 Jul 2014 22:53:10 -0400
+Received: by mail-qa0-f48.google.com with SMTP id m5so7156974qaj.21
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Jul 2014 19:53:09 -0700 (PDT)
+Message-ID: <53D5BB10.6070309@gmail.com>
+Date: Sun, 27 Jul 2014 22:53:04 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>, Chris Mason <clm@fb.com>,
-        <linux-btrfs@vger.kernel.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH RFC] btrfs: Use backup superblocks if and only if the
  first superblock is valid but corrupted.
-References: <1403841234-10393-1-git-send-email-quwenruo@cn.fujitsu.com> <53D17A88.5090905@fb.com> <53D46A8B.2030002@gmail.com>
-In-Reply-To: <53D46A8B.2030002@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+References: <1403841234-10393-1-git-send-email-quwenruo@cn.fujitsu.com> <53D17A88.5090905@fb.com> <53D46A8B.2030002@gmail.com> <53D5994F.4010605@cn.fujitsu.com>
+In-Reply-To: <53D5994F.4010605@cn.fujitsu.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms030804000706080309000600"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
--------- Original Message --------
-Subject: Re: [PATCH RFC] btrfs: Use backup superblocks if and only if 
-the first superblock is valid but corrupted.
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>, 
-<linux-btrfs@vger.kernel.org>
-Date: 2014年07月27日 10:57
-> On 07/24/2014 05:28 PM, Chris Mason wrote:
->>
->> On 06/26/2014 11:53 PM, Qu Wenruo wrote:
->>> Current btrfs will only use the first superblock, making the backup
->>> superblocks only useful for 'btrfs rescue super' command.
->>>
->>> The old problem is that if we use backup superblocks when the first
->>> superblock is not valid, we will be able to mount a none btrfs
->>> filesystem, which used to contains btrfs but other fs is made on it.
->>>
->>> The old problem can be solved related easily by checking the first
->>> superblock in a special way:
->>> 1) If the magic number in the first superblock does not match:
->>>     This filesystem is not btrfs anymore, just exit.
->>>     If end-user consider it's really btrfs, then old 'btrfs rescue super'
->>>     method is still available.
->>>
->>> 2) If the magic number in the first superblock matches but checksum does
->>>     not match:
->>>     This filesystem is btrfs but first superblock is corrupted, use
->>>     backup roots. Just continue searching remaining superblocks.
->> I do agree that in these cases we can trust that the backup superblock
->> comes from the same filesystem.
->>
->> But, for right now I'd prefer the admin get involved in using the backup
->> supers.  I think silently using the backups is going to lead to surprises.
-> Maybe there could be a mount non-default mount-option to use backup
-> superblocks iff the first one is corrupted, and then log a warning
-> whenever this actually happens?  Not handling stuff like this
-> automatically really hurts HA use cases.
->
->
-This seems better and comments also shows this idea.
-What about merging the behavior into 'recovery' mount option or adding a 
-new mount option?
+--------------ms030804000706080309000600
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-Thanks,
-Qu
+On 07/27/2014 08:29 PM, Qu Wenruo wrote:
+>=20
+> -------- Original Message --------
+> Subject: Re: [PATCH RFC] btrfs: Use backup superblocks if and only if
+> the first superblock is valid but corrupted.
+> From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+> To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+> <linux-btrfs@vger.kernel.org>
+> Date: 2014=E5=B9=B407=E6=9C=8827=E6=97=A5 10:57
+>> On 07/24/2014 05:28 PM, Chris Mason wrote:
+>>>
+>>> On 06/26/2014 11:53 PM, Qu Wenruo wrote:
+>>>> Current btrfs will only use the first superblock, making the backup
+>>>> superblocks only useful for 'btrfs rescue super' command.
+>>>>
+>>>> The old problem is that if we use backup superblocks when the first
+>>>> superblock is not valid, we will be able to mount a none btrfs
+>>>> filesystem, which used to contains btrfs but other fs is made on it.=
+
+>>>>
+>>>> The old problem can be solved related easily by checking the first
+>>>> superblock in a special way:
+>>>> 1) If the magic number in the first superblock does not match:
+>>>>     This filesystem is not btrfs anymore, just exit.
+>>>>     If end-user consider it's really btrfs, then old 'btrfs rescue
+>>>> super'
+>>>>     method is still available.
+>>>>
+>>>> 2) If the magic number in the first superblock matches but checksum
+>>>> does
+>>>>     not match:
+>>>>     This filesystem is btrfs but first superblock is corrupted, use
+>>>>     backup roots. Just continue searching remaining superblocks.
+>>> I do agree that in these cases we can trust that the backup superbloc=
+k
+>>> comes from the same filesystem.
+>>>
+>>> But, for right now I'd prefer the admin get involved in using the bac=
+kup
+>>> supers.  I think silently using the backups is going to lead to
+>>> surprises.
+>> Maybe there could be a mount non-default mount-option to use backup
+>> superblocks iff the first one is corrupted, and then log a warning
+>> whenever this actually happens?  Not handling stuff like this
+>> automatically really hurts HA use cases.
+>>
+>>
+> This seems better and comments also shows this idea.
+> What about merging the behavior into 'recovery' mount option or adding =
+a
+> new mount option?
+Personally, I'd add a new mount option, but make recovery imply that opti=
+on.
+
+
+
+--------------ms030804000706080309000600
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIGuDCC
+BrQwggScoAMCAQICAw8BRDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA1
+MTIxNDEwMzJaFw0xNDExMDgxNDEwMzJaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDbLUaL
+Gs4JTdU7sgr0MzD57CMUAv307ddC9pxooDMN3PiUvzEd5kLtBCh8KDB1wbMdfm4hte2rDd+j
+hM1tIq67BvNbdDPztOcBZwT2/3OVyyG4B1ddCqUyt03zGKw6Y34eHNfapsZiiItX0GBNfjHU
+Wv+WDo+XNha/WmGSSMv21HkftF9XA1KC9Bpr9JJI23MKK7T2g/7b3KoGZlx3ekLIJsF5B7+B
+DMPPDqOHQbRnccyOHEMyhM13g6WoAbU+3aKYc+C/9UsYtDV+xlvBLWagky1acstD5wOA35V6
+uDRbUhD+vOjuMRMCj9jJOIYqa6AeSagBjxRnisJr0RFzQ4f+NjGCHPaFTvRvbkiXh4q22doT
+0SxbNBUm7B9ANugIOtS9/VQhTWKDi//WTqZQ7Ecl4yVJbMCUg/iaRHMCGS41vqMICPszRidW
+rL04NwS9D2cREEY1y/xrNo0ZvKPZu6tLhxhPf7w+5rsN3+wWxGaR1hNpnVUT9AeacLKZO6W9
+FsRT3Unkr91IhQATHTKYr4EAkjN/5lgvA+sxp5TxxsUnoJYrD8IHf8aYfJsAHMleBwx4xSeZ
+tw/n5iIjJjFZq9IRZ1zQhK62p+a5vJ2vlJHjTgavhQrfb1pUOjbqsnI4ndQ5hNosL9el4Kxq
+Yko+HsxVEmSwSsjq6cV2L3oz0z8NUwIDAQABo4IBWTCCAVUwDAYDVR0TAQH/BAIwADBWBglg
+hkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg
+b3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYDVR0PAQH/BAQDAgOoMEAGA1UdJQQ5
+MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYKKwYBBAGCNwoDAwYJYIZIAYb4
+QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3AuY2FjZXJ0Lm9y
+ZzAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vY3JsLmNhY2VydC5vcmcvcmV2b2tlLmNybDA0
+BgNVHREELTArgRRhaGZlcnJvaW43QGdtYWlsLmNvbYETYWhlbW1lbGdAb2hpb2d0LmNvbTAN
+BgkqhkiG9w0BAQ0FAAOCAgEAIokFPcW8+cO2Clu0Ei+ehAmQRBHfV5RWJ8aMVLXOCfiJX0ch
+IjVSIt6I3uQaR4J1ZIAjCSPkbpfZQDaLoGFI5j8aYEQhOeKxrvOMzY9/aSUYabCJIhE/sX64
+klFV0bzm+PR9cDMWeQ9BoZf0m8UROPSfDnrjEk+p04hGg3pAZMcSwCzxdb604NHjgHJmf2xG
+UQVzQgC6Ek/BKat0xuPTuPmtPv9OicK75CPmLZKYW3rFpCD6bhb1mm+ROcCNhniRY2LYm9YN
+QdlHQUzTFqj0tvuYrzNI3LNV4PjEfN8z6omPCT2Rq8/uKLseN+m8F0ioqm+cphqpmzKoDUpN
+nePLkqDFUFWCeWRxSjBTy4IMVUfdNXriVGihH8hyIICQiOfmmBOzhzUifdomJuTGtoXRuHVT
+R2f/YdrJrLnKI4f+Othdp7F3KhB4c6JiOnTEH5J8n9q3rFjt4MPRwcjIHMhmF5nZVQlgxEMo
+1cPCmvG1D9tcgXbH79jjqydo9SDXhzLQob7axkzGRY96IstNcvoQ/UNsdPPfFMYlHtGz4TxT
+DhBjv4ERskGmKBZrfmxkXkcuTV/gcykct6Xvw9YXb8WTL4qSYHSYk9fReVLgE/L4RBUpX2JJ
+QvIR0AJLER165/aZlQXZtuJjnfxJtJTJZZ+Gor9h0G2kuR5Dy0JuYdBO4t4xggShMIIEnQIB
+ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
+cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
+EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFEMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
+BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE0MDcyODAyNTMwNFowIwYJKoZIhvcNAQkE
+MRYEFBc/iXQWl/PaVzkI1Argfq8qWDlCMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
+MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
+AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
+VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
+GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
+ZXJ0Lm9yZwIDDwFEMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
+MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
+bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDDwFE
+MA0GCSqGSIb3DQEBAQUABIICAFDDjB2FuivPxfDlbcyDSoc+g2G14/ToTp/B8xBOt7mH2lwq
+K4jwldYmYonVeqKaNIRiznK83XXLLaCC38rlPRHmFErQfvHDQGM2pk1NLSkewy76Oir1llke
+6EV/qTJFYoGkt67odweLi5PuzYyDd97TA07kIPSNZzXWE+hqgaf0noFTpF3BYTcwe4YPLWlF
+whP8cdjBTDOVDDikZofaizv8NlcSZkINkQXPhm4Yx0Zrw+pvtOFXrPGykuFaHYs1sNLuPnFt
+FEeu70/fW64tFvHczZ206OVJdyQy3mXSyJxWx86wK20lcOUChRGTSXP1kiXQ97FMHg2FLf97
+g5KYxoUEiOYi5tFGnnkom+kIapzTDYRXHJIVknLDYWX4vFT+nKSw3vCZGprZoIkYvDmWGM0T
+Hn/PlSUugtCgzuCp4Vkj2OWphNX4cGsOk7D+rQZEC2pQCADMgLNjVMJrhwmA8Ve0LPE7ofWQ
+ZiXqeGFSAPr9S1i4M3r3FCj3l6dwv2uxy0iifcZxV9oyv+jgwVu446vH0v/ItEMS4apeciFV
+tmcdfxu7hbeI9PM+uHAnf8yqyk59oPdVKnLL/Ik6Y5ufz84/4Vv9eY4HL1Xd+VoMnAUqdOgz
+UaSlwxu0lUZR+252YiIfwTwCkF9OsrAKmgiAf0FyYpeXK7J/fijoFkeqQbLIAAAAAAAA
+--------------ms030804000706080309000600--

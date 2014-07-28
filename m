@@ -1,71 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx02.posteo.de ([89.146.194.165]:55580 "EHLO posteo.de"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751890AbaG1WgG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 18:36:06 -0400
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by mail.posteo.de (Postfix) with ESMTP id 398CB25AF530
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 00:36:04 +0200 (CEST)
-Received: from posteo.de ([10.125.125.178]) (using TLS)
-	by localhost (amavis1.posteo.de [10.125.125.165]) (amavisd-new, port 10026)
-	with ESMTPS id MeG8pqV8qcjJ for <linux-btrfs@vger.kernel.org>;
-	Tue, 29 Jul 2014 00:36:02 +0200 (CEST)
-Received: from mail.posteo.de (localhost [127.0.0.1])
-	by mail.posteo.de (Postfix) with ESMTPSA id CE8802C1491
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 00:36:01 +0200 (CEST)
-Message-ID: <53D6D04F.7050904@posteo.de>
-Date: Tue, 29 Jul 2014 00:35:59 +0200
-From: Karl-Philipp Richter <krichter@posteo.de>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42045 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752665AbaG1W6A convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jul 2014 18:58:00 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org, Cody P Schafer <dev@codyps.com>,
+        Marc MERLIN <marc@merlins.org>
+Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
+Date: Tue, 29 Jul 2014 00:57:57 +0200
+Message-ID: <3028943.O2kv9eKhCx@merkaba>
+In-Reply-To: <53D166C6.2070403@fb.com>
+References: <1502954.OtX3SzjMKZ@merkaba> <1557956.045aK4K0qS@merkaba> <53D166C6.2070403@fb.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: How to skip "looping a lot" question of btrfs restore 3.15?
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="dxaJcLxekAAHaCtOpUsbgeUWdhP9fn9UM"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---dxaJcLxekAAHaCtOpUsbgeUWdhP9fn9UM
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: quoted-printable
+Am Donnerstag, 24. Juli 2014, 16:04:22 schrieb Chris Mason:
+> On 07/24/2014 02:49 PM, Martin Steigerwald wrote:
+> > Am Donnerstag, 24. Juli 2014, 10:58:51 schrieb Chris Mason:
+> >> On 07/23/2014 06:47 PM, Martin Steigerwald wrote:
+> >>> Am Dienstag, 15. Juli 2014, 17:08:27 schrieb Martin Steigerwald:
+> >>>> Am Dienstag, 15. Juli 2014, 09:21:40 schrieb Chris Mason:
+> >>>>> On 07/14/2014 05:58 PM, Martin Steigerwald wrote:
+> >>>>>> Am Montag, 14. Juli 2014, 16:12:22 schrieb Chris Mason:
+> >>>>>>> On 07/14/2014 11:10 AM, Martin Steigerwald wrote:
+> >>>>>>>> Am Montag, 14. Juli 2014, 17:04:22 schrieben Sie:
+> >>>>>>>>> Hi!
+> >>>>>>>>> 
+> >>>>>>>>> While with 3.16-rc3 and rc4 I didn´t have a BTRFS hang in several
+> >>>>>>>>> days
+> >>>>>>>>> of
+> >>>>>>>>> usage, with 3-16-rc5 I had a hang again. Less than a hour since
+> >>>>>>>>> booting
+> >>>>>>>>> it.
+> >>>>>>>>> 
+> >>>>>>>>> Since the hang bug I and others had with 3.15 and upto 3.16-rc2
+> >>>>>>>>> usually
+> >>>>>>>>> didn´t happen that quickly after boot and since backtrace looks a
+> >>>>>>>>> bit
+> >>>>>>>>> different from what I have in memory, I post this in a new thread.
+> >>>>>>>>> See thread "Blocked tasks on 3.15.1" for a discussion of previous
+> >>>>>>>>> hang
+> >>>>>>>>> issues.
+> >>>>>>>> 
+> >>>>>>>> Probably good to add some basic information on the filesystem:
+> >>>>>>> Do you have compression enabled?  I wasn't able to nail down the
+> >>>>>>> 3.15.1
+> >>>>>>> hang before vacation attacked me, but I'm hoping to track it down
+> >>>>>>> today.
+> >>>>>> 
+> >>>>>> Yes. I have.
+> >>>>>> 
+> >>>>>> It just hung again while I was playing PlaneShift.
+> >>>>>> 
+> >>>>>> Back to 3.16-rc4 as rc5 seems to be broke here.
+> >>>>> 
+> >>>>> The btrfs hang you're hitting goes back to 3.15.  So 3.16-rc4 vs rc5
+> >>>>> shouldn't be a factor.  Are you hitting other problems with 3.16?
+> >>>> 
+> >>>> So far for this day 3.16-rc4 behaves nicely. With 3.16-rc5 I had a
+> >>>> BTRFS
+> >>>> hang twice yesterday. 3.16-rc4 before also behaved nicely for several
+> >>>> days
+> >>>> or well about a week here.
+> >>> 
+> >>> 3.16-rc4 now hung as well…
+> >> 
+> >> Liu Bo has a promising patch:
+> >> 
+> >> https://urldefense.proofpoint.com/v1/url?u=https://patchwork.kernel.org/p
+> >> atch/4618421/&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=6%2FL0lzzDhu0Y1hL9xm%2B
+> >> QyA%3D%3D%0A&m=CJPREifRDOxlzhYeURx75h33LGU7YemJsNeLP%2FvXCv8%3D%0A&s=8fb0
+> >> a70afce09530f16ea66a47d2af07966706b21281a7142d86256979013bab
+> >> 
+> >> Please give it a shot.  There's a second deadlock reading the free space
+> >> cache, I'm still working on that one too.
+> > 
+> > Now running 3.16-rc6 + current git + this patch.
+> > 
+> > It may take some time tough cause during compiling the kernel BTRFS hung
+> > again, which caused loss of KDE Baloo desktop search file index and parts
+> > of a mail I wrote in KMail.
+> > 
+> > Since the patch mentioned ENOSPC issues but the filesystem has enough free
+> > space according to df I shrunk the trees with
+> 
+> Thanks for giving it a try.  The ENOSPC mentioned here is looking for a
+> contiguous extent, so it's easily possible to trigger that enospc
+> without actually being full.
 
-Hi together,
-In the current HEAD (3f11e516db629f7a662bfd6376231817b4e34cc9) of
-https://github.com/kdave/btrfs-progs.git (I assume this list is the
-right address because I got some hints to the project from here) the
-btrfs restore subcommand asks often (up to 100 time during restauration
-of 400 GB)
+So far no lockup with 3.16.0-rc6-tp520-fixcompwrite+
 
-    We seem to be looping a lot on /a/path/to/our/precious, do you want
-to keep going on ? (y/N):
+But BTRFS still not used up all space for laying out trees after balance:
 
-which can't be suppressed with the `-i` option (which might be right
-because it's technically not an error), but I can't see how to get
-around this. Am I missing something? Otherwise it would be nice to have
-an extra option maybe with an argument how often "we" are looping on a
-file before the command asks for interaction.
+Label: 'home'  uuid: […]
+        Total devices 2 FS bytes used 126.70GiB
+        devid    1 size 160.00GiB used 156.00GiB path /dev/dm-0
+        devid    2 size 160.00GiB used 156.00GiB path /dev/mapper/sata-home
 
-Best regards,
-Karl-P. Richter
+May be a good sign nonetheless, thus mentioned.
 
+Any other findings?
 
---dxaJcLxekAAHaCtOpUsbgeUWdhP9fn9UM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iQEcBAEBAgAGBQJT1tBPAAoJEGadKJ8eJ7ZG+hgH/3eQpQEuClXPa6pc1YOVDZvM
-pnLqKCq6xGI1Qg5oRQwKcm+8N+Hlxxpe1xxi1gG1+kpz0tckwohRgY1SsNYmI6fQ
-NG3odVF2zkLbMKq4Smd58uE0PWn8Rv2l7zN43s2MXb6CLogPusR0k6qiWl3Vhx15
-1eiqsf/qt5rQnUAWx84QYwQfneBkvAZxkXNGssJGRGIwNmhlRJtdevAvlrtE5mvk
-s4f+anIRpJkS/UksWZ0RJY353AjARVmU5Gor8aOzVRYKtLGEQ2ywA6HIahKAKG7S
-B+34s17M23Dp3xxZmITYwSvT/iRa82iM0HIXPObhmUftdSoitplMTcJYEFl+Awg=
-=nabY
------END PGP SIGNATURE-----
-
---dxaJcLxekAAHaCtOpUsbgeUWdhP9fn9UM--
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

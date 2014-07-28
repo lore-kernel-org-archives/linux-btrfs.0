@@ -1,77 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57368 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750917AbaG1QtM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 12:49:12 -0400
-Date: Mon, 28 Jul 2014 18:49:09 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Andreas Dilger <adilger@dilger.ca>
-Cc: dsterba@suse.cz, linux-nilfs@vger.kernel.org, xfs@oss.sgi.com,
-        Btrfs Developer List <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com
-Subject: Re: [Ocfs2-devel] [PATCH 2/4 v3] fiemap: add EXTENT_DATA_COMPRESSED
- flag
-Message-ID: <20140728164909.GK1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1386778302.git.dsterba@suse.cz>
- <4f8d5dc5b51a43efaf16c39398c23a6276e40a30.1386778303.git.dsterba@suse.cz>
- <20131212232443.GL31386@dastard>
- <9520AB36-B728-423A-8EA1-FDD22B79AE90@dilger.ca>
- <B58DEEA8-561A-4173-B9F5-528B73E06C6D@dilger.ca>
- <20140724192245.GG1553@suse.cz>
- <5B4825C3-F47E-48B7-8DA4-6D79F53B73B1@dilger.ca>
+Received: from mail-la0-f51.google.com ([209.85.215.51]:54612 "EHLO
+	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750817AbaG1Rbl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Jul 2014 13:31:41 -0400
+Received: by mail-la0-f51.google.com with SMTP id pn19so351935lab.24
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jul 2014 10:31:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5B4825C3-F47E-48B7-8DA4-6D79F53B73B1@dilger.ca>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CAOcd+r1VqCogBa+S4C3ZejsNsAiWgOkVAJjSWttJbJcqKfBwpQ@mail.gmail.com>
+References: <1401795704-20668-1-git-send-email-fdmanana@gmail.com>
+	<CAOcd+r1VqCogBa+S4C3ZejsNsAiWgOkVAJjSWttJbJcqKfBwpQ@mail.gmail.com>
+Date: Mon, 28 Jul 2014 18:31:38 +0100
+Message-ID: <CAL3q7H5JhRB_k+X++qzaHE5kYORaFxCn-JHfNmnA1MFJuRde1A@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: update commit root on snapshot creation after
+ orphan cleanup
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the feedback.
+On Sat, Jul 19, 2014 at 8:11 PM, Alex Lyakas
+<alex.btrfs@zadarastorage.com> wrote:
+> Hi Filipe,
+> It's quite possible I don't fully understand the issue. It seems that
+> we are creating a read-only snapshot, commit a transaction, and then
+> go and modify the snapshot once again, by deleting all the
+> ORPHAN_ITEMs we have in its file tree (btrfs_orphan_cleanup).
+> Shouldn't all this be part of snapshot creation, so that after we
+> commit, we have a clean file tree with no orphans there? (not sure if
+> this makes sense though).
+>
+> With your patch we do this additional commit after the cleanup. But
+> nothing prevents "send" from starting before this additional commit,
+> correct? And it would still see the orphans through the commit root.
+> You say that it is not a problem, but I am not sure why (probably I am
+> missing something here). So for me it looks like your patch closes a
+> race window significantly (at the cost of an additional commit), but
+> does not close it fully.
 
-On Thu, Jul 24, 2014 at 04:34:35PM -0600, Andreas Dilger wrote:
-> >> - rename fe_length to fe_logi_length and #define fe_length fe_logi_length
-> >> - always fill in fe_phys_length (= fe_logi_length for uncompressed files)
-> >>  and set FIEMAP_EXTENT_PHYS_LENGTH whether the extent is compressed or not
-> > 
-> > This is my understanding and contradicts the first point.
-> 
-> I think Dave Chinner's former point was that having fe_phys_length validity
-> depend on FIEMAP_EXTENT_DATA_COMPRESSED is a non-intuitive interface.  It is
-> not true that fe_phys_length would always be valid, since that is not the
-> case for older kernels that currently always set this field to 0, so they
-> need some flag to indicate if fe_phys_length is valid.
+Hi Alex,
 
-I see the backward compatibility issue now. The patches (up to v4)
-updated all filesystems to fill the physical length with logical,
-but this should be 0 to keep the backward compatibility and also to keep
-the changes to existing fiemap users minimal.
+That's right, after the transaction commit finishes, the snapshot will
+be visible and accessible to user space - so someone may start a send
+before the orphan cleanup starts. It was ok only for the serialized
+case (create snapshot, wait for ioctl to return, call send ioctl).
 
-So for v5, PHYS_LENGTH will be introduced but only used by btrfs
-together with ENCODED and COMPRESSED. Though this may look too much for
-my needs to represent compressed extent, it is flexible for future use.
+>
+> But most important: perhaps "send" should look for ORPHAN_ITEMs and
+> treat those inodes as "deleted"?
 
-> Alternately,
-> userspace could do:
-> 
-> 	if (ext->fe_phys_length == 0)
-> 		ext->fe_phys_length = ext->fe_logi_length;
-> 
-> but that pre-supposes that fe_phys_length == 0 is never a valid value when
-> fe_logi_length is non-zero, and this might introduce errors in some cases.
-> I could imagine that some compression methods might not allocate any space
-> at all if it was all zeroes, and just store a bit in the blockpointer or
-> extent, so having a separate FIEMAP_EXTENT_PHYS_LENGTH is probably safer
-> in the long run.
+There are other cases were orphans can exist, like for file truncates
+for example, where ignoring the inode wouldn't be very correct.
+Tried that approach initially, but it's actually more complex to
+implement and adds some additional overhead (tree searches - and the
+orphan items are normally too far from the inode items, due to a very
+high objectid (-5ULL)).
 
-Sounds good to me.
+I've reworked this with a different approach and CC'ed you
+(https://patchwork.kernel.org/patch/4635471/).
 
-> That opens up the question of whether a written zero
-> filled space that gets compressed away is different from a hole, but I'd
-> prefer to just return whatever the file mapping is than interpret it.
+thanks
 
-It could save some bytes, but I don' see it too practical. I expect the
-amount of zeroed blocks to be low on average and the current compression
-methods are able to squeeze long runs of zeros to a few tens of bytes
-per page.
+>
+> Thanks,
+> Alex.
+>
+>
+>
+> On Tue, Jun 3, 2014 at 2:41 PM, Filipe David Borba Manana
+> <fdmanana@gmail.com> wrote:
+>> On snapshot creation (either writable or read-only), we do orphan cleanup
+>> against the root of the snapshot. If the cleanup did remove any orphans,
+>> then the current root node will be different from the commit root node
+>> until the next transaction commit happens.
+>>
+>> A send operation always uses the commit root of a snapshot - this means
+>> it will see the orphans if it starts computing the send stream before the
+>> next transaction commit happens (triggered by a timer or sync() for .e.g),
+>> which is when the commit root gets assigned a reference to current root,
+>> where the orphans are not visible anymore. The consequence of send seeing
+>> the orphans is explained below.
+>>
+>> For example:
+>>
+>>     mkfs.btrfs -f /dev/sdd
+>>     mount -o commit=999 /dev/sdd /mnt
+>>
+>>     # open a file with O_TMPFILE and leave it open
+>>     # write some data to the file
+>>     btrfs subvolume snapshot -r /mnt /mnt/snap1
+>>
+>>     btrfs send /mnt/snap1 -f /tmp/send.data
+>>
+>> The send operation will fail with the following error:
+>>
+>>     ERROR: send ioctl failed with -116: Stale file handle
+>>
+>> What happens here is that our snapshot has an orphan inode still visible
+>> through the commit root, that corresponds to the tmpfile. However send
+>> will attempt to call inode.c:btrfs_iget(), with the goal of reading the
+>> file's data, which will return -ESTALE because it will use the current
+>> root (and not the commit root) of the snapshot.
+>>
+>> Of course, there are other cases where we can get orphans, but this
+>> example using a tmpfile makes it much easier to reproduce the issue.
+>>
+>> Therefore on snapshot creation, after calling btrfs_orphan_cleanup, if
+>> the commit root is different from the current root, just commit the
+>> transaction associated with the snapshot's root (if it exists), so that
+>> a send will not see any orphans that don't exist anymore. This also
+>> guarantees a send will always see the same content regardless of whether
+>> a transaction commit happened already before the send was requested and
+>> after the orphan cleanup (meaning the commit root and current roots are
+>> the same) or it hasn't happened yet (commit and current roots are
+>> different).
+>>
+>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+>> ---
+>>  fs/btrfs/ioctl.c | 29 +++++++++++++++++++++++++++++
+>>  1 file changed, 29 insertions(+)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 95194a9..6680ad9 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -712,6 +712,35 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+>>         if (ret)
+>>                 goto fail;
+>>
+>> +       /*
+>> +        * If orphan cleanup did remove any orphans, it means the tree was
+>> +        * modified and therefore the commit root is not the same as the
+>> +        * current root anymore. This is a problem, because send uses the
+>> +        * commit root and therefore can see inode items that don't exist
+>> +        * in the current root anymore, and for example make calls to
+>> +        * btrfs_iget, which will do tree lookups based on the current root
+>> +        * and not on the commit root. Those lookups will fail, returning a
+>> +        * -ESTALE error, and making send fail with that error. So make sure
+>> +        * a send does not see any orphans we have just removed, and that it
+>> +        * will see the same inodes regardless of whether a transaction
+>> +        * commit happened before it started (meaning that the commit root
+>> +        * will be the same as the current root) or not.
+>> +        */
+>> +       if (readonly && pending_snapshot->snap->node !=
+>> +           pending_snapshot->snap->commit_root) {
+>> +               trans = btrfs_join_transaction(pending_snapshot->snap);
+>> +               if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
+>> +                       ret = PTR_ERR(trans);
+>> +                       goto fail;
+>> +               }
+>> +               if (!IS_ERR(trans)) {
+>> +                       ret = btrfs_commit_transaction(trans,
+>> +                                                      pending_snapshot->snap);
+>> +                       if (ret)
+>> +                               goto fail;
+>> +               }
+>> +       }
+>> +
+>>         inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+>>         if (IS_ERR(inode)) {
+>>                 ret = PTR_ERR(inode);
+>> --
+>> 1.9.1
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

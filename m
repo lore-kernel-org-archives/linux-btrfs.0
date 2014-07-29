@@ -1,50 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45393 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751151AbaG2N6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jul 2014 09:58:51 -0400
-Date: Tue, 29 Jul 2014 15:58:49 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangshilong1991@gmail.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: fix some build warnings on 32bit platform
-Message-ID: <20140729135849.GV1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1406393395-4317-1-git-send-email-wangshilong1991@gmail.com>
- <20140729134814.GT1553@twin.jikos.cz>
- <9F558E7B-1384-43EA-BAE0-6F01A31E609B@gmail.com>
+Received: from bay004-omc4s4.hotmail.com ([65.54.190.206]:57402 "EHLO
+	BAY004-OMC4S4.hotmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750708AbaG2SuB convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jul 2014 14:50:01 -0400
+Message-ID: <BAY172-W396EC3E14A0DC50B6BC3EFB0F80@phx.gbl>
+From: Kyle Gates <kylegates@hotmail.com>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+Date: Tue, 29 Jul 2014 13:50:00 -0500
+In-Reply-To: <53D70469.1030504@jp.fujitsu.com>
+References: <53D1F661.1030504@jp.fujitsu.com>
+ <BAY172-W33CE4C937687878CDD0C23B0FB0@phx.gbl>,<53D70469.1030504@jp.fujitsu.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <9F558E7B-1384-43EA-BAE0-6F01A31E609B@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 29, 2014 at 09:56:46PM +0800, Wang Shilong wrote:
-> Hi David，
-> 
-> > On Sun, Jul 27, 2014 at 12:49:55AM +0800, Wang Shilong wrote:
-> >> cmds-restore.c:120:4: warning: format %lu expects argument of type
-> >> long unsigned int, but argument 3 has type size_t [-Wformat=]
-> >>    fprintf(stderr, "bad compress length %lu\n", in_len);
-> > 
-> >> --- a/cmds-restore.c
-> >> +++ b/cmds-restore.c
-> >> @@ -117,7 +117,7 @@ static int decompress_lzo(unsigned char *inbuf, char *outbuf, u64 compress_len,
-> >> 		in_len = read_compress_length(inbuf);
-> >> 
-> >> 		if ((tot_in + LZO_LEN + in_len) > tot_len) {
-> >> -			fprintf(stderr, "bad compress length %lu\n", in_len);
-> >> +			fprintf(stderr, "bad compress length %u\n", in_len);
-> > 
-> > in_len is size_t, this prints a warning on 64bit. Let's make it %lu and
-> > cas to unsigned long (fixed locally, no need to resend), we'er not using
-> > the 'z' size_t modifier for printf anywhere.
-> 
-> 
-> I am sorry that i forgot to test the patch on 64bit.  As i have left current
-> company, i could not setup a 64 bit machine until next week.
-> 
-> So i will appreciate it if you could fix this when merging or wait
-> until next week once i got a 64bit machine.
+----------------------------------------
+> Date: Tue, 29 Jul 2014 11:18:17 +0900
+> From: takeuchi_satoru@jp.fujitsu.com
+> To: kylegates@hotmail.com; linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+>
+> Hi Kyle,
+>
+> (2014/07/28 22:24), Kyle Gates wrote:
+>>
+>> small wording error inline below
+>>
+>> ----------------------------------------
+>>> Date: Fri, 25 Jul 2014 15:17:05 +0900
+>>> From: takeuchi_satoru@jp.fujitsu.com
+>>> To: linux-btrfs@vger.kernel.org
+>>> Subject: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+>>>
+>>> From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>>
+>>> - There are many format to show snapshot name in error messages,
+>>> "'%s'", "'%s", "%s", "('%s')", and "('%s)". Since it's messy,
+>>> unify these to "'%s'" format.
+>>> - Fix a type: s/uncorrect/incorrect/
+>>>
+>>> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>>
+>>> ---
+>>> cmds-subvolume.c | 16 ++++++++--------
+>>> 1 file changed, 8 insertions(+), 8 deletions(-)
+>>>
+>>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>>> index b7bfb3e..ce38503 100644
+>>> --- a/cmds-subvolume.c
+>>> +++ b/cmds-subvolume.c
+>>> @@ -140,14 +140,14 @@ static int cmd_subvol_create(int argc, char **argv)
+>>> dstdir = dirname(dupdir);
+>>>
+>>> if (!test_issubvolname(newname)) {
+>>> - fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
+>>> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+>>> newname);
+>>> goto out;
+>>> }
+>>>
+>>> len = strlen(newname);
+>>> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+>>> - fprintf(stderr, "ERROR: subvolume name('%s)\n",
+>>> + fprintf(stderr, "ERROR: subvolume name too long '%s'\n",
+>>> newname);
+>>> goto out;
+>>> }
+>>> @@ -314,7 +314,7 @@ again:
+>>> free(cpath);
+>>>
+>>> if (!test_issubvolname(vname)) {
+>>> - fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
+>>> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+>>> vname);
+>>> ret = 1;
+>>> goto out;
+>>> @@ -322,7 +322,7 @@ again:
+>>>
+>>> len = strlen(vname);
+>>> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+>>> - fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+>>> + fprintf(stderr, "ERROR: too long snapshot name '%s'\n",
+>>
+>> + fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+>
+> Thank you for your comment. Fixed. How about is it?
 
-No problem, already fixed.
+Yes, that looks good. Thanks.
+>
+> ===
+> From 73f9847c603fbe863f072d029b1a4948a1032d6e Mon Sep 17 00:00:00 2001
+> From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> Date: Fri, 25 Jul 2014 12:46:27 +0900
+> Subject: [PATCH] btrfs-progs: unify the format of error messages.
+>
+> ---
+> cmds-subvolume.c | 16 ++++++++--------
+> 1 file changed, 8 insertions(+), 8 deletions(-)
+>
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index b7bfb3e..5a99c94 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -140,14 +140,14 @@ static int cmd_subvol_create(int argc, char **argv)
+> dstdir = dirname(dupdir);
+>
+> if (!test_issubvolname(newname)) {
+> - fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
+> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+> newname);
+> goto out;
+> }
+>
+> len = strlen(newname);
+> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+> - fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
+> + fprintf(stderr, "ERROR: subvolume name too long '%s'\n",
+> newname);
+> goto out;
+> }
+> @@ -314,7 +314,7 @@ again:
+> free(cpath);
+>
+> if (!test_issubvolname(vname)) {
+> - fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
+> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+> vname);
+> ret = 1;
+> goto out;
+> @@ -322,7 +322,7 @@ again:
+>
+> len = strlen(vname);
+> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+> - fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+> + fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+> vname);
+> ret = 1;
+> goto out;
+> @@ -722,14 +722,14 @@ static int cmd_snapshot(int argc, char **argv)
+> }
+>
+> if (!test_issubvolname(newname)) {
+> - fprintf(stderr, "ERROR: incorrect snapshot name ('%s')\n",
+> + fprintf(stderr, "ERROR: incorrect snapshot name '%s'\n",
+> newname);
+> goto out;
+> }
+>
+> len = strlen(newname);
+> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+> - fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+> + fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+> newname);
+> goto out;
+> }
+> @@ -778,7 +778,7 @@ static int cmd_snapshot(int argc, char **argv)
+> res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
+>
+> if (res < 0) {
+> - fprintf( stderr, "ERROR: cannot snapshot %s - %s\n",
+> + fprintf( stderr, "ERROR: cannot snapshot '%s' - %s\n",
+> subvol_descr, strerror(errno));
+> goto out;
+> }
+> @@ -991,7 +991,7 @@ static int cmd_subvol_show(int argc, char **argv)
+>
+> ret = find_mount_root(fullpath, &mnt);
+> if (ret < 0) {
+> - fprintf(stderr, "ERROR: find_mount_root failed on %s: "
+> + fprintf(stderr, "ERROR: find_mount_root failed on '%s': "
+> "%s\n", fullpath, strerror(-ret));
+> goto out;
+> }
+> --
+> 1.9.3
+>
+ 		 	   		  

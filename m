@@ -1,232 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41603 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753215AbaGXJf6 (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:47501 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752667AbaG2CSb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Jul 2014 05:35:58 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6O9ZYK4006084
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Jul 2014 17:35:34 +0800
-From: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: remove author and copyright info from man page
-Date: Thu, 24 Jul 2014 17:30:15 +0800
-Message-ID: <1406194215-7774-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+	Mon, 28 Jul 2014 22:18:31 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 8E6963EE1A0
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 11:18:29 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id A639FAC051C
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 11:18:28 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 5DFDD1DB8049
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 11:18:28 +0900 (JST)
+Message-ID: <53D70469.1030504@jp.fujitsu.com>
+Date: Tue, 29 Jul 2014 11:18:17 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Kyle Gates <kylegates@hotmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+References: <53D1F661.1030504@jp.fujitsu.com> <BAY172-W33CE4C937687878CDD0C23B0FB0@phx.gbl>
+In-Reply-To: <BAY172-W33CE4C937687878CDD0C23B0FB0@phx.gbl>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->From:
-http://man7.org/linux/man-pages/man7/man-pages.7.html
-...
-AUTHORS lists authors of the documentation or program.Use of
-an AUTHORS section is strongly discouraged. Generally,
-it is better not to clutter every page with a list of
-(over time potentially numerous) authors; if you write
-or significantly amend a page, add a copyright notice
-as a comment in the source file.  If you are the author
-of a device driver and want to include an address for
-reporting bugs, place this under the BUGS section.
-...
+Hi Kyle,
 
-Suggested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Signed-off-by: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+(2014/07/28 22:24), Kyle Gates wrote:
+>
+> small wording error inline below
+>
+> ----------------------------------------
+>> Date: Fri, 25 Jul 2014 15:17:05 +0900
+>> From: takeuchi_satoru@jp.fujitsu.com
+>> To: linux-btrfs@vger.kernel.org
+>> Subject: [PATCH 2/2] btrfs-progs: Unify the messy error message formats
+>>
+>> From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>
+>> - There are many format to show snapshot name in error messages,
+>> "'%s'", "'%s", "%s", "('%s')", and "('%s)". Since it's messy,
+>> unify these to "'%s'" format.
+>> - Fix a type: s/uncorrect/incorrect/
+>>
+>> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>>
+>> ---
+>> cmds-subvolume.c | 16 ++++++++--------
+>> 1 file changed, 8 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>> index b7bfb3e..ce38503 100644
+>> --- a/cmds-subvolume.c
+>> +++ b/cmds-subvolume.c
+>> @@ -140,14 +140,14 @@ static int cmd_subvol_create(int argc, char **argv)
+>> dstdir = dirname(dupdir);
+>>
+>> if (!test_issubvolname(newname)) {
+>> - fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
+>> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+>> newname);
+>> goto out;
+>> }
+>>
+>> len = strlen(newname);
+>> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+>> - fprintf(stderr, "ERROR: subvolume name('%s)\n",
+>> + fprintf(stderr, "ERROR: subvolume name too long '%s'\n",
+>> newname);
+>> goto out;
+>> }
+>> @@ -314,7 +314,7 @@ again:
+>> free(cpath);
+>>
+>> if (!test_issubvolname(vname)) {
+>> - fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
+>> + fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+>> vname);
+>> ret = 1;
+>> goto out;
+>> @@ -322,7 +322,7 @@ again:
+>>
+>> len = strlen(vname);
+>> if (len == 0 || len>= BTRFS_VOL_NAME_MAX) {
+>> - fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+>> + fprintf(stderr, "ERROR: too long snapshot name '%s'\n",
+>
+> + fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+
+Thank you for your comment. Fixed. How about is it?
+
+===
+ From 73f9847c603fbe863f072d029b1a4948a1032d6e Mon Sep 17 00:00:00 2001
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Date: Fri, 25 Jul 2014 12:46:27 +0900
+Subject: [PATCH] btrfs-progs: unify the format of error messages.
+
 ---
- Documentation/btrfs-convert.txt     | 12 ------------
- Documentation/btrfs-debug-tree.txt  | 12 ------------
- Documentation/btrfs-find-root.txt   | 12 ------------
- Documentation/btrfs-image.txt       | 12 ------------
- Documentation/btrfs-map-logical.txt | 12 ------------
- Documentation/btrfs-show-super.txt  | 12 ------------
- Documentation/btrfs-zero-log.txt    | 12 ------------
- Documentation/btrfstune.txt         | 12 ------------
- 8 files changed, 96 deletions(-)
+  cmds-subvolume.c | 16 ++++++++--------
+  1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/Documentation/btrfs-convert.txt b/Documentation/btrfs-convert.txt
-index 1eff0bf..11d6044 100644
---- a/Documentation/btrfs-convert.txt
-+++ b/Documentation/btrfs-convert.txt
-@@ -31,18 +31,6 @@ EXIT STATUS
- *btrfs-convert* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-debug-tree.txt b/Documentation/btrfs-debug-tree.txt
-index bfc8aa4..23fc115 100644
---- a/Documentation/btrfs-debug-tree.txt
-+++ b/Documentation/btrfs-debug-tree.txt
-@@ -33,18 +33,6 @@ EXIT STATUS
- *btrfs-debug-tree* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-find-root.txt b/Documentation/btrfs-find-root.txt
-index a360f8f..c934b4c 100644
---- a/Documentation/btrfs-find-root.txt
-+++ b/Documentation/btrfs-find-root.txt
-@@ -28,18 +28,6 @@ EXIT STATUS
- *btrfs-find-root* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-image.txt b/Documentation/btrfs-image.txt
-index 155194a..b7751f9 100644
---- a/Documentation/btrfs-image.txt
-+++ b/Documentation/btrfs-image.txt
-@@ -56,18 +56,6 @@ EXIT STATUS
- *btrfs-image* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-map-logical.txt b/Documentation/btrfs-map-logical.txt
-index a8710bf..a3d110c 100644
---- a/Documentation/btrfs-map-logical.txt
-+++ b/Documentation/btrfs-map-logical.txt
-@@ -32,18 +32,6 @@ EXIT STATUS
- *btrfs-map-logical* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-show-super.txt b/Documentation/btrfs-show-super.txt
-index 6fee0f1..1646be3 100644
---- a/Documentation/btrfs-show-super.txt
-+++ b/Documentation/btrfs-show-super.txt
-@@ -45,18 +45,6 @@ EXIT STATUS
- *btrfs-show-super* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfs-zero-log.txt b/Documentation/btrfs-zero-log.txt
-index 0a8d3e3..498ecd6 100644
---- a/Documentation/btrfs-zero-log.txt
-+++ b/Documentation/btrfs-zero-log.txt
-@@ -40,18 +40,6 @@ EXIT STATUS
- *btrfs-zero-log* will return 0 if no error happened.
- Other exit code means some problems happened.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
-diff --git a/Documentation/btrfstune.txt b/Documentation/btrfstune.txt
-index bf44bdf..56cf66b 100644
---- a/Documentation/btrfstune.txt
-+++ b/Documentation/btrfstune.txt
-@@ -31,18 +31,6 @@ EXIT STATUS
- *btrfstune* will return 0 if no error happened.
- If any problems happened, 1 will be returned.
- 
--AUTHOR
--------
--Written by Shilong Wang and Wenruo Qu.
--
--COPYRIGHT
-----------
--Copyright (C) 2013 FUJITSU LIMITED.
--
--License GPLv2: GNU GPL version 2 <http://gnu.org/licenses/gpl.html>.
--
--This is free software: you are free  to  change  and  redistribute  it. There is NO WARRANTY, to the extent permitted by law.
--
- SEE ALSO
- --------
- `mkfs.btrfs`(8)
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index b7bfb3e..5a99c94 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -140,14 +140,14 @@ static int cmd_subvol_create(int argc, char **argv)
+  	dstdir = dirname(dupdir);
+  
+  	if (!test_issubvolname(newname)) {
+-		fprintf(stderr, "ERROR: uncorrect subvolume name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+  			newname);
+  		goto out;
+  	}
+  
+  	len = strlen(newname);
+  	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: subvolume name too long ('%s)\n",
++		fprintf(stderr, "ERROR: subvolume name too long '%s'\n",
+  			newname);
+  		goto out;
+  	}
+@@ -314,7 +314,7 @@ again:
+  	free(cpath);
+  
+  	if (!test_issubvolname(vname)) {
+-		fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect subvolume name '%s'\n",
+  			vname);
+  		ret = 1;
+  		goto out;
+@@ -322,7 +322,7 @@ again:
+  
+  	len = strlen(vname);
+  	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
++		fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+  			vname);
+  		ret = 1;
+  		goto out;
+@@ -722,14 +722,14 @@ static int cmd_snapshot(int argc, char **argv)
+  	}
+  
+  	if (!test_issubvolname(newname)) {
+-		fprintf(stderr, "ERROR: incorrect snapshot name ('%s')\n",
++		fprintf(stderr, "ERROR: incorrect snapshot name '%s'\n",
+  			newname);
+  		goto out;
+  	}
+  
+  	len = strlen(newname);
+  	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
++		fprintf(stderr, "ERROR: snapshot name too long '%s'\n",
+  			newname);
+  		goto out;
+  	}
+@@ -778,7 +778,7 @@ static int cmd_snapshot(int argc, char **argv)
+  	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args);
+  
+  	if (res < 0) {
+-		fprintf( stderr, "ERROR: cannot snapshot %s - %s\n",
++		fprintf( stderr, "ERROR: cannot snapshot '%s' - %s\n",
+  			subvol_descr, strerror(errno));
+  		goto out;
+  	}
+@@ -991,7 +991,7 @@ static int cmd_subvol_show(int argc, char **argv)
+  
+  	ret = find_mount_root(fullpath, &mnt);
+  	if (ret < 0) {
+-		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
++		fprintf(stderr, "ERROR: find_mount_root failed on '%s': "
+  				"%s\n", fullpath, strerror(-ret));
+  		goto out;
+  	}
 -- 
-1.9.0
+1.9.3
 

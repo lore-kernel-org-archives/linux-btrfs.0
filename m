@@ -1,111 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21660 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753144AbaGUI7j (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.54]:52385 "EHLO
+	smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753407AbaG2PHj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Jul 2014 04:59:39 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@gmail.com, dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: check if there is required kernel send stream version
-Date: Mon, 21 Jul 2014 17:03:01 +0800
-Message-Id: <1405933381-21365-1-git-send-email-anand.jain@oracle.com>
+	Tue, 29 Jul 2014 11:07:39 -0400
+Message-ID: <53D7B8B3.8000701@skagestad.org>
+Date: Tue, 29 Jul 2014 17:07:31 +0200
+From: =?ISO-8859-1?Q?Torbj=F8rn?= <lists@skagestad.org>
+MIME-Version: 1.0
+To: bo.li.liu@oracle.com
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS hang with 3.16-rc5 (and also with 3.16-rc4)
+References: <1984661.CMGGdWA6Ux@merkaba> <1809953.ithLVmijbn@merkaba> <53D11F2B.1070008@fb.com> <53D1E260.6080708@skagestad.org> <20140725092800.GC25859@localhost.localdomain> <53D22FD4.2070806@skagestad.org> <53D23AF1.9010704@skagestad.org> <53D24166.7030208@skagestad.org> <20140728100059.GB29285@localhost.localdomain> <53D62FD7.6010205@skagestad.org> <20140729095139.GA3947@localhost.localdomain>
+In-Reply-To: <20140729095139.GA3947@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When kernel does not have the send stream version 2 patches,
-the btrfs send with --stream-version 2 would fail with out
-giving the details what is wrong. This patch will help to
-identify correctly that required kernel patches are missing.
+On 07/29/2014 12:18 PM, Liu Bo wrote:
+> On Mon, Jul 28, 2014 at 01:11:19PM +0200, Torbjørn wrote:
+>> On 28. juli 2014 12:00, Liu Bo wrote:
+>> <snip>
+>>> This seems to be incomplete(Looks like dmesg has reached its buffer size limit),
+>>> does /var/log/message have the whole stack info?
+>>>
+>>> thanks,
+>>> -liubo
+>> Hi,
+>>
+>> Complete log was over 40MB. I uploaded everything from boot until
+>> "blocked for 120 seconds" started to appear.
+>> If you want all the trailing log as well, let me know.
+>>
+>> https://gist.github.com/anonymous/7958d8917967f727f324
+> Sorry...still don't get why it's locked up, io_ctl_prepare_pages() has several
+> callers, and they are properly released from the code level.  And the warnings
+> printed in the log belong to other btrfs partitions, not the hanged btrfs one,
+> and we're still not able to know which one holds the free space cache inode page.
+>
+> Maybe we'd better resort to a bisect between 3.14 and 3.15(I know it'd be a lot
+> of time though).
+>
+> Here, doing rsync on compress=lzo full btrfs never hit that problem, shrug...
+>
+> thanks,
+> -liubo
+>
+>> --
+>> Torbjørn
+That's too bad.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-send.c | 13 +++++++++++++
- send.h      |  2 ++
- utils.c     | 17 +++++++++++++++++
- utils.h     |  1 +
- 4 files changed, 33 insertions(+)
+My reproducer is not 100% guaranteed to trigger the hang, so doing a 
+bisect might lead us to some innocent commit.
+I have run the rsync + snapshot job several times here now, and no hang.
 
-diff --git a/cmds-send.c b/cmds-send.c
-index 9a73b32..0c20a6f 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -435,6 +435,7 @@ int cmd_send(int argc, char **argv)
- 	u64 parent_root_id = 0;
- 	int full_send = 1;
- 	int new_end_cmd_semantic = 0;
-+	int k_sstream;
- 
- 	memset(&send, 0, sizeof(send));
- 	send.dump_fd = fileno(stdout);
-@@ -544,6 +545,18 @@ int cmd_send(int argc, char **argv)
- 				ret = 1;
- 				goto out;
- 			}
-+
-+			/* check if btrfs kernel supports send stream ver 2 */
-+			if (g_stream_version > BTRFS_SEND_STREAM_VERSION_1) {
-+				k_sstream = btrfs_read_sysfs(BTRFS_SEND_STREAM_VER_PATH);
-+				if (k_sstream < g_stream_version) {
-+					fprintf(stderr,
-+					"ERROR: Need btrfs kernel send stream version %d or above, %d\n",
-+					BTRFS_SEND_STREAM_VERSION_2, k_sstream);
-+					ret = 1;
-+					goto out;
-+				}
-+			}
- 			break;
- 		case 's':
- 			g_total_data_size = 1;
-diff --git a/send.h b/send.h
-index ea56965..d7a171b 100644
---- a/send.h
-+++ b/send.h
-@@ -24,6 +24,8 @@ extern "C" {
- #endif
- 
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
-+#define BTRFS_SEND_STREAM_VER_PATH "/sys/fs/btrfs/send/stream_version"
-+
- #define BTRFS_SEND_STREAM_VERSION_1 1
- #define BTRFS_SEND_STREAM_VERSION_2 2
- /* Max supported stream version. */
-diff --git a/utils.c b/utils.c
-index e144dfd..e3d4fa2 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2681,3 +2681,20 @@ int fsid_to_mntpt(__u8 *fsid, char *mntpt, int *mnt_cnt)
- 
- 	return ret;
- }
-+
-+int btrfs_read_sysfs(char path[PATH_MAX])
-+{
-+	int fd;
-+	char val;
-+
-+	fd = open(path, O_RDONLY);
-+	if (fd < 0)
-+		return -errno;
-+
-+	if (read(fd, &val, sizeof(char)) < sizeof(char)) {
-+		close(fd);
-+		return -EINVAL;
-+	}
-+	close(fd);
-+	return atoi((const char *)&val);
-+}
-diff --git a/utils.h b/utils.h
-index ddf31cf..0c9b65f 100644
---- a/utils.h
-+++ b/utils.h
-@@ -153,5 +153,6 @@ static inline u64 btrfs_min_dev_size(u32 leafsize)
- 	return 2 * (BTRFS_MKFS_SYSTEM_GROUP_SIZE +
- 		    btrfs_min_global_blk_rsv_size(leafsize));
- }
-+int btrfs_read_sysfs(char path[PATH_MAX]);
- 
- #endif
--- 
-2.0.0.153.g79dcccc
-
+--
+Torbjørn

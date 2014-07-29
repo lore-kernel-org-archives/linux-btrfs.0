@@ -1,87 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx02.posteo.de ([89.146.194.165]:34056 "EHLO posteo.de"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1752552AbaG2BD5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 21:03:57 -0400
-Message-ID: <53D6F2F5.9080107@posteo.de>
-Date: Tue, 29 Jul 2014 03:03:49 +0200
-From: Karl-Philipp Richter <krichter@posteo.de>
+Received: from mail-we0-f175.google.com ([74.125.82.175]:34107 "EHLO
+	mail-we0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752530AbaG2IEm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Jul 2014 04:04:42 -0400
+Received: by mail-we0-f175.google.com with SMTP id t60so8497352wes.20
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 01:04:40 -0700 (PDT)
 MIME-Version: 1.0
-To: Justin Maggard <jmaggard10@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: How to skip "looping a lot" question of btrfs restore 3.15?
-References: <53D6D04F.7050904@posteo.de> <CAKgsxVQbP-3huz92Y4Z3d6zVq6dnKekgs0mQzBfbLnhvD-VMjQ@mail.gmail.com>
-In-Reply-To: <CAKgsxVQbP-3huz92Y4Z3d6zVq6dnKekgs0mQzBfbLnhvD-VMjQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="TFE7ILpsCSocuksUGFTts822lbXxv1P9S"
+From: Peter Waller <peter@scraperwiki.com>
+Date: Tue, 29 Jul 2014 09:04:00 +0100
+Message-ID: <CAFChkqszfFU51qkr1CSNgv0VKNhr8U_jEDv0_BPaZZghLzKojA@mail.gmail.com>
+Subject: Machine lockup due to btrfs-transaction on AWS EC2 Ubuntu 14.04
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---TFE7ILpsCSocuksUGFTts822lbXxv1P9S
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Hi All,
 
-Hi Justin,
-thanks for your help. I guess the patch will be available in the repos,
-soon, so I'll work with `yes` in the meantime because I'm not too
-familiar with patching in this form.
+I've reported a bug with Ubuntu here:
+https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1349711
 
-Best regards,
-Karl-P. Richter
+The machine in question has one BTRFS volume which is 87% full and
+lives on an Logical Volume Manager (LVM) block device on top of one
+Amazon Elastic Block Store (EBS) device.
 
-Am 29.07.2014 um 02:09 schrieb Justin Maggard:
-> On Mon, Jul 28, 2014 at 3:35 PM, Karl-Philipp Richter
-> <krichter@posteo.de> wrote:
->> Hi together,
->> In the current HEAD (3f11e516db629f7a662bfd6376231817b4e34cc9) of
->> https://github.com/kdave/btrfs-progs.git (I assume this list is the
->> right address because I got some hints to the project from here) the
->> btrfs restore subcommand asks often (up to 100 time during restauratio=
-n
->> of 400 GB)
->>
->>     We seem to be looping a lot on /a/path/to/our/precious, do you wan=
-t
->> to keep going on ? (y/N):
->>
->> which can't be suppressed with the `-i` option (which might be right
->> because it's technically not an error), but I can't see how to get
->> around this. Am I missing something? Otherwise it would be nice to hav=
-e
->> an extra option maybe with an argument how often "we" are looping on a=
+We have other machines in a similar configuration which have not
+displayed this behaviour.
 
->> file before the command asks for interaction.
->>
->> Best regards,
->> Karl-P. Richter
->>
->=20
-> I just posted the patch we use to get around that.  Or, if you don't
-> want to build a modified btrfs-progs, you could always use the `yes`
-> command to press y for you.
->=20
-> -Justin
->=20
+The one thing which makes this machine different is that it has
+directories which contain many thousands of files. We don't make heavy
+use of subvolumes or snapshots.
+
+More details follow:
+
+# cat /proc/version_signature
+Ubuntu 3.13.0-32.57-generic 3.13.11.4
+
+The machine had a soft-lockup with messages like this appearing on the console:
+
+[246736.752053] INFO: rcu_sched self-detected stall on CPU { 0}
+(t=2220246 jiffies g=35399662 c=35399661 q=0)
+[246736.756059] INFO: rcu_sched detected stalls on CPUs/tasks: { 0}
+(detected by 1, t=2220247 jiffies, g=35399662, c=35399661, q=0)
+[246764.192014] BUG: soft lockup - CPU#0 stuck for 23s! [kworker/u30:2:1828]
+[246764.212058] BUG: soft lockup - CPU#1 stuck for 23s! [btrfs-transacti:492]
 
 
---TFE7ILpsCSocuksUGFTts822lbXxv1P9S
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+After the first lockup and reboot, the following messages were in
+dmesg, which I ignored because after some research I saw that they
+were changed to warnings and considered non-harmful. A btrfs-scrub
+performed after this failed without error:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
 
-iQEcBAEBAgAGBQJT1vL2AAoJEGadKJ8eJ7ZG5M8H+wfiOQfY6kt7ULQVqcZ/nvhL
-tmVOoHh1rV55mpL8fOvvD5KT4KyD63T/9mX62g/5LyAkOYwWA8coAtLyhAIKY222
-bJgjpcs27FEtJ0Ld7c0BRDuChLs4udZNWf2XN3BXDTthv91ZcS4huYC09Gp97iNC
-X79ClIw/5p8dD1Tods7IiY5yf/CIG4C4KXWQf89bYT0e5bmVkx55nVf+9nCWGbGH
-0vpWwpSvx4Zz5Oy4EKyQtuL7ejNFajjzxJJvsfCRRtmYFscRv2VDWGZA5LqQ+h8d
-ghj6MyX+500+JcY9y5ClqvsYuMnozWmh4ggMy4uc4ysu6J5SFnTK7eMIMHc0ZVs=
-=zsBN
------END PGP SIGNATURE-----
+[ 77.609490] BTRFS error (device dm-0): block group 10766778368 has
+wrong amount of free space
+[ 77.613678] BTRFS error (device dm-0): failed to load free space
+cache for block group 10766778368
+[ 77.643801] BTRFS error (device dm-0): block group 19356712960 has
+wrong amount of free space
+[ 77.648952] BTRFS error (device dm-0): failed to load free space
+cache for block group 19356712960
+[ 77.926325] BTRFS error (device dm-0): block group 20430454784 has
+wrong amount of free space
+[ 77.931078] BTRFS error (device dm-0): failed to load free space
+cache for block group 20430454784
+[ 78.111437] BTRFS error (device dm-0): block group 21504196608 has
+wrong amount of free space
+[ 78.116165] BTRFS error (device dm-0): failed to load free space
+cache for block group 21504196608
 
---TFE7ILpsCSocuksUGFTts822lbXxv1P9S--
+
+After the second time I've observed the lockup and rebooted, these
+messages have appeared:
+
+
+[ 45.390221] BTRFS error (device dm-0): free space inode generation
+(0) did not match free space cache generation (70012)
+[ 45.413472] BTRFS error (device dm-0): free space inode generation
+(0) did not match free space cache generation (70012)
+[ 467.423961] BTRFS error (device dm-0): block group 518646661120 has
+wrong amount of free space
+[ 467.429251] BTRFS error (device dm-0): failed to load free space
+cache for block group 518646661120
+
+
+I would like to know if these second messages are harmful and if
+remedial action is needed in response to the latter messages.
+Searching for messages similar to my lockup I found this report which
+suggested the problem may be fixed in 3.14.
+
+Any advice appreciated,
+
+Thanks,
+
+- Peter

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:43783 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753004AbaG2JW3 (ORCPT
+	with ESMTP id S1753110AbaG2JWb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jul 2014 05:22:29 -0400
+	Tue, 29 Jul 2014 05:22:31 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6T9MPFE002837
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 17:22:25 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6T9MQ3L002841
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 17:22:26 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 05/12] Btrfs: fix missing error handler if submiting re-read bio fails
-Date: Tue, 29 Jul 2014 17:24:03 +0800
-Message-ID: <1406625850-32168-6-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v2 06/12] Btrfs: Cleanup unused variant and argument of IO failure handlers
+Date: Tue, 29 Jul 2014 17:24:04 +0800
+Message-ID: <1406625850-32168-7-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
@@ -19,32 +19,102 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com>
 
-We forgot to free failure record and bio after submitting re-read bio failed,
-fix it.
-
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1-v2:
 - None
 ---
- fs/btrfs/extent_io.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/extent_io.c | 26 ++++++++++----------------
+ 1 file changed, 10 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 881fc49..fb00736 100644
+index fb00736..f71b34f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2345,6 +2345,11 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	ret = tree->ops->submit_bio_hook(inode, read_mode, bio,
+@@ -1978,8 +1978,7 @@ struct io_failure_record {
+ 	int in_validation;
+ };
+ 
+-static int free_io_failure(struct inode *inode, struct io_failure_record *rec,
+-				int did_repair)
++static int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+ {
+ 	int ret;
+ 	int err = 0;
+@@ -2106,7 +2105,6 @@ static int clean_io_failure(u64 start, struct page *page)
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 	struct extent_state *state;
+ 	int num_copies;
+-	int did_repair = 0;
+ 	int ret;
+ 
+ 	private = 0;
+@@ -2127,7 +2125,6 @@ static int clean_io_failure(u64 start, struct page *page)
+ 		/* there was no real error, just free the record */
+ 		pr_debug("clean_io_failure: freeing dummy error at %llu\n",
+ 			 failrec->start);
+-		did_repair = 1;
+ 		goto out;
+ 	}
+ 	if (fs_info->sb->s_flags & MS_RDONLY)
+@@ -2144,19 +2141,16 @@ static int clean_io_failure(u64 start, struct page *page)
+ 		num_copies = btrfs_num_copies(fs_info, failrec->logical,
+ 					      failrec->len);
+ 		if (num_copies > 1)  {
+-			ret = repair_io_failure(fs_info, start, failrec->len,
+-						failrec->logical, page,
+-						failrec->failed_mirror);
+-			did_repair = !ret;
++			repair_io_failure(fs_info, start, failrec->len,
++					  failrec->logical, page,
++					  failrec->failed_mirror);
+ 		}
+-		ret = 0;
+ 	}
+ 
+ out:
+-	if (!ret)
+-		ret = free_io_failure(inode, failrec, did_repair);
++	free_io_failure(inode, failrec);
+ 
+-	return ret;
++	return 0;
+ }
+ 
+ /*
+@@ -2266,7 +2260,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 		 */
+ 		pr_debug("bio_readpage_error: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d\n",
+ 			 num_copies, failrec->this_mirror, failed_mirror);
+-		free_io_failure(inode, failrec, 0);
++		free_io_failure(inode, failrec);
+ 		return -EIO;
+ 	}
+ 
+@@ -2309,13 +2303,13 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 	if (failrec->this_mirror > num_copies) {
+ 		pr_debug("bio_readpage_error: (fail) num_copies=%d, next_mirror %d, failed_mirror %d\n",
+ 			 num_copies, failrec->this_mirror, failed_mirror);
+-		free_io_failure(inode, failrec, 0);
++		free_io_failure(inode, failrec);
+ 		return -EIO;
+ 	}
+ 
+ 	bio = btrfs_io_bio_alloc(GFP_NOFS, 1);
+ 	if (!bio) {
+-		free_io_failure(inode, failrec, 0);
++		free_io_failure(inode, failrec);
+ 		return -EIO;
+ 	}
+ 	bio->bi_end_io = failed_bio->bi_end_io;
+@@ -2346,7 +2340,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
  					 failrec->this_mirror,
  					 failrec->bio_flags, 0);
-+	if (ret) {
-+		free_io_failure(inode, failrec, 0);
-+		bio_put(bio);
-+	}
-+
- 	return ret;
- }
+ 	if (ret) {
+-		free_io_failure(inode, failrec, 0);
++		free_io_failure(inode, failrec);
+ 		bio_put(bio);
+ 	}
  
 -- 
 1.9.3

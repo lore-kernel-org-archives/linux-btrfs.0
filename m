@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28881 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43783 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753134AbaG2JWb (ORCPT
+	with ESMTP id S1753246AbaG2JWf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jul 2014 05:22:31 -0400
+	Tue, 29 Jul 2014 05:22:35 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6T9MRJD002849
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 17:22:27 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6T9MS1W002854
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Jul 2014 17:22:29 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 08/12] Btrfs: modify repair_io_failure and make it suit direct io
-Date: Tue, 29 Jul 2014 17:24:06 +0800
-Message-ID: <1406625850-32168-9-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH v2 09/12] Btrfs: modify clean_io_failure and make it suit direct io
+Date: Tue, 29 Jul 2014 17:24:07 +0800
+Message-ID: <1406625850-32168-10-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
@@ -19,89 +19,135 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com>
 
-The original code of repair_io_failure was just used for buffered read,
-because it got some filesystem data from page structure, it is safe for
-the page in the page cache. But when we do a direct read, the pages in bio
-are not in the page cache, that is there is no filesystem data in the page
-structure. In order to implement direct read data repair, we need modify
-repair_io_failure and pass all filesystem data it need by function
-parameters.
+We could not use clean_io_failure in the direct IO path because it got the
+filesystem information from the page structure, but the page in the direct
+IO bio didn't have the filesystem information in its structure. So we need
+modify it and pass all the information it need by parameters.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1-v2:
 - None
 ---
- fs/btrfs/extent_io.c | 8 +++++---
- fs/btrfs/extent_io.h | 2 +-
- fs/btrfs/scrub.c     | 1 +
- 3 files changed, 7 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c | 31 +++++++++++++++----------------
+ fs/btrfs/extent_io.h |  6 +++---
+ fs/btrfs/scrub.c     |  3 +--
+ 3 files changed, 19 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index daa3e9c..1389759 100644
+index 1389759..8082220 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1994,7 +1994,7 @@ static int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+@@ -1992,10 +1992,10 @@ static int free_io_failure(struct inode *inode, struct io_failure_record *rec)
+  * currently, there can be no more than two copies of every data bit. thus,
+  * exactly one rewrite is required.
   */
- int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
- 			u64 length, u64 logical, struct page *page,
--			int mirror_num)
-+			unsigned int pg_offset, int mirror_num)
+-int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
+-			u64 length, u64 logical, struct page *page,
+-			unsigned int pg_offset, int mirror_num)
++int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
++		      struct page *page, unsigned int pg_offset, int mirror_num)
  {
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
  	struct bio *bio;
  	struct btrfs_device *dev;
-@@ -2033,7 +2033,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
- 		return -EIO;
+ 	u64 map_length = 0;
+@@ -2043,10 +2043,9 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
  	}
- 	bio->bi_bdev = dev->bdev;
--	bio_add_page(bio, page, length, start - page_offset(page));
-+	bio_add_page(bio, page, length, pg_offset);
  
- 	if (btrfsic_submit_bio_wait(WRITE_SYNC, bio)) {
- 		/* try to remap that extent elsewhere? */
-@@ -2064,7 +2064,8 @@ int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
+ 	printk_ratelimited_in_rcu(KERN_INFO
+-			"BTRFS: read error corrected: ino %lu off %llu "
+-		    "(dev %s sector %llu)\n", page->mapping->host->i_ino,
+-		    start, rcu_str_deref(dev->name), sector);
+-
++				  "BTRFS: read error corrected: ino %llu off %llu (dev %s sector %llu)\n",
++				  btrfs_ino(inode), start,
++				  rcu_str_deref(dev->name), sector);
+ 	bio_put(bio);
+ 	return 0;
+ }
+@@ -2063,9 +2062,10 @@ int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
+ 
  	for (i = 0; i < num_pages; i++) {
  		struct page *p = extent_buffer_page(eb, i);
- 		ret = repair_io_failure(root->fs_info, start, PAGE_CACHE_SIZE,
--					start, p, mirror_num);
-+					start, p, start - page_offset(p),
-+					mirror_num);
+-		ret = repair_io_failure(root->fs_info, start, PAGE_CACHE_SIZE,
+-					start, p, start - page_offset(p),
+-					mirror_num);
++
++		ret = repair_io_failure(root->fs_info->btree_inode, start,
++					PAGE_CACHE_SIZE, start, p,
++					start - page_offset(p), mirror_num);
  		if (ret)
  			break;
  		start += PAGE_CACHE_SIZE;
-@@ -2124,6 +2125,7 @@ static int clean_io_failure(u64 start, struct page *page)
+@@ -2078,12 +2078,12 @@ int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
+  * each time an IO finishes, we do a fast check in the IO failure tree
+  * to see if we need to process or clean up an io_failure_record
+  */
+-static int clean_io_failure(u64 start, struct page *page)
++static int clean_io_failure(struct inode *inode, u64 start,
++			    struct page *page, unsigned int pg_offset)
+ {
+ 	u64 private;
+ 	u64 private_failure;
+ 	struct io_failure_record *failrec;
+-	struct inode *inode = page->mapping->host;
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 	struct extent_state *state;
+ 	int num_copies;
+@@ -2123,10 +2123,9 @@ static int clean_io_failure(u64 start, struct page *page)
+ 		num_copies = btrfs_num_copies(fs_info, failrec->logical,
+ 					      failrec->len);
  		if (num_copies > 1)  {
- 			repair_io_failure(fs_info, start, failrec->len,
+-			repair_io_failure(fs_info, start, failrec->len,
++			repair_io_failure(inode, start, failrec->len,
  					  failrec->logical, page,
-+					  start - page_offset(page),
- 					  failrec->failed_mirror);
+-					  start - page_offset(page),
+-					  failrec->failed_mirror);
++					  pg_offset, failrec->failed_mirror);
  		}
  	}
+ 
+@@ -2535,7 +2534,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 			if (ret)
+ 				uptodate = 0;
+ 			else
+-				clean_io_failure(start, page);
++				clean_io_failure(inode, start, page, 0);
+ 		}
+ 
+ 		if (likely(uptodate))
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4ce0547..4366453 100644
+index 4366453..7662eaa 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -343,7 +343,7 @@ struct btrfs_fs_info;
+@@ -341,9 +341,9 @@ struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask);
  
- int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
- 			u64 length, u64 logical, struct page *page,
--			int mirror_num);
-+			unsigned int pg_offset, int mirror_num);
+ struct btrfs_fs_info;
+ 
+-int repair_io_failure(struct btrfs_fs_info *fs_info, u64 start,
+-			u64 length, u64 logical, struct page *page,
+-			unsigned int pg_offset, int mirror_num);
++int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
++		      struct page *page, unsigned int pg_offset,
++		      int mirror_num);
  int end_extent_writepage(struct page *page, int err, u64 start, u64 end);
  int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
  			 int mirror_num);
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b6d198f..0609245 100644
+index 0609245..149a528 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -684,6 +684,7 @@ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
- 		fs_info = BTRFS_I(inode)->root->fs_info;
- 		ret = repair_io_failure(fs_info, offset, PAGE_SIZE,
+@@ -681,8 +681,7 @@ static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *fixup_ctx)
+ 			ret = -EIO;
+ 			goto out;
+ 		}
+-		fs_info = BTRFS_I(inode)->root->fs_info;
+-		ret = repair_io_failure(fs_info, offset, PAGE_SIZE,
++		ret = repair_io_failure(inode, offset, PAGE_SIZE,
  					fixup->logical, page,
-+					offset - page_offset(page),
+ 					offset - page_offset(page),
  					fixup->mirror_num);
- 		unlock_page(page);
- 		corrected = !ret;
 -- 
 1.9.3
 

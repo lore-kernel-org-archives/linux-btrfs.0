@@ -1,55 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from titan.nuclearwinter.com ([174.136.96.186]:39235 "EHLO
-	mail.nuclearwinter.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750949AbaG3XME (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 19:12:04 -0400
-Message-ID: <53D97932.8010505@nuclearwinter.com>
-Date: Wed, 30 Jul 2014 18:01:06 -0500
-From: Larkin Lowrey <llowrey@nuclearwinter.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27152 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750919AbaG3XSP convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jul 2014 19:18:15 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Nick Krause <xerofoify@gmail.com>
+CC: Zach Brown <zab@zabbo.net>, Chris Mason <clm@fb.com>,
+        "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
+	<linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] Remove certain calls for releasing page cache
+Date: Wed, 30 Jul 2014 23:18:10 +0000
+Message-ID: <se1kwwn8cwmosqn1karyfwfv.1406762043976@email.android.com>
+References: <1406752954-26158-1-git-send-email-xerofoify@gmail.com>
+	<53D959D0.1020303@fb.com>
+	<20140730205148.GA25256@lenny.home.zabbo.net>,<CAPDOMVhWmOYNG=WTwXL5V9-t_rAj-eDPB3WQf7Qj4yjcw7v=0Q@mail.gmail.com>
+In-Reply-To: <CAPDOMVhWmOYNG=WTwXL5V9-t_rAj-eDPB3WQf7Qj4yjcw7v=0Q@mail.gmail.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-To: dptrash@arcor.de, linux-bcache@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs on bcache
-References: <1368165877.1162129.1406757898943.JavaMail.ngmail@webmail06.arcor-online.net>
-In-Reply-To: <1368165877.1162129.1406757898943.JavaMail.ngmail@webmail06.arcor-online.net>
-Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been running two backup servers, with 25T and 20T of data, using
-btrfs on bcache (writeback) for about 7 months. I periodically run btrfs
-scrubs and backup verifies (SHA1 hashes) and have never had a corruption
-issue.
+So I'm going to list all the things that are wrong with this in the off chance that you will actually improve and then go back to ignoring your emails.
 
-My use of btrfs is simple, though, with no subvolumes and no btrfs level
-raid. My bcache backing devices are LVM volumes that span multiple md
-raid6 arrays. So, either the bug has been fixed or my configuration is
-not susceptible.
+1) You test your patches before you send them.  Xfstests is how you test.
 
-I'm running kernel 3.15.5-200.fc20.x86_64.
+2) You seem to think page_cache_release releases the page cache.  It doesn't, it releases a ref on the page, we take a ref while we are doing IO and then drop it when we are done.  It is not evicted from cache until the VM decides to do it at some point in the future, so all your patch does is make us leak page cache.
 
---Larkin
+3) You don't free the compressed pages.  This leaks memory.  These pages are only used for writing out, there is absolutely no reason to keep them around after the IO is complete, we have the actual page with the real data still in cache.
 
-On 7/30/2014 5:04 PM, dptrash@arcor.de wrote:
-> Concerning http://thread.gmane.org/gmane.comp.file-systems.btrfs/31018, does this "bug" still exists?
->
-> Kernel 3.14
-> B: 2x HDD 1 TB
-> C: 1x SSD 256 GB
->
-> # make-bcache -B /dev/sda /dev/sdb -C /dev/sdc --cache_replacement_policy=lru
-> # mkfs.btrfs -d raid1 -m raid1 -L "BTRFS_RAID" /dev/bcache0 /dev/bcache1
->
-> I still have no "incomplete page write" messages in "dmesg | grep btrfs" and the checksums of some manually reviewed files are okay.
->
-> Who has more experiences about this?
->
-> Thanks,
->
-> - dp
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-bcache" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+4) You also made it so we don't free the the struct we use to track the compressed IO, which is just as useless as the compressed pages now, causing another memory leak.
 
+Had you tested this patch it would have killed the box pretty quickly and you would have known all of this.  But you didn't, and wasted a lot of much smarter peoples time.  This is not OK, this gets you ignored.  Do not do it again.  Thanks,
+
+Josef
+
+Nick Krause <xerofoify@gmail.com> wrote:
+
+
+On Wed, Jul 30, 2014 at 4:51 PM, Zach Brown <zab@zabbo.net> wrote:
+> On Wed, Jul 30, 2014 at 04:47:12PM -0400, Josef Bacik wrote:
+>> On 07/30/2014 04:42 PM, Nicholas Krause wrote:
+>> >This patch removes the lines for releasing the page cache in certain
+>> >files as this may aid in perfomance with writes in the compression
+>> >rountines of btrfs. Please note that this patch has not been tested
+>> >on my own hardware due to no compression based btrfs volumes of my
+>> >own.
+>> >
+>>
+>> https://urldefense.proofpoint.com/v1/url?u=http://37.media.tumblr.com/tumblr_m44v95k9Y11qjhgo6o1_250.gif&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=epKcfiwbd4AA3VbfORegZjsqgl8dEZjg%2B3XKikkWVBM%3D%0A&s=5dd9a127c17ca09d584d86694d71f37cd336eab3f17658f8c0dccbfe2a53e2d8
+>
+> https://urldefense.proofpoint.com/v1/url?u=https://www.youtube.com/watch?v%3DjVfkYZmXHAg&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=epKcfiwbd4AA3VbfORegZjsqgl8dEZjg%2B3XKikkWVBM%3D%0A&s=5402110ffa4beccf257af0fc266e8cab20264119fe9bdb2e4734c8ba3e49a211
+>
+> - z
+
+
+Zach,
+Is there a reason for freeing the page cache as I seem to be missing why?
+Regards Nick

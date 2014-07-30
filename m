@@ -1,33 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f175.google.com ([209.85.220.175]:33931 "EHLO
-	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754663AbaG3DyV (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:29271 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751056AbaG3EB3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Jul 2014 23:54:21 -0400
+	Wed, 30 Jul 2014 00:01:29 -0400
+Message-ID: <53D86E0F.7080703@oracle.com>
+Date: Wed, 30 Jul 2014 12:01:19 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Date: Tue, 29 Jul 2014 23:54:20 -0400
-Message-ID: <CAPDOMVjJHbCwDVyKQ+Vuse7G76FLSLq69Ja4kmopDbjtEb_Zkw@mail.gmail.com>
-Subject: Work Queue for btrfs compression writes
-From: Nick Krause <xerofoify@gmail.com>
-To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
-	<linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: kreijack@inwind.it
+CC: Goffredo Baroncelli <kreijack@libero.it>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH not for integration] btrfs-devlist: dumps btrfs_device
+ and btrfs_fs_devices from kernel
+References: <1406291632-29582-1-git-send-email-anand.jain@oracle.com> <53D35341.4080502@libero.it>
+In-Reply-To: <53D35341.4080502@libero.it>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Guys ,
-I am new to   reading  and writing  kernel code.I got interested in
-writing code for btrfs as it seems to
-need more work then other file systems and this seems other then
-drivers, a good use of time on my part.
-I interested in helping improving the compression of btrfs by using  a
-set of threads using work queues like XFS
-or reads and keeping the page cache after reading compressed blocks as
-these seem to be a great way to improve
-on  compression performance mostly with large partitions of compressed
-data. I am not asking you to write the code
-for me but as I am new a little guidance and help would be greatly
-appreciated as this seems like too much work for just a newbie.
-Thanks A lot,
-Nick
+
+
+
+On 26/07/2014 15:05, Goffredo Baroncelli wrote:
+> On 07/25/2014 02:33 PM, Anand Jain wrote:
+>> This would dump the following info:
+>>
+>> fs_address dev_address dev_root_addr root_fsid
+>> fsid name uuid (seed_fsid@seed_addr sprout_fsid@sprout_addr)
+>> 	(fs_num_devices fs_open_devices fs_rw_devices fs_missing_devices fs_total_devices) fs_total_rw_bytes fs_num_can_discard
+>> 	devid gen total_bytes disk_total_bytes bytes_used type io_align io_width sector_size fmode
+>> 	not_fs_Mounted|not_fs_Seeding|not_fs_Rotating
+>> 	not_Writable|not_MD|not_Missing|not_Discard|not_Replace_tgt|not_Run_pending|not_Nobarriers|not_Stat_valid|not_Bdev
+>>
+>> Applies on Chris integration branch now
+>
+> Hi Anand,
+>
+> why not export these information via sysfs ?
+
+
+Thanks for the comments.
+
+  If its for the purpose of recreating the kernel
+  LIST_HEAD(fs_uuids) in the user-space, what would you
+  choose ? sysfs / ioctl / memory-dump / any-other better way ?
+
+Regds, Anand
+
+
+
+> BR
+> G.Baroncelli
+>
+>>
+>> Anand Jain (1):
+>>    btrfs: introduce BTRFS_IOC_GET_DEVS
+>>
+>>   fs/btrfs/super.c           |  86 +++++++++++++++++++++++++++
+>>   fs/btrfs/volumes.c         | 145 +++++++++++++++++++++++++++++++++++++++++++++
+>>   fs/btrfs/volumes.h         |   3 +
+>>   include/uapi/linux/btrfs.h |  53 ++++++++++++++++-
+>>   4 files changed, 286 insertions(+), 1 deletion(-)
+>>
+>> Anand Jain (1):
+>>    btrfs-progs: introduce btrfs-devlist
+>>
+>>   .gitignore      |   1 +
+>>   Makefile        |   4 +-
+>>   btrfs-devlist.c | 268 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   ioctl.h         |  52 +++++++++++
+>>   4 files changed, 323 insertions(+), 2 deletions(-)
+>>   create mode 100644 btrfs-devlist.c
+>>
+>
+>

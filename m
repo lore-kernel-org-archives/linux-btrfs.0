@@ -1,78 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:42756 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754801AbaG3RSc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 13:18:32 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-fsdevel@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, adilger@dilger.ca, hch@infradead.org,
-        mfasheh@suse.com, viro@zeniv.linux.org.uk, david@fromorbit.com,
-        xfs@oss.sgi.com, linux-nilfs@vger.kernel.org,
-        ocfs2-devel@oss.oracle.com, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/6 v5] fiemap: introduce DATA_COMPRESSED and PHYS_LENGTH flags
-Date: Wed, 30 Jul 2014 19:18:29 +0200
-Message-Id: <cover.1406739708.git.dsterba@suse.cz>
+Received: from mail-vc0-f181.google.com ([209.85.220.181]:59770 "EHLO
+	mail-vc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754801AbaG3RUA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jul 2014 13:20:00 -0400
+Received: by mail-vc0-f181.google.com with SMTP id lf12so2281816vcb.26
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 10:20:00 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <4161ea8377c20da597d4fdbb65613cf1.squirrel@webmail.wanet.net>
+References: <CAPDOMVjJHbCwDVyKQ+Vuse7G76FLSLq69Ja4kmopDbjtEb_Zkw@mail.gmail.com>
+	<20140730093821.GJ31950@carfax.org.uk>
+	<4161ea8377c20da597d4fdbb65613cf1.squirrel@webmail.wanet.net>
+Date: Wed, 30 Jul 2014 13:19:59 -0400
+Message-ID: <CAPDOMVgNRJete6N=q9xYCTo-xaL_E2Kjo=NOcfncGLSKkmGuig@mail.gmail.com>
+Subject: Re: Work Queue for btrfs compression writes
+From: Nick Krause <xerofoify@gmail.com>
+To: ashford@whisperpc.com
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+        "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
+	<linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The original FIEMAP patch did not define the bits, btrfs would like to use a
-flag for compressed extents. The PHYS_LENGTH flag emerged during patchset
-revisions to keep backward compatibility and flexible fiemap API.
-
-Currently, the 'filefrag' utility has no way to recognize and denote a
-compressed extent. As implemented in btrfs right now, the compression step
-splits a big extent into smaller chunks and this is reported as a heavily
-fragmented file. Adding the flag to filefrag will at least give some
-explanation why, this has been confusing users for some time already.
-
-fiemap_fill_next_extent is extended and takes argument to fill the physical
-length.
-
-V5:
-Physical length is by default undefined. Btrfs use of compressed flag was
-enhanced to reflect the fiemap changes. Patches reordered so the generic fiemap
-go first.
-
-V4:
-The physical length is always set and equal to logical, or different and
-then sets the COMPRESSED flag.
-fiemap_extent::fe_length renamed to fe_logi_length
-
-V3:
-Based on feedback from Andreas, implement #1 from V2, current users of
-fiemap_fill_next_extent (fs/, ext4, gfs2, ocfs2, nilfs2, xfs) updated
-accordingly, no functional change.
-
-V2:
-Based on feedback from Andreas, the fiemap_extent is now able to hold the
-physical extent length, to be filled by the filesystem callback.
-
-1) extend fiemap_fill_next_extent to take phys_length and update all
-   users (ext4, gfs2, ocfs2, nilfs2, xfs)
+On Wed, Jul 30, 2014 at 11:36 AM,  <ashford@whisperpc.com> wrote:
+>> On Tue, Jul 29, 2014 at 11:54:20PM -0400, Nick Krause wrote:
+>>> Hey Guys ,
+>>> I interested in helping improving the compression of btrfs by using  a
+>>> set of threads using work queues like XFS
+>>> or reads and keeping the page cache after reading compressed blocks as
+>>> these seem to be a great way to improve
+>>> on  compression performance mostly with large partitions of compressed
+>>> data.
+>>
+>>    I suspect that this may be a medium-sized project, rather than a
+>> small one. My gut feeling (based on limited experience) is that the
+>> fallocate extensions project would be considerably simpler.
+>>
+>>    Hugo.
+>
+> I may be in error, but I believe this may be a bit more complex than just
+> routing all reads and writes through a decompression/compression work
+> queue.  On the write side, it might be better to compress the synchronous
+> requests in-line, instead of going through a work queue.  Similarly, on
+> the read side, it might be better to decompress user-requested data (and
+> metadata) in-line, and have any system-generated read-ahead data be
+> decompressed in a work queue (the same work queue?).
+>
+> I believe that one of the significant concerns of the above is that the
+> compression and decompression routines will have to be verified to be
+> thread-safe.  If BTRFS is using the same compression/decompression
+> routines that other file-systems use, then the core code is almost
+> certainly thread-safe.  Any BTRFS wrapper code will have to be verified.
+>
+> Peter Ashford
+>
 
 
-David Sterba (6):
-  fiemap: fix comment at EXTENT_DATA_ENCRYPTED
-  fiemap: add fe_phys_length and EXTENT_PHYS_LENGTH flag
-  fiemap: add FIEMAP_EXTENT_DATA_COMPRESSED flag
-  Documentation/fiemap: Document DATA_COMPRESSED and PHYS_LENGTH flags
-  fiemap: rename fe_length to fe_logi_length
-  btrfs: set FIEMAP_EXTENT_DATA_COMPRESSED for compressed extents
-
- Documentation/filesystems/fiemap.txt | 24 ++++++++++++++++++++----
- fs/btrfs/extent_io.c                 | 11 ++++++++---
- fs/ext4/extents.c                    |  4 ++--
- fs/ext4/inline.c                     |  2 +-
- fs/gfs2/inode.c                      |  2 +-
- fs/ioctl.c                           | 21 ++++++++++++++-------
- fs/nilfs2/inode.c                    |  8 +++++---
- fs/ocfs2/extent_map.c                |  4 ++--
- fs/xfs/xfs_iops.c                    |  2 +-
- include/linux/fs.h                   |  2 +-
- include/uapi/linux/fiemap.h          | 16 +++++++++++++---
- 11 files changed, 68 insertions(+), 28 deletions(-)
-
--- 
-1.8.4.5
-
+Peter ,
+Seems that the code from my reading is that the code is using the same
+compression
+routines as the other file systems. You seem to have some ideas on how
+to write this
+or improve it at least, if you want you can send me a list of ideas
+that you have.
+Cheers Nick

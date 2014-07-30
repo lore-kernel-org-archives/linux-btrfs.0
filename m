@@ -1,184 +1,270 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:7250 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754555AbaG3RAb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 13:00:31 -0400
-Message-ID: <53D924A8.2050008@fb.com>
-Date: Wed, 30 Jul 2014 13:00:24 -0400
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Takashi Iwai <tiwai@suse.de>
-CC: Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: Fix memory corruption by ulist_add_merge() on
- 32bit arch
-References: <1406537824-2376-1-git-send-email-tiwai@suse.de>	<53D64D40.80606@fb.com>	<s5hzjft7fwm.wl%tiwai@suse.de>	<s5hsill7fak.wl%tiwai@suse.de>	<s5hsiljrwwy.wl%tiwai@suse.de>	<53D9015A.90001@fb.com>	<s5h61iesxen.wl%tiwai@suse.de>	<s5h1tt2sx94.wl%tiwai@suse.de>	<53D911DE.7000806@fb.com>	<s5hwqaurgic.wl%tiwai@suse.de>	<53D916DB.9020901@fb.com> <s5hsilirehv.wl%tiwai@suse.de>
-In-Reply-To: <s5hsilirehv.wl%tiwai@suse.de>
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Received: from cantor2.suse.de ([195.135.220.15]:42770 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755402AbaG3RSi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jul 2014 13:18:38 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-fsdevel@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, adilger@dilger.ca, hch@infradead.org,
+        mfasheh@suse.com, viro@zeniv.linux.org.uk, david@fromorbit.com,
+        xfs@oss.sgi.com, linux-nilfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/6] fiemap: add fe_phys_length and EXTENT_PHYS_LENGTH flag
+Date: Wed, 30 Jul 2014 19:18:36 +0200
+Message-Id: <f257ce29393707293c0ce056bd8c6a7b3daa6082.1406739708.git.dsterba@suse.cz>
+In-Reply-To: <cover.1406739708.git.dsterba@suse.cz>
+References: <cover.1406739708.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/30/2014 12:35 PM, Takashi Iwai wrote:
-> At Wed, 30 Jul 2014 12:01:31 -0400,
-> Josef Bacik wrote:
->>
->> On 07/30/2014 11:52 AM, Takashi Iwai wrote:
->>> At Wed, 30 Jul 2014 11:40:14 -0400,
->>> Josef Bacik wrote:
->>>>
->>>> On 07/30/2014 11:05 AM, Takashi Iwai wrote:
->>>>> At Wed, 30 Jul 2014 17:01:52 +0200,
->>>>> Takashi Iwai wrote:
->>>>>>
->>>>>> At Wed, 30 Jul 2014 10:29:46 -0400,
->>>>>> Josef Bacik wrote:
->>>>>>>
->>>>>>> On 07/30/2014 05:57 AM, Takashi Iwai wrote:
->>>>>>>> At Mon, 28 Jul 2014 16:01:55 +0200,
->>>>>>>> Takashi Iwai wrote:
->>>>>>>>>
->>>>>>>>> At Mon, 28 Jul 2014 15:48:41 +0200,
->>>>>>>>> Takashi Iwai wrote:
->>>>>>>>>>
->>>>>>>>>> At Mon, 28 Jul 2014 09:16:48 -0400,
->>>>>>>>>> Josef Bacik wrote:
->>>>>>>>>>>
->>>>>>>>>>> On 07/28/2014 04:57 AM, Takashi Iwai wrote:
->>>>>>>>>>>> We've got bug reports that btrfs crashes when quota is enabled on
->>>>>>>>>>>> 32bit kernel, typically with the Oops like below:
->>>>>>>>>>>>       BUG: unable to handle kernel NULL pointer dereference at 00000004
->>>>>>>>>>>>       IP: [<f9234590>] find_parent_nodes+0x360/0x1380 [btrfs]
->>>>>>>>>>>>       *pde = 00000000
->>>>>>>>>>>>       Oops: 0000 [#1] SMP
->>>>>>>>>>>>       CPU: 0 PID: 151 Comm: kworker/u8:2 Tainted: G S      W 3.15.2-1.gd43d97e-default #1
->>>>>>>>>>>>       Workqueue: btrfs-qgroup-rescan normal_work_helper [btrfs]
->>>>>>>>>>>>       task: f1478130 ti: f147c000 task.ti: f147c000
->>>>>>>>>>>>       EIP: 0060:[<f9234590>] EFLAGS: 00010213 CPU: 0
->>>>>>>>>>>>       EIP is at find_parent_nodes+0x360/0x1380 [btrfs]
->>>>>>>>>>>>       EAX: f147dda8 EBX: f147ddb0 ECX: 00000011 EDX: 00000000
->>>>>>>>>>>>       ESI: 00000000 EDI: f147dda4 EBP: f147ddf8 ESP: f147dd38
->>>>>>>>>>>>        DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
->>>>>>>>>>>>       CR0: 8005003b CR2: 00000004 CR3: 00bf3000 CR4: 00000690
->>>>>>>>>>>>       Stack:
->>>>>>>>>>>>        00000000 00000000 f147dda4 00000050 00000001 00000000 00000001 00000050
->>>>>>>>>>>>        00000001 00000000 d3059000 00000001 00000022 000000a8 00000000 00000000
->>>>>>>>>>>>        00000000 000000a1 00000000 00000000 00000001 00000000 00000000 11800000
->>>>>>>>>>>>       Call Trace:
->>>>>>>>>>>>        [<f923564d>] __btrfs_find_all_roots+0x9d/0xf0 [btrfs]
->>>>>>>>>>>>        [<f9237bb1>] btrfs_qgroup_rescan_worker+0x401/0x760 [btrfs]
->>>>>>>>>>>>        [<f9206148>] normal_work_helper+0xc8/0x270 [btrfs]
->>>>>>>>>>>>        [<c025e38b>] process_one_work+0x11b/0x390
->>>>>>>>>>>>        [<c025eea1>] worker_thread+0x101/0x340
->>>>>>>>>>>>        [<c026432b>] kthread+0x9b/0xb0
->>>>>>>>>>>>        [<c0712a71>] ret_from_kernel_thread+0x21/0x30
->>>>>>>>>>>>        [<c0264290>] kthread_create_on_node+0x110/0x110
->>>>>>>>>>>>
->>>>>>>>>>>> This indicates a NULL corruption in prefs_delayed list.  The further
->>>>>>>>>>>> investigation and bisection pointed that the call of ulist_add_merge()
->>>>>>>>>>>> results in the corruption.
->>>>>>>>>>>>
->>>>>>>>>>>> ulist_add_merge() takes u64 as aux and writes a 64bit value into
->>>>>>>>>>>> old_aux.  The callers of this function in backref.c, however, pass a
->>>>>>>>>>>> pointer of a pointer to old_aux.  That is, the function overwrites
->>>>>>>>>>>> 64bit value on 32bit pointer.  This caused a NULL in the adjacent
->>>>>>>>>>>> variable, in this case, prefs_delayed.
->>>>>>>>>>>>
->>>>>>>>>>>> Here is a quick attempt to band-aid over this: a new function,
->>>>>>>>>>>> ulist_add_merge_ptr() is introduced to pass/store properly a pointer
->>>>>>>>>>>> value instead of u64.  There are still ugly void ** cast remaining
->>>>>>>>>>>> in the callers because void ** cannot be taken implicitly.  But, it's
->>>>>>>>>>>> safer than explicit cast to u64, anyway.
->>>>>>>>>>>>
->>>>>>>>>>>> Bugzilla: https://urldefense.proofpoint.com/v1/url?u=https://bugzilla.novell.com/show_bug.cgi?id%3D887046&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=m3qrbo6ngjqKO%2B7ofuwRfQflb9Cx%2FXrF8TKejkPjxfA%3D%0A&s=199a5b6f0ed181925e9ba2c1060fe20d1c8ad2831dd1d96cc7eddd2a343fa72b
->>>>>>>>>>>> Cc: <stable@vger.kernel.org> [v3.11+]
->>>>>>>>>>>> Signed-off-by: Takashi Iwai <tiwai@suse.de>
->>>>>>>>>>>> ---
->>>>>>>>>>>>
->>>>>>>>>>>> Alternatively, we can change the argument of aux and old_aux to a
->>>>>>>>>>>> pointer from u64, as backref.c is the only user of ulist_add_merge()
->>>>>>>>>>>> function.  I'll cook up another patch if it's the preferred way.
->>>>>>>>>>>>
->>>>>>>>>>>
->>>>>>>>>>> Yeah lets just use a pointer and see how that works out.  Thanks,
->>>>>>>>>>
->>>>>>>>>> Oops, I forgot that ulist_add() takes aux as u64 and it calling
->>>>>>>>>> ulist_add_merge() internally.  So, we can't change the type blindly
->>>>>>>>>> there, unfortunately.
->>>>>>>>>
->>>>>>>>> Looking back at the code, it seems that all aux arguments passed to
->>>>>>>>> ulist_add() in qgroup.c are pointers, too.  So, indeed, all aux values
->>>>>>>>> are pointers, so far, and it'd be even cleaner to replace all these
->>>>>>>>> from u64 to void *.
->>>>>>>>>
->>>>>>>>> But, such a replacement patch will become difficult for backporting to
->>>>>>>>> stable kernels (the bug existed since 3.11, at least).  So IMO, we
->>>>>>>>> should put a smaller fix like my previous one, let it backported to
->>>>>>>>> stable kernels, and do more comprehensive replacements to pointer on
->>>>>>>>> its top.
->>>>>>>>
->>>>>>>> Ping.  Could you guys take my original patch as is, or do you prefer
->>>>>>>> changing in a different way?  If so, how?
->>>>>>>>
->>>>>>>
->>>>>>> I don't care how hard it is to backport to stable,
->>>>>>
->>>>>> You must do care as a maintainer.  It's a long-standing and serious
->>>>>> bug since 3.11.  The kernel hangs up immediately when you enable quota
->>>>>> on 32bit kernel.  And it's really hard to revert it when the rootfs is
->>>>>> btrfs.  (The mount follows the immediate hang up after reboot.)
->>>>>>
->>>>
->>>> What I mean is that we want the right fix first, not something that is easier to
->>>> pull back to stable and then the right fix later.  Do it right first and then
->>>> backport it to the stable kernels, it's perfectly acceptable to adjust patches
->>>> when sending them to the stable team.  "But it's hard" is not a valid excuse for
->>>> not doing it right the first time.
->>>
->>> Well, I guess this underestimates the burden of backports.  Currently,
->>> there is stable kernel for each kernel release.  Anyone has to
->>> backport for each version, and you'll be asked.  I, as a long-time
->>> subsystem maintainer, wouldn't go in that way :)
->>>
->>> And, speaking of "rightness" -- replacing the callers with a wrapper
->>> is also a right fix.  It's even a safer fix.  That's basically why I
->>> posted it as the primary patch.
->>>
->>> The merit of replacing all callers is that you can eliminate nasty
->>> casts by that.  This is however rather a cleanup, which is a different
->>> bonus from what we need to fix.
->>>
->>>>>>> since we're using pointers
->>>>>>> everywhere just change it to void * and be done with it.  Thanks,
->>>>>>
->>>>>> Fix it quickly, then do cleanup.  This is the golden rule for
->>>>>> regression :)
->>>>>
->>>>> Also, another question is whether you guys are OK to change the type
->>>>> to a pointer.  Through a glance, the ulist code was intended to handle
->>>>> any generic data, thus it uses u64, right?  Using void pointer breaks
->>>>> this concept.
->>>>>
->>>>
->>>> It's fine, ulist today resembles very little from what it was originally.  The
->>>> current users all shove pointers into there, so we might as well just make it a
->>>> pointer.  Thanks,
->>>
->>> OK, good to know.
->>>
->>> If this post still doesn't convince you, I'll prepare the patch to do
->>> all replacements.
->>>
->>>
->>
->> I don't care that much, do it however you want.  Thanks,
->
-> Yes, I do care because I know of this kind of horror very well.
->
-> OK, I'm going to send the new patch(es).
->
+Add a new member to fiemap_extent that represents the physical extent
+length. This value is undefined if the flag EXTENT_PHYS_LENGTH is not
+set.
 
-I meant that I don't care how you do it, if you want to do it the simple way
-first and then send the cleanup later thats fine by me.  Thanks,
+No functional change to existing fiemap users.
 
-Josef
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/extent_io.c        |  2 +-
+ fs/ext4/extents.c           |  4 ++--
+ fs/ext4/inline.c            |  2 +-
+ fs/gfs2/inode.c             |  2 +-
+ fs/ioctl.c                  | 13 ++++++++-----
+ fs/nilfs2/inode.c           |  8 +++++---
+ fs/ocfs2/extent_map.c       |  4 ++--
+ fs/xfs/xfs_iops.c           |  2 +-
+ include/linux/fs.h          |  2 +-
+ include/uapi/linux/fiemap.h |  6 +++++-
+ 10 files changed, 27 insertions(+), 18 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a389820d158b..c85da2e54ce7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4357,7 +4357,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			end = 1;
+ 		}
+ 		ret = fiemap_fill_next_extent(fieinfo, em_start, disko,
+-					      em_len, flags);
++					      em_len, 0, flags);
+ 		if (ret)
+ 			goto out_free;
+ 	}
+diff --git a/fs/ext4/extents.c b/fs/ext4/extents.c
+index 4da228a0e6d0..a194024e96a2 100644
+--- a/fs/ext4/extents.c
++++ b/fs/ext4/extents.c
+@@ -2253,7 +2253,7 @@ static int ext4_fill_fiemap_extents(struct inode *inode,
+ 				(__u64)es.es_lblk << blksize_bits,
+ 				(__u64)es.es_pblk << blksize_bits,
+ 				(__u64)es.es_len << blksize_bits,
+-				flags);
++				0, flags);
+ 			if (err < 0)
+ 				break;
+ 			if (err == 1) {
+@@ -5125,7 +5125,7 @@ static int ext4_xattr_fiemap(struct inode *inode,
+ 
+ 	if (physical)
+ 		error = fiemap_fill_next_extent(fieinfo, 0, physical,
+-						length, flags);
++						length, 0, flags);
+ 	return (error < 0 ? error : 0);
+ }
+ 
+diff --git a/fs/ext4/inline.c b/fs/ext4/inline.c
+index 645205d8ada6..16f93d8100db 100644
+--- a/fs/ext4/inline.c
++++ b/fs/ext4/inline.c
+@@ -1825,7 +1825,7 @@ int ext4_inline_data_fiemap(struct inode *inode,
+ 
+ 	if (physical)
+ 		error = fiemap_fill_next_extent(fieinfo, 0, physical,
+-						length, flags);
++						length, 0, flags);
+ 	brelse(iloc.bh);
+ out:
+ 	up_read(&EXT4_I(inode)->xattr_sem);
+diff --git a/fs/gfs2/inode.c b/fs/gfs2/inode.c
+index e62e59477884..d0d35557ab5f 100644
+--- a/fs/gfs2/inode.c
++++ b/fs/gfs2/inode.c
+@@ -1931,7 +1931,7 @@ static int gfs2_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			len = size - start;
+ 		if (start < size)
+ 			ret = fiemap_fill_next_extent(fieinfo, start, phys,
+-						      len, flags);
++						      len, 0, flags);
+ 		if (ret == 1)
+ 			ret = 0;
+ 	} else {
+diff --git a/fs/ioctl.c b/fs/ioctl.c
+index 8ac3fad36192..127551c70b0a 100644
+--- a/fs/ioctl.c
++++ b/fs/ioctl.c
+@@ -70,6 +70,7 @@ static int ioctl_fibmap(struct file *filp, int __user *p)
+  * @logical:	Extent logical start offset, in bytes
+  * @phys:	Extent physical start offset, in bytes
+  * @len:	Extent length, in bytes
++ * @phys_len:   Physical extent length in bytes
+  * @flags:	FIEMAP_EXTENT flags that describe this extent
+  *
+  * Called from file system ->fiemap callback. Will populate extent
+@@ -83,7 +84,7 @@ static int ioctl_fibmap(struct file *filp, int __user *p)
+ #define SET_NO_UNMOUNTED_IO_FLAGS	(FIEMAP_EXTENT_DATA_ENCRYPTED)
+ #define SET_NOT_ALIGNED_FLAGS	(FIEMAP_EXTENT_DATA_TAIL|FIEMAP_EXTENT_DATA_INLINE)
+ int fiemap_fill_next_extent(struct fiemap_extent_info *fieinfo, u64 logical,
+-			    u64 phys, u64 len, u32 flags)
++			    u64 phys, u64 len, u64 phys_len, u32 flags)
+ {
+ 	struct fiemap_extent extent;
+ 	struct fiemap_extent __user *dest = fieinfo->fi_extents_start;
+@@ -109,6 +110,7 @@ int fiemap_fill_next_extent(struct fiemap_extent_info *fieinfo, u64 logical,
+ 	extent.fe_physical = phys;
+ 	extent.fe_length = len;
+ 	extent.fe_flags = flags;
++	extent.fe_phys_length = phys_len;
+ 
+ 	dest += fieinfo->fi_extents_mapped;
+ 	if (copy_to_user(dest, &extent, sizeof(extent)))
+@@ -318,10 +320,11 @@ int __generic_block_fiemap(struct inode *inode,
+ 				flags = FIEMAP_EXTENT_MERGED|FIEMAP_EXTENT_LAST;
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+ 							      phys, size,
+-							      flags);
++							      0, flags);
+ 			} else if (size) {
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+-							      phys, size, flags);
++							      phys, size,
++							      0, flags);
+ 				size = 0;
+ 			}
+ 
+@@ -347,7 +350,7 @@ int __generic_block_fiemap(struct inode *inode,
+ 			if (start_blk > last_blk && !whole_file) {
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+ 							      phys, size,
+-							      flags);
++							      0, flags);
+ 				break;
+ 			}
+ 
+@@ -358,7 +361,7 @@ int __generic_block_fiemap(struct inode *inode,
+ 			if (size) {
+ 				ret = fiemap_fill_next_extent(fieinfo, logical,
+ 							      phys, size,
+-							      flags);
++							      0, flags);
+ 				if (ret)
+ 					break;
+ 			}
+diff --git a/fs/nilfs2/inode.c b/fs/nilfs2/inode.c
+index 6252b173a465..a99e6d093f11 100644
+--- a/fs/nilfs2/inode.c
++++ b/fs/nilfs2/inode.c
+@@ -1017,7 +1017,8 @@ int nilfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			if (size) {
+ 				/* End of the current extent */
+ 				ret = fiemap_fill_next_extent(
+-					fieinfo, logical, phys, size, flags);
++					fieinfo, logical, phys, size, 0,
++					flags);
+ 				if (ret)
+ 					break;
+ 			}
+@@ -1067,7 +1068,8 @@ int nilfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 					flags |= FIEMAP_EXTENT_LAST;
+ 
+ 				ret = fiemap_fill_next_extent(
+-					fieinfo, logical, phys, size, flags);
++					fieinfo, logical, phys, size,
++					0, flags);
+ 				if (ret)
+ 					break;
+ 				size = 0;
+@@ -1083,7 +1085,7 @@ int nilfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 					/* Terminate the current extent */
+ 					ret = fiemap_fill_next_extent(
+ 						fieinfo, logical, phys, size,
+-						flags);
++						0, flags);
+ 					if (ret || blkoff > end_blkoff)
+ 						break;
+ 
+diff --git a/fs/ocfs2/extent_map.c b/fs/ocfs2/extent_map.c
+index 767370b656ca..cb0276908155 100644
+--- a/fs/ocfs2/extent_map.c
++++ b/fs/ocfs2/extent_map.c
+@@ -736,7 +736,7 @@ static int ocfs2_fiemap_inline(struct inode *inode, struct buffer_head *di_bh,
+ 					 id2.i_data.id_data);
+ 
+ 		ret = fiemap_fill_next_extent(fieinfo, 0, phys, id_count,
+-					      flags);
++					      0, flags);
+ 		if (ret < 0)
+ 			return ret;
+ 	}
+@@ -809,7 +809,7 @@ int ocfs2_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		virt_bytes = (u64)le32_to_cpu(rec.e_cpos) << osb->s_clustersize_bits;
+ 
+ 		ret = fiemap_fill_next_extent(fieinfo, virt_bytes, phys_bytes,
+-					      len_bytes, fe_flags);
++					      len_bytes, 0, fe_flags);
+ 		if (ret)
+ 			break;
+ 
+diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
+index 205613a06068..5a7c1f6d1189 100644
+--- a/fs/xfs/xfs_iops.c
++++ b/fs/xfs/xfs_iops.c
+@@ -1030,7 +1030,7 @@ xfs_fiemap_format(
+ 		fiemap_flags |= FIEMAP_EXTENT_LAST;
+ 
+ 	error = fiemap_fill_next_extent(fieinfo, logical, physical,
+-					length, fiemap_flags);
++					length, 0, fiemap_flags);
+ 	if (error > 0) {
+ 		error = 0;
+ 		*full = 1;	/* user array now full */
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index e11d60cc867b..609e1d72c3e0 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1412,7 +1412,7 @@ struct fiemap_extent_info {
+ 							fiemap_extent array */
+ };
+ int fiemap_fill_next_extent(struct fiemap_extent_info *info, u64 logical,
+-			    u64 phys, u64 len, u32 flags);
++			    u64 phys, u64 len, u64 phys_len, u32 flags);
+ int fiemap_check_flags(struct fiemap_extent_info *fieinfo, u32 fs_flags);
+ 
+ /*
+diff --git a/include/uapi/linux/fiemap.h b/include/uapi/linux/fiemap.h
+index 93abfcd9ac47..ed52d3f7821d 100644
+--- a/include/uapi/linux/fiemap.h
++++ b/include/uapi/linux/fiemap.h
+@@ -19,7 +19,9 @@ struct fiemap_extent {
+ 	__u64 fe_physical; /* physical offset in bytes for the start
+ 			    * of the extent from the beginning of the disk */
+ 	__u64 fe_length;   /* length in bytes for this extent */
+-	__u64 fe_reserved64[2];
++	__u64 fe_phys_length; /* physical length in bytes, may be different from
++                               * fe_length, is valid if PHYS_LENGTH flag set */
++	__u64 fe_reserved64;
+ 	__u32 fe_flags;    /* FIEMAP_EXTENT_* flags for this extent */
+ 	__u32 fe_reserved[3];
+ };
+@@ -50,6 +52,8 @@ struct fiemap {
+ 						    * Sets EXTENT_UNKNOWN. */
+ #define FIEMAP_EXTENT_ENCODED		0x00000008 /* Data can not be read
+ 						    * while fs is unmounted */
++#define FIEMAP_EXTENT_PHYS_LENGTH	0x00000010 /* Physical length of extent
++						    * not the same as logical */
+ #define FIEMAP_EXTENT_DATA_ENCRYPTED	0x00000080 /* Data is encrypted by fs.
+ 						    * Sets EXTENT_ENCODED */
+ #define FIEMAP_EXTENT_NOT_ALIGNED	0x00000100 /* Extent offsets may not be
+-- 
+1.8.4.5
+

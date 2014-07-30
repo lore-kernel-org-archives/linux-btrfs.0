@@ -1,94 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f169.google.com ([209.85.192.169]:50145 "EHLO
-	mail-pd0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751952AbaG2BzU (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:53477 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754477AbaG3H0p (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Jul 2014 21:55:20 -0400
-Received: by mail-pd0-f169.google.com with SMTP id y10so10898070pdj.28
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jul 2014 18:55:20 -0700 (PDT)
-From: Justin Maggard <jmaggard10@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard10@gmail.com>
-Subject: [PATCH v2] btrfs-progs: add always option to restore's looping prompt
-Date: Mon, 28 Jul 2014 18:55:09 -0700
-Message-Id: <1406598909-9658-1-git-send-email-jmaggard10@gmail.com>
+	Wed, 30 Jul 2014 03:26:45 -0400
+Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 348693EE0BD
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:44 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 38125AC068A
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:43 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 98B8D1DB804F
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:40 +0900 (JST)
+Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
+	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id F0B9D3285DA
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:39 +0900 (JST)
+Message-ID: <53D89E28.7040100@jp.fujitsu.com>
+Date: Wed, 30 Jul 2014 16:26:32 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: remove unnecessary NULL check after get_df()
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you are using btrfs restore to try to recover a very large or
-fragmented file, you may encounter _lots_ of prompts requiring
-you to press 'y' to continue because we are looping a lot.
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Add the option to press 'a', to supress these prompts for the rest
-of the file.
+If get_df() returns 0, "sargs" surely points to malloc'ed region.
+So NULL check of sargs is not necessary.
 
-Signed-off-by: Justin Maggard <jmaggard10@gmail.com>
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+
 ---
- cmds-restore.c |   31 ++++++++++++++++++++++---------
- 1 file changed, 22 insertions(+), 9 deletions(-)
+ cmds-filesystem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-restore.c b/cmds-restore.c
-index 3465f84..059194d 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -410,23 +410,31 @@ out:
- 	return ret;
- }
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index bf87bbe..38011e5 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -201,7 +201,7 @@ static int cmd_filesystem_df(int argc, char **argv)
+        }
+        ret = get_df(fd, &sargs);
  
--static int ask_to_continue(const char *file)
-+enum loop_response {
-+	LOOP_STOP,
-+	LOOP_CONTINUE,
-+	LOOP_DONTASK
-+};
-+
-+static enum loop_response ask_to_continue(const char *file)
- {
- 	char buf[2];
- 	char *ret;
- 
- 	printf("We seem to be looping a lot on %s, do you want to keep going "
--	       "on ? (y/N): ", file);
-+	       "on ? (y/N/a): ", file);
- again:
- 	ret = fgets(buf, 2, stdin);
- 	if (*ret == '\n' || tolower(*ret) == 'n')
--		return 1;
-+		return LOOP_STOP;
-+	if (tolower(*ret) == 'a')
-+		return LOOP_DONTASK;
- 	if (tolower(*ret) != 'y') {
--		printf("Please enter either 'y' or 'n': ");
-+		printf("Please enter one of 'y', 'n', or 'a': ");
- 		goto again;
- 	}
- 
--	return 0;
-+	return LOOP_CONTINUE;
- }
- 
- 
-@@ -594,11 +602,16 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
- 	}
- 
- 	while (1) {
--		if (loops++ >= 1024) {
--			ret = ask_to_continue(file);
--			if (ret)
-+		if (loops >= 0 && loops++ >= 1024) {
-+			enum loop_response resp;
-+
-+			resp = ask_to_continue(file);
-+			if (resp == LOOP_STOP)
- 				break;
--			loops = 0;
-+			else if (resp == LOOP_CONTINUE)
-+				loops = 0;
-+			else if (resp == LOOP_DONTASK)
-+				loops = -1;
- 		}
- 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			do {
+-       if (!ret && sargs) {
++       if (ret == 0) {
+                print_df(sargs);
+                free(sargs);
+        } else {
 -- 
-1.7.10.4
+1.9.3
 

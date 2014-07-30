@@ -1,34 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:39773 "EHLO tetsuo.zabbo.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751479AbaG3Uvt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 16:51:49 -0400
-Date: Wed, 30 Jul 2014 13:51:48 -0700
-From: Zach Brown <zab@zabbo.net>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Nicholas Krause <xerofoify@gmail.com>, clm@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Remove certain calls for releasing page cache
-Message-ID: <20140730205148.GA25256@lenny.home.zabbo.net>
-References: <1406752954-26158-1-git-send-email-xerofoify@gmail.com>
- <53D959D0.1020303@fb.com>
+Received: from mail-in-05.arcor-online.net ([151.189.21.45]:51297 "EHLO
+	mail-in-05.arcor-online.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752701AbaG3WFA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jul 2014 18:05:00 -0400
+Date: Thu, 31 Jul 2014 00:04:58 +0200 (CEST)
+From: dptrash@arcor.de
+To: linux-bcache@vger.kernel.org, linux-btrfs@vger.kernel.org
+Message-ID: <1368165877.1162129.1406757898943.JavaMail.ngmail@webmail06.arcor-online.net>
+Subject: btrfs on bcache
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53D959D0.1020303@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 30, 2014 at 04:47:12PM -0400, Josef Bacik wrote:
-> On 07/30/2014 04:42 PM, Nicholas Krause wrote:
-> >This patch removes the lines for releasing the page cache in certain
-> >files as this may aid in perfomance with writes in the compression
-> >rountines of btrfs. Please note that this patch has not been tested
-> >on my own hardware due to no compression based btrfs volumes of my
-> >own.
-> >
-> 
-> http://37.media.tumblr.com/tumblr_m44v95k9Y11qjhgo6o1_250.gif
+Concerning http://thread.gmane.org/gmane.comp.file-systems.btrfs/31018, does this "bug" still exists?
 
-https://www.youtube.com/watch?v=jVfkYZmXHAg
+Kernel 3.14
+B: 2x HDD 1 TB
+C: 1x SSD 256 GB
 
-- z
+# make-bcache -B /dev/sda /dev/sdb -C /dev/sdc --cache_replacement_policy=lru
+# mkfs.btrfs -d raid1 -m raid1 -L "BTRFS_RAID" /dev/bcache0 /dev/bcache1
+
+I still have no "incomplete page write" messages in "dmesg | grep btrfs" and the checksums of some manually reviewed files are okay.
+
+Who has more experiences about this?
+
+Thanks,
+
+- dp

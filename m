@@ -1,30 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:38208 "EHLO imap.thunk.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750716AbaGaMUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 08:20:38 -0400
-Date: Thu, 31 Jul 2014 07:35:03 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Peter Hurley <peter@hurleysoftware.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Nick Krause <xerofoify@gmail.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Work Queue for btrfs compression writes
-Message-ID: <20140731113503.GC17375@thunk.org>
-References: <CAPDOMVjJHbCwDVyKQ+Vuse7G76FLSLq69Ja4kmopDbjtEb_Zkw@mail.gmail.com>
- <20140730093821.GJ31950@carfax.org.uk>
- <20140730141329.GC20353@thunk.org>
- <53D90309.9070909@hurleysoftware.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53D90309.9070909@hurleysoftware.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:58400 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751173AbaGaMme (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 31 Jul 2014 08:42:34 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>,
+        Alex Lyakas <alex.btrfs@zadarastorage.com>
+Subject: [PATCH v2] Btrfs: race free update of commit root for ro snapshots
+Date: Thu, 31 Jul 2014 14:41:07 +0100
+Message-Id: <1406814067-413-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1406572238-28804-1-git-send-email-fdmanana@suse.com>
+References: <1406572238-28804-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 30, 2014 at 10:36:57AM -0400, Peter Hurley wrote:
-> 
-> Where is that git tree? I've been planning to set up a unit test and
-> regression suite for tty/serial, and wouldn't mind cribbing the
-> infrastructure from someone's existing work.
+This is a better solution for the problem addressed in the following
+commit:
 
-https://git.kernel.org/cgit/fs/ext2/xfstests-bld.git/
+    Btrfs: update commit root on snapshot creation after orphan cleanup
+    (3821f348889e506efbd268cc8149e0ebfa47c4e5)
+
+The previous solution wasn't the best because of 2 reasons:
+
+    1) It added another full transaction commit, which is more expensive
+       than just swapping the commit root with the root;
+
+    2) If a reboot happened after the first transaction commit (the one
+       that creates the snapshot) and before the second transaction commit,
+       then we would end up with the same problem if a send using that
+       snapshot was requested before the first transaction commit after
+       the reboot.
+
+This change addresses those 2 issues. The second issue is addressed by
+switching the commit root in the dentry lookup VFS callback, which is
+also called by the snapshot/subvol creation ioctl and performs orphan
+cleanup if needed. Like the vfs, the ioctl locks the parent inode too,
+preventing race issues between a dentry lookup and snapshot creation.
+
+Cc: Alex Lyakas <alex.btrfs@zadarastorage.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Updated commit message, as original second issue  was not correct.
+    Removed redundant btrfs_orphan_cleanup() call in the snapshot creation
+    ioctl, as it's performed by btrfs_lookup_dentry() which is called by
+    the ioctl.
+
+ fs/btrfs/inode.c | 36 ++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c | 33 ---------------------------------
+ 2 files changed, 36 insertions(+), 33 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1d5f0b3..4f35c6c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5227,6 +5227,42 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 			iput(inode);
+ 			inode = ERR_PTR(ret);
+ 		}
++		/*
++		 * If orphan cleanup did remove any orphans, it means the tree
++		 * was modified and therefore the commit root is not the same as
++		 * the current root anymore. This is a problem, because send
++		 * uses the commit root and therefore can see inode items that
++		 * don't exist in the current root anymore, and for example make
++		 * calls to btrfs_iget, which will do tree lookups based on the
++		 * current root and not on the commit root. Those lookups will
++		 * fail, returning a -ESTALE error, and making send fail with
++		 * that error. So make sure a send does not see any orphans we
++		 * have just removed, and that it will see the same inodes
++		 * regardless of whether a transaction commit happened before
++		 * it started (meaning that the commit root will be the same as
++		 * the current root) or not.
++		 */
++		if (sub_root->node != sub_root->commit_root) {
++			u64 sub_flags = btrfs_root_flags(&sub_root->root_item);
++
++			if (sub_flags & BTRFS_ROOT_SUBVOL_RDONLY) {
++				struct extent_buffer *eb;
++
++				/*
++				 * Assert we can't have races between dentry
++				 * lookup called through the snapshot creation
++				 * ioctl and the VFS.
++				 */
++				ASSERT(mutex_is_locked(&dir->i_mutex));
++
++				down_write(&root->fs_info->commit_root_sem);
++				eb = sub_root->commit_root;
++				sub_root->commit_root =
++					btrfs_root_node(sub_root);
++				up_write(&root->fs_info->commit_root_sem);
++				free_extent_buffer(eb);
++			}
++		}
+ 	}
+ 
+ 	return inode;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2a30ac1..ef2e073 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -711,39 +711,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (ret)
+ 		goto fail;
+ 
+-	ret = btrfs_orphan_cleanup(pending_snapshot->snap);
+-	if (ret)
+-		goto fail;
+-
+-	/*
+-	 * If orphan cleanup did remove any orphans, it means the tree was
+-	 * modified and therefore the commit root is not the same as the
+-	 * current root anymore. This is a problem, because send uses the
+-	 * commit root and therefore can see inode items that don't exist
+-	 * in the current root anymore, and for example make calls to
+-	 * btrfs_iget, which will do tree lookups based on the current root
+-	 * and not on the commit root. Those lookups will fail, returning a
+-	 * -ESTALE error, and making send fail with that error. So make sure
+-	 * a send does not see any orphans we have just removed, and that it
+-	 * will see the same inodes regardless of whether a transaction
+-	 * commit happened before it started (meaning that the commit root
+-	 * will be the same as the current root) or not.
+-	 */
+-	if (readonly && pending_snapshot->snap->node !=
+-	    pending_snapshot->snap->commit_root) {
+-		trans = btrfs_join_transaction(pending_snapshot->snap);
+-		if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
+-			ret = PTR_ERR(trans);
+-			goto fail;
+-		}
+-		if (!IS_ERR(trans)) {
+-			ret = btrfs_commit_transaction(trans,
+-						       pending_snapshot->snap);
+-			if (ret)
+-				goto fail;
+-		}
+-	}
+-
+ 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+ 	if (IS_ERR(inode)) {
+ 		ret = PTR_ERR(inode);
+-- 
+1.9.1
+

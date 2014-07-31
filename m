@@ -1,109 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:45910 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:45936 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751864AbaGaTJf (ORCPT
+	with ESMTP id S1750845AbaGaTMp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 15:09:35 -0400
-Date: Thu, 31 Jul 2014 20:09:10 +0100
+	Thu, 31 Jul 2014 15:12:45 -0400
+Date: Thu, 31 Jul 2014 20:12:40 +0100
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Nicholas Krause <xerofoify@gmail.com>
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Add support to check for FALLOC_FL_COLLAPSE_RANGE  and
- FALLOC_FL_ZERO_RANGE crap modes
-Message-ID: <20140731190910.GP31950@carfax.org.uk>
-References: <1406829213-4759-1-git-send-email-xerofoify@gmail.com>
+To: Nick Krause <xerofoify@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
+	<linux-btrfs@vger.kernel.org>
+Subject: Re: Implement new FALLOC_FL_* modes
+Message-ID: <20140731191240.GQ31950@carfax.org.uk>
+References: <CAPDOMVi7fS9zwpZcENiSxhWWn02VfV5H9qnHrK-4kfjLW1zaXg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="fjEAjMKpll6GDq3U"
-In-Reply-To: <1406829213-4759-1-git-send-email-xerofoify@gmail.com>
+	protocol="application/pgp-signature"; boundary="aNvCJ41Feu8IgPyB"
+In-Reply-To: <CAPDOMVi7fS9zwpZcENiSxhWWn02VfV5H9qnHrK-4kfjLW1zaXg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---fjEAjMKpll6GDq3U
+--aNvCJ41Feu8IgPyB
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Thu, Jul 31, 2014 at 01:53:33PM -0400, Nicholas Krause wrote:
-> This adds checks for the stated modes as if they are crap we will return error
-> not supported.
+On Thu, Jul 31, 2014 at 02:08:15PM -0400, Nick Krause wrote:
+> I am doing this project from the btrfs wiki, since I am new after
+> reading the code using lxr I am wondering if
+> we can base the code off that already in ext4 for these modes as they
+> seem to work rather well. I am wondering
+> through as a newbie some of the data structures are ext4 based and the
+> same goes for some of the functions.
+> I am wondering what the equivalent structures and functions are in
+> btrfs as I can't seem to find them after reading
+> the code as a newbie for the last few hours in lxr. Maybe I just
+> missing something?
 
-   You've just enabled two options, but you haven't actually
-implemented the code behind it. I would tell you *NOT* to do anything
-else on this work until you can answer the question: What happens if
-you apply this patch, create a large file called "foo.txt", and then a
-userspace program executes the following code?
+   The fundamental on-disk structures for btrfs and ext4 are totally
+different. You will get very confused if you expect the ext4 code to
+work in the btrfs module, or even if you expect structures to be
+similar.
 
-int fd = open("foo.txt", O_RDWR);
-fallocate(fd, FALLOCATE_FL_COLLAPSE_RANGE, 50, 50);
-
-   Try it on a btrfs filesystem, both with and without your patch.
-Also try it on an ext4 filesystem.
-
-   Once you've done all of that, reply to this mail and tell me what
-the problem is with this patch. You need to make two answers: what are
-the technical problems with the patch? What errors have you made in
-the development process?
-
-   *Only* if you can answer those questions sensibly, should you write
-any more patches, of any kind.
+   But first -- answer my questions in the reply I made to your patch
+just now. Do nothing else until you can answer all three of those
+questions sensibly.
 
    Hugo.
-
-> Signed-off-by: Nicholas Krause <xerofoify@gmail.com>
-> ---
->  fs/btrfs/file.c |    3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 1f2b99c..599495a 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2490,7 +2490,8 @@ static long btrfs_fallocate(struct file *file, int mode,
->  	alloc_end = round_up(offset + len, blocksize);
->  
->  	/* Make sure we aren't being give some crap mode */
-> -	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
-> +	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE|
-> +	FALLOC_FL_COLLAPSE_RANGE | FALLOC_FL_ZERO_RANGE))
->  		return -EOPNOTSUPP;
->  
->  	if (mode & FALLOC_FL_PUNCH_HOLE)
-> -- 
-> 1.7.10.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- The glass is neither half-full nor half-empty; it is twice as ---  
-                        large as it needs to be.                         
+        --- Great films about cricket:  200/1: A Pace Odyssey ---        
 
---fjEAjMKpll6GDq3U
+--aNvCJ41Feu8IgPyB
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIVAwUBU9qUVlheFHXiqx3kAQL+qw/9HV1Y2bBRYUCgboJXscwoLC+8YF3JBlo5
-WfDCnkUxw+w7m8yXP9N7ZS7nztyb3bAinrP+h4qTf2MP09EVIYH6CYHq0DDavGwr
-LwuLsgJS6CTgW6Fgu0XXtQFZAQhwZYHidSm/+bfH9dQ9rnBHXecM+uE2jfpSiF5Z
-TBu+HH5AP+tvqkMtk8SNI7SR2ISYQZWkHB/kN7YQsloZdUkzyIRyee1E6LSrOb4/
-kEbjblUbIAJpNiJuAmMbe9hUJ1rzeE08joTzKUu9O0Yq34/pMiMy5yeZZCZCn88P
-7K9msBgL+9zwxUBhBsKJd3Lmmo/9AmZObwDhbozfhhb20IosedDhlxMxbrbYdZ7p
-Q0PHL3VLrU/RVBcy+KbLF10Kb6YBwjagjnjUSQO7T6kHlcz7nPWpedxNwLKb4nqq
-DmkAaWM9QNo2u0/Sw3Ef3O+gE+ZS5y5n9evWSnuNzUb78BnRmG9HfpFptEi7rFrw
-NhBCSvlaLPJ2w36PDh/VkQUAyfQJP88dD8Okbk6BOBcqonCqGZgyjFlE5pKmnfXY
-YdlmMcB7DHEY/KJlfYwNM9eVjkvuE2pA4ZZPtXhw64JceKD5/VMeQjaQXjqoUcX1
-9dxeqzh6bzVeoTt+PoBuHHXfWvZ6qmv4Cd3zC6IMlmc/KsIsiHyfmE9XMdKw13b6
-DFBgCSpXxiQ=
-=W+li
+iQIVAwUBU9qVKFheFHXiqx3kAQIKZg/8C/hraoZV6GxCiNAxkxmSXSnVuIACAgpV
+uE+msf1L+B2itMvvLh745UYqvrDewrCBtZIYGOhO4G668g5FlShl3UbtnAalhle5
+1oJhUmWTp1OmwHoevVPDIi+8iqxi85kbkaI1WtgwO1gotupk+LE4F26qPMBDeYKo
+LvaEz2Gsn20HSuCvCB5TlvrIQgslQjRcm4qiETzBGo3yybvzVPDBUoLcGHdmYXLj
+NHmWatj/gVVoMNAy4KpYPhX8bwXEoR6x+n9rZ4slZRCAE4//2EGLLJze2vGTZorv
+PPeJTQIbpQZo6ZV6lTXfbqDIzwhs1TtiE4DWDYdOdpgk6D2Z7q2qe9hswcPeLAzI
+LZ2kKTxD/F7hukCQrFFkKPsuEnHJxDbAMDT6vPP1rGEn/VeR9qEwxVg0+3zfm6rD
+53saJ4BpoqzjL1XrBYRDlHYTzJYf2+1r3SAaT4mMOUbmgEYvGt63+WN+TMBZnnoP
+Gp4oTiYRto4M81/vvJ+ueXVHCeJt0MBg3dy7Q8YrP+AMdtM57gvJXY3Csem/NcsL
+T+Lhgux4qivrXKzwPH0zYdWH5P7ZAtscSZxkRw+mzg9NFF4Ofgz2BtAJGUuG62qi
+CiSxAlMeJAchOOJ2CyIgDKqKRTYQmkfBchgE3Kxs148CHm4HUsPga2S/L4dQMWRC
+6o0bR1+eQso=
+=CrpC
 -----END PGP SIGNATURE-----
 
---fjEAjMKpll6GDq3U--
+--aNvCJ41Feu8IgPyB--

@@ -1,40 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:38986 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751066AbaGaRxp (ORCPT
+Received: from mail-vc0-f181.google.com ([209.85.220.181]:54694 "EHLO
+	mail-vc0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752550AbaGaSIQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 13:53:45 -0400
-From: Nicholas Krause <xerofoify@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] Add support to check for FALLOC_FL_COLLAPSE_RANGE  and FALLOC_FL_ZERO_RANGE crap modes
-Date: Thu, 31 Jul 2014 13:53:33 -0400
-Message-Id: <1406829213-4759-1-git-send-email-xerofoify@gmail.com>
+	Thu, 31 Jul 2014 14:08:16 -0400
+Received: by mail-vc0-f181.google.com with SMTP id lf12so4888698vcb.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jul 2014 11:08:15 -0700 (PDT)
+MIME-Version: 1.0
+Date: Thu, 31 Jul 2014 14:08:15 -0400
+Message-ID: <CAPDOMVi7fS9zwpZcENiSxhWWn02VfV5H9qnHrK-4kfjLW1zaXg@mail.gmail.com>
+Subject: Implement new FALLOC_FL_* modes
+From: Nick Krause <xerofoify@gmail.com>
+To: "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
+	<linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds checks for the stated modes as if they are crap we will return error
-not supported.
-
-Signed-off-by: Nicholas Krause <xerofoify@gmail.com>
----
- fs/btrfs/file.c |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 1f2b99c..599495a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2490,7 +2490,8 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	alloc_end = round_up(offset + len, blocksize);
- 
- 	/* Make sure we aren't being give some crap mode */
--	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
-+	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE|
-+	FALLOC_FL_COLLAPSE_RANGE | FALLOC_FL_ZERO_RANGE))
- 		return -EOPNOTSUPP;
- 
- 	if (mode & FALLOC_FL_PUNCH_HOLE)
--- 
-1.7.10.4
-
+I am doing this project from the btrfs wiki, since I am new after
+reading the code using lxr I am wondering if
+we can base the code off that already in ext4 for these modes as they
+seem to work rather well. I am wondering
+through as a newbie some of the data structures are ext4 based and the
+same goes for some of the functions.
+I am wondering what the equivalent structures and functions are in
+btrfs as I can't seem to find them after reading
+the code as a newbie for the last few hours in lxr. Maybe I just
+missing something?
+Regards Nick

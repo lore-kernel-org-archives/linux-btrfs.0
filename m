@@ -1,49 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58026 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750947AbaGaKyc (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 31 Jul 2014 06:54:32 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: return path with unlocked nodes in btrfs_next_leaf
-Date: Thu, 31 Jul 2014 12:53:39 +0100
-Message-Id: <1406807619-20859-1-git-send-email-fdmanana@suse.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57735 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750711AbaGaLmk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jul 2014 07:42:40 -0400
+Date: Thu, 31 Jul 2014 13:42:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Cyril Scetbon <cyril.scetbon@free.fr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Is Btrfs stable ?
+Message-ID: <20140731114238.GB1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CC47E18A-CB01-4B75-8067-0DE43AF341C6@free.fr>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CC47E18A-CB01-4B75-8067-0DE43AF341C6@free.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Calling unlock_up() to release our new path doesn't release the
-read lock on the node at level 1, because our return path has
-path->slots[0] == 0, which makes unlock_up() skip unlocking that
-node. Since we don't need to return that node locked, call
-btrfs_unlock_up_safe() instead of unlock_up(), which will release
-all nodes in the path (except the leaf of course).
-For any level N >= 2, the corresponding node lock isn't released by
-unlock_up() too if path->slots[N - 1] == 0.
+On Thu, Jul 31, 2014 at 12:32:27PM +0200, Cyril Scetbon wrote:
+> I'm sorry cause I suppose it's a recurrent question. However I've been
+> looking into the linux kernel code and didn't see anything concerning
+> an experimental status for Btrfs. However, when I format a device with
+> mkfs.btrfs I get a message saying it's experimental that comes from
+> http://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/tree/mkfs.c#n1442
 
-Releasing the read lock immediately will allow concurrent writers
-to write lock that node at level 1 (or higher levels if applicable)
-while the btrfs_next_leaf() caller processes the leaf.
+The mkfs.btrfs tool is probably the last instance where the experimental
+tag exists, but should be removed so it's consistent with kernel and the
+documentation. Thanks for the notice.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> But you say that it's no longer unstable at
+> https://btrfs.wiki.kernel.org/index.php/Main_Page#Stability_status,
+> right ?
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 783ea3b..8ca6761 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5833,7 +5833,7 @@ again:
- 	}
- 	ret = 0;
- done:
--	unlock_up(path, 0, 1, 0, NULL);
-+	btrfs_unlock_up_safe(path, 1);
- 	path->leave_spinning = old_spinning;
- 	if (!old_spinning)
- 		btrfs_set_path_blocking(path);
--- 
-1.9.1
-
+That's right.

@@ -1,55 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:53477 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754477AbaG3H0p (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:10115 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752518AbaGaBf7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 03:26:45 -0400
-Received: from kw-mxoi1.gw.nic.fujitsu.com (unknown [10.0.237.133])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 348693EE0BD
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:44 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 38125AC068A
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:43 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 98B8D1DB804F
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:40 +0900 (JST)
-Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
-	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id F0B9D3285DA
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Jul 2014 16:26:39 +0900 (JST)
-Message-ID: <53D89E28.7040100@jp.fujitsu.com>
-Date: Wed, 30 Jul 2014 16:26:32 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Wed, 30 Jul 2014 21:35:59 -0400
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <takeuchi_satoru@jp.fujitsu.com>, <dsterba@suse.cz>,
+        <1i5t5.duncan@cox.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs-progs: correct manpage option description for scrub
+Date: Thu, 31 Jul 2014 09:29:57 +0800
+Message-ID: <1406770197-4508-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <panf01ac9518b2ac3b72c@cox.net>
+References: <panf01ac9518b2ac3b72c@cox.net>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: remove unnecessary NULL check after get_df()
-Content-Type: text/plain; charset="ISO-2022-JP"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+The -f option of scrub means to
+    "force starting new scrub even if a scrub is already running"
+*not*
+    "force to check whether scrub has started or resumed in userspace"
+as described originally.
 
-If get_df() returns 0, "sargs" surely points to malloc'ed region.
-So NULL check of sargs is not necessary.
+So replace the orignal description in the manpage and code.
 
+Also, add description of the potential failure as follows
+    "If a scrub is already running, it fails."
+
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
+Cc: David Sterba <dsterba@suse.cz>
 ---
- cmds-filesystem.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+changelog
+	v1->v2: adopt more precise expression of the checking behavior
+		add description of potential failure
+	v2->v3: remove duplicate word in description
+---
+ Documentation/btrfs-scrub.txt | 6 +++---
+ cmds-scrub.c                  | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index bf87bbe..38011e5 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -201,7 +201,7 @@ static int cmd_filesystem_df(int argc, char **argv)
-        }
-        ret = get_df(fd, &sargs);
+diff --git a/Documentation/btrfs-scrub.txt b/Documentation/btrfs-scrub.txt
+index 7b27d63..b8d3b65 100644
+--- a/Documentation/btrfs-scrub.txt
++++ b/Documentation/btrfs-scrub.txt
+@@ -18,7 +18,7 @@ SUBCOMMAND
+ ----------
+ *start* [-BdqrRf] [-c <ioprio_class> -n <ioprio_classdata>] <path>|<device>::
+ Start a scrub on all devices of the filesystem identified by <path> or on
+-a single <device>.
++a single <device>. If a scrub is already running, the new one fails.
+ +
+ Without options, scrub is started as a background process.
+ Progress can be obtained with the *scrub status* command. Scrubbing
+@@ -47,8 +47,8 @@ manpage).
+ -n <ioprio_classdata>::::
+ Set IO priority classdata (see `ionice`(1) manpage).
+ -f::::
+-force to check whether scrub has started or resumed in userspace.
+-this is useful when scrub stat record file is damaged.
++Force starting new scrub even if a scrub is already running.
++This is useful when scrub stat record file is damaged.
  
--       if (!ret && sargs) {
-+       if (ret == 0) {
-                print_df(sargs);
-                free(sargs);
-        } else {
+ *cancel* <path>|<device>::
+ If a scrub is running on the filesystem identified by <path>, cancel it.
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 03eb9ba..8c3d61c 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -1529,7 +1529,7 @@ out:
+ 
+ static const char * const cmd_scrub_start_usage[] = {
+ 	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
+-	"Start a new scrub",
++	"Start a new scrub. If a scrub is already running, the new one fails.",
+ 	"",
+ 	"-B     do not background",
+ 	"-d     stats per device (-B only)",
+@@ -1538,7 +1538,7 @@ static const char * const cmd_scrub_start_usage[] = {
+ 	"-R     raw print mode, print full data instead of summary"
+ 	"-c     set ioprio class (see ionice(1) manpage)",
+ 	"-n     set ioprio classdata (see ionice(1) manpage)",
+-	"-f     force to skip checking whether scrub has started/resumed in userspace ",
++	"-f     force starting new scrub even if a scrub is already running.",
+ 	"       this is useful when scrub stats record file is damaged",
+ 	NULL
+ };
 -- 
-1.9.3
+1.8.1.4
 

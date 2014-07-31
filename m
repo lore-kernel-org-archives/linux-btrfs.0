@@ -1,93 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10115 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42243 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752518AbaGaBf7 (ORCPT
+	with ESMTP id S1756099AbaGaD3n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 21:35:59 -0400
+	Wed, 30 Jul 2014 23:29:43 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s6V3Te2o008703
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jul 2014 11:29:40 +0800
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <takeuchi_satoru@jp.fujitsu.com>, <dsterba@suse.cz>,
-        <1i5t5.duncan@cox.net>, Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Subject: [PATCH v3] btrfs-progs: correct manpage option description for scrub
-Date: Thu, 31 Jul 2014 09:29:57 +0800
-Message-ID: <1406770197-4508-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <panf01ac9518b2ac3b72c@cox.net>
-References: <panf01ac9518b2ac3b72c@cox.net>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs-progs: init variables which are checked later in btrfs-property
+Date: Thu, 31 Jul 2014 11:23:42 +0800
+Message-ID: <1406777024-7647-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The -f option of scrub means to
-    "force starting new scrub even if a scrub is already running"
-*not*
-    "force to check whether scrub has started or resumed in userspace"
-as described originally.
-
-So replace the orignal description in the manpage and code.
-
-Also, add description of the potential failure as follows
-    "If a scrub is already running, it fails."
+The local variable @object etc. in btrfs-property get/set functions
+are to be checked whether to be NULL or not, but the @parse_args()
+don't guarantee to assign a value to it, so it is better to init
+it to NULL.
 
 Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Cc: David Sterba <dsterba@suse.cz>
 ---
-changelog
-	v1->v2: adopt more precise expression of the checking behavior
-		add description of potential failure
-	v2->v3: remove duplicate word in description
----
- Documentation/btrfs-scrub.txt | 6 +++---
- cmds-scrub.c                  | 4 ++--
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ cmds-property.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/btrfs-scrub.txt b/Documentation/btrfs-scrub.txt
-index 7b27d63..b8d3b65 100644
---- a/Documentation/btrfs-scrub.txt
-+++ b/Documentation/btrfs-scrub.txt
-@@ -18,7 +18,7 @@ SUBCOMMAND
- ----------
- *start* [-BdqrRf] [-c <ioprio_class> -n <ioprio_classdata>] <path>|<device>::
- Start a scrub on all devices of the filesystem identified by <path> or on
--a single <device>.
-+a single <device>. If a scrub is already running, the new one fails.
- +
- Without options, scrub is started as a background process.
- Progress can be obtained with the *scrub status* command. Scrubbing
-@@ -47,8 +47,8 @@ manpage).
- -n <ioprio_classdata>::::
- Set IO priority classdata (see `ionice`(1) manpage).
- -f::::
--force to check whether scrub has started or resumed in userspace.
--this is useful when scrub stat record file is damaged.
-+Force starting new scrub even if a scrub is already running.
-+This is useful when scrub stat record file is damaged.
+diff --git a/cmds-property.c b/cmds-property.c
+index 9c4eb92..90c7603 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -389,7 +389,7 @@ static void parse_args(int argc, char **argv,
+ static int cmd_get(int argc, char **argv)
+ {
+ 	int ret;
+-	char *object;
++	char *object = NULL;
+ 	char *name = NULL;
+ 	int types = 0;
  
- *cancel* <path>|<device>::
- If a scrub is running on the filesystem identified by <path>, cancel it.
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 03eb9ba..8c3d61c 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1529,7 +1529,7 @@ out:
+@@ -413,9 +413,9 @@ static int cmd_get(int argc, char **argv)
+ static int cmd_set(int argc, char **argv)
+ {
+ 	int ret;
+-	char *object;
+-	char *name;
+-	char *value;
++	char *object = NULL;
++	char *name = NULL;
++	char *value = NULL;
+ 	int types = 0;
  
- static const char * const cmd_scrub_start_usage[] = {
- 	"btrfs scrub start [-BdqrRf] [-c ioprio_class -n ioprio_classdata] <path>|<device>",
--	"Start a new scrub",
-+	"Start a new scrub. If a scrub is already running, the new one fails.",
- 	"",
- 	"-B     do not background",
- 	"-d     stats per device (-B only)",
-@@ -1538,7 +1538,7 @@ static const char * const cmd_scrub_start_usage[] = {
- 	"-R     raw print mode, print full data instead of summary"
- 	"-c     set ioprio class (see ionice(1) manpage)",
- 	"-n     set ioprio classdata (see ionice(1) manpage)",
--	"-f     force to skip checking whether scrub has started/resumed in userspace ",
-+	"-f     force starting new scrub even if a scrub is already running.",
- 	"       this is useful when scrub stats record file is damaged",
- 	NULL
- };
+ 	if (check_argc_min(argc, 4) || check_argc_max(argc, 6))
 -- 
 1.8.1.4
 

@@ -1,44 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:43315 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754662AbaG3RzC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Jul 2014 13:55:02 -0400
-Date: Wed, 30 Jul 2014 19:55:01 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: wait until all subvolumes are cleaned
-Message-ID: <20140730175501.GZ1553@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1406148973-23162-1-git-send-email-dsterba@suse.cz>
- <20140730175519.55905112@natsu>
+Received: from cn.fujitsu.com ([59.151.112.132]:8104 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755314AbaGaBa6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Jul 2014 21:30:58 -0400
+Message-ID: <1406769907.3556.0.camel@localhost.localdomain>
+Subject: Re: [PATCH v2] btrfs-progs: correct manpage option description for
+ scrub
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: Duncan <1i5t5.duncan@cox.net>
+CC: <linux-btrfs@vger.kernel.org>
+Date: Thu, 31 Jul 2014 09:25:07 +0800
+In-Reply-To: <pan$8f01a$5c9518b2$fccdda79$5ac3b72c@cox.net>
+References: <53D88C08.6050704@jp.fujitsu.com>
+	 <1406705525-349-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+	 <pan$8f01a$5c9518b2$fccdda79$5ac3b72c@cox.net>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140730175519.55905112@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the feedback, appreciated.
-
-On Wed, Jul 30, 2014 at 05:55:19PM +0600, Roman Mamedov wrote:
-> > +static const char * const cmd_subvol_sync_usage[] = {
-> > +	"btrfs subvolume sync <path> [<subvol-id>...]",
-> > +	"Wait until given subvolume(s) are completely cleaned",
-> > +	"Wait until given subvolume(s) are completely cleaned after deletion.",
+On Wed, 2014-07-30 at 10:26 +0000, Duncan wrote:
+> Gui Hecheng posted on Wed, 30 Jul 2014 15:32:05 +0800 as excerpted:
 > 
-> I find "cleaned" to be confusing here. "OK, this subvolume is now clean"? At
-> the very least this gives an impression that the desired condition is that
-> subvolume *still exists*, but is empty.
->
-> How about "Wait until given subvolume(s) are completely removed from the
-> filesystem. Does not return until all ongoing deletion requests (if any) on
-> given subvolume(s) are complete".
-
-Sounds good, I'll use the text in the next version.
-
-> > +	"If no subvolume id is given, wait until there are no more snapshots",
+> > Also, add description of the potential failure as follows
+> >     "If a scrub is already running running, it fails."
 > 
-> Please don't intermix "subvolume" and "snapshot" like that. Better to use
-> "subvolume" in all cases to avoid confusion.
+> Just a typo (running running?) in the description...
+> 
+Hmmm, that's my fault. Thanks very much, I will correct it soon.
 
-Good point, will fix it and the typos.

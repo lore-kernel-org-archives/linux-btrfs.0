@@ -1,87 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44002 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750789AbaGaWK4 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 31 Jul 2014 18:10:56 -0400
-From: Filipe Manana <fdmanana@suse.com>
+Received: from mail-wg0-f52.google.com ([74.125.82.52]:40642 "EHLO
+	mail-wg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750907AbaGaXy5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jul 2014 19:54:57 -0400
+Received: by mail-wg0-f52.google.com with SMTP id a1so3447913wgh.23
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jul 2014 16:54:56 -0700 (PDT)
+MIME-Version: 1.0
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Fri, 1 Aug 2014 02:54:35 +0300
+Message-ID: <CAGqmi747VW41DOPR-uev5cDaYtJ=FzzMCVfNNqtF7OUwB1jLjg@mail.gmail.com>
+Subject: Btrfs offline deduplication
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: ensure tmpfile inode is always persisted with link count of 0
-Date: Fri,  1 Aug 2014 00:10:32 +0100
-Message-Id: <1406848232-16269-1-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we open a file with O_TMPFILE, don't do any further operation on
-it (so that the inode item isn't updated) and then force a transaction
-commit, we get a persisted inode item with a link count of 1, and not 0
-as it should be.
+Good time of day.
+I have several questions about data deduplication on btrfs.
+Sorry if i ask stupid questions or waste you time %)
 
-Steps to reproduce it (requires a modern xfs_io with -T support):
+What about implementation of offline data deduplication? I don't see
+any activity on this place, may be i need to ask a particular person?
+Where the problem? May be a can i try to help (testing as example)?
 
-    $ mkfs.btrfs -f /dev/sdd
-    $ mount -o /dev/sdd /mnt
-    $ xfs_io -T /mnt &
-    $ sync
+I could be wrong, but as i understand btrfs store crc32 checksum one
+per file, if this is true, may be make a sense to create small worker
+for dedup files? Like worker for autodefrag?
+With simple logic like:
+if sum1 == sum2 && file_size1 == file_size2; then
+if (bit_to_bit_identical(file1,2)); then merge(file1, file2);
+This can be first attempt to implement per file offline dedup
+What you think about it? could i be wrong? or this is a horrible crutch?
+(as i understand it not change format of fs)
 
-Then btrfs-debug-tree shows the inode item with a link count of 1:
+(bedup and other tools, its cool, but have several problem with these
+tools and i think, what kernel implementation can work better).
 
-    $ btrfs-debug-tree /dev/sdd
-    (...)
-    fs tree key (FS_TREE ROOT_ITEM 0)
-    leaf 29556736 items 4 free space 15851 generation 6 owner 5
-    fs uuid f164d01b-1b92-481d-a4e4-435fb0f843d0
-    chunk uuid 0e3d0e56-bcca-4a1c-aa5f-cec2c6f4f7a6
-    	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-		inode generation 3 transid 6 size 0 block group 0 mode 40755 links 1
-    	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-    		inode ref index 0 namelen 2 name: ..
-    	item 2 key (257 INODE_ITEM 0) itemoff 15951 itemsize 160
-    		inode generation 6 transid 6 size 0 block group 0 mode 100600 links 1
-    	item 3 key (ORPHAN ORPHAN_ITEM 257) itemoff 15951 itemsize 0
-		orphan item
-    checksum tree key (CSUM_TREE ROOT_ITEM 0)
-    (...)
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4f35c6c..8ad3ea9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5688,6 +5688,13 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	}
- 
- 	/*
-+	 * O_TMPFILE, set link count to 0, so that after this point,
-+	 * we fill in an inode item with the correct link count.
-+	 */
-+	if (!name)
-+		set_nlink(inode, 0);
-+
-+	/*
- 	 * we have to initialize this early, so we can reclaim the inode
- 	 * number if we fail afterwards in this function.
- 	 */
-@@ -9133,6 +9140,14 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
- 	if (ret)
- 		goto out;
- 
-+	/*
-+	 * We set number of links to 0 in btrfs_new_inode(), and here we set
-+	 * it to 1 because d_tmpfile() will issue a warning if the count is 0,
-+	 * through:
-+	 *
-+	 *    d_tmpfile() -> inode_dec_link_count() -> drop_nlink()
-+	 */
-+	set_nlink(inode, 1);
- 	d_tmpfile(dentry, inode);
- 	mark_inode_dirty(inode);
- 
 -- 
-1.9.1
-
+Best regards,
+Timofey.

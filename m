@@ -1,55 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60121 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752614AbaHGWKJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Aug 2014 18:10:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XFVsp-0003bX-Kl
-	for linux-btrfs@vger.kernel.org; Fri, 08 Aug 2014 00:10:03 +0200
-Received: from 51B64F7D.dsl.pool.telekom.hu ([81.182.79.125])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Aug 2014 00:10:03 +0200
-Received: from megabrutal by 51B64F7D.dsl.pool.telekom.hu with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Aug 2014 00:10:03 +0200
+Received: from victor.provo.novell.com ([137.65.250.26]:44002 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750789AbaGaWK4 (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 31 Jul 2014 18:10:56 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: MegaBrutal <megabrutal@gmail.com>
-Subject: Re: Quota reached: can't delete
-Date: Thu, 7 Aug 2014 22:04:54 +0000 (UTC)
-Message-ID: <loom.20140808T000436-719@post.gmane.org>
-References: <CAEgy6-3jQ3nkFqY-eJj86vDSsfZQ2naiA-VoMw-U-TPaBd3Pew@mail.gmail.com> <51014FCF.7080202@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: ensure tmpfile inode is always persisted with link count of 0
+Date: Fri,  1 Aug 2014 00:10:32 +0100
+Message-Id: <1406848232-16269-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne Jansen <sensille <at> gmx.net> writes:
+If we open a file with O_TMPFILE, don't do any further operation on
+it (so that the inode item isn't updated) and then force a transaction
+commit, we get a persisted inode item with a link count of 1, and not 0
+as it should be.
 
-> 
-> On 24.01.2013 16:12, Jerome M wrote:
-> > Hi,
-> > 
-> > With the current btrfs quota implementation, when you reach a
-> > subvolume quota limit, you can't delete anything without first
-> > removing the limit or enlarge it:
-> > 
-> > rm: cannot remove `testfile.bin': Disk quota exceeded
-> > 
-> > 
-> > Is there any plan to change that?
-> 
-> Yes, there is. The problem is that even deletion needs space.
-> So we need to allow remove to go over quota. The current implementation
-> doesn't make this distinction.
-> 
+Steps to reproduce it (requires a modern xfs_io with -T support):
 
-I've found a workaround to avoid changing quota: null the file and then
-you'll be able to delete it.
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount -o /dev/sdd /mnt
+    $ xfs_io -T /mnt &
+    $ sync
 
-echo > testfile.bin
-rm testfile.bin
+Then btrfs-debug-tree shows the inode item with a link count of 1:
 
-P.S.: Sorry for necromancing this thread, but I couldn't resist to tell. :P
+    $ btrfs-debug-tree /dev/sdd
+    (...)
+    fs tree key (FS_TREE ROOT_ITEM 0)
+    leaf 29556736 items 4 free space 15851 generation 6 owner 5
+    fs uuid f164d01b-1b92-481d-a4e4-435fb0f843d0
+    chunk uuid 0e3d0e56-bcca-4a1c-aa5f-cec2c6f4f7a6
+    	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+		inode generation 3 transid 6 size 0 block group 0 mode 40755 links 1
+    	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+    		inode ref index 0 namelen 2 name: ..
+    	item 2 key (257 INODE_ITEM 0) itemoff 15951 itemsize 160
+    		inode generation 6 transid 6 size 0 block group 0 mode 100600 links 1
+    	item 3 key (ORPHAN ORPHAN_ITEM 257) itemoff 15951 itemsize 0
+		orphan item
+    checksum tree key (CSUM_TREE ROOT_ITEM 0)
+    (...)
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4f35c6c..8ad3ea9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5688,6 +5688,13 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	/*
++	 * O_TMPFILE, set link count to 0, so that after this point,
++	 * we fill in an inode item with the correct link count.
++	 */
++	if (!name)
++		set_nlink(inode, 0);
++
++	/*
+ 	 * we have to initialize this early, so we can reclaim the inode
+ 	 * number if we fail afterwards in this function.
+ 	 */
+@@ -9133,6 +9140,14 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 	if (ret)
+ 		goto out;
+ 
++	/*
++	 * We set number of links to 0 in btrfs_new_inode(), and here we set
++	 * it to 1 because d_tmpfile() will issue a warning if the count is 0,
++	 * through:
++	 *
++	 *    d_tmpfile() -> inode_dec_link_count() -> drop_nlink()
++	 */
++	set_nlink(inode, 1);
+ 	d_tmpfile(dentry, inode);
+ 	mark_inode_dirty(inode);
+ 
+-- 
+1.9.1
 

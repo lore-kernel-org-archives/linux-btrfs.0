@@ -1,30 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 8.mo4.mail-out.ovh.net ([188.165.33.112]:41777 "EHLO
-	mo4.mail-out.ovh.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753897AbaGaKtB convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 06:49:01 -0400
-Received: from mail421.ha.ovh.net (b9.ovh.net [213.186.33.59])
-	by mo4.mail-out.ovh.net (Postfix) with SMTP id E30F5FFA3AC
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Jul 2014 12:32:30 +0200 (CEST)
-From: Cyril Scetbon <cyril.scetbon@free.fr>
-Content-Type: text/plain; charset=us-ascii
-Subject: Is Btrfs stable ?
-Message-Id: <CC47E18A-CB01-4B75-8067-0DE43AF341C6@free.fr>
-Date: Thu, 31 Jul 2014 12:32:27 +0200
+Received: from victor.provo.novell.com ([137.65.250.26]:58026 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750947AbaGaKyc (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Thu, 31 Jul 2014 06:54:32 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: return path with unlocked nodes in btrfs_next_leaf
+Date: Thu, 31 Jul 2014 12:53:39 +0100
+Message-Id: <1406807619-20859-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Calling unlock_up() to release our new path doesn't release the
+read lock on the node at level 1, because our return path has
+path->slots[0] == 0, which makes unlock_up() skip unlocking that
+node. Since we don't need to return that node locked, call
+btrfs_unlock_up_safe() instead of unlock_up(), which will release
+all nodes in the path (except the leaf of course).
+For any level N >= 2, the corresponding node lock isn't released by
+unlock_up() too if path->slots[N - 1] == 0.
 
-I'm sorry cause I suppose it's a recurrent question. However I've been looking into the linux kernel code and didn't see anything concerning an experimental status for Btrfs. However, when I format a device with mkfs.btrfs I get a message saying it's experimental that comes from http://git.kernel.org/cgit/linux/kernel/git/mason/btrfs-progs.git/tree/mkfs.c#n1442
-But you say that it's no longer unstable at https://btrfs.wiki.kernel.org/index.php/Main_Page#Stability_status, right ?
+Releasing the read lock immediately will allow concurrent writers
+to write lock that node at level 1 (or higher levels if applicable)
+while the btrfs_next_leaf() caller processes the leaf.
 
-If someone can explain me that.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 783ea3b..8ca6761 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -5833,7 +5833,7 @@ again:
+ 	}
+ 	ret = 0;
+ done:
+-	unlock_up(path, 0, 1, 0, NULL);
++	btrfs_unlock_up_safe(path, 1);
+ 	path->leave_spinning = old_spinning;
+ 	if (!old_spinning)
+ 		btrfs_set_path_blocking(path);
 -- 
-Cyril SCETBON
+1.9.1
 

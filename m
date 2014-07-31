@@ -1,148 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58400 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751173AbaGaMme (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 31 Jul 2014 08:42:34 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-        Alex Lyakas <alex.btrfs@zadarastorage.com>
-Subject: [PATCH v2] Btrfs: race free update of commit root for ro snapshots
-Date: Thu, 31 Jul 2014 14:41:07 +0100
-Message-Id: <1406814067-413-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1406572238-28804-1-git-send-email-fdmanana@suse.com>
-References: <1406572238-28804-1-git-send-email-fdmanana@suse.com>
+Received: from mail-vc0-f178.google.com ([209.85.220.178]:42183 "EHLO
+	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750774AbaGaQsV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Jul 2014 12:48:21 -0400
+MIME-Version: 1.0
+In-Reply-To: <20140731101116.GN31950@carfax.org.uk>
+References: <1406752954-26158-1-git-send-email-xerofoify@gmail.com>
+	<CAPM=9ty2PhMdLykVX4c074Tdkyh0OO_jtfw-CAFHk8ANcZA4kQ@mail.gmail.com>
+	<CAPDOMVgXChx5HST-jMEZmWDydWKe0Yv15pyTiPeOuQSVEjihFA@mail.gmail.com>
+	<20140731101116.GN31950@carfax.org.uk>
+Date: Thu, 31 Jul 2014 12:48:20 -0400
+Message-ID: <CAPDOMVjOTCwkesj3KQE54Lxg8tPptTn-X-ZCsU-X4h1RCjYf+Q@mail.gmail.com>
+Subject: Re: [PATCH] Remove certain calls for releasing page cache
+From: Nick Krause <xerofoify@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Nick Krause <xerofoify@gmail.com>,
+        Dave Airlie <airlied@gmail.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>,
+        "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
+	<linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a better solution for the problem addressed in the following
-commit:
+On Thu, Jul 31, 2014 at 6:11 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Wed, Jul 30, 2014 at 10:05:16PM -0400, Nick Krause wrote:
+>> On Wed, Jul 30, 2014 at 7:30 PM, Dave Airlie <airlied@gmail.com> wrote:
+>> >> This patch removes the lines for releasing the page cache in certain
+>> >> files as this may aid in perfomance with writes in the compression
+>> >> rountines of btrfs. Please note that this patch has not been tested
+>> >> on my own hardware due to no compression based btrfs volumes of my
+>> >> own.
+>> >>
+>> >
+>> > For all that is sacred, STOP.
+> [snip]
+>> > But if you want to work on the kernel, this isn't the way to do it, and
+>> > nobody will ever take a patch from you seriously if you continue in this
+>> > fashion.
+>> >
+>> > Dave.
+>> Dave ,
+>> Seems I need to have tested this code first.
+>
+>    You've said this before, having made exactly the same error (not
+> testing a patch). Yet you do it again. You seem to be ignoring all the
+> advice you've been given -- or at least not learning from it, and not
+> learning from your experiences. Could you please, for half an hour or
+> so, stop thinking about the immediate goal of getting a patch into the
+> kernel, and take a short while to think about your process of
+> learning. Look at all the advice you've had (from me, from Ted, from
+> others), actually understand it, and consider all the things you need
+> to do which *aren't* hacking up a lump of C. Actually learn these
+> things -- have them in your mind all the time.
+>
+>    I would appreciate it if you could actually engage with someone
+> (doesn't have to be me) about this -- why are you ignoring the advice?
+> Is it because you don't understand it? Is it because you think you can
+> cut corners? Is it because you're concetrating on the code so much that
+> you're forgetting it?
+>
+>    The main thing you're doing which is making people angry is not
+> because you're submitting bad patches (although you are). It's because
+> you're not listening to advice, and you're not apparently learning
+> anything from the feedback you're given. Your behaviour is not
+> changing over time, which makes you look like a waste of time to all
+> those people trying to help you.
+>
+>    Hugo.
+>
+> --
+> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+>   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+>          --- That's not rain, that's a lake with slots in it ---
 
-    Btrfs: update commit root on snapshot creation after orphan cleanup
-    (3821f348889e506efbd268cc8149e0ebfa47c4e5)
-
-The previous solution wasn't the best because of 2 reasons:
-
-    1) It added another full transaction commit, which is more expensive
-       than just swapping the commit root with the root;
-
-    2) If a reboot happened after the first transaction commit (the one
-       that creates the snapshot) and before the second transaction commit,
-       then we would end up with the same problem if a send using that
-       snapshot was requested before the first transaction commit after
-       the reboot.
-
-This change addresses those 2 issues. The second issue is addressed by
-switching the commit root in the dentry lookup VFS callback, which is
-also called by the snapshot/subvol creation ioctl and performs orphan
-cleanup if needed. Like the vfs, the ioctl locks the parent inode too,
-preventing race issues between a dentry lookup and snapshot creation.
-
-Cc: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Updated commit message, as original second issue  was not correct.
-    Removed redundant btrfs_orphan_cleanup() call in the snapshot creation
-    ioctl, as it's performed by btrfs_lookup_dentry() which is called by
-    the ioctl.
-
- fs/btrfs/inode.c | 36 ++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.c | 33 ---------------------------------
- 2 files changed, 36 insertions(+), 33 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1d5f0b3..4f35c6c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5227,6 +5227,42 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 			iput(inode);
- 			inode = ERR_PTR(ret);
- 		}
-+		/*
-+		 * If orphan cleanup did remove any orphans, it means the tree
-+		 * was modified and therefore the commit root is not the same as
-+		 * the current root anymore. This is a problem, because send
-+		 * uses the commit root and therefore can see inode items that
-+		 * don't exist in the current root anymore, and for example make
-+		 * calls to btrfs_iget, which will do tree lookups based on the
-+		 * current root and not on the commit root. Those lookups will
-+		 * fail, returning a -ESTALE error, and making send fail with
-+		 * that error. So make sure a send does not see any orphans we
-+		 * have just removed, and that it will see the same inodes
-+		 * regardless of whether a transaction commit happened before
-+		 * it started (meaning that the commit root will be the same as
-+		 * the current root) or not.
-+		 */
-+		if (sub_root->node != sub_root->commit_root) {
-+			u64 sub_flags = btrfs_root_flags(&sub_root->root_item);
-+
-+			if (sub_flags & BTRFS_ROOT_SUBVOL_RDONLY) {
-+				struct extent_buffer *eb;
-+
-+				/*
-+				 * Assert we can't have races between dentry
-+				 * lookup called through the snapshot creation
-+				 * ioctl and the VFS.
-+				 */
-+				ASSERT(mutex_is_locked(&dir->i_mutex));
-+
-+				down_write(&root->fs_info->commit_root_sem);
-+				eb = sub_root->commit_root;
-+				sub_root->commit_root =
-+					btrfs_root_node(sub_root);
-+				up_write(&root->fs_info->commit_root_sem);
-+				free_extent_buffer(eb);
-+			}
-+		}
- 	}
- 
- 	return inode;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2a30ac1..ef2e073 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -711,39 +711,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (ret)
- 		goto fail;
- 
--	ret = btrfs_orphan_cleanup(pending_snapshot->snap);
--	if (ret)
--		goto fail;
--
--	/*
--	 * If orphan cleanup did remove any orphans, it means the tree was
--	 * modified and therefore the commit root is not the same as the
--	 * current root anymore. This is a problem, because send uses the
--	 * commit root and therefore can see inode items that don't exist
--	 * in the current root anymore, and for example make calls to
--	 * btrfs_iget, which will do tree lookups based on the current root
--	 * and not on the commit root. Those lookups will fail, returning a
--	 * -ESTALE error, and making send fail with that error. So make sure
--	 * a send does not see any orphans we have just removed, and that it
--	 * will see the same inodes regardless of whether a transaction
--	 * commit happened before it started (meaning that the commit root
--	 * will be the same as the current root) or not.
--	 */
--	if (readonly && pending_snapshot->snap->node !=
--	    pending_snapshot->snap->commit_root) {
--		trans = btrfs_join_transaction(pending_snapshot->snap);
--		if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
--			ret = PTR_ERR(trans);
--			goto fail;
--		}
--		if (!IS_ERR(trans)) {
--			ret = btrfs_commit_transaction(trans,
--						       pending_snapshot->snap);
--			if (ret)
--				goto fail;
--		}
--	}
--
- 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
- 	if (IS_ERR(inode)) {
- 		ret = PTR_ERR(inode);
--- 
-1.9.1
-
+Hugo,
+That makes sense seems I need to listen better and test my code first, which is
+bad in any environment.
+Regards Nick

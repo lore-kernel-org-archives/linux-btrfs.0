@@ -1,61 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f172.google.com ([209.85.220.172]:38525 "EHLO
-	mail-vc0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751887AbaHADZy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 23:25:54 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:39014 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750851AbaHAJCE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Aug 2014 05:02:04 -0400
+Message-ID: <53DB585F.8040400@oracle.com>
+Date: Fri, 01 Aug 2014 17:05:35 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Date: Thu, 31 Jul 2014 23:25:53 -0400
-Message-ID: <CAPDOMVhHq9kmRh11tX7BF_V4XjDncpzUROoJJntif-vwKZbbNw@mail.gmail.com>
-Subject: Help with btrfs_zero_range function
-From: Nick Krause <xerofoify@gmail.com>
-To: "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
-	<linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Chris Mason <clm@fb.com>, Miao Xie <miaox@cn.fujitsu.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: integration tree updated
+References: <53D1B595.7070908@fb.com>
+In-Reply-To: <53D1B595.7070908@fb.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey Guys,
-I need to ask a question again, I am writing the above function and
-basing it off the one of punch hole.
-I have only started writing the function and have a few questions
-about how to write this. Below this message
-are my questions so fair and I also posting my written code in case
-you guys want to give any feed back.
-Regards and Thanks Again,
-Nick
-Questions
-1. bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
-   How I change this to check for a zero range or do I just remove
-this variable;
-2. ret = find_first_non_hole(inode, &offset, &len);
-    How do I modify the called function for ret to be for a zero range?
-The other parts of this function  are pretty similar to the one for
-punch holes and seems pretty easy
-to move other the other parts.
-Code
 
-static long btrfs_zero_range(struct inode *inode, loff_t loffset,
-loff_t len,){
-    struct btrfs_root *root = BTRF_I(inode)->root;
-    struct btrfs_path *path;
-    struct btrfs_block_rsv *rsv;
-    struct btrfs_trans_handle *trans;
-     u64 lockstart;
-     u64 lockend;
-     u64 tail_start;
-     u64 tail_len;
-     u64 orig_start = offset;
-    u64 cur_offset;
-    u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-    u64 drop_end;
-    int ret = 0;
-     int err = 0;
-     int rsv_count;
-     bool same_page;
-     bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
-     u64 ino_size;
-    ret=btrfs_wait_ordered_range(inode, offset, len);
-    if(ret)
-        return ret;
+
+Hi Chris,
+
+  Looks like you missed Miao update (on 17 Jul) to back out the bad
+  patch (below), and your integration branch (published on 25 Jul)
+  still contains the same.
+
+[PATCH 2/2] Btrfs: fix wrong total device counter after removing a seed 
+device
+
+  You should remove it.
+
+  Simple test cases on your integration branch (like btrfs dev del OR
+  btrfs/003) is failing due to this and I (+ others would) spend some
+  time digging it out
+
+
+Miao,
+
+  If it helps -
+     cur_devices in the loop is null.
+
+BUG: unable to handle kernel NULL pointer dereference at 0000000000000050
+IP: [<ffffffffa00a8fc0>] btrfs_rm_device+0x4c0/0x860 [btrfs]
+
+         cur_devices = root->fs_info->fs_devices;
+         do {
+                 cur_devices->total_devices--;
+                 cur_devices = cur_devices->seed;
+         } while (device->fs_devices != cur_devices);
+
+
+  PS: I didn't find the follow-up patch in the mailing list,
+     did I missing anything ?
+
+Thanks, Anand
+
+
+On 07/25/2014 09:40 AM, Chris Mason wrote:
+> Hi everyone,
+>
+> I've pushed out my current integration branch.  It does have a few of
+> Miao Xie's patches missing because there were some rejects.  I think
+> this was just because some things got pulled in out of order, and I'll
+> get it fixed up.
+>
+> Also missing is Mark's quota snapshot deletion fixes.  They were
+> crashing during btrfs/011 with CONFIG_DEBUG_PAGE_ALLOC on.  We'll get
+> that nailed down.
+>
+> integration is subject to rebasing, so please treat it more like a patch
+> queue.  It is very lightly tested, the goal is just to show which
+> patches are already applied and which ones are still pending.
+>
+> Thanks!
+>
+> -chris
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

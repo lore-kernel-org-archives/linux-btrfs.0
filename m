@@ -1,149 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sub3.mail.dreamhost.com ([69.163.253.7]:44686 "EHLO
-	homiemail-a11.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755263AbaHAMpY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Aug 2014 08:45:24 -0400
-Message-ID: <53DB8BDF.9020509@terrorise.me.uk>
-Date: Fri, 01 Aug 2014 13:45:19 +0100
-From: Frankie Fisher <frankie@terrorise.me.uk>
+Received: from cantor2.suse.de ([195.135.220.15]:54749 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755150AbaHANXL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Aug 2014 09:23:11 -0400
+Date: Fri, 1 Aug 2014 15:23:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs offline deduplication
+Message-ID: <20140801132308.GF1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAGqmi747VW41DOPR-uev5cDaYtJ=FzzMCVfNNqtF7OUwB1jLjg@mail.gmail.com>
+ <53DB6948.3000009@gmail.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: open_ctree failed on 3.16.0
-References: <53DB64CF.7060601@terrorise.me.uk> <pan$aa380$cfda0300$d7b3a968$e36385c0@cox.net>
-In-Reply-To: <pan$aa380$cfda0300$d7b3a968$e36385c0@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090305070902070108030603"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53DB6948.3000009@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Fri, Aug 01, 2014 at 06:17:44AM -0400, Austin S Hemmelgarn wrote:
+> I do think however that having the option of a background thread doing
+> deduplication asynchronously is a good idea, but then you would have to
+> have some way to trigger it on individual files/trees, and triggering on
+> writes like the autodefrag thread does doesn't make much sense.  Having
+> some userspace program to tell it to run on a given set of files would
+> probably be the best approach for a trigger.  I don't remember if this
+> kind of thing was also included in the online deduplication patches that
+> got posted a while back or not.
 
---------------ms090305070902070108030603
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+IIRC the proposed implementation only merged new writes with existing
+data.
 
-On 01/08/14 12:29, Duncan wrote:
-> Frankie Fisher posted on Fri, 01 Aug 2014 10:58:39 +0100 as excerpted:
->
->> A circuit breaker failed a few times and now I can't mount my btrfs
->> volume - it fails with open_ctree failed:
->
->>
->> What are the next steps I should try? Should I try btrfs-zero-log? Or
->> should I try btrfsck? Or something else?
->
-> The standard advice concerning btrfs check (aka btrfsck) is that runnin=
-g
-> it without --repair or similar won't hurt as in that case it's read-onl=
-y,
-> but by the same token, it won't help, except possibly to give you an id=
-ea
-> of what's wrong.
-
-fwiw, this is the output of btrfsck:
-http://cwillu.com:8080/86.136.116.221/2
-
- > <snip helpful advice>
-
-Thanks for the helpful info, I will work through it. It would be nice to =
-
-be able to recover the filesystem, but if I can't recover the filesystem =
-
-it wouldn't be the end of the world as I have a backup from a few days=20
-before the incident. Even if I can't recover the filesystem, if=20
-reporting this issue helps btrfs be more robust in the future that would =
-
-be a good outcome. To that end I have made a copy of the filesystem with =
-
-btrfs-image which I can supply if necessary.
-
-Regards,
-Frankie Fisher
-
-
---------------ms090305070902070108030603
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIMijCC
-BjQwggQcoAMCAQICAR4wDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
-DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNp
-Z25pbmcxKTAnBgNVBAMTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTA3
-MTAyNDIxMDE1NVoXDTE3MTAyNDIxMDE1NVowgYwxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1T
-dGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWdu
-aW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAxIFByaW1hcnkgSW50ZXJtZWRpYXRlIENs
-aWVudCBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMcJg8zOLdgasSmkLhOr
-lr6KMoOMpohBllVHrdRvEg/q6r8jR+EK75xCGhR8ToREoqe7zM9/UnC6TS2y9UKTpT1v7RSM
-zR0t6ndl0TWBuUr/UXBhPk+Kmy7bI4yW4urC+y7P3/1/X7U8ocb8VpH/Clt+4iq7nirMcNh6
-qJR+xjOhV+VHzQMALuGYn5KZmc1NbJQYclsGkDxDz2UbFqE2+6vIZoL+jb9x4Pa5gNf1TwSD
-kOkikZB1xtB4ZqtXThaABSONdfmv/Z1pua3FYxnCFmdr/+N2JLKutIxMYqQOJebr/f/h5t95
-m4JgrM3Y/w7YX9d7YAL9jvN4SydHsU6n65cCAwEAAaOCAa0wggGpMA8GA1UdEwEB/wQFMAMB
-Af8wDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBRTcu2SnODaywFcfH6WNU7y1LhRgjAfBgNV
-HSMEGDAWgBROC+8apEBbpRdphzDKNGhD0EGu8jBmBggrBgEFBQcBAQRaMFgwJwYIKwYBBQUH
-MAGGG2h0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9jYTAtBggrBgEFBQcwAoYhaHR0cDovL3d3
-dy5zdGFydHNzbC5jb20vc2ZzY2EuY3J0MFsGA1UdHwRUMFIwJ6AloCOGIWh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tL3Nmc2NhLmNybDAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20v
-c2ZzY2EuY3JsMIGABgNVHSAEeTB3MHUGCysGAQQBgbU3AQIBMGYwLgYIKwYBBQUHAgEWImh0
-dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUHAgEWKGh0dHA6Ly93
-d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwDQYJKoZIhvcNAQEFBQADggIBAAqD
-CH14qywGXLhjjF6uHLkjd02hcdh9hrw+VUsv+q1eeQWB21jWj3kJ96AUlPCoEGZ/ynJNScWy
-6QMVQjbbMXltUfO4n4bGGdKo3awPWp61tjAFgraLJgDk+DsSvUD6EowjMTNx25GQgyYJ5RPI
-zKKR9tQW8gGK+2+RHxkUCTbYFnL6kl8Ch507rUdPPipJ9CgJFws3kDS3gOS5WFMxcjO5DwKf
-KSETEPrHh7p5shuuNktvsv6hxHTLhiMKX893gxdT3XLS9OKmCv87vkINQcNEcIIoFWbP9HOR
-z9v3vQwR4e3ksLc2JZOAFK+ssS5XMEoznzpihEP0PLc4dCBYjbvSD7kxgDwZ+Aj8Q9PkbvE9
-sIPP7ON0fz095HdThKjiVJe6vofq+n6b1NBc8XdrQvBmunwxD5nvtTW4vtN6VY7mUCmxsCie
-uoBJ9OlqmsVWQvifIYf40dJPZkk9YgGTzWLpXDSfLSplbY2LL9C9U0ptvjcDjefLTvqSFc7t
-w1sEhF0n/qpA2r0GpvkLRDmcSwVyPvmjFBGqUp/pNy8ZuPGQmHwFi2/14+xeSUDG2bwnsYJQ
-G2EdJCB6luQ57GEnTA/yKZSTKI8dDQa8Sd3zfXb19mOgSF0bBdXbuKhEpuP9wirslFe6fQ1t
-5j5R0xi72MZ8ikMu1RQZKCyDbMwazlHiMIIGTjCCBTagAwIBAgIDCls5MA0GCSqGSIb3DQEB
-BQUAMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMi
-U2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20g
-Q2xhc3MgMSBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTQwNjI2MTIyMDE4
-WhcNMTUwNjI3MDcxNTEyWjBlMRkwFwYDVQQNExAzU3VzdEVEbVdWb2pDQ3IzMSAwHgYDVQQD
-DBdmcmFua2llQHRlcnJvcmlzZS5tZS51azEmMCQGCSqGSIb3DQEJARYXZnJhbmtpZUB0ZXJy
-b3Jpc2UubWUudWswggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCwfY6rRpAyxFVA
-17oVBISNhqyms1PoGt2ADCM1svmgwi9i76QY1OCmLfHiOGRzkXURvZkm2OlxMmIK0lVnmI7B
-o6/xJavi/Fiyl4IbBVCrRMqaP3gdyatwd1Y7323SKb43DlxPDsU/AfiPvDsmu0V/0JCOMBAE
-hfECe9n3aONNPHnGDMresseNONMb/R21EldU791dhuVaIYUmwXA50BiDLI0u4ZOtTWVGDG9R
-0MyjfBaXCmMh/YBL+FWBAvjy5+vUxusWbOrG3hS6aSEwvjJz2yAin5MjI5hb4wsC8jmWgr6w
-xokAdRZwjDZZNGo0XS/lGqi8hdYiBdL+jRpVp34pAgMBAAGjggLdMIIC2TAJBgNVHRMEAjAA
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwHQYDVR0OBBYE
-FKGQiXHn4U8U/LSclk+GwpwhYT18MB8GA1UdIwQYMBaAFFNy7ZKc4NrLAVx8fpY1TvLUuFGC
-MCIGA1UdEQQbMBmBF2ZyYW5raWVAdGVycm9yaXNlLm1lLnVrMIIBTAYDVR0gBIIBQzCCAT8w
-ggE7BgsrBgEEAYG1NwECAzCCASowLgYIKwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wu
-Y29tL3BvbGljeS5wZGYwgfcGCCsGAQUFBwICMIHqMCcWIFN0YXJ0Q29tIENlcnRpZmljYXRp
-b24gQXV0aG9yaXR5MAMCAQEagb5UaGlzIGNlcnRpZmljYXRlIHdhcyBpc3N1ZWQgYWNjb3Jk
-aW5nIHRvIHRoZSBDbGFzcyAxIFZhbGlkYXRpb24gcmVxdWlyZW1lbnRzIG9mIHRoZSBTdGFy
-dENvbSBDQSBwb2xpY3ksIHJlbGlhbmNlIG9ubHkgZm9yIHRoZSBpbnRlbmRlZCBwdXJwb3Nl
-IGluIGNvbXBsaWFuY2Ugb2YgdGhlIHJlbHlpbmcgcGFydHkgb2JsaWdhdGlvbnMuMDYGA1Ud
-HwQvMC0wK6ApoCeGJWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL2NydHUxLWNybC5jcmwwgY4G
-CCsGAQUFBwEBBIGBMH8wOQYIKwYBBQUHMAGGLWh0dHA6Ly9vY3NwLnN0YXJ0c3NsLmNvbS9z
-dWIvY2xhc3MxL2NsaWVudC9jYTBCBggrBgEFBQcwAoY2aHR0cDovL2FpYS5zdGFydHNzbC5j
-b20vY2VydHMvc3ViLmNsYXNzMS5jbGllbnQuY2EuY3J0MCMGA1UdEgQcMBqGGGh0dHA6Ly93
-d3cuc3RhcnRzc2wuY29tLzANBgkqhkiG9w0BAQUFAAOCAQEAeOm6OtvIkNrl7HQ+2WfWuXol
-k0v/3cTqKaMWez4HhrniFYvGhVeum9hWtUJsfyNW37nnkJVKFvPFuR76fEWiouKIt8X2ddya
-22aCHqawnF9BV3WZ7tnb6YQ+r8t4kNrEVa6Vdg0P/qw3ZJeDuSAW8O4w/aXKOBLbjJsbEo/r
-8F3LITi3AXOyYQC8x6PacwZ6d4NvjMGvyyZUYFWyDDoie8DDkBjcOGZaW4CDIQvzwgODC6vZ
-Ns2ixrpLQ5q/1Nl+qdAK2CLYO8JLGgm1VcD2kBphxz4cc6fJPwfC9tTZfk9B+u8+S/BPYSxt
-H5yLsLzgxx8bcysh3ZfHCGYTvP+cUDGCA90wggPZAgEBMIGUMIGMMQswCQYDVQQGEwJJTDEW
-MBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlm
-aWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVy
-bWVkaWF0ZSBDbGllbnQgQ0ECAwpbOTAJBgUrDgMCGgUAoIICHTAYBgkqhkiG9w0BCQMxCwYJ
-KoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xNDA4MDExMjQ1MTlaMCMGCSqGSIb3DQEJBDEW
-BBQdh+HTx3oKbdGQQqLHQAN5ZLBoKjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGlBgkrBgEEAYI3EAQxgZcwgZQwgYwxCzAJBgNV
-BAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRh
-bCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAxIFByaW1h
-cnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQIDCls5MIGnBgsqhkiG9w0BCRACCzGBl6CBlDCB
-jDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3Vy
-ZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNz
-IDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBAgMKWzkwDQYJKoZIhvcNAQEBBQAE
-ggEAUudeDnaaXt5nbF5uYQUYw9ajvH+F7ydWu+ypQ/RQADxiSyiEP+qVbVbQBZ1FrspBRk/4
-lwhxksy9ee9WcxCDUxGAZN9BXeHCF8JFyPT0v31l/ZsILX0VjeaAdV06h1URVx/guB+2Pg7y
-zrf+cygRwugs6mg2ElhmDwwvxOQZDEQyLXevRZ+iw5Z62F2KCALK9gXnMRC9dtOMKs/OuUVg
-qz+ybSCktmB0xQ5Bis28jeUy3uAxDmtFPEJUAieLKJKOckVPDxvfoIBA71wO/MMEovdxTuyR
-AUjSVTeYvVGg8yf/7uZBqQk61/wVfzU9K/SD3RXCmn8VztUtfm9NC1lLHwAAAAAAAA==
---------------ms090305070902070108030603--
+For the out-of-band ("off-line") dedup there's bedup
+(https://github.com/g2p/bedup) or Mark's duperemove tool
+(https://github.com/markfasheh/duperemove) that work on a set of files.

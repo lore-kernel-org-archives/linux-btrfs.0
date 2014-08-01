@@ -1,86 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f179.google.com ([209.85.220.179]:37132 "EHLO
-	mail-vc0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751120AbaHABxQ (ORCPT
+Received: from mail-vc0-f178.google.com ([209.85.220.178]:60129 "EHLO
+	mail-vc0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751774AbaHAB61 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Jul 2014 21:53:16 -0400
+	Thu, 31 Jul 2014 21:58:27 -0400
+Received: by mail-vc0-f178.google.com with SMTP id la4so5636958vcb.37
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jul 2014 18:58:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20140731190910.GP31950@carfax.org.uk>
-References: <1406829213-4759-1-git-send-email-xerofoify@gmail.com>
-	<20140731190910.GP31950@carfax.org.uk>
-Date: Thu, 31 Jul 2014 21:53:15 -0400
-Message-ID: <CAPDOMVj8cEsgR1TTOkTUWaxMHiEbpnM6qcj7opRuRLP+3YOfTg@mail.gmail.com>
-Subject: Re: [PATCH] Add support to check for FALLOC_FL_COLLAPSE_RANGE and
- FALLOC_FL_ZERO_RANGE crap modes
+In-Reply-To: <20140731191240.GQ31950@carfax.org.uk>
+References: <CAPDOMVi7fS9zwpZcENiSxhWWn02VfV5H9qnHrK-4kfjLW1zaXg@mail.gmail.com>
+	<20140731191240.GQ31950@carfax.org.uk>
+Date: Thu, 31 Jul 2014 21:58:26 -0400
+Message-ID: <CAPDOMViWLoCaizZAzS3h81Pi106AY24sLfwGtVsG1sHQoAm9_g@mail.gmail.com>
+Subject: Re: Implement new FALLOC_FL_* modes
 From: Nick Krause <xerofoify@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Nicholas Krause <xerofoify@gmail.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+To: Hugo Mills <hugo@carfax.org.uk>, Nick Krause <xerofoify@gmail.com>,
         "linux-btrfs@vger.kernel.org SYSTEM list:BTRFS FILE"
-	<linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+	<linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 31, 2014 at 3:09 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Thu, Jul 31, 2014 at 01:53:33PM -0400, Nicholas Krause wrote:
->> This adds checks for the stated modes as if they are crap we will return error
->> not supported.
+On Thu, Jul 31, 2014 at 3:12 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Thu, Jul 31, 2014 at 02:08:15PM -0400, Nick Krause wrote:
+>> I am doing this project from the btrfs wiki, since I am new after
+>> reading the code using lxr I am wondering if
+>> we can base the code off that already in ext4 for these modes as they
+>> seem to work rather well. I am wondering
+>> through as a newbie some of the data structures are ext4 based and the
+>> same goes for some of the functions.
+>> I am wondering what the equivalent structures and functions are in
+>> btrfs as I can't seem to find them after reading
+>> the code as a newbie for the last few hours in lxr. Maybe I just
+>> missing something?
 >
->    You've just enabled two options, but you haven't actually
-> implemented the code behind it. I would tell you *NOT* to do anything
-> else on this work until you can answer the question: What happens if
-> you apply this patch, create a large file called "foo.txt", and then a
-> userspace program executes the following code?
+>    The fundamental on-disk structures for btrfs and ext4 are totally
+> different. You will get very confused if you expect the ext4 code to
+> work in the btrfs module, or even if you expect structures to be
+> similar.
 >
-> int fd = open("foo.txt", O_RDWR);
-> fallocate(fd, FALLOCATE_FL_COLLAPSE_RANGE, 50, 50);
->
->    Try it on a btrfs filesystem, both with and without your patch.
-> Also try it on an ext4 filesystem.
->
->    Once you've done all of that, reply to this mail and tell me what
-> the problem is with this patch. You need to make two answers: what are
-> the technical problems with the patch? What errors have you made in
-> the development process?
->
->    *Only* if you can answer those questions sensibly, should you write
-> any more patches, of any kind.
+>    But first -- answer my questions in the reply I made to your patch
+> just now. Do nothing else until you can answer all three of those
+> questions sensibly.
 >
 >    Hugo.
->
->> Signed-off-by: Nicholas Krause <xerofoify@gmail.com>
->> ---
->>  fs/btrfs/file.c |    3 ++-
->>  1 file changed, 2 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index 1f2b99c..599495a 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -2490,7 +2490,8 @@ static long btrfs_fallocate(struct file *file, int mode,
->>       alloc_end = round_up(offset + len, blocksize);
->>
->>       /* Make sure we aren't being give some crap mode */
->> -     if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
->> +     if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE|
->> +     FALLOC_FL_COLLAPSE_RANGE | FALLOC_FL_ZERO_RANGE))
->>               return -EOPNOTSUPP;
->>
->>       if (mode & FALLOC_FL_PUNCH_HOLE)
->> --
->> 1.7.10.4
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
 > --
 > === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
 >   PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->   --- The glass is neither half-full nor half-empty; it is twice as ---
->                         large as it needs to be.
-Calls are there in btrfs , therefore will either kernel panic or cause an oops.
-Need to test this patch as this is very easy to catch bug.
-Nick
+>         --- Great films about cricket:  200/1: A Pace Odyssey ---
+
+I believed I answered your questions , seems I need to fucking test my patches.
+And about the reply about data structures , thanks seems the other fallocate
+functions are there and I need to read these first , I sent out my patch by
+accident as I didn't realize I have removed the error return by mistake.
+Sorry Nick

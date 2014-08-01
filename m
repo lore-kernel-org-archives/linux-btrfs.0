@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:58650 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:44889 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751081AbaGaWML (ORCPT
+	with ESMTP id S1750738AbaHAJwL (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 31 Jul 2014 18:12:11 -0400
+	Fri, 1 Aug 2014 05:52:11 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] xfstests: add regression test for btrfs send with orphans
-Date: Fri,  1 Aug 2014 00:11:08 +0100
-Message-Id: <1406848268-20620-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] xfstests: add regression test for btrfs send with orphans
+Date: Fri,  1 Aug 2014 11:51:53 +0100
+Message-Id: <1406890313-11780-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1406848268-20620-1-git-send-email-fdmanana@suse.com>
+References: <1406848268-20620-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -25,19 +27,23 @@ This issue is fixed by the following linux kernel btrfs patch:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/057     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+V2: Replaced a > redirect with a >> redirect to $seqres.full, and added a
+    sleep.
+
+ tests/btrfs/057     | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/btrfs/057.out |  1 +
  tests/btrfs/group   |  1 +
- 3 files changed, 83 insertions(+)
+ 3 files changed, 86 insertions(+)
  create mode 100755 tests/btrfs/057
  create mode 100644 tests/btrfs/057.out
 
 diff --git a/tests/btrfs/057 b/tests/btrfs/057
 new file mode 100755
-index 0000000..2174077
+index 0000000..1e313e9
 --- /dev/null
 +++ b/tests/btrfs/057
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,84 @@
 +#! /bin/bash
 +# FS QA Test No. btrfs/057
 +#
@@ -105,11 +111,14 @@ index 0000000..2174077
 +
 +# Create a tmpfile file, write some data to it and leave it open, so that our
 +# main subvolume has an orphan inode item.
-+$XFS_IO_PROG -T $SCRATCH_MNT >$seqres.full 2>&1 < <(
++$XFS_IO_PROG -T $SCRATCH_MNT >>$seqres.full 2>&1 < <(
 +	echo "pwrite 0 65536"
 +	read
 +) &
 +XFS_IO_PID=$!
++
++# Give it some time to the xfs_io process to create the tmpfile.
++sleep 3
 +
 +# With the tmpfile open, create a RO snapshot and use it for a send operation.
 +# The send operation used to fail with -ESTALE due to the presence of the

@@ -1,146 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from latitanza.investici.org ([82.94.249.234]:43928 "EHLO
-	latitanza.investici.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750978AbaHBN6n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Aug 2014 09:58:43 -0400
-Received: from [82.94.249.234] (latitanza [82.94.249.234]) (Authenticated sender: francesco.devita@inventati.org) by localhost (Postfix) with ESMTPSA id 15823120921
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Aug 2014 13:35:45 +0000 (UTC)
-From: Francesco De Vita <francesco.devita@inventati.org>
-To: linux-btrfs@vger.kernel.org
-Subject: unable to mount disk, error removing orphan entry and transid failures
-Date: Sat, 02 Aug 2014 15:36:28 +0200
-Message-ID: <9137964.Mz9lUL7tjl@fdv-a52je>
+Received: from mail-wg0-f47.google.com ([74.125.82.47]:57624 "EHLO
+	mail-wg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755171AbaHBSRH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Aug 2014 14:17:07 -0400
+Received: by mail-wg0-f47.google.com with SMTP id b13so5640163wgh.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Aug 2014 11:17:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAL3q7H76NAMQzVJkCTW+ZOD0ukvfk--CGiWj3925p5eE9pOfYg@mail.gmail.com>
+References: <1401795704-20668-1-git-send-email-fdmanana@gmail.com>
+	<CAOcd+r1VqCogBa+S4C3ZejsNsAiWgOkVAJjSWttJbJcqKfBwpQ@mail.gmail.com>
+	<CAL3q7H5JhRB_k+X++qzaHE5kYORaFxCn-JHfNmnA1MFJuRde1A@mail.gmail.com>
+	<CAL3q7H76NAMQzVJkCTW+ZOD0ukvfk--CGiWj3925p5eE9pOfYg@mail.gmail.com>
+Date: Sat, 2 Aug 2014 21:17:05 +0300
+Message-ID: <CAOcd+r20dUDZLwPZFGGpMFUQu=s0i5jqLEF1YKD_m31w-8-fkQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: update commit root on snapshot creation after
+ orphan cleanup
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everyone
+Hi Filipe,
+Thank you for the explanation.
+I understand that without your patch we return to user-space after
+deleting the orphans, but leaving the transaction open. So user-space
+sees the snapshot and can start send. With your patch, we return to
+user-space after orphan cleanup has been committed. Unless we crash in
+the middle, like you pointed.
 
-I'm not subscribed to this mailing list, so if you would like to reply 
-to me please add my email address in CC.
+I will also look at the new patch.
 
-I'm using Debian Jessie (Testing) with Linux 3.14-2-amd64 (3.14.13-2) 
-and Btrfs v3.14.1.
+Thanks!
+Alex.
 
 
-These are my disks:
 
-> $ sudo btrfs fi show
-> Label: 'debian_ssd'  uuid: e51fe605-acfe-4cc3-911c-87498e5bf202
->         Total devices 1 FS bytes used 75.38GiB
->         devid    1 size 109.79GiB used 87.04GiB path /dev/sda2
+
+On Thu, Jul 31, 2014 at 3:41 PM, Filipe David Manana <fdmanana@gmail.com> wrote:
+> On Mon, Jul 28, 2014 at 6:31 PM, Filipe David Manana <fdmanana@gmail.com> wrote:
+>> On Sat, Jul 19, 2014 at 8:11 PM, Alex Lyakas
+>> <alex.btrfs@zadarastorage.com> wrote:
+>>> Hi Filipe,
+>>> It's quite possible I don't fully understand the issue. It seems that
+>>> we are creating a read-only snapshot, commit a transaction, and then
+>>> go and modify the snapshot once again, by deleting all the
+>>> ORPHAN_ITEMs we have in its file tree (btrfs_orphan_cleanup).
+>>> Shouldn't all this be part of snapshot creation, so that after we
+>>> commit, we have a clean file tree with no orphans there? (not sure if
+>>> this makes sense though).
+>>>
+>>> With your patch we do this additional commit after the cleanup. But
+>>> nothing prevents "send" from starting before this additional commit,
+>>> correct? And it would still see the orphans through the commit root.
+>>> You say that it is not a problem, but I am not sure why (probably I am
+>>> missing something here). So for me it looks like your patch closes a
+>>> race window significantly (at the cost of an additional commit), but
+>>> does not close it fully.
+>>
+>> Hi Alex,
+>>
+>> That's right, after the transaction commit finishes, the snapshot will
+>> be visible and accessible to user space - so someone may start a send
+>> before the orphan cleanup starts. It was ok only for the serialized
+>> case (create snapshot, wait for ioctl to return, call send ioctl).
 >
-> Label: 'data'  uuid: 29642a24-9e18-413b-a213-8f52f49348e5
->         Total devices 1 FS bytes used 153.34GiB
->         devid    1 size 298.09GiB used 160.04GiB path /dev/sdb1
-
-
-and I have a problem with the second one, a HDD partitioned as follows:
-
-> $ sudo fdisk -l /dev/sdb
+> Actually no. If after the 1st transaction commit (the one that creates
+> the snapshot and makes it visible to user space) and before the orphan
+> cleanup is called another task attempts to use the snapshot for a send
+> operation, it will block when doing the snapshot dentry lookup -
+> because both tasks acquire the parent inode's mutex (implicitly
+> through the vfs and explicitly via the snapshot/subvol ioctl entry
+> point).
 >
-> Disk /dev/sdb: 320.1 GB, 320072933376 bytes
-> 255 heads, 63 sectors/track, 38913 cylinders, total 625142448 sectors
-> Units = sectors of 1 * 512 = 512 bytes
-> Sector size (logical/physical): 512 bytes / 512 bytes
-> I/O size (minimum/optimal): 512 bytes / 512 bytes
-> Disk identifier: 0xe0c5913d
+> Nevertheless, it's better to move the commit root switch part to the
+> dentry lookup function (as the new patch does), since after the first
+> transaction commit and before the second one commits, a reboot might
+> happen, and after that we would get into the same issue until the
+> first transaction commit happens after the reboot. I'll update the new
+> patch's comment.
 >
->    Device Boot      Start         End      Blocks   Id  System
-> /dev/sdb1            2048   625139711   312568832   83  Linux
-
-
-This is what happened: I was downloading a file with Ktorrent but 
-suddenly the download was interrupted suggesting that there was no 
-more space left on the disk (/dev/sdb1). Using "btrfs fi df 
-/mountpoint" there were no evidences of no space left, so I tried to 
-remove the file, in order to download it again, but then I received 
-an I/O error message and it was impossibile to remove the file.
-At this point I simply rebooted my system, and here come troubles...
-
-To make a long story short, I'm now unable to mount the disk and also, 
-to boot up my system I had to comment out /dev/sdb1 from fstab.
-This is what happens if I try to mount it (with or without mount 
-options):
-
-> $ sudo mount -t btrfs -o recovery,nospace_cache,clear_cache \
-> /dev/sdb1 /tmp/disk/
-> mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
+> thanks
 >
-> $ dmesg | tail
-> [ 4807.804659] BTRFS info (device sdb1): enabling auto recovery
-> [ 4807.804676] BTRFS info (device sdb1): disabling disk space caching
-> [ 4807.804687] BTRFS info (device sdb1): force clearing of disk cache
-> [ 4808.204075] parent transid verify failed on 239058944 wanted 1150 
-> 		 found 1125899906843774
-> [ 4808.227703] parent transid verify failed on 239058944 wanted 1150 
-> 		 found 1125899906843774
-> [ 4808.227734] BTRFS error (device sdb1): Error removing orphan 
-> 		 entry, stopping orphan cleanup
-> [ 4808.227739] BTRFS critical (device sdb1): could not do orphan 
-> 		 cleanup -22
-> [ 4808.477155] BTRFS: open_ctree failed
-
-
-Moreover btrfsck gives:
-
-> $ sudo btrfsck /dev/sdb1
-> Checking filesystem on /dev/sdb1
-> UUID: 29642a24-9e18-413b-a213-8f52f49348e5
-> checking extents
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> Ignoring transid failure
-> checking free space cache
-> cache and super generation don't match, space cache will be 
->   invalidated
-> checking fs roots
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> Ignoring transid failure
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> Ignoring transid failure
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
+>>
+>>>
+>>> But most important: perhaps "send" should look for ORPHAN_ITEMs and
+>>> treat those inodes as "deleted"?
+>>
+>> There are other cases were orphans can exist, like for file truncates
+>> for example, where ignoring the inode wouldn't be very correct.
+>> Tried that approach initially, but it's actually more complex to
+>> implement and adds some additional overhead (tree searches - and the
+>> orphan items are normally too far from the inode items, due to a very
+>> high objectid (-5ULL)).
+>>
+>> I've reworked this with a different approach and CC'ed you
+>> (https://patchwork.kernel.org/patch/4635471/).
+>>
+>> thanks
+>>
+>>>
+>>> Thanks,
+>>> Alex.
+>>>
+>>>
+>>>
+>>> On Tue, Jun 3, 2014 at 2:41 PM, Filipe David Borba Manana
+>>> <fdmanana@gmail.com> wrote:
+>>>> On snapshot creation (either writable or read-only), we do orphan cleanup
+>>>> against the root of the snapshot. If the cleanup did remove any orphans,
+>>>> then the current root node will be different from the commit root node
+>>>> until the next transaction commit happens.
+>>>>
+>>>> A send operation always uses the commit root of a snapshot - this means
+>>>> it will see the orphans if it starts computing the send stream before the
+>>>> next transaction commit happens (triggered by a timer or sync() for .e.g),
+>>>> which is when the commit root gets assigned a reference to current root,
+>>>> where the orphans are not visible anymore. The consequence of send seeing
+>>>> the orphans is explained below.
+>>>>
+>>>> For example:
+>>>>
+>>>>     mkfs.btrfs -f /dev/sdd
+>>>>     mount -o commit=999 /dev/sdd /mnt
+>>>>
+>>>>     # open a file with O_TMPFILE and leave it open
+>>>>     # write some data to the file
+>>>>     btrfs subvolume snapshot -r /mnt /mnt/snap1
+>>>>
+>>>>     btrfs send /mnt/snap1 -f /tmp/send.data
+>>>>
+>>>> The send operation will fail with the following error:
+>>>>
+>>>>     ERROR: send ioctl failed with -116: Stale file handle
+>>>>
+>>>> What happens here is that our snapshot has an orphan inode still visible
+>>>> through the commit root, that corresponds to the tmpfile. However send
+>>>> will attempt to call inode.c:btrfs_iget(), with the goal of reading the
+>>>> file's data, which will return -ESTALE because it will use the current
+>>>> root (and not the commit root) of the snapshot.
+>>>>
+>>>> Of course, there are other cases where we can get orphans, but this
+>>>> example using a tmpfile makes it much easier to reproduce the issue.
+>>>>
+>>>> Therefore on snapshot creation, after calling btrfs_orphan_cleanup, if
+>>>> the commit root is different from the current root, just commit the
+>>>> transaction associated with the snapshot's root (if it exists), so that
+>>>> a send will not see any orphans that don't exist anymore. This also
+>>>> guarantees a send will always see the same content regardless of whether
+>>>> a transaction commit happened already before the send was requested and
+>>>> after the orphan cleanup (meaning the commit root and current roots are
+>>>> the same) or it hasn't happened yet (commit and current roots are
+>>>> different).
+>>>>
+>>>> Signed-off-by: Filipe David Borba Manana <fdmanana@gmail.com>
+>>>> ---
+>>>>  fs/btrfs/ioctl.c | 29 +++++++++++++++++++++++++++++
+>>>>  1 file changed, 29 insertions(+)
+>>>>
+>>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>>> index 95194a9..6680ad9 100644
+>>>> --- a/fs/btrfs/ioctl.c
+>>>> +++ b/fs/btrfs/ioctl.c
+>>>> @@ -712,6 +712,35 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+>>>>         if (ret)
+>>>>                 goto fail;
+>>>>
+>>>> +       /*
+>>>> +        * If orphan cleanup did remove any orphans, it means the tree was
+>>>> +        * modified and therefore the commit root is not the same as the
+>>>> +        * current root anymore. This is a problem, because send uses the
+>>>> +        * commit root and therefore can see inode items that don't exist
+>>>> +        * in the current root anymore, and for example make calls to
+>>>> +        * btrfs_iget, which will do tree lookups based on the current root
+>>>> +        * and not on the commit root. Those lookups will fail, returning a
+>>>> +        * -ESTALE error, and making send fail with that error. So make sure
+>>>> +        * a send does not see any orphans we have just removed, and that it
+>>>> +        * will see the same inodes regardless of whether a transaction
+>>>> +        * commit happened before it started (meaning that the commit root
+>>>> +        * will be the same as the current root) or not.
+>>>> +        */
+>>>> +       if (readonly && pending_snapshot->snap->node !=
+>>>> +           pending_snapshot->snap->commit_root) {
+>>>> +               trans = btrfs_join_transaction(pending_snapshot->snap);
+>>>> +               if (IS_ERR(trans) && PTR_ERR(trans) != -ENOENT) {
+>>>> +                       ret = PTR_ERR(trans);
+>>>> +                       goto fail;
+>>>> +               }
+>>>> +               if (!IS_ERR(trans)) {
+>>>> +                       ret = btrfs_commit_transaction(trans,
+>>>> +                                                      pending_snapshot->snap);
+>>>> +                       if (ret)
+>>>> +                               goto fail;
+>>>> +               }
+>>>> +       }
+>>>> +
+>>>>         inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+>>>>         if (IS_ERR(inode)) {
+>>>>                 ret = PTR_ERR(inode);
+>>>> --
+>>>> 1.9.1
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>> --
+>> Filipe David Manana,
+>>
+>> "Reasonable men adapt themselves to the world.
+>>  Unreasonable men adapt the world to themselves.
+>>  That's why all progress depends on unreasonable men."
 >
-> ----- [hundreds of lines like above] -----
 >
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> Ignoring transid failure
-> parent transid verify failed on 239058944 wanted 1150 found 
->   1125899906843774
-> Ignoring transid failure
-> root 5 inode 152079 errors 400, nbytes wrong
-> found 116115363572 bytes used err is 1
-> total csum bytes: 160413592
-> total tree bytes: 388710400
-> total fs tree bytes: 168460288
-> total extent tree bytes: 21364736
-> btree space waste bytes: 62697338
-> file data blocks allocated: 346825613312
->  referenced 164106739712
-> Btrfs v3.14.1
-
-
-This is the problem and I don't understand what's going on. Is there 
-the chance to at least retrieve the data in the disk? As stated 
-at the beginning of the email I'm not subscribed to this ML, 
-please add my email address in CC in the reply. Thank you in advance.
-
-Best regards
--- 
-Francesco De Vita
-E-mail: francesco.devita@inventati.org
-OpenPGP Key: 0x5E658D5F01C57174
+>
+> --
+> Filipe David Manana,
+>
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."

@@ -1,46 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:49376 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752131AbaHDPAW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 11:00:22 -0400
-Received: by mail-wi0-f178.google.com with SMTP id hi2so5193045wib.17
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 08:00:19 -0700 (PDT)
-Message-ID: <53DFA001.7020002@peter-r.co.uk>
-Date: Mon, 04 Aug 2014 16:00:17 +0100
-From: Peter Roberts <me@peter-r.co.uk>
+Received: from mail-oi0-f51.google.com ([209.85.218.51]:57425 "EHLO
+	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751499AbaHDPTp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 11:19:45 -0400
+Received: by mail-oi0-f51.google.com with SMTP id g201so4707083oib.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 08:19:42 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <6493655.Zcj5VSyTA2@xev>
+References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
+	<20140804113231.GD31950@carfax.org.uk>
+	<CAFChkqv3N27jWxL=URgkZ1G86BFBo+-Cmg9emOO3G80OKY2n4g@mail.gmail.com>
+	<6493655.Zcj5VSyTA2@xev>
+Date: Mon, 4 Aug 2014 10:19:41 -0500
+Message-ID: <CAKcLGm_hopombtQmzt6BGGNw4nvXO7ufePw6unR9z3zhX32pQw@mail.gmail.com>
+Subject: Re: ENOSPC with mkdir and rename
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
 To: russell@coker.com.au
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Scan not being performed properly on boot
-References: <53DEF7DD.5070002@peter-r.co.uk> <1704788.vV3kpDkpOK@xev>
-In-Reply-To: <1704788.vV3kpDkpOK@xev>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Peter Waller <peter@scraperwiki.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/08/2014 04:31, Russell Coker wrote:
-> What is GRUB (or your boot loader) giving as parameters to the kernel? 
-> What error messages appear on screen? Sometimes it's helpful to 
-> photograph the screen and put the picture on a web server to help 
-> people diagnose the problem. 
-Here a screenshot http://imgur.com/8pQgG8g
+On Mon, Aug 4, 2014 at 9:47 AM, Russell Coker <russell@coker.com.au> wrote:
+> If you regularly run a scrub with options such as "-dusage=50 -musage=10" then
+> the amount of free space in metadata chunks will tend to be a lot greater than
+> that in data chunks.
+>
 
-Making changes to /etc/fstab didn't seem to work and nor did manually 
-adding device=/dev/sda1,device... in the GRUB config itself. What has 
-fixed the problem though seems pretty horrible it to specify 
-root=/dev/sda1 instead of UUID=....
-
-> That sounds like a problem with the Ubuntu initrd, probably filing an 
-> Ubuntu bug report would be the best thing to do. Is BTRFS supported in 
-> that version of Ubuntu? But just changing your boot configuration to 
-> use /dev/sdx is probably the best option. 
-I'll file a bug report but I'm not sure whether this is a GRUB or an 
-initrd / initramfs problem. Getting a persistent fix required a bodge in 
-/etc/grub.d/10-linux
-
-As for support, I don't think it is considered stable in 14.04 but I 
-haven't had to do anything special to use it and used to official 
-installer to get where I am (converting the single disk FS to a RAID1 
-after).
-
-In any case, thanks for the help :)
+Just to clarify for posterity, I'm pretty sure you meant 'balance'
+with "-dusage=50 -musage=10" instead of 'scrub'.

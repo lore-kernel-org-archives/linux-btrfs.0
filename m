@@ -1,43 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f171.google.com ([209.85.220.171]:61106 "EHLO
-	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751108AbaHDJWs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 05:22:48 -0400
-Received: by mail-vc0-f171.google.com with SMTP id hq11so10615268vcb.16
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 02:22:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
-	<53DEE40C.6020403@cn.fujitsu.com>
-	<CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
-Date: Mon, 4 Aug 2014 11:22:47 +0200
-Message-ID: <CAFvQSYTYokjT3=-QA_5bKYjmE+Y1+0Wb4gMJrERWJOkDxDakvg@mail.gmail.com>
-Subject: Re: ENOSPC with mkdir and rename
-From: Clemens Eisserer <linuxhippy@gmail.com>
+Received: from csamuel.org ([74.50.50.137]:41402 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751223AbaHDJg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Aug 2014 05:36:59 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 66B084003F
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Aug 2014 19:36:58 +1000 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 15725-04 for <linux-btrfs@vger.kernel.org>;
+ Mon,  4 Aug 2014 19:36:58 +1000 (EST)
+Received: from quad.localnet (2001-44b8-41dd-d500-9ddd-740d-de8b-0d3a.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:9ddd:740d:de8b:d3a])
+	by csamuel.org (Postfix) with ESMTPSA id 0B86140030
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Aug 2014 19:36:58 +1000 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Scan not being performed properly on boot
+Date: Mon, 04 Aug 2014 19:36:56 +1000
+Message-ID: <5672287.2MWqrccyOF@quad>
+In-Reply-To: <1704788.vV3kpDkpOK@xev>
+References: <53DEF7DD.5070002@peter-r.co.uk> <1704788.vV3kpDkpOK@xev>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Peter,
+On Mon, 4 Aug 2014 01:31:42 PM Russell Coker wrote:
 
-> All of this is *very* surprising. I'm not new to BTRFS, I've been
-> using it on my own machines for multiple years. I didn't realise there
-> was an un-holstered footgun on my lap at this point. How can it be
-> made clear how to avoid the ENOSPC problem to myself and other
-> sysadmins? Or preferably not exist as a problem?
+> Is BTRFS supported in that version of Ubuntu?
 
-I've also found the fixed metadata/data split to be an uncomfortable
-implementation detail, and some more flexible approach would be very
-welcome from my side.
+Out of the box a fresh 14.04 install onto btrfs worked fine for me on two 
+different sets of hardware.  13.10 the same on a third piece of hardware.
 
-So far I've used BTRFS' mixed mode mentioned in the mkfs.btrfs man page:
+cheers,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-> -M|--mixedMix data and metadata chunks together for more efficient space utilization.
-> This feature incurs a performance penalty in larger filesystems.
-> It is recommended for use with filesystems of 1 GiB or smaller.
 
-However I didn't find any information on how large the mentioned
-overhead is, or where it originates from.
-
-Best regards, Clemens

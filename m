@@ -1,40 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f178.google.com ([74.125.82.178]:42492 "EHLO
-	mail-we0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752452AbaHDKtB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 06:49:01 -0400
-Received: by mail-we0-f178.google.com with SMTP id w61so7556815wes.37
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 03:48:57 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140804103929.GB31950@carfax.org.uk>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
- <53DEE40C.6020403@cn.fujitsu.com> <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
- <17833067.mzxAL4oqZq@quad> <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
- <20140804102206.GA31950@carfax.org.uk> <CAFChkquonAbMbPynpxvayb3qpLAEcMSfC2TvGKCG+kFo-Qy7eA@mail.gmail.com>
- <20140804103929.GB31950@carfax.org.uk>
-From: Peter Waller <peter@scraperwiki.com>
-Date: Mon, 4 Aug 2014 11:48:17 +0100
-Message-ID: <CAFChkqsQW0tKKF0qDjVcJHYykH=e7GV9NbXOF8rvQfQA=Z9YBw@mail.gmail.com>
+Received: from csamuel.org ([74.50.50.137]:58222 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752367AbaHDKu6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Aug 2014 06:50:58 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id ACDB84003F
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Aug 2014 20:50:57 +1000 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 16065-07 for <linux-btrfs@vger.kernel.org>;
+ Mon,  4 Aug 2014 20:50:57 +1000 (EST)
+Received: from quad.localnet (2001-44b8-41dd-d500-9ddd-740d-de8b-0d3a.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:9ddd:740d:de8b:d3a])
+	by csamuel.org (Postfix) with ESMTPSA id 4594640030
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 Aug 2014 20:50:57 +1000 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC with mkdir and rename
-To: Hugo Mills <hugo@carfax.org.uk>, Peter Waller <peter@scraperwiki.com>,
-        Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Date: Mon, 04 Aug 2014 20:50:55 +1000
+Message-ID: <6565984.JHVfJyxURt@quad>
+In-Reply-To: <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
+References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com> <17833067.mzxAL4oqZq@quad> <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4 August 2014 11:39, Hugo Mills <hugo@carfax.org.uk> wrote:
->> >  * btrfs fi df
->> >     - look at metadata used vs total. If these are close to zero (on
->> >       3.15+) or close to 512 MiB (on <3.15), then you are in danger of
->> >       ENOSPC.
->>
->> Hmm. It's unfortunate that this could indicate an amount of space
->> which is free when it actually isn't.
->
->    That's why the 512 MiB block reserve was split out of metadata --
-> so that you don't look at metadata and say "oh, I've got half a gig
-> free, that's OK".
+On Mon, 4 Aug 2014 11:09:23 AM Peter Waller wrote:
 
-I don't quite follow this. Is it a recent development I missed? When
-was it "split out"? More recently than the software I'm using?
-Otherwise I'm having difficulty parsing this.
+> I accept that. It's all very well if you read the BTRFS list and/or
+> are a BTRFS developer. But if you're trying to work it out in the heat
+> of battle, as we have sysadmins who would have to, there is a
+> combination of things here that makes it unreasonable and harmful for
+> production.
+
+To be honest I'm not sure I'd suggest btrfs for production use at all at 
+present, it's only recently been unmarked as experimental and to be honest I 
+feel that was premature. :-(
+
+All the best,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+

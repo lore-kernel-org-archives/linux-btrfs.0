@@ -1,97 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40772 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750827AbaHDFYH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Aug 2014 01:24:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XEAkf-0007Kf-0r
-	for linux-btrfs@vger.kernel.org; Mon, 04 Aug 2014 07:24:05 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 07:24:05 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 07:24:05 +0200
+Received: from mail-ob0-f182.google.com ([209.85.214.182]:46940 "EHLO
+	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751053AbaHDGaK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 02:30:10 -0400
+Received: by mail-ob0-f182.google.com with SMTP id wm4so4183930obc.13
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Aug 2014 23:30:09 -0700 (PDT)
+MIME-Version: 1.0
+From: rocwhite168 <rocwhite168@163.com>
+Date: Mon, 4 Aug 2014 01:29:49 -0500
+Message-ID: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
+Subject: Unrecoverable errors when the btrfs file system was modified outside
+ the running OS
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Scan not being performed properly on boot
-Date: Mon, 4 Aug 2014 05:23:51 +0000 (UTC)
-Message-ID: <pan$a693c$ad9d22e3$2215559b$722c9bf2@cox.net>
-References: <53DEF7DD.5070002@peter-r.co.uk> <1704788.vV3kpDkpOK@xev>
-	<53DF0553.1010404@chinilu.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-George Mitchell posted on Sun, 03 Aug 2014 21:00:19 -0700 as excerpted:
+Hello,
 
->>> I cannot mount my root with anything other than an explicit /dev/sdx
->>> reference until I manually run a scan. Then UUID etc all work. I've
->> That sounds like a problem with the Ubuntu initrd, probably filing an
->> Ubuntu bug report would be the best thing to do.  Is BTRFS supported in
->> that version of Ubuntu?
->>
->> But just changing your boot configuration to use /dev/sdx is probably
->> the best option.
->>
-> Assuming you are booting with grub2, you will need to use /dev/sdx in
-> the grub2 configuration file.  This is known issue with grub2. Example
-> from my script:
-> 
-> ------------------------------------------------------------------------
-> echo    'Loading Linux desktop ...'
-> linux   /vmlinuz-desktop root=/dev/sda7 ro splash quiet
-> echo    'Loading initial ramdisk ...'
-> initrd  /initrd-desktop.img
-> 
-> ------------------------------------------------------------------------
+I just had a very frustrating experience with btrfs, which I was only
+able to resolve by rolling back to ext4 using the subvol btrfs-convert
+created. The same type of situation occurred before when I was using
+the ext file system and the result was far less disastrous.
 
-??
+The source of problem came from the fact that I have a Windows and
+Ubuntu 14.04 dual-boot setup and within Windows I also use VirtualBox
+to run the same Ubuntu with rawdisk. Today I updated Ubuntu to a new
+kernel within VirtualBox. At this point, I would usually shutdown
+VirtualBox before I let my machine go to hibernation. However, this
+time I forgot. And when the machine started up, it went directly into
+Ubuntu (because grub was updated and to avoid issues my VirtualBox
+setup didn't allow Ubuntu to see my Windows partitions). I did a
+grub-udpate, and rebooted back to Windows, where my VirtualBox was
+still up and running fine. The tragedy happened when I now shut down
+Ubuntu and VirtualBox. The btrfs file system was totally corrupted. I
+tried various combinations ro, recovery, nospace_cache, and
+clear_cache mount options, and it wouldn't mount. dmesg showed some
+"transid verify failed", "open_ctree failed" error messages. btrfs
+restore only retrieved three files.. btrfsck --repair and
+btrfs-zero-log didn't help either.
 
-Known issue with ubuntu's grub2, perhaps?  Or perhaps with separate 
-initrds as opposed to kernel-appended initramfss?  Or maybe it's with 
-loadable kernel modules as opposed to a custom-built monolithic kernel?  
-Or maybe it's an issue with mbr style grub2 but not gpt with a dedicated 
-BIOS boot partition, or perhaps with grub2 in EFI mode instead of BIOS 
-mode?
+To my very surprise, btrfs-convert -r was able to use the subvol it
+created to roll back to ext4. But had I not converted from ext4 to
+btrfs, this would be an unrecoverable situation. Whether or not I have
+backups is a separate issue, being able to recover at least "somewhat"
+in this situation seems to be a desired feature for any file system.
 
-Because it works just fine here, grub2, root=LABEL= style root= line 
-pointed at a multi-device btrfs rootfs, BIOS mode gpt partitions with a 
-dedicated BIOS partition for grub2 to use, custom built monolithic kernel 
-with all necessary modules builtin and an appended initramfs, not a 
-separately loaded initrd.
-
-As rootfs /is/ a multi-device btrfs I /do/ have to have an initramfs, 
-because apparently the kernel's command-line parser doesn't properly 
-handle the btrs device= mount option in rootflags=device= parameters, and 
-without a userspace btrfs device scan, the btrfs device= mount option 
-must be passed for multi-device filesystems or btrfs will refuse to mount 
-the device without degraded.  But with an appropriate initramfs, it most 
-certainly does work here.
-
-FWIW, my initramfs is dracut-based, btrfs and udev dracut modules loaded 
-of course, with or without the systemd dracut module also loaded (I 
-recently converted to systemd and was running the non-systemd dracut 
-before that.
-
-And root=LABEL= works just fine.
-
-In fact, I have grub2 variables setup with the labels for several 
-different rootfs choices, working multi-device btrfs rootfs, primary 
-backup multi-device btrfs rootfs, and secondary backup reiserfs rootfs.  
-I then have a grub2 menu setup that lets me choose between the three, 
-substituting in the appropriate grub2 variable based root=LABEL= kernel 
-commandline option as necessary.  With the previously mentioned exception 
-of having to use the initramfs in the first place in ordered to work 
-around the kernel's rootflags=device= parsing issue instead of being able 
-to direct-boot the rootfs without an initramfs at all, it all works 
-exactly as expected.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Roc

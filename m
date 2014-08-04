@@ -1,152 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:37242 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751059AbaHDRho (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 4 Aug 2014 13:37:44 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: make btrfs_search_forward return with nodes unlocked
-Date: Mon,  4 Aug 2014 19:37:21 +0100
-Message-Id: <1407177441-11152-1-git-send-email-fdmanana@suse.com>
+Received: from tetsuo.zabbo.net ([50.193.208.193]:39779 "EHLO tetsuo.zabbo.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751341AbaHDSb7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Aug 2014 14:31:59 -0400
+Date: Mon, 4 Aug 2014 11:31:58 -0700
+From: Zach Brown <zab@zabbo.net>
+To: Fabian Frederick <fabf@skynet.be>
+Cc: Josef Bacik <jbacik@fb.com>, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
+Subject: Re: [PATCH 1/1] Btrfs: fix sparse warning
+Message-ID: <20140804183158.GA18659@lenny.home.zabbo.net>
+References: <1405451837-8235-1-git-send-email-fabf@skynet.be>
+ <20140716172021.GA10833@lenny.home.zabbo.net>
+ <1762701571.679094.1405622254558.open-xchange@webmail.nmp.skynet.be>
+ <20140717190152.GB24196@lenny.home.zabbo.net>
+ <20140802142449.15f4cfc2c2821e90e04e175e@skynet.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140802142449.15f4cfc2c2821e90e04e175e@skynet.be>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-None of the uses of btrfs_search_forward() need to have the path
-nodes (level >= 1) read locked, only the leaf needs to be locked
-while the caller processes it. Therefore make it return a path
-with all nodes unlocked, except for the leaf.
+On Sat, Aug 02, 2014 at 02:24:49PM +0200, Fabian Frederick wrote:
+> On Thu, 17 Jul 2014 12:01:52 -0700
+> Zach Brown <zab@zabbo.net> wrote:
+> 
+> > > > > @@ -515,7 +515,8 @@ static int write_buf(struct file *filp, const void *buf,
+> > > > > u32 len, loff_t *off)
+> > > >
+> > > > Though this probably wants to be rewritten in terms of kernel_write().
+> > > > That'd give an opportunity to get rid of the sctx->send_off and have it
+> > > > use f_pos in the filp.
+> > > 
+> > > Do you mean directly call kernel_write from send_cmd/send_header ?
+> > > I guess that loop around vfs_write in write_buf is there for something ...
+> > 
+> > write_buf() could still exist to iterate over the buffer in the case of
+> > partial writes but it doesn't need to muck around with set_fs() and
+> > forcing casts.
+> > 
+> > - z
+> 
+> Hello Zach,
+> 
+> 	Here's an untested patch which
 
-This change is motivated by the observation that during a file
-fsync we repeatdly call btrfs_search_forward() and process the
-returned leaf while upper nodes of the returned path (level >= 1)
-are read locked, which unnecessarily blocks other tasks that want
-to write to the same fs/subvol btree.
-Therefore instead of modifying the fsync code to unlock all nodes
-with level >= 1 immediately after calling btrfs_search_forward(),
-change btrfs_search_forward() to do it, so that it benefits all
-callers.
+Try testing it.  It's easy with virtualization and xfstests.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c     | 11 +++++++----
- fs/btrfs/ioctl.c     |  5 -----
- fs/btrfs/tree-log.c  |  3 ---
- fs/btrfs/uuid-tree.c |  1 -
- fs/btrfs/volumes.c   |  2 --
- 5 files changed, 7 insertions(+), 15 deletions(-)
+You'll find that sending to a file fails because each individual file
+write call that makes up a send starts at offset 0 -- at the start of
+the file.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 8ca6761..993d81b 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5144,8 +5144,9 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
- 	u32 nritems;
- 	int level;
- 	int ret = 1;
-+	int keep_locks = path->keep_locks;
- 
--	WARN_ON(!path->keep_locks);
-+	path->keep_locks = 1;
- again:
- 	cur = btrfs_read_lock_root_node(root);
- 	level = btrfs_header_level(cur);
-@@ -5209,7 +5210,6 @@ find_next_key:
- 		path->slots[level] = slot;
- 		if (level == path->lowest_level) {
- 			ret = 0;
--			unlock_up(path, level, 1, 0, NULL);
- 			goto out;
- 		}
- 		btrfs_set_path_blocking(path);
-@@ -5224,9 +5224,12 @@ find_next_key:
- 		btrfs_clear_path_blocking(path, NULL, 0);
- 	}
- out:
--	if (ret == 0)
-+	path->keep_locks = keep_locks;
-+	if (ret == 0) {
-+		btrfs_unlock_up_safe(path, path->lowest_level + 1);
-+		btrfs_set_path_blocking(path);
- 		memcpy(min_key, &found_key, sizeof(found_key));
--	btrfs_set_path_blocking(path);
-+	}
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ef2e073..d490abd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -936,12 +936,9 @@ static int find_new_extents(struct btrfs_root *root,
- 	min_key.offset = *off;
- 
- 	while (1) {
--		path->keep_locks = 1;
- 		ret = btrfs_search_forward(root, &min_key, path, newer_than);
- 		if (ret != 0)
- 			goto none;
--		path->keep_locks = 0;
--		btrfs_unlock_up_safe(path, 1);
- process_slot:
- 		if (min_key.objectid != ino)
- 			goto none;
-@@ -2083,8 +2080,6 @@ static noinline int search_ioctl(struct inode *inode,
- 	key.type = sk->min_type;
- 	key.offset = sk->min_offset;
- 
--	path->keep_locks = 1;
--
- 	while (1) {
- 		ret = btrfs_search_forward(root, &key, path, sk->min_transid);
- 		if (ret != 0) {
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 6e0fa17..df332dd 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2981,8 +2981,6 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 	min_key.type = key_type;
- 	min_key.offset = min_offset;
- 
--	path->keep_locks = 1;
--
- 	ret = btrfs_search_forward(root, &min_key, path, trans->transid);
- 
- 	/*
-@@ -3950,7 +3948,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		err = ret;
- 		goto out_unlock;
- 	}
--	path->keep_locks = 1;
- 
- 	while (1) {
- 		ins_nr = 0;
-diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
-index f6a4c03..7782829 100644
---- a/fs/btrfs/uuid-tree.c
-+++ b/fs/btrfs/uuid-tree.c
-@@ -279,7 +279,6 @@ int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info,
- 	key.offset = 0;
- 
- again_search_slot:
--	path->keep_locks = 1;
- 	ret = btrfs_search_forward(root, &key, path, 0);
- 	if (ret) {
- 		if (ret > 0)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0daf748..73e4d30 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3629,8 +3629,6 @@ static int btrfs_uuid_scan_kthread(void *data)
- 	max_key.type = BTRFS_ROOT_ITEM_KEY;
- 	max_key.offset = (u64)-1;
- 
--	path->keep_locks = 1;
--
- 	while (1) {
- 		ret = btrfs_search_forward(root, &key, path, 0);
- 		if (ret) {
--- 
-1.9.1
+Getting this right means getting the semantics around updating the send
+descriptors f_pos right.  It requires having a bit of a think about send
+semantics and f_pos update locking.
 
+- z

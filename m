@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from atl4mhob09.myregisteredsite.com ([209.17.115.47]:44493 "EHLO
-	atl4mhob09.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751201AbaHDEVm (ORCPT
+Received: from atl4mhob08.myregisteredsite.com ([209.17.115.46]:53950 "EHLO
+	atl4mhob08.myregisteredsite.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750764AbaHDEdZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Aug 2014 00:21:42 -0400
-Received: from mailpod1.hostingplatform.com (atl4obmail05pod1.mgt.hosting.qts.netsol.com [10.30.71.117])
-	by atl4mhob09.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s744LfGm031807
-	for <linux-btrfs@vger.kernel.org>; Mon, 4 Aug 2014 00:21:41 -0400
-Message-ID: <53DF0A98.2010907@chinilu.com>
-Date: Sun, 03 Aug 2014 21:22:48 -0700
+	Mon, 4 Aug 2014 00:33:25 -0400
+Received: from mailpod1.hostingplatform.com (atl4obmail04pod1.mgt.hosting.qts.netsol.com [10.30.71.116])
+	by atl4mhob08.myregisteredsite.com (8.14.4/8.14.4) with ESMTP id s744XLn7027236
+	for <linux-btrfs@vger.kernel.org>; Mon, 4 Aug 2014 00:33:21 -0400
+Message-ID: <53DF0D55.3050504@chinilu.com>
+Date: Sun, 03 Aug 2014 21:34:29 -0700
 From: George Mitchell <george@chinilu.com>
 Reply-To: george@chinilu.com
 MIME-Version: 1.0
@@ -38,5 +38,8 @@ On 08/03/2014 09:14 PM, Russell Coker wrote:
 >> linux   /vmlinuz-desktop root=/dev/sda7 ro splash quiet
 >> echo    'Loading initial ramdisk ...'
 >> initrd  /initrd-desktop.img
-Russell, it fixed the problem for me, that's all I know.  That's why I 
-am suggesting it.
+I see what you are saying.  Its a hack.  But I suspect that most of the 
+distros are not yet accommodating btrfs with their standard mkinitrd 
+process.  At this point modifying grub2 config does solve the problem.  
+If you know a reasonably easy way to fix initrd so that it can interpret 
+UUID and LABEL, I would certainly be all ears.

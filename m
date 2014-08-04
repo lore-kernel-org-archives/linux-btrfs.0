@@ -1,32 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:57425 "EHLO
-	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751499AbaHDPTp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 11:19:45 -0400
-Received: by mail-oi0-f51.google.com with SMTP id g201so4707083oib.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 08:19:42 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <6493655.Zcj5VSyTA2@xev>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
-	<20140804113231.GD31950@carfax.org.uk>
-	<CAFChkqv3N27jWxL=URgkZ1G86BFBo+-Cmg9emOO3G80OKY2n4g@mail.gmail.com>
-	<6493655.Zcj5VSyTA2@xev>
-Date: Mon, 4 Aug 2014 10:19:41 -0500
-Message-ID: <CAKcLGm_hopombtQmzt6BGGNw4nvXO7ufePw6unR9z3zhX32pQw@mail.gmail.com>
-Subject: Re: ENOSPC with mkdir and rename
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: russell@coker.com.au
-Cc: Peter Waller <peter@scraperwiki.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:58790 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751259AbaHDQ1N convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Aug 2014 12:27:13 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Unrecoverable errors when the btrfs file system was modified outside the running OS
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
+Date: Mon, 4 Aug 2014 10:27:11 -0600
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <30ECDD3D-6680-4A38-9582-36AD082701BF@colorremedies.com>
+References: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
+To: rocwhite168 <rocwhite168@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 4, 2014 at 9:47 AM, Russell Coker <russell@coker.com.au> wrote:
-> If you regularly run a scrub with options such as "-dusage=50 -musage=10" then
-> the amount of free space in metadata chunks will tend to be a lot greater than
-> that in data chunks.
->
 
-Just to clarify for posterity, I'm pretty sure you meant 'balance'
-with "-dusage=50 -musage=10" instead of 'scrub'.
+On Aug 4, 2014, at 12:29 AM, rocwhite168 <rocwhite168@163.com> wrote:
+
+> Hello,
+> 
+> I just had a very frustrating experience with btrfs, which I was only
+> able to resolve by rolling back to ext4 using the subvol btrfs-convert
+> created. The same type of situation occurred before when I was using
+> the ext file system and the result was far less disastrous.
+
+The recoverability of a filesystem after it's been used simultaneously by two computers can't be a useful metric. This is so highly non-deterministic I just don't buy the one off comparison of two filesystems' survival rates.
+
+This is sort of in the realm of if you're going to slam doors, make really certain first there aren't any fingers near the door frame.
+
+
+
+Chris Murphy
+

@@ -1,77 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34283 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751769AbaHDLcd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 07:32:33 -0400
-Date: Mon, 4 Aug 2014 12:32:31 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Clemens Eisserer <linuxhippy@gmail.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42293 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752215AbaHDMuc convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 08:50:32 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: ENOSPC with mkdir and rename
-Message-ID: <20140804113231.GD31950@carfax.org.uk>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
- <53DEE40C.6020403@cn.fujitsu.com>
- <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
- <17833067.mzxAL4oqZq@quad>
- <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
- <20140804102206.GA31950@carfax.org.uk>
- <CAFvQSYRDz1EW4CiKbRNEp0HKhciHPM+b_63CrOOko+D6aYPnvw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
+Date: Mon, 04 Aug 2014 14:50:29 +0200
+Message-ID: <234528786.A5cAeyBFJU@merkaba>
+In-Reply-To: <1537782.AGn1dfcASJ@merkaba>
+References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <1537782.AGn1dfcASJ@merkaba>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="EcSFpNr6Vcxykj4g"
-In-Reply-To: <CAFvQSYRDz1EW4CiKbRNEp0HKhciHPM+b_63CrOOko+D6aYPnvw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---EcSFpNr6Vcxykj4g
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Aug 04, 2014 at 01:04:25PM +0200, Clemens Eisserer wrote:
-> Hi Hugo,
+Am Freitag, 25. Juli 2014, 11:54:37 schrieb Martin Steigerwald:
+> Am Donnerstag, 24. Juli 2014, 22:48:05 schrieben Sie:
+> > When failing to allocate space for the whole compressed extent, we'll
+> > fallback to uncompressed IO, but we've forgotten to redirty the pages
+> > which belong to this compressed extent, and these 'clean' pages will
+> > simply skip 'submit' part and go to endio directly, at last we got data
+> > corruption as we write nothing.
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > ---
+> > 
+> >  fs/btrfs/inode.c | 12 ++++++++++++
+> >  1 file changed, 12 insertions(+)
+> > 
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 3668048..8ea7610 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > 
+> > @@ -709,6 +709,18 @@ retry:
+> >  				unlock_extent(io_tree, async_extent->start,
+> >  				
+> >  					      async_extent->start +
+> >  					      async_extent->ram_size - 1);
+> > 
+> > +
+> > +				/*
+> > +				 * we need to redirty the pages if we decide to
+> > +				 * fallback to uncompressed IO, otherwise we
+> > +				 * will not submit these pages down to lower
+> > +				 * layers.
+> > +				 */
+> > +				extent_range_redirty_for_io(inode,
+> > +						async_extent->start,
+> > +						async_extent->start +
+> > +						async_extent->ram_size - 1);
+> > +
+> > 
+> >  				goto retry;
+> >  			
+> >  			}
+> >  			goto out_free;
 > 
-> >    On the 3.15+ kernels, the block reserve is split out of metadata
-> > and reported separately. This helps with the following process:
+> I am testing this currently. So far no lockup. Lets see. Still has not
+> filled the the block device with trees completely after I balanced them:
 > 
-> Thanks a lot for pointing this out, I hadn't noticed this change until now.
+> Label: 'home'  uuid: […]
+>         Total devices 2 FS bytes used 125.57GiB
+>         devid    1 size 160.00GiB used 153.00GiB path /dev/dm-0
+>         devid    2 size 160.00GiB used 153.00GiB path /dev/mapper/sata-home
 > 
-> One thing I didn't find any information about is the overhead
-> introduced by mixied-mode.
-> It would be great if you could explain it in a few sentences.
+> I believe the lockups happen more easily if the trees occupy all of disk
+> space. Well I will do some compiling of some KDE components which may let
+> BTRFS fill all space again.
+> 
+> This patch will mean it when it can´t make enough free space in the
+> (fragmented) tree it will write uncompressed?
+> 
+> This would mean that one would have a defragment trees regularily to allow
+> for writes to happen compressed at all times.
+> 
+> Well… of course still better than lockup or corruption.
 
-   I don't know, I'm afraid. I don't think we've got any benchmarks on
-the scale of the slowdown.
+So lookups so far anymore.
 
-   Hugo.
+Tested with 3.16-rc5, 3.16-rc7, now running 3-16 final.
 
+/home BTRFS only got today filled completely tree-wise:
+
+merkaba:~> btrfs fi sh /home
+Label: 'home'  uuid: […]
+        Total devices 2 FS bytes used 127.35GiB
+        devid    1 size 160.00GiB used 160.00GiB path /dev/mapper/msata-home
+        devid    2 size 160.00GiB used 160.00GiB path /dev/dm-3
+
+But I had KDE and kernel compile running full throttle at that time and still 
+good.
+
+Tested-By: Martin Steigerwald <martin@lichtvoll.de>
+
+
+I think this should go to stable. Thanks, Liu.
+
+Ciao,
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- Reading Mein Kampf won't make you a Nazi. Reading Das Kapital ---  
-         won't make you a communist. But most trolls started out         
-                    with a copy of Lord of the Rings.                    
-
---EcSFpNr6Vcxykj4g
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBU99vT1heFHXiqx3kAQLfExAAqzb7d1hL5OMUvbYlkuxM+UTvp6wQ1+SZ
-tXSFegrb2iypaYZ6QTA93P5/xg8e6q/T1cmJFKrmpk4nbZYu2iTT3qZxp05cljua
-z47fs50iX1bLhpJzF9x9UKRa1Mvoh7nkn3+44pXUnMMPJEPYf5muBVckIB6+59HG
-wAOX7xZOOJZ7014UWGTqk/3bjB+bjJcXI9nWvt+gcNaIJ00hCb+tgQIkHXHr6AXf
-PnWpYE6eSpUwqNHddmfF3af7IHHVGEIbIjLXKwE2TxWssV7n6FOUNDomdiCK6soE
-xevqYUtPitQUbPS686XjBYShhM4FNXbuKACC1sJVtGnp76fW7LlULm4HiGXgjDVM
-aUbvu5Pv8wI73GL3ZvPtHCn/qGoanUPRKKeKcXdAL7TBX2S86TxCxN4TG1U/77Al
-36R1UHhPSKQmXwZmY8JKshpOFXtnlT3MD17dtuNxFij44SPXAUeDl2lILf13IU08
-7AuFYLIBa9en4SnGk285wSbM3Gkqv2e1FyA7VmB5KN15b6Ca5dsr0kE4+tdy0G33
-s85CbHSV4ksV06PMb4vQ+g4EQcksXbdcih9UwDD9rF6Af5W6NtkGGN7zW7mDwQ5e
-xm4oVqbr6/OBanDs1lPHPoAPTEFPC2LmwIhWzkrRhqOzduCY3bcrBkLPItz0Ix/3
-stTjpnxr3J0=
-=B+Iz
------END PGP SIGNATURE-----
-
---EcSFpNr6Vcxykj4g--
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

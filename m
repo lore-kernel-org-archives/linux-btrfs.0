@@ -1,33 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f173.google.com ([74.125.82.173]:47056 "EHLO
-	mail-we0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752426AbaHDLAD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 07:00:03 -0400
-Received: by mail-we0-f173.google.com with SMTP id q58so7504141wes.18
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 03:59:59 -0700 (PDT)
+Received: from mail-vc0-f171.google.com ([209.85.220.171]:40668 "EHLO
+	mail-vc0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752043AbaHDLE0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 07:04:26 -0400
+Received: by mail-vc0-f171.google.com with SMTP id hq11so10760954vcb.16
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 04:04:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6565984.JHVfJyxURt@quad>
+In-Reply-To: <20140804102206.GA31950@carfax.org.uk>
 References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
- <17833067.mzxAL4oqZq@quad> <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
- <6565984.JHVfJyxURt@quad>
-From: Peter Waller <peter@scraperwiki.com>
-Date: Mon, 4 Aug 2014 11:59:19 +0100
-Message-ID: <CAFChkqsnRvO9h=kxO8LVnchEN3k5oXUFhsCgGw0qPpaT9ipnjw@mail.gmail.com>
+	<53DEE40C.6020403@cn.fujitsu.com>
+	<CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
+	<17833067.mzxAL4oqZq@quad>
+	<CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
+	<20140804102206.GA31950@carfax.org.uk>
+Date: Mon, 4 Aug 2014 13:04:25 +0200
+Message-ID: <CAFvQSYRDz1EW4CiKbRNEp0HKhciHPM+b_63CrOOko+D6aYPnvw@mail.gmail.com>
 Subject: Re: ENOSPC with mkdir and rename
-To: Chris Samuel <chris@csamuel.org>
-Cc: linux-btrfs@vger.kernel.org
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 4 August 2014 11:50, Chris Samuel <chris@csamuel.org> wrote:
-> To be honest I'm not sure I'd suggest btrfs for production use at all at
-> present, it's only recently been unmarked as experimental and to be honest I
-> feel that was premature. :-(
+Hi Hugo,
 
-Thanks for the honest answer.
+>    On the 3.15+ kernels, the block reserve is split out of metadata
+> and reported separately. This helps with the following process:
 
-There are very positive signals out there which I had perhaps taken
-too literally. I'd love to see it become ready, there are a lot of things
-about BTRFS which appeal greatly. So I hope I'm helping by trying
-to make it clear the problems that I encountered.
+Thanks a lot for pointing this out, I hadn't noticed this change until now.
+
+One thing I didn't find any information about is the overhead
+introduced by mixied-mode.
+It would be great if you could explain it in a few sentences.
+
+Thank you in advance, Clemens

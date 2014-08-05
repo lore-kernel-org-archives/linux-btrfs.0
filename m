@@ -1,88 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f50.google.com ([209.85.219.50]:45514 "EHLO
-	mail-oa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750987AbaHDXBS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Aug 2014 19:01:18 -0400
-Received: by mail-oa0-f50.google.com with SMTP id g18so95027oah.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Aug 2014 16:01:18 -0700 (PDT)
+Received: from merkurneu.hrz.uni-giessen.de ([134.176.2.3]:54140 "EHLO
+	merkurneu.hrz.uni-giessen.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753608AbaHEHkm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Aug 2014 03:40:42 -0400
+Received: from mailgw82.hrz.uni-giessen.de by merkurneu.hrz.uni-giessen.de with ESMTP for linux-btrfs@vger.kernel.org; Tue, 5 Aug 2014 09:25:31 +0200
+Received: from merkur.hrz.uni-giessen.de (merkur.hrz.uni-giessen.de [134.176.2.12])
+	by mailgw82.hrz.uni-giessen.de (Postfix) with ESMTP id 5080D4800081
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Aug 2014 09:25:14 +0200 (CEST)
+Received: from [134.176.2.12] by merkur.hrz.uni-giessen.de with ESMTP for linux-btrfs@vger.kernel.org; Tue, 5 Aug 2014 09:25:14 +0200
+Message-Id: <53E086D9.3080806@computational.bio.uni-giessen.de>
+Date: Tue, 05 Aug 2014 09:25:13 +0200
+From: Burkhard Linke <Burkhard.Linke@computational.bio.uni-giessen.de>
 MIME-Version: 1.0
-Date: Mon, 4 Aug 2014 16:01:17 -0700
-Message-ID: <CADw2B2PA-_PKvWduHPcObdXtxMO3ttyBkqtNB=p=GX4oH5dt_A@mail.gmail.com>
-Subject: btrfs and iostat - how do I measure the live performance of my btrsf filesystems?
-From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Changing the sector size of the underlying storage
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I apologize if this has already been addressed, regardless of whether
-or not it's a n00b question, I'm stumped and am looking for some
-guidance.
+Hi,
 
-Is iostat a viable measure of btrfs performance?
-I've got the following environment:
----------------------------------------------------------------------
-2014-08-04 11:56:10
-root@a i ~ # uname -a
-Linux a 3.14.15-1-lts #1 SMP Thu Jul 31 22:42:44 UTC 2014 x86_64 GNU/Linux
-2014-08-04 13:05:44
-root@a i ~ # btrfs --version
-Btrfs v3.14.2-dirty
-2014-08-04 13:05:44
-root@a i ~ # btrfs fi show
-Label: 'system'  uuid: 06acfd0f-314d-457f-ba00-f96bf5b94a02
-Total devices 2 FS bytes used 20.68GiB
-devid    1 size 476.94GiB used 30.03GiB path /dev/sda
-devid    2 size 476.94GiB used 30.03GiB path /dev/sdb
+I've been using a btrfs volume in a NFS server for some time, based in 
+iscsi storage with 4k sectors. Due to problems with NFS I've decided to 
+drop iscsi and make the iscsi target server (standard x86 box with raid 
+drive) a secondary NFS server.
 
-Label: 'data'  uuid: 10cc711b-8c8c-457c-91b1-d8ea4ef4e8d8
-Total devices 4 FS bytes used 1.02TiB
-devid    1 size 558.91GiB used 558.91GiB path /dev/sdc
-devid    2 size 558.91GiB used 558.89GiB path /dev/sdd
-devid    3 size 558.91GiB used 558.89GiB path /dev/sde
-devid    4 size 558.91GiB used 558.89GiB path /dev/sdf
+This requires mounting the btrfs volume directly on the new NFS server. 
+The raid array (linux md raid 6) reports the raid drive as a 512b sector 
+size drive. Mounting the btrfs volume fails with an "already mounted" 
+error message; running "btrfs check" also does not recognize the volume. 
+"btrfs fi show" shows the correct information about the volume, 
+"btrfs-show-super" also prints the correct information from the 
+superblock. It also indicates that the volume assumes 4k sectors. I was 
+finally able to mount the volume using a loopback device. A subsequent 
+scrub run show no errors at all, so the volume itself is ok.
 
-Btrfs v3.14.2-dirty
----------------------------------------------------------------------
-Here's my iostat output:
----------------------------------------------------------------------
-2014-08-04 13:26:39
-root@a i ~ # iostat
-Linux 3.14.15-1-lts (eanna) 08/04/2014 _x86_64_ (24 CPU)
+The questions are:
 
-avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-           6.93    0.34    2.82    0.40    0.00   89.50
+- Is btrfs dependent on the sector size of the underlying storage?
+- Is it possible to change the sector size, e.g. after migrating a 
+volume to a different storage?
 
-Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
-sdb              22.40        38.75       540.65     836356   11668224
-sda              22.41        40.32       540.65     870084   11668224
-sdg               0.02         0.14         0.00       2987         24
-sdc              17.42       232.10       368.66    5009076    7956248
-sdd              16.64       196.53       357.23    4241392    7709640
-sdf              16.30       196.35       367.01    4237644    7920700
-sde              17.12       232.16       355.58    5010384    7674092
-sdh               0.01         0.22         0.00       4820          0
+Output of btrfs-show-super:
+superblock: bytenr=65536, device=/dev/vg00/secondary_nas
+---------------------------------------------------------
+csum            0xb9f1cb2f [match]
+bytenr            65536
+flags            0x1
+magic            _BHRfS_M [match]
+fsid            41eea530-05a9-4af4-9c23-a12d99ec64d0
+label            secondary
+generation        108373
+root            13237056634880
+sys_array_size        129
+chunk_root_generation    108362
+root_level        1
+chunk_root        13272016519168
+chunk_root_level    1
+log_root        0
+log_root_transid    0
+log_root_level        0
+total_bytes        32985348833280
+bytes_used        13287498846208
+sectorsize        4096
+nodesize        16384
+leafsize        16384
+stripesize        4096
+root_dir        6
+num_devices        1
+compat_flags        0x0
+compat_ro_flags        0x0
+incompat_flags        0x61
+csum_type        0
+csum_size        4
+cache_generation    108373
+uuid_tree_generation    108373
+dev_item.uuid        3b80d2e0-3cd7-46fd-b9be-f0c318e0ec75
+dev_item.fsid        41eea530-05a9-4af4-9c23-a12d99ec64d0 [match]
+dev_item.type        0
+dev_item.total_bytes    32985348833280
+dev_item.bytes_used    13315547856896
+dev_item.io_align    4096
+dev_item.io_width    4096
+dev_item.sector_size    4096
+dev_item.devid        1
+dev_item.dev_group    0
+dev_item.seek_speed    0
+dev_item.bandwidth    0
+dev_item.generation    0
 
-How do I boil those numbers down to something meaningful, so I can get
-an idea of the throughput in situ?
+I can live with the current setup for the moment, but using the loopback 
+device may have an impact on performance, so I'm looking for the easiest 
+way to mount the volume without any workaround
 
-Presumably the answer is based on the normal read/write arithmetic
-associated with RAID:
-* raid1 read is nx (no lower than 1x), write is 1x
-* raid10 read is nx (no lower than (n/spans)x), write is (n/spans)x
+Best regards,
+Burkhard Linke
 
-But as a practical matter, how does one go from the formulae to iostat
-output to a metric? For instance:
-Device:            tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
-sdb              22.40        38.75       540.65     836356   11668224
-sda              22.41        40.32       540.65     870084   11668224
+-- 
+Dr. rer. nat. Burkhard Linke
+Bioinformatics and Systems Biology
+Justus-Liebig-University Giessen
+35392 Giessen, Germany
+Phone: (+49) (0)641 9935810
 
-Do I take this to mean that for my raid1 read throughput is possibly
-38.75 + 40.32 = 79.07 kB_read/s, and write is (540.65 + 540.65)/2 =
-540.65 kB_write/s?
-
-Though raid5&6 are yet to be fully baked, I imagine the answer for
-those levels can become quite complex.
-
-Thanks for your time,
--rb

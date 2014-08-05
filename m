@@ -1,69 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50322 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:43363 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754546AbaHEIGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Aug 2014 04:06:30 -0400
+	id S1757215AbaHEIVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Aug 2014 04:21:00 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XEZlL-0006uN-AV
-	for linux-btrfs@vger.kernel.org; Tue, 05 Aug 2014 10:06:27 +0200
+	id 1XEZzP-0006qZ-3F
+	for linux-btrfs@vger.kernel.org; Tue, 05 Aug 2014 10:20:59 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Aug 2014 10:06:27 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Aug 2014 10:20:59 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Aug 2014 10:06:27 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Aug 2014 10:20:59 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: ENOSPC with mkdir and rename
-Date: Tue, 5 Aug 2014 08:06:12 +0000 (UTC)
-Message-ID: <pan$dbb9d$e1133995$a123d619$8316b9ab@cox.net>
+Date: Tue, 5 Aug 2014 08:20:40 +0000 (UTC)
+Message-ID: <pan$92d50$cb27b892$f18e750a$667475cd@cox.net>
 References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
+	<53DEE40C.6020403@cn.fujitsu.com>
+	<CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
 	<17833067.mzxAL4oqZq@quad>
-	<CAFvQSYRtZZz00u5fg8h0bjT-W67URtNMqh6F7SZxgZVYXNyR8Q@mail.gmail.com>
-	<1875052.8GFlAMfPzL@quad>
+	<CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
+	<20140804102206.GA31950@carfax.org.uk>
+	<CAFChkquonAbMbPynpxvayb3qpLAEcMSfC2TvGKCG+kFo-Qy7eA@mail.gmail.com>
+	<53DFBE43.2050901@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Samuel posted on Mon, 04 Aug 2014 20:24:46 +1000 as excerpted:
+Austin S Hemmelgarn posted on Mon, 04 Aug 2014 13:09:23 -0400 as
+excerpted:
 
-> On Mon, 4 Aug 2014 11:56:46 AM Clemens Eisserer wrote:
-> 
->> Which doesn't protect the *average* user from running into issues like
->> this.
-> 
-> No, but they need to be aware of it.
+> Think of each chunk like a box, and each block as a block, and that you
+> have two different types of block (data and metadata) and two different
+> types of box (also data and metadata). The data boxes are four times the
+> size of the metadata boxes, and they all have to fit in one really big
+> container (the device itself).  You can only put data blocks in the data
+> boxs, and you can only put metadata blocks in metadata boxes.  Say that
+> in total, you can fit 128 data boxes in the large container, or you can
+> replace one data box with up to four metadata boxes.  Even though you
+> may only have a few blocks in a given box, the box still takes up the
+> same amount of space in the larger container.  Thus, it's possible to
+> have only a few blocks stored, but not be able to add any more boxes to
+> the larger container.  A balance operation is essentially the equivalent
+> of taking all of the blocks of a given type, and fitting them into the
+> smallest number of boxes possible.
 
-Actually, an ordinary user/admin /should/ have no more need to be aware 
-of it than they do on any other filesystem.  Since that issue doesn't 
-occur on ext* or reiserfs, to pick two examples I'm familiar with, they 
-shouldn't need to worry about it on btrfs either.  But then, just such an 
-"ordinary admin" shouldn't yet be running btrfs on their system, as it's 
-simply not to that point of readiness and maturity yet.
+FWIW, that's a great analogy to stick up on the wiki somewhere, probably 
+somewhere in the FAQ related to ENOSPC.  Please consider doing so.
 
-Which is why I'm not particularly happy with seeing all the "btrfs is 
-still not stable, use at your own risk" warnings disappearing.  With them 
-there, people who chose to run btrfs /could/ be expected to have done 
-their research and have btrfs specific knowledge such as this, because 
-btrfs was clearly marked as /not/ ready for "ordinary users" not prepared 
-to do such research on their own.
-
-But now that those warnings are all being removed, btrfs should "just 
-work" for all those "ordinary users".
-
-But it doesn't.  Btrfs is still special and requires btrfs-domain 
-specific knowledge to properly administer, as the fixes that would remove 
-that requirement, in this case perhaps a background thread that would 
-check for data/metadata imbalance and at least log a warning suggesting a 
-rebalance, if not triggering that rebalance on its own, simply aren't 
-there yet.
-
-IMO, without those fixes, btrfs is still experimental, or at least not 
-entirely stable yet and requiring btrfs-domain-specific knowledge, and 
-should keep the warnings saying exactly that.  Unfortunately...
+(Someone took one of my explanations from the list and stuck it in the 
+wiki, virtually word-for-word, with a link to the list post in the 
+archives for more.  I was glad, as for some reason I just seem to work 
+best on the lists, and seem to treat web pages as read-only, even if 
+they're on a wiki I in theory have or can get write-privs on.  I'm 
+suggesting someone, doesn't have to be you tho great if it is, do the 
+same with this.)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

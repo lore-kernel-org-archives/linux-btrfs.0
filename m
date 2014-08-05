@@ -1,65 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1668 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932700AbaHEIvu convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Aug 2014 04:51:50 -0400
-Message-ID: <53E09B20.4020305@cn.fujitsu.com>
-Date: Tue, 5 Aug 2014 16:51:44 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:39121 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757515AbaHEJe6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Aug 2014 05:34:58 -0400
+Received: by mail-wi0-f179.google.com with SMTP id f8so954585wiw.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Aug 2014 02:34:54 -0700 (PDT)
 MIME-Version: 1.0
-To: Peter Waller <peter@scraperwiki.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: ENOSPC with mkdir and rename
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com> <53DEE40C.6020403@cn.fujitsu.com> <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
-In-Reply-To: <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+From: Peter Waller <peter@scraperwiki.com>
+Date: Tue, 5 Aug 2014 10:34:13 +0100
+Message-ID: <CAFChkqv7WOUmYPajdJMqZ_LAeMfssUH8X8a6J_y1Xghm_Rqgiw@mail.gmail.com>
+Subject: Stack dumps in use_block_rsv while rebalancing ("block rsv returned -28")
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I already posted this in the thread "ENOSPC with mkdir and rename",
+but now I have a device with 100GB unallocated on the "btrfs fi sh"
+output, and when I run a rebalance of the form:
 
--------- Original Message --------
-Subject: Re: ENOSPC with mkdir and rename
-From: Peter Waller <peter@scraperwiki.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年08月04日 16:14
-> Thanks for responses.
->
-> All of this is *very* surprising. I'm not new to BTRFS, I've been
-> using it on my own machines for multiple years. I didn't realise there
-> was an un-holstered footgun on my lap at this point. How can it be
-> made clear how to avoid the ENOSPC problem to myself and other
-> sysadmins? Or preferably not exist as a problem?
-[snip]
+> btrfs filesystem balance start -dusage=50 -musage=10 "$mount"
 
-In fact such "defeat"(or whatever) is not really btrfs only problem.
-In ext*, there is still similiar behavior: ext* has a up limit on the 
-number of inode after mkfs.
-(When you mkfs.ext*, you are prompt the up limit of inodes)
-However other metadata in ext* is stored together with data, so no 
-ENOSPC problem like btrfs.
+I get more than 75 of such stack traces contaminating the klog. I've
+put some of them up in a gist here:
+https://gist.github.com/pwaller/1df8a7efc2f10343f2e3 and one of them
+is reproduced below.
 
-Btrfs only makes ENOSPC easier to happen by completly split data and 
-metadata, and does extra
-data reserve for metadata.
-
-If you like the ext* way, as already mentioned you can mkfs.btrfs with 
--M flag.
-
-But IMO, some tuning in btrfs chunk allocation algorithm may helps.
-For example, we have a 20G disk, and 14G space is allocated to 
-data/metadata chunks.
-Under such sitiuation, if btrfs needs new data chunk, it will allocate 
-up to 10% of disk, which is 2G.
-But if it comes to metadata, it will only allocate up to 256M metadata 
-chunk.
-This makes it very easy to allocate the rest of space all to data chunk.
-
-But if btrfs can use the free space in a more diligent way when space is 
-not enough,
-metadata and data usage should be more balanced and less ENOSPC will occur.
-
-If nobody dislike the idea, I'd like try to implent this later.
+Is this harmful or expected? Are there any workarounds?
 
 Thanks,
-Qu
 
+- Peter
+
+[376007.681938] ------------[ cut here ]------------
+[376007.681957] WARNING: CPU: 1 PID: 27021 at
+/home/apw/COD/linux/fs/btrfs/
+extent-tree.c:6946
+use_block_rsv+0xfd/0x1a0 [btrfs]()
+[376007.681958] BTRFS: block rsv returned -28
+[376007.681959] Modules linked in: softdog tcp_diag inet_diag dm_crypt
+ppdev xen_fbfront fb_sys_fops syscopyarea sysfillrect sysimgblt
+i2c_piix4 serio_raw parport_pc parport mac_hid isofs xt_tcpudp
+iptable_filter xt_owner ip_tables x_tables btrfs xor raid6_pq
+crct10dif_pclmul crc32_pclmul ghash_clmulni_intel aesni_intel
+aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd floppy psmouse
+[376007.681980] CPU: 1 PID: 27021 Comm: pam_script_ses_ Tainted: G
+   W     3.15.7-031507-generic #201407281235
+[376007.681981] Hardware name: Xen HVM domU, BIOS 4.2.amazon 05/23/2014
+[376007.681983]  0000000000001b22 ffff8800acca39d8 ffffffff8176f115
+0000000000000007
+[376007.681986]  ffff8800acca3a28 ffff8800acca3a18 ffffffff8106ceac
+ffff8801efc37870
+[376007.681989]  ffff88017db0ff00 ffff8801aedcd800 0000000000001000
+ffff88001c987000
+[376007.681992] Call Trace:
+[376007.682000]  [<ffffffff8176f115>] dump_stack+0x46/0x58
+[376007.682005]  [<ffffffff8106ceac>] warn_slowpath_common+0x8c/0xc0
+[376007.682008]  [<ffffffff8106cf96>] warn_slowpath_fmt+0x46/0x50
+[376007.682016]  [<ffffffffa00d9d1d>] use_block_rsv+0xfd/0x1a0 [btrfs]
+[376007.682024]  [<ffffffffa00de687>] btrfs_alloc_free_block+0x57/0x220 [btrfs]
+[376007.682027]  [<ffffffff8178033c>] ? __do_page_fault+0x28c/0x550
+[376007.682031]  [<ffffffff8119749f>] ? page_add_file_rmap+0x6f/0xb0
+[376007.682037]  [<ffffffffa00c8a3c>] btrfs_copy_root+0xfc/0x2b0 [btrfs]
+[376007.682041]  [<ffffffff811c60b9>] ? memcg_check_events+0x29/0x50
+[376007.682051]  [<ffffffffa013a583>] ? create_reloc_root+0x33/0x2c0 [btrfs]
+[376007.682061]  [<ffffffffa013a743>] create_reloc_root+0x1f3/0x2c0 [btrfs]
+[376007.682064]  [<ffffffff811dd073>] ? generic_permission+0xf3/0x120
+[376007.682073]  [<ffffffffa0140eb8>] btrfs_init_reloc_root+0xb8/0xd0 [btrfs]
+[376007.682082]  [<ffffffffa00ee967>]
+record_root_in_trans.part.30+0x97/0x100 [btrfs]
+[376007.682090]  [<ffffffffa00ee9f4>] record_root_in_trans+0x24/0x30 [btrfs]
+[376007.682098]  [<ffffffffa00efeb1>]
+btrfs_record_root_in_trans+0x51/0x80 [btrfs]
+[376007.682106]  [<ffffffffa00f13d6>]
+start_transaction.part.35+0x86/0x560 [btrfs]
+[376007.682109]  [<ffffffff8132c197>] ? apparmor_capable+0x27/0x80
+[376007.682117]  [<ffffffffa00f18d9>] start_transaction+0x29/0x30 [btrfs]
+[376007.682125]  [<ffffffffa00f19a7>] btrfs_join_transaction+0x17/0x20 [btrfs]
+[376007.682133]  [<ffffffffa00f7fa8>] btrfs_dirty_inode+0x58/0xe0 [btrfs]
+[376007.682141]  [<ffffffffa00fcaf2>] btrfs_setattr+0xa2/0xf0 [btrfs]
+[376007.682144]  [<ffffffff811eec74>] notify_change+0x1c4/0x3b0
+[376007.682146]  [<ffffffff811dde96>] ? final_putname+0x26/0x50
+[376007.682149]  [<ffffffff811d088d>] chown_common+0x16d/0x1a0
+[376007.682153]  [<ffffffff811f2b08>] ? __mnt_want_write+0x58/0x70
+[376007.682156]  [<ffffffff811d1a8f>] SyS_fchownat+0xbf/0x100
+[376007.682159]  [<ffffffff811d1aed>] SyS_chown+0x1d/0x20
+[376007.682163]  [<ffffffff817858bf>] tracesys+0xe1/0xe6
+[376007.682165] ---[ end trace 1853311c87a5cd94 ]---

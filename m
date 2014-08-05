@@ -1,40 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:41621 "EHLO
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:41643 "EHLO
 	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753469AbaHEMRi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Aug 2014 08:17:38 -0400
+	with ESMTP id S1753130AbaHEMUg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Aug 2014 08:20:36 -0400
 From: Russell Coker <russell@coker.com.au>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+To: Duncan <1i5t5.duncan@cox.net>
 Reply-To: russell@coker.com.au
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: ENOSPC with mkdir and rename
-Date: Tue, 05 Aug 2014 22:17:34 +1000
-Message-ID: <5946755.iXasy4PIFE@xev>
-In-Reply-To: <53E09B20.4020305@cn.fujitsu.com>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com> <CAFChkqttiPWQ+FquT2FfKE54US7vkeEyQsUT8fuD1BWNhS3k=w@mail.gmail.com> <53E09B20.4020305@cn.fujitsu.com>
+Date: Tue, 05 Aug 2014 22:20:33 +1000
+Message-ID: <5484676.xyTNESz9qN@xev>
+In-Reply-To: <pan$dbb9d$e1133995$a123d619$8316b9ab@cox.net>
+References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com> <1875052.8GFlAMfPzL@quad> <pan$dbb9d$e1133995$a123d619$8316b9ab@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 5 Aug 2014 16:51:44 Qu Wenruo wrote:
-> In fact such "defeat"(or whatever) is not really btrfs only problem.
-> In ext*, there is still similiar behavior: ext* has a up limit on the 
-> number of inode after mkfs.
-> (When you mkfs.ext*, you are prompt the up limit of inodes)
-> However other metadata in ext* is stored together with data, so no 
-> ENOSPC problem like btrfs.
+On Tue, 5 Aug 2014 08:06:12 Duncan wrote:
+> Which is why I'm not particularly happy with seeing all the "btrfs is 
+> still not stable, use at your own risk" warnings disappearing.  With them 
+> there, people who chose to run btrfs /could/ be expected to have done 
+> their research and have btrfs specific knowledge such as this, because 
+> btrfs was clearly marked as /not/ ready for "ordinary users" not prepared 
+> to do such research on their own.
+> 
+> But now that those warnings are all being removed, btrfs should "just 
+> work" for all those "ordinary users".
+> 
+> But it doesn't.  Btrfs is still special and requires btrfs-domain 
+> specific knowledge to properly administer, as the fixes that would remove 
+> that requirement, in this case perhaps a background thread that would 
+> check for data/metadata imbalance and at least log a warning suggesting a 
+> rebalance, if not triggering that rebalance on its own, simply aren't 
+> there yet.
 
-There is a huge difference between BTRFS and Ext* in this regard.
+Currently the Debian/Jessie freeze is approaching.  The Debian kernel team 
+have chosen 3.16 and don't have any plans for significant back-ports from 
+later kernels.
 
-The way that Ext* has always worked is that if you delete one file, pipe or 
-socket that isn't hard-linked, or one sym-link or directory then you free up 1 
-Inode.  1 free Inode allows you to create 1 file, pipe, socket, sym-link, or 
-directory.
+Based on what I've read on this list it seems that BTRFS is less stable in 
+3.15 than in 3.14.  Even 3.14 isn't something I'd recommend to random people 
+who want something to just work.
 
-Deleting a file or directory on BTRFS takes MORE metadata space (at least 
-temporarily) because it  writes a new copy of the tree.  So not only will 
-deleting files not immediately solve a lack of metadata space on BTRFS but it 
-might even make things worse.
+The Debian installer has BTRFS in a list of filesystems to choose with no 
+special notice about it.  I'm thinking of filing a Debian bug requesting that 
+they put a warning against it.
+
+What do people here think?
 
 -- 
 My Main Blog         http://etbe.coker.com.au/

@@ -1,79 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50907 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753806AbaHFK3Y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 06:29:24 -0400
-Date: Wed, 6 Aug 2014 11:29:19 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Martin Steigerwald <Martin@lichtvoll.de>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:35584 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755259AbaHFM2a (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 08:28:30 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Hugo Mills <hugo@carfax.org.uk>
 Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
         Chris Mason <clm@fb.com>
 Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
-Message-ID: <20140806102918.GA3968@carfax.org.uk>
-References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com>
- <1537782.AGn1dfcASJ@merkaba>
- <234528786.A5cAeyBFJU@merkaba>
- <3143412.n5KSJct7YP@merkaba>
+Date: Wed, 06 Aug 2014 14:28:17 +0200
+Message-ID: <2081055.UhRBjlI1Dc@merkaba>
+In-Reply-To: <20140806102918.GA3968@carfax.org.uk>
+References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <3143412.n5KSJct7YP@merkaba> <20140806102918.GA3968@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="xHFwDpU9dbj6ez1V"
-In-Reply-To: <3143412.n5KSJct7YP@merkaba>
+Content-Type: multipart/signed; boundary="nextPart4616474.pi2G4bb5Gf"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---xHFwDpU9dbj6ez1V
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--nextPart4616474.pi2G4bb5Gf
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-On Wed, Aug 06, 2014 at 12:21:59PM +0200, Martin Steigerwald wrote:
-> It basically happened on about the first heavy write I/O occasion after
-> the BTRFS trees filled the complete device:
-> 
-> I am now balancing the trees down to lower sizes manually with
-> 
-> btrfs balance start -dusage=10 /home
-> 
-> btrfs balance start -musage=10 /home
+Am Mittwoch, 6. August 2014, 11:29:19 schrieb Hugo Mills:
+> On Wed, Aug 06, 2014 at 12:21:59PM +0200, Martin Steigerwald wrote:
+> > It basically happened on about the first heavy write I/O occasion a=
+fter
+> > the BTRFS trees filled the complete device:
+> >=20
+> > I am now balancing the trees down to lower sizes manually with
+> >=20
+> > btrfs balance start -dusage=3D10 /home
+> >=20
+> > btrfs balance start -musage=3D10 /home
+>=20
+>    Note that balance has nothing to do with balancing the metadata
+> trees. The tree structures are automatically balanced as part of thei=
+r
+> normal operation. A "btrfs balance start" is a much higher-level
+> operation. It's called balance because the overall effect is to
+> balance the data usage evenly across multiple devices. (Actually, to
+> balance the available space evenly).
+>=20
+>    Also note that the data part isn't tree-structured, so referring t=
+o
+> "balancing the trees" with a -d flag is doubly misleading. :)
 
-   Note that balance has nothing to do with balancing the metadata
-trees. The tree structures are automatically balanced as part of their
-normal operation. A "btrfs balance start" is a much higher-level
-operation. It's called balance because the overall effect is to
-balance the data usage evenly across multiple devices. (Actually, to
-balance the available space evenly).
+Hmm, it makes used size in
 
-   Also note that the data part isn't tree-structured, so referring to
-"balancing the trees" with a -d flag is doubly misleading. :)
+merkaba:~> btrfs fi sh /home
+Label: 'home'  uuid: [=E2=80=A6]
+        Total devices 2 FS bytes used 129.12GiB
+        devid    1 size 160.00GiB used 142.03GiB path /dev/dm-0
+        devid    2 size 160.00GiB used 142.03GiB path /dev/mapper/sata-=
+home
 
-   Hugo.
+and I thought this the is size used by the trees BTRFS creates.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 65E74AC0 from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- You know... I'm sure this code would seem a lot better if I ---   
-                         never tried running it.                         
+So you say it does not balance shortest versus longest path but=E2=80=A6=
+ as the tree=20
+algorithm does this automatically=E2=80=A6 but just the *data* in the t=
+ree?
 
---xHFwDpU9dbj6ez1V
+In any way: I should not be required to do this kind of manual maintena=
+nce in=20
+order to prevent BTRFS from locking up hard on write accesses.
+
+Ciao,
+=2D-=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--nextPart4616474.pi2G4bb5Gf
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v2
 
-iQIVAwUBU+IDflheFHXiqx3kAQIo7BAApmn8KRu8J1UpC1+cwvJngHfxhQT9yXSS
-RDH2DJy7IwOKYcqTxJUYOYy1o687ZTFStltrEdCftK6QNLSPkJOECo7dWt70yXVv
-zDyQYmjngFbvicrtSrviM5d1ITEOHquerGLkiS1Km400GHKG6dno8KJaQcLd8VD7
-oS6efvgA+tONQFHwzt4F1wg84IXf8CcUVCAB7zx7klZxTIHQNvs+85GpzKJau5w6
-h5Php71YngmiJj3hzPnuCnvTmrDPBfXVr+zqHeJ2PygKgXFcnXf8Rnug5uxHl8Oc
-o38b+FIeWoUBfhhhPfwMsBzxfNo6OhyIHmgOio/Hl6aZDI4CKncKLZtDNUCjZzlI
-X4ZLUR+709MLG8q4frEAE+uxp4CbGzhgqDSf64Imdtb8TBSyUw6Nu75ea8Toj6DL
-+OonY85Ao94baa26Dik5oJv+CWKMOzZ9FLSHp3MddEALWmV2NORriCJMksDGWkiM
-txftQ2a/PYwcIt5XvQpMwsN7/1zHqYLacJhMOC2bZ4wMHQIstY22O3nXHrDVLcV3
-zl4107trnScev1DBtyBxbkmsH6HjyOn/7auWxObLHUAvjZrZsdgyVcXkI2jtfb+Q
-Q/WwEwwZKsPZx2AG+41Rjaf3Q2pRdyAuIbmfkqOKEbTJtZ4/2eRu8RySStvYIs8F
-mABXwxVy3E4=
-=q3R6
+iEYEABECAAYFAlPiH2wACgkQmRvqrKWZhMflWwCfc/xp47wRK6g6V61m16PbnwlN
+GxUAn18HqIa/3PyoRsnyBS82u2DpMvCW
+=8xtp
 -----END PGP SIGNATURE-----
 
---xHFwDpU9dbj6ez1V--
+--nextPart4616474.pi2G4bb5Gf--
+

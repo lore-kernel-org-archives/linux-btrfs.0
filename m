@@ -1,47 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:42051 "EHLO mail.virtall.com"
+Received: from plane.gmane.org ([80.91.229.3]:59104 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753939AbaHEXj0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Aug 2014 19:39:26 -0400
-To: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-Subject: Re: btrfs and iostat - how do I measure the live performance of my  btrsf =?UTF-8?Q?filesystems=3F?=
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Wed, 06 Aug 2014 01:39:22 +0200
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-In-Reply-To: <CADw2B2MgvUt_bL11ZOAZjyk+R2pmM5JbLVjmgqoXBHSTEypMqw@mail.gmail.com>
-References: <e464a0229fbd354aea0d15d8342330b1@admin.virtall.com>
- <CADw2B2MgvUt_bL11ZOAZjyk+R2pmM5JbLVjmgqoXBHSTEypMqw@mail.gmail.com>
-Message-ID: <40ee87d5d8b24230774bf28018ceb289@admin.virtall.com>
+	id S1754298AbaHFAFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Aug 2014 20:05:35 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XEoj0-0007WH-3K
+	for linux-btrfs@vger.kernel.org; Wed, 06 Aug 2014 02:05:02 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Aug 2014 02:05:02 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Aug 2014 02:05:02 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: ENOSPC with mkdir and rename
+Date: Wed, 6 Aug 2014 00:04:22 +0000 (UTC)
+Message-ID: <pan$e7996$8cc44d40$452539c$35ab87@cox.net>
+References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com>
+	<1875052.8GFlAMfPzL@quad> <pan$dbb9d$e1133995$a123d619$8316b9ab@cox.net>
+	<5484676.xyTNESz9qN@xev>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-08-06 00:06, G. Richard Bellamy wrote:
-> On Tue, Aug 5, 2014 at 7:14 AM, Tomasz Chmielewski <mangoo@wpkg.org> 
-> wrote:
->> Simple iostat won't give you meaningful live performance stats.
->> 
->> You can combine it i.e. like below:
->> 
->> iostat -x 1
->> iostat -mx 1
->> iostat -m 1
-> 
-> Thanks for the pointer about viewing the extended stats, and showing
-> them in MB rather than kB.
-> 
-> Maybe I'm missing something here. I'm failing to see how adding those
-> additional stats helps me get meaningful throughput information for a
-> multi-device btrfs volume.
+Russell Coker posted on Tue, 05 Aug 2014 22:20:33 +1000 as excerpted:
 
-Well you won't see an aggregate, but you will see individual device 
-statistics with "1" at the end of iostat arguments (meaning, dump the 
-stats every second).
+> The Debian installer has BTRFS in a list of filesystems to choose with
+> no special notice about it.  I'm thinking of filing a Debian bug
+> requesting that they put a warning against it.
+> 
+> What do people here think?
 
+You already have my general feeling, a warning is still appropriate.
+
+For Debian, I believe it's fair to characterize people running stable as 
+relatively conservative.  As such, a warning may be appropriate, but if 
+they're actually /that/ conservative, is it needed, or will user's 
+natural inclinations to filesystem conservatism be enough, and a btrfs 
+warning thus look more serious than it is?
+
+I'd say warn, unless that warning /will/ be seen as "eat your babies" 
+level, even when it's more "appropriate care and a regular backup program 
+recommended."
 
 -- 
-Tomasz Chmielewski
-http://www.sslrack.com
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,84 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24437 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754768AbaHFJeY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 05:34:24 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s769YLtf029825
-	for <linux-btrfs@vger.kernel.org>; Wed, 6 Aug 2014 17:34:21 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs: cancel scrub/replace if the user space process receive SIGKILL.
-Date: Wed, 6 Aug 2014 17:34:22 +0800
-Message-ID: <1407317662-9364-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:43373 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752489AbaHFJn1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Aug 2014 05:43:27 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XExkj-0007vG-9f
+	for linux-btrfs@vger.kernel.org; Wed, 06 Aug 2014 11:43:25 +0200
+Received: from 195.167.52.143 ([195.167.52.143])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Aug 2014 11:43:25 +0200
+Received: from tmjuju by 195.167.52.143 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Aug 2014 11:43:25 +0200
+To: linux-btrfs@vger.kernel.org
+From: TM <tmjuju@yahoo.com>
+Subject: Recovering a 4xhdd RAID10 file system with 2 failed disks
+Date: Wed, 6 Aug 2014 09:43:05 +0000 (UTC)
+Message-ID: <loom.20140806T113805-883@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When impatient sysadmin is tired of waiting background running btrfs
-scrub/replace and send SIGKILL to btrfs process, unlike
-SIGINT/SIGTERM which can be caught by user space program and cancel the
-scrub work, user space program will continue running until ioctl exits.
+Recovering a 4xhdd RAID10 file system with 2 failed disks
 
-To keep it consistent with the behavior of btrfs-progs, which cancels
-the work when SIGINT is received, this patch will make scrub routine to
-check SIGKILL pending of current task and cancel the work if SIGKILL is
-already pending.
+Hi all,
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 29 +++++++++++++++++++++++++----
- 1 file changed, 25 insertions(+), 4 deletions(-)
+  Quick and Dirty:
+  4disk RAID10 with 2 missing devices, mounts as degraded,ro ,  readonly
+scrub ends with no errors
+  Recovery options:
+  A/ If you had at least 3 hdds, you could replace/add a device
+  B/ If you only have 2 hdds, even if scrub ro is ok, 
+ you cannot replace/add a device
+  So I guess the best option is:
+  B.1/ create a new RAID0 filesystem , copy data over to the new filesystem,
+ move the old drives to the new filesystem, re-balance the system as RAID10.
+  B.2/ any other ways to recover I am missing ? anything easier/faster ?
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b6d198f..0c8047f 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2277,6 +2277,29 @@ static int get_raid56_logic_offset(u64 physical, int num,
- 	return 1;
- }
- 
-+/*
-+ * check whether the scrub is canceled
-+ * if canceled, return -ECANCELED, else return 0
-+ *
-+ * scrub/replace will be canceled when
-+ * 1) cancel is called manually
-+ * 2) caller user space process(btrfs-progs) receive SIGKILL
-+ * other signals can be caught in btrfs-progs using multi-thread
-+ * and cancel the work.
-+ * but SIGKILL can't be caught and btrfs-progs already fallen into ioctl
-+ * so cancel current scrub to return asap if SIGKILL is received.
-+ */
-+static inline int is_scrub_canceled(struct btrfs_fs_info *fs_info,
-+				    struct scrub_ctx *sctx)
-+{
-+	int ret = 0;
-+
-+	if (unlikely(atomic_read(&fs_info->scrub_cancel_req) ||
-+		     atomic_read(&sctx->cancel_req) ||
-+		     __fatal_signal_pending(current)))
-+		ret = -ECANCELED;
-+	return ret;
-+}
- static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 					   struct map_lookup *map,
- 					   struct btrfs_device *scrub_dev,
-@@ -2420,11 +2443,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 		/*
- 		 * canceled?
- 		 */
--		if (atomic_read(&fs_info->scrub_cancel_req) ||
--		    atomic_read(&sctx->cancel_req)) {
--			ret = -ECANCELED;
-+		ret = is_scrub_canceled(fs_info, sctx);
-+		if (ret)
- 			goto out;
--		}
- 		/*
- 		 * check to see if we have to pause
- 		 */
--- 
-2.0.4
+
+  Long story:
+  A couple of weeks back I had a failed hdd in a RAID10 4disk btrfs.
+  I added a new device, removed the failed, but three days later after the
+recovery, I ended up with another 2 failing disks.
+  So I physically removed the failing 2 disks from the drive bays. 
+  (sent one back to Seagate for replacement, the other one I kept it and
+will send it later)
+  (please note I do have a backup)
+
+  Good thing is that the two drives I have left in this RAID10 , seem to
+hold all data and data seems ok according to a read-only scrub.
+  The remaining 2 disks from the RAID can be mounted with –o degraded,ro
+  I did a read-only scrub on the filesystem (while mounted as –o
+degraded,ro) and scrub ended with no errors. 
+  I hope this ro scrub is 100% validation that I have not lost any files,
+and all files are ok. 
+
+  Just today I *tried* to inserted a new disk, and add it to the RAID10 setup.
+  If I mount the filesystem as degraded,ro I cannot add a new device (btrfs
+device add). And I cannot replace a disk (btrfs replace –r start).
+  That is because the filesystem is mounted not only as degraded but as
+read-only.
+  But a two disk RAID10, can only be mounted as ro.
+  This is by design
+gitorious.org/linux-n900/linux-n900/commit
+/bbb651e469d99f0088e286fdeb54acca7bb4ad4e
+  
+  But again, a RAID10 system should be recoverable somehow if the data is
+all there but half of the disks are missing. 
+(Ie. the raid0 data is there and only the raid1 part is missing. The
+striped volume is ok, the mirror data is missing)
+  If it was an ordinary RAID10 , replacing the two mirror disks at the same
+time should be acceptable and the RAID should be recoverable.
+
+  Myself I am lucky , since I still have one of the old failing disks in my
+hands. (the other one is being RMAd currently)
+  I can insert the old failing disk and mount the file system as degraded
+(but not ro), and then run a btrfs replace or btrfs device add.
+
+  But in case I did not have the old failing disk in my hands, or if the
+disk was damaged beyond recognition/repair (eg not recognized in BIOS),
+  as far as I understand it is impossible to add/replace drives in a file
+system mounted as read-only.
+
+  Am I missing something ?
+  Is there a better and faster way to recover a RAID10 when only the striped
+data is there but not the mirror data?
+
+Thanks in advance,
+TM
+
 

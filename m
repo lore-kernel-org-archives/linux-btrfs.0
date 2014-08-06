@@ -1,76 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:35584 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755259AbaHFM2a (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 08:28:30 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
-        Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
-Date: Wed, 06 Aug 2014 14:28:17 +0200
-Message-ID: <2081055.UhRBjlI1Dc@merkaba>
-In-Reply-To: <20140806102918.GA3968@carfax.org.uk>
-References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <3143412.n5KSJct7YP@merkaba> <20140806102918.GA3968@carfax.org.uk>
+Received: from ngcobalt08.manitu.net ([217.11.48.108]:36550 "EHLO
+	ngcobalt08.manitu.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751276AbaHFN1g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 09:27:36 -0400
+Received: from lapbok.localnet (unknown [46.189.32.222])
+	(Authenticated sender: jseifert)
+	by ngcobalt08.manitu.net (Postfix) with ESMTPSA id 68B933A8074
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Aug 2014 15:20:08 +0200 (CEST)
+From: Justus Seifert <justus.seifert@cloudandheat.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Unrecoverable errors when the btrfs file system was modified outside the running OS
+Date: Wed, 06 Aug 2014 15:19:50 +0200
+Message-ID: <1740245.62hL253geB@lapbok>
+In-Reply-To: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
+References: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart4616474.pi2G4bb5Gf"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart1509564.NocDkyUSB6"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart4616474.pi2G4bb5Gf
+--nextPart1509564.NocDkyUSB6
 Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain; charset="utf-8"
 
-Am Mittwoch, 6. August 2014, 11:29:19 schrieb Hugo Mills:
-> On Wed, Aug 06, 2014 at 12:21:59PM +0200, Martin Steigerwald wrote:
-> > It basically happened on about the first heavy write I/O occasion a=
-fter
-> > the BTRFS trees filled the complete device:
-> >=20
-> > I am now balancing the trees down to lower sizes manually with
-> >=20
-> > btrfs balance start -dusage=3D10 /home
-> >=20
-> > btrfs balance start -musage=3D10 /home
+On Monday 04 August 2014 01:29:49 you wrote:
+> Hello,
 >=20
->    Note that balance has nothing to do with balancing the metadata
-> trees. The tree structures are automatically balanced as part of thei=
-r
-> normal operation. A "btrfs balance start" is a much higher-level
-> operation. It's called balance because the overall effect is to
-> balance the data usage evenly across multiple devices. (Actually, to
-> balance the available space evenly).
+> I just had a very frustrating experience with btrfs, which I was only=
+
+> able to resolve by rolling back to ext4 using the subvol btrfs-conver=
+t
+> created. The same type of situation occurred before when I was using
+> the ext file system and the result was far less disastrous.
 >=20
->    Also note that the data part isn't tree-structured, so referring t=
-o
-> "balancing the trees" with a -d flag is doubly misleading. :)
+> The source of problem came from the fact that I have a Windows and
+> Ubuntu 14.04 dual-boot setup and within Windows I also use VirtualBox=
 
-Hmm, it makes used size in
+> to run the same Ubuntu with rawdisk. Today I updated Ubuntu to a new
+> kernel within VirtualBox. At this point, I would usually shutdown
+> VirtualBox before I let my machine go to hibernation. However, this
+> time I forgot. And when the machine started up, it went directly into=
 
-merkaba:~> btrfs fi sh /home
-Label: 'home'  uuid: [=E2=80=A6]
-        Total devices 2 FS bytes used 129.12GiB
-        devid    1 size 160.00GiB used 142.03GiB path /dev/dm-0
-        devid    2 size 160.00GiB used 142.03GiB path /dev/mapper/sata-=
-home
+> Ubuntu (because grub was updated and to avoid issues my VirtualBox
+> setup didn't allow Ubuntu to see my Windows partitions). I did a
+> grub-udpate, and rebooted back to Windows, where my VirtualBox was
+> still up and running fine. The tragedy happened when I now shut down
+> Ubuntu and VirtualBox. The btrfs file system was totally corrupted. I=
 
-and I thought this the is size used by the trees BTRFS creates.
+> tried various combinations ro, recovery, nospace_cache, and
+> clear_cache mount options, and it wouldn't mount. dmesg showed some
+> "transid verify failed", "open_ctree failed" error messages. btrfs
+> restore only retrieved three files.. btrfsck --repair and
+> btrfs-zero-log didn't help either.
+>=20
+> To my very surprise, btrfs-convert -r was able to use the subvol it
+> created to roll back to ext4. But had I not converted from ext4 to
+> btrfs, this would be an unrecoverable situation. Whether or not I hav=
+e
+> backups is a separate issue, being able to recover at least "somewhat=
+"
+> in this situation seems to be a desired feature for any file system.
+>=20
+> Roc
 
-So you say it does not balance shortest versus longest path but=E2=80=A6=
- as the tree=20
-algorithm does this automatically=E2=80=A6 but just the *data* in the t=
-ree?
 
-In any way: I should not be required to do this kind of manual maintena=
-nce in=20
-order to prevent BTRFS from locking up hard on write accesses.
+btrfs is CoW
+stale metadata means stale block info
+stale block info means no idea where the files are on disk and no idea =
+where=20
+free blocks are
+btrfs does not know, that it does not know, where to read and where to =
+write,=20
+it assumes the metadata cached in ram is correct and just reads and wri=
+tes to=20
+the disk where it sees fit.
+this is disastrous if the location of files changes
+cow means the location of files and metadata changes with _every single=
+ write_=20
+!
 
-Ciao,
-=2D-=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---nextPart4616474.pi2G4bb5Gf
+ext4 is not CoW
+if you do not delete, grow, shrink or create files =E2=80=93 only inpla=
+ce edits or=20
+small appeds that do not allocate aditional blocks, then the location o=
+f the=20
+files on disk does not change.
+this is often the case for most files and metadata on a root filesystem=
+.
+thus it is no surprise at all that the consequences of using stale meta=
+data=20
+for a filesystem that was mounted elsewhere differs dramatically betwee=
+n ext4=20
+and btrfs.
+
+please keep in mind that all filesystems assume that the ram is a safe =
+place to=20
+keep metadataduring runtime,  since reading all the required metadata a=
+ll the=20
+time would be a huge performance brake for modern filesystems.  old fil=
+esystems=20
+might be different.
+
+if you want the metadata not to change then try a read-only filesystem =
+for root=20
+for a while.  squashfs is the default root fs for openwrt and is ro.
+
+sry kmail ate my draft for this mail once and i was too lazy to retype =
+it=20
+completely thus only simple grammar and no spell checks.
+
+if you are interested in more details, ask detailed questions.  duncan =
+might=20
+also help you if you ask him.
+
+regards
+justus seifert
+--nextPart1509564.NocDkyUSB6
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 Content-Transfer-Encoding: 7Bit
@@ -78,10 +124,20 @@ Content-Transfer-Encoding: 7Bit
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iEYEABECAAYFAlPiH2wACgkQmRvqrKWZhMflWwCfc/xp47wRK6g6V61m16PbnwlN
-GxUAn18HqIa/3PyoRsnyBS82u2DpMvCW
-=8xtp
+iQIcBAABAgAGBQJT4it2AAoJELFJh75Z+IvIDH0P/Rdt5I9fuRWlxHfRKQWPPp+0
+olywSPrnGgP7Ora8njpUzrH0gyAslHVRASoUWLa1Dsl88rE+3bJApES7fiK+fUTQ
+Yv9kQbDtbdHErFlFHzT/+nalTPDxxKI5JkWmomfzqAR4aSXUrxt0xc5ZMI0XkMIc
+GoI0cF6wZ11SRDcYqVf/dZICr8Jc7U3a4LFHXxR8e6M0VsA5lAGSEkjZDTChpAff
+yolnsEPrDgZ9ikwqSTUUQJl8UXo1JX2Ty+WYRMFcnSgCZU2tCjwbK6jvEFVCsgxR
+2qWZK5w03dX0uNxw90JxBkGy9f3kThUkJira95UZoFz5UlrOhGmxe2b6SH7Eml91
+Y8w/5B0IFsoSt7ux2rp5B5i8r9COOohEtag4mEyQVYDZLs38Xy+f6bz8Fd7QY2vk
+t3NYft+ZUPOYjfyQPcBlJH6TpqHU6XSt8At5yPZInLSaFLV0yskBU5bIiC8Brfap
+6g5E6f4gvr4T3KrtkHAviY5FEBFZkDWeTEPvBjcIxj5inSyrxH6a8U9dAOTQJc0r
+caR5Vk8gwPiBYiBbclR51EzKHNRJISUhAQnqf0RtYXGvMg39/j6VTYFoO5j2Pniu
+c4s7964e2LSFURsFO/auhuooaBtvS0jB6xjm2z8sPlHhjISwh+AHS7Cr8/nPG0YN
+jQm29IVX3vsL0GQIloAy
+=Neip
 -----END PGP SIGNATURE-----
 
---nextPart4616474.pi2G4bb5Gf--
+--nextPart1509564.NocDkyUSB6--
 

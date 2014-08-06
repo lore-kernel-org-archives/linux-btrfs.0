@@ -1,143 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ngcobalt08.manitu.net ([217.11.48.108]:36550 "EHLO
-	ngcobalt08.manitu.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751276AbaHFN1g (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 09:27:36 -0400
-Received: from lapbok.localnet (unknown [46.189.32.222])
-	(Authenticated sender: jseifert)
-	by ngcobalt08.manitu.net (Postfix) with ESMTPSA id 68B933A8074
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Aug 2014 15:20:08 +0200 (CEST)
-From: Justus Seifert <justus.seifert@cloudandheat.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Unrecoverable errors when the btrfs file system was modified outside the running OS
-Date: Wed, 06 Aug 2014 15:19:50 +0200
-Message-ID: <1740245.62hL253geB@lapbok>
-In-Reply-To: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
-References: <CAOgBZNo0hvmCJhm4Oqnnavkt8qyafLHk6eMQ5uPzpHkb4OtbCA@mail.gmail.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29347 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752284AbaHFNgI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Aug 2014 09:36:08 -0400
+Message-ID: <53E22F37.9000308@fb.com>
+Date: Wed, 6 Aug 2014 09:35:51 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1509564.NocDkyUSB6"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+To: Martin Steigerwald <Martin@lichtvoll.de>, Liu Bo <bo.li.liu@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
+References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <1537782.AGn1dfcASJ@merkaba> <234528786.A5cAeyBFJU@merkaba> <3143412.n5KSJct7YP@merkaba>
+In-Reply-To: <3143412.n5KSJct7YP@merkaba>
+Content-Type: text/plain; charset="windows-1252"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/06/2014 06:21 AM, Martin Steigerwald wrote:
 
---nextPart1509564.NocDkyUSB6
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+>> I think this should go to stable. Thanks, Liu.
 
-On Monday 04 August 2014 01:29:49 you wrote:
-> Hello,
->=20
-> I just had a very frustrating experience with btrfs, which I was only=
+I'm definitely tagging this for stable.
 
-> able to resolve by rolling back to ext4 using the subvol btrfs-conver=
-t
-> created. The same type of situation occurred before when I was using
-> the ext file system and the result was far less disastrous.
->=20
-> The source of problem came from the fact that I have a Windows and
-> Ubuntu 14.04 dual-boot setup and within Windows I also use VirtualBox=
+> 
+> Unfortunately this fix does not seem to fix all lockups.
 
-> to run the same Ubuntu with rawdisk. Today I updated Ubuntu to a new
-> kernel within VirtualBox. At this point, I would usually shutdown
-> VirtualBox before I let my machine go to hibernation. However, this
-> time I forgot. And when the machine started up, it went directly into=
+The traces below are a little different, could you please send the whole
+file?
 
-> Ubuntu (because grub was updated and to avoid issues my VirtualBox
-> setup didn't allow Ubuntu to see my Windows partitions). I did a
-> grub-udpate, and rebooted back to Windows, where my VirtualBox was
-> still up and running fine. The tragedy happened when I now shut down
-> Ubuntu and VirtualBox. The btrfs file system was totally corrupted. I=
+-chris
 
-> tried various combinations ro, recovery, nospace_cache, and
-> clear_cache mount options, and it wouldn't mount. dmesg showed some
-> "transid verify failed", "open_ctree failed" error messages. btrfs
-> restore only retrieved three files.. btrfsck --repair and
-> btrfs-zero-log didn't help either.
->=20
-> To my very surprise, btrfs-convert -r was able to use the subvol it
-> created to roll back to ext4. But had I not converted from ext4 to
-> btrfs, this would be an unrecoverable situation. Whether or not I hav=
-e
-> backups is a separate issue, being able to recover at least "somewhat=
-"
-> in this situation seems to be a desired feature for any file system.
->=20
-> Roc
-
-
-btrfs is CoW
-stale metadata means stale block info
-stale block info means no idea where the files are on disk and no idea =
-where=20
-free blocks are
-btrfs does not know, that it does not know, where to read and where to =
-write,=20
-it assumes the metadata cached in ram is correct and just reads and wri=
-tes to=20
-the disk where it sees fit.
-this is disastrous if the location of files changes
-cow means the location of files and metadata changes with _every single=
- write_=20
-!
-
-ext4 is not CoW
-if you do not delete, grow, shrink or create files =E2=80=93 only inpla=
-ce edits or=20
-small appeds that do not allocate aditional blocks, then the location o=
-f the=20
-files on disk does not change.
-this is often the case for most files and metadata on a root filesystem=
-.
-thus it is no surprise at all that the consequences of using stale meta=
-data=20
-for a filesystem that was mounted elsewhere differs dramatically betwee=
-n ext4=20
-and btrfs.
-
-please keep in mind that all filesystems assume that the ram is a safe =
-place to=20
-keep metadataduring runtime,  since reading all the required metadata a=
-ll the=20
-time would be a huge performance brake for modern filesystems.  old fil=
-esystems=20
-might be different.
-
-if you want the metadata not to change then try a read-only filesystem =
-for root=20
-for a while.  squashfs is the default root fs for openwrt and is ro.
-
-sry kmail ate my draft for this mail once and i was too lazy to retype =
-it=20
-completely thus only simple grammar and no spell checks.
-
-if you are interested in more details, ask detailed questions.  duncan =
-might=20
-also help you if you ask him.
-
-regards
-justus seifert
---nextPart1509564.NocDkyUSB6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABAgAGBQJT4it2AAoJELFJh75Z+IvIDH0P/Rdt5I9fuRWlxHfRKQWPPp+0
-olywSPrnGgP7Ora8njpUzrH0gyAslHVRASoUWLa1Dsl88rE+3bJApES7fiK+fUTQ
-Yv9kQbDtbdHErFlFHzT/+nalTPDxxKI5JkWmomfzqAR4aSXUrxt0xc5ZMI0XkMIc
-GoI0cF6wZ11SRDcYqVf/dZICr8Jc7U3a4LFHXxR8e6M0VsA5lAGSEkjZDTChpAff
-yolnsEPrDgZ9ikwqSTUUQJl8UXo1JX2Ty+WYRMFcnSgCZU2tCjwbK6jvEFVCsgxR
-2qWZK5w03dX0uNxw90JxBkGy9f3kThUkJira95UZoFz5UlrOhGmxe2b6SH7Eml91
-Y8w/5B0IFsoSt7ux2rp5B5i8r9COOohEtag4mEyQVYDZLs38Xy+f6bz8Fd7QY2vk
-t3NYft+ZUPOYjfyQPcBlJH6TpqHU6XSt8At5yPZInLSaFLV0yskBU5bIiC8Brfap
-6g5E6f4gvr4T3KrtkHAviY5FEBFZkDWeTEPvBjcIxj5inSyrxH6a8U9dAOTQJc0r
-caR5Vk8gwPiBYiBbclR51EzKHNRJISUhAQnqf0RtYXGvMg39/j6VTYFoO5j2Pniu
-c4s7964e2LSFURsFO/auhuooaBtvS0jB6xjm2z8sPlHhjISwh+AHS7Cr8/nPG0YN
-jQm29IVX3vsL0GQIloAy
-=Neip
------END PGP SIGNATURE-----
-
---nextPart1509564.NocDkyUSB6--
-
+> 
+> Just had a hard lockup again during java-bases CrashPlanPROe app backuping
+> company data which is stored on BTRFS via ecryptfs to central Backup server.
+> 
+> It basically happened on about the first heavy write I/O occasion after
+> the BTRFS trees filled the complete device:
+> 
+> I am now balancing the trees down to lower sizes manually with
+> 
+> btrfs balance start -dusage=10 /home
+> 
+> btrfs balance start -musage=10 /home
+> 
+> and raising values. BTW I got out of space with trying both at the same time:
+> 
+> merkaba:~#1> btrfs balance start -dusage=10 -musage=10 /home
+> ERROR: error during balancing '/home' - No space left on device
+> There may be more info in syslog - try dmesg | tail
+> 
+> merkaba:~#1> btrfs fi sh /home
+> Label: 'home'  uuid: […]
+>         Total devices 2 FS bytes used 128.76GiB
+>         devid    1 size 160.00GiB used 146.00GiB path /dev/dm-0
+>         devid    2 size 160.00GiB used 146.00GiB path /dev/mapper/sata-home
+> 
+> So I am pretty sure meanwhile that hangs can best be trigger *if* BTRFS
+> trees fill the complete device.
+> 
+> I will try to keep tree sizes down as a work-around for now even it if means
+> additional write access towards the SSD devices.
+> 
+> And make sure tree sizes stay down on my first server BTRFS as well although
+> this uses debian backport kernel 3.14 and thus may not be affected.
+> 
+> Are there any other fixes to try out? I really like to see this resolved. Its
+> in two stable kernel revisions already: 3.15 and 3.16. And by this it means
+> if not fixed next Debian stable (Jessie) will be affected by it.
+> 
+> 
+> Some kern.log (have stored the complete file)
+> 
+> Aug  6 12:01:16 merkaba kernel: [90496.262084] INFO: task java:21301 blocked for more than 120 seconds.
+> Aug  6 12:01:16 merkaba kernel: [90496.263626]       Tainted: G           O  3.16.0-tp520-fixcompwrite+ #3
+> Aug  6 12:01:16 merkaba kernel: [90496.265159] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> Aug  6 12:01:16 merkaba kernel: [90496.266756] java            D ffff880044e3cef0     0 21301      1 0x00000000
+> Aug  6 12:01:16 merkaba kernel: [90496.268353]  ffff8801960e3bd8 0000000000000002 ffff880407f649b0 ffff8801960e3fd8
+> Aug  6 12:01:16 merkaba kernel: [90496.269980]  ffff880044e3c9b0 0000000000013040 ffff880044e3c9b0 ffff88041e293040
+> Aug  6 12:01:16 merkaba kernel: [90496.271766]  ffff88041e5c6868 ffff8801960e3c70 0000000000000002 ffffffff810db1d9
+> Aug  6 12:01:16 merkaba kernel: [90496.273383] Call Trace:
+> Aug  6 12:01:16 merkaba kernel: [90496.275017]  [<ffffffff810db1d9>] ? wait_on_page_read+0x37/0x37
+> Aug  6 12:01:16 merkaba kernel: [90496.276630]  [<ffffffff81470fd0>] schedule+0x64/0x66
+> Aug  6 12:01:16 merkaba kernel: [90496.278209]  [<ffffffff81471157>] io_schedule+0x57/0x76
+> Aug  6 12:01:16 merkaba kernel: [90496.279817]  [<ffffffff810db1e2>] sleep_on_page+0x9/0xd
+> Aug  6 12:01:16 merkaba kernel: [90496.281403]  [<ffffffff8147152d>] __wait_on_bit_lock+0x41/0x85
+> Aug  6 12:01:16 merkaba kernel: [90496.282991]  [<ffffffff810db29f>] __lock_page+0x70/0x7c
+> Aug  6 12:01:16 merkaba kernel: [90496.284550]  [<ffffffff81070f3a>] ? autoremove_wake_function+0x2f/0x2f
+> Aug  6 12:01:16 merkaba kernel: [90496.286156]  [<ffffffffc0476617>] lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.287742]  [<ffffffffc0476617>] ? lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.289344]  [<ffffffffc047a8f4>] extent_write_cache_pages.isra.21.constprop.42+0x1a7/0x2d9 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.290955]  [<ffffffff810dba82>] ? find_get_pages_tag+0xfc/0x123
+> Aug  6 12:01:16 merkaba kernel: [90496.292574]  [<ffffffffc047ae1c>] extent_writepages+0x46/0x57 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.294154]  [<ffffffffc04650b2>] ? btrfs_submit_direct+0x3ef/0x3ef [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.295760]  [<ffffffffc046361f>] btrfs_writepages+0x23/0x25 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.297492]  [<ffffffff810e556b>] do_writepages+0x1b/0x24
+> Aug  6 12:01:16 merkaba kernel: [90496.299035]  [<ffffffff810dc88a>] __filemap_fdatawrite_range+0x50/0x52
+> Aug  6 12:01:16 merkaba kernel: [90496.300561]  [<ffffffff810dc8f1>] filemap_fdatawrite_range+0xe/0x10
+> Aug  6 12:01:16 merkaba kernel: [90496.302118]  [<ffffffffc046ea30>] btrfs_sync_file+0x67/0x2bd [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.303630]  [<ffffffff810dc88a>] ? __filemap_fdatawrite_range+0x50/0x52
+> Aug  6 12:01:16 merkaba kernel: [90496.305158]  [<ffffffff81156289>] vfs_fsync_range+0x1c/0x1e
+> Aug  6 12:01:16 merkaba kernel: [90496.306669]  [<ffffffff811562a2>] vfs_fsync+0x17/0x19
+> Aug  6 12:01:16 merkaba kernel: [90496.308197]  [<ffffffffc04f732a>] ecryptfs_fsync+0x2f/0x34 [ecryptfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.309711]  [<ffffffff81156289>] vfs_fsync_range+0x1c/0x1e
+> Aug  6 12:01:16 merkaba kernel: [90496.311249]  [<ffffffff811562a2>] vfs_fsync+0x17/0x19
+> Aug  6 12:01:16 merkaba kernel: [90496.312771]  [<ffffffff811564c9>] do_fsync+0x2c/0x45
+> Aug  6 12:01:16 merkaba kernel: [90496.314288]  [<ffffffff811566af>] SyS_fsync+0xb/0xf
+> Aug  6 12:01:16 merkaba kernel: [90496.315800]  [<ffffffff8147420b>] tracesys+0xdd/0xe2
+> 
+> 
+> 
+> Aug  6 12:01:16 merkaba kernel: [90496.380221] INFO: task java:21563 blocked for more than 120 seconds.
+> Aug  6 12:01:16 merkaba kernel: [90496.381691]       Tainted: G           O  3.16.0-tp520-fixcompwrite+ #3
+> Aug  6 12:01:16 merkaba kernel: [90496.383192] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> Aug  6 12:01:16 merkaba kernel: [90496.384687] java            D ffff880038111dd0     0 21563      1 0x00000000
+> Aug  6 12:01:16 merkaba kernel: [90496.386203]  ffff88006df0fbd8 0000000000000002 ffffffff81a15500 ffff88006df0ffd8
+> Aug  6 12:01:16 merkaba kernel: [90496.387843]  ffff880038111890 0000000000013040 ffff880038111890 ffff88041e213040
+> Aug  6 12:01:16 merkaba kernel: [90496.389414]  ffff88041e5cc568 ffff88006df0fc70 0000000000000002 ffffffff810db1d9
+> Aug  6 12:01:16 merkaba kernel: [90496.391031] Call Trace:
+> Aug  6 12:01:16 merkaba kernel: [90496.392574]  [<ffffffff810db1d9>] ? wait_on_page_read+0x37/0x37
+> Aug  6 12:01:16 merkaba kernel: [90496.394154]  [<ffffffff81470fd0>] schedule+0x64/0x66
+> Aug  6 12:01:16 merkaba kernel: [90496.395686]  [<ffffffff81471157>] io_schedule+0x57/0x76
+> Aug  6 12:01:16 merkaba kernel: [90496.397218]  [<ffffffff810db1e2>] sleep_on_page+0x9/0xd
+> Aug  6 12:01:16 merkaba kernel: [90496.398723]  [<ffffffff8147152d>] __wait_on_bit_lock+0x41/0x85
+> Aug  6 12:01:16 merkaba kernel: [90496.400232]  [<ffffffff810db29f>] __lock_page+0x70/0x7c
+> Aug  6 12:01:16 merkaba kernel: [90496.401895]  [<ffffffff81070f3a>] ? autoremove_wake_function+0x2f/0x2f
+> Aug  6 12:01:16 merkaba kernel: [90496.403440]  [<ffffffffc0476617>] lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.404942]  [<ffffffffc0476617>] ? lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.406433]  [<ffffffffc047a8f4>] extent_write_cache_pages.isra.21.constprop.42+0x1a7/0x2d9 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.407950]  [<ffffffff810dba82>] ? find_get_pages_tag+0xfc/0x123
+> Aug  6 12:01:16 merkaba kernel: [90496.409474]  [<ffffffffc047ae1c>] extent_writepages+0x46/0x57 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.411020]  [<ffffffffc04650b2>] ? btrfs_submit_direct+0x3ef/0x3ef [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.412558]  [<ffffffffc046361f>] btrfs_writepages+0x23/0x25 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.414102]  [<ffffffff810e556b>] do_writepages+0x1b/0x24
+> Aug  6 12:01:16 merkaba kernel: [90496.415621]  [<ffffffff810dc88a>] __filemap_fdatawrite_range+0x50/0x52
+> Aug  6 12:01:16 merkaba kernel: [90496.417184]  [<ffffffff810dc8f1>] filemap_fdatawrite_range+0xe/0x10
+> Aug  6 12:01:16 merkaba kernel: [90496.418753]  [<ffffffffc046ea30>] btrfs_sync_file+0x67/0x2bd [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.420344]  [<ffffffff810dc88a>] ? __filemap_fdatawrite_range+0x50/0x52
+> Aug  6 12:01:16 merkaba kernel: [90496.421914]  [<ffffffff81156289>] vfs_fsync_range+0x1c/0x1e
+> Aug  6 12:01:16 merkaba kernel: [90496.423467]  [<ffffffff811562a2>] vfs_fsync+0x17/0x19
+> Aug  6 12:01:16 merkaba kernel: [90496.425051]  [<ffffffffc04f732a>] ecryptfs_fsync+0x2f/0x34 [ecryptfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.426593]  [<ffffffff81156289>] vfs_fsync_range+0x1c/0x1e
+> Aug  6 12:01:16 merkaba kernel: [90496.428280]  [<ffffffff811562a2>] vfs_fsync+0x17/0x19
+> Aug  6 12:01:16 merkaba kernel: [90496.429853]  [<ffffffff811564c9>] do_fsync+0x2c/0x45
+> Aug  6 12:01:16 merkaba kernel: [90496.431351]  [<ffffffff811566af>] SyS_fsync+0xb/0xf
+> Aug  6 12:01:16 merkaba kernel: [90496.432841]  [<ffffffff8147420b>] tracesys+0xdd/0xe2
+> 
+> 
+> 
+> Aug  6 12:01:16 merkaba kernel: [90496.434306] INFO: task kworker/u8:3:21401 blocked for more than 120 seconds.
+> Aug  6 12:01:16 merkaba kernel: [90496.435814]       Tainted: G           O  3.16.0-tp520-fixcompwrite+ #3
+> Aug  6 12:01:16 merkaba kernel: [90496.437328] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> Aug  6 12:01:16 merkaba kernel: [90496.438885] kworker/u8:3    D ffff880133ebe780     0 21401      2 0x00000000
+> Aug  6 12:01:16 merkaba kernel: [90496.440464] Workqueue: btrfs-flush_delalloc normal_work_helper [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.442037]  ffff88003e953b18 0000000000000002 ffffffff81a15500 ffff88003e953fd8
+> Aug  6 12:01:16 merkaba kernel: [90496.443639]  ffff880133ebe240 0000000000013040 ffff880133ebe240 ffff88041e213040
+> Aug  6 12:01:16 merkaba kernel: [90496.445246]  ffff88041e5bc968 ffff88003e953bb0 0000000000000002 ffffffff810db1d9
+> Aug  6 12:01:16 merkaba kernel: [90496.446901] Call Trace:
+> Aug  6 12:01:16 merkaba kernel: [90496.448485]  [<ffffffff810db1d9>] ? wait_on_page_read+0x37/0x37
+> Aug  6 12:01:16 merkaba kernel: [90496.450081]  [<ffffffff81470fd0>] schedule+0x64/0x66
+> Aug  6 12:01:16 merkaba kernel: [90496.451682]  [<ffffffff81471157>] io_schedule+0x57/0x76
+> Aug  6 12:01:16 merkaba kernel: [90496.453271]  [<ffffffff810db1e2>] sleep_on_page+0x9/0xd
+> Aug  6 12:01:16 merkaba kernel: [90496.455037]  [<ffffffff8147152d>] __wait_on_bit_lock+0x41/0x85
+> Aug  6 12:01:16 merkaba kernel: [90496.456617]  [<ffffffff810db29f>] __lock_page+0x70/0x7c
+> Aug  6 12:01:16 merkaba kernel: [90496.458203]  [<ffffffff81070f3a>] ? autoremove_wake_function+0x2f/0x2f
+> Aug  6 12:01:16 merkaba kernel: [90496.459793]  [<ffffffffc0476617>] lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.461353]  [<ffffffffc0476617>] ? lock_page+0x1e/0x21 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.462917]  [<ffffffffc047a8f4>] extent_write_cache_pages.isra.21.constprop.42+0x1a7/0x2d9 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.464479]  [<ffffffff81009e60>] ? native_sched_clock+0x3a/0x3c
+> Aug  6 12:01:16 merkaba kernel: [90496.466036]  [<ffffffffc047ae1c>] extent_writepages+0x46/0x57 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.467632]  [<ffffffff81066fbf>] ? task_group_account_field+0x3b/0x40
+> Aug  6 12:01:16 merkaba kernel: [90496.469168]  [<ffffffffc04650b2>] ? btrfs_submit_direct+0x3ef/0x3ef [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.470737]  [<ffffffffc046361f>] btrfs_writepages+0x23/0x25 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.472307]  [<ffffffff810e556b>] do_writepages+0x1b/0x24
+> Aug  6 12:01:16 merkaba kernel: [90496.473885]  [<ffffffff810dc88a>] __filemap_fdatawrite_range+0x50/0x52
+> Aug  6 12:01:16 merkaba kernel: [90496.475458]  [<ffffffff810dd1b3>] filemap_flush+0x17/0x19
+> Aug  6 12:01:16 merkaba kernel: [90496.477041]  [<ffffffffc0465df9>] btrfs_run_delalloc_work+0x2e/0x64 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.478624]  [<ffffffffc04863d7>] normal_work_helper+0xdf/0x224 [btrfs]
+> Aug  6 12:01:16 merkaba kernel: [90496.480257]  [<ffffffff81052d8c>] process_one_work+0x16f/0x2b8
+> Aug  6 12:01:16 merkaba kernel: [90496.481977]  [<ffffffff81053636>] worker_thread+0x27b/0x32e
+> Aug  6 12:01:16 merkaba kernel: [90496.483544]  [<ffffffff810533bb>] ? cancel_delayed_work_sync+0x10/0x10
+> Aug  6 12:01:16 merkaba kernel: [90496.485082]  [<ffffffff81058012>] kthread+0xb2/0xba
+> Aug  6 12:01:16 merkaba kernel: [90496.486624]  [<ffffffff81470000>] ? ap_handle_dropped_data+0xf/0xc8
+> Aug  6 12:01:16 merkaba kernel: [90496.488148]  [<ffffffff81057f60>] ? __kthread_parkme+0x62/0x62
+> Aug  6 12:01:16 merkaba kernel: [90496.489719]  [<ffffffff81473f6c>] ret_from_fork+0x7c/0xb0
+> Aug  6 12:01:16 merkaba kernel: [90496.491265]  [<ffffffff81057f60>] ? __kthread_parkme+0x62/0x62
+> 
+> 
+> Ciao,
+> 

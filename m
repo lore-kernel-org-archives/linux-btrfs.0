@@ -1,170 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:39746 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751900AbaH3QXF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 12:23:05 -0400
-Received: from freie.home (home.lxoliva.fsfla.org [172.31.160.22])
-	by linux-libre.fsfla.org (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id s7UGAxl7020077
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 16:10:59 GMT
-From: Alexandre Oliva <oliva@gnu.org>
-To: linux-btrfs@vger.kernel.org
-Subject: fixes for btrfs check --repair
-Date: Sat, 30 Aug 2014 13:00:40 -0300
-Message-ID: <ora96m3r2v.fsf@free.home>
+Received: from cn.fujitsu.com ([59.151.112.132]:17573 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754458AbaHGCvV convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 22:51:21 -0400
+Message-ID: <53E2E9A3.6060206@cn.fujitsu.com>
+Date: Thu, 7 Aug 2014 10:51:15 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-=-="
+To: <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>,
+        Chris Mason <clm@fb.com>
+Subject: Re: [PATCH] btrfs: Don't continue mounting when superblock csum mismatches
+ even generation is less than 10.
+References: <1403599753-4072-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1403599753-4072-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
+It seems that the patch is rejected in patchwork,
 
-I got a faulty memory module a while ago, and it ran for a while,
-corrupting a number of filesystems on that server.  Most of the
-corruption is long gone, as the filesystems (ceph osds) were
-reconstructed, but I tried really hard to avoid having to rebuild one
-4TB filesystem from scratch, since it was still fully operational.  I
-failed, but in the process, I ran into and fixed two btrfs check
---repair bugs.  I gave up when removing an old snapshot caused the
-delayed refs processing to abort because it couldn't find a ref to
-delete, whereas btrfs check --repair completed successfully without
-fixing anything.  Mounting the apparently-clean filesystem would still
-run into the same delayed refs error, but trying to map the logical
-extent back to a file produced an error.  Since it was far too big to
-preserve, even in metadata only, I didn't, and proceeded to mkfs.btrfs
-right away.
+Could any one tell me the reason?
 
-Here are the patches.
+Thanks,
+Qu
+-------- Original Message --------
+Subject: [PATCH] btrfs: Don't continue mounting when superblock csum 
+mismatches even generation is less than 10.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Date: 2014年06月24日 16:49
+> Revert kernel commit 667e7d94a1683661cff5fe9a0fa0d7f8fdd2c007.
+> (Btrfs: allow superblock mismatch from older mkfs by Chris Mason)
+>
+> Above commit will cause disaster if someone try to mount a newly created but
+> later corrupted btrfs filesystem.
+>
+> And before btrfs entered mainline, btrfs-progs has already superblock
+> checksum. See btrfs-progs commit: 5ccd1715fa2eaad0b26037bb53706779c8c93b5f
+> (superblock duplication by Yan Zheng).
+> Before commit 5ccd17, mkfs.btrfs uses 16K as super offset, while current btrfs
+> uses 64K super offset, anyway old btrfs without super csum will not be
+> mountable due to the change of super offset.
+>
+> So backward compatibility is not a problem.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/disk-io.c | 6 ------
+>   1 file changed, 6 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 8bb4aa1..dbfb2a3 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -400,12 +400,6 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+>   
+>   		if (memcmp(raw_disk_sb, result, csum_size))
+>   			ret = 1;
+> -
+> -		if (ret && btrfs_super_generation(disk_sb) < 10) {
+> -			printk(KERN_WARNING
+> -				"BTRFS: super block crcs don't match, older mkfs detected\n");
+> -			ret = 0;
+> -		}
+>   	}
+>   
+>   	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
 
-
---=-=-=
-Content-Type: text/x-diff
-Content-Disposition: inline; filename=repair-recow-del.patch
-
-repair: remove recowed entry from the to-recow list
-
-From: Alexandre Oliva <oliva@gnu.org>
-
-If we attempt to repair a filesystem with metadata blocks that need
-recowing, we'll get into an infinite loop repeatedly recowing the
-first entry in the list, without ever removing it from the list.
-Oops.  Fixed.
-
-Signed-off-by: Alexandre Oliva <oliva@gnu.org>
----
- cmds-check.c |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 268e588..66c982f 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -6760,6 +6760,7 @@ int cmd_check(int argc, char **argv)
- 
- 		eb = list_first_entry(&root->fs_info->recow_ebs,
- 				      struct extent_buffer, recow);
-+		list_del_init(&eb->recow);
- 		ret = recow_extent_buffer(root, eb);
- 		if (ret)
- 			break;
-
---=-=-=
-Content-Type: text/x-diff
-Content-Disposition: inline; filename=check-no-tree-refs-as-data-refs.patch
-
-check: do not dereference tree_refs as data_refs
-
-From: Alexandre Oliva <oliva@gnu.org>
-
-In a filesystem corrupted by a faulty memory module, btrfsck would get
-very confused attempting to access backrefs that weren't data backrefs
-as if they were.  Besides invoking undefined behavior for accessing
-potentially-uninitialized data past the end of objects, or with
-dynamic types unrelated with the static types held in the
-corresponding memory, it used offsets and lengths from such fields
-that did not correspond to anything in the filesystem proper.
-
-Moving the test for full backrefs and checking that they're data
-backrefs earlier avoided the crash I was running into, but that was
-not enough to make the filesystem complete a successful repair.
-
-Signed-off-by: Alexandre Oliva <oliva@gnu.org>
----
- cmds-check.c |   19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 66c982f..319dd2b 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -4781,15 +4781,17 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	list_for_each_entry(back, &rec->backrefs, list) {
-+		if (back->full_backref || !back->is_data)
-+			continue;
-+
- 		dback = (struct data_backref *)back;
-+
- 		/*
- 		 * We only pay attention to backrefs that we found a real
- 		 * backref for.
- 		 */
- 		if (dback->found_ref == 0)
- 			continue;
--		if (back->full_backref)
--			continue;
- 
- 		/*
- 		 * For now we only catch when the bytes don't match, not the
-@@ -4905,6 +4907,9 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
- 	 * references and fix up the ones that don't match.
- 	 */
- 	list_for_each_entry(back, &rec->backrefs, list) {
-+		if (back->full_backref || !back->is_data)
-+			continue;
-+
- 		dback = (struct data_backref *)back;
- 
- 		/*
-@@ -4913,8 +4918,6 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
- 		 */
- 		if (dback->found_ref == 0)
- 			continue;
--		if (back->full_backref)
--			continue;
- 
- 		if (dback->bytes == best->bytes &&
- 		    dback->disk_bytenr == best->bytenr)
-@@ -5134,14 +5137,16 @@ static int find_possible_backrefs(struct btrfs_trans_handle *trans,
- 	int ret;
- 
- 	list_for_each_entry(back, &rec->backrefs, list) {
-+		/* Don't care about full backrefs (poor unloved backrefs) */
-+		if (back->full_backref || !back->is_data)
-+			continue;
-+
- 		dback = (struct data_backref *)back;
- 
- 		/* We found this one, we don't need to do a lookup */
- 		if (dback->found_ref)
- 			continue;
--		/* Don't care about full backrefs (poor unloved backrefs) */
--		if (back->full_backref)
--			continue;
-+
- 		key.objectid = dback->root;
- 		key.type = BTRFS_ROOT_ITEM_KEY;
- 		key.offset = (u64)-1;
-
---=-=-=
-
-
-
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist|Red Hat Brasil GNU Toolchain Engineer
-
---=-=-=--

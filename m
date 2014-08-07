@@ -1,194 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:51962 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757264AbaHGKBF (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Thu, 7 Aug 2014 06:01:05 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix hole detection during file fsync
-Date: Thu,  7 Aug 2014 12:00:44 +0100
-Message-Id: <1407409244-5982-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1407335592-27897-1-git-send-email-fdmanana@suse.com>
-References: <1407335592-27897-1-git-send-email-fdmanana@suse.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:47897 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754533AbaHGK0E (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Aug 2014 06:26:04 -0400
+Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 8E4523EE1BA
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:02 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id A28E5AC0933
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:01 +0900 (JST)
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 574341DB8042
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:01 +0900 (JST)
+Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
+	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 786F2BD65CD
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:00 +0900 (JST)
+Message-ID: <53E35430.9070408@jp.fujitsu.com>
+Date: Thu, 7 Aug 2014 19:25:52 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: Documentations: Fix a format error in btrfs-replace.txt
+References: <1407137334-6183-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1407137334-6183-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The file hole detection logic during a file fsync wasn't correct,
-because it didn't look back (in a previous leaf) for the last file
-extent item that can be in a leaf to the left of our leaf and that
-has a generation lower than the current transaction id. This made it
-assume that a hole exists when it really doesn't exist in the file.
+(2014/08/04 16:28), Qu Wenruo wrote:
+> Missing '+'s cause '-B' option not displayed correctly, add it to fix.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Such false positive hole detection happens in the following scenario:
+Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-* We have a file that has many file extent items, covering 3 or more
-  btree leafs (the first leaf must contain non file extent items too).
-
-* Two ranges of the file are modified, with their extent items being
-  located at 2 different leafs and those leafs aren't consecutive.
-
-* When processing the second modified leaf, we weren't checking if
-  some file extent item exists that is located in some leaf that is
-  between our 2 modified leafs, and therefore assumed the range defined
-  between the last file extent item in the first leaf and the first file
-  extent item in the second leaf matched a hole.
-
-Fortunately this didn't result in overriding the log with wrong data,
-instead it made the last loop in copy_items() attempt to insert a
-duplicated key (for a hole file extent item), which makes the file
-fsync code return with -EEXIST to file.c:btrfs_sync_file() which in
-turn ends up doing a full transaction commit, which is much more
-expensive then writing only to the log tree and wait for it to be
-durably persisted (as well as the file's modified extents/pages).
-Therefore fix the hole detection logic, so that we don't pay the
-cost of doing full transaction commits.
-
-I could trigger this issue with the following test for xfstests (which
-never fails, either without or with this patch). The last fsync call
-results in a full transaction commit, due to the -EEXIST error mentioned
-above. I could also observe this behaviour happening frequently when
-running xfstests/generic/075 in a loop.
-
-Test:
-
-    _cleanup()
-    {
-        _cleanup_flakey
-        rm -fr $tmp
-    }
-
-    # get standard environment, filters and checks
-    . ./common/rc
-    . ./common/filter
-    . ./common/dmflakey
-
-    # real QA test starts here
-    _supported_fs btrfs
-    _supported_os Linux
-    _require_scratch
-    _require_dm_flakey
-    _need_to_be_root
-
-    rm -f $seqres.full
-
-    # Create a file with many file extent items, each representing a 4Kb extent.
-    # These items span 3 btree leaves, of 16Kb each (default mkfs.btrfs leaf size
-    # as of btrfs-progs 3.12).
-    _scratch_mkfs -l 16384 >/dev/null 2>&1
-    _init_flakey
-    SAVE_MOUNT_OPTIONS="$MOUNT_OPTIONS"
-    MOUNT_OPTIONS="$MOUNT_OPTIONS -o commit=999"
-    _mount_flakey
-
-    # First fsync, inode has BTRFS_INODE_NEEDS_FULL_SYNC flag set.
-    $XFS_IO_PROG -f -c "pwrite -S 0x01 -b 4096 0 4096" -c "fsync" \
-            $SCRATCH_MNT/foo | _filter_xfs_io
-
-    # For any of the following fsync calls, inode doesn't have the flag
-    # BTRFS_INODE_NEEDS_FULL_SYNC set.
-    for ((i = 1; i <= 500; i++)); do
-        OFFSET=$((4096 * i))
-        LEN=4096
-        $XFS_IO_PROG -c "pwrite -S 0x01 $OFFSET $LEN" -c "fsync" \
-                $SCRATCH_MNT/foo | _filter_xfs_io
-    done
-
-    # Commit transaction and bump next transaction's id (to 7).
-    sync
-
-    # Truncate will set the BTRFS_INODE_NEEDS_FULL_SYNC flag in the btrfs's
-    # inode runtime flags.
-    $XFS_IO_PROG -c "truncate 2048000" $SCRATCH_MNT/foo
-
-    # Commit transaction and bump next transaction's id (to 8).
-    sync
-
-    # Touch 1 extent item from the first leaf and 1 from the last leaf. The leaf
-    # in the middle, containing only file extent items, isn't touched. So the
-    # next fsync, when calling btrfs_search_forward(), won't visit that middle
-    # leaf. First and 3rd leaf have now a generation with value 8, while the
-    # middle leaf remains with a generation with value 6.
-    $XFS_IO_PROG \
-        -c "pwrite -S 0xee -b 4096 0 4096" \
-        -c "pwrite -S 0xff -b 4096 2043904 4096" \
-        -c "fsync" \
-        $SCRATCH_MNT/foo | _filter_xfs_io
-
-    _load_flakey_table $FLAKEY_DROP_WRITES
-    md5sum $SCRATCH_MNT/foo | _filter_scratch
-    _unmount_flakey
-
-    _load_flakey_table $FLAKEY_ALLOW_WRITES
-    # During mount, we'll replay the log created by the fsync above, and the file's
-    # md5 digest should be the same we got before the unmount.
-    _mount_flakey
-    md5sum $SCRATCH_MNT/foo | _filter_scratch
-    _unmount_flakey
-    MOUNT_OPTIONS="$SAVE_MOUNT_OPTIONS"
-
-    status=0
-    exit
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Updated commit message, fixed a couple typos, grammar and a more
-    clear explanation of the problem.
-
- fs/btrfs/tree-log.c | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index df332dd..5a917a6 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3296,7 +3296,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 	struct list_head ordered_sums;
- 	int skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 	bool has_extents = false;
--	bool need_find_last_extent = (*last_extent == 0);
-+	bool need_find_last_extent = true;
- 	bool done = false;
- 
- 	INIT_LIST_HEAD(&ordered_sums);
-@@ -3350,8 +3350,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 		 */
- 		if (ins_keys[i].type == BTRFS_EXTENT_DATA_KEY) {
- 			has_extents = true;
--			if (need_find_last_extent &&
--			    first_key.objectid == (u64)-1)
-+			if (first_key.objectid == (u64)-1)
- 				first_key = ins_keys[i];
- 		} else {
- 			need_find_last_extent = false;
-@@ -3425,6 +3424,16 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 	if (!has_extents)
- 		return ret;
- 
-+	if (need_find_last_extent && *last_extent == first_key.offset) {
-+		/*
-+		 * We don't have any leafs between our current one and the one
-+		 * we processed before that can have file extent items for our
-+		 * inode (and have a generation number smaller than our current
-+		 * transaction id).
-+		 */
-+		need_find_last_extent = false;
-+	}
-+
- 	/*
- 	 * Because we use btrfs_search_forward we could skip leaves that were
- 	 * not modified and then assume *last_extent is valid when it really
-@@ -3535,7 +3544,7 @@ fill_holes:
- 					       0, 0);
- 		if (ret)
- 			break;
--		*last_extent = offset + len;
-+		*last_extent = extent_end;
- 	}
- 	/*
- 	 * Need to let the callers know we dropped the path so they should
--- 
-1.9.1
+> ---
+>   Documentation/btrfs-replace.txt | 2 ++
+>   1 file changed, 2 insertions(+)
+> 
+> diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
+> index eecf9b0..067b02d 100644
+> --- a/Documentation/btrfs-replace.txt
+> +++ b/Documentation/btrfs-replace.txt
+> @@ -42,6 +42,7 @@ The <targetdev> needs to be same size or larger than the <srcdev>.
+>   only read from <srcdev> if no other zero-defect mirror exists.
+>   (enable this if your drive has lots of read errors, the access would be very
+>   slow)
+> ++
+>   -f::::
+>   force using and overwriting <targetdev> even if it looks like
+>   containing a valid btrfs filesystem.
+> @@ -49,6 +50,7 @@ containing a valid btrfs filesystem.
+>   A valid filesystem is assumed if a btrfs superblock is found which contains a
+>   correct checksum. Devices which are currently mounted are
+>   never allowed to be used as the <targetdev>.
+> ++
+>   -B::::
+>   no background replace.
+>   
+> 
 

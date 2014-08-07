@@ -1,182 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42330 "EHLO mx1.redhat.com"
+Received: from plane.gmane.org ([80.91.229.3]:60121 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751871AbaH1NtN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 09:49:13 -0400
-From: Eryu Guan <eguan@redhat.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 14/15 v2] btrfs: new case to run btrfs scrub and remount with different compress algorithms simultaneously
-Date: Thu, 28 Aug 2014 21:47:55 +0800
-Message-Id: <1409233676-22787-15-git-send-email-eguan@redhat.com>
-In-Reply-To: <1409233676-22787-1-git-send-email-eguan@redhat.com>
-References: <1409233676-22787-1-git-send-email-eguan@redhat.com>
+	id S1752614AbaHGWKJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Aug 2014 18:10:09 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XFVsp-0003bX-Kl
+	for linux-btrfs@vger.kernel.org; Fri, 08 Aug 2014 00:10:03 +0200
+Received: from 51B64F7D.dsl.pool.telekom.hu ([81.182.79.125])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Aug 2014 00:10:03 +0200
+Received: from megabrutal by 51B64F7D.dsl.pool.telekom.hu with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Aug 2014 00:10:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: MegaBrutal <megabrutal@gmail.com>
+Subject: Re: Quota reached: can't delete
+Date: Thu, 7 Aug 2014 22:04:54 +0000 (UTC)
+Message-ID: <loom.20140808T000436-719@post.gmane.org>
+References: <CAEgy6-3jQ3nkFqY-eJj86vDSsfZQ2naiA-VoMw-U-TPaBd3Pew@mail.gmail.com> <51014FCF.7080202@gmx.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs scrub and remount with different compress algorithms
-simultaneously with fsstress running in background.
+Arne Jansen <sensille <at> gmx.net> writes:
 
-Signed-off-by: Eryu Guan <eguan@redhat.com>
----
- tests/btrfs/072     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/072.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 131 insertions(+)
- create mode 100755 tests/btrfs/072
- create mode 100644 tests/btrfs/072.out
+> 
+> On 24.01.2013 16:12, Jerome M wrote:
+> > Hi,
+> > 
+> > With the current btrfs quota implementation, when you reach a
+> > subvolume quota limit, you can't delete anything without first
+> > removing the limit or enlarge it:
+> > 
+> > rm: cannot remove `testfile.bin': Disk quota exceeded
+> > 
+> > 
+> > Is there any plan to change that?
+> 
+> Yes, there is. The problem is that even deletion needs space.
+> So we need to allow remove to go over quota. The current implementation
+> doesn't make this distinction.
+> 
 
-diff --git a/tests/btrfs/072 b/tests/btrfs/072
-new file mode 100755
-index 0000000..7f86aa1
---- /dev/null
-+++ b/tests/btrfs/072
-@@ -0,0 +1,128 @@
-+#! /bin/bash
-+# FSQA Test No. btrfs/072
-+#
-+# Run btrfs scrub and remount with different compress algorithms
-+# simultaneously with fsstress running in background.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (C) 2014 Red Hat Inc. All rights reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -fr $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_scratch_dev_pool 4
-+
-+rm -f $seqres.full
-+
-+# test case array
-+tcs=(
-+	"-m single -d single"
-+	"-m dup -d single"
-+	"-m raid0 -d raid0"
-+	"-m raid1 -d raid0"
-+	"-m raid1 -d raid1"
-+	"-m raid10 -d raid10"
-+	"-m raid5 -d raid5"
-+	"-m raid6 -d raid6"
-+)
-+
-+run_test()
-+{
-+	local mkfs_opts=$1
-+
-+	echo "Test $mkfs_opts" >>$seqres.full
-+
-+	# dup only works on single device
-+	if [[ "$mkfs_opts" =~ dup ]]; then
-+		_scratch_mkfs $mkfs_opts >>$seqres.full 2>&1
-+	else
-+		_scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
-+	fi
-+	# make sure we created btrfs with desired options
-+	if [ $? -ne 0 ]; then
-+		echo "mkfs $mkfs_opts failed"
-+		return
-+	fi
-+	_scratch_mount >>$seqres.full 2>&1
-+
-+	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
-+	echo "Run fsstress $args" >>$seqres.full
-+	$FSSTRESS_PROG $args >/dev/null 2>&1 &
-+	fsstress_pid=$!
-+
-+	echo -n "Start scrub worker: " >>$seqres.full
-+	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
-+	scrub_pid=$!
-+	echo "$scrub_pid" >>$seqres.full
-+
-+	echo -n "Start remount worker: " >>$seqres.full
-+	_btrfs_stress_remount $SCRATCH_MNT >/dev/null 2>&1 &
-+	remount_pid=$!
-+	echo "$remount_pid" >>$seqres.full
-+
-+	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
-+	wait $fsstress_pid
-+	kill $scrub_pid $remount_pid
-+	wait
-+	# wait for the scrub and remount operations to finish
-+	while ps aux | grep "scrub start" | grep -qv grep; do
-+		sleep 1
-+	done
-+	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
-+		sleep 1
-+	done
-+
-+	echo "Scrub the filesystem" >>$seqres.full
-+	$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
-+	if [ $? -ne 0 ]; then
-+		echo "Scrub find errors in \"$mkfs_opts\" test" | tee -a $seqres.full
-+	fi
-+
-+	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT >/dev/null 2>&1
-+	_scratch_unmount
-+	_check_scratch_fs
-+}
-+
-+echo "Silence is golden"
-+for t in "${tcs[@]}"; do
-+	run_test "$t"
-+done
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/072.out b/tests/btrfs/072.out
-new file mode 100644
-index 0000000..590bbc6
---- /dev/null
-+++ b/tests/btrfs/072.out
-@@ -0,0 +1,2 @@
-+QA output created by 072
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 5377acf..e631d5b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -74,3 +74,4 @@
- 069 auto replace defrag compress
- 070 auto replace remount compress
- 071 auto scrub defrag compress
-+072 auto scrub remount compress
--- 
-1.8.3.1
+I've found a workaround to avoid changing quota: null the file and then
+you'll be able to delete it.
+
+echo > testfile.bin
+rm testfile.bin
+
+P.S.: Sorry for necromancing this thread, but I couldn't resist to tell. :P
 

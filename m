@@ -1,329 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61963 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754013AbaHGAlh convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Aug 2014 20:41:37 -0400
-Message-ID: <53E2CB3E.2080705@cn.fujitsu.com>
-Date: Thu, 7 Aug 2014 08:41:34 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42991 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754158AbaHGAws (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Aug 2014 20:52:48 -0400
+Message-ID: <53E2CDD9.5080009@fb.com>
+Date: Wed, 6 Aug 2014 20:52:41 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: <fdmanana@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Avoid trucating page or punching hole in a already
- existed hole.
-References: <1401434170-30695-1-git-send-email-quwenruo@cn.fujitsu.com> <CAL3q7H7kuFoKBsfwEBzjQTxkNSDpPw5MKQCOu9a_BFZDde3iqQ@mail.gmail.com>
-In-Reply-To: <CAL3q7H7kuFoKBsfwEBzjQTxkNSDpPw5MKQCOu9a_BFZDde3iqQ@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
+References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <3143412.n5KSJct7YP@merkaba> <53E22F37.9000308@fb.com> <4178355.kT8uO1WxjX@merkaba> <53E24738.5070908@fb.com>
+In-Reply-To: <53E24738.5070908@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Filipe,
+On 08/06/2014 11:18 AM, Chris Mason wrote:
+> On 08/06/2014 10:43 AM, Martin Steigerwald wrote:
+>> Am Mittwoch, 6. August 2014, 09:35:51 schrieb Chris Mason:
+>>> On 08/06/2014 06:21 AM, Martin Steigerwald wrote:
+>>>>> I think this should go to stable. Thanks, Liu.
+>>>
+>>> I'm definitely tagging this for stable.
+>>>
+>>>> Unfortunately this fix does not seem to fix all lockups.
+>>>
+>>> The traces below are a little different, could you please send the whole
+>>> file?
+>>
+>> Will paste it at the end.
+> 
+> [90496.156016] kworker/u8:14   D ffff880044e38540     0 21050      2 0x00000000
+> [90496.157683] Workqueue: btrfs-delalloc normal_work_helper [btrfs]
+> [90496.159320]  ffff88022880f990 0000000000000002 ffff880407f649b0 ffff88022880ffd8
+> [90496.160997]  ffff880044e38000 0000000000013040 ffff880044e38000 7fffffffffffffff
+> [90496.162686]  ffff880301383aa0 0000000000000002 ffffffff814705d0 ffff880301383a98
+> [90496.164360] Call Trace:
+> [90496.166028]  [<ffffffff814705d0>] ? michael_mic.part.6+0x21/0x21
+> [90496.167854]  [<ffffffff81470fd0>] schedule+0x64/0x66
+> [90496.169574]  [<ffffffff814705ff>] schedule_timeout+0x2f/0x114
+> [90496.171221]  [<ffffffff8106479a>] ? wake_up_process+0x2f/0x32
+> [90496.172867]  [<ffffffff81062c3b>] ? get_parent_ip+0xd/0x3c
+> [90496.174472]  [<ffffffff81062ce5>] ? preempt_count_add+0x7b/0x8e
+> [90496.176053]  [<ffffffff814717f3>] __wait_for_common+0x11e/0x163
+> [90496.177619]  [<ffffffff814717f3>] ? __wait_for_common+0x11e/0x163
+> [90496.179173]  [<ffffffff810647aa>] ? wake_up_state+0xd/0xd
+> [90496.180728]  [<ffffffff81471857>] wait_for_completion+0x1f/0x21
+> [90496.182285]  [<ffffffffc044e3b3>] btrfs_async_run_delayed_refs+0xbf/0xd9 [btrfs]
+> [90496.183833]  [<ffffffffc04624e1>] __btrfs_end_transaction+0x2b6/0x2ec [btrfs]
+> [90496.185380]  [<ffffffffc0462522>] btrfs_end_transaction+0xb/0xd [btrfs]
+> [90496.186940]  [<ffffffffc0451742>] find_free_extent+0x8a9/0x976 [btrfs]
+> [90496.189464]  [<ffffffffc0451990>] btrfs_reserve_extent+0x6f/0x119 [btrfs]
+> [90496.191326]  [<ffffffffc0466b45>] cow_file_range+0x1a6/0x377 [btrfs]
+> [90496.193080]  [<ffffffffc047adc4>] ? extent_write_locked_range+0x10c/0x11e [btrfs]
+> [90496.194659]  [<ffffffffc04677e4>] submit_compressed_extents+0x100/0x412 [btrfs]
+> [90496.196225]  [<ffffffff8120e344>] ? debug_smp_processor_id+0x17/0x19
+> [90496.197776]  [<ffffffffc0467b78>] async_cow_submit+0x82/0x87 [btrfs]
+> [90496.199383]  [<ffffffffc048644b>] normal_work_helper+0x153/0x224 [btrfs]
+> [90496.200944]  [<ffffffff81052d8c>] process_one_work+0x16f/0x2b8
+> [90496.202483]  [<ffffffff81053636>] worker_thread+0x27b/0x32e
+> [90496.204000]  [<ffffffff810533bb>] ? cancel_delayed_work_sync+0x10/0x10
+> [90496.205514]  [<ffffffff81058012>] kthread+0xb2/0xba
+> [90496.207040]  [<ffffffff81470000>] ? ap_handle_dropped_data+0xf/0xc8
+> [90496.208565]  [<ffffffff81057f60>] ? __kthread_parkme+0x62/0x62
+> [90496.210096]  [<ffffffff81473f6c>] ret_from_fork+0x7c/0xb0
+> [90496.211618]  [<ffffffff81057f60>] ? __kthread_parkme+0x62/0x62
+> 
+> 
+> Ok, this should explain the hang.  submit_compressed_extents is calling
+> cow_file_range with a locked page.
+> 
+> cow_file_range is trying to find a free extent and in the process is
+> calling btrfs_end_transaction, which is running the async delayed refs,
+> which is trying to write dirty pages, which is waiting for your locked
+> page.
+> 
+> I should be able to reproduce this ;)
 
-Thanks for the test result, I'll investigate it soon.
+This part of the trace is relatively new because Liu Bo's patch made us
+redirty the pages, making it more likely that we'd try to write them
+during commit.
 
-Also I'll fix the code style problem too.
+But, at the end of the day we have a fundamental deadlock with
+committing a transaction while holding a locked page from an ordered file.
 
-Thanks,
-Qu
--------- Original Message --------
-Subject: Re: [PATCH] btrfs: Avoid trucating page or punching hole in a 
-already existed hole.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: 2014年08月07日 02:58
-> On Fri, May 30, 2014 at 8:16 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> btrfs_punch_hole() will truncate unaligned pages or punch hole on a
->> already existed hole.
->> This will cause unneeded zero page or holes splitting the original huge
->> hole.
->>
->> This patch will skip already existed holes before any page truncating or
->> hole punching.
->>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Hi Qu,
->
-> FYI, this change seems to introduce some regressions when using the
-> NO_HOLES feature, and it's easy to reproduce with xfstests, where at
-> least 3 tests fail in a deterministic way:
->
-> $ cat /home/fdmanana/git/hub/xfstests/local.config
-> export TEST_DEV=/dev/sdb
-> export TEST_DIR=/home/fdmanana/btrfs-tests/dev
-> export SCRATCH_MNT="/home/fdmanana/btrfs-tests/scratch_1"
-> export FSTYP=btrfs
->
-> $ cd /home/fdmanana/git/hub/xfstests
-> $ mkfs.btrfs -f -O no-holes /dev/sdb
-> Performing full device TRIM (100.00GiB) ...
-> Turning ON incompat feature 'extref': increased hardlink limit per file to 65536
-> fs created label (null) on /dev/sdb
-> nodesize 16384 leafsize 16384 sectorsize 4096 size 100.00GiB
-> Btrfs v3.14.1-96-gcc7fd5a-dirty
->
-> $ ./check generic/075  generic/091  generic/112
-> FSTYP         -- btrfs
-> PLATFORM      -- Linux/x86_64 debian-vm3 3.16.0-rc6-fdm-btrfs-next-38+
->
-> generic/075 87s ... [failed, exit status 1] - output mismatch (see
-> /home/fdmanana/git/hub/xfstests/results//generic/075.out.bad)
->      --- tests/generic/075.out 2014-08-06 20:30:02.986012249 +0100
->      +++ /home/fdmanana/git/hub/xfstests/results//generic/075.out.bad
-> 2014-08-06 20:42:23.386012249 +0100
->      @@ -4,15 +4,5 @@
->       -----------------------------------------------
->       fsx.0 : -d -N numops -S 0
->       -----------------------------------------------
->      -
->      ------------------------------------------------
->      -fsx.1 : -d -N numops -S 0 -x
->      ------------------------------------------------
->      ...
->      (Run 'diff -u tests/generic/075.out
-> /home/fdmanana/git/hub/xfstests/results//generic/075.out.bad'  to see
-> the entire diff)
-> generic/091 56s ... [failed, exit status 1] - output mismatch (see
-> /home/fdmanana/git/hub/xfstests/results//generic/091.out.bad)
->      --- tests/generic/091.out 2014-02-21 19:11:09.460443001 +0000
->      +++ /home/fdmanana/git/hub/xfstests/results//generic/091.out.bad
-> 2014-08-06 20:42:25.262012249 +0100
->      @@ -1,7 +1,601 @@
->       QA output created by 091
->       fsx -N 10000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
->      -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
->      -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
->      -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
->      -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
->      -fsx -N 10000 -o 128000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -W
->      ...
->      (Run 'diff -u tests/generic/091.out
-> /home/fdmanana/git/hub/xfstests/results//generic/091.out.bad'  to see
-> the entire diff)
-> generic/112 93s ... [failed, exit status 1] - output mismatch (see
-> /home/fdmanana/git/hub/xfstests/results//generic/112.out.bad)
->      --- tests/generic/112.out 2014-02-21 19:11:09.460443001 +0000
->      +++ /home/fdmanana/git/hub/xfstests/results//generic/112.out.bad
-> 2014-08-06 20:42:28.930012249 +0100
->      @@ -4,15 +4,5 @@
->       -----------------------------------------------
->       fsx.0 : -A -d -N numops -S 0
->       -----------------------------------------------
->      -
->      ------------------------------------------------
->      -fsx.1 : -A -d -N numops -S 0 -x
->      ------------------------------------------------
->      ...
->      (Run 'diff -u tests/generic/112.out
-> /home/fdmanana/git/hub/xfstests/results//generic/112.out.bad'  to see
-> the entire diff)
-> Ran: generic/075 generic/091 generic/112
-> Failures: generic/075 generic/091 generic/112
-> Failed 3 of 3 tests
->
->
-> Without NO_HOLES, those tests pass. With NO_HOLES and without this
-> patch, the tests pass too.
-> Do you think you can take a look at this?
->
-> (A couple nitpick comments below too)
->
-> Thanks Qu
->
->
->> ---
->>   fs/btrfs/file.c | 112 +++++++++++++++++++++++++++++++++++++++++++++++++-------
->>   1 file changed, 98 insertions(+), 14 deletions(-)
->>
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index ae6af07..93915d1 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -2168,6 +2168,37 @@ out:
->>          return 0;
->>   }
->>
->> +/*
->> + * Find a hole extent on given inode and change start/len to the end of hole
->> + * extent.(hole/vacuum extent whose em->start <= start &&
->> + *        em->start + em->len > start)
->> + * When a hole extent is found, return 1 and modify start/len.
->> + */
->> +static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
->> +{
->> +       struct extent_map *em;
->> +       int ret = 0;
->> +
->> +       em = btrfs_get_extent(inode, NULL, 0, *start, *len, 0);
->> +       if (IS_ERR_OR_NULL(em)) {
->> +               if (!em)
->> +                       ret = -ENOMEM;
->> +               else
->> +                       ret = PTR_ERR(em);
->> +               return ret;
->> +       }
->> +
->> +       /* Hole or vacuum extent(only exists in no-hole mode) */
->> +       if (em->block_start == EXTENT_MAP_HOLE) {
->> +               ret = 1;
->> +               *len = em->start + em->len > *start + *len ?
->> +                      0 : *start + *len - em->start - em->len;
->> +               *start = em->start + em->len;
->> +       }
->> +       free_extent_map(em);
->> +       return ret;
->> +}
->> +
->>   static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>   {
->>          struct btrfs_root *root = BTRFS_I(inode)->root;
->> @@ -2175,17 +2206,18 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>          struct btrfs_path *path;
->>          struct btrfs_block_rsv *rsv;
->>          struct btrfs_trans_handle *trans;
->> -       u64 lockstart = round_up(offset, BTRFS_I(inode)->root->sectorsize);
->> -       u64 lockend = round_down(offset + len,
->> -                                BTRFS_I(inode)->root->sectorsize) - 1;
->> -       u64 cur_offset = lockstart;
->> +       u64 lockstart;
->> +       u64 lockend;
->> +       u64 tail_start;
->> +       u64 tail_len;
->> +       u64 orig_start = offset;
->> +       u64 cur_offset;
->>          u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
->>          u64 drop_end;
->>          int ret = 0;
->>          int err = 0;
->>          int rsv_count;
->> -       bool same_page = ((offset >> PAGE_CACHE_SHIFT) ==
->> -                         ((offset + len - 1) >> PAGE_CACHE_SHIFT));
->> +       bool same_page;
->>          bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
->>          u64 ino_size = round_up(inode->i_size, PAGE_CACHE_SIZE);
->>
->> @@ -2194,6 +2226,21 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>                  return ret;
->>
->>          mutex_lock(&inode->i_mutex);
->> +       ret = find_first_non_hole(inode, &offset, &len);
->> +       if (ret < 0)
->> +               goto out_only_mutex;
->> +       if (ret && !len) {
->> +               /* Already in a large hole */
->> +               ret = 0;
->> +               goto out_only_mutex;
->> +       }
->> +
->> +       lockstart = round_up(offset , BTRFS_I(inode)->root->sectorsize);
-> Nitpick, this should have caused checkpatch.pl to emit a warning
-> (space after the comma).
->
->> +       lockend = round_down(offset + len,
->> +                            BTRFS_I(inode)->root->sectorsize) - 1;
->> +       same_page = ((offset >> PAGE_CACHE_SHIFT) ==
->> +                   ((offset + len - 1) >> PAGE_CACHE_SHIFT));
->> +
->>          /*
->>           * We needn't truncate any page which is beyond the end of the file
->>           * because we are sure there is no data there.
->> @@ -2205,8 +2252,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>          if (same_page && len < PAGE_CACHE_SIZE) {
->>                  if (offset < ino_size)
->>                          ret = btrfs_truncate_page(inode, offset, len, 0);
->> -               mutex_unlock(&inode->i_mutex);
->> -               return ret;
->> +               goto out_only_mutex;
->>          }
->>
->>          /* zero back part of the first page */
->> @@ -2218,12 +2264,39 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>                  }
->>          }
->>
->> -       /* zero the front end of the last page */
->> -       if (offset + len < ino_size) {
->> -               ret = btrfs_truncate_page(inode, offset + len, 0, 1);
->> -               if (ret) {
->> -                       mutex_unlock(&inode->i_mutex);
->> -                       return ret;
->> +       /* Check the aligned pages after the first unaligned page,
->> +        * if offset != orig_start, which means the first unaligned page
->> +        * including serveral following pages are already in holes,
->> +        * the extra check can be skipped */
->> +       if (offset == orig_start) {
->> +               /* after truncate page, check hole again */
->> +               len = offset + len - lockstart;
->> +               offset = lockstart;
->> +               ret = find_first_non_hole(inode, &offset, &len);
->> +               if (ret < 0)
->> +                       goto out_only_mutex;
->> +               if (ret && !len) {
->> +                       ret = 0;
->> +                       goto out_only_mutex;
->> +               }
->> +               lockstart = offset;
->> +       }
->> +
->> +       /* Check the tail unaligned part is in a hole */
->> +       tail_start = lockend + 1;
->> +       tail_len = offset + len - tail_start;
->> +       if (tail_len) {
->> +               ret = find_first_non_hole(inode, &tail_start, &tail_len);
->> +               if (unlikely(ret < 0))
->> +                       goto out_only_mutex;
->> +               if (!ret) {
->> +                       /* zero the front end of the last page */
->> +                       if (tail_start + tail_len < ino_size) {
->> +                               ret = btrfs_truncate_page(inode,
->> +                                               tail_start + tail_len, 0, 1);
->> +                               if (ret)
->> +                                       goto out_only_mutex;
->> +                               }
-> Nitpick, this last } is not aligned (same indentation level) with its
-> matching {.
->
->>                  }
->>          }
->>
->> @@ -2299,6 +2372,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>          BUG_ON(ret);
->>          trans->block_rsv = rsv;
->>
->> +       cur_offset = lockstart;
->> +       len = lockend - cur_offset;
->>          while (cur_offset < lockend) {
->>                  ret = __btrfs_drop_extents(trans, root, inode, path,
->>                                             cur_offset, lockend + 1,
->> @@ -2339,6 +2414,14 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
->>                                                rsv, min_size);
->>                  BUG_ON(ret);    /* shouldn't happen */
->>                  trans->block_rsv = rsv;
->> +
->> +               ret = find_first_non_hole(inode, &cur_offset, &len);
->> +               if (unlikely(ret < 0))
->> +                       break;
->> +               if (ret && !len) {
->> +                       ret = 0;
->> +                       break;
->> +               }
->>          }
->>
->>          if (ret) {
->> @@ -2372,6 +2455,7 @@ out_free:
->>   out:
->>          unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
->>                               &cached_state, GFP_NOFS);
->> +out_only_mutex:
->>          mutex_unlock(&inode->i_mutex);
->>          if (ret && !err)
->>                  err = ret;
->> --
->> 1.9.3
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+For now, I'm ripping out the strict ordered file and going back to a
+best-effort filemap_flush like ext4 is using.
+
+-chris
 

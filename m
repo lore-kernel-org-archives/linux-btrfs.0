@@ -1,63 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:47897 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754533AbaHGK0E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Aug 2014 06:26:04 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 8E4523EE1BA
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:02 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id A28E5AC0933
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:01 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 574341DB8042
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:01 +0900 (JST)
-Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
-	by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 786F2BD65CD
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Aug 2014 19:26:00 +0900 (JST)
-Message-ID: <53E35430.9070408@jp.fujitsu.com>
-Date: Thu, 7 Aug 2014 19:25:52 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Received: from mail-la0-f50.google.com ([209.85.215.50]:47411 "EHLO
+	mail-la0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751601AbaHHAcD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Aug 2014 20:32:03 -0400
+Received: by mail-la0-f50.google.com with SMTP id gf5so4055960lab.23
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Aug 2014 17:32:01 -0700 (PDT)
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Documentations: Fix a format error in btrfs-replace.txt
-References: <1407137334-6183-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1407137334-6183-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1406625850-32168-3-git-send-email-miaox@cn.fujitsu.com>
+References: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com>
+	<1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com>
+	<1406625850-32168-3-git-send-email-miaox@cn.fujitsu.com>
+Date: Fri, 8 Aug 2014 01:32:00 +0100
+Message-ID: <CAL3q7H41-81_EXF5i45XBTf8qcHc02_KvdmPnMZkpuNbsqSFSA@mail.gmail.com>
+Subject: Re: [PATCH v2 02/12] Btrfs: load checksum data once when submitting a
+ direct read io
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/08/04 16:28), Qu Wenruo wrote:
-> Missing '+'s cause '-B' option not displayed correctly, add it to fix.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+On Tue, Jul 29, 2014 at 10:24 AM, Miao Xie <miaox@cn.fujitsu.com> wrote:
+> The current code would load checksum data for several times when we split
+> a whole direct read io because of the limit of the raid stripe, it would
+> make us search the csum tree for several times. In fact, it just wasted time,
+> and made the contention of the csum tree root be more serious. This patch
+> improves this problem by loading the data at once.
+>
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+> Changelog v1 -> v2:
+> - Remove the __GFP_ZERO flag in btrfs_submit_direct because it would trigger
+>   a WARNing. It is reported by Filipe David Manana, Thanks.
 
-Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Hi Miao,
+
+Without this flag (to zero the struct), I get a general protection fault at:
+
+(gdb) list *(btrfs_endio_direct_read+0xb8)
+0x38378 is in btrfs_endio_direct_read (fs/btrfs/inode.c:7242).
+7237 if (err)
+7238 clear_bit(BIO_UPTODATE, &dio_bio->bi_flags);
+7239 dio_end_io(dio_bio, err);
+7240
+7241 if (io_bio->end_io)
+7242 io_bio->end_io(io_bio, err);
+7243 bio_put(bio);
+7244 }
+
+Happens when running xfstests/generic/091
+
 
 > ---
->   Documentation/btrfs-replace.txt | 2 ++
->   1 file changed, 2 insertions(+)
-> 
-> diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
-> index eecf9b0..067b02d 100644
-> --- a/Documentation/btrfs-replace.txt
-> +++ b/Documentation/btrfs-replace.txt
-> @@ -42,6 +42,7 @@ The <targetdev> needs to be same size or larger than the <srcdev>.
->   only read from <srcdev> if no other zero-defect mirror exists.
->   (enable this if your drive has lots of read errors, the access would be very
->   slow)
-> ++
->   -f::::
->   force using and overwriting <targetdev> even if it looks like
->   containing a valid btrfs filesystem.
-> @@ -49,6 +50,7 @@ containing a valid btrfs filesystem.
->   A valid filesystem is assumed if a btrfs superblock is found which contains a
->   correct checksum. Devices which are currently mounted are
->   never allowed to be used as the <targetdev>.
-> ++
->   -B::::
->   no background replace.
->   
-> 
+>  fs/btrfs/btrfs_inode.h |  1 -
+>  fs/btrfs/ctree.h       |  3 +--
+>  fs/btrfs/extent_io.c   | 13 +++++++++++--
+>  fs/btrfs/file-item.c   | 14 ++------------
+>  fs/btrfs/inode.c       | 38 +++++++++++++++++++++-----------------
+>  5 files changed, 35 insertions(+), 34 deletions(-)
+>
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index a0cf3e5..b69bf7e 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -263,7 +263,6 @@ struct btrfs_dio_private {
+>
+>         /* dio_bio came from fs/direct-io.c */
+>         struct bio *dio_bio;
+> -       u8 csum[0];
+>  };
+>
+>  /*
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index be91397..40e9938 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3739,8 +3739,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+>  int btrfs_lookup_bio_sums(struct btrfs_root *root, struct inode *inode,
+>                           struct bio *bio, u32 *dst);
+>  int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
+> -                             struct btrfs_dio_private *dip, struct bio *bio,
+> -                             u64 logical_offset);
+> +                             struct bio *bio, u64 logical_offset);
+>  int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+>                              struct btrfs_root *root,
+>                              u64 objectid, u64 pos,
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 23398ad..0fb63c4 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2617,9 +2617,18 @@ btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
+>
+>  struct bio *btrfs_bio_clone(struct bio *bio, gfp_t gfp_mask)
+>  {
+> -       return bio_clone_bioset(bio, gfp_mask, btrfs_bioset);
+> -}
+> +       struct btrfs_io_bio *btrfs_bio;
+> +       struct bio *new;
+>
+> +       new = bio_clone_bioset(bio, gfp_mask, btrfs_bioset);
+> +       if (new) {
+> +               btrfs_bio = btrfs_io_bio(new);
+> +               btrfs_bio->csum = NULL;
+> +               btrfs_bio->csum_allocated = NULL;
+> +               btrfs_bio->end_io = NULL;
+> +       }
+> +       return bio;
+> +}
+>
+>  /* this also allocates from the btrfs_bioset */
+>  struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index f46cfe4..cf1b94f 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -299,19 +299,9 @@ int btrfs_lookup_bio_sums(struct btrfs_root *root, struct inode *inode,
+>  }
+>
+>  int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
+> -                             struct btrfs_dio_private *dip, struct bio *bio,
+> -                             u64 offset)
+> +                             struct bio *bio, u64 offset)
+>  {
+> -       int len = (bio->bi_iter.bi_sector << 9) - dip->disk_bytenr;
+> -       u16 csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+> -       int ret;
+> -
+> -       len >>= inode->i_sb->s_blocksize_bits;
+> -       len *= csum_size;
+> -
+> -       ret = __btrfs_lookup_bio_sums(root, inode, bio, offset,
+> -                                     (u32 *)(dip->csum + len), 1);
+> -       return ret;
+> +       return __btrfs_lookup_bio_sums(root, inode, bio, offset, NULL, 1);
+>  }
+>
+>  int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 548489e..fd88126 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7081,7 +7081,8 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+>         struct inode *inode = dip->inode;
+>         struct btrfs_root *root = BTRFS_I(inode)->root;
+>         struct bio *dio_bio;
+> -       u32 *csums = (u32 *)dip->csum;
+> +       struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+> +       u32 *csums = (u32 *)io_bio->csum;
+>         u64 start;
+>         int i;
+>
+> @@ -7123,6 +7124,9 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+>         if (err)
+>                 clear_bit(BIO_UPTODATE, &dio_bio->bi_flags);
+>         dio_end_io(dio_bio, err);
+> +
+> +       if (io_bio->end_io)
+> +               io_bio->end_io(io_bio, err);
+>         bio_put(bio);
+>  }
+>
+> @@ -7261,13 +7265,20 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
+>                 ret = btrfs_csum_one_bio(root, inode, bio, file_offset, 1);
+>                 if (ret)
+>                         goto err;
+> -       } else if (!skip_sum) {
+> -               ret = btrfs_lookup_bio_sums_dio(root, inode, dip, bio,
+> +       } else {
+> +               /*
+> +                * We have loaded all the csum data we need when we submit
+> +                * the first bio, so skip it.
+> +                */
+> +               if (dip->logical_offset != file_offset)
+> +                       goto map;
+> +
+> +               /* Load all csum data at once. */
+> +               ret = btrfs_lookup_bio_sums_dio(root, inode, dip->orig_bio,
+>                                                 file_offset);
+>                 if (ret)
+>                         goto err;
+>         }
+> -
+>  map:
+>         ret = btrfs_map_bio(root, rw, bio, 0, async_submit);
+>  err:
+> @@ -7288,7 +7299,7 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+>         u64 submit_len = 0;
+>         u64 map_length;
+>         int nr_pages = 0;
+> -       int ret = 0;
+> +       int ret;
+>         int async_submit = 0;
+>
+>         map_length = orig_bio->bi_iter.bi_size;
+> @@ -7392,11 +7403,10 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+>         struct btrfs_root *root = BTRFS_I(inode)->root;
+>         struct btrfs_dio_private *dip;
+>         struct bio *io_bio;
+> +       struct btrfs_io_bio *btrfs_bio;
+>         int skip_sum;
+> -       int sum_len;
+>         int write = rw & REQ_WRITE;
+>         int ret = 0;
+> -       u16 csum_size;
+>
+>         skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+>
+> @@ -7406,16 +7416,7 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+>                 goto free_ordered;
+>         }
+>
+> -       if (!skip_sum && !write) {
+> -               csum_size = btrfs_super_csum_size(root->fs_info->super_copy);
+> -               sum_len = dio_bio->bi_iter.bi_size >>
+> -                       inode->i_sb->s_blocksize_bits;
+> -               sum_len *= csum_size;
+> -       } else {
+> -               sum_len = 0;
+> -       }
+> -
+> -       dip = kmalloc(sizeof(*dip) + sum_len, GFP_NOFS);
+> +       dip = kmalloc(sizeof(*dip), GFP_NOFS);
+>         if (!dip) {
+>                 ret = -ENOMEM;
+>                 goto free_io_bio;
+> @@ -7441,6 +7442,9 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+>         if (!ret)
+>                 return;
+>
+> +       btrfs_bio = btrfs_io_bio(io_bio);
+> +       if (btrfs_bio->end_io)
+> +               btrfs_bio->end_io(btrfs_bio, ret);
+>  free_io_bio:
+>         bio_put(io_bio);
+>
+> --
+> 1.9.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

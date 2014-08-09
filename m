@@ -1,17 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36092 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751071AbaHIT0H (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 9 Aug 2014 15:26:07 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: fix csum tree corruption, duplicate and outdated checksums
-Date: Sat,  9 Aug 2014 21:22:27 +0100
-Message-Id: <1407615747-12949-1-git-send-email-fdmanana@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:9523 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751055AbaHITkX convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Aug 2014 15:40:23 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Filipe Manana <fdmanana@suse.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix csum tree corruption, duplicate and outdated
+ checksums
+Date: Sat, 9 Aug 2014 19:40:17 +0000
+Message-ID: <mmfcdo0u9ha9kxqgm6e9xd6n.1407613215870@email.android.com>
+References: <1407615747-12949-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1407615747-12949-1-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset=US-ASCII
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+I'm getting on a plane right now to kiss you, be prepared.  Thanks,
+
+Josef
+
+Filipe Manana <fdmanana@suse.com> wrote:
+
 
 Under rare circumstances we can end up leaving 2 versions of a checksum
 for the same file extent range.
@@ -102,14 +115,18 @@ index a1f97de..7897dcd 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
 @@ -746,7 +746,7 @@ again:
- 				found_next = 1;
- 			if (ret != 0)
- 				goto insert;
--			slot = 0;
-+			slot = path->slots[0];
- 		}
- 		btrfs_item_key_to_cpu(path->nodes[0], &found_key, slot);
- 		if (found_key.objectid != BTRFS_EXTENT_CSUM_OBJECTID ||
--- 
+                                found_next = 1;
+                        if (ret != 0)
+                                goto insert;
+-                       slot = 0;
++                       slot = path->slots[0];
+                }
+                btrfs_item_key_to_cpu(path->nodes[0], &found_key, slot);
+                if (found_key.objectid != BTRFS_EXTENT_CSUM_OBJECTID ||
+--
 1.9.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  https://urldefense.proofpoint.com/v1/url?u=http://vger.kernel.org/majordomo-info.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=%2F%2BJGihlBY9P4TZ77yUay5e6r3fawI30oSQXNPGxdVvc%3D%0A&s=32396751f1503bfc1bd4b63ca15fcf656cf42bacc3b09aaadbcc8e394bc65733

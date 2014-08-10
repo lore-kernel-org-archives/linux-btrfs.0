@@ -1,231 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ny.voidptr.de ([5.45.110.253]:35437 "EHLO ny.voidptr.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754251AbaHNVOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 17:14:10 -0400
-From: Nils Steinger <nst@voidptr.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Nils Steinger <nst@voidptr.de>
-Subject: [PATCH v2] Add options to use a fixed unit for `filesystem df` instead of determining it automatically.
-Date: Thu, 14 Aug 2014 23:13:38 +0200
-Message-Id: <1408050818-17184-2-git-send-email-nst@voidptr.de>
-In-Reply-To: <1408050818-17184-1-git-send-email-nst@voidptr.de>
-References: <1408044261-11234-1-git-send-email-nst@voidptr.de>
- <1408050818-17184-1-git-send-email-nst@voidptr.de>
+Received: from nm16-vm7.bullet.mail.sg3.yahoo.com ([106.10.149.70]:33816 "EHLO
+	nm16-vm7.bullet.mail.sg3.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751122AbaHJT1t convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Aug 2014 15:27:49 -0400
+Message-ID: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com>
+Date: Mon, 11 Aug 2014 03:21:16 +0800
+From: Vimal A R <arvimal@yahoo.in>
+Reply-To: Vimal A R <arvimal@yahoo.in>
+Subject: Ideas for a feature implementation
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The automatic unit selection makes parsing the output of `filesystem df` unnecessarily difficult.
-Using the new options -b, -k, -m, and -g, the output unit can be set to bytes, kibi-, mebi-, and gibibytes respectively.
+Hello,
 
-Signed-off-by: Nils Steinger <nst@voidptr.de>
----
+I came across the to-do list at https://btrfs.wiki.kernel.org/index.php/Project_ideas and would like to know if this list is updated and recent.
 
-v2: Add options to btrfs-filesystem man page. Also removed invalid "[<path>...]" placeholder in the process.
+I am looking for a project idea for my under graduate degree which can be completed in around 3-4 months. Are there any suggestions and ideas to help me further?
 
- Documentation/btrfs-filesystem.txt | 14 ++++++++-
- cmds-filesystem.c                  | 62 +++++++++++++++++++++++++++++++++-----
- utils.c                            | 30 ++++++++++++++++++
- utils.h                            |  8 +++++
- 4 files changed, 106 insertions(+), 8 deletions(-)
-
-diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index 0ee79cb..404474d 100644
---- a/Documentation/btrfs-filesystem.txt
-+++ b/Documentation/btrfs-filesystem.txt
-@@ -17,8 +17,20 @@ resizing, defragment.
- 
- SUBCOMMAND
- ----------
--*df* <path> [<path>...]::
-+*df* [-b|-k|-m|-g] <path>::
- Show space usage information for a mount point.
-++
-+By default, all values are scaled to the shortest three digit unit. You can
-+use the following options to set a fixed unit for all values:
-++
-+-b::::
-+Display all values in bytes.
-+-k::::
-+Display all values in kibibytes.
-+-m::::
-+Display all values in mebibytes.
-+-g::::
-+Display all values in gibibytes.
- 
- *show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
- Show the btrfs filesystem with some additional info.
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 306f715..54406a5 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -113,8 +113,13 @@ static const char * const filesystem_cmd_group_usage[] = {
- };
- 
- static const char * const cmd_df_usage[] = {
--	"btrfs filesystem df <path>",
-+	"btrfs filesystem df [options] <path>",
- 	"Show space usage information for a mount point",
-+	"",
-+	"-b             display all values in bytes",
-+	"-k             display all values in kibibytes",
-+	"-m             display all values in mebibytes",
-+	"-g             display all values in gibibytes",
- 	NULL
- };
- 
-@@ -204,7 +209,7 @@ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
- 	return 0;
- }
- 
--static void print_df(struct btrfs_ioctl_space_args *sargs)
-+static void print_df(struct btrfs_ioctl_space_args *sargs, int output_unit)
- {
- 	u64 i;
- 	struct btrfs_ioctl_space_info *sp = sargs->spaces;
-@@ -213,8 +218,8 @@ static void print_df(struct btrfs_ioctl_space_args *sargs)
- 		printf("%s, %s: total=%s, used=%s\n",
- 			group_type_str(sp->flags),
- 			group_profile_str(sp->flags),
--			pretty_size(sp->total_bytes),
--			pretty_size(sp->used_bytes));
-+			fixed_unit_size(sp->total_bytes, output_unit),
-+			fixed_unit_size(sp->used_bytes, output_unit));
- 	}
- }
- 
-@@ -223,13 +228,56 @@ static int cmd_df(int argc, char **argv)
- 	struct btrfs_ioctl_space_args *sargs = NULL;
- 	int ret;
- 	int fd;
-+	int output_unit = 0;
-+	int multiple_options_specified = 0;
- 	char *path;
- 	DIR  *dirstream = NULL;
- 
--	if (check_argc_exact(argc, 2))
-+	optind = 1;
-+	while(1) {
-+		int c = getopt(argc, argv, "bkmg");
-+		if (c < 0)
-+			break;
-+
-+		switch(c) {
-+		case 'b':
-+			if (output_unit > 0)
-+				multiple_options_specified = 1;
-+
-+			output_unit = 1;
-+			break;
-+		case 'k':
-+			if (output_unit > 0)
-+				multiple_options_specified = 1;
-+
-+			output_unit = 1024;
-+			break;
-+		case 'm':
-+			if (output_unit > 0)
-+				multiple_options_specified = 1;
-+
-+			output_unit = 1024 * 1024;
-+			break;
-+		case 'g':
-+			if (output_unit > 0)
-+				multiple_options_specified = 1;
-+
-+			output_unit = 1024 * 1024 * 1024;
-+			break;
-+		default:
-+			usage(cmd_df_usage);
-+		}
-+	}
-+
-+	if (multiple_options_specified) {
-+		fprintf(stderr, "Please only specify one the unit selection parameters -b/k/m/g\n.");
-+		return EINVAL;
-+	}
-+
-+	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_df_usage);
- 
--	path = argv[1];
-+	path = argv[argc - 1];
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
-@@ -239,7 +287,7 @@ static int cmd_df(int argc, char **argv)
- 	ret = get_df(fd, &sargs);
- 
- 	if (!ret && sargs) {
--		print_df(sargs);
-+		print_df(sargs, output_unit);
- 		free(sargs);
- 	} else {
- 		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
-diff --git a/utils.c b/utils.c
-index e130849..971e0ac 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1280,6 +1280,36 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes)
- 	return snprintf(str, str_bytes, "%.2f%s", fraction,
- 			size_strs[num_divs]);
- }
-+int fixed_unit_size_snprintf(u64 size, int unit, char *str, size_t str_bytes)
-+{
-+	int size_str_idx;
-+	float fraction;
-+
-+	switch (unit) {
-+	case 1:
-+		size_str_idx = 0;
-+		break;
-+	case 1024:
-+		size_str_idx = 1;
-+		break;
-+	case 1024 * 1024:
-+		size_str_idx = 2;
-+		break;
-+	case 1024 * 1024 * 1024:
-+		size_str_idx = 3;
-+		break;
-+	default:
-+		return pretty_size_snprintf(size, str, str_bytes);
-+	}
-+
-+	if (str_bytes == 0)
-+		return 0;
-+
-+	fraction = (float)size / unit;
-+
-+	return snprintf(str, str_bytes, "%.2f%s", fraction,
-+			size_strs[size_str_idx]);
-+}
- 
- /*
-  * __strncpy__null - strncpy with null termination
-diff --git a/utils.h b/utils.h
-index db8d63c..313408b 100644
---- a/utils.h
-+++ b/utils.h
-@@ -67,6 +67,14 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
- 		_str;							\
- 	})
- 
-+int fixed_unit_size_snprintf(u64 size, int unit, char *str, size_t str_bytes);
-+#define fixed_unit_size(size, unit) 						\
-+	({								\
-+		static __thread char _str[24];				\
-+		(void)fixed_unit_size_snprintf((size), (unit), _str, sizeof(_str));	\
-+		_str;							\
-+	})
-+
- int get_mountpt(char *dev, char *mntpt, size_t size);
- int btrfs_scan_block_devices(int run_ioctl);
- u64 parse_size(char *s);
--- 
-1.9.1
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+Thank you,
+Vimal

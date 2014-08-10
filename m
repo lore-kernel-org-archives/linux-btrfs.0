@@ -1,17 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:60370 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751173AbaHJXmZ (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sun, 10 Aug 2014 19:42:25 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: lists@colorremedies.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: send, lower mem requirements for processing xattrs
-Date: Mon, 11 Aug 2014 01:25:06 +0100
-Message-Id: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:2963 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751734AbaHJXwW convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Aug 2014 19:52:22 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Filipe Manana <fdmanana@suse.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "lists@colorremedies.com" <lists@colorremedies.com>
+Subject: Re: [PATCH] Btrfs: send, lower mem requirements for processing
+ xattrs
+Date: Sun, 10 Aug 2014 23:52:09 +0000
+Message-ID: <8uvx1msa7pjsyoq758f3sw4x.1407714728203@email.android.com>
+References: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
+Content-Type: text/plain; charset=US-ASCII
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Sigh I can only top post from my phone.  Instead of using contig_bug just use is_vmalloc_addr.  Thanks,
+
+Josef
+
+Filipe Manana <fdmanana@suse.com> wrote:
+
 
 Maximum xattr size can be up to nearly the leaf size. For an fs with a
 leaf size larger than the page size, using kmalloc requires allocating
@@ -31,86 +44,90 @@ index 3c63b29..215064d 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
 @@ -997,6 +997,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 	struct btrfs_key di_key;
- 	char *buf = NULL;
- 	int buf_len;
-+	bool contig_buf;
- 	u32 name_len;
- 	u32 data_len;
- 	u32 cur;
+        struct btrfs_key di_key;
+        char *buf = NULL;
+        int buf_len;
++       bool contig_buf;
+        u32 name_len;
+        u32 data_len;
+        u32 cur;
 @@ -1006,11 +1007,13 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 	int num;
- 	u8 type;
- 
--	if (found_key->type == BTRFS_XATTR_ITEM_KEY)
--		buf_len = BTRFS_MAX_XATTR_SIZE(root);
--	else
--		buf_len = PATH_MAX;
+        int num;
+        u8 type;
+
+-       if (found_key->type == BTRFS_XATTR_ITEM_KEY)
+-               buf_len = BTRFS_MAX_XATTR_SIZE(root);
+-       else
+-               buf_len = PATH_MAX;
 -
-+	/*
-+	 * Start with a small buffer (1 page). If later we end up needing more
-+	 * space, which can happen for xattrs on a fs with a leaf size > 4Kb,
-+	 * attempt to increase the buffer. Typically xattr values are small.
-+	 */
-+	buf_len = PATH_MAX;
-+	contig_buf = true;
- 	buf = kmalloc(buf_len, GFP_NOFS);
- 	if (!buf) {
- 		ret = -ENOMEM;
++       /*
++        * Start with a small buffer (1 page). If later we end up needing more
++        * space, which can happen for xattrs on a fs with a leaf size > 4Kb,
++        * attempt to increase the buffer. Typically xattr values are small.
++        */
++       buf_len = PATH_MAX;
++       contig_buf = true;
+        buf = kmalloc(buf_len, GFP_NOFS);
+        if (!buf) {
+                ret = -ENOMEM;
 @@ -1037,7 +1040,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 				ret = -ENAMETOOLONG;
- 				goto out;
- 			}
--			if (name_len + data_len > buf_len) {
-+			if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root)) {
- 				ret = -E2BIG;
- 				goto out;
- 			}
+                                ret = -ENAMETOOLONG;
+                                goto out;
+                        }
+-                       if (name_len + data_len > buf_len) {
++                       if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root)) {
+                                ret = -E2BIG;
+                                goto out;
+                        }
 @@ -1045,12 +1048,31 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 			/*
- 			 * Path too long
- 			 */
--			if (name_len + data_len > buf_len) {
-+			if (name_len + data_len > PATH_MAX) {
- 				ret = -ENAMETOOLONG;
- 				goto out;
- 			}
- 		}
- 
-+		if (name_len + data_len > buf_len) {
-+			if (contig_buf)
-+				kfree(buf);
-+			else
-+				vfree(buf);
-+			buf = NULL;
-+			buf_len = name_len + data_len;
-+			if (contig_buf)
-+				buf = kmalloc(buf_len, GFP_NOFS);
-+			if (!buf) {
-+				buf = vmalloc(buf_len);
-+				if (!buf) {
-+					ret = -ENOMEM;
-+					goto out;
-+				}
-+				contig_buf = false;
-+			}
-+		}
+                        /*
+                         * Path too long
+                         */
+-                       if (name_len + data_len > buf_len) {
++                       if (name_len + data_len > PATH_MAX) {
+                                ret = -ENAMETOOLONG;
+                                goto out;
+                        }
+                }
+
++               if (name_len + data_len > buf_len) {
++                       if (contig_buf)
++                               kfree(buf);
++                       else
++                               vfree(buf);
++                       buf = NULL;
++                       buf_len = name_len + data_len;
++                       if (contig_buf)
++                               buf = kmalloc(buf_len, GFP_NOFS);
++                       if (!buf) {
++                               buf = vmalloc(buf_len);
++                               if (!buf) {
++                                       ret = -ENOMEM;
++                                       goto out;
++                               }
++                               contig_buf = false;
++                       }
++               }
 +
- 		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
- 				name_len + data_len);
- 
+                read_extent_buffer(eb, buf, (unsigned long)(di + 1),
+                                name_len + data_len);
+
 @@ -1071,7 +1093,10 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
- 	}
- 
+        }
+
  out:
--	kfree(buf);
-+	if (contig_buf)
-+		kfree(buf);
-+	else
-+		vfree(buf);
- 	return ret;
+-       kfree(buf);
++       if (contig_buf)
++               kfree(buf);
++       else
++               vfree(buf);
+        return ret;
  }
- 
--- 
+
+--
 1.9.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  https://urldefense.proofpoint.com/v1/url?u=http://vger.kernel.org/majordomo-info.html&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=0g6WGYzRdvDGTNBGE%2B9Cc6zaQIOCx8CwbRFIJFgZcAM%3D%0A&s=cd46d14d0b643be3734a57e10521a9ccd5b5ec3732bb96b6f83da18df6a44c98

@@ -1,76 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44469 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751226AbaHJPmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Aug 2014 11:42:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XGVGJ-0003dH-Qr
-	for linux-btrfs@vger.kernel.org; Sun, 10 Aug 2014 17:42:23 +0200
-Received: from pd953ed30.dip0.t-ipconnect.de ([217.83.237.48])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Aug 2014 17:42:23 +0200
-Received: from holger.hoffstaette by pd953ed30.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Aug 2014 17:42:23 +0200
-To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Fixing the btrfs deadlocks
-Date: Sun, 10 Aug 2014 15:42:09 +0000 (UTC)
-Message-ID: <pan.2014.08.10.15.42.09@googlemail.com>
-References: <CAETJ_S-BOjatUFPVPwKCmgMRfWG6K0WEJgE=F_Di2i=52fqGCQ@mail.gmail.com>
-	<2242759.aOKEuU2TTR@xev> <20140809143206.GJ11855@bitfolk.com>
-	<CAETJ_S8rf4Y_7x4+fDB19JfNZYa1wjQOwTHcdCxd9eHq17NgXg@mail.gmail.com>
-	<CAETJ_S-VZk5pxgT4HCJnQwenL6eDP88z7tW-KEHYqtnn=NWbww@mail.gmail.com>
-	<pan$29b1$ee1dac$e6091513$d07b2702@cox.net>
-	<20140809182113.GI12778@merlins.org>
-	<pan.2014.08.10.12.43.31@googlemail.com>
-	<20140810143900.GB27670@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49598 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751235AbaHJQZ4 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Aug 2014 12:25:56 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59791 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XGVwS-003cU1-BA
+	for linux-btrfs@vger.kernel.org; Sun, 10 Aug 2014 10:25:56 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: 40TB volume taking over 16 hours to mount, any ideas?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <pan$d6d2e$b19333f0$ee4ea84e$5a707866@cox.net>
+Date: Sun, 10 Aug 2014 10:25:53 -0600
+Message-Id: <A7CFCD27-F663-425A-A695-3E7842777348@colorremedies.com>
+References: <CAETJ_S-BOjatUFPVPwKCmgMRfWG6K0WEJgE=F_Di2i=52fqGCQ@mail.gmail.com> <2242759.aOKEuU2TTR@xev> <20140809143206.GJ11855@bitfolk.com> <CAETJ_S8rf4Y_7x4+fDB19JfNZYa1wjQOwTHcdCxd9eHq17NgXg@mail.gmail.com> <CAETJ_S-VZk5pxgT4HCJnQwenL6eDP88z7tW-KEHYqtnn=NWbww@mail.gmail.com> <pan$29b1$ee1dac$e6091513$d07b2702@cox.net> <CAETJ_S8347mtU6-o9BW=_Q27atdcj6P-aFZ1551S6G6rXBS8=A@mail.gmail.com> <CAETJ_S9HsWEYrV2zrfr8ZSD69SoFCiHnND38HLo8pq7ENiEPbw@mail.gmail.com> <CAETJ_S8DT=yW6V8bmAJ5s-+ZbuLjnDUK_XWEFRwK_p8hoR+LWA@mail.gmail.com> <pan$d6d2e$b19333f0$ee4ea84e$5a707866@cox.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 10 Aug 2014 07:39:00 -0700, Marc MERLIN wrote:
 
-> My apologies if I missed some Emails, but I'm a bit confused.
-> The deadlocks happen reliably with 3.15+, but those patches are marked as
-> being for 3.14 in your URL, but then you say you didn't backport them to
-> 3.14.
+On Aug 10, 2014, at 2:24 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+> Either way, the question then comes up of what to use when you do a new 
+> mkfs.  My personal feeling?  Btrfs isn't yet fully stable, and there's a 
+> very real possibility that one may have to restore from backup, so one 
+> should be prepared for that.
 
-sigh :)
+Jose said early on he that he is prepared for this, but nevertheless a week is a rather long time for restore.
 
-My patch queue is meant for 3.14 only. The notorious hangs in 3.15+
-are a different issue, as we have seen likely caused by the workqueue
-changes; I was only interested in keeping & improving 3.14.x, precisely
-because 3.15 is still borked and short-lived, and 3.16 has exciting new,
-completely btrfs-unrelated problems for which I really don't have much
-patience at the moment.
+>  Given the size of the data store you're 
+> working with and the remote nature of that backup, with access over 
+> limited-speed pipes, I wonder if btrfs is really an appropriate choice 
+> for you at this point.
 
-> That said, if you'd like to me try a set of patches that applies to
-> 3.15.latest or 3.16 to see if they stop my frequent btrfs deadlocks, I'd be
-> happy to.
+We don't know if this backup is extra icing on the cake. Yes it's a week of restore, but it still might be entirely dispensable; e.g. 1 of 2+ glusterfs georep slaves and at least one of the others is XFS based.
 
-I meant you could try my patch queue if you intend to use 3.14.x for a
-longer period of time since it's a longterm kernel. If and when The Great
-Hang has been fixed I migh look at 3.16+ again, but thanks to the quite
-unhelpful general btrfs backport policy I'm not holding my breath.
-"Simply use the latest kernel" is laughably impractical for many reasons,
-and for the majority of people it's just easier to not use btrfs at all -
-which helps nobody.
+> I guess xfs is the standard recommendation for big-data sizes and it is 
+> said to be long past the "better have a UPS" days, or of course the 
+> default ext4.  
 
-The - admittedly poorly worded - "backporting" referred to getting a set
-of identified patches (aka my queue) into 3.14-longterm via Greg KH; there
-is nothing to do except apply them.
+XFS is now the default filesystem for RHEL 7 and Fedora 21 Server, likely also for Fedora 21 Cloud. This includes /boot.
 
-> If the patches are meant for 3.14, that's not very helpful since 3.14 is
-> reasonably stable for me in comparison.
+> 
+> You can of course try btrfs again in a year or so, when it should have 
+> matured quite a bit.  I actually did that after my first try at btrfs, 
+> leaving for a time then coming back, and was impressed at how much it had 
+> matured in the mean time.
 
-..which is precisely what I said and why I'm using it. :)
-That does not mean problems identified post-3.14 cannot or should not
-be patched if they are being addressed in other trees and apply easily.
+I'm looking back to Aug 2011 when Fedora 16 was slated to have Btrfs by default.
 
--h
+
+Chris Murphy
 

@@ -1,53 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:59869 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751493AbaHJR00 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Aug 2014 13:26:26 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Peter Waller <peter@scraperwiki.com>
-Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-Subject: Re: ENOSPC with mkdir and rename
-Date: Sun, 10 Aug 2014 19:26:25 +0200
-Message-ID: <2485127.sKlMmAdHLi@merkaba>
-In-Reply-To: <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
-References: <CAFChkqtpb+xMhFk+7RBux-o-FOO0oaxx28Wz-LZZZVpvq2nRFQ@mail.gmail.com> <17833067.mzxAL4oqZq@quad> <CAFChkqs3LOM4HmDzpXgs6YTeoXvyNPbsNWCPf74=_MnPneJ+HQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:44342 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751215AbaHJVBq convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Aug 2014 17:01:46 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49247 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XGaFN-001mUh-DV
+	for linux-btrfs@vger.kernel.org; Sun, 10 Aug 2014 15:01:45 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: [BUG] btrfs send/receive, page allocation failure
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <2BBB0EBF-DD55-45B4-8BF5-F8DAA9398A4F@colorremedies.com>
+Date: Sun, 10 Aug 2014 15:01:44 -0600
+Message-Id: <CF539008-5930-447D-B26C-2A2BBE9337EA@colorremedies.com>
+References: <2BBB0EBF-DD55-45B4-8BF5-F8DAA9398A4F@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 4. August 2014, 11:09:23 schrieb Peter Waller:
-> On 4 August 2014 10:39, Chris Samuel <chris@csamuel.org> wrote:
-> > On Mon, 4 Aug 2014 09:14:19 AM Peter Waller wrote:
-> >> All of this is *very* surprising.
-> > 
-> > Hmm, it shouldn't be, the ENOSPC issues are well known and have been
-> > discussed here for years.
+
+On Aug 7, 2014, at 9:31 AM, Chris Murphy <lists@colorremedies.com> wrote:
+
+> # btrfs send /mnt/320G/2012april_HDD_fullbackup.ro.0/ | btrfs receive /mnt/500G/
+> At subvol /mnt/320G/2012april_HDD_fullbackup.ro.0/
+> At subvol 2012april_HDD_fullbackup.ro.0
+> ERROR: send ioctl failed with -12: Cannot allocate memory
+> ERROR: unexpected EOF in stream.
 > 
-> I accept that. It's all very well if you read the BTRFS list and/or
-> are a BTRFS developer. But if you're trying to work it out in the heat
-> of battle, as we have sysadmins who would have to, there is a
-> combination of things here that makes it unreasonable and harmful for
-> production.
+> 
+> kernel-3.16.0-1.fc21.x86_64
+> btrfs-progs-3.14.2-3.fc21.x86_64
+> 
+> 
+> Both the source and destination were recently (< 24 hours) created with the above versions.
+> 
+> Bug report here:
+> https://bugzilla.kernel.org/show_bug.cgi?id=81781
+> 
+> dmesg excerpt with debug kernel here:
+> https://bugzilla.kernel.org/attachment.cgi?id=145331
 
-Well, maybe, just maybe… BTRFS is not yet ready for production use.
+This isn't reproducible by only changing kernels to 3.14.15-100.fc19.x86_64, so it's a regression in 3.16. What's also interesting is the performance is much worse with 3.14 compared to 3.16. I get ~8.3MB/s with 3.14, and ~21.8MB/s with 3.16; all other factors are identical.
 
-I installed it on a server recently, my own VM. And I am expect that I may 
-need to fix up things there. And I did it with a *huge* free space margin. And 
-still running Debian backport kernel 3.14. Won´t change it to 3.16 until I 
-have seen that it runs nicely on my laptop again.
 
-Test it on non critical servers – yes. Use it on critical production servers? 
-My answer is a no for this. Despite partial support in SLES 11 SP 2 and 
-support (partial?) for it in Oracle Unbreakable Linux.
-
-BTRFS is just not yet there from my current experiences with it.
-
-One thing that may get you covered up usually: Make it five times as large as 
-the data you put on it and try to monitor for situation you better rebalance 
-in advance.
-
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Chris Murphy

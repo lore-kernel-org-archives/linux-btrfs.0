@@ -1,58 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:49598 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751235AbaHJQZ4 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Aug 2014 12:25:56 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59791 helo=ming.hsd1.co.comcast.net)
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XGVwS-003cU1-BA
-	for linux-btrfs@vger.kernel.org; Sun, 10 Aug 2014 10:25:56 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: 40TB volume taking over 16 hours to mount, any ideas?
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$d6d2e$b19333f0$ee4ea84e$5a707866@cox.net>
-Date: Sun, 10 Aug 2014 10:25:53 -0600
-Message-Id: <A7CFCD27-F663-425A-A695-3E7842777348@colorremedies.com>
-References: <CAETJ_S-BOjatUFPVPwKCmgMRfWG6K0WEJgE=F_Di2i=52fqGCQ@mail.gmail.com> <2242759.aOKEuU2TTR@xev> <20140809143206.GJ11855@bitfolk.com> <CAETJ_S8rf4Y_7x4+fDB19JfNZYa1wjQOwTHcdCxd9eHq17NgXg@mail.gmail.com> <CAETJ_S-VZk5pxgT4HCJnQwenL6eDP88z7tW-KEHYqtnn=NWbww@mail.gmail.com> <pan$29b1$ee1dac$e6091513$d07b2702@cox.net> <CAETJ_S8347mtU6-o9BW=_Q27atdcj6P-aFZ1551S6G6rXBS8=A@mail.gmail.com> <CAETJ_S9HsWEYrV2zrfr8ZSD69SoFCiHnND38HLo8pq7ENiEPbw@mail.gmail.com> <CAETJ_S8DT=yW6V8bmAJ5s-+ZbuLjnDUK_XWEFRwK_p8hoR+LWA@mail.gmail.com> <pan$d6d2e$b19333f0$ee4ea84e$5a707866@cox.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from magic.merlins.org ([209.81.13.136]:46267 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750964AbaHJQhI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Aug 2014 12:37:08 -0400
+Date: Sun, 10 Aug 2014 09:36:59 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <20140810163659.GO12778@merlins.org>
+References: <CAETJ_S-BOjatUFPVPwKCmgMRfWG6K0WEJgE=F_Di2i=52fqGCQ@mail.gmail.com>
+ <2242759.aOKEuU2TTR@xev>
+ <20140809143206.GJ11855@bitfolk.com>
+ <CAETJ_S8rf4Y_7x4+fDB19JfNZYa1wjQOwTHcdCxd9eHq17NgXg@mail.gmail.com>
+ <CAETJ_S-VZk5pxgT4HCJnQwenL6eDP88z7tW-KEHYqtnn=NWbww@mail.gmail.com>
+ <pan$29b1$ee1dac$e6091513$d07b2702@cox.net>
+ <20140809182113.GI12778@merlins.org>
+ <pan.2014.08.10.12.43.31@googlemail.com>
+ <20140810143900.GB27670@merlins.org>
+ <pan.2014.08.10.15.42.09@googlemail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan.2014.08.10.15.42.09@googlemail.com>
+Subject: Re: Fixing the btrfs deadlocks
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On Aug 10, 2014, at 2:24 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+On Sun, Aug 10, 2014 at 03:42:09PM +0000, Holger Hoffstätte wrote:
+> On Sun, 10 Aug 2014 07:39:00 -0700, Marc MERLIN wrote:
 > 
-> Either way, the question then comes up of what to use when you do a new 
-> mkfs.  My personal feeling?  Btrfs isn't yet fully stable, and there's a 
-> very real possibility that one may have to restore from backup, so one 
-> should be prepared for that.
-
-Jose said early on he that he is prepared for this, but nevertheless a week is a rather long time for restore.
-
->  Given the size of the data store you're 
-> working with and the remote nature of that backup, with access over 
-> limited-speed pipes, I wonder if btrfs is really an appropriate choice 
-> for you at this point.
-
-We don't know if this backup is extra icing on the cake. Yes it's a week of restore, but it still might be entirely dispensable; e.g. 1 of 2+ glusterfs georep slaves and at least one of the others is XFS based.
-
-> I guess xfs is the standard recommendation for big-data sizes and it is 
-> said to be long past the "better have a UPS" days, or of course the 
-> default ext4.  
-
-XFS is now the default filesystem for RHEL 7 and Fedora 21 Server, likely also for Fedora 21 Cloud. This includes /boot.
-
+> > My apologies if I missed some Emails, but I'm a bit confused.
+> > The deadlocks happen reliably with 3.15+, but those patches are marked as
+> > being for 3.14 in your URL, but then you say you didn't backport them to
+> > 3.14.
 > 
-> You can of course try btrfs again in a year or so, when it should have 
-> matured quite a bit.  I actually did that after my first try at btrfs, 
-> leaving for a time then coming back, and was impressed at how much it had 
-> matured in the mean time.
+> sigh :)
+> 
+> My patch queue is meant for 3.14 only. The notorious hangs in 3.15+
+> are a different issue, as we have seen likely caused by the workqueue
+> changes; I was only interested in keeping & improving 3.14.x, precisely
+> because 3.15 is still borked and short-lived, and 3.16 has exciting new,
+> completely btrfs-unrelated problems for which I really don't have much
+> patience at the moment.
+ 
+Aaah, gotcha, and to be clear, 3.16 has the same hang problems so far
+(or maybe even worse).
 
-I'm looking back to Aug 2011 when Fedora 16 was slated to have Btrfs by default.
+> I meant you could try my patch queue if you intend to use 3.14.x for a
+> longer period of time since it's a longterm kernel. If and when The Great
 
+Ok, I understand you now.
 
-Chris Murphy
+> "Simply use the latest kernel" is laughably impractical for many reasons,
+> and for the majority of people it's just easier to not use btrfs at all -
+> which helps nobody.
+ 
+I totally agree with you on that one.
 
+> ..which is precisely what I said and why I'm using it. :)
+> That does not mean problems identified post-3.14 cannot or should not
+> be patched if they are being addressed in other trees and apply easily.
+
+Ok, I'm following you now. 
+So, I don't really have time to deal with potential recoveries and
+restores if anything goes wrong in the next 3 weeks, and since 3.14
+works well enough for me (the hangs are rare enough that I can deal with
+them), I'm unfortunately going to skip on your offer.
+I do appreciate the work you did and the rationale behind it very much
+actually, I'm just not the right "customer" for this at the moment.
+
+Hopefully this new thread will bring up your work again for others to
+see and hopefully it will be useful to some.
+
+Thanks
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,32 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f53.google.com ([209.85.215.53]:57451 "EHLO
-	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753096AbaHKSIe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Aug 2014 14:08:34 -0400
-Received: by mail-la0-f53.google.com with SMTP id gl10so7126922lab.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 11:08:32 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <53E90409.5050105@jrs-s.net>
-References: <loom.20140811T193907-62@post.gmane.org> <53E90409.5050105@jrs-s.net>
-From: Ames Cornish <ames@montebellopartners.com>
-Date: Mon, 11 Aug 2014 11:08:12 -0700
-Message-ID: <CAP6pX24mY4QKAJZWa+FQuqQUM+gyedo3dxp1CbvxFjFKYfSRGg@mail.gmail.com>
-Subject: Re: Announcement: buttersink - like rsync for btrfs snapshots
-To: Jim Salter <jim@jrs-s.net>
-Cc: Ames Cornish <gmane@pub.cornishes.net>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:37823 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753979AbaHKVl1 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Aug 2014 17:41:27 -0400
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: [PATCH] Btrfs: fix regression of btrfs device replace
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <1406632179-17747-1-git-send-email-bo.li.liu@oracle.com>
+Date: Mon, 11 Aug 2014 15:41:25 -0600
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <27C52EC9-CF6E-4FB7-9504-316A25D45DFB@colorremedies.com>
+References: <1406632179-17747-1-git-send-email-bo.li.liu@oracle.com>
+To: Liu Bo <bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jim,
 
-btrfs send reliability has been an issue, though I've been able to
-successfully use it for my backups.  buttersink usually detects the
-errors and will either move the destination snapshot to mark it as
-partial/failed (for btrfs), or cancel and delete the partial upload
-(for S3).  I've also found that it helps to wait a while (e.g. 30
-seconds) after any volume deletes before trying the send/sync.  I hope
-btrfs-progs will get more reliable, too.
+On Jul 29, 2014, at 5:09 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
 
-- Ames
+> Commit 49c6f736f34f901117c20960ebd7d5e60f12fcac(
+> btrfs: dev replace should replace the sysfs entry) added the missing sysfs entry
+> in the process of device replace, but didn't take missing devices into account,
+> so now we have
+> 
+> BUG: unable to handle kernel NULL pointer dereference at 0000000000000088
+> IP: [<ffffffffa0268551>] btrfs_kobj_rm_device+0x21/0x40 [btrfs]
+> ...
+> 
+> To reproduce it,
+> 1. mkfs.btrfs -f disk1 disk2
+> 2. mkfs.ext4 disk1
+> 3. mount disk2 /mnt -odegraded
+> 4. btrfs replace start -B 1 disk3 /mnt
+> --------------------------
+> 
+> This fixes the problem.
+> 
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> fs/btrfs/sysfs.c | 2 +-
+> 1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 7869936..12e5355 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -614,7 +614,7 @@ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
+> 	if (!fs_info->device_dir_kobj)
+> 		return -EINVAL;
+> 
+> -	if (one_device) {
+> +	if (one_device && one_device->bdev) {
+> 		disk = one_device->bdev->bd_part;
+> 		disk_kobj = &part_to_dev(disk)->kobj;
+> 
+
+
+Applied to 3.16.0 and tested, problem is fixed.
+
+
+Chris Murphy
+

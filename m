@@ -1,87 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f175.google.com ([209.85.214.175]:64393 "EHLO
-	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753554AbaHKVhQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Aug 2014 17:37:16 -0400
-Received: by mail-ob0-f175.google.com with SMTP id wp18so6532498obc.34
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 14:37:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20140812011401.568c16e6@natsu>
-References: <CADw2B2Neg6-iG4uwGoW6XPomY4+-1BkUTx-7zPrAZPS6R3pRYg@mail.gmail.com>
-	<20140812011401.568c16e6@natsu>
-Date: Mon, 11 Aug 2014 14:37:15 -0700
-Message-ID: <CADw2B2O25ZQxT6Ez5aGs2_K7+G2S6PammCCMt6=Suu8oPLEtPw@mail.gmail.com>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:55079 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751387AbaHKXbO convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Aug 2014 19:31:14 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:50439 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XGz3a-003Tr0-8T
+	for linux-btrfs@vger.kernel.org; Mon, 11 Aug 2014 17:31:14 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Large files, nodatacow and fragmentation
-From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <20140812011401.568c16e6@natsu>
+Date: Mon, 11 Aug 2014 17:31:13 -0600
+Message-Id: <AC90CAC7-A8F5-4C74-8295-4360A6A8FE45@colorremedies.com>
+References: <CADw2B2Neg6-iG4uwGoW6XPomY4+-1BkUTx-7zPrAZPS6R3pRYg@mail.gmail.com> <20140812011401.568c16e6@natsu>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 11, 2014 at 12:14 PM, Roman Mamedov <rm@romanrm.net> wrote:
->
-> First of all, why do you require a COW filesystem in the first place... if all
-> you do is just use it in a NoCOW mode?
->
+
+On Aug 11, 2014, at 1:14 PM, Roman Mamedov <rm@romanrm.net> wrote:
+
+
+> 
 > Second, why qcow2? It can also have internal fragmentation which is unlikely to
 > do anything good for performance.
 
-Both great questions. I'm experimenting with btrfs, and the various
-permutations of
-btrfs with KVM.
+It really depends on what version of libvirt and qemu-image you've got. I did some testing during Fedora 20 prior to release, and the best results for my configuration (a laptop with an HDD at that time): btrfs host, +C qcow2, btrfs guest, both 16KB leaf size, and the drive pointing to the qcow2 file with cache policy set to unsafe. And even when obliterating the VM while writing data, I never lost the guest Btrfs file system. Not that I recommend it, the cache policy is unsafe after all. I did lose some data but it was limited to commit time. We're not talking huge differences, the metric I was using was installing Fedora 20 based on installer log start/stop time for doing the unattended portion of the install. It also matters somewhat to pre-allocate metadata when creating the qcow2 file.
 
-So, why btrfs vs lvm or ext4:
-1. Because nocow isn't all I'm doing with that filesystem.
-2. I like the way btrfs subvolumes work, vs lvm. I can have the nocow
-files in one
-subvolume, and still get great snapshot performance out of others.
-3. I get the performance of a raid10 without the lvm management overhead. Online
-rebalancing. Easy online resizing.
-4. And frankly, I just kinda want to make it work.
+I also tested XFS on XFS, ext4 on ext4, also in qcow2. And also on raw images. And also on LV's. I'd think the LV would have been faster since it completely eliminates one of the file systems (there is no host fs).
 
->
-> Try RAW format images; to reduce the space requirements, with the latest
-> Qemu/KVM you can pass-through TRIM command from inside the VM guest (at least
-> in the IDE controller mode) so that the backing filesystem will unmap areas
-> that are no longer in use inside the VM, in effect "re-sparsifying" the image.
-> This is VERY nifty. But yeah this can cause some fragmentation even with NoCOW.
->
-> In my personal use case NoCOW is only utilized partly, because all subvolumes
-> with running VMs are being snapshotted about every 30 minutes, and those
-> snapshots are kept for two weeks. The performance is passable; at least when
-> using KVM's "cache=writeback" mode (or less safer ones).
+Anyway, what I determined was the only way to know is to actually test your workload, or a good approximation of it, with various configurations.
 
-I've done my reading of qcow2 vs raw and that indicated that while
-there is better
-performance using raw, it's not significant enough to bypass the
-ability to take a qemu
-snapshot. I've not done the analysis myself, so I could be reading things wrong.
+And another test is LVM thinp LV's once libvirt has support for using them (which may already have happened, I haven't revisted this since Oct 2013 testing), because those snapshots should be as usable as Btrfs snapshots, unlike conventional LVM snapshots which are slow and need explicit preallocation.
 
-There's a great thread, "Are nocow files snapshot-aware?" [1]. My take
-from that reading
-is that doing a btrfs snapshot of a nocow file seems like it's
-reasonable on a semi-regular
-basis, but DON'T do it every 30 seconds.
 
-Also that whole thread is predicated on the idea that your nocow files
-are themselves
-managed by a process/system that can read and write to them
-atomically, thus I decided
-against using the raw format.
+Chris Murphy
 
->
-> --
-> With respect,
-> Roman
-
-Thanks Roman. But really we haven't addressed my original question,
-which is - how would
-I determine the root cause of the fragmentation in this nocow file on
-top of a btrfs subvolume?
-
-[1] http://www.spinics.net/lists/linux-btrfs/msg31341.html
-
-Kind Regards,
-Richard

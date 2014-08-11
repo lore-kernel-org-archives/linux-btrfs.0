@@ -1,42 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f50.google.com ([209.85.192.50]:38002 "EHLO
-	mail-qg0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751735AbaHKCxp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Aug 2014 22:53:45 -0400
-Received: by mail-qg0-f50.google.com with SMTP id q108so8109294qgd.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Aug 2014 19:53:44 -0700 (PDT)
-Message-ID: <53E83035.8010603@gmail.com>
-Date: Sun, 10 Aug 2014 22:53:41 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Vimal A R <arvimal@yahoo.in>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:59823 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1754682AbaHKU1w convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Aug 2014 16:27:52 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49200 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XGwC7-001dlt-U4
+	for linux-btrfs@vger.kernel.org; Mon, 11 Aug 2014 14:27:51 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Ideas for a feature implementation
-References: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com>
-In-Reply-To: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com>
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <53E83035.8010603@gmail.com>
+Date: Mon, 11 Aug 2014 14:27:51 -0600
+Message-Id: <678801E6-E1C8-42B5-8D50-C59B68549EC4@colorremedies.com>
+References: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com> <53E83035.8010603@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/10/2014 03:21 PM, Vimal A R wrote:
-> Hello,
-> 
-> I came across the to-do list at https://btrfs.wiki.kernel.org/index.php/Project_ideas and would like to know if this list is updated and recent.
-> 
-> I am looking for a project idea for my under graduate degree which can be completed in around 3-4 months. Are there any suggestions and ideas to help me further?
-> 
-> Thank you,
-> Vimal
-It's not really listed there (though some of the projects there might be
-considered subsets of it), but improved parallelization for the
-multi-device setups is one thing that I know that a lot of people would
-like to see.
 
-Another thing that isn't listed there, that I would personally love to
-see is support for secure file deletion.  To be truly secure though,
-this would need to hook into the COW logic so that files marked for
-secure deletion can't be reflinked (maybe make the automatically NOCOW
-instead, and don't allow snapshots?), and when they get written to, the
-blocks that get COW'ed have the old block overwritten.
+On Aug 10, 2014, at 8:53 PM, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
 
+> 
+> Another thing that isn't listed there, that I would personally love to
+> see is support for secure file deletion.  To be truly secure though,
+> this would need to hook into the COW logic so that files marked for
+> secure deletion can't be reflinked (maybe make the automatically NOCOW
+> instead, and don't allow snapshots?), and when they get written to, the
+> blocks that get COW'ed have the old block overwritten.
+
+If the file is reflinked or snapshot, then it can it be secure deleted? Because what does it mean to secure delete a file when there's a completely independent file pointing to the same physical blocks? What if someone else owns that independent file? Does the reflink copy get rm'd as well? Or does the file remain, but its blocks are zero'd/corrupted?
+
+For SSDs, whether it's an overwrite or an FITRIM ioctl it's an open question when the data is actually irretrievable. It may be seconds, but could be much longer (hours?) so I'm not sure if it's useful. On HDD's using SMR it's not necessarily a given an overwrite will work there either.
+
+
+Chris Murphy

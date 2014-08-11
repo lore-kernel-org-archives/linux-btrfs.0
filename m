@@ -1,47 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:11859 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751055AbaHIUZj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Aug 2014 16:25:39 -0400
-Message-ID: <53E683B6.6080400@fb.com>
-Date: Sat, 9 Aug 2014 16:25:26 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Filipe Manana <fdmanana@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <stable@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix csum tree corruption, duplicate and outdated
- checksums
-References: <1407615747-12949-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1407615747-12949-1-git-send-email-fdmanana@suse.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from victor.provo.novell.com ([137.65.250.26]:60370 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751173AbaHJXmZ (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Sun, 10 Aug 2014 19:42:25 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: lists@colorremedies.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: send, lower mem requirements for processing xattrs
+Date: Mon, 11 Aug 2014 01:25:06 +0100
+Message-Id: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Maximum xattr size can be up to nearly the leaf size. For an fs with a
+leaf size larger than the page size, using kmalloc requires allocating
+multiple pages that are contiguous, which might not be possible if
+there's heavy memory fragmentation. Therefore fallback to vmalloc if
+we fail to allocate with kmalloc. Also start with a smaller buffer size,
+since xattr values typically are smaller than a page.
 
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 41 +++++++++++++++++++++++++++++++++--------
+ 1 file changed, 33 insertions(+), 8 deletions(-)
 
-On 08/09/2014 04:22 PM, Filipe Manana wrote:
-> Under rare circumstances we can end up leaving 2 versions of a checksum
-> for the same file extent range.
-> 
-> The reason for this is that after calling btrfs_next_leaf we process
-> slot 0 of the leaf it returns, instead of processing the slot set in
-> path->slots[0]. Most of the time (by far) path->slots[0] is 0, but after
-> btrfs_next_leaf() releases the path and before it searches for the next
-> leaf, another task might cause a split of the next leaf, which migrates
-> some of its keys to the leaf we were processing before calling
-> btrfs_next_leaf(). In this case btrfs_next_leaf() returns again the
-> same leaf but with path->slots[0] having a slot number corresponding
-> to the first new key it got, that is, a slot number that didn't exist
-> before calling btrfs_next_leaf(), as the leaf now has more keys than
-> it had before. So we must really process the returned leaf starting at
-> path->slots[0] always, as it isn't always 0, and the key at slot 0 can
-> have an offset much lower than our search offset/bytenr.
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 3c63b29..215064d 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -997,6 +997,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	struct btrfs_key di_key;
+ 	char *buf = NULL;
+ 	int buf_len;
++	bool contig_buf;
+ 	u32 name_len;
+ 	u32 data_len;
+ 	u32 cur;
+@@ -1006,11 +1007,13 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	int num;
+ 	u8 type;
+ 
+-	if (found_key->type == BTRFS_XATTR_ITEM_KEY)
+-		buf_len = BTRFS_MAX_XATTR_SIZE(root);
+-	else
+-		buf_len = PATH_MAX;
+-
++	/*
++	 * Start with a small buffer (1 page). If later we end up needing more
++	 * space, which can happen for xattrs on a fs with a leaf size > 4Kb,
++	 * attempt to increase the buffer. Typically xattr values are small.
++	 */
++	buf_len = PATH_MAX;
++	contig_buf = true;
+ 	buf = kmalloc(buf_len, GFP_NOFS);
+ 	if (!buf) {
+ 		ret = -ENOMEM;
+@@ -1037,7 +1040,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 				ret = -ENAMETOOLONG;
+ 				goto out;
+ 			}
+-			if (name_len + data_len > buf_len) {
++			if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root)) {
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+@@ -1045,12 +1048,31 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 			/*
+ 			 * Path too long
+ 			 */
+-			if (name_len + data_len > buf_len) {
++			if (name_len + data_len > PATH_MAX) {
+ 				ret = -ENAMETOOLONG;
+ 				goto out;
+ 			}
+ 		}
+ 
++		if (name_len + data_len > buf_len) {
++			if (contig_buf)
++				kfree(buf);
++			else
++				vfree(buf);
++			buf = NULL;
++			buf_len = name_len + data_len;
++			if (contig_buf)
++				buf = kmalloc(buf_len, GFP_NOFS);
++			if (!buf) {
++				buf = vmalloc(buf_len);
++				if (!buf) {
++					ret = -ENOMEM;
++					goto out;
++				}
++				contig_buf = false;
++			}
++		}
++
+ 		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
+ 				name_len + data_len);
+ 
+@@ -1071,7 +1093,10 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	}
+ 
+ out:
+-	kfree(buf);
++	if (contig_buf)
++		kfree(buf);
++	else
++		vfree(buf);
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
 
-And the bug goes all the way back to 2007.  I'd like to blame Yan Zheng,
-but it was in my original code too.
-
-Great find and explanation, I've added this to my merge window pull.
-Thanks!
-
--chris

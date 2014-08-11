@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:37377 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:55302 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751407AbaHKAz5 (ORCPT
+	with ESMTP id S1751711AbaHKBJz (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sun, 10 Aug 2014 20:55:57 -0400
+	Sun, 10 Aug 2014 21:09:55 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: lists@colorremedies.com, jbacik@fb.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: send, lower mem requirements for processing xattrs
-Date: Mon, 11 Aug 2014 02:52:04 +0100
-Message-Id: <1407721924-17510-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v4] Btrfs: send, lower mem requirements for processing xattrs
+Date: Mon, 11 Aug 2014 03:09:35 +0100
+Message-Id: <1407722975-18112-1-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
 References: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -28,12 +28,13 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 V2: Use is_vmalloc_addr() instead of keeping a boolean variable around.
 V3: Use krealloc instead of kfree + kmalloc.
+V4: Fixed a checkpatch warning about missing blank line after var declaration.
 
- fs/btrfs/send.c | 41 +++++++++++++++++++++++++++++++++--------
- 1 file changed, 33 insertions(+), 8 deletions(-)
+ fs/btrfs/send.c | 42 ++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 34 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 3c63b29..8b2780d 100644
+index 3c63b29..b29fc5c 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
 @@ -1006,11 +1006,13 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
@@ -64,7 +65,7 @@ index 3c63b29..8b2780d 100644
  				ret = -E2BIG;
  				goto out;
  			}
-@@ -1045,12 +1047,32 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+@@ -1045,12 +1047,33 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
  			/*
  			 * Path too long
  			 */
@@ -82,6 +83,7 @@ index 3c63b29..8b2780d 100644
 +				buf = NULL;
 +			} else {
 +				char *tmp = krealloc(buf, buf_len, GFP_NOFS);
++
 +				if (!tmp)
 +					kfree(buf);
 +				buf = tmp;
@@ -98,7 +100,7 @@ index 3c63b29..8b2780d 100644
  		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
  				name_len + data_len);
  
-@@ -1071,7 +1093,10 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+@@ -1071,7 +1094,10 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
  	}
  
  out:

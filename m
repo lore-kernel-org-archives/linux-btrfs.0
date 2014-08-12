@@ -1,36 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from detritus.pyropus.ca ([64.5.53.58]:58510 "HELO
-	detritus.pyropus.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1754266AbaHLCxn (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:45738 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750763AbaHLCya (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Aug 2014 22:53:43 -0400
-Date: Mon, 11 Aug 2014 20:55:21 -0600
-From: Charles Cazabon <charlesc-lists-btrfs@pyropus.ca>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Blocked tasks on 3.15.1
-Message-ID: <20140812025521.GA6730@pyropus.ca>
-References: <52e3cfababa49919100759860b59aa7c@admin.virtall.com>
- <53C7CD0F.7070603@fb.com>
- <CAPoQQ-1PcyPgJ4eoicP4xM8RShA2qo77fM7kqU5eKKUM2cmuUQ@mail.gmail.com>
- <1745216.hDa4tC2HJJ@merkaba> <53CE7ACF.7070109@fb.com>
+	Mon, 11 Aug 2014 22:54:30 -0400
+Message-ID: <53E98237.3070108@cn.fujitsu.com>
+Date: Tue, 12 Aug 2014 10:55:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53CE7ACF.7070109@fb.com>
+To: <bo.li.liu@oracle.com>, Chris Mason <clm@fb.com>
+CC: Martin Steigerwald <Martin@lichtvoll.de>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
+References: <1406213285-19607-1-git-send-email-bo.li.liu@oracle.com> <3143412.n5KSJct7YP@merkaba> <53E22F37.9000308@fb.com> <4178355.kT8uO1WxjX@merkaba> <53E24738.5070908@fb.com> <53E2CDD9.5080009@fb.com> <20140807075029.GA29710@localhost.localdomain> <53E336D5.3010401@cn.fujitsu.com> <53E386E7.50802@fb.com> <20140810145543.GA31343@localhost.localdomain>
+In-Reply-To: <20140810145543.GA31343@localhost.localdomain>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The blocked tasks issue that got significantly worse in 3.15 -- did anything
-go into 3.16 related to this?  I didn't see a single "btrfs" in Linus' 3.16
-announcement, so I don't know whether it should be better, the same, or worse
-in this respect...
+On Sun, 10 Aug 2014 22:55:44 +0800, Liu Bo wrote:
+>>>>> This part of the trace is relatively new because Liu Bo's patch made us
+>>>>> redirty the pages, making it more likely that we'd try to write them
+>>>>> during commit.
+>>>>>
+>>>>> But, at the end of the day we have a fundamental deadlock with
+>>>>> committing a transaction while holding a locked page from an ordered file.
+>>>>>
+>>>>> For now, I'm ripping out the strict ordered file and going back to a
+>>>>> best-effort filemap_flush like ext4 is using.
+>>>>
+>>>> I think I've figured the deadlock out, this is obviously a race case, really
+>>>> hard to reproduce :-(
+>>>>
+>>>> So it turns out to be related to workqueues -- now a kthread can process
+>>>> work_struct queued in different workqueues, so we can explain the deadlock as
+>>>> such,
+>>>>
+>>>> (1)
+>>>> "btrfs-delalloc" workqueue gets a compressed extent to process with all its pages
+>>>> locked during this, and it runs into read free space cache inode, and then wait
+>>>> on lock_page().
+>>>>
+>>>> (2)
+>>>> Reading that free space cache inode comes to submit part, and we have a
+>>>> indirect twice endio way for it, with the first endio we come to end_workqueue_bio()
+>>>> and queue a work in "btrfs-endio-meta" workqueue, and it will run the real
+>>>> endio() for us, but ONLY when it's processed.
+>>>>
+>>>> So the problem is a kthread can serve several workqueues, which means
+>>>> works in "btrfs-endio-meta" workqueues and works in "btrfs-flush_delalloc"
+>>>> workqueues can be in the same processing list of a kthread.  When
+>>>> "btrfs-flush_delalloc" waits for the compressed page and "btrfs-endio-meta"
+>>>> comes after it, it hangs.
+>>>
+>>> I don't think it is right. All the btrfs workqueue has RECLAIM flag, which means
+>>> each btrfs workqueue has its own rescue worker. So the problem you said should
+>>> not happen.
+>>
+>> Right, I traded some emails with Tejun about this and spent a few days
+>> trying to prove the workqueues were doing the wrong thing.   It will end
+>> up spawning another worker thread for the new work, and it won't get
+>> queued up behind the existing thread.
+>>
+>> If both work items went to the same workqueue, you'd definitely be right.
+>>
+>> I've got a patch to change the flush-delalloc code so we don't do the
+>> file writes during commit.  It seems like the only choice right now.
+> 
+> Not the only choice any more ;)
+> 
+> It turns out to be related to async_cow's ordered list, say we have two
+> async_cow works on the wq->ordered_list, and the first work(named A) finishes its
+> ->ordered_func() and ->ordered_free(), and the second work(B) starts B's
+> ->ordered_func() which gets to read free space cache inode, where it queues a
+> work on @endio_meta_workers, but this work happens to be the same address with
+> A's work.
+> 
+> So now the situation is,
+> 
+> (1) in kthread's looping worker_thread(), work A is actually running its job,
+> (2) however, work A has freed its memory but kthread still want to use this
+>     address of memory, which means worker->current_work is still A's address.
+> (3) B's readahead for free space cache inode happens to queue a work whose
+>     address of memory is just the previous address of A's work, which means
+>     another worker's ->current_work is also A's address.
+> (4) as in btrfs we all use function normal_work_helper(), so
+>     worker->current_func is fixed here.
+> (5) worker_thread()
+>            ->process_one_work()
+>                     ->find_worker_executing_work()    
+>                     (find a collision, another work returns)
+> 
+> Then we saw the hang.
 
-I haven't seen a definite statement about this on this list, either.
+Here is my understand of what you said:
+The same worker dealt with work A and work B, and the 3rd work which was introduced by
+work B and has the same virtual memory address as work A was also inserted into the work
+list of that worker. But work B was wait for the 3rd work at that time, so deadlock happened.
+Am I right?
 
-Can someone more familiar with the state of development comment on this?
+If I'm right, I think what you said is impossible. Before we dealt with work B, we should
+already invoke spin_unlock_irq(&pool->lock), which implies a memory barrier that all changes
+happens before unlock should complete before unlock, that is the address in current_work should
+be the address of work B, when we inserted the 3rd work which was introduced by work B, we
+should not find the address of work A in current_work of work B's worker.
 
-Charles
--- 
------------------------------------------------------------------------
-Charles Cazabon
-GPL'ed software available at:               http://pyropus.ca/software/
------------------------------------------------------------------------
+I can not reproduce the problem on my machine, so I don't verify whether what I said is right
+or not. Please correct me if I am wrong.
+
+Thanks
+Miao

@@ -1,45 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:36355 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751760AbaHLLBq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 07:01:46 -0400
-Received: by mail-wi0-f174.google.com with SMTP id d1so5644227wiv.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 04:01:45 -0700 (PDT)
-Message-ID: <53E9F3D6.9040502@gmail.com>
-Date: Tue, 12 Aug 2014 14:00:38 +0300
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-MIME-Version: 1.0
-To: Vimal A R <arvimal@yahoo.in>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:60521 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753065AbaHLQi0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Aug 2014 12:38:26 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XHF5c-0007dr-R5
+	for linux-btrfs@vger.kernel.org; Tue, 12 Aug 2014 18:38:24 +0200
+Received: from coffee.modeemi.fi ([130.230.72.140])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 18:38:24 +0200
+Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 18:38:24 +0200
+To: linux-btrfs@vger.kernel.org
+From: Erkki Seppala <flux-btrfs@inside.org>
 Subject: Re: Ideas for a feature implementation
+Date: Tue, 12 Aug 2014 19:38:14 +0300
+Message-ID: <m49mwb9ek95.fsf@coffee.modeemi.fi>
 References: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com>
-In-Reply-To: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	<53E83035.8010603@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/8/2014 10:21 μμ, Vimal A R wrote:
-> Hello,
->
-> I came across the to-do list at https://btrfs.wiki.kernel.org/index.php/Project_ideas and would like to know if this list is updated and recent.
->
-> I am looking for a project idea for my under graduate degree which can be completed in around 3-4 months. Are there any suggestions and ideas to help me further?
-Maybe help with Andrea Mazzoleni's New RAID library supporting up to six 
-parities? It seems to be a great feature for btrfs.
+Austin S Hemmelgarn <ahferroin7@gmail.com> writes:
 
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg31735.html
+> Another thing that isn't listed there, that I would personally love to
+> see is support for secure file deletion.
 
-
->
-> Thank you,
-> Vimal
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+As discussed in the followups, it is difficult to do a really secure
+deletion and a security-conscious person would opt to use encryption
+instead. Ability to encrypt subvolumes or files would probably serve
+those needs sufficiently, though it sounds like it could easily be a
+longer task than 4 months.
 
 -- 
-Konstantinos Skarlatos
+  _____________________________________________________________________
+     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
+    / /_ / // // /\ \/ /                                            \  /
+   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
 

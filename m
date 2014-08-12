@@ -1,47 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f175.google.com ([209.85.220.175]:36620 "EHLO
-	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753913AbaHLRob (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:44987 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753087AbaHLSWm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 13:44:31 -0400
-Received: by mail-vc0-f175.google.com with SMTP id ik5so13515869vcb.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 10:44:30 -0700 (PDT)
+	Tue, 12 Aug 2014 14:22:42 -0400
+Message-ID: <53EA5B67.7040109@fb.com>
+Date: Tue, 12 Aug 2014 14:22:31 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <53E9068B.3090005@jrs-s.net>
-References: <loom.20140811T193907-62@post.gmane.org>
-	<53E90409.5050105@jrs-s.net>
-	<CAP6pX24fWPrZ3368WxaViYT2_N2WcCWtso3KqxF_SRrDTS54xQ@mail.gmail.com>
-	<CAP6pX26e79LZzMMwdeE7JOeGyoLtRxqvJhScBX1LDEwJ7UNe3Q@mail.gmail.com>
-	<53E9068B.3090005@jrs-s.net>
-Date: Tue, 12 Aug 2014 19:44:30 +0200
-Message-ID: <CAFvQSYStbiwXZottPhOkgohcfd=-c+gNbkHg+e-MTGN0b+_hWg@mail.gmail.com>
-Subject: Re: Announcement: buttersink - like rsync for btrfs snapshots
-From: Clemens Eisserer <linuxhippy@gmail.com>
-To: Jim Salter <jim@jrs-s.net>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Mark Fasheh <mfasheh@suse.de>, <linux-btrfs@vger.kernel.org>
+CC: Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH 2/5] btrfs: qgroup: account shared subtrees during snapshot
+ delete
+References: <1405625944-4883-1-git-send-email-mfasheh@suse.de> <1405625944-4883-3-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1405625944-4883-3-git-send-email-mfasheh@suse.de>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jim,
 
-> To any core btrfs devs who are listening and care - the unreliability of
-> btrfs send/receive is IMO the single biggest roadblock to adoption of btrfs
-> as a serious next-gen FS.
 
-For you it are send/receive deficiencies, however there are many other
-feature/enhancement requests having top priority for other users.
+On 07/17/2014 03:39 PM, Mark Fasheh wrote:
+> During its tree walk, btrfs_drop_snapshot() will skip any shared
+> subtrees it encounters. This is incorrect when we have qgroups
+> turned on as those subtrees need to have their contents
+> accounted. In particular, the case we're concerned with is when
+> removing our snapshot root leaves the subtree with only one root
+> reference.
+> 
+> In those cases we need to find the last remaining root and add
+> each extent in the subtree to the corresponding qgroup exclusive
+> counts.
+> 
+> This patch implements the shared subtree walk and a new qgroup
+> operation, BTRFS_QGROUP_OPER_SUB_SUBTREE. When an operation of
+> this type is encountered during qgroup accounting, we search for
+> any root references to that extent and in the case that we find
+> only one reference left, we go ahead and do the math on it's
+> exclusive counts.
+> 
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+> Reviewed-by: Josef Bacik <jbacik@fb.com>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 813537f..1aa4325 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -8078,6 +8331,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>  	}
+>  	root_dropped = true;
+>  out_end_trans:
+> +	ret = btrfs_delayed_qgroup_accounting(trans, root->fs_info);
+                                                     ^^^^^^^^^^^
 
-Fact is, just crying for improvements won't make things better - if
-you want a feature/enhancement done, you have several options:
-- Implement/fix it yourself
-- Go to your distribution provider with whom you have a support
-contract and make him implement what you would like to see
-- Sponsor somebody yourself to get it sone.
+CONFIG_DEBUG_PAGEALLOC noticed that root is already free at this point.
+ I switched it to tree_root instead ;)
 
-> with (very) occasional filesystem corruption... IF I can rely on replication
-> to keep my data safe on another box.  Without the replication, there's just
-> no reasonable case to be made to replace ZFS.
-
-... and now the usual ZFS comparison to make devs jealous ;)
-
-Best regards, Clemens
+-chris

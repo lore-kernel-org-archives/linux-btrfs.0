@@ -1,40 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:16691 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753903AbaHLRjT (ORCPT
+Received: from mail-vc0-f175.google.com ([209.85.220.175]:36620 "EHLO
+	mail-vc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753913AbaHLRob (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 13:39:19 -0400
-Message-ID: <53EA513F.3080804@fb.com>
-Date: Tue, 12 Aug 2014 13:39:11 -0400
-From: Chris Mason <clm@fb.com>
+	Tue, 12 Aug 2014 13:44:31 -0400
+Received: by mail-vc0-f175.google.com with SMTP id ik5so13515869vcb.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 10:44:30 -0700 (PDT)
 MIME-Version: 1.0
-To: Takashi Iwai <tiwai@suse.de>, Josef Bacik <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: Fix memory corruption by ulist_add_merge() on
- 32bit arch
-References: <1406537824-2376-1-git-send-email-tiwai@suse.de>	<53D64D40.80606@fb.com>	<s5hzjft7fwm.wl%tiwai@suse.de>	<s5hsill7fak.wl%tiwai@suse.de>	<s5hsiljrwwy.wl%tiwai@suse.de>	<53D9015A.90001@fb.com>	<s5h61iesxen.wl%tiwai@suse.de>	<s5h1tt2sx94.wl%tiwai@suse.de>	<53D911DE.7000806@fb.com>	<s5hwqaurgic.wl%tiwai@suse.de>	<53D916DB.9020901@fb.com>	<s5hsilirehv.wl%tiwai@suse.de>	<53D924A8.2050008@fb.com>	<s5ha97q91vj.wl%tiwai@suse.de> <s5h38d94pm7.wl%tiwai@suse.de>
-In-Reply-To: <s5h38d94pm7.wl%tiwai@suse.de>
-Content-Type: text/plain; charset="ISO-8859-1"
+In-Reply-To: <53E9068B.3090005@jrs-s.net>
+References: <loom.20140811T193907-62@post.gmane.org>
+	<53E90409.5050105@jrs-s.net>
+	<CAP6pX24fWPrZ3368WxaViYT2_N2WcCWtso3KqxF_SRrDTS54xQ@mail.gmail.com>
+	<CAP6pX26e79LZzMMwdeE7JOeGyoLtRxqvJhScBX1LDEwJ7UNe3Q@mail.gmail.com>
+	<53E9068B.3090005@jrs-s.net>
+Date: Tue, 12 Aug 2014 19:44:30 +0200
+Message-ID: <CAFvQSYStbiwXZottPhOkgohcfd=-c+gNbkHg+e-MTGN0b+_hWg@mail.gmail.com>
+Subject: Re: Announcement: buttersink - like rsync for btrfs snapshots
+From: Clemens Eisserer <linuxhippy@gmail.com>
+To: Jim Salter <jim@jrs-s.net>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Jim,
 
+> To any core btrfs devs who are listening and care - the unreliability of
+> btrfs send/receive is IMO the single biggest roadblock to adoption of btrfs
+> as a serious next-gen FS.
 
-On 08/06/2014 11:14 AM, Takashi Iwai wrote:
->>>
->>> I meant that I don't care how you do it, if you want to do it the simple way
->>> first and then send the cleanup later thats fine by me.  Thanks,
->>
->> Ah, misunderstood.  Then please disregard my v2 patches and take just
->> v1 patch.  It's even good for 3.16, if possible.
->>
->> I'll send the cleanup patch on top of that.
-> 
-> Ping.  I don't want to play a bot, but slowly wondering what's going
-> on...
+For you it are send/receive deficiencies, however there are many other
+feature/enhancement requests having top priority for other users.
 
-Sorry for the delay Takashi.  This patch is a ';' away from compiling.
-I've fixed it up here and I'm running tests, but I wanted to double
-check this was the latest version.
+Fact is, just crying for improvements won't make things better - if
+you want a feature/enhancement done, you have several options:
+- Implement/fix it yourself
+- Go to your distribution provider with whom you have a support
+contract and make him implement what you would like to see
+- Sponsor somebody yourself to get it sone.
 
--chris
+> with (very) occasional filesystem corruption... IF I can rely on replication
+> to keep my data safe on another box.  Without the replication, there's just
+> no reasonable case to be made to replace ZFS.
+
+... and now the usual ZFS comparison to make devs jealous ;)
+
+Best regards, Clemens

@@ -1,105 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27563 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753469AbaHLH47 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:28334 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753894AbaHLIAL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 03:56:59 -0400
-Message-ID: <53E9C8C2.5020409@oracle.com>
-Date: Tue, 12 Aug 2014 15:56:50 +0800
+	Tue, 12 Aug 2014 04:00:11 -0400
+Message-ID: <53E9C985.2040007@oracle.com>
+Date: Tue, 12 Aug 2014 16:00:05 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
 To: miaox@cn.fujitsu.com
 CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] btrfs: update sprout seed pointer when seed fs is
- relinquished
-References: <1407750176-15853-1-git-send-email-anand.jain@oracle.com> <1407750176-15853-4-git-send-email-anand.jain@oracle.com> <53E9C134.5020706@cn.fujitsu.com>
-In-Reply-To: <53E9C134.5020706@cn.fujitsu.com>
+Subject: Re: [PATCH 3/4] btrfs: fix rw_devices miss match after seed replace
+References: <1407750176-15853-1-git-send-email-anand.jain@oracle.com> <1407750176-15853-3-git-send-email-anand.jain@oracle.com> <53E9C267.4020902@cn.fujitsu.com>
+In-Reply-To: <53E9C267.4020902@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 12/08/2014 15:24, Miao Xie wrote:
-> On Mon, 11 Aug 2014 17:42:56 +0800, Anand Jain wrote:
->> We are not updating sprout fs seed pointer when all seed device
->> is replaced. This patch will check if all seed device has been
->> replaced and then update the sprout pointer accordingly.
+On 12/08/2014 15:29, Miao Xie wrote:
+> On Mon, 11 Aug 2014 17:42:55 +0800, Anand Jain wrote:
+>> reproducer:
+>>      reproducer:
+>>      mount /dev/sdb /btrfs
+>>      btrfs dev add /dev/sdc /btrfs
+>>      btrfs rep start -B /dev/sdb /dev/sdd /btrfs
+>>      umount /btrfs
 >>
->> Same reproducer as in the previous patch would apply here.
->> And notice that btrfs_close_device will check if seed fs is
->> present and spits out the error with out this patch.
+>> WARNING: CPU: 0 PID: 3882 at fs/btrfs/volumes.c:892 __btrfs_close_devices+0x1c8/0x200 [btrfs]()
 >>
->> int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
->> {
->> ::
->>                  seed_devices = fs_devices->seed;
->> ::
->>          while (seed_devices) {
->>                  fs_devices = seed_devices;
->>                  seed_devices = fs_devices->seed;
->>                  __btrfs_close_devices(fs_devices);
->>                  free_fs_devices(fs_devices);
->>          }
+>> which is
+>>
+>>          WARN_ON(fs_devices->rw_devices);
+>>
+>>     The problem here is that we did not add one to the rw_devices when
+>>     we replace the seed device with a writable device.
 >>
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
->>   fs/btrfs/volumes.c | 19 +++++++++++++++++++
->>   1 file changed, 19 insertions(+)
+>>   fs/btrfs/dev-replace.c | 2 ++
+>>   1 file changed, 2 insertions(+)
 >>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index f098ae7..bfdc11f 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1992,6 +1992,25 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
->>   			btrfs_scratch_superblock(srcdev);
->>   	}
->>
->> +	/* unless fs_devices is seed fs, num_devices shouldn't go
->> +	 * zero
->> +	 */
+>> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+>> index eea26e1..fb0a7fa 100644
+>> --- a/fs/btrfs/dev-replace.c
+>> +++ b/fs/btrfs/dev-replace.c
+>> @@ -562,6 +562,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>>   	if (fs_info->fs_devices->latest_bdev == src_device->bdev)
+>>   		fs_info->fs_devices->latest_bdev = tgt_device->bdev;
+>>   	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
+>> +	if (src_device->fs_devices->seeding)
+>> +		fs_info->fs_devices->rw_devices++;
 >
-> According to coding style, the preferred style for multi-line comments is(except files in net
-> subsystem):
->
-> /*
->   * <comment>
->   */
->
->> +	BUG_ON(!fs_devices->num_devices && !fs_devices->seeding);
->
-> Use ASSERT?
->
->> +	/* if this is no devs we rather delete the fs_devices */
->> +	if (!fs_devices->num_devices) {
->> +		struct btrfs_fs_devices *tmp_fs_devices;
->> +
->> +		tmp_fs_devices = fs_info->fs_devices;
->> +		while (tmp_fs_devices) {
->> +			if (tmp_fs_devices->seed == fs_devices) {
->> +				tmp_fs_devices->seed = fs_devices->seed;
->> +				break;
->> +			}
->> +			tmp_fs_devices = tmp_fs_devices->seed;
->> +		}
->> +		fs_devices->seed = NULL;
->
-> Why not free fs_devices like btrfs_rm_device?
+> As I said in the previous version of this patch, we might increase ->rw_devices twice if
+> the source device is a missing device in the seed filesystem. Once is here, the other is
+> in btrfs_rm_dev_replace_srcdev().
 
-  Thanks for the review. ! Yes memory leak is another bug
-  I have the patch for it will send it soon. the bug trying
-  to address here is fs_devices stale seed pointer.
+   Yes that should be fixed. I think a separate patch will do since
+   btrfs_rm_dev_replace_srcdev() is invariably incrementing the
+   ->rw_devices without checking if the fs is a seed fs.
 
 Anand
 
-> The other is OK.
+> Thanks
+> Miao
 >
-> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
->
->> +	}
->>   	call_rcu(&srcdev->rcu, free_device);
->>   }
 >>
+>>   	/* replace the sysfs entry */
+>>   	btrfs_kobj_rm_device(fs_info, src_device);
 >>
 >
 > --

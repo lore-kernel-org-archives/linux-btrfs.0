@@ -1,78 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:48028 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751464AbaHRBdd (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:37796 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751506AbaHLIaN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Aug 2014 21:33:33 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 8A0A33EE1DF
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 10:33:31 +0900 (JST)
+	Tue, 12 Aug 2014 04:30:13 -0400
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 4E2013EE0C2
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:11 +0900 (JST)
 Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 9ABACAC02FC
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 10:33:30 +0900 (JST)
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 580EDAC0409
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:10 +0900 (JST)
 Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 4A5821DB803C
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 10:33:30 +0900 (JST)
-Received: from G01JPEXCHYT13.g01.fujitsu.local (G01JPEXCHYT13.g01.fujitsu.local [10.128.194.52])
-	by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 159C46D648C
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 10:33:28 +0900 (JST)
-Message-ID: <53F157DE.9030901@jp.fujitsu.com>
-Date: Mon, 18 Aug 2014 10:33:18 +0900
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 0A26B1DB803A
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:10 +0900 (JST)
+Received: from G01JPEXCHYT16.g01.fujitsu.local (G01JPEXCHYT16.g01.fujitsu.local [10.128.194.55])
+	by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 3DB306D6371
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:09 +0900 (JST)
+Message-ID: <53E9D08A.3070404@jp.fujitsu.com>
+Date: Tue, 12 Aug 2014 17:30:02 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Fix a misformatting in 'man btrfs-replace'
-References: <53E9D08A.3070404@jp.fujitsu.com>
-In-Reply-To: <53E9D08A.3070404@jp.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Fix a misformatting in 'man btrfs-replace'
 Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2014/08/12 17:30), Satoru Takeuchi wrote:
-> From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> 
-> Just fix the following misformatting in 'man btrfs-replace'.
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-Please ignore this patch.
+Just fix the following misformatting in 'man btrfs-replace'.
 
-It's part of the following Qu's patch.
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36116.html
+===============================================================================
+-f                                                                                                                
+    force using and overwriting <targetdev> even if it looks like containing
+    a valid btrfs filesystem.
 
-In addition, to make matters worse, I've reviewed and tested this patch ;-(
+    A valid filesystem is assumed if a btrfs superblock is found which
+    contains a correct checksum. Devices which are currently mounted are never
+    allowed to be used as the <targetdev>. -B:::: no background replace.
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===============================================================================
+ 
+Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36206.html
+---
+ Documentation/btrfs-replace.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Satoru
-
-> 
-> ===============================================================================
-> -f
->      force using and overwriting <targetdev> even if it looks like containing
->      a valid btrfs filesystem.
-> 
->      A valid filesystem is assumed if a btrfs superblock is found which
->      contains a correct checksum. Devices which are currently mounted are never
->      allowed to be used as the <targetdev>. -B:::: no background replace.
->                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-> ===============================================================================
->   
-> Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> 
-> ---
->   Documentation/btrfs-replace.txt | 1 +
->   1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
-> index eecf9b0..476e351 100644
-> --- a/Documentation/btrfs-replace.txt
-> +++ b/Documentation/btrfs-replace.txt
-> @@ -49,6 +49,7 @@ containing a valid btrfs filesystem.
->   A valid filesystem is assumed if a btrfs superblock is found which contains a
->   correct checksum. Devices which are currently mounted are
->   never allowed to be used as the <targetdev>.
-> ++
->   -B::::
->   no background replace.
->   
-> 
+diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
+index eecf9b0..476e351 100644
+--- a/Documentation/btrfs-replace.txt
++++ b/Documentation/btrfs-replace.txt
+@@ -49,6 +49,7 @@ containing a valid btrfs filesystem.
+ A valid filesystem is assumed if a btrfs superblock is found which contains a
+ correct checksum. Devices which are currently mounted are
+ never allowed to be used as the <targetdev>.
+++
+ -B::::
+ no background replace.
+ 
+-- 
+1.9.3
 

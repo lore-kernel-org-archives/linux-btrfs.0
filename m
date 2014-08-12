@@ -1,91 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:58688 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750699AbaHLFOI (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:25260 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751906AbaHLHvV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 01:14:08 -0400
-Received: by mail-oi0-f45.google.com with SMTP id e131so6298002oig.32
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 22:14:08 -0700 (PDT)
+	Tue, 12 Aug 2014 03:51:21 -0400
+Date: Tue, 12 Aug 2014 15:51:05 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Chris Mason <clm@fb.com>, Martin Steigerwald <Martin@lichtvoll.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix compressed write corruption on enospc
+Message-ID: <20140812075104.GD9244@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <3143412.n5KSJct7YP@merkaba>
+ <53E22F37.9000308@fb.com>
+ <4178355.kT8uO1WxjX@merkaba>
+ <53E24738.5070908@fb.com>
+ <53E2CDD9.5080009@fb.com>
+ <20140807075029.GA29710@localhost.localdomain>
+ <53E336D5.3010401@cn.fujitsu.com>
+ <53E386E7.50802@fb.com>
+ <20140810145543.GA31343@localhost.localdomain>
+ <53E98237.3070108@cn.fujitsu.com>
 MIME-Version: 1.0
-Date: Tue, 12 Aug 2014 13:14:08 +0800
-Message-ID: <CAMVG2stLXT+Yo=C8fsNx9g+6h9h4r-Yni3D=EeRVQObCVhw98w@mail.gmail.com>
-Subject: 3.15 btrfs free space cache oops
-From: Daniel J Blueman <daniel@quora.org>
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53E98237.3070108@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When running MonetDB over a BTRFS RAID-0 set over 4 SSDs [1] on
-3.15.5, we see io_ctl have a bad address of 0x200000, causing a fatal
-pagefault in memcpy():
+On Tue, Aug 12, 2014 at 10:55:51AM +0800, Miao Xie wrote:
+> On Sun, 10 Aug 2014 22:55:44 +0800, Liu Bo wrote:
+> >>>>> This part of the trace is relatively new because Liu Bo's patch made us
+> >>>>> redirty the pages, making it more likely that we'd try to write them
+> >>>>> during commit.
+> >>>>>
+> >>>>> But, at the end of the day we have a fundamental deadlock with
+> >>>>> committing a transaction while holding a locked page from an ordered file.
+> >>>>>
+> >>>>> For now, I'm ripping out the strict ordered file and going back to a
+> >>>>> best-effort filemap_flush like ext4 is using.
+> >>>>
+> >>>> I think I've figured the deadlock out, this is obviously a race case, really
+> >>>> hard to reproduce :-(
+> >>>>
+> >>>> So it turns out to be related to workqueues -- now a kthread can process
+> >>>> work_struct queued in different workqueues, so we can explain the deadlock as
+> >>>> such,
+> >>>>
+> >>>> (1)
+> >>>> "btrfs-delalloc" workqueue gets a compressed extent to process with all its pages
+> >>>> locked during this, and it runs into read free space cache inode, and then wait
+> >>>> on lock_page().
+> >>>>
+> >>>> (2)
+> >>>> Reading that free space cache inode comes to submit part, and we have a
+> >>>> indirect twice endio way for it, with the first endio we come to end_workqueue_bio()
+> >>>> and queue a work in "btrfs-endio-meta" workqueue, and it will run the real
+> >>>> endio() for us, but ONLY when it's processed.
+> >>>>
+> >>>> So the problem is a kthread can serve several workqueues, which means
+> >>>> works in "btrfs-endio-meta" workqueues and works in "btrfs-flush_delalloc"
+> >>>> workqueues can be in the same processing list of a kthread.  When
+> >>>> "btrfs-flush_delalloc" waits for the compressed page and "btrfs-endio-meta"
+> >>>> comes after it, it hangs.
+> >>>
+> >>> I don't think it is right. All the btrfs workqueue has RECLAIM flag, which means
+> >>> each btrfs workqueue has its own rescue worker. So the problem you said should
+> >>> not happen.
+> >>
+> >> Right, I traded some emails with Tejun about this and spent a few days
+> >> trying to prove the workqueues were doing the wrong thing.   It will end
+> >> up spawning another worker thread for the new work, and it won't get
+> >> queued up behind the existing thread.
+> >>
+> >> If both work items went to the same workqueue, you'd definitely be right.
+> >>
+> >> I've got a patch to change the flush-delalloc code so we don't do the
+> >> file writes during commit.  It seems like the only choice right now.
+> > 
+> > Not the only choice any more ;)
+> > 
+> > It turns out to be related to async_cow's ordered list, say we have two
+> > async_cow works on the wq->ordered_list, and the first work(named A) finishes its
+> > ->ordered_func() and ->ordered_free(), and the second work(B) starts B's
+> > ->ordered_func() which gets to read free space cache inode, where it queues a
+> > work on @endio_meta_workers, but this work happens to be the same address with
+> > A's work.
+> > 
+> > So now the situation is,
+> > 
+> > (1) in kthread's looping worker_thread(), work A is actually running its job,
+> > (2) however, work A has freed its memory but kthread still want to use this
+> >     address of memory, which means worker->current_work is still A's address.
+> > (3) B's readahead for free space cache inode happens to queue a work whose
+> >     address of memory is just the previous address of A's work, which means
+> >     another worker's ->current_work is also A's address.
+> > (4) as in btrfs we all use function normal_work_helper(), so
+> >     worker->current_func is fixed here.
+> > (5) worker_thread()
+> >            ->process_one_work()
+> >                     ->find_worker_executing_work()    
+> >                     (find a collision, another work returns)
+> > 
+> > Then we saw the hang.
+> 
+> Here is my understand of what you said:
+> The same worker dealt with work A and work B, and the 3rd work which was introduced by
+> work B and has the same virtual memory address as work A was also inserted into the work
+> list of that worker. But work B was wait for the 3rd work at that time, so deadlock happened.
+> Am I right?
+> 
+> If I'm right, I think what you said is impossible. Before we dealt with work B, we should
+> already invoke spin_unlock_irq(&pool->lock), which implies a memory barrier that all changes
+> happens before unlock should complete before unlock, that is the address in current_work should
+> be the address of work B, when we inserted the 3rd work which was introduced by work B, we
+> should not find the address of work A in current_work of work B's worker.
+> 
+> I can not reproduce the problem on my machine, so I don't verify whether what I said is right
+> or not. Please correct me if I am wrong.
 
-(gdb) list *(__btrfs_write_out_cache+0x3e4)
-0xffffffff81365984 is in __btrfs_write_out_cache
-(fs/btrfs/free-space-cache.c:521).
-516            if (io_ctl->index >= io_ctl->num_pages)
-517                return -ENOSPC;
-518            io_ctl_map_page(io_ctl, 0);
-519        }
-520
-521        memcpy(io_ctl->cur, bitmap, PAGE_CACHE_SIZE);
-522        io_ctl_set_crc(io_ctl, io_ctl->index - 1);
-523        if (io_ctl->index < io_ctl->num_pages)
-524            io_ctl_map_page(io_ctl, 0);
-525        return 0;
+Hmm, my fault...the problem is complex so I didn't describe it 100% precisely
+in the above reply.
 
-I can try to reproduce it if more data is useful?
+I've sent a patch about this which has the truth you may want :-)
 
-Thanks,
-  Daniel
-
--- [1]
-
-mkfs.btrfs -f -m raid0 -d raid0 -n 16k -l 16k -O skinny-metadata
-/dev/sda2 /dev/sdc2 /dev/sdb2 /dev/sdd2
-mount /dev/sda2 /scratch -o noatime,discard,nodatasum,nobarrier,ssd_spread
-
--- [2]
-
-BUG: unable to handle kernel paging request at 0000000000200000
-IP: [<ffffffff8135a374>] __btrfs_write_out_cache+0x3e4/0x8e0
-PGD 3bca02c067 PUD 3bcf5fb067 PMD 0
-Oops: 0000 [#1] SMP
-Modules linked in:
-CPU: 34 PID: 46645 Comm: mserver5 Not tainted 3.15.5-server #7
-Hardware name: Dell Inc. PowerEdge R815/0W13NR, BIOS 3.1.1 [1.1.54] 10/16/2013
-task: ffff880a8c7234f0 ti: ffff8809aefcc000 task.ti: ffff8809aefcc000
-RIP: 0010:[<ffffffff8135a374>] [<ffffffff8135a374>]
-__btrfs_write_out_cache+0x3e4/0x8e0
-RSP: 0018:ffff8809aefcfc40 EFLAGS: 00010246
-RAX: 0000004fb9321000 RBX: ffff8809aefcfca8 RCX: 0000000000000200
-RDX: 0000000000001000 RSI: 0000000000200000 RDI: ffff884fb9321000
-RBP: ffff8809aefcfd48 R08: 0000000000000200 R09: 0000000000000000
-R10: 0000000000000000 R11: ffff884fb9320ffc R12: ffff8831e3303740
-R13: ffff880100579970 R14: ffff880bb38061c0 R15: 0000000000200000
-FS: 00007fb9447ed700(0000) GS:ffff884bbfc80000(0000) knlGS:0000000000000000
-CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000200000 CR3: 000000329b71c000 CR4: 00000000000407e0
-Stack:
- ffff8809aefcfc90 0000000000000011 0000000e00000000 ffff884fbbc2c870
- ffff880bb38061c0 ffff8809aefcfc90 ffff880bb3806058 ffff880b000002ec
- ffff883bcd523800 ffff8833d338f2c0 ffff88476b1eb4e0 000000b890cde000
-Call Trace:
- [<ffffffff81a75b4b>] ? _raw_spin_lock+0xb/0x20
- [<ffffffff8135c0e1>] btrfs_write_out_cache+0xb1/0xf0
- [<ffffffff8130be0b>] btrfs_write_dirty_block_groups+0x58b/0x670
- [<ffffffff813199c5>] commit_cowonly_roots+0x195/0x250
- [<ffffffff8131b92f>] btrfs_commit_transaction+0x41f/0x9b0
- [<ffffffff81358e85>] ? btrfs_log_dentry_safe+0x55/0x70
- [<ffffffff8132b6b2>] btrfs_sync_file+0x182/0x2a0
- [<ffffffff8114a450>] do_fsync+0x50/0x80
- [<ffffffff8114a6de>] SyS_fdatasync+0xe/0x20
- [<ffffffff81a766e6>] system_call_fastpath+0x1a/0x1f
-Code: ff 4d 89 fc 49 89 c7 e9 ab 00 00 00 0f 1f 00 40 f6 c7 02 0f 85
-fe 00 00 00 40 f6 c7 04 0f 85 14 01 00 00 89 d1 c1 e9 03 f6 c2 04 <f3>
-48 a5 74 09 8b 0e 89 0f b9 04 00 00 00 f6 c2 02 74 0e 44 0f
-RIP [<ffffffff8135a374>] __btrfs_write_out_cache+0x3e4/0x8e0
- RSP <ffff8809aefcfc40>
-CR2: 0000000000200000
--- 
-Daniel J Blueman
+-liubo

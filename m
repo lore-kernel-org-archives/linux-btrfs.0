@@ -1,56 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:33870 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751891AbaHKJMY (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:34968 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751220AbaHLVFs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Aug 2014 05:12:24 -0400
-Received: from kw-mxoi2.gw.nic.fujitsu.com (unknown [10.0.237.143])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 101AA3EE0B6
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 18:12:23 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 27CEEAC044B
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 18:12:22 +0900 (JST)
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id D5BB51DB803C
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 18:12:21 +0900 (JST)
-Received: from G01JPEXCHKW18.g01.fujitsu.local (G01JPEXCHKW18.g01.fujitsu.local [10.0.194.57])
-	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 3452C328477
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Aug 2014 18:12:21 +0900 (JST)
-Message-ID: <53E888F0.7010207@jp.fujitsu.com>
-Date: Mon, 11 Aug 2014 18:12:16 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/3] btrfs-progs: avoid to use numeric literal for the size
- of uuid buffer
-Content-Type: text/plain; charset="ISO-2022-JP"
+	Tue, 12 Aug 2014 17:05:48 -0400
+Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
+	by frost.carfax.org.uk with esmtp (Exim 4.80)
+	(envelope-from <hugo@carfax.org.uk>)
+	id 1XHIbM-0005cl-Ma
+	for linux-btrfs@vger.kernel.org; Tue, 12 Aug 2014 20:23:24 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>
+Subject: [PATCH] btrfs-progs: Fix spelling in btrfs sub list help
+Date: Tue, 12 Aug 2014 21:22:53 +0100
+Message-Id: <1407874973-24502-2-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <1407874973-24502-1-git-send-email-hugo@carfax.org.uk>
+References: <1407874973-24502-1-git-send-email-hugo@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+"below", not "bellow"
 
-Replace a numeric literal to more descriptive macro for
-the size of uuid buffer.
-
-Signed-of-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-
+Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- cmds-filesystem.c | 2 +-
+ cmds-subvolume.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 5a80a98..7633f1f 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -603,7 +603,7 @@ static int cmd_show(int argc, char **argv)
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
- 	char path[PATH_MAX];
- 	__u8 fsid[BTRFS_FSID_SIZE];
--	char uuid_buf[37];
-+	char uuid_buf[BTRFS_UUID_UNPARSED_SIZE];
- 	int found = 0;
- 
- 	while (1) {
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 5216e53..349d0db 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -390,7 +390,7 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"             to the given <path>",
+ 	"-c           print the ogeneration of the subvolume",
+ 	"-g           print the generation of the subvolume",
+-	"-o           print only subvolumes bellow specified path",
++	"-o           print only subvolumes below specified path",
+ 	"-u           print the uuid of subvolumes (and snapshots)",
+ 	"-q           print the parent uuid of the snapshots",
+ 	"-R           print the uuid of the received snapshots",
 -- 
-1.9.3
+2.0.1
 

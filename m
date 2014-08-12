@@ -1,146 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21852 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751387AbaHLHpa (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27563 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753469AbaHLH47 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 03:45:30 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Chris Mason <clm@fb.com>, miaox@cn.fujitsu.com,
-        Martin Steigerwald <Martin@lichtvoll.de>,
-        Marc MERLIN <marc@merlins.org>,
-        =?UTF-8?q?Torbj=C3=B8rn?= <lists@skagestad.org>
-Subject: [PATCH] Btrfs: fix task hang under heavy compressed write
-Date: Tue, 12 Aug 2014 15:44:59 +0800
-Message-Id: <1407829499-21902-1-git-send-email-bo.li.liu@oracle.com>
+	Tue, 12 Aug 2014 03:56:59 -0400
+Message-ID: <53E9C8C2.5020409@oracle.com>
+Date: Tue, 12 Aug 2014 15:56:50 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: miaox@cn.fujitsu.com
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/4] btrfs: update sprout seed pointer when seed fs is
+ relinquished
+References: <1407750176-15853-1-git-send-email-anand.jain@oracle.com> <1407750176-15853-4-git-send-email-anand.jain@oracle.com> <53E9C134.5020706@cn.fujitsu.com>
+In-Reply-To: <53E9C134.5020706@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This has been reported and discussed for a long time, and this hang occurs in
-both 3.15 and 3.16.
 
-Btrfs now migrates to use kernel workqueue, but it introduces this hang problem.
 
-Btrfs has a kind of work queued as an ordered way, which means that its
-ordered_func() must be processed in the way of FIFO, so it usually looks like --
+On 12/08/2014 15:24, Miao Xie wrote:
+> On Mon, 11 Aug 2014 17:42:56 +0800, Anand Jain wrote:
+>> We are not updating sprout fs seed pointer when all seed device
+>> is replaced. This patch will check if all seed device has been
+>> replaced and then update the sprout pointer accordingly.
+>>
+>> Same reproducer as in the previous patch would apply here.
+>> And notice that btrfs_close_device will check if seed fs is
+>> present and spits out the error with out this patch.
+>>
+>> int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>> {
+>> ::
+>>                  seed_devices = fs_devices->seed;
+>> ::
+>>          while (seed_devices) {
+>>                  fs_devices = seed_devices;
+>>                  seed_devices = fs_devices->seed;
+>>                  __btrfs_close_devices(fs_devices);
+>>                  free_fs_devices(fs_devices);
+>>          }
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/volumes.c | 19 +++++++++++++++++++
+>>   1 file changed, 19 insertions(+)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index f098ae7..bfdc11f 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1992,6 +1992,25 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+>>   			btrfs_scratch_superblock(srcdev);
+>>   	}
+>>
+>> +	/* unless fs_devices is seed fs, num_devices shouldn't go
+>> +	 * zero
+>> +	 */
+>
+> According to coding style, the preferred style for multi-line comments is(except files in net
+> subsystem):
+>
+> /*
+>   * <comment>
+>   */
+>
+>> +	BUG_ON(!fs_devices->num_devices && !fs_devices->seeding);
+>
+> Use ASSERT?
+>
+>> +	/* if this is no devs we rather delete the fs_devices */
+>> +	if (!fs_devices->num_devices) {
+>> +		struct btrfs_fs_devices *tmp_fs_devices;
+>> +
+>> +		tmp_fs_devices = fs_info->fs_devices;
+>> +		while (tmp_fs_devices) {
+>> +			if (tmp_fs_devices->seed == fs_devices) {
+>> +				tmp_fs_devices->seed = fs_devices->seed;
+>> +				break;
+>> +			}
+>> +			tmp_fs_devices = tmp_fs_devices->seed;
+>> +		}
+>> +		fs_devices->seed = NULL;
+>
+> Why not free fs_devices like btrfs_rm_device?
 
-normal_work_helper(arg)
-    work = container_of(arg, struct btrfs_work, normal_work);
+  Thanks for the review. ! Yes memory leak is another bug
+  I have the patch for it will send it soon. the bug trying
+  to address here is fs_devices stale seed pointer.
 
-    work->func() <---- (we name it work X)
-    for ordered_work in wq->ordered_list
-            ordered_work->ordered_func()
-            ordered_work->ordered_free()
+Anand
 
-The hang is a rare case, first when we find free space, we get an uncached block
-group, then we go to read its free space cache inode for free space information,
-so it will
-
-file a readahead request
-    btrfs_readpages()
-         for page that is not in page cache
-                __do_readpage()
-                     submit_extent_page()
-                           btrfs_submit_bio_hook()
-                                 btrfs_bio_wq_end_io()
-                                 submit_bio()
-                                 end_workqueue_bio() <--(ret by the 1st endio)
-                                      queue a work(named work Y) for the 2nd
-                                      also the real endio()
-
-So the hang occurs when work Y's work_struct and work X's work_struct happens
-to share the same address.
-
-A bit more explanation,
-
-A,B,C -- struct btrfs_work
-arg   -- struct work_struct
-
-kthread:
-worker_thread()
-    pick up a work_struct from @worklist
-    process_one_work(arg)
-	worker->current_work = arg;  <-- arg is A->normal_work
-	worker->current_func(arg)
-		normal_work_helper(arg)
-		     A = container_of(arg, struct btrfs_work, normal_work);
-
-		     A->func()
-		     A->ordered_func()
-		     A->ordered_free()  <-- A gets freed
-
-		     B->ordered_func()
-			  submit_compressed_extents()
-			      find_free_extent()
-				  load_free_space_inode()
-				      ...   <-- (the above readhead stack)
-				      end_workqueue_bio()
-					   btrfs_queue_work(work C)
-		     B->ordered_free()
-
-As if work A has a high priority in wq->ordered_list and there are more ordered
-works queued after it, such as B->ordered_func(), its memory could have been
-freed before normal_work_helper() returns, which means that kernel workqueue
-code worker_thread() still has worker->current_work pointer to be work
-A->normal_work's, ie. arg's address.
-
-Meanwhile, work C is allocated after work A is freed, work C->normal_work
-and work A->normal_work are likely to share the same address(I confirmed this
-with ftrace output, so I'm not just guessing, it's rare though).
-
-When another kthread picks up work C->normal_work to process, and finds our
-kthread is processing it(see find_worker_executing_work()), it'll think
-work C as a collision and skip then, which ends up nobody processing work C.
-
-So the situation is that our kthread is waiting forever on work C.
-
-The key point is that they shouldn't have the same address, so this defers
-->ordered_free() and does a batched free to avoid that.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/async-thread.c | 12 ++++++++++--
- 1 file changed, 10 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 5a201d8..2ac01b3 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -195,6 +195,7 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
- 	struct btrfs_work *work;
- 	spinlock_t *lock = &wq->list_lock;
- 	unsigned long flags;
-+	LIST_HEAD(free_list);
- 
- 	while (1) {
- 		spin_lock_irqsave(lock, flags);
-@@ -219,17 +220,24 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
- 
- 		/* now take the lock again and drop our item from the list */
- 		spin_lock_irqsave(lock, flags);
--		list_del(&work->ordered_list);
-+		list_move_tail(&work->ordered_list, &free_list);
- 		spin_unlock_irqrestore(lock, flags);
- 
- 		/*
- 		 * we don't want to call the ordered free functions
- 		 * with the lock held though
- 		 */
-+	}
-+	spin_unlock_irqrestore(lock, flags);
-+
-+	while (!list_empty(&free_list)) {
-+		work = list_entry(free_list.next, struct btrfs_work,
-+				  ordered_list);
-+
-+		list_del(&work->ordered_list);
- 		work->ordered_free(work);
- 		trace_btrfs_all_work_done(work);
- 	}
--	spin_unlock_irqrestore(lock, flags);
- }
- 
- static void normal_work_helper(struct work_struct *arg)
--- 
-1.8.1.4
-
+> The other is OK.
+>
+> Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+>
+>> +	}
+>>   	call_rcu(&srcdev->rcu, free_device);
+>>   }
+>>
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

@@ -1,55 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44877 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752076AbaHLId3 (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48038 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751558AbaHLKvO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 04:33:29 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7C8XS5C020537
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 08:33:29 GMT
-Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s7C8XR1o019963
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 08:33:28 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7C8XRLU002704
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 08:33:27 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] Btrfs: cleanup for btrfs workqueue tracepoints
-Date: Tue, 12 Aug 2014 16:33:18 +0800
-Message-Id: <1407832398-2409-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1407832398-2409-1-git-send-email-bo.li.liu@oracle.com>
-References: <1407832398-2409-1-git-send-email-bo.li.liu@oracle.com>
+	Tue, 12 Aug 2014 06:51:14 -0400
+Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 6E7553EE0BB
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 19:51:12 +0900 (JST)
+Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 7A293AC051A
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 19:51:11 +0900 (JST)
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 2BB691DB803B
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 19:51:11 +0900 (JST)
+Received: from g01jpexchkw37.g01.fujitsu.local (unknown [10.0.193.4])
+	by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 7289B3287D9
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 19:51:10 +0900 (JST)
+Message-ID: <53E9F196.1030008@jp.fujitsu.com>
+Date: Tue, 12 Aug 2014 19:51:02 +0900
+From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: (FYI) I'll be offline several days
+Content-Type: text/plain; charset="ISO-2022-JP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tracepoint trace_btrfs_normal_work_done never has an user, just cleanup it.
+Hi all,
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- include/trace/events/btrfs.h | 7 -------
- 1 file changed, 7 deletions(-)
+I'll be offline as summer vacation for several days.
+So, until Aug 18, probably I can't send any reply...
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index bb8fe5a..aa595b1 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1046,13 +1046,6 @@ DEFINE_EVENT(btrfs__work, btrfs_work_sched,
- 	TP_ARGS(work)
- );
- 
--DEFINE_EVENT(btrfs__work, btrfs_normal_work_done,
--
--	TP_PROTO(struct btrfs_work *work),
--
--	TP_ARGS(work)
--);
--
- DEFINE_EVENT(btrfs__work__done, btrfs_all_work_done,
- 
- 	TP_PROTO(struct btrfs_work *work),
--- 
-1.8.1.4
+Thanks,
+Satoru
 

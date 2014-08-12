@@ -1,85 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28959 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754183AbaHLDAT (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:6899 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753426AbaHLHWr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Aug 2014 23:00:19 -0400
-Date: Tue, 12 Aug 2014 11:00:05 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix regression of btrfs device replace
-Message-ID: <20140812030004.GB9244@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1406632179-17747-1-git-send-email-bo.li.liu@oracle.com>
- <27C52EC9-CF6E-4FB7-9504-316A25D45DFB@colorremedies.com>
- <53E97AFC.4060404@jp.fujitsu.com>
+	Tue, 12 Aug 2014 03:22:47 -0400
+Message-ID: <53E9C134.5020706@cn.fujitsu.com>
+Date: Tue, 12 Aug 2014 15:24:36 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53E97AFC.4060404@jp.fujitsu.com>
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 4/4] btrfs: update sprout seed pointer when seed fs is
+ relinquished
+References: <1407750176-15853-1-git-send-email-anand.jain@oracle.com> <1407750176-15853-4-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1407750176-15853-4-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 12, 2014 at 11:25:00AM +0900, Satoru Takeuchi wrote:
-> Hi Liu,
+On Mon, 11 Aug 2014 17:42:56 +0800, Anand Jain wrote:
+> We are not updating sprout fs seed pointer when all seed device
+> is replaced. This patch will check if all seed device has been
+> replaced and then update the sprout pointer accordingly.
 > 
-> (2014/08/12 6:41), Chris Murphy wrote:
-> >
-> >On Jul 29, 2014, at 5:09 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> >
-> >>Commit 49c6f736f34f901117c20960ebd7d5e60f12fcac(
-> >>btrfs: dev replace should replace the sysfs entry) added the missing sysfs entry
-> >>in the process of device replace, but didn't take missing devices into account,
-> >>so now we have
-> >>
-> >>BUG: unable to handle kernel NULL pointer dereference at 0000000000000088
-> >>IP: [<ffffffffa0268551>] btrfs_kobj_rm_device+0x21/0x40 [btrfs]
-> >>...
-> >>
-> >>To reproduce it,
-> >>1. mkfs.btrfs -f disk1 disk2
-> >>2. mkfs.ext4 disk1
-> >>3. mount disk2 /mnt -odegraded
-> >>4. btrfs replace start -B 1 disk3 /mnt
-> >>--------------------------
-> >>
-> >>This fixes the problem.
-> >>
-> >>Reported-by: Chris Murphy <lists@colorremedies.com>
-> >>Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> >>---
-> >>fs/btrfs/sysfs.c | 2 +-
-> >>1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
-> >>diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> >>index 7869936..12e5355 100644
-> >>--- a/fs/btrfs/sysfs.c
-> >>+++ b/fs/btrfs/sysfs.c
-> >>@@ -614,7 +614,7 @@ int btrfs_kobj_rm_device(struct btrfs_fs_info *fs_info,
-> >>	if (!fs_info->device_dir_kobj)
-> >>		return -EINVAL;
-> >>
-> >>-	if (one_device) {
-> >>+	if (one_device && one_device->bdev) {
-> >>		disk = one_device->bdev->bd_part;
-> >>		disk_kobj = &part_to_dev(disk)->kobj;
-> >>
-> >
-> >
-> >Applied to 3.16.0 and tested, problem is fixed.
-> >
-> >
-> >Chris Murphy
+> Same reproducer as in the previous patch would apply here.
+> And notice that btrfs_close_device will check if seed fs is
+> present and spits out the error with out this patch.
 > 
-> Reviewed-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
-> Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+> {
+> ::
+>                 seed_devices = fs_devices->seed;
+> ::
+>         while (seed_devices) {
+>                 fs_devices = seed_devices;
+>                 seed_devices = fs_devices->seed;
+>                 __btrfs_close_devices(fs_devices);
+>                 free_fs_devices(fs_devices);
+>         }
 > 
-> I confirmed both
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 19 +++++++++++++++++++
+>  1 file changed, 19 insertions(+)
 > 
->  - This problem happens with 3.16, and
->  - This problem doesn't happen with 3.16 + your patch.
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f098ae7..bfdc11f 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1992,6 +1992,25 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+>  			btrfs_scratch_superblock(srcdev);
+>  	}
+>  
+> +	/* unless fs_devices is seed fs, num_devices shouldn't go
+> +	 * zero
+> +	 */
 
-Thanks for your testing!
- 
--liubo
+According to coding style, the preferred style for multi-line comments is(except files in net
+subsystem):
+
+/*
+ * <comment>
+ */
+
+> +	BUG_ON(!fs_devices->num_devices && !fs_devices->seeding);
+
+Use ASSERT?
+
+> +	/* if this is no devs we rather delete the fs_devices */
+> +	if (!fs_devices->num_devices) {
+> +		struct btrfs_fs_devices *tmp_fs_devices;
+> +
+> +		tmp_fs_devices = fs_info->fs_devices;
+> +		while (tmp_fs_devices) {
+> +			if (tmp_fs_devices->seed == fs_devices) {
+> +				tmp_fs_devices->seed = fs_devices->seed;
+> +				break;
+> +			}
+> +			tmp_fs_devices = tmp_fs_devices->seed;
+> +		}
+> +		fs_devices->seed = NULL;
+
+Why not free fs_devices like btrfs_rm_device?
+
+The other is OK.
+
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+
+> +	}
+>  	call_rcu(&srcdev->rcu, free_device);
+>  }
+>  
+> 
+

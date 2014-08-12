@@ -1,35 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:41353 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753352AbaHLHZi (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:37127 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752710AbaHLHqG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 03:25:38 -0400
+	Tue, 12 Aug 2014 03:46:06 -0400
 Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id DCD173EE0BD
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:25:36 +0900 (JST)
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 142BF3EE0ED
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:46:04 +0900 (JST)
 Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id EC85AAC0457
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:25:35 +0900 (JST)
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 61D88E08005
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:25:35 +0900 (JST)
-Message-ID: <53E9C165.6060500@jp.fujitsu.com>
-Date: Tue, 12 Aug 2014 16:25:25 +0900
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 25557AC0301
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:46:03 +0900 (JST)
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id BE3C1E38001
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 16:46:02 +0900 (JST)
+Message-ID: <53E9C62A.9020105@jp.fujitsu.com>
+Date: Tue, 12 Aug 2014 16:45:46 +0900
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 MIME-Version: 1.0
 To: Eric Sandeen <esandeen@redhat.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/3 v2] btrfs-progs: random fixes of btrfs-filesystem documentation
-References: <53E888C3.70807@jp.fujitsu.com> <53E8F7F0.3060300@redhat.com> <53E95703.9050705@jp.fujitsu.com> <6DC8BDFA-32FF-4EB4-87D4-AB09F7A5A9FE@redhat.com>
-In-Reply-To: <6DC8BDFA-32FF-4EB4-87D4-AB09F7A5A9FE@redhat.com>
+Subject: [PATCH 1/3 v3] btrfs-progs: random fixes of btrfs-filesystem documentation
+References: <53E888C3.70807@jp.fujitsu.com> <53E8F7F0.3060300@redhat.com> <53E95703.9050705@jp.fujitsu.com> <6DC8BDFA-32FF-4EB4-87D4-AB09F7A5A9FE@redhat.com> <53E9C165.6060500@jp.fujitsu.com>
+In-Reply-To: <53E9C165.6060500@jp.fujitsu.com>
 Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Oops, I sent a wrong patch. Here is the correct one.
+
+===
 From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
 
   - Simplify the description of both man and usage.
-  - Add the description about short options for '--all-devices
+  - Add the description about short options for '--all-devices'
     and '--mounted', '-d' and '-m' respectively.
   - Fix to show -d and -m is not exclusive
     with '<path>|<uuid>|<device>|<label>'.
@@ -41,13 +44,15 @@ Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 ---
 changelog:
   - v2: Fix the description based on Eric's comment
+  - v3: Fix the incomplete update of btrfs-filesystem.txt
 ---
   Documentation/btrfs-filesystem.txt | 22 ++++++++++++++--------
+  Documentation/btrfs-replace.txt    |  1 +
   cmds-filesystem.c                  | 15 ++++++++++-----
-  2 files changed, 24 insertions(+), 13 deletions(-)
+  3 files changed, 25 insertions(+), 13 deletions(-)
 
 diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index c9c0b00..fe68496 100644
+index c9c0b00..63cb91e 100644
 --- a/Documentation/btrfs-filesystem.txt
 +++ b/Documentation/btrfs-filesystem.txt
 @@ -20,15 +20,21 @@ SUBCOMMAND
@@ -65,21 +70,33 @@ index c9c0b00..fe68496 100644
 -filesystem(s);
 -If '--all-devices' is passed, all the devices under /dev are scanned;
 -otherwise the devices list is extracted from the /proc/partitions file.
-+If none of '<path>|<uuid>|<device>|<label>' is passed, btrfs shows
-+information of all the btrfs filesystems both mounted and unmounted.
++By default, the show command scans all devices found in /proc/partitions.
 ++
-+The show command finds btrfs filesystems by scanning all the devices
-+in /proc/partitions by default.
++By default, the structure of all discovered filesystems is shown.
++If any one of [<path>|<uuid>|<device>|<label>] is specified, only filesystems
++matching that identifier are shown.
 ++
 +`Options`
 ++
-+-d|--alldevices::::
-+scan all the devices under /dev
++-d|--all-devices::::
++all devices found under /dev are scanned
 +-m|--mounted::::
-+scan only mounted filesystems
++only mounted btrfs devices are scanned
   
   *sync* <path>::
   Force a sync for the filesystem identified by <path>.
+diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
+index eecf9b0..476e351 100644
+--- a/Documentation/btrfs-replace.txt
++++ b/Documentation/btrfs-replace.txt
+@@ -49,6 +49,7 @@ containing a valid btrfs filesystem.
+  A valid filesystem is assumed if a btrfs superblock is found which contains a
+  correct checksum. Devices which are currently mounted are
+  never allowed to be used as the <targetdev>.
+++
+  -B::::
+  no background replace.
+  
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
 index 38011e5..3e9f33b 100644
 --- a/cmds-filesystem.c

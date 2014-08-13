@@ -1,256 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31274 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:38737 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933556AbaH0Kea (ORCPT
+	with ESMTP id S1751691AbaHMAO6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Aug 2014 06:34:30 -0400
-Date: Wed, 27 Aug 2014 18:34:13 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Avoid trucating page or punching hole in a
- already existed hole.
-Message-ID: <20140827103412.GA24545@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1401434170-30695-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20140827081953.GA15994@localhost.localdomain>
- <CAL3q7H5R_nemONu2T2Fzwb7hCVEz7S+Zv0ctSfvRwe3LBHP11Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5R_nemONu2T2Fzwb7hCVEz7S+Zv0ctSfvRwe3LBHP11Q@mail.gmail.com>
+	Tue, 12 Aug 2014 20:14:58 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7D0EueE008557
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:57 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7D0EtmO017698
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:56 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7D0EtTl023865
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:55 GMT
+From: Guangyu Sun <guangyu.sun@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: force mixed groups when -r rootdir is small
+Date: Tue, 12 Aug 2014 17:13:54 -0700
+Message-Id: <1407888835-15739-1-git-send-email-guangyu.sun@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 27, 2014 at 09:41:14AM +0100, Filipe David Manana wrote:
-> On Wed, Aug 27, 2014 at 9:19 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > On Fri, May 30, 2014 at 03:16:10PM +0800, Qu Wenruo wrote:
-> >> btrfs_punch_hole() will truncate unaligned pages or punch hole on a
-> >> already existed hole.
-> >> This will cause unneeded zero page or holes splitting the original huge
-> >> hole.
-> >>
-> >> This patch will skip already existed holes before any page truncating or
-> >> hole punching.
-> >>
-> >> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> >> ---
-> >>  fs/btrfs/file.c | 112 +++++++++++++++++++++++++++++++++++++++++++++++++-------
-> >>  1 file changed, 98 insertions(+), 14 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> >> index ae6af07..93915d1 100644
-> >> --- a/fs/btrfs/file.c
-> >> +++ b/fs/btrfs/file.c
-> >> @@ -2168,6 +2168,37 @@ out:
-> >>       return 0;
-> >>  }
-> >>
-> >> +/*
-> >> + * Find a hole extent on given inode and change start/len to the end of hole
-> >> + * extent.(hole/vacuum extent whose em->start <= start &&
-> >> + *      em->start + em->len > start)
-> >> + * When a hole extent is found, return 1 and modify start/len.
-> >> + */
-> >> +static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
-> >> +{
-> >> +     struct extent_map *em;
-> >> +     int ret = 0;
-> >> +
-> >> +     em = btrfs_get_extent(inode, NULL, 0, *start, *len, 0);
-> >> +     if (IS_ERR_OR_NULL(em)) {
-> >> +             if (!em)
-> >> +                     ret = -ENOMEM;
-> >> +             else
-> >> +                     ret = PTR_ERR(em);
-> >> +             return ret;
-> >> +     }
-> >> +
-> >> +     /* Hole or vacuum extent(only exists in no-hole mode) */
-> >> +     if (em->block_start == EXTENT_MAP_HOLE) {
-> >> +             ret = 1;
-> >> +             *len = em->start + em->len > *start + *len ?
-> >> +                    0 : *start + *len - em->start - em->len;
-> >> +             *start = em->start + em->len;
-> >> +     }
-> >> +     free_extent_map(em);
-> >> +     return ret;
-> >> +}
-> >> +
-> >>  static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>  {
-> >>       struct btrfs_root *root = BTRFS_I(inode)->root;
-> >> @@ -2175,17 +2206,18 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>       struct btrfs_path *path;
-> >>       struct btrfs_block_rsv *rsv;
-> >>       struct btrfs_trans_handle *trans;
-> >> -     u64 lockstart = round_up(offset, BTRFS_I(inode)->root->sectorsize);
-> >> -     u64 lockend = round_down(offset + len,
-> >> -                              BTRFS_I(inode)->root->sectorsize) - 1;
-> >> -     u64 cur_offset = lockstart;
-> >> +     u64 lockstart;
-> >> +     u64 lockend;
-> >> +     u64 tail_start;
-> >> +     u64 tail_len;
-> >> +     u64 orig_start = offset;
-> >> +     u64 cur_offset;
-> >>       u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
-> >>       u64 drop_end;
-> >>       int ret = 0;
-> >>       int err = 0;
-> >>       int rsv_count;
-> >> -     bool same_page = ((offset >> PAGE_CACHE_SHIFT) ==
-> >> -                       ((offset + len - 1) >> PAGE_CACHE_SHIFT));
-> >> +     bool same_page;
-> >>       bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
-> >>       u64 ino_size = round_up(inode->i_size, PAGE_CACHE_SIZE);
-> >>
-> >> @@ -2194,6 +2226,21 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>               return ret;
-> >>
-> >>       mutex_lock(&inode->i_mutex);
-> >> +     ret = find_first_non_hole(inode, &offset, &len);
-> >> +     if (ret < 0)
-> >> +             goto out_only_mutex;
-> >> +     if (ret && !len) {
-> >> +             /* Already in a large hole */
-> >> +             ret = 0;
-> >> +             goto out_only_mutex;
-> >> +     }
-> >> +
-> >> +     lockstart = round_up(offset , BTRFS_I(inode)->root->sectorsize);
-> >> +     lockend = round_down(offset + len,
-> >> +                          BTRFS_I(inode)->root->sectorsize) - 1;
-> >
-> > Why do we round_up lockstart but round_down lockend?
-> >
-> > For [0,4095], then lockstart is 4096 and lockend is (u64)-1, any thoughts?
-> 
-> Seems odd, but is it a problem for that case?
-> The same_page check below makes us return without locking the range in
-> the iotree using the computed values for lockstart and lockend.
+mkfs.btrfs did not force mixed data/metadata groups if the size of
+rootdir given by -r option is small.
 
-No problems so far luckily, but it's odd.
+ # mkdir -p /tmp/mydir
+ # echo "aaa" > /tmp/mydir/myfile
+ # mkfs.btrfs -f -r /tmp/mydir /dev/sdb1
+ ...
+ fs created label (null) on /dev/sdb1
+ 	nodesize 16384 leafsize 16384 sectorsize 4096 size 28.00MiB
+ ...
 
-thanks,
--liubo
+leafsize and sectorsize are different means it is not using mixed
+groups.
 
-> 
-> >
-> > thanks,
-> > -liubo
-> >
-> >> +     same_page = ((offset >> PAGE_CACHE_SHIFT) ==
-> >> +                 ((offset + len - 1) >> PAGE_CACHE_SHIFT));
-> >> +
-> >>       /*
-> >>        * We needn't truncate any page which is beyond the end of the file
-> >>        * because we are sure there is no data there.
-> >> @@ -2205,8 +2252,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>       if (same_page && len < PAGE_CACHE_SIZE) {
-> >>               if (offset < ino_size)
-> >>                       ret = btrfs_truncate_page(inode, offset, len, 0);
-> >> -             mutex_unlock(&inode->i_mutex);
-> >> -             return ret;
-> >> +             goto out_only_mutex;
-> >>       }
-> >>
-> >>       /* zero back part of the first page */
-> >> @@ -2218,12 +2264,39 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>               }
-> >>       }
-> >>
-> >> -     /* zero the front end of the last page */
-> >> -     if (offset + len < ino_size) {
-> >> -             ret = btrfs_truncate_page(inode, offset + len, 0, 1);
-> >> -             if (ret) {
-> >> -                     mutex_unlock(&inode->i_mutex);
-> >> -                     return ret;
-> >> +     /* Check the aligned pages after the first unaligned page,
-> >> +      * if offset != orig_start, which means the first unaligned page
-> >> +      * including serveral following pages are already in holes,
-> >> +      * the extra check can be skipped */
-> >> +     if (offset == orig_start) {
-> >> +             /* after truncate page, check hole again */
-> >> +             len = offset + len - lockstart;
-> >> +             offset = lockstart;
-> >> +             ret = find_first_non_hole(inode, &offset, &len);
-> >> +             if (ret < 0)
-> >> +                     goto out_only_mutex;
-> >> +             if (ret && !len) {
-> >> +                     ret = 0;
-> >> +                     goto out_only_mutex;
-> >> +             }
-> >> +             lockstart = offset;
-> >> +     }
-> >> +
-> >> +     /* Check the tail unaligned part is in a hole */
-> >> +     tail_start = lockend + 1;
-> >> +     tail_len = offset + len - tail_start;
-> >> +     if (tail_len) {
-> >> +             ret = find_first_non_hole(inode, &tail_start, &tail_len);
-> >> +             if (unlikely(ret < 0))
-> >> +                     goto out_only_mutex;
-> >> +             if (!ret) {
-> >> +                     /* zero the front end of the last page */
-> >> +                     if (tail_start + tail_len < ino_size) {
-> >> +                             ret = btrfs_truncate_page(inode,
-> >> +                                             tail_start + tail_len, 0, 1);
-> >> +                             if (ret)
-> >> +                                     goto out_only_mutex;
-> >> +                             }
-> >>               }
-> >>       }
-> >>
-> >> @@ -2299,6 +2372,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>       BUG_ON(ret);
-> >>       trans->block_rsv = rsv;
-> >>
-> >> +     cur_offset = lockstart;
-> >> +     len = lockend - cur_offset;
-> >>       while (cur_offset < lockend) {
-> >>               ret = __btrfs_drop_extents(trans, root, inode, path,
-> >>                                          cur_offset, lockend + 1,
-> >> @@ -2339,6 +2414,14 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-> >>                                             rsv, min_size);
-> >>               BUG_ON(ret);    /* shouldn't happen */
-> >>               trans->block_rsv = rsv;
-> >> +
-> >> +             ret = find_first_non_hole(inode, &cur_offset, &len);
-> >> +             if (unlikely(ret < 0))
-> >> +                     break;
-> >> +             if (ret && !len) {
-> >> +                     ret = 0;
-> >> +                     break;
-> >> +             }
-> >>       }
-> >>
-> >>       if (ret) {
-> >> @@ -2372,6 +2455,7 @@ out_free:
-> >>  out:
-> >>       unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
-> >>                            &cached_state, GFP_NOFS);
-> >> +out_only_mutex:
-> >>       mutex_unlock(&inode->i_mutex);
-> >>       if (ret && !err)
-> >>               err = ret;
-> >> --
-> >> 1.9.3
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> -- 
-> Filipe David Manana,
-> 
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
+after this patch:
+
+ # mkfs.btrfs -f -r /tmp/mydir /dev/sdb1
+ ...
+ Turning ON incompat feature 'mixed-bg': mixed data and metadata block
+ groups
+ ...
+ fs created label (null) on /dev/sdb1
+ 	nodesize 4096 leafsize 4096 sectorsize 4096 size 28.00MiB
+ ...
+
+Also the size check in option -b is inconsistent with other similar
+size checks in utils.c. Make it consistent by removing '='.
+
+Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
+---
+ mkfs.c |   21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index 16e9222..71aea40 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1332,11 +1332,6 @@ int main(int ac, char **av)
+ 				break;
+ 			case 'b':
+ 				block_count = parse_size(optarg);
+-				if (block_count <= 1024*1024*1024) {
+-					printf("SMALL VOLUME: forcing mixed "
+-					       "metadata/data groups\n");
+-					mixed = 1;
+-				}
+ 				zero_end = 0;
+ 				break;
+ 			case 'V':
+@@ -1388,6 +1383,18 @@ int main(int ac, char **av)
+ 		mixed = 1;
+ 	}
+ 
++	if (source_dir_set) {
++		source_dir_size = size_sourcedir(source_dir, sectorsize,
++					     &num_of_meta_chunks, &size_of_data);
++		if (block_count < source_dir_size)
++			block_count = source_dir_size;
++	}
++
++	if (block_count && block_count < 1024 * 1024 * 1024 && !mixed) {
++		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
++		mixed = 1;
++	}
++
+ 	/*
+ 	* Set default profiles according to number of added devices.
+ 	* For mixed groups defaults are single/single.
+@@ -1475,10 +1482,6 @@ int main(int ac, char **av)
+ 		}
+ 
+ 		first_file = file;
+-		source_dir_size = size_sourcedir(source_dir, sectorsize,
+-					     &num_of_meta_chunks, &size_of_data);
+-		if(block_count < source_dir_size)
+-			block_count = source_dir_size;
+ 		ret = zero_output_file(fd, block_count, sectorsize);
+ 		if (ret) {
+ 			fprintf(stderr, "unable to zero the output file\n");
+-- 
+1.7.9.5
+

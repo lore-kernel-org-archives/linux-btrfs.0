@@ -1,59 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from queue01b.mail.zen.net.uk ([212.23.3.242]:34504 "EHLO
-	queue01b.mail.zen.net.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753141AbaHLQEx (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:43388 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754252AbaHMCCu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 12:04:53 -0400
-Received: from [212.23.1.1] (helo=smarthost01a.mail.zen.net.uk)
-	by queue01b.mail.zen.net.uk with esmtp (Exim 4.72)
-	(envelope-from <david@chrestomanci.org>)
-	id 1XHEZ9-00028i-RQ
-	for linux-btrfs@vger.kernel.org; Tue, 12 Aug 2014 16:04:51 +0000
-Received: from [82.70.68.182] (helo=www.chrestomanci.org)
-	by smarthost01a.mail.zen.net.uk with esmtps (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-	(Exim 4.80)
-	(envelope-from <david@chrestomanci.org>)
-	id 1XHEXC-000B0v-EU
-	for linux-btrfs@vger.kernel.org; Tue, 12 Aug 2014 16:02:50 +0000
-Message-ID: <53EA3AA0.9080607@chrestomanci.org>
-Date: Tue, 12 Aug 2014 17:02:40 +0100
-From: David Pottage <david@chrestomanci.org>
+	Tue, 12 Aug 2014 22:02:50 -0400
+Received: by mail-pa0-f48.google.com with SMTP id et14so13980878pad.21
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 19:02:50 -0700 (PDT)
 MIME-Version: 1.0
-To: Cyril Scetbon <cyril.scetbon@free.fr>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Using Btrfs with Ubuntu 14.04
-References: <8951EA18-525B-43F4-8B8E-499611A69465@free.fr>
-In-Reply-To: <8951EA18-525B-43F4-8B8E-499611A69465@free.fr>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20140812142423.GJ8314@merlins.org>
+References: <CAETJ_S8rf4Y_7x4+fDB19JfNZYa1wjQOwTHcdCxd9eHq17NgXg@mail.gmail.com>
+	<CAETJ_S-VZk5pxgT4HCJnQwenL6eDP88z7tW-KEHYqtnn=NWbww@mail.gmail.com>
+	<pan$29b1$ee1dac$e6091513$d07b2702@cox.net>
+	<CAETJ_S8347mtU6-o9BW=_Q27atdcj6P-aFZ1551S6G6rXBS8=A@mail.gmail.com>
+	<CAETJ_S9HsWEYrV2zrfr8ZSD69SoFCiHnND38HLo8pq7ENiEPbw@mail.gmail.com>
+	<CAETJ_S8DT=yW6V8bmAJ5s-+ZbuLjnDUK_XWEFRwK_p8hoR+LWA@mail.gmail.com>
+	<pan$d6d2e$b19333f0$ee4ea84e$5a707866@cox.net>
+	<A7CFCD27-F663-425A-A695-3E7842777348@colorremedies.com>
+	<CAETJ_S_YDnJsf9Fc6+ynpBVK7MXv3RGuhhJrSVV2Tizf1J+kdA@mail.gmail.com>
+	<pan$8f34b$65843f03$7e0dd88e$286fcd58@cox.net>
+	<20140812142423.GJ8314@merlins.org>
+Date: Tue, 12 Aug 2014 21:02:49 -0500
+Message-ID: <CAETJ_S9M-s9-+szYo3r6SsdF0HUpanK=7jrG-FrWsvEpd7k7jg@mail.gmail.com>
+Subject: Re: 40TB volume taking over 16 hours to mount, any ideas?
+From: Jose Ildefonso Camargo Tolosa <ildefonso.camargo@gmail.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-On 12/08/14 08:46, Cyril Scetbon wrote:
-> Hi guys,
+On Tue, Aug 12, 2014 at 9:24 AM, Marc MERLIN <marc@merlins.org> wrote:
+> On Tue, Aug 12, 2014 at 04:15:26AM +0000, Duncan wrote:
+>> Jose Ildefonso Camargo Tolosa posted on Mon, 11 Aug 2014 16:33:36 -0500 as
+>> excerpted:
+>>
+>> > As I hate when a thread is left "hanging", you deserve to know what
+>> > happened in the end, you likely already guessed, but anyway: I nuked the
+>> > filesystem, and started over.
+>> >
+>> > After some internal discussion in the company, we decided to move to ZFS
+>> > for now.  However, we will keep an eye on btrfs, and will likely deploy
+>> > it to some smaller system for further testing.
+>> >
+>> > Thanks you all for your help!
+>>
+>> Thank you too. =:^)
+>>
+>> Sounds like a sane decision for the time being.
 >
-> Can you tell me if there are any pitfalls to use Btrfs under Ubuntu 14.04 (Btrfs 3.12). Are there any well known bug that are only fixed later ? Please, send me links just to check if it could hurt or not ..
-You should probably install the latest kernel, as otherwise if you 
-report any issue to this list the first thing people will ask you to do 
-is to update.
+> Just remember that ZFS is fine for internal use, but that you can never
+> ever ship any product based on ZFS due to its licensing.
+>
 
-Follow the instructions here:
-https://wiki.ubuntu.com/KernelTeam/GitKernelBuild
+Yeah, that's one of the reasons why we won't lose sight of btrfs, and
+will try to keep at least one system with it in order to help testing
+and stabilizing it.
 
-It is not hard, but it will take a while. I would allow at least an hour 
-to build a kernel package unless you are on the latest fast hardware. It 
-could also take a long time to git clone the kernel unless your internet 
-conection is fast.
+And that's true for ZFS on Linux, but not for ZFS with FreeBSD (think:
+FreeNAS).  However, I do not want to use FreeBSD for now.
 
-On step 2, I suggest you clone from the stable reposistory instead of 
-Linus's bleeding edge repsitory. The sable clone URL is: 
-git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-
-Good luck !
-
--- 
-David Pottage
-
-
-
-
+Ildefonso

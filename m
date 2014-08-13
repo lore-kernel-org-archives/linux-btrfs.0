@@ -1,68 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:47479 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753817AbaHMWt6 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Aug 2014 18:49:58 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:59672 helo=ming.hsd1.co.comcast.net)
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XHhMj-001XaY-6T
-	for linux-btrfs@vger.kernel.org; Wed, 13 Aug 2014 16:49:57 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: [BUG] kernel BUG at fs/btrfs/extent_io.c:2124! oops when reading corrupt file on btrfs raid5
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <E7CC2628-F28A-4431-86D7-0572F6C9F296@colorremedies.com>
-Date: Wed, 13 Aug 2014 16:49:56 -0600
-Message-Id: <D3417AF1-C87C-493C-9D58-6A81CDA13333@colorremedies.com>
-References: <E7CC2628-F28A-4431-86D7-0572F6C9F296@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:45316 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750772AbaHMXTe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Aug 2014 19:19:34 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XHhpL-0001IA-J6
+	for linux-btrfs@vger.kernel.org; Thu, 14 Aug 2014 01:19:31 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 01:19:31 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 01:19:31 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: delete missing /dev/sdd which is now added as /dev/sdd1
+Date: Wed, 13 Aug 2014 23:19:20 +0000 (UTC)
+Message-ID: <pan$d18a1$d124172b$7cfbfa6b$9072ec25@cox.net>
+References: <53EAF935.4040605@rasmusa.net>
+	<20140813145155.GA20611@merlins.org>
+	<1407944166.3763056.152323965.0FFD88B6@webmail.messagingengine.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm unable to reproduce this with kernel and progs built from integration branch (I think, anyway); this is what I built:
+Rasmus Abrahamsen posted on Wed, 13 Aug 2014 17:36:06 +0200 as excerpted:
 
-git clone git://repo.or.cz/btrfs-progs-unstable/devel.git
-cd devel
-git checkout integration-20140729
+>  I now did the following
+> 
+> dd if=/dev/zero of=/dev/sdd
+> 
+> Finally, btrfs does not recognize the partition as part of my raid
+> anymore, but what's worse is that it now tells me that two missing
+> devices is a no go, so I cannot mount it as anything but read-only. All
+> the data is there, /dev/sdd1 was never used and /dev/sdd was the
+> originally missing one. Mounting as read-only prevents you from adding
+> devices.
 
-git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
-cd linux-btrfs
-git checkout integration
+There's a patch in-flight that should, I believe, help with this.  I
+haven't followed the specific details, but IIRC, it has something to do
+with a missing sysfs entry.  Because of that missing entry, btrfs
+(userspace) doesn't have the same view of filesystem device status that
+the kernel has, and device add/replace/delete can go haywire.
+Additionally, in some cases it triggers too many missing devices errors,
+forcing the mount read-only, which in turn won't let you add devices to
+fix the problem even if due to the circumstances you know all files are
+actually there and intact.
 
+So at this point you have three choices:
 
-After corrupting a file, the only difference from 3.16.0 is when reading the corrupt file is I get __readpage_endio_check in dmesg. 
+1) Give up on the filesystem, do a mkfs and go from there.
 
-If I understand correctly, corruption is detected, data is correctly rebuilt from parity and sent up to sha1sum but the corrected data is not written back to disk (expected). A balance also causes corruption to be detected but this time the fix is written to disk, the corruption isn't detected after this.
+2) Wait for the patch to make it into kernel 3.17 and go from there.
 
-
-[   82.798368] BTRFS info (device sdd): disk space caching is enabled
-[   82.875705] SELinux: initialized (dev sdd, type btrfs), uses xattr
-[   92.699491] BTRFS info (device sdd): csum failed ino 257 off 0 csum 2566472073 expected csum 2759032090
-[   92.791565] BTRFS info (device sdd): csum failed ino 257 off 4096 csum 3231022384 expected csum 2759032090
-[   92.791862] BTRFS info (device sdd): csum failed ino 257 off 0 csum 2566472073 expected csum 2759032090
-[   92.850708] BTRFS info (device sdd): csum failed ino 257 off 8192 csum 3303363542 expected csum 2759032090
-[   92.873660] BTRFS info (device sdd): csum failed ino 257 off 12288 csum 2295875483 expected csum 2759032090
-[   92.921120] BTRFS info (device sdd): csum failed ino 257 off 16384 csum 1837874343 expected csum 2759032090
-[   93.022287] BTRFS info (device sdd): csum failed ino 257 off 20480 csum 4011747594 expected csum 2759032090
-[   93.303243] BTRFS info (device sdd): csum failed ino 257 off 24576 csum 199417701 expected csum 2759032090
-[   93.475170] BTRFS info (device sdd): csum failed ino 257 off 28672 csum 802473067 expected csum 2759032090
-[   93.559571] BTRFS info (device sdd): csum failed ino 257 off 32768 csum 2190845313 expected csum 2759032090
-[  282.402413] BTRFS info (device sdd): disk space caching is enabled
-[  282.487717] SELinux: initialized (dev sdd, type btrfs), uses xattr
-[  286.119979] __readpage_endio_check: 7 callbacks suppressed
-[  286.121279] BTRFS info (device sdd): csum failed ino 257 off 0 csum 2566472073 expected csum 2759032090
-[  286.284266] BTRFS info (device sdd): csum failed ino 257 off 4096 csum 3231022384 expected csum 2759032090
-[  286.383582] BTRFS info (device sdd): csum failed ino 257 off 8192 csum 3303363542 expected csum 2759032090
-[  286.383592] BTRFS info (device sdd): csum failed ino 257 off 0 csum 2566472073 expected csum 2759032090
-[  286.693884] BTRFS info (device sdd): csum failed ino 257 off 12288 csum 2295875483 expected csum 2759032090
-[  286.983491] BTRFS info (device sdd): csum failed ino 257 off 16384 csum 1837874343 expected csum 2759032090
-[  287.233004] BTRFS info (device sdd): csum failed ino 257 off 20480 csum 4011747594 expected csum 2759032090
-[  287.279199] BTRFS info (device sdd): csum failed ino 257 off 24576 csum 199417701 expected csum 2759032090
-[  287.505774] BTRFS info (device sdd): csum failed ino 257 off 28672 csum 802473067 expected csum 2759032090
-[  287.601100] BTRFS info (device sdd): csum failed ino 257 off 32768 csum 2190845313 expected csum 2759032090
+3) Go read the list and find and cherrypick that patch, then rebuild with
+it included, and go from there.
 
 
-Chris Murphy
+Meanwhile, an observation on the btrfs behavior that contributed to
+getting you into this situation in the first place, and how to avoid it in
+the future:
+
+Btrfs filesystem and filesystem device detection relies on a "magic
+string" found in the superblock to identify btrfs filesystems, and other
+metadata within the superblock to determine what specific btrfs filesystem
+it belongs to.  When events such as btrfs device add/delete/ replace that
+change the devices composing a filesystem don't complete properly, this
+superblock information can remain to confuse btrfs when it tries working
+with the remaining device components in the filesystem.
+
+That's what was happening to you, tho the missing sysfs entries mentioned
+above make the situation rather worse.  Btrfs was still detecting these
+remaining bits of superblock information saying that the device in
+question belonged to the btrfs it originated with, and was getting
+confused.
+
+One way to avoid this problem is to use a tool called wipefs, part of
+util-linux, to erase the magic-string btrfs detection uses, so that
+particular device will no longer be detected as part of a btrfs, and thus
+can't confuse btrfs.  Alternatively, you can simply zero-out the correct 8
+bytes on the raw device manually, using for instance dd to write directly
+to the device.
+
+See this link from the btrfs wiki problem-FAQ for more (including how to
+restore the 8-byte magic string using dd if you decide you made a mistake,
+something not really possible if you zero out the entire device as you did
+above):
+
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#How_to_clean_up_old_superblock_.3F
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

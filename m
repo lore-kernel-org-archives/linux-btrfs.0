@@ -1,161 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.vavmaster.de ([148.251.133.103]:56006 "EHLO
-	mail.vavmaster.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752607AbaHMR06 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Aug 2014 13:26:58 -0400
-Received: from [176.195.77.16] (helo=stakan.localnet)
-	by mail.vavmaster.de with esmtpsa (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256)
-	(Exim 4.83)
-	(envelope-from <v@piratweb.com>)
-	id 1XHba0-000870-Uy
-	for linux-btrfs@vger.kernel.org; Wed, 13 Aug 2014 18:39:17 +0200
-From: Valdis Voronin <v@piratweb.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Welcome to linux-btrfs
-Date: Wed, 13 Aug 2014 20:39:15 +0400
-Message-ID: <2553353.cJGYBglVXM@stakan>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:58184 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751317AbaHMT1P convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Aug 2014 15:27:15 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:58131 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XHeCW-003h7U-IA
+	for linux-btrfs@vger.kernel.org; Wed, 13 Aug 2014 13:27:13 -0600
+From: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: [BUG] kernel BUG at fs/btrfs/extent_io.c:2124! oops when reading corrupt file on btrfs raid5
+Message-Id: <E7CC2628-F28A-4431-86D7-0572F6C9F296@colorremedies.com>
+Date: Wed, 13 Aug 2014 13:27:10 -0600
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-I am using here Debian Jessie whith classic Raid1 mdadm, with two ssd devices 
-(Crucial_CT256MX100SSD1) and btrfs 3.14-2-amd64 #1 SMP Debian 3.14.13-2 
-(2014-07-24) x86_64 GNU/Linux.
-The server under load. After some days or a week is see in messages (log files, 
-see below.).
-The server is not freeze but works not correctly. There are no possibility to 
-reboot.
-Is this a bug? May be somebody has an ider for mount options or kernel 
-upgrade?
-
-cat > fstab
-
-/dev/md/2 / btrfs defaults 0 0
+Summary: 
+Corrupt a file on a btrfs raid5 volume, mount then read the file, I get an oops. System is totally hung up, ssh no longer works, etc.
 
 
-Regards
-Vladislav
+Versions:
+kernel-3.16.0-1.cmlb729fdm810v4.fc21.x86_64
+btrfs-progs-3.14.2-3.fc21
 
-cat > messages
+Kernel 3.16.0-1.fc21.x86_64 with the following patches to btrfs/send.c and btrfs/sysfs.c, probably not a factor.
+https://friendpaste.com/Bgwdjk31P3pZHtArr341G
+https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg35925.html
 
-Aug 12 06:25:45 srv1 rsyslogd: [origin software="rsyslogd" swVersion="7.6.3" 
-x-pid="1676" x-info="http://www.rsyslog.com"] rsyslogd was HUPed
-Aug 12 06:28:36 srv1 rsyslogd-2359: action 'action 17' resumed (module 
-'builtin:ompipe') [try http://www.rsyslog.com/e/2359 ]
-Aug 12 07:02:04 srv1 rsyslogd-2007: action 'action 17' suspended, next retry 
-is Tue Aug 12 07:02:34 2014 [try http://www.rsyslog.com/e/2007 ]
-Aug 12 09:03:41 srv1 kernel: [163223.598939] mysqld          D ffff88040b2a2e38     
-0 11941   4011 0x00000000
-Aug 12 09:03:41 srv1 kernel: [163223.598941]  ffff88040b2a2a20 0000000000000086 
-0000000000014380 ffff880428eeffd8
-Aug 12 09:03:41 srv1 kernel: [163223.598943]  0000000000014380 ffff88040b2a2a20 
-ffff88081ea54c10 ffff88081edc7608
-Aug 12 09:03:41 srv1 kernel: [163223.598944]  0000000000000002 ffffffff81121000 
-ffff880428eef6d0 ffff880428eef7b0
-Aug 12 09:03:41 srv1 kernel: [163223.598946] Call Trace:
-Aug 12 09:03:41 srv1 kernel: [163223.598950]  [<ffffffff81121000>] ? 
-wait_on_page_read+0x60/0x60
-Aug 12 09:03:41 srv1 kernel: [163223.598954]  [<ffffffff814c7e34>] ? 
-io_schedule+0x94/0x130 
-Aug 12 09:03:41 srv1 kernel: [163223.598955]  [<ffffffff81121005>] ? 
-sleep_on_page+0x5/0x10
-Aug 12 09:03:41 srv1 kernel: [163223.598956]  [<ffffffff814c81a4>] ? 
-__wait_on_bit+0x54/0x80
-Aug 12 09:03:41 srv1 kernel: [163223.598960]  [<ffffffff8109f510>] ? 
-autoremove_wake_function+0x30/0x30
-Aug 12 09:03:41 srv1 kernel: [163223.598965]  [<ffffffff811345b7>] ? 
-shrink_inactive_list+0x187/0x4d0
-Aug 12 09:03:41 srv1 kernel: [163223.598968]  [<ffffffff811352de>] ? 
-shrink_zone+0x5e/0x180
-Aug 12 09:03:41 srv1 kernel: [163223.598971]  [<ffffffff81135e45>] ? 
-try_to_free_mem_cgroup_pages+0xc5/0x150
-Aug 12 09:03:41 srv1 kernel: [163223.598975]  [<ffffffff8117f82f>] ? 
-__mem_cgroup_try_charge+0x55f/0x6a0
-Aug 12 09:03:41 srv1 kernel: [163223.598990]  [<ffffffff8117ffdd>] ? 
-mem_cgroup_charge_common+0x3d/0x90
-Aug 12 09:03:41 srv1 kernel: [163223.598995]  [<ffffffff81121d41>] ? 
-add_to_page_cache_lru+0x11/0x40
-Aug 12 09:03:41 srv1 kernel: [163223.599002]  [<ffffffffa023f80e>] ? 
-prepare_pages.isra.19+0xae/0x170 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599012]  [<ffffffffa0240925>] ? 
-btrfs_file_aio_write+0x215/0x550 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599015]  [<ffffffff811876a7>] ? 
-do_sync_write+0x57/0x90
-Aug 12 09:03:41 srv1 kernel: [163223.599018]  [<ffffffff8118876d>] ? 
-SyS_write+0x3d/0xa0
-Aug 12 09:03:41 srv1 kernel: [163223.599054]  ffff8807f6a1b1f0 0000000000000086 
-0000000000014380 ffff88053c2c3fd8
-Aug 12 09:03:41 srv1 kernel: [163223.599057]  0000000000000002 ffffffff81121000 
-ffff88053c2c3650 ffff88053c2c3730
-Aug 12 09:03:41 srv1 kernel: [163223.599059]  [<ffffffff81121000>] ? 
-wait_on_page_read+0x60/0x60
-Aug 12 09:03:41 srv1 kernel: [163223.599062]  [<ffffffff81121005>] ? 
-sleep_on_page+0x5/0x10
-Aug 12 09:03:41 srv1 kernel: [163223.599064]  [<ffffffff81120e0f>] ? 
-wait_on_page_bit+0x7f/0x90 
-Aug 12 09:03:41 srv1 kernel: [163223.599067]  [<ffffffff81133bb7>] ? 
-shrink_page_list+0x667/0xa50   
-Aug 12 09:03:41 srv1 kernel: [163223.599069]  [<ffffffff81134f69>] ? 
-shrink_lruvec+0x2e9/0x600
-Aug 12 09:03:41 srv1 kernel: [163223.599072]  [<ffffffff811357a0>] ? 
-do_try_to_free_pages+0xe0/0x550
-Aug 12 09:03:41 srv1 kernel: [163223.599076]  [<ffffffff81135e45>] ? 
-try_to_free_mem_cgroup_pages+0xc5/0x150
-Aug 12 09:03:41 srv1 kernel: [163223.599079]  [<ffffffff8117f82f>] ? 
-__mem_cgroup_try_charge+0x55f/0x6a0
-Aug 12 09:03:41 srv1 kernel: [163223.599082]  [<ffffffff8117ffdd>] ? 
-mem_cgroup_charge_common+0x3d/0x90 
-Aug 12 09:03:41 srv1 kernel: [163223.599084]  [<ffffffff81121c0f>] ? 
-add_to_page_cache_locked+0x2f/0x150  
-Aug 12 09:03:41 srv1 kernel: [163223.599091]  [<ffffffffa024e127>] ? 
-extent_readpages+0xb7/0x190 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599098]  [<ffffffff8112d503>] ? 
-__do_page_cache_readahead+0x193/0x240
-Aug 12 09:03:41 srv1 kernel: [163223.599101]  [<ffffffff811238d9>] ? 
-generic_file_aio_read+0x459/0x6d0
-Aug 12 09:03:41 srv1 kernel: [163223.599103]  [<ffffffff81187c41>] ? 
-vfs_read+0x91/0x160
-Aug 12 09:03:41 srv1 kernel: [163223.599106]  [<ffffffff814d2cf9>] ? 
-system_call_fastpath+0x16/0x1b
-Aug 12 09:03:41 srv1 kernel: [163223.599168] kworker/u16:2   D ffff880730ea0868     
-0 27951      2 0x00000000
-Aug 12 09:03:41 srv1 kernel: [163223.599172]  ffff880730ea0450 0000000000000046 
-0000000000014380 ffff88000721ffd8
-Aug 12 09:03:41 srv1 kernel: [163223.599174]  ffff88000721f880 0000000000000002 
-ffffffff81121000 ffff8805827e3d98
-Aug 12 09:03:41 srv1 kernel: [163223.599176]  [<ffffffff81121000>] ? 
-wait_on_page_read+0x60/0x60
-Aug 12 09:03:41 srv1 kernel: [163223.599179]  [<ffffffff81121005>] ? 
-sleep_on_page+0x5/0x10
-Aug 12 09:03:41 srv1 kernel: [163223.599181]  [<ffffffff811210f5>] ? 
-__lock_page+0x65/0x70
-Aug 12 09:03:41 srv1 kernel: [163223.599189]  [<ffffffffa0248fcd>] ? 
-lock_delalloc_pages+0x10d/0x190 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599199]  [<ffffffffa024b95f>] ? 
-submit_extent_page.isra.36+0x1af/0x230 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599209]  [<ffffffffa024b640>] ? 
-end_extent_writepage+0x90/0x90 [btrfs] 
-Aug 12 09:03:41 srv1 kernel: [163223.599215]  [<ffffffffa024ce97>] ? 
-extent_write_cache_pages.isra.29.constprop.49+0x207/0x340 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599225]  [<ffffffffa0233960>] ? 
-btrfs_submit_direct+0x6b0/0x6b0 [btrfs]
-Aug 12 09:03:41 srv1 kernel: [163223.599229]  [<ffffffff811ad63c>] ? 
-writeback_sb_inodes+0x19c/0x3d0
-Aug 12 09:03:41 srv1 kernel: [163223.599232]  [<ffffffff811adb73>] ? 
-wb_writeback+0x243/0x2d0 
-Aug 12 09:03:41 srv1 kernel: [163223.599236]  [<ffffffff8101255b>] ? 
-__switch_to+0x11b/0x4b0
-Aug 12 09:03:41 srv1 kernel: [163223.599240]  [<ffffffff8107a7e6>] ? 
-worker_thread+0x116/0x3b0
-Aug 12 09:03:41 srv1 kernel: [163223.599243]  [<ffffffff81080a68>] ? 
-kthread+0xb8/0xd0
-Aug 12 09:03:41 srv1 kernel: [163223.599245]  [<ffffffff814d2c4c>] ? 
-ret_from_fork+0x7c/0xb0  
-Aug 12 09:05:41 srv1 kernel: [163343.527812] Call Trace:
+Kernel is tainted due to building vbox guest additions, also probably not a factor.
 
-Grus
-Valdis
+
+
+Reproduce steps:
+
+
+# mkfs.btrfs -mraid5 -draid5 /dev/sd[bcd]
+# mount /dev/sdb /mnt
+# cp /boot/vmlinuz-0-rescue-05dc03f2ac9a4275ac6ca3c9acb23b01 /mnt/
+# filefrag -v /mnt/vmlinuz-0-rescue-05dc03f2ac9a4275ac6ca3c9acb23b01 
+File size of /mnt/vmlinuz-0-rescue-05dc03f2ac9a4275ac6ca3c9acb23b01 is 6188600 (1511 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..    1510:     534016..    535526:   1511:             last,eof
+/mnt/vmlinuz-0-rescue-05dc03f2ac9a4275ac6ca3c9acb23b01: 1 extent found
+# umount /mnt
+# btrfs-corrupt-block -c1 -l 2187329536 /dev/sdb
+mirror 1 logical 2187329536 physical 1084227584 device /dev/sdc
+corrupting 2187329536 copy 1
+mirror 2 logical 2187329536 physical 1084227584 device /dev/sdd
+# mount /dev/sdb /mnt
+# sha1sum /mnt/vmlinuz-0-rescue-05dc03f2ac9a4275ac6ca3c9acb23b01 
+<system hangs>
+
+
+
+Capture from serial console:
+
+
+[  240.937759] BTRFS info (device sdd): disk space caching is enabled
+[  246.494163] BTRFS info (device sdd): csum failed ino 257 off 0 csum 2566472073 expected csum 2054244407
+[  246.594305] BTRFS info (device sdd): csum failed ino 257 off 4096 csum 232031403 expected csum 2054244407
+[  246.699625] BTRFS info (device sdd): csum failed ino 257 off 8192 csum 289721564 expected csum 2054244407
+[  246.815886] BTRFS info (device sdd): csum failed ino 257 off 12288 csum 3907555249 expected csum 2054244407
+[  246.815945] ------------[ cut here ]------------
+[  246.815950] kernel BUG at fs/btrfs/extent_io.c:2124!
+[  246.815957] invalid opcode: 0000 [#1] SMP 
+[  246.815973] Modules linked in: vboxsf(OE) cfg80211 rfkill btrfs snd_intel8x0 ppdev xor snd_ac97_codec ac97_bus snd_seq raid6_pq snd_seq_device snd_pcm microcode serio_raw vboxvideo(OE) drm snd_timer snd parport_pc i2c_piix4 parport i2c_core soundcore vboxguest(OE) xfs libcrc32c virtio_net virtio_pci virtio_ring virtio ata_generic pata_acpi
+[  246.815978] CPU: 1 PID: 75 Comm: kworker/u6:5 Tainted: G           OE 3.16.0-1.cmlb729fdm810v4.fc21.x86_64 #1
+[  246.815981] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+[  246.815999] Workqueue: btrfs-endio normal_work_helper [btrfs]
+[  246.816002] task: ffff88009ba54520 ti: ffff880000040000 task.ti: ffff880000040000
+[  246.816037] RIP: 0010:[<ffffffffa0317b45>]  [<ffffffffa0317b45>] end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
+[  246.816040] RSP: 0018:ffff880000043ca0  EFLAGS: 00010246
+[  246.816043] RAX: 0000000000000000 RBX: ffffea00025ae800 RCX: ffff8800997622b0
+[  246.816045] RDX: ffff8800997622c0 RSI: ffff8800997622a0 RDI: 0000000000000000
+[  246.816048] RBP: ffff880000043d70 R08: 0000000000000001 R09: 0000000000000000
+[  246.816051] R10: ffff880099789168 R11: ffff88009aaef200 R12: ffff880099789168
+[  246.816053] R13: 0000000000001000 R14: ffff880099bfbc30 R15: 0000000000001000
+[  246.816056] FS:  0000000000000000(0000) GS:ffff88009fa80000(0000) knlGS:0000000000000000
+[  246.816059] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  246.816062] CR2: 00007fa49063b000 CR3: 0000000099da3000 CR4: 00000000000006e0
+[  246.816067] Stack:
+[  246.816073]  ffff88009b927800 ffff88009f4064e0 0000000000014a00 ffff88009fa94a00
+[  246.816078]  0000000000014a00 ffff880099788fc0 ffff88009a3f9000 ffff880099789168
+[  246.816083]  ffff880099bfbb40 ffff880099789168 ffff880099789000 0000000000000000
+[  246.816086] Call Trace:
+[  246.816095]  [<ffffffff8133abdb>] bio_endio+0x6b/0xa0
+[  246.816101]  [<ffffffff8133ac22>] bio_endio_nodec+0x12/0x20
+[  246.816112]  [<ffffffffa02eca57>] end_workqueue_fn+0x37/0x40 [btrfs]
+[  246.816125]  [<ffffffffa032664d>] normal_work_helper+0xbd/0x280 [btrfs]
+[  246.816132]  [<ffffffff810abc16>] process_one_work+0x176/0x470
+[  246.816138]  [<ffffffff810ac62b>] worker_thread+0x6b/0x550
+[  246.816144]  [<ffffffff810ac5c0>] ? rescuer_thread+0x2e0/0x2e0
+[  246.816151]  [<ffffffff810b30ea>] kthread+0xea/0x100
+[  246.816156]  [<ffffffff810b3000>] ? insert_kthread_work+0x40/0x40
+[  246.816164]  [<ffffffff8172297c>] ret_from_fork+0x7c/0xb0
+[  246.816170]  [<ffffffff810b3000>] ? insert_kthread_work+0x40/0x40
+[  246.816186] Code: ff ff ff 4c 8b 9d 78 ff ff ff e9 a8 f9 ff ff 0f 1f 80 00 00 00 00 c7 01 00 00 00 00 c7 44 11 fc 00 00 00 00 e9 e5 f8 ff ff 0f 0b <0f> 0b f6 05 74 d6 06 00 04 74 29 41 8b 4a 28 45 89 d8 ba 01 00 
+[  246.816198] RIP  [<ffffffffa0317b45>] end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
+[  246.816200]  RSP <ffff880000043ca0>
+[  246.816267] ---[ end trace 8de5096f8477f8e8 ]---
+[  246.816314] BUG: unable to handle kernel paging request at ffffffffffffffd8
+[  246.816320] IP: [<ffffffff810b36f0>] kthread_data+0x10/0x20
+[  246.816326] PGD 1c14067 PUD 1c16067 PMD 0 
+[  246.816331] Oops: 0000 [#2] SMP 
+[  246.816343] Modules linked in: vboxsf(OE) cfg80211 rfkill btrfs snd_intel8x0 ppdev xor snd_ac97_codec ac97_bus snd_seq raid6_pq snd_seq_device snd_pcm microcode serio_raw vboxvideo(OE) drm snd_timer snd parport_pc i2c_piix4 parport i2c_core soundcore vboxguest(OE) xfs libcrc32c virtio_net virtio_pci virtio_ring virtio ata_generic pata_acpi
+[  246.816346] CPU: 1 PID: 75 Comm: kworker/u6:5 Tainted: G      D    OE 3.16.0-1.cmlb729fdm810v4.fc21.x86_64 #1
+[  246.816349] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+[  246.816357] task: ffff88009ba54520 ti: ffff880000040000 task.ti: ffff880000040000
+[  246.816363] RIP: 0010:[<ffffffff810b36f0>]  [<ffffffff810b36f0>] kthread_data+0x10/0x20
+[  246.816366] RSP: 0018:ffff880000043958  EFLAGS: 00010002
+[  246.816368] RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000000000
+[  246.816371] RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffff88009ba54520
+[  246.816374] RBP: ffff880000043958 R08: ffff88009ba545b0 R09: 0000000000000001
+[  246.816376] R10: ffff88009fa990c0 R11: ffff880036968bc8 R12: ffff88009fa94a00
+[  246.816379] R13: ffff88009ba549d8 R14: 0000000000000001 R15: ffff88009ba54520
+[  246.816382] FS:  0000000000000000(0000) GS:ffff88009fa80000(0000) knlGS:0000000000000000
+[  246.816384] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  246.816387] CR2: 0000000000000028 CR3: 0000000099da3000 CR4: 00000000000006e0
+[  246.816391] Stack:
+[  246.816397]  ffff880000043970 ffffffff810acb91 0000000000000000 ffff8800000439d0
+[  246.816402]  ffffffff8171e69c ffff88009ba54520 0000000000014a00 ffff880000043fd8
+[  246.816407]  0000000000014a00 ffffffff813461ca ffff88009ba54bf0 ffff880000043670
+[  246.816409] Call Trace:
+[  246.816416]  [<ffffffff810acb91>] wq_worker_sleeping+0x11/0x90
+[  246.816422]  [<ffffffff8171e69c>] __schedule+0x63c/0x780
+[  246.816429]  [<ffffffff813461ca>] ? put_io_context_active+0xaa/0xd0
+[  246.816434]  [<ffffffff8171e809>] schedule+0x29/0x70
+[  246.816441]  [<ffffffff81091f58>] do_exit+0x828/0xa80
+[  246.816449]  [<ffffffff8101750c>] oops_end+0x9c/0xe0
+[  246.816455]  [<ffffffff810179db>] die+0x4b/0x70
+[  246.816461]  [<ffffffff8101402a>] do_trap+0xba/0x150
+[  246.816467]  [<ffffffff810143e5>] do_error_trap+0x95/0x130
+[  246.816479]  [<ffffffffa0317b45>] ? end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
+[  246.816484]  [<ffffffff81333a67>] ? chksum_update+0x17/0x20
+[  246.816490]  [<ffffffff813256f6>] ? crypto_shash_update+0x36/0x100
+[  246.816496]  [<ffffffff81014c50>] do_invalid_op+0x20/0x30
+[  246.816502]  [<ffffffff817243de>] invalid_op+0x1e/0x30
+[  246.816513]  [<ffffffffa0317b45>] ? end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
+[  246.816519]  [<ffffffff8133abdb>] bio_endio+0x6b/0xa0
+[  246.816525]  [<ffffffff8133ac22>] bio_endio_nodec+0x12/0x20
+[  246.816536]  [<ffffffffa02eca57>] end_workqueue_fn+0x37/0x40 [btrfs]
+[  246.816548]  [<ffffffffa032664d>] normal_work_helper+0xbd/0x280 [btrfs]
+[  246.816554]  [<ffffffff810abc16>] process_one_work+0x176/0x470
+[  246.816560]  [<ffffffff810ac62b>] worker_thread+0x6b/0x550
+[  246.816566]  [<ffffffff810ac5c0>] ? rescuer_thread+0x2e0/0x2e0
+[  246.816571]  [<ffffffff810b30ea>] kthread+0xea/0x100
+[  246.816577]  [<ffffffff810b3000>] ? insert_kthread_work+0x40/0x40
+[  246.816583]  [<ffffffff8172297c>] ret_from_fork+0x7c/0xb0
+[  246.816588]  [<ffffffff810b3000>] ? insert_kthread_work+0x40/0x40
+[  246.816603] Code: 00 48 89 e5 5d 48 8b 40 c8 48 c1 e8 02 83 e0 01 c3 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 48 8b 87 60 04 00 00 55 48 89 e5 <48> 8b 40 d8 5d c3 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 
+[  246.816608] RIP  [<ffffffff810b36f0>] kthread_data+0x10/0x20
+[  246.816611]  RSP <ffff880000043958>
+[  246.816613] CR2: ffffffffffffffd8
+[  246.816616] ---[ end trace 8de
+
+
+
+Chris Murphy
+

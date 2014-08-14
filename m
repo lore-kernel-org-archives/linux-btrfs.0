@@ -1,31 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ny.voidptr.de ([5.45.110.253]:35169 "EHLO ny.voidptr.de"
+Received: from mout.gmx.net ([212.227.15.15]:50662 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752402AbaHNTgw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 15:36:52 -0400
-From: Nils Steinger <nst@voidptr.de>
+	id S932100AbaHNV4k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Aug 2014 17:56:40 -0400
+Received: from [192.168.178.21] ([85.177.119.112]) by mail.gmx.com (mrgmx002)
+ with ESMTPSA (Nemesis) id 0Lzc5y-1WNYe427Wc-014iMP for
+ <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 23:56:38 +0200
+Message-ID: <53ED3095.4070004@gmx.de>
+Date: Thu, 14 Aug 2014 23:56:37 +0200
+From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: Nils Steinger <nst@voidptr.de>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH v3] btrfs-progs: Add uninstall targets to Makefiles.
-Date: Thu, 14 Aug 2014 21:36:47 +0200
-Message-Id: <1408045008-13399-1-git-send-email-nst@voidptr.de>
+Subject: fuzz testing a 32 bit x86 user mode linux guest brought a BUG in
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I finally got around to applying David Sterba's suggestions about a
-month ago, but when I sent my updated patch to the mailing list,
-vger.kernel.org accepted and then silently dropped my mail, so I shelved
-the patch for a while.
-My new `filesystem df` patch just got through, so here's another try for
-the Makefile patch.
 
-Nils Steinger (1):
-  btrfs-progs: Add uninstall targets to Makefiles.
+Hello,
 
- Documentation/Makefile | 4 ++++
- Makefile               | 7 +++++++
- 2 files changed, 11 insertions(+)
+a recent kernel brought up this while using trinity inside a x86 UML (stable Gentoo Linux):
+
+
+Aug 14 22:07:06 trinity kernel: ------------[ cut here ]------------
+Aug 14 22:07:06 trinity kernel: WARNING: CPU: 0 PID: 5860 at fs/btrfs/extent_io.c:430 insert_state+0x69/0x170()
+Aug 14 22:07:06 trinity kernel: BTRFS: end < start 4094 18446744073709551615
+Aug 14 22:07:06 trinity kernel: CPU: 0 PID: 5860 Comm: trinity-c1 Tainted: G    B          3.16.0-11149-gba36899-dirty #7
+Aug 14 22:07:06 trinity kernel: Stack:
+Aug 14 22:07:06 trinity kernel: 085bfd28 085bfd28 00000003 086f0547 0d2e0000 0d2e7cec 085da26e 0d2e7ca4
+Aug 14 22:07:06 trinity kernel: 08501e1f 00000000 0d2e7c78 0d2e7cdc 0807cb95 085ed604 0d2e7d08 000016e4
+Aug 14 22:07:06 trinity kernel: 085da26e 000001ae 082c9109 000001ae 082c9109 00000000 00000000 0d2e7d88
+Aug 14 22:07:06 trinity kernel: Call Trace:
+Aug 14 22:07:06 trinity kernel: [<08501e1f>] dump_stack+0x26/0x28
+Aug 14 22:07:06 trinity kernel: [<0807cb95>] warn_slowpath_common+0x75/0xa0
+Aug 14 22:07:06 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 22:07:06 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 22:07:06 trinity kernel: [<0807cc0e>] warn_slowpath_fmt+0x2e/0x30
+Aug 14 22:07:06 trinity kernel: [<082c9109>] insert_state+0x69/0x170
+Aug 14 22:07:06 trinity kernel: [<082c9527>] __set_extent_bit+0x177/0x730
+Aug 14 22:07:06 trinity kernel: [<08078a0c>] ? do_set_thread_area+0x1c/0x50
+Aug 14 22:07:06 trinity kernel: [<082cab09>] lock_extent_bits+0x59/0x230
+Aug 14 22:07:06 trinity kernel: [<080975ac>] ? finish_task_switch.constprop.53+0x3c/0x90
+Aug 14 22:07:06 trinity kernel: [<08504fc2>] ? mutex_lock+0x12/0x30
+Aug 14 22:07:06 trinity kernel: [<082bcea5>] btrfs_file_llseek+0x1a5/0x440
+Aug 14 22:07:06 trinity kernel: [<08504f9d>] ? __mutex_lock_slowpath+0x28d/0x2a0
+Aug 14 22:07:06 trinity kernel: [<0810d1bf>] vfs_llseek+0x3f/0x50
+Aug 14 22:07:06 trinity kernel: [<0810d217>] SyS_lseek+0x47/0xb0
+Aug 14 22:07:06 trinity kernel: [<080629e0>] handle_syscall+0x60/0x80
+Aug 14 22:07:06 trinity kernel: [<084c04cc>] ? ptrace+0x2c/0x70
+Aug 14 22:07:06 trinity kernel: [<080794a2>] ? get_fp_registers+0x22/0x40
+Aug 14 22:07:06 trinity kernel: [<080745ac>] userspace+0x46c/0x5e0
+Aug 14 22:07:06 trinity kernel: [<080799f6>] ? os_set_thread_area+0x26/0x40
+Aug 14 22:07:06 trinity kernel: [<08078a0c>] ? do_set_thread_area+0x1c/0x50
+Aug 14 22:07:06 trinity kernel: [<08078b88>] ? arch_switch_tls+0xb8/0x100
+Aug 14 22:07:06 trinity kernel: [<0805f720>] fork_handler+0x60/0x70
+Aug 14 22:07:06 trinity kernel:
+Aug 14 22:07:06 trinity kernel: ---[ end trace 77e962ef58783178 ]---
+Aug 14 22:07:06 trinity trinity: Detected kernel tainting. Last seed was 1274643378
+Aug 14 23:28:04 trinity kernel: 08501e1f 00000000 859afb64 859afbc8 0807cb95 085ed604 859afbf4 000015fd
+Aug 14 23:28:04 trinity kernel: 085da26e 000001ae 082c9109 000001ae 082c9109 8640e500 00000000 859afc74
+Aug 14 23:28:04 trinity kernel: Call Trace:
+Aug 14 23:28:04 trinity kernel: [<08501e1f>] dump_stack+0x26/0x28
+Aug 14 23:28:04 trinity kernel: [<0807cb95>] warn_slowpath_common+0x75/0xa0
+Aug 14 23:28:04 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<0807cc0e>] warn_slowpath_fmt+0x2e/0x30
+Aug 14 23:28:04 trinity kernel: [<082c9109>] insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<082c9527>] __set_extent_bit+0x177/0x730
+Aug 14 23:28:04 trinity kernel: [<082cab09>] lock_extent_bits+0x59/0x230
+Aug 14 23:28:04 trinity kernel: [<082b593d>] btrfs_evict_inode+0x14d/0x5a0
+Aug 14 23:28:04 trinity kernel: [<08125ffd>] evict+0xdd/0x1b0
+Aug 14 23:28:04 trinity kernel: [<08506281>] ? _raw_spin_lock+0x11/0x20
+Aug 14 23:28:04 trinity kernel: [<08126c7d>] iput+0x16d/0x180
+Aug 14 23:28:04 trinity kernel: [<08122888>] __dentry_kill+0x138/0x200
+Aug 14 23:28:04 trinity kernel: [<081230a6>] dput+0x156/0x180
+Aug 14 23:28:04 trinity kernel: [<0810ed45>] __fput+0x175/0x190
+Aug 14 23:28:04 trinity kernel: [<0810eb90>] ? file_free_rcu+0x0/0x40
+Aug 14 23:28:04 trinity kernel: [<0810ed9b>] ____fput+0xb/0x10
+Aug 14 23:28:04 trinity kernel: [<08092756>] task_work_run+0x76/0x90
+Aug 14 23:28:04 trinity kernel: [<0807e8dd>] do_exit+0x32d/0x940
+Aug 14 23:28:04 trinity kernel: [<0807efd2>] do_group_exit+0xa2/0xf0
+Aug 14 23:28:04 trinity kernel: [<0807f037>] SyS_exit_group+0x17/0x20
+Aug 14 23:28:04 trinity kernel: [<080629e0>] handle_syscall+0x60/0x80
+Aug 14 23:28:04 trinity kernel: [<080e4290>] ? shmem_setattr+0xc0/0x2d0
+Aug 14 23:28:04 trinity kernel: [<084c04cc>] ? ptrace+0x2c/0x70
+Aug 14 23:28:04 trinity kernel: [<080794a2>] ? get_fp_registers+0x22/0x40
+Aug 14 23:28:04 trinity kernel: [<080745ac>] userspace+0x46c/0x5e0
+Aug 14 23:28:04 trinity kernel: [<080799f6>] ? os_set_thread_area+0x26/0x40
+Aug 14 23:28:04 trinity kernel: [<08078a0c>] ? do_set_thread_area+0x1c/0x50
+Aug 14 23:28:04 trinity kernel: [<08078b88>] ? arch_switch_tls+0xb8/0x100
+Aug 14 23:28:04 trinity kernel: [<0805f720>] fork_handler+0x60/0x70
+Aug 14 23:28:04 trinity kernel:
+Aug 14 23:28:04 trinity kernel: ---[ end trace 77e962ef5942c6fc ]---
+Aug 14 23:28:04 trinity kernel: ------------[ cut here ]------------
+Aug 14 23:28:04 trinity kernel: WARNING: CPU: 0 PID: 5629 at fs/btrfs/extent_io.c:430 insert_state+0x69/0x170()
+Aug 14 23:28:04 trinity kernel: BTRFS: end < start 4094 18446744073709551615
+Aug 14 23:28:04 trinity kernel: CPU: 0 PID: 5629 Comm: trinity-main Tainted: G    B   W    L 3.16.0-11149-gba36899-dirty #7
+Aug 14 23:28:04 trinity kernel: Stack:
+Aug 14 23:28:04 trinity kernel: 085bfd28 085bfd28 00000003 086f0547 859a8000 859afbd8 085da26e 859afb90
+Aug 14 23:28:04 trinity kernel: 08501e1f 00000000 859afb64 859afbc8 0807cb95 085ed604 859afbf4 000015fd
+Aug 14 23:28:04 trinity kernel: 085da26e 000001ae 082c9109 000001ae 082c9109 8640e500 00000000 859afc74
+Aug 14 23:28:04 trinity kernel: Call Trace:
+Aug 14 23:28:04 trinity kernel: [<08501e1f>] dump_stack+0x26/0x28
+Aug 14 23:28:04 trinity kernel: [<0807cb95>] warn_slowpath_common+0x75/0xa0
+Aug 14 23:28:04 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<082c9109>] ? insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<0807cc0e>] warn_slowpath_fmt+0x2e/0x30
+Aug 14 23:28:04 trinity kernel: [<082c9109>] insert_state+0x69/0x170
+Aug 14 23:28:04 trinity kernel: [<082c9527>] __set_extent_bit+0x177/0x730
+Aug 14 23:28:04 trinity kernel: [<082cab09>] lock_extent_bits+0x59/0x230
+Aug 14 23:28:04 trinity kernel: [<082b593d>] btrfs_evict_inode+0x14d/0x5a0
+Aug 14 23:28:04 trinity kernel: [<08125ffd>] evict+0xdd/0x1b0
+Aug 14 23:28:04 trinity kernel: [<08506281>] ? _raw_spin_lock+0x11/0x20
+Aug 14 23:28:04 trinity kernel: [<08126c7d>] iput+0x16d/0x180
+Aug 14 23:28:04 trinity kernel: [<08122888>] __dentry_kill+0x138/0x200
+Aug 14 23:28:04 trinity kernel: [<081230a6>] dput+0x156/0x180
+Aug 14 23:28:04 trinity kernel: [<0810ed45>] __fput+0x175/0x190
+Aug 14 23:28:04 trinity kernel: [<0810eb90>] ? file_free_rcu+0x0/0x40
+Aug 14 23:28:04 trinity kernel: [<0810ed9b>] ____fput+0xb/0x10
+Aug 14 23:28:04 trinity kernel: [<08092756>] task_work_run+0x76/0x90
+Aug 14 23:28:04 trinity kernel: [<0807e8dd>] do_exit+0x32d/0x940
+Aug 14 23:28:04 trinity kernel: [<0807efd2>] do_group_exit+0xa2/0xf0
+Aug 14 23:28:04 trinity kernel: [<0807f037>] SyS_exit_group+0x17/0x20
+Aug 14 23:28:04 trinity kernel: [<080629e0>] handle_syscall+0x60/0x80
+Aug 14 23:28:04 trinity kernel: [<080e4290>] ? shmem_setattr+0xc0/0x2d0
+Aug 14 23:28:04 trinity kernel: [<084c04cc>] ? ptrace+0x2c/0x70
+Aug 14 23:28:04 trinity kernel: [<080794a2>] ? get_fp_registers+0x22/0x40
+Aug 14 23:28:04 trinity kernel: [<080745ac>] userspace+0x46c/0x5e0
+Aug 14 23:28:04 trinity kernel: [<080799f6>] ? os_set_thread_area+0x26/0x40
+Aug 14 23:28:04 trinity kernel: [<08078a0c>] ? do_set_thread_area+0x1c/0x50
+Aug 14 23:28:04 trinity kernel: [<08078b88>] ? arch_switch_tls+0xb8/0x100
+Aug 14 23:28:04 trinity kernel: [<0805f720>] fork_handler+0x60/0x70
+Aug 14 23:28:04 trinity kernel:
+Aug 14 23:28:04 trinity kernel: ---[ end trace 77e962ef5942c6fd ]---
+
+
+
+(The "dirty" comes from an UML fix for kernel/resource.c pending to be come into mainline soon)
 
 -- 
-1.9.1
+Toralf
 

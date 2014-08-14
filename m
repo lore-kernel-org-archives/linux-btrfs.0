@@ -1,245 +1,246 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48081 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751733AbaHTDAB (ORCPT
+Received: from mail-pd0-f180.google.com ([209.85.192.180]:40351 "EHLO
+	mail-pd0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753485AbaHNLkt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Aug 2014 23:00:01 -0400
-Message-ID: <53F40F26.6080806@oracle.com>
-Date: Wed, 20 Aug 2014 10:59:50 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: Eryu Guan <guaneryu@gmail.com>
-CC: linux-btrfs@vger.kernel.org, dsterba@suse.cz, zab@zabbo.net
-Subject: Re: [PATCH 2/2] btrfs-progs: canonicalize dm device name before update
- kernel
-References: <1408016420-29221-1-git-send-email-guaneryu@gmail.com> <1408016420-29221-2-git-send-email-guaneryu@gmail.com> <53ED676A.1060904@oracle.com> <20140815043029.GA3013@dhcp-13-216.nay.redhat.com>
-In-Reply-To: <20140815043029.GA3013@dhcp-13-216.nay.redhat.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	Thu, 14 Aug 2014 07:40:49 -0400
+Received: by mail-pd0-f180.google.com with SMTP id v10so1430129pde.39
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 04:40:48 -0700 (PDT)
+From: Eryu Guan <guaneryu@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH 1/2 RFC] btrfs-progs: scan devices for specific fsid in btrfs_scan_for_fsid
+Date: Thu, 14 Aug 2014 19:40:19 +0800
+Message-Id: <1408016420-29221-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The function name "btrfs_scan_for_fsid" suggests to me that it should
+look for btrfs devices with specific fsid value, it doesn't make sense
+to scan all devices.
 
+So adding a new parameter to btrfs_scan_for_fsid and related functions
+to specify the target fsid, if fsid is NULL then scan all devices.
 
-On 15/08/2014 12:30, Eryu Guan wrote:
-> On Fri, Aug 15, 2014 at 09:50:34AM +0800, Anand Jain wrote:
->>
->> Eryu,
->>
->>   btrfs dev scan -d option is there for legacy reasons. The new method
->>   is using libblkid to find btrfs devs.
->>
->>     David/Zach, is it time to remove -d option ? or mention deprecated.
->>
->>
->>   But your test case show problem using btrfsck as well. thats nice!
->>   The fix for this is in the kernel, which would return busy
->>   if the device path is being updated when the device is mounted.
->>   Can you try with Chris integration branch ? mainly the patch..
->>
->> -------------
->> commit 4e5c146442b23437d23a2bd81b95f13dfeaffe88
->> Author: Anand Jain <anand.jain@oracle.com>
->> Date:   Thu Jul 3 18:22:05 2014 +0800
->>
->>      Btrfs: device_list_add() should not update list when mounted
->> -------------
->
-> Thanks Anand, this patch fixed the issue, btrfsck reports "Device or
-> resource busy" now.
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+---
 
-  Thanks for testing.
+I'm not so sure if this is the expected behavior, any comments are welcomed!
 
-> [root@hp-dl388g8-01 ~]# btrfsck /dev/mapper/rhel_hp--dl388g8--01-btrfs--2
-> ERROR: device scan failed '/dev/dm-3' - Device or resource busy
-> Checking filesystem on /dev/mapper/rhel_hp--dl388g8--01-btrfs--2
-> UUID: 1104d6d6-2653-496b-8d67-184d522dd632
-> checking extents
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> checking csums
-> checking root refs
-> found 114688 bytes used err is 0
-> total csum bytes: 0
-> total tree bytes: 114688
-> total fs tree bytes: 32768
-> total extent tree bytes: 16384
-> btree space waste bytes: 108436
-> file data blocks allocated: 0
->   referenced 0
-> Btrfs v3.12
->
-> But btrfsck is still scanning unrelated devices when checking a btrfs
-> with multiple devices. In my case, I was checking btrfs on lv btrfs-2,
-> but btrfs-1(dm-3) was scanned too.
+ cmds-device.c     |  2 +-
+ cmds-filesystem.c |  2 +-
+ disk-io.c         |  2 +-
+ utils.c           | 43 +++++++++++++++++++++++++++++--------------
+ utils.h           | 10 +++++-----
+ 5 files changed, 37 insertions(+), 22 deletions(-)
 
-  That's expected, as of now the only way to find a partner device is
-  by scanning the available devices.
+diff --git a/cmds-device.c b/cmds-device.c
+index c8586a0..f028fc0 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -226,7 +226,7 @@ static int cmd_scan_dev(int argc, char **argv)
+ 
+ 	if (all || argc == 1) {
+ 		printf("Scanning for Btrfs filesystems\n");
+-		ret = scan_for_btrfs(where, BTRFS_UPDATE_KERNEL);
++		ret = scan_for_btrfs(where, NULL, BTRFS_UPDATE_KERNEL);
+ 		if (ret)
+ 			fprintf(stderr, "ERROR: error %d while scanning\n", ret);
+ 		goto out;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 306f715..7077ef8 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -633,7 +633,7 @@ static int cmd_show(int argc, char **argv)
+ 		goto out;
+ 
+ devs_only:
+-	ret = scan_for_btrfs(where, !BTRFS_UPDATE_KERNEL);
++	ret = scan_for_btrfs(where, NULL, !BTRFS_UPDATE_KERNEL);
+ 
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: %d while scanning\n", ret);
+diff --git a/disk-io.c b/disk-io.c
+index 8db0335..1a90ac7 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -995,7 +995,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
+ 	}
+ 
+ 	if (total_devs != 1) {
+-		ret = btrfs_scan_for_fsid(run_ioctl);
++		ret = btrfs_scan_for_fsid((*fs_devices)->fsid, run_ioctl);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/utils.c b/utils.c
+index e130849..f54e749 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1022,7 +1022,9 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 
+ 	/* scan other devices */
+ 	if (is_btrfs && total_devs > 1) {
+-		if ((ret = btrfs_scan_for_fsid(!BTRFS_UPDATE_KERNEL)))
++		ret = btrfs_scan_for_fsid(fs_devices_mnt->fsid,
++					  !BTRFS_UPDATE_KERNEL);
++		if (ret)
+ 			return ret;
+ 	}
+ 
+@@ -1099,7 +1101,7 @@ void btrfs_register_one_device(char *fname)
+ 	close(fd);
+ }
+ 
+-int btrfs_scan_one_dir(char *dirname, int run_ioctl)
++int btrfs_scan_one_dir(char *dirname, u8 *fsid, int run_ioctl)
+ {
+ 	DIR *dirp = NULL;
+ 	struct dirent *dirent;
+@@ -1180,7 +1182,13 @@ again:
+ 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+ 					    &num_devices,
+ 					    BTRFS_SUPER_INFO_OFFSET);
+-		if (ret == 0 && run_ioctl > 0) {
++		close(fd);
++		if (ret)
++			continue;
++
++		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
++			continue;
++		if (run_ioctl > 0) {
+ 			btrfs_register_one_device(fullpath);
+ 		}
+ 		close(fd);
+@@ -1210,13 +1218,13 @@ fail:
+ 	return ret;
+ }
+ 
+-int btrfs_scan_for_fsid(int run_ioctls)
++int btrfs_scan_for_fsid(u8 *fsid, int run_ioctls)
+ {
+ 	int ret;
+ 
+-	ret = scan_for_btrfs(BTRFS_SCAN_PROC, run_ioctls);
++	ret = scan_for_btrfs(BTRFS_SCAN_PROC, fsid, run_ioctls);
+ 	if (ret)
+-		ret = scan_for_btrfs(BTRFS_SCAN_DEV, run_ioctls);
++		ret = scan_for_btrfs(BTRFS_SCAN_DEV, fsid, run_ioctls);
+ 	return ret;
+ }
+ 
+@@ -1455,7 +1463,7 @@ int set_label(const char *btrfs_dev, const char *label)
+ 		set_label_mounted(btrfs_dev, label);
+ }
+ 
+-int btrfs_scan_block_devices(int run_ioctl)
++int btrfs_scan_block_devices(u8 *fsid, int run_ioctl)
+ {
+ 
+ 	struct stat st;
+@@ -1523,10 +1531,15 @@ scan_again:
+ 		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+ 					    &num_devices,
+ 					    BTRFS_SUPER_INFO_OFFSET);
+-		if (ret == 0 && run_ioctl > 0) {
++		close(fd);
++		if (ret)
++			continue;
++
++		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
++			continue;
++		if (run_ioctl > 0) {
+ 			btrfs_register_one_device(fullpath);
+ 		}
+-		close(fd);
+ 	}
+ 
+ 	fclose(proc_partitions);
+@@ -2014,7 +2027,7 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr)
+ 	return 0;
+ }
+ 
+-int btrfs_scan_lblkid(int update_kernel)
++int btrfs_scan_lblkid(u8 *fsid, int update_kernel)
+ {
+ 	int fd = -1;
+ 	int ret;
+@@ -2053,6 +2066,8 @@ int btrfs_scan_lblkid(int update_kernel)
+ 		}
+ 
+ 		close(fd);
++		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
++			continue;
+ 		if (update_kernel)
+ 			btrfs_register_one_device(path);
+ 	}
+@@ -2064,19 +2079,19 @@ int btrfs_scan_lblkid(int update_kernel)
+ /*
+  * scans devs for the btrfs
+ */
+-int scan_for_btrfs(int where, int update_kernel)
++int scan_for_btrfs(int where, u8 *fsid, int update_kernel)
+ {
+ 	int ret = 0;
+ 
+ 	switch (where) {
+ 	case BTRFS_SCAN_PROC:
+-		ret = btrfs_scan_block_devices(update_kernel);
++		ret = btrfs_scan_block_devices(fsid, update_kernel);
+ 		break;
+ 	case BTRFS_SCAN_DEV:
+-		ret = btrfs_scan_one_dir("/dev", update_kernel);
++		ret = btrfs_scan_one_dir("/dev", fsid, update_kernel);
+ 		break;
+ 	case BTRFS_SCAN_LBLKID:
+-		ret = btrfs_scan_lblkid(update_kernel);
++		ret = btrfs_scan_lblkid(fsid, update_kernel);
+ 		break;
+ 	}
+ 	return ret;
+diff --git a/utils.h b/utils.h
+index db8d63c..e7f850b 100644
+--- a/utils.h
++++ b/utils.h
+@@ -50,9 +50,9 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int fd, char *path,
+ 		      u64 block_count, u32 io_width, u32 io_align,
+ 		      u32 sectorsize);
+-int btrfs_scan_for_fsid(int run_ioctls);
++int btrfs_scan_for_fsid(u8 *fsid, int run_ioctls);
+ void btrfs_register_one_device(char *fname);
+-int btrfs_scan_one_dir(char *dirname, int run_ioctl);
++int btrfs_scan_one_dir(char *dirname, u8 *fsid, int run_ioctl);
+ int check_mounted(const char *devicename);
+ int check_mounted_where(int fd, const char *file, char *where, int size,
+ 			struct btrfs_fs_devices **fs_devices_mnt);
+@@ -68,7 +68,7 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
+ 	})
+ 
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+-int btrfs_scan_block_devices(int run_ioctl);
++int btrfs_scan_block_devices(u8 *fsid, int run_ioctl);
+ u64 parse_size(char *s);
+ u64 arg_strtou64(const char *str);
+ int open_file_or_dir(const char *fname, DIR **dirstream);
+@@ -87,7 +87,7 @@ u64 btrfs_device_size(int fd, struct stat *st);
+ /* Helper to always get proper size of the destination string */
+ #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
+ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr);
+-int scan_for_btrfs(int where, int update_kernel);
++int scan_for_btrfs(int where, u8 *fsid, int update_kernel);
+ int get_label_mounted(const char *mount_path, char *labelp);
+ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ 	u64 dev_cnt, int mixed, char *estr);
+@@ -96,7 +96,7 @@ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			   int verify);
+ int ask_user(char *question);
+ int lookup_ino_rootid(int fd, u64 *rootid);
+-int btrfs_scan_lblkid(int update_kernel);
++int btrfs_scan_lblkid(u8 *fsid, int update_kernel);
+ int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
+ int find_mount_root(const char *path, char **mount_root);
+ int get_device_info(int fd, u64 devid,
+-- 
+1.8.3.1
 
-Anand
-
-
-
-> Hope my first patch could fix this issue in an expected way.
->
-> Thanks,
-> Eryu
->>
->>
->> Thanks, Anand
->>
->>
->> On 14/08/2014 19:40, Eryu Guan wrote:
->>> A btrfsck or btrfs device scan -d operation could change the device
->>> name of other mounted btrfs in kernel, if the other btrfs is on lvm
->>> device.
->>>
->>> Assume that we have two btrfs filesystems, kernel is 3.16.0-rc4+
->>>
->>> [root@hp-dl388eg8-01 btrfs-progs]# btrfs fi show
->>> Label: none  uuid: 1aba7da5-ce2b-4af0-a716-db732abc60b2
->>>          Total devices 1 FS bytes used 384.00KiB
->>>          devid    1 size 15.00GiB used 2.04GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv1
->>>
->>> Label: none  uuid: 26ff4f12-f6d9-4cbc-aae2-57febeefde37
->>>          Total devices 2 FS bytes used 112.00KiB
->>>          devid    1 size 15.00GiB used 2.03GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv2
->>>          devid    2 size 15.00GiB used 2.01GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv3
->>>
->>> Btrfs v3.14.2
->>>
->>> And testlv1 was mounted at /mnt/btrfs
->>>
->>> [root@hp-dl388eg8-01 btrfs-progs]# df -TP /mnt/btrfs
->>> Filesystem                                Type  1024-blocks  Used Available Capacity Mounted on
->>> /dev/mapper/rhel_hp--dl388eg8--01-testlv1 btrfs    15728640   512  13602560       1% /mnt/btrfs
->>>
->>> Now run btrfsck on testlv2 or btrfs device scan -d, which will scan
->>> all btrfs devices and somehow change the device name.
->>>
->>> [root@hp-dl388eg8-01 btrfs-progs]# btrfsck /dev/mapper/rhel_hp--dl388eg8--01-testlv2 >/dev/null 2>&1
->>>
->>> [root@hp-dl388eg8-01 btrfs-progs]# df -TP /mnt/btrfs
->>> Filesystem     Type  1024-blocks  Used Available Capacity Mounted on
->>> /dev/dm-3      btrfs    15728640   512  13602560       1% /mnt/btrfs
->>> [root@hp-dl388eg8-01 btrfs-progs]# btrfs fi show
->>> Label: none  uuid: 1aba7da5-ce2b-4af0-a716-db732abc60b2
->>>          Total devices 1 FS bytes used 384.00KiB
->>>          devid    1 size 15.00GiB used 2.04GiB path /dev/dm-3
->>>
->>> Label: none  uuid: 26ff4f12-f6d9-4cbc-aae2-57febeefde37
->>>          Total devices 2 FS bytes used 112.00KiB
->>>          devid    1 size 15.00GiB used 2.03GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv2
->>>          devid    2 size 15.00GiB used 2.01GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv3
->>>
->>> Btrfs v3.14.2
->>>
->>> Now calling btrfs_register_one_device with canonicalized dm device name.
->>>
->>> Signed-off-by: Eryu Guan <guaneryu@gmail.com>
->>> ---
->>>
->>> With patch 1 applied, btrfsck won't change the device name,
->>> but btrfs device scan -d still does.
->>>
->>>   utils.c | 44 +++++++++++++++++++++++++++++++++++++++++---
->>>   1 file changed, 41 insertions(+), 3 deletions(-)
->>>
->>> diff --git a/utils.c b/utils.c
->>> index f54e749..3567094 100644
->>> --- a/utils.c
->>> +++ b/utils.c
->>> @@ -985,6 +985,32 @@ static int blk_file_in_dev_list(struct btrfs_fs_devices* fs_devices,
->>>   }
->>>
->>>   /*
->>> + * Convert dm-N device name to /dev/mapper/name
->>> + */
->>> +static void canonicalize_dm_name(char *devnode, char *path, int len)
->>> +{
->>> +	char *buf = NULL;
->>> +	FILE *sysfsp = NULL;
->>> +
->>> +	buf = malloc(PATH_MAX);
->>> +	if (!buf)
->>> +		return;
->>> +
->>> +	snprintf(buf, PATH_MAX, "/sys/block/%s/dm/name", devnode);
->>> +	sysfsp = fopen(buf, "r");
->>> +	if (!sysfsp)
->>> +		goto out;
->>> +
->>> +	if (fgets(buf, PATH_MAX, sysfsp)) {
->>> +		buf[strlen(buf) - 1] = '\0';
->>> +		snprintf(path, len - 1, "/dev/mapper/%s", buf);
->>> +	}
->>> +	fclose(sysfsp);
->>> +out:
->>> +	free(buf);
->>> +}
->>> +
->>> +/*
->>>    * returns 1 if the device was mounted, < 0 on error or 0 if everything
->>>    * is safe to continue.
->>>    */
->>> @@ -1189,6 +1215,9 @@ again:
->>>   		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
->>>   			continue;
->>>   		if (run_ioctl > 0) {
->>> +			if (!strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")))
->>> +				canonicalize_dm_name(dirent->d_name,
->>> +						     fullpath, PATH_MAX);
->>>   			btrfs_register_one_device(fullpath);
->>>   		}
->>>   		close(fd);
->>> @@ -1475,8 +1504,11 @@ int btrfs_scan_block_devices(u8 *fsid, int run_ioctl)
->>>   	int i;
->>>   	char buf[1024];
->>>   	char fullpath[110];
->>> +	char devnode[64];
->>> +	char *dirname = "/dev/";
->>>   	int scans = 0;
->>>   	int special;
->>> +	int is_dm;
->>>
->>>   scan_again:
->>>   	proc_partitions = fopen("/proc/partitions","r");
->>> @@ -1493,9 +1525,11 @@ scan_again:
->>>   			return -ENOENT;
->>>   		}
->>>
->>> -	strcpy(fullpath,"/dev/");
->>> -	while(fgets(buf, 1023, proc_partitions)) {
->>> -		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
->>> +	strcpy(fullpath, dirname);
->>> +	while (fgets(buf, sizeof(buf) - 1, proc_partitions)) {
->>> +		i = sscanf(buf, " %*d %*d %*d %99s", devnode);
->>> +		strncpy(fullpath + strlen(dirname), devnode,
->>> +			sizeof(fullpath) - strlen(dirname));
->>>
->>>   		/*
->>>   		 * multipath and MD devices may register as a btrfs filesystem
->>> @@ -1504,6 +1538,7 @@ scan_again:
->>>   		 * This scans the special entries last
->>>   		 */
->>>   		special = strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")) == 0;
->>> +		is_dm = special;
->>>   		if (!special)
->>>   			special = strncmp(fullpath, "/dev/md", strlen("/dev/md")) == 0;
->>>
->>> @@ -1538,6 +1573,9 @@ scan_again:
->>>   		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
->>>   			continue;
->>>   		if (run_ioctl > 0) {
->>> +			if (is_dm)
->>> +				canonicalize_dm_name(devnode, fullpath,
->>> +						     sizeof(fullpath));
->>>   			btrfs_register_one_device(fullpath);
->>>   		}
->>>   	}
->>>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

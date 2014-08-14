@@ -1,60 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:33519 "EHLO
-	out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751521AbaHNFVj (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:49645 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753901AbaHNKuy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 01:21:39 -0400
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-	by gateway1.nyi.internal (Postfix) with ESMTP id 0EB8E22F1D
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 01:21:36 -0400 (EDT)
-Message-Id: <1407993696.3962313.152559325.65391308@webmail.messagingengine.com>
-From: Rasmus Abrahamsen <me@rasmusa.net>
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Thu, 14 Aug 2014 06:50:54 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7EAoqek003684
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 10:50:53 GMT
+Received: from aserz7021.oracle.com (aserz7021.oracle.com [141.146.126.230])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7EAoq3o015275
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 10:50:52 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+	by aserz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7EAoqgP015265
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 10:50:52 GMT
+Message-ID: <53EC9555.80403@oracle.com>
+Date: Thu, 14 Aug 2014 18:54:13 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
-In-Reply-To: <C14B310E-5F2B-4762-884B-AA11108373D3@colorremedies.com>
-References: <53EAF935.4040605@rasmusa.net> <20140813145155.GA20611@merlins.org>
- <1407944166.3763056.152323965.0FFD88B6@webmail.messagingengine.com>
- <pan$d18a1$d124172b$7cfbfa6b$9072ec25@cox.net>
- <C14B310E-5F2B-4762-884B-AA11108373D3@colorremedies.com>
-Subject: Re: delete missing /dev/sdd which is now added as /dev/sdd1
-Date: Thu, 14 Aug 2014 07:21:36 +0200
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: xfstest/btrfs  _require_scratch_dev_pool  runs  btrfsck
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wow, such a long and detailed message. Thank you so much for taking the
-time to do this.
 
-Well, to be honest, I am starting to like the idea of starting over,
-although it will be a pain.
 
-Besides, I would have to wait for any distro to make a live disk with
-the new btrfs version because my linux partition is also on that raid.
+  Here below is a simple test script. I can't understand why
+  _require_scratch_dev_pool should check consistency on the disk ?
 
-I also learned that "btrfs delete missing" should only be used if the
-drive is gone forever, not to force remove it because of a mistake I did
-myself (tried to replace it with the 1,5 GB partition).
+-------------
+#! /bin/bash
+# Test case 060
 
-On Thu, Aug 14, 2014, at 04:06 AM, Chris Murphy wrote:
-> 
-> On Aug 13, 2014, at 5:19 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> > 
-> > 2) Wait for the patch to make it into kernel 3.17 and go from there.
-> 
-> Based on integration right now it looks like a lot of stuff.
-> 
-> 
-> > 3) Go read the list and find and cherrypick that patch, then rebuild with
-> > it included, and go from there.
-> 
-> Could be this one:
-> http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/patch/?id=0c414ebcd5ba515b58249099619a5d9dbcc1a3b8
-> 
-> 
-> Chris Murphy
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+seq=`basename $0`
+seqres=$RESULT_DIR/$seq
+echo "QA output created by $seq"
+
+tmp=/tmp/$$
+status=1    # failure is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_cleanup()
+{
+     cd /
+     rm -f $tmp.tmp
+}
+
+# get standard environment, filters and checks
+. ./common/rc
+. ./common/filter
+
+_require_scratch_dev_pool 4
+
+status=0
+exit
+-------------
+
+./check btrfs/060
+
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 OL 3.16.0-rc6+
+MKFS_OPTIONS  -- /dev/sdc
+MOUNT_OPTIONS -- /dev/sdc /mnt/scratch
+
+btrfs/060 2s ... 1s
+_check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent (see 
+/usr/src/cli/xfstests/results//btrfs/060.full)   <-----
+Ran: btrfs/060
+Passed all 1 tests
+
+
+_check_btrfs_filesystem()
+{
+::
+         echo "_check_btrfs_filesystem: filesystem on $device is 
+inconsistent" >>$seqres.full
+
+
+
+check
+::
+           test -f ${RESULT_DIR}/require_scratch && _check_scratch_fs
+
+
+

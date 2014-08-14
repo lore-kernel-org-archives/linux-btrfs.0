@@ -1,88 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52104 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753634AbaHUGs5 convert rfc822-to-8bit (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:44698 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753902AbaHNNYX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 02:48:57 -0400
-Message-ID: <53F59656.4090404@cn.fujitsu.com>
-Date: Thu, 21 Aug 2014 14:48:54 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Thu, 14 Aug 2014 09:24:23 -0400
+Received: by mail-ig0-f177.google.com with SMTP id hn18so4931084igb.16
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 06:24:23 -0700 (PDT)
 MIME-Version: 1.0
-To: Eryu Guan <guaneryu@gmail.com>, Zach Brown <zab@zabbo.net>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [BUG] cannot mount subvolume with selinux context
-References: <20140819033216.GB3013@dhcp-13-216.nay.redhat.com> <20140819172854.GG429@lenny.home.zabbo.net> <20140820035742.GC3013@dhcp-13-216.nay.redhat.com>
-In-Reply-To: <20140820035742.GC3013@dhcp-13-216.nay.redhat.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CADCGFBWSor1oZ7XzqcJZ4-4XwCS-TbMHmBRzezRi01=SRVjpQA@mail.gmail.com>
+References: <CADCGFBVa42xr+4ie20GupFfZJzteihPNDnr4b_8_8UmfK_0M5w@mail.gmail.com>
+ <CAKcLGm-JPT9XY7pS2Fv_G1RWXyovcYVQeO1WMR3a+DHm_PNoHg@mail.gmail.com>
+ <20130710225454.GJ25386@twin.jikos.cz> <CADCGFBWSor1oZ7XzqcJZ4-4XwCS-TbMHmBRzezRi01=SRVjpQA@mail.gmail.com>
+From: Roger Pack <rogerpack2005@gmail.com>
+Date: Thu, 14 Aug 2014 07:23:53 -0600
+Message-ID: <CADCGFBW8CiRB7j+jsiLtjuFdku24rvnSkENwv27+aDv0tG9=jQ@mail.gmail.com>
+Subject: Fwd: lz4 status?
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
--------- Original Message --------
-Subject: Re: [BUG] cannot mount subvolume with selinux context
-From: Eryu Guan <guaneryu@gmail.com>
-To: Zach Brown <zab@zabbo.net>
-Date: 2014年08月20日 11:57
-> On Tue, Aug 19, 2014 at 10:28:54AM -0700, Zach Brown wrote:
->> On Tue, Aug 19, 2014 at 11:32:16AM +0800, Eryu Guan wrote:
->>> Hi,
->>>
->>> Description of the problem:
->>>
->>> mount btrfs with selinux context, then create a subvolume, the new
->>> subvolume cannot be mounted, even with the same context.
->>>
->>> mkfs -t btrfs /dev/sda5
->>> mount -o context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/btrfs
->>> btrfs subvolume create /mnt/btrfs/subvol
->>> mount -o subvol=subvol,context=system_u:object_r:nfs_t:s0 /dev/sda5 /mnt/test
->> Submit a xfstest?
-> Sure, will do.
+On Wed, Jul 10, 2013 at 4:54 PM, David Sterba <dsterba@suse.cz> wrote:
 >
-> Thanks,
-> Eryu
->>> The security_sb_copy_data() takes out selinux context data to
->>> "secdata", then mount_subvol() calls mount_fs() (via vfs_kern_mount())
->>> again without selinux context, so mount_subvol() fails, which fails
->>> the whole mount.
->>>
->>> Not sure what's the proper fix. Zach suggestted that the fix will
->>> probably be to rework the vfs functions a bit as he said in rh
->>> bugzilla[1].
->> Yeah, I have no idea what'd be preferred here:
->>
->>   - rework the vfs _kern_ mount api to offer one that doesn't mess with
->>     selinux mount options
->>   - add a flag to have the second _kern_ mount ignore selinux (but not
->>     MS_KERNMOUNT?)
->>   - binary data and fs selinux handling?  (like nfs)
-In fact, we can just make btrfs deal with "subvol=" mount option in a 
-new method.
-Current, btrfs handle "subvol=" by call vfs_kern_mount again and use vfs 
-level mount_subtree() to do the path
-search thing.
+> On Sun, Jun 30, 2013 at 12:35:09PM -0500, Mitch Harder wrote:
+> > There's been a parallel effort to incorporate a general set of lz4
+> > patches in the kernel.
+> >
+> > I see these patches are currently queued up in the linux-next tree, so
+> > we may see them in the 3.11 kernel.
+>
+> The patches are now merged into 3.11.
+>
+> > It looks like lz4 and lz4hc will be provided.
+>
+> Regarding HC mode, there are some core compression code changes needed
+> in order to fully utilize the its potential, namely larger chunk size
+> that's compressed at a time. There was some tiny yet measurable gain of
+> HC against ordinary mode compared on current 4k-at-a-time
+> implementation, but the space savings did not justify the speed drop of
+> HC mode.
+>
+> I can't say if the patchset will be ready for 3.12 though.
+>
+> david
 
-But on the other hand, btrfs does not call vfs_kern_mount() when 
-handling default subvolume or "subvolid=" mount,
-so, I think we can do all the path search inside btrfs instead of reuse 
-vfs level functions, and convert "subvol="
-mount option to "subvolid=", which should be selinux friendly now.
-(And in this method mount_subvol() should be called just before 
-get_default_root()).
 
-If I am wrong, please tell me.
-
-BTW, it seems that if mainline kernel accept the patchset which convert 
-"subvolid=" to "subvol=", it will make the
-bug more seriously. :-(
-Thank goddness, the successor patch uses get_path()....
-
-Thanks,
-Qu
->>
->> - z
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+Any update here re: lz4 integration?
+I noticed some people here saying they saw it not available yet?
+http://www.phoronix.com/forums/showthread.php?94912-Btrfs-Gets-Big-Changes-Features-In-Linux-3-14-Kernel
+Cheers!
+-roger-

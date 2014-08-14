@@ -1,16 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ny.voidptr.de ([5.45.110.253]:35143 "EHLO ny.voidptr.de"
+Received: from ny.voidptr.de ([5.45.110.253]:35437 "EHLO ny.voidptr.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753698AbaHNTZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 15:25:05 -0400
+	id S1754251AbaHNVOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Aug 2014 17:14:10 -0400
 From: Nils Steinger <nst@voidptr.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Nils Steinger <nst@voidptr.de>
-Subject: [PATCH] Add options to use a fixed unit for `filesystem df` instead of determining it automatically.
-Date: Thu, 14 Aug 2014 21:24:21 +0200
-Message-Id: <1408044261-11234-2-git-send-email-nst@voidptr.de>
-In-Reply-To: <1408044261-11234-1-git-send-email-nst@voidptr.de>
+Subject: [PATCH v2] Add options to use a fixed unit for `filesystem df` instead of determining it automatically.
+Date: Thu, 14 Aug 2014 23:13:38 +0200
+Message-Id: <1408050818-17184-2-git-send-email-nst@voidptr.de>
+In-Reply-To: <1408050818-17184-1-git-send-email-nst@voidptr.de>
 References: <1408044261-11234-1-git-send-email-nst@voidptr.de>
+ <1408050818-17184-1-git-send-email-nst@voidptr.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -19,11 +20,41 @@ Using the new options -b, -k, -m, and -g, the output unit can be set to bytes, k
 
 Signed-off-by: Nils Steinger <nst@voidptr.de>
 ---
- cmds-filesystem.c | 62 ++++++++++++++++++++++++++++++++++++++++++++++++-------
- utils.c           | 30 +++++++++++++++++++++++++++
- utils.h           |  8 +++++++
- 3 files changed, 93 insertions(+), 7 deletions(-)
 
+v2: Add options to btrfs-filesystem man page. Also removed invalid "[<path>...]" placeholder in the process.
+
+ Documentation/btrfs-filesystem.txt | 14 ++++++++-
+ cmds-filesystem.c                  | 62 +++++++++++++++++++++++++++++++++-----
+ utils.c                            | 30 ++++++++++++++++++
+ utils.h                            |  8 +++++
+ 4 files changed, 106 insertions(+), 8 deletions(-)
+
+diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
+index 0ee79cb..404474d 100644
+--- a/Documentation/btrfs-filesystem.txt
++++ b/Documentation/btrfs-filesystem.txt
+@@ -17,8 +17,20 @@ resizing, defragment.
+ 
+ SUBCOMMAND
+ ----------
+-*df* <path> [<path>...]::
++*df* [-b|-k|-m|-g] <path>::
+ Show space usage information for a mount point.
+++
++By default, all values are scaled to the shortest three digit unit. You can
++use the following options to set a fixed unit for all values:
+++
++-b::::
++Display all values in bytes.
++-k::::
++Display all values in kibibytes.
++-m::::
++Display all values in mebibytes.
++-g::::
++Display all values in gibibytes.
+ 
+ *show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
+ Show the btrfs filesystem with some additional info.
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
 index 306f715..54406a5 100644
 --- a/cmds-filesystem.c

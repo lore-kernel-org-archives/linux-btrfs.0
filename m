@@ -1,68 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:46863 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750786AbaHNEXN convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 00:23:13 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: Large files, nodatacow and fragmentation
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <CADw2B2NnWFY=rOvArTDtnw2jkRe-HqNCcqeB0r80et60euEy3g@mail.gmail.com>
-Date: Wed, 13 Aug 2014 22:23:11 -0600
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <9EB33BE3-FAC0-4AE8-BB95-ABE68C578D47@colorremedies.com>
-References: <CADw2B2Neg6-iG4uwGoW6XPomY4+-1BkUTx-7zPrAZPS6R3pRYg@mail.gmail.com> <20140812011401.568c16e6@natsu> <AC90CAC7-A8F5-4C74-8295-4360A6A8FE45@colorremedies.com> <CADw2B2NnWFY=rOvArTDtnw2jkRe-HqNCcqeB0r80et60euEy3g@mail.gmail.com>
-To: "G. Richard Bellamy" <rbellamy@pteradigm.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:31426 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750737AbaHNEeP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Aug 2014 00:34:15 -0400
+Message-ID: <53EC3D01.1030502@oracle.com>
+Date: Thu, 14 Aug 2014 12:37:21 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+CC: Miao Xie <miaox@cn.fujitsu.com>, Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Subject: Re: bug adding device to seed device, btrfs fi show fails
+References: <29B81ECC-8877-4BBB-9701-1CB5C46717ED@colorremedies.com> <53702B42.8040806@oracle.com> <5371E1E5.1030909@cn.fujitsu.com> <91408049-2586-446C-BD11-D3E33A5ECD27@colorremedies.com>
+In-Reply-To: <91408049-2586-446C-BD11-D3E33A5ECD27@colorremedies.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Aug 13, 2014, at 9:57 PM, "G. Richard Bellamy" <rbellamy@pteradigm.com> wrote:
+Chris,
 
-> On Mon, Aug 11, 2014 at 11:36 AM, G. Richard Bellamy
-> <rbellamy@pteradigm.com> wrote:
->> That being said, how would I determine what the root issue is?
->> Specifically, the qcow2 file in question seems to have increasing
->> fragmentation, even with the No_COW attr.
->> 
->> [1]
->> $ mkfs.btrfs -m raid10 -d raid10 /dev/sda /dev/sdb /dev/sdc /dev/sdd
->> $ mount /dev/sda /mnt
->> $ cd /mnt
->> $ btrfs create subvolume __data
->> $ btrfs create subvolume __data/libvirt
->> $ cd /
->> $ umount /mnt
->> $ mount /dev/sda /var/lib/libvirt
->> $ chattr +C /var/lib/libvirt/images
->> $ cp /run/media/rbellamy/433acf1d-a1a4-4596-a6a7-005e643b24e0/libvirt/images/atlas.qcow2
->> /var/lib/libvirt/images/
->> $ filefrag /var/lib/libvirt/images/atlas.qcow2
->> /var/lib/libvirt/images/atlas.qcow2: 0 extents found
+For the seed replace issues. you have to try this patch set.
+Thanks.
+  https://patchwork.kernel.org/patch/4716371/
 
-Sorta weird, it ought to have at least 1. Or maybe it wasn't sync'd yet from the copy.
+Next, for the failing 'btrfs fi show' issue the following diff
+is the latest. The last attempt was ..
+  [PATCH] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO 
+miss-matched with slots
 
->> [START UP THE VM - DO SOME THINGS]
->> $ filefrag /var/lib/libvirt/images/atlas.qcow2
->> /var/lib/libvirt/images/atlas.qcow2: 12236 extents found
->> [START UP THE VM - DO SOME THINGS]
->> $ filefrag /var/lib/libvirt/images/atlas.qcow2
->> /var/lib/libvirt/images/atlas.qcow2: 34988 extents found
-> 
-> I appreciate the information to date.
+However as Wang mentioned we would need to show both seed and
+sprout together, to make sense to the user.
 
-lsattr /var/lib/libvirt/images/atlas.qcow2
-
-Is the xattr actually in place on that file?
-> 
-> So, I think my question still stands: how can I determine empirically
-> what is causing the fragmentation?
-
-It will fragment somewhat but I can't say that I've seen this much fragmentation with xattr C applied to qcow2. What's the workload? How was the qcow2 created? I recommend -o preallocation=metadata,compat=1.1,lazy_refcounts=on when creating it. My workloads were rather simplistic: OS installs and reinstalls. What's the filesystem being used in the guest that's using the qcow2 as backing?
-
-It might be that your workload is best suited for a preallocated raw file that inherits +C, or even possibly an LV.
+So I have the following fix. which will soon be sent out
+when tests are completed.
 
 
-Chris Murphy
+kernel:
+-------------
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index da73ab3..05dd88b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2725,7 +2725,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_root 
+*root, void __user *arg)
+                 return -ENOMEM;
 
+         mutex_lock(&fs_devices->device_list_mutex);
+-       fi_args->num_devices = fs_devices->num_devices;
++       fi_args->num_devices = fs_devices->total_devices;
+         memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
+
+         list_for_each_entry_safe(device, next, &fs_devices->devices, 
+dev_list) {
+----------------
+
+
+btrfs-progs:
+----------------
+diff --git a/utils.c b/utils.c
+index 8bdc2a7..fa837b9 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1929,12 +1929,29 @@ int get_fs_info(char *path, struct 
+btrfs_ioctl_fs_info_args *fi_args,
+         if (!fi_args->num_devices)
+                 goto out;
+
+-       di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
++       /*
++        * with kernel patch
++        * btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO 
+miss-matched with slots
++        * the kernel now returns total_devices which does not include
++        * replacing device if running. There might be a race condition
++	 * where replace might have been completed before DEVS are
++	 * probed. So we anyway probe the replacing at devid 0
++	 * separately which would return -ENODEV if replace has
++	 * finished.
++        */
++
++       di_args = *di_ret = malloc((fi_args->num_devices + 1) * 
+sizeof(*di_args));
+         if (!di_args) {
+                 ret = -errno;
+                 goto out;
+         }
+
++       /* get the replace target device if it is there */
++       ret = get_device_info(fd, i, &di_args[ndevs]);
++       if (!ret) {
++               ndevs++;
++               fi_args->num_devices++;
++       }
++       i++;
++
+----------------
+
+
+Thanks, Anand

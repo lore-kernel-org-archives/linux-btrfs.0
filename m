@@ -1,48 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32768 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751196AbaHOPiP (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10705 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751063AbaHOQFG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Aug 2014 11:38:15 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7FFcEZ2031944
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Aug 2014 15:38:15 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7FFcErn019438
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Aug 2014 15:38:14 GMT
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7FFcDNl026919
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 Aug 2014 15:38:13 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: show real function name in btrfs workqueue tracepoint
-Date: Fri, 15 Aug 2014 23:38:06 +0800
-Message-Id: <1408117086-1201-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 15 Aug 2014 12:05:06 -0400
+Message-ID: <53EE2FAC.7080704@fb.com>
+Date: Fri, 15 Aug 2014 12:05:00 -0400
+From: Chris Mason <clm@fb.com>
+MIME-Version: 1.0
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] Btrfs: fix task hang under heavy compressed write
+References: <1407829499-21902-1-git-send-email-bo.li.liu@oracle.com> <1408117013-305-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1408117013-305-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use %pf instead of %p, just same as kernel workqueue tracepoints.
+On 08/15/2014 11:36 AM, Liu Bo wrote:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- include/trace/events/btrfs.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+[ snip ]
+> 
+> Besides, there're other cases that can lead to deadlock, but the real problem
+> is that all btrfs workqueue shares one work->func, -- normal_work_helper,
+> so this makes each workqueue to have its own helper function, but only a
+> wraper pf normal_work_helper.
+> 
+> With this patch, I no long hit the above hang.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> v3:
+>   - Adopting Chris's advice, this has each workqueue provide its own helper
+>     function.
+>   - This is rebased on the latest Chris's for-linus branch.
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index e26c541..6c1f897 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1009,7 +1009,7 @@ DECLARE_EVENT_CLASS(btrfs__work,
- 		__entry->normal_work	= &work->normal_work;
- 	),
- 
--	TP_printk("work=%p (normal_work=%p), wq=%p, func=%p, ordered_func=%p,"
-+	TP_printk("work=%p (normal_work=%p), wq=%p, func=%pf, ordered_func=%p,"
- 		  " ordered_free=%p",
- 		  __entry->work, __entry->normal_work, __entry->wq,
- 		   __entry->func, __entry->ordered_func, __entry->ordered_free)
--- 
-1.8.1.4
+This is what I had in mind, thanks Liu! I'll test and queue it up for rc2.
 
+-chris

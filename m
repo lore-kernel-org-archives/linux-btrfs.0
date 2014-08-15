@@ -1,30 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.vavmaster.de ([148.251.133.103]:37609 "EHLO
-	mail.vavmaster.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753178AbaHOKKk (ORCPT
+Received: from relay-out1.mail.masterhost.ru ([83.222.23.61]:28000 "EHLO
+	relay-out1.mail.masterhost.ru" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754384AbaHOKT4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Aug 2014 06:10:40 -0400
-Received: from monitor.ncrc.ru ([212.119.193.219] helo=workstation.localnet)
-	by mail.vavmaster.de with esmtpsa (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256)
-	(Exim 4.84_RC1)
-	(envelope-from <v@piratweb.com>)
-	id 1XIET0-0001A5-Hb
-	for linux-btrfs@vger.kernel.org; Fri, 15 Aug 2014 12:10:38 +0200
-From: Valdis Voronin <v@piratweb.com>
+	Fri, 15 Aug 2014 06:19:56 -0400
+Received: from [UNAVAILABLE] ([212.119.193.219] helo=workstation.localnet)
+	by relay1.mail.masterhost.ru with esmtpa
+	envelope from <vladislav.vorobiev@ncrc.ru>
+	authenticated with vladislav.vorobiev@ncrc.ru
+	message id 1XIEPP-000Lb6-MZ
+	for linux-btrfs@vger.kernel.org; Fri, 15 Aug 2014 14:06:56 +0400
+From: =?utf-8?B?0JLQu9Cw0LTQuNGB0LvQsNCyINCS0L7RgNC+0LHRjNC10LI=?=
+	<vladislav.vorobiev@ncrc.ru>
 To: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs 3.14-2-amd64   btrfs_file_aio_write problem?
-Date: Fri, 15 Aug 2014 14:10:37 +0400
-Message-ID: <2628463.rfvAuWT57X@workstation>
+Date: Fri, 15 Aug 2014 14:06:55 +0400
+Message-ID: <140825759.GofhNo9yzi@workstation>
 In-Reply-To: <2168796.1W5hd7vOnH@stakan>
 References: <2553353.cJGYBglVXM@stakan> <2168796.1W5hd7vOnH@stakan>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="nextPart4145355.A3mK9YvkNr"
+Content-Type: multipart/mixed; boundary="nextPart3245618.dFmHPmrB4X"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a multi-part message in MIME format.
 
---nextPart4145355.A3mK9YvkNr
+--nextPart3245618.dFmHPmrB4X
 Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain; charset="utf-8"
 
@@ -238,7 +239,7 @@ ext
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---nextPart4145355.A3mK9YvkNr
+--nextPart3245618.dFmHPmrB4X
 Content-Disposition: attachment; filename="a.png"
 Content-Transfer-Encoding: base64
 Content-Type: image/png; name="a.png"
@@ -940,5 +941,5 @@ riZJkuo5kEgkCoWCmv1AHbeoN5/6YCJzwDAAGDtgtSgAAAAAAOwD+h4AAAAAALAPiB4AAAAAALAP
 iB4AAAAAALAPiB4AAAAAALAPiB4AAAAAALAPiB4AAAAAALAPiB4AAAAAALAPAhYhAQAAAADALv4/
 /LtVR0SLqDkAAAAASUVORK5CYII=
 
---nextPart4145355.A3mK9YvkNr--
+--nextPart3245618.dFmHPmrB4X--
 

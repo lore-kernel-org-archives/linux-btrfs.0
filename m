@@ -1,48 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f45.google.com ([209.85.219.45]:64111 "EHLO
-	mail-oa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932087AbaHNXQS (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:8957 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750869AbaHOART (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 19:16:18 -0400
-Received: by mail-oa0-f45.google.com with SMTP id i7so1559045oag.32
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 16:16:17 -0700 (PDT)
+	Thu, 14 Aug 2014 20:17:19 -0400
+Message-ID: <53ED517E.9010600@fb.com>
+Date: Thu, 14 Aug 2014 20:17:02 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <08770CD2-AA55-4BC1-B92C-E7D3360399F8@colorremedies.com>
-References: <CADw2B2Neg6-iG4uwGoW6XPomY4+-1BkUTx-7zPrAZPS6R3pRYg@mail.gmail.com>
-	<20140812011401.568c16e6@natsu>
-	<AC90CAC7-A8F5-4C74-8295-4360A6A8FE45@colorremedies.com>
-	<CADw2B2NnWFY=rOvArTDtnw2jkRe-HqNCcqeB0r80et60euEy3g@mail.gmail.com>
-	<9EB33BE3-FAC0-4AE8-BB95-ABE68C578D47@colorremedies.com>
-	<CADw2B2MGyDAvAxrZOML0kX_shdFD6QSyMV9XWxKfJAoZpLXsSQ@mail.gmail.com>
-	<08770CD2-AA55-4BC1-B92C-E7D3360399F8@colorremedies.com>
-Date: Thu, 14 Aug 2014 16:16:17 -0700
-Message-ID: <CADw2B2NJQYn_xkrAebmdu_c-7z7yFNZ1aDFS=jYmQcHfco2d+g@mail.gmail.com>
-Subject: Re: Large files, nodatacow and fragmentation
-From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Marc MERLIN <marc@merlins.org>
+CC: Austin S Hemmelgarn <ahferroin7@gmail.com>, <linux-btrfs@vger.kernel.org>,
+        <jbacik@fb.com>, <takeuchi_satoru@jp.fujitsu.com>
+Subject: Re: btrfs-zero-log fails, can't mount FS
+References: <20140814160902.GA25370@merlins.org> <53ECE953.70009@gmail.com> <20140814172743.GC27531@merlins.org> <53ED321D.1040702@fb.com> <20140814222818.GL27531@merlins.org>
+In-Reply-To: <20140814222818.GL27531@merlins.org>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 14, 2014 at 11:40 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> and there may be a fit for bcache here because you actually would get these random writes committed to stable media much faster in that case, and a lot of work has been done to make this more reliable than battery backed write caches on hardware raid.
 
-umph... heard of bcache, but never looked at it or considered it as an
-option in this scenario. After reading the doco and some of the design
-documents, it's looking like bcache and md/mdadm or LVM could do the
-trick.
 
-The gotchas state clearly that btrfs on top of bcache is not recommended.
+On 08/14/2014 06:28 PM, Marc MERLIN wrote:
+> On Thu, Aug 14, 2014 at 06:03:09PM -0400, Chris Mason wrote:
+>> At least I'll get to buy you a beer this time.
+>  
+> Haha, no worries :)
+> 
+>> Lets just see if the log root is the only problem.  This will get you
+>> through btrfs-zero-log
+> 
+> It sure did, thanks much for the patch.
+> It output absolutely nothing instead of the wanted got lines it usually
+> spits out, and the filesystem mounted without problems.
+> 
+> I'll add this better btrfs-zero-log in my initrd for next time.
+> 
+> Would it be ok to modify btrfs-zero-log to simply remove the return -EIO
+> line?
+> 
+> Does it really matter whether it can setup the log root tree when it's being
+> asked to nuke the log?
 
-However, can bcache be put 'in front' of a btrfs raid10 volume? I
-think not, since btrfs volumes are not presented as individual block
-devices, instead you've got several block devices (e.g. /dev/sda and
-/dev/sdb are in a btrfs raid1, and can be seen individually by the
-OS)... however I wish it could, since bcache "...turns random writes
-into sequential writes", which solve entirely the problem which
-prompts the nocow option in btrfs.
+Yes, btrfs-zero log doesn't need that root to be read.  I'll fix it up,
+really glad it worked for you.
 
-Much to think on here.
-
--rb
+-chris

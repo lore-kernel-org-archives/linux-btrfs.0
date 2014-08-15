@@ -1,34 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:52247 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751295AbaHOKAj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Aug 2014 06:00:39 -0400
-Date: Fri, 15 Aug 2014 10:29:50 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: "Luis R. Rodriguez" <mcgrof@do-not-panic.com>
-Cc: clm@fb.com, jbacik@fb.com, hch@infradead.org,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, jeffm@suse.com, fdmanana@suse.com,
-        "Luis R. Rodriguez" <mcgrof@suse.com>
-Subject: Re: [RFC v3 0/2] vfs / btrfs: add support for ustat()
-Message-ID: <20140815092950.GZ18016@ZenIV.linux.org.uk>
-References: <1408071538-14354-1-git-send-email-mcgrof@do-not-panic.com>
+Received: from mx1.redhat.com ([209.132.183.28]:36824 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750846AbaHOOac (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Aug 2014 10:30:32 -0400
+Date: Fri, 15 Aug 2014 16:30:21 +0200 (CEST)
+From: =?ISO-8859-15?Q?Luk=E1=A8_Czerner?= <lczerner@redhat.com>
+To: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, util-linux@vger.kernel.org
+cc: Ric Wheeler <rwheeler@redhat.com>, Hannes Reinecke <hare@suse.de>
+Subject: 2014 Linux Plumbers Call for File and Storage Systems Microconference
+ Proposals
+Message-ID: <alpine.LFD.2.00.1408151618160.2220@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1408071538-14354-1-git-send-email-mcgrof@do-not-panic.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 14, 2014 at 07:58:56PM -0700, Luis R. Rodriguez wrote:
+Submission for Microconferences discussion topics and BOFs are now open [1]
+and as a File and Storage Systems [2] microconference leads we'd like to
+invite you to submit your proposals.
 
-> Christoph had noted that this seemed associated to the problem
-> that the btrfs uses different assignments for st_dev than s_dev,
-> but much as I'd like to see that changed based on discussions so
-> far its unclear if this is going to be possible unless strong
-> commitment is reached.
+You can find the instructions on how to propose a discussion topic here:
 
-Explain, please.  Whose commitment and commitment to what, exactly?
-Having different ->st_dev values for different files on the same
-fs is a bloody bad idea; why does btrfs do that at all?  If nothing else,
-it breaks the usual "are those two files on the same fs?" tests...
+http://www.linuxplumbersconf.org/2014/how-to-submit-microconference-discussions-topics/
+
+The Linux Plumbers Conference has officially sold out all of the places, so
+we encourage submissions for our file and storage microconference from people
+who have already registered.  We will work to get exceptionally compelling
+session leaders registered, but our ability is limited, so please submit your
+topics early.
+
+Deadline for submissions is Friday, August 30th at midnight and we will
+announce the topics on Monday, September 1st.
+
+If you have any questions, please let us know.
+
+Thanks!
+-Lukas
+
+-- 
+[1] http://www.linuxplumbersconf.org/2014/submissions-for-microconferences-discussion-topics-and-bofs-are-now-open/
+[2] http://www.linuxplumbersconf.org/2014/ocw/events/LPC2014/tracks/303
+[3] http://www.linuxplumbersconf.org/2014/how-to-submit-microconference-discussions-topics/
+[4] http://wiki.linuxplumbersconf.org/2014:file_and_storage_systems

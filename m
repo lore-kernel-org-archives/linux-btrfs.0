@@ -1,66 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f179.google.com ([209.85.217.179]:61706 "EHLO
-	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752108AbaHOCs2 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:56510 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750771AbaHOELy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 22:48:28 -0400
+	Fri, 15 Aug 2014 00:11:54 -0400
+Date: Thu, 14 Aug 2014 21:11:53 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-zero-log fails, can't mount FS
+Message-ID: <20140815041153.GF14965@merlins.org>
+References: <20140814160902.GA25370@merlins.org> <53ECE953.70009@gmail.com> <20140814172743.GC27531@merlins.org> <53ED321D.1040702@fb.com> <20140814222818.GL27531@merlins.org> <53ED517E.9010600@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20140717174940.GR10393@wotan.suse.de>
-References: <1405546678-7846-1-git-send-email-mcgrof@do-not-panic.com>
- <20140717080301.GA14263@infradead.org> <20140717174940.GR10393@wotan.suse.de>
-From: "Luis R. Rodriguez" <mcgrof@do-not-panic.com>
-Date: Thu, 14 Aug 2014 22:48:05 -0400
-Message-ID: <CAB=NE6WaQqp52MfZfjcShAUchj-1B+ZMsF1r6HabSiUxFLb7jQ@mail.gmail.com>
-Subject: Re: [RFC v2 0/2] vfs / btrfs: add support for ustat()
-To: Christoph Hellwig <hch@infradead.org>
-Cc: "Luis R. Rodriguez" <mcgrof@do-not-panic.com>,
-        Al Viro <viro@zeniv.linux.org.uk>, Chris Mason <clm@fb.com>,
-        jbacik@fb.com, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Jeff Mahoney <jeffm@suse.com>, fdmanana@suse.com
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53ED517E.9010600@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 17, 2014 at 1:49 PM, Luis R. Rodriguez <mcgrof@suse.com> wrote:
-> On Thu, Jul 17, 2014 at 01:03:01AM -0700, Christoph Hellwig wrote:
->> On Wed, Jul 16, 2014 at 02:37:56PM -0700, Luis R. Rodriguez wrote:
->> > From: "Luis R. Rodriguez" <mcgrof@suse.com>
->> >
->> > This makes the implementation simpler by stuffing the struct on
->> > the driver and just letting the driver iinsert it and remove it
->> > onto the sb list. This avoids the kzalloc() completely.
->>
->> Again, NAK.  Make btrfs report the proper anon dev_t in stat and
->> everything will just work.
->
-> Let's consider this userspace case:
->
->         struct stat buf;
->         struct ustat ubuf;
->
->         /* Find a valid device number */
->         if (stat("/", &buf)) {
->                 fprintf(stderr, "Stat failed: %s\n", strerror(errno));
->                 return 1;
->         }
->
->         /* Call ustat on it */
->         if (ustat(buf.st_dev, &ubuf)) {
->                 fprintf(stderr, "Ustat failed: %s\n", strerror(errno));
->                 return 1;
->         }
->
-> In the btrfs case it has an inode op for getattr, that is used and we set
-> the dev to anonymous dev_t. Later ustat will use user_get_super() which
-> will only be able to work with a userblock if the super block's only
-> dev_t is assigned to it. Since we have many anonymous to dev_t mapping
-> to super block though we can't complete the search for btfs and ustat()
-> fails with -EINVAL. The series expands the number of dev_t's that a super
-> block can have and allows this search to complete.
+On Thu, Aug 14, 2014 at 08:17:02PM -0400, Chris Mason wrote:
+> Yes, btrfs-zero log doesn't need that root to be read.  I'll fix it up,
 
-Any further advice? I'll submit a v3 for RFC with some small change
-for a fix for stress testing identified by Filipe Manana.
+Cool, thanks for fixing that, this one was easy considering :)
 
-  Luis
+> really glad it worked for you.
+
+You and me both :) 
+Your timely reply today was very much appreciated.
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

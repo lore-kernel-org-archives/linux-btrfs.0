@@ -1,36 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:56510 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750771AbaHOELy (ORCPT
+Received: from bombadil.infradead.org ([198.137.202.9]:55945 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753581AbaHOG3C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Aug 2014 00:11:54 -0400
-Date: Thu, 14 Aug 2014 21:11:53 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-zero-log fails, can't mount FS
-Message-ID: <20140815041153.GF14965@merlins.org>
-References: <20140814160902.GA25370@merlins.org> <53ECE953.70009@gmail.com> <20140814172743.GC27531@merlins.org> <53ED321D.1040702@fb.com> <20140814222818.GL27531@merlins.org> <53ED517E.9010600@fb.com>
+	Fri, 15 Aug 2014 02:29:02 -0400
+Date: Thu, 14 Aug 2014 23:28:56 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: "Luis R. Rodriguez" <mcgrof@do-not-panic.com>
+Cc: Christoph Hellwig <hch@infradead.org>, Al Viro <viro@zeniv.linux.org.uk>,
+        Chris Mason <clm@fb.com>, jbacik@fb.com, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>, fdmanana@suse.com
+Subject: Re: [RFC v2 0/2] vfs / btrfs: add support for ustat()
+Message-ID: <20140815062856.GA27487@infradead.org>
+References: <1405546678-7846-1-git-send-email-mcgrof@do-not-panic.com>
+ <20140717080301.GA14263@infradead.org>
+ <20140717174940.GR10393@wotan.suse.de>
+ <CAB=NE6WaQqp52MfZfjcShAUchj-1B+ZMsF1r6HabSiUxFLb7jQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53ED517E.9010600@fb.com>
+In-Reply-To: <CAB=NE6WaQqp52MfZfjcShAUchj-1B+ZMsF1r6HabSiUxFLb7jQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 14, 2014 at 08:17:02PM -0400, Chris Mason wrote:
-> Yes, btrfs-zero log doesn't need that root to be read.  I'll fix it up,
+On Thu, Aug 14, 2014 at 10:48:05PM -0400, Luis R. Rodriguez wrote:
+> Any further advice? I'll submit a v3 for RFC with some small change
+> for a fix for stress testing identified by Filipe Manana.
 
-Cool, thanks for fixing that, this one was easy considering :)
+The advice is to stop setting different dev_t values for different
+files in btrfs.
 
-> really glad it worked for you.
-
-You and me both :) 
-Your timely reply today was very much appreciated.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  

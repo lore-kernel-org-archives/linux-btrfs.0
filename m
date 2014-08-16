@@ -1,78 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38736 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751415AbaHMAO6 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:29632 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751878AbaHRIQg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 20:14:58 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7D0EuEd008559
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:57 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7D0EtiW009074
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:56 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7D0Etfb023880
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 00:14:55 GMT
-From: Guangyu Sun <guangyu.sun@oracle.com>
+	Mon, 18 Aug 2014 04:16:36 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: don't zero dev if dev size is smaller than -r rootdir size
-Date: Tue, 12 Aug 2014 17:13:55 -0700
-Message-Id: <1407888835-15739-2-git-send-email-guangyu.sun@oracle.com>
-In-Reply-To: <1407888835-15739-1-git-send-email-guangyu.sun@oracle.com>
-References: <1407888835-15739-1-git-send-email-guangyu.sun@oracle.com>
+Cc: wangsl.fnst@cn.fujitsu.com, lists@colorremedies.com
+Subject: [PATCH] btrfs-progs: do a separate probe for _transient_ replacing device As mentioned in the kernel patch   btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO miss-matched with slots
+Date: Sat, 16 Aug 2014 11:08:08 +0800
+Message-Id: <1408158488-4316-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>
+References: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even if the size of rootdir given by -r option is larger than the
-specified partition, zero_output_file() is still called. It will take
-time to fill up the partition with zero if the partition is big, and
-end up with an EIO.
+The count as returned by BTRFS_IOC_FS_INFO is the number of slots that
+btrfs-progs would allocate for the BTRFS_IOC_DEV_INFO ioctl. Since
+BTRFS_IOC_DEV_INFO would loop across the seed devices, So its better
+ioctl BTRFS_IOC_FS_INFO returns the total_devices instead of num_devices.
 
-The size should be checked before zeroing the partition.
+The above mentioned patch just does that. That is, it returns
+total_devices instead of num_devices.
 
-Signed-off-by: Guangyu Sun <guangyu.sun@oracle.com>
+Which means we need to probe for the replacing device separately.
+
+This patch will probe for the replacing device separately.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- mkfs.c |   19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ utils.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index 71aea40..ea61180 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1475,12 +1475,31 @@ int main(int ac, char **av)
- 			exit(1);
- 		}
- 	} else {
-+		struct stat st;
-+		u64 size;
-+
- 		fd = open_target(file);
- 		if (fd < 0) {
- 			fprintf(stderr, "unable to open the %s\n", file);
- 			exit(1);
- 		}
+diff --git a/utils.c b/utils.c
+index 8bdc2a7..fa837b9 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1929,12 +1929,29 @@ int get_fs_info(char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 	if (!fi_args->num_devices)
+ 		goto out;
  
-+		if (fstat(fd, &st) < 0) {
-+			fprintf(stderr, "unable to stat %s\n", file);
-+			exit(1);
-+		}
+-	di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
++	/*
++	 * with kernel patch
++	 * btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO miss-matched with slots
++	 * the kernel now returns total_devices which does not include
++	 * replacing device if running.
++	 * As we need to get dev info of the replace device if it is running,
++	 * so just add one to fi_args->num_devices.
++	 */
 +
-+		size = btrfs_device_size(fd, &st);
-+		if (size == 0) {
-+			fprintf(stderr, "unable to find %s size\n", file);
-+			exit(1);
-+		}
++	di_args = *di_ret = malloc((fi_args->num_devices + 1) * sizeof(*di_args));
+ 	if (!di_args) {
+ 		ret = -errno;
+ 		goto out;
+ 	}
+ 
++	/* get the replace target device if it is there */
++	ret = get_device_info(fd, i, &di_args[ndevs]);
++	if (!ret) {
++		ndevs++;
++		fi_args->num_devices++;
++	}
++	i++;
 +
-+		if (size < block_count) {
-+			fprintf(stderr, "%s is smaller than requested size\n", file);
-+			exit(1);
-+		}
-+
- 		first_file = file;
- 		ret = zero_output_file(fd, block_count, sectorsize);
- 		if (ret) {
+ 	for (; i <= fi_args->max_id; ++i) {
+ 		BUG_ON(ndevs >= fi_args->num_devices);
+ 		ret = get_device_info(fd, i, &di_args[ndevs]);
 -- 
-1.7.9.5
+2.0.0.153.g79dcccc
 

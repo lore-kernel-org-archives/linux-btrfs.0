@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fw5a-t3e-f1b.wadns.net ([41.185.62.27]:28146 "EHLO
-	fw5a.wadns.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751155AbaHMM0Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Aug 2014 08:26:25 -0400
-Message-ID: <53EB5962.2050908@swiftspirit.co.za>
-Date: Wed, 13 Aug 2014 14:26:10 +0200
-From: Brendan Hide <brendan@swiftspirit.co.za>
-MIME-Version: 1.0
-To: David Pottage <david@chrestomanci.org>
-CC: Austin S Hemmelgarn <ahferroin7@gmail.com>, Vimal A R <arvimal@yahoo.in>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36288 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751652AbaHQVRg convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 17 Aug 2014 17:17:36 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:60972 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XJ7pX-001j97-BC
+	for linux-btrfs@vger.kernel.org; Sun, 17 Aug 2014 15:17:35 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Ideas for a feature implementation
-References: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com> <53E83035.8010603@gmail.com> <53EA3852.2000607@chrestomanci.org>
-In-Reply-To: <53EA3852.2000607@chrestomanci.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <53EB4581.8050104@chrestomanci.org>
+Date: Sun, 17 Aug 2014 15:17:35 -0600
+Message-Id: <6F8832C7-D1D2-4D73-A304-6FAC6C4C54C9@colorremedies.com>
+References: <1407698476.20187.YahooMailNeo@web192906.mail.sg3.yahoo.com> <53E9F3D6.9040502@gmail.com> <53EB4581.8050104@chrestomanci.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014/08/12 17:52, David Pottage wrote:
->
-> [snip] ... if it does not then the file-system has broken the contract 
-> to secure delete a file when you asked it to.
-This is a technicality - and it has not necessarily "broken the contract".
 
-I think the correct thing to do would be to securely delete the metadata 
-referring to that file. That would satisfy the concept that there is no 
-evidence that the file ever existed in that location. The fact that it 
-actually does still legitimately exist elsewhere is not a caveat - it is 
-simply acting within standard behaviour.
+On Aug 13, 2014, at 5:01 AM, David Pottage <david@chrestomanci.org> wrote:
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+> At present, you can write RAID 5 or 6 data, but if anything goes wrong, btrfs cannot use the parity information to help you get your data back, so in general you are better off with RAID 1 or 10.
 
+Btrfs RAID5/6 normally mounted will reconstruct data from parity if there's a data checksum mismatch indicating data block(s) are corrupt. It'll also reconstruct from parity in the case of degraded mounts, and when doing a balance. What's missing is scrub.
+
+
+> Also, I don't think I/O done in parallel so you get no speed advantage from having multiple discs either.
+
+Hmm I thought that was just single and raid1?
+
+
+Chris Murphy

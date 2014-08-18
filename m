@@ -1,70 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from incomingmail.riverbed.com ([208.70.196.45]:50602 "EHLO
-	smtp1.riverbed.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751563AbaHRRiS convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Aug 2014 13:38:18 -0400
-From: Ming Lei <Ming.Lei@riverbed.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: fs_mark test on btrfs on 3.16.0-rc6+ #1 SMP
-Date: Mon, 18 Aug 2014 17:38:17 +0000
-Message-ID: <2CE44BD3DBCF9541909CCB42F11CA3923A0B896B@sfo1exc-mbxp08.nbttech.com>
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from cantor2.suse.de ([195.135.220.15]:39515 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752026AbaHRVBT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Aug 2014 17:01:19 -0400
+Date: Mon, 18 Aug 2014 14:01:17 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>
+Subject: [PATCH] btrfs: don't go readonly on existing qgroup items
+Message-ID: <20140818210117.GB2203@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_drop_snapshot() leaves subvolume qgroup items on disk after
+completion. This can cause problems with snapshot creation. If a new
+snapshot tries to claim the deleted subvolumes id, btrfs will get -EEXIST
+from add_qgroup_item() and go read-only. The following commands will
+reproduce this problem (assume btrfs is on /dev/sda and is mounted at
+/btrfs)
 
-Hi,
+mkfs.btrfs -f /dev/sda
+mount -t btrfs /dev/sda /btrfs/
+btrfs quota enable /btrfs/
+btrfs su sna /btrfs/ /btrfs/snap
+btrfs su de /btrfs/snap
+sleep 45
+umount /btrfs/
+mount -t btrfs /dev/sda /btrfs/
 
-I ran the fs_mark test on a single empty hard drive. After the test, the df -h results are:
+We can fix this by catching -EEXIST in add_qgroup_item() and
+initializing the existing items. We have the problem of orphaned
+relation items being on disk from an old snapshot but that is outside
+the scope of this patch.
 
-/dev/sdk1             917G   39G  832G   5% /ext4
-/dev/sdj1             932G   53G  850G   6% /btrfs
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+---
+ fs/btrfs/qgroup.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-The test result for btrfs shows it ran 15 hours. Note there is no file/dir remove operation which I knew very slow compared with ext4.
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index b497498..8477d33 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -551,9 +551,15 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
+ 	key.type = BTRFS_QGROUP_INFO_KEY;
+ 	key.offset = qgroupid;
+ 
++	/*
++	 * Avoid a transaction abort by catching -EEXIST here. In that
++	 * case, we proceed by re-initializing the existing structure
++	 * on disk.
++	 */
++
+ 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
+ 				      sizeof(*qgroup_info));
+-	if (ret)
++	if (ret && ret != -EEXIST)
+ 		goto out;
+ 
+ 	leaf = path->nodes[0];
+@@ -572,7 +578,7 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
+ 	key.type = BTRFS_QGROUP_LIMIT_KEY;
+ 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
+ 				      sizeof(*qgroup_limit));
+-	if (ret)
++	if (ret && ret != -EEXIST)
+ 		goto out;
+ 
+ 	leaf = path->nodes[0];
+-- 
+1.8.4.5
 
-[root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 1000 -N 1000 -d /btrfs/ -t 10;date
-Mon Aug 11 11:32:54 PDT 2014
-
-#  /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /btrfs/  -t  10 
-#             Version 3.3, 10 thread(s) starting at Mon Aug 11 11:32:54 2014
-#             Sync method: INBAND FSYNC: fsync() per file in write loop.
-#             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
-#             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
-#             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
-#             App overhead is time in microseconds spent in the test not doing file writing related system calls.
-#             All system call times are reported in microseconds
-FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
-     8     10000000         4096        184.0        155517800       33      372    93743        7       16     3094    16450    54015  5420340        0        0        0        1        4     7777        0        0        0
-Tue Aug 12 02:40:01 PDT 2014
-
-For hours, the disk utilization was around 95% and cpu utilization for all 12 cores was very low and only one core showed around 26%wa.
-
-
-To compare with Ext4:
-The test for ext4 on a same model of hard drive ran 2.5 hours.  
-
-[root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 1000 -N 1000 -d /ext4/ -t 10;date
-Fri Aug  8 17:13:56 PDT 2014
-#  /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /ext4/  -t  10 
-#             Version 3.3, 10 thread(s) starting at Fri Aug  8 17:13:56 2014
-#             Sync method: INBAND FSYNC: fsync() per file in write loop.
-#             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
-#             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
-#             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
-#             App overhead is time in microseconds spent in the test not doing file writing related system calls.
-#             All system call times are reported in microseconds.
-
-FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
-     9     10000000         4096        105.0        156950153       19      449  1741759        6       15  2069984    32368    94751  2044364        0        0        0        1        4     4149        0        0        0
-Sat Aug  9 19:41:14 PDT 2014
-
-Is it a known issue with btrfs or do I need to adjust the default parameters for btrfs (I remember use the default to make btrfs)? 
-
-Mount command shows:
-/dev/sdk1 on /ext4 type ext4 (rw,relatime,seclabel,data=ordered)
-/dev/sdj1 on /btrfs type btrfs (rw,relatime,seclabel,nospace_cache)
-
-Thanks
-Ming

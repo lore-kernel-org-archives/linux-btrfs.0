@@ -1,233 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:56225 "EHLO mout.gmx.net"
+Received: from plane.gmane.org ([80.91.229.3]:43202 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750826AbaHRJZb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Aug 2014 05:25:31 -0400
-Received: from fb07-iapwap2.localnet ([134.176.19.122]) by mail.gmx.com
- (mrgmx001) with ESMTPSA (Nemesis) id 0MMkDH-1XIVJW3Kn9-008Xx8 for
- <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 11:25:29 +0200
-From: Marc Dietrich <marvin24@gmx.de>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: btrfs restore memory corruption (bug: 82701)
-Date: Mon, 18 Aug 2014 11:25:28 +0200
-Message-ID: <2058629.ulFxBAG3Lx@fb07-iapwap2>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+	id S1751676AbaHRSQs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Aug 2014 14:16:48 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XJRU3-0002uG-6Z
+	for linux-btrfs@vger.kernel.org; Mon, 18 Aug 2014 20:16:43 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 20:16:43 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 20:16:43 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: Putting very big and small files in one subvolume?
+Date: Mon, 18 Aug 2014 19:16:20 +0100
+Message-ID: <lstftk$tmt$1@ger.gmane.org>
+References: <CAH-HCWVDtPv9gYxpcA4drK=FDes_0z8QTxqOBcocWf9T_b4tyQ@mail.gmail.com> <pan$df1ba$a20420a2$2ac33113$90ec0a1@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$df1ba$a20420a2$2ac33113$90ec0a1@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Good questions and already good comment given.
 
-I did a checkout of the latest btrfs progs to repair my damaged filesystem. 
-Running btrfs restore gives me several failed to inflate: -6 and crashes with 
-some memory corruption. I ran it again with valgrind and got:
 
-valgrind --log-file=x2 -v --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
+For another view...
 
-==8528== Memcheck, a memory error detector
-==8528== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
-==8528== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright info
-==8528== Command: btrfs restore /dev/sda9 /mnt/backup
-==8528== Parent PID: 8453
-==8528== 
-==8528== Syscall param pwrite64(buf) points to uninitialised byte(s)
-==8528==    at 0x59BE3C3: __pwrite_nocancel (in /lib64/libpthread-2.18.so)
-==8528==    by 0x41F22F: search_dir (cmds-restore.c:392)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x66956a0 is 7,056 bytes inside a block of size 8,192 
-alloc'd
-==8528==    at 0x4C277AB: malloc (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x41EEAD: search_dir (cmds-restore.c:316)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528== 
-==8528== Invalid read of size 1
-==8528==    at 0x4C2BF15: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x684c186 is 1,110 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528== 
-==8528== Invalid read of size 8
-==8528==    at 0x4C2BF40: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x684c178 is 1,096 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528== 
-==8528== Invalid read of size 8
-==8528==    at 0x4C2BF52: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x684c168 is 1,080 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528== 
-==8528== Invalid read of size 1
-==8528==    at 0x4C2BFE4: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x6a385f8 is 2,680 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528== 
-==8528== Invalid read of size 2
-==8528==    at 0x4C2BFA0: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x6b0bfb8 is 632 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
-==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
-==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528== 
-==8528== Invalid read of size 2
-==8528==    at 0x4C2BFB3: memcpy@@GLIBC_2.14 (in 
-/usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-==8528==    by 0x4043FE: main (btrfs.c:286)
-==8528==  Address 0x6b0bfb4 is 628 bytes inside a block of size 4,224 free'd
-==8528==    at 0x4C28ADC: free (in /usr/lib64/valgrind/vgpreload_memcheck-
-amd64-linux.so)
-==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
-==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
-==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-==8528== 
-==8528== 
-==8528== HEAP SUMMARY:
-==8528==     in use at exit: 0 bytes in 0 blocks
-==8528==   total heap usage: 260,452 allocs, 260,452 frees, 278,189,550 bytes 
-allocated
-==8528== 
-==8528== All heap blocks were freed -- no leaks are possible
-==8528== 
-==8528== For counts of detected and suppressed errors, rerun with: -v
-==8528== Use --track-origins=yes to see where uninitialised values come from
-==8528== ERROR SUMMARY: 16597 errors from 7 contexts (suppressed: 2 from 2)
+On 17/08/14 13:31, Duncan wrote:
+> Shriramana Sharma posted on Sun, 17 Aug 2014 14:26:06 +0530 as excerpted:
+> 
+>> Hello. One more Q re generic BTRFS behaviour.
+>> https://btrfs.wiki.kernel.org/index.php/Main_Page specifically
+>> advertises BTRFS's "Space-efficient packing of small files".
+>>
+>> So far (on ext3/4) I have been using two partitions for small/regular
+>> files (like my source code repos, home directory with its hidden config
+>> subdirectories etc) and big files (like downloaded Linux ISOs,
+>> VMs etc) under some sort of understanding that this will help curb
+>> fragmentation...
 
-see: https://bugzilla.kernel.org/show_bug.cgi?id=82701
+The cases of pathological fragmentation by btrfs (for 'database-style'
+files and VM image files especially) have been mentioned, as have the
+use of nocow and/or using separate subvolumes to reduce or slow down the
+buildup of the fragmentation.
 
-Marc
+systemd logging even bulldozed blindly into that one spectacularly!...
 
-p.s.
 
-I wonder if this list should be autosubscribed to btrfs related bugs
+There is now a defragment option. However, that does not scale well for
+large or frequently rewritten files and you gamble how much IO bandwidth
+you can afford to lose rewriting *entire* files.
+
+The COW fragmentation problem is not going to go away. Also, there is
+quite a high requirement for user awareness to specially mark
+directories/files as nocow. And yet then, that still does not work well
+if multiple snapshots are being taken...!
+
+
+Could a better and more complete fix be to automatically defragment say
+just x4 the size being written for a file segment?
+
+Also, for the file segment being defragged, abandon any links to other
+snapshots to in effect deliberately replicate the data where appropriate
+so that data segment is fully defragged.
+
+
+
+>> In any case, since BTRFS effectively discourages usage of separate
+>> partitions to take advantage of subvolumes etc, and given the above
+>> claim to the FS automatically handling small files efficiently, I wonder
+>> if it makes sense any longer to create separate subvolumes for such
+>> big/small files as I describe in my use case?
+> 
+> It's worth noting that btrfs subvolumes are a reasonably lightweight 
+> construct, comparable enough to ordinary subdirectories that they're 
+> presented that way when browsing a parent subvolume, and there was 
+> actually discussion of making subvolumes and subdirs the exact same 
+> thing, effectively turning all subdirs into subvolumes.
+> 
+> As it turns out that wasn't feasible due not to btrfs limitations, but 
+> (as I understand it) to assumptions about subdirectories vs. mountable 
+> entities (subvolumes) built into the Linux POSIX and VFS levels...
+
+Due to namespaces and inode number spaces?...
+
+
+
+> OTOH, I tend to be rather more of an independent partition booster than 
+> many.  The biggest reason for that is the too many eggs in one basket 
+> problem.  Fully separate filesystems on separate partitions...
+
+I do so similarly myself. A good scheme that I have found to work well
+for my cases is to have separate partitions for:
+
+/boot
+/var
+/var/log
+/
+/usr
+/home
+/mnt/data...
+
+And all the better and easy to do using GPT partition tables.
+
+The one aspect to all that is that you can protect your system becoming
+jammed by suffering a full disk for whatever reason and all without
+needing to resort to quotas. So for example, rogue logging can fill up
+/var/log and you can still use the system and be able to easily tidy
+things up.
+
+However, that scheme does also require that you have a good idea of what
+partition sizes you will need right from when first set up.
+
+You can 'cheat' and gain flexibility at the expense of HDD head seek
+time by cobbling together LVM volumes as and when needed to resize
+whichever filesystem.
+
+
+Which is where btrfs comes into play in that if you can trust to not
+lose all your eggs to btrfs corruption, you can utilise your partition
+scheme with subvolumes and quotas and allow the intelligence in btrfs to
+make everything work well even if you change what size (quota) you want
+for a subvolume. The ENTIRE disk (no partition table) is all btrfs.
+
+Special NOTE: Myself, I consider btrfs *quotas* to be still very
+experimental at the moment and not to be used with valued data!
+
+
+
+Other big plusses for btrfs for me are the raid and snapshots.
+
+The killer though is for how robust the filesystem is against corruption
+and random data/hardware failure.
+
+btrfsck?
+
+
+Always keep multiple backups!
+
+Regards,
+Martin
+
+
+
+
 

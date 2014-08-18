@@ -1,29 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37685 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:57061 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754753AbaHNVIj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 17:08:39 -0400
-Date: Thu, 14 Aug 2014 23:08:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Roger Pack <rogerpack2005@gmail.com>
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: lz4 status?
-Message-ID: <20140814210837.GM1553@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <CADCGFBVa42xr+4ie20GupFfZJzteihPNDnr4b_8_8UmfK_0M5w@mail.gmail.com>
- <CAKcLGm-JPT9XY7pS2Fv_G1RWXyovcYVQeO1WMR3a+DHm_PNoHg@mail.gmail.com>
- <20130710225454.GJ25386@twin.jikos.cz>
- <CADCGFBWSor1oZ7XzqcJZ4-4XwCS-TbMHmBRzezRi01=SRVjpQA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CADCGFBWSor1oZ7XzqcJZ4-4XwCS-TbMHmBRzezRi01=SRVjpQA@mail.gmail.com>
+	id S1752353AbaHRKWs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Aug 2014 06:22:48 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id BAD0FABF3
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 Aug 2014 10:22:46 +0000 (UTC)
+From: David Disseldorp <ddiss@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: David Disseldorp <ddiss@suse.de>
+Subject: [PATCH v2] btrfs-progs: fix typo in subvol list usage
+Date: Mon, 18 Aug 2014 12:22:35 +0200
+Message-Id: <1408357355-15053-1-git-send-email-ddiss@suse.de>
+In-Reply-To: <1397669690-11950-1-git-send-email-ddiss@suse.de>
+References: <1397669690-11950-1-git-send-email-ddiss@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 14, 2014 at 07:17:29AM -0600, Roger Pack wrote:
-> Any update here re: lz4 integration?
-> I noticed some people here saying they saw it not available yet?
-> http://www.phoronix.com/forums/showthread.php?94912-Btrfs-Gets-Big-Changes-Features-In-Linux-3-14-Kernel
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ Documentation/btrfs-subvolume.txt | 2 +-
+ cmds-subvolume.c                  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-https://btrfs.wiki.kernel.org/index.php/FAQ#Will_btrfs_support_LZ4.3F
+diff --git a/Documentation/btrfs-subvolume.txt b/Documentation/btrfs-subvolume.txt
+index a519131..c8b9928 100644
+--- a/Documentation/btrfs-subvolume.txt
++++ b/Documentation/btrfs-subvolume.txt
+@@ -99,7 +99,7 @@ print the ogeneration of the subvolume, aliases: ogen or origin generation.
+ -g::::
+ print the generation of the subvolume.
+ -o::::
+-print only subvolumes bellow specified <path>.
++print only subvolumes below the specified <path>.
+ -u::::
+ print the UUID of the subvolume.
+ -q::::
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 5e821c7..75a7385 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -390,7 +390,7 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"             to the given <path>",
+ 	"-c           print the ogeneration of the subvolume",
+ 	"-g           print the generation of the subvolume",
+-	"-o           print only subvolumes bellow specified path",
++	"-o           print only subvolumes below the specified path",
+ 	"-u           print the uuid of subvolumes (and snapshots)",
+ 	"-q           print the parent uuid of the snapshots",
+ 	"-t           print the result as a table",
+-- 
+1.8.4.5
+

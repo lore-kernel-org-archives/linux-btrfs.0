@@ -1,68 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailsec104.isp.belgacom.be ([195.238.20.100]:37240 "EHLO
-	mailsec104.isp.belgacom.be" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751968AbaHRQxK convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Aug 2014 12:53:10 -0400
-Date: Mon, 18 Aug 2014 18:53:08 +0200 (CEST)
-From: Fabian Frederick <fabf@skynet.be>
-Reply-To: Fabian Frederick <fabf@skynet.be>
-To: Zach Brown <zab@zabbo.net>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Message-ID: <749953430.240415.1408380788296.open-xchange@webmail.nmp.skynet.be>
-In-Reply-To: <20140805213214.GH18659@lenny.home.zabbo.net>
-References: <1405451837-8235-1-git-send-email-fabf@skynet.be> <20140716172021.GA10833@lenny.home.zabbo.net> <1762701571.679094.1405622254558.open-xchange@webmail.nmp.skynet.be> <20140717190152.GB24196@lenny.home.zabbo.net> <20140802142449.15f4cfc2c2821e90e04e175e@skynet.be> <20140804183158.GA18659@lenny.home.zabbo.net> <2069847253.202465.1407230425329.open-xchange@webmail.nmp.skynet.be> <20140805213214.GH18659@lenny.home.zabbo.net>
-Subject: Re: [PATCH 1/1] Btrfs: fix sparse warning
+Received: from incomingmail.riverbed.com ([208.70.196.45]:50602 "EHLO
+	smtp1.riverbed.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751563AbaHRRiS convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Aug 2014 13:38:18 -0400
+From: Ming Lei <Ming.Lei@riverbed.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: fs_mark test on btrfs on 3.16.0-rc6+ #1 SMP
+Date: Mon, 18 Aug 2014 17:38:17 +0000
+Message-ID: <2CE44BD3DBCF9541909CCB42F11CA3923A0B896B@sfo1exc-mbxp08.nbttech.com>
+Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+Hi,
 
-> On 05 August 2014 at 23:32 Zach Brown <zab@zabbo.net> wrote:
->
->
-> > > > Hello Zach,
-> > > >
-> > > >Â  Â  Â Here's an untested patch which
-> > >
-> > > Try testing it.Â  It's easy with virtualization and xfstests.
-> > >
-> > > You'll find that sending to a file fails because each individual file
-> > > write call that makes up a send starts at offset 0 -- at the start of
-> > > the file.
-> > >
-> > > Getting this right means getting the semantics around updating the send
-> > > descriptors f_pos right.Â  It requires having a bit of a think about send
-> > > semantics and f_pos update locking.
-> >
-> > Thanks for those informations Zach,
-> >
-> > I've tried btrfs test scripts related to ioctl in xfstests (tests/btrfs/025,
-> > 035, 052, 055)
-> > but was not able to trigger that problem. Do I have to create another
-> > script,
-> > use some generic one
-> > or maybe use big test/scratch devices ?
->
-> No idea, sorry.Â  Maybe your patch is fine and I'm a dummy.Â  Maybe you
-> didn't test the kernel you thought you were testing.Â  Maybe the test
-> doesn't test what you changed.Â  You'll have to do some investigating to
-> find out.
+I ran the fs_mark test on a single empty hard drive. After the test, the df -h results are:
 
-After checking both kernel and btrfs-progs, it seems file offset is only being
-passed through TLV(see send.c/ send_write/
-TLV_PUT_U64(BTRFS_SEND_A_FILE_OFFSET). Tell me if I'm wrong but when we do
-'btrfs send backupÂ  | btrfs receive backupvolume',
-btrfs-progs calls btrfs_ioctl_send emitting several BTRFS_SEND_C_WRITE with
-relevant BTRFS_SEND_A_FILE_OFFSET (growing by 48kb). At the other side of | ,
-'btrfs receive' executes read_and_process_cmd which does TLV_GET before
-s->ops->write. All btrfs interactions being done with | maybe we could simply
-replace vfs_write stuff as you suggested and remove sctx->send_off ?
+/dev/sdk1             917G   39G  832G   5% /ext4
+/dev/sdj1             932G   53G  850G   6% /btrfs
 
-Regards,
-FabianÂ 
+The test result for btrfs shows it ran 15 hours. Note there is no file/dir remove operation which I knew very slow compared with ext4.
 
->
-> - z
+[root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 1000 -N 1000 -d /btrfs/ -t 10;date
+Mon Aug 11 11:32:54 PDT 2014
+
+#  /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /btrfs/  -t  10 
+#             Version 3.3, 10 thread(s) starting at Mon Aug 11 11:32:54 2014
+#             Sync method: INBAND FSYNC: fsync() per file in write loop.
+#             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
+#             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
+#             App overhead is time in microseconds spent in the test not doing file writing related system calls.
+#             All system call times are reported in microseconds
+FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
+     8     10000000         4096        184.0        155517800       33      372    93743        7       16     3094    16450    54015  5420340        0        0        0        1        4     7777        0        0        0
+Tue Aug 12 02:40:01 PDT 2014
+
+For hours, the disk utilization was around 95% and cpu utilization for all 12 cores was very low and only one core showed around 26%wa.
+
+
+To compare with Ext4:
+The test for ext4 on a same model of hard drive ran 2.5 hours.  
+
+[root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 1000 -N 1000 -d /ext4/ -t 10;date
+Fri Aug  8 17:13:56 PDT 2014
+#  /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /ext4/  -t  10 
+#             Version 3.3, 10 thread(s) starting at Fri Aug  8 17:13:56 2014
+#             Sync method: INBAND FSYNC: fsync() per file in write loop.
+#             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
+#             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
+#             App overhead is time in microseconds spent in the test not doing file writing related system calls.
+#             All system call times are reported in microseconds.
+
+FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
+     9     10000000         4096        105.0        156950153       19      449  1741759        6       15  2069984    32368    94751  2044364        0        0        0        1        4     4149        0        0        0
+Sat Aug  9 19:41:14 PDT 2014
+
+Is it a known issue with btrfs or do I need to adjust the default parameters for btrfs (I remember use the default to make btrfs)? 
+
+Mount command shows:
+/dev/sdk1 on /ext4 type ext4 (rw,relatime,seclabel,data=ordered)
+/dev/sdj1 on /btrfs type btrfs (rw,relatime,seclabel,nospace_cache)
+
+Thanks
+Ming

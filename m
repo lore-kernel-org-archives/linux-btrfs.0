@@ -1,76 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:39515 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:39923 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752026AbaHRVBT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Aug 2014 17:01:19 -0400
-Date: Mon, 18 Aug 2014 14:01:17 -0700
+	id S1751941AbaHRVmD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Aug 2014 17:42:03 -0400
+Date: Mon, 18 Aug 2014 14:42:01 -0700
 From: Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>
-Subject: [PATCH] btrfs: don't go readonly on existing qgroup items
-Message-ID: <20140818210117.GB2203@wotan.suse.de>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: fix leak in qgroup_subtree_accounting() error
+	path
+Message-ID: <20140818214201.GC2203@wotan.suse.de>
 Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <53F10BF1.6070602@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53F10BF1.6070602@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_drop_snapshot() leaves subvolume qgroup items on disk after
-completion. This can cause problems with snapshot creation. If a new
-snapshot tries to claim the deleted subvolumes id, btrfs will get -EEXIST
-from add_qgroup_item() and go read-only. The following commands will
-reproduce this problem (assume btrfs is on /dev/sda and is mounted at
-/btrfs)
+On Sun, Aug 17, 2014 at 03:09:21PM -0500, Eric Sandeen wrote:
+> Coverity pointed this out; in the newly added
+> qgroup_subtree_accounting(), if btrfs_find_all_roots()
+> returns an error, we leak at least the parents pointer,
+> and possibly the roots pointer, depending on what failure
+> occurs.
+> 
+> If btrfs_find_all_roots() returns an error, we need to
+> free up all allocations before we return.  "roots" is
+> initialized to NULL, so it should be safe to free
+> it unconditionally (ulist_free() handles that case).
 
-mkfs.btrfs -f /dev/sda
-mount -t btrfs /dev/sda /btrfs/
-btrfs quota enable /btrfs/
-btrfs su sna /btrfs/ /btrfs/snap
-btrfs su de /btrfs/snap
-sleep 45
-umount /btrfs/
-mount -t btrfs /dev/sda /btrfs/
+Great, thanks for this Eric.
 
-We can fix this by catching -EEXIST in add_qgroup_item() and
-initializing the existing items. We have the problem of orphaned
-relation items being on disk from an old snapshot but that is outside
-the scope of this patch.
+Reviewed-by: Mark Fasheh <mfasheh@suse.de>
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/qgroup.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b497498..8477d33 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -551,9 +551,15 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_INFO_KEY;
- 	key.offset = qgroupid;
- 
-+	/*
-+	 * Avoid a transaction abort by catching -EEXIST here. In that
-+	 * case, we proceed by re-initializing the existing structure
-+	 * on disk.
-+	 */
-+
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_info));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
-@@ -572,7 +578,7 @@ static int add_qgroup_item(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_QGROUP_LIMIT_KEY;
- 	ret = btrfs_insert_empty_item(trans, quota_root, path, &key,
- 				      sizeof(*qgroup_limit));
--	if (ret)
-+	if (ret && ret != -EEXIST)
- 		goto out;
- 
- 	leaf = path->nodes[0];
--- 
-1.8.4.5
-
+--
+Mark Fasheh

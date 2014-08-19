@@ -1,51 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33551 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752688AbaHSPd2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Aug 2014 11:33:28 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Chris Murphy <lists@colorremedies.com>
-Subject: [PATCH] Btrfs: fix crash on endio of reading corrupted block
-Date: Tue, 19 Aug 2014 23:33:13 +0800
-Message-Id: <1408462393-3291-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55143 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751423AbaHSPhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Aug 2014 11:37:03 -0400
+Date: Tue, 19 Aug 2014 17:37:02 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 8/8] btrfs: rename total_bytes to avoid confusion
+Message-ID: <20140819153702.GZ1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1407911066-5363-1-git-send-email-anand.jain@oracle.com>
+ <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The crash is
+On Wed, Aug 13, 2014 at 02:24:26PM +0800, Anand Jain wrote:
+> we are assigning number_devices to the total_bytes,
+> that's very confusing for a moment
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bf99e82..c0c360a 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2253,7 +2253,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>  	struct list_head *devices;
+>  	struct super_block *sb = root->fs_info->sb;
+>  	struct rcu_string *name;
+> -	u64 total_bytes;
+> +	u64 ret_sz;
 
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/extent_io.c:2124!
-[...]
-Workqueue: btrfs-endio normal_work_helper [btrfs]
-RIP: 0010:[<ffffffffa02d6055>]  [<ffffffffa02d6055>] end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
-
-This is in fact a regression.
-
-It is because we forgot to increase @offset properly in reading corrupted block,
-so that the @offset remains, and this leads to checksum errors while reading
-left blocks queued up in the same bio, and then ends up with hiting the above
-BUG_ON.
-
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3af4966..be41e4d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2602,6 +2602,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
- 					test_bit(BIO_UPTODATE, &bio->bi_flags);
- 				if (err)
- 					uptodate = 0;
-+				offset += len;
- 				continue;
- 			}
- 		}
--- 
-1.8.1.4
-
+A 'tmp' would do, but whatever

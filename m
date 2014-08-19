@@ -1,65 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:44347 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751653AbaHSP43 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Aug 2014 11:56:29 -0400
-Received: by mail-wg0-f42.google.com with SMTP id l18so6447192wgh.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Aug 2014 08:56:28 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:54623 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753047AbaHSPRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Aug 2014 11:17:02 -0400
+Date: Tue, 19 Aug 2014 17:17:00 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/3] btrfs-progs: Show error message if btrfs filesystem
+ show failed to find any btrfs filesystem
+Message-ID: <20140819151700.GY1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <53E8891F.3010607@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20140819140309.GT1553@twin.jikos.cz>
-References: <53E80B87.30504@gmail.com> <20140819140309.GT1553@twin.jikos.cz>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 19 Aug 2014 18:55:47 +0300
-Message-ID: <CAGqmi77OtVSiv0HO=xBo9Yueq9wA0AORF6uwrCmKaUYDsXArcA@mail.gmail.com>
-Subject: Re: [RFC PATCH] btrfs-progs: Move btrfstune to btrfs device tune
-To: dsterba@suse.cz, Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53E8891F.3010607@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No problem =).
-Then, just ignore patch.
+On Mon, Aug 11, 2014 at 06:13:03PM +0900, Satoru Takeuchi wrote:
+> From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+> 
+> Current btrfs doesn't display any error message if this command
+> failed to find any btrfs filesystem corresponding to
+> <path>|<uuid>|<device>|<label> which user specified.
 
-2014-08-19 17:03 GMT+03:00 David Sterba <dsterba@suse.cz>:
-> On Mon, Aug 11, 2014 at 03:17:11AM +0300, Timofey Titovets wrote:
->> According to https://btrfs.wiki.kernel.org/index.php/Project_ideas#btrfs
->> Quote:
->> merge functionality of btrfstune, eg. under btrfs dev set-seed /dev/
->> (discuss the command name though)
->
-> I've added this project idea long time ago and I'm afraid it's not valid
-> anymore, at least not in the proposed way.
->
->> This patch is just code move
->> After, user can tune btrfs parameters through:
->> btrfs dev tune -xr /dev/sda2
->
-> The btrfstune utility works on an unmounted filesystem and affects the
-> whole filesystem, so the 'device' subgroup is not right here.
->
-> Most of the commands from the base utility on a mounted filesystem, so a
-> separate btrfstune makes some distinction. The reason for merging the
-> two was to avoid a 1MB binary for very simple thing, the generic
-> filesystem code can be shared with 'btrfs'.
->
-> The question is what's the right UI, a new subcommand, or via the
-> generic properties command? The property interface is not yet populated,
-> so it might be hard to imagine where the tuning settings would go.
-> Something like this:
->
-> $ btrfs prop set feature.skinny-metadata 1 /dev/sdx
->
-> The extended refs can be turned on even on a mounted filesystem, so this
-> would avoid doing 'echo 1 > /sys/fs/btrfs/UUID/features/extended_iref'.
->
-> At this moment I'm inclined to use the properties interface, which means
-> that the btrfstune utility will stay a bit longer. I'll update the
-> project idea to reflect this so it's not confusing anymore (sorry).
+I'm not sure if it is necessary to print anything. Like if grep printed
+"Sorry I did not find any lines, please check your regexp"
 
-
-
--- 
-Have a nice day,
-Timofey.
+Although, we can add a non-zero return value if there was anything found
+or not.

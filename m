@@ -1,69 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31423 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751251AbaHMGRU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Aug 2014 02:17:20 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7D6HJfA025247
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 06:17:20 GMT
-Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
-	by ucsinet22.oracle.com (8.14.5+Sun/8.14.5) with ESMTP id s7D6HJJS006319
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 06:17:19 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7D6HI7D016677
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Aug 2014 06:17:18 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8] btrfs: rename total_bytes to avoid confusion
-Date: Wed, 13 Aug 2014 14:24:26 +0800
-Message-Id: <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1407911066-5363-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:55292 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753185AbaHSPo3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Aug 2014 11:44:29 -0400
+Date: Tue, 19 Aug 2014 17:44:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/8] btrfs: replace seed device followed by unmount
+ causes kernel WARNING
+Message-ID: <20140819154428.GA1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1407911066-5363-1-git-send-email-anand.jain@oracle.com>
+ <1407911066-5363-2-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1407911066-5363-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1407911066-5363-1-git-send-email-anand.jain@oracle.com>
 
-we are assigning number_devices to the total_bytes,
-that's very confusing for a moment
+On Wed, Aug 13, 2014 at 02:24:20PM +0800, Anand Jain wrote:
+> reproducer:
+> mount /dev/sdb /btrfs
+> btrfs dev add /dev/sdc /btrfs
+> btrfs rep start -B /dev/sdb /dev/sdd /btrfs
+> umount /btrfs
+> 
+> WARNING: CPU: 0 PID: 12661 at fs/btrfs/volumes.c:891 __btrfs_close_devices+0x1b0/0x200 [btrfs]()
+> ::
+> 
+> __btrfs_close_devices()
+> ::
+>         WARN_ON(fs_devices->open_devices);
+> 
+> After the seed device has been replaced the new target device
+> is no more a seed device. So we need to update the device
+> numbers in the fs_devices as pointed by the fs_info.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bf99e82..c0c360a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2253,7 +2253,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	struct list_head *devices;
- 	struct super_block *sb = root->fs_info->sb;
- 	struct rcu_string *name;
--	u64 total_bytes;
-+	u64 ret_sz;
- 	int seeding_dev = 0;
- 	int ret = 0;
- 
-@@ -2356,13 +2356,13 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 		root->fs_info->fs_devices->rotating = 1;
- 
--	total_bytes = btrfs_super_total_bytes(root->fs_info->super_copy);
-+	ret_sz = btrfs_super_total_bytes(root->fs_info->super_copy);
- 	btrfs_set_super_total_bytes(root->fs_info->super_copy,
--				    total_bytes + device->total_bytes);
-+				    ret_sz + device->total_bytes);
- 
--	total_bytes = btrfs_super_num_devices(root->fs_info->super_copy);
-+	ret_sz = btrfs_super_num_devices(root->fs_info->super_copy);
- 	btrfs_set_super_num_devices(root->fs_info->super_copy,
--				    total_bytes + 1);
-+				    ret_sz + 1);
- 
- 	/* add sysfs device entry */
- 	btrfs_kobj_add_device(root->fs_info, device);
--- 
-2.0.0.153.g79dcccc
-
+A formality: if you get a reviewed-by from somebody and the patch does
+not change in the next iteration, add the tag to the patch as well. This
+will ensure the review credit is not lost.
+Otherwise, pinging the maintainer with a forgotten reviewed-by also works.

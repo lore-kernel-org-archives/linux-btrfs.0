@@ -1,105 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eng.riverbed.com ([208.70.196.45]:28785 "EHLO
-	smtp1.riverbed.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753853AbaHSRXt convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Aug 2014 13:23:49 -0400
-From: Ming Lei <Ming.Lei@riverbed.com>
-To: "miaox@cn.fujitsu.com" <miaox@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: fs_mark test on btrfs on 3.16.0-rc6+ #1 SMP
-Date: Tue, 19 Aug 2014 17:23:47 +0000
-Message-ID: <2CE44BD3DBCF9541909CCB42F11CA3923A0B93B9@sfo1exc-mbxp08.nbttech.com>
-References: <2CE44BD3DBCF9541909CCB42F11CA3923A0B896B@sfo1exc-mbxp08.nbttech.com>
- <53F2C1CA.3040609@cn.fujitsu.com>
-In-Reply-To: <53F2C1CA.3040609@cn.fujitsu.com>
-Content-Type: text/plain; charset="us-ascii"
+Received: from cantor2.suse.de ([195.135.220.15]:57588 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753388AbaHSR3l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Aug 2014 13:29:41 -0400
+Date: Tue, 19 Aug 2014 19:29:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: Use backup superblocks if and only if the
+ first superblock is valid but corrupted.
+Message-ID: <20140819172938.GD1553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1403841234-10393-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <53D17A88.5090905@fb.com>
+ <53D46A8B.2030002@gmail.com>
+ <53D5994F.4010605@cn.fujitsu.com>
+ <53D5BB10.6070309@gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53D5BB10.6070309@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My miss. Thank you all for pointing out that actually ext4 performed much worse in this test. I am wondering whether there is some benchmarking has been done in all sorts of different workloads with comparison to ext4. I know btrfs vs ext4 is not the apple to apple test, but it will encourage users switch to btrfs.
+On Sun, Jul 27, 2014 at 10:53:04PM -0400, Austin S Hemmelgarn wrote:
+> >>> But, for right now I'd prefer the admin get involved in using the backup
+> >>> supers.  I think silently using the backups is going to lead to
+> >>> surprises.
+> >> Maybe there could be a mount non-default mount-option to use backup
+> >> superblocks iff the first one is corrupted, and then log a warning
+> >> whenever this actually happens?  Not handling stuff like this
+> >> automatically really hurts HA use cases.
+> >>
+> >>
+> > This seems better and comments also shows this idea.
+> > What about merging the behavior into 'recovery' mount option or adding a
+> > new mount option?
+> Personally, I'd add a new mount option, but make recovery imply that option.
 
+I agree with that, though we do not need introduce an extra option if
+the meaning is denendent on 'recovery', but rather make it a mode of
+recovery (and we could add more in the future). Eg.
 
------Original Message-----
-From: Miao Xie [mailto:miaox@cn.fujitsu.com] 
-Sent: Monday, August 18, 2014 8:18 PM
-To: Ming Lei; linux-btrfs@vger.kernel.org
-Subject: Re: fs_mark test on btrfs on 3.16.0-rc6+ #1 SMP
+$ mount -o recovery=sb
 
-On Mon, 18 Aug 2014 17:38:17 +0000, Ming Lei wrote:
-> 
-> Hi,
-> 
-> I ran the fs_mark test on a single empty hard drive. After the test, the df -h results are:
-> 
-> /dev/sdk1             917G   39G  832G   5% /ext4
-> /dev/sdj1             932G   53G  850G   6% /btrfs
-> 
-> The test result for btrfs shows it ran 15 hours. Note there is no file/dir remove operation which I knew very slow compared with ext4.
-> 
-> [root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 
-> 1000 -N 1000 -d /btrfs/ -t 10;date Mon Aug 11 11:32:54 PDT 2014
-> 
-> #  /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /btrfs/  -t  10 
-> #             Version 3.3, 10 thread(s) starting at Mon Aug 11 11:32:54 2014
-> #             Sync method: INBAND FSYNC: fsync() per file in write loop.
-> #             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
-> #             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
-> #             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
-> #             App overhead is time in microseconds spent in the test not doing file writing related system calls.
-> #             All system call times are reported in microseconds
-> FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
->      8     10000000         4096        184.0        155517800       33      372    93743        7       16     3094    16450    54015  5420340        0        0        0        1        4     7777        0        0        0
-> Tue Aug 12 02:40:01 PDT 2014
-> 
-> For hours, the disk utilization was around 95% and cpu utilization for all 12 cores was very low and only one core showed around 26%wa.
-> 
-> 
-> To compare with Ext4:
-> The test for ext4 on a same model of hard drive ran 2.5 hours.  
-> 
-> [root@sh679 ~]# date;/root/fs_mark -v -n 1000000 -s 4096 -k -S 1 -D 
-> 1000 -N 1000 -d /ext4/ -t 10;date Fri Aug  8 17:13:56 PDT 2014 #  
-> /root/fs_mark  -v  -n  1000000  -s  4096  -k  -S  1  -D  1000  -N  1000  -d  /ext4/  -t  10
-> #             Version 3.3, 10 thread(s) starting at Fri Aug  8 17:13:56 2014
-> #             Sync method: INBAND FSYNC: fsync() per file in write loop.
-> #             Directories:  Round Robin between directories across 1000 subdirectories with 1000 files per subdirectory.
-> #             File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
-> #             Files info: size 4096 bytes, written with an IO size of 16384 bytes per write
-> #             App overhead is time in microseconds spent in the test not doing file writing related system calls.
-> #             All system call times are reported in microseconds.
-> 
-> FSUse%        Count         Size    Files/sec     App Overhead        CREAT (Min/Avg/Max)        WRITE (Min/Avg/Max)        FSYNC (Min/Avg/Max)         SYNC (Min/Avg/Max)        CLOSE (Min/Avg/Max)       UNLINK (Min/Avg/Max)
->      9     10000000         4096        105.0        156950153       19      449  1741759        6       15  2069984    32368    94751  2044364        0        0        0        1        4     4149        0        0        0
-> Sat Aug  9 19:41:14 PDT 2014
-
-From
-
-> Fri Aug  8 17:13:56 PDT 2014
-
-to
- 
-> Sat Aug  9 19:41:14 PDT 2014
-
-It is not 2.5 hours, it's 26.5 hours.
-
-Thanks
-Miao
-
-> 
-> Is it a known issue with btrfs or do I need to adjust the default parameters for btrfs (I remember use the default to make btrfs)? 
-> 
-> Mount command shows:
-> /dev/sdk1 on /ext4 type ext4 (rw,relatime,seclabel,data=ordered)
-> /dev/sdj1 on /btrfs type btrfs (rw,relatime,seclabel,nospace_cache)
-> 
-> Thanks
-> Ming
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
-> in the body of a message to majordomo@vger.kernel.org More majordomo 
-> info at  http://vger.kernel.org/majordomo-info.html
-> .
-> 
-
+which would try to use all valid backup superblocks to mount.

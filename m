@@ -1,71 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48046 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:48683 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751733AbaHTCJc (ORCPT
+	with ESMTP id S1751733AbaHTCMF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Aug 2014 22:09:32 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7K29Uuq014295
+	Tue, 19 Aug 2014 22:12:05 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id s7K2C4Wm016412
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:09:31 GMT
-Received: from aserz7022.oracle.com (aserz7022.oracle.com [141.146.126.231])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7K29TS5019467
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:09:30 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-	by aserz7022.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7K29TdS010595
-	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:09:29 GMT
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:12:05 GMT
+Received: from userz7021.oracle.com (userz7021.oracle.com [156.151.31.85])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7K2C3AS019669
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:12:04 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+	by userz7021.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id s7K2C3Ha024249
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 02:12:03 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8 v2] btrfs: rename total_bytes to avoid confusion
-Date: Wed, 20 Aug 2014 10:54:17 +0800
-Message-Id: <1408503257-29568-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
-References: <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/8 v2] btrfs: replace seed device followed by unmount causes kernel WARNING
+Date: Wed, 20 Aug 2014 10:56:56 +0800
+Message-Id: <1408503416-29625-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1407911066-5363-2-git-send-email-anand.jain@oracle.com>
+References: <1407911066-5363-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-we are assigning number_devices to the total_bytes,
-that's very confusing for a moment
+reproducer:
+mount /dev/sdb /btrfs
+btrfs dev add /dev/sdc /btrfs
+btrfs rep start -B /dev/sdb /dev/sdd /btrfs
+umount /btrfs
+
+WARNING: CPU: 0 PID: 12661 at fs/btrfs/volumes.c:891 __btrfs_close_devices+0x1b0/0x200 [btrfs]()
+::
+
+__btrfs_close_devices()
+::
+        WARN_ON(fs_devices->open_devices);
+
+After the seed device has been replaced the new target device
+is no more a seed device. So we need to update the device
+numbers in the fs_devices as pointed by the fs_info.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-v2: accepts David comment renames ret_sz to tmp
+v2: sorry had missed the Reviewed by tag, Thxs David
 
- fs/btrfs/volumes.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bf99e82..718f734 100644
+index 5fd0132..f098ae7 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2253,7 +2253,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	struct list_head *devices;
- 	struct super_block *sb = root->fs_info->sb;
- 	struct rcu_string *name;
--	u64 total_bytes;
-+	u64 tmp;
- 	int seeding_dev = 0;
- 	int ret = 0;
+@@ -1964,7 +1964,13 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
  
-@@ -2356,13 +2356,13 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 		root->fs_info->fs_devices->rotating = 1;
+ 	WARN_ON(!mutex_is_locked(&fs_info->fs_devices->device_list_mutex));
  
--	total_bytes = btrfs_super_total_bytes(root->fs_info->super_copy);
-+	tmp = btrfs_super_total_bytes(root->fs_info->super_copy);
- 	btrfs_set_super_total_bytes(root->fs_info->super_copy,
--				    total_bytes + device->total_bytes);
-+				    tmp + device->total_bytes);
+-	fs_devices = fs_info->fs_devices;
++	/*
++	 * in case of fs with no seed, srcdev->fs_devices will point
++	 * to fs_devices of fs_info. However when the dev being replaced is
++	 * a seed dev it will point to the seed's local fs_devices. In short
++	 * srcdev will have its correct fs_devices in both the cases.
++	 */
++	fs_devices = srcdev->fs_devices;
  
--	total_bytes = btrfs_super_num_devices(root->fs_info->super_copy);
-+	tmp = btrfs_super_num_devices(root->fs_info->super_copy);
- 	btrfs_set_super_num_devices(root->fs_info->super_copy,
--				    total_bytes + 1);
-+				    tmp + 1);
- 
- 	/* add sysfs device entry */
- 	btrfs_kobj_add_device(root->fs_info, device);
+ 	list_del_rcu(&srcdev->dev_list);
+ 	list_del_rcu(&srcdev->dev_alloc_list);
 -- 
 2.0.0.153.g79dcccc
 

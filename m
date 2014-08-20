@@ -1,87 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from exchange-west-ht02.tripadvisor.com ([192.170.138.102]:8684 "EHLO
-	exchange-west.tripadvisor.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752006AbaHTNrN (ORCPT
+Received: from mail-qg0-f51.google.com ([209.85.192.51]:40741 "EHLO
+	mail-qg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750819AbaHTPYB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 09:47:13 -0400
-Message-ID: <53F4A59E.6090907@tripadvisor.com>
-Date: Wed, 20 Aug 2014 09:41:50 -0400
-From: "Benjamin O'Connor" <boconnor@tripadvisor.com>
+	Wed, 20 Aug 2014 11:24:01 -0400
+Received: by mail-qg0-f51.google.com with SMTP id a108so7453485qge.24
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 08:24:00 -0700 (PDT)
+Message-ID: <53F4BD8D.9090203@gmail.com>
+Date: Wed, 20 Aug 2014 11:23:57 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Tomasz Chmielewski <tch@virtall.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andrej Manduch <amanduch@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+CC: M G Berberich <btrfs@oss.m-berberich.de>
 Subject: Re: Questions on using BtrFS for fileserver
-References: <0f416a00a2dabac75caa768581a5e965@admin.virtall.com>
-In-Reply-To: <0f416a00a2dabac75caa768581a5e965@admin.virtall.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
+References: <20140819162151.GA15166@forwiss.uni-passau.de> <53F3C3C7.8020303@gmail.com>
+In-Reply-To: <53F3C3C7.8020303@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As a counter-argument, I use BTRFS on a filesystem with about 280TB raw right now as a 
-fileserver.  Note that this is mostly transient data (raid 0), and I have stuck with 3.14, 
-hearing the horror stories of 3.15/3.16 locking up.
-
-Even at that size (29TB LUNs), I have been able to add and remove devices and rebalance 
-with no issues other than it causing increased IO and taking several weeks to move that 
-much data around.
-
-Definitely avoid 3.15/3.16 and test out your workload first if possible to make sure it 
-performs properly.  Also build the filesystem and put data on it and test device 
-removals/rebuilds to make sure it works with your OS, btrfs tools, and kernel version. 
-All that being said it works great for us where we value COW and expansion/rebalancing 
-over performance and redundancy.
-
-The filesystem is exported via NFS and rsync to over 200 clients over 10gb/sec ethernet, 
-and hits around 5-7gb/sec balanced between reads and writes.
-
-One of our alternative file storage needs that I'd also hoped to move to BTRFS consisted 
-of subtrees of 255 directories, each with 255 directories under them, and 255 directories 
-under them with 1 file in each (don't ask).  That *did not* work well under BTRFS -- 
-probably due to the metadata juggling required in creating or removing any one file that 
-far down in such a bizarre tree.  We kept that particular area under XFS.
-
--ben
-
-
-Tomasz Chmielewski wrote:
->>> we are thinking about using BtrFS on standard hardware for a
->>> fileserver with about 50T (100T raw) of storage (25Ã—4TByte).
->>>
->>
->> I would recommend carefully reading this thread titled: "1 week to
->> rebuid 4x 3TB raid10 is a long time!"
->
-> So I have a 2 x 2.6 TB devices in btrfs RAID-1, 716G used. Linux 3.16.
->
-> One of the disks failed.
->
-> "btrfs device delete missing /home" is taking 9 days so far, on an idle system:
->
-> root 4828 0.3 0.0 17844 260 pts/1 D+ Aug11 38:18 btrfs device delete missing /home
->
-> There is some kind of btrfs debug info printed in dmesg which seems to tell me that the
-> operation is working, like:
->
-> [744657.598810] BTRFS info (device sda4): relocating block group 908951814144 flags 17
-> [744672.021612] BTRFS info (device sda4): found 4784 extents
-> [744688.604997] BTRFS info (device sda4): found 4784 extents
-> [744689.133397] BTRFS info (device sda4): relocating block group 910025555968 flags 17
-> [744701.162678] BTRFS info (device sda4): found 4196 extents
-> [744725.000459] BTRFS info (device sda4): found 4196 extents
->
->
-> but other than that, the recovery time doesn't look optimistic to me, there is no ability
-> to check the progress etc.
->
->
-
--- 
------------------------------
-Benjamin O'Connor
-TechOps Systems Administrator
-TripAdvisor Media Group
-
-boconnor@tripadvisor.com
-c. 617-312-9072
------------------------------
-
+On 08/19/2014 05:38 PM, Andrej Manduch wrote:
+> Hi,
+> 
+> On 08/19/2014 06:21 PM, M G Berberich wrote:> · Are there any
+> reports/papers/web-pages about BtrFS-systems this size
+>>   in use? Praises, complains, performance-reviews, whatever…
+> 
+> I don't know about papers or benchmarks but few weeks ago there was a
+> guy who has problem with really long mounting with btrfs with similiar size.
+> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36226.html
+> 
+> And I would not recommend 3TB disks. *I'm not btrfs dev* but as far as I
+> know there is a quite different between rebuilding disk on real RAID and
+> btrfs RAID. The problem is btrfs has RAID on filesystem level not on hw
+> level so there is bigger mechanical overheat on drives and thus it take
+> significantli longer than regular RAID.
+It really suprises me that so many people come to this conclusion, but
+maybe they don't provide as much slack space as I do on my systems.  In
+general you will only have a longer rebuild on BTRFS than on hardware
+RAID if the filesystem is more than about 50% full.  On my desktop array
+(4x 1TB disks using BTRFS RAID10), I've replaced disks before and it
+took less than an hour for the operation.  Of course that array is
+usually not more than 10% full.  Interestingly, it took less time to
+rebuild this array the last time I lost a disk than it did back when it
+was 3x 1TB disks in a BTRFS RAID1, so things might improve overall with
+a larger number of disks in the array.

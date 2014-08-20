@@ -1,61 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:52702 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750947AbaHTEGG (ORCPT
+Received: from mail.virtall.com ([178.63.195.102]:48876 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752006AbaHTJ3W convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 00:06:06 -0400
-Date: Tue, 19 Aug 2014 20:22:05 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: M G Berberich <btrfs@oss.m-berberich.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+	Wed, 20 Aug 2014 05:29:22 -0400
+Received: from mailext.virtall.com (localhost [127.0.0.1])
+	by mailext.virtall.com (Postfix) with ESMTP id B04983519A5
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 11:23:26 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Questions on using BtrFS for fileserver
-Message-ID: <20140820032205.GL3875@merlins.org>
-References: <20140819162151.GA15166@forwiss.uni-passau.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20140819162151.GA15166@forwiss.uni-passau.de>
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Wed, 20 Aug 2014 11:23:26 +0200
+From: Tomasz Chmielewski <tch@virtall.com>
+Message-ID: <0f416a00a2dabac75caa768581a5e965@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 19, 2014 at 06:21:52PM +0200, M G Berberich wrote:
-> · incremental send/receive works.
- 
-Yes.
+>> we are thinking about using BtrFS on standard hardware for a
+>> fileserver with about 50T (100T raw) of storage (25Ã—4TByte).
+>> 
+> 
+> I would recommend carefully reading this thread titled: "1 week to
+> rebuid 4x 3TB raid10 is a long time!"
 
-> · There is no support for hotspares (spare disks that automatically
->   replaces faulty disk).
+So I have a 2 x 2.6 TB devices in btrfs RAID-1, 716G used. Linux 3.16.
 
-Correct
+One of the disks failed.
 
-> · BtrFS with RAID1 is fairly stable.
+"btrfs device delete missing /home" is taking 9 days so far, on an idle 
+system:
 
->From what I know.
+root      4828  0.3  0.0  17844   260 pts/1    D+   Aug11  38:18 btrfs 
+device delete missing /home
 
-> · RAID 5/6 spreads all data over all devices, leading to performance
->   problems on large diskarrays, and there is no option to limit the
->   numbers of disk per stripe so far.
+There is some kind of btrfs debug info printed in dmesg which seems to 
+tell me that the operation is working, like:
 
-Not sure about the performance issue, but either way, don't use RAID5/6
-with btrfs for anything else than playing around. The code is not
-finished.
+[744657.598810] BTRFS info (device sda4): relocating block group 
+908951814144 flags 17
+[744672.021612] BTRFS info (device sda4): found 4784 extents
+[744688.604997] BTRFS info (device sda4): found 4784 extents
+[744689.133397] BTRFS info (device sda4): relocating block group 
+910025555968 flags 17
+[744701.162678] BTRFS info (device sda4): found 4196 extents
+[744725.000459] BTRFS info (device sda4): found 4196 extents
 
-> · If a disk failes, does BtrFS rebalance automatically? (This would
->   give a a kind o hotspare behavior)
- 
-No, not for raid5/6.
 
-> · Are there any reports/papers/web-pages about BtrFS-systems this size
->   in use? Praises, complains, performance-reviews, whatever…
+but other than that, the recovery time doesn't look optimistic to me, 
+there is no ability to check the progress etc.
 
-Use md-raid5 which is known and true, and put btrfs on top.
-And still have backups, be ready for btrfs to become unusable (speed
-and/or deadlocks), get trashed, or some other problem.
-It's not guaranteed to happen, but the odds are far from being 0 either,
-so either your data is throwaway, or have good backups.
 
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Tomasz Chmielewski
+http://www.sslrack.com
+

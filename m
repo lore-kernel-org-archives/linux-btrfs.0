@@ -1,42 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:59072 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:62210 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751468AbaHTRfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 13:35:10 -0400
+	id S1751468AbaHTRfM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 13:35:12 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 01/15] btrfs: new test to run btrfs balance and subvolume test simultaneously
-Date: Thu, 21 Aug 2014 01:33:50 +0800
-Message-Id: <1408556044-907-3-git-send-email-eguan@redhat.com>
+Subject: [PATCH 02/15] btrfs: new test to run btrfs balance and scrub simltaneously
+Date: Thu, 21 Aug 2014 01:33:51 +0800
+Message-Id: <1408556044-907-4-git-send-email-eguan@redhat.com>
 In-Reply-To: <1408556044-907-1-git-send-email-eguan@redhat.com>
 References: <1408556044-907-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-with fsstress running in background.
+Run btrfs balance and scrub operations simultaneously with fsstress
+running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/057     | 147 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/057.out |   2 +
+ tests/btrfs/058     | 141 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/058.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 150 insertions(+)
- create mode 100755 tests/btrfs/057
- create mode 100644 tests/btrfs/057.out
+ 3 files changed, 144 insertions(+)
+ create mode 100755 tests/btrfs/058
+ create mode 100644 tests/btrfs/058.out
 
-diff --git a/tests/btrfs/057 b/tests/btrfs/057
+diff --git a/tests/btrfs/058 b/tests/btrfs/058
 new file mode 100755
-index 0000000..2f507a7
+index 0000000..999727d
 --- /dev/null
-+++ b/tests/btrfs/057
-@@ -0,0 +1,147 @@
++++ b/tests/btrfs/058
+@@ -0,0 +1,141 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/057
++# FSQA Test No. btrfs/058
 +#
-+# Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-+# with fsstress running in background.
++# Run btrfs balance and scrub operations simultaneously with fsstress
++# running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -100,7 +100,6 @@ index 0000000..2f507a7
 +{
 +	local mkfs_opts=$1
 +	local saved_mkfs_opts=$MKFS_OPTIONS
-+	local subvol_mnt=$tmp.mnt
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
@@ -111,14 +110,13 @@ index 0000000..2f507a7
 +	else
 +		_scratch_pool_mkfs >>$seqres.full 2>&1
 +	fi
-+	ret=$?
++	local ret=$?
 +	MKFS_OPTIONS=$saved_mkfs_opts
 +	# make sure we created btrfs with desired options
 +	if [ $ret -ne 0 ]; then
 +		echo "mkfs $mkfs_opts failed"
 +		return
 +	fi
-+
 +	_scratch_mount >>$seqres.full 2>&1
 +
 +	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
@@ -135,27 +133,25 @@ index 0000000..2f507a7
 +	balance_pid=$!
 +	echo "$balance_pid" >>$seqres.full
 +
-+	echo -n "Start subvolume worker: " >>$seqres.full
-+	mkdir -p $subvol_mnt
++	echo -n "Start scrub worker: " >>$seqres.full
 +	(
 +		while true; do
-+			$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol_$$
-+			$MOUNT_PROG -o subvol=subvol_$$ $SCRATCH_DEV $subvol_mnt
-+			$UMOUNT_PROG $subvol_mnt
-+			$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/subvol_$$
++			$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
 +		done
-+	) >/dev/null 2>&1 &
-+	subvol_pid=$!
-+	echo "$subvol_pid" >>$seqres.full
++	) &
++	scrub_pid=$!
++	echo "$scrub_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+
-+	kill $balance_pid $subvol_pid
++	kill $balance_pid $scrub_pid
 +	wait
-+	# the balance process might be still in D state and cannot be killed
++	# the balance/scrub process might be still in D state and cannot be killed
 +	# which could block umount, wait for it to finish
 +	while ps aux | grep "balance start" | grep -qv grep; do
++		sleep 1
++	done
++	while ps aux | grep "scrub start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -166,8 +162,6 @@ index 0000000..2f507a7
 +	fi
 +
 +	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT >/dev/null 2>&1
-+	# in case the subvolume is still mounted
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
 +	_scratch_unmount
 +	_check_scratch_fs
 +}
@@ -179,23 +173,23 @@ index 0000000..2f507a7
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/057.out b/tests/btrfs/057.out
+diff --git a/tests/btrfs/058.out b/tests/btrfs/058.out
 new file mode 100644
-index 0000000..185023c
+index 0000000..fb5ca60
 --- /dev/null
-+++ b/tests/btrfs/057.out
++++ b/tests/btrfs/058.out
 @@ -0,0 +1,2 @@
-+QA output created by 057
++QA output created by 058
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 2da7127..08fd54a 100644
+index 08fd54a..c6b1baa 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -59,3 +59,4 @@
- 054 auto quick
+@@ -60,3 +60,4 @@
  055 auto quick
  056 auto quick
-+057 auto stress balance subvol
+ 057 auto stress balance subvol
++058 auto stress balance scrub
 -- 
 1.8.3.1
 

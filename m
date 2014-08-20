@@ -1,35 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34354 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752300AbaHTIW2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 04:22:28 -0400
-Date: Wed, 20 Aug 2014 16:22:19 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: cleanup the same name in end_bio_extent_readpage
-Message-ID: <20140820082218.GB30876@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1408462342-2581-1-git-send-email-bo.li.liu@oracle.com>
- <53F3A5F4.8080405@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53F3A5F4.8080405@fb.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:34738 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750876AbaHTIqm (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Wed, 20 Aug 2014 04:46:42 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: lists@colorremedies.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v5] Btrfs: send, lower mem requirements for processing xattrs
+Date: Wed, 20 Aug 2014 10:45:45 +0100
+Message-Id: <1408527945-1652-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
+References: <1407716706-5115-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 19, 2014 at 03:31:00PM -0400, Chris Mason wrote:
-> On 08/19/2014 11:32 AM, Liu Bo wrote:
-> > We've defined a 'offset' out of bio_for_each_segment_all.
-> 
-> This isn't causing problems though?  It should just be shadowing the
-> bio_for_each_segment_all variable for the duration of the curlies.
-> 
-> No objection as a cleanup, just making sure I'm not missing something.
+Maximum xattr size can be up to nearly the leaf size. For an fs with a
+leaf size larger than the page size, using kmalloc requires allocating
+multiple pages that are contiguous, which might not be possible if
+there's heavy memory fragmentation. Therefore fallback to vmalloc if
+we fail to allocate with kmalloc. Also start with a smaller buffer size,
+since xattr values typically are smaller than a page.
 
-It did't cause any problems yet in my testers at least, so just a cleanup.
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-thanks,
--liubo
+V2: Use is_vmalloc_addr() instead of keeping a boolean variable around.
+V3: Use krealloc instead of kfree + kmalloc.
+V4: Fixed a checkpatch warning about missing blank line after var declaration.
+V5: Use kvfree() and pass __GFP_NOWARN to krealloc().
+
+ fs/btrfs/send.c | 40 ++++++++++++++++++++++++++++++++--------
+ 1 file changed, 32 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 3c63b29..3290da9 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1006,11 +1006,13 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	int num;
+ 	u8 type;
+ 
+-	if (found_key->type == BTRFS_XATTR_ITEM_KEY)
+-		buf_len = BTRFS_MAX_XATTR_SIZE(root);
+-	else
+-		buf_len = PATH_MAX;
+-
++	/*
++	 * Start with a small buffer (1 page). If later we end up needing more
++	 * space, which can happen for xattrs on a fs with a leaf size greater
++	 * then the page size, attempt to increase the buffer. Typically xattr
++	 * values are small.
++	 */
++	buf_len = PATH_MAX;
+ 	buf = kmalloc(buf_len, GFP_NOFS);
+ 	if (!buf) {
+ 		ret = -ENOMEM;
+@@ -1037,7 +1039,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 				ret = -ENAMETOOLONG;
+ 				goto out;
+ 			}
+-			if (name_len + data_len > buf_len) {
++			if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root)) {
+ 				ret = -E2BIG;
+ 				goto out;
+ 			}
+@@ -1045,12 +1047,34 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 			/*
+ 			 * Path too long
+ 			 */
+-			if (name_len + data_len > buf_len) {
++			if (name_len + data_len > PATH_MAX) {
+ 				ret = -ENAMETOOLONG;
+ 				goto out;
+ 			}
+ 		}
+ 
++		if (name_len + data_len > buf_len) {
++			buf_len = name_len + data_len;
++			if (is_vmalloc_addr(buf)) {
++				vfree(buf);
++				buf = NULL;
++			} else {
++				char *tmp = krealloc(buf, buf_len,
++						     GFP_NOFS | __GFP_NOWARN);
++
++				if (!tmp)
++					kfree(buf);
++				buf = tmp;
++			}
++			if (!buf) {
++				buf = vmalloc(buf_len);
++				if (!buf) {
++					ret = -ENOMEM;
++					goto out;
++				}
++			}
++		}
++
+ 		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
+ 				name_len + data_len);
+ 
+@@ -1071,7 +1095,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
+ 	}
+ 
+ out:
+-	kfree(buf);
++	kvfree(buf);
+ 	return ret;
+ }
+ 
+-- 
+1.9.1
 

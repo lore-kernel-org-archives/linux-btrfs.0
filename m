@@ -1,42 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:41988 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:25638 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752568AbaHTRf0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 13:35:26 -0400
+	id S1752568AbaHTRf2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 13:35:28 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 08/15] btrfs: new case to run btrfs subvolume create/delete and defrag operations simultaneously
-Date: Thu, 21 Aug 2014 01:33:57 +0800
-Message-Id: <1408556044-907-10-git-send-email-eguan@redhat.com>
+Subject: [PATCH 09/15] btrfs: new case to run subvolume create/delete and remount with different compress algorithms
+Date: Thu, 21 Aug 2014 01:33:58 +0800
+Message-Id: <1408556044-907-11-git-send-email-eguan@redhat.com>
 In-Reply-To: <1408556044-907-1-git-send-email-eguan@redhat.com>
 References: <1408556044-907-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs subvolume create/mount/umount/delete and btrfs defrag
-operation simultaneously, with fsstress running in background.
+Run btrfs subvolume create/mount/umount/delete and remount with
+different compress algorithms simultaneously, with fsstress running
+in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/064     | 155 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/064.out |   2 +
+ tests/btrfs/065     | 148 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/065.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 158 insertions(+)
- create mode 100755 tests/btrfs/064
- create mode 100644 tests/btrfs/064.out
+ 3 files changed, 151 insertions(+)
+ create mode 100755 tests/btrfs/065
+ create mode 100644 tests/btrfs/065.out
 
-diff --git a/tests/btrfs/064 b/tests/btrfs/064
+diff --git a/tests/btrfs/065 b/tests/btrfs/065
 new file mode 100755
-index 0000000..b8009aa
+index 0000000..6737cb1
 --- /dev/null
-+++ b/tests/btrfs/064
-@@ -0,0 +1,155 @@
++++ b/tests/btrfs/065
+@@ -0,0 +1,148 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/064
++# FSQA Test No. btrfs/065
 +#
-+# Run btrfs subvolume create/mount/umount/delete and btrfs defrag
-+# operation simultaneously, with fsstress running in background.
++# Run btrfs subvolume create/mount/umount/delete and remount with
++# different compress algorithms simultaneously, with fsstress running
++# in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -99,7 +101,6 @@ index 0000000..b8009aa
 +run_test()
 +{
 +	local mkfs_opts=$1
-+	local with_compress=$2
 +	local saved_mkfs_opts=$MKFS_OPTIONS
 +	local subvol_mnt=$tmp.mnt
 +
@@ -139,30 +140,24 @@ index 0000000..b8009aa
 +	subvol_pid=$!
 +	echo "$subvol_pid" >>$seqres.full
 +
-+	echo -n "Start defrag worker: " >>$seqres.full
++	echo -n "Start remount worker: " >>$seqres.full
 +	(
 +		while true; do
-+			if [ "$with_compress" == "nocompress" ]; then
-+				find $SCRATCH_MNT \( -type f -o -type d \) -exec \
-+					$BTRFS_UTIL_PROG filesystem defrag {} \; >>$seqres.full 2>&1
-+			else
-+				find $SCRATCH_MNT \( -type f -o -type d \) -exec \
-+					$BTRFS_UTIL_PROG filesystem defrag -clzo {} \; >>$seqres.full 2>&1
-+				find $SCRATCH_MNT \( -type f -o -type d \) -exec \
-+					$BTRFS_UTIL_PROG filesystem defrag -czlib {} \; >>$seqres.full 2>&1
-+			fi
++			for algo in no zlib lzo; do
++				$MOUNT_PROG -o remount,compress=$algo $SCRATCH_MNT >>$seqres.full 2>&1
++			done
 +		done
-+	) &
-+	defrag_pid=$!
-+	echo "$defrag_pid" >>$seqres.full
++	) >/dev/null 2>&1 &
++	remount_pid=$!
++	echo "$remount_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
 +
-+	kill $subvol_pid $defrag_pid
++	kill $subvol_pid $remount_pid
 +	wait
-+	# wait for btrfs defrag process to exit, otherwise it will block umount
-+	while ps aux | grep "btrfs filesystem defrag" | grep -qv grep; do
++	# wait for the remount loop process to finish
++	while ps aux | grep "mount.*$SCRATCH_MNT" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -181,29 +176,28 @@ index 0000000..b8009aa
 +
 +echo "Silence is golden"
 +for t in "${tcs[@]}"; do
-+	run_test "$t" nocompress
-+	run_test "$t" compress
++	run_test "$t"
 +done
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/064.out b/tests/btrfs/064.out
+diff --git a/tests/btrfs/065.out b/tests/btrfs/065.out
 new file mode 100644
-index 0000000..d907654
+index 0000000..94476cd
 --- /dev/null
-+++ b/tests/btrfs/064.out
++++ b/tests/btrfs/065.out
 @@ -0,0 +1,2 @@
-+QA output created by 064
++QA output created by 065
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 0000b9d..7c0a72e 100644
+index 7c0a72e..70aa3c3 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -66,3 +66,4 @@
- 061 auto stress balance replace
+@@ -67,3 +67,4 @@
  062 auto stress subvol replace
  063 auto stress subvol scrub
-+064 auto stress subvol defrag compress
+ 064 auto stress subvol defrag compress
++065 auto stress subvol remount compress
 -- 
 1.8.3.1
 

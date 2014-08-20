@@ -1,42 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:21402 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:1695 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752568AbaHTRfU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 13:35:20 -0400
+	id S1752575AbaHTRfT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 13:35:19 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 06/15] btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
-Date: Thu, 21 Aug 2014 01:33:55 +0800
-Message-Id: <1408556044-907-8-git-send-email-eguan@redhat.com>
+Subject: [PATCH 05/15] btrfs: new case to run btrfs balance and device replace simultaneously
+Date: Thu, 21 Aug 2014 01:33:54 +0800
+Message-Id: <1408556044-907-7-git-send-email-eguan@redhat.com>
 In-Reply-To: <1408556044-907-1-git-send-email-eguan@redhat.com>
 References: <1408556044-907-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs subvolume create/mount/umount/delete and device replace
-operation simultaneously, with fsstress running in background.
+Run btrfs balance and replace operations simultaneously with fsstress
+running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/062     | 167 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/062.out |   2 +
+ common/rc           |  24 ++++++++
+ tests/btrfs/061     | 161 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/061.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 170 insertions(+)
- create mode 100755 tests/btrfs/062
- create mode 100644 tests/btrfs/062.out
+ 4 files changed, 188 insertions(+)
+ create mode 100755 tests/btrfs/061
+ create mode 100644 tests/btrfs/061.out
 
-diff --git a/tests/btrfs/062 b/tests/btrfs/062
+diff --git a/common/rc b/common/rc
+index 7ea1614..9212547 100644
+--- a/common/rc
++++ b/common/rc
+@@ -1985,6 +1985,24 @@ _require_scratch_dev_pool()
+ 	done
+ }
+ 
++# ensure devices in SCRATCH_DEV_POOL are of the same size
++# must be called after _require_scratch_dev_pool
++_require_scratch_dev_pool_equal_size()
++{
++	local _size
++	local _newsize
++	local _dev
++
++	# SCRATCH_DEV has been set to the first device in SCRATCH_DEV_POOL
++	_size=`_get_device_size $SCRATCH_DEV`
++	for _dev in $SCRATCH_DEV_POOL; do
++		_newsize=`_get_device_size $_dev`
++		if [ $_size -ne $_newsize ]; then
++			_notrun "This test requires devices in SCRATCH_DEV_POOL have the same size"
++		fi
++	done
++}
++
+ # We will check if the device is deletable
+ _require_deletable_scratch_dev_pool()
+ {
+@@ -2231,6 +2249,12 @@ _require_btrfs_fs_feature()
+ 		_notrun "Feature $feat not supported by the available btrfs version"
+ }
+ 
++# return device size in kb
++_get_device_size()
++{
++	grep `_short_dev $1` /proc/partitions | awk '{print $3}'
++}
++
+ init_rc()
+ {
+ 	if [ "$iam" == new ]
+diff --git a/tests/btrfs/061 b/tests/btrfs/061
 new file mode 100755
-index 0000000..d110af8
+index 0000000..28640cc
 --- /dev/null
-+++ b/tests/btrfs/062
-@@ -0,0 +1,167 @@
++++ b/tests/btrfs/061
+@@ -0,0 +1,161 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/062
++# FSQA Test No. btrfs/061
 +#
-+# Run btrfs subvolume create/mount/umount/delete and device replace
-+# operation simultaneously, with fsstress running in background.
++# Run btrfs balance and replace operations simultaneously with fsstress
++# running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -101,7 +144,6 @@ index 0000000..d110af8
 +	local mkfs_opts=$1
 +	local saved_mkfs_opts=$MKFS_OPTIONS
 +	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
-+	local subvol_mnt=$tmp.mnt
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
@@ -118,7 +160,6 @@ index 0000000..d110af8
 +		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +		return
 +	fi
-+
 +	_scratch_mount >>$seqres.full 2>&1
 +
 +	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
@@ -126,18 +167,14 @@ index 0000000..d110af8
 +	$FSSTRESS_PROG $args >/dev/null 2>&1 &
 +	fsstress_pid=$!
 +
-+	echo -n "Start subvolume worker: " >>$seqres.full
-+	mkdir -p $subvol_mnt
++	echo -n "Start balance worker: " >>$seqres.full
 +	(
 +		while true; do
-+			$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol_$$
-+			$MOUNT_PROG -o subvol=subvol_$$ $SCRATCH_DEV $subvol_mnt
-+			$UMOUNT_PROG $subvol_mnt
-+			$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/subvol_$$
++			$BTRFS_UTIL_PROG balance start $SCRATCH_MNT
 +		done
 +	) >/dev/null 2>&1 &
-+	subvol_pid=$!
-+	echo "$subvol_pid" >>$seqres.full
++	balance_pid=$!
++	echo "$balance_pid" >>$seqres.full
 +
 +	echo -n "Start replace worker: " >>$seqres.full
 +	(
@@ -168,11 +205,13 @@ index 0000000..d110af8
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+
-+	kill $subvol_pid $replace_pid
++	kill $balance_pid $replace_pid
 +	wait
-+	# the replace process might be still in D state and cannot be killed
++	# the balance/replace process might be still in D state and cannot be killed
 +	# which could block umount, wait for it to finish
++	while ps aux | grep "balance start" | grep -qv grep; do
++		sleep 1
++	done
 +	while ps aux | grep "replace start" | grep -qv grep; do
 +		sleep 1
 +	done
@@ -186,8 +225,6 @@ index 0000000..d110af8
 +	MKFS_OPTIONS=$saved_mkfs_opts
 +	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT >/dev/null 2>&1
-+	# in case the subvolume is still mounted
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
 +	_scratch_unmount
 +	_check_scratch_fs
 +}
@@ -199,23 +236,23 @@ index 0000000..d110af8
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/062.out b/tests/btrfs/062.out
+diff --git a/tests/btrfs/061.out b/tests/btrfs/061.out
 new file mode 100644
-index 0000000..a1578f4
+index 0000000..273be9e
 --- /dev/null
-+++ b/tests/btrfs/062.out
++++ b/tests/btrfs/061.out
 @@ -0,0 +1,2 @@
-+QA output created by 062
++QA output created by 061
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 36fee18..0000845 100644
+index 5971993..36fee18 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -64,3 +64,4 @@
+@@ -63,3 +63,4 @@
+ 058 auto stress balance scrub
  059 auto stress balance defrag compress
  060 auto stress balance remount compress
- 061 auto stress balance replace
-+062 auto stress subvol replace
++061 auto stress balance replace
 -- 
 1.8.3.1
 

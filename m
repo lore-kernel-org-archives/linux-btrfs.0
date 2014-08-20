@@ -1,29 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47867 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751460AbaHTO3Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 10:29:16 -0400
-Date: Wed, 20 Aug 2014 16:29:14 +0200
-From: David Sterba <dsterba@suse.cz>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:54568 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752845AbaHTXI7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 19:08:59 -0400
+Date: Thu, 21 Aug 2014 09:08:38 +1000
+From: Dave Chinner <david@fromorbit.com>
 To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 8/8 v2] btrfs: rename total_bytes to avoid confusion
-Message-ID: <20140820142914.GH1553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1407911066-5363-8-git-send-email-anand.jain@oracle.com>
- <1408503257-29568-1-git-send-email-anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] xfstest: add tests/btrfs/059 to test seed operations
+Message-ID: <20140820230838.GH26465@dastard>
+References: <1408115781-4876-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1408503257-29568-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1408115781-4876-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 20, 2014 at 10:54:17AM +0800, Anand Jain wrote:
-> we are assigning number_devices to the total_bytes,
-> that's very confusing for a moment
+On Fri, Aug 15, 2014 at 11:16:21PM +0800, Anand Jain wrote:
+> This test contains a set of 5 sub test cases which will tests
+> the device add and replacement on a seed FS. The kernel messages
+> are checked at the end of the each of the 5 test cases to see
+> if there are any kernel warnings or bugs reported. As in general
+> btrfs do report warning when device counts such as num_devices
+> and rw_devices appears to be wrong.
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Since the tests has to deal with the replace, it would need
+> up to five scratch device with same size.
 
-Thanks.
+Please separate this out into 5 tests using shared infrastructure.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

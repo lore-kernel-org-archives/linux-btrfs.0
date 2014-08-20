@@ -1,77 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36365 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751423AbaHTIKW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 04:10:22 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH] btrfs: Fix a deadlock in btrfs_dev_replace_finishing()
-Date: Wed, 20 Aug 2014 16:10:15 +0800
-Message-ID: <1408522215-15803-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:49365 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750939AbaHTPDR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 11:03:17 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 181E2AAC1
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 15:03:16 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH -rc2] btrfs: remove stale code after removing ordered operations
+Date: Wed, 20 Aug 2014 17:03:14 +0200
+Message-Id: <1408546994-4156-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs-transacion:5657
-[stack snip]
-btrfs_bio_map()
-    btrfs_bio_counter_inc_blocked()
-        percpu_counter_inc(&fs_info->bio_counter)  ###bio_counter > 0(A)
-        __btrfs_bio_map()
-            btrfs_dev_replace_lock()
-                mutex_lock(dev_replace->lock)	   ###wait mutex(B)
+The commit "btrfs: disable strict file flushes for renames and
+truncates" (8d875f95da43c6a8f18f77869f2ef26e9594fecc) left some unused
+code and defines.
 
-btrfs:32612
-[stack snip]
-btrfs_dev_replace_start()
-    btrfs_dev_replace_lock()
-	mutex_lock(dev_replace->lock)		   ###hold mutex(B)
-    btrfs_dev_replace_finishing()
-        btrfs_rm_dev_replace_blocked()
-            wait until percpu_counter_sum == 0	   ###wait on bio_counter(A)
-
-This bug can be triggered quite easily by the following test script:
-http://pastebin.com/MQmb37Cy
-
-This patch will fix the ABBA problem by calling
-btrfs_dev_replace_unlock() before btrfs_rm_dev_replace_blocked().
-
-The consistency of btrfs devices list and their superblocks is protected
-by device_list_mutex, not btrfs_dev_replace_lock/unlock().
-So it is safe the move btrfs_dev_replace_unlock() before
-btrfs_rm_dev_replace_blocked().
-
-Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/dev-replace.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index eea26e1..d738ff8 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -567,6 +567,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	btrfs_kobj_rm_device(fs_info, src_device);
- 	btrfs_kobj_add_device(fs_info, tgt_device);
+This is a cleanup after a 3.17-rc1 patch.
+
+ fs/btrfs/btrfs_inode.h |  8 --------
+ fs/btrfs/ctree.h       |  7 -------
+ fs/btrfs/inode.c       | 10 ----------
+ 3 files changed, 25 deletions(-)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 43527fd78825..ee9d37d4f883 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -25,14 +25,6 @@
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
  
-+	btrfs_dev_replace_unlock(dev_replace);
-+
- 	btrfs_rm_dev_replace_blocked(fs_info);
+-/*
+- * ordered_data_close is set by truncate when a file that used
+- * to have good data has been truncated to zero.  When it is set
+- * the btrfs file release call will add this inode to the
+- * ordered operations list so that we make sure to flush out any
+- * new data the application may have written before commit.
+- */
+-#define BTRFS_INODE_ORDERED_DATA_CLOSE		0
+ #define BTRFS_INODE_ORPHAN_META_RESERVED	1
+ #define BTRFS_INODE_DUMMY			2
+ #define BTRFS_INODE_IN_DEFRAG			3
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8e29b614fe93..69cd3262193e 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -62,13 +62,6 @@ struct btrfs_ordered_sum;
  
- 	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
-@@ -580,7 +582,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	 * superblock is scratched out so that it is no longer marked to
- 	 * belong to this filesystem.
- 	 */
--	btrfs_dev_replace_unlock(dev_replace);
- 	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
- 	mutex_unlock(&root->fs_info->chunk_mutex);
+ #define BTRFS_COMPAT_EXTENT_TREE_V0
  
+-/*
+- * files bigger than this get some pre-flushing when they are added
+- * to the ordered operations list.  That way we limit the total
+- * work done by the commit
+- */
+-#define BTRFS_ORDERED_OPERATIONS_FLUSH_LIMIT (8 * 1024 * 1024)
+-
+ /* holds pointers to all of the tree roots */
+ #define BTRFS_ROOT_TREE_OBJECTID 1ULL
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 03708ef3deef..ded36a4e47a8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4545,16 +4545,6 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 		btrfs_end_transaction(trans, root);
+ 	} else {
+-
+-		/*
+-		 * We're truncating a file that used to have good data down to
+-		 * zero. Make sure it gets into the ordered flush list so that
+-		 * any new writes get down to disk quickly.
+-		 */
+-		if (newsize == 0)
+-			set_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
+-				&BTRFS_I(inode)->runtime_flags);
+-
+ 		/*
+ 		 * 1 for the orphan item we're going to add
+ 		 * 1 for the orphan item deletion.
 -- 
-2.0.4
+1.9.0
 

@@ -1,41 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:47833 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:21402 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752568AbaHTRfX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 13:35:23 -0400
+	id S1752568AbaHTRfU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Aug 2014 13:35:20 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 07/15] btrfs: new case to run btrfs subvolume create/delete operations and scrub simultaneously
-Date: Thu, 21 Aug 2014 01:33:56 +0800
-Message-Id: <1408556044-907-9-git-send-email-eguan@redhat.com>
+Subject: [PATCH 06/15] btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
+Date: Thu, 21 Aug 2014 01:33:55 +0800
+Message-Id: <1408556044-907-8-git-send-email-eguan@redhat.com>
 In-Reply-To: <1408556044-907-1-git-send-email-eguan@redhat.com>
 References: <1408556044-907-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs subvolume create/mount/umount/delete and btrfs scrub
+Run btrfs subvolume create/mount/umount/delete and device replace
 operation simultaneously, with fsstress running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- tests/btrfs/063     | 146 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/063.out |   2 +
+ tests/btrfs/062     | 167 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/062.out |   2 +
  tests/btrfs/group   |   1 +
- 3 files changed, 149 insertions(+)
- create mode 100755 tests/btrfs/063
- create mode 100644 tests/btrfs/063.out
+ 3 files changed, 170 insertions(+)
+ create mode 100755 tests/btrfs/062
+ create mode 100644 tests/btrfs/062.out
 
-diff --git a/tests/btrfs/063 b/tests/btrfs/063
+diff --git a/tests/btrfs/062 b/tests/btrfs/062
 new file mode 100755
-index 0000000..68e6a25
+index 0000000..d110af8
 --- /dev/null
-+++ b/tests/btrfs/063
-@@ -0,0 +1,146 @@
++++ b/tests/btrfs/062
+@@ -0,0 +1,167 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/063
++# FSQA Test No. btrfs/062
 +#
-+# Run btrfs subvolume create/mount/umount/delete and btrfs scrub
++# Run btrfs subvolume create/mount/umount/delete and device replace
 +# operation simultaneously, with fsstress running in background.
 +#
 +#-----------------------------------------------------------------------
@@ -80,44 +80,45 @@ index 0000000..68e6a25
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_scratch_dev_pool 4
++_require_scratch_dev_pool 5
++_require_scratch_dev_pool_equal_size
 +
 +rm -f $seqres.full
 +
 +# test case array
 +tcs=(
 +	"-m single -d single"
-+	"-m dup -d single"
 +	"-m raid0 -d raid0"
 +	"-m raid1 -d raid0"
 +	"-m raid1 -d raid1"
 +	"-m raid10 -d raid10"
-+	"-m raid5 -d raid5"
-+	"-m raid6 -d raid6"
++#	"-m raid5 -d raid5"	# raid5 does not support replace operation yet
++#	"-m raid6 -d raid6"	# raid6 does not support replace operation yet
 +)
 +
 +run_test()
 +{
 +	local mkfs_opts=$1
 +	local saved_mkfs_opts=$MKFS_OPTIONS
++	local saved_scratch_dev_pool=$SCRATCH_DEV_POOL
 +	local subvol_mnt=$tmp.mnt
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
++	# remove the last device from the SCRATCH_DEV_POOL list so
++	# _scratch_pool_mkfs won't use all devices in pool
++	local last_dev="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $NF}'`"
++	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | sed -e "s# *$last_dev *##"`
 +	MKFS_OPTIONS="$MKFS_OPTIONS $mkfs_opts"
-+	# dup only works on single device
-+	if [[ "$mkfs_opts" =~ dup ]]; then
-+		_scratch_mkfs >>$seqres.full 2>&1
-+	else
-+		_scratch_pool_mkfs >>$seqres.full 2>&1
-+	fi
-+	local ret=$?
-+	MKFS_OPTIONS=$saved_mkfs_opts
++	_scratch_pool_mkfs >>$seqres.full 2>&1
 +	# make sure we created btrfs with desired options
 +	if [ $? -ne 0 ]; then
 +		echo "mkfs $mkfs_opts failed"
++		MKFS_OPTIONS=$saved_mkfs_opts
++		SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +		return
 +	fi
++
 +	_scratch_mount >>$seqres.full 2>&1
 +
 +	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
@@ -138,23 +139,41 @@ index 0000000..68e6a25
 +	subvol_pid=$!
 +	echo "$subvol_pid" >>$seqres.full
 +
-+	echo -n "Start scrub worker: " >>$seqres.full
++	echo -n "Start replace worker: " >>$seqres.full
 +	(
++		# take the last device as free device
++		free_dev=$last_dev
++		# replace all devices in btrfs_devices in turn
++		# do not replace SCRATCH_DEV which will be used in _scratch_mount
++		# and _check_scratch_fs etc.
++		btrfs_devices=`echo $SCRATCH_DEV_POOL | sed -e "s# *$SCRATCH_DEV *##"`
++		# set first device in btrfs_devices as first src_dev
++		src_dev=`echo $btrfs_devices | $AWK_PROG '{print $1}'`
++		echo "btrfs_devices=$btrfs_devices" >>$seqres.full
++		echo "free_dev=$free_dev, src_dev=$src_dev" >>$seqres.full
 +		while true; do
-+			$BTRFS_UTIL_PROG scrub start -B $SCRATCH_MNT >>$seqres.full 2>&1
++			echo "Replacing $src_dev with $free_dev" >>$seqres.full
++			$BTRFS_UTIL_PROG replace start -fB $src_dev $free_dev $SCRATCH_MNT >>$seqres.full 2>&1
++			if [ $? -ne 0 ]; then
++				continue
++			fi
++			btrfs_devices="$btrfs_devices $free_dev"
++			btrfs_devices=`echo $btrfs_devices | sed -e "s# *$src_dev *##"`
++			free_dev=$src_dev
++			src_dev=`echo $btrfs_devices | $AWK_PROG '{print $1}'`
 +		done
-+	) &
-+	scrub_pid=$!
-+	echo "$scrub_pid" >>$seqres.full
++	) >/dev/null 2>&1 &
++	replace_pid=$!
++	echo "$replace_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
 +
-+	kill $subvol_pid $scrub_pid
++	kill $subvol_pid $replace_pid
 +	wait
-+	# the scrub process might be still in D state and cannot be killed
++	# the replace process might be still in D state and cannot be killed
 +	# which could block umount, wait for it to finish
-+	while ps aux | grep "scrub start" | grep -qv grep; do
++	while ps aux | grep "replace start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -164,6 +183,8 @@ index 0000000..68e6a25
 +		echo "Scrub find errors in \"$mkfs_opts\" test" | tee -a $seqres.full
 +	fi
 +
++	MKFS_OPTIONS=$saved_mkfs_opts
++	SCRATCH_DEV_POOL=$saved_scratch_dev_pool
 +	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT >/dev/null 2>&1
 +	# in case the subvolume is still mounted
 +	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
@@ -178,23 +199,23 @@ index 0000000..68e6a25
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/063.out b/tests/btrfs/063.out
+diff --git a/tests/btrfs/062.out b/tests/btrfs/062.out
 new file mode 100644
-index 0000000..de35fc5
+index 0000000..a1578f4
 --- /dev/null
-+++ b/tests/btrfs/063.out
++++ b/tests/btrfs/062.out
 @@ -0,0 +1,2 @@
-+QA output created by 063
++QA output created by 062
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 0000845..0000b9d 100644
+index 36fee18..0000845 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -65,3 +65,4 @@
+@@ -64,3 +64,4 @@
+ 059 auto stress balance defrag compress
  060 auto stress balance remount compress
  061 auto stress balance replace
- 062 auto stress subvol replace
-+063 auto stress subvol scrub
++062 auto stress subvol replace
 -- 
 1.8.3.1
 

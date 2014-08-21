@@ -1,43 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14811 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752071AbaHUJnP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 05:43:15 -0400
-Message-ID: <1408614180.11298.0.camel@localhost.localdomain>
-Subject: Re: [PATCH] btrfs-progs: init uninitialized output buf for
- btrfs-restore
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Marc Dietrich <marvin24@gmx.de>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Thu, 21 Aug 2014 17:43:00 +0800
-In-Reply-To: <2179924.d4q2ELedVV@fb07-iapwap2>
-References: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <2179924.d4q2ELedVV@fb07-iapwap2>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx1.redhat.com ([209.132.183.28]:40354 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754551AbaHUO3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 10:29:53 -0400
+Message-ID: <53F60264.5090401@redhat.com>
+Date: Thu, 21 Aug 2014 09:29:56 -0500
+From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
+To: Anand Jain <Anand.Jain@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/3] btrfs-progs: remove full /dev scanning
+References: <53F51F4D.2090203@redhat.com> <53F5B18B.1030801@oracle.com>
+In-Reply-To: <53F5B18B.1030801@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-08-21 at 10:14 +0200, Marc Dietrich wrote:
-> Hi Gui,
+On 8/21/14, 3:44 AM, Anand Jain wrote:
 > 
-> Am Donnerstag, 21. August 2014, 11:35:36 schrieb Gui Hecheng:
-> > A memory problem reported by valgrind as follows:
-> > 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
-> > When running:
-> > 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
-> > 
-> > Because the output buf size is alloced with malloc, but the length of
-> > output data is shorter than the sizeof(buf), so valgrind report
-> > uninitialised byte(s).
-> > We could use calloc to repalce malloc and clear this WARNING away.
 > 
-> yes, the warning vanished. But the reads from free'd memory make me more 
-> worring...
+>  A long time back there was an attempt to remove it but
+>  this avoided it. Pls ref to the link in this discussion.
+> 
+>  https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg27272.html
 
-Ah, yeah, I am looking into it, hope that I can do some help :)
+Hm, I guess I don't understand this.  How is udev related to whether
+or not /proc/partitions is sufficient vs. recursive /dev?
 
-> Marc
+To be clear, my patchset keeps the -d / --all-devices option.
 
+It simply discovers all devices via /proc/partitions, not via
+a full /dev tree walk.
+
+Thanks,
+-Eric
+
+
+> Thanks, Anand
+> 
+> On 08/21/2014 06:21 AM, Eric Sandeen wrote:
+>> btrfs fileystem show and btrfs device scan today both have
+>> the "-d" option to scan everything under /dev.  But we also
+>> have a mechanism to scan everything in /proc/partitions, which
+>> should always be sufficient.
+>>
+>> If anyone knows why we'd find something deep under /dev but
+>> not in /proc/partitions, speak now or forever hold your peace...
+>>
+>> Tested this by running through a matrix of -d, -m, or "" args
+>> for show/scan, for a 2-device fs, with and without a symlinked
+>> device, with and without a symlinked mountpoint.  All output was
+>> identical.
+>>
+>> Thanks,
+>> -Eric
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 

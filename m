@@ -1,173 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from linux-libre.fsfla.org ([208.118.235.54]:39978 "EHLO
-	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751677AbaH3S1K (ORCPT
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:62636 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754019AbaHUMEM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 14:27:10 -0400
-Received: from freie.home (home.lxoliva.fsfla.org [172.31.160.22])
-	by linux-libre.fsfla.org (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id s7UIR6ip021393
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 18:27:06 GMT
-From: Alexandre Oliva <oliva@gnu.org>
+	Thu, 21 Aug 2014 08:04:12 -0400
+Received: by mail-pa0-f52.google.com with SMTP id bj1so14133053pad.39
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 05:04:11 -0700 (PDT)
+Received: from ako (pl398.nas931.p-kanagawa.nttpc.ne.jp. [219.102.77.142])
+        by mx.google.com with ESMTPSA id ey10sm38501939pdb.50.2014.08.21.05.04.09
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
+        Thu, 21 Aug 2014 05:04:10 -0700 (PDT)
+From: Naohiro Aota <naota@elisp.net>
 To: linux-btrfs@vger.kernel.org
-Subject: btrfs: add -k option to filesystem df
-Date: Sat, 30 Aug 2014 15:27:00 -0300
-Message-ID: <or61h94yvf.fsf@free.home>
+Subject: [PATCH RFC] btrfs-progs: Show backtrace on BUGs
+Date: Thu, 21 Aug 2014 21:04:07 +0900
+Message-ID: <87zjey82x4.fsf@elisp.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce support for df to print sizes in KiB, easy to extend to other
-bases.
+"btrfs check" is still under heavy development and so there are some
+BUGs beging hit. "btrfs check" can be run on limited environment which
+lacks gdb to debug the abort in detail. If we could see backtrace, it
+will be easier to find a root cause of the BUG.
 
-The man page is also updated and fixed in that it made it seem like
-multiple paths were accepted.
+Following is my "btrfs check" output with and without the patch.
 
-Signed-off-by: Alexandre Oliva <oliva@gnu.org>
+without patch:
+
+ref mismatch on [1437411180544 16384] extent item 3, found 2
+btrfs: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags & 1)' failed.
+enabling repair mode
+Checking filesystem on /dev/sdb2
+UUID: a53121ee-679f-4241-bb44-ceb5a1a7beb7
+
+with patch:
+
+ref mismatch on [1437411180544 16384] extent item 3, found 2
+btrfs check(free_extent_buffer+0xa3)[0x808ff89]
+btrfs check[0x8090222]
+btrfs check(alloc_extent_buffer+0xa7)[0x80903d0]
+btrfs check(btrfs_find_create_tree_block+0x2e)[0x807edef]
+btrfs check(btrfs_alloc_free_block+0x299)[0x808a3c4]
+btrfs check(__btrfs_cow_block+0x1d4)[0x8078896]
+btrfs check(btrfs_cow_block+0x150)[0x807934d]
+btrfs check(btrfs_search_slot+0x136)[0x807c041]
+btrfs check[0x8065a6b]
+btrfs check[0x806bc0f]
+btrfs check(cmd_check+0xc8f)[0x806d03a]
+btrfs check(main+0x167)[0x804f5ec]
+/lib/libc.so.6(__libc_start_main+0xe6)[0xf754c4f6]
+btrfs check[0x804f061]
+btrfsck: extent_io.c:612: free_extent_buffer: Assertion `!(eb->flags & 1)' failed.
+enabling repair mode
+Checking filesystem on /dev/sdb2
+UUID: a53121ee-679f-4241-bb44-ceb5a1a7beb7
+
+Now it's much clear that there's something wrong around
+alloc_extent_buffer.
+
+Signed-off-by: Naohiro Aota <naota@elisp.net>
 ---
- Documentation/btrfs-filesystem.txt |    4 +++-
- cmds-filesystem.c                  |   26 +++++++++++++++++++++++---
- utils.c                            |   29 +++++++++++++++++++++++++++--
- utils.h                            |    1 +
- 4 files changed, 54 insertions(+), 6 deletions(-)
+ Makefile     |  2 +-
+ kerncompat.h | 29 ++++++++++++++++++++++++++---
+ 2 files changed, 27 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index c9c0b00..70ba4b8 100644
---- a/Documentation/btrfs-filesystem.txt
-+++ b/Documentation/btrfs-filesystem.txt
-@@ -17,8 +17,10 @@ resizing, defragment.
+diff --git a/Makefile b/Makefile
+index 76565e8..9db5441 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@ CC = gcc
+ LN = ln
+ AR = ar
+ AM_CFLAGS = -Wall -D_FILE_OFFSET_BITS=64 -DBTRFS_FLAT_INCLUDES -fno-strict-aliasing -fPIC
+-CFLAGS = -g -O1 -fno-strict-aliasing
++CFLAGS = -g -O1 -fno-strict-aliasing -rdynamic
+ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+diff --git a/kerncompat.h b/kerncompat.h
+index f370cd8..94fadc8 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -27,6 +27,7 @@
+ #include <byteswap.h>
+ #include <assert.h>
+ #include <stddef.h>
++#include <execinfo.h>
+ #include <linux/types.h>
  
- SUBCOMMAND
- ----------
--*df* <path> [<path>...]::
-+*df* [--kbytes] <path>::
- Show space usage information for a mount point.
-++
-+If '-k' or '--kbytes' is passed, sizes will be printed in KiB.
+ #ifndef READ
+@@ -50,7 +51,18 @@
+ #define ULONG_MAX       (~0UL)
+ #endif
  
- *show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
- Show the btrfs filesystem with some additional info.
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 7e8ca95..737fcf3 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -113,8 +113,9 @@ static const char * const filesystem_cmd_group_usage[] = {
- };
+-#define BUG() assert(0)
++#define MAX_BACKTRACE 128
++#define show_trace()						\
++	do {							\
++		void *trace[MAX_BACKTRACE];			\
++		int n = backtrace(trace, MAX_BACKTRACE);	\
++		backtrace_symbols_fd(trace, n, 2);		\
++	} while(0)
++#define BUG()					\
++	do {					\
++		show_trace();			\
++		assert(0);			\
++	} while(0)
+ #ifdef __CHECKER__
+ #define __force    __attribute__((force))
+ #define __bitwise__ __attribute__((bitwise))
+@@ -233,8 +245,19 @@ static inline long IS_ERR(const void *ptr)
+ #define kstrdup(x, y) strdup(x)
+ #define kfree(x) free(x)
  
- static const char * const cmd_df_usage[] = {
--	"btrfs filesystem df <path>",
-+	"btrfs filesystem df [-k] <path>",
- 	"Show space usage information for a mount point",
-+	"-k|--kbytes        show disk spaces in KB",
- 	NULL
- };
+-#define BUG_ON(c) assert(!(c))
+-#define WARN_ON(c) assert(!(c))
++#define BUG_ON(c)				\
++	do {					\
++		if((c)) {			\
++			show_trace();		\
++			assert(!(c));		\
++		}				\
++	} while(0)
++#define WARN_ON(c) do {				\
++		if((c)) {			\
++			show_trace();		\
++			assert(!(c));		\
++		}				\
++	} while(0)
  
-@@ -226,10 +227,29 @@ static int cmd_df(int argc, char **argv)
- 	char *path;
- 	DIR  *dirstream = NULL;
  
--	if (check_argc_exact(argc, 2))
-+	while (1) {
-+		int long_index;
-+		static struct option long_options[] = {
-+			{ "kbytes", no_argument, NULL, 'k'},
-+			{ NULL, no_argument, NULL, 0 },
-+		};
-+		int c = getopt_long(argc, argv, "k", long_options,
-+					&long_index);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'k':
-+			pretty_size_force_base (1024);
-+			break;
-+		default:
-+			usage(cmd_df_usage);
-+		}
-+	}
-+
-+	if (check_argc_max(argc, optind + 1))
- 		usage(cmd_df_usage);
- 
--	path = argv[1];
-+	path = argv[optind];
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
-diff --git a/utils.c b/utils.c
-index 6c09366..f760d1b 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1377,19 +1377,43 @@ out:
- }
- 
- static char *size_strs[] = { "", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"};
-+u64 forced_base = 0;
-+int pretty_size_force_base(u64 base)
-+{
-+	u64 check = 1;
-+	while (check < base)
-+		check *= 1024;
-+	if (check != base && base)
-+		return -1;
-+	forced_base = base;
-+	return 0;
-+}
- int pretty_size_snprintf(u64 size, char *str, size_t str_bytes)
- {
- 	int num_divs = 0;
-+	u64 last_size = size;
- 	float fraction;
- 
- 	if (str_bytes == 0)
- 		return 0;
- 
--	if( size < 1024 ){
-+	if( forced_base ){
-+		u64 base = forced_base;
-+		while (base > 1) {
-+			base /= 1024;
-+			last_size = size;
-+			size /= 1024;
-+			num_divs++;
-+		}
-+		if (num_divs < 2)
-+			return snprintf(str, str_bytes, "%llu%s",
-+					(unsigned long long)size,
-+					size_strs[num_divs]);
-+		goto check;
-+	} else if( size < 1024 ){
- 		fraction = size;
- 		num_divs = 0;
- 	} else {
--		u64 last_size = size;
- 		num_divs = 0;
- 		while(size >= 1024){
- 			last_size = size;
-@@ -1397,6 +1421,7 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_bytes)
- 			num_divs ++;
- 		}
- 
-+	check:
- 		if (num_divs >= ARRAY_SIZE(size_strs)) {
- 			str[0] = '\0';
- 			return -1;
-diff --git a/utils.h b/utils.h
-index fd25126..bbcb042 100644
---- a/utils.h
-+++ b/utils.h
-@@ -71,6 +71,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
- 
-+int pretty_size_force_base(u64 base);
- int pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
- #define pretty_size(size) 						\
- 	({								\
-
-
+ #define container_of(ptr, type, member) ({                      \
 -- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist|Red Hat Brasil GNU Toolchain Engineer
+2.0.4

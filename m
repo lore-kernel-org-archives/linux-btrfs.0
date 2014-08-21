@@ -1,48 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f51.google.com ([209.85.192.51]:40741 "EHLO
-	mail-qg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750819AbaHTPYB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Aug 2014 11:24:01 -0400
-Received: by mail-qg0-f51.google.com with SMTP id a108so7453485qge.24
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Aug 2014 08:24:00 -0700 (PDT)
-Message-ID: <53F4BD8D.9090203@gmail.com>
-Date: Wed, 20 Aug 2014 11:23:57 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Received: from 206-248-167-68.dsl.teksavvy.com ([206.248.167.68]:55340 "EHLO
+	mail.isoar.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754508AbaHUVVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 17:21:19 -0400
+Received: from localhost ([127.0.0.1])
+	by mail.isoar.ca with esmtpsa (TLSv1:DHE-RSA-AES128-SHA:128)
+	(Exim 4.80.1 #2)
+	id 1XKYq2-0000Oz-1P
+	for linux-btrfs@vger.kernel.org; Thu, 21 Aug 2014 16:20:02 -0400
+Message-ID: <53F65471.2070205@isoar.ca>
+Date: Thu, 21 Aug 2014 16:20:01 -0400
+From: "Andrew E. Mileski" <andrewm@isoar.ca>
 MIME-Version: 1.0
-To: Andrej Manduch <amanduch@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: M G Berberich <btrfs@oss.m-berberich.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Questions on using BtrFS for fileserver
-References: <20140819162151.GA15166@forwiss.uni-passau.de> <53F3C3C7.8020303@gmail.com>
-In-Reply-To: <53F3C3C7.8020303@gmail.com>
-Content-Type: text/plain; charset=utf-8
+References: <20140819162151.GA15166@forwiss.uni-passau.de>
+In-Reply-To: <20140819162151.GA15166@forwiss.uni-passau.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/19/2014 05:38 PM, Andrej Manduch wrote:
-> Hi,
-> 
-> On 08/19/2014 06:21 PM, M G Berberich wrote:> · Are there any
-> reports/papers/web-pages about BtrFS-systems this size
->>   in use? Praises, complains, performance-reviews, whatever…
-> 
-> I don't know about papers or benchmarks but few weeks ago there was a
-> guy who has problem with really long mounting with btrfs with similiar size.
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36226.html
-> 
-> And I would not recommend 3TB disks. *I'm not btrfs dev* but as far as I
-> know there is a quite different between rebuilding disk on real RAID and
-> btrfs RAID. The problem is btrfs has RAID on filesystem level not on hw
-> level so there is bigger mechanical overheat on drives and thus it take
-> significantli longer than regular RAID.
-It really suprises me that so many people come to this conclusion, but
-maybe they don't provide as much slack space as I do on my systems.  In
-general you will only have a longer rebuild on BTRFS than on hardware
-RAID if the filesystem is more than about 50% full.  On my desktop array
-(4x 1TB disks using BTRFS RAID10), I've replaced disks before and it
-took less than an hour for the operation.  Of course that array is
-usually not more than 10% full.  Interestingly, it took less time to
-rebuild this array the last time I lost a disk than it did back when it
-was 3x 1TB disks in a BTRFS RAID1, so things might improve overall with
-a larger number of disks in the array.
+On 19/08/14 12:21 PM, M G Berberich wrote:
+>
+> we are thinking about using BtrFS on standard hardware for a
+> fileserver with about 50T (100T raw) of storage (25×4TByte).
+>
+> ...
+>
+> · Are there any reports/papers/web-pages about BtrFS-systems this size
+>    in use? Praises, complains, performance-reviews, whatever…
+
+For what it is worth, I am running two btrfs filesystems:
+1. Primary:  25 TiB, hardware RAID-6, LVM, PCIex8 (11x3TB)
+2. Backup :  25 TiB, software RAID-5, LUKS, USB 3.0 (8x4TB)
+
+I am not using btrfs RAID (-d single -m dup), rather hardware or 
+software MD.  Neither are partitioned (as they are not bootable).
+
+I do hourly / daily / weekly / monthly / yearly snapshots on subvolumes 
+in the primary fs, and pruning excess snapshots (example: I only keep 24 
+hourly snapshots).
+
+Currently using stock Fedora 20, though I try to keep the btrfs utility 
+up-to-date by building from GIT when an updated RPM is not available.
+
+
+Overall impressions of btrfs:
+
+* Very resilient.
+
+It has suffered many hardware-related panics and no data-loss or 
+filesystem corruption has been detected.  I maintain a backup, which 
+includes hashes of everything, and also 5% par2 recovery for some 
+critical data.
+
+The data is fairly static though, with the vast majority of operations 
+being reads.
+
+* Much higher CPU load than ext4.
+
+This exposes a known reset issue with the old 3Ware 9650SE-ML16 RAID 
+controller.  Switching to the NOOP IO scheduler helped reduce the load 
+considerably, but it still can get quite high [even without LUKS].
+
+CPU & motherboard replacement hardware is on-hand, and an upgrade is 
+imminent (currently using an old Core2 Duo @ 3 GHz, 4 GiB DDR2).
+
+* Slow to mount, but not an unreasonable amount.
+
+
+~~ Andrew E. Mileski

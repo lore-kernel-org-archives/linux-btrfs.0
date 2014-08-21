@@ -1,117 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:57919 "EHLO mout.gmx.net"
+Received: from tetsuo.zabbo.net ([50.193.208.193]:60724 "EHLO tetsuo.zabbo.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754279AbaHUTD1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 15:03:27 -0400
-Message-ID: <53F64274.6090008@gmx.at>
-Date: Thu, 21 Aug 2014 21:03:16 +0200
-From: Klaus Holler <kho@gmx.at>
+	id S1754520AbaHUVZR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 17:25:17 -0400
+Date: Thu, 21 Aug 2014 14:25:17 -0700
+From: Zach Brown <zab@zabbo.net>
+To: Klaus Holler <kho@gmx.at>
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs receive problem on ARM kirkwood NAS with kernel 3.16.0 and
+ btrfs-progs 3.14.2
+Message-ID: <20140821212517.GE7116@lenny.home.zabbo.net>
+References: <53F0A3B2.80709@gmx.at>
+ <20140819221055.GI429@lenny.home.zabbo.net>
+ <20140819222241.GD31558@carfax.org.uk>
+ <53F64274.6090008@gmx.at>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Zach Brown <zab@zabbo.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs receive problem on ARM kirkwood NAS with kernel 3.16.0
- and btrfs-progs 3.14.2
-References: <53F0A3B2.80709@gmx.at> <20140819221055.GI429@lenny.home.zabbo.net> <20140819222241.GD31558@carfax.org.uk>
-In-Reply-To: <20140819222241.GD31558@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53F64274.6090008@gmx.at>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Hugo and Zach!
-
-a big thanks to both of you!
-
-Both Hugo's userspace workaround and
-Zach's patch work fine for me - the /boot snapshot can be restored
-completely as expected :-)
-
-Will now try with the bigger snapshots ...
-
-Thanks again,
-Klaus
-
-
-Am 2014-08-20 um 00:22 schrieb Hugo Mills:
-> On Tue, Aug 19, 2014 at 03:10:55PM -0700, Zach Brown wrote:
->> On Sun, Aug 17, 2014 at 02:44:34PM +0200, Klaus Holler wrote:
->>> Hello list,
->>> 
->>> I want to use an ARM kirkwood based NSA325v2 NAS (dubbed 
->>> "Receiver") for receiving btrfs snapshots done on several 
->>> hosts, e.g. a Core Duo laptop running kubuntu 14.04 LTS
->>> (dubbed "Source"), storing them on a 3TB WD red disk (having
->>> GPT label, partitions created with parted).
->>> 
->>> But all the btrfs receive commands on 'Receiver' fail soon
->>> with e.g.: ERROR: writing to
->>> initrd.img-3.13.0-24-generic.original failed. File too large
->>> ... and that stops reception/snapshot creation.
->> 
->> ...
->> 
->>> Increasing the verbosity with "-v -v" for btrfs receive shows 
->>> the following differences between receive operations on 
->>> 'Receiver' and 'OtherHost', both of them using the identical 
->>> inputfile 
->>> /boot/.snapshot/20140816-1310-boot_kernel3.16.0.btrfs-send
->>> 
->>> * the chown and chmod operations are different -> resulting in
->>>  weird/wrong permissions and sizes on 'Receiver' side. *
->>> what's "stransid", this is the first line that differs
->> 
->> This is interesting, thanks for going to the trouble to show 
->> those diffs.
->> 
->> That the commands and strings match up show us that the basic
->> tlv header chaining is working.  But the u64 attribute values
->> are sometimes messed up.  And messed up in a specific way.  A 
->> variable number of low order bytes are magically appearing.
->> 
->> (gdb) print/x 11709972488 $2 = 0x2b9f80008 (gdb) print/x 178680 
->> $3 = 0x2b9f8
->> 
->> (gdb) print/x 588032 $6 = 0x8f900 (gdb) print/x 2297 $7 = 0x8f9
->> 
->> Some light googling makes me think that the Marvell Kirkwood is 
->> not friendly at all to unaligned accesses.
+On Thu, Aug 21, 2014 at 09:03:16PM +0200, Klaus Holler wrote:
+> Hello Hugo and Zach!
 > 
-> ARM isn't in general -- it never has been, even 20 years ago in the
-> ARM3 days when I was writing code in ARM assembler. We've been 
-> bitten by this before in btrfs (mkfs on ARM works, mounting it 
-> fails fast, because userspace has a trap to fix unaligned
-> accesses, and the kernel doesn't).
+> a big thanks to both of you!
 > 
->> The (biting tongue) send and receive code is playing some games 
->> with casting aligned and unaligned pointers.  Maybe that's 
->> upsetting the arm toolchain/kirkwood.
-> 
-> Almost certainly the toolchain isn't identifying the unaligned 
-> accesses, and thus building code that uses them causes stuff to 
-> break.
-> 
-> There's a workaround for userspace that you can use to verify that
->  this is indeed the problem: echo 2 >/proc/cpu/alignment will tell 
-> the kernel to fix up unaligned accesses initiated in userspace. 
-> It's a performance killer, but it should serve to identify whether 
-> the problem is actually this.
-> 
-> Hugo.
-> 
->> Does this completely untested patch to btrfs-progs, to be run on 
->> the receiver, do anything?
->> 
->> - z
->> 
->> diff --git a/send-stream.c b/send-stream.c index
->> 88e18e2..4f8dd83 100644 --- a/send-stream.c +++ b/send-stream.c
->> @@ -204,7 +204,7 @@ out: int __len; \ TLV_GET(s, attr,
->> (void**)&__tmp, &__len); \ TLV_CHECK_LEN(sizeof(*__tmp), __len);
->> \ -               *v = le##bits##_to_cpu(*__tmp); \ +
->> *v = get_unaligned_le##bits(__tmp); \ } while (0)
->> 
->> #define TLV_GET_U8(s, attr, v) TLV_GET_INT(s, attr, 8, v)
-> 
+> Both Hugo's userspace workaround and
+> Zach's patch work fine for me - the /boot snapshot can be restored
+> completely as expected :-)
 
+Cool, glad to hear it.  I sent a proper patch to the list and added your
+reported-by and tested-by, hope that's OK.
 
--- 
-Klaus Holler <kho (at) gmx (punkt) at>
+- z

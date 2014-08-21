@@ -1,89 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37860 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:34251 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752766AbaHUFzH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 01:55:07 -0400
+	id S1750791AbaHUJOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 05:14:40 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XKLKy-0003AG-4P
-	for linux-btrfs@vger.kernel.org; Thu, 21 Aug 2014 07:55:04 +0200
-Received: from zmail.pkvoda.ru ([77.82.81.84])
+	id 1XKOS4-00025T-4I
+	for linux-btrfs@vger.kernel.org; Thu, 21 Aug 2014 11:14:36 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 07:55:04 +0200
-Received: from kamheric by zmail.pkvoda.ru with local (Gmexim 0.1 (Debian))
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 11:14:36 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 07:55:04 +0200
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 11:14:36 +0200
 To: linux-btrfs@vger.kernel.org
-From: Mihail Zaporozhets <kamheric@gmail.com>
-Subject: btrfs restore
-Date: Thu, 21 Aug 2014 05:52:01 +0000 (UTC)
-Message-ID: <loom.20140821T061503-238@post.gmane.org>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Significance of high number of mails on this list?
+Date: Thu, 21 Aug 2014 09:14:24 +0000 (UTC)
+Message-ID: <pan$d267e$1210562f$8bf8dd69$ab91a1c@cox.net>
+References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-I'm create btrfs multi-device volume: (2TB * 5disks)
-1. one device was converted from ext3, 
-then delete sub-volume 'ext2'; 
-2. 'btrfs device add /dev/sd* /mnt/sdc1'; 
-and some times again,  Every disk adds by one, then move data from other
-disks. 2 times was running 'btrfs fi defrag -r -v -t 700K /mnt/sdc1; btrfs
-balance start /mnt/sdc1; btrfs scrub start /mnt/sdc1'. Finally I have FS at
-5 devices.
+Shriramana Sharma posted on Thu, 21 Aug 2014 08:52:52 +0530 as excerpted:
 
-After, go to reboot pc, and I seen that 1 drive have no any partition. I'm
-full of sadness. I think that device was not correctly unmounted and one
-disk fail.
-mount -t btrfs -o degreded,ro,recovery,nospace_cache ...
-mount -t btrfs -o recovery,nospace_cache ...
-btrfs-find-root, btrfs-zero-log .. 
+> Hello. People on this list have been kind enough to reply to my
+> technical questions. However, seeing the high number of mails on this
+> list, esp with the title PATCH, I have a question about the development
+> itself:
+> 
+> Is this just an indication of a vibrant user/devel community [*] and
+> healthy development of many new nice features to eventually come out in
+> stable form later, or are we still at the fixing rough edges stage?
+> IOW what is the proportion of commits adding new features to those
+> stabilising/fixing features?
+> 
+> [* Since there is no separate btrfs-users vs brtfs-dev I'm not able to
+> gauge this difference either. i.e. if there were a dedicated -dev list I
+> might not be alarmed by a high number of mails indicating fast
+> development.]
+> 
+> Mostly I have read like "BTRFS is mostly stable but there might be a few
+> corner cases as yet unknown since this is a totally new generation of
+> FSs". But still given the volume of mails here I wanted to ask... I'm
+> sorry I realize I'm being a bit vague but I'm not sure how to exactly
+> express what I'm feeling about BTRFS right now...
 
-Finaly:
-btrfs restore -t 10404875644928 -v -i /dev/sda1 /mnt/uh1/eric/ - 
-Success! but some directory is absent; 3.4 TB restored, but 4 (available
-disks)*1.82 Tb = 7.28 TB; and 7.28-3.4 = about 3.8 TB which is missing .
-Where is it ? How can i get it back? 
+Good question, but certainly one where opinions are likely to differ.  Of 
+course there a more or less official answer on the wiki 
+( btrfs.wiki.kernel.org ), but given the previous research the level of 
+the questions you've been asking demonstrate, I expect you've seen that 
+and well, it's simply not at the level of detail you find yourself 
+needing at this point, so here you are, asking for more detail and, I 
+guess, personal opinion.
 
-How can i try to restore more data? 
+I'm going to frame my own answer as several general "observations of 
+fact" which I don't believe there's likely to be much dispute over, then 
+explain them, then follow that with my own opinion.
 
-Please advice.
+"Observations of fact" enumerated:
 
-_____
-mount -t btrfs -o degraded,ro,recovery,nospace_cache /dev/sda1 /mnt/tmp3;
-dmesg | tail
+1) Definitions of "stable" differ.
+2) Mailing lists distort reality.
+3) Previous btrfs warnings have been removed.
+4) Two major recent stability-affecting bugs.
+5) Some bits of btrfs more stable than others.
 
-[11774.958996] BTRFS info (device sde1): allowing degraded mounts
-[11774.959001] BTRFS info (device sde1): enabling auto recovery
-[11774.959003] BTRFS info (device sde1): disabling disk space caching
-[11774.959955] BTRFS warning (device sde1): devid 5 missing
-[11774.986391] BTRFS: failed to read tree root on sde1
-[11774.986408] BTRFS: failed to read tree root on sde1
-[11774.986456] BTRFS: failed to read tree root on sde1
-[11774.986473] BTRFS: failed to read tree root on sde1
-[11774.986481] BTRFS: failed to read tree root on sde1
-[11775.014471] BTRFS: open_ctree failed
-    
-# btrfs-zero-log /dev/sda1                         
-warning devid 5 not found already
-Check tree block failed, want=16845270495232, have=0
-read block failed check_tree_block
-Couldn't read tree root
-______
-# uname -a
-Linux oit-875u 3.16.0-031600rc7-generic #201407271635 SMP Sun Jul 27
-20:36:48 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-    # btrfs fi show                                         
-Label: none  uuid: 841f1b5c-adb2-485f-a4cf-83bbf880dced
-        Total devices 5 FS bytes used 9.09TiB
-        devid    1 size 1.82TiB used 1.82TiB path /dev/sda1
-        devid    2 size 1.82TiB used 1.82TiB path /dev/sdc1
-        devid    3 size 1.82TiB used 1.82TiB path /dev/sdd1
-        devid    4 size 1.82TiB used 1.82TiB path /dev/sde1
-        *** Some devices missing
+"Observations of fact" explained:
 
-Btrfs v3.14.1
+1) Definitions of "stable" differ.
 
+There's the "stable" that people like me sometimes simply omit the "b" 
+from and call stale, and there's "dogfoodable" stable.
+
+In distro terms, sta(b)le is RHEL 5 or Debian old-stable.  In filesystem 
+terms, it's ext3, as ext4 is only now beginning to look stable.
+
+"Dogfoodable" stable refers to the point at which developers and early 
+testers find software stable enough to actually use in their ordinary 
+daily routine.
+
+I can't see anyone arguing that btrfs meets the sta(b)le standard or that 
+it's any closer than a few years out.  OTOH, I guess most regulars here 
+have found btrfs "dogfoodable stable" for some time.  But "stable" for 
+most people means something in between, and just where btrfs is in that 
+in between, is where the debate is.
+
+2) Filesystem mailing lists distort reality.
+
+It's exceeding difficult to draw accurate stability conclusions (well, 
+beyond the sta(b)le level) from a filesystem's mailing list.  If the 
+filesystem's under active development, there /will/ be numbers of active 
+bugs reported, some of which will look pretty bad from the outside or 
+simple sysadmin's perspective, and lots of patches floating around in 
+various stages of development as well.  An uninitiated outsider's 
+reaction will almost certainly be "and THIS is what they call STABLE?"
+
+But that's a fairly obvious first-order conclusion.  The immediate 
+natural reaction is to discount it, but it's just as easy to over-
+discount and see it as more stable than it is.  Accurately calibrating 
+the amount of discount without other information is basically impossible, 
+so other information must be used as a primary gauge, with the mailing 
+list possibly used as a reality check on /that/.
+
+OTOH, I'd expect a fully mature and stable (post-mature? sta(b)le?) 
+filesystem, without much /need/ for new development, only maintenance of 
+current state, to have a much quieter list.  Obviously as a filesystem 
+falls into obsolescence and disuse, it'll have a quieter list as well.
+
+3) Previous btrfs warnings have been removed.
+
+In the last few kernel cycles the previous more or less official "btrfs 
+will eat your babies" level instability warning has been removed, from 
+the kernel option description, to the wording used on the wiki, to the 
+warning in the manpages and printed by mkfs.btrfs, if there's any warning 
+at all left, it's far less strident than it was.
+
+Some here believe the complete removal of such warnings has been 
+premature, altho arguably it was time to tone them down.
+
+4) Two severe stability-affecting bugs have recently been traced and have 
+patches working thru the pipeline as we speak.
+
+One of these bugs has been there since very near the beginning, but 
+happened to only be triggered rarely, the reason it wasn't caught until 
+now.  The patch is to be applied to stable going back as far as stable 
+series (with btrfs) go and should already be in 3.17-development (which 
+I've not switched to yet so I can't say for sure).
+
+The other of these bugs was introduced with the switch from btrfs-kernel 
+private worker threads before and in 3.14, to the generic kworker thread 
+facility in 3.15, and apparently triggers only for those using btrfs 
+compression.  It has thus been there for the full 3.15 and 3.16 kernel 
+cycles, with a fix to go into 3.17 (again, I'm not sure if it's there 
+yet) and presumably be backported to 3.16. (3.15 isn't a long-term-
+support kernel and is thus nearing/at EOL, and isn't likely to get the 
+patch.)  This bug hit enough people hard enough that the current 
+recommendation is to stick with 3.14 until 3.16-stable and 3.17-
+development have the fix.  I've not been as severely affected, perhaps 
+due to my general desktop use-case and the fact that I'm on ssd.
+
+Of course such bugs hit much longer term stable kernel subsystems too -- 
+there was recently an mdraid bug in this category that hit the news, 
+but...
+
+5) Some bits of btrfs are unquestionably more "stable" than others.
+
+The btrfs raid5/6 code, for instance, isn't even complete yet, let alone 
+stable.
+
+The longest implemented and most well tested stable code is the basic, 
+single device btrfs in default single-mode data, dup-mode metadata, 
+configuration, in ordinary filesystem feature replacement mode -- no 
+special use of any of the fancy btrfs specific features and no quota 
+usage.  This generally works quite well in normal operation.
+
+Multi-device raid0/1/10 modes are now reasonably stable as well and don't 
+see a lot of serious normal operational problems reported.  Device add/
+delete/replace isn't quite as stable however, and does see bugs reported 
+from time to time.
+
+Quota support and more advanced btrfs specific features such as 
+snapshotting and send/receive are less stable and have more problems.  
+Even the relatively critical kworker threads related bug mentioned above 
+apparently only affected those using the btrfs specific transparent 
+compression feature, which wouldn't be included in an apples to apples 
+comparison with traditional filesystems since they don't normally have 
+such a feature.
+
+Of course, without the btrfs specific features there's little or no 
+reason to pick btrfs over other filesystems, so the stability of those 
+advanced filesystem features matters!
+
+My opinion:
+
+Bottom line, keep your backups tested and ready for use if necessary, 
+know the stability level of the filesystem device modes and features you 
+use and be prepared accordingly, keep current on your kernels unless you 
+have a specific reason not to (like the current kworker related bug 
+keeping many to 3.14 until it's fixed), and keep current with btrfs 
+current status on the mailing list, and you shouldn't have too much 
+problem.
+
+Of course that's a stiff set of requirements for widely deployed "stable" 
+use as most people simply aren't used to having to do all that to support 
+their "stable" systems, which is why I'm among those who believe 
+stripping the previous warnings was somewhat premature, altho toning them 
+down a bit was arguably appropriate.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

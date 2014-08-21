@@ -1,88 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:22239 "EHLO
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:34241 "EHLO
 	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750791AbaHUJ3z (ORCPT
+	by vger.kernel.org with ESMTP id S1753614AbaHUJfL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 05:29:55 -0400
-Date: Thu, 21 Aug 2014 19:29:52 +1000
+	Thu, 21 Aug 2014 05:35:11 -0400
+Date: Thu, 21 Aug 2014 19:35:05 +1000
 From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Zach Brown <zab@zabbo.net>
 Cc: Eryu Guan <eguan@redhat.com>, fstests@vger.kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/15] btrfs: new test to run btrfs balance and subvolume
- test simultaneously
-Message-ID: <20140821092952.GL26465@dastard>
+Subject: Re: [PATCH 00/15] xfstests: new btrfs stress test cases
+Message-ID: <20140821093505.GM26465@dastard>
 References: <1408556044-907-1-git-send-email-eguan@redhat.com>
- <1408556044-907-3-git-send-email-eguan@redhat.com>
- <53F553AE.5060707@cn.fujitsu.com>
- <20140821090105.GJ26465@dastard>
- <53F5B895.3000403@cn.fujitsu.com>
+ <20140820182437.GJ429@lenny.home.zabbo.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <53F5B895.3000403@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20140820182437.GJ429@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 21, 2014 at 05:15:01PM +0800, Qu Wenruo wrote:
+On Wed, Aug 20, 2014 at 11:24:37AM -0700, Zach Brown wrote:
+> On Thu, Aug 21, 2014 at 01:33:48AM +0800, Eryu Guan wrote:
+> > This patchset add new stress test cases for btrfs by running two
+> > different btrfs operations simultaneously under fsstress to ensure
+> > btrfs doesn't hang or oops in such situations. btrfs scrub and
+> > btrfs check will be run after each test.
 > 
-> -------- Original Message --------
-> Subject: Re: [PATCH 01/15] btrfs: new test to run btrfs balance and
-> subvolume test simultaneously
-> From: Dave Chinner <david@fromorbit.com>
-> To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Date: 2014年08月21日 17:01
-> >On Thu, Aug 21, 2014 at 10:04:30AM +0800, Qu Wenruo wrote:
-> >>-------- Original Message --------
-> >>Subject: [PATCH 01/15] btrfs: new test to run btrfs balance and
-> >>subvolume test simultaneously
-> >>From: Eryu Guan <eguan@redhat.com>
-> >>To: <fstests@vger.kernel.org>
-> >>Date: 2014年08月21日 01:33
-> >>>Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-> >>>with fsstress running in background.
-....
-> >>>+# test case array
-> >>>+tcs=(
-> >>>+	"-m single -d single"
-> >>>+	"-m dup -d single"
-> >>>+	"-m raid0 -d raid0"
-> >>>+	"-m raid1 -d raid0"
-> >>>+	"-m raid1 -d raid1"
-> >>>+	"-m raid10 -d raid10"
-> >>>+	"-m raid5 -d raid5"
-> >>>+	"-m raid6 -d raid6"
-> >>>+)
-> >>I wonder should we add the mkfs options there.
-> >>Since xfstests already use environment MKFS_OPTIONS to do mkfs,
-> >>if really need to test all mkfs options, IMO it is better to change
-> >>MKFS_OPTIONS on each test round.
-> >Hmmm - I you didn't read the code, because:
-> >
-> >>>+run_test()
-> >>>+{
-> >>>+	local mkfs_opts=$1
-> >>>+	local saved_mkfs_opts=$MKFS_OPTIONS
-> >>>+	local subvol_mnt=$tmp.mnt
-> >>>+
-> >>>+	echo "Test $mkfs_opts" >>$seqres.full
-> >>>+
-> >>>+	MKFS_OPTIONS="$MKFS_OPTIONS $mkfs_opts"
-> >>>+	# dup only works on single device
-> >it's doing exactly what you suggest.
-> I am afraid that you misunderstand what I mean...
-> I just mean these mount option should be done by setting environment
-> before runing check or set in local.conf.
+> Cool.
+> 
+> > The test matrix is the combination of 6 btrfs operations:
+> > 
+> > 	balance
+> > 	create/mount/umount/delete subvolume
+> > 	replace device
+> > 	scrub
+> > 	defrag
+> > 	remount with different compress algorithms
+> > 	
+> > Short descriptions:
+> > 
+> > 	057: balance-subvolume
+> > 	058: balance-scrub
+> > 	059: balance-defrag
+> > 	060: balance-remount
+> > 	061: balance-replace
+> > 	062: subvolume-replace
+> > 	063: subvolume-scrub
+> > 	064: subvolume-defrag
+> > 	065: subvolume-remount
+> > 	066: replace-scrub
+> > 	067: replace-defrag
+> > 	068: replace-remount
+> > 	069: scrub-defrag
+> > 	070: scrub-remount
+> > 	071: defrag-remount
+> 
+> But I'm not sure it should be built this way.
+> 
+> At the very least each operation's implementation should be in a shared
+> function somewhere instead of being duplicated in each test.
+> 
+> But I don't think there should be a seperate test for each combination.
+> With a bit of fiddly bash you can automate generating unique
+> combinations of operations that are defined as functions in one test.
+> 
+> btrfs_op_balance()
+> {
+>         echo hi
+> }
+> 
+> btrfs_op_scrub()
+> {
+>         echo hi
+> }
+> 
+> btrfs_op_defrag()
+> {
+>         echo hi
+> }
+> 
+> ops=($(declare -F | awk '/-f btrfs_op_/ {print $3}'))
+> nr=${#ops[@]}
+> 
+> for i in $(seq 0          $((nr - 2))); do
+> for j in $(seq $((i + 1)) $((nr - 1))); do
+> 	echo ${ops[i]} ${ops[j]}
+> done
+> done
 
-You can override or append to MKFS_OPTIONS and MOUNT_OPTIONS in
-tests if required - lots of tests do exactly that (e.g. any quota
-test your care to name). That modification, however, is only valid
-for the specific test being run because the modification is to the
-environment of the test process, not the environment of check
-process that is running the tests....
+Yes, it could be done like that, but historically that has proven to
+be a bad idea. Multiplexing tens of tests within a single test is
+just makes it hard to determine what failed. It might fail one
+combination in 3.16, a different combo in 3.17 and yet another in
+3.18. But from a reporting point of view, all we see is that a
+single test failed, rather than being able to see that there were
+three separate problems and that btrfs_op_scrub() was the common
+factor in all three failures.
 
-i.e. Running custom mkfs or mount options like this is perfectly
-acceptable and I'm just commenting that the implementation of those
-custom options could be a lot better.
+It's trivial to write this as a bunch of helper functions and then
+boiler-plate the actual tests themselves. There will be little
+difference in terms of run time, but we get much more fine-grained
+control of execution and reporting....
 
 Cheers,
 

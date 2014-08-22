@@ -1,164 +1,277 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34263 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755847AbaHVIjZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 04:39:25 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XKkNR-0004Lt-6P
-	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 10:39:17 +0200
-Received: from zmail.pkvoda.ru ([77.82.81.84])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 10:39:17 +0200
-Received: from kamheric by zmail.pkvoda.ru with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 10:39:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Mihail Zaporozhets <kamheric@gmail.com>
-Subject: Re: btrfs restore
-Date: Fri, 22 Aug 2014 08:39:04 +0000 (UTC)
-Message-ID: <loom.20140822T100842-195@post.gmane.org>
-References: <loom.20140821T061503-238@post.gmane.org> <20140822015216.GE3875@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mout-xforward.gmx.net ([82.165.159.13]:53929 "EHLO
+	mout-xforward.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755212AbaHVImY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 04:42:24 -0400
+Received: from fb07-iapwap2.physik.uni-giessen.de ([134.176.19.122]) by
+ mail.gmx.com (mrgmx002) with ESMTPSA (Nemesis) id 0MUI8w-1Wttro35QQ-00QxPY
+ for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 10:42:22 +0200
+From: Marc Dietrich <marvin24@gmx.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs restore memory corruption (bug: 82701)
+Date: Fri, 22 Aug 2014 10:42:18 +0200
+Message-ID: <2743777.ssdxK72F8y@fb07-iapwap2>
+In-Reply-To: <1408689825.22226.14.camel@localhost.localdomain>
+References: <2058629.ulFxBAG3Lx@fb07-iapwap2> <2196812.uedtk6DxDd@fb07-iapwap2> <1408689825.22226.14.camel@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart9176907.ZAFTu8zI79"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN <marc <at> merlins.org> writes:
+
+--nextPart9176907.ZAFTu8zI79
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+
+Am Freitag, 22. August 2014, 14:43:45 schrieb Gui Hecheng:
+> On Thu, 2014-08-21 at 16:19 +0200, Marc Dietrich wrote:
+> > Am Donnerstag, 21. August 2014, 17:52:16 schrieb Gui Hecheng:
+> > > On Mon, 2014-08-18 at 11:25 +0200, Marc Dietrich wrote:
+> > > > Hi,
+> > > > 
+> > > > I did a checkout of the latest btrfs progs to repair my damaged
+> > > > filesystem.
+> > > > Running btrfs restore gives me several failed to inflate: -6 and
+> > > > crashes
+> > > > with some memory corruption. I ran it again with valgrind and got:
+> > > > 
+> > > > valgrind --log-file=x2 -v --leak-check=yes btrfs restore /dev/sda9
+> > > > /mnt/backup
+> > > > 
+> > > > ==8528== Memcheck, a memory error detector
+> > > > ==8528== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et
+> > > > al.
+> > > > ==8528== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright
+> > > > info
+> > > > ==8528== Command: btrfs restore /dev/sda9 /mnt/backup
+> > > > ==8528== Parent PID: 8453
+> > > > ==8528==
+> > > > ==8528== Syscall param pwrite64(buf) points to uninitialised byte(s)
+> > > > ==8528==    at 0x59BE3C3: __pwrite_nocancel (in
+> > > > /lib64/libpthread-2.18.so)
+> > > > ==8528==    by 0x41F22F: search_dir (cmds-restore.c:392)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
+> > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
+> > > > ==8528==  Address 0x66956a0 is 7,056 bytes inside a block of size
+> > > > 8,192
+> > > > alloc'd
+> > > > ==8528==    at 0x4C277AB: malloc (in
+> > > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
+> > > > ==8528==    by 0x41EEAD: search_dir (cmds-restore.c:316)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
+> > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
+> > > 
+> > > -------------------[snip]---------------------------------
+> > > .... leaks ...
+> > > ----------------------------------------------------------
+>
+> For the leak below...
+> I've no idea why the @decompress_lzo() is not statisfied with @inbuf
+> with the exact size of the disk bytes.
+> Or maybe the compressed data had just sufferred damages...
+> 
+> BTW, when you wrote your data, did that kernel has the following commit
+> for btrfs?
+> 	commit: 59516f6017c589e7316418fda6128ba8f829a77f
+
+mmh, I used the master branch which is still on 3.14.2 (from k.org).
+
+Ah, there is a development branch on another repo (repo.or.cz). Why oh why?
 
 > 
-> On Thu, Aug 21, 2014 at 05:52:01AM +0000, Mihail Zaporozhets wrote:
-> > # btrfs-zero-log /dev/sda1                         
-> > warning devid 5 not found already
-> > Check tree block failed, want=16845270495232, have=0
-> > read block failed check_tree_block
-> > Couldn't read tree root
+> If *NO*, then you may try the following and see if it makes any
+> difference:
+> ---------------------------------------------------------
+> diff --git a/cmds-restore.c b/cmds-restore.c
+> index dde7de8..ae1ea72 100644
+> --- a/cmds-restore.c
+> +++ b/cmds-restore.c
+> @@ -297,7 +297,7 @@ static int copy_one_extent(struct btrfs_root *root,
+> int fd,
+>         ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
+>         offset = btrfs_file_extent_offset(leaf, fi);
+>         num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
+> -       size_left = disk_size;
+> +       size_left = num_bytes;
+>         if (compress == BTRFS_COMPRESS_NONE)
+>                 bytenr += offset;
 > 
-> You may be hitting the same problem I was a week back. See the thread
-> that says "btrfs-zero-log fails, can't mount FS"
-> 
-> Download the source for btrfs-progs, and apply this patch from Chris:
-> 
-> diff --git a/disk-io.c b/disk-io.c
-> index 8db0335..d9a8e19 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
->  <at>  <at>  -911,13 +911,13  <at>  <at>  int btrfs_setup_all_roots(struct
-btrfs_fs_info *fs_info, u64 root_tree_bytenr,
->                         return -EIO;
+> @@ -376,7 +376,7 @@ again:
+>                 goto out;
 >         }
->         fs_info->csum_root->track_dirty = 1;
-> -
-> +#if 0
->         ret = find_and_setup_log_root(root, fs_info, sb);
+> 
+> -       ret = decompress(inbuf, outbuf, disk_size, &ram_size, compress);
+> +       ret = decompress(inbuf, outbuf, num_bytes, &ram_size, compress);
 >         if (ret) {
->                 printk("Couldn't setup log root tree\n");
->                 return -EIO;
->         }
-> -
-> +#endif
->         fs_info->generation = generation;
->         fs_info->last_trans_committed = generation;
->         if (extent_buffer_uptodate(fs_info->extent_root->node) &&
+>                 num_copies =
+> btrfs_num_copies(&root->fs_info->mapping_tree,
+>                                               bytenr, length);
+> ------------------------------------------------------------------------
+> *NOTE*: the above is just a trial, it is actually not proper, but please
+> don't worry, it does no harm.
+
+well, my restore finished after 1 week (~ 400 GB of compressed data), from 
+which 100 GB got lost. It wasn't important data so I'm willing to redo the 
+complete restore again if you (or the the btrfs team) is interested in fixing 
+these bugs in the near future.
+
+I will upload the latest valgrind log for the finial run to the bugzilla on 
+kernel.org (https://bugzilla.kernel.org/show_bug.cgi?id=82701).
+
+I wonder if there is a corrupted btrfs disk image which can be used as a 
+reference and which triggers all the current error paths (or maybe several 
+images with one error in each one as other projects do). On the other hand, I 
+guess this would be a huge pill of work.
+
+Marc
+
+
+
+> -Gui
 > 
-> Or if you're desparate and want a binary, I'll Email you one directly
-> (not that you should run a binary you got from someone via Email as
-> root, so it's only if you're desperate)
-> 
-> Marc
+> > ==3007== Invalid read of size 1
+> > ==3007==    at 0x57A11B1: lzo1x_decompress_safe (in
+> > /usr/lib64/liblzo2.so.2.0.0)
+> > ==3007==    by 0x41E2C4: decompress (cmds-restore.c:122)
+> > ==3007==    by 0x41F19D: search_dir (cmds-restore.c:378)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==  Address 0x6887774 is 4 bytes after a block of size 4,096 alloc'd
+> > ==3007==    at 0x4C277AB: malloc (in
+> > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
+> > ==3007==    by 0x41EE61: search_dir (cmds-restore.c:309)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
+> > 
+> > Thanks so far!
+> > 
+> > Marc
+> > 
+> > > > ==8528== Invalid read of size 2
+> > > > ==8528==    at 0x4C2BFA0: memcpy@@GLIBC_2.14 (in
+> > > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+> > > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
+> > > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
+> > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
+> > > > ==8528==  Address 0x6b0bfb8 is 632 bytes inside a block of size 4,224
+> > > > free'd ==8528==    at 0x4C28ADC: free (in
+> > > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
+> > > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
+> > > > ==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
+> > > > ==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
+> > > > ==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==
+> > > > ==8528== Invalid read of size 2
+> > > > ==8528==    at 0x4C2BFB3: memcpy@@GLIBC_2.14 (in
+> > > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+> > > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
+> > > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
+> > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
+> > > > ==8528==  Address 0x6b0bfb4 is 628 bytes inside a block of size 4,224
+> > > > free'd ==8528==    at 0x4C28ADC: free (in
+> > > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
+> > > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
+> > > > ==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
+> > > > ==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
+> > > > ==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
+> > > > ==8528==
+> > > > ==8528==
+> > > > ==8528== HEAP SUMMARY:
+> > > > ==8528==     in use at exit: 0 bytes in 0 blocks
+> > > > ==8528==   total heap usage: 260,452 allocs, 260,452 frees,
+> > > > 278,189,550
+> > > > bytes allocated
+> > > > ==8528==
+> > > > ==8528== All heap blocks were freed -- no leaks are possible
+> > > > ==8528==
+> > > > ==8528== For counts of detected and suppressed errors, rerun with: -v
+> > > > ==8528== Use --track-origins=yes to see where uninitialised values
+> > > > come
+> > > > from ==8528== ERROR SUMMARY: 16597 errors from 7 contexts (suppressed:
+> > > > 2
+> > > > from 2)
+> > > > 
+> > > > see: https://bugzilla.kernel.org/show_bug.cgi?id=82701
+> > > > 
+> > > > Marc
+> > > > 
+> > > > p.s.
+> > > > 
+> > > > I wonder if this list should be autosubscribed to btrfs related bugs
+> > > > 
+> > > > --
+> > > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> > > > in
+> > > > the body of a message to majordomo@vger.kernel.org
+> > > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart9176907.ZAFTu8zI79
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Thanks for answers. 
-ok,
-git clone git://repo.or.cz/btrfs-progs-unstable/devel.git;
-make;
-Do I need to patch devel's version, or it contains this changes? if no:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
 
-sudo ./btrfs-zero-log /dev/sda1
-warning devid 5 not found already
-Check tree block failed, want=16845270495232, have=0
-read block failed check_tree_block
-Couldn't read tree root
+iQEcBAABAgAGBQJT9wJqAAoJEKyeR39HFBtoWNEH/1r3wYRw5mu3L5WLWjOIOmLO
+UcrF7I8WPm0wHrnPtCvszeiYTAADY4tdvBn0xUc0laGbLZsGlhwmWW3q0jlYEsqd
+pZv063k0bUX5yV/2ZPkU5GFsn85U8tegPpDIH8Hzg4YQ2ECf/rC1O8D7jr0zB+GI
+QTT+Nvc6giNBxDDTXP4QRcJQ+MbpDbw08X/3hWMMb7Zzk+EXeKRflE/FQDZMtAXZ
+eWXSFxwoFrMOYT39TrXBhpzXan69scOHeroMcarM4ss6WUB7yIVTXuu8uKTOCdT3
+MAzMMjYa0ZhW2Vo5Z4xzxX10zXuKrj+03iHEFj0LN/XKIIdMptwIY49bGaedExE=
+=qe7f
+-----END PGP SIGNATURE-----
 
-sudo btrfs-debug-tree -R /dev/sda1              
-warning devid 5 not found already
-Check tree block failed, want=16845270495232, have=0
-read block failed check_tree_block
-Couldn't read tree root
-
-sudo ./btrfs-show-super /dev/sda1
-superblock: bytenr=65536, device=/dev/sda1
----------------------------------------------------------
-csum			0x9867082d [match]
-bytenr			65536
-flags			0x1
-magic			_BHRfS_M [match]
-fsid			841f1b5c-adb2-485f-a4cf-83bbf880dced
-label			
-generation		59176
-root			16845270495232
-sys_array_size		97
-chunk_root_generation	59166
-root_level		2
-chunk_root		11409648779264
-chunk_root_level	2
-log_root		0
-log_root_transid	0
-log_root_level		0
-total_bytes		10001983041536
-bytes_used		9997613580288
-sectorsize		4096
-nodesize		4096
-leafsize		4096
-stripesize		4096
-root_dir		6
-num_devices		5
-compat_flags		0x0
-compat_ro_flags		0x0
-incompat_flags		0x1
-csum_type		0
-csum_size		4
-cache_generation	59176
-uuid_tree_generation	59176
-dev_item.uuid		1ef01e06-b355-4a17-a2c8-5623188813f9
-dev_item.fsid		841f1b5c-adb2-485f-a4cf-83bbf880dced [match]
-dev_item.type		0
-dev_item.total_bytes	2000397885440
-dev_item.bytes_used	1999324119040
-dev_item.io_align	4096
-dev_item.io_width	4096
-dev_item.sector_size	4096
-dev_item.devid		1
-dev_item.dev_group	0
-dev_item.seek_speed	0
-dev_item.bandwidth	0
-dev_item.generation	0
-
-
-./btrfs --version
-Btrfs v3.14.2
-
-last dmesg :
-[110290.284290] show_signal_msg: 174 callbacks suppressed                  
-                          
-[110290.284294] btrfs-debug-tre[6014]: segfault at e0 ip 00000000004022b0 sp
-00007fffcb77d1d0 error 4 in btrfs-debug-tree[400000+27000]            
-[111278.465863] btrfs-debug-tre[10907]: segfault at e0 ip 00000000004022b0
-sp 00007fff856c6bd0 error 4 in btrfs-debug-tree[400000+27000]
-
-
-sudo ./btrfs rescue chunk-recover -v /dev/sda1    
-All Devices:
-	Device: id = 4, name = /dev/sde1
-	Device: id = 3, name = /dev/sdd1
-	Device: id = 2, name = /dev/sdc1
-	Device: id = 1, name = /dev/sda1
-
-still waiting....
- I started this before write to mail list, but, as i remember, my pc after
-one night stay fully freeze,  and had no reaction for anyone keys, and I
-just reboot it at that time.
-
-
-Nothing changes until this moment...
+--nextPart9176907.ZAFTu8zI79--
 

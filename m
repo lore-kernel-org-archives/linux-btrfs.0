@@ -1,73 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50891 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932410AbaHVRfx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 13:35:53 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XKske-0007aA-DM
-	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 19:35:48 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 19:35:48 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 19:35:48 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Significance of high number of mails on this list?
-Date: Fri, 22 Aug 2014 17:35:36 +0000 (UTC)
-Message-ID: <pan$b0f07$6c9be711$e76b466$99de97dd@cox.net>
-References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
-	<2217061.yFV10mnZWq@merkaba>
-	<CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
-	<53F6E9B7.1040701@gmail.com>
-	<pan$258d1$c3749601$d83e6a85$e56acf7f@cox.net>
-	<CAL3q7H6PrjdSA-qjEsiX6vEMQbeYukn2R4vh=f4mteQNv0Y_qg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:36796 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932487AbaHVRjC convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 13:39:02 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Distro vs latest kernel for BTRFS?
+Date: Fri, 22 Aug 2014 19:38:59 +0200
+Message-ID: <5464164.8Uxj5nlT6d@merkaba>
+In-Reply-To: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filipe David Manana posted on Fri, 22 Aug 2014 10:58:33 +0100 as
-excerpted:
+Am Freitag, 22. August 2014, 17:29:29 schrieb Shriramana Sharma:
+> Hello. I've seen repeated advices to use the latest kernel. While
+> hearing of the recent compression bug affecting recent kernels does
+> somewhat warn one off the previous advice, I would like to know what
+> people who are running regular distros do to get the latest kernel.
+> 
+> Personally I'm on Kubuntu, which provides mainline kernels till a
+> particular point but not beyond that.
+> 
+> Do people here always compile the latest kernel themselves just to get
+> the latest BTRFS stability fixes (and  improvements, though as a
+> second priority)?
 
-> On Fri, Aug 22, 2014 at 8:35 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Konstantinos Skarlatos posted on Fri, 22 Aug 2014 09:56:55 +0300 as
->> excerpted:
->>
->>> I would stay with rsync for a while, because there is always the
->>> possibility of a bug [...] (Or maybe I am too paranoid[)]
->>
->> I believe in this case you /are/ "being too paranoid."
->>
->> Both btrfs send and receive only deal with data/metadata they know how
->> to deal with.  If it's corrupt in some way or if they don't understand
->> it, they don't send/write it, they fail.
-> 
-> Most of the time yes, however we have at least 1 know bug that affects
-> 3.14.x only where send silently corrupts file data (replaces valid data
-> with zeroes) at the destination:
-> 
-> https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/
-commit/?id=766b5e5ae78dd04a93a275690a49e23d7dcb1f39
-> 
-> The fix landed in 3.15, but wasn't backported to 3.14.x yet (adding
-> Chris to cc).
-> 
-> 
->> IOW, if it works without error it's as guaranteed to be golden as these
->> things get.
+I compile own kernel on my main laptop cause I want to follow kernel 
+development closely for my Linux Performance analysis and tuning trainings and 
+also help a bit with testing things.
 
-Well, I /did/ say "as golden as these things get".  With even long stable 
-subsystems such as mdraid having occasional data-risking bugs, and with 
-btrfs in general not yet fully stable/mature...
+I don´t compile kernels on any other machines anymore. Instead I use what 
+Debian Sid gives me. On the server VM I use 3.14 Debian Wheezy Backports 
+kernel, an will continue to do so, until I know a 3.16 package with BTRFS fixes 
+hits the backports repo.
 
-But point taken.  That bug flew under my radar.  Thanks for mentioning it.
+I recommend against SLES 11 SP 3 stable kernel. Their 3.0 had serious free 
+space issues in one VM after *just* installing OpenLDAP and have snapper 
+continue with the snapshotting. It was still 2GB free, but I was not able to 
+delete files or delete snapshots anymore. I think I also try rebalancing the 
+FS. After a while I gave up and reverted to a previous VM snapshot.
 
+I know this is supported officially, but I don´t think this is anywhere near 
+production ready. SLES 12 should be much better as its using a newer kernel.
+
+On any account long time enterprise Linux kernels may easily become outdated. 
+I know they are backporting things, but I think for BTRFS its better to follow 
+new kernels as is more timely.
+
+With the distros that release all 6 months or so, I think you get recent 
+enough kernel easily. With Debian you can use backport kernels. Some distros 
+have additionally kernel repos for more recent kernels. And I in the end I 
+think you can even install newer kernel packages on enterprise distros, but… 
+you loose support this way.
+
+For Kubuntu / Ubuntu I think there even is a daily kernel PPA. I think 
+Phoronix uses it for their daily performance regression testing (and making 
+big noise of regressions even in RC kernels).
+
+Ciao,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

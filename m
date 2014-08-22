@@ -1,41 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:53378 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:53832 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756243AbaHVNPp (ORCPT
+	with ESMTP id S932132AbaHVOKG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 09:15:45 -0400
-Date: Fri, 22 Aug 2014 06:15:42 -0700
+	Fri, 22 Aug 2014 10:10:06 -0400
+Date: Fri, 22 Aug 2014 07:10:02 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Cc: Shriramana Sharma <samjnaa@gmail.com>,
-        Martin Steigerwald <Martin@lichtvoll.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Significance of high number of mails on this list?
-Message-ID: <20140822131542.GN3875@merlins.org>
-References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
- <2217061.yFV10mnZWq@merkaba>
- <CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
- <53F6E9B7.1040701@gmail.com>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Distro vs latest kernel for BTRFS?
+Message-ID: <20140822141002.GO3875@merlins.org>
+References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53F6E9B7.1040701@gmail.com>
+In-Reply-To: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 22, 2014 at 09:56:55AM +0300, Konstantinos Skarlatos wrote:
-> I would stay with rsync for a while, because there is always the
-> possibility of a bug that corrupts both your primary filesystem and
-> your backup one, or send propagating corruption from one filesystem
-> to another (Or maybe I am too paranoid, it would be good if we could
-> have the opinion of a btrfs developer on this)
+On Fri, Aug 22, 2014 at 05:29:29PM +0530, Shriramana Sharma wrote:
+> Hello. I've seen repeated advices to use the latest kernel. While
+> hearing of the recent compression bug affecting recent kernels does
+> somewhat warn one off the previous advice, I would like to know what
+> people who are running regular distros do to get the latest kernel.
+> 
+> Personally I'm on Kubuntu, which provides mainline kernels till a
+> particular point but not beyond that.
+> 
+> Do people here always compile the latest kernel themselves just to get
+> the latest BTRFS stability fixes (and  improvements, though as a
+> second priority)?
 
-btrfs send will not corrupt your primary filesystem, it takes a read
-only subvolume and sends its data somewhere else.
-At worst, it can (and has in the fact) create incorrect data on the
-destination, and I've never seen a single report of it actually
-corrupting the destination filesystem (the destination subvolume can
-correct incorrect data, but that wouldn't corrupt the existing data on
-the destination).
+First, yeah you want to stay with 3.14 for now until the last bug that's
+been found and is integrated in a stable 3.16.
+
+Yes, I compile my own kernels, but that's mostly because that's what one
+did in 1993, and that's what I still do now :)
+
+If you're not comfortable compiling your own kernel (mostly getting the
+.config options you want/need), you can
+1) use a recent enough vendor kernel 
+2) use their .config (or /proc/config.gz) as a way to build a new
+kernel.
 
 Marc
 -- 

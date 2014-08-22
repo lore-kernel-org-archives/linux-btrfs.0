@@ -1,53 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54151 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932410AbaHVSSD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 14:18:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XKtPR-0000Ws-UH
-	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 20:17:57 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 20:17:57 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 20:17:57 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unclean shutdowns cause google-chrome profile to be corrupted
- in various ways
-Date: Fri, 22 Aug 2014 18:17:38 +0000 (UTC)
-Message-ID: <pan$a7366$366442ed$60aa89a1$c636b8e3@cox.net>
-References: <20140822155040.GU3875@merlins.org>
-Mime-Version: 1.0
+Received: from mail-vc0-f176.google.com ([209.85.220.176]:56832 "EHLO
+	mail-vc0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932410AbaHVSWg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 14:22:36 -0400
+Received: by mail-vc0-f176.google.com with SMTP id id10so12581033vcb.21
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 11:22:35 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <53F731BC.6000200@gmail.com>
+References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+	<53F731BC.6000200@gmail.com>
+Date: Fri, 22 Aug 2014 14:22:35 -0400
+Message-ID: <CAGfcS_=ArzTNUGCmyhcOSL-acTgfThF5XVu_-AHVaCssmsuKkQ@mail.gmail.com>
+Subject: Re: Distro vs latest kernel for BTRFS?
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Shriramana Sharma <samjnaa@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Fri, 22 Aug 2014 08:50:40 -0700 as excerpted:
+On Fri, Aug 22, 2014 at 8:04 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+>>
+> I personally use Gentoo Unstable on all my systems, so I build all my
+> kernels locally anyway, and stay pretty much in-line with the current
+> stable Mainline kernel.
 
-> Fairly often (over 20 times for me so far with various kernel versions),
-> when I reboot after a crash, my google-chrome profile is damaged in one
-> of 2 ways:
-> 1) open tabs don't reopen 2) google-chrome says that my profile is
-> corrupted.
-> 
-> In both cases rsyncing ~/.config/google-chrome from the last hourly
-> snapshot has fixed the problem every time.
+"Gentoo Unstable" probably means gentoo-sources, testing version,
+which follows the stable kernel branch, but the most recent stable,
+and not the long-term stable.  gentoo-sources stable version generally
+follows the most recent longterm stable kernel (so 3.14 right now).
+I'm not sure what the exact policy is, but that is my sense of it.
 
-I've had a similar issue with firefox, tho I've narrowed it down to a 
-single file, IIRC preferences.js, which firefox keeps plenty of backups 
-of (I see seven, going back quite some way), and recovering it from the 
-last firefox backup or from my own backups has worked the three-ish times 
-it happened here.  But it was a bit disconcerting to see firefox pop up 
-its new profile wizard the first time it happened, and it took me awhile 
-to figure out which file I needed to restore to get my skins and 
-extensions back to normal.
+So, you're still running a stable kernel most likely.  If you really
+want mainline then you want git-sources.  That follows the most recent
+mainline I believe.  Of course, if you're following it that closely
+then you probably should think about just doing a git clone and
+managing it yourself, since then you can handle patches/etc more
+easily.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+I think the best option for somebody running btrfs is to stick with a
+stable kernel branch, either the current stable or a very recent
+longterm.  I wouldn't go back into 3.2 land or anything like that.
 
+But, yes, if you had stuck with 3.14 and not gone to the current
+stable then you would have missed the compress=lzo deadlock.  So, pick
+your poison.  :)
+
+Rich

@@ -1,49 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:60720 "EHLO tetsuo.zabbo.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754505AbaHUVYc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 17:24:32 -0400
-Received: from lenny.home.zabbo.net (lenny.home.zabbo.net [192.168.242.10])
-	by tetsuo.zabbo.net (Postfix) with ESMTP id B8F407200521
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 14:24:31 -0700 (PDT)
-From: Zach Brown <zab@zabbo.net>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fix unaligned loads in receive
-Date: Thu, 21 Aug 2014 14:24:04 -0700
-Message-Id: <1408656244-17654-1-git-send-email-zab@zabbo.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:15504 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755634AbaHVDmv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 23:42:51 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s7M3gk1Q008074
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 11:42:46 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: corrupt-block: fix a delete and use bug corrupting extent tree.
+Date: Fri, 22 Aug 2014 11:42:49 +0800
+Message-ID: <1408678969-9218-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported corruption after receiving subvolumes.  Turning up the
-logging during the receive showed that the commands and string
-attributes were being received correctly but the u64 attrbutes were
-sometimes corrupted by having variable number of low order bytes
-introduced.
+When corrupting extent tree, corrupt-block will iterate each child
+node/leaf of a node.
+However, when a node's child is leaf, btrfs_corrupt_extent_leaf() may
+delete some item in the leaf, which may cause the children number of the
+parent node decrease.
 
-It turned out they were on a platform that corrupts unaligned userspace
-loads.  Loading the u64s from the unaligned pointers into the received
-command stream with get_unaligned() fixed the problem.
-
-Reported-By: Klaus Holler <kho@gmx.at>
-Tested-By: Klaus Holler <kho@gmx.at>
-Signed-off-by: Zach Brown <zab@zabbo.net>
+Before this patch, corrupt-block will read out the nritems only *ONCE*
+and iterate the 'nritems' times.
+When btrfs_corrupt_extent_leaf() deletes enough item, causing the
+nritems of btrfs_header decreased, the last few iteration will access
+non-existed node, which will cause the delete and use bug like
+the following:
 ---
- send-stream.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+\# ./btrfs-corrupt-block -E /dev/vdc
+deleting extent record: key 40714240 168 16384
+Couldn't map the block 3459802452797161472
+btrfs-corrupt-block: volumes.c:1137: btrfs_num_copies: Assertion
+`!(!ce)' failed.
+Aborted
+---
 
-diff --git a/send-stream.c b/send-stream.c
-index 88e18e2..4f8dd83 100644
---- a/send-stream.c
-+++ b/send-stream.c
-@@ -204,7 +204,7 @@ out:
- 		int __len; \
- 		TLV_GET(s, attr, (void**)&__tmp, &__len); \
- 		TLV_CHECK_LEN(sizeof(*__tmp), __len); \
--		*v = le##bits##_to_cpu(*__tmp); \
-+		*v = get_unaligned_le##bits(__tmp); \
- 	} while (0)
+This patch will update the nritmes in each iteration to avoid the bug.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ btrfs-corrupt-block.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 6ecbe47..486ea19 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -264,12 +264,10 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
+ 				      struct extent_buffer *eb)
+ {
+ 	int i;
+-	u32 nr;
  
- #define TLV_GET_U8(s, attr, v) TLV_GET_INT(s, attr, 8, v)
+ 	if (!eb)
+ 		return;
+ 
+-	nr = btrfs_header_nritems(eb);
+ 	if (btrfs_is_leaf(eb)) {
+ 		btrfs_corrupt_extent_leaf(trans, root, eb);
+ 		return;
+@@ -280,7 +278,7 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
+ 			return;
+ 	}
+ 
+-	for (i = 0; i < nr; i++) {
++	for (i = 0; i < btrfs_header_nritems(eb); i++) {
+ 		struct extent_buffer *next;
+ 
+ 		next = read_tree_block(root, btrfs_node_blockptr(eb, i),
 -- 
-1.9.3
+2.0.4
 

@@ -1,66 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f173.google.com ([209.85.220.173]:38524 "EHLO
-	mail-vc0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932410AbaHVSeQ (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:56464 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750734AbaHVSqg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 14:34:16 -0400
-Received: by mail-vc0-f173.google.com with SMTP id hy10so12778697vcb.18
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 11:34:15 -0700 (PDT)
+	Fri, 22 Aug 2014 14:46:36 -0400
+Date: Fri, 22 Aug 2014 11:46:32 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Eric Sandeen <sandeen@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Unclean shutdowns cause google-chrome profile to be corrupted in
+ various ways
+Message-ID: <20140822184632.GD3875@merlins.org>
+References: <20140822155040.GU3875@merlins.org>
+ <53F77EAB.5070309@redhat.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$258d1$c3749601$d83e6a85$e56acf7f@cox.net>
-References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
-	<2217061.yFV10mnZWq@merkaba>
-	<CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
-	<53F6E9B7.1040701@gmail.com>
-	<pan$258d1$c3749601$d83e6a85$e56acf7f@cox.net>
-Date: Fri, 22 Aug 2014 14:34:15 -0400
-Message-ID: <CAGfcS_=uPkF0eF4bROJj1o9V0boC0-it=PGswhtZWSRjhVscwQ@mail.gmail.com>
-Subject: Re: Significance of high number of mails on this list?
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <53F77EAB.5070309@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 22, 2014 at 3:35 AM, Duncan <1i5t5.duncan@cox.net> wrote:
->
-> No claim to be a dev, btrfs or otherwise, here, but I believe in this
-> case you /are/ "being too paranoid."
->
-> Both btrfs send and receive only deal with data/metadata they know how to
-> deal with.  If it's corrupt in some way or if they don't understand it,
-> they don't send/write it, they fail.
->
-> IOW, if it works without error it's as guaranteed to be golden as these
-> things get.  The problem is that it doesn't always work without error in
-> the first place, sometimes it /does/ fail.  In that instance you can
-> always try again as the existing data/metadata shouldn't be damaged, but
-> if it keeps failing you may have to try something else, rsync, etc.
+On Fri, Aug 22, 2014 at 12:32:27PM -0500, Eric Sandeen wrote:
+> On 8/22/14, 10:50 AM, Marc MERLIN wrote:
+> 
+> > But if my kernel hangs due to a bug that isn't btrfs' fault and I need
+> > to power off and back on, after reboot my google-chrome profile is
+> > almost always broken in some way.
+> 
+> Given my experiences with userspace in general, I'd lay money on
+> google-chrome simply not DTRT WRT data integrity syscalls (or
+> maybe it's the sqlite database handling underneath...)
+> 
+> Does it behave any differently on other filesystems?
 
-Well, my main use-case for rsync right now is btrfs bug hoses my
-filesystem, so it would be nice to have a daily full backup on
-something other than btrfs so that it is unlikely to suffer the same
-problem at the same time.
+Well
+1) I used to work on chromeos until some months back, and haven't heard
+on this problem with chrome/linux
+2) never had a chrome corruption problem on a non btrfs filesystem
+3) as mentioned, my btrfs snapshots are somehow always consistent for
+chrome, which if chrome were not flushing its buffers right, wouldn't
+happen.
 
-Using btrfs send with that backup would certainly be more efficient,
-but it would defeat the purpose of the backup, which is to not be
-btrfs.  I am already using mirroring in the event of drive failure,
-and offsite cloud backups of critical data in the event of a larger
-catastrophe.  Btrfs eating my data is a somewhat likely failure mode
-in the grand scheme of things, so I protect against it so that I can
-still have fun playing with btrfs without losing sleep.
+Incidently, I just had to rebuild my mysqldb on my laptop after it got
+corrupted in a way that was non recoverable.
+Mysql surely knows how to flush and have consistent state points.
 
-I've actually restored from it once.  I suspect that I could have
-fixed my ENOSPC problem without resorting to that, but the usual FAQ
-solutions didn't work and I was running short on time, and that
-particular filesystem was only 64GB anyway so it was a fast restore
-(and that is why this filesystem is prone to ENOSPC in the first
-place).
+In my experience, linux crashes cause btrfs to somehow end up with non
+consistent states on disk. Whether it's a bug in the btrfs code, the
+linux block subsystem or sata driver, or firmware bugs on all 5 SSDs
+I've had so far, I can't say, but there is a problem somewhere for sure.
 
-Oh, and I'm using rsnapshot, so I also get the benefit of a few days
-worth of backups - almost as good as snapper, though in reality
-obviously not the same thing.
-
---
-Rich
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

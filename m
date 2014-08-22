@@ -1,355 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29581 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752937AbaHVGoW (ORCPT
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:39573 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752937AbaHVG5C (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 02:44:22 -0400
-Message-ID: <1408689825.22226.14.camel@localhost.localdomain>
-Subject: Re: btrfs restore memory corruption (bug: 82701)
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Marc Dietrich <marvin24@gmx.de>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Fri, 22 Aug 2014 14:43:45 +0800
-In-Reply-To: <2196812.uedtk6DxDd@fb07-iapwap2>
-References: <2058629.ulFxBAG3Lx@fb07-iapwap2>
-	 <1408614736.11298.6.camel@localhost.localdomain>
-	 <2196812.uedtk6DxDd@fb07-iapwap2>
-Content-Type: text/plain; charset="UTF-8"
+	Fri, 22 Aug 2014 02:57:02 -0400
+Received: by mail-wi0-f180.google.com with SMTP id n3so9442480wiv.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 23:57:01 -0700 (PDT)
+Message-ID: <53F6E9B7.1040701@gmail.com>
+Date: Fri, 22 Aug 2014 09:56:55 +0300
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 MIME-Version: 1.0
+To: Shriramana Sharma <samjnaa@gmail.com>,
+        Martin Steigerwald <Martin@lichtvoll.de>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Significance of high number of mails on this list?
+References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>	<2217061.yFV10mnZWq@merkaba> <CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
+In-Reply-To: <CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2014-08-21 at 16:19 +0200, Marc Dietrich wrote:
-> Am Donnerstag, 21. August 2014, 17:52:16 schrieb Gui Hecheng:
-> > On Mon, 2014-08-18 at 11:25 +0200, Marc Dietrich wrote:
-> > > Hi,
-> > > 
-> > > I did a checkout of the latest btrfs progs to repair my damaged
-> > > filesystem.
-> > > Running btrfs restore gives me several failed to inflate: -6 and crashes
-> > > with some memory corruption. I ran it again with valgrind and got:
-> > > 
-> > > valgrind --log-file=x2 -v --leak-check=yes btrfs restore /dev/sda9
-> > > /mnt/backup
-> > > 
-> > > ==8528== Memcheck, a memory error detector
-> > > ==8528== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
-> > > ==8528== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright info
-> > > ==8528== Command: btrfs restore /dev/sda9 /mnt/backup
-> > > ==8528== Parent PID: 8453
-> > > ==8528==
-> > > ==8528== Syscall param pwrite64(buf) points to uninitialised byte(s)
-> > > ==8528==    at 0x59BE3C3: __pwrite_nocancel (in /lib64/libpthread-2.18.so)
-> > > ==8528==    by 0x41F22F: search_dir (cmds-restore.c:392)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x66956a0 is 7,056 bytes inside a block of size 8,192
-> > > alloc'd
-> > > ==8528==    at 0x4C277AB: malloc (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x41EEAD: search_dir (cmds-restore.c:316)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > 
-> > -------------------[snip]---------------------------------
-> > 
-> > > ==8528== Invalid read of size 1
-> > > ==8528==    at 0x4C2BF15: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x684c186 is 1,110 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-> > > ==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==
-> > > ==8528== Invalid read of size 8
-> > > ==8528==    at 0x4C2BF40: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x684c178 is 1,096 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-> > > ==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==
-> > > ==8528== Invalid read of size 8
-> > > ==8528==    at 0x4C2BF52: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x684c168 is 1,080 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-> > > ==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==
-> > > ==8528== Invalid read of size 1
-> > > ==8528==    at 0x4C2BFE4: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x6a385f8 is 2,680 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x41E053: next_leaf (cmds-restore.c:202)
-> > > ==8528==    by 0x41E50F: search_dir (cmds-restore.c:731)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==
-> > 
-> > ----------------------------------------------------------
-> > For the above piece,
-> > maybe you would like to try if the following helps or not:
-> > 
-> > diff --git a/cmds-restore.c b/cmds-restore.c
-> > index 239ea6c..dde7de8 100644
-> > --- a/cmds-restore.c
-> > +++ b/cmds-restore.c
-> > @@ -182,6 +182,7 @@ again:
-> >                 c = path->nodes[level];
-> >                 if (slot >= btrfs_header_nritems(c)) {
-> >                         level++;
-> > +                       offset = 1;
-> >                         if (level == BTRFS_MAX_LEVEL)
-> >                                 return 1;
-> >                         continue;
-> > 
-> > it doesn't seems to go the right way when entering the next level,
-> > it should starts at the first slot at least.
-> 
-> Can't tell if it's the right thing to do, but at least I haven't seen *this* 
-> leak message for a while now.
+On 22/8/2014 6:40 πμ, Shriramana Sharma wrote:
+> Hello people. Thank you for your detailed replies, esp Duncan.
+>
+> In essence, I plan on using BTRFS for my production data -- mainly
+> programs/documents I write in connection with my academic research.
+> I'm not a professional sysadmin and I'm not running a business server.
+> I'm just managing my own data, and as I have mentioned, my chief
+> reason for looking at BTRFS is the ease of snapshots and backups using
+> send/receive.
+>
+> It is clear now that snapshots are by and large stable but
+> send/receive is not. But, IIUC, even if send/receive fails I still
+> have the older data which is not overwritten due to COW and atomic
+> operations, and I can always retry send/receive again. Is this
+> correct?
+>
+> If yes, then I guess I can take the plunge but ensure I have daily
+> backups (which BTRFS itself should help me do easily).
+>
+>
+I would stay with rsync for a while, because there is always the 
+possibility of a bug that corrupts both your primary filesystem and your 
+backup one, or send propagating corruption from one filesystem to 
+another (Or maybe I am too paranoid, it would be good if we could have 
+the opinion of a btrfs developer on this)
 
-I think it works a bit, because it shows that you've passed all the
-stuff with inline extents.
+I would also suggest lsyncd if rsync runs become slow due to too many 
+files and directories, or you have something like my use case, where i 
+have filesystems with millions of files and my backup servers are a few 
+km away and reachable over relatively slow wireless links.
 
-> Additionally, I get many of these (unrelated) leaks now:
+Finaly, be sure to use the --inplace option of rsync.
 
-For the leak below...
-I've no idea why the @decompress_lzo() is not statisfied with @inbuf
-with the exact size of the disk bytes.
-Or maybe the compressed data had just sufferred damages...
-
-BTW, when you wrote your data, did that kernel has the following commit
-for btrfs?
-	commit: 59516f6017c589e7316418fda6128ba8f829a77f
-
-If *NO*, then you may try the following and see if it makes any
-difference:
----------------------------------------------------------
-diff --git a/cmds-restore.c b/cmds-restore.c
-index dde7de8..ae1ea72 100644
---- a/cmds-restore.c
-+++ b/cmds-restore.c
-@@ -297,7 +297,7 @@ static int copy_one_extent(struct btrfs_root *root,
-int fd,
-        ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
-        offset = btrfs_file_extent_offset(leaf, fi);
-        num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
--       size_left = disk_size;
-+       size_left = num_bytes;
-        if (compress == BTRFS_COMPRESS_NONE)
-                bytenr += offset;
- 
-@@ -376,7 +376,7 @@ again:
-                goto out;
-        }
- 
--       ret = decompress(inbuf, outbuf, disk_size, &ram_size, compress);
-+       ret = decompress(inbuf, outbuf, num_bytes, &ram_size, compress);
-        if (ret) {
-                num_copies =
-btrfs_num_copies(&root->fs_info->mapping_tree,
-                                              bytenr, length);
-------------------------------------------------------------------------
-*NOTE*: the above is just a trial, it is actually not proper, but please
-don't worry, it does no harm.
-
--Gui
-
-> ==3007== Invalid read of size 1
-> ==3007==    at 0x57A11B1: lzo1x_decompress_safe (in 
-> /usr/lib64/liblzo2.so.2.0.0)
-> ==3007==    by 0x41E2C4: decompress (cmds-restore.c:122)
-> ==3007==    by 0x41F19D: search_dir (cmds-restore.c:378)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==  Address 0x6887774 is 4 bytes after a block of size 4,096 alloc'd
-> ==3007==    at 0x4C277AB: malloc (in /usr/lib64/valgrind/vgpreload_memcheck-
-> amd64-linux.so)
-> ==3007==    by 0x41EE61: search_dir (cmds-restore.c:309)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> ==3007==    by 0x41F8D7: search_dir (cmds-restore.c:895)
-> 
-> Thanks so far!
-> 
-> Marc
-> 
-> 
-> > > ==8528== Invalid read of size 2
-> > > ==8528==    at 0x4C2BFA0: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x6b0bfb8 is 632 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
-> > > ==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
-> > > ==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==
-> > > ==8528== Invalid read of size 2
-> > > ==8528==    at 0x4C2BFB3: memcpy@@GLIBC_2.14 (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
-> > > ==8528==    by 0x43818F: read_extent_buffer (string3.h:51)
-> > > ==8528==    by 0x41EC66: search_dir (cmds-restore.c:233)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > ==8528==  Address 0x6b0bfb4 is 628 bytes inside a block of size 4,224
-> > > free'd ==8528==    at 0x4C28ADC: free (in
-> > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > ==8528==    by 0x437895: free_extent_buffer (extent_io.c:618)
-> > > ==8528==    by 0x4261CA: btrfs_release_path (ctree.c:61)
-> > > ==8528==    by 0x426212: btrfs_free_path (ctree.c:51)
-> > > ==8528==    by 0x41F93B: search_dir (cmds-restore.c:911)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > ==8528==
-> > > ==8528==
-> > > ==8528== HEAP SUMMARY:
-> > > ==8528==     in use at exit: 0 bytes in 0 blocks
-> > > ==8528==   total heap usage: 260,452 allocs, 260,452 frees, 278,189,550
-> > > bytes allocated
-> > > ==8528==
-> > > ==8528== All heap blocks were freed -- no leaks are possible
-> > > ==8528==
-> > > ==8528== For counts of detected and suppressed errors, rerun with: -v
-> > > ==8528== Use --track-origins=yes to see where uninitialised values come
-> > > from ==8528== ERROR SUMMARY: 16597 errors from 7 contexts (suppressed: 2
-> > > from 2)
-> > > 
-> > > see: https://bugzilla.kernel.org/show_bug.cgi?id=82701
-> > > 
-> > > Marc
-> > > 
-> > > p.s.
-> > > 
-> > > I wonder if this list should be autosubscribed to btrfs related bugs
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+-- 
+Konstantinos Skarlatos
 

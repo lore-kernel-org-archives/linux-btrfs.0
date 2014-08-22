@@ -1,59 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f180.google.com ([209.85.217.180]:37019 "EHLO
-	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750925AbaHVUFR (ORCPT
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:60515 "EHLO
+	mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751716AbaHVVnj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 16:05:17 -0400
-Received: by mail-lb0-f180.google.com with SMTP id v6so9849680lbi.39
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 13:05:15 -0700 (PDT)
-From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Chris Mason <clm@fb.com>, Jiri Kosina <trivial@kernel.org>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] trivial: fs/btrfs/tree-log.c: Fix closing brace followed by if
-References: <1403293903-17696-1-git-send-email-linux@rasmusvillemoes.dk>
-	<53A499B8.5050107@fb.com>
-Date: Fri, 22 Aug 2014 22:05:13 +0200
-In-Reply-To: <53A499B8.5050107@fb.com> (Josef Bacik's message of "Fri, 20 Jun
-	2014 13:29:44 -0700")
-Message-ID: <87iolkthmu.fsf@rasmusvillemoes.dk>
+	Fri, 22 Aug 2014 17:43:39 -0400
+Received: by mail-oi0-f47.google.com with SMTP id x69so8139716oia.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 14:43:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <40ee87d5d8b24230774bf28018ceb289@admin.virtall.com>
+References: <e464a0229fbd354aea0d15d8342330b1@admin.virtall.com>
+	<CADw2B2MgvUt_bL11ZOAZjyk+R2pmM5JbLVjmgqoXBHSTEypMqw@mail.gmail.com>
+	<40ee87d5d8b24230774bf28018ceb289@admin.virtall.com>
+Date: Fri, 22 Aug 2014 14:36:22 -0700
+Message-ID: <CADw2B2Ow+s+V03vT_WPMH5w9pWck-d0uaDi6KjLGOygKugAciA@mail.gmail.com>
+Subject: Re: btrfs and iostat - how do I measure the live performance of my
+ btrsf filesystems?
+From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Josef Bacik <jbacik@fb.com> writes:
+An interesting exercise saw me reading data from my RAID10 to a USB
+device, which produced the following representative iostat:
 
-> On 06/20/2014 12:51 PM, Rasmus Villemoes wrote:
->> Maybe "else if" was meant, but because of the goto out_unlock, it
->> doesn't make a difference. Anyway, I chose the "only whitespace" fix.
+Linux 3.14.17-1-lts (eanna) 08/22/2014 _x86_64_ (24 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           3.53    0.00    0.50    2.83    0.00   93.14
+
+Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
+sda               1.89         0.01         0.01        839        998
+sdc               0.00         0.00         0.00          1          0
+sdb               1.23         0.02         0.01       1254        998
+sdi             175.40         0.00        20.26         39    1454881
+sdd               0.26         0.01         0.00        827         58
+sde              28.86        12.29         0.00     882447         61
+sdf               0.00         0.00         0.00          1          0
+sdh              25.25        12.29         0.00     882448         57
+sdg               0.25         0.01         0.00        826         60
+
+/dev/sdi is the USB drive, and /dev/sd[defg] are the four devices in
+the raid10 volume. I'm reading a large (1.1T) file from the raid10
+volume and writing it to the USB drive.
+
+You can see that there are approximately two drives from the raid10
+which are being read from - I assume this corresponds to the two spans
+(the 'no lower than the (n/spans)x' speed I mentioned in my original
+post - and that they aggregate to 24.58MB/s reads. This corresponds to
+the 20.26MB/s writes to the USB drive.
+
+The raid10 volume is only being used for this file operation, nothing
+else is touching it but the kernel and btrfs.
+
+I'm curious how others would read this?
+
+On Tue, Aug 5, 2014 at 4:39 PM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
+> On 2014-08-06 00:06, G. Richard Bellamy wrote:
 >>
->> Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
->> ---
->>   fs/btrfs/tree-log.c | 3 ++-
->>   1 file changed, 2 insertions(+), 1 deletion(-)
+>> On Tue, Aug 5, 2014 at 7:14 AM, Tomasz Chmielewski <mangoo@wpkg.org>
+>> wrote:
+>>>
+>>> Simple iostat won't give you meaningful live performance stats.
+>>>
+>>> You can combine it i.e. like below:
+>>>
+>>> iostat -x 1
+>>> iostat -mx 1
+>>> iostat -m 1
 >>
->> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
->> index 9e1f2cd..50af2b9 100644
->> --- a/fs/btrfs/tree-log.c
->> +++ b/fs/btrfs/tree-log.c
->> @@ -3980,7 +3980,8 @@ again:
->>   		if (ret < 0) {
->>   			err = ret;
->>   			goto out_unlock;
->> -		} if (ret) {
->> +		}
->> +		if (ret) {
->>   			ins_nr = 0;
->>   			btrfs_release_path(path);
->>   			continue;
 >>
+>> Thanks for the pointer about viewing the extended stats, and showing
+>> them in MB rather than kB.
+>>
+>> Maybe I'm missing something here. I'm failing to see how adding those
+>> additional stats helps me get meaningful throughput information for a
+>> multi-device btrfs volume.
 >
-> Nope that's right, thanks,
 >
-> Reviewed-by: Josef Bacik <jbacik@fb.com>
-
-Was this picked up? I don't see it upstream.
-
-Thanks,
-Rasmus
+> Well you won't see an aggregate, but you will see individual device
+> statistics with "1" at the end of iostat arguments (meaning, dump the stats
+> every second).
+>
+>
+>
+> --
+> Tomasz Chmielewski
+> http://www.sslrack.com
+>

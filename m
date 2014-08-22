@@ -1,68 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:36796 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932487AbaHVRjC convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 13:39:02 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Shriramana Sharma <samjnaa@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:45333 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932410AbaHVSKO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 14:10:14 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XKtHo-0004X6-Td
+	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 20:10:04 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 20:10:04 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 20:10:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Distro vs latest kernel for BTRFS?
-Date: Fri, 22 Aug 2014 19:38:59 +0200
-Message-ID: <5464164.8Uxj5nlT6d@merkaba>
-In-Reply-To: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+Date: Fri, 22 Aug 2014 18:09:51 +0000 (UTC)
+Message-ID: <pan$41e33$d9a65aff$7440271d$d5dff35b@cox.net>
 References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+	<53F731BC.6000200@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 22. August 2014, 17:29:29 schrieb Shriramana Sharma:
-> Hello. I've seen repeated advices to use the latest kernel. While
-> hearing of the recent compression bug affecting recent kernels does
-> somewhat warn one off the previous advice, I would like to know what
-> people who are running regular distros do to get the latest kernel.
-> 
-> Personally I'm on Kubuntu, which provides mainline kernels till a
-> particular point but not beyond that.
-> 
-> Do people here always compile the latest kernel themselves just to get
-> the latest BTRFS stability fixes (and  improvements, though as a
-> second priority)?
+Austin S Hemmelgarn posted on Fri, 22 Aug 2014 08:04:12 -0400 as
+excerpted:
 
-I compile own kernel on my main laptop cause I want to follow kernel 
-development closely for my Linux Performance analysis and tuning trainings and 
-also help a bit with testing things.
+> On 2014-08-22 07:59, Shriramana Sharma wrote:
+>> Hello. I've seen repeated advices to use the latest kernel. While
+>> hearing of the recent compression bug affecting recent kernels does
+>> somewhat warn one off the previous advice, I would like to know what
+>> people who are running regular distros do to get the latest kernel.
+>> 
+>> Personally I'm on Kubuntu, which provides mainline kernels till a
+>> particular point but not beyond that.
+>> 
+>> Do people here always compile the latest kernel themselves just to get
+>> the latest BTRFS stability fixes (and  improvements, though as a second
+>> priority)?
+>> 
+> I personally use Gentoo Unstable on all my systems, so I build all my
+> kernels locally anyway, and stay pretty much in-line with the current
+> stable Mainline kernel.
+> Interestingly, I haven't had any issues related to either of the
+> recently discovered bugs, despite meeting all of the criteria for being
+> affected by them.
 
-I don´t compile kernels on any other machines anymore. Instead I use what 
-Debian Sid gives me. On the server VM I use 3.14 Debian Wheezy Backports 
-kernel, an will continue to do so, until I know a 3.16 package with BTRFS fixes 
-hits the backports repo.
+Semantics but FWIW some people prefer for that to be called testing, not 
+unstable.  Gentoo doesn't have an official whole-tree unstable level, tho 
+in effect that's what you get if you enable the various project overlays 
+and unmask the non-live packages, so one could say it's per-project or 
+per-package.
 
-I recommend against SLES 11 SP 3 stable kernel. Their 3.0 had serious free 
-space issues in one VM after *just* installing OpenLDAP and have snapper 
-continue with the snapshotting. It was still 2GB free, but I was not able to 
-delete files or delete snapshots anymore. I think I also try rebalancing the 
-FS. After a while I gave up and reverted to a previous VM snapshot.
+But of course without an official unstable level, the distinction between 
+testing and unstable is rather blurred, so some people call it unstable, 
+as opposed to stable, too.  But some don't like the "unstable" 
+connotation, and technically, it /is/ closer to Debian's "testing" than 
+their "unstable", and I don't know anyone else using the "unstable" 
+label, so...
 
-I know this is supported officially, but I don´t think this is anywhere near 
-production ready. SLES 12 should be much better as its using a newer kernel.
+Meanwhile, while I'm on gentoo as well, I've been configuring and 
+building my own kernels since shortly after I switched to Linux 
+(Mandrake, at the time) instead of MS eXPrivacy, which I refused to do on 
+principle.  As a matter of fact, while I had done a bit of experimenting 
+before and had taken some time researching the switch, I began my big 
+switch for real the week eXPrivacy came out.  After a decade on MS, my 
+feelings were with FLOSS but my experience was all on MS so I honestly 
+don't know when/if I would have switched without the eXPrivacy line I 
+simply wasn't going to cross as a push from MS, so ironically I have MS 
+to thank for pushing me to freedomware. =:^)
 
-On any account long time enterprise Linux kernels may easily become outdated. 
-I know they are backporting things, but I think for BTRFS its better to follow 
-new kernels as is more timely.
+Anyway, unlike Marc Merlin by the time I switched to Linux you weren't 
+expected to build your own kernel, but I learned it within the first 
+three months as I was still dual booting and switching one task after 
+another to my new Linux platform.  I learned because as a critical part 
+of my freedomware platform it was important to me to do so.  And I've 
+been building my own kernel, using a set of scripts I've maintained[1] 
+over the years to do so, since then.  When I switched to gentoo, I simply 
+took the scripts I already had with me, changing them slightly for the 
+new environment, as I hadn't setup the separate config file I use these 
+days.
 
-With the distros that release all 6 months or so, I think you get recent 
-enough kernel easily. With Debian you can use backport kernels. Some distros 
-have additionally kernel repos for more recent kernels. And I in the end I 
-think you can even install newer kernel packages on enterprise distros, but… 
-you loose support this way.
+These days I fetch, configure and build directly from Linus' git repo, 
+still using my scripts set to help me do so. =:^)
 
-For Kubuntu / Ubuntu I think there even is a daily kernel PPA. I think 
-Phoronix uses it for their daily performance regression testing (and making 
-big noise of regressions even in RC kernels).
+While you may not consider Gentoo a "normal distro", presumably you 
+consider Mandriva such a distro, it being the successor to the Mandrake 
+on which I started doing my own kernel builds.
 
-Ciao,
+---
+[1] Scripts I've maintained:  FWIW, I learned bash/shell by tearing apart 
+and recoding the Mandrake initscripts, getting a practical understanding 
+of shell scripting as actually used on a system in the process.  To me, 
+tho I've switched to systemd that's arguably the biggest loss of doing 
+so, as newbies no longer have the opportunity to bootstrap their own 
+shell and shell-scripting knowledge on the scripts the system itself 
+bootstraps with. =:^(
+
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

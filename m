@@ -1,61 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54951 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932149AbaHVQHe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 12:07:34 -0400
-Received: from [63.139.181.48] (port=51894 helo=legolas.merlins.org)
-	by mail1.merlins.org with esmtpsa
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1XKrNF-00022m-GD by authid <merlins.org> with srv_auth_plain
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 09:07:33 -0700
-Received: from merlin by legolas.merlins.org with local (Exim 4.80)
-	(envelope-from <marc@merlins.org>)
-	id 1XKr7d-0002BR-Qr
-	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 08:51:25 -0700
-Date: Fri, 22 Aug 2014 08:50:40 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Unclean shutdowns cause google-chrome profile to be corrupted in
- various ways
-Message-ID: <20140822155040.GU3875@merlins.org>
-MIME-Version: 1.0
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56621 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932159AbaHVQve convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 12:51:34 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:51044 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XKs3p-002j9U-K2
+	for linux-btrfs@vger.kernel.org; Fri, 22 Aug 2014 10:51:33 -0600
 Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: Distro vs latest kernel for BTRFS?
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+Date: Fri, 22 Aug 2014 10:51:33 -0600
+Message-Id: <F39D0877-994E-4A4C-BA61-2F7B532D359D@colorremedies.com>
+References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Someone just told me yesterday they had the same problem, so I filed a
-bug:
-https://bugzilla.kernel.org/show_bug.cgi?id=83041
 
-Fairly often (over 20 times for me so far with various kernel versions),
-when I reboot after a crash, my google-chrome profile is damaged in one
-of 2 ways:
-1) open tabs don't reopen
-2) google-chrome says that my profile is corrupted.
+On Aug 22, 2014, at 5:59 AM, Shriramana Sharma <samjnaa@gmail.com> wrote:
 
-In both cases rsyncing ~/.config/google-chrome from the last hourly
-snapshot has fixed the problem every time.
+> Hello. I've seen repeated advices to use the latest kernel. While
+> hearing of the recent compression bug affecting recent kernels does
+> somewhat warn one off the previous advice, I would like to know what
+> people who are running regular distros do to get the latest kernel.
+> 
+> Personally I'm on Kubuntu, which provides mainline kernels till a
+> particular point but not beyond that.
+> 
+> Do people here always compile the latest kernel themselves just to get
+> the latest BTRFS stability fixes (and  improvements, though as a
+> second priority)?
 
-Given that, I would say that google-chrome does not have a bug of half
-unclean states since the state present in a snapshot has always worked
-for me, but that's anecdotal, not proof.
+It's highly variable on this list. I'm lazy so I'm mostly using Fedora kernels from updates repo. But for Btrfs specific testing I use mainline kernels built almost daily from Fedora's koji build system, which don't even make it to the updates-testing repo.
 
-But if my kernel hangs due to a bug that isn't btrfs' fault and I need
-to power off and back on, after reboot my google-chrome profile is
-almost always broken in some way.
-This with a samsung evo 840 SSD which I believe does reasonable enough
-things on power shutdowns, although I can't prove that.
+http://koji.fedoraproject.org/koji/packageinfo?packageID=8
 
-File formats are some kind of raw data and sqlite 3.x
-~/.config/google-chrome-beta/Profile 1:
-Last Session:                     data
-Last Tabs:                        data
-Login Data:                       SQLite 3.x database
+I only compile kernels if I'm testing a particular patch. Although I did build a kernel based on the original git pull for 3.17 just because it was a big pile of stuff and figured it was worth testing some old bugs against. So it really depends on your setup, workload, if you're testing patches, etc. The problems with 3.15 and 3.16 were unusual.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+
+Chris Murphy
+

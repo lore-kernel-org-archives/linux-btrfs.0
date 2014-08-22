@@ -1,79 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f175.google.com ([209.85.217.175]:52657 "EHLO
-	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752737AbaHVJ6f (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:35070 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752166AbaHVLoC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 05:58:35 -0400
-Received: by mail-lb0-f175.google.com with SMTP id 10so9403364lbg.34
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 02:58:33 -0700 (PDT)
+	Fri, 22 Aug 2014 07:44:02 -0400
+Received: by mail-ig0-f179.google.com with SMTP id h18so14366566igc.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 04:44:01 -0700 (PDT)
+Message-ID: <53F72CFD.1060702@gmail.com>
+Date: Fri, 22 Aug 2014 07:43:57 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <pan$258d1$c3749601$d83e6a85$e56acf7f@cox.net>
-References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
-	<2217061.yFV10mnZWq@merkaba>
-	<CAH-HCWVxOA+NBD5ON_D2Np2mC6+PC=n5QCCc410pQC04X7VnxA@mail.gmail.com>
-	<53F6E9B7.1040701@gmail.com>
-	<pan$258d1$c3749601$d83e6a85$e56acf7f@cox.net>
-Date: Fri, 22 Aug 2014 10:58:33 +0100
-Message-ID: <CAL3q7H6PrjdSA-qjEsiX6vEMQbeYukn2R4vh=f4mteQNv0Y_qg@mail.gmail.com>
+To: Shriramana Sharma <samjnaa@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Significance of high number of mails on this list?
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Marc MERLIN <marc@merlins.org>,
-        samjnaa@gmail.com
-Content-Type: text/plain; charset=UTF-8
+References: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
+In-Reply-To: <CAH-HCWVZPNkc7ycsL4jH0i6niVU3nqZiB2MLD6CfP85FckAg7g@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms060000020903070602020302"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 22, 2014 at 8:35 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Konstantinos Skarlatos posted on Fri, 22 Aug 2014 09:56:55 +0300 as
-> excerpted:
->
->> I would stay with rsync for a while, because there is always the
->> possibility of a bug that corrupts both your primary filesystem and your
->> backup one, or send propagating corruption from one filesystem to
->> another (Or maybe I am too paranoid, it would be good if we could have
->> the opinion of a btrfs developer on this)
->
-> No claim to be a dev, btrfs or otherwise, here, but I believe in this
-> case you /are/ "being too paranoid."
->
-> Both btrfs send and receive only deal with data/metadata they know how to
-> deal with.  If it's corrupt in some way or if they don't understand it,
-> they don't send/write it, they fail.
+This is a cryptographically signed message in MIME format.
 
-Most of the time yes, however we have at least 1 know bug that affects
-3.14.x only where send silently corrupts file data (replaces valid
-data with zeroes) at the destination:
+--------------ms060000020903070602020302
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/?id=766b5e5ae78dd04a93a275690a49e23d7dcb1f39
-
-The fix landed in 3.15, but wasn't backported to 3.14.x yet (adding
-Chris to cc).
-
->
-> IOW, if it works without error it's as guaranteed to be golden as these
-> things get.  The problem is that it doesn't always work without error in
-> the first place, sometimes it /does/ fail.  In that instance you can
-> always try again as the existing data/metadata shouldn't be damaged, but
-> if it keeps failing you may have to try something else, rsync, etc.
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+On 2014-08-20 23:22, Shriramana Sharma wrote:
+> Hello. People on this list have been kind enough to reply to my
+> technical questions. However, seeing the high number of mails on this
+> list, esp with the title PATCH, I have a question about the
+> development itself:
+>=20
+> Is this just an indication of a vibrant user/devel community [*] and
+> healthy development of many new nice features to eventually come out
+> in stable form later, or are we still at the fixing rough edges stage?
+> IOW what is the proportion of commits adding new features to those
+> stabilising/fixing features?
+>=20
+> [* Since there is no separate btrfs-users vs brtfs-dev I'm not able to
+> gauge this difference either. i.e. if there were a dedicated -dev list
+> I might not be alarmed by a high number of mails indicating fast
+> development.]
+>=20
+> Mostly I have read like "BTRFS is mostly stable but there might be a
+> few corner cases as yet unknown since this is a totally new generation
+> of FSs". But still given the volume of mails here I wanted to ask...
+> I'm sorry I realize I'm being a bit vague but I'm not sure how to
+> exactly express what I'm feeling about BTRFS right now...
+>=20
+Personally I'd say that BTRFS is 'stable' enough for light usage without
+using stuff like quotas or RAID5/6.  So far, having used it since 3.10,
+I've only once had a filesystem get corrupted when there wasn't some
+serious underlying hardware issue (crashed disk, SATA controller
+dropping random single sectors from writes, etc.), and it gives me much
+better performance than what I previously used (ext4 on top of LVM).
+As far as what to make of the volume of patches on the mailing list, I'd
+say that that shouldn't be used as a measure of quality.  The ext4
+mailing list is almost as busy on a regular basis, and people have been
+using that in production for years, and the XFS mailing list gets much
+higher volume of patches from time to time, and it's generally
+considered the gold standard of a stable filesystem.
 
 
--- 
-Filipe David Manana,
+--------------ms060000020903070602020302
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQwODIyMTE0MzU3
+WjAjBgkqhkiG9w0BCQQxFgQUIc27jqHisHd/Fkprm/Oi4GEZgIswbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAZ9Ze9DSnHP6yoTUFoZaZEHBya9Yh
+2fr0dNlvaCvrs9Lt/S2Byg4e5Z5N4H/0h40Yo3arCeH/b9ovWuxgRX0kMbJYKvb3w0KUnpk4
+TnwwqeSJoWkeQFx3temjPCBMNE4IZZqW4V20h6nUN38FLhyqopjRVbukAj8zjA8rA/p3m7eD
+iplRC6WOsvuuMRda25CC88aYIEusCPlsMnMzcJwWIC3EjNdeK3mbvaoFJ5NWq5wqt6o23yRr
+Bbc71wPZ9CF5vR8iDHv6K9+gzR5LEtp5z/ff6T94J5OtYFH2MghyyWLd1PHqXwmMhCZG55Vs
+4y2KhFMbMXnFx/WBs62sdiy8oQAAAAAAAA==
+--------------ms060000020903070602020302--

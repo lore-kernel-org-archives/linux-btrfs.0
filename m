@@ -1,49 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:12878 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:9168 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756387AbaHVPTk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 11:19:40 -0400
-Message-ID: <53F75F87.4050302@redhat.com>
-Date: Fri, 22 Aug 2014 10:19:35 -0500
+	id S1756525AbaHVP3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Aug 2014 11:29:14 -0400
+Message-ID: <53F761C9.5050300@redhat.com>
+Date: Fri, 22 Aug 2014 10:29:13 -0500
 From: Eric Sandeen <sandeen@redhat.com>
 MIME-Version: 1.0
-To: Marc Dietrich <marvin24@gmx.de>
-CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+CC: marvin24@gmx.de
 Subject: Re: [PATCH] btrfs-progs: init uninitialized output buf for btrfs-restore
-References: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com> <53F63D8F.2080400@redhat.com> <53F640F1.1010104@redhat.com> <2820069.ALay9nml0k@fb07-iapwap2>
-In-Reply-To: <2820069.ALay9nml0k@fb07-iapwap2>
+References: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/22/14, 2:35 AM, Marc Dietrich wrote:
-> Hi Eric,
+On 8/20/14, 10:35 PM, Gui Hecheng wrote:
+> A memory problem reported by valgrind as follows:
+> 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
+> When running:
+> 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
 > 
-> Am Donnerstag, 21. August 2014, 13:56:49 schrieb Eric Sandeen:
->> On 8/21/14, 1:42 PM, Eric Sandeen wrote:
->>> On 8/20/14, 10:35 PM, Gui Hecheng wrote:
->>>> A memory problem reported by valgrind as follows:
->>>> 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
->>>>
->>>> When running:
->>>> 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
->>>>
->>>> Because the output buf size is alloced with malloc, but the length of
->>>> output data is shorter than the sizeof(buf), so valgrind report
->>>> uninitialised byte(s).
->>>> We could use calloc to repalce malloc and clear this WARNING away.
->>>
->>> It clears the valgrind error away, but does it hide a real bug?
->>
->> Maybe the relevant question for Marc is - did you get decompression
->> errors during restore?  if so then I guess it all makes sense, and
->> the proposed patch seems sane after all, sorry.
+> Because the output buf size is alloced with malloc, but the length of
+> output data is shorter than the sizeof(buf), so valgrind report
+> uninitialised byte(s).
+> We could use calloc to repalce malloc and clear this WARNING away.
 > 
-> I use lzo and yes, I got decompression errors.
+> Reported-by: Marc Dietrich <marvin24@gmx.de>
+> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 
-Ok, ignore me then, I'm sorry - it all makes sense, Gui's patch
-included.  I didn't have my head on straight.
+Sorry for the noise in reply to this, I think the patch itself
+is fine.  It would have clarified things to the reviewer, though,
+if you had added more detail to the commit log, such as:
+
+> If a btrfs-restore process encounters corruption and fails
+> to properly decompress all data, some parts of the output
+> buffer may not be initialized.  This was reported by valgrind as
+> follows:
+> 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
+> When running:
+> 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
+> 
+> Because the output buf size is alloced with malloc, but the length of
+> output data is shorter than the sizeof(buf), so valgrind reports
+> uninitialised byte(s).
+>
+> We could use calloc to replace malloc to ensure that all written
+> bytes are initialized.
+
+Anyway:
+
+Reviewed-by: Eric Sandeen <sandeen@redhat.com>
 
 Thanks,
 -Eric
+
+> ---
+>  cmds-restore.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/cmds-restore.c b/cmds-restore.c
+> index cbda6bb..bb72311 100644
+> --- a/cmds-restore.c
+> +++ b/cmds-restore.c
+> @@ -251,7 +251,7 @@ static int copy_one_inline(int fd, struct btrfs_path *path, u64 pos)
+>  	}
+>  
+>  	ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
+> -	outbuf = malloc(ram_size);
+> +	outbuf = calloc(1, ram_size);
+>  	if (!outbuf) {
+>  		fprintf(stderr, "No memory\n");
+>  		return -ENOMEM;
+> @@ -320,7 +320,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+>  	}
+>  
+>  	if (compress != BTRFS_COMPRESS_NONE) {
+> -		outbuf = malloc(ram_size);
+> +		outbuf = calloc(1, ram_size);
+>  		if (!outbuf) {
+>  			fprintf(stderr, "No memory\n");
+>  			free(inbuf);
+> 
 

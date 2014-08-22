@@ -1,91 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f47.google.com ([209.85.218.47]:60515 "EHLO
-	mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751716AbaHVVnj (ORCPT
+Received: from mout.kundenserver.de ([212.227.17.24]:53902 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751716AbaHVWAs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 17:43:39 -0400
-Received: by mail-oi0-f47.google.com with SMTP id x69so8139716oia.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 14:43:38 -0700 (PDT)
+	Fri, 22 Aug 2014 18:00:48 -0400
+Message-ID: <53F7BD8E.10308@floga.de>
+Date: Sat, 23 Aug 2014 00:00:46 +0200
+From: =?ISO-8859-15?Q?Florian_Gamb=F6ck?= <mail@floga.de>
 MIME-Version: 1.0
-In-Reply-To: <40ee87d5d8b24230774bf28018ceb289@admin.virtall.com>
-References: <e464a0229fbd354aea0d15d8342330b1@admin.virtall.com>
-	<CADw2B2MgvUt_bL11ZOAZjyk+R2pmM5JbLVjmgqoXBHSTEypMqw@mail.gmail.com>
-	<40ee87d5d8b24230774bf28018ceb289@admin.virtall.com>
-Date: Fri, 22 Aug 2014 14:36:22 -0700
-Message-ID: <CADw2B2Ow+s+V03vT_WPMH5w9pWck-d0uaDi6KjLGOygKugAciA@mail.gmail.com>
-Subject: Re: btrfs and iostat - how do I measure the live performance of my
- btrsf filesystems?
-From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
-To: Tomasz Chmielewski <mangoo@wpkg.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: superblock checksum mismatch after crash, cannot mount
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An interesting exercise saw me reading data from my RAID10 to a USB
-device, which produced the following representative iostat:
+Hi there,
 
-Linux 3.14.17-1-lts (eanna) 08/22/2014 _x86_64_ (24 CPU)
+I think i just crashed my btrfs partition, is someone willing to guide 
+me through the recovery steps?
 
-avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-           3.53    0.00    0.50    2.83    0.00   93.14
+The "crash" went like so: I was testing the watchdog ability of my 
+Raspberry Pi, whose root filesystem is btrfs. To test if the watchdog 
+works I started a fork bomb. Normally, the watchdog device would not be 
+reset and the Pi restarts. My Pi actually shut down, but didn't start 
+again. When inspecting the SD card in another computer, i could not 
+mount the btrfs partition. The dmesg keeps saying:
 
-Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
-sda               1.89         0.01         0.01        839        998
-sdc               0.00         0.00         0.00          1          0
-sdb               1.23         0.02         0.01       1254        998
-sdi             175.40         0.00        20.26         39    1454881
-sdd               0.26         0.01         0.00        827         58
-sde              28.86        12.29         0.00     882447         61
-sdf               0.00         0.00         0.00          1          0
-sdh              25.25        12.29         0.00     882448         57
-sdg               0.25         0.01         0.00        826         60
+BTRFS: device label RASPIROOT devid 1 transid 18320 /dev/sdf3
+BTRFS: superblock checksum mismatch
+BTRFS: open_ctree failed
 
-/dev/sdi is the USB drive, and /dev/sd[defg] are the four devices in
-the raid10 volume. I'm reading a large (1.1T) file from the raid10
-volume and writing it to the USB drive.
+When trying to mount in recovery mode, it says:
 
-You can see that there are approximately two drives from the raid10
-which are being read from - I assume this corresponds to the two spans
-(the 'no lower than the (n/spans)x' speed I mentioned in my original
-post - and that they aggregate to 24.58MB/s reads. This corresponds to
-the 20.26MB/s writes to the USB drive.
+$ LANG=en_US sudo mount -t btrfs -o recovery,ro /dev/sdf3 /mnt/
+mount: wrong fs type, bad option, bad superblock on /dev/sdf3,
+        missing codepage or helper program, or other error
 
-The raid10 volume is only being used for this file operation, nothing
-else is touching it but the kernel and btrfs.
+I also wanted to create a btrfs-image, but it went like:
 
-I'm curious how others would read this?
+checksum verify failed on 65536 found DFE4B1C4 wanted 712D0238
+checksum verify failed on 65536 found DFE4B1C4 wanted 712D0238
+Csum didn't match
+Error reading metadata block
+Error adding block -5
+checksum verify failed on 65536 found DFE4B1C4 wanted 712D0238
+checksum verify failed on 65536 found DFE4B1C4 wanted 712D0238
+Csum didn't match
+Error reading metadata block
+Error flushing pending -5
+create failed (Success)
 
-On Tue, Aug 5, 2014 at 4:39 PM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
-> On 2014-08-06 00:06, G. Richard Bellamy wrote:
->>
->> On Tue, Aug 5, 2014 at 7:14 AM, Tomasz Chmielewski <mangoo@wpkg.org>
->> wrote:
->>>
->>> Simple iostat won't give you meaningful live performance stats.
->>>
->>> You can combine it i.e. like below:
->>>
->>> iostat -x 1
->>> iostat -mx 1
->>> iostat -m 1
->>
->>
->> Thanks for the pointer about viewing the extended stats, and showing
->> them in MB rather than kB.
->>
->> Maybe I'm missing something here. I'm failing to see how adding those
->> additional stats helps me get meaningful throughput information for a
->> multi-device btrfs volume.
->
->
-> Well you won't see an aggregate, but you will see individual device
-> statistics with "1" at the end of iostat arguments (meaning, dump the stats
-> every second).
->
->
->
-> --
-> Tomasz Chmielewski
-> http://www.sslrack.com
->
+Do you have any advice, how I can get the partition up running? Of 
+course I do have backups and it would be a matter of minutes to reset 
+the whole card, but I want to know the "btrfs like" way to repair the 
+partition.
+
+--
+Best wishes
+FloGa

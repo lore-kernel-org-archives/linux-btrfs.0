@@ -1,53 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:56464 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:56495 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750734AbaHVSqg (ORCPT
+	with ESMTP id S1750733AbaHVStX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 14:46:36 -0400
-Date: Fri, 22 Aug 2014 11:46:32 -0700
+	Fri, 22 Aug 2014 14:49:23 -0400
+Date: Fri, 22 Aug 2014 11:49:19 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Eric Sandeen <sandeen@redhat.com>
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Unclean shutdowns cause google-chrome profile to be corrupted in
  various ways
-Message-ID: <20140822184632.GD3875@merlins.org>
+Message-ID: <20140822184919.GE3875@merlins.org>
 References: <20140822155040.GU3875@merlins.org>
- <53F77EAB.5070309@redhat.com>
+ <pan$a7366$366442ed$60aa89a1$c636b8e3@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <53F77EAB.5070309@redhat.com>
+In-Reply-To: <pan$a7366$366442ed$60aa89a1$c636b8e3@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 22, 2014 at 12:32:27PM -0500, Eric Sandeen wrote:
-> On 8/22/14, 10:50 AM, Marc MERLIN wrote:
+On Fri, Aug 22, 2014 at 06:17:38PM +0000, Duncan wrote:
+> Marc MERLIN posted on Fri, 22 Aug 2014 08:50:40 -0700 as excerpted:
 > 
-> > But if my kernel hangs due to a bug that isn't btrfs' fault and I need
-> > to power off and back on, after reboot my google-chrome profile is
-> > almost always broken in some way.
+> > Fairly often (over 20 times for me so far with various kernel versions),
+> > when I reboot after a crash, my google-chrome profile is damaged in one
+> > of 2 ways:
+> > 1) open tabs don't reopen 2) google-chrome says that my profile is
+> > corrupted.
+> > 
+> > In both cases rsyncing ~/.config/google-chrome from the last hourly
+> > snapshot has fixed the problem every time.
 > 
-> Given my experiences with userspace in general, I'd lay money on
-> google-chrome simply not DTRT WRT data integrity syscalls (or
-> maybe it's the sqlite database handling underneath...)
-> 
-> Does it behave any differently on other filesystems?
+> I've had a similar issue with firefox, tho I've narrowed it down to a 
 
-Well
-1) I used to work on chromeos until some months back, and haven't heard
-on this problem with chrome/linux
-2) never had a chrome corruption problem on a non btrfs filesystem
-3) as mentioned, my btrfs snapshots are somehow always consistent for
-chrome, which if chrome were not flushing its buffers right, wouldn't
-happen.
+Ok, so so far we've had:
+1) gogole-chrome
+2) firefox
+3) mysql
 
-Incidently, I just had to rebuild my mysqldb on my laptop after it got
-corrupted in a way that was non recoverable.
-Mysql surely knows how to flush and have consistent state points.
+and 3 different people reporting this at least.
 
-In my experience, linux crashes cause btrfs to somehow end up with non
-consistent states on disk. Whether it's a bug in the btrfs code, the
-linux block subsystem or sata driver, or firmware bugs on all 5 SSDs
-I've had so far, I can't say, but there is a problem somewhere for sure.
+Google-chrome is complicated because it has many state files and I
+haven't narrowed down which one got corrupted.
+In your firefox example, did you find what corruption you got in that
+file, or was it just truncated?
+
+For mysql, I got:
+InnoDB: Page directory corruption: infimum not pointed to
+140708 11:53:58  InnoDB: Page dump in ascii and hex (16384 bytes):
+ len 16384; hex 00000000(16KB of 0's).
 
 Marc
 -- 

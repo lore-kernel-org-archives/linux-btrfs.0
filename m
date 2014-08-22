@@ -1,100 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:47871 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753984AbaHVCg4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 22:36:56 -0400
-Date: Thu, 21 Aug 2014 19:36:53 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Mihail Zaporozhets <kamheric@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs restore
-Message-ID: <20140822023653.GG3875@merlins.org>
-References: <loom.20140821T061503-238@post.gmane.org>
- <20140822015216.GE3875@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140822015216.GE3875@merlins.org>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:34459 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753984AbaHVDTD convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Aug 2014 23:19:03 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49239 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XKfNV-002N2u-Jg
+	for linux-btrfs@vger.kernel.org; Thu, 21 Aug 2014 21:19:01 -0600
+Content-Type: text/plain; charset=windows-1252
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Subject: Re: mkfs.btrfs vs fstrim on an SD Card (not SSD)
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <3CE6F328-8757-4B7F-858F-E820DFDF97E8@colorremedies.com>
+Date: Thu, 21 Aug 2014 21:19:00 -0600
+Message-Id: <F5912FA1-9B5B-4E22-A9A8-EB09461F2BD4@colorremedies.com>
+References: <3CE6F328-8757-4B7F-858F-E820DFDF97E8@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just created 
-https://btrfs.wiki.kernel.org/index.php/Btrfs-zero-log
+I may have answered my own question using strace. And for whatever reason this time fstrim worked.
 
-and added the info about this failure of btrfs-zero-log as well as the
-patch from Chris.
-Whenever it's in a new version of btrfs-zero-log, I or someone else can
-update that wiki page to tell people to just update to a newer version
-to get around this "Couldn't setup log root tree" problem.
+fstrim
+ioctl(3, FITRIM, 0x7fffbf6b87e0) 
+…
+write(1, "/mnt/: 13.9 MiB (14598144 bytes)"…, 41/mnt/: 13.9 MiB (14598144 bytes) trimmed
 
-However, re-reading your error message you got a different error, so the
-patch isn't likely to work for you
-
-read block failed check_tree_block 
-is a warhing
-
-Your actual error is
-	if (!extent_buffer_uptodate(root->node)) {
-		fprintf(stderr, "Couldn't read tree root\n");
-		return -EIO;
-	}
-
-This looks more serious, and I'm not sure if btrfs-zero-log can help
-with that.
-
-I'll let someone else answer.
-
-Marc
+Clearly this is only erasing what the file system is aware of having been recently deleted, even though it's a bit off as I'd just deleted a 6.1MB file.
 
 
-On Thu, Aug 21, 2014 at 06:52:16PM -0700, Marc MERLIN wrote:
-> On Thu, Aug 21, 2014 at 05:52:01AM +0000, Mihail Zaporozhets wrote:
-> > # btrfs-zero-log /dev/sda1                         
-> > warning devid 5 not found already
-> > Check tree block failed, want=16845270495232, have=0
-> > read block failed check_tree_block
-> > Couldn't read tree root
-> 
-> You may be hitting the same problem I was a week back. See the thread
-> that says "btrfs-zero-log fails, can't mount FS"
-> 
-> Download the source for btrfs-progs, and apply this patch from Chris:
-> 
-> diff --git a/disk-io.c b/disk-io.c
-> index 8db0335..d9a8e19 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -911,13 +911,13 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
->                         return -EIO;
->         }
->         fs_info->csum_root->track_dirty = 1;
-> -
-> +#if 0
->         ret = find_and_setup_log_root(root, fs_info, sb);
->         if (ret) {
->                 printk("Couldn't setup log root tree\n");
->                 return -EIO;
->         }
-> -
-> +#endif
->         fs_info->generation = generation;
->         fs_info->last_trans_committed = generation;
->         if (extent_buffer_uptodate(fs_info->extent_root->node) &&
-> 
-> 
-> Or if you're desparate and want a binary, I'll Email you one directly
-> (not that you should run a binary you got from someone via Email as
-> root, so it's only if you're desperate)
-> 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
 
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+mkfs.btrs:
+
+ioctl(3, BLKGETSIZE64, 14729330176)     = 0
+ioctl(3, BLKDISCARD, {0, 7fff920ee4a0}) = 0
+write(2, "Performing full device TRIM (13."..., 43Performing full device TRIM (13.72GiB) ...
+) = 43
+ioctl(3, BLKDISCARD, {0, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {40000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {80000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {c0000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {100000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {140000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {180000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {1c0000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {200000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {240000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {280000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {2c0000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {300000000, 7fff920ee4a0}) = 0
+ioctl(3, BLKDISCARD, {340000000, 7fff920ee4a0}) = 0
+
+And this blew away everything on that partition.
+
+Since the SD Card spec references a completely different command than the ATA spec (TRIM), I don't think either one of these are TRIM, even if functionally equivalent. Instead the SD Card ERASE_* commands are probably being used, but I can't confirm this because writes to /dev/mmcblk0 aren't showing up with:
+
+echo scsi:scsi_dispatch_cmd_start > /sys/kernel/debug/tracing/set_event 
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace_pipe
+
+
+Chris Murphy

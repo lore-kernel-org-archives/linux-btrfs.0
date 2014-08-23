@@ -1,111 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.131]:58837 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750867AbaHWOOi (ORCPT
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:60121 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750916AbaHWQjt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Aug 2014 10:14:38 -0400
-Message-ID: <53F8A1CC.80906@floga.de>
-Date: Sat, 23 Aug 2014 16:14:36 +0200
-From: =?UTF-8?B?RmxvcmlhbiBHYW1iw7Zjaw==?= <mail@floga.de>
+	Sat, 23 Aug 2014 12:39:49 -0400
+Received: by mail-pa0-f43.google.com with SMTP id lf10so17989649pab.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Aug 2014 09:39:48 -0700 (PDT)
 MIME-Version: 1.0
+Date: Sat, 23 Aug 2014 16:39:48 +0000
+Message-ID: <CAGP2HaPx2pXbN=FyBH5MskrsufDXcWtddVfG4Kaie-ZVg=ivJg@mail.gmail.com>
+Subject: btrfs unmountable, any btrfs tool segfaults
+From: Nikolay Shtabel <shtabnik@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: superblock checksum mismatch after crash, cannot mount
-References: <53F7BD8E.10308@floga.de>	<pan$a4556$243aa48a$bd2898a8$c2006893@cox.net> <53F85317.8060900@floga.de> <pan$16219$d960b649$52ed1e6$33540704@cox.net>
-In-Reply-To: <pan$16219$d960b649$52ed1e6$33540704@cox.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 23.08.2014 11:34, schrieb Duncan:
->> Afterwards, as I said, none of the partitions were recognized anymore. Not even btrfs recognized the third partition.
-> That is strange.  Was the partition table still recognized?  Had you used
-> mbr or gpt partitioning (I'm presuming the pi handles them, of course, I
-> don't know a lot about pi/arm).
+Hello,
 
-I haven't run any tests on that, so to be safe, I use a MBR table. And 
-yes, the table was still in order, all three partitions were there, but 
-none of the filesystems were recognized. Sorry if I confused you. But 
-still I think it's a big deal if a rescue on partition 3 breaks the 
-filesystems on each partition of the device. It's like every single 
-superblock was deleted.
+I'm using archinux with btrfs as root filesystem, kernel 3.15.2, btrfs 3.14.2.
 
-> FWIW these days I use gpt because it keeps one checksummed copy at each
-> end of the device for better reliability, and of course also because it
-> does away with primary/secondary/logical partition worries and allows
-> partition names/labels (as distinct from filesystem labels), but I have
-> literally /no/ idea whether pi supports it as I've never worked with a pi.
+System was working fine for more than year, but suddenly
+after large pacman update filesystem came to
+unrecoverable error (remounted root ro).
 
-This sounds interesting. Maybe that will be my next project to stress 
-little Pi.
+I've decided to reboot, and after that btrfs failed to mount:
 
-> I can't think of any scenario that would screw up all the partitions
-> unless the partition table was damaged and/or unless the firmware was
-> buggy and basically scrambled things.  It's almost as if the superblock
-> fix landed in the middle of the partition table (maybe 64 KiB into the
-> entire SD card, is that still partition table?) instead of at the 64 KiB
-> mark into what would have been partition 3, the btrfs partition, but if
-> it was reading the second one as good, it must have gotten the right
-> partition to do that, in which case it couldn't be that you simply typoed
-> and didn't include the digit.
+[ 1673.285020] BTRFS: bad tree block start 0 471748608
+[ 1673.285071] BTRFS: bad tree block start 0 471748608
+[ 1673.317384] BTRFS: open_ctree failed
 
-So, I am almost absolutely sure that the table is in order, since there 
-are no other problems regarding that. And like you said, rescue showed 
-me the right superblocks and also here I am sure that I didn't forget 
-the 3 when typing in the command.
+When trying to mount with -o ro, recovery:
 
-> I can't personally rule out a bug in btrfs rescue as I've never used that
-> tool myself, but one this severe?  Hard to imagine, yet /something/
-> screwed up.
+[ 1788.777081] BTRFS info (device sdc2): enabling auto recovery
+[ 1788.777088] BTRFS info (device sdc2): disk space caching is enabled
+[ 1788.778502] BTRFS: bad tree block start 0 471748608
+[ 1788.778577] BTRFS: bad tree block start 0 471748608
+[ 1788.778657] BTRFS: bad tree block start 0 471748608
+[ 1788.778774] BTRFS: bad tree block start 0 471748608
+[ 1788.778990] BTRFS: bad tree block start 0 260931584
+[ 1788.779221] BTRFS: bad tree block start 0 260931584
+[ 1788.779236] BTRFS: failed to read tree root on sdc2
+[ 1788.779563] parent transid verify failed on 260562944 wanted 427348
+found 427351
+[ 1788.779907] parent transid verify failed on 260562944 wanted 427348
+found 427351
+[ 1788.779908] BTRFS: failed to read tree root on sdc2
+[ 1788.780288] parent transid verify failed on 260358144 wanted 427347
+found 427351
+[ 1788.780571] parent transid verify failed on 260358144 wanted 427347
+found 427351
+[ 1788.780575] BTRFS: failed to read tree root on sdc2
+[ 1788.844215] BTRFS: open_ctree failed
 
-I don't want to believe that the SD firmware or the driver or whatever 
-would redirect calls on certain partitions to the main device. So it 
-seems more plausible to think that there is something wrong in the 
-rescue command, like the calculation of the offset or something.
+Then, i've tried to btrfs check:
 
-> Anyway, were it me, I'd consider that sdcard suspect (bad firmware) until
-> I could pin down what it did a bit better, because something implausible
-> just happened, and that's as plausible an explanation as anything else
-> we've got.
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+read block failed check_tree_block
+Couldn't setup extent tree
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+read block failed check_tree_block
+Couldn't setup csum tree
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+read block failed check_tree_block
+Checking filesystem on /dev/sdc2
+UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
+Critical roots corrupted, unable to fsck the FS
+Segmentation fault
+(btrfs[5049]: segfault at 1d3 ip 000000000042e35d sp 00007fff6b317870
+error 4 in btrfs[400000+6b000])
 
-These corruptions (although I can't say for sure that the problems were 
-identical) happened both on a cheap class 4 SDHC and on my current class 
-10 microSDHC, the first one on a Raspberry B, the latter on a Raspberry 
-B+. You are right, at the moment we can only guess what the cause of the 
-errors was, but it's hard to believe that both Pis and both SD cards 
-share the same bugs. At least I don't want to believe that.
+As there are errors with csum and extent tree i've tried to reinit them also:
 
-> At that point, that's what I would have done too, with the caveat about
-> considering the card suspect for the time being, and being sure it's
-> /regularly/ backed up in case it scrambles again.
+btrfs check --init-csum-tree:
 
-I create btrfs snapshots every 6 hours on the same card and send them to 
-an external flash drive every 24 hours. If I've done much work, then 
-these intervals will be shorter, of course. I always work in a way that 
-nothing will be lost, even if the Pi explodes. ;-)
+Creating a new CRC tree
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+read block failed check_tree_block
+Couldn't setup extent tree
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+read block failed check_tree_block
+Couldn't setup csum tree
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+read block failed check_tree_block
+Checking filesystem on /dev/sdc2
+UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
+Reinit crc root
+Unable to find block group for 0
+btrfs: extent-tree.c:288: find_search_start: Assertion `!(1)' failed.
+Aborted
 
-> There's some recent research at how poor certain solid state devices are at handling power cuts. Someone here probably has a link or google it. Having work on one partition scramble others certainly seems like bad firmware to me, tho I'm no expert. But btrfs' write patterns are surely about as far from the fat many of these devices were designed for as it gets, so btrfs may well be stressing it quite a bit as well.
+btrfs check --init-extent-tree:
 
-Yes, but that's exactly why we test and experiment. I try several mount 
-options, I tried several SD cards and maybe some lucky day I can track 
-down and reproduce the problems and can say for sure whether the card or 
-btrfs was at fault.
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+read block failed check_tree_block
+Couldn't setup extent tree
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+read block failed check_tree_block
+Couldn't setup csum tree
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+read block failed check_tree_block
+Checking filesystem on /dev/sdc2
+UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
+Creating a new extent tree
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+read block failed check_tree_block
+Error reading root block
+error pinning down used bytes
+Segmentation fault
+([ 2816.659245] btrfs[5068]: segfault at 1d3 ip 000000000042e35d sp
+00007fffc2052420 error 4 in btrfs[400000+6b000])
 
-> I'd also try to compare notes with other pi users and see if they're
-> noting problems with the pi and btrfs as well.  I'm entirely clueless in
-> that regard, but I read enough about them to at least know they have a
-> rather large and active user community, so you can't be the first to have
-> tried it.  Someone's gotta have some experience to share.
+After all, the last step is to use btrfs restore:
 
-Regarding that, most times I just read posts like "just don't do that", 
-"just use raspbian's default" and the like. No more explanations. So I'd 
-rather go on my own journey, keep on using Gentoo, adjust my kernel, and 
-stress btrfs to its limits. I like to experiment new things, after all.
+btrfs restore -iv /dev/sdc2 /mnt/restore/
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+Check tree block failed, want=471748608, have=0
+read block failed check_tree_block
+Couldn't setup extent tree
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+Check tree block failed, want=468189184, have=0
+read block failed check_tree_block
+Couldn't setup csum tree
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+Check tree block failed, want=466935808, have=0
+read block failed check_tree_block
+Segmentation fault
+[ 3324.252370] btrfs[32022]: segfault at fffffffffffffffb ip
+000000000042a763 sp 00007fff14488690 error 5 in btrfs[400000+6b000]
 
-But thanks again for your advice, it helps me to poke at the right 
-edges. :-)
+I've tried this with latest btrfs-progs built from git.
 
--- 
-Best wishes
+Can you please suggest any method to restore files from filesystem?
 
-FloGa
+Thanks!
 
+Nikolay Shtabel

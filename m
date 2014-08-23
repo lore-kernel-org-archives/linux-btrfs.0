@@ -1,181 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:34528 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:38319 "EHLO
 	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750809AbaHWQqY (ORCPT
+	by vger.kernel.org with ESMTP id S1751199AbaHWRhf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Aug 2014 12:46:24 -0400
-Date: Sat, 23 Aug 2014 12:38:05 -0400
+	Sat, 23 Aug 2014 13:37:35 -0400
+Date: Sat, 23 Aug 2014 13:37:33 -0400
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: superblock checksum mismatch after crash, cannot mount
-Message-ID: <20140823163803.GA9149@hungrycats.org>
-References: <53F7BD8E.10308@floga.de>
- <pan$a4556$243aa48a$bd2898a8$c2006893@cox.net>
- <53F85317.8060900@floga.de>
- <pan$16219$d960b649$52ed1e6$33540704@cox.net>
+To: linux-btrfs@vger.kernel.org
+Subject: backtrace for segfault in btrfs-convert
+Message-ID: <20140823173733.GB9149@hungrycats.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <pan$16219$d960b649$52ed1e6$33540704@cox.net>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 23, 2014 at 09:34:10AM +0000, Duncan wrote:
-> Florian Gamböck posted on Sat, 23 Aug 2014 10:38:47 +0200 as excerpted:
-> 
-> > Am 23.08.2014 07:27, schrieb Duncan:
-> >> btrfs-show-super is your tool for inspecting the superblocks.  [...]
-> >> Then use btrfs rescue super-recover
-> 
-> > Yes, show-super told me, that the first super block did "NOT MATCH", but
-> > the second one seemed to be in order ("MATCHED"). The SD card is 16 GiB
-> > big, so there was no third super block.
-> > 
-> > Rescue also listed the first one as bad and the second one as good and
-> > it seemed to run successfully, no errors whatsoever.
-> 
-> Good so far, but...
-> 
-> > However, after "recovering", every single partition on the card broke.
-> > There were three partitions: 1 = fat32 ("/boot"), 2 = swap, 3 = btrfs
-> > ("/"). Naturally I ran the rescue command on partition 3, I hope that
-> > was not a mistake. Afterwards, as I said, none of the partitions were
-> > recognized anymore. Not even btrfs recognized the third partition.
-> 
-> That is strange.  Was the partition table still recognized?  Had you used 
-> mbr or gpt partitioning (I'm presuming the pi handles them, of course, I 
-> don't know a lot about pi/arm).
-> 
-> FWIW these days I use gpt because it keeps one checksummed copy at each 
-> end of the device for better reliability, and of course also because it 
-> does away with primary/secondary/logical partition worries and allows 
-> partition names/labels (as distinct from filesystem labels), but I have 
-> literally /no/ idea whether pi supports it as I've never worked with a pi.
-> 
-> I can't think of any scenario that would screw up all the partitions  
-> unless the partition table was damaged and/or unless the firmware was 
-> buggy and basically scrambled things.  It's almost as if the superblock 
-> fix landed in the middle of the partition table (maybe 64 KiB into the 
-> entire SD card, is that still partition table?) instead of at the 64 KiB 
-> mark into what would have been partition 3, the btrfs partition, but if 
-> it was reading the second one as good, it must have gotten the right 
-> partition to do that, in which case it couldn't be that you simply typoed 
-> and didn't include the digit.
-> 
-> I can't personally rule out a bug in btrfs rescue as I've never used that 
-> tool myself, but one this severe?  Hard to imagine, yet /something/ 
-> screwed up. 
-> 
-> Weird.
+This came from trying to convert a ~1.8T ext4 filesystem with btrfs-progs
+master (24cf4d8c3ee924b474f68514e0167cc2e602a48d) on Debian.  e2fsck -f
+reports no errors on the source filesystem.
 
-Sounds like perfectly normal SD card corruption.
+I've done several ext4 conversions before this one, so I'm pretty sure
+the tool works most of the time.  ;)
 
-> Anyway, were it me, I'd consider that sdcard suspect (bad firmware) until 
-> I could pin down what it did a bit better, because something implausible 
-> just happened, and that's as plausible an explanation as anything else 
-> we've got.
-> 
-> > Since I've thought I messed up entirely, I just gave up, re-formatted
-> > the card and let my backups do the job.
-> 
-> At that point, that's what I would have done too, with the caveat about 
-> considering the card suspect for the time being, and being sure it's 
-> /regularly/ backed up in case it scrambles again.
-> 
-> > It's quite annoying though, how often I get those problems. May it be
-> > that the Raspberry Pi is too slow to let btrfs do its background magic,
-> > may it be that btrfs is not that suitable for SD cards (in my case it's
-> > a class 10 microSDHC, 16GiB), or may it be that btrfs is still not that
-> > reliable when it comes to "unclean" shutdowns.
-> 
-> I'd guess a mix of the above.  There's some recent research at how poor 
-> certain solid state devices are at handling power cuts.  Someone here 
-> probably has a link or google it.  Having work on one partition scramble 
-> others certainly seems like bad firmware to me, tho I'm no expert.  But 
-> btrfs' write patterns are surely about as far from the fat many of these 
-> devices were designed for as it gets, so btrfs may well be stressing it 
-> quite a bit as well.
+Options are:
 
-btrfs write patterns are probably closer to what SD cards are designed
-for than ext4 or xfs.  btrfs COW tries to write data sequentially in
-contiguous chunks like a camera sequentially storing JPEGs on a FAT
-filesystem.  Contrast with ext4 which alternates between journal writes
-and random 4K page writes.  ext4 also writes metadata twice (once in
-the FS, once in the journal) to wear out the SD card faster.
+	btrfs-convert -n -d /dev/mapper/testsnap
 
-> I'd also try to compare notes with other pi users and see if they're 
-> noting problems with the pi and btrfs as well.  I'm entirely clueless in 
-> that regard, but I read enough about them to at least know they have a 
-> rather large and active user community, so you can't be the first to have 
-> tried it.  Someone's gotta have some experience to share.
+It segfaults without the -n and -d options too, but takes much longer to
+run get to this point.
 
-I have several Pis running btrfs on a local build of kernel 3.12.24.
-I have no btrfs-specific problems with these...but there's a "but":
-
-Consumer SD cards are /terrible/ storage devices.  Always back up all
-data written to an SD card as soon as possible after writing it, and
-develop a process to restore the backup to a new SD card conveniently
-when--not if--the card fails.
-
-Over the years I've burned my way through dozens of SD cards in Pis,
-Beagles, x86 laptops, USB SD card readers, cameras and cell phones.
-I have more bad or failed cards than good ones in my collection, but no
-more than three of any specific model.  Brand, price, and specs don't
-correlate to success or failure.  Even the good cards wear out after
-heavy use.  The bad ones fail much faster, and are more likely to give
-you garbage data instead of properly formed I/O errors as they fail.
-
-btrfs helps with the backup/restore process, detects SD card failure
-faster, and puts less write load on the SD card (COW instead of
-journalling, and compression reduces write size).
-
-Some might suggest "ext4 is better than btrfs because I can fix a
-corrupt SD card with e2fsck that I can't fix with btrfsck"; however,
-in my experience the Pis don't have enough RAM to run e2fsck when it
-allocates extra memory to fix non-trivial FS corruption, and failing SD
-cards just get worse when you rewrite them anyway.  Save some time and
-sanity, and just skip ahead to building a new SD card (preferably not
-the same brand and model as the old one) from the last backup.  You may
-need to go through three or four models before you find one that works.
-
-Bad firmware (i.e. anything less than the very /best/ firmware) can flip
-bits instead of giving explicit I/O errors.  No filesystem can survive
-this.  btrfs can turn flipped bits into I/O errors and try to limit
-the damage by making the filesystem read-only, but it can't fix the
-underlying problem.
-
-You might still be able to use a bad SD card read-only in a Pi (e.g. to
-boot and mount root from a USB device); however, any write to a bad
-SD card can scramble its contents, so such a system is running on
-borrowed time.  In the worst cases, a single write can make all data on
-the card instantly and permanently irretrievable.  In typical cases a
-write to one location effectively change data in several other locations
-in unpredictable ways, including changes to the mapping between logical
-block addresses and physical storage locations.
-
-btrfs suppresses redundant metadata by default when it detects
-non-rotating media, so on a single storage device you won't get two copies
-of metadata and all corruption is unrecoverable.  Corrupt metadata
-produces messages that look more like FS bugs than storage device
-corruption--you won't get nice clean "checksum failed" error messages
-when btrfs can't find the data checksums in a corrupt metadata tree to
-verify them.
-
-> The other possibility I guess is to try a different brand and spec of 
-> card, to see if that makes any difference.  I just don't know at this 
-> point, so it's all in-play ATM.
-> 
-> > Nevertheless, I will keep your explanations around for future reference,
-> > they were really helpful! Thanks again!
-> 
-> =:^)
-> 
-> -- 
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+(gdb) bt full
+#0  __memcpy_sse2_unaligned () at ../sysdeps/x86_64/multiarch/memcpy-sse2-unaligned.S:156
+No locals.
+#1  0x0000000000415c86 in memcpy (__len=<optimized out>, __src=<optimized out>, __dest=<optimized out>) at /usr/include/x86_64-linux-gnu/bits/string3.h:51
+No locals.
+#2  copy_extent_buffer (dst=dst@entry=0x2235210, src=src@entry=0x22330f0, dst_offset=<optimized out>, src_offset=<optimized out>, len=len@entry=18446744073709551563) at extent_io.c:910
+No locals.
+#3  0x00000000004056c4 in copy_for_split (nritems=0, mid=1, slot=0, right=0x2235210, l=0x22330f0, path=0x674ca0, root=0x63dc00, trans=0x11105c0) at ctree.c:1912
+        data_copy_size = -53
+        i = <optimized out>
+        ret = 0
+        wret = <optimized out>
+        rt_data_off = <optimized out>
+        disk_key = {objectid = 6544384, type = 160 '\240', offset = 26444}
+#4  split_leaf (trans=trans@entry=0x11105c0, root=root@entry=0x63dc00, ins_key=ins_key@entry=0x7fffffffde40, path=path@entry=0x674ca0, data_size=data_size@entry=52, extend=extend@entry=1) at ctree.c:2096
+        disk_key = {objectid = 0, type = 0 '\000', offset = 0}
+        l = 0x22330f0
+        nritems = 0
+        mid = 1
+        slot = 0
+        right = 0x2235210
+        ret = <optimized out>
+        wret = <optimized out>
+        split = <optimized out>
+        num_doubles = 0
+        __PRETTY_FUNCTION__ = "split_leaf"
+#5  0x0000000000407283 in btrfs_search_slot (trans=0x11105c0, root=root@entry=0x63dc00, key=key@entry=0x7fffffffde40, p=p@entry=0x674ca0, ins_len=ins_len@entry=52, cow=cow@entry=1) at ctree.c:1120
+        sret = <optimized out>
+        b = 0x22330f0
+        slot = 0
+        ret = <optimized out>
+        level = <optimized out>
+        should_reada = 0
+        lowest_level = 0 '\000'
+        __PRETTY_FUNCTION__ = "btrfs_search_slot"
+#6  0x0000000000407416 in btrfs_insert_empty_items (trans=trans@entry=0x11105c0, root=root@entry=0x63dc00, path=path@entry=0x674ca0, cpu_key=cpu_key@entry=0x7fffffffde40, data_size=data_size@entry=0x7fffffffde3c, nr=nr@entry=1) at ctree.c:2412
+        leaf = <optimized out>
+        ret = 0
+        slot = <optimized out>
+        i = <optimized out>
+        nritems = 32767
+        total_size = 52
+        total_data = <optimized out>
+        data_end = <optimized out>
+        disk_key = {objectid = 144, type = 240 '\360', offset = 18158513697557980219}
+        __PRETTY_FUNCTION__ = "btrfs_insert_empty_items"
+#7  0x0000000000414256 in btrfs_insert_empty_item (data_size=27, key=0x7fffffffde40, path=0x674ca0, root=0x63dc00, trans=0x11105c0) at ctree.h:2305
+No locals.
+#8  btrfs_insert_inode_ref (trans=0x11105c0, root=0x63dc00, name=name@entry=0x16604fc "", name_len=name_len@entry=17, inode_objectid=inode_objectid@entry=96847738, ref_objectid=<optimized out>, index=1915) at inode-item.c:72
+        path = 0x674ca0
+        key = {objectid = 96847738, type = 12 '\f', offset = 38723926}
+        ref = <optimized out>
+        ptr = <optimized out>
+        ret = <optimized out>
+        ins_len = 27
+        __PRETTY_FUNCTION__ = "btrfs_insert_inode_ref"
+#9  0x0000000000421d68 in dir_iterate_proc (dir=<optimized out>, entry=<optimized out>, dirent=0x16604f4, offset=<optimized out>, blocksize=<optimized out>, buf=<optimized out>, priv_data=0x7fffffffe3a0) at btrfs-convert.c:290
+        ret = <optimized out>
+        file_type = 0
+        objectid = 96847738
+        inode_size = <optimized out>
+        dotdot = ".."
+        location = {objectid = 96847738, type = 1 '\001', offset = 0}
+        idata = 0x7fffffffe3a0
+        name_len = 17
+        __PRETTY_FUNCTION__ = "dir_iterate_proc"
+#10 0x00007ffff704b6f3 in ext2fs_process_dir_block () from /lib/x86_64-linux-gnu/libext2fs.so.2
+No symbol table info available.
+#11 0x00007ffff7047cfc in ?? () from /lib/x86_64-linux-gnu/libext2fs.so.2
+No symbol table info available.
+#12 0x00007ffff704ba1b in ext2fs_dir_iterate2 () from /lib/x86_64-linux-gnu/libext2fs.so.2
+No symbol table info available.
+#13 0x00000000004248ae in create_dir_entries (ext2_ino=38723672, ext2_fs=0x632010, btrfs_inode=0x7fffffffe430, objectid=38723926, root=0x63dc00, trans=0x11105c0) at btrfs-convert.c:323
+        ret = <optimized out>
+        err = <optimized out>
+        data = {trans = 0x11105c0, root = 0x63dc00, inode = 0x7fffffffe430, objectid = 38723926, index_cnt = 1915, parent = 38723925, errcode = 0}
+#14 copy_single_inode (noxattr=0, packing=0, datacsum=0, ext2_inode=0x7fffffffe320, ext2_ino=38723672, ext2_fs=0x632010, objectid=38723926, root=0x63dc00, trans=0x11105c0) at btrfs-convert.c:985
+        ret = <optimized out>
+        btrfs_inode = {generation = 1, transid = 18446744073709551492, size = 53920, nbytes = 0, block_group = 0, nlink = 1, uid = 0, gid = 0, mode = 16877, rdev = 0, flags = 0, sequence = 0, reserved = {0, 0, 0, 0}, atime = {sec = 1408667056, nsec = 0}, ctime = {sec = 1408667056, nsec = 0}, mtime = {sec = 1408667056, nsec = 0}, otime = {sec = 0, nsec = 0}}
+#15 copy_inodes (noxattr=0, packing=0, datacsum=0, ext2_fs=0x632010, root=0x63dc00) at btrfs-convert.c:1067
+        ret = <optimized out>
+        err = <optimized out>
+        ext2_scan = 0x63e220
+        ext2_ino = 38723672
+        objectid = 38723926
+        ext2_inode = {i_mode = 16877, i_uid = 0, i_size = 192512, i_atime = 1408667056, i_ctime = 1408667056, i_mtime = 1408667056, i_dtime = 0, i_gid = 0, i_links_count = 2, i_blocks = 376, i_flags = 528384, osd1 = {linux1 = {l_i_version = 4040}, hurd1 = {h_i_translator = 4040}}, i_block = {193290, 4, 0, 0, 16, 157918112, 16, 31, 158255041, 0, 0, 0, 0, 0, 0}, i_generation = 1366646, i_file_acl = 0, i_size_high = 0, i_faddr = 0, osd2 = {linux2 = {l_i_blocks_hi = 0, l_i_file_acl_high = 0, l_i_uid_high = 0, l_i_gid_high = 0, l_i_checksum_lo = 0, l_i_reserved = 0}, hurd2 = {h_i_frag = 0 '\000', h_i_fsize = 0 '\000', h_i_mode_high = 0, h_i_uid_high = 0, h_i_gid_high = 0, h_i_author = 0}}}
+        trans = 0x11105c0
+#16 do_convert (noxattr=-7352, packing=0, datacsum=0, devname=0x7fffffffe8ab "/dev/mapper/testsnap") at btrfs-convert.c:2278
+        ext2_fs = 0x632010
+        root = 0x63dc00
+        ret = <optimized out>
+        fd = <optimized out>
+        blocks = {5277888, 5277889, 5277909, 5277956, 5277957, 5277958, 5277959}
+        total_bytes = <optimized out>
+        super_bytenr = 21618229248
+        ext2_root = 0x0
+        i = <optimized out>
+        blocksize = 4096
+#17 main (argc=<optimized out>, argv=<optimized out>) at btrfs-convert.c:2745
+        ret = 0
+        packing = 0
+        noxattr = -7352
+        datacsum = 0
+        rollback = <optimized out>
+        file = 0x7fffffffe8ab "/dev/mapper/testsnap"
+(gdb)

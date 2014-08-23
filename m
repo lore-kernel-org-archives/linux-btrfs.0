@@ -1,86 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:9168 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756525AbaHVP3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Aug 2014 11:29:14 -0400
-Message-ID: <53F761C9.5050300@redhat.com>
-Date: Fri, 22 Aug 2014 10:29:13 -0500
-From: Eric Sandeen <sandeen@redhat.com>
+Received: from mail-la0-f43.google.com ([209.85.215.43]:51982 "EHLO
+	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751546AbaHWSpX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Aug 2014 14:45:23 -0400
+Received: by mail-la0-f43.google.com with SMTP id gi9so8784952lab.30
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Aug 2014 11:45:22 -0700 (PDT)
 MIME-Version: 1.0
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-CC: marvin24@gmx.de
-Subject: Re: [PATCH] btrfs-progs: init uninitialized output buf for btrfs-restore
-References: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-In-Reply-To: <1408592136-7606-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <87mway82qp.fsf@elisp.net>
+References: <87mway82qp.fsf@elisp.net>
+Date: Sat, 23 Aug 2014 19:45:22 +0100
+Message-ID: <CAL3q7H61-uAP08uXNzsZfwKT8h1ZjRAR_GvD69wRKuRPpkbh9A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: Do not free dirty extent buffer
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Naohiro Aota <naota@elisp.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/20/14, 10:35 PM, Gui Hecheng wrote:
-> A memory problem reported by valgrind as follows:
-> 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
-> When running:
-> 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
-> 
-> Because the output buf size is alloced with malloc, but the length of
-> output data is shorter than the sizeof(buf), so valgrind report
-> uninitialised byte(s).
-> We could use calloc to repalce malloc and clear this WARNING away.
-> 
-> Reported-by: Marc Dietrich <marvin24@gmx.de>
-> Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-
-Sorry for the noise in reply to this, I think the patch itself
-is fine.  It would have clarified things to the reviewer, though,
-if you had added more detail to the commit log, such as:
-
-> If a btrfs-restore process encounters corruption and fails
-> to properly decompress all data, some parts of the output
-> buffer may not be initialized.  This was reported by valgrind as
-> follows:
-> 	=== Syscall param pwrite64(buf) points to uninitialised byte(s)
-> When running:
-> 	# valgrind --leak-check=yes btrfs restore /dev/sda9 /mnt/backup
-> 
-> Because the output buf size is alloced with malloc, but the length of
-> output data is shorter than the sizeof(buf), so valgrind reports
-> uninitialised byte(s).
+On Thu, Aug 21, 2014 at 1:07 PM, Naohiro Aota <naota@elisp.net> wrote:
+> free_some_buffer() should not free dirty extent buffers. They should be
+> left for later commit.
 >
-> We could use calloc to replace malloc to ensure that all written
-> bytes are initialized.
-
-Anyway:
-
-Reviewed-by: Eric Sandeen <sandeen@redhat.com>
-
-Thanks,
--Eric
-
+> Signed-off-by: Naohiro Aota <naota@elisp.net>
 > ---
->  cmds-restore.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/cmds-restore.c b/cmds-restore.c
-> index cbda6bb..bb72311 100644
-> --- a/cmds-restore.c
-> +++ b/cmds-restore.c
-> @@ -251,7 +251,7 @@ static int copy_one_inline(int fd, struct btrfs_path *path, u64 pos)
->  	}
->  
->  	ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
-> -	outbuf = malloc(ram_size);
-> +	outbuf = calloc(1, ram_size);
->  	if (!outbuf) {
->  		fprintf(stderr, "No memory\n");
->  		return -ENOMEM;
-> @@ -320,7 +320,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
->  	}
->  
->  	if (compress != BTRFS_COMPRESS_NONE) {
-> -		outbuf = malloc(ram_size);
-> +		outbuf = calloc(1, ram_size);
->  		if (!outbuf) {
->  			fprintf(stderr, "No memory\n");
->  			free(inbuf);
-> 
+>  extent_io.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/extent_io.c b/extent_io.c
+> index a127e54..8a668be 100644
+> --- a/extent_io.c
+> +++ b/extent_io.c
+> @@ -552,7 +552,7 @@ static int free_some_buffers(struct extent_io_tree *tree)
+>
+>         list_for_each_safe(node, next, &tree->lru) {
+>                 eb = list_entry(node, struct extent_buffer, lru);
+> -               if (eb->refs == 1) {
+> +               if (eb->refs == 1 && !(eb->flags && EXTENT_DIRTY)) {
 
+Hi,
+
+Did you meant bitwise and (&) and not logical and (&&) right?
+
+
+>                         free_extent_buffer(eb);
+>                         if (tree->cache_size < cache_hard_max)
+>                                 break;
+> --
+> 2.0.4
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

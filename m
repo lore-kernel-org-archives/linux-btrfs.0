@@ -1,187 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:60121 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750916AbaHWQjt (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34528 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750809AbaHWQqY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Aug 2014 12:39:49 -0400
-Received: by mail-pa0-f43.google.com with SMTP id lf10so17989649pab.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Aug 2014 09:39:48 -0700 (PDT)
+	Sat, 23 Aug 2014 12:46:24 -0400
+Date: Sat, 23 Aug 2014 12:38:05 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: superblock checksum mismatch after crash, cannot mount
+Message-ID: <20140823163803.GA9149@hungrycats.org>
+References: <53F7BD8E.10308@floga.de>
+ <pan$a4556$243aa48a$bd2898a8$c2006893@cox.net>
+ <53F85317.8060900@floga.de>
+ <pan$16219$d960b649$52ed1e6$33540704@cox.net>
 MIME-Version: 1.0
-Date: Sat, 23 Aug 2014 16:39:48 +0000
-Message-ID: <CAGP2HaPx2pXbN=FyBH5MskrsufDXcWtddVfG4Kaie-ZVg=ivJg@mail.gmail.com>
-Subject: btrfs unmountable, any btrfs tool segfaults
-From: Nikolay Shtabel <shtabnik@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <pan$16219$d960b649$52ed1e6$33540704@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sat, Aug 23, 2014 at 09:34:10AM +0000, Duncan wrote:
+> Florian Gamböck posted on Sat, 23 Aug 2014 10:38:47 +0200 as excerpted:
+> 
+> > Am 23.08.2014 07:27, schrieb Duncan:
+> >> btrfs-show-super is your tool for inspecting the superblocks.  [...]
+> >> Then use btrfs rescue super-recover
+> 
+> > Yes, show-super told me, that the first super block did "NOT MATCH", but
+> > the second one seemed to be in order ("MATCHED"). The SD card is 16 GiB
+> > big, so there was no third super block.
+> > 
+> > Rescue also listed the first one as bad and the second one as good and
+> > it seemed to run successfully, no errors whatsoever.
+> 
+> Good so far, but...
+> 
+> > However, after "recovering", every single partition on the card broke.
+> > There were three partitions: 1 = fat32 ("/boot"), 2 = swap, 3 = btrfs
+> > ("/"). Naturally I ran the rescue command on partition 3, I hope that
+> > was not a mistake. Afterwards, as I said, none of the partitions were
+> > recognized anymore. Not even btrfs recognized the third partition.
+> 
+> That is strange.  Was the partition table still recognized?  Had you used 
+> mbr or gpt partitioning (I'm presuming the pi handles them, of course, I 
+> don't know a lot about pi/arm).
+> 
+> FWIW these days I use gpt because it keeps one checksummed copy at each 
+> end of the device for better reliability, and of course also because it 
+> does away with primary/secondary/logical partition worries and allows 
+> partition names/labels (as distinct from filesystem labels), but I have 
+> literally /no/ idea whether pi supports it as I've never worked with a pi.
+> 
+> I can't think of any scenario that would screw up all the partitions  
+> unless the partition table was damaged and/or unless the firmware was 
+> buggy and basically scrambled things.  It's almost as if the superblock 
+> fix landed in the middle of the partition table (maybe 64 KiB into the 
+> entire SD card, is that still partition table?) instead of at the 64 KiB 
+> mark into what would have been partition 3, the btrfs partition, but if 
+> it was reading the second one as good, it must have gotten the right 
+> partition to do that, in which case it couldn't be that you simply typoed 
+> and didn't include the digit.
+> 
+> I can't personally rule out a bug in btrfs rescue as I've never used that 
+> tool myself, but one this severe?  Hard to imagine, yet /something/ 
+> screwed up. 
+> 
+> Weird.
 
-I'm using archinux with btrfs as root filesystem, kernel 3.15.2, btrfs 3.14.2.
+Sounds like perfectly normal SD card corruption.
 
-System was working fine for more than year, but suddenly
-after large pacman update filesystem came to
-unrecoverable error (remounted root ro).
+> Anyway, were it me, I'd consider that sdcard suspect (bad firmware) until 
+> I could pin down what it did a bit better, because something implausible 
+> just happened, and that's as plausible an explanation as anything else 
+> we've got.
+> 
+> > Since I've thought I messed up entirely, I just gave up, re-formatted
+> > the card and let my backups do the job.
+> 
+> At that point, that's what I would have done too, with the caveat about 
+> considering the card suspect for the time being, and being sure it's 
+> /regularly/ backed up in case it scrambles again.
+> 
+> > It's quite annoying though, how often I get those problems. May it be
+> > that the Raspberry Pi is too slow to let btrfs do its background magic,
+> > may it be that btrfs is not that suitable for SD cards (in my case it's
+> > a class 10 microSDHC, 16GiB), or may it be that btrfs is still not that
+> > reliable when it comes to "unclean" shutdowns.
+> 
+> I'd guess a mix of the above.  There's some recent research at how poor 
+> certain solid state devices are at handling power cuts.  Someone here 
+> probably has a link or google it.  Having work on one partition scramble 
+> others certainly seems like bad firmware to me, tho I'm no expert.  But 
+> btrfs' write patterns are surely about as far from the fat many of these 
+> devices were designed for as it gets, so btrfs may well be stressing it 
+> quite a bit as well.
 
-I've decided to reboot, and after that btrfs failed to mount:
+btrfs write patterns are probably closer to what SD cards are designed
+for than ext4 or xfs.  btrfs COW tries to write data sequentially in
+contiguous chunks like a camera sequentially storing JPEGs on a FAT
+filesystem.  Contrast with ext4 which alternates between journal writes
+and random 4K page writes.  ext4 also writes metadata twice (once in
+the FS, once in the journal) to wear out the SD card faster.
 
-[ 1673.285020] BTRFS: bad tree block start 0 471748608
-[ 1673.285071] BTRFS: bad tree block start 0 471748608
-[ 1673.317384] BTRFS: open_ctree failed
+> I'd also try to compare notes with other pi users and see if they're 
+> noting problems with the pi and btrfs as well.  I'm entirely clueless in 
+> that regard, but I read enough about them to at least know they have a 
+> rather large and active user community, so you can't be the first to have 
+> tried it.  Someone's gotta have some experience to share.
 
-When trying to mount with -o ro, recovery:
+I have several Pis running btrfs on a local build of kernel 3.12.24.
+I have no btrfs-specific problems with these...but there's a "but":
 
-[ 1788.777081] BTRFS info (device sdc2): enabling auto recovery
-[ 1788.777088] BTRFS info (device sdc2): disk space caching is enabled
-[ 1788.778502] BTRFS: bad tree block start 0 471748608
-[ 1788.778577] BTRFS: bad tree block start 0 471748608
-[ 1788.778657] BTRFS: bad tree block start 0 471748608
-[ 1788.778774] BTRFS: bad tree block start 0 471748608
-[ 1788.778990] BTRFS: bad tree block start 0 260931584
-[ 1788.779221] BTRFS: bad tree block start 0 260931584
-[ 1788.779236] BTRFS: failed to read tree root on sdc2
-[ 1788.779563] parent transid verify failed on 260562944 wanted 427348
-found 427351
-[ 1788.779907] parent transid verify failed on 260562944 wanted 427348
-found 427351
-[ 1788.779908] BTRFS: failed to read tree root on sdc2
-[ 1788.780288] parent transid verify failed on 260358144 wanted 427347
-found 427351
-[ 1788.780571] parent transid verify failed on 260358144 wanted 427347
-found 427351
-[ 1788.780575] BTRFS: failed to read tree root on sdc2
-[ 1788.844215] BTRFS: open_ctree failed
+Consumer SD cards are /terrible/ storage devices.  Always back up all
+data written to an SD card as soon as possible after writing it, and
+develop a process to restore the backup to a new SD card conveniently
+when--not if--the card fails.
 
-Then, i've tried to btrfs check:
+Over the years I've burned my way through dozens of SD cards in Pis,
+Beagles, x86 laptops, USB SD card readers, cameras and cell phones.
+I have more bad or failed cards than good ones in my collection, but no
+more than three of any specific model.  Brand, price, and specs don't
+correlate to success or failure.  Even the good cards wear out after
+heavy use.  The bad ones fail much faster, and are more likely to give
+you garbage data instead of properly formed I/O errors as they fail.
 
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-read block failed check_tree_block
-Checking filesystem on /dev/sdc2
-UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
-Critical roots corrupted, unable to fsck the FS
-Segmentation fault
-(btrfs[5049]: segfault at 1d3 ip 000000000042e35d sp 00007fff6b317870
-error 4 in btrfs[400000+6b000])
+btrfs helps with the backup/restore process, detects SD card failure
+faster, and puts less write load on the SD card (COW instead of
+journalling, and compression reduces write size).
 
-As there are errors with csum and extent tree i've tried to reinit them also:
+Some might suggest "ext4 is better than btrfs because I can fix a
+corrupt SD card with e2fsck that I can't fix with btrfsck"; however,
+in my experience the Pis don't have enough RAM to run e2fsck when it
+allocates extra memory to fix non-trivial FS corruption, and failing SD
+cards just get worse when you rewrite them anyway.  Save some time and
+sanity, and just skip ahead to building a new SD card (preferably not
+the same brand and model as the old one) from the last backup.  You may
+need to go through three or four models before you find one that works.
 
-btrfs check --init-csum-tree:
+Bad firmware (i.e. anything less than the very /best/ firmware) can flip
+bits instead of giving explicit I/O errors.  No filesystem can survive
+this.  btrfs can turn flipped bits into I/O errors and try to limit
+the damage by making the filesystem read-only, but it can't fix the
+underlying problem.
 
-Creating a new CRC tree
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-read block failed check_tree_block
-Checking filesystem on /dev/sdc2
-UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
-Reinit crc root
-Unable to find block group for 0
-btrfs: extent-tree.c:288: find_search_start: Assertion `!(1)' failed.
-Aborted
+You might still be able to use a bad SD card read-only in a Pi (e.g. to
+boot and mount root from a USB device); however, any write to a bad
+SD card can scramble its contents, so such a system is running on
+borrowed time.  In the worst cases, a single write can make all data on
+the card instantly and permanently irretrievable.  In typical cases a
+write to one location effectively change data in several other locations
+in unpredictable ways, including changes to the mapping between logical
+block addresses and physical storage locations.
 
-btrfs check --init-extent-tree:
+btrfs suppresses redundant metadata by default when it detects
+non-rotating media, so on a single storage device you won't get two copies
+of metadata and all corruption is unrecoverable.  Corrupt metadata
+produces messages that look more like FS bugs than storage device
+corruption--you won't get nice clean "checksum failed" error messages
+when btrfs can't find the data checksums in a corrupt metadata tree to
+verify them.
 
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-read block failed check_tree_block
-Checking filesystem on /dev/sdc2
-UUID: 9b5edd54-b3cb-4882-b8d5-ede68717e0aa
-Creating a new extent tree
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-read block failed check_tree_block
-Error reading root block
-error pinning down used bytes
-Segmentation fault
-([ 2816.659245] btrfs[5068]: segfault at 1d3 ip 000000000042e35d sp
-00007fffc2052420 error 4 in btrfs[400000+6b000])
-
-After all, the last step is to use btrfs restore:
-
-btrfs restore -iv /dev/sdc2 /mnt/restore/
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-Check tree block failed, want=471748608, have=0
-read block failed check_tree_block
-Couldn't setup extent tree
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-Check tree block failed, want=468189184, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-Check tree block failed, want=466935808, have=0
-read block failed check_tree_block
-Segmentation fault
-[ 3324.252370] btrfs[32022]: segfault at fffffffffffffffb ip
-000000000042a763 sp 00007fff14488690 error 5 in btrfs[400000+6b000]
-
-I've tried this with latest btrfs-progs built from git.
-
-Can you please suggest any method to restore files from filesystem?
-
-Thanks!
-
-Nikolay Shtabel
+> The other possibility I guess is to try a different brand and spec of 
+> card, to see if that makes any difference.  I just don't know at this 
+> point, so it's all in-play ATM.
+> 
+> > Nevertheless, I will keep your explanations around for future reference,
+> > they were really helpful! Thanks again!
+> 
+> =:^)
+> 
+> -- 
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

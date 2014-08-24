@@ -1,31 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.131]:50700 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752573AbaHXOJt (ORCPT
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:43178 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752789AbaHXPsO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 10:09:49 -0400
-Message-ID: <53F9F22B.4040109@floga.de>
-Date: Sun, 24 Aug 2014 16:09:47 +0200
-From: =?ISO-8859-1?Q?Florian_Gamb=F6ck?= <ml@floga.de>
+	Sun, 24 Aug 2014 11:48:14 -0400
+Received: by mail-pa0-f43.google.com with SMTP id lf10so19510741pab.30
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 08:48:11 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <pan$cd143$1f075140$a44693a2$c17a5577@cox.net>
+References: <CAGP2HaPx2pXbN=FyBH5MskrsufDXcWtddVfG4Kaie-ZVg=ivJg@mail.gmail.com>
+	<pan$cd143$1f075140$a44693a2$c17a5577@cox.net>
+Date: Sun, 24 Aug 2014 15:48:10 +0000
+Message-ID: <CAGP2HaM3C-rzoisqqirGRHo=0nQpdrW4xPH=nkmDo45C84jpKA@mail.gmail.com>
+Subject: Re: btrfs unmountable, any btrfs tool segfaults
+From: Nikolay Shtabel <shtabnik@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: superblock checksum mismatch after crash, cannot mount
-References: <53F7BD8E.10308@floga.de> <pan$a4556$243aa48a$bd2898a8$c2006893@cox.net> <53F85317.8060900@floga.de> <pan$16219$d960b649$52ed1e6$33540704@cox.net> <20140823163803.GA9149@hungrycats.org> <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net> <20140824110853.GB22693@apia.perrit.net>
-In-Reply-To: <20140824110853.GB22693@apia.perrit.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 24.08.2014 13:08, schrieb Leen Besselink:
-> tip for basically any Linux filesystem, especially on Flash-based storage and also btrfs:
-> - use noatime (if you aren't doing that already, don't know if that is the default in btrfs)
+Thanks for the link, I'm glad to see that restore work for you.
+I've tried this also and everything doesn't work ending up with segfault.
 
-Yeah, I use this option per standard since I don't really need access times.
+Unfortunately in my case I had some important files on btrfs
+partition, due to performance reasons (it was on SSD).
 
-> How bad is it ? Well, look at this presentation:
+I doesn't find solution in mailing-list archives, because there are
+not so many cases in which tools refuses to work.
+
+So, now I'm trying to debug btrfs tools, aiming first to get
+btrfs-zero-log working.
+
 >
-> https://www.youtube.com/watch?v=CPEzLNh5YIo
-
-Wow, this really surprised me. I never thought that SD cards are that 
-unreliable. Maybe on my Pi I'll use the card only for booting from now 
-on and move the system to an external hard drive ...
+> First answer (probably not too helpful, but gets the point across):
+>
+> Since btrfs is still not fully stable and you are urged to keep backups
+> if you value the data, then restore from them.  If you don't have them,
+> by definition you obviously don't value the data enough to bother with
+> the hassle of backing it up, so no big deal if you lose it, right?
+>
+> Second answer (hopefully more helpful, but I'm obviously a bit grumpy
+> today; I could put off answering until I'm not so grumpy, but I know what
+> it's like to be waiting for an answer, so read thru the grumpy and we can
+> both hope the solution works):
+>
+> It used to be common courtesy to read a couple weeks of the the backgroup/
+> backlist before posting questions as they might be answered already.  I
+> guess it isn't so these days...
+>
+> Anyway, see the second half of the following post (the first half is a
+> different problem and solution) dealing with using restore with btrfs-
+> find-root and etc, along with the wiki link mentioned (and of course the
+> manpages as well).  With some luck you can still get btrfs restore
+> working.  It worked for me recently (as you can see there, I had backups
+> but they weren't as current as I would have liked).
+>
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/37980
+>

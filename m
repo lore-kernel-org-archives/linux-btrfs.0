@@ -1,50 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from forward18.mail.yandex.net ([95.108.253.143]:57616 "EHLO
-	forward18.mail.yandex.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753154AbaHXRKI (ORCPT
+Received: from relay5-d.mail.gandi.net ([217.70.183.197]:41074 "EHLO
+	relay5-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752385AbaHXRZ4 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 13:10:08 -0400
-Received: from web11g.yandex.ru (web11g.yandex.ru [95.108.252.111])
-	by forward18.mail.yandex.net (Yandex) with ESMTP id DE2AC1780EEB
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 20:59:33 +0400 (MSK)
-From: Flash ROM <flashromguru@yandex.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: superblock checksum mismatch after crash, cannot mount
+	Sun, 24 Aug 2014 13:25:56 -0400
+Received: from mfilter26-d.gandi.net (mfilter26-d.gandi.net [217.70.178.154])
+	by relay5-d.mail.gandi.net (Postfix) with ESMTP id 303AF41C056
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 19:25:54 +0200 (CEST)
+Received: from relay5-d.mail.gandi.net ([217.70.183.197])
+	by mfilter26-d.gandi.net (mfilter26-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id TT9yR4hgizEt for <linux-btrfs@vger.kernel.org>;
+	Sun, 24 Aug 2014 19:25:52 +0200 (CEST)
+Received: from zafu.localnet (AMontpellier-656-1-470-118.w92-145.abo.wanadoo.fr [92.145.254.118])
+	(Authenticated sender: michel@bouissou.net)
+	by relay5-d.mail.gandi.net (Postfix) with ESMTPSA id B90E341C061
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 19:25:52 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: REPORT: Still a lot of BTRFS freezes in 3.16.1-1-ARCH
+Date: Sun, 24 Aug 2014 19:25:43 +0200
+Message-ID: <4207113.A3bnH6gnWF@zafu>
 MIME-Version: 1.0
-Message-Id: <9896671408899573@web11g.yandex.ru>
-Date: Sun, 24 Aug 2014 18:59:33 +0200
-Content-Type: text/plain
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-About SD cards and somesuch... 
+Hi there,
 
-TL;DR: THINK TWICE before formatting SD cards!!!
+This is to report that I'm still having quite systematic BRTFS freezes on an 
+ArchLinux running latest 3.16.1-1-ARCH kernel.
 
-What is SD card? One or several NAND flash ICs + controller doing wear leveling and interface translation. It does wear leveling and handles flash blocks translation to show you what you expect, making it look like if it can deal with 512 byte sectors, while flash haves totally different blocking factors.
+Interestingly enough, I have several latops with the exact same setup :
 
-There'are some bumps on this way. Most of issues come from the fact that flash memory *lacks* "write" operation and uses very specific block operations. There is "page program" and "block erase". Page is typically 1 to 4KiB (+some bytes for ECC, "out of band" data). Erase block is much larger and can usually vary about 256KiB to about 16MiB. Advanced flash storages could prefer to do erase operations in larger erase groups, probably to speed things up by submitting commands to several flash IC at once. This can make preferred erase block size of flash-backed storage even larger.
+Arch Linux with 3.16.1-1-ARCH kernel, fully running on BTRFS (with LZO 
+compression) over LVM over LUKS.
 
-Once flash page is programmed, it can't be filled with different data unless whole huge erase block is erased by erase operation, clearing all pages in block to their erased state. And then flash can withstand only limited amount of cycles, about several thousands for MLC (2 bit per cell) NAND and only few hundreds rewrites for TLC (3 bit per cell) nand. Then there could be bad blocks, both pre-existing at manufacture time and newly appeared due to wear. And some reserve space to cover new bad blocks. And software expects all these damn 512 byte sectors. 
+All machines have hourly BTRFS snapshots performed by SuSE ´ snapper ª 
+utility.
 
-Sounds a bit complicated, isn't it? So there is rather comples translation layer on the way which does translations, bad blocks mapping, wear leveling and so on. In fact even SD card haves rather smart firmware in controller which does many non-trivial operations. But it haves simplified routines, which makes it worse than SSDs. 
+The difference between the laptops only relate to the disk (HD vs. SSD) and CPU 
+"power".
 
-So what? There're some things you do not expect.
+I have :
 
-1) Formatting and repartitioning SD card? Generally WORST IDEA EVER. Unless you got idea about NAND flash, how it works and able to guess flash geometry and place filesystem adequately and hint it to use sane blocking factors (hard thing to do), you better do not repartition or format SD cards at all. Factory file sysmte comes pre-formatted in very special way. Generally if you look on new card, you will see fileystem follows special patterns. First, partition table looks a bit empty. There is partition table block and then ... some unused space. While it sounds dumb, this strange thing being done to put partition table in separate erase block, so it never read-modify-written when FAT entries are updated. Should something go wrong, FAR can recover from backup copy. But erased partition table just suxx. Then, FAT tables are aligned in way to fit well around erase block bounds. And of course filesystem blocks should map correctly over NAND pages, because getting filesystem block put into middle of two pages means 2 pages have to be touched when you write single filesystem block just because of bad layout. Incorrect layout can kill write performance of SD card by 2-3 times, especially on small files/small writes and cause extra wear. This is known as write amplification factor. 
+- Intel Core I3 with mechanical 1TB Samsung HD: NEVER hangs.
 
-This said, you can *try* to reformat, BUT no standard OS of firmware formatter will help you with default settings. They can't know geometry of underlying NAND and controller properties. There is no standard, widely accepted way to get such information from card. No matter if you use OS formatter, camera formatter or whatever. YOU WILL RUIN factory format (which is crafted in best possible way) and replace it with another, very likely suboptimal one. So you can easily reduce write speed, get increased wear and just make it unsafe. Up to sudden loss of partition table. So if you're about to try, remember at least the following: put partition table to separate erase block which is never touched. Sudden loss of partition table suxx. So, assuming most common 2-bit MLC NAND, first partition should start at least about 4-32MiB away from card beginning (more alignment does not hurts as long as it is power of 2 and you're ok with lost space). Large alignments of powers of 2 is your friend (in case TLC nand can be not a case due to strange block sizes). Filesystem start should be aligned to large power of 2 factors like units of 32MiB from begin of card. Filesytem blocks should be put on page boundary, avoiding case where filesystem block laid badly over pages boundary (if you lucky, can happen automatically if you align FS start in mentioned way). For these who is really inclined to try this and want to get sane results at cost of some card wearout, there are some tools like "flashbench" which will try to guess actual geometry and best alignment by actually doing some writes and looking on resulting speeds. Obviously, best blocking match leads to best speed as well due to least possible amplification factor.
+- Intel Celeron CPU 1007U @ 1.50GHz with Crucial_512GB MX100 SSD: NEVER hangs.
 
-2) Active writes? Especially small and random? Nice way to quickly kill your card. You see, wear leveling controller could be simplified. Then card often shown as mass storage and I'm not really sure this way card getting any hints about unused regions at all (shouldnt be huge issue for real sd/mmc hosts like Pi but can be problem with USB card readers and somesuch, I guess). If unused region hints are not used (no working DISCARD-like things in effect), wear leveller faces very heavy and suboptimal conditions, where it only haves few extra non-busy blocks for all operations and so it have to deal with read-modiwy-erase-write sequencing far more often than it could be in better conditions. Whole point of DISCARD was to improve operational conditions of wear leveler by giving hints which blocks are not used anymore so it can erase blocks in background and then use them to satisfy request in optimal ways, by just doing what has been requested with minimal overhead. This speeds up write (read-modify-erase-program sequence is slow) and reduces amplification factor, hence less wear. And why so many buzz about amplification? Imagine you'll write 64-bytes file. Due to sector nature it would be at least 512 bytes operation (8x amplification). Maybe more if filesystem only works with blocks. Controller will at least read something like 4KiB page, no matter what, and patch requested 512 bytes inside, and at least program it to new place, should there be free page. So now 64 bytes are 4KiB operation, huh? Buf if there was no free page, controller will have to do some read-patch-erase-write for whole erase block, often 4MiB or more. Or even several blocks + forced garbage collection, if there was no empty erase block to put patched data on (likely scenario if you haven't got DISCARD support on wheels). So, several 4MiB blocks were read, patched and at least one was erased? For that silly 64 byte write? That's what we call amplificaton! Needless to say, if you feed card with small random writes, it will die much, much faster 
-than you can expect from card size multiplied by erase cycles NAND can withstand. Now you probably understand why your card will never reach rated write speed on small files. If you write 100MiB file, it will eventually self-sync on blocking border, making amplification factor close to 1. Not a case for 64-byte files. Btw same applies for SSDs, though their larger capacity, widespread discard support and better controllers and algos make it less daunting problem for sure. 
-
-Solution? Use heavy RAM buffering (increase write barrier times?) and try to hint filesystem to aggregate writes to large sequential blocks, preferrably multiple of eraseblock size(in some FS its possible to "ab"use hinting intended for RAID stripes, etc). And DISCARD is your best friend, if you can get it working. Interestingly, CoW based designs are inherently more flash-friendly due to the fact wear leveler is kind of CoW itself and in lucly case it can be almost 1 to 1 mapping. In bad cases write amplification can occur of course. Best case is when file system is explicitly aware of flash blocking factors and uses this knowledge to optimise all sorts of things but its not what you can expect from SD cards and/or "generic" filesystems.
-
-3) Attitude when NAND worn out. SSDs are usually relatively smart in this regard and will just go read only when they're close to expected maximum of erase-reprogram cycles of flash. And SSDs are quite good in ECC abilities. SD cards have cheap and weak controller and so much more dumb and what you see can wary in drastic ways. Sometimes critical structures in NAND could become corrupted to degree controller would fail to initialise card at power up, making data completely unavailable, card is pretty dead at this point. Sometimes controller would miss corrupt data. Sometimes it would be unable to handle it properly. In best case it would go readonly as SSDs do. SSDs have S.M.A.R.T. to help you to get idea how it performs. SD cards.... uhm, there was idea to do similar thing and newest standards added commands with similar meaning, but needless to say its not yet widespread and very optional thing, mostly meant for built-in eMMC "cards". So hell yeah, backup your data. You can't know when it will fail and you can't know how it would fail. Needless to say it makes it easy to suddenly loss all your data.
-
-4) Unexpected power loss on write? Ouch, it hurts! Imagine power got lost in the middle of read-patch-erase-program sequence dealing with large 4+ MiB block, etc. It can happen data were not completely written back to new destination when power loss arrived, possibly resulting in data loss. SSDs are even nasty enough to keep interesting counter - "unsafe shutdown count", it increased each time you've turned off power without properly shutting down SSD first, hence causing risk of mentioned issues. That's why partition table *MUST* live in separate erase block. Else you can once figure out block has been erased but power lost before partition table data were written back. Hence, partition table loss. Sounds cool, isn't it? This case can also violate assumptions of most filesystems about how underlying layer behaves on power loss. Most filesystems just do not expect power loss can cause corruption of something like 4MiB eraseblock with all data it keeps instead of just data involved into current operation. Then, hidden geometry makes it hard to even predict which (meta)data will be damaged. This also affects SSDs to some degree. Toggling power of flash based storages when write is in progress and some time after it (where background logic can operate) is a really bad idea.
-
-5) Sometimes you can face less common stuff like wear leveler hardcoded to deal with FAT32. Fat area can have smaller eraseblocks and wear levler can assume there is FAT and will adjust logic to better handle small frequent writes into this area. You never know what wear leveler will do. So once you trashed factory filesystem, you're really on your own and proceeding on your own risk.
+- Asus EeePC, Intel Atom CPU N450  @ 1.66GHz with SanDisk 120 GB SSD: VERY 
+OFTEN HANGS, only since 3.15 kernel, and I'm pretty sure that the hardware 
+itself is OK.
 
 
-Bottom line: THINK TWICE before formatting SD cards.ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+It seems that the only machine on which BTRFS crashes is the one on which the 
+CPU is weak & slow relatively to the SSD (so the I/O, considering compression 
+and encryption, is quite surely CPU-bound).
+
+The typical situation causing a machine crash is : Performing a lot of updates 
+using "pacman -Syu".
+
+The typical freeze happens while applying the updates (not while dowloading 
+the packages).
+
+The typical result is :
+
+- The update process stalls.
+- The rest of the machine AT FIRST seems unaffected
+- After a while eventually everything that needs disk access freezes
+- A fierce reboot is finally needed.
+
+The typical outcome is :
+
+- After reboot, a number of files belonging to the packages that were in 
+process of updating, or had been updated last, appear as having a size of ZERO 
+bytes (so what depends on them is typicaly broken).
+
+(If the write to disk is ORDERED, this isn't supposed to happen, is it ??)
+
+- Forcibly reinstalling the packages for the broken files usually fixes things 
+up.
+
+I've had this exact experience at least 5 times on this machine now, always 
+exactly as described.
+
+I've never seen any such issue on my other machines on which CPU power is 
+better relatively to the disk speed...
+
+Hope this can be of any help ?
+
+I'm longing for a kernel fix cause I fear something could seriously break in 
+the end...
+
+Kind regards.
+
+-- 
+Sw‚mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+

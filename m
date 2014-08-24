@@ -1,56 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f67.google.com ([209.85.216.67]:56078 "EHLO
-	mail-qa0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752392AbaHXJzd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 05:55:33 -0400
-Received: by mail-qa0-f67.google.com with SMTP id v10so3939458qac.10
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 02:55:32 -0700 (PDT)
-MIME-Version: 1.0
-Date: Sun, 24 Aug 2014 17:55:32 +0800
-Message-ID: <CAGQ70evg4N0dU1-hycjQYbUDUwfnH_akTEcNTtAf=2rjtDU7NA@mail.gmail.com>
-Subject: 6+ MiB/s constant usage on a btrfs volume with kernel 3.16
-From: Oon-Ee Ng <ngoonee.talk@gmail.com>
+Received: from mta4.perrit.net ([194.213.15.92]:45718 "EHLO mta4.perrit.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752606AbaHXLRb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Aug 2014 07:17:31 -0400
+Received: from apia.perrit.net (apia.colo.hnglo.perrit.net [194.0.170.50])
+	by mail.perrit.nl (Postfix) with ESMTP id 7B55A1602E1
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 13:08:53 +0200 (CEST)
+Date: Sun, 24 Aug 2014 13:08:53 +0200
+From: Leen Besselink <leen@consolejunkie.net>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: superblock checksum mismatch after crash, cannot mount
+Message-ID: <20140824110853.GB22693@apia.perrit.net>
+Reply-To: leen@consolejunkie.net
+References: <53F7BD8E.10308@floga.de>
+ <pan$a4556$243aa48a$bd2898a8$c2006893@cox.net>
+ <53F85317.8060900@floga.de>
+ <pan$16219$d960b649$52ed1e6$33540704@cox.net>
+ <20140823163803.GA9149@hungrycats.org>
+ <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Aug 24, 2014 at 12:56:47AM +0000, Duncan wrote:
+> Zygo Blaxell posted on Sat, 23 Aug 2014 12:38:05 -0400 as excerpted:
+> 
+> > Consumer SD cards are /terrible/ storage devices.  Always back up all
+> > data written to an SD card as soon as possible after writing it, and
+> > develop a process to restore the backup to a new SD card conveniently
+> > when--not if--the card fails.
+> > 
+> > Over the years I've burned my way through dozens of SD cards in Pis,
+> > Beagles, x86 laptops, USB SD card readers, cameras and cell phones.
+> > I have more bad or failed cards than good ones in my collection, but no
+> > more than three of any specific model.  Brand, price, and specs don't
+> > correlate to success or failure.  Even the good cards wear out after
+> > heavy use.  The bad ones fail much faster, and are more likely to give
+> > you garbage data instead of properly formed I/O errors as they fail.
+> 
+> I had read that it was bad, but I didn't know it was /that/ bad.  The 
+> ones I've used have tended to be write-once, read for quite some time, 
+> often lose (or throw away as obsolete due to tiny size) before I write 
+> them again, or at least before I write them half a dozen times, and I've 
+> generally not has problems with them doing that, but I wouldn't tend to 
+> know about routine rewrite behavior.  Sounds like it's much worse than I 
+> might have thought.
+> 
 
-I'm using 64-bit Arch Linux. Since update to kernel versions 3.16 and
-3.16.1 I'm getting a constant 6+ MiB/s write on my root. Root does not
-seem to fill up though. Has run for 2 hours straight, and obviously
-slows everything else down to a crawl.
+tip for basically any Linux filesystem, especially on Flash-based storage and also btrfs:
+- use noatime (if you aren't doing that already, don't know if that is the default in btrfs)
 
-Downgrading to 3.15.8 (last working version for me) solves the
-symptoms. I'm unsure how to check for root causes, and my distro's
-mailing list suggested starting here.
+" Performance
 
-btrfs info as shown below, and this dropbox link[1] is a png
-printscreen of my iotop and perf top. Please advise.
+noatime - as discussed in the mailing list noatime mount option might speed up your file system, especially in case you have lots of snapshots. Each read access to a file is supposed to update its unix access time. COW will happen and will make even more writes. Default is now relatime which updates access times less often (see: http://kerneltrap.org/node/14148). 
 
-Btrfs v3.14.2
-% btrfs fi show
-Label: 'DATA'  uuid: 762a0d46-d88b-4d2a-a4ff-ba9de5ebe993
-        Total devices 1 FS bytes used 380.17GiB
-        devid    1 size 439.83GiB used 439.83GiB path /dev/sda9
+Note that noatime will break some applications like the venerable mutt (unless you use Maildir mailboxes). "
 
-Label: 'HOME'  uuid: 00f91282-ab65-429d-b0f6-2439924755a7
-        Total devices 1 FS bytes used 73.03GiB
-        devid    1 size 97.66GiB used 97.66GiB path /dev/sda7
+https://btrfs.wiki.kernel.org/index.php/Mount_options#Performance
 
-Label: 'ROOT'  uuid: 4c860350-eced-4224-a4ec-657576fc54e8
-        Total devices 1 FS bytes used 25.49GiB
-        devid    1 size 34.18GiB used 34.18GiB path /dev/sda6
+How bad is it ? Well, look at this presentation:
 
-Btrfs v3.14.2
-% btrfs fi df /
-Data, single: total=31.90GiB, used=24.66GiB
-System, DUP: total=8.00MiB, used=12.00KiB
-System, single: total=4.00MiB, used=0.00
-Metadata, DUP: total=1.12GiB, used=853.64MiB
-Metadata, single: total=8.00MiB, used=0.00
-unknown, single: total=288.00MiB, used=0.00
+https://www.youtube.com/watch?v=CPEzLNh5YIo
 
-[1] - https://db.tt/TSh5piq6
+> Thanks.
+> 
+> -- 
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

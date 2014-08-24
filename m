@@ -1,48 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42795 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751148AbaHXGNr (ORCPT
+Received: from mail-qa0-f67.google.com ([209.85.216.67]:56078 "EHLO
+	mail-qa0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752392AbaHXJzd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 02:13:47 -0400
-Date: Sat, 23 Aug 2014 20:07:12 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs unmountable, any btrfs tool segfaults
-Message-ID: <20140824030712.GP3875@merlins.org>
-References: <CAGP2HaPx2pXbN=FyBH5MskrsufDXcWtddVfG4Kaie-ZVg=ivJg@mail.gmail.com>
- <pan$cd143$1f075140$a44693a2$c17a5577@cox.net>
+	Sun, 24 Aug 2014 05:55:33 -0400
+Received: by mail-qa0-f67.google.com with SMTP id v10so3939458qac.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 02:55:32 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$cd143$1f075140$a44693a2$c17a5577@cox.net>
+Date: Sun, 24 Aug 2014 17:55:32 +0800
+Message-ID: <CAGQ70evg4N0dU1-hycjQYbUDUwfnH_akTEcNTtAf=2rjtDU7NA@mail.gmail.com>
+Subject: 6+ MiB/s constant usage on a btrfs volume with kernel 3.16
+From: Oon-Ee Ng <ngoonee.talk@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 24, 2014 at 01:21:17AM +0000, Duncan wrote:
-> It used to be common courtesy to read a couple weeks of the the backgroup/
-> backlist before posting questions as they might be answered already.  I 
-> guess it isn't so these days...
+Hi,
 
-This is not scalable. There shouldn't be any recovery wisdom that is
-only in the mailing list archive. This should be copied to the wiki.
-I've been doing my part (and then some :), so have others ), so I urge
-the rest to update the wiki with important information likely to be
-useful to others later.
- 
-> Anyway, see the second half of the following post (the first half is a 
-> different problem and solution) dealing with using restore with btrfs-
-> find-root and etc, along with the wiki link mentioned (and of course the 
-> manpages as well).  With some luck you can still get btrfs restore 
-> working.  It worked for me recently (as you can see there, I had backups 
-> but they weren't as current as I would have liked).
-> 
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/37980
+I'm using 64-bit Arch Linux. Since update to kernel versions 3.16 and
+3.16.1 I'm getting a constant 6+ MiB/s write on my root. Root does not
+seem to fill up though. Has run for 2 hours straight, and obviously
+slows everything else down to a crawl.
 
-Please put this in the wiki :)
+Downgrading to 3.15.8 (last working version for me) solves the
+symptoms. I'm unsure how to check for root causes, and my distro's
+mailing list suggested starting here.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+btrfs info as shown below, and this dropbox link[1] is a png
+printscreen of my iotop and perf top. Please advise.
+
+Btrfs v3.14.2
+% btrfs fi show
+Label: 'DATA'  uuid: 762a0d46-d88b-4d2a-a4ff-ba9de5ebe993
+        Total devices 1 FS bytes used 380.17GiB
+        devid    1 size 439.83GiB used 439.83GiB path /dev/sda9
+
+Label: 'HOME'  uuid: 00f91282-ab65-429d-b0f6-2439924755a7
+        Total devices 1 FS bytes used 73.03GiB
+        devid    1 size 97.66GiB used 97.66GiB path /dev/sda7
+
+Label: 'ROOT'  uuid: 4c860350-eced-4224-a4ec-657576fc54e8
+        Total devices 1 FS bytes used 25.49GiB
+        devid    1 size 34.18GiB used 34.18GiB path /dev/sda6
+
+Btrfs v3.14.2
+% btrfs fi df /
+Data, single: total=31.90GiB, used=24.66GiB
+System, DUP: total=8.00MiB, used=12.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, DUP: total=1.12GiB, used=853.64MiB
+Metadata, single: total=8.00MiB, used=0.00
+unknown, single: total=288.00MiB, used=0.00
+
+[1] - https://db.tt/TSh5piq6

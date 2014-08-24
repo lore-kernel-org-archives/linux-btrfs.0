@@ -1,77 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mta4.perrit.net ([194.213.15.92]:45718 "EHLO mta4.perrit.net"
+Received: from csamuel.org ([74.50.50.137]:51151 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752606AbaHXLRb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 07:17:31 -0400
-Received: from apia.perrit.net (apia.colo.hnglo.perrit.net [194.0.170.50])
-	by mail.perrit.nl (Postfix) with ESMTP id 7B55A1602E1
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 13:08:53 +0200 (CEST)
-Date: Sun, 24 Aug 2014 13:08:53 +0200
-From: Leen Besselink <leen@consolejunkie.net>
+	id S1752443AbaHXMt4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Aug 2014 08:49:56 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id 898E7405C7
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 22:49:55 +1000 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 01810-05 for <linux-btrfs@vger.kernel.org>;
+ Sun, 24 Aug 2014 22:49:55 +1000 (EST)
+Received: from quad.localnet (2001-44b8-41dd-d500-5c25-1b76-13ce-24c4.static.ipv6.internode.on.net [IPv6:2001:44b8:41dd:d500:5c25:1b76:13ce:24c4])
+	by csamuel.org (Postfix) with ESMTPSA id 17FF5405C4
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 22:49:55 +1000 (EST)
+From: Chris Samuel <chris@csamuel.org>
 To: linux-btrfs@vger.kernel.org
 Subject: Re: superblock checksum mismatch after crash, cannot mount
-Message-ID: <20140824110853.GB22693@apia.perrit.net>
-Reply-To: leen@consolejunkie.net
-References: <53F7BD8E.10308@floga.de>
- <pan$a4556$243aa48a$bd2898a8$c2006893@cox.net>
- <53F85317.8060900@floga.de>
- <pan$16219$d960b649$52ed1e6$33540704@cox.net>
- <20140823163803.GA9149@hungrycats.org>
- <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net>
+Date: Sun, 24 Aug 2014 22:49:51 +1000
+Message-ID: <2850101.SbkCu8D9cB@quad>
+In-Reply-To: <20140824110853.GB22693@apia.perrit.net>
+References: <53F7BD8E.10308@floga.de> <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net> <20140824110853.GB22693@apia.perrit.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 24, 2014 at 12:56:47AM +0000, Duncan wrote:
-> Zygo Blaxell posted on Sat, 23 Aug 2014 12:38:05 -0400 as excerpted:
-> 
-> > Consumer SD cards are /terrible/ storage devices.  Always back up all
-> > data written to an SD card as soon as possible after writing it, and
-> > develop a process to restore the backup to a new SD card conveniently
-> > when--not if--the card fails.
-> > 
-> > Over the years I've burned my way through dozens of SD cards in Pis,
-> > Beagles, x86 laptops, USB SD card readers, cameras and cell phones.
-> > I have more bad or failed cards than good ones in my collection, but no
-> > more than three of any specific model.  Brand, price, and specs don't
-> > correlate to success or failure.  Even the good cards wear out after
-> > heavy use.  The bad ones fail much faster, and are more likely to give
-> > you garbage data instead of properly formed I/O errors as they fail.
-> 
-> I had read that it was bad, but I didn't know it was /that/ bad.  The 
-> ones I've used have tended to be write-once, read for quite some time, 
-> often lose (or throw away as obsolete due to tiny size) before I write 
-> them again, or at least before I write them half a dozen times, and I've 
-> generally not has problems with them doing that, but I wouldn't tend to 
-> know about routine rewrite behavior.  Sounds like it's much worse than I 
-> might have thought.
-> 
+On Sun, 24 Aug 2014 01:08:53 PM Leen Besselink wrote:
 
-tip for basically any Linux filesystem, especially on Flash-based storage and also btrfs:
-- use noatime (if you aren't doing that already, don't know if that is the default in btrfs)
+> tip for basically any Linux filesystem, especially on Flash-based storage
+> and also btrfs: - use noatime (if you aren't doing that already, don't know
+> if that is the default in btrfs)
 
-" Performance
+Since 2.6.30 (5 years old now) the kernel has defaulted to mounting filesystems
+with relatime not atime so it's not as bad as it used to be.  This is from the mount
+manual page.
 
-noatime - as discussed in the mailing list noatime mount option might speed up your file system, especially in case you have lots of snapshots. Each read access to a file is supposed to update its unix access time. COW will happen and will make even more writes. Default is now relatime which updates access times less often (see: http://kerneltrap.org/node/14148). 
+       relatime
+              Update inode access times relative to modify or change time.  Access time is  only
+              updated  if the previous access time was earlier than the current modify or change
+              time. (Similar to noatime, but doesn't break mutt or other applications that  need
+              to know if a file has been read since the last time it was modified.)
 
-Note that noatime will break some applications like the venerable mutt (unless you use Maildir mailboxes). "
+              Since  Linux  2.6.30,  the kernel defaults to the behavior provided by this option
+              (unless noatime was  specified), and the strictatime option is required to  obtain
+              traditional  semantics.  In  addition,  since Linux 2.6.30, the file's last access
+              time is always  updated  if  it  is more than 1 day old.
 
-https://btrfs.wiki.kernel.org/index.php/Mount_options#Performance
+All the best,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-How bad is it ? Well, look at this presentation:
 
-https://www.youtube.com/watch?v=CPEzLNh5YIo
-
-> Thanks.
-> 
-> -- 
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

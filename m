@@ -1,49 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:50753 "EHLO
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:36727 "EHLO
 	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751682AbaHXTsk convert rfc822-to-8bit
+	by vger.kernel.org with ESMTP id S1753522AbaHXU3W convert rfc822-to-8bit
 	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 15:48:40 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49462 helo=ming.hsd1.co.comcast.net)
+	Sun, 24 Aug 2014 16:29:22 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:49618 helo=ming.hsd1.co.comcast.net)
 	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
 	(Exim 4.82)
 	(envelope-from <lists@colorremedies.com>)
-	id 1XLdmJ-0047E6-Ct
-	for linux-btrfs@vger.kernel.org; Sun, 24 Aug 2014 13:48:39 -0600
-Content-Type: text/plain; charset=us-ascii
+	id 1XLePi-004MBp-0c
+	for linux-btrfs@vger.kernel.org; Sun, 24 Aug 2014 14:29:22 -0600
+Content-Type: text/plain; charset=iso-8859-1
 Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: superblock checksum mismatch after crash, cannot mount
 From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <9896671408899573@web11g.yandex.ru>
-Date: Sun, 24 Aug 2014 13:48:38 -0600
-Message-Id: <401C8BD0-BE70-4FDF-A37A-D65D131E8843@colorremedies.com>
-References: <9896671408899573@web11g.yandex.ru>
+In-Reply-To: <53F8A1CC.80906@floga.de>
+Date: Sun, 24 Aug 2014 14:29:20 -0600
+Message-Id: <2432ED31-C827-446E-82E9-E0BFA44051CB@colorremedies.com>
+References: <53F7BD8E.10308@floga.de>	<pan$a4556$243aa48a$bd2898a8$c2006893@cox.net> <53F85317.8060900@floga.de> <pan$16219$d960b649$52ed1e6$33540704@cox.net> <53F8A1CC.80906@floga.de>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On Aug 24, 2014, at 10:59 AM, Flash ROM <flashromguru@yandex.com> wrote:
+On Aug 23, 2014, at 8:14 AM, Florian Gamböck <mail@floga.de> wrote:
+
 > 
-> 1) Formatting and repartitioning SD card? Generally WORST IDEA EVER.
+> I haven't run any tests on that, so to be safe, I use a MBR table. And yes, the table was still in order, all three partitions were there, but none of the filesystems were recognized. Sorry if I confused you. But still I think it's a big deal if a rescue on partition 3 breaks the filesystems on each partition of the device. It's like every single superblock was deleted.
 
-All cameras have a format function, and this function both partitions and formats (creates a filesystem/volume format).  If they can get away with it, so can anyone else.
-
-
-> While it sounds dumb, this strange thing being done to put partition table in separate erase block, so it never read-modify-written when FAT entries are updated. Should something go wrong, FAR can recover from backup copy. But erased partition table just suxx. Then, FAT tables are aligned in way to fit well around erase block bounds.
-
-I think you seriously overestimate the knowledge of camera manufacturer's about the details of flash storage; and any ability to discover it; and any willingness on the part of the flash manufacturer to reveal such underlying details. The whole point of these cards is to completely abstract the reality of the underlying hardware from the application layer - in this case the camera or mobile device using it.
-
-Also, with SDXC exFAT is now specified. And it has only one FAT there isn't a backup FAT. So they're even more difficult to recover data from should things go awry filesystem wise.
+This is on 32-bit ARM, so it is possible there's a bug no one else has run into yet. It's worth trying to reproduce the conditions. Maybe someone has a suggestion on how to corrupt just the first Btrfs superblock, it should be really straightforward. Then you can try to repair it again: both ways, with the partition specified and not specified to see if there are different results.
 
 
-> This said, you can *try* to reformat, BUT no standard OS of firmware formatter will help you with default settings. They can't know geometry of underlying NAND and controller properties. There is no standard, widely accepted way to get such information from card. No matter if you use OS formatter, camera formatter or whatever. YOU WILL RUIN factory format (which is crafted in best possible way) and replace it with another, very likely suboptimal one.
+> So, I am almost absolutely sure that the table is in order, since there are no other problems regarding that. And like you said, rescue showed me the right superblocks and also here I am sure that I didn't forget the 3 when typing in the command.
 
-It's recommended by the card manufacturers to reformat it in each camera its inserted into. It's the only recommended way to "erase" the sd card for re-use, they don't recommend selectively deleting images. And it's known that one camera's partition table and formatting can irritate another camera make/model if the card isn't reformatted by that camera.
+Well it's a question then whether that should matter, and if it does then maybe that's a bug or feature request. You chose superblock 2 to overwrite superblock 1, which is a fixed LBA distance, so it should only be overwriting sectors inside the Btrfs partition in any case unless there isn't a check for this. In which case it should only affect some sectors starting 64KB offset from the start of the whole block device. That would only adversely affect one of the filesystems, not two. So it seems something else is going on here.
 
-> So once you trashed factory filesystem, you're really on your own and proceeding on your own risk.
+If you haven't changed anything on this SD Card you could look at a couple sectors 64KB offset from each /dev/sdX and /dev/sdX[12] - so three checks. And see what's there. Is it a Btrfs superblock? If none of them have a Btrfs superblock then definitely something else is going on.
 
-Absurd. It's recommended *by* both device manufacturers (cameras and mobile devices) that consume such cards, as well as the cards' manufacturers. The workflow you're proposing for SD Cards is as a write once device with no practical way of deleting the files on it.
+> 
+> I don't want to believe that the SD firmware or the driver or whatever would redirect calls on certain partitions to the main device. So it seems more plausible to think that there is something wrong in the rescue command, like the calculation of the offset or something.
+
+It's possible. See the other thread about this "btrfs receive problem on ARM kirkwood NAS" in particular the reply from Hugo Mills.
+
 
 
 Chris Murphy

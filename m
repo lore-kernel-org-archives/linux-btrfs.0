@@ -1,57 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33606 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:55848 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750989AbaHXA5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Aug 2014 20:57:00 -0400
+	id S1750854AbaHXBVc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 23 Aug 2014 21:21:32 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XLM79-0003eo-5z
-	for linux-btrfs@vger.kernel.org; Sun, 24 Aug 2014 02:56:59 +0200
+	id 1XLMUs-000432-Rz
+	for linux-btrfs@vger.kernel.org; Sun, 24 Aug 2014 03:21:30 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 02:56:59 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 03:21:30 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 02:56:59 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 03:21:30 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: superblock checksum mismatch after crash, cannot mount
-Date: Sun, 24 Aug 2014 00:56:47 +0000 (UTC)
-Message-ID: <pan$101a9$d6ff1fb7$ae6d9b70$9c335a80@cox.net>
-References: <53F7BD8E.10308@floga.de>
-	<pan$a4556$243aa48a$bd2898a8$c2006893@cox.net> <53F85317.8060900@floga.de>
-	<pan$16219$d960b649$52ed1e6$33540704@cox.net>
-	<20140823163803.GA9149@hungrycats.org>
+Subject: Re: btrfs unmountable, any btrfs tool segfaults
+Date: Sun, 24 Aug 2014 01:21:17 +0000 (UTC)
+Message-ID: <pan$cd143$1f075140$a44693a2$c17a5577@cox.net>
+References: <CAGP2HaPx2pXbN=FyBH5MskrsufDXcWtddVfG4Kaie-ZVg=ivJg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo Blaxell posted on Sat, 23 Aug 2014 12:38:05 -0400 as excerpted:
+Nikolay Shtabel posted on Sat, 23 Aug 2014 16:39:48 +0000 as excerpted:
 
-> Consumer SD cards are /terrible/ storage devices.  Always back up all
-> data written to an SD card as soon as possible after writing it, and
-> develop a process to restore the backup to a new SD card conveniently
-> when--not if--the card fails.
+> After all, the last step is to use btrfs restore:
 > 
-> Over the years I've burned my way through dozens of SD cards in Pis,
-> Beagles, x86 laptops, USB SD card readers, cameras and cell phones.
-> I have more bad or failed cards than good ones in my collection, but no
-> more than three of any specific model.  Brand, price, and specs don't
-> correlate to success or failure.  Even the good cards wear out after
-> heavy use.  The bad ones fail much faster, and are more likely to give
-> you garbage data instead of properly formed I/O errors as they fail.
+> btrfs restore -iv /dev/sdc2 /mnt/restore/
+> Check tree block failed, want=471748608, have=0
+> Check tree block failed, want=471748608, have=0
 
-I had read that it was bad, but I didn't know it was /that/ bad.  The 
-ones I've used have tended to be write-once, read for quite some time, 
-often lose (or throw away as obsolete due to tiny size) before I write 
-them again, or at least before I write them half a dozen times, and I've 
-generally not has problems with them doing that, but I wouldn't tend to 
-know about routine rewrite behavior.  Sounds like it's much worse than I 
-might have thought.
+> read block failed check_tree_block
+> Couldn't setup extent tree
 
-Thanks.
+> read block failed check_tree_block
+> Couldn't setup csum tree
+
+> read block failed check_tree_block
+> Segmentation fault [ 3324.252370]
+
+> Can you please suggest any method to restore files from filesystem?
+
+First answer (probably not too helpful, but gets the point across):
+
+Since btrfs is still not fully stable and you are urged to keep backups 
+if you value the data, then restore from them.  If you don't have them, 
+by definition you obviously don't value the data enough to bother with 
+the hassle of backing it up, so no big deal if you lose it, right?
+
+Second answer (hopefully more helpful, but I'm obviously a bit grumpy 
+today; I could put off answering until I'm not so grumpy, but I know what 
+it's like to be waiting for an answer, so read thru the grumpy and we can 
+both hope the solution works):
+
+It used to be common courtesy to read a couple weeks of the the backgroup/
+backlist before posting questions as they might be answered already.  I 
+guess it isn't so these days...
+
+Anyway, see the second half of the following post (the first half is a 
+different problem and solution) dealing with using restore with btrfs-
+find-root and etc, along with the wiki link mentioned (and of course the 
+manpages as well).  With some luck you can still get btrfs restore 
+working.  It worked for me recently (as you can see there, I had backups 
+but they weren't as current as I would have liked).
+
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/37980
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48335 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752188AbaHYBGI convert rfc822-to-8bit (ORCPT
+Received: from mail-qg0-f42.google.com ([209.85.192.42]:61381 "EHLO
+	mail-qg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753538AbaHYCJv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Aug 2014 21:06:08 -0400
-Message-ID: <53FA8BFB.1000604@cn.fujitsu.com>
-Date: Mon, 25 Aug 2014 09:06:03 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Sun, 24 Aug 2014 22:09:51 -0400
+Received: by mail-qg0-f42.google.com with SMTP id j5so12662943qga.15
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Aug 2014 19:09:50 -0700 (PDT)
 MIME-Version: 1.0
-To: Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Distro vs latest kernel for BTRFS?
-References: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
-In-Reply-To: <CAH-HCWVMO+NO0B5i0o0gCHBy9dLjc08gcqxT7oEV5WkO2BHvMA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CAGQ70ev-a4QbJzxx+uurT+ZgX17TpzWQg=FrhL6BHu+j0a_ZWw@mail.gmail.com>
+References: <CAGQ70evg4N0dU1-hycjQYbUDUwfnH_akTEcNTtAf=2rjtDU7NA@mail.gmail.com>
+	<pan$36b2f$b7fa7666$7edd97f3$7ace6746@cox.net>
+	<CAGQ70euehc2=Q9rRJ1zk7HzobDsbBg8QnVi=-2t3Zhn35xLRzA@mail.gmail.com>
+	<441201408902401@web23m.yandex.ru>
+	<pan.2014.08.24.18.08.12@googlemail.com>
+	<CAGQ70ev-a4QbJzxx+uurT+ZgX17TpzWQg=FrhL6BHu+j0a_ZWw@mail.gmail.com>
+Date: Mon, 25 Aug 2014 10:09:49 +0800
+Message-ID: <CAGQ70ethmJwvMOCzOLMMnML65sUkGiog9Ek6DB_HaH9V9MVQJg@mail.gmail.com>
+Subject: Re: 6+ MiB/s constant usage on a btrfs volume with kernel 3.16
+From: Oon-Ee Ng <ngoonee.talk@gmail.com>
+To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Personally, if doing development, compiling from latest stable or 
-integration kernel is my choice.
-
-But if not developing the codes, I prefer Arch's core repo, which is 
-about 1~2 weeks late than the stable release.
-Although somewhat late, but still much newer than most distros' stable repo.
-(I also used to use Gentoo, but even with ccache, compiling everything 
-is somewhat time killing and overkilled for me)
-
-Thanks,
-Qu
--------- Original Message --------
-Subject: Distro vs latest kernel for BTRFS?
-From: Shriramana Sharma <samjnaa@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: 2014年08月22日 19:59
-> Hello. I've seen repeated advices to use the latest kernel. While
-> hearing of the recent compression bug affecting recent kernels does
-> somewhat warn one off the previous advice, I would like to know what
-> people who are running regular distros do to get the latest kernel.
+On Mon, Aug 25, 2014 at 8:05 AM, Oon-Ee Ng <ngoonee.talk@gmail.com> wrote:
+> On Mon, Aug 25, 2014 at 2:08 AM, Holger Hoffstätte
+> <holger.hoffstaette@googlemail.com> wrote:
+>>
+>> iosnoop:
+>> http://www.brendangregg.com/blog/2014-07-16/iosnoop-for-linux.html
+>>
+>> Probably either a continuing balance or autodefrag vs. systemd's logging.
 >
-> Personally I'm on Kubuntu, which provides mainline kernels till a
-> particular point but not beyond that.
->
-> Do people here always compile the latest kernel themselves just to get
-> the latest BTRFS stability fixes (and  improvements, though as a
-> second priority)?
->
-
+> Thank you, I'll try that out.
+http://tny.cz/da4d5338 shows the problem, and for comparison this is a
+30 second iosnoop log from 3.15.8 where I do not experience this issue
+http://pastebin.com/8EjKiAuf

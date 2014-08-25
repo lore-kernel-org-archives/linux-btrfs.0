@@ -1,114 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20394 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752640AbaHYGQn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Aug 2014 02:16:43 -0400
-Date: Mon, 25 Aug 2014 14:16:05 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Naohiro Aota <naota@elisp.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs: initial reference count of extent buffer is correct?
-Message-ID: <20140825061604.GE22848@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <87y4ud2l7q.fsf@elisp.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <87y4ud2l7q.fsf@elisp.net>
+Received: from victor.provo.novell.com ([137.65.250.26]:53006 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751979AbaHYIzJ (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Mon, 25 Aug 2014 04:55:09 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix corruption after write/fsync failure + fsync + log recovery
+Date: Mon, 25 Aug 2014 10:43:00 +0100
+Message-Id: <1408959780-4217-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 25, 2014 at 02:26:49PM +0900, Naohiro Aota wrote:
-> Hi, list
-> 
-> I'm having trouble with my btrfs FS recently and running btrfs check to
-> try to fix the FS. Unfortunately, it aborted with:
-> 
-> btrfsck: root-tree.c:81: btrfs_update_root: Assertion `!(ret != 0)' failed.
-> 
-> It means that "extent tree root" is not found in "tree root tree"! Then
-> I added btrfs_print_leaf() there to see what is happening there. There
-> were "(... METADATA_ITEM 0)" keys listed. Well, I found "tree root
-> tree"'s root extent buffer is somewhat replaced by a extent buffer from
-> the extent tree.
-> 
-> Reading the code, it seems that free_some_buffers() reclaim extent
-> buffers allocated to root trees because they are not
-> extent_buffer_get()ed (i.e. @refs == 1). 
-> 
-> To reproduce this problem, try running this code. This program first
-> print root tree node's bytenr, and scan some trees. If your FS is large
-> enough to run free_some_buffers(), tree root node's bytenr after the
-> scan would be different.
-> 
-> #include <stdio.h>
-> #include "ctree.h"
-> #include "disk-io.h"
-> 
-> void scan_tree(struct btrfs_root *root, struct extent_buffer *eb)
-> {
->   u32 i;
->   u32 nr;
->   nr = btrfs_header_nritems(eb);
->   if (btrfs_is_leaf(eb)) return;
->   u32 size = btrfs_level_size(root, btrfs_header_level(eb) - 1);
->   for (i = 0; i < nr; i++) {
->     if (btrfs_is_leaf(eb)) return;
->     u64 bytenr = btrfs_node_blockptr(eb, i);
->     struct extent_buffer *next = read_tree_block(root, bytenr, size,
-> 						 btrfs_node_ptr_generation(eb, i));
->     if (!next) continue;
->     scan_tree(root, next);
->   }
-> }
-> 
-> int main(int ac, char **av)
-> {
->   struct btrfs_fs_info *info;
->   struct btrfs_root *root;
->   info = open_ctree_fs_info(av[1], 0, 0, OPEN_CTREE_PARTIAL);
->   root = info->fs_root;
->   printf("tree root %lld\n", info->tree_root->node->start);
->   scan_tree(info->fs_root, info->extent_root->node);
->   scan_tree(info->fs_root, info->csum_root->node);
->   scan_tree(info->fs_root, info->fs_root->node);
->   printf("tree root %lld\n", info->tree_root->node->start);
->   return close_ctree(root);
-> }
-> 
-> On my environment, the above code print the following result. "Tree root
-> tree variable" is eventually pointing to another extent!
-> 
-> $ ./btrfs-reproduce /dev/sda3
-> tree root 91393835008
-> tree root 49102848
-> 
-> I found commit 53ee1bccf99cd5b474fe1aa857b7dd176e3a1407 changed the
-> initial @refs to 1, stating that "we don't give enough
-> free_extent_buffer() to reduce the eb's references to zero so that the
-> eb can finally be freed", but I don't think this is correct. Even if
-> initial @refs == 2, one free_extent_buffer() would make the @refs to 1
-> and so let it reclaimed by free_some_buffer(), so it does not seems to
-> be a problem for me...
-> 
-> I think there are some collides how to use extent buffer: should
-> __alloc_extent_buffer set @refs = 2 for the caller or should the code
-> call extent_buffer_get() by themselves everywhere you allocate eb before
-> any other eb allocation not to let the first eb reclaimed? How to fix
-> this problem? revert 53ee1bccf99cd5b474fe1aa857b7dd176e3a1407 is the
-> collect way? or add "missing" extent_buffer_get() everywhere allocating
-> is done?
+While writing to a file, in inode.c:cow_file_range() (and same applies to
+submit_compressed_extents()), after reserving an extent for the file data,
+we create a new extent map for the written range and insert it into the
+extent map cache. After that, we create an ordered operation, but if it
+fails (due to a transient/temporary-ENOMEM), we return without dropping
+that extent map, which points to a reserved extent that is freed when we
+return. A subsequent incremental fsync (when the btrfs inode doesn't have
+the flag BTRFS_INODE_NEEDS_FULL_SYNC) considers this extent map valid and
+logs a file extent item based on that extent map, which points to a disk
+extent that doesn't contain valid data - it was freed by us earlier, at this
+point it might contain any random/garbage data.
 
-You may think of it twice, commit 53ee1bccf99cd5b474fe1aa857b7dd176e3a1407 
-is to fix a bug of assigning a free block to two different extent buffers, ie.
-two different extent buffers' share the same eb->start, so it's not just bumping
-a reference cnt.
+Therefore, if we reach an error condition when cowing a file range after
+we added the new extent map to the cache, drop it from the cache before
+returning.
 
-Right now we want to be consistent with the kernel side, decreasing eb->refs=0
-means it'd be freed, so droping free_some_buffer() can be a good choice.
+Some sequence of steps that lead to this:
 
-And for caching extent buffer, we've increased eb->refs by 1 to keep it in the
-cache rbtree.
+    $ mkfs.btrfs -f /dev/sdd
+    $ mount -o commit=9999 /dev/sdd /mnt
+    $ cd /mnt
 
-thanks,
--liubo
+    $ xfs_io -f -c "pwrite -S 0x01 -b 4096 0 4096" -c "fsync" foo
+    $ xfs_io -c "pwrite -S 0x02 -b 4096 4096 4096"
+    $ sync
+
+    $ od -t x1 foo
+    0000000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+    *
+    0010000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+    *
+    0020000
+
+    $ xfs_io -c "pwrite -S 0xa1 -b 4096 0 4096" foo
+
+    # Now this write + fsync fail with -ENOMEM, which was returned by
+    # btrfs_add_ordered_extent() in inode.c:cow_file_range().
+    $ xfs_io -c "pwrite -S 0xff -b 4096 4096 4096" foo
+    $ xfs_io -c "fsync" foo
+    fsync: Cannot allocate memory
+
+    # Now do a new write + fsync, which will succeed. Our previous
+    # -ENOMEM was a transient/temporary error.
+    $ xfs_io -c "pwrite -S 0xee -b 4096 16384 4096" foo
+    $ xfs_io -c "fsync" foo
+
+    # Our file content (in page cache) is now:
+    $ od -t x1 foo
+    0000000 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1
+    *
+    0010000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+    *
+    0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    *
+    0040000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
+    *
+    0050000
+
+    # Now reboot the machine, and mount the fs, so that fsync log replay
+    # takes place.
+
+    # The file content is now weird, in particular the first 8Kb, which
+    # do not match our data before nor after the sync command above.
+    $ od -t x1 foo
+    0000000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
+    *
+    0010000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+    *
+    0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    *
+    0040000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
+    *
+    0050000
+
+    # In fact these first 4Kb are a duplicate of the last 4kb block.
+    # The last write got an extent map/file extent item that points to
+    # the same disk extent that we got in the write+fsync that failed
+    # with the -ENOMEM error. btrfs-debug-tree and btrfsck allow us to
+    # verify that:
+
+    $ btrfs-debug-tree /dev/sdd
+    (...)
+	item 6 key (257 EXTENT_DATA 0) itemoff 15819 itemsize 53
+		extent data disk byte 12582912 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+	item 7 key (257 EXTENT_DATA 8192) itemoff 15766 itemsize 53
+		extent data disk byte 0 nr 0
+		extent data offset 0 nr 8192 ram 8192
+	item 8 key (257 EXTENT_DATA 16384) itemoff 15713 itemsize 53
+		extent data disk byte 12582912 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+
+    $ umount /dev/sdd
+    $ btrfsck /dev/sdd
+    Checking filesystem on /dev/sdd
+    UUID: db5e60e1-050d-41e6-8c7f-3d742dea5d8f
+    checking extents
+    extent item 12582912 has multiple extent items
+    ref mismatch on [12582912 4096] extent item 1, found 2
+    Backref bytes do not match extent backref, bytenr=12582912, ref bytes=4096, backref bytes=8192
+    backpointer mismatch on [12582912 4096]
+    Errors found in extent allocation tree or chunk allocation
+    checking free space cache
+    checking fs roots
+    root 5 inode 257 errors 1000, some csum missing
+    found 131074 bytes used err is 1
+    total csum bytes: 4
+    total tree bytes: 131072
+    total fs tree bytes: 32768
+    total extent tree bytes: 16384
+    btree space waste bytes: 123404
+    file data blocks allocated: 274432
+     referenced 274432
+    Btrfs v3.14.1-96-gcc7fd5a-dirty
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c678dea..16e8146 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -792,8 +792,12 @@ retry:
+ 						ins.offset,
+ 						BTRFS_ORDERED_COMPRESSED,
+ 						async_extent->compress_type);
+-		if (ret)
++		if (ret) {
++			btrfs_drop_extent_cache(inode, async_extent->start,
++						async_extent->start +
++						async_extent->ram_size - 1, 0);
+ 			goto out_free_reserve;
++		}
+ 
+ 		/*
+ 		 * clear dirty, set writeback and unlock the pages.
+@@ -985,14 +989,14 @@ static noinline int cow_file_range(struct inode *inode,
+ 		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
+ 					       ram_size, cur_alloc_size, 0);
+ 		if (ret)
+-			goto out_reserve;
++			goto out_drop_extent_cache;
+ 
+ 		if (root->root_key.objectid ==
+ 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+ 			ret = btrfs_reloc_clone_csums(inode, start,
+ 						      cur_alloc_size);
+ 			if (ret)
+-				goto out_reserve;
++				goto out_drop_extent_cache;
+ 		}
+ 
+ 		if (disk_num_bytes < cur_alloc_size)
+@@ -1020,6 +1024,8 @@ static noinline int cow_file_range(struct inode *inode,
+ out:
+ 	return ret;
+ 
++out_drop_extent_cache:
++	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
+ out_reserve:
+ 	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+ out_unlock:
+-- 
+1.9.1
+

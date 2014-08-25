@@ -1,138 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:30531 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752145AbaHYKVt (ORCPT
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:44100 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755151AbaHYLmp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Aug 2014 06:21:49 -0400
-Message-ID: <1408962091.11888.10.camel@localhost.localdomain>
-Subject: Re: btrfs restore memory corruption (bug: 82701)
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Marc Dietrich <marvin24@gmx.de>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Mon, 25 Aug 2014 18:21:31 +0800
-In-Reply-To: <2541460.r9GW3Dua9b@ax5200p>
-References: <2058629.ulFxBAG3Lx@fb07-iapwap2>
-	 <1408689825.22226.14.camel@localhost.localdomain>
-	 <2743777.ssdxK72F8y@fb07-iapwap2> <2541460.r9GW3Dua9b@ax5200p>
-Content-Type: text/plain; charset="UTF-8"
+	Mon, 25 Aug 2014 07:42:45 -0400
+Received: by mail-ig0-f180.google.com with SMTP id l13so2615023iga.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Aug 2014 04:42:44 -0700 (PDT)
+Message-ID: <53FB212E.8070208@gmail.com>
+Date: Mon, 25 Aug 2014 07:42:38 -0400
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: superblock checksum mismatch after crash, cannot mount
+References: <9896671408899573@web11g.yandex.ru> <401C8BD0-BE70-4FDF-A37A-D65D131E8843@colorremedies.com>
+In-Reply-To: <401C8BD0-BE70-4FDF-A37A-D65D131E8843@colorremedies.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms020309000709020709050901"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-08-25 at 10:58 +0200, Marc Dietrich wrote:
-> Am Freitag 22 August 2014, 10:42:18 schrieb Marc Dietrich:
-> > Am Freitag, 22. August 2014, 14:43:45 schrieb Gui Hecheng:
-> > > On Thu, 2014-08-21 at 16:19 +0200, Marc Dietrich wrote:
-> > > > Am Donnerstag, 21. August 2014, 17:52:16 schrieb Gui Hecheng:
-> > > > > On Mon, 2014-08-18 at 11:25 +0200, Marc Dietrich wrote:
-> > > > > > Hi,
-> > > > > > 
-> > > > > > I did a checkout of the latest btrfs progs to repair my damaged
-> > > > > > filesystem.
-> > > > > > Running btrfs restore gives me several failed to inflate: -6 and
-> > > > > > crashes
-> > > > > > with some memory corruption. I ran it again with valgrind and got:
-> > > > > > 
-> > > > > > valgrind --log-file=x2 -v --leak-check=yes btrfs restore /dev/sda9
-> > > > > > /mnt/backup
-> > > > > > 
-> > > > > > ==8528== Memcheck, a memory error detector
-> > > > > > ==8528== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et
-> > > > > > al.
-> > > > > > ==8528== Using Valgrind-3.8.1 and LibVEX; rerun with -h for
-> > > > > > copyright
-> > > > > > info
-> > > > > > ==8528== Command: btrfs restore /dev/sda9 /mnt/backup
-> > > > > > ==8528== Parent PID: 8453
-> > > > > > ==8528==
-> > > > > > ==8528== Syscall param pwrite64(buf) points to uninitialised byte(s)
-> > > > > > ==8528==    at 0x59BE3C3: __pwrite_nocancel (in
-> > > > > > /lib64/libpthread-2.18.so)
-> > > > > > ==8528==    by 0x41F22F: search_dir (cmds-restore.c:392)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > > > > ==8528==  Address 0x66956a0 is 7,056 bytes inside a block of size
-> > > > > > 8,192
-> > > > > > alloc'd
-> > > > > > ==8528==    at 0x4C277AB: malloc (in
-> > > > > > /usr/lib64/valgrind/vgpreload_memcheck- amd64-linux.so)
-> > > > > > ==8528==    by 0x41EEAD: search_dir (cmds-restore.c:316)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x41F8D0: search_dir (cmds-restore.c:895)
-> > > > > > ==8528==    by 0x4204B8: cmd_restore (cmds-restore.c:1284)
-> > > > > > ==8528==    by 0x4043FE: main (btrfs.c:286)
-> > > > > 
-> > > > > -------------------[snip]---------------------------------
-> > > > > .... leaks ...
-> > > > > ----------------------------------------------------------
-> > > 
-> > > For the leak below...
-> > > I've no idea why the @decompress_lzo() is not statisfied with @inbuf
-> > > with the exact size of the disk bytes.
-> > > Or maybe the compressed data had just sufferred damages...
-> > > 
-> > > BTW, when you wrote your data, did that kernel has the following commit
-> > > for btrfs?
-> > > 
-> > > 	commit: 59516f6017c589e7316418fda6128ba8f829a77f
-> > 
-> > mmh, I used the master branch which is still on 3.14.2 (from k.org).
-> > 
-> > Ah, there is a development branch on another repo (repo.or.cz). Why oh why?
-> 
-> Guy, 
-> 
-> sorry to quote an earlier mail, I forgot to add you as CC on you latest post 
-> and I'm not subscribed to the list.
-> 
-> > There is a development branch for btrfs-progs from david:
-> > http://github.com/kdave/btrfs-progs.git if you would like to try.
-> 
-> ok, thanks will try.
-> 
-> > But here, what I mean is your *kernel* version when you wrote your data.
-> 
-> I'm using btrfs since 3.14 or so (and maybe also some random distro kernel 
-> based on 3.11). The partition contained a lot of larger git trees and virtual 
-> machines - yes, not ideal for btrfs but a nice testcase ...
-> 
-> > There is a change for btrfs-restore which depends on a kernel commit.
-> > If you wrote your data with a older kernel and apply the 3.14.2
-> > btrfs-progs to restore, then there may be wandering stuffs.
-> 
-> wow. That should never happend I think. Userspace should always be able to fix 
-> corruptions made by earlier kernels (except disk layout changes maybe).
-> 
-> > Now, I am just suspecting such a scenario.
-> 
-> Possbile. So how to proceed? If I checkout the latest brtfs from the repo 
-> above and restore again, are you still interested in the results?
+This is a cryptographically signed message in MIME format.
 
-Ah, I think you could clone the progs from the repo and apply the two
-small pieces that I mentioned before.
-Yes, I am still trying to follow the issues with restore. It seems
-btrfs-restore needs more effect from btrfs developers since it doesn't
-survive tough scenarioes.
+--------------ms020309000709020709050901
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-> It seems there are lots of people reporting corruptions on the list and also 
-> lots of fixes posted. Maybe it's better to restart from new (format a the 
-> partiton) and report problems happen after that. What do you think?
-
-Oh, I think you've just found a really good case for btrfs-restore.
-Maybe you could keep a image of that, just like Zooko did here:
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg36701.html
-
-Thanks,
--Gui
-
-> Marc
+On 2014-08-24 15:48, Chris Murphy wrote:
+>=20
+> On Aug 24, 2014, at 10:59 AM, Flash ROM <flashromguru@yandex.com> wrote=
+:
+>> While it sounds dumb, this strange thing being done to put partition t=
+able in separate erase block, so it never read-modify-written when FAT en=
+tries are updated. Should something go wrong, FAR can recover from backup=
+ copy. But erased partition table just suxx. Then, FAT tables are aligned=
+ in way to fit well around erase block bounds.
+>=20
+> I think you seriously overestimate the knowledge of camera manufacturer=
+'s about the details of flash storage; and any ability to discover it; an=
+d any willingness on the part of the flash manufacturer to reveal such un=
+derlying details. The whole point of these cards is to completely abstrac=
+t the reality of the underlying hardware from the application layer - in =
+this case the camera or mobile device using it.
+>=20
+If you really know what you are doing, it is possible to determine erase
+block size by looking at device performance timings, with surprisingly
+high accuracy (assuming you aren't trying to have software do it for
+you).  I've actually done this before on several occasions, with nearly
+100% success.
+> Also, with SDXC exFAT is now specified. And it has only one FAT there i=
+sn't a backup FAT. So they're even more difficult to recover data from sh=
+ould things go awry filesystem wise.
+>=20
+It's too bad that TFAT didn't catch on, as it would have been great for
+SD cards if it could be configured to put each FAT on a different erase
+block.
+>=20
+>> This said, you can *try* to reformat, BUT no standard OS of firmware f=
+ormatter will help you with default settings. They can't know geometry of=
+ underlying NAND and controller properties. There is no standard, widely =
+accepted way to get such information from card. No matter if you use OS f=
+ormatter, camera formatter or whatever. YOU WILL RUIN factory format (whi=
+ch is crafted in best possible way) and replace it with another, very lik=
+ely suboptimal one.
+>=20
+> It's recommended by the card manufacturers to reformat it in each camer=
+a its inserted into. It's the only recommended way to "erase" the sd card=
+ for re-use, they don't recommend selectively deleting images. And it's k=
+nown that one camera's partition table and formatting can irritate anothe=
+r camera make/model if the card isn't reformatted by that camera.
+>=20
+It's not just cameras that have this issue, a lot of other hardware
+makes stupid assumptions about the format of media.  The first firmware
+release for the Nintendo Wii for example, chocked if you tried to use an
+SD card with more than one partition on it, and old desktop versions of
+Windows won't ever show you anything other than the first partition on
+an SD card (or most USB storage devices for that matter).
 
 
+
+--------------ms020309000709020709050901
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIFuDCC
+BbQwggOcoAMCAQICAw9gVDANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
+HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
+ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNDA4
+MDgxMTMwNDRaFw0xNTAyMDQxMTMwNDRaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
+MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
+ZW1tZWxnQG9oaW9ndC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdmm8R
+BM5D6fGiB6rpogPZbLYu6CkU6834rcJepfmxKnLarYUYM593/VGygfaaHAyuc8qLaRA3u1M0
+Qp29flqmhv1VDTBZ+zFu6JgHjTDniBii1KOZRo0qV3jC5NvaS8KUM67+eQBjm29LhBWVi3+e
+a8jLxmogFXV0NGej+GHIr5zA9qKz2WJOEoGh0EfqZ2MQTmozcGI43/oqIYhRj8fRMkWXLUAF
+WsLzPQMpK19hD8fqwlxQWhBV8gsGRG54K5pyaQsjne7m89SF5M8JkNJPH39tHEvfv2Vhf7EM
+Y4WGyhLAULSlym1AI1uUHR1FfJaj3AChaEJZli/AdajYsqc7AgMBAAGjggFZMIIBVTAMBgNV
+HRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNhdGUg
+Zm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEE
+AYI3CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8v
+b2NzcC5jYWNlcnQub3JnMDEGA1UdHwQqMCgwJqAkoCKGIGh0dHA6Ly9jcmwuY2FjZXJ0Lm9y
+Zy9yZXZva2UuY3JsMDQGA1UdEQQtMCuBFGFoZmVycm9pbjdAZ21haWwuY29tgRNhaGVtbWVs
+Z0BvaGlvZ3QuY29tMA0GCSqGSIb3DQEBDQUAA4ICAQCr4klxcZU/PDRBpUtlb+d6JXl2dfto
+OUP/6g19dpx6Ekt2pV1eujpIj5whh5KlCSPUgtHZI7BcksLSczQbxNDvRu6LNKqGJGvcp99k
+cWL1Z6BsgtvxWKkOmy1vB+2aPfDiQQiMCCLAqXwHiNDZhSkwmGsJ7KHMWgF/dRVDnsl6aOQZ
+jAcBMpUZxzA/bv4nY2PylVdqJWp9N7x86TF9sda1zRZiyUwy83eFTDNzefYPtc4MLppcaD4g
+Wt8U6T2ffQfCWVzDirhg4WmDH3MybDItjkSB2/+pgGOS4lgtEBMHzAGQqQ+5PojTHRyqu9Jc
+O59oIGrTaOtKV9nDeDtzNaQZgygJItJi9GoAl68AmIHxpS1rZUNV6X8ydFrEweFdRTVWhUEL
+70Cnx84YBojXv01LYBSZaq18K8cERPLaIrUD2go+2ffjdE9ejvYDhNBllY+ufvRizIjQA1uC
+OdktVAN6auQob94kOOsWpoMSrzHHvOvVW/kbokmKzaLtcs9+nJoL+vPi2AyzbaoQASVZYOGW
+pE3daA0F5FJfcPZKCwd5wdnmT3dU1IRUxa5vMmgjP20lkfP8tCPtvZv2mmI2Nw5SaXNY4gVu
+WQrvkV2in+TnGqgEIwUrLVbx9G6PSYZZs07czhO+Q1iVuKdAwjL/AYK0Us9v50acIzbl5CWw
+ZGj3wjGCA6EwggOdAgEBMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6
+Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEh
+MB8GCSqGSIb3DQEJARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwCQYFKw4DAhoFAKCCAfUw
+GAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQwODI1MTE0MjM4
+WjAjBgkqhkiG9w0BCQQxFgQUqqgzaN2oejnuukJI5KwOup5luj4wbAYJKoZIhvcNAQkPMV8w
+XTALBglghkgBZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIA
+gDANBggqhkiG9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBkQYJKwYBBAGCNxAE
+MYGDMIGAMHkxEDAOBgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0
+Lm9yZzEiMCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ
+ARYSc3VwcG9ydEBjYWNlcnQub3JnAgMPYFQwgZMGCyqGSIb3DQEJEAILMYGDoIGAMHkxEDAO
+BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEiMCAGA1UE
+AxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBj
+YWNlcnQub3JnAgMPYFQwDQYJKoZIhvcNAQEBBQAEggEAyJkbIHEyqfJ3Obm/lTF46gpfwiSD
+9u4RriuJsljj/NZ0fwZXAX6WaJMP9pW1jEt2uQJHIrl6S9Pf0H56J3Wo5G2e1PhA0ZQNJHlR
+VK3+ZBGlz8M6f1Jwv69G4np6xlm0tOjusntJEe5ZQwYFfgB9H1knwjnX6nzy1knMsaRmER99
+XqWbyrlKkIze7vRRkvl9D/oxePTzD1gfUxKBiRZGn1vvg/86ehgpyxdZX7g5vwn7OtEGN4xQ
+Y7gwIXAjXPj8Z8vMLURVxRTGigh4kqnFoqXXylGKdFxfLbmEIrbXL89Ug/1uSKtp8Hte3MnV
+Z4FK7FoqXVu2PqPsntBB7taTRwAAAAAAAA==
+--------------ms020309000709020709050901--

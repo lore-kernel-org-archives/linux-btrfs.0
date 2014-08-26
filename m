@@ -1,85 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:44861 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932353AbaHZI16 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:29638 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933898AbaHZI3y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Aug 2014 04:27:58 -0400
-Message-ID: <53FC4507.701@oracle.com>
-Date: Tue, 26 Aug 2014 16:27:51 +0800
+	Tue, 26 Aug 2014 04:29:54 -0400
+Message-ID: <53FC457B.5050703@oracle.com>
+Date: Tue, 26 Aug 2014 16:29:47 +0800
 From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
 To: Eric Sandeen <sandeen@redhat.com>
 CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/3] btrfs-progs: don't fall back to recursive /dev scan
-References: <53F51F4D.2090203@redhat.com> <53F51FD8.4020800@redhat.com>
-In-Reply-To: <53F51FD8.4020800@redhat.com>
+Subject: Re: [PATCH 3/3] btrfs-progs: remove BTRFS_SCAN_DEV and btrfs_scan_one_dir
+References: <53F51F4D.2090203@redhat.com> <53F5201B.6030504@redhat.com>
+In-Reply-To: <53F5201B.6030504@redhat.com>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+
+  :-( to see the entire btrfs_scan_one_dir() going away.
+
 Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 
-On 21/08/2014 06:23, Eric Sandeen wrote:
-> If we didn't find what we are looking for in /proc/partitions,
-> we're not going to find it by scanning every node under /dev, either.
->
-> But that's just what btrfs_scan_for_fsid() does.
->
-> Remove that fallback; at that point btrfs_scan_for_fsid() just calls
-> scan_for_btrfs(), so remove the wrapper & call it directly.
->
-> Side note: so, these paths always use /proc/partitions, not libblkid.
-> Userspace-intiated scans default to libblkid.  I presume this is
-> part of the design, and intentional?  Anyway, not changing it now!
+On 21/08/2014 06:24, Eric Sandeen wrote:
+> After the previous 2 patches, nothing uses
+> whole-dev-tree scanning, so remove the code which
+> implemented that functionality.
 >
 > Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 > ---
 >
-> diff --git a/disk-io.c b/disk-io.c
-> index d10d647..077eb7e 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -1018,7 +1018,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
->   	}
->
->   	if (total_devs != 1) {
-> -		ret = btrfs_scan_for_fsid(run_ioctl);
-> +		ret = scan_for_btrfs(BTRFS_SCAN_PROC, run_ioctl);
->   		if (ret)
->   			return ret;
->   	}
 > diff --git a/utils.c b/utils.c
-> index d61cbec..12ed7a2 100644
+> index 12ed7a2..765a214 100644
 > --- a/utils.c
 > +++ b/utils.c
-> @@ -1151,7 +1151,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
->
->   	/* scan other devices */
->   	if (is_btrfs && total_devs > 1) {
-> -		if ((ret = btrfs_scan_for_fsid(!BTRFS_UPDATE_KERNEL)))
-> +		if ((ret = scan_for_btrfs(BTRFS_SCAN_PROC, !BTRFS_UPDATE_KERNEL)))
->   			return ret;
->   	}
->
-> @@ -1339,16 +1339,6 @@ fail:
->   	return ret;
+> @@ -1228,117 +1228,6 @@ void btrfs_register_one_device(char *fname)
+>   	close(fd);
 >   }
 >
-> -int btrfs_scan_for_fsid(int run_ioctls)
+> -int btrfs_scan_one_dir(char *dirname, int run_ioctl)
 > -{
+> -	DIR *dirp = NULL;
+> -	struct dirent *dirent;
+> -	struct pending_dir *pending;
+> -	struct stat st;
 > -	int ret;
+> -	int fd;
+> -	int dirname_len;
+> -	char *fullpath;
+> -	struct list_head pending_list;
+> -	struct btrfs_fs_devices *tmp_devices;
+> -	u64 num_devices;
 > -
-> -	ret = scan_for_btrfs(BTRFS_SCAN_PROC, run_ioctls);
-> -	if (ret)
-> -		ret = scan_for_btrfs(BTRFS_SCAN_DEV, run_ioctls);
+> -	INIT_LIST_HEAD(&pending_list);
+> -
+> -	pending = malloc(sizeof(*pending));
+> -	if (!pending)
+> -		return -ENOMEM;
+> -	strcpy(pending->name, dirname);
+> -
+> -again:
+> -	dirname_len = strlen(pending->name);
+> -	fullpath = malloc(PATH_MAX);
+> -	dirname = pending->name;
+> -
+> -	if (!fullpath) {
+> -		ret = -ENOMEM;
+> -		goto fail;
+> -	}
+> -	dirp = opendir(dirname);
+> -	if (!dirp) {
+> -		fprintf(stderr, "Unable to open %s for scanning\n", dirname);
+> -		ret = -errno;
+> -		goto fail;
+> -	}
+> -	while(1) {
+> -		dirent = readdir(dirp);
+> -		if (!dirent)
+> -			break;
+> -		if (dirent->d_name[0] == '.')
+> -			continue;
+> -		if (dirname_len + strlen(dirent->d_name) + 2 > PATH_MAX) {
+> -			ret = -EFAULT;
+> -			goto fail;
+> -		}
+> -		snprintf(fullpath, PATH_MAX, "%s/%s", dirname, dirent->d_name);
+> -		ret = lstat(fullpath, &st);
+> -		if (ret < 0) {
+> -			fprintf(stderr, "failed to stat %s\n", fullpath);
+> -			continue;
+> -		}
+> -		if (S_ISLNK(st.st_mode))
+> -			continue;
+> -		if (S_ISDIR(st.st_mode)) {
+> -			struct pending_dir *next = malloc(sizeof(*next));
+> -			if (!next) {
+> -				ret = -ENOMEM;
+> -				goto fail;
+> -			}
+> -			strcpy(next->name, fullpath);
+> -			list_add_tail(&next->list, &pending_list);
+> -		}
+> -		if (!S_ISBLK(st.st_mode)) {
+> -			continue;
+> -		}
+> -		fd = open(fullpath, O_RDONLY);
+> -		if (fd < 0) {
+> -			/* ignore the following errors:
+> -				ENXIO (device don't exists)
+> -				ENOMEDIUM (No medium found ->
+> -					like a cd tray empty)
+> -			*/
+> -			if(errno != ENXIO && errno != ENOMEDIUM)
+> -				fprintf(stderr, "failed to read %s: %s\n",
+> -					fullpath, strerror(errno));
+> -			continue;
+> -		}
+> -		ret = btrfs_scan_one_device(fd, fullpath, &tmp_devices,
+> -					    &num_devices,
+> -					    BTRFS_SUPER_INFO_OFFSET, 0);
+> -		if (ret == 0 && run_ioctl > 0) {
+> -			btrfs_register_one_device(fullpath);
+> -		}
+> -		close(fd);
+> -	}
+> -	if (!list_empty(&pending_list)) {
+> -		free(pending);
+> -		pending = list_entry(pending_list.next, struct pending_dir,
+> -				     list);
+> -		free(fullpath);
+> -		list_del(&pending->list);
+> -		closedir(dirp);
+> -		dirp = NULL;
+> -		goto again;
+> -	}
+> -	ret = 0;
+> -fail:
+> -	free(pending);
+> -	free(fullpath);
+> -	while (!list_empty(&pending_list)) {
+> -		pending = list_entry(pending_list.next, struct pending_dir,
+> -				     list);
+> -		list_del(&pending->list);
+> -		free(pending);
+> -	}
+> -	if (dirp)
+> -		closedir(dirp);
 > -	return ret;
 > -}
 > -
 >   int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
 >   				 int super_offset)
 >   {
+> @@ -2291,9 +2180,6 @@ int scan_for_btrfs(int where, int update_kernel)
+>   	case BTRFS_SCAN_PROC:
+>   		ret = btrfs_scan_block_devices(update_kernel);
+>   		break;
+> -	case BTRFS_SCAN_DEV:
+> -		ret = btrfs_scan_one_dir("/dev", update_kernel);
+> -		break;
+>   	case BTRFS_SCAN_LBLKID:
+>   		ret = btrfs_scan_lblkid(update_kernel);
+>   		break;
+> diff --git a/utils.h b/utils.h
+> index 0c9b65f..3a05131 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -27,9 +27,8 @@
+>   #define BTRFS_MKFS_SMALL_VOLUME_SIZE (1024 * 1024 * 1024)
+>
+>   #define BTRFS_SCAN_PROC		(1ULL << 0)
+> -#define BTRFS_SCAN_DEV		(1ULL << 1)
+> -#define BTRFS_SCAN_MOUNTED	(1ULL << 2)
+> -#define BTRFS_SCAN_LBLKID	(1ULL << 3)
+> +#define BTRFS_SCAN_MOUNTED	(1ULL << 1)
+> +#define BTRFS_SCAN_LBLKID	(1ULL << 2)
+>
+>   #define BTRFS_UPDATE_KERNEL	1
+>
+> @@ -70,7 +69,6 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+>   		      u32 sectorsize);
+>   int btrfs_scan_for_fsid(int run_ioctls);
+>   void btrfs_register_one_device(char *fname);
+> -int btrfs_scan_one_dir(char *dirname, int run_ioctl);
+>   char *canonicalize_dm_name(const char *ptname);
+>   char *canonicalize_path(const char *path);
+>   int check_mounted(const char *devicename);
 >
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

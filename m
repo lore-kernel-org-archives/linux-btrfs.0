@@ -1,39 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:53273 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754880AbaHZMCP (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:29163 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1758119AbaHZOWl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Aug 2014 08:02:15 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Most recent stable enough btrfs-tools?
-Date: Tue, 26 Aug 2014 14:02:09 +0200
-Message-ID: <1633965.0Bemk8PY0Z@merkaba>
-In-Reply-To: <8E53FA87-B774-44B0-83D0-EF651FB21BD4@colorremedies.com>
-References: <2350809.UalJ0KWvmX@merkaba> <8E53FA87-B774-44B0-83D0-EF651FB21BD4@colorremedies.com>
+	Tue, 26 Aug 2014 10:22:41 -0400
+Message-ID: <53FC982B.9090608@fb.com>
+Date: Tue, 26 Aug 2014 10:22:35 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Btrfs-progs releases
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 25. August 2014, 14:45:39 schrieb Chris Murphy:
-> On Aug 25, 2014, at 6:00 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
-> > What is the latest stuff that stills supposed to work okay?
-> 
-> I'm new to git so take this with a grain of salt, but this returns no
-> differences:
-> 
-> git diff mason/master sterba/v3.16.x
-> 
-> So I'd say we're about to see a btrfs-progs released.
-> 
-> mason=git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-> sterba=git://repo.or.cz/btrfs-progs-unstable/devel.git
+Hi everyone,
 
-Thanks, mason repo got updated since I last checked. I think I will try its 
-current master.
+I've just tagged btrfs-progs v3.16.  Like the last few releases, this
+one was prepared by Dave Sterba, who has been wrangling btrfs-progs
+patches for some time now.
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Dave has asked to officially take over the btrfs-progs maintenance, and
+I said yes before he could change his mind.  Everyone here is doing a
+fantastic job improving btrfs-progs quality and usability, and making
+Dave the btrfs progs maintainer will make sure these changes get
+out on a regular basis.
+
+Aside from more regular releases, very little will change.  I'm still
+running the kernel releases, and I'm setting up more frequent pushes to
+the kernel integration branch so we can more effectively manage our
+patches for the next merge window.
+
+While Dave is getting his kernel.org accounts setup, I'll keep pushing
+his changes to my btrfs-progs git tree, and create tar balls in the
+usual places.
+
+Once his kernel.org trees are setup, we'll find a way to mirror his
+master copy into my directories.
+
+Thanks for your contributions everyone, please let us know if you have
+any questions.
+
+-chris

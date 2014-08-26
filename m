@@ -1,239 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45476 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934095AbaHZI3L (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:53273 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754880AbaHZMCP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Aug 2014 04:29:11 -0400
-Date: Tue, 26 Aug 2014 16:28:56 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe David Manana <fdmanana@gmail.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix corruption after write/fsync failure + fsync
- + log recovery
-Message-ID: <20140826082856.GF16865@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1408959780-4217-1-git-send-email-fdmanana@suse.com>
- <20140826033247.GA28985@localhost.localdomain>
- <CAL3q7H7mHppo2pKrct5evj8RzP+t1VDOn97aEdU09j5EAozKJg@mail.gmail.com>
+	Tue, 26 Aug 2014 08:02:15 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Most recent stable enough btrfs-tools?
+Date: Tue, 26 Aug 2014 14:02:09 +0200
+Message-ID: <1633965.0Bemk8PY0Z@merkaba>
+In-Reply-To: <8E53FA87-B774-44B0-83D0-EF651FB21BD4@colorremedies.com>
+References: <2350809.UalJ0KWvmX@merkaba> <8E53FA87-B774-44B0-83D0-EF651FB21BD4@colorremedies.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H7mHppo2pKrct5evj8RzP+t1VDOn97aEdU09j5EAozKJg@mail.gmail.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 26, 2014 at 08:56:18AM +0100, Filipe David Manana wrote:
-> On Tue, Aug 26, 2014 at 4:32 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > On Mon, Aug 25, 2014 at 10:43:00AM +0100, Filipe Manana wrote:
-> >> While writing to a file, in inode.c:cow_file_range() (and same applies to
-> >> submit_compressed_extents()), after reserving an extent for the file data,
-> >> we create a new extent map for the written range and insert it into the
-> >> extent map cache. After that, we create an ordered operation, but if it
-> >> fails (due to a transient/temporary-ENOMEM), we return without dropping
-> >> that extent map, which points to a reserved extent that is freed when we
-> >> return. A subsequent incremental fsync (when the btrfs inode doesn't have
-> >> the flag BTRFS_INODE_NEEDS_FULL_SYNC) considers this extent map valid and
-> >> logs a file extent item based on that extent map, which points to a disk
-> >> extent that doesn't contain valid data - it was freed by us earlier, at this
-> >> point it might contain any random/garbage data.
-> >>
-> >> Therefore, if we reach an error condition when cowing a file range after
-> >> we added the new extent map to the cache, drop it from the cache before
-> >> returning.
-> >>
-> >> Some sequence of steps that lead to this:
-> >>
-> >>     $ mkfs.btrfs -f /dev/sdd
-> >>     $ mount -o commit=9999 /dev/sdd /mnt
-> >>     $ cd /mnt
-> >>
-> >>     $ xfs_io -f -c "pwrite -S 0x01 -b 4096 0 4096" -c "fsync" foo
-> >>     $ xfs_io -c "pwrite -S 0x02 -b 4096 4096 4096"
-> >>     $ sync
-> >>
-> >>     $ od -t x1 foo
-> >>     0000000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
-> >>     *
-> >>     0010000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
-> >>     *
-> >>     0020000
-> >>
-> >>     $ xfs_io -c "pwrite -S 0xa1 -b 4096 0 4096" foo
-> >>
-> >>     # Now this write + fsync fail with -ENOMEM, which was returned by
-> >>     # btrfs_add_ordered_extent() in inode.c:cow_file_range().
-> >>     $ xfs_io -c "pwrite -S 0xff -b 4096 4096 4096" foo
-> >>     $ xfs_io -c "fsync" foo
-> >>     fsync: Cannot allocate memory
-> >>
-> >>     # Now do a new write + fsync, which will succeed. Our previous
-> >>     # -ENOMEM was a transient/temporary error.
-> >>     $ xfs_io -c "pwrite -S 0xee -b 4096 16384 4096" foo
-> >>     $ xfs_io -c "fsync" foo
-> >>
-> >>     # Our file content (in page cache) is now:
-> >>     $ od -t x1 foo
-> >>     0000000 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1
-> >>     *
-> >>     0010000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
-> >>     *
-> >>     0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> >>     *
-> >>     0040000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
-> >>     *
-> >>     0050000
-> >>
-> >>     # Now reboot the machine, and mount the fs, so that fsync log replay
-> >>     # takes place.
-> >>
-> >>     # The file content is now weird, in particular the first 8Kb, which
-> >>     # do not match our data before nor after the sync command above.
-> >>     $ od -t x1 foo
-> >>     0000000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
-> >>     *
-> >>     0010000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
-> >>     *
-> >>     0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> >>     *
-> >>     0040000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
-> >>     *
-> >>     0050000
-> >>
-> >>     # In fact these first 4Kb are a duplicate of the last 4kb block.
-> >>     # The last write got an extent map/file extent item that points to
-> >>     # the same disk extent that we got in the write+fsync that failed
-> >>     # with the -ENOMEM error. btrfs-debug-tree and btrfsck allow us to
-> >>     # verify that:
-> >>
-> >>     $ btrfs-debug-tree /dev/sdd
-> >>     (...)
-> >>       item 6 key (257 EXTENT_DATA 0) itemoff 15819 itemsize 53
-> >>               extent data disk byte 12582912 nr 8192
-> >>               extent data offset 0 nr 8192 ram 8192
-> >>       item 7 key (257 EXTENT_DATA 8192) itemoff 15766 itemsize 53
-> >>               extent data disk byte 0 nr 0
-> >>               extent data offset 0 nr 8192 ram 8192
-> >>       item 8 key (257 EXTENT_DATA 16384) itemoff 15713 itemsize 53
-> >>               extent data disk byte 12582912 nr 4096
-> >>               extent data offset 0 nr 4096 ram 4096
-> >>
-> >>     $ umount /dev/sdd
-> >>     $ btrfsck /dev/sdd
-> >>     Checking filesystem on /dev/sdd
-> >>     UUID: db5e60e1-050d-41e6-8c7f-3d742dea5d8f
-> >>     checking extents
-> >>     extent item 12582912 has multiple extent items
-> >>     ref mismatch on [12582912 4096] extent item 1, found 2
-> >>     Backref bytes do not match extent backref, bytenr=12582912, ref bytes=4096, backref bytes=8192
-> >>     backpointer mismatch on [12582912 4096]
-> >>     Errors found in extent allocation tree or chunk allocation
-> >>     checking free space cache
-> >>     checking fs roots
-> >>     root 5 inode 257 errors 1000, some csum missing
-> >>     found 131074 bytes used err is 1
-> >>     total csum bytes: 4
-> >>     total tree bytes: 131072
-> >>     total fs tree bytes: 32768
-> >>     total extent tree bytes: 16384
-> >>     btree space waste bytes: 123404
-> >>     file data blocks allocated: 274432
-> >>      referenced 274432
-> >>     Btrfs v3.14.1-96-gcc7fd5a-dirty
-> >>
-> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> >> ---
-> >>  fs/btrfs/inode.c | 12 +++++++++---
-> >>  1 file changed, 9 insertions(+), 3 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> >> index c678dea..16e8146 100644
-> >> --- a/fs/btrfs/inode.c
-> >> +++ b/fs/btrfs/inode.c
-> >> @@ -792,8 +792,12 @@ retry:
-> >>                                               ins.offset,
-> >>                                               BTRFS_ORDERED_COMPRESSED,
-> >>                                               async_extent->compress_type);
-> >> -             if (ret)
-> >> +             if (ret) {
-> >> +                     btrfs_drop_extent_cache(inode, async_extent->start,
-> >> +                                             async_extent->start +
-> >> +                                             async_extent->ram_size - 1, 0);
-> >>                       goto out_free_reserve;
-> >> +             }
+Am Montag, 25. August 2014, 14:45:39 schrieb Chris Murphy:
+> On Aug 25, 2014, at 6:00 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
+> > What is the latest stuff that stills supposed to work okay?
+> 
+> I'm new to git so take this with a grain of salt, but this returns no
+> differences:
+> 
+> git diff mason/master sterba/v3.16.x
+> 
+> So I'd say we're about to see a btrfs-progs released.
+> 
+> mason=git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+> sterba=git://repo.or.cz/btrfs-progs-unstable/devel.git
 
-My bad, I made a mistake, what I want is just sitting here ;)
+Thanks, mason repo got updated since I last checked. I think I will try its 
+current master.
 
-> >>
-> >>               /*
-> >>                * clear dirty, set writeback and unlock the pages.
-> >
-> > What about the 'if (ret) {}' after btrfs_add_ordered_extent_compress()?
-> > It looks similar to this case.
-> 
-> Similar but different, and not a problem.
-> 
-> The problem is returning after adding the extent map to the modified
-> list and before creating an ordered operation.
-> For that case you mention, since the ordered operation was created, we
-> return without removing the extent map and without returning the
-> reserved space too - that's because removing the em and returning the
-> space is done by btrfs_finish_ordered_io(), for which the fsync was to
-> wait for (again, because the ordered operation exists).
-
-Thanks for the explanation.
-
--liubo
-
-> 
-> thanks
-> 
-> >
-> > thanks,
-> > -liubo
-> >
-> >> @@ -985,14 +989,14 @@ static noinline int cow_file_range(struct inode *inode,
-> >>               ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
-> >>                                              ram_size, cur_alloc_size, 0);
-> >>               if (ret)
-> >> -                     goto out_reserve;
-> >> +                     goto out_drop_extent_cache;
-> >>
-> >>               if (root->root_key.objectid ==
-> >>                   BTRFS_DATA_RELOC_TREE_OBJECTID) {
-> >>                       ret = btrfs_reloc_clone_csums(inode, start,
-> >>                                                     cur_alloc_size);
-> >>                       if (ret)
-> >> -                             goto out_reserve;
-> >> +                             goto out_drop_extent_cache;
-> >>               }
-> >>
-> >>               if (disk_num_bytes < cur_alloc_size)
-> >> @@ -1020,6 +1024,8 @@ static noinline int cow_file_range(struct inode *inode,
-> >>  out:
-> >>       return ret;
-> >>
-> >> +out_drop_extent_cache:
-> >> +     btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
-> >>  out_reserve:
-> >>       btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
-> >>  out_unlock:
-> >> --
-> >> 1.9.1
-> >>
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> -- 
-> Filipe David Manana,
-> 
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

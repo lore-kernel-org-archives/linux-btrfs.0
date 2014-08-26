@@ -1,65 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f43.google.com ([209.85.215.43]:51982 "EHLO
-	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751546AbaHWSpX (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:26892 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933998AbaHZIYT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 23 Aug 2014 14:45:23 -0400
-Received: by mail-la0-f43.google.com with SMTP id gi9so8784952lab.30
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Aug 2014 11:45:22 -0700 (PDT)
+	Tue, 26 Aug 2014 04:24:19 -0400
+Message-ID: <53FC442C.7060705@oracle.com>
+Date: Tue, 26 Aug 2014 16:24:12 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <87mway82qp.fsf@elisp.net>
-References: <87mway82qp.fsf@elisp.net>
-Date: Sat, 23 Aug 2014 19:45:22 +0100
-Message-ID: <CAL3q7H61-uAP08uXNzsZfwKT8h1ZjRAR_GvD69wRKuRPpkbh9A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: Do not free dirty extent buffer
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Naohiro Aota <naota@elisp.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Eric Sandeen <sandeen@redhat.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/3] btrfs-progs: remove full /dev scanning
+References: <53F51F4D.2090203@redhat.com> <53F5B18B.1030801@oracle.com> <53F60264.5090401@redhat.com>
+In-Reply-To: <53F60264.5090401@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 21, 2014 at 1:07 PM, Naohiro Aota <naota@elisp.net> wrote:
-> free_some_buffer() should not free dirty extent buffers. They should be
-> left for later commit.
+
+
+On 21/08/2014 22:29, Eric Sandeen wrote:
+> On 8/21/14, 3:44 AM, Anand Jain wrote:
+>>
+>>
+>>   A long time back there was an attempt to remove it but
+>>   this avoided it. Pls ref to the link in this discussion.
+>>
+>>   https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg27272.html
 >
-> Signed-off-by: Naohiro Aota <naota@elisp.net>
-> ---
->  extent_io.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Hm, I guess I don't understand this.  How is udev related to whether
+> or not /proc/partitions is sufficient vs. recursive /dev?
 >
-> diff --git a/extent_io.c b/extent_io.c
-> index a127e54..8a668be 100644
-> --- a/extent_io.c
-> +++ b/extent_io.c
-> @@ -552,7 +552,7 @@ static int free_some_buffers(struct extent_io_tree *tree)
+> To be clear, my patchset keeps the -d / --all-devices option.
 >
->         list_for_each_safe(node, next, &tree->lru) {
->                 eb = list_entry(node, struct extent_buffer, lru);
-> -               if (eb->refs == 1) {
-> +               if (eb->refs == 1 && !(eb->flags && EXTENT_DIRTY)) {
+> It simply discovers all devices via /proc/partitions, not via
+> a full /dev tree walk.
 
-Hi,
+  Makes sense.
 
-Did you meant bitwise and (&) and not logical and (&&) right?
+Thanks, Anand
 
 
->                         free_extent_buffer(eb);
->                         if (tree->cache_size < cache_hard_max)
->                                 break;
-> --
-> 2.0.4
+> Thanks,
+> -Eric
+>
+>
+>> Thanks, Anand
+>>
+>> On 08/21/2014 06:21 AM, Eric Sandeen wrote:
+>>> btrfs fileystem show and btrfs device scan today both have
+>>> the "-d" option to scan everything under /dev.  But we also
+>>> have a mechanism to scan everything in /proc/partitions, which
+>>> should always be sufficient.
+>>>
+>>> If anyone knows why we'd find something deep under /dev but
+>>> not in /proc/partitions, speak now or forever hold your peace...
+>>>
+>>> Tested this by running through a matrix of -d, -m, or "" args
+>>> for show/scan, for a 2-device fs, with and without a symlinked
+>>> device, with and without a symlinked mountpoint.  All output was
+>>> identical.
+>>>
+>>> Thanks,
+>>> -Eric
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+>

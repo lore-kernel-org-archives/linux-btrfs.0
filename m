@@ -1,46 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f175.google.com ([209.85.192.175]:41419 "EHLO
-	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754334AbaHUMID (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 08:08:03 -0400
-Received: by mail-pd0-f175.google.com with SMTP id r10so13501613pdi.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Aug 2014 05:08:02 -0700 (PDT)
-Received: from ako (pl398.nas931.p-kanagawa.nttpc.ne.jp. [219.102.77.142])
-        by mx.google.com with ESMTPSA id dn3sm25317494pbc.79.2014.08.21.05.08.01
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
-        Thu, 21 Aug 2014 05:08:01 -0700 (PDT)
-From: Naohiro Aota <naota@elisp.net>
+Received: from cantor2.suse.de ([195.135.220.15]:40979 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756433AbaH0Rrs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Aug 2014 13:47:48 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D00E8AD0A
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 17:47:47 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Do not free dirty extent buffer
-Date: Thu, 21 Aug 2014 21:07:58 +0900
-Message-ID: <87mway82qp.fsf@elisp.net>
-MIME-Version: 1.0
-Content-Type: text/plain
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: readahead errors are not fatal
+Date: Wed, 27 Aug 2014 19:47:45 +0200
+Message-Id: <1409161665-28234-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-free_some_buffer() should not free dirty extent buffers. They should be
-left for later commit.
+Kill the BUG_ON.
 
-Signed-off-by: Naohiro Aota <naota@elisp.net>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- extent_io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ disk-io.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/extent_io.c b/extent_io.c
-index a127e54..8a668be 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -552,7 +552,7 @@ static int free_some_buffers(struct extent_io_tree *tree)
- 
- 	list_for_each_safe(node, next, &tree->lru) {
- 		eb = list_entry(node, struct extent_buffer, lru);
--		if (eb->refs == 1) {
-+		if (eb->refs == 1 && !(eb->flags && EXTENT_DIRTY)) {
- 			free_extent_buffer(eb);
- 			if (tree->cache_size < cache_hard_max)
- 				break;
+diff --git a/disk-io.c b/disk-io.c
+index 8db0335bc81b..7ddd4b90836f 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -152,7 +152,8 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+ 	length = blocksize;
+ 	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+ 			      bytenr, &length, &multi, 0, NULL);
+-	BUG_ON(ret);
++	if (ret)
++		return 0
+ 	device = multi->stripes[0].dev;
+ 	device->total_ios++;
+ 	blocksize = min(blocksize, (u32)(64 * 1024));
 -- 
-2.0.4
+1.9.0
+

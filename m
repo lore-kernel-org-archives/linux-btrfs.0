@@ -1,84 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:59470 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S933257AbaH0NAJ (ORCPT
+Received: from mail-oa0-f44.google.com ([209.85.219.44]:56986 "EHLO
+	mail-oa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935182AbaH0Rjc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Aug 2014 09:00:09 -0400
-Message-ID: <53FDD651.3080600@fb.com>
-Date: Wed, 27 Aug 2014 09:00:01 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 27 Aug 2014 13:39:32 -0400
+Received: by mail-oa0-f44.google.com with SMTP id eb12so451406oac.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 10:39:32 -0700 (PDT)
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>, <toralf.foerster@gmx.de>
-Subject: Re: [PATCH RFC] Btrfs: fix warning of insert_state() when doing lseek
-References: <1409066130-29948-1-git-send-email-bo.li.liu@oracle.com> <53FCA7F9.90709@fb.com> <20140827083709.GB15994@localhost.localdomain>
-In-Reply-To: <20140827083709.GB15994@localhost.localdomain>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <pan$427a1$f65bd1f8$7ddfd94c$6b06de1b@cox.net>
+References: <CADw2B2PYPJdcLWvkufY71kvAdCdgXhsdO2Gizf8hXAruppxXPA@mail.gmail.com>
+	<pan$427a1$f65bd1f8$7ddfd94c$6b06de1b@cox.net>
+Date: Wed, 27 Aug 2014 10:39:32 -0700
+Message-ID: <CADw2B2NX8XY3V_vD-7eN9vj0tHtEfJwdsS4bovQ0cOHus_9Q-g@mail.gmail.com>
+Subject: Re: fallocate fail on btrfs
+From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/27/2014 04:37 AM, Liu Bo wrote:
-> On Tue, Aug 26, 2014 at 11:30:01AM -0400, Chris Mason wrote:
->>
->>
->> On 08/26/2014 11:15 AM, Liu Bo wrote:
->>> An user reported this, it is because that lseek's SEEK_SET/SEEK_CUR/SEEK_END
->>> allow a negative value for @offset, but btrfs's SEEK_DATA/SEEK_HOLE don't
->>> prepare for that and convert the negative @offset into unsigned type,
->>> so we get (end < start) warning.
->>>
->>> [ 1269.835374] ------------[ cut here ]------------
->>> [ 1269.836809] WARNING: CPU: 0 PID: 1241 at fs/btrfs/extent_io.c:430 insert_state+0x11d/0x140()
->>> [ 1269.838816] BTRFS: end < start 4094 18446744073709551615
->>> [ 1269.840334] CPU: 0 PID: 1241 Comm: a.out Tainted: G        W      3.16.0+ #306
->>> [ 1269.858229] Call Trace:
->>> [ 1269.858612]  [<ffffffff81801a69>] dump_stack+0x4e/0x68
->>> [ 1269.858952]  [<ffffffff8107894c>] warn_slowpath_common+0x8c/0xc0
->>> [ 1269.859416]  [<ffffffff81078a36>] warn_slowpath_fmt+0x46/0x50
->>> [ 1269.859929]  [<ffffffff813b0fbd>] insert_state+0x11d/0x140
->>> [ 1269.860409]  [<ffffffff813b1396>] __set_extent_bit+0x3b6/0x4e0
->>> [ 1269.860805]  [<ffffffff813b21c7>] lock_extent_bits+0x87/0x200
->>> [ 1269.861697]  [<ffffffff813a5b28>] btrfs_file_llseek+0x148/0x2a0
->>> [ 1269.862168]  [<ffffffff811f201e>] SyS_lseek+0xae/0xc0
->>> [ 1269.862620]  [<ffffffff8180b212>] system_call_fastpath+0x16/0x1b
->>> [ 1269.862970] ---[ end trace 4d33ea885832054b ]---
->>>
->>> This adds a check for that, if we find the unsigned type @offset is greater
->>> than inode's size, we get to skip trying to find extent maps.
->>
->> Dave Jones hit something similar with his fuzzer.  Fixing it up was on
->> my list for rc4.  Thanks for taking a look.
->>
->>>
->>> Reported-by: Toralf Förster <toralf.foerster@gmx.de>
->>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->>> ---
->>>  fs/btrfs/file.c | 12 ++++++++++--
->>>  1 file changed, 10 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->>> index 1f2b99c..a370916 100644
->>> --- a/fs/btrfs/file.c
->>> +++ b/fs/btrfs/file.c
->>> @@ -2644,6 +2644,13 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int whence)
->>>  	u64 len = i_size_read(inode);
->>>  	int ret = 0;
->>
->>
->> We also check if (lockend <= lockstart), but that doesn't cover the case
->> where lockend == lockstart == (u64)-1).  We should also be sector
->> aligning everything we send down to lock_extent_bits.
-> 
-> Hmm...I don't understand how (lockend == lockstart == (u64)-1) could happen,
-> lockend is assigned by i_size_read(inode), will it be -1?
+Good questions, should have included that info in the OP.
 
-Well, it's an unsigned....Dave's fuzzer can send lots of evil values.
+The current versions I can get, but I'm frankly terrified to try to
+roll back to prior versions to "test" this, since back in that land be
+monsters with deadlocks preventing degraded volumes from being fixed
+and other challenges I wasn't qualified to fix - and it was over three
+months ago that I tried fallocate last. I run Arch and aggressively
+update, so I can infer what those version were, and will do so, though
+I know that is of limited efficacy in helping you help me...
 
-> 
-> Yeah, I'm taking care of the align stuff, perhaps doing it in another patch is a
-> good idea?
+Best-guess Prior (2014-06-30):
+------------------------------------------------
+linux-lts 3.10.45-1
+btrfs-progs 3.14.2-2
+linux 3.15.2-1
+util-linux 2.24.2-1
 
-I'd do it all in one, Btrfs: fix up bounds checking in lseek
+Current (2014-08-27 10:28:07):
+-----------
+rbellamy@eanna i ~ % pacman -Q linux-lts btrfs-progs-git linux util-linux
+linux-lts 3.14.17-1
+btrfs-progs-git 3.16_108_d34cbe7-1
+linux 3.16.1-1
+util-linux 2.25-3
 
--chris
-
+On Tue, Aug 26, 2014 at 11:39 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> G. Richard Bellamy posted on Tue, 26 Aug 2014 22:05:01 -0700 as excerpted:
+>
+>> When I try to run fallocate with "--keep-size" on my btrfs partitions,
+>> it's failing, and I'm at a loss as to why. This was working in prior
+>> versions.
+>>
+>> Any suggestions on how to attack this problem? I'm betting I'm missing
+>> something simple here, and have just gone down the rabbit hole...
+>>
+>> BTW, I've confirmed that the line that fails is fallocate.c:368 [2],
+>> with "open" always returning -1.
+>
+> One "something simple" you're missing (either that or I am) is any
+> reference to which version you're running.  You say it was working in
+> prior versions, but /which/ prior versions, and /which/ version doesn't
+> work now?
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

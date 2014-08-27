@@ -1,76 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15504 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755634AbaHVDmv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 23:42:51 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s7M3gk1Q008074
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Aug 2014 11:42:46 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: corrupt-block: fix a delete and use bug corrupting extent tree.
-Date: Fri, 22 Aug 2014 11:42:49 +0800
-Message-ID: <1408678969-9218-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from cantor2.suse.de ([195.135.220.15]:40962 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750908AbaH0Rqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Aug 2014 13:46:35 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id BFFB5AD85
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 17:46:33 +0000 (UTC)
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: Arvin Schnell <aschnell@suse.de>, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: library version defines
+Date: Wed, 27 Aug 2014 19:46:32 +0200
+Message-Id: <1409161592-27875-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When corrupting extent tree, corrupt-block will iterate each child
-node/leaf of a node.
-However, when a node's child is leaf, btrfs_corrupt_extent_leaf() may
-delete some item in the leaf, which may cause the children number of the
-parent node decrease.
+From: Arvin Schnell <aschnell@suse.de>
 
-Before this patch, corrupt-block will read out the nritems only *ONCE*
-and iterate the 'nritems' times.
-When btrfs_corrupt_extent_leaf() deletes enough item, causing the
-nritems of btrfs_header decreased, the last few iteration will access
-non-existed node, which will cause the delete and use bug like
-the following:
+commit 46de1a6ec3dbb0db203baa6c46cb64ba9b000ea2 changed the
+parameters of btrfs_read_and_process_send_stream().  This breaks
+snapper compilation. We can include version defines usable for the C
+preprocessor.
+
+Version 0.1.0: API up to and including 46de1a6ec3dbb0db2 (3.14.x)
+
+Version 0.1.1: 909131939f750faffb9fab (changed in 3.16)
+
+Signed-off-by: Arvin Schnell <aschnell@suse.de>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-\# ./btrfs-corrupt-block -E /dev/vdc
-deleting extent record: key 40714240 168 16384
-Couldn't map the block 3459802452797161472
-btrfs-corrupt-block: volumes.c:1137: btrfs_num_copies: Assertion
-`!(!ce)' failed.
-Aborted
----
+ Makefile      |  2 +-
+ send-stream.h |  5 +++++
+ version.sh    | 17 ++++++++++++++++-
+ 3 files changed, 22 insertions(+), 2 deletions(-)
 
-This patch will update the nritmes in each iteration to avoid the bug.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- btrfs-corrupt-block.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 6ecbe47..486ea19 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -264,12 +264,10 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 				      struct extent_buffer *eb)
- {
- 	int i;
--	u32 nr;
+diff --git a/Makefile b/Makefile
+index e721e99c8319..73ef386896bf 100644
+--- a/Makefile
++++ b/Makefile
+@@ -20,7 +20,7 @@ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
+ 		   uuid-tree.o utils-lib.o
+ libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
+ 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
+-	       extent_io.h ioctl.h ctree.h btrfsck.h
++	       extent_io.h ioctl.h ctree.h btrfsck.h version.h
+ TESTS = fsck-tests.sh convert-tests.sh
  
- 	if (!eb)
- 		return;
+ INSTALL = install
+diff --git a/send-stream.h b/send-stream.h
+index 293bf6af3659..bedff4d0422c 100644
+--- a/send-stream.h
++++ b/send-stream.h
+@@ -18,6 +18,11 @@
+ #ifndef SEND_STREAM_H_
+ #define SEND_STREAM_H_
  
--	nr = btrfs_header_nritems(eb);
- 	if (btrfs_is_leaf(eb)) {
- 		btrfs_corrupt_extent_leaf(trans, root, eb);
- 		return;
-@@ -280,7 +278,7 @@ static void btrfs_corrupt_extent_tree(struct btrfs_trans_handle *trans,
- 			return;
- 	}
++/*
++ * NOTE: this file is public API, any incompatible change has to update
++ * library version
++ */
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+diff --git a/version.sh b/version.sh
+index 90000019fe1d..2e4a8d9e1303 100644
+--- a/version.sh
++++ b/version.sh
+@@ -8,6 +8,10 @@
+  
+ v="v3.16"
  
--	for (i = 0; i < nr; i++) {
-+	for (i = 0; i < btrfs_header_nritems(eb); i++) {
- 		struct extent_buffer *next;
++lib_major=0
++lib_minor=1
++lib_patchlevel=1
++
+ which git &> /dev/null
+ if [ $? == 0 -a -d .git ]; then
+     if head=`git rev-parse --verify HEAD 2>/dev/null`; then
+@@ -24,8 +28,19 @@ if [ $? == 0 -a -d .git ]; then
+     fi
+ fi
  
- 		next = read_tree_block(root, btrfs_node_blockptr(eb, i),
+-echo "#ifndef __BUILD_VERSION" > .build-version.h
++echo "/* NOTE: this file is autogenerated by version.sh, do not edit */" > .build-version.h
++echo "#ifndef __BUILD_VERSION" >> .build-version.h
++echo >> .build-version.h
+ echo "#define __BUILD_VERSION" >> .build-version.h
++echo >> .build-version.h
++echo "#define BTRFS_LIB_MAJOR $lib_major" >> .build-version.h
++echo "#define BTRFS_LIB_MINOR $lib_minor" >> .build-version.h
++echo "#define BTRFS_LIB_PATCHLEVEL $lib_patchlevel" >> .build-version.h
++echo >> .build-version.h
++echo "#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \\" >> .build-version.h
++echo "                            BTRFS_LIB_MINOR * 100 + \\" >> .build-version.h
++echo "                            BTRFS_LIB_PATCHLEVEL )" >> .build-version.h
++echo >> .build-version.h
+ echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
+ echo "#endif" >> .build-version.h
+ 
 -- 
-2.0.4
+1.9.0
 

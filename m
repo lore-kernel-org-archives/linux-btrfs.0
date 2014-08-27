@@ -1,95 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:31696 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751435AbaHZR0d (ORCPT
+Received: from mail-oi0-f51.google.com ([209.85.218.51]:52054 "EHLO
+	mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932581AbaH0FFC convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Aug 2014 13:26:33 -0400
-Message-ID: <53FCC343.1040607@fb.com>
-Date: Tue, 26 Aug 2014 13:26:27 -0400
-From: Chris Mason <clm@fb.com>
+	Wed, 27 Aug 2014 01:05:02 -0400
+Received: by mail-oi0-f51.google.com with SMTP id v63so4493397oia.24
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Aug 2014 22:05:01 -0700 (PDT)
 MIME-Version: 1.0
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs for rc3
-Content-Type: text/plain; charset="ISO-8859-1"
+Date: Tue, 26 Aug 2014 22:05:01 -0700
+Message-ID: <CADw2B2PYPJdcLWvkufY71kvAdCdgXhsdO2Gizf8hXAruppxXPA@mail.gmail.com>
+Subject: fallocate fail on btrfs
+From: "G. Richard Bellamy" <rbellamy@pteradigm.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+When I try to run fallocate with "--keep-size" on my btrfs partitions,
+it's failing, and I'm at a loss as to why. This was working in prior
+versions.
 
-Please pull our fixes from my for-linus branch:
+Any suggestions on how to attack this problem? I'm betting I'm missing
+something simple here, and have just gone down the rabbit hole...
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+BTW, I've confirmed that the line that fails is fallocate.c:368 [2],
+with "open" always returning -1.
 
-The biggest of these comes from Liu Bo, who tracked down a hang
-we've been hitting since moving to kernel workqueues (it's a btrfs bug,
-not in the generic code).  His patch needs backporting to 3.16 and 3.15
-stable, which I'll send once this is in.
+[1]
+2014-08-26 21:58:28
+root@eanna i /var/lib/libvirt/images # fallocate -n -l 10 test.test
+fallocate: cannot open test.test: No such file or directory
+zsh: exit 1     fallocate -n -l 10 test.test
+2014-08-26 21:58:41
+root@eanna i /var/lib/libvirt/images # fallocate -l 10 test.test
+2014-08-26 21:58:52
+root@eanna i /var/lib/libvirt/images # ls -alh
+total 4.0K
+drwxr-xr-x 1 root root  18 Aug 26 21:58 .
+drwxr-xr-x 1 root root 100 Aug 26 17:39 ..
+-rw-r--r-- 1 root root  10 Aug 26 21:58 test.test
+2014-08-26 21:58:54
+root@eanna i /var/lib/libvirt/images # umask
+022
+2014-08-26 21:59:03
+root@eanna i /var/lib/libvirt/images # umask 000
+2014-08-26 21:59:08
+root@eanna i /var/lib/libvirt/images # rm test.test
+removed ‘test.test’
+2014-08-26 21:59:15
+root@eanna i /var/lib/libvirt/images # fallocate -n -l 10 test.test
+fallocate: cannot open test.test: No such file or directory
+zsh: exit 1     fallocate -n -l 10 test.test
+2014-08-26 21:59:19
+root@eanna i /var/lib/libvirt/images # ls -alh
+total 0
+drwxr-xr-x 1 root root   0 Aug 26 21:59 .
+drwxr-xr-x 1 root root 100 Aug 26 17:39 ..
+2014-08-26 21:59:23
+root@eanna i /var/lib/libvirt/images #
 
-Otherwise these are assorted fixes.  Most were integrated last week
-during KS, but I wanted to give everyone the chance to test the result,
-so I waited for rc2 to come out before sending.
-
-Miao Xie (7) commits (+28/-22):
-    Btrfs: fix unzeroed members in fs_devices when creating a fs from seed fs (+3/-0)
-    Btrfs: don't consider the missing device when allocating new chunks (+2/-14)
-    Btrfs: Fix the problem that the replace destroys the seed filesystem (+6/-2)
-    Btrfs: don't write any data into a readonly device when scrub (+11/-0)
-    Btrfs: Fix wrong device size when we are resizing the device (+3/-2)
-    Btrfs: fix put dio bio twice when we submit dio bio fail (+2/-3)
-    Btrfs: fix wrong missing device counter decrease (+1/-1)
-
-Filipe Manana (5) commits (+72/-38):
-    Btrfs: ensure tmpfile inode is always persisted with link count of 0 (+15/-0)
-    Btrfs: race free update of commit root for ro snapshots (+36/-33)
-    Btrfs: clone, don't create invalid hole extent map (+2/-1)
-    Btrfs: don't monopolize a core when evicting inode (+6/-0)
-    Btrfs: fix hole detection during file fsync (+13/-4)
-
-Liu Bo (3) commits (+143/-62):
-    Btrfs: fix task hang under heavy compressed write (+141/-61)
-    Btrfs: fix crash on endio of reading corrupted block (+1/-0)
-    Btrfs: fix regression of btrfs device replace (+1/-1)
-
-Anand Jain (2) commits (+48/-1):
-    Btrfs: device_list_add() should not update list when mounted (+27/-0)
-    btrfs: check generation as replace duplicates devid+uuid (+21/-1)
-
-Qu Wenruo (2) commits (+7/-8):
-    btrfs: Return right extent when fiemap gives unaligned offset and len. (+2/-2)
-    btrfs: Use right extent length when inserting overlap extent map. (+5/-6)
-
-Wang Shilong (2) commits (+4/-1):
-    Btrfs: fix wrong write range for filemap_fdatawrite_range() (+2/-1)
-    Btrfs: fix wrong extent mapping for DirectIO (+2/-0)
-
-Chris Mason (1) commits (+9/-1):
-    Btrfs: fix filemap_flush call in btrfs_file_release
-
-Eric Sandeen (1) commits (+1/-1):
-    btrfs: fix leak in qgroup_subtree_accounting() error path
-
-chandan (1) commits (+1/-2):
-    Btrfs: fill_holes: Fix slot number passed to hole_mergeable() call.
-
-Total: (24) commits
-
- fs/btrfs/async-thread.c  |  44 +++++++++++++++----
- fs/btrfs/async-thread.h  |  28 +++++++++++-
- fs/btrfs/delayed-inode.c |   4 +-
- fs/btrfs/disk-io.c       |  56 +++++++++++++-----------
- fs/btrfs/extent-tree.c   |  23 +++-------
- fs/btrfs/extent_io.c     |   5 ++-
- fs/btrfs/file.c          |  17 +++++---
- fs/btrfs/inode.c         | 109 ++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/ioctl.c         |  36 +---------------
- fs/btrfs/ordered-data.c  |   1 +
- fs/btrfs/qgroup.c        |   3 +-
- fs/btrfs/raid56.c        |   9 ++--
- fs/btrfs/reada.c         |   3 +-
- fs/btrfs/scrub.c         |  25 ++++++++---
- fs/btrfs/sysfs.c         |   2 +-
- fs/btrfs/tree-log.c      |  17 ++++++--
- fs/btrfs/volumes.c       |  65 +++++++++++++++++++++++++---
- 17 files changed, 312 insertions(+), 135 deletions(-)
+[2] fd = open(filename, O_RDWR | (!dig && !mode ? O_CREAT : 0), 0644);

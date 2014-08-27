@@ -1,104 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40962 "EHLO mx2.suse.de"
+Received: from tetsuo.zabbo.net ([50.193.208.193]:42533 "EHLO tetsuo.zabbo.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750908AbaH0Rqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Aug 2014 13:46:35 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id BFFB5AD85
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 17:46:33 +0000 (UTC)
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: Arvin Schnell <aschnell@suse.de>, David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: library version defines
-Date: Wed, 27 Aug 2014 19:46:32 +0200
-Message-Id: <1409161592-27875-1-git-send-email-dsterba@suse.cz>
+	id S932413AbaH0SQD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Aug 2014 14:16:03 -0400
+Date: Wed, 27 Aug 2014 11:16:03 -0700
+From: Zach Brown <zab@zabbo.net>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: readahead errors are not fatal
+Message-ID: <20140827181603.GF12827@lenny.home.zabbo.net>
+References: <1409161665-28234-1-git-send-email-dsterba@suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1409161665-28234-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Arvin Schnell <aschnell@suse.de>
+On Wed, Aug 27, 2014 at 07:47:45PM +0200, David Sterba wrote:
+> Kill the BUG_ON.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>  disk-io.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/disk-io.c b/disk-io.c
+> index 8db0335bc81b..7ddd4b90836f 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -152,7 +152,8 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+>  	length = blocksize;
+>  	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+>  			      bytenr, &length, &multi, 0, NULL);
+> -	BUG_ON(ret);
+> +	if (ret)
+> +		return 0
+>  	device = multi->stripes[0].dev;
+>  	device->total_ios++;
+>  	blocksize = min(blocksize, (u32)(64 * 1024));
 
-commit 46de1a6ec3dbb0db203baa6c46cb64ba9b000ea2 changed the
-parameters of btrfs_read_and_process_send_stream().  This breaks
-snapper compilation. We can include version defines usable for the C
-preprocessor.
+Seems like this is already leaking a refcount and only returns 0..  so
+maybe remove the bug_on something like this totally untested patch?
 
-Version 0.1.0: API up to and including 46de1a6ec3dbb0db2 (3.14.x)
+There's another "#if 0"-ed out caller in extent-tree.c but that nonsense
+should just be removed.
 
-Version 0.1.1: 909131939f750faffb9fab (changed in 3.16)
+- z
 
-Signed-off-by: Arvin Schnell <aschnell@suse.de>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- Makefile      |  2 +-
- send-stream.h |  5 +++++
- version.sh    | 17 ++++++++++++++++-
- 3 files changed, 22 insertions(+), 2 deletions(-)
+commit 69a668994c70cc1fd86d1c349d272b1cbfde23b1
+Author: Zach Brown <zab@zabbo.net>
+Date:   Wed Aug 27 11:07:23 2014 -0700
 
-diff --git a/Makefile b/Makefile
-index e721e99c8319..73ef386896bf 100644
---- a/Makefile
-+++ b/Makefile
-@@ -20,7 +20,7 @@ libbtrfs_objects = send-stream.o send-utils.o rbtree.o btrfs-list.o crc32c.o \
- 		   uuid-tree.o utils-lib.o
- libbtrfs_headers = send-stream.h send-utils.h send.h rbtree.h btrfs-list.h \
- 	       crc32c.h list.h kerncompat.h radix-tree.h extent-cache.h \
--	       extent_io.h ioctl.h ctree.h btrfsck.h
-+	       extent_io.h ioctl.h ctree.h btrfsck.h version.h
- TESTS = fsck-tests.sh convert-tests.sh
+    btrfs-progs: kill BUG_ON in readahead_tree_block()
+    
+    David sent a quick patch that removed a BUG_ON().  I took a peek and
+    found that the function was already leaking an eb ref and only returned
+    0.  So this fixes the leak and makes the function void and fixes up the
+    callers.
+    
+    Accidentally-motivated-by: David Sterba <dsterba@suse.cz>
+    Signed-off-by: Zach Brown <zab@zabbo.net>
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 268e588..d479361 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1287,7 +1287,6 @@ static void reada_walk_down(struct btrfs_root *root,
+ 	u32 nritems;
+ 	u32 blocksize;
+ 	int i;
+-	int ret;
+ 	int level;
  
- INSTALL = install
-diff --git a/send-stream.h b/send-stream.h
-index 293bf6af3659..bedff4d0422c 100644
---- a/send-stream.h
-+++ b/send-stream.h
-@@ -18,6 +18,11 @@
- #ifndef SEND_STREAM_H_
- #define SEND_STREAM_H_
+ 	level = btrfs_header_level(node);
+@@ -1299,9 +1298,7 @@ static void reada_walk_down(struct btrfs_root *root,
+ 	for (i = slot; i < nritems; i++) {
+ 		bytenr = btrfs_node_blockptr(node, i);
+ 		ptr_gen = btrfs_node_ptr_generation(node, i);
+-		ret = readahead_tree_block(root, bytenr, blocksize, ptr_gen);
+-		if (ret)
+-			break;
++		readahead_tree_block(root, bytenr, blocksize, ptr_gen);
+ 	}
+ }
  
-+/*
-+ * NOTE: this file is public API, any incompatible change has to update
-+ * library version
-+ */
-+
- #ifdef __cplusplus
- extern "C" {
- #endif
-diff --git a/version.sh b/version.sh
-index 90000019fe1d..2e4a8d9e1303 100644
---- a/version.sh
-+++ b/version.sh
-@@ -8,6 +8,10 @@
-  
- v="v3.16"
+diff --git a/disk-io.c b/disk-io.c
+index f71f5ca..1f1ce75 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -134,31 +134,26 @@ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 				   blocksize);
+ }
  
-+lib_major=0
-+lib_minor=1
-+lib_patchlevel=1
-+
- which git &> /dev/null
- if [ $? == 0 -a -d .git ]; then
-     if head=`git rev-parse --verify HEAD 2>/dev/null`; then
-@@ -24,8 +28,19 @@ if [ $? == 0 -a -d .git ]; then
-     fi
- fi
+-int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+-			 u64 parent_transid)
++void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++			  u64 parent_transid)
+ {
+-	int ret;
+ 	struct extent_buffer *eb;
+ 	u64 length;
+ 	struct btrfs_multi_bio *multi = NULL;
+ 	struct btrfs_device *device;
  
--echo "#ifndef __BUILD_VERSION" > .build-version.h
-+echo "/* NOTE: this file is autogenerated by version.sh, do not edit */" > .build-version.h
-+echo "#ifndef __BUILD_VERSION" >> .build-version.h
-+echo >> .build-version.h
- echo "#define __BUILD_VERSION" >> .build-version.h
-+echo >> .build-version.h
-+echo "#define BTRFS_LIB_MAJOR $lib_major" >> .build-version.h
-+echo "#define BTRFS_LIB_MINOR $lib_minor" >> .build-version.h
-+echo "#define BTRFS_LIB_PATCHLEVEL $lib_patchlevel" >> .build-version.h
-+echo >> .build-version.h
-+echo "#define BTRFS_LIB_VERSION ( BTRFS_LIB_MAJOR * 10000 + \\" >> .build-version.h
-+echo "                            BTRFS_LIB_MINOR * 100 + \\" >> .build-version.h
-+echo "                            BTRFS_LIB_PATCHLEVEL )" >> .build-version.h
-+echo >> .build-version.h
- echo "#define BTRFS_BUILD_VERSION \"Btrfs $v\"" >> .build-version.h
- echo "#endif" >> .build-version.h
+ 	eb = btrfs_find_tree_block(root, bytenr, blocksize);
+-	if (eb && btrfs_buffer_uptodate(eb, parent_transid)) {
+-		free_extent_buffer(eb);
+-		return 0;
++	if (!(eb && btrfs_buffer_uptodate(eb, parent_transid)) &&
++	    !btrfs_map_block(&root->fs_info->mapping_tree, READ,
++			     bytenr, &length, &multi, 0, NULL)) {
++		device = multi->stripes[0].dev;
++		device->total_ios++;
++		blocksize = min(blocksize, (u32)(64 * 1024));
++		readahead(device->fd, multi->stripes[0].physical, blocksize);
+ 	}
  
--- 
-1.9.0
-
+-	length = blocksize;
+-	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
+-			      bytenr, &length, &multi, 0, NULL);
+-	BUG_ON(ret);
+-	device = multi->stripes[0].dev;
+-	device->total_ios++;
+-	blocksize = min(blocksize, (u32)(64 * 1024));
+-	readahead(device->fd, multi->stripes[0].physical, blocksize);
++	free_extent_buffer(eb);
+ 	kfree(multi);
+-	return 0;
+ }
+ 
+ static int verify_parent_transid(struct extent_io_tree *io_tree,
+diff --git a/disk-io.h b/disk-io.h
+index 13d4420..c296055 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -48,8 +48,8 @@ struct btrfs_device;
+ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirror);
+ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 				      u32 blocksize, u64 parent_transid);
+-int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+-			 u64 parent_transid);
++void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++			  u64 parent_transid);
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 						   u64 bytenr, u32 blocksize);
+ 

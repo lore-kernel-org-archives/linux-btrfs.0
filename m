@@ -1,84 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38154 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752217AbaHRIe4 (ORCPT
+Received: from smtp-pro1.mana.pf ([202.3.225.198]:47247 "EHLO
+	smtp-pro1.mana.pf" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750908AbaH0SNm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Aug 2014 04:34:56 -0400
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 27 Aug 2014 14:13:42 -0400
+Received: from tiare.sysnux.pf (75.173.185.203.dsl.dyn.mana.pf [203.185.173.75])
+	(using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: courrier@sysnux.pf)
+	by smtp-pro1.mana.pf (Postfix) with ESMTPSA id 2B0265409D
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 08:04:35 -1000 (TAHT)
+Received: from tiare.sysnux.pf (tiare.sysnux.pf [192.168.10.1])
+	by tiare.sysnux.pf (Postfix) with ESMTP id 04EF3C0284
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 Aug 2014 08:04:35 -1000 (TAHT)
+Message-ID: <53FE1DB2.8040900@sysnux.pf>
+Date: Wed, 27 Aug 2014 08:04:34 -1000
+From: Jean-Denis Girard <jd.girard@sysnux.pf>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Cc: lists@colorremedies.com
-Subject: [PATCH v2] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO miss-matched with slots
-Date: Mon, 18 Aug 2014 16:38:18 +0800
-Message-Id: <1408351099-4721-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1408351099-4721-1-git-send-email-anand.jain@oracle.com>
-References: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>
- <1408351099-4721-1-git-send-email-anand.jain@oracle.com>
+Subject: Undelete files / directory
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-ioctl BTRFS_IOC_FS_INFO return num_devices which does _not_ include seed
-device, But the following ioctl BTRFS_IOC_DEV_INFO counts and gets seed
-disk when probed. So in the userland we hit a count-slot missmatch
-bug..
-            get_fs_info()
-            ::
-                    BUG_ON(ndevs >= fi_args->num_devices);
-which hits this bug when we have mounted a seed device.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-So to fix this problem here in this patch ioctl BTRFS_IOC_FS_INFO
-will provide total_devices instead of num_devices.
+Hi list,
 
-This would fix the problem partly. Partly because ealier num_devices
-included the replacing device but now total_device does not include
-the replacing device. Getting a count which includes a transient device
-is rather too in efficient/wrong indeed, because there can be a race
-condition where in the time between ioctl BTRFS_IOC_FS_INFO to
-BTRFS_IOC_DEV_INFO the replace device operation might have been
-completed. So to fix this problem its better that user land btrfs-progs
-probes replacing device (at devid 0) separately.
+Two days ago I mistakenly deleted a directory on a btrfs file system. As
+soon as I realized, I cleanly unmounted the partition, and have not
+touched it since then. I have no snapshot and no backup; I was on
+vacations with my laptop, and the directory deleted contained ~3 weeks
+of photos.
 
-v2:
-Agree with Wang's comment. Its better to show seed disks under the
-sprout fs, so that user can establish mapping of seed to sprout devices.
+I found this script:
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/22560
+but the commands have probably changed, and it no longer runs.
 
-So here I am making BTRFS_IOC_FS_INFO to return the total_devices
-which would count the seed devices (but not the replacing device).
-A btrfs-progs patch will separately probe for devid 0 (which is
-a replacing transient device when present).
+So is there a way to recover a deleted directory on btrfs? Just to make
+things clear, this is not a broken file system, just a normally deleted
+directory.
 
-v1:
-This patch will make BTRFS_IOC_DEV_INFO ioctl to provide disks only
-of the FSID being probed (seed disks are under different FSID).
+I'm on Fedora 20, with kernel 3.15.10-200.fc20.x86_64, and
+btrfs-progs-3.14.2-3.fc20.x86_64.
 
-which means when seed is still not deleted from the sprout the btrfs
-filesystem show command will show disks them under their
-respective FSIDs
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: a new kind of fix. which would allow seed to be shown in
-    the btrfs fi show cli output.
+Thanks,
+- -- 
+Jean-Denis Girard
 
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+SysNux                  Systèmes    Linux    en  Polynésie  française
+http://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.79.75.27
+-----BEGIN PGP SIGNATURE-----
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index da73ab3..05dd88b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2725,7 +2725,7 @@ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
- 		return -ENOMEM;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	fi_args->num_devices = fs_devices->num_devices;
-+	fi_args->num_devices = fs_devices->total_devices;
- 	memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
- 
- 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
--- 
-2.0.0.153.g79dcccc
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-
+iEYEARECAAYFAlP+HbIACgkQuu7Rv+oOo/hH7wCdFJhYm4eFwU5TbUyrdWM4iIuP
+aqQAn2H3D0dvEznBhgyij8Pn8Ww6XQF5
+=ybUk
+-----END PGP SIGNATURE-----

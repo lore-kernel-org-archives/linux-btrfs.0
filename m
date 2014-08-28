@@ -1,97 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51071 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750894AbaH1VXe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 17:23:34 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XN7AE-000090-AT
-	for linux-btrfs@vger.kernel.org; Thu, 28 Aug 2014 23:23:26 +0200
-Received: from 11.161.185.203.dsl.dyn.mana.pf ([203.185.161.11])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 23:23:26 +0200
-Received: from jd.girard by 11.161.185.203.dsl.dyn.mana.pf with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 23:23:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Jean-Denis Girard <jd.girard@sysnux.pf>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:39910 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751383AbaH1Va4 convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 17:30:56 -0400
+Content-Type: text/plain; charset=iso-8859-1
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Undelete files / directory
-Date: Thu, 28 Aug 2014 11:23:12 -1000
-Message-ID: <lto6k2$ebq$1@ger.gmane.org>
-References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net> <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com> <ltnnfo$a57$1@ger.gmane.org> <883EA056-F115-4254-9412-622C07170707@colorremedies.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <883EA056-F115-4254-9412-622C07170707@colorremedies.com>
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <ltnnfo$a57$1@ger.gmane.org>
+Date: Thu, 28 Aug 2014 15:30:53 -0600
+Cc: linux-btrfs@vger.kernel.org
+Message-Id: <2E882BA1-E572-4B5B-9AC7-B5B2CD40920B@colorremedies.com>
+References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net> <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com> <ltnnfo$a57$1@ger.gmane.org>
+To: Jean-Denis Girard <jd.girard@sysnux.pf>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 28/08/2014 10:21, Chris Murphy a écrit :
-> What do you get for 
 
-[root@x220 ~]# btrfs-debug-tree -R /dev/mapper/home
+On Aug 28, 2014, at 11:04 AM, Jean-Denis Girard <jd.girard@sysnux.pf> wrote:
 
-root tree: 115230801920 level 1
-chunk tree: 131072 level 1
-extent tree key (EXTENT_TREE ROOT_ITEM 0) 115230806016 level 2
-device tree key (DEV_TREE ROOT_ITEM 0) 115191881728 level 0
-fs tree key (FS_TREE ROOT_ITEM 0) 115215908864 level 3
-checksum tree key (CSUM_TREE ROOT_ITEM 0) 115230842880 level 3
-uuid tree key (UUID_TREE ROOT_ITEM 0) 115196645376 level 0
-data reloc tree key (DATA_RELOC_TREE ROOT_ITEM 0) 115623051264 level 0
-btrfs root backup slot 0
-        tree root gen 138441 block 115220434944
-                extent root gen 138441 block 115217117184
-                chunk root gen 73727 block 131072
-                device root gen 130645 block 115191881728
-                csum root gen 138441 block 115216838656
-                fs root gen 138441 block 115215908864
-                26813235200 used 42947575808 total 1 devices
-btrfs root backup slot 1
-        tree root gen 138442 block 115230801920
-                extent root gen 138442 block 115230806016
-                chunk root gen 73727 block 131072
-                device root gen 130645 block 115191881728
-                csum root gen 138442 block 115230842880
-                fs root gen 138441 block 115215908864
-                26813235200 used 42947575808 total 1 devices
-btrfs root backup slot 2
-        tree root gen 138439 block 115231158272
-                extent root gen 138439 block 115230871552
-                chunk root gen 73727 block 131072
-                device root gen 130645 block 115191881728
-                csum root gen 138440 block 115231473664
-                fs root gen 138440 block 115231453184
-                26818527232 used 42947575808 total 1 devices
-btrfs root backup slot 3
-        tree root gen 138440 block 115210838016
-                extent root gen 138440 block 115233878016
-                chunk root gen 73727 block 131072
-                device root gen 130645 block 115191881728
-                csum root gen 138441 block 115216838656
-                fs root gen 138441 block 115215908864
-                26813243392 used 42947575808 total 1 devices
-total bytes 42947575808
-bytes used 26813235200
-uuid ca93d247-9076-4aa7-862b-a6add3a5c16c
-Btrfs v3.14.2
+> Hi Chris,
+> 
+> Thanks for your detailed answer.
+> 
+> Le 28/08/2014 06:25, Chris Murphy a écrit :
+>> 9. btrfs-find-root /dev/sdc
+>> Super think's the tree root is at 29917184, chunk root 20987904
+>> Well block 4194304 seems great, but generation doesn't match, have=2, want=9 level 0
+>> Well block 4243456 seems great, but generation doesn't match, have=3, want=9 level 0
+>> Well block 29376512 seems great, but generation doesn't match, have=4, want=9 level 0
+>> Well block 29474816 seems great, but generation doesn't match, have=5, want=9 level 0
+>> Well block 29556736 seems great, but generation doesn't match, have=6, want=9 level 0
+>> Well block 29736960 seems great, but generation doesn't match, have=7, want=9 level 0
+>> Well block 29900800 seems great, but generation doesn't match, have=8, want=9 level 0
+> 
+> Here is what the command returns :
+> 
+> [root@x220 ~]# btrfs-find-root /dev/mapper/home
+> Super think's the tree root is at 115230801920, chunk root 131072
+> Went past the fs size, exiting[root@x220 ~]#
+> 
+> I just tried with latest btrfs-progs (from git), it returns exactly the
+> same.
+> 
+> The btrfs partition is on top of dm-crypt, could it be a problem?
 
-So this seems fine; why is btrfs-find-root not working for me?
+So I'm working with a really rudimentary case here. However, this might also be possible:
 
-Then I tried to use the root with oldest generation:
-[root@x220 ~]# btrfs restore -t 115231158272 -v /dev/mapper/home
---path-regex '^/(|jdg(|/tmp(|/.*)))$' .
+# btrfs-show-super /dev/sdc
+[snip]
+generation		11
+[snip]
 
-It did recover many files / directories, but unfortunately not my
-photos. Does it mean I discovered my mistake and unmounted the partition
-too late, and the info is lost?
+That's the current generation at unmount time. If nothing at all was being written to the volume between delete time and unmount time, the generation you want will be one less than this.
 
-I made a dump of the device to another computer (using dd), I think the
-data are still here (hexedit).
+Then you can use, for example:
 
-What else could I try?
+# btrfs-debug-tree -g 10 /dev/sdc
+
+And that'll hopefully return a tree block for that generation. In my case it wouldn't be good news because I had already had several remounts, so the generation had rolled over a few times since I'd deleted the file so it's not in generation 10, or even generation 8. So I tried generation 7 again where I found it before:
+
+# btrfs-find-root -g 7 /dev/sdc
+Super think's the tree root is at 29491200, chunk root 20987904
+Well block 4194304 seems great, but generation doesn't match, have=2, want=7 level 0
+Well block 4243456 seems great, but generation doesn't match, have=3, want=7 level 0
+Well block 29409280 seems great, but generation doesn't match, have=10, want=7 level 0
+Well block 29491200 seems great, but generation doesn't match, have=11, want=7 level 0
+Well block 29556736 seems great, but generation doesn't match, have=6, want=7 level 0
+
+Unfortunately there's no gen 7. So I'm not sure how to discover the tree block number.
+
+I still have it written down from before of course, and it still works:
+
+btrfs restore -v -t 29736960 /dev/sdc /home/chris/
+parent transid verify failed on 29736960 wanted 12 found 7
+parent transid verify failed on 29736960 wanted 12 found 7
+parent transid verify failed on 29736960 wanted 12 found 7
+parent transid verify failed on 29736960 wanted 12 found 7
+Ignoring transid failure
+Restoring /home/chris/pics
+Restoring /home/chris/pics/IMG_3327.tif
+Done searching /pics
+Done searching 
 
 
-Thanks,
-Jean-Denis Girard
+The shasum for this file though doesn't match the original. Size is correct though. But it doesn't open, application says it's corrupted. So it might take some work to recover that, if even possible. So I'd definitely say (again) don't mount the volume rw. And hopefully nothing was written between directory delete time and unmount time.
+
+
+Chris Murphy
+
 

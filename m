@@ -1,29 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:60348 "EHLO tetsuo.zabbo.net"
+Received: from mx1.redhat.com ([209.132.183.28]:57506 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752713AbaHUQDs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Aug 2014 12:03:48 -0400
-Date: Thu, 21 Aug 2014 09:03:47 -0700
-From: Zach Brown <zab@zabbo.net>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Eryu Guan <eguan@redhat.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/15] xfstests: new btrfs stress test cases
-Message-ID: <20140821160347.GP429@lenny.home.zabbo.net>
-References: <1408556044-907-1-git-send-email-eguan@redhat.com>
- <20140820182437.GJ429@lenny.home.zabbo.net>
- <20140821093505.GM26465@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140821093505.GM26465@dastard>
+	id S1751129AbaH1Nsl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 09:48:41 -0400
+From: Eryu Guan <eguan@redhat.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
+Subject: [PATCH 00/15 v2] xfstests: new btrfs stress test cases
+Date: Thu, 28 Aug 2014 21:47:41 +0800
+Message-Id: <1409233676-22787-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> It's trivial to write this as a bunch of helper functions and then
-> boiler-plate the actual tests themselves. There will be little
-> difference in terms of run time, but we get much more fine-grained
-> control of execution and reporting....
+This patchset add new stress test cases for btrfs by running two
+different btrfs operations simultaneously under fsstress to ensure
+btrfs doesn't hang or oops in such situations. btrfs scrub and
+btrfs check will be run after each test.
 
-Sure, that's reasonable, given the xfstests infrastructure.
+The test matrix is the combination of 6 btrfs operations:
 
-- z
+	balance
+	create/mount/umount/delete subvolume
+	replace device
+	scrub
+	defrag
+	remount with different compress algorithms
+	
+Short descriptions:
+
+	059: balance-subvolume
+	060: balance-scrub
+	061: balance-defrag
+	062: balance-remount
+	063: balance-replace
+	064: subvolume-replace
+	065: subvolume-scrub
+	066: subvolume-defrag
+	067: subvolume-remount
+	068: replace-scrub
+	069: replace-defrag
+	070: replace-remount
+	071: scrub-defrag
+	072: scrub-remount
+	073: defrag-remount
+
+Some issues I've seen:
+
+1. subvolume cannot be mounted with selinux context, so you may see
+   such logs in dmesg
+
+   SELinux: mount invalid.  Same superblock, different security settings for (dev dm-8, type btrfs)
+
+   I've reported the bug to btrfs list, see
+   [BUG] cannot mount subvolume with selinux context
+
+2. btrfs replace operation always returns ENOENT if balance is running
+   So in 063.full you'll see
+
+   ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt/testarea/scratch": No such file or directory, no error
+
+   Not sure if it's btrfs bug, at least I think the error code is misleading
+
+3. replace operation hangs the kernel(3.16-rc4+) with fsstress running
+   So case 064/068/069/070 will hang
+
+
+Changes since v1:
+- put common operations in common/rc as functions and share them across these tests
+- append mkfs options to _scratch_mkfs and _scratch_pool_mkfs instead of updating $MKFS_OPTIONS
+- rebase on top of master and re-number starting from btrfs/059
+
+Thanks,
+Eryu Guan
+
+Eryu Guan (15):
+  btrfs: new test to run btrfs balance and subvolume test simultaneously
+  btrfs: new test to run btrfs balance and scrub simltaneously
+  btrfs: new test to run btrfs balance and defrag operations simultaneously
+  btrfs: new case to run btrfs balance and remount with different compress algorithms
+  btrfs: new case to run btrfs balance and device replace simultaneously
+  btrfs: new case to run btrfs subvolume create/delete operations and device replace simultaneously
+  btrfs: new case to run btrfs subvolume create/delete operations and scrub simultaneously
+  btrfs: new case to run btrfs subvolume create/delete and defrag operations simultaneously
+  btrfs: new case to run subvolume create/delete and remount with different compress algorithms
+  btrfs: new case to run device replace and scrub operations simultaneously
+  btrfs: new case to run device replace and defrag operations simultaneously
+  btrfs: new case to run device replace and remount with different compress algorithms simultaneously
+  btrfs: new case to run btrfs scrub and defrag operations simultaneously
+  btrfs: new case to run btrfs scrub and remount with different compress algorithms simultaneously
+  btrfs: new case to run defrag and remount with different compress algorithms simultaneously
+
+ common/rc           | 115 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/059     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/059.out |   2 +
+ tests/btrfs/060     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/060.out |   2 +
+ tests/btrfs/061     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/061.out |   2 +
+ tests/btrfs/062     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/062.out |   2 +
+ tests/btrfs/063     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/063.out |   2 +
+ tests/btrfs/064     | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/064.out |   2 +
+ tests/btrfs/065     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/065.out |   2 +
+ tests/btrfs/066     | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/066.out |   2 +
+ tests/btrfs/067     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/067.out |   2 +
+ tests/btrfs/068     | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/068.out |   2 +
+ tests/btrfs/069     | 133 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/069.out |   2 +
+ tests/btrfs/070     | 131 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/070.out |   2 +
+ tests/btrfs/071     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/071.out |   2 +
+ tests/btrfs/072     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/072.out |   2 +
+ tests/btrfs/073     | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/073.out |   2 +
+ tests/btrfs/group   |  15 ++++++
+ 32 files changed, 2109 insertions(+)
+ create mode 100755 tests/btrfs/059
+ create mode 100644 tests/btrfs/059.out
+ create mode 100755 tests/btrfs/060
+ create mode 100644 tests/btrfs/060.out
+ create mode 100755 tests/btrfs/061
+ create mode 100644 tests/btrfs/061.out
+ create mode 100755 tests/btrfs/062
+ create mode 100644 tests/btrfs/062.out
+ create mode 100755 tests/btrfs/063
+ create mode 100644 tests/btrfs/063.out
+ create mode 100755 tests/btrfs/064
+ create mode 100644 tests/btrfs/064.out
+ create mode 100755 tests/btrfs/065
+ create mode 100644 tests/btrfs/065.out
+ create mode 100755 tests/btrfs/066
+ create mode 100644 tests/btrfs/066.out
+ create mode 100755 tests/btrfs/067
+ create mode 100644 tests/btrfs/067.out
+ create mode 100755 tests/btrfs/068
+ create mode 100644 tests/btrfs/068.out
+ create mode 100755 tests/btrfs/069
+ create mode 100644 tests/btrfs/069.out
+ create mode 100755 tests/btrfs/070
+ create mode 100644 tests/btrfs/070.out
+ create mode 100755 tests/btrfs/071
+ create mode 100644 tests/btrfs/071.out
+ create mode 100755 tests/btrfs/072
+ create mode 100644 tests/btrfs/072.out
+ create mode 100755 tests/btrfs/073
+ create mode 100644 tests/btrfs/073.out
+
+-- 
+1.8.3.1
+

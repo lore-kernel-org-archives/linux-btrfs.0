@@ -1,147 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tetsuo.zabbo.net ([50.193.208.193]:42533 "EHLO tetsuo.zabbo.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932413AbaH0SQD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Aug 2014 14:16:03 -0400
-Date: Wed, 27 Aug 2014 11:16:03 -0700
-From: Zach Brown <zab@zabbo.net>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: readahead errors are not fatal
-Message-ID: <20140827181603.GF12827@lenny.home.zabbo.net>
-References: <1409161665-28234-1-git-send-email-dsterba@suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:23511 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S934106AbaH1C0Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Aug 2014 22:26:25 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s7S2QHjW012071
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 10:26:18 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs-progs: fix len of read_extent_buffer for inline extent in restore
+Date: Thu, 28 Aug 2014 10:25:53 +0800
+Message-ID: <1409192755-1826-1-git-send-email-guihc.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1409161665-28234-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 27, 2014 at 07:47:45PM +0200, David Sterba wrote:
-> Kill the BUG_ON.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->  disk-io.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/disk-io.c b/disk-io.c
-> index 8db0335bc81b..7ddd4b90836f 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -152,7 +152,8 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
->  	length = blocksize;
->  	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
->  			      bytenr, &length, &multi, 0, NULL);
-> -	BUG_ON(ret);
-> +	if (ret)
-> +		return 0
->  	device = multi->stripes[0].dev;
->  	device->total_ios++;
->  	blocksize = min(blocksize, (u32)(64 * 1024));
+Steps to reproduce:
+	# mkfs.btrfs -f <dev>
+	# mount -o compress-force=lzo <dev> <mnt>
+	# for ((i=0;i<4000;i++)); do
+	  	echo -n 'A' >> <mnt>/inline_data
+	  done
+	# umount <mnt>
+	# valgrind --tool=memcheck --leak-check=full	\
+	  btrfs restore <dev> <dest_dir>
+output:
+	==32118== Invalid read of size 1
+	==32118==    at 0x4A0A4E4: memcpy@@GLIBC_2.14
+	==32118==    by 0x43DC91: read_extent_buffer
+	==32118==    by 0x421401: search_dir (cmds-restore.c:240)
+	==32118==    by 0x422CBB: cmd_restore (cmds-restore.c:1317)
+	==32118==    by 0x404709: main (btrfs.c:248)
+	==32118==  Address 0x4c4f4ac is not stack'd, malloc'd or...
 
-Seems like this is already leaking a refcount and only returns 0..  so
-maybe remove the bug_on something like this totally untested patch?
+It is because when deal with inline extent, the read_extent_buffer
+is now reading a len of @ram_bytes which is the len of the uncompressed
+data. But actually here we want the len of the inline item.
+So in the compressed situation, use the len of the inline item.
 
-There's another "#if 0"-ed out caller in extent-tree.c but that nonsense
-should just be removed.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ cmds-restore.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-- z
+diff --git a/cmds-restore.c b/cmds-restore.c
+index bb72311..e94592c 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -231,13 +231,15 @@ static int copy_one_inline(int fd, struct btrfs_path *path, u64 pos)
+ 	unsigned long ptr;
+ 	int ret;
+ 	int len;
++	int inline_item_len;
+ 	int compress;
+ 
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+ 	ptr = btrfs_file_extent_inline_start(fi);
+ 	len = btrfs_file_extent_inline_len(leaf, path->slots[0], fi);
+-	read_extent_buffer(leaf, buf, ptr, len);
++	inline_item_len = btrfs_file_extent_inline_item_len(leaf, btrfs_item_nr(path->slots[0]));
++	read_extent_buffer(leaf, buf, ptr, inline_item_len);
+ 
+ 	compress = btrfs_file_extent_compression(leaf, fi);
+ 	if (compress == BTRFS_COMPRESS_NONE) {
+-- 
+1.8.1.4
 
-commit 69a668994c70cc1fd86d1c349d272b1cbfde23b1
-Author: Zach Brown <zab@zabbo.net>
-Date:   Wed Aug 27 11:07:23 2014 -0700
-
-    btrfs-progs: kill BUG_ON in readahead_tree_block()
-    
-    David sent a quick patch that removed a BUG_ON().  I took a peek and
-    found that the function was already leaking an eb ref and only returned
-    0.  So this fixes the leak and makes the function void and fixes up the
-    callers.
-    
-    Accidentally-motivated-by: David Sterba <dsterba@suse.cz>
-    Signed-off-by: Zach Brown <zab@zabbo.net>
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 268e588..d479361 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -1287,7 +1287,6 @@ static void reada_walk_down(struct btrfs_root *root,
- 	u32 nritems;
- 	u32 blocksize;
- 	int i;
--	int ret;
- 	int level;
- 
- 	level = btrfs_header_level(node);
-@@ -1299,9 +1298,7 @@ static void reada_walk_down(struct btrfs_root *root,
- 	for (i = slot; i < nritems; i++) {
- 		bytenr = btrfs_node_blockptr(node, i);
- 		ptr_gen = btrfs_node_ptr_generation(node, i);
--		ret = readahead_tree_block(root, bytenr, blocksize, ptr_gen);
--		if (ret)
--			break;
-+		readahead_tree_block(root, bytenr, blocksize, ptr_gen);
- 	}
- }
- 
-diff --git a/disk-io.c b/disk-io.c
-index f71f5ca..1f1ce75 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -134,31 +134,26 @@ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
- 				   blocksize);
- }
- 
--int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
--			 u64 parent_transid)
-+void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+			  u64 parent_transid)
- {
--	int ret;
- 	struct extent_buffer *eb;
- 	u64 length;
- 	struct btrfs_multi_bio *multi = NULL;
- 	struct btrfs_device *device;
- 
- 	eb = btrfs_find_tree_block(root, bytenr, blocksize);
--	if (eb && btrfs_buffer_uptodate(eb, parent_transid)) {
--		free_extent_buffer(eb);
--		return 0;
-+	if (!(eb && btrfs_buffer_uptodate(eb, parent_transid)) &&
-+	    !btrfs_map_block(&root->fs_info->mapping_tree, READ,
-+			     bytenr, &length, &multi, 0, NULL)) {
-+		device = multi->stripes[0].dev;
-+		device->total_ios++;
-+		blocksize = min(blocksize, (u32)(64 * 1024));
-+		readahead(device->fd, multi->stripes[0].physical, blocksize);
- 	}
- 
--	length = blocksize;
--	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
--			      bytenr, &length, &multi, 0, NULL);
--	BUG_ON(ret);
--	device = multi->stripes[0].dev;
--	device->total_ios++;
--	blocksize = min(blocksize, (u32)(64 * 1024));
--	readahead(device->fd, multi->stripes[0].physical, blocksize);
-+	free_extent_buffer(eb);
- 	kfree(multi);
--	return 0;
- }
- 
- static int verify_parent_transid(struct extent_io_tree *io_tree,
-diff --git a/disk-io.h b/disk-io.h
-index 13d4420..c296055 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -48,8 +48,8 @@ struct btrfs_device;
- int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirror);
- struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 				      u32 blocksize, u64 parent_transid);
--int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
--			 u64 parent_transid);
-+void readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+			  u64 parent_transid);
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
- 						   u64 bytenr, u32 blocksize);
- 

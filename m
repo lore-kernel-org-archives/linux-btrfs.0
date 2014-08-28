@@ -1,43 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45825 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750894AbaH1VvP convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 17:51:15 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:54425 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750894AbaH1Wtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 18:49:40 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XN8Vb-0007Ha-VC
+	for linux-btrfs@vger.kernel.org; Fri, 29 Aug 2014 00:49:35 +0200
+Received: from 11.161.185.203.dsl.dyn.mana.pf ([203.185.161.11])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Aug 2014 00:49:35 +0200
+Received: from jd.girard by 11.161.185.203.dsl.dyn.mana.pf with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Aug 2014 00:49:35 +0200
+To: linux-btrfs@vger.kernel.org
+From: Jean-Denis Girard <jd.girard@sysnux.pf>
 Subject: Re: Undelete files / directory
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <53FE1DB2.8040900@sysnux.pf>
-Date: Thu, 28 Aug 2014 15:51:13 -0600
-Cc: linux-btrfs@vger.kernel.org
-Message-Id: <4934565B-6B58-4ADA-BA16-50EC5D170F37@colorremedies.com>
-References: <53FE1DB2.8040900@sysnux.pf>
-To: Jean-Denis Girard <jd.girard@sysnux.pf>
+Date: Thu, 28 Aug 2014 12:49:18 -1000
+Message-ID: <ltoble$78t$1@ger.gmane.org>
+References: <53FE1DB2.8040900@sysnux.pf> <4934565B-6B58-4ADA-BA16-50EC5D170F37@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <4934565B-6B58-4ADA-BA16-50EC5D170F37@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Le 28/08/2014 11:51, Chris Murphy a écrit :
+> Ahh yes. So you'll see here that there's a new build for you not yet in updates repo.
 
-On Aug 27, 2014, at 12:04 PM, Jean-Denis Girard <jd.girard@sysnux.pf> wrote:
+btrfs-progs-3.16-1.fc20.x86_64 installed, but it doesn't change anything:
 
-> I'm on Fedora 20, with kernel 3.15.10-200.fc20.x86_64, and
-> btrfs-progs-3.14.2-3.fc20.x86_64.
-
-Ahh yes. So you'll see here that there's a new build for you not yet in updates repo.
-
-http://koji.fedoraproject.org/koji/buildinfo?buildID=571861
-
-Go here and click on the download link
-x86_64	(build logs)
-btrfs-progs-3.16-1.fc20.x86_64.rpm (info) (download)
-
-You can apply it one of two ways:
-yum install <downloadURL>
-
-Or you can download the RPM to a local folder (curl -Os or whatever) and do:
-yum install *rpm
+[jdg@tiare tmp]$ btrfs-find-root x220_home.img
+Super think's the tree root is at 115230801920, chunk root 131072
+Went past the fs size, exiting[jdg@tiare tmp]$
 
 
-
-Chris Murphy
+Thanks,
+Jean-Denis Girard
 

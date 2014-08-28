@@ -1,71 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56734 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750941AbaH1QZg convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 12:25:36 -0400
-Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:65062 helo=ming.hsd1.co.comcast.net)
-	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
-	(Exim 4.82)
-	(envelope-from <lists@colorremedies.com>)
-	id 1XN2Vy-000oiL-Vq
-	for linux-btrfs@vger.kernel.org; Thu, 28 Aug 2014 10:25:35 -0600
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
+Received: from plane.gmane.org ([80.91.229.3]:51320 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750834AbaH1RaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 13:30:08 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XN3WN-0001rN-Jo
+	for linux-btrfs@vger.kernel.org; Thu, 28 Aug 2014 19:30:03 +0200
+Received: from 11.161.185.203.dsl.dyn.mana.pf ([203.185.161.11])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 19:30:03 +0200
+Received: from jd.girard by 11.161.185.203.dsl.dyn.mana.pf with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 19:30:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: Jean-Denis Girard <jd.girard@sysnux.pf>
 Subject: Re: Undelete files / directory
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net>
-Date: Thu, 28 Aug 2014 10:25:33 -0600
-Message-Id: <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com>
-References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Thu, 28 Aug 2014 07:04:55 -1000
+Message-ID: <ltnnfo$a57$1@ger.gmane.org>
+References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net> <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+In-Reply-To: <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Line 84
-		"$dir/restore" -i -t $id -m "$regex" "$dev" $out
+Hi Chris,
 
-I don't see a -m option for btrfs restore, maybe use --path-regex instead.
+Thanks for your detailed answer.
 
-I just did this without the script and it worked:
+Le 28/08/2014 06:25, Chris Murphy a écrit :
+> 9. btrfs-find-root /dev/sdc
+> Super think's the tree root is at 29917184, chunk root 20987904
+> Well block 4194304 seems great, but generation doesn't match, have=2, want=9 level 0
+> Well block 4243456 seems great, but generation doesn't match, have=3, want=9 level 0
+> Well block 29376512 seems great, but generation doesn't match, have=4, want=9 level 0
+> Well block 29474816 seems great, but generation doesn't match, have=5, want=9 level 0
+> Well block 29556736 seems great, but generation doesn't match, have=6, want=9 level 0
+> Well block 29736960 seems great, but generation doesn't match, have=7, want=9 level 0
+> Well block 29900800 seems great, but generation doesn't match, have=8, want=9 level 0
 
-1. mkfs.btrfs /dev/sdc
-2. mount /dev/sdc /mnt
-3. mkdir /mnt/pics
-4. scp IMG_3327.tif <blahhost>:/mnt/pics/    #copied TIFF from another computer
-5. btrfs fi sync /mnt     #make sure it's committed
-6. rm -f /mnt/pics/IMG_3327.tif
-7. btrfs fi sync /mnt     #make sure it's gone, superfluous probably
-8. umount /mnt
-9. btrfs-find-root /dev/sdc
-Super think's the tree root is at 29917184, chunk root 20987904
-Well block 4194304 seems great, but generation doesn't match, have=2, want=9 level 0
-Well block 4243456 seems great, but generation doesn't match, have=3, want=9 level 0
-Well block 29376512 seems great, but generation doesn't match, have=4, want=9 level 0
-Well block 29474816 seems great, but generation doesn't match, have=5, want=9 level 0
-Well block 29556736 seems great, but generation doesn't match, have=6, want=9 level 0
-Well block 29736960 seems great, but generation doesn't match, have=7, want=9 level 0
-Well block 29900800 seems great, but generation doesn't match, have=8, want=9 level 0
-Found tree root at 29917184 gen 9 level 0
+Here is what the command returns :
 
-At this point I can pretty much guess that the file I want is in generation 7. It might be in 8. But I went ahead and looked for it using btrfs-debug-tree and sure enough I see a bunch of items with very big lengths and it's gen 7. So in the above list, block 29736960 is for generation 7.
+[root@x220 ~]# btrfs-find-root /dev/mapper/home
+Super think's the tree root is at 115230801920, chunk root 131072
+Went past the fs size, exiting[root@x220 ~]#
 
-10. btrfs restore -t 29736960 -v /dev/sdc /home/chris
-parent transid verify failed on 29736960 wanted 9 found 7
-parent transid verify failed on 29736960 wanted 9 found 7
-parent transid verify failed on 29736960 wanted 9 found 7
-parent transid verify failed on 29736960 wanted 9 found 7
-Ignoring transid failure
-Restoring /home/chris/pics
-Restoring /home/chris/pics/IMG_3327.tif
-Done searching /pics
-Done searching 
+I just tried with latest btrfs-progs (from git), it returns exactly the
+same.
+
+The btrfs partition is on top of dm-crypt, could it be a problem?
 
 
-11. I did an shasum on the restored and original TIFFs and they match.
+Thanks,
+Jean-Denis Girard
 
-
-So the script probably makes it easier to find the right root, and also has a regex pattern to probably filter out the junk. In retrospect I probably should have deleted the directory rather than the file for this test, so I went back and mounted sdc, rmdir'd the directory, unmounted, and the same command still restores the file that was in that directory.
-
-
-Chris Murphy

@@ -1,97 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33005 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932466AbaH1KEQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 06:04:16 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XMwYw-0003hf-KS
-	for linux-btrfs@vger.kernel.org; Thu, 28 Aug 2014 12:04:14 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 12:04:14 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 12:04:14 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:56734 "EHLO
+	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750941AbaH1QZg convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 12:25:36 -0400
+Received: from c-75-70-18-61.hsd1.co.comcast.net ([75.70.18.61]:65062 helo=ming.hsd1.co.comcast.net)
+	by slmp-550-94.slc.westdc.net with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.82)
+	(envelope-from <lists@colorremedies.com>)
+	id 1XN2Vy-000oiL-Vq
+	for linux-btrfs@vger.kernel.org; Thu, 28 Aug 2014 10:25:35 -0600
+Content-Type: text/plain; charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
 Subject: Re: Undelete files / directory
-Date: Thu, 28 Aug 2014 10:04:04 +0000 (UTC)
-Message-ID: <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net>
-References: <53FE1DB2.8040900@sysnux.pf>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Chris Murphy <lists@colorremedies.com>
+In-Reply-To: <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net>
+Date: Thu, 28 Aug 2014 10:25:33 -0600
+Message-Id: <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com>
+References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jean-Denis Girard posted on Wed, 27 Aug 2014 08:04:34 -1000 as excerpted:
+Line 84
+		"$dir/restore" -i -t $id -m "$regex" "$dev" $out
 
-> Two days ago I mistakenly deleted a directory on a btrfs file system. As
-> soon as I realized, I cleanly unmounted the partition, and have not
-> touched it since then. I have no snapshot and no backup; I was on
-> vacations with my laptop, and the directory deleted contained ~3 weeks
-> of photos.
-> 
-> I found this script:
-> http://comments.gmane.org/gmane.comp.file-systems.btrfs/22560 but the
-> commands have probably changed, and it no longer runs.
-> 
-> So is there a way to recover a deleted directory on btrfs? Just to make
-> things clear, this is not a broken file system, just a normally deleted
-> directory.
-> 
-> I'm on Fedora 20, with kernel 3.15.10-200.fc20.x86_64, and
-> btrfs-progs-3.14.2-3.fc20.x86_64.
+I don't see a -m option for btrfs restore, maybe use --path-regex instead.
 
-Were you trying to use that script as-posted without understanding what 
-it did?  You realize how easy it'd be for someone to post some script 
-claiming to do something great, that instead did a rm -rf /* or some 
-such, right?
+I just did this without the script and it worked:
 
-Anyway, looks like line 67 needs changed.
+1. mkfs.btrfs /dev/sdc
+2. mount /dev/sdc /mnt
+3. mkdir /mnt/pics
+4. scp IMG_3327.tif <blahhost>:/mnt/pics/    #copied TIFF from another computer
+5. btrfs fi sync /mnt     #make sure it's committed
+6. rm -f /mnt/pics/IMG_3327.tif
+7. btrfs fi sync /mnt     #make sure it's gone, superfluous probably
+8. umount /mnt
+9. btrfs-find-root /dev/sdc
+Super think's the tree root is at 29917184, chunk root 20987904
+Well block 4194304 seems great, but generation doesn't match, have=2, want=9 level 0
+Well block 4243456 seems great, but generation doesn't match, have=3, want=9 level 0
+Well block 29376512 seems great, but generation doesn't match, have=4, want=9 level 0
+Well block 29474816 seems great, but generation doesn't match, have=5, want=9 level 0
+Well block 29556736 seems great, but generation doesn't match, have=6, want=9 level 0
+Well block 29736960 seems great, but generation doesn't match, have=7, want=9 level 0
+Well block 29900800 seems great, but generation doesn't match, have=8, want=9 level 0
+Found tree root at 29917184 gen 9 level 0
 
-The command is now btrfs-find-root not just find-root, and the script 
-assumes it's being run from the same directory as the find-root command, 
-which isn't likely to be the case, so you can remove the "$dir"/ bit and 
-just let the normal path do the searching.  You can read the btrfs-find-
-root manpage and experiment with running the command on its own a bit to 
-see what it does.
+At this point I can pretty much guess that the file I want is in generation 7. It might be in 8. But I went ahead and looked for it using btrfs-debug-tree and sure enough I see a bunch of items with very big lengths and it's gen 7. So in the above list, block 29736960 is for generation 7.
 
-Then, it looks like he hard-coded the device-path for the filesystem as 
-/dev/mapper/queen-home.  You'll need to fix that.  Looks like you can 
-replace it with "$dev".
+10. btrfs restore -t 29736960 -v /dev/sdc /home/chris
+parent transid verify failed on 29736960 wanted 9 found 7
+parent transid verify failed on 29736960 wanted 9 found 7
+parent transid verify failed on 29736960 wanted 9 found 7
+parent transid verify failed on 29736960 wanted 9 found 7
+Ignoring transid failure
+Restoring /home/chris/pics
+Restoring /home/chris/pics/IMG_3327.tif
+Done searching /pics
+Done searching 
 
-So line 67 should look like this:
 
-btrfs-find-root "$dev" 2>&1 \
+11. I did an shasum on the restored and original TIFFs and they match.
 
-Line 84, the command should be btrfs restore.  Again, kill the $dir/ bit 
-along with the quote around the command, and you can read about it in the 
-btrfs-restore manpage.
 
-Finally, at least as I'm seeing it here, line 103 is a bunch of 
-corruption at the end of the file and can simply be deleted.
+So the script probably makes it easier to find the right root, and also has a regex pattern to probably filter out the junk. In retrospect I probably should have deleted the directory rather than the file for this test, so I went back and mounted sdc, rmdir'd the directory, unmounted, and the same command still restores the file that was in that directory.
 
-At a quick glance that's all that immediately jumps out at me as needing 
-changed, but I neither examined the output of btrfs-find-root too closely 
-to see if lines 68 and 69 need changed at all, nor the command-line 
-options to see if they changed.  Presumably you can do that yourself -- 
-thus the mentions of the manpages and experimenting with the btrfs-find-
-root command.
 
-Also, while nothing immediately jumps out at me as bad about the script, 
-keep in mind that something simply posted to a list isn't a trusted 
-source already checked for at least the worst system-eating mistakes like 
-your distro's packages should be, and you'll need to run it as root for 
-device access.  I've not gone thru it looking for stuff that might go 
-wrong if fed the wrong parameters, etc.  Understand what it actually does 
-before attempting to run it as root, as if he screwed up something and/or 
-you mistype the parameters you're feeding it, I don't expect you want it 
-deleting all your files as a result!
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

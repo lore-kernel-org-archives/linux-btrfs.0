@@ -1,78 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:29568 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:33375 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751129AbaH1Nsn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Aug 2014 09:48:43 -0400
+	id S1751129AbaH1Nsp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Aug 2014 09:48:45 -0400
 From: Eryu Guan <eguan@redhat.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Eryu Guan <eguan@redhat.com>
-Subject: [PATCH 01/15 v2] btrfs: new test to run btrfs balance and subvolume test simultaneously
-Date: Thu, 28 Aug 2014 21:47:42 +0800
-Message-Id: <1409233676-22787-2-git-send-email-eguan@redhat.com>
+Subject: [PATCH 02/15 v2] btrfs: new test to run btrfs balance and scrub simultaneously
+Date: Thu, 28 Aug 2014 21:47:43 +0800
+Message-Id: <1409233676-22787-3-git-send-email-eguan@redhat.com>
 In-Reply-To: <1409233676-22787-1-git-send-email-eguan@redhat.com>
 References: <1409233676-22787-1-git-send-email-eguan@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-with fsstress running in background.
+Run btrfs balance and scrub operations simultaneously with fsstress
+running in background.
 
 Signed-off-by: Eryu Guan <eguan@redhat.com>
 ---
- common/rc           |  24 ++++++++++
- tests/btrfs/059     | 129 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/059.out |   2 +
+ common/rc           |   8 ++++
+ tests/btrfs/060     | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/060.out |   2 +
  tests/btrfs/group   |   1 +
- 4 files changed, 156 insertions(+)
- create mode 100755 tests/btrfs/059
- create mode 100644 tests/btrfs/059.out
+ 4 files changed, 139 insertions(+)
+ create mode 100755 tests/btrfs/060
+ create mode 100644 tests/btrfs/060.out
 
 diff --git a/common/rc b/common/rc
-index 16da898..c1a7b9e 100644
+index f55aa0d..9df331d 100644
 --- a/common/rc
 +++ b/common/rc
-@@ -2375,6 +2375,30 @@ _get_free_inode()
- 	echo $nr_inode
+@@ -2398,6 +2398,14 @@ _btrfs_stress_subvolume()
+ 	done
  }
  
-+_btrfs_stress_balance()
++_btrfs_stress_scrub()
 +{
 +	local btrfs_mnt=$1
 +	while true; do
-+		$BTRFS_UTIL_PROG balance start $btrfs_mnt
-+	done
-+}
-+
-+_btrfs_stress_subvolume()
-+{
-+	local btrfs_dev=$1
-+	local btrfs_mnt=$2
-+	local subvol_name=$3
-+	local subvol_mnt=$4
-+
-+	mkdir -p $subvol_mnt
-+	while true; do
-+		$BTRFS_UTIL_PROG subvolume create $btrfs_mnt/$subvol_name
-+		$MOUNT_PROG -o subvol=$subvol_name $btrfs_dev $subvol_mnt
-+		$UMOUNT_PROG $subvol_mnt
-+		$BTRFS_UTIL_PROG subvolume delete $btrfs_mnt/$subvol_name
++		$BTRFS_UTIL_PROG scrub start -B $btrfs_mnt
 +	done
 +}
 +
  init_rc()
  {
  	if [ "$iam" == new ]
-diff --git a/tests/btrfs/059 b/tests/btrfs/059
+diff --git a/tests/btrfs/060 b/tests/btrfs/060
 new file mode 100755
-index 0000000..817facb
+index 0000000..a2365fa
 --- /dev/null
-+++ b/tests/btrfs/059
-@@ -0,0 +1,129 @@
++++ b/tests/btrfs/060
+@@ -0,0 +1,128 @@
 +#! /bin/bash
-+# FSQA Test No. btrfs/059
++# FSQA Test No. btrfs/060
 +#
-+# Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
-+# with fsstress running in background.
++# Run btrfs balance and scrub operations simultaneously with fsstress
++# running in background.
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (C) 2014 Red Hat Inc. All rights reserved.
@@ -135,7 +119,6 @@ index 0000000..817facb
 +run_test()
 +{
 +	local mkfs_opts=$1
-+	local subvol_mnt=$tmp.mnt
 +
 +	echo "Test $mkfs_opts" >>$seqres.full
 +
@@ -147,7 +130,7 @@ index 0000000..817facb
 +	fi
 +	# make sure we created btrfs with desired options
 +	if [ $? -ne 0 ]; then
-+		echo "mkfs $mkfs_opts failed" | tee -a $seqres.full
++		echo "mkfs $mkfs_opts failed"
 +		return
 +	fi
 +	_scratch_mount >>$seqres.full 2>&1
@@ -162,18 +145,20 @@ index 0000000..817facb
 +	balance_pid=$!
 +	echo "$balance_pid" >>$seqres.full
 +
-+	echo -n "Start subvolume worker: " >>$seqres.full
-+	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
-+	subvol_pid=$!
-+	echo "$subvol_pid" >>$seqres.full
++	echo -n "Start scrub worker: " >>$seqres.full
++	_btrfs_stress_scrub $SCRATCH_MNT >/dev/null 2>&1 &
++	scrub_pid=$!
++	echo "$scrub_pid" >>$seqres.full
 +
 +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
 +	wait $fsstress_pid
-+
-+	kill $balance_pid $subvol_pid
++	kill $balance_pid $scrub_pid
 +	wait
-+	# wait for the balance operation to finish
++	# wait for the balance and scrub operations to finish
 +	while ps aux | grep "balance start" | grep -qv grep; do
++		sleep 1
++	done
++	while ps aux | grep "scrub start" | grep -qv grep; do
 +		sleep 1
 +	done
 +
@@ -184,8 +169,6 @@ index 0000000..817facb
 +	fi
 +
 +	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT >/dev/null 2>&1
-+	# in case the subvolume is still mounted
-+	$UMOUNT_PROG $subvol_mnt >/dev/null 2>&1
 +	_scratch_unmount
 +	_check_scratch_fs
 +}
@@ -197,23 +180,23 @@ index 0000000..817facb
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/059.out b/tests/btrfs/059.out
+diff --git a/tests/btrfs/060.out b/tests/btrfs/060.out
 new file mode 100644
-index 0000000..36ebeea
+index 0000000..8ffce4d
 --- /dev/null
-+++ b/tests/btrfs/059.out
++++ b/tests/btrfs/060.out
 @@ -0,0 +1,2 @@
-+QA output created by 059
++QA output created by 060
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 3fa9778..c66c42c 100644
+index c66c42c..1c60c8f 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -61,3 +61,4 @@
- 056 auto quick
+@@ -62,3 +62,4 @@
  057 auto quick
  058 auto quick
-+059 auto balance subvol
+ 059 auto balance subvol
++060 auto balance scrub
 -- 
 1.8.3.1
 

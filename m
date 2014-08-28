@@ -1,21 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33747 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:1253 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932889AbaH1C2W convert rfc822-to-8bit (ORCPT
+	with ESMTP id S932114AbaH1Cqe convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Aug 2014 22:28:22 -0400
-Message-ID: <1409192882.1582.13.camel@localhost.localdomain>
+	Wed, 27 Aug 2014 22:46:34 -0400
+Message-ID: <1409193972.2879.2.camel@localhost.localdomain>
 Subject: Re: fs corruption report
 From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
 To: Zooko Wilcox-OHearn <zooko@leastauthority.com>
-CC: <linux-btrfs@vger.kernel.org>, <marvin24@gmx.de>
-Date: Thu, 28 Aug 2014 10:28:02 +0800
+CC: <linux-btrfs@vger.kernel.org>
+Date: Thu, 28 Aug 2014 10:46:12 +0800
 In-Reply-To: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com>
 References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+BTW，there is a develop branch from the btrfs-progs's maintainer David:
+http://github.com/kdave/btrfs-progs.git
+
+Maybe you'd like to try it, it may make some differences.
+
+-Gui
 
 On Mon, 2014-08-25 at 05:08 +0000, Zooko Wilcox-OHearn wrote:
 > Dear people of linux-btrfs:
@@ -77,46 +84,7 @@ On Mon, 2014-08-25 at 05:08 +0000, Zooko Wilcox-OHearn wrote:
 > to corruption. However, I don't immediately see how to proceed.
 > 
 > Regards,
-
-Hi Zooko，
-Here are some pieces for your information:
-
-For the first:
-==5569== Syscall param pwrite64(buf) points to uninitialised byte(s)
-==5569==    at 0x56ABD03: __pwrite_nocancel (syscall-template.S:81)
-==5569==    by 0x41F346: search_dir (cmds-restore.c:392)
-
-It is handled by
-https://patchwork.kernel.org/patch/4755441/
-
-For the second:
-==5569== Invalid read of size 1
-==5569==    at 0x4C2F95E: memcpy@@GLIBC_2.14
-==5569==    by 0x4388E6: read_extent_buffer (string3.h:51)
-==5569==    by 0x41ED6C: search_dir (cmds-restore.c:233)
-
-It should be handled by
-https://patchwork.kernel.org/patch/4792381/
-And it handles Marc's similar problem too.
-
-And for the last one and the crucial one...
-==5569== Invalid read of size 4
-==5569==    at 0x41E394: decompress (cmds-restore.c:93)
-==5569==    by 0x41F291: search_dir (cmds-restore.c:378)
-along with 
-==5569== Invalid read of size 1
-==5569==    at 0x548DDB6: lzo1x_decompress_safe 
-==5569==    by 0x41E3BD: decompress (cmds-restore.c:122)
-==5569==    by 0x41F291: search_dir (cmds-restore.c:378)
-
-Sorry, I'm not able to reproduce it yet, it may be just what you've
-guessed that corruption happens. But I am sure that there are bugs
-around the decompress routine, because I've got "failed to inflate"s too
-with a non-corrupted btrfs. I'm going to track it down.
-
-Thanks,
--Gui
-
+> 
 > Zooko Wilcox-O'Hearn
 > 
 > Founder, CEO, and Customer Support Rep

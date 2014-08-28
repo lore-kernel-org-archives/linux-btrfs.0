@@ -1,38 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from top.free-electrons.com ([176.31.233.9]:52837 "EHLO
-	mail.free-electrons.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751007AbaH3MsQ (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:45205 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S965641AbaH1C01 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 08:48:16 -0400
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Subject: [PATCH 0/2] Build system fixes/improvements
-Date: Sat, 30 Aug 2014 14:48:08 +0200
-Message-Id: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
+	Wed, 27 Aug 2014 22:26:27 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s7S2QNxO012096
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 Aug 2014 10:26:23 +0800
+From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+Subject: [PATCH 3/3] btrfs-progs: remove meaningless debug info for restore
+Date: Thu, 28 Aug 2014 10:25:55 +0800
+Message-ID: <1409192755-1826-3-git-send-email-guihc.fnst@cn.fujitsu.com>
+In-Reply-To: <1409192755-1826-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+References: <1409192755-1826-1-git-send-email-guihc.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+The printf of @offset enlightens the user little.
+And the restore cmd is not a debugging tool, so just
+remove the debug-info-like printf.
 
-Here are two patches that we have in the Buildroot embedded Linux
-build system against btrfs-progs. The first patch allows to disable
-the build and installation of the docmentation, the second patch
-improves static building and installation.
+Signed-off-by: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
+---
+ cmds-restore.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Thanks,
-
-Thomas
-
-Gustavo Zacarias (1):
-  Add support for DISABLE_DOCUMENTATION
-
-Thomas Petazzoni (1):
-  Improve static building and installation
-
- Makefile | 31 ++++++++++++++++++++++++++-----
- 1 file changed, 26 insertions(+), 5 deletions(-)
-
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 918f1fb..648fbc9 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -310,8 +310,6 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+ 	if (compress == BTRFS_COMPRESS_NONE)
+ 		bytenr += offset;
+ 
+-	if (offset)
+-		printf("offset is %Lu\n", offset);
+ 	/* we found a hole */
+ 	if (disk_size == 0)
+ 		return 0;
 -- 
-2.0.0
+1.8.1.4
 

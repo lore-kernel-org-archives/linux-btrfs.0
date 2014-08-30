@@ -1,56 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from top.free-electrons.com ([176.31.233.9]:52839 "EHLO
+Received: from top.free-electrons.com ([176.31.233.9]:52842 "EHLO
 	mail.free-electrons.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751032AbaH3MsQ (ORCPT
+	with ESMTP id S1751007AbaH3MsR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 08:48:16 -0400
+	Sat, 30 Aug 2014 08:48:17 -0400
 From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Gustavo Zacarias <gustavo@zacarias.com.ar>,
-        Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Subject: [PATCH 1/2] Add support for DISABLE_DOCUMENTATION
-Date: Sat, 30 Aug 2014 14:48:09 +0200
-Message-Id: <1409402890-22860-2-git-send-email-thomas.petazzoni@free-electrons.com>
+Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Subject: [PATCH 2/2] Improve static building and installation
+Date: Sat, 30 Aug 2014 14:48:10 +0200
+Message-Id: <1409402890-22860-3-git-send-email-thomas.petazzoni@free-electrons.com>
 In-Reply-To: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
 References: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gustavo Zacarias <gustavo@zacarias.com.ar>
+This commit improves the static-only building of btrfs-progs, and adds
+support for installing the static only tools:
 
-This commit adds the support for a make variable named
-"DISABLE_DOCUMENTATION", which allows to disable the build of the
-documentation. This is useful in contexts where the tools needed to
-build the documentation are not necessarily available.
+ - It now ensures that all programs are built statically, not only a
+   small subset of them, by defining 'progs_static' from the existing
+   'progs' variable.
 
-Signed-off-by: Gustavo Zacarias <gustavo@zacarias.com.ar>
+ - It changes the order of libraries in the btrfs-%.static rule so
+   that -lpthread (part of STATIC_LIBS) appears *after* the '$($(subst
+   -,_,$(subst .static,,$@)-libs))' logic, which brings in
+   -lcom_err. This is needed because libcom_err.a uses the semaphore
+   functions, which are available in the pthread library.
+
+ - Adds the necessary rules to generate the btrfsck.static link and
+   btrfstune.static binary.
+
+ - Adds an 'install-static' target to install the static
+   binaries. Note that they are renamed to not carry a '.static'
+   suffix.
+
 Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 ---
- Makefile | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ Makefile | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index e721e99..926885f 100644
+index 926885f..93e264b 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -57,10 +57,15 @@ btrfs_image_libs = -lpthread
- btrfs_fragments_libs = -lgd -lpng -ljpeg -lfreetype
+@@ -50,6 +50,8 @@ progs = mkfs.btrfs btrfs-debug-tree btrfsck \
+ 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
+ 	btrfs-find-root btrfstune btrfs-show-super
  
- SUBDIRS =
--BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS)) build-Documentation
--INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS)) install-Documentation
-+BUILDDIRS = $(patsubst %,build-%,$(SUBDIRS))
-+INSTALLDIRS = $(patsubst %,install-%,$(SUBDIRS))
- CLEANDIRS = $(patsubst %,clean-%,$(SUBDIRS))
- 
-+ifneq ($(DISABLE_DOCUMENTATION),1)
-+BUILDDIRS += build-Documentation
-+INSTALLDIRS += install-Documentation
-+endif
++progs_static = $(foreach p,$(progs),$(p).static)
 +
- .PHONY: $(SUBDIRS)
- .PHONY: $(BUILDDIRS)
- .PHONY: $(INSTALLDIRS)
+ # external libs required by various binaries; for btrfs-foo,
+ # specify btrfs_foo_libs = <list of libs>; see $($(subst...)) rules below
+ btrfs_convert_libs = -lext2fs -lcom_err
+@@ -141,7 +143,7 @@ test:
+ # NOTE: For static compiles, you need to have all the required libs
+ # 	static equivalent available
+ #
+-static: btrfs.static mkfs.btrfs.static btrfs-find-root.static
++static: $(progs_static)
+ 
+ version.h:
+ 	@echo "    [SH]     $@"
+@@ -174,8 +176,8 @@ $(lib_links):
+ btrfs-%.static: $(static_objects) btrfs-%.static.o $(static_libbtrfs_objects)
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(STATIC_CFLAGS) -o $@ $@.o $(static_objects) \
+-		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS) \
+-		$($(subst -,_,$(subst .static,,$@)-libs))
++		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) \
++		$($(subst -,_,$(subst .static,,$@)-libs)) $(STATIC_LIBS)
+ 
+ btrfs-%: $(objects) $(libs) btrfs-%.o
+ 	@echo "    [LD]     $@"
+@@ -196,6 +198,10 @@ btrfsck: btrfs
+ 	@echo "    [LN]     $@"
+ 	$(Q)$(LN) -f btrfs btrfsck
+ 
++btrfsck.static: btrfs.static
++	@echo "    [LN]     $@"
++	$(Q)$(LN) -f $^ $@
++
+ mkfs.btrfs: $(objects) $(libs) mkfs.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
+@@ -209,6 +215,11 @@ btrfstune: $(objects) $(libs) btrfstune.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o btrfstune $(objects) btrfstune.o $(LDFLAGS) $(LIBS)
+ 
++btrfstune.static: $(static_objects) btrfstune.static.o $(static_libbtrfs_objects)
++	@echo "    [LD]     $@"
++	$(Q)$(CC) $(STATIC_CFLAGS) -o $@ btrfstune.static.o $(static_objects) \
++		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
++
+ dir-test: $(objects) $(libs) dir-test.o
+ 	@echo "    [LD]     $@"
+ 	$(Q)$(CC) $(CFLAGS) -o dir-test $(objects) dir-test.o $(LDFLAGS) $(LIBS)
+@@ -258,6 +269,11 @@ install: $(libs) $(progs) $(INSTALLDIRS)
+ 	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
+ 	$(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
+ 
++install-static: $(progs_static) $(INSTALLDIRS)
++	for p in $(progs_static) ; do \
++		$(INSTALL) -D -m755 $$p $(DESTDIR)$(bindir)/`basename $$p .static` ; \
++	done
++
+ $(INSTALLDIRS):
+ 	@echo "Making install in $(patsubst install-%,%,$@)"
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst install-%,%,$@) install
 -- 
 2.0.0
 

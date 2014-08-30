@@ -1,113 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from top.free-electrons.com ([176.31.233.9]:52842 "EHLO
-	mail.free-electrons.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751007AbaH3MsR (ORCPT
+Received: from linux-libre.fsfla.org ([208.118.235.54]:39746 "EHLO
+	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751900AbaH3QXF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 08:48:17 -0400
-From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+	Sat, 30 Aug 2014 12:23:05 -0400
+Received: from freie.home (home.lxoliva.fsfla.org [172.31.160.22])
+	by linux-libre.fsfla.org (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id s7UGAxl7020077
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 16:10:59 GMT
+From: Alexandre Oliva <oliva@gnu.org>
 To: linux-btrfs@vger.kernel.org
-Cc: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
-Subject: [PATCH 2/2] Improve static building and installation
-Date: Sat, 30 Aug 2014 14:48:10 +0200
-Message-Id: <1409402890-22860-3-git-send-email-thomas.petazzoni@free-electrons.com>
-In-Reply-To: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
-References: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
+Subject: fixes for btrfs check --repair
+Date: Sat, 30 Aug 2014 13:00:40 -0300
+Message-ID: <ora96m3r2v.fsf@free.home>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="=-=-="
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit improves the static-only building of btrfs-progs, and adds
-support for installing the static only tools:
+--=-=-=
 
- - It now ensures that all programs are built statically, not only a
-   small subset of them, by defining 'progs_static' from the existing
-   'progs' variable.
+I got a faulty memory module a while ago, and it ran for a while,
+corrupting a number of filesystems on that server.  Most of the
+corruption is long gone, as the filesystems (ceph osds) were
+reconstructed, but I tried really hard to avoid having to rebuild one
+4TB filesystem from scratch, since it was still fully operational.  I
+failed, but in the process, I ran into and fixed two btrfs check
+--repair bugs.  I gave up when removing an old snapshot caused the
+delayed refs processing to abort because it couldn't find a ref to
+delete, whereas btrfs check --repair completed successfully without
+fixing anything.  Mounting the apparently-clean filesystem would still
+run into the same delayed refs error, but trying to map the logical
+extent back to a file produced an error.  Since it was far too big to
+preserve, even in metadata only, I didn't, and proceeded to mkfs.btrfs
+right away.
 
- - It changes the order of libraries in the btrfs-%.static rule so
-   that -lpthread (part of STATIC_LIBS) appears *after* the '$($(subst
-   -,_,$(subst .static,,$@)-libs))' logic, which brings in
-   -lcom_err. This is needed because libcom_err.a uses the semaphore
-   functions, which are available in the pthread library.
+Here are the patches.
 
- - Adds the necessary rules to generate the btrfsck.static link and
-   btrfstune.static binary.
 
- - Adds an 'install-static' target to install the static
-   binaries. Note that they are renamed to not carry a '.static'
-   suffix.
+--=-=-=
+Content-Type: text/x-diff
+Content-Disposition: inline; filename=repair-recow-del.patch
 
-Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+repair: remove recowed entry from the to-recow list
+
+From: Alexandre Oliva <oliva@gnu.org>
+
+If we attempt to repair a filesystem with metadata blocks that need
+recowing, we'll get into an infinite loop repeatedly recowing the
+first entry in the list, without ever removing it from the list.
+Oops.  Fixed.
+
+Signed-off-by: Alexandre Oliva <oliva@gnu.org>
 ---
- Makefile | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
+ cmds-check.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Makefile b/Makefile
-index 926885f..93e264b 100644
---- a/Makefile
-+++ b/Makefile
-@@ -50,6 +50,8 @@ progs = mkfs.btrfs btrfs-debug-tree btrfsck \
- 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
- 	btrfs-find-root btrfstune btrfs-show-super
+diff --git a/cmds-check.c b/cmds-check.c
+index 268e588..66c982f 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -6760,6 +6760,7 @@ int cmd_check(int argc, char **argv)
  
-+progs_static = $(foreach p,$(progs),$(p).static)
+ 		eb = list_first_entry(&root->fs_info->recow_ebs,
+ 				      struct extent_buffer, recow);
++		list_del_init(&eb->recow);
+ 		ret = recow_extent_buffer(root, eb);
+ 		if (ret)
+ 			break;
+
+--=-=-=
+Content-Type: text/x-diff
+Content-Disposition: inline; filename=check-no-tree-refs-as-data-refs.patch
+
+check: do not dereference tree_refs as data_refs
+
+From: Alexandre Oliva <oliva@gnu.org>
+
+In a filesystem corrupted by a faulty memory module, btrfsck would get
+very confused attempting to access backrefs that weren't data backrefs
+as if they were.  Besides invoking undefined behavior for accessing
+potentially-uninitialized data past the end of objects, or with
+dynamic types unrelated with the static types held in the
+corresponding memory, it used offsets and lengths from such fields
+that did not correspond to anything in the filesystem proper.
+
+Moving the test for full backrefs and checking that they're data
+backrefs earlier avoided the crash I was running into, but that was
+not enough to make the filesystem complete a successful repair.
+
+Signed-off-by: Alexandre Oliva <oliva@gnu.org>
+---
+ cmds-check.c |   19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/cmds-check.c b/cmds-check.c
+index 66c982f..319dd2b 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -4781,15 +4781,17 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	list_for_each_entry(back, &rec->backrefs, list) {
++		if (back->full_backref || !back->is_data)
++			continue;
 +
- # external libs required by various binaries; for btrfs-foo,
- # specify btrfs_foo_libs = <list of libs>; see $($(subst...)) rules below
- btrfs_convert_libs = -lext2fs -lcom_err
-@@ -141,7 +143,7 @@ test:
- # NOTE: For static compiles, you need to have all the required libs
- # 	static equivalent available
- #
--static: btrfs.static mkfs.btrfs.static btrfs-find-root.static
-+static: $(progs_static)
- 
- version.h:
- 	@echo "    [SH]     $@"
-@@ -174,8 +176,8 @@ $(lib_links):
- btrfs-%.static: $(static_objects) btrfs-%.static.o $(static_libbtrfs_objects)
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(STATIC_CFLAGS) -o $@ $@.o $(static_objects) \
--		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS) \
--		$($(subst -,_,$(subst .static,,$@)-libs))
-+		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) \
-+		$($(subst -,_,$(subst .static,,$@)-libs)) $(STATIC_LIBS)
- 
- btrfs-%: $(objects) $(libs) btrfs-%.o
- 	@echo "    [LD]     $@"
-@@ -196,6 +198,10 @@ btrfsck: btrfs
- 	@echo "    [LN]     $@"
- 	$(Q)$(LN) -f btrfs btrfsck
- 
-+btrfsck.static: btrfs.static
-+	@echo "    [LN]     $@"
-+	$(Q)$(LN) -f $^ $@
+ 		dback = (struct data_backref *)back;
 +
- mkfs.btrfs: $(objects) $(libs) mkfs.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o mkfs.btrfs $(objects) mkfs.o $(LDFLAGS) $(LIBS)
-@@ -209,6 +215,11 @@ btrfstune: $(objects) $(libs) btrfstune.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o btrfstune $(objects) btrfstune.o $(LDFLAGS) $(LIBS)
+ 		/*
+ 		 * We only pay attention to backrefs that we found a real
+ 		 * backref for.
+ 		 */
+ 		if (dback->found_ref == 0)
+ 			continue;
+-		if (back->full_backref)
+-			continue;
  
-+btrfstune.static: $(static_objects) btrfstune.static.o $(static_libbtrfs_objects)
-+	@echo "    [LD]     $@"
-+	$(Q)$(CC) $(STATIC_CFLAGS) -o $@ btrfstune.static.o $(static_objects) \
-+		$(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
+ 		/*
+ 		 * For now we only catch when the bytes don't match, not the
+@@ -4905,6 +4907,9 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
+ 	 * references and fix up the ones that don't match.
+ 	 */
+ 	list_for_each_entry(back, &rec->backrefs, list) {
++		if (back->full_backref || !back->is_data)
++			continue;
 +
- dir-test: $(objects) $(libs) dir-test.o
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) $(CFLAGS) -o dir-test $(objects) dir-test.o $(LDFLAGS) $(LIBS)
-@@ -258,6 +269,11 @@ install: $(libs) $(progs) $(INSTALLDIRS)
- 	$(INSTALL) -m755 -d $(DESTDIR)$(incdir)
- 	$(INSTALL) -m644 $(headers) $(DESTDIR)$(incdir)
+ 		dback = (struct data_backref *)back;
  
-+install-static: $(progs_static) $(INSTALLDIRS)
-+	for p in $(progs_static) ; do \
-+		$(INSTALL) -D -m755 $$p $(DESTDIR)$(bindir)/`basename $$p .static` ; \
-+	done
+ 		/*
+@@ -4913,8 +4918,6 @@ static int verify_backrefs(struct btrfs_trans_handle *trans,
+ 		 */
+ 		if (dback->found_ref == 0)
+ 			continue;
+-		if (back->full_backref)
+-			continue;
+ 
+ 		if (dback->bytes == best->bytes &&
+ 		    dback->disk_bytenr == best->bytenr)
+@@ -5134,14 +5137,16 @@ static int find_possible_backrefs(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 
+ 	list_for_each_entry(back, &rec->backrefs, list) {
++		/* Don't care about full backrefs (poor unloved backrefs) */
++		if (back->full_backref || !back->is_data)
++			continue;
 +
- $(INSTALLDIRS):
- 	@echo "Making install in $(patsubst install-%,%,$@)"
- 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst install-%,%,$@) install
+ 		dback = (struct data_backref *)back;
+ 
+ 		/* We found this one, we don't need to do a lookup */
+ 		if (dback->found_ref)
+ 			continue;
+-		/* Don't care about full backrefs (poor unloved backrefs) */
+-		if (back->full_backref)
+-			continue;
++
+ 		key.objectid = dback->root;
+ 		key.type = BTRFS_ROOT_ITEM_KEY;
+ 		key.offset = (u64)-1;
+
+--=-=-=
+
+
+
 -- 
-2.0.0
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist|Red Hat Brasil GNU Toolchain Engineer
 
+--=-=-=--

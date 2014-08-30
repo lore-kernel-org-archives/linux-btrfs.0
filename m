@@ -1,63 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:56595 "EHLO mout.gmx.net"
+Received: from plane.gmane.org ([80.91.229.3]:54729 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750811AbaH2VMb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Aug 2014 17:12:31 -0400
-Received: from [192.168.178.21] ([78.54.157.243]) by mail.gmx.com (mrgmx002)
- with ESMTPSA (Nemesis) id 0Mg4FJ-1XknF23M0L-00NPHG for
- <linux-btrfs@vger.kernel.org>; Fri, 29 Aug 2014 23:12:29 +0200
-Message-ID: <5400ECBC.5090301@gmx.de>
-Date: Fri, 29 Aug 2014 23:12:28 +0200
-From: =?UTF-8?B?VG9yYWxmIEbDtnJzdGVy?= <toralf.foerster@gmx.de>
-MIME-Version: 1.0
+	id S1751813AbaH3UMu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 Aug 2014 16:12:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XNp0x-0004sz-Ox
+	for linux-btrfs@vger.kernel.org; Sat, 30 Aug 2014 22:12:47 +0200
+Received: from 137.163.185.203.dsl.dyn.mana.pf ([203.185.163.137])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 22:12:47 +0200
+Received: from jd.girard by 137.163.185.203.dsl.dyn.mana.pf with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 22:12:47 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: BUG_ON spams /var/log/messages with the same msg full
-Content-Type: text/plain; charset=utf-8
+From: Jean-Denis Girard <jd.girard@sysnux.pf>
+Subject: Re: Undelete files / directory
+Date: Sat, 30 Aug 2014 10:12:34 -1000
+Message-ID: <lttb7j$ef$1@ger.gmane.org>
+References: <53FE1DB2.8040900@sysnux.pf> <pan$2ed7a$1001c22e$8c89f27e$d20dc522@cox.net> <262E2EAA-FE5F-4ADB-9D1D-258D51D81AFE@colorremedies.com> <ltnnfo$a57$1@ger.gmane.org> <54002E66.703@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <54002E66.703@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At as 32 bit KVM I run these 2 commands:
+Le 28/08/2014 21:40, Konstantinos Skarlatos a écrit :
+> On 28/8/2014 8:04 μμ, Jean-Denis Girard wrote:
+>> Hi Chris,
+>>
+>> Thanks for your detailed answer.
+>>
+>> Le 28/08/2014 06:25, Chris Murphy a écrit :
+>>> 9. btrfs-find-root /dev/sdc
+>>> Super think's the tree root is at 29917184, chunk root 20987904
+>>> Well block 4194304 seems great, but generation doesn't match, have=2,
+>>> want=9 level 0
+>>> Well block 4243456 seems great, but generation doesn't match, have=3,
+>>> want=9 level 0
+>>> Well block 29376512 seems great, but generation doesn't match,
+>>> have=4, want=9 level 0
+>>> Well block 29474816 seems great, but generation doesn't match,
+>>> have=5, want=9 level 0
+>>> Well block 29556736 seems great, but generation doesn't match,
+>>> have=6, want=9 level 0
+>>> Well block 29736960 seems great, but generation doesn't match,
+>>> have=7, want=9 level 0
+>>> Well block 29900800 seems great, but generation doesn't match,
+>>> have=8, want=9 level 0
+> Hi all,
+> 
+> I did a successful btrfs restore a few months ago, saving all of my
+> deleted files except 2 (So i lost about 1GB on a 4TB filesystem)
+> Here is what i did (this is from memory and from my .zsh_history file,
+> so i may be missing something)
+> 
+> btrfs-find-root  /dev/sdd -o 5 > b1.txt
+> I think the -o 5 option is quite important here.
 
-tfoerste@n22kvm ~ $ mkdir /mnt/ramdisk/btrfs; truncate -s 97M /mnt/ramdisk/btrfs.fs; /sbin/mkfs.btrfs /mnt/ramdisk/btrfs.fs; sudo su -c "mount -o loop,compress=lzo /mnt/ramdisk/btrfs.fs /mnt/ramdisk/btrfs; chmod 777 /mnt/ramdisk/btrfs"
+Thanks for the reply, but for some reason btrfs-fins-root does not work
+on this file system. Here is what I get:
 
-tfoerste@n22kvm ~ $ D=/mnt/ramdisk/btrfs; while [[ : ]]; do cd ~; sudo rm -rf $D/t3; mkdir $D/t3 || break; cd $D/t3; mkdir -p v1/v2; for i in $(seq 0 99); do touch v1/v2/f$i; mkdir v1/v2/d$i; done; trinity -C 4 -N 100000 -V $D/t3/v1/v2; echo; echo " done"; echo; sleep 4; done
+[jdg@tiare tmp]$ btrfs-find-root x220_home.img -o 5
+Super think's the tree root is at 115230801920, chunk root 131072
+Went past the fs size, exiting[jdg@tiare tmp]$
+
+I can mount the file system, access the files, though obviously not the
+deleted directory.
 
 
 
-After a short while the syslog was flooded with :
-
-
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183425] ---[ end trace 8ef9caa1ec878927 ]---
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183427] ------------[ cut here ]------------
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183429] WARNING: CPU: 1 PID: 24838 at fs/btrfs/extent_io.c:430 insert_state+0x66/0x190()
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183430] BTRFS: end < start 4094 18446744073709551615
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183431] Modules linked in:
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183432] CPU: 1 PID: 24838 Comm: rm Tainted: G        W      3.17.0-rc2 #4
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183433] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5-0-ge51488c-20140602_164612-nilsson.home.kraxel.org 04/01/2014
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183436]  00000000 00000000 e72c3d24 c16ee73d e72c3d64 e72c3d54 c10468ef c18e5650
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183439]  e72c3d80 00006106 c18f4d52 000001ae c1326756 c1326756 00000000 e72c3e18
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183443]  cc223dc0 e72c3d6c c104698e 00000009 e72c3d64 c18e5650 e72c3d80 e72c3db8
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183443] Call Trace:
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183445]  [<c16ee73d>] dump_stack+0x41/0x52
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183447]  [<c10468ef>] warn_slowpath_common+0x7f/0xa0
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183449]  [<c1326756>] ? insert_state+0x66/0x190
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183451]  [<c1326756>] ? insert_state+0x66/0x190
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183453]  [<c104698e>] warn_slowpath_fmt+0x2e/0x30
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183454]  [<c1326756>] insert_state+0x66/0x190
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183457]  [<c1326dc9>] __set_extent_bit+0x549/0x5f0
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183459]  [<c1327e3c>] lock_extent_bits+0x6c/0x200
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183461]  [<c1313d8e>] ? btrfs_evict_inode+0xee/0x540
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183464]  [<c1313db8>] btrfs_evict_inode+0x118/0x540
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183466]  [<c1161877>] evict+0x97/0x150
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183467]  [<c1161e9a>] iput+0xda/0x170
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183469]  [<c1154708>] do_unlinkat+0xf8/0x230
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183471]  [<c10cc62c>] ? __audit_syscall_entry+0x9c/0xf0
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183473]  [<c11578ce>] SyS_unlinkat+0x1e/0x40
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183476]  [<c16f656b>] sysenter_do_call+0x12/0x12
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183477] ---[ end trace 8ef9caa1ec878928 ]---
-Aug 29 23:08:29 n22kvm kernel: [ 1806.183479] ------------[ cut here ]------------
-
--- 
-Toralf
-pgp key: 0076 E94E
+Regards,
+Jean-Denis Girard
 

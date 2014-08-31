@@ -1,47 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f52.google.com ([209.85.216.52]:63644 "EHLO
-	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750924AbaHaCRP convert rfc822-to-8bit (ORCPT
+Received: from linux-libre.fsfla.org ([208.118.235.54]:42876 "EHLO
+	linux-libre.fsfla.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751454AbaHaSHj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Aug 2014 22:17:15 -0400
-Received: by mail-qa0-f52.google.com with SMTP id f12so3766443qad.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 19:17:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <or61h94yvf.fsf@free.home>
-References: <or61h94yvf.fsf@free.home>
-Date: Sun, 31 Aug 2014 07:47:14 +0530
-Message-ID: <CAH-HCWXacJOstUxtsESRkWjZnxRZ_kmSKNiTO22qTyek+D+CMw@mail.gmail.com>
+	Sun, 31 Aug 2014 14:07:39 -0400
+From: Alexandre Oliva <oliva@gnu.org>
+To: Shriramana Sharma <samjnaa@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs: add -k option to filesystem df
-From: Shriramana Sharma <samjnaa@gmail.com>
-To: Alexandre Oliva <oliva@gnu.org>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+References: <or61h94yvf.fsf@free.home>
+	<CAH-HCWX49Rw6psFtbUP+ohWMQVBLuOYLwBz0q46hvrGytJzhCA@mail.gmail.com>
+Date: Sun, 31 Aug 2014 15:07:32 -0300
+In-Reply-To: <CAH-HCWX49Rw6psFtbUP+ohWMQVBLuOYLwBz0q46hvrGytJzhCA@mail.gmail.com>
+	(Shriramana Sharma's message of "Sun, 31 Aug 2014 05:48:33 +0530")
+Message-ID: <or1trw4job.fsf@free.home>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/30/14, Alexandre Oliva <oliva@gnu.org> wrote:
-> Introduce support for df to print sizes in KiB, easy to extend to other
-> bases.
+On Aug 30, 2014, Shriramana Sharma <samjnaa@gmail.com> wrote:
 
-Hello. I'm glad to see this as I have been a fan of the binary units
-for long (since they were introduced)!
+> But somehow I feel the name of the long option could be made better than
+> --kbytes which is not exactly descriptive of what it accomplishes. IIUC so
+> far only bytes are displayed right?
 
-However I feel the chosen long option could be improved as it reads
-"kbytes" and:
-
-1) currently SI units are being displayed as "kbytes" exist there too
-
-2) it sounds as if it is intended to force display in kbytes only
-whereas that is not the case.
-
-What is actually being introduced is IEC units for the sizes. So --iec
-and -i would be better choices for the options. Since btrfs fi df
-currently doesn't seem to have any options (I am only looking at the
-3.12 version on my system) this should not conflict with anything
-else.
-
-BTW this site: http://ram.kossboss.com/btrfs-fi-df-balance-btrfs-df/
-seems to already show IEC units -- perhaps is it Alexandre's site?!
+kbytes displays KiBs, whereas the preexisting code chooses a magnitude
+most suitable to present the size in a human-friendly way.  I'd be happy
+to drop the long option, to follow GNU df's practice: there's no long
+option (without arguments) equivalent to -k there.
 
 -- 
-Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist|Red Hat Brasil GNU Toolchain Engineer

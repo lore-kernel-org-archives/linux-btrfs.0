@@ -1,51 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:61009 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753129AbaH2Sby (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:52438 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751216AbaHaLsi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Aug 2014 14:31:54 -0400
-Message-ID: <5400C714.9030107@fb.com>
-Date: Fri, 29 Aug 2014 14:31:48 -0400
-From: Chris Mason <clm@fb.com>
+	Sun, 31 Aug 2014 07:48:38 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Chris Mason <clm@fb.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3] Btrfs: fix task hang under heavy compressed write
+Date: Sun, 31 Aug 2014 13:48:36 +0200
+Message-ID: <5987063.Et4MtoWL1c@merkaba>
+In-Reply-To: <6660868.gHr8BxRfi4@merkaba>
+References: <1407829499-21902-1-git-send-email-bo.li.liu@oracle.com> <53FC855F.2060904@fb.com> <6660868.gHr8BxRfi4@merkaba>
 MIME-Version: 1.0
-To: Miao Xie <miaox@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 11/12] Btrfs: implement repair function when direct
- read fails
-References: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-12-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1406625850-32168-12-git-send-email-miaox@cn.fujitsu.com>
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/29/2014 05:24 AM, Miao Xie wrote:
-> This patch implement data repair function when direct read fails.
+Am Dienstag, 26. August 2014, 15:20:21 schrieb Martin Steigerwald:
+> Am Dienstag, 26. August 2014, 09:02:23 schrieb Chris Mason:
+> > On 08/26/2014 06:20 AM, Martin Steigerwald wrote:
+> > > Am Montag, 25. August 2014, 10:58:13 schrieb Chris Mason:
+> > >> On 08/15/2014 11:36 AM, Liu Bo wrote:
+> > >>> This has been reported and discussed for a long time, and this hang
+> > >>> occurs
+> > >>> in both 3.15 and 3.16.
+> > >> 
+> > >> [ great description ]
+> > >> 
+> > >> I ran this through tests last week, and an overnight test over the
+> > >> weekend.  It's in my for-linus branch now, along with everything else I
+> > >> plan on sending for rc3.
+> > >> 
+> > >> Please double check my merge, I had to undo your rebase onto Miao's
+> > >> patches.>
+> > > 
+> > > I would like to test this on 3.17-rc2, what do I need to do to make it
+> > > apply cleanly? That function in disk-io.c looks quite different from
+> > > what
+> > > the patch assumes at the beginning, so I am not sure how to merge this.
+> > 
+> > You can just pull my for-linus branch, Liu Bo's fix is on top.
 > 
-> The detail of the implementation is:
-> - When we find the data is not right, we try to read the data from the other
->   mirror.
-> - After we get right data, we write it back to the corrupted mirror.
-> - And if the data on the new mirror is still corrupted, we will try next
->   mirror until we read right data or all the mirrors are traversed.
-> - After the above work, we set the uptodate flag according to the result.
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 08e65e9..56b1546 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -698,7 +719,12 @@ static void end_workqueue_bio(struct bio *bio, int err)
->  
->  	fs_info = end_io_wq->info;
->  	end_io_wq->error = err;
-> -	btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL, NULL);
-> +
-> +	if (likely(end_io_wq->metadata != BTRFS_WQ_ENDIO_DIO_REPAIR))
-> +		btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL,
-> +				NULL);
-> +	else
-> +		INIT_WORK(&end_io_wq->work.normal_work, dio_end_workqueue_fn);
+> Thanks, I put the commit on top of your for-linus branch on top of 3.17-rc2.
+> Lets see how it goes.
 
-It's not clear why this one is using INIT_WORK instead of
-btrfs_init_work, or why we're calling directly into queue_work instead
-of btrfs_queue_work.  What am I missing?
+So far this appears to work well.
 
--chris
+I have experienced no hangs.
+
+Tested-By: Martin Steigerwald <martin@lichtvoll.de>
+
+But I bet Linus took it already anyways :). Looking forward to rc3.
+
+Thanks for digging into and fixing this long standing annoying bug.
+
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

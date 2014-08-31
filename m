@@ -1,64 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:37796 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751506AbaHLIaN (ORCPT
+Received: from mail-qa0-f52.google.com ([209.85.216.52]:63644 "EHLO
+	mail-qa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750924AbaHaCRP convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Aug 2014 04:30:13 -0400
-Received: from kw-mxq.gw.nic.fujitsu.com (unknown [10.0.237.131])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 4E2013EE0C2
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:11 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 580EDAC0409
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:10 +0900 (JST)
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 0A26B1DB803A
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:10 +0900 (JST)
-Received: from G01JPEXCHYT16.g01.fujitsu.local (G01JPEXCHYT16.g01.fujitsu.local [10.128.194.55])
-	by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 3DB306D6371
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Aug 2014 17:30:09 +0900 (JST)
-Message-ID: <53E9D08A.3070404@jp.fujitsu.com>
-Date: Tue, 12 Aug 2014 17:30:02 +0900
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+	Sat, 30 Aug 2014 22:17:15 -0400
+Received: by mail-qa0-f52.google.com with SMTP id f12so3766443qad.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Aug 2014 19:17:14 -0700 (PDT)
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Fix a misformatting in 'man btrfs-replace'
-Content-Type: text/plain; charset="ISO-2022-JP"
+In-Reply-To: <or61h94yvf.fsf@free.home>
+References: <or61h94yvf.fsf@free.home>
+Date: Sun, 31 Aug 2014 07:47:14 +0530
+Message-ID: <CAH-HCWXacJOstUxtsESRkWjZnxRZ_kmSKNiTO22qTyek+D+CMw@mail.gmail.com>
+Subject: Re: btrfs: add -k option to filesystem df
+From: Shriramana Sharma <samjnaa@gmail.com>
+To: Alexandre Oliva <oliva@gnu.org>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+On 8/30/14, Alexandre Oliva <oliva@gnu.org> wrote:
+> Introduce support for df to print sizes in KiB, easy to extend to other
+> bases.
 
-Just fix the following misformatting in 'man btrfs-replace'.
+Hello. I'm glad to see this as I have been a fan of the binary units
+for long (since they were introduced)!
 
-===============================================================================
--f                                                                                                                
-    force using and overwriting <targetdev> even if it looks like containing
-    a valid btrfs filesystem.
+However I feel the chosen long option could be improved as it reads
+"kbytes" and:
 
-    A valid filesystem is assumed if a btrfs superblock is found which
-    contains a correct checksum. Devices which are currently mounted are never
-    allowed to be used as the <targetdev>. -B:::: no background replace.
-                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-===============================================================================
- 
-Signed-off-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+1) currently SI units are being displayed as "kbytes" exist there too
 
----
- Documentation/btrfs-replace.txt | 1 +
- 1 file changed, 1 insertion(+)
+2) it sounds as if it is intended to force display in kbytes only
+whereas that is not the case.
 
-diff --git a/Documentation/btrfs-replace.txt b/Documentation/btrfs-replace.txt
-index eecf9b0..476e351 100644
---- a/Documentation/btrfs-replace.txt
-+++ b/Documentation/btrfs-replace.txt
-@@ -49,6 +49,7 @@ containing a valid btrfs filesystem.
- A valid filesystem is assumed if a btrfs superblock is found which contains a
- correct checksum. Devices which are currently mounted are
- never allowed to be used as the <targetdev>.
-++
- -B::::
- no background replace.
- 
+What is actually being introduced is IEC units for the sizes. So --iec
+and -i would be better choices for the options. Since btrfs fi df
+currently doesn't seem to have any options (I am only looking at the
+3.12 version on my system) this should not conflict with anything
+else.
+
+BTW this site: http://ram.kossboss.com/btrfs-fi-df-balance-btrfs-df/
+seems to already show IEC units -- perhaps is it Alexandre's site?!
+
 -- 
-1.9.3
-
+Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा

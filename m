@@ -1,118 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:8179 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751563AbaI3Qnm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Sep 2014 12:43:42 -0400
-Message-ID: <542ADDAF.8010503@fb.com>
-Date: Tue, 30 Sep 2014 12:43:27 -0400
-From: Josef Bacik <jbacik@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:26796 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751078AbaIAGzG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Sep 2014 02:55:06 -0400
+Message-ID: <5404188F.1040309@cn.fujitsu.com>
+Date: Mon, 1 Sep 2014 14:56:15 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Eryu Guan <eguan@redhat.com>
-CC: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v4 01/15] btrfs: new test to run btrfs balance and subvolume
- test simultaneously
-References: <1411704901-12723-1-git-send-email-eguan@redhat.com> <1411704901-12723-2-git-send-email-eguan@redhat.com> <5429AD14.5000805@fb.com> <20140930154809.GQ13912@dhcp-13-216.nay.redhat.com> <542AD236.2000609@fb.com> <20140930160810.GR13912@dhcp-13-216.nay.redhat.com>
-In-Reply-To: <20140930160810.GR13912@dhcp-13-216.nay.redhat.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+To: Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 11/12] Btrfs: implement repair function when direct
+ read fails
+References: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-12-git-send-email-miaox@cn.fujitsu.com> <5400C714.9030107@fb.com>
+In-Reply-To: <5400C714.9030107@fb.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/30/2014 12:08 PM, Eryu Guan wrote:
-> On Tue, Sep 30, 2014 at 11:54:30AM -0400, Josef Bacik wrote:
->> On 09/30/2014 11:48 AM, Eryu Guan wrote:
->>> On Mon, Sep 29, 2014 at 03:03:48PM -0400, Josef Bacik wrote:
->>>> On 09/26/2014 12:14 AM, Eryu Guan wrote:
->>>>> Run btrfs balance and subvolume create/mount/umount/delete simultaneously,
->>>>> with fsstress running in background.
->>>>>
->>>>> Signed-off-by: Eryu Guan <eguan@redhat.com>
->>>>> ---
->>> [snip]
->>>>> +	args=`_scale_fsstress_args -p 20 -n 100 $FSSTRESS_AVOID -d $SCRATCH_MNT/stressdir`
->>>>> +	echo "Run fsstress $args" >>$seqres.full
->>>>> +	$FSSTRESS_PROG $args >/dev/null 2>&1 &
->>>>> +	fsstress_pid=$!
->>>>> +
->>>>> +	echo -n "Start balance worker: " >>$seqres.full
->>>>> +	_btrfs_stress_balance $SCRATCH_MNT >/dev/null 2>&1 &
->>>>> +	balance_pid=$!
->>>>> +	echo "$balance_pid" >>$seqres.full
->>>>> +
->>>>> +	echo -n "Start subvolume worker: " >>$seqres.full
->>>>> +	_btrfs_stress_subvolume $SCRATCH_DEV $SCRATCH_MNT subvol_$$ $subvol_mnt >/dev/null 2>&1 &
->>>>> +	subvol_pid=$!
->>>>> +	echo "$subvol_pid" >>$seqres.full
->>>>> +
->>>>> +	echo "Wait for fsstress to exit and kill all background workers" >>$seqres.full
->>>>> +	wait $fsstress_pid
->>>>> +
->>>>> +	kill $balance_pid $subvol_pid
->>>>> +	wait
->>>>> +	# wait for the balance operation to finish
->>>>> +	while ps aux | grep "balance start" | grep -qv grep; do
->>>>> +		sleep 1
->>>>> +	done
->>>>
->>>> This bit isn't needed, killing the balance pid also won't do anything, just
->>>> waiting is enough, it'll only exit once the balance is finished. If you
->>>> really want to stop the balance you can use
->>>
->>> I think it's still needed, or the balance process would block the
->>> later umount and test fails like
->>>
->>> --- tests/btrfs/059.out 2014-09-26 11:35:43.932850826 +0800
->>> +++ /root/xfstests/results//btrfs/059.out.bad   2014-09-30 23:29:47.538310375 +0800
->>> @@ -1,2 +1,9 @@
->>>   QA output created by 059
->>>   Silence is golden
->>> +umount: /mnt/testarea/scratch: target is busy.
->>> +        (In some cases useful info about processes that use
->>> +         the device is found by lsof(8) or fuser(1))
->>> +umount: /mnt/testarea/scratch: target is busy.
->>> +        (In some cases useful info about processes that use
->>> +         the device is found by lsof(8) or fuser(1))
->>> +_check_btrfs_filesystem: filesystem on /dev/mapper/rhel_hp--dl388eg8--01-testlv2 is inconsistent (see /root/xfstests/results//btrfs/059.full)
->>>
->>> Adding debug output of "lsof $SCRATCH_MNT" and "ps aux | grep btrfs"
->>> before umount shows it's the balance process is still running and
->>> blocks the umount.
->>>
->>> lsof /mnt/testarea/scratch
->>> btrfs   13491 root    3r   DIR   0,40       42  256 /mnt/testarea/scratch
->>> ps aux | grep btrfs
->>> ....
->>> root     13491  7.0  0.0  18660  1312 pts/1    D+   23:29   0:00 /usr/sbin/btrfs balance start /mnt/testarea/scratch
->>>
->>> Killing the balance pid is to stop any further balance operation, wait
->>> is waiting for the child process (_btrfs_stress_balance), not the
->>> child's child process (balance process). So only wait is not enough,
->>> we should wait for the balance to finish explicitly.
->>>
->>> This is also true for the rest of the test cases in this series. This
->>> is kind of ugly, but I cannot figure out a better solution right now..
->>>
+On Fri, 29 Aug 2014 14:31:48 -0400, Chris Mason wrote:
+> On 07/29/2014 05:24 AM, Miao Xie wrote:
+>> This patch implement data repair function when direct read fails.
 >>
->> Oh duh sorry, I missed that it was a loop of btrfs balance start, not just
->> btrfs balance start &.  Ok in that case instead use
+>> The detail of the implementation is:
+>> - When we find the data is not right, we try to read the data from the other
+>>   mirror.
+>> - After we get right data, we write it back to the corrupted mirror.
+>> - And if the data on the new mirror is still corrupted, we will try next
+>>   mirror until we read right data or all the mirrors are traversed.
+>> - After the above work, we set the uptodate flag according to the result.
 >>
->> btrfs balance status
->>
->> and loop on that until it is done and then exit, that way it is clear what
->> we are waiting on, but really I'm not married to the idea either so if it
->> ends up being too much trouble just skip it.  You can add
->>
->> Reviewed-by: Josef Bacik <jbacik@fb.com>
->>
->> Whenever you re-roll with your whitespace changes and whatever other
->> cleanups you add.  Thanks,
->
-> Thanks for your review!
->
-> Just want to confirm with you, do you mean I can add your reviewed-by
-> for the whole patchset or just the first one?
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 08e65e9..56b1546 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -698,7 +719,12 @@ static void end_workqueue_bio(struct bio *bio, int err)
+>>  
+>>  	fs_info = end_io_wq->info;
+>>  	end_io_wq->error = err;
+>> -	btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL, NULL);
+>> +
+>> +	if (likely(end_io_wq->metadata != BTRFS_WQ_ENDIO_DIO_REPAIR))
+>> +		btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL,
+>> +				NULL);
+>> +	else
+>> +		INIT_WORK(&end_io_wq->work.normal_work, dio_end_workqueue_fn);
+> 
+> It's not clear why this one is using INIT_WORK instead of
+> btrfs_init_work, or why we're calling directly into queue_work instead
+> of btrfs_queue_work.  What am I missing?
 
-Oh sorry, the whole patchset.  Thanks,
+I'm sorry that I forgot writing the explanation in this patch's changlog,
+I wrote it in Patch 0.
 
-Josef
+"2.When the io on the mirror ends, we will insert the endio work into the
+   system workqueue, not btrfs own endio workqueue, because the original
+   endio work is still blocked in the btrfs endio workqueue, if we insert
+   the endio work of the io on the mirror into that workqueue, deadlock
+   would happen."
 
+Could you add it into the changelog of this patch when you apply this patch?
+
+Thanks
+Miao

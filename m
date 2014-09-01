@@ -1,169 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:65523 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754322AbaHNLk5 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:2728 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751569AbaIABGe convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Aug 2014 07:40:57 -0400
-Received: by mail-pa0-f42.google.com with SMTP id lf10so1492286pab.29
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Aug 2014 04:40:57 -0700 (PDT)
-From: Eryu Guan <guaneryu@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH 2/2] btrfs-progs: canonicalize dm device name before update kernel
-Date: Thu, 14 Aug 2014 19:40:20 +0800
-Message-Id: <1408016420-29221-2-git-send-email-guaneryu@gmail.com>
-In-Reply-To: <1408016420-29221-1-git-send-email-guaneryu@gmail.com>
-References: <1408016420-29221-1-git-send-email-guaneryu@gmail.com>
+	Sun, 31 Aug 2014 21:06:34 -0400
+Message-ID: <5403C692.4000705@cn.fujitsu.com>
+Date: Mon, 1 Sep 2014 09:06:26 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+To: <bo.li.liu@oracle.com>, Filipe David Manana <fdmanana@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Avoid trucating page or punching hole in a already
+ existed hole.
+References: <1401434170-30695-1-git-send-email-quwenruo@cn.fujitsu.com> <20140827081953.GA15994@localhost.localdomain> <CAL3q7H5R_nemONu2T2Fzwb7hCVEz7S+Zv0ctSfvRwe3LBHP11Q@mail.gmail.com> <20140827103412.GA24545@localhost.localdomain>
+In-Reply-To: <20140827103412.GA24545@localhost.localdomain>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A btrfsck or btrfs device scan -d operation could change the device
-name of other mounted btrfs in kernel, if the other btrfs is on lvm
-device.
 
-Assume that we have two btrfs filesystems, kernel is 3.16.0-rc4+
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: Avoid trucating page or punching hole in a 
+already existed hole.
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe David Manana <fdmanana@gmail.com>
+Date: 2014年08月27日 18:34
+> [snip]
+>>> Why do we round_up lockstart but round_down lockend?
+>>>
+>>> For [0,4095], then lockstart is 4096 and lockend is (u64)-1, any thoughts?
+>> Seems odd, but is it a problem for that case?
+>> The same_page check below makes us return without locking the range in
+>> the iotree using the computed values for lockstart and lockend.
+> No problems so far luckily, but it's odd.
+>
+> thanks,
+> -liubo
+Sorry for the late replay. Off for serval days....
 
-[root@hp-dl388eg8-01 btrfs-progs]# btrfs fi show
-Label: none  uuid: 1aba7da5-ce2b-4af0-a716-db732abc60b2
-        Total devices 1 FS bytes used 384.00KiB
-        devid    1 size 15.00GiB used 2.04GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv1
+IMO, round up the start and round down the end is the correct way.
 
-Label: none  uuid: 26ff4f12-f6d9-4cbc-aae2-57febeefde37
-        Total devices 2 FS bytes used 112.00KiB
-        devid    1 size 15.00GiB used 2.03GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv2
-        devid    2 size 15.00GiB used 2.01GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv3
+As shown in the following case(and is the most common case).
+0        4K        8K        12K        16K
+|    Data    |    Data    |    Data    |    Data    |
+     |-------------Hole range--------|
+     |-Zero--|--Hole extent--|-Zero--|
 
-Btrfs v3.14.2
+As the graph shows, the hole extent is the range aligned to page size and
+*inside the hoped hole range*.
 
-And testlv1 was mounted at /mnt/btrfs
+So, I round up start(offset) and round down end(offset + len) to get the
+page aligned range.
 
-[root@hp-dl388eg8-01 btrfs-progs]# df -TP /mnt/btrfs
-Filesystem                                Type  1024-blocks  Used Available Capacity Mounted on
-/dev/mapper/rhel_hp--dl388eg8--01-testlv1 btrfs    15728640   512  13602560       1% /mnt/btrfs
+Also, as mentioned by Filipe, for range in same page, it will be handled
+specially without hitting the normal routine.
 
-Now run btrfsck on testlv2 or btrfs device scan -d, which will scan
-all btrfs devices and somehow change the device name.
+Thanks,
+Qu
 
-[root@hp-dl388eg8-01 btrfs-progs]# btrfsck /dev/mapper/rhel_hp--dl388eg8--01-testlv2 >/dev/null 2>&1
-
-[root@hp-dl388eg8-01 btrfs-progs]# df -TP /mnt/btrfs
-Filesystem     Type  1024-blocks  Used Available Capacity Mounted on
-/dev/dm-3      btrfs    15728640   512  13602560       1% /mnt/btrfs
-[root@hp-dl388eg8-01 btrfs-progs]# btrfs fi show
-Label: none  uuid: 1aba7da5-ce2b-4af0-a716-db732abc60b2
-        Total devices 1 FS bytes used 384.00KiB
-        devid    1 size 15.00GiB used 2.04GiB path /dev/dm-3
-
-Label: none  uuid: 26ff4f12-f6d9-4cbc-aae2-57febeefde37
-        Total devices 2 FS bytes used 112.00KiB
-        devid    1 size 15.00GiB used 2.03GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv2
-        devid    2 size 15.00GiB used 2.01GiB path /dev/mapper/rhel_hp--dl388eg8--01-testlv3
-
-Btrfs v3.14.2
-
-Now calling btrfs_register_one_device with canonicalized dm device name.
-
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
----
-
-With patch 1 applied, btrfsck won't change the device name,
-but btrfs device scan -d still does.
-
- utils.c | 44 +++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 41 insertions(+), 3 deletions(-)
-
-diff --git a/utils.c b/utils.c
-index f54e749..3567094 100644
---- a/utils.c
-+++ b/utils.c
-@@ -985,6 +985,32 @@ static int blk_file_in_dev_list(struct btrfs_fs_devices* fs_devices,
- }
- 
- /*
-+ * Convert dm-N device name to /dev/mapper/name
-+ */
-+static void canonicalize_dm_name(char *devnode, char *path, int len)
-+{
-+	char *buf = NULL;
-+	FILE *sysfsp = NULL;
-+
-+	buf = malloc(PATH_MAX);
-+	if (!buf)
-+		return;
-+
-+	snprintf(buf, PATH_MAX, "/sys/block/%s/dm/name", devnode);
-+	sysfsp = fopen(buf, "r");
-+	if (!sysfsp)
-+		goto out;
-+
-+	if (fgets(buf, PATH_MAX, sysfsp)) {
-+		buf[strlen(buf) - 1] = '\0';
-+		snprintf(path, len - 1, "/dev/mapper/%s", buf);
-+	}
-+	fclose(sysfsp);
-+out:
-+	free(buf);
-+}
-+
-+/*
-  * returns 1 if the device was mounted, < 0 on error or 0 if everything
-  * is safe to continue.
-  */
-@@ -1189,6 +1215,9 @@ again:
- 		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
- 			continue;
- 		if (run_ioctl > 0) {
-+			if (!strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")))
-+				canonicalize_dm_name(dirent->d_name,
-+						     fullpath, PATH_MAX);
- 			btrfs_register_one_device(fullpath);
- 		}
- 		close(fd);
-@@ -1475,8 +1504,11 @@ int btrfs_scan_block_devices(u8 *fsid, int run_ioctl)
- 	int i;
- 	char buf[1024];
- 	char fullpath[110];
-+	char devnode[64];
-+	char *dirname = "/dev/";
- 	int scans = 0;
- 	int special;
-+	int is_dm;
- 
- scan_again:
- 	proc_partitions = fopen("/proc/partitions","r");
-@@ -1493,9 +1525,11 @@ scan_again:
- 			return -ENOENT;
- 		}
- 
--	strcpy(fullpath,"/dev/");
--	while(fgets(buf, 1023, proc_partitions)) {
--		i = sscanf(buf," %*d %*d %*d %99s", fullpath+5);
-+	strcpy(fullpath, dirname);
-+	while (fgets(buf, sizeof(buf) - 1, proc_partitions)) {
-+		i = sscanf(buf, " %*d %*d %*d %99s", devnode);
-+		strncpy(fullpath + strlen(dirname), devnode,
-+			sizeof(fullpath) - strlen(dirname));
- 
- 		/*
- 		 * multipath and MD devices may register as a btrfs filesystem
-@@ -1504,6 +1538,7 @@ scan_again:
- 		 * This scans the special entries last
- 		 */
- 		special = strncmp(fullpath, "/dev/dm-", strlen("/dev/dm-")) == 0;
-+		is_dm = special;
- 		if (!special)
- 			special = strncmp(fullpath, "/dev/md", strlen("/dev/md")) == 0;
- 
-@@ -1538,6 +1573,9 @@ scan_again:
- 		if (fsid && memcmp(fsid, tmp_devices->fsid, BTRFS_FSID_SIZE))
- 			continue;
- 		if (run_ioctl > 0) {
-+			if (is_dm)
-+				canonicalize_dm_name(devnode, fullpath,
-+						     sizeof(fullpath));
- 			btrfs_register_one_device(fullpath);
- 		}
- 	}
--- 
-1.8.3.1
+>>> thanks,
+>>> -liubo
+>>>
+>>>> +     same_page = ((offset >> PAGE_CACHE_SHIFT) ==
+>>>> +                 ((offset + len - 1) >> PAGE_CACHE_SHIFT));
+>>>> +
+>>>>        /*
+>>>>         * We needn't truncate any page which is beyond the end of the file
+>>>>         * because we are sure there is no data there.
+>>>> @@ -2205,8 +2252,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+>>>>        if (same_page && len < PAGE_CACHE_SIZE) {
+>>>>                if (offset < ino_size)
+>>>>                        ret = btrfs_truncate_page(inode, offset, len, 0);
+>>>> -             mutex_unlock(&inode->i_mutex);
+>>>> -             return ret;
+>>>> +             goto out_only_mutex;
+>>>>        }
+>>>>
+>>>>        /* zero back part of the first page */
+>>>> @@ -2218,12 +2264,39 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+>>>>                }
+>>>>        }
+>>>>
+>>>> -     /* zero the front end of the last page */
+>>>> -     if (offset + len < ino_size) {
+>>>> -             ret = btrfs_truncate_page(inode, offset + len, 0, 1);
+>>>> -             if (ret) {
+>>>> -                     mutex_unlock(&inode->i_mutex);
+>>>> -                     return ret;
+>>>> +     /* Check the aligned pages after the first unaligned page,
+>>>> +      * if offset != orig_start, which means the first unaligned page
+>>>> +      * including serveral following pages are already in holes,
+>>>> +      * the extra check can be skipped */
+>>>> +     if (offset == orig_start) {
+>>>> +             /* after truncate page, check hole again */
+>>>> +             len = offset + len - lockstart;
+>>>> +             offset = lockstart;
+>>>> +             ret = find_first_non_hole(inode, &offset, &len);
+>>>> +             if (ret < 0)
+>>>> +                     goto out_only_mutex;
+>>>> +             if (ret && !len) {
+>>>> +                     ret = 0;
+>>>> +                     goto out_only_mutex;
+>>>> +             }
+>>>> +             lockstart = offset;
+>>>> +     }
+>>>> +
+>>>> +     /* Check the tail unaligned part is in a hole */
+>>>> +     tail_start = lockend + 1;
+>>>> +     tail_len = offset + len - tail_start;
+>>>> +     if (tail_len) {
+>>>> +             ret = find_first_non_hole(inode, &tail_start, &tail_len);
+>>>> +             if (unlikely(ret < 0))
+>>>> +                     goto out_only_mutex;
+>>>> +             if (!ret) {
+>>>> +                     /* zero the front end of the last page */
+>>>> +                     if (tail_start + tail_len < ino_size) {
+>>>> +                             ret = btrfs_truncate_page(inode,
+>>>> +                                             tail_start + tail_len, 0, 1);
+>>>> +                             if (ret)
+>>>> +                                     goto out_only_mutex;
+>>>> +                             }
+>>>>                }
+>>>>        }
+>>>>
+>>>> @@ -2299,6 +2372,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+>>>>        BUG_ON(ret);
+>>>>        trans->block_rsv = rsv;
+>>>>
+>>>> +     cur_offset = lockstart;
+>>>> +     len = lockend - cur_offset;
+>>>>        while (cur_offset < lockend) {
+>>>>                ret = __btrfs_drop_extents(trans, root, inode, path,
+>>>>                                           cur_offset, lockend + 1,
+>>>> @@ -2339,6 +2414,14 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+>>>>                                              rsv, min_size);
+>>>>                BUG_ON(ret);    /* shouldn't happen */
+>>>>                trans->block_rsv = rsv;
+>>>> +
+>>>> +             ret = find_first_non_hole(inode, &cur_offset, &len);
+>>>> +             if (unlikely(ret < 0))
+>>>> +                     break;
+>>>> +             if (ret && !len) {
+>>>> +                     ret = 0;
+>>>> +                     break;
+>>>> +             }
+>>>>        }
+>>>>
+>>>>        if (ret) {
+>>>> @@ -2372,6 +2455,7 @@ out_free:
+>>>>   out:
+>>>>        unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+>>>>                             &cached_state, GFP_NOFS);
+>>>> +out_only_mutex:
+>>>>        mutex_unlock(&inode->i_mutex);
+>>>>        if (ret && !err)
+>>>>                err = ret;
+>>>> --
+>>>> 1.9.3
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>> -- 
+>> Filipe David Manana,
+>>
+>> "Reasonable men adapt themselves to the world.
+>>   Unreasonable men adapt the world to themselves.
+>>   That's why all progress depends on unreasonable men."
 

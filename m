@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:52368 "EHLO
-	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755425AbaIBWdR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:17 -0400
-Received: by mail-pa0-f48.google.com with SMTP id ey11so15709659pad.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:17 -0700 (PDT)
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:48626 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755413AbaIBWdO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:14 -0400
+Received: by mail-pa0-f49.google.com with SMTP id kq14so15633578pab.22
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:14 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -16,9 +16,9 @@ Cc: akpm@linux-foundation.org, james.l.morris@oracle.com,
         neilb@suse.de, serge@hallyn.com, torvalds@linux-foundation.org,
         =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
         Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
-Subject: [PATCH RFC 3/6] crypto: LLVMLinux: Remove VLAIS usage from libcrc32c.c
-Date: Tue,  2 Sep 2014 15:32:30 -0700
-Message-Id: <1409697153-7006-4-git-send-email-behanw@converseincode.com>
+Subject: [PATCH RFC 2/6] crypto: LLVMLinux: Remove VLAIS usage from crypto/hmac.c
+Date: Tue,  2 Sep 2014 15:32:29 -0700
+Message-Id: <1409697153-7006-3-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 References: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -48,43 +48,60 @@ Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
 Cc: pageexec@freemail.hu
 ---
- lib/libcrc32c.c | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ crypto/hmac.c | 27 +++++++++++++--------------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/lib/libcrc32c.c b/lib/libcrc32c.c
-index b3131f5..03f2cf3 100644
---- a/lib/libcrc32c.c
-+++ b/lib/libcrc32c.c
-@@ -41,20 +41,20 @@ static struct crypto_shash *tfm;
- 
- u32 crc32c(u32 crc, const void *address, unsigned int length)
- {
+diff --git a/crypto/hmac.c b/crypto/hmac.c
+index 8d9544c..00ce204 100644
+--- a/crypto/hmac.c
++++ b/crypto/hmac.c
+@@ -52,20 +52,19 @@ static int hmac_setkey(struct crypto_shash *parent,
+ 	struct hmac_ctx *ctx = align_ptr(opad + ss,
+ 					 crypto_tfm_ctx_alignment());
+ 	struct crypto_shash *hash = ctx->hash;
 -	struct {
 -		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(tfm)];
+-		char ctx[crypto_shash_descsize(hash)];
 -	} desc;
 +	char desc[sizeof(struct shash_desc)
-+		+ crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR;
++		+ crypto_shash_descsize(hash)] CRYPTO_MINALIGN_ATTR;
 +	struct shash_desc *shash = (struct shash_desc *)desc;
-+	u32 *ctx = (u32 *)shash_desc_ctx(shash);
- 	int err;
+ 	unsigned int i;
  
--	desc.shash.tfm = tfm;
--	desc.shash.flags = 0;
--	*(u32 *)desc.ctx = crc;
-+	shash->tfm = tfm;
-+	shash->flags = 0;
-+	*ctx = crc;
+-	desc.shash.tfm = hash;
+-	desc.shash.flags = crypto_shash_get_flags(parent) &
+-			    CRYPTO_TFM_REQ_MAY_SLEEP;
++	shash->tfm = hash;
++	shash->flags = crypto_shash_get_flags(parent)
++		& CRYPTO_TFM_REQ_MAY_SLEEP;
  
--	err = crypto_shash_update(&desc.shash, address, length);
-+	err = crypto_shash_update(shash, address, length);
- 	BUG_ON(err);
+ 	if (keylen > bs) {
+ 		int err;
  
--	return *(u32 *)desc.ctx;
-+	return *ctx;
+-		err = crypto_shash_digest(&desc.shash, inkey, keylen, ipad);
++		err = crypto_shash_digest(shash, inkey, keylen, ipad);
+ 		if (err)
+ 			return err;
+ 
+@@ -81,12 +80,12 @@ static int hmac_setkey(struct crypto_shash *parent,
+ 		opad[i] ^= 0x5c;
+ 	}
+ 
+-	return crypto_shash_init(&desc.shash) ?:
+-	       crypto_shash_update(&desc.shash, ipad, bs) ?:
+-	       crypto_shash_export(&desc.shash, ipad) ?:
+-	       crypto_shash_init(&desc.shash) ?:
+-	       crypto_shash_update(&desc.shash, opad, bs) ?:
+-	       crypto_shash_export(&desc.shash, opad);
++	return crypto_shash_init(shash) ?:
++	       crypto_shash_update(shash, ipad, bs) ?:
++	       crypto_shash_export(shash, ipad) ?:
++	       crypto_shash_init(shash) ?:
++	       crypto_shash_update(shash, opad, bs) ?:
++	       crypto_shash_export(shash, opad);
  }
  
- EXPORT_SYMBOL(crc32c);
+ static int hmac_export(struct shash_desc *pdesc, void *out)
 -- 
 1.9.1
 

@@ -1,37 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2977 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751574AbaIABgl convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 Aug 2014 21:36:41 -0400
-Message-ID: <1409535309.8843.2.camel@localhost.localdomain>
-Subject: Re: [PATCH 3/3] btrfs-progs: remove meaningless debug info for
- restore
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-Date: Mon, 1 Sep 2014 09:35:09 +0800
-In-Reply-To: <20140829144937.GE31801@twin.jikos.cz>
-References: <1409192755-1826-1-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <1409192755-1826-3-git-send-email-guihc.fnst@cn.fujitsu.com>
-	 <20140829144937.GE31801@twin.jikos.cz>
-Content-Type: text/plain; charset="UTF-8"
+Received: from cantor2.suse.de ([195.135.220.15]:39433 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750787AbaIBMSo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Sep 2014 08:18:44 -0400
+Date: Tue, 2 Sep 2014 14:18:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] Build system fixes/improvements
+Message-ID: <20140902121841.GG5888@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1409402890-22860-1-git-send-email-thomas.petazzoni@free-electrons.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2014-08-29 at 16:49 +0200, David Sterba wrote:
-> On Thu, Aug 28, 2014 at 10:25:55AM +0800, Gui Hecheng wrote:
-> > The printf of @offset enlightens the user little.
-> > And the restore cmd is not a debugging tool, so just
-> > remove the debug-info-like printf.
-> 
-> I'd like to let the restore command be more verbose as it's potentially
-> working with a broken filesystem and getting details can help. There's
-> -v option for increasing verbosity, please move the printf there.
+On Sat, Aug 30, 2014 at 02:48:08PM +0200, Thomas Petazzoni wrote:
+> Here are two patches that we have in the Buildroot embedded Linux
+> build system against btrfs-progs. The first patch allows to disable
+> the build and installation of the docmentation, the second patch
+> improves static building and installation.
 
-OK，since the -v option seems to serve as a debug helper.
-
-> Thaks.
-
-
+Good fixes, thanks.

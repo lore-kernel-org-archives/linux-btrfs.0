@@ -1,45 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([178.63.195.102]:42539 "EHLO mail.virtall.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754156AbaI2OSF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Sep 2014 10:18:05 -0400
-To: bo.li.liu@oracle.com
-Subject: Re: 3.17.0-rc6 system freeze
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Mon, 29 Sep 2014 16:18:01 +0200
-From: Tomasz Chmielewski <tch@virtall.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-In-Reply-To: <20140929141016.GA31870@localhost.localdomain>
-References: <a02fcec6b3069c7d69e6453725d624e5@admin.virtall.com>
- <20140929141016.GA31870@localhost.localdomain>
-Message-ID: <394df3a1d2ee7b374491dd2da1958672@admin.virtall.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:47832 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752121AbaIBJNe (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Tue, 2 Sep 2014 05:13:34 -0400
+From: Filipe Manana <fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix fsync race leading to invalid data after log replay
+Date: Tue,  2 Sep 2014 11:09:58 +0100
+Message-Id: <1409652598-27398-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1409418089-31790-1-git-send-email-fdmanana@suse.com>
+References: <1409418089-31790-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2014-09-29 16:10 (Mon), Liu Bo wrote:
-> Hi Tomasz,
-> 
-> On Mon, Sep 29, 2014 at 02:00:18PM +0200, Tomasz Chmielewski wrote:
->> System froze under 3.17.0-rc6 with btrfs. It had to be hard rebooted.
+When the fsync callback (btrfs_sync_file) starts, it first waits for
+the writeback of any dirty pages to start and finish without holding
+the inode's mutex (to reduce contention). After this it acquires the
+inode's mutex and repeats that process via btrfs_wait_ordered_range
+only if we're doing a full sync (BTRFS_INODE_NEEDS_FULL_SYNC flag
+is set on the inode).
 
-> How does this happen?  A stressful write with compression?
+This is not safe for a non full sync - we need to start and wait for
+writeback to finish for any pages that might have been made dirty
+before acquiring the inode's mutex and after that first step mentioned
+before. Why this is needed is explained by the following comment added
+to btrfs_sync_file:
 
-Rsync (with --inplace - can be stressful / lead to fragmentation on 
-large files which change) + snapshot + remove old snapshot, for several 
-remote sources (rsync server1, snapshot, remove old snap; rsync server2, 
-snapshot, remove old snap etc.).
+  "Right before acquiring the inode's mutex, we might have new
+   writes dirtying pages, which won't immediately start the
+   respective ordered operations - that is done through the
+   fill_delalloc callbacks invoked from the writepage and
+   writepages address space operations. So make sure we start
+   all ordered operations before starting to log our inode. Not
+   doing this means that while logging the inode, writeback
+   could start and invoke writepage/writepages, which would call
+   the fill_delalloc callbacks (cow_file_range,
+   submit_compressed_extents). These callbacks add first an
+   extent map to the modified list of extents and then create
+   the respective ordered operation, which means in
+   tree-log.c:btrfs_log_inode() we might capture all existing
+   ordered operations (with btrfs_get_logged_extents()) before
+   the fill_delalloc callback adds its ordered operation, and by
+   the time we visit the modified list of extent maps (with
+   btrfs_log_changed_extents()), we see and process the extent
+   map they created. We then use the extent map to construct a
+   file extent item for logging without waiting for the
+   respective ordered operation to finish - this file extent
+   item points to a disk location that might not have yet been
+   written to, containing random data - so after a crash a log
+   replay will make our inode have file extent items that point
+   to disk locations containing invalid data, as we returned
+   success to userspace without waiting for the respective
+   ordered operation to finish, because it wasn't captured by
+   btrfs_get_logged_extents()."
 
-Filesystem is RAID-1 with compress-force=zlib:
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-/dev/sdc1 on /mnt/lxc2 type btrfs 
-(rw,noatime,compress-force=zlib,space_cache)
+V2: Better comments and for the non full sync case, start only the
+    ordered operations, instead of starting them and waiting for them
+    to complete. Waiting for their completion is already done later by
+    btrfs_sync_log(), so like this we can reduce some latency as some
+    ordered operations might complete (or get closer to) while writing
+    to the log tree (btrfs_log_dentry_safe).
 
-The last operation written to the logfile was snapshot removal.
+ fs/btrfs/file.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 63 insertions(+), 15 deletions(-)
 
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e5534c1..5427ba8 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1865,6 +1865,20 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
+ 	return 0;
+ }
+ 
++static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
++{
++	int ret;
++
++	atomic_inc(&BTRFS_I(inode)->sync_writers);
++	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
++	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++			     &BTRFS_I(inode)->runtime_flags))
++		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
++	atomic_dec(&BTRFS_I(inode)->sync_writers);
++
++	return ret;
++}
++
+ /*
+  * fsync call for both files and directories.  This logs the inode into
+  * the tree log instead of forcing full commits whenever possible.
+@@ -1894,30 +1908,64 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 * multi-task, and make the performance up.  See
+ 	 * btrfs_wait_ordered_range for an explanation of the ASYNC check.
+ 	 */
+-	atomic_inc(&BTRFS_I(inode)->sync_writers);
+-	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
+-	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+-			     &BTRFS_I(inode)->runtime_flags))
+-		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
+-	atomic_dec(&BTRFS_I(inode)->sync_writers);
++	ret = start_ordered_ops(inode, start, end);
+ 	if (ret)
+ 		return ret;
+ 
+ 	mutex_lock(&inode->i_mutex);
+-
+-	/*
+-	 * We flush the dirty pages again to avoid some dirty pages in the
+-	 * range being left.
+-	 */
+ 	atomic_inc(&root->log_batch);
+ 	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+ 			     &BTRFS_I(inode)->runtime_flags);
++	/*
++	 * We might have have had more pages made dirty after calling
++	 * start_ordered_ops and before acquiring the inode's i_mutex.
++	 */
+ 	if (full_sync) {
++		/*
++		 * For a full sync, we need to make sure any ordered operations
++		 * start and finish before we start logging the inode, so that
++		 * all extents are persisted and the respective file extent
++		 * items are in the fs/subvol btree.
++		 */
+ 		ret = btrfs_wait_ordered_range(inode, start, end - start + 1);
+-		if (ret) {
+-			mutex_unlock(&inode->i_mutex);
+-			goto out;
+-		}
++	} else {
++		/*
++		 * Start any new ordered operations before starting to log the
++		 * inode. We will wait for them to finish in btrfs_sync_log().
++		 *
++		 * Right before acquiring the inode's mutex, we might have new
++		 * writes dirtying pages, which won't immediately start the
++		 * respective ordered operations - that is done through the
++		 * fill_delalloc callbacks invoked from the writepage and
++		 * writepages address space operations. So make sure we start
++		 * all ordered operations before starting to log our inode. Not
++		 * doing this means that while logging the inode, writeback
++		 * could start and invoke writepage/writepages, which would call
++		 * the fill_delalloc callbacks (cow_file_range,
++		 * submit_compressed_extents). These callbacks add first an
++		 * extent map to the modified list of extents and then create
++		 * the respective ordered operation, which means in
++		 * tree-log.c:btrfs_log_inode() we might capture all existing
++		 * ordered operations (with btrfs_get_logged_extents()) before
++		 * the fill_delalloc callback adds its ordered operation, and by
++		 * the time we visit the modified list of extent maps (with
++		 * btrfs_log_changed_extents()), we see and process the extent
++		 * map they created. We then use the extent map to construct a
++		 * file extent item for logging without waiting for the
++		 * respective ordered operation to finish - this file extent
++		 * item points to a disk location that might not have yet been
++		 * written to, containing random data - so after a crash a log
++		 * replay will make our inode have file extent items that point
++		 * to disk locations containing invalid data, as we returned
++		 * success to userspace without waiting for the respective
++		 * ordered operation to finish, because it wasn't captured by
++		 * btrfs_get_logged_extents().
++		 */
++		ret = start_ordered_ops(inode, start, end);
++	}
++	if (ret) {
++		mutex_unlock(&inode->i_mutex);
++		goto out;
+ 	}
+ 	atomic_inc(&root->log_batch);
+ 
 -- 
-Tomasz Chmielewski
-http://www.sslrack.com
+1.9.1
 

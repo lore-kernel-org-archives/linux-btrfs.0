@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f170.google.com ([209.85.192.170]:51892 "EHLO
-	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755434AbaIBWdT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:19 -0400
-Received: by mail-pd0-f170.google.com with SMTP id r10so9661896pdi.29
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:19 -0700 (PDT)
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:52368 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755425AbaIBWdR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:17 -0400
+Received: by mail-pa0-f48.google.com with SMTP id ey11so15709659pad.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:17 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -16,9 +16,9 @@ Cc: akpm@linux-foundation.org, james.l.morris@oracle.com,
         neilb@suse.de, serge@hallyn.com, torvalds@linux-foundation.org,
         =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
         Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
-Subject: [PATCH RFC 4/6] crypto: LLVMLinux: Remove VLAIS usage from crypto/testmgr.c
-Date: Tue,  2 Sep 2014 15:32:31 -0700
-Message-Id: <1409697153-7006-5-git-send-email-behanw@converseincode.com>
+Subject: [PATCH RFC 3/6] crypto: LLVMLinux: Remove VLAIS usage from libcrc32c.c
+Date: Tue,  2 Sep 2014 15:32:30 -0700
+Message-Id: <1409697153-7006-4-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 References: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -48,38 +48,43 @@ Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
 Cc: pageexec@freemail.hu
 ---
- crypto/testmgr.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ lib/libcrc32c.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/crypto/testmgr.c b/crypto/testmgr.c
-index ac2b631..f4bf5c2 100644
---- a/crypto/testmgr.c
-+++ b/crypto/testmgr.c
-@@ -1714,16 +1714,16 @@ static int alg_test_crc32c(const struct alg_test_desc *desc,
- 	}
+diff --git a/lib/libcrc32c.c b/lib/libcrc32c.c
+index b3131f5..03f2cf3 100644
+--- a/lib/libcrc32c.c
++++ b/lib/libcrc32c.c
+@@ -41,20 +41,20 @@ static struct crypto_shash *tfm;
  
- 	do {
--		struct {
--			struct shash_desc shash;
--			char ctx[crypto_shash_descsize(tfm)];
--		} sdesc;
-+		char sdesc[sizeof(struct shash_desc)
-+			+ crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR;
-+		struct shash_desc *shash = (struct shash_desc *)sdesc;
-+		u32 *ctx = (u32 *)shash_desc_ctx(shash);
+ u32 crc32c(u32 crc, const void *address, unsigned int length)
+ {
+-	struct {
+-		struct shash_desc shash;
+-		char ctx[crypto_shash_descsize(tfm)];
+-	} desc;
++	char desc[sizeof(struct shash_desc)
++		+ crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR;
++	struct shash_desc *shash = (struct shash_desc *)desc;
++	u32 *ctx = (u32 *)shash_desc_ctx(shash);
+ 	int err;
  
--		sdesc.shash.tfm = tfm;
--		sdesc.shash.flags = 0;
-+		shash->tfm = tfm;
-+		shash->flags = 0;
+-	desc.shash.tfm = tfm;
+-	desc.shash.flags = 0;
+-	*(u32 *)desc.ctx = crc;
++	shash->tfm = tfm;
++	shash->flags = 0;
++	*ctx = crc;
  
--		*(u32 *)sdesc.ctx = le32_to_cpu(420553207);
--		err = crypto_shash_final(&sdesc.shash, (u8 *)&val);
-+		*ctx = le32_to_cpu(420553207);
-+		err = crypto_shash_final(shash, (u8 *)&val);
- 		if (err) {
- 			printk(KERN_ERR "alg: crc32c: Operation failed for "
- 			       "%s: %d\n", driver, err);
+-	err = crypto_shash_update(&desc.shash, address, length);
++	err = crypto_shash_update(shash, address, length);
+ 	BUG_ON(err);
+ 
+-	return *(u32 *)desc.ctx;
++	return *ctx;
+ }
+ 
+ EXPORT_SYMBOL(crc32c);
 -- 
 1.9.1
 

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:48626 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755413AbaIBWdO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:14 -0400
-Received: by mail-pa0-f49.google.com with SMTP id kq14so15633578pab.22
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:14 -0700 (PDT)
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:34297 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755489AbaIBWd0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:26 -0400
+Received: by mail-pa0-f51.google.com with SMTP id rd3so15953398pab.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:25 -0700 (PDT)
 From: behanw@converseincode.com
 To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
         fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
@@ -14,11 +14,13 @@ Cc: akpm@linux-foundation.org, james.l.morris@oracle.com,
         linux-crypto@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
         neilb@suse.de, serge@hallyn.com, torvalds@linux-foundation.org,
+        =?UTF-8?q?Vin=C3=ADcius=20Tinti?= <viniciustinti@gmail.com>,
         =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
-        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
-Subject: [PATCH RFC 2/6] crypto: LLVMLinux: Remove VLAIS usage from crypto/hmac.c
-Date: Tue,  2 Sep 2014 15:32:29 -0700
-Message-Id: <1409697153-7006-3-git-send-email-behanw@converseincode.com>
+        Behan Webster <behanw@converseincode.com>,
+        Mark Charlebois <charlebm@gmail.com>
+Subject: [PATCH RFC 6/6] btrfs: LLVMLinux: Remove VLAIS
+Date: Tue,  2 Sep 2014 15:32:33 -0700
+Message-Id: <1409697153-7006-7-git-send-email-behanw@converseincode.com>
 In-Reply-To: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 References: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
 MIME-Version: 1.0
@@ -26,12 +28,20 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jan-Simon Möller <dl9pf@gmx.de>
+From: Vinícius Tinti <viniciustinti@gmail.com>
 
-The use of variable length arrays in structs (VLAIS) in the Linux Kernel code
-precludes the use of compilers which don't implement VLAIS (for instance the
-Clang compiler). This patch instead allocates the appropriate amount of memory
-using an char array.
+Replaced the use of a Variable Length Array In Struct (VLAIS) with a C99
+compliant equivalent. This is the original VLAIS struct.
+
+struct {
+	struct shash_desc shash;
+	char ctx[crypto_shash_descsize(tfm)];
+} desc;
+
+This patch instead allocates the appropriate amount of memory using an char
+array.
+
+The new code can be compiled with both gcc and clang.
 
 struct shash_desc contains a flexible array member member ctx declared with
 CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
@@ -46,62 +56,44 @@ CRYPTO_MINALIGN_ATTR.
 
 Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
 Signed-off-by: Behan Webster <behanw@converseincode.com>
-Cc: pageexec@freemail.hu
+Signed-off-by: Vinícius Tinti <viniciustinti@gmail.com>
+Signed-off-by: Mark Charlebois <charlebm@gmail.com>
 ---
- crypto/hmac.c | 27 +++++++++++++--------------
- 1 file changed, 13 insertions(+), 14 deletions(-)
+ fs/btrfs/hash.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/crypto/hmac.c b/crypto/hmac.c
-index 8d9544c..00ce204 100644
---- a/crypto/hmac.c
-+++ b/crypto/hmac.c
-@@ -52,20 +52,19 @@ static int hmac_setkey(struct crypto_shash *parent,
- 	struct hmac_ctx *ctx = align_ptr(opad + ss,
- 					 crypto_tfm_ctx_alignment());
- 	struct crypto_shash *hash = ctx->hash;
+diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
+index 85889aa..2fdacda 100644
+--- a/fs/btrfs/hash.c
++++ b/fs/btrfs/hash.c
+@@ -33,18 +33,18 @@ void btrfs_hash_exit(void)
+ 
+ u32 btrfs_crc32c(u32 crc, const void *address, unsigned int length)
+ {
 -	struct {
 -		struct shash_desc shash;
--		char ctx[crypto_shash_descsize(hash)];
+-		char ctx[crypto_shash_descsize(tfm)];
 -	} desc;
 +	char desc[sizeof(struct shash_desc)
-+		+ crypto_shash_descsize(hash)] CRYPTO_MINALIGN_ATTR;
++		+ crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR;
 +	struct shash_desc *shash = (struct shash_desc *)desc;
- 	unsigned int i;
++	u32 *ctx = (u32 *)shash_desc_ctx(shash);
+ 	int err;
  
--	desc.shash.tfm = hash;
--	desc.shash.flags = crypto_shash_get_flags(parent) &
--			    CRYPTO_TFM_REQ_MAY_SLEEP;
-+	shash->tfm = hash;
-+	shash->flags = crypto_shash_get_flags(parent)
-+		& CRYPTO_TFM_REQ_MAY_SLEEP;
+-	desc.shash.tfm = tfm;
+-	desc.shash.flags = 0;
+-	*(u32 *)desc.ctx = crc;
++	shash->tfm = tfm;
++	shash->flags = 0;
++	*ctx = crc;
  
- 	if (keylen > bs) {
- 		int err;
+-	err = crypto_shash_update(&desc.shash, address, length);
++	err = crypto_shash_update(shash, address, length);
+ 	BUG_ON(err);
  
--		err = crypto_shash_digest(&desc.shash, inkey, keylen, ipad);
-+		err = crypto_shash_digest(shash, inkey, keylen, ipad);
- 		if (err)
- 			return err;
- 
-@@ -81,12 +80,12 @@ static int hmac_setkey(struct crypto_shash *parent,
- 		opad[i] ^= 0x5c;
- 	}
- 
--	return crypto_shash_init(&desc.shash) ?:
--	       crypto_shash_update(&desc.shash, ipad, bs) ?:
--	       crypto_shash_export(&desc.shash, ipad) ?:
--	       crypto_shash_init(&desc.shash) ?:
--	       crypto_shash_update(&desc.shash, opad, bs) ?:
--	       crypto_shash_export(&desc.shash, opad);
-+	return crypto_shash_init(shash) ?:
-+	       crypto_shash_update(shash, ipad, bs) ?:
-+	       crypto_shash_export(shash, ipad) ?:
-+	       crypto_shash_init(shash) ?:
-+	       crypto_shash_update(shash, opad, bs) ?:
-+	       crypto_shash_export(shash, opad);
+-	return *(u32 *)desc.ctx;
++	return *ctx;
  }
- 
- static int hmac_export(struct shash_desc *pdesc, void *out)
 -- 
 1.9.1
 

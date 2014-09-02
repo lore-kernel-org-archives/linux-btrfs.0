@@ -1,50 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37954 "EHLO mx2.suse.de"
+Received: from imap.thunk.org ([74.207.234.97]:60578 "EHLO imap.thunk.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753792AbaIBLFD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Sep 2014 07:05:03 -0400
-Date: Tue, 2 Sep 2014 13:05:02 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: cancel scrub/replace if the user space process
- receive SIGKILL.
-Message-ID: <20140902110502.GC5888@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1407317662-9364-1-git-send-email-quwenruo@cn.fujitsu.com>
+	id S1752599AbaIBLd2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Sep 2014 07:33:28 -0400
+Date: Tue, 2 Sep 2014 07:31:04 -0400
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Dave Chinner <david@fromorbit.com>,
+        Nikolai Grigoriev <ngrigoriev@gmail.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        linux-mm@kvack.org, Jens Axboe <axboe@kernel.dk>
+Subject: Re: ext4 vs btrfs performance on SSD array
+Message-ID: <20140902113104.GD5049@thunk.org>
+References: <CAEp=YLgzsLbmEfGB5YKVcHP4CQ-_z1yxnZ0tpo7gjKZ2e1ma5g@mail.gmail.com>
+ <20140902000822.GA20473@dastard>
+ <20140902012222.GA21405@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1407317662-9364-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20140902012222.GA21405@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 06, 2014 at 05:34:22PM +0800, Qu Wenruo wrote:
-> When impatient sysadmin is tired of waiting background running btrfs
-> scrub/replace and send SIGKILL to btrfs process, unlike
-> SIGINT/SIGTERM which can be caught by user space program and cancel the
-> scrub work, user space program will continue running until ioctl exits.
+>  - the very small max readahead size
 
-I don't understand why it's needed to add another way to cancel scrub.
-Does it mean that 'btrfs scrub cancel' is not sufficient? It cancels
-both foreground and background scrub.  Same for dev-replace, it has the
-cancel subcommand.
+For things like the readahead size, that's probably something that we
+should autotune, based the time it takes to read N sectors.  i.e.,
+start N relatively small, such as 128k, and then bump it up based on
+how long it takes to do a sequential read of N sectors until it hits a
+given tunable, which is specified in milliseconds instead of kilobytes.
 
-Sending KILL signal to some random process is not the right way, how can
-the admin know to which filesystem the process belongs?
+>  - replacing cfq with deadline (or noop)
 
-> To keep it consistent with the behavior of btrfs-progs, which cancels
-> the work when SIGINT is received, this patch will make scrub routine to
-> check SIGKILL pending of current task and cancel the work if SIGKILL is
-> already pending.
+Unfortunately, that will break ionice and a number of other things...
 
-The foreground scrub starts a separate process and then wait()s. If you
-want to catch a SIGINT, then change it to a loop that checks for if the
-forked process exited or if Ctrl-c was pressed.
+      	       	     		     		  - Ted
 
-The dev-replace can be started without a userspace process via
-kthread_run from btrfs_dev_replace_continue_on_mount, and sending
-signals to kernel processes requires some caution. For one, the signals
-have to be explicitly allowed. But before that I'd like to better
-understand where the SIGKILL is unavoidable.
-
-Thanks.

@@ -1,53 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:27276 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752181AbaIBAKs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Sep 2014 20:10:48 -0400
-Date: Tue, 2 Sep 2014 10:08:22 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Nikolai Grigoriev <ngrigoriev@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from bombadil.infradead.org ([198.137.202.9]:60266 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751702AbaIBBW0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Sep 2014 21:22:26 -0400
+Date: Mon, 1 Sep 2014 18:22:22 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Nikolai Grigoriev <ngrigoriev@gmail.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        linux-mm@kvack.org, Jens Axboe <axboe@kernel.dk>
 Subject: Re: ext4 vs btrfs performance on SSD array
-Message-ID: <20140902000822.GA20473@dastard>
+Message-ID: <20140902012222.GA21405@infradead.org>
 References: <CAEp=YLgzsLbmEfGB5YKVcHP4CQ-_z1yxnZ0tpo7gjKZ2e1ma5g@mail.gmail.com>
+ <20140902000822.GA20473@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEp=YLgzsLbmEfGB5YKVcHP4CQ-_z1yxnZ0tpo7gjKZ2e1ma5g@mail.gmail.com>
+In-Reply-To: <20140902000822.GA20473@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 26, 2014 at 07:39:08PM -0400, Nikolai Grigoriev wrote:
-> Hi,
-> 
-> This is not exactly a problem - I am trying to understand why BTRFS
-> demonstrates significantly higher throughput in my environment.
-> 
-> I am observing something that I cannot explain. I am trying to come up
-> with a good filesystem configuration using HP P420i controller and
-> SSDs (Intel S3500). Out of curiosity I have tried BTRFS (still
-> unstable so I can't really expect to be able to use it) and noticed
-> that the read speed is about 150% of ext4 - while write speed is
-> comparable.
-...
-> When I read, I observe different picture:
-> 
-> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await  svctm  %util
-> (ext4 - reading)
-> sdb               0.00     0.00 4782.00    0.00   597.75     0.00 256.00     1.57    0.33   0.18  84.10
-> (btrfs - reading)
-> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await  svctm  %util
-> sdc             207.00     0.00 1794.00    0.00   886.40     0.00 1011.90    10.59    5.90   0.56 100.00
-> (xfs - reading)
-> Device:         rrqm/s   wrqm/s     r/s     w/s    rMB/s    wMB/s avgrq-sz avgqu-sz   await  svctm  %util
-> sdd               0.00     0.00 4623.00    0.00   577.88     0.00 256.00     1.71    0.37   0.21  97.00
+On Tue, Sep 02, 2014 at 10:08:22AM +1000, Dave Chinner wrote:
+> Pretty obvious difference: avgrq-sz. btrfs is doing 512k IOs, ext4
+> and XFS are doing is doing 128k IOs because that's the default block
+> device readahead size.  'blockdev --setra 1024 /dev/sdd' before
+> mounting the filesystem will probably fix it.
 
-Pretty obvious difference: avgrq-sz. btrfs is doing 512k IOs, ext4
-and XFS are doing is doing 128k IOs because that's the default block
-device readahead size.  'blockdev --setra 1024 /dev/sdd' before
-mounting the filesystem will probably fix it.
+Btw, it's really getting time to make Linux storage fs work out the
+box.  There's way to many things that are stupid by default and we
+require everyone to fix up manually:
 
--Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+ - the ridiculously low max_sectors default
+ - the very small max readahead size
+ - replacing cfq with deadline (or noop)
+ - the too small RAID5 stripe cache size
+
+and probably a few I forgot about.  It's time to make things perform
+well out of the box..

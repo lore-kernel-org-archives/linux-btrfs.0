@@ -1,179 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47832 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:48672 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752121AbaIBJNe (ORCPT
+	with ESMTP id S1752957AbaIBLu0 (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 2 Sep 2014 05:13:34 -0400
+	Tue, 2 Sep 2014 07:50:26 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix fsync race leading to invalid data after log replay
-Date: Tue,  2 Sep 2014 11:09:58 +0100
-Message-Id: <1409652598-27398-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1409418089-31790-1-git-send-email-fdmanana@suse.com>
-References: <1409418089-31790-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix fsync data loss after a ranged fsync
+Date: Tue,  2 Sep 2014 13:50:12 +0100
+Message-Id: <1409662212-12126-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
+References: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When the fsync callback (btrfs_sync_file) starts, it first waits for
-the writeback of any dirty pages to start and finish without holding
-the inode's mutex (to reduce contention). After this it acquires the
-inode's mutex and repeats that process via btrfs_wait_ordered_range
-only if we're doing a full sync (BTRFS_INODE_NEEDS_FULL_SYNC flag
-is set on the inode).
+While we're doing a full fsync (when the inode has the flag
+BTRFS_INODE_NEEDS_FULL_SYNC set) that is ranged too (covers only a
+portion of the file), we might have ordered operations that are started
+before or while we're logging the inode and that fall outside the fsync
+range.
 
-This is not safe for a non full sync - we need to start and wait for
-writeback to finish for any pages that might have been made dirty
-before acquiring the inode's mutex and after that first step mentioned
-before. Why this is needed is explained by the following comment added
-to btrfs_sync_file:
-
-  "Right before acquiring the inode's mutex, we might have new
-   writes dirtying pages, which won't immediately start the
-   respective ordered operations - that is done through the
-   fill_delalloc callbacks invoked from the writepage and
-   writepages address space operations. So make sure we start
-   all ordered operations before starting to log our inode. Not
-   doing this means that while logging the inode, writeback
-   could start and invoke writepage/writepages, which would call
-   the fill_delalloc callbacks (cow_file_range,
-   submit_compressed_extents). These callbacks add first an
-   extent map to the modified list of extents and then create
-   the respective ordered operation, which means in
-   tree-log.c:btrfs_log_inode() we might capture all existing
-   ordered operations (with btrfs_get_logged_extents()) before
-   the fill_delalloc callback adds its ordered operation, and by
-   the time we visit the modified list of extent maps (with
-   btrfs_log_changed_extents()), we see and process the extent
-   map they created. We then use the extent map to construct a
-   file extent item for logging without waiting for the
-   respective ordered operation to finish - this file extent
-   item points to a disk location that might not have yet been
-   written to, containing random data - so after a crash a log
-   replay will make our inode have file extent items that point
-   to disk locations containing invalid data, as we returned
-   success to userspace without waiting for the respective
-   ordered operation to finish, because it wasn't captured by
-   btrfs_get_logged_extents()."
+Therefore when a full ranged fsync finishes don't remove every extent
+map from the list of modified extent maps - as for some of them, that
+fall outside our fsync range, their respective ordered operation hasn't
+finished yet, meaning the corresponding file extent item wasn't inserted
+into the fs/subvol tree yet and therefore we didn't log it, and we must
+let the next fast fsync (one that checks only the modified list) see this
+extent map and log a matching file extent item to the log btree and wait
+for its ordered operation to finish (if it's still ongoing).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-V2: Better comments and for the non full sync case, start only the
-    ordered operations, instead of starting them and waiting for them
-    to complete. Waiting for their completion is already done later by
-    btrfs_sync_log(), so like this we can reduce some latency as some
-    ordered operations might complete (or get closer to) while writing
-    to the log tree (btrfs_log_dentry_safe).
+V2: No code change, only updated the changelog and the comment, to make
+    them more clear and accurate.
 
- fs/btrfs/file.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 63 insertions(+), 15 deletions(-)
+ fs/btrfs/file.c     |  2 +-
+ fs/btrfs/tree-log.c | 54 +++++++++++++++++++++++++++++++++++++++++++----------
+ fs/btrfs/tree-log.h |  2 ++
+ 3 files changed, 47 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e5534c1..5427ba8 100644
+index 66c4076..e5534c1 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1865,6 +1865,20 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
- 	return 0;
+@@ -1979,7 +1979,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 
+ 	btrfs_init_log_ctx(&ctx);
+ 
+-	ret = btrfs_log_dentry_safe(trans, root, dentry, &ctx);
++	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
+ 	if (ret < 0) {
+ 		/* Fallthrough and commit/free transaction. */
+ 		ret = 1;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 5a917a6..93d3c16 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -94,8 +94,10 @@
+ #define LOG_WALK_REPLAY_ALL 3
+ 
+ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root, struct inode *inode,
+-			     int inode_only);
++			   struct btrfs_root *root, struct inode *inode,
++			   int inode_only,
++			   const loff_t start,
++			   const loff_t end);
+ static int link_to_fixup_dir(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     struct btrfs_path *path, u64 objectid);
+@@ -3856,8 +3858,10 @@ process:
+  * This handles both files and directories.
+  */
+ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root, struct inode *inode,
+-			     int inode_only)
++			   struct btrfs_root *root, struct inode *inode,
++			   int inode_only,
++			   const loff_t start,
++			   const loff_t end)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_path *dst_path;
+@@ -4050,8 +4054,31 @@ log_extents:
+ 		struct extent_map *em, *n;
+ 
+ 		write_lock(&tree->lock);
+-		list_for_each_entry_safe(em, n, &tree->modified_extents, list)
++		/*
++		 * We can't just remove every em if we're called for a ranged
++		 * fsync - that is, one that doesn't cover the whole possible
++		 * file range (0 to LLONG_MAX). This is because we can have
++		 * em's that fall outside the range we're logging and therefore
++		 * their ordered operations haven't completed yet
++		 * (btrfs_finish_ordered_io() not invoked yet). This means we
++		 * didn't get their respective file extent item in the fs/subvol
++		 * tree yet, and need to let the next fast fsync (one which
++		 * consults the list of modified extent maps) find the em so
++		 * that it logs a matching file extent item and waits for the
++		 * respective ordered operation to complete (if it's still
++		 * running).
++		 *
++		 * Removing every em outside the range we're logging would make
++		 * the next fast fsync not log their matching file extent items,
++		 * therefore making us lose data after a log replay.
++		 */
++		list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
++			if (em->mod_start > end)
++				continue;
++			if (em->mod_start + em->mod_len <= start)
++				continue;
+ 			list_del_init(&em->list);
++		}
+ 		write_unlock(&tree->lock);
+ 	}
+ 
+@@ -4158,7 +4185,10 @@ out:
+  */
+ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 			    	  struct btrfs_root *root, struct inode *inode,
+-			    	  struct dentry *parent, int exists_only,
++				  struct dentry *parent,
++				  const loff_t start,
++				  const loff_t end,
++				  int exists_only,
+ 				  struct btrfs_log_ctx *ctx)
+ {
+ 	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
+@@ -4204,7 +4234,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto end_no_trans;
+ 
+-	ret = btrfs_log_inode(trans, root, inode, inode_only);
++	ret = btrfs_log_inode(trans, root, inode, inode_only, start, end);
+ 	if (ret)
+ 		goto end_trans;
+ 
+@@ -4232,7 +4262,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 
+ 		if (BTRFS_I(inode)->generation >
+ 		    root->fs_info->last_trans_committed) {
+-			ret = btrfs_log_inode(trans, root, inode, inode_only);
++			ret = btrfs_log_inode(trans, root, inode, inode_only,
++					      0, LLONG_MAX);
+ 			if (ret)
+ 				goto end_trans;
+ 		}
+@@ -4266,13 +4297,15 @@ end_no_trans:
+  */
+ int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct dentry *dentry,
++			  const loff_t start,
++			  const loff_t end,
+ 			  struct btrfs_log_ctx *ctx)
+ {
+ 	struct dentry *parent = dget_parent(dentry);
+ 	int ret;
+ 
+ 	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent,
+-				     0, ctx);
++				     start, end, 0, ctx);
+ 	dput(parent);
+ 
+ 	return ret;
+@@ -4509,6 +4542,7 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 		    root->fs_info->last_trans_committed))
+ 		return 0;
+ 
+-	return btrfs_log_inode_parent(trans, root, inode, parent, 1, NULL);
++	return btrfs_log_inode_parent(trans, root, inode, parent, 0,
++				      LLONG_MAX, 1, NULL);
  }
  
-+static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
-+{
-+	int ret;
-+
-+	atomic_inc(&BTRFS_I(inode)->sync_writers);
-+	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
-+			     &BTRFS_I(inode)->runtime_flags))
-+		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
-+	atomic_dec(&BTRFS_I(inode)->sync_writers);
-+
-+	return ret;
-+}
-+
- /*
-  * fsync call for both files and directories.  This logs the inode into
-  * the tree log instead of forcing full commits whenever possible.
-@@ -1894,30 +1908,64 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 * multi-task, and make the performance up.  See
- 	 * btrfs_wait_ordered_range for an explanation of the ASYNC check.
- 	 */
--	atomic_inc(&BTRFS_I(inode)->sync_writers);
--	ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
--	if (!ret && test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			     &BTRFS_I(inode)->runtime_flags))
--		ret = filemap_fdatawrite_range(inode->i_mapping, start, end);
--	atomic_dec(&BTRFS_I(inode)->sync_writers);
-+	ret = start_ordered_ops(inode, start, end);
- 	if (ret)
- 		return ret;
- 
- 	mutex_lock(&inode->i_mutex);
--
--	/*
--	 * We flush the dirty pages again to avoid some dirty pages in the
--	 * range being left.
--	 */
- 	atomic_inc(&root->log_batch);
- 	full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 			     &BTRFS_I(inode)->runtime_flags);
-+	/*
-+	 * We might have have had more pages made dirty after calling
-+	 * start_ordered_ops and before acquiring the inode's i_mutex.
-+	 */
- 	if (full_sync) {
-+		/*
-+		 * For a full sync, we need to make sure any ordered operations
-+		 * start and finish before we start logging the inode, so that
-+		 * all extents are persisted and the respective file extent
-+		 * items are in the fs/subvol btree.
-+		 */
- 		ret = btrfs_wait_ordered_range(inode, start, end - start + 1);
--		if (ret) {
--			mutex_unlock(&inode->i_mutex);
--			goto out;
--		}
-+	} else {
-+		/*
-+		 * Start any new ordered operations before starting to log the
-+		 * inode. We will wait for them to finish in btrfs_sync_log().
-+		 *
-+		 * Right before acquiring the inode's mutex, we might have new
-+		 * writes dirtying pages, which won't immediately start the
-+		 * respective ordered operations - that is done through the
-+		 * fill_delalloc callbacks invoked from the writepage and
-+		 * writepages address space operations. So make sure we start
-+		 * all ordered operations before starting to log our inode. Not
-+		 * doing this means that while logging the inode, writeback
-+		 * could start and invoke writepage/writepages, which would call
-+		 * the fill_delalloc callbacks (cow_file_range,
-+		 * submit_compressed_extents). These callbacks add first an
-+		 * extent map to the modified list of extents and then create
-+		 * the respective ordered operation, which means in
-+		 * tree-log.c:btrfs_log_inode() we might capture all existing
-+		 * ordered operations (with btrfs_get_logged_extents()) before
-+		 * the fill_delalloc callback adds its ordered operation, and by
-+		 * the time we visit the modified list of extent maps (with
-+		 * btrfs_log_changed_extents()), we see and process the extent
-+		 * map they created. We then use the extent map to construct a
-+		 * file extent item for logging without waiting for the
-+		 * respective ordered operation to finish - this file extent
-+		 * item points to a disk location that might not have yet been
-+		 * written to, containing random data - so after a crash a log
-+		 * replay will make our inode have file extent items that point
-+		 * to disk locations containing invalid data, as we returned
-+		 * success to userspace without waiting for the respective
-+		 * ordered operation to finish, because it wasn't captured by
-+		 * btrfs_get_logged_extents().
-+		 */
-+		ret = start_ordered_ops(inode, start, end);
-+	}
-+	if (ret) {
-+		mutex_unlock(&inode->i_mutex);
-+		goto out;
- 	}
- 	atomic_inc(&root->log_batch);
- 
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 7f5b41b..e2e798a 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -59,6 +59,8 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
+ int btrfs_recover_log_trees(struct btrfs_root *tree_root);
+ int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, struct dentry *dentry,
++			  const loff_t start,
++			  const loff_t end,
+ 			  struct btrfs_log_ctx *ctx);
+ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root,
 -- 
 1.9.1
 

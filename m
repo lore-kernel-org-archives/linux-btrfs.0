@@ -1,192 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:48672 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752957AbaIBLu0 (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Tue, 2 Sep 2014 07:50:26 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix fsync data loss after a ranged fsync
-Date: Tue,  2 Sep 2014 13:50:12 +0100
-Message-Id: <1409662212-12126-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
-References: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
+Received: from mail-pd0-f170.google.com ([209.85.192.170]:51892 "EHLO
+	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755434AbaIBWdT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 18:33:19 -0400
+Received: by mail-pd0-f170.google.com with SMTP id r10so9661896pdi.29
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 15:33:19 -0700 (PDT)
+From: behanw@converseincode.com
+To: agk@redhat.com, clm@fb.com, davem@davemloft.net, dm-devel@redhat.com,
+        fabf@skynet.be, herbert@gondor.apana.org.au, jbacik@fb.com,
+        snitzer@redhat.com
+Cc: akpm@linux-foundation.org, james.l.morris@oracle.com,
+        john.johansen@canonical.com, linux-btrfs@vger.kernel.org,
+        linux-crypto@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-security-module@vger.kernel.org,
+        neilb@suse.de, serge@hallyn.com, torvalds@linux-foundation.org,
+        =?UTF-8?q?Jan-Simon=20M=C3=B6ller?= <dl9pf@gmx.de>,
+        Behan Webster <behanw@converseincode.com>, pageexec@freemail.hu
+Subject: [PATCH RFC 4/6] crypto: LLVMLinux: Remove VLAIS usage from crypto/testmgr.c
+Date: Tue,  2 Sep 2014 15:32:31 -0700
+Message-Id: <1409697153-7006-5-git-send-email-behanw@converseincode.com>
+In-Reply-To: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
+References: <1409697153-7006-1-git-send-email-behanw@converseincode.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While we're doing a full fsync (when the inode has the flag
-BTRFS_INODE_NEEDS_FULL_SYNC set) that is ranged too (covers only a
-portion of the file), we might have ordered operations that are started
-before or while we're logging the inode and that fall outside the fsync
-range.
+From: Jan-Simon Möller <dl9pf@gmx.de>
 
-Therefore when a full ranged fsync finishes don't remove every extent
-map from the list of modified extent maps - as for some of them, that
-fall outside our fsync range, their respective ordered operation hasn't
-finished yet, meaning the corresponding file extent item wasn't inserted
-into the fs/subvol tree yet and therefore we didn't log it, and we must
-let the next fast fsync (one that checks only the modified list) see this
-extent map and log a matching file extent item to the log btree and wait
-for its ordered operation to finish (if it's still ongoing).
+The use of variable length arrays in structs (VLAIS) in the Linux Kernel code
+precludes the use of compilers which don't implement VLAIS (for instance the
+Clang compiler). This patch instead allocates the appropriate amount of memory
+using an char array.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+struct shash_desc contains a flexible array member member ctx declared with
+CRYPTO_MINALIGN_ATTR, so sizeof(struct shash_desc) aligns the beginning
+of the array declared after struct shash_desc with long long.
+
+No trailing padding is required because it is not a struct type that can
+be used in an array.
+
+The CRYPTO_MINALIGN_ATTR is required so that desc is aligned with long long
+as would be the case for a struct containing a member with
+CRYPTO_MINALIGN_ATTR.
+
+Signed-off-by: Jan-Simon Möller <dl9pf@gmx.de>
+Signed-off-by: Behan Webster <behanw@converseincode.com>
+Cc: pageexec@freemail.hu
 ---
+ crypto/testmgr.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-V2: No code change, only updated the changelog and the comment, to make
-    them more clear and accurate.
-
- fs/btrfs/file.c     |  2 +-
- fs/btrfs/tree-log.c | 54 +++++++++++++++++++++++++++++++++++++++++++----------
- fs/btrfs/tree-log.h |  2 ++
- 3 files changed, 47 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 66c4076..e5534c1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1979,7 +1979,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 
- 	btrfs_init_log_ctx(&ctx);
- 
--	ret = btrfs_log_dentry_safe(trans, root, dentry, &ctx);
-+	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
- 	if (ret < 0) {
- 		/* Fallthrough and commit/free transaction. */
- 		ret = 1;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 5a917a6..93d3c16 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -94,8 +94,10 @@
- #define LOG_WALK_REPLAY_ALL 3
- 
- static int btrfs_log_inode(struct btrfs_trans_handle *trans,
--			     struct btrfs_root *root, struct inode *inode,
--			     int inode_only);
-+			   struct btrfs_root *root, struct inode *inode,
-+			   int inode_only,
-+			   const loff_t start,
-+			   const loff_t end);
- static int link_to_fixup_dir(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct btrfs_path *path, u64 objectid);
-@@ -3856,8 +3858,10 @@ process:
-  * This handles both files and directories.
-  */
- static int btrfs_log_inode(struct btrfs_trans_handle *trans,
--			     struct btrfs_root *root, struct inode *inode,
--			     int inode_only)
-+			   struct btrfs_root *root, struct inode *inode,
-+			   int inode_only,
-+			   const loff_t start,
-+			   const loff_t end)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_path *dst_path;
-@@ -4050,8 +4054,31 @@ log_extents:
- 		struct extent_map *em, *n;
- 
- 		write_lock(&tree->lock);
--		list_for_each_entry_safe(em, n, &tree->modified_extents, list)
-+		/*
-+		 * We can't just remove every em if we're called for a ranged
-+		 * fsync - that is, one that doesn't cover the whole possible
-+		 * file range (0 to LLONG_MAX). This is because we can have
-+		 * em's that fall outside the range we're logging and therefore
-+		 * their ordered operations haven't completed yet
-+		 * (btrfs_finish_ordered_io() not invoked yet). This means we
-+		 * didn't get their respective file extent item in the fs/subvol
-+		 * tree yet, and need to let the next fast fsync (one which
-+		 * consults the list of modified extent maps) find the em so
-+		 * that it logs a matching file extent item and waits for the
-+		 * respective ordered operation to complete (if it's still
-+		 * running).
-+		 *
-+		 * Removing every em outside the range we're logging would make
-+		 * the next fast fsync not log their matching file extent items,
-+		 * therefore making us lose data after a log replay.
-+		 */
-+		list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
-+			if (em->mod_start > end)
-+				continue;
-+			if (em->mod_start + em->mod_len <= start)
-+				continue;
- 			list_del_init(&em->list);
-+		}
- 		write_unlock(&tree->lock);
+diff --git a/crypto/testmgr.c b/crypto/testmgr.c
+index ac2b631..f4bf5c2 100644
+--- a/crypto/testmgr.c
++++ b/crypto/testmgr.c
+@@ -1714,16 +1714,16 @@ static int alg_test_crc32c(const struct alg_test_desc *desc,
  	}
  
-@@ -4158,7 +4185,10 @@ out:
-  */
- static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 			    	  struct btrfs_root *root, struct inode *inode,
--			    	  struct dentry *parent, int exists_only,
-+				  struct dentry *parent,
-+				  const loff_t start,
-+				  const loff_t end,
-+				  int exists_only,
- 				  struct btrfs_log_ctx *ctx)
- {
- 	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
-@@ -4204,7 +4234,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto end_no_trans;
+ 	do {
+-		struct {
+-			struct shash_desc shash;
+-			char ctx[crypto_shash_descsize(tfm)];
+-		} sdesc;
++		char sdesc[sizeof(struct shash_desc)
++			+ crypto_shash_descsize(tfm)] CRYPTO_MINALIGN_ATTR;
++		struct shash_desc *shash = (struct shash_desc *)sdesc;
++		u32 *ctx = (u32 *)shash_desc_ctx(shash);
  
--	ret = btrfs_log_inode(trans, root, inode, inode_only);
-+	ret = btrfs_log_inode(trans, root, inode, inode_only, start, end);
- 	if (ret)
- 		goto end_trans;
+-		sdesc.shash.tfm = tfm;
+-		sdesc.shash.flags = 0;
++		shash->tfm = tfm;
++		shash->flags = 0;
  
-@@ -4232,7 +4262,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 
- 		if (BTRFS_I(inode)->generation >
- 		    root->fs_info->last_trans_committed) {
--			ret = btrfs_log_inode(trans, root, inode, inode_only);
-+			ret = btrfs_log_inode(trans, root, inode, inode_only,
-+					      0, LLONG_MAX);
- 			if (ret)
- 				goto end_trans;
- 		}
-@@ -4266,13 +4297,15 @@ end_no_trans:
-  */
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct dentry *dentry,
-+			  const loff_t start,
-+			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx)
- {
- 	struct dentry *parent = dget_parent(dentry);
- 	int ret;
- 
- 	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent,
--				     0, ctx);
-+				     start, end, 0, ctx);
- 	dput(parent);
- 
- 	return ret;
-@@ -4509,6 +4542,7 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 		    root->fs_info->last_trans_committed))
- 		return 0;
- 
--	return btrfs_log_inode_parent(trans, root, inode, parent, 1, NULL);
-+	return btrfs_log_inode_parent(trans, root, inode, parent, 0,
-+				      LLONG_MAX, 1, NULL);
- }
- 
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 7f5b41b..e2e798a 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -59,6 +59,8 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- int btrfs_recover_log_trees(struct btrfs_root *tree_root);
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct dentry *dentry,
-+			  const loff_t start,
-+			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx);
- int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
+-		*(u32 *)sdesc.ctx = le32_to_cpu(420553207);
+-		err = crypto_shash_final(&sdesc.shash, (u8 *)&val);
++		*ctx = le32_to_cpu(420553207);
++		err = crypto_shash_final(shash, (u8 *)&val);
+ 		if (err) {
+ 			printk(KERN_ERR "alg: crc32c: Operation failed for "
+ 			       "%s: %d\n", driver, err);
 -- 
 1.9.1
 

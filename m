@@ -1,151 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34195 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750733AbaIJGHN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Sep 2014 02:07:13 -0400
-Message-ID: <540FEA80.6040007@oracle.com>
-Date: Wed, 10 Sep 2014 14:06:56 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
-MIME-Version: 1.0
-To: kreijack@inwind.it, dsterba@suse.cz, Chris Mason <clm@fb.com>
-CC: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC 0/5] Scan all devices to build fs device list
-References: <1409751393-5403-1-git-send-email-miaox@cn.fujitsu.com> <540B6900.7000307@fb.com> <20140908090946.GI5636@twin.jikos.cz> <540D8D45.6000608@oracle.com> <540DE427.4040008@inwind.it> <540E7359.4050000@oracle.com> <540F63BC.6080601@inwind.it>
-In-Reply-To: <540F63BC.6080601@inwind.it>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:50115 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752518AbaIBMFw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Sep 2014 08:05:52 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XOmqJ-0002mQ-6D
+	for linux-btrfs@vger.kernel.org; Tue, 02 Sep 2014 14:05:47 +0200
+Received: from pd953e79b.dip0.t-ipconnect.de ([217.83.231.155])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 14:05:47 +0200
+Received: from holger.hoffstaette by pd953e79b.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Sep 2014 14:05:47 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Btrfs-progs-3.16: fs metadata is both single and dup?
+Date: Tue, 2 Sep 2014 12:05:33 +0000 (UTC)
+Message-ID: <pan.2014.09.02.12.05.33@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+I updated to progs-3.16 and noticed during testing:
 
-Goffredo,
+root>losetup 
+NAME       SIZELIMIT OFFSET AUTOCLEAR RO BACK-FILE
+/dev/loop0         0      0         0  0 /tmp/img
 
+root>mkfs.btrfs -f /dev/loop0
+Btrfs v3.16
+See http://btrfs.wiki.kernel.org for more information.
 
-Thanks for comments, more in line below.
+Performing full device TRIM (8.00GiB) ...
+Turning ON incompat feature 'extref': increased hardlink limit per file 
+to 65536
+fs created label (null) on /dev/loop0
+	nodesize 16384 leafsize 16384 sectorsize 4096 size 8.00GiB
+root>mkdir /tmp/btrfs
+root>mount /dev/loop0 /tmp/btrfs 
 
-On 10/09/2014 04:31, Goffredo Baroncelli wrote:
-> On 09/09/2014 05:26 AM, Anand Jain wrote:
->
-> Anand,
-> first thanks to discuss this with me; below my comments
->
->>> You are talking about a ioctl: why not use (extending them when needed)
->>> the sysfs information ?
->>
->>   yeah, I understand I am the only person talking about ioctl,
->>   and all others recommend sysfs. I understand I am wrong, but
->>   just by mass. and I still have no idea why not ioctl ?
->
-> Because it is an interface difficult to extend.
+All fine until here..
 
-  Its quite common to make ioctl auto adaptable by using the
-  structure size/version.  btrfs-devlist tool does it too.
+root>btrfs filesystem df /tmp/btrfs 
+Data, single: total=8.00MiB, used=64.00KiB
+System, DUP: total=8.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, DUP: total=409.56MiB, used=112.00KiB
+Metadata, single: total=8.00MiB, used=0.00
 
+..wait, what? Let's be clear..
 
->>   Problem with sysfs:
->>    - Note that sysfs supports only one parameter value with max length
->>    u64, to rebuilt entire kernel's fs_uuid list in the user space
->>    that would be quite a lot of sysfs files. should that be fine ?
->>    Further we would need another traverser tool (python ?) to read
->>    all these sysfs files. ? so that we could create fs_uuid list
->>    in the user-space.
-> To me it seems that other fs interface scale well even if the number
-> of items is big (think /proc)
+root>btrfs balance start -mconvert=dup /tmp/btrfs 
+Done, had to relocate 4 out of 5 chunks
 
-  /proc supports larger content transfer using seq_file.  /sysfs doesn't.
+root>btrfs filesystem df /tmp/btrfs            
+Data, single: total=8.00MiB, used=64.00KiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=128.00MiB, used=112.00KiB
 
->>    - we would need all info about the kernel fs_uuid, even when the
->>   device is not mounted.
+Now looking as expected.
 
-> Could you elaborate ?
-> We have two kind of objects: filesystems and devices. A filesystem is
-> created when its first device is registered. When the filesystem
-> is mounted, further information are available.
->
-> Our hypothetical sysfs interface should export information about
-> filesystem and/or devices until they exist. If a filesystem is
-> mounted more information are exported. When it is umounted
-> less are exported.
->
-> This would not be different if we use a ioctl() interface.
+root>btrfs balance start -mconvert=single -f /tmp/btrfs 
+Done, had to relocate 2 out of 3 chunks
 
-  (Its not an on disk structure)
-  The purpose of this interface is to read entire of volume.c
-  static LIST_HEAD(fs_uuids) list from the btrfs memory to the
-  user space. Sorry if it wasn't clear before.
+root>btrfs filesystem df /tmp/btrfs            
+Data, single: total=8.00MiB, used=128.00KiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=256.00MiB, used=112.00KiB
 
-  We desperately need this to solve some critical structural
-  problem in btrs-progs.
+Looking good too (metadata doubled)
 
->>    - thinking of nested seed with sysfs is more complicated, as we would
->>   have same btrfs_device at multiple fs_devices. still we must represent
->>   them in the sysfs.
-> I am not used to use seed device; so I can't comment.
->
->>    - as of now fs_uuid can grow infinite with just "a" device.
->>     ref: [PATCH 1/2] btrfs: device list could grow infinite
-> This is a btrfs problem. Doesn't make sense to store these information
-> if there aren't any device. When the last device disappear (is replaced),
-> the filesystem object should disappear too.
-> If a sysfs approach point out this problem... to me it seems good ! :-)
+So where does the confusing initial display come from? I'm running this 
+against a (very patched) 3.14.17, but don't remember ever seeing this 
+with btrfs-progs-3.14.2.
 
+Any ideas?
 
->>     can't imagine anybody traversing through /sysfs to understand
->>     what btrfs-kernel think of devices. user would prefer a cli
->>     to know that instead.
-> sysfs is an interface, that doesn't means that is THE user interface.
-> Of course a CLI or a GUI will need.
-
-
->>
->>    - sysfs layout has to be dynamic based on fs_uuids list changes,
->>    devices added, removed, mounted replaced etc.. isn't it making
->>    more unstable ?
->
-> $ find /sys | wc -l
-> 27362
-> On my PC sysfs has more already than 20 thousands entries, and it is
-> a quite simple machine. But this doesn't cause instability.
-> May be more difficult, but I don't think that sysfs is not capable
-> to sustain that.
->
->
-> Already linux export a lot of sysfs files for each device. I.e.
->
-> $ find /sys/block/sda/ | wc -l
-> 	190
->
-> these are hundreds entries for each disks. So I don't think that btrfs sysfs
-> interface could cause more problem even if a filesystem has
-> a lot of disks.
-
-
->>
->> appreciate your comments
-> The major problem of an ioctl() interface is that is very difficult
-> to extend. Typically when we need to extend it , the current is
-> marked as old/deprecated and a new one is generated.
-> However an ioctl() is an ABI so even the old interface have to be
-> maintained.
->
-> One point about I have to agree with you is that a sysfs interface
-> is not good, is when:
-> - we need to export huge quantity of data
-> - we have an high rate of data
->
-> But these to me don't seem to apply to a sysfs btrfs interface.
-
-
-  I thought you will say sysfs doesn't have to depend on any
-  custom made user space tool to read/write. :-)
-
-  The challenge is to provide sysfs interface without cluttering
-  it.  There are a lot talks on sysfs being cluttered.
-  We definitely need sysfs interface for btrfs. But I am not
-  too sure if we can get all the info without looking btrfs sysfs
-  interface too cluttered, typically we might need all info as
-  in btrfs-devlist.
-
-Thanks, Anand
+thanks
+Holger
 

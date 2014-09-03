@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:13195 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932488AbaICNeP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 09:34:15 -0400
+	with ESMTP id S932291AbaICNeK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 09:34:10 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s83DYBAq006674
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 21:34:11 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s83DY6TM006652
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 21:34:06 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 11/18] Btrfs: fix unprotected device list access when getting the fs information
-Date: Wed, 3 Sep 2014 21:35:40 +0800
-Message-ID: <1409751347-5296-11-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 06/18] Btrfs: Fix wrong free_chunk_space assignment during removing a device
+Date: Wed, 3 Sep 2014 21:35:35 +0800
+Message-ID: <1409751347-5296-6-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1409751347-5296-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1409751347-5296-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,46 +18,31 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we get the fs information, we forgot to acquire the mutex of device list,
-it might cause the problem we might access a device that was removed. Fix
-it by acquiring the device list mutex.
+During removing a device, we have modified free_chunk_space when we
+shrink the device, so we needn't assign a new value to it after
+the device shrink. Fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/super.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 089991d..6b98358 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1703,7 +1703,11 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f8273bb..1524b3f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1671,11 +1671,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+ 	if (ret)
+ 		goto error_undo;
  
--	/* holding chunk_muext to avoid allocating new chunks */
-+	/*
-+	 * holding chunk_muext to avoid allocating new chunks, holding
-+	 * device_list_mutex to avoid the device being removed
-+	 */
-+	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	mutex_lock(&fs_info->chunk_mutex);
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(found, head, list) {
-@@ -1744,11 +1748,13 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	ret = btrfs_calc_avail_data_space(fs_info->tree_root, &total_free_data);
- 	if (ret) {
- 		mutex_unlock(&fs_info->chunk_mutex);
-+		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 		return ret;
- 	}
- 	buf->f_bavail += div_u64(total_free_data, factor);
- 	buf->f_bavail = buf->f_bavail >> bits;
- 	mutex_unlock(&fs_info->chunk_mutex);
-+	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+-	spin_lock(&root->fs_info->free_chunk_lock);
+-	root->fs_info->free_chunk_space = device->total_bytes -
+-		device->bytes_used;
+-	spin_unlock(&root->fs_info->free_chunk_lock);
+-
+ 	device->in_fs_metadata = 0;
+ 	btrfs_scrub_cancel_dev(root->fs_info, device);
  
- 	buf->f_type = BTRFS_SUPER_MAGIC;
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
 -- 
 1.9.3
 

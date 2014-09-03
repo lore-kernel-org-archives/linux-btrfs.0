@@ -1,102 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:53399 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933168AbaICWCG convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 18:02:06 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Toralf =?ISO-8859-1?Q?F=F6rster?= <toralf.foerster@gmx.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: INFO: task btrfs-transacti:2408 blocked for more than 120 seconds.
-Date: Thu, 04 Sep 2014 00:02:03 +0200
-Message-ID: <1484398.jrmhBVWBue@merkaba>
-In-Reply-To: <54074D1D.1070509@gmx.de>
-References: <54074D1D.1070509@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from plane.gmane.org ([80.91.229.3]:43447 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933571AbaICXHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Sep 2014 19:07:11 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XPJdu-0004iz-7v
+	for linux-btrfs@vger.kernel.org; Thu, 04 Sep 2014 01:07:10 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 01:07:10 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 01:07:10 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: INFO: task btrfs-transacti:2408 blocked for more than 120
+ seconds.
+Date: Wed, 3 Sep 2014 23:06:58 +0000 (UTC)
+Message-ID: <pan$5c2a6$641b4be8$956583a6$a6dae12e@cox.net>
+References: <54074D1D.1070509@gmx.de> <1484398.jrmhBVWBue@merkaba>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 3. September 2014, 19:17:17 schrieben Sie:
-> At a 32 bit stable Gentoo Linux I do have 2 BTRFS file systems :
-> 
-> $ mount | grep btrfs
-> /var/lib/portage.fs on /usr/portage type btrfs (rw,noatime,compress=lzo)
-> /var/lib/pkg.fs on /var/db/pkg type btrfs (rw,noatime,compress=lzo)
-> 
-> holding a lot of small Gentoo-package-Manager-related files. The first is
-> exported via NMFS so that my KVM can access that tree too.
-> 
-> Today I got a hang while upgrading a package at the host and one within the
-> KVM at the same time, syslog tells me:
+Martin Steigerwald posted on Thu, 04 Sep 2014 00:02:03 +0200 as excerpted:
 
-Which kernel is this?
-
-If this is anything less than 3.17-rc3, I suggest you try with that one, or 
-wait till the hang fix patches got into stable trees. Chris´s recent pull 
-request may have been about these.
-
-Thanks,
-Martin
-
-> Sep  3 19:10:57 n22 kernel: INFO: task btrfs-transacti:2408 blocked for more
-> than 120 seconds. Sep  3 19:10:57 n22 kernel: Not tainted 3.16.1 #5
-> Sep  3 19:10:57 n22 kernel: "echo 0 >
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message. Sep  3
-> 19:10:57 n22 kernel: btrfs-transacti D 00000000     0  2408      2
-> 0x00000000 Sep  3 19:10:57 n22 kernel: edb15a34 00000086 c10c7efc 00000000
-> 00000001 5197f8f9 00001fa0 c17bf880 Sep  3 19:10:57 n22 kernel: c17bf880
-> f3630880 f10167c0 c1099ed3 00000002 00000001 00000000 c10c7efc Sep  3
-> 19:10:57 n22 kernel: 118a2543 00000857 ffffffff 00000018 c24d94d3 002180b0
-> 0062c84a abf93cc6 Sep  3 19:10:57 n22 kernel: Call Trace:
-> Sep  3 19:10:57 n22 kernel: [<c10c7efc>] ? __delayacct_blkio_start+0x1c/0x20
-> Sep  3 19:10:57 n22 kernel: [<c1099ed3>] ? ktime_get_ts+0x83/0x180 Sep  3
-> 19:10:57 n22 kernel: [<c10c7efc>] ? __delayacct_blkio_start+0x1c/0x20 Sep 
-> 3 19:10:57 n22 kernel: [<c10f6ba0>] ? wait_on_page_read+0x50/0x50 Sep  3
-> 19:10:57 n22 kernel: [<c14c4bc6>] io_schedule+0x86/0x100
-> Sep  3 19:10:57 n22 kernel: [<c10f6bad>] sleep_on_page+0xd/0x20
-> Sep  3 19:10:57 n22 kernel: [<c14c4ee1>] __wait_on_bit+0x51/0x80
-> Sep  3 19:10:57 n22 kernel: [<c10f6ba0>] ? wait_on_page_read+0x50/0x50
-> Sep  3 19:10:57 n22 kernel: [<c10f69f3>] wait_on_page_bit+0x83/0x90
-> Sep  3 19:10:57 n22 kernel: [<c107ce10>] ?
-> autoremove_wake_function+0x40/0x40 Sep  3 19:10:57 n22 kernel: [<c125869c>]
-> read_extent_buffer_pages+0x2dc/0x2f0 Sep  3 19:10:57 n22 kernel:
-> [<c1229718>] btree_read_extent_buffer_pages.constprop.50+0xc8/0x140 Sep  3
-> 19:10:57 n22 kernel: [<c1228860>] ? free_root_pointers+0x50/0x50 Sep  3
-> 19:10:57 n22 kernel: [<c122a6dc>] read_tree_block+0x3c/0x60 Sep  3 19:10:57
-> n22 kernel: [<c120ae31>] read_block_for_search.isra.30+0x141/0x390 Sep  3
-> 19:10:57 n22 kernel: [<c120cb67>] btrfs_search_slot+0x3a7/0x870 Sep  3
-> 19:10:57 n22 kernel: [<c1213a92>] lookup_inline_extent_backref+0x132/0x6e0
-> Sep  3 19:10:57 n22 kernel: [<c107222b>] ? update_curr+0xeb/0x1a0
-> Sep  3 19:10:57 n22 kernel: [<c107e7be>] ? cpuacct_charge+0x6e/0x90
-> Sep  3 19:10:57 n22 kernel: [<c12160cd>] __btrfs_free_extent+0x13d/0xd10
-> Sep  3 19:10:57 n22 kernel: [<c14c8652>] ? _raw_spin_unlock+0x22/0x30
-> Sep  3 19:10:57 n22 kernel: [<c121b9c7>] ?
-> __btrfs_run_delayed_refs+0x117/0x1260 Sep  3 19:10:57 n22 kernel:
-> [<c121c187>] __btrfs_run_delayed_refs+0x8d7/0x1260 Sep  3 19:10:57 n22
-> kernel: [<c1065849>] ? finish_task_switch+0x79/0x100 Sep  3 19:10:57 n22
-> kernel: [<c14c73ad>] ? mutex_unlock+0xd/0x10
-> Sep  3 19:10:57 n22 kernel: [<c12209c8>]
-> btrfs_run_delayed_refs.part.60+0x58/0x220 Sep  3 19:10:57 n22 kernel:
-> [<c124e477>] ? btrfs_run_ordered_operations+0x1b7/0x240 Sep  3 19:10:57 n22
-> kernel: [<c1220ba4>] btrfs_run_delayed_refs+0x14/0x30 Sep  3 19:10:57 n22
-> kernel: [<c1230f75>] btrfs_commit_transaction+0x45/0xc70 Sep  3 19:10:57
-> n22 kernel: [<c1231c1e>] ? start_transaction+0x7e/0x5b0 Sep  3 19:10:57 n22
-> kernel: [<c122d3f5>] transaction_kthread+0x195/0x220 Sep  3 19:10:57 n22
-> kernel: [<c122d260>] ? btrfs_cleanup_transaction+0x490/0x490 Sep  3
-> 19:10:57 n22 kernel: [<c105d896>] kthread+0xa6/0xc0
-> Sep  3 19:10:57 n22 kernel: [<c14c8f01>] ret_from_kernel_thread+0x21/0x30
-> Sep  3 19:10:57 n22 kernel: [<c105d7f0>] ?
-> kthread_create_on_node+0x180/0x180 Sep  3 19:10:57 n22 kernel: 2 locks held
-> by btrfs-transacti/2408:
-> Sep  3 19:10:57 n22 kernel: #0: 
-> (&fs_info->transaction_kthread_mutex){......}, at: [<c122d367>]
-> transaction_kthread+0x107/0x220 Sep  3 19:10:57 n22 kernel: #1: 
-> (&head_ref->mutex){......}, at: [<c128149f>]
-> btrfs_delayed_ref_lock+0x2f/0x1f0
+> Am Mittwoch, 3. September 2014, 19:17:17 schrieben Sie:
+>> At a 32 bit stable Gentoo Linux I do have 2 BTRFS file systems :
+>> 
+>> $ mount | grep btrfs /var/lib/portage.fs on /usr/portage type btrfs
+>> (rw,noatime,compress=lzo) /var/lib/pkg.fs on /var/db/pkg type btrfs
+>> (rw,noatime,compress=lzo)
+>> 
+>> holding a lot of small Gentoo-package-Manager-related files. The first
+>> is exported via NMFS so that my KVM can access that tree too.
+>> 
+>> Today I got a hang while upgrading a package at the host and one within
+>> the KVM at the same time, syslog tells me:
 > 
-> 
-> Just FWIW
+> Which kernel is this?
+
+>From the posted log:
+
+>> Sep  3 19:10:57 n22 kernel: Not tainted 3.16.1 #5
+
+=:^)
+
+(FWIW even tho I don't claim to be a dev or to otherwise make much sense 
+of traces like the one posted, I /have/ learned to look for the kernel 
+version in a line near the top of the trace.  I can make sense of that, 
+at least, and it can sometimes save a bit of confusion when the poster 
+claims to be using one version but is obviously a bit confused themselves 
+as the trace says it's something else.  =:^)
+
+> If this is anything less than 3.17-rc3, I suggest you try with that one,
+> or wait till the hang fix patches got into stable trees. ChrisÂ´s recent
+> pull request may have been about these.
+
+Agreed.  Very likely the following known issue:
+
+Kernel 3.15 switched various critical btrfs tasks from private btrfs 
+threads to the generic kworker kernel threads infrastructure, but in the 
+process triggered a previously latent kworker lockdep bug where the 
+kworker threads weren't behaving according to their documentation.
+
+Developing and testing a proper fix to the root kworker threads behavior 
+issue will probably take another kernel cycle or two, but in the mean 
+time a btrfs patch working around the problem has been developed and 
+tested.  It's in 3.17-rc3 and marked for stable but not yet in a stable 
+release.
+
+So 3.14 stable series wasn't affected by the problem as btrfs was still 
+using private kernel threads, previous versions aren't recommended as 
+they had other now known and fixed bugs, 3.15 is AFAIK not a long-term-
+stable series and is unlikely to get the patch unless you apply it 
+yourself, 3.16 isn't a long-term-stable either but is still supported and 
+the patch is queued for the next stable release, and 3.17 thru rc2 
+doesn't have the fix but it's in rc3.
+
+So 3.17-rc3+ is the only non-git mainline kernel with the patch applied 
+at this time.  For this bug you therefore have the following choices:
+
+1) Switch to the latest 3.17 series development kernel. (Preferred)
+2) Live with it until the next 3.16 stable series release.
+3) Grab and apply the patch to a previous 3.15 or 3.16 stable series 
+kernel yourself.
+4) Revert to 3.14 stable series, which wasn't affected.
+5) Turn off the compression mount option and do a rebalance to eliminate 
+existing compression, as the bug only triggers when dealing with btrfs 
+compression.
+6) Live on the /real/ edge and switch to btrfs integration series 
+kernels, with patches undergoing testing for the /next/ mainline kernel 
+series (3.18 at this point).
+
+FWIW, there's another much harder to trigger (thus only recently found, 
+traced and patched) bug that goes back much farther (3.4 at least), with 
+a patch in 3.17-rc3 and headed for stable series as well.  However, given 
+the rarity of triggering it and the fact that people have lived with it 
+until now, while that patch is good to apply to prevent future rare-case 
+issues, it's not as urgent as the one above.
 
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

@@ -1,93 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from slmp-550-94.slc.westdc.net ([50.115.112.57]:45503 "EHLO
-	slmp-550-94.slc.westdc.net" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754164AbaIBURj convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Sep 2014 16:17:39 -0400
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 6.6 \(1510\))
-Subject: Re: [PATCH v3] Btrfs: fix crash on endio of reading corrupted block
-From: Chris Murphy <lists@colorremedies.com>
-In-Reply-To: <1408766426-13271-1-git-send-email-bo.li.liu@oracle.com>
-Date: Tue, 2 Sep 2014 14:17:34 -0600
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Eric Sandeen <sandeen@redhat.com>
-Message-Id: <E2CBD1D2-E02D-4C9C-8FEF-A39535B3DE98@colorremedies.com>
-References: <1408462393-3291-1-git-send-email-bo.li.liu@oracle.com> <1408766426-13271-1-git-send-email-bo.li.liu@oracle.com>
-To: Liu Bo <bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:16852 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754908AbaICG5Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 02:57:25 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s836v1NX015711
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 14:57:01 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 03/10] Btrfs: fix wrong fsid check of scrub
+Date: Wed, 3 Sep 2014 14:58:47 +0800
+Message-ID: <1409727527-21147-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <20140724132431.GB1553@twin.jikos.cz>
+References: <20140724132431.GB1553@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+All the metadata in the seed devices has the same fsid as the fsid
+of the seed filesystem which is on the seed device, so we should check
+them by the current filesystem. Fix it.
 
-On Aug 22, 2014, at 10:00 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+---
+Changelog v1 -> v2:
+- Use const keyword to restrict the fsid.
+- Remove unnecessary the variant.
+---
+ fs/btrfs/scrub.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
-> The crash is
-> 
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/extent_io.c:2124!
-> invalid opcode: 0000 [#1] SMP
-> ...
-> CPU: 3 PID: 88 Comm: kworker/u8:7 Not tainted 3.17.0-0.rc1.git0.1.fc22.x86_64 #1
-> Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
-> Workqueue: btrfs-endio normal_work_helper [btrfs]
-> task: ffff8800d7152700 ti: ffff8800d729c000 task.ti: ffff8800d729c000
-> RIP: 0010:[<ffffffffa02d6055>]  [<ffffffffa02d6055>] end_bio_extent_readpage+0xb45/0xcd0 [btrfs]
-> Call Trace:
->  [<ffffffff810c3ef8>] ? __enqueue_entity+0x78/0x80
->  [<ffffffff810ca969>] ? enqueue_entity+0x2e9/0x990
->  [<ffffffff813464ab>] bio_endio+0x6b/0xa0
->  [<ffffffff813464f2>] bio_endio_nodec+0x12/0x20
->  [<ffffffffa02ab217>] end_workqueue_fn+0x37/0x40 [btrfs]
->  [<ffffffffa02e4b5d>] normal_work_helper+0xbd/0x280 [btrfs]
->  [<ffffffff810ac4fe>] process_one_work+0x17e/0x430
->  [<ffffffff810ace8b>] worker_thread+0x6b/0x4a0
->  [<ffffffff810ace20>] ? rescuer_thread+0x2a0/0x2a0
->  [<ffffffff810b1fca>] kthread+0xea/0x100
->  [<ffffffff810b1ee0>] ? kthread_create_on_node+0x1a0/0x1a0
->  [<ffffffff8173dd7c>] ret_from_fork+0x7c/0xb0
->  [<ffffffff810b1ee0>] ? kthread_create_on_node+0x1a0/0x1a0
-> 
-> This is in fact a regression introduced by commit
-> facc8a2247340a9735fe8cc123c5da2102f5ef1b(Btrfs: don't cache the csum value into
-> the extent state tree).
-> 
-> It is because we forgot to increase @offset properly in reading corrupted block,
-> so that the @offset remains unchanged, and it leads to checksum errors while
-> reading left blocks queued up in the same bio, and then btrfs tries to
-> iterate copies for those blocks in order to get good data, and hits the
-> BUG_ON() which we set to avoid finding good copies for blocks without problems.
-> 
-> Reported-by: Chris Murphy <lists@colorremedies.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
-> v2:
->   - Improve the commit log to be clear, suggested by Eric.
-> v3:
->   - Show the commit that introduces this bug, I forgot to add this in the v2
->     version.
-> 
-> fs/btrfs/extent_io.c | 1 +
-> 1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 3af4966..be41e4d 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2602,6 +2602,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
-> 					test_bit(BIO_UPTODATE, &bio->bi_flags);
-> 				if (err)
-> 					uptodate = 0;
-> +				offset += len;
-> 				continue;
-> 			}
-> 		}
-> -- 
-> 1.8.1.4
-> 
-> --
-
-Cannot reproduce with the same steps with kernel 3.17.0-0.rc3.git0.1.fc22.x86_64.
-
-
-Chris Murphy
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index dfb92a2..12a6801 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1361,6 +1361,14 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 	return;
+ }
+ 
++static inline int scrub_check_fsid(const u8 *fsid,
++				   struct scrub_page *spage)
++{
++	struct btrfs_fs_devices *fs_devices = spage->dev->fs_devices;
++
++	return !memcmp(fsid, fs_devices->fsid, BTRFS_UUID_SIZE);
++}
++
+ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
+ 					 struct scrub_block *sblock,
+ 					 int is_metadata, int have_csum,
+@@ -1380,7 +1388,7 @@ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
+ 		h = (struct btrfs_header *)mapped_buffer;
+ 
+ 		if (sblock->pagev[0]->logical != btrfs_stack_header_bytenr(h) ||
+-		    memcmp(h->fsid, fs_info->fsid, BTRFS_UUID_SIZE) ||
++		    !scrub_check_fsid(h->fsid, sblock->pagev[0]) ||
+ 		    memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
+ 			   BTRFS_UUID_SIZE)) {
+ 			sblock->header_error = 1;
+@@ -1750,7 +1758,7 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
+ 	if (sblock->pagev[0]->generation != btrfs_stack_header_generation(h))
+ 		++fail;
+ 
+-	if (memcmp(h->fsid, fs_info->fsid, BTRFS_UUID_SIZE))
++	if (!scrub_check_fsid(h->fsid, sblock->pagev[0]))
+ 		++fail;
+ 
+ 	if (memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
+@@ -1790,8 +1798,6 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ {
+ 	struct btrfs_super_block *s;
+ 	struct scrub_ctx *sctx = sblock->sctx;
+-	struct btrfs_root *root = sctx->dev_root;
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	u8 calculated_csum[BTRFS_CSUM_SIZE];
+ 	u8 on_disk_csum[BTRFS_CSUM_SIZE];
+ 	struct page *page;
+@@ -1816,7 +1822,7 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 	if (sblock->pagev[0]->generation != btrfs_super_generation(s))
+ 		++fail_gen;
+ 
+-	if (memcmp(s->fsid, fs_info->fsid, BTRFS_UUID_SIZE))
++	if (!scrub_check_fsid(s->fsid, sblock->pagev[0]))
+ 		++fail_cor;
+ 
+ 	len = BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE;
+-- 
+1.9.3
 

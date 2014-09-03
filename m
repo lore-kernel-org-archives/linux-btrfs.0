@@ -1,92 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16852 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51232 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754908AbaICG5Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 02:57:25 -0400
+	with ESMTP id S1755392AbaICG6b (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 02:58:31 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s836v1NX015711
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 14:57:01 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s836w3ZE015764
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 14:58:03 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 03/10] Btrfs: fix wrong fsid check of scrub
-Date: Wed, 3 Sep 2014 14:58:47 +0800
-Message-ID: <1409727527-21147-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <20140724132431.GB1553@twin.jikos.cz>
-References: <20140724132431.GB1553@twin.jikos.cz>
+Subject: [PATCH v2 06/10] Btrfs: Fix the problem that the dirty flag of dev stats is cleared
+Date: Wed, 3 Sep 2014 14:59:50 +0800
+Message-ID: <1409727590-21247-1-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <20140724134549.GD1553@twin.jikos.cz>
+References: <20140724134549.GD1553@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All the metadata in the seed devices has the same fsid as the fsid
-of the seed filesystem which is on the seed device, so we should check
-them by the current filesystem. Fix it.
+The io error might happen during writing out the device stats, and the
+device stats information and dirty flag would be update at that time,
+but the current code didn't consider this case, just clear the dirty
+flag, it would cause that we forgot to write out the new device stats
+information. Fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
 Changelog v1 -> v2:
-- Use const keyword to restrict the fsid.
-- Remove unnecessary the variant.
+- Change the variant name and make some cleanup by David's comment
 ---
- fs/btrfs/scrub.c | 16 +++++++++++-----
- 1 file changed, 11 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c |  8 ++++++--
+ fs/btrfs/volumes.h | 16 ++++++++++++----
+ 2 files changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index dfb92a2..12a6801 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1361,6 +1361,14 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 	return;
- }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 19188df..4ea73c8 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -159,6 +159,7 @@ static struct btrfs_device *__alloc_device(void)
  
-+static inline int scrub_check_fsid(const u8 *fsid,
-+				   struct scrub_page *spage)
-+{
-+	struct btrfs_fs_devices *fs_devices = spage->dev->fs_devices;
+ 	spin_lock_init(&dev->reada_lock);
+ 	atomic_set(&dev->reada_in_flight, 0);
++	atomic_set(&dev->dev_stats_dirty, 0);
+ 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_WAIT);
+ 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_WAIT);
+ 
+@@ -6398,16 +6399,19 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *dev_root = fs_info->dev_root;
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	struct btrfs_device *device;
++	int dirtied;
+ 	int ret = 0;
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+-		if (!device->dev_stats_valid || !device->dev_stats_dirty)
++		dirtied = atomic_read(&device->dev_stats_dirty);
 +
-+	return !memcmp(fsid, fs_devices->fsid, BTRFS_UUID_SIZE);
++		if (!device->dev_stats_valid || !dirtied)
+ 			continue;
+ 
+ 		ret = update_dev_stat_item(trans, dev_root, device);
+ 		if (!ret)
+-			device->dev_stats_dirty = 0;
++			atomic_sub(dirtied, &device->dev_stats_dirty);
+ 	}
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6fcc8ea..9a1eff3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -110,7 +110,8 @@ struct btrfs_device {
+ 	/* disk I/O failure stats. For detailed description refer to
+ 	 * enum btrfs_dev_stat_values in ioctl.h */
+ 	int dev_stats_valid;
+-	int dev_stats_dirty; /* counters need to be written to disk */
++
++	atomic_t dev_stats_dirty; /* counters need to be written to disk */
+ 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
+ };
+ 
+@@ -359,11 +360,18 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *extent_root,
+ 				u64 chunk_offset, u64 chunk_size);
++
++static inline void btrfs_dev_dirty_stat(struct btrfs_device *dev)
++{
++	smp_mb__before_atomic();
++	atomic_inc(&dev->dev_stats_dirty);
 +}
 +
- static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
- 					 struct scrub_block *sblock,
- 					 int is_metadata, int have_csum,
-@@ -1380,7 +1388,7 @@ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
- 		h = (struct btrfs_header *)mapped_buffer;
- 
- 		if (sblock->pagev[0]->logical != btrfs_stack_header_bytenr(h) ||
--		    memcmp(h->fsid, fs_info->fsid, BTRFS_UUID_SIZE) ||
-+		    !scrub_check_fsid(h->fsid, sblock->pagev[0]) ||
- 		    memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
- 			   BTRFS_UUID_SIZE)) {
- 			sblock->header_error = 1;
-@@ -1750,7 +1758,7 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 	if (sblock->pagev[0]->generation != btrfs_stack_header_generation(h))
- 		++fail;
- 
--	if (memcmp(h->fsid, fs_info->fsid, BTRFS_UUID_SIZE))
-+	if (!scrub_check_fsid(h->fsid, sblock->pagev[0]))
- 		++fail;
- 
- 	if (memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
-@@ -1790,8 +1798,6 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+ 				      int index)
  {
- 	struct btrfs_super_block *s;
- 	struct scrub_ctx *sctx = sblock->sctx;
--	struct btrfs_root *root = sctx->dev_root;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u8 calculated_csum[BTRFS_CSUM_SIZE];
- 	u8 on_disk_csum[BTRFS_CSUM_SIZE];
- 	struct page *page;
-@@ -1816,7 +1822,7 @@ static int scrub_checksum_super(struct scrub_block *sblock)
- 	if (sblock->pagev[0]->generation != btrfs_super_generation(s))
- 		++fail_gen;
+ 	atomic_inc(dev->dev_stat_values + index);
+-	dev->dev_stats_dirty = 1;
++	btrfs_dev_dirty_stat(dev);
+ }
  
--	if (memcmp(s->fsid, fs_info->fsid, BTRFS_UUID_SIZE))
-+	if (!scrub_check_fsid(s->fsid, sblock->pagev[0]))
- 		++fail_cor;
+ static inline int btrfs_dev_stat_read(struct btrfs_device *dev,
+@@ -378,7 +386,7 @@ static inline int btrfs_dev_stat_read_and_reset(struct btrfs_device *dev,
+ 	int ret;
  
- 	len = BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE;
+ 	ret = atomic_xchg(dev->dev_stat_values + index, 0);
+-	dev->dev_stats_dirty = 1;
++	btrfs_dev_dirty_stat(dev);
+ 	return ret;
+ }
+ 
+@@ -386,7 +394,7 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
+ 				      int index, unsigned long val)
+ {
+ 	atomic_set(dev->dev_stat_values + index, val);
+-	dev->dev_stats_dirty = 1;
++	btrfs_dev_dirty_stat(dev);
+ }
+ 
+ static inline void btrfs_dev_stat_reset(struct btrfs_device *dev,
 -- 
 1.9.3
 

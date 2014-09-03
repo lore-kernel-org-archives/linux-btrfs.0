@@ -1,124 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51232 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49929 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755392AbaICG6b (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 02:58:31 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s836w3ZE015764
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 14:58:03 +0800
+	with ESMTP id S1755472AbaICJAU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 05:00:20 -0400
+Message-ID: <5406D90C.60707@cn.fujitsu.com>
+Date: Wed, 3 Sep 2014 17:02:04 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 06/10] Btrfs: Fix the problem that the dirty flag of dev stats is cleared
-Date: Wed, 3 Sep 2014 14:59:50 +0800
-Message-ID: <1409727590-21247-1-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <20140724134549.GD1553@twin.jikos.cz>
-References: <20140724134549.GD1553@twin.jikos.cz>
+Reply-To: <miaox@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Chris Mason <clm@fb.com>, <bo.li.liu@oracle.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 11/12] Btrfs: implement repair function when direct
+ read fails
+References: <1403955302-22396-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-1-git-send-email-miaox@cn.fujitsu.com> <1406625850-32168-12-git-send-email-miaox@cn.fujitsu.com> <5400C714.9030107@fb.com> <5404188F.1040309@cn.fujitsu.com> <20140902123319.GA14438@localhost.localdomain> <5405C08B.9020009@fb.com>
+In-Reply-To: <5405C08B.9020009@fb.com>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The io error might happen during writing out the device stats, and the
-device stats information and dirty flag would be update at that time,
-but the current code didn't consider this case, just clear the dirty
-flag, it would cause that we forgot to write out the new device stats
-information. Fix it.
+On Tue, 2 Sep 2014 09:05:15 -0400, Chris Mason wrote:
+>>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>>>> index 08e65e9..56b1546 100644
+>>>>> --- a/fs/btrfs/disk-io.c
+>>>>> +++ b/fs/btrfs/disk-io.c
+>>>>> @@ -698,7 +719,12 @@ static void end_workqueue_bio(struct bio *bio, int err)
+>>>>>  
+>>>>>  	fs_info = end_io_wq->info;
+>>>>>  	end_io_wq->error = err;
+>>>>> -	btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL, NULL);
+>>>>> +
+>>>>> +	if (likely(end_io_wq->metadata != BTRFS_WQ_ENDIO_DIO_REPAIR))
+>>>>> +		btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL,
+>>>>> +				NULL);
+>>>>> +	else
+>>>>> +		INIT_WORK(&end_io_wq->work.normal_work, dio_end_workqueue_fn);
+>>>>
+>>>> It's not clear why this one is using INIT_WORK instead of
+>>>> btrfs_init_work, or why we're calling directly into queue_work instead
+>>>> of btrfs_queue_work.  What am I missing?
+>>>
+>>> I'm sorry that I forgot writing the explanation in this patch's changlog,
+>>> I wrote it in Patch 0.
+>>>
+>>> "2.When the io on the mirror ends, we will insert the endio work into the
+>>>    system workqueue, not btrfs own endio workqueue, because the original
+>>>    endio work is still blocked in the btrfs endio workqueue, if we insert
+>>>    the endio work of the io on the mirror into that workqueue, deadlock
+>>>    would happen."
+>>
+>> Can you elaborate the deadlock?
+>>
+>> Now that buffer read can insert a subsequent read-mirror bio into btrfs endio
+>> workqueue without problems, what's the difference?
+> 
+> We do have problems if we're inserting dependent items in the same
+> workqueue.
+> 
+> Miao, please make a repair workqueue.  I'll also have a use for it in
+> the raid56 parity work I think.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v2:
-- Change the variant name and make some cleanup by David's comment
----
- fs/btrfs/volumes.c |  8 ++++++--
- fs/btrfs/volumes.h | 16 ++++++++++++----
- 2 files changed, 18 insertions(+), 6 deletions(-)
+OK, I'll update the patch soon.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 19188df..4ea73c8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -159,6 +159,7 @@ static struct btrfs_device *__alloc_device(void)
- 
- 	spin_lock_init(&dev->reada_lock);
- 	atomic_set(&dev->reada_in_flight, 0);
-+	atomic_set(&dev->dev_stats_dirty, 0);
- 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_WAIT);
- 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_WAIT);
- 
-@@ -6398,16 +6399,19 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *dev_root = fs_info->dev_root;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	struct btrfs_device *device;
-+	int dirtied;
- 	int ret = 0;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
--		if (!device->dev_stats_valid || !device->dev_stats_dirty)
-+		dirtied = atomic_read(&device->dev_stats_dirty);
-+
-+		if (!device->dev_stats_valid || !dirtied)
- 			continue;
- 
- 		ret = update_dev_stat_item(trans, dev_root, device);
- 		if (!ret)
--			device->dev_stats_dirty = 0;
-+			atomic_sub(dirtied, &device->dev_stats_dirty);
- 	}
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6fcc8ea..9a1eff3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -110,7 +110,8 @@ struct btrfs_device {
- 	/* disk I/O failure stats. For detailed description refer to
- 	 * enum btrfs_dev_stat_values in ioctl.h */
- 	int dev_stats_valid;
--	int dev_stats_dirty; /* counters need to be written to disk */
-+
-+	atomic_t dev_stats_dirty; /* counters need to be written to disk */
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
- };
- 
-@@ -359,11 +360,18 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
- int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *extent_root,
- 				u64 chunk_offset, u64 chunk_size);
-+
-+static inline void btrfs_dev_dirty_stat(struct btrfs_device *dev)
-+{
-+	smp_mb__before_atomic();
-+	atomic_inc(&dev->dev_stats_dirty);
-+}
-+
- static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
- 				      int index)
- {
- 	atomic_inc(dev->dev_stat_values + index);
--	dev->dev_stats_dirty = 1;
-+	btrfs_dev_dirty_stat(dev);
- }
- 
- static inline int btrfs_dev_stat_read(struct btrfs_device *dev,
-@@ -378,7 +386,7 @@ static inline int btrfs_dev_stat_read_and_reset(struct btrfs_device *dev,
- 	int ret;
- 
- 	ret = atomic_xchg(dev->dev_stat_values + index, 0);
--	dev->dev_stats_dirty = 1;
-+	btrfs_dev_dirty_stat(dev);
- 	return ret;
- }
- 
-@@ -386,7 +394,7 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
- 				      int index, unsigned long val)
- {
- 	atomic_set(dev->dev_stat_values + index, val);
--	dev->dev_stats_dirty = 1;
-+	btrfs_dev_dirty_stat(dev);
- }
- 
- static inline void btrfs_dev_stat_reset(struct btrfs_device *dev,
--- 
-1.9.3
+Thanks
+Miao
 

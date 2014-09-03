@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13195 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:16789 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932291AbaICNeN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 09:34:13 -0400
+	with ESMTP id S1756091AbaICNeJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 09:34:09 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s83DY9qD006665
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 21:34:09 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s83DY4QO006646
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 21:34:04 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 09/18] Btrfs: fix unprotected device's variants on 32bits machine
-Date: Wed, 3 Sep 2014 21:35:38 +0800
-Message-ID: <1409751347-5296-9-git-send-email-miaox@cn.fujitsu.com>
+Subject: [PATCH 04/18] Btrfs: fix wrong disk size when writing super blocks
+Date: Wed, 3 Sep 2014 21:35:33 +0800
+Message-ID: <1409751347-5296-4-git-send-email-miaox@cn.fujitsu.com>
 In-Reply-To: <1409751347-5296-1-git-send-email-miaox@cn.fujitsu.com>
 References: <1409751347-5296-1-git-send-email-miaox@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,350 +18,282 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-->total_bytes,->disk_total_bytes,->bytes_used is protected by chunk
-lock when we change them, but sometimes we read them without any lock,
-and we might get unexpected value. We fix this problem like inode's
-i_size.
+total_size will be changed when resizing a device, and disk_total_size
+will be changed if resizing is successful. Meanwhile, the on-disk super
+blocks of the previous transaction might not be updated. Considering
+the consistency of the metadata in the previous transaction, We should
+use the size in the previous transaction to check if the super block is
+beyond the boundary of the device. Fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c | 15 +++++----
- fs/btrfs/ioctl.c       |  6 ++--
- fs/btrfs/volumes.c     | 48 +++++++++++++++++------------
- fs/btrfs/volumes.h     | 84 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 124 insertions(+), 29 deletions(-)
+ fs/btrfs/check-integrity.c |  2 +-
+ fs/btrfs/dev-replace.c     | 18 ++++++++++++++++++
+ fs/btrfs/disk-io.c         |  5 +++--
+ fs/btrfs/scrub.c           |  3 ++-
+ fs/btrfs/transaction.c     |  2 ++
+ fs/btrfs/volumes.c         | 40 +++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h         | 18 ++++++++++++++++++
+ 7 files changed, 83 insertions(+), 5 deletions(-)
 
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index e0033c8..cb7f3fe 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -807,7 +807,7 @@ static int btrfsic_process_superblock_dev_mirror(
+ 
+ 	/* super block bytenr is always the unmapped device bytenr */
+ 	dev_bytenr = btrfs_sb_offset(superblock_mirror_num);
+-	if (dev_bytenr + BTRFS_SUPER_INFO_SIZE > device->total_bytes)
++	if (dev_bytenr + BTRFS_SUPER_INFO_SIZE > device->commit_total_bytes)
+ 		return -1;
+ 	bh = __bread(superblock_bdev, dev_bytenr / 4096,
+ 		     BTRFS_SUPER_INFO_SIZE);
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 1be03d8..da7ac14 100644
+index 72dc02e..7877b0f 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -418,7 +418,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+@@ -168,6 +168,8 @@ no_valid_dev_replace_entry_found:
+ 					dev_replace->srcdev->total_bytes;
+ 				dev_replace->tgtdev->disk_total_bytes =
+ 					dev_replace->srcdev->disk_total_bytes;
++				dev_replace->tgtdev->commit_total_bytes =
++					dev_replace->srcdev->commit_total_bytes;
+ 				dev_replace->tgtdev->bytes_used =
+ 					dev_replace->srcdev->bytes_used;
+ 			}
+@@ -329,6 +331,20 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 	    args->start.tgtdev_name[0] == '\0')
+ 		return -EINVAL;
  
- 	/* the disk copy procedure reuses the scrub code */
- 	ret = btrfs_scrub_dev(fs_info, src_device->devid, 0,
--			      src_device->total_bytes,
-+			      btrfs_device_get_total_bytes(src_device),
- 			      &dev_replace->scrub_progress, 0, 1);
- 
- 	ret = btrfs_dev_replace_finishing(root->fs_info, ret);
-@@ -555,11 +555,12 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
- 	memcpy(tgt_device->uuid, src_device->uuid, sizeof(tgt_device->uuid));
++	/*
++	 * Here we commit the transaction to make sure commit_total_bytes
++	 * of all the devices are updated.
++	 */
++	trans = btrfs_attach_transaction(root);
++	if (!IS_ERR(trans)) {
++		ret = btrfs_commit_transaction(trans, root);
++		if (ret)
++			return ret;
++	} else if (PTR_ERR(trans) != -ENOENT) {
++		return PTR_ERR(trans);
++	}
++
++	/* the disk copy procedure reuses the scrub code */
+ 	mutex_lock(&fs_info->volume_mutex);
+ 	ret = btrfs_dev_replace_find_srcdev(root, args->start.srcdevid,
+ 					    args->start.srcdev_name,
+@@ -539,6 +555,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
  	memcpy(src_device->uuid, uuid_tmp, sizeof(src_device->uuid));
--	tgt_device->total_bytes = src_device->total_bytes;
--	tgt_device->disk_total_bytes = src_device->disk_total_bytes;
-+	btrfs_device_set_total_bytes(tgt_device, src_device->total_bytes);
-+	btrfs_device_set_disk_total_bytes(tgt_device,
-+					  src_device->disk_total_bytes);
-+	btrfs_device_set_bytes_used(tgt_device, src_device->bytes_used);
- 	ASSERT(list_empty(&src_device->resized_list));
- 	tgt_device->commit_total_bytes = src_device->commit_total_bytes;
--	tgt_device->bytes_used = src_device->bytes_used;
- 	tgt_device->commit_bytes_used = src_device->bytes_used;
+ 	tgt_device->total_bytes = src_device->total_bytes;
+ 	tgt_device->disk_total_bytes = src_device->disk_total_bytes;
++	ASSERT(list_empty(&src_device->resized_list));
++	tgt_device->commit_total_bytes = src_device->commit_total_bytes;
+ 	tgt_device->bytes_used = src_device->bytes_used;
  	if (fs_info->sb->s_bdev == src_device->bdev)
  		fs_info->sb->s_bdev = tgt_device->bdev;
-@@ -650,6 +651,7 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 			      struct btrfs_ioctl_dev_replace_args *args)
- {
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
-+	struct btrfs_device *srcdev;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index df1ae8c..0c7ae0e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3131,7 +3131,8 @@ static int write_dev_supers(struct btrfs_device *device,
  
- 	btrfs_dev_replace_lock(dev_replace);
- 	/* even if !dev_replace_is_valid, the values are good enough for
-@@ -672,8 +674,9 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
-+		srcdev = dev_replace->srcdev;
- 		args->status.progress_1000 = div64_u64(dev_replace->cursor_left,
--			div64_u64(dev_replace->srcdev->total_bytes, 1000));
-+			div64_u64(btrfs_device_get_total_bytes(srcdev), 1000));
- 		break;
- 	}
- 	btrfs_dev_replace_unlock(dev_replace);
-@@ -832,7 +835,7 @@ static int btrfs_dev_replace_continue_on_mount(struct btrfs_fs_info *fs_info)
+ 	for (i = 0; i < max_mirrors; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+-		if (bytenr + BTRFS_SUPER_INFO_SIZE >= device->total_bytes)
++		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
++		    device->commit_total_bytes)
+ 			break;
  
- 	ret = btrfs_scrub_dev(fs_info, dev_replace->srcdev->devid,
- 			      dev_replace->committed_cursor_left,
--			      dev_replace->srcdev->total_bytes,
-+			      btrfs_device_get_total_bytes(dev_replace->srcdev),
- 			      &dev_replace->scrub_progress, 0, 1);
- 	ret = btrfs_dev_replace_finishing(fs_info, ret);
- 	WARN_ON(ret);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c692c36..e78d9f9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1550,7 +1550,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 		goto out_free;
- 	}
+ 		if (wait) {
+@@ -3448,7 +3449,7 @@ static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ 		btrfs_set_stack_device_type(dev_item, dev->type);
+ 		btrfs_set_stack_device_id(dev_item, dev->devid);
+ 		btrfs_set_stack_device_total_bytes(dev_item,
+-						   dev->disk_total_bytes);
++						   dev->commit_total_bytes);
+ 		btrfs_set_stack_device_bytes_used(dev_item, dev->bytes_used);
+ 		btrfs_set_stack_device_io_align(dev_item, dev->io_align);
+ 		btrfs_set_stack_device_io_width(dev_item, dev->io_width);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f8e1144..cce122b 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2861,7 +2861,8 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
  
--	old_size = device->total_bytes;
-+	old_size = btrfs_device_get_total_bytes(device);
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ 		bytenr = btrfs_sb_offset(i);
+-		if (bytenr + BTRFS_SUPER_INFO_SIZE > scrub_dev->total_bytes)
++		if (bytenr + BTRFS_SUPER_INFO_SIZE >
++		    scrub_dev->commit_total_bytes)
+ 			break;
  
- 	if (mod < 0) {
- 		if (new_size > old_size) {
-@@ -2732,8 +2732,8 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	}
+ 		ret = scrub_pages(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index e336646..2f7c0be 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1868,6 +1868,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	memcpy(root->fs_info->super_for_commit, root->fs_info->super_copy,
+ 	       sizeof(*root->fs_info->super_copy));
  
- 	di_args->devid = dev->devid;
--	di_args->bytes_used = dev->bytes_used;
--	di_args->total_bytes = dev->total_bytes;
-+	di_args->bytes_used = btrfs_device_get_bytes_used(dev);
-+	di_args->total_bytes = btrfs_device_get_total_bytes(dev);
- 	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
- 	if (dev->name) {
- 		struct rcu_string *name;
++	btrfs_update_commit_device_size(root->fs_info);
++
+ 	spin_lock(&root->fs_info->trans_lock);
+ 	cur_trans->state = TRANS_STATE_UNBLOCKED;
+ 	root->fs_info->running_transaction = NULL;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d8e4a3d..41da102 100644
+index 1646659..7b5c042 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1308,7 +1308,7 @@ again:
+@@ -74,6 +74,7 @@ static struct btrfs_fs_devices *__alloc_fs_devices(void)
+ 	mutex_init(&fs_devs->device_list_mutex);
  
- 	if (device->bytes_used > 0) {
- 		u64 len = btrfs_dev_extent_length(leaf, extent);
--		device->bytes_used -= len;
-+		btrfs_device_set_bytes_used(device, device->bytes_used - len);
- 		spin_lock(&root->fs_info->free_chunk_lock);
- 		root->fs_info->free_chunk_space += len;
- 		spin_unlock(&root->fs_info->free_chunk_lock);
-@@ -1462,8 +1462,10 @@ static int btrfs_add_device(struct btrfs_trans_handle *trans,
- 	btrfs_set_device_io_align(leaf, dev_item, device->io_align);
- 	btrfs_set_device_io_width(leaf, dev_item, device->io_width);
- 	btrfs_set_device_sector_size(leaf, dev_item, device->sector_size);
--	btrfs_set_device_total_bytes(leaf, dev_item, device->disk_total_bytes);
--	btrfs_set_device_bytes_used(leaf, dev_item, device->bytes_used);
-+	btrfs_set_device_total_bytes(leaf, dev_item,
-+				     btrfs_device_get_disk_total_bytes(device));
-+	btrfs_set_device_bytes_used(leaf, dev_item,
-+				    btrfs_device_get_bytes_used(device));
- 	btrfs_set_device_group(leaf, dev_item, 0);
- 	btrfs_set_device_seek_speed(leaf, dev_item, 0);
- 	btrfs_set_device_bandwidth(leaf, dev_item, 0);
-@@ -2330,7 +2332,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
- 	}
+ 	INIT_LIST_HEAD(&fs_devs->devices);
++	INIT_LIST_HEAD(&fs_devs->resized_devices);
+ 	INIT_LIST_HEAD(&fs_devs->alloc_list);
+ 	INIT_LIST_HEAD(&fs_devs->list);
  
+@@ -154,6 +155,7 @@ static struct btrfs_device *__alloc_device(void)
  
--	if (i_size_read(bdev->bd_inode) < srcdev->total_bytes) {
-+	if (i_size_read(bdev->bd_inode) <
-+	    btrfs_device_get_total_bytes(srcdev)) {
- 		btrfs_err(fs_info, "target device is smaller than source device!");
- 		ret = -EINVAL;
- 		goto error;
-@@ -2360,11 +2363,11 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
- 	device->io_width = root->sectorsize;
- 	device->io_align = root->sectorsize;
+ 	INIT_LIST_HEAD(&dev->dev_list);
+ 	INIT_LIST_HEAD(&dev->dev_alloc_list);
++	INIT_LIST_HEAD(&dev->resized_list);
+ 
+ 	spin_lock_init(&dev->io_lock);
+ 
+@@ -2168,6 +2170,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
  	device->sector_size = root->sectorsize;
--	device->total_bytes = srcdev->total_bytes;
--	device->disk_total_bytes = srcdev->disk_total_bytes;
-+	device->total_bytes = btrfs_device_get_total_bytes(srcdev);
-+	device->disk_total_bytes = btrfs_device_get_disk_total_bytes(srcdev);
-+	device->bytes_used = btrfs_device_get_bytes_used(srcdev);
- 	ASSERT(list_empty(&srcdev->resized_list));
- 	device->commit_total_bytes = srcdev->commit_total_bytes;
--	device->bytes_used = srcdev->bytes_used;
- 	device->commit_bytes_used = device->bytes_used;
+ 	device->total_bytes = i_size_read(bdev->bd_inode);
+ 	device->disk_total_bytes = device->total_bytes;
++	device->commit_total_bytes = device->total_bytes;
+ 	device->dev_root = root->fs_info->dev_root;
+ 	device->bdev = bdev;
+ 	device->in_fs_metadata = 1;
+@@ -2364,6 +2367,8 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_root *root, char *device_path,
+ 	device->sector_size = root->sectorsize;
+ 	device->total_bytes = srcdev->total_bytes;
+ 	device->disk_total_bytes = srcdev->disk_total_bytes;
++	ASSERT(list_empty(&srcdev->resized_list));
++	device->commit_total_bytes = srcdev->commit_total_bytes;
+ 	device->bytes_used = srcdev->bytes_used;
  	device->dev_root = fs_info->dev_root;
  	device->bdev = bdev;
-@@ -2435,8 +2438,10 @@ static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
- 	btrfs_set_device_io_align(leaf, dev_item, device->io_align);
- 	btrfs_set_device_io_width(leaf, dev_item, device->io_width);
- 	btrfs_set_device_sector_size(leaf, dev_item, device->sector_size);
--	btrfs_set_device_total_bytes(leaf, dev_item, device->disk_total_bytes);
--	btrfs_set_device_bytes_used(leaf, dev_item, device->bytes_used);
-+	btrfs_set_device_total_bytes(leaf, dev_item,
-+				     btrfs_device_get_disk_total_bytes(device));
-+	btrfs_set_device_bytes_used(leaf, dev_item,
-+				    btrfs_device_get_bytes_used(device));
- 	btrfs_mark_buffer_dirty(leaf);
+@@ -2448,6 +2453,7 @@ static int __btrfs_grow_device(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_super_block *super_copy =
+ 		device->dev_root->fs_info->super_copy;
++	struct btrfs_fs_devices *fs_devices;
+ 	u64 old_total = btrfs_super_total_bytes(super_copy);
+ 	u64 diff = new_size - device->total_bytes;
  
- out:
-@@ -2464,8 +2469,8 @@ static int __btrfs_grow_device(struct btrfs_trans_handle *trans,
+@@ -2457,12 +2463,17 @@ static int __btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 	    device->is_tgtdev_for_dev_replace)
+ 		return -EINVAL;
+ 
++	fs_devices = device->dev_root->fs_info->fs_devices;
++
  	btrfs_set_super_total_bytes(super_copy, old_total + diff);
  	device->fs_devices->total_rw_bytes += diff;
  
--	device->total_bytes = new_size;
--	device->disk_total_bytes = new_size;
-+	btrfs_device_set_total_bytes(device, new_size);
-+	btrfs_device_set_disk_total_bytes(device, new_size);
+ 	device->total_bytes = new_size;
+ 	device->disk_total_bytes = new_size;
  	btrfs_clear_space_info_full(device->dev_root->fs_info);
- 	if (list_empty(&device->resized_list))
- 		list_add_tail(&device->resized_list,
-@@ -3110,11 +3115,12 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
- 	list_for_each_entry(device, devices, dev_list) {
--		old_size = device->total_bytes;
-+		old_size = btrfs_device_get_total_bytes(device);
- 		size_to_free = div_factor(old_size, 1);
- 		size_to_free = min(size_to_free, (u64)1 * 1024 * 1024);
- 		if (!device->writeable ||
--		    device->total_bytes - device->bytes_used > size_to_free ||
-+		    btrfs_device_get_total_bytes(device) -
-+		    btrfs_device_get_bytes_used(device) > size_to_free ||
- 		    device->is_tgtdev_for_dev_replace)
- 			continue;
++	if (list_empty(&device->resized_list))
++		list_add_tail(&device->resized_list,
++			      &fs_devices->resized_devices);
  
-@@ -3920,8 +3926,8 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = root->fs_info->super_copy;
- 	u64 old_total = btrfs_super_total_bytes(super_copy);
--	u64 old_size = device->total_bytes;
--	u64 diff = device->total_bytes - new_size;
-+	u64 old_size = btrfs_device_get_total_bytes(device);
-+	u64 diff = old_size - new_size;
- 
- 	if (device->is_tgtdev_for_dev_replace)
- 		return -EINVAL;
-@@ -3934,7 +3940,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 	lock_chunks(root);
- 
--	device->total_bytes = new_size;
-+	btrfs_device_set_total_bytes(device, new_size);
- 	if (device->writeable) {
- 		device->fs_devices->total_rw_bytes -= diff;
- 		spin_lock(&root->fs_info->free_chunk_lock);
-@@ -4000,7 +4006,7 @@ again:
- 		ret = -ENOSPC;
- 		lock_chunks(root);
- 
--		device->total_bytes = old_size;
-+		btrfs_device_set_total_bytes(device, old_size);
- 		if (device->writeable)
- 			device->fs_devices->total_rw_bytes += diff;
- 		spin_lock(&root->fs_info->free_chunk_lock);
-@@ -4018,7 +4024,7 @@ again:
+ 	return btrfs_update_device(trans, device);
+ }
+@@ -4011,8 +4022,11 @@ again:
  	}
  
  	lock_chunks(root);
--	device->disk_total_bytes = new_size;
-+	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->resized_list))
- 		list_add_tail(&device->resized_list,
- 			      &root->fs_info->fs_devices->resized_devices);
-@@ -4429,8 +4435,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto error_del_extent;
+-
+ 	device->disk_total_bytes = new_size;
++	if (list_empty(&device->resized_list))
++		list_add_tail(&device->resized_list,
++			      &root->fs_info->fs_devices->resized_devices);
++
+ 	/* Now btrfs_update_device() will change the on-disk size. */
+ 	ret = btrfs_update_device(trans, device);
+ 	if (ret) {
+@@ -5993,6 +6007,7 @@ static void fill_device_from_item(struct extent_buffer *leaf,
+ 	device->devid = btrfs_device_id(leaf, dev_item);
+ 	device->disk_total_bytes = btrfs_device_total_bytes(leaf, dev_item);
+ 	device->total_bytes = device->disk_total_bytes;
++	device->commit_total_bytes = device->disk_total_bytes;
+ 	device->bytes_used = btrfs_device_bytes_used(leaf, dev_item);
+ 	device->type = btrfs_device_type(leaf, dev_item);
+ 	device->io_align = btrfs_device_io_align(leaf, dev_item);
+@@ -6520,3 +6535,26 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
  
--	for (i = 0; i < map->num_stripes; i++)
--		map->stripes[i].dev->bytes_used += stripe_size;
-+	for (i = 0; i < map->num_stripes; i++) {
-+		num_bytes = map->stripes[i].dev->bytes_used + stripe_size;
-+		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
+ 	return 0;
+ }
++
++/*
++ * Update the size of all devices, which is used for writing out the
++ * super blocks.
++ */
++void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_device *curr, *next;
++
++	if (list_empty(&fs_devices->resized_devices))
++		return;
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	lock_chunks(fs_info->dev_root);
++	list_for_each_entry_safe(curr, next, &fs_devices->resized_devices,
++				 resized_list) {
++		list_del_init(&curr->resized_list);
++		curr->commit_total_bytes = curr->disk_total_bytes;
 +	}
- 
- 	spin_lock(&extent_root->fs_info->free_chunk_lock);
- 	extent_root->fs_info->free_chunk_space -= (stripe_size *
++	unlock_chunks(fs_info->dev_root);
++	mutex_unlock(&fs_devices->device_list_mutex);
++}
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index f79d532..76600a3 100644
+index e15f288..b30d018 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -32,6 +32,19 @@ struct btrfs_pending_bios {
- 	struct bio *tail;
- };
+@@ -87,6 +87,21 @@ struct btrfs_device {
+ 	/* physical drive uuid (or lvm uuid) */
+ 	u8 uuid[BTRFS_UUID_SIZE];
  
-+/*
-+ * Use sequence counter to get consistent device stat data on
-+ * 32-bit processors.
-+ */
-+#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
-+#include <linux/seqlock.h>
-+#define __BTRFS_NEED_DEVICE_DATA_ORDERED
-+#define btrfs_device_data_ordered_init(device)	\
-+	seqcount_init(&device->data_seqcount)
-+#else
-+#define btrfs_device_data_ordered_init(device) do { } while (0)
-+#endif
++	/*
++	 * size of the device on the current transaction
++	 *
++	 * This variant is update when committing the transaction,
++	 * and protected by device_list_mutex
++	 */
++	u64 commit_total_bytes;
 +
- struct btrfs_device {
- 	struct list_head dev_list;
- 	struct list_head dev_alloc_list;
-@@ -61,6 +74,10 @@ struct btrfs_device {
- 	int can_discard;
- 	int is_tgtdev_for_dev_replace;
- 
-+#ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
-+	seqcount_t data_seqcount;
-+#endif
++	/*
++	 * used to manage the device which is resized
++	 *
++	 * It is protected by chunk_lock.
++	 */
++	struct list_head resized_list;
 +
- 	/* the internal btrfs device id */
- 	u64 devid;
+ 	/* for sending down flush barriers */
+ 	int nobarriers;
+ 	struct bio *flush_bio;
+@@ -136,6 +151,7 @@ struct btrfs_fs_devices {
+ 	struct mutex device_list_mutex;
+ 	struct list_head devices;
  
-@@ -133,6 +150,73 @@ struct btrfs_device {
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
- };
- 
-+/*
-+ * If we read those variants at the context of their own lock, we needn't
-+ * use the following helpers, reading them directly is safe.
-+ */
-+#if BITS_PER_LONG==32 && defined(CONFIG_SMP)
-+#define BTRFS_DEVICE_GETSET_FUNCS(name)					\
-+static inline u64							\
-+btrfs_device_get_##name(const struct btrfs_device *dev)			\
-+{									\
-+	u64 size;							\
-+	unsigned int seq;						\
-+									\
-+	do {								\
-+		seq = read_seqcount_begin(&dev->data_seqcount);		\
-+		size = dev->name;					\
-+	} while (read_seqcount_retry(&dev->data_seqcount, seq));	\
-+	return size;							\
-+}									\
-+									\
-+static inline void							\
-+btrfs_device_set_##name(struct btrfs_device *dev, u64 size)		\
-+{									\
-+	preempt_disable();						\
-+	write_seqcount_begin(&dev->data_seqcount);			\
-+	dev->name = size;						\
-+	write_seqcount_end(&dev->data_seqcount);			\
-+	preempt_enable();						\
-+}
-+#elif BITS_PER_LONG==32 && defined(CONFIG_PREEMPT)
-+#define BTRFS_DEVICE_GETSET_FUNCS(name)					\
-+static inline u64							\
-+btrfs_device_get_##name(const struct btrfs_device *dev)			\
-+{									\
-+	u64 size;							\
-+									\
-+	preempt_disable();						\
-+	size = dev->name;						\
-+	preempt_enable();						\
-+	return size;							\
-+}									\
-+									\
-+static inline void							\
-+btrfs_device_set_##name(struct btrfs_device *dev, u64 size)		\
-+{									\
-+	preempt_disable();						\
-+	dev->name = size;						\
-+	preempt_enable();						\
-+}
-+#else
-+#define BTRFS_DEVICE_GETSET_FUNCS(name)					\
-+static inline u64							\
-+btrfs_device_get_##name(const struct btrfs_device *dev)			\
-+{									\
-+	return dev->name;						\
-+}									\
-+									\
-+static inline void							\
-+btrfs_device_set_##name(struct btrfs_device *dev, u64 size)		\
-+{									\
-+	dev->name = size;						\
-+}
-+#endif
++	struct list_head resized_devices;
+ 	/* devices not currently being allocated */
+ 	struct list_head alloc_list;
+ 	struct list_head list;
+@@ -402,4 +418,6 @@ static inline void btrfs_dev_stat_reset(struct btrfs_device *dev,
+ {
+ 	btrfs_dev_stat_set(dev, index, 0);
+ }
 +
-+BTRFS_DEVICE_GETSET_FUNCS(total_bytes);
-+BTRFS_DEVICE_GETSET_FUNCS(disk_total_bytes);
-+BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
-+
- struct btrfs_fs_devices {
- 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
- 
++void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info);
+ #endif
 -- 
 1.9.3
 

@@ -1,95 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52227 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753372AbaICACK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Sep 2014 20:02:10 -0400
-Date: Wed, 3 Sep 2014 10:01:58 +1000
-From: NeilBrown <neilb@suse.de>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Dave Chinner <david@fromorbit.com>,
-        Nikolai Grigoriev <ngrigoriev@gmail.com>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
-        linux-mm@kvack.org, Jens Axboe <axboe@kernel.dk>
-Subject: Re: ext4 vs btrfs performance on SSD array
-Message-ID: <20140903100158.34916d34@notabene.brown>
-In-Reply-To: <20140902012222.GA21405@infradead.org>
-References: <CAEp=YLgzsLbmEfGB5YKVcHP4CQ-_z1yxnZ0tpo7gjKZ2e1ma5g@mail.gmail.com>
-	<20140902000822.GA20473@dastard>
-	<20140902012222.GA21405@infradead.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:11093 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755882AbaICBCt convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Sep 2014 21:02:49 -0400
+Message-ID: <540668AF.1060402@cn.fujitsu.com>
+Date: Wed, 3 Sep 2014 09:02:39 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/qpHnXvwX/9xC8Ii9lSW1zc6"; protocol="application/pgp-signature"
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: cancel scrub/replace if the user space process
+ receive SIGKILL.
+References: <1407317662-9364-1-git-send-email-quwenruo@cn.fujitsu.com> <20140902110502.GC5888@twin.jikos.cz>
+In-Reply-To: <20140902110502.GC5888@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/qpHnXvwX/9xC8Ii9lSW1zc6
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, 1 Sep 2014 18:22:22 -0700 Christoph Hellwig <hch@infradead.org> wro=
-te:
+-------- Original Message --------
+Subject: Re: [PATCH] btrfs: cancel scrub/replace if the user space 
+process receive SIGKILL.
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Date: 2014年09月02日 19:05
+> On Wed, Aug 06, 2014 at 05:34:22PM +0800, Qu Wenruo wrote:
+>> When impatient sysadmin is tired of waiting background running btrfs
+>> scrub/replace and send SIGKILL to btrfs process, unlike
+>> SIGINT/SIGTERM which can be caught by user space program and cancel the
+>> scrub work, user space program will continue running until ioctl exits.
+> I don't understand why it's needed to add another way to cancel scrub.
+> Does it mean that 'btrfs scrub cancel' is not sufficient? It cancels
+> both foreground and background scrub.  Same for dev-replace, it has the
+> cancel subcommand.
+Yes, 'scrub cacnel' is sufficient and it's what userspace calls when 
+catching SIGINT.
+I sent the user-space patch to fix the 'dev-replace cancel' signal 
+handling and then consider
+since SIGKILL can't be caught, it can't be handle in user-space so I 
+then sent the kernel patch to handle it.
 
-> On Tue, Sep 02, 2014 at 10:08:22AM +1000, Dave Chinner wrote:
-> > Pretty obvious difference: avgrq-sz. btrfs is doing 512k IOs, ext4
-> > and XFS are doing is doing 128k IOs because that's the default block
-> > device readahead size.  'blockdev --setra 1024 /dev/sdd' before
-> > mounting the filesystem will probably fix it.
->=20
-> Btw, it's really getting time to make Linux storage fs work out the
-> box.  There's way to many things that are stupid by default and we
-> require everyone to fix up manually:
->=20
->  - the ridiculously low max_sectors default
->  - the very small max readahead size
->  - replacing cfq with deadline (or noop)
->  - the too small RAID5 stripe cache size
->=20
-> and probably a few I forgot about.  It's time to make things perform
-> well out of the box..
+But if user-space can handle SIGINT correctly, the SIGKILL won't be 
+sent, so the kernel patch can be ignored.
 
-Do we still need maximums at all?
-There was a time when the queue limit in the block device (or bdi) was an
-important part of the write throttle strategy.  Without a queue limit, all =
-of
-memory could be consumed by memory in write-back, all queued for some devic=
-e.
-This wasn't healthy.
+Thanks,
+Qu
+>
+> Sending KILL signal to some random process is not the right way, how can
+> the admin know to which filesystem the process belongs?
+>
+>> To keep it consistent with the behavior of btrfs-progs, which cancels
+>> the work when SIGINT is received, this patch will make scrub routine to
+>> check SIGKILL pending of current task and cancel the work if SIGKILL is
+>> already pending.
+> The foreground scrub starts a separate process and then wait()s.If you
+> want to catch a SIGINT, then change it to a loop that checks for if the
+> forked process exited or if Ctrl-c was pressed.
 
-But since then the write throttling has been completely re-written.  I'm not
-certain (and should check) but I suspect it doesn't depend on submit_bio
-blocking when the queue is full any more.
+>
+> The dev-replace can be started without a userspace process via
+> kthread_run from btrfs_dev_replace_continue_on_mount, and sending
+> signals to kernel processes requires some caution. For one, the signals
+> have to be explicitly allowed. But before that I'd like to better
+> understand where the SIGKILL is unavoidable.
+>
+> Thanks.
 
-So can we just remove the limit on max_sectors and the RAID5 stripe cache
-size?  I'm certainly keen to remove the later and just use a mempool if the
-limit isn't needed.
-I have seen reports that a very large raid5 stripe cache size can cause
-a reduction in performance.  I don't know why but I suspect it is a bug that
-should be found and fixed.
-
-Do we need max_sectors ??
-
-NeilBrown
-
---Sig_/qpHnXvwX/9xC8Ii9lSW1zc6
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQIVAwUBVAZadjnsnt1WYoG5AQLXJxAAsX82VcFvlQc6mqiIU+TEQnmCi8QD+eVl
-2Z7u275tYXvLAJaT9dfuQ+4lq47r6zoLLg4GvFRZVzgK9I+uVbSsAE03Fo64vgNh
-6nyGTop2r4LE30actF2JsbijBnhduzIhMKArQ54k/839hSL0YELi9sTiMG+R4UFd
-I8OzGnNCXP35PmmomgSZUs7D8UvzyAaLQRakVSKpTqnTAQDzYhrLTnIBlQSK78am
-8TdyrcYQgjjVE9kPzjGasFv1ME4t3wxa8/t8+e9kxwDInqbie0leNAqPuzOexZcv
-eIfYmsaXLUnzVIucz2/8VUUfGZRa2aor7mSD/DDq3OhjlDRgL/RBCaWCGBRHGX5F
-+RT2lQnYXK0YoOekBZexL8DG428E3y1fG4zLd2nYk9qMxZia3ARqQRakKTpCJFez
-D1DU2dAm8g8EEkbs+f8GTvnfmKuShjYJh83PH2w0XwHkVc9l6M7HvmInXp+RlKBW
-a9jpR2EyLYCEjsOaz5gtdPBr8ZwJpu6DVRn8b19Y3sfX2mvKXRSfNwOirfM8W2qM
-CiT7DX92QVABt4mY8BiGbMJXRggxNPeeiu+YZfB2ENSZeNkRk5+oM6tvrBDUR0qQ
-l0Upw+3XbR4uBAvXrJNknW+F5uSLphgqfxLYsyNFP36E80ABGmD6bTQznA/sYzxH
-T6H52iExhno=
-=DHQt
------END PGP SIGNATURE-----
-
---Sig_/qpHnXvwX/9xC8Ii9lSW1zc6--

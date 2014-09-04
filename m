@@ -1,35 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35473 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1750793AbaIDMsh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Sep 2014 08:48:37 -0400
-Message-ID: <54085F9E.80206@fb.com>
-Date: Thu, 4 Sep 2014 08:48:30 -0400
-From: Chris Mason <clm@fb.com>
-MIME-Version: 1.0
-To: Dan Carpenter <dan.carpenter@oracle.com>
-CC: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>,
-        <kernel-janitors@vger.kernel.org>
-Subject: Re: [patch] Btrfs: kfree()ing ERR_PTRs
-References: <20140904110915.GB21504@mwanda>
-In-Reply-To: <20140904110915.GB21504@mwanda>
-Content-Type: text/plain; charset="ISO-8859-1"
+Received: from plane.gmane.org ([80.91.229.3]:48846 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754274AbaIDRcP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 13:32:15 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XPatJ-0000MA-1Q
+	for linux-btrfs@vger.kernel.org; Thu, 04 Sep 2014 19:32:13 +0200
+Received: from pd953e3b4.dip0.t-ipconnect.de ([217.83.227.180])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 19:32:13 +0200
+Received: from holger.hoffstaette by pd953e3b4.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 19:32:13 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: Re: Btrfs stable updates for v3.16
+Date: Thu, 4 Sep 2014 17:31:59 +0000 (UTC)
+Message-ID: <pan.2014.09.04.17.31.59@googlemail.com>
+References: <54077F27.1040603@fb.com>
+	<pan.2014.09.03.23.36.00@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(removed stable@ for now)
 
+Just to follow up on this -
 
-On 09/04/2014 07:09 AM, Dan Carpenter wrote:
-> The "inherit" in btrfs_ioctl_snap_create_v2() and "vol_args" in
-> btrfs_ioctl_rm_dev() are ERR_PTRs so we can't call kfree() on them.
-> 
-> These kind of bugs are "One Err Bugs" where there is just one error
-> label that does everything.  I could set the "inherit = NULL" and keep
-> the single out label but it ends up being more complicated that way.  It
-> makes the code simpler to re-order the unwind so it's in the mirror
-> order of the allocation and introduce some new error labels.
+On Wed, 03 Sep 2014 23:36:00 +0000, Holger Hoffstätte wrote:
 
-Thanks Dan, agreed on the unwinding.
+> [on backporting both:
+>  8d875f95da43c6a8f18f77869f2ef26e9594fecc and
+>  f6dc45c7a93a011dff6eb9b2ffda59c390c7705a to 3.14]
+>
+> ...and I guess nobody will complain about slightly better performance
+> either.
 
--chris
+So "slightly" is an understatement: rename/replace/truncate without full
+immediate flushing - as done by rsync's copy+rename - is now indeed
+*much* faster, to the point that backups with many small files finish
+in a fraction of the time. Wonderful!
+
+Please do get this into the next 3.14 cycle, I'll gladly help and test.
+
+Thanks!
+
+Holger
+

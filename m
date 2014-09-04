@@ -1,101 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:58955 "EHLO mout.gmx.net"
+Received: from cantor2.suse.de ([195.135.220.15]:53175 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751231AbaIDJuY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Sep 2014 05:50:24 -0400
-From: Marc Dietrich <marvin24@gmx.de>
-To: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-Cc: Zooko Wilcox-OHearn <zooko@leastauthority.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: fs corruption report
-Date: Thu, 04 Sep 2014 11:50:14 +0200
-Message-ID: <3487607.QJCBo4siRK@fb07-iapwap2>
-In-Reply-To: <1409799655.13046.16.camel@localhost.localdomain>
-References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com> <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com> <1409799655.13046.16.camel@localhost.localdomain>
+	id S1750994AbaIDJ6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 05:58:15 -0400
+Date: Thu, 4 Sep 2014 11:58:12 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, lists@colorremedies.com
+Subject: Re: [PATCH v2] btrfs: ioctl BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO
+ miss-matched with slots
+Message-ID: <20140904095812.GA5636@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1408158488-4316-1-git-send-email-anand.jain@oracle.com>
+ <1408351099-4721-1-git-send-email-anand.jain@oracle.com>
+ <1408351099-4721-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart74233430.8Rm6rAqyM1"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1408351099-4721-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---nextPart74233430.8Rm6rAqyM1
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="UTF-8"
-
-Hello Guy,
-
-Am Donnerstag, 4. September 2014, 11:00:55 schrieb Gui Hecheng:
-> On Mon, 2014-09-01 at 15:25 +0000, Zooko Wilcox-OHearn wrote:
-> > I'm more than happy to try out patches and even focus my own brain on
-> > diagnosing it, if I can. I'm hoping to regain access to some of my
-> > files on my btrfs partition, and also I would enjoy helping get this
-> > improved. :-)
-> > 
-> > So if you want me to try an experiment, just email me. Unfortunately I
-> > can't just give you a copy of the partition, since it has confidential
-> > information on it.
-> > 
-> > Regards,
-> > 
-> > Zooko
+On Mon, Aug 18, 2014 at 04:38:18PM +0800, Anand Jain wrote:
+> ioctl BTRFS_IOC_FS_INFO return num_devices which does _not_ include seed
+> device, But the following ioctl BTRFS_IOC_DEV_INFO counts and gets seed
+> disk when probed. So in the userland we hit a count-slot missmatch
+> bug..
+>             get_fs_info()
+>             ::
+>                     BUG_ON(ndevs >= fi_args->num_devices);
+> which hits this bug when we have mounted a seed device.
 > 
-> Hi Zooko, Marc,
+> So to fix this problem here in this patch ioctl BTRFS_IOC_FS_INFO
+> will provide total_devices instead of num_devices.
+
+The ioctl is very unclear what the 'num_device' actually means.
+
+> This would fix the problem partly. Partly because ealier num_devices
+> included the replacing device but now total_device does not include
+> the replacing device. Getting a count which includes a transient device
+> is rather too in efficient/wrong indeed, because there can be a race
+> condition where in the time between ioctl BTRFS_IOC_FS_INFO to
+> BTRFS_IOC_DEV_INFO the replace device operation might have been
+> completed. So to fix this problem its better that user land btrfs-progs
+> probes replacing device (at devid 0) separately.
 > 
-> Firstly, thanks for your backtrace info, Marc.
-> Sorry to reply late, since I'm offline these days.
-> For the restore problem, I'm sure that the lzo decompress routine lacks
-> the ability to handle some specific extent pattern.
+> v2:
+> Agree with Wang's comment. Its better to show seed disks under the
+> sprout fs, so that user can establish mapping of seed to sprout devices.
 > 
-> Here is my test result:
-> I'm using a specific file for test
-> /usr/lib/modules/$(uname -r)/kernel/net/irda/irda.ko.
-> You can get it easily on your own box.
-> 
-> 	# mkfs -t btrfs <dev>
-> 	# mount -o compress-force=lzo <dev> <mnt>
-> 	# cp irda.ko <mnt>
-> 	# umount <dev>
-> 	# btrfs restore -v <dev> <restore_dir>
-> report:
-> 	# bad compress length
-> 	# failed to inflate
+> So here I am making BTRFS_IOC_FS_INFO to return the total_devices
+> which would count the seed devices (but not the replacing device).
 
-uh, that's really odd. I don't use force compress, but I guess it will also 
-happen with non-forced one if the file is big enough.
+This is even more confusing. I think we need to add another member to
+the ioctl struct to reflect the number of regular devices (num_devices)
+and the true total number of devices including seeding and replaced
+devices. The difference should be accompanied by a flag that would say
+if there's a seeding or replace in progress.
 
-> btrfs-progs version: v3.16.x
-> 
-> With the same file under no-compress & zlib-compress,
-> the restore will output a correct copy of irda.ko.
-> 
-> I'm not sure whether the problem above has something to do with your
-> problem. Hope that the messages above are helpful.
-
-I also get lot's of "bad compress length", so it might be indeed related.
-
-I'm not a programmer, but is it possible that we are just skipping the lzo 
-header (magic + header len + rest of header)?
-
-Thanks,
-
-Marc
-
---nextPart74233430.8Rm6rAqyM1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iQEcBAABAgAGBQJUCDXWAAoJEKyeR39HFBtoVmIH/2FmBeGU+CjZoeyIO0gGQHnF
-LOWu7No8yC4uOYaVDNevnKArJ+GwfRO17rOOcKmM2b/GBDuEGZYfyamK9rRAKPHx
-OoUpHKR2PLM2zcHvIldNX939g5+YGgZycA5Nsph8xw7syF4NC/McO2JKKDqWcjQh
-qOM5vFCF/Zf/bzolgNrN/TcKSR9uCz6s1gMzLnZ7f28VPjffXL7KUY0xmJXn4Ww3
-kbF4k9G+7847RCBT7pw6ZQsOX8asPkYcADpftVjQkBhp+Rjgcng2MrFgjfMrsgpX
-Yb0IfamfFfe+pG35tKWb79uxU6E72aBbIUNtQFjIdxaKgB9asx8LiBUZv7kA1K4=
-=HEYl
------END PGP SIGNATURE-----
-
---nextPart74233430.8Rm6rAqyM1--
-
+There are some backward compatibility concerns. Setting num_devices to
+total_devices changes semantics of the ioctl, so I think it should stay
+as is for now, but the BUG_ON can be removed and replaced by code that
+reallocates the buffer or allocates a few more items in advance.

@@ -1,66 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18863 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756517AbaIDDBY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 23:01:24 -0400
-Message-ID: <1409799655.13046.16.camel@localhost.localdomain>
-Subject: Re: fs corruption report
-From: Gui Hecheng <guihc.fnst@cn.fujitsu.com>
-To: Zooko Wilcox-OHearn <zooko@leastauthority.com>
-CC: Marc Dietrich <marvin24@gmx.de>, <linux-btrfs@vger.kernel.org>
-Date: Thu, 4 Sep 2014 11:00:55 +0800
-In-Reply-To: <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com>
-References: <CAM_a8JxJBFQykuF13UF1Fi9jbM-=yromXbQ5PrWM5JPR7u6pXA@mail.gmail.com>
-	 <1409192882.1582.13.camel@localhost.localdomain>
-	 <1484373.Oezxgh4u8P@ax5200p> <5322846.kPR8ohTNYd@ax5200p>
-	 <CAM_a8Jy3kwxtDvJ36T0hVrGRBbOK34MOEqZY0GhUUyAUHJMnCw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mail-la0-f49.google.com ([209.85.215.49]:44580 "EHLO
+	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751068AbaIDFam (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 01:30:42 -0400
+Received: by mail-la0-f49.google.com with SMTP id b17so10908896lan.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Sep 2014 22:30:37 -0700 (PDT)
 MIME-Version: 1.0
+Date: Thu, 4 Sep 2014 07:30:37 +0200
+Message-ID: <CANg_oxxmR+qkSfZeVYK5dF1HnbSJapEF1tZ+3-9ij5hq7d2E=w@mail.gmail.com>
+Subject: BTRFS critical (device dm-0): invalid dir item name len: 45389
+From: john terragon <jterragon@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2014-09-01 at 15:25 +0000, Zooko Wilcox-OHearn wrote:
-> I'm more than happy to try out patches and even focus my own brain on
-> diagnosing it, if I can. I'm hoping to regain access to some of my
-> files on my btrfs partition, and also I would enjoy helping get this
-> improved. :-)
-> 
-> So if you want me to try an experiment, just email me. Unfortunately I
-> can't just give you a copy of the partition, since it has confidential
-> information on it.
-> 
-> Regards,
-> 
-> Zooko
+Hi.
 
-Hi Zooko, Marc,
+When I traverse one of my btrfs, for example with a simple "find /", I
+get the following in kmsg
 
-Firstly, thanks for your backtrace info, Marc.
-Sorry to reply late, since I'm offline these days.
-For the restore problem, I'm sure that the lzo decompress routine lacks
-the ability to handle some specific extent pattern.
+BTRFS critical (device dm-0): invalid dir item name len: 45389
 
-Here is my test result:
-I'm using a specific file for test
-/usr/lib/modules/$(uname -r)/kernel/net/irda/irda.ko.
-You can get it easily on your own box.
+The message appears just one time (so I guess it involves just one
+file/dir). dm-0 is the first dmcrypt device of a pair on which I have
+btrfs in RAID0 (btrfs native raid). Though I can't be 100% sure, this
+seems to be a very recent problem (I would have noticed something
+"critical" in kmsg if it happened before). Everything else seems to
+work fine.
 
-	# mkfs -t btrfs <dev>
-	# mount -o compress-force=lzo <dev> <mnt>
-	# cp irda.ko <mnt>
-	# umount <dev>
-	# btrfs restore -v <dev> <restore_dir>
-report:
-	# bad compress length
-	# failed to inflate
+So, should I be worried. Is there a way to fix this? (I assume that a
+scrub would not do any good since it seems to be related to btrfs data
+structures more than actual file data). Is there at least a way to
+know which file/dir is involved? Maybe a verbose debug mode? Or maybe
+I should just add some printk in the verify_dir_item function that
+seems to generate the message.
 
-btrfs-progs version: v3.16.x
-
-With the same file under no-compress & zlib-compress,
-the restore will output a correct copy of irda.ko.
-
-I'm not sure whether the problem above has something to do with your
-problem. Hope that the messages above are helpful.
-
--Gui
-
+Thanks
+John

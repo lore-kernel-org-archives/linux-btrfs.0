@@ -1,51 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:53725 "EHLO
-	out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932327AbaICVcN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Sep 2014 17:32:13 -0400
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by gateway2.nyi.internal (Postfix) with ESMTP id C80652095C
-	for <linux-btrfs@vger.kernel.org>; Wed,  3 Sep 2014 17:32:11 -0400 (EDT)
-Date: Wed, 3 Sep 2014 14:32:09 -0700
-From: Greg KH <greg@kroah.com>
-To: dsterba@suse.cz, stable@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        clm@fb.com
+Received: from cantor2.suse.de ([195.135.220.15]:34251 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751736AbaIDQiA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 12:38:00 -0400
+Date: Thu, 4 Sep 2014 18:37:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Greg KH <greg@kroah.com>
+Cc: stable@vger.kernel.org, linux-btrfs@vger.kernel.org, clm@fb.com
 Subject: Re: Btrfs stable updates for 3.16.x (and others)
-Message-ID: <20140903213209.GA20589@kroah.com>
+Message-ID: <20140904163758.GC5636@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <20140819111045.GQ1553@suse.cz>
+ <20140903213209.GA20589@kroah.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20140819111045.GQ1553@suse.cz>
+In-Reply-To: <20140903213209.GA20589@kroah.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 19, 2014 at 01:10:45PM +0200, David Sterba wrote:
-> Hi stable team,
+On Wed, Sep 03, 2014 at 02:32:09PM -0700, Greg KH wrote:
+> >         6f7ff6d7832c6be13e8c95598884dbc40ad69fb7
+> This doesn't apply to 3.10-stable :(
 > 
-> please add the following patches to stable trees.
-> 
-> Patch #3 applies to all currently live stables, a 7 years old bug. I've
-> briefly reviewed all 3 patches against 3.10/12/14/16 (ie. 3.4 skips #1
-> and #2).
-> 
-> Subjects:
->         Btrfs: read lock extent buffer while walking backrefs
->         Btrfs: fix compressed write corruption on enospc
->         Btrfs: fix csum tree corruption, duplicate and outdated checksums
-> Commits:
->         6f7ff6d7832c6be13e8c95598884dbc40ad69fb7
+> >         ce62003f690dff38d3164a632ec69efa15c32cbf
+> Neither did this.
 
-This doesn't apply to 3.10-stable :(
-
->         ce62003f690dff38d3164a632ec69efa15c32cbf
-
-Neither did this.
-
->         27b9a8122ff71a8cadfbffb9c4f0694300464f3b
-
-Was already marked for stable.
-
-thanks,
-
-greg k-h
+I'm sorry for the trouble. I tried to verify that the patches apply but
+must have missed that.

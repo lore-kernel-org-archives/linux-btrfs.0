@@ -1,366 +1,279 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40719 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752982AbaIOPJ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Sep 2014 11:09:58 -0400
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Hugo Mills <hugo@carfax.org.uk>,
-        Nils Steinger <nst@voidptr.de>, Alexandre Oliva <oliva@gnu.org>
-Subject: [UI RFC][PATCH] btrfs-progs: add options to tune units for fi df output
-Date: Mon, 15 Sep 2014 17:09:52 +0200
-Message-Id: <1410793792-17621-1-git-send-email-dsterba@suse.cz>
+Received: from userp1040.oracle.com ([156.151.31.81]:46198 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753642AbaIDLjT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 07:39:19 -0400
+Message-ID: <5408504C.1050203@oracle.com>
+Date: Thu, 04 Sep 2014 19:43:08 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
+MIME-Version: 1.0
+To: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+CC: zab@redhat.com, wangshilong1991@gmail.com
+Subject: Re: [PATCH] btrfs-progs: per-thread, per-call pretty buffer
+References: <20130709202443.GJ18717@lenny.home.zabbo.net> <1373466615-30013-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1373466615-30013-1-git-send-email-dsterba@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The size unit format is a longstanding annoyance. This patch is based on
-the work of Nils and Alexandre and enhances the options. It's possible
-to select raw bytes, SI-based or IEC-based compact units (human
-frientdly) or a fixed base from kilobytes to terabytes. The default is
-compact human readable IEC-based, no change to current version.
 
-CC: Nils Steinger <nst@voidptr.de>
-CC: Alexandre Oliva <oliva@gnu.org>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
 
-I tried to make the command line UI rich enough to address current and future
-needs, I'm open to tweaks, rewording etc.
+ > +		static __thread char _str[24];
 
-The patch is based on current snapshot of integration branch that will be the
-base of 3.17 release and contains the 'enhanced df' patches, branch dev/units.
+  This patch is causing segmentation fault as it reached maximum stack
+  depth on the sparc machine. Just earlier method of malloc is better ?
+  unless we want to change the stack depth.  Any comments ?
 
- Documentation/btrfs-filesystem.txt |  25 ++++++++-
- cmds-filesystem.c                  | 111 ++++++++++++++++++++++++++++---------
- utils.c                            |  48 ++++++++++++----
- utils.h                            |  30 +++++++---
- 4 files changed, 168 insertions(+), 46 deletions(-)
+Thanks, Anand
 
-diff --git a/Documentation/btrfs-filesystem.txt b/Documentation/btrfs-filesystem.txt
-index c9c0b006a0b0..7ac105ff350e 100644
---- a/Documentation/btrfs-filesystem.txt
-+++ b/Documentation/btrfs-filesystem.txt
-@@ -17,8 +17,31 @@ resizing, defragment.
- 
- SUBCOMMAND
- ----------
--*df* <path> [<path>...]::
-+*df* [options] <path>::
- Show space usage information for a mount point.
-++
-+`Options`
-++
-+-b|--raw::::
-+raw numbers in bytes, without the 'B' suffix
-+-h::::
-+print human friendly numbers, base 1024, this is the default
-+-H::::
-+print human friendly numbers, base 1000
-+--iec::::
-+select the 1024 base for the following options, according to the IEC standard
-+--si::::
-+select the 1000 base for the following options, according to the SI standard
-+-k|--kbytes::::
-+show sizes in KiB, or KB with --si
-+-m|--mbytes::::
-+show sizes in MiB, or MB with --si
-+-g|--gbytes::::
-+show sizes in GiB, or GB with --si
-+-t|--tbytes::::
-+show sizes in TiB, or TB with --si
-+
-+If conflicting options are passed, the last one takes precedence.
- 
- *show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
- Show the btrfs filesystem with some additional info.
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 89b897496256..68876957cbab 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -114,12 +114,21 @@ static const char * const filesystem_cmd_group_usage[] = {
- };
- 
- static const char * const cmd_filesystem_df_usage[] = {
--       "btrfs filesystem df <path>",
-+       "btrfs filesystem df [options] <path>",
-        "Show space usage information for a mount point",
-+	"-b|--raw           raw numbers in bytes",
-+	"-h                 human friendly numbers, base 1024 (default)",
-+	"-H                 human friendly numbers, base 1000",
-+	"--iec              use 1024 as a base (Kib, MiB, GiB, ...)",
-+	"--si               use 1000 as a base (KB, MB, GB, ...)",
-+	"-k|--kbytes        show sizes in KiB, or KB with --si",
-+	"-m|--mbytes        show sizes in MiB, or MB with --si",
-+	"-g|--gbytes        show sizes in GiB, or GB with --si",
-+	"-t|--tbytes        show sizes in TiB, or TB with --si",
-        NULL
- };
- 
--static void print_df(struct btrfs_ioctl_space_args *sargs)
-+static void print_df(struct btrfs_ioctl_space_args *sargs, int unit_mode)
- {
-        u64 i;
-        struct btrfs_ioctl_space_info *sp = sargs->spaces;
-@@ -128,8 +137,8 @@ static void print_df(struct btrfs_ioctl_space_args *sargs)
-                printf("%s, %s: total=%s, used=%s\n",
-                        group_type_str(sp->flags),
-                        group_profile_str(sp->flags),
--                       pretty_size(sp->total_bytes),
--                       pretty_size(sp->used_bytes));
-+                       pretty_size_mode(sp->total_bytes, unit_mode),
-+                       pretty_size_mode(sp->used_bytes, unit_mode));
-        }
- }
- 
-@@ -183,33 +192,83 @@ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
- 
- static int cmd_filesystem_df(int argc, char **argv)
- {
--       struct btrfs_ioctl_space_args *sargs = NULL;
--       int ret;
--       int fd;
--       char *path;
--       DIR *dirstream = NULL;
-+	struct btrfs_ioctl_space_args *sargs = NULL;
-+	int ret;
-+	int fd;
-+	char *path;
-+	DIR *dirstream = NULL;
-+	unsigned unit_mode = UNITS_DEFAULT;
- 
--       if (check_argc_exact(argc, 2))
--               usage(cmd_filesystem_df_usage);
-+	optind = 1;
-+	while (1) {
-+		int long_index;
-+		static const struct option long_options[] = {
-+			{ "raw", no_argument, NULL, 'b'},
-+			{ "kbytes", no_argument, NULL, 'k'},
-+			{ "mbytes", no_argument, NULL, 'm'},
-+			{ "gbytes", no_argument, NULL, 'g'},
-+			{ "tbytes", no_argument, NULL, 't'},
-+			{ "si", no_argument, NULL, 256},
-+			{ "iec", no_argument, NULL, 257},
-+		};
-+		int c = getopt_long(argc, argv, "bhHkmgt", long_options,
-+					&long_index);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'b':
-+			unit_mode = UNITS_RAW;
-+			break;
-+		case 'k':
-+			units_set_base(&unit_mode, UNITS_KBYTES);
-+			break;
-+		case 'm':
-+			units_set_base(&unit_mode, UNITS_MBYTES);
-+			break;
-+		case 'g':
-+			units_set_base(&unit_mode, UNITS_GBYTES);
-+			break;
-+		case 't':
-+			units_set_base(&unit_mode, UNITS_TBYTES);
-+			break;
-+		case 'h':
-+			unit_mode = UNITS_HUMAN_BINARY;
-+			break;
-+		case 'H':
-+			unit_mode = UNITS_HUMAN_DECIMAL;
-+			break;
-+		case 256:
-+			units_set_mode(&unit_mode, UNITS_DECIMAL);
-+			break;
-+		case 257:
-+			units_set_mode(&unit_mode, UNITS_BINARY);
-+			break;
-+		default:
-+			usage(cmd_filesystem_df_usage);
-+		}
-+	}
- 
--       path = argv[1];
-+	if (check_argc_max(argc, optind + 1))
-+		usage(cmd_filesystem_df_usage);
- 
--       fd = open_file_or_dir(path, &dirstream);
--       if (fd < 0) {
--               fprintf(stderr, "ERROR: can't access '%s'\n", path);
--               return 1;
--       }
--       ret = get_df(fd, &sargs);
-+	path = argv[optind];
- 
--       if (!ret && sargs) {
--               print_df(sargs);
--               free(sargs);
--       } else {
--               fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
--       }
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", path);
-+		return 1;
-+	}
-+	ret = get_df(fd, &sargs);
- 
--       close_file_or_dir(fd, dirstream);
--       return !!ret;
-+	if (ret == 0) {
-+		print_df(sargs, unit_mode);
-+		free(sargs);
-+	} else {
-+		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
-+	}
-+
-+	close_file_or_dir(fd, dirstream);
-+	return !!ret;
- }
- 
- static int match_search_item_kernel(__u8 *fsid, char *mnt, char *label,
-diff --git a/utils.c b/utils.c
-index 9ab1480ede43..5db05010e839 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1383,33 +1383,36 @@ static const char* unit_suffix_binary[] =
- static const char* unit_suffix_decimal[] =
- 	{ "B", "KB", "MB", "GB", "TB", "PB", "EB"};
- 
--int pretty_size_snprintf(u64 size, char *str, size_t str_size, int unit_mode)
-+int pretty_size_snprintf(u64 size, char *str, size_t str_size, unsigned unit_mode)
- {
- 	int num_divs;
- 	float fraction;
--	int base = 0;
-+	u64 base = 0;
-+	int mult = 0;
- 	const char** suffix = NULL;
- 	u64 last_size;
- 
- 	if (str_size == 0)
- 		return 0;
- 
--	if (unit_mode == UNITS_RAW) {
-+	if ((unit_mode & ~UNITS_MODE_MASK) == UNITS_RAW) {
- 		snprintf(str, str_size, "%llu", size);
- 		return 0;
- 	}
- 
--	if (unit_mode == UNITS_BINARY) {
-+	if ((unit_mode & ~UNITS_MODE_MASK) == UNITS_BINARY) {
- 		base = 1024;
-+		mult = 1024;
- 		suffix = unit_suffix_binary;
--	} else if (unit_mode == UNITS_DECIMAL) {
-+	} else if ((unit_mode & ~UNITS_MODE_MASK) == UNITS_DECIMAL) {
- 		base = 1000;
-+		mult = 1000;
- 		suffix = unit_suffix_decimal;
- 	}
- 
- 	/* Unknown mode */
- 	if (!base) {
--		fprintf(stderr, "INTERNAL ERROR: unknown unit base, mode %d",
-+		fprintf(stderr, "INTERNAL ERROR: unknown unit base, mode %d\n",
- 				unit_mode);
- 		assert(0);
- 		return -1;
-@@ -1417,11 +1420,22 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_size, int unit_mode)
- 
- 	num_divs = 0;
- 	last_size = size;
--
--	while (size >= base) {
--		last_size = size;
--		size /= base;
--		num_divs++;
-+	switch (unit_mode & UNITS_MODE_MASK) {
-+	case UNITS_TBYTES: base *= mult; num_divs++;
-+	case UNITS_GBYTES: base *= mult; num_divs++;
-+	case UNITS_MBYTES: base *= mult; num_divs++;
-+	case UNITS_KBYTES: num_divs++;
-+			   break;
-+	case UNITS_BYTES:
-+			   base = 1;
-+			   num_divs = 0;
-+			   break;
-+	default:
-+		while (size >= mult) {
-+			last_size = size;
-+			size /= mult;
-+			num_divs++;
-+		}
- 	}
- 
- 	if (num_divs >= ARRAY_SIZE(unit_suffix_binary)) {
-@@ -2573,3 +2587,15 @@ const char *group_profile_str(u64 flag)
- 	}
- }
- 
-+void units_set_mode(unsigned *units, unsigned mode)
-+{
-+	unsigned base = *units & UNITS_MODE_MASK;
-+
-+	*units = base | mode;
-+}
-+void units_set_base(unsigned *units, unsigned base)
-+{
-+	unsigned mode = *units & ~UNITS_MODE_MASK;
-+
-+	*units = base | mode;
-+}
-diff --git a/utils.h b/utils.h
-index 1eed0c1606aa..8156f13126af 100644
---- a/utils.h
-+++ b/utils.h
-@@ -50,12 +50,26 @@ void fixup_argv0(char **argv, const char *token);
- void set_argv0(char **argv);
- 
- /*
-- * Output mode of byte units
-+ * Output modes of size
-  */
--#define UNITS_RAW			(1)
--#define UNITS_BINARY			(2)
--#define UNITS_DECIMAL			(3)
--#define UNITS_HUMAN			UNITS_BINARY
-+#define UNITS_RESERVED			(0)
-+#define UNITS_BYTES			(1)
-+#define UNITS_KBYTES			(2)
-+#define UNITS_MBYTES			(3)
-+#define UNITS_GBYTES			(4)
-+#define UNITS_TBYTES			(5)
-+#define UNITS_RAW			(1U << UNITS_MODE_SHIFT)
-+#define UNITS_BINARY			(2U << UNITS_MODE_SHIFT)
-+#define UNITS_DECIMAL			(3U << UNITS_MODE_SHIFT)
-+#define UNITS_MODE_MASK			((1U << UNITS_MODE_SHIFT) - 1)
-+#define UNITS_MODE_SHIFT		(8)
-+#define UNITS_HUMAN_BINARY		(UNITS_BINARY)
-+#define UNITS_HUMAN_DECIMAL		(UNITS_DECIMAL)
-+#define UNITS_HUMAN			(UNITS_HUMAN_BINARY)
-+#define UNITS_DEFAULT			(UNITS_HUMAN)
-+
-+void units_set_mode(unsigned *units, unsigned mode);
-+void units_set_base(unsigned *units, unsigned base);
- 
- int make_btrfs(int fd, const char *device, const char *label,
- 	       char *fs_uuid, u64 blocks[6], u64 num_bytes, u32 nodesize,
-@@ -79,12 +93,12 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
- int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
- 				 int super_offset);
- 
--int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, int unit_mode);
--#define pretty_size(size) 	pretty_size_mode(size, UNITS_BINARY)
-+int pretty_size_snprintf(u64 size, char *str, size_t str_bytes, unsigned unit_mode);
-+#define pretty_size(size) 	pretty_size_mode(size, UNITS_DEFAULT)
- #define pretty_size_mode(size, mode) 					      \
- 	({								      \
- 		static __thread char _str[32];				      \
--		(void)pretty_size_snprintf((size), _str, sizeof(_str), mode); \
-+		(void)pretty_size_snprintf((size), _str, sizeof(_str), (mode)); \
- 		_str;							      \
- 	})
- 
--- 
-2.1.0
 
+On 07/10/2013 10:30 PM, David Sterba wrote:
+> From: Zach Brown <zab@redhat.com>
+>
+> From: Zach Brown <zab@redhat.com>
+>
+> We don't need callers to manage string storage for each pretty_sizes()
+> call.  We can use a macro to have per-thread and per-call static storage
+> so that pretty_sizes() can be used as many times as needed in printf()
+> arguments without requiring a bunch of supporting variables.
+>
+> This lets us have a natural interface at the cost of requiring __thread
+> and TLS from gcc and a small amount of static storage.  This seems
+> better than the current code or doing something with illegible format
+> specifier macros.
+>
+> Signed-off-by: Zach Brown <zab@redhat.com>
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>
+> I've updated the rest of pretty_size callers in targets that were not built by
+> default.
+>
+>   btrfs-calc-size.c | 13 +++----------
+>   btrfs-fragments.c |  2 +-
+>   cmds-filesystem.c | 27 +++++++++------------------
+>   cmds-scrub.c      |  8 ++++----
+>   mkfs.c            |  4 +---
+>   utils.c           | 19 ++++++++++---------
+>   utils.h           | 10 +++++++++-
+>   7 files changed, 37 insertions(+), 46 deletions(-)
+>
+> diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+> index c4adfb0..5aa0b70 100644
+> --- a/btrfs-calc-size.c
+> +++ b/btrfs-calc-size.c
+> @@ -162,18 +162,11 @@ out_print:
+>   		       stat.total_inline, stat.total_nodes, stat.total_leaves,
+>   		       level + 1);
+>   	} else {
+> -		char *total_size;
+> -		char *inline_size;
+> -
+> -		total_size = pretty_sizes(stat.total_bytes);
+> -		inline_size = pretty_sizes(stat.total_inline);
+> -
+>   		printf("\t%s total size, %s inline data, %Lu nodes, "
+>   		       "%Lu leaves, %d levels\n",
+> -		       total_size, inline_size, stat.total_nodes,
+> -		       stat.total_leaves, level + 1);
+> -		free(total_size);
+> -		free(inline_size);
+> +		       pretty_size(stat.total_bytes),
+> +		       pretty_size(stat.total_inline),
+> +		       stat.total_nodes, stat.total_leaves, level + 1);
+>   	}
+>   out:
+>   	btrfs_free_path(path);
+> diff --git a/btrfs-fragments.c b/btrfs-fragments.c
+> index a012fe1..7ec77e7 100644
+> --- a/btrfs-fragments.c
+> +++ b/btrfs-fragments.c
+> @@ -87,7 +87,7 @@ print_bg(FILE *html, char *name, u64 start, u64 len, u64 used, u64 flags,
+>
+>   	fprintf(html, "<p>%s chunk starts at %lld, size is %s, %.2f%% used, "
+>   		      "%.2f%% fragmented</p>\n", chunk_type(flags), start,
+> -		      pretty_sizes(len), 100.0 * used / len, 100.0 * frag);
+> +		      pretty_size(len), 100.0 * used / len, 100.0 * frag);
+>   	fprintf(html, "<img src=\"%s\" border=\"1\" />\n", name);
+>   }
+>
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index f41a72a..222e458 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -111,8 +111,6 @@ static int cmd_df(int argc, char **argv)
+>
+>   	for (i = 0; i < sargs->total_spaces; i++) {
+>   		char description[80];
+> -		char *total_bytes;
+> -		char *used_bytes;
+>   		int written = 0;
+>   		u64 flags = sargs->spaces[i].flags;
+>
+> @@ -155,10 +153,9 @@ static int cmd_df(int argc, char **argv)
+>   			written += 7;
+>   		}
+>
+> -		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+> -		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
+> -		printf("%s: total=%s, used=%s\n", description, total_bytes,
+> -		       used_bytes);
+> +		printf("%s: total=%s, used=%s\n", description,
+> +			pretty_size(sargs->spaces[i].total_bytes),
+> +			pretty_size(sargs->spaces[i].used_bytes));
+>   	}
+>   	close(fd);
+>   	free(sargs);
+> @@ -192,7 +189,6 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+>   	char uuidbuf[37];
+>   	struct list_head *cur;
+>   	struct btrfs_device *device;
+> -	char *super_bytes_used;
+>   	u64 devs_found = 0;
+>   	u64 total;
+>
+> @@ -204,25 +200,20 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+>   	else
+>   		printf("Label: none ");
+>
+> -	super_bytes_used = pretty_sizes(device->super_bytes_used);
+>
+>   	total = device->total_devs;
+>   	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
+> -	       (unsigned long long)total, super_bytes_used);
+> -
+> -	free(super_bytes_used);
+> +	       (unsigned long long)total,
+> +	       pretty_size(device->super_bytes_used));
+>
+>   	list_for_each(cur, &fs_devices->devices) {
+> -		char *total_bytes;
+> -		char *bytes_used;
+>   		device = list_entry(cur, struct btrfs_device, dev_list);
+> -		total_bytes = pretty_sizes(device->total_bytes);
+> -		bytes_used = pretty_sizes(device->bytes_used);
+> +
+>   		printf("\tdevid %4llu size %s used %s path %s\n",
+>   		       (unsigned long long)device->devid,
+> -		       total_bytes, bytes_used, device->name);
+> -		free(total_bytes);
+> -		free(bytes_used);
+> +		       pretty_size(device->total_bytes),
+> +		       pretty_size(device->bytes_used), device->name);
+> +
+>   		devs_found++;
+>   	}
+>   	if (devs_found < total) {
+> diff --git a/cmds-scrub.c b/cmds-scrub.c
+> index 95dfee3..bf50650 100644
+> --- a/cmds-scrub.c
+> +++ b/cmds-scrub.c
+> @@ -139,7 +139,6 @@ static void print_scrub_summary(struct btrfs_scrub_progress *p)
+>   {
+>   	u64 err_cnt;
+>   	u64 err_cnt2;
+> -	char *bytes;
+>
+>   	err_cnt = p->read_errors +
+>   			p->csum_errors +
+> @@ -151,10 +150,11 @@ static void print_scrub_summary(struct btrfs_scrub_progress *p)
+>   	if (p->malloc_errors)
+>   		printf("*** WARNING: memory allocation failed while scrubbing. "
+>   		       "results may be inaccurate\n");
+> -	bytes = pretty_sizes(p->data_bytes_scrubbed + p->tree_bytes_scrubbed);
+> -	printf("\ttotal bytes scrubbed: %s with %llu errors\n", bytes,
+> +
+> +	printf("\ttotal bytes scrubbed: %s with %llu errors\n",
+> +		pretty_size(p->data_bytes_scrubbed + p->tree_bytes_scrubbed),
+>   		max(err_cnt, err_cnt2));
+> -	free(bytes);
+> +
+>   	if (err_cnt || err_cnt2) {
+>   		printf("\terror details:");
+>   		PRINT_SCRUB_ERROR(p->read_errors, "read");
+> diff --git a/mkfs.c b/mkfs.c
+> index 95fceb3..ade85c7 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1356,7 +1356,6 @@ int main(int ac, char **av)
+>   	u64 num_of_meta_chunks = 0;
+>   	u64 size_of_data = 0;
+>   	u64 source_dir_size = 0;
+> -	char *pretty_buf;
+>   	struct btrfs_super_block *super;
+>   	u64 flags;
+>   	int dev_cnt = 0;
+> @@ -1629,8 +1628,7 @@ raid_groups:
+>   	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+>   	    "sectorsize %u size %s\n",
+>   	    label, first_file, nodesize, leafsize, sectorsize,
+> -	    pretty_buf = pretty_sizes(btrfs_super_total_bytes(root->fs_info->super_copy)));
+> -	free(pretty_buf);
+> +	    pretty_size(btrfs_super_total_bytes(root->fs_info->super_copy)));
+>
+>   	printf("%s\n", BTRFS_BUILD_VERSION);
+>   	btrfs_commit_transaction(trans, root);
+> diff --git a/utils.c b/utils.c
+> index 1eeda0f..ced85aa 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -1152,13 +1152,14 @@ out:
+>   }
+>
+>   static char *size_strs[] = { "", "KB", "MB", "GB", "TB",
+> -			    "PB", "EB", "ZB", "YB"};
+> -char *pretty_sizes(u64 size)
+> +			    "PB", "EB"};
+> +void pretty_size_snprintf(u64 size, char *str, size_t str_bytes)
+>   {
+>   	int num_divs = 0;
+> -        int pretty_len = 16;
+>   	float fraction;
+> -	char *pretty;
+> +
+> +	if (str_bytes == 0)
+> +		return;
+>
+>   	if( size < 1024 ){
+>   		fraction = size;
+> @@ -1172,13 +1173,13 @@ char *pretty_sizes(u64 size)
+>   			num_divs ++;
+>   		}
+>
+> -		if (num_divs >= ARRAY_SIZE(size_strs))
+> -			return NULL;
+> +		if (num_divs >= ARRAY_SIZE(size_strs)) {
+> +			str[0] = '\0';
+> +			return;
+> +		}
+>   		fraction = (float)last_size / 1024;
+>   	}
+> -	pretty = malloc(pretty_len);
+> -	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs]);
+> -	return pretty;
+> +	snprintf(str, str_bytes, "%.2f%s", fraction, size_strs[num_divs]);
+>   }
+>
+>   /*
+> diff --git a/utils.h b/utils.h
+> index 3c17e14..36fb591 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -44,7 +44,15 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+>   			struct btrfs_fs_devices **fs_devices_mnt);
+>   int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+>   				 int super_offset);
+> -char *pretty_sizes(u64 size);
+> +
+> +void pretty_size_snprintf(u64 size, char *str, size_t str_bytes);
+> +#define pretty_size(size) 						\
+> +	({								\
+> +		static __thread char _str[24];				\
+> +		pretty_size_snprintf((size), _str, sizeof(_str));	\
+> +		_str;							\
+> +	})
+> +
+>   int get_mountpt(char *dev, char *mntpt, size_t size);
+>   int btrfs_scan_block_devices(int run_ioctl);
+>   u64 parse_size(char *s);
+>

@@ -1,61 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:39411 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S935108AbaICXud (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Sep 2014 19:50:33 -0400
-Message-ID: <5407A942.2030701@fb.com>
-Date: Wed, 3 Sep 2014 19:50:26 -0400
-From: Chris Mason <clm@fb.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:32982 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753041AbaIDLJb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 07:09:31 -0400
+Date: Thu, 4 Sep 2014 14:09:15 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+Subject: [patch] Btrfs: kfree()ing ERR_PTRs
+Message-ID: <20140904110915.GB21504@mwanda>
 MIME-Version: 1.0
-To: =?UTF-8?B?SG9sZ2VyIEhvZmZzdMOkdHRl?=
-	<holger.hoffstaette@googlemail.com>,
-        <linux-btrfs@vger.kernel.org>
-CC: <stable@vger.kernel.org>
-Subject: Re: Btrfs stable updates for v3.16
-References: <54077F27.1040603@fb.com> <pan.2014.09.03.23.36.00@googlemail.com>
-In-Reply-To: <pan.2014.09.03.23.36.00@googlemail.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The "inherit" in btrfs_ioctl_snap_create_v2() and "vol_args" in
+btrfs_ioctl_rm_dev() are ERR_PTRs so we can't call kfree() on them.
 
+These kind of bugs are "One Err Bugs" where there is just one error
+label that does everything.  I could set the "inherit = NULL" and keep
+the single out label but it ends up being more complicated that way.  It
+makes the code simpler to re-order the unwind so it's in the mirror
+order of the allocation and introduce some new error labels.
 
-On 09/03/2014 07:36 PM, Holger Hoffstätte wrote:
-> On Wed, 03 Sep 2014 16:50:47 -0400, Chris Mason wrote:
-> 
->> Hi everyone,
->>
->> For 3.16, please pull these into stable, I've cherry picked and tested
->> them here.  For 3.15 and earlier there are a few conflicts, so I'll make
->> a git tree with things to pull.
->>
->> 8d875f95da43c6a8f18f77869f2ef26e9594fecc v3.15+
-> 
-> This ("fix filemap_flush call in btrfs_file_release") is the only one 
-> that requires some work for 3.14.
-> 
-> There is one conflict in ordered.data.c - just a sligh work queue 
-> submission change - and the second in transaction.c where the patch does 
-> not delete enough from btrfs_flush_all_pending_stuffs(), since 3.14 still 
-> has the old qgroup calls in place. I removed it wholesale and that makes 
-> everything fit.
-> 
-> The followup ("fix filemap_flush call in btrfs_file_release") then also 
-> applies.
-> 
-> Should they also go into the next 3.14.x stable cycle? This rename 
-> deadlock sounds like a possible problem with rsync, which seems like a 
-> popular use case, and I guess nobody will complain about slightly better 
-> performance either.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Right, the btrfs_flush_all_pending_stuffs function can just be deleted.
- But, Liu Bo's patch isn't required on 3.14 (since the regression he
-fixed came with 3.15).
-
-And these changes are big enough that I like to test them a little here
-before sending out.  I did mark that patch as 3.15+, but really that
-deadlock has been there forever.  We only started seeing it with 3.15+
-because other waitqueue problems made it stand out.
-
--chris
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index de505d5..741b92b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1702,7 +1702,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+ 	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY |
+ 	      BTRFS_SUBVOL_QGROUP_INHERIT)) {
+ 		ret = -EOPNOTSUPP;
+-		goto out;
++		goto free_args;
+ 	}
+ 
+ 	if (vol_args->flags & BTRFS_SUBVOL_CREATE_ASYNC)
+@@ -1712,27 +1712,31 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+ 	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
+ 		if (vol_args->size > PAGE_CACHE_SIZE) {
+ 			ret = -EINVAL;
+-			goto out;
++			goto free_args;
+ 		}
+ 		inherit = memdup_user(vol_args->qgroup_inherit, vol_args->size);
+ 		if (IS_ERR(inherit)) {
+ 			ret = PTR_ERR(inherit);
+-			goto out;
++			goto free_args;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
+ 					      vol_args->fd, subvol, ptr,
+ 					      readonly, inherit);
++	if (ret)
++		goto free_inherit;
+ 
+-	if (ret == 0 && ptr &&
+-	    copy_to_user(arg +
+-			 offsetof(struct btrfs_ioctl_vol_args_v2,
+-				  transid), ptr, sizeof(*ptr)))
++	if (ptr && copy_to_user(arg +
++				offsetof(struct btrfs_ioctl_vol_args_v2,
++					transid),
++				ptr, sizeof(*ptr)))
+ 		ret = -EFAULT;
+-out:
+-	kfree(vol_args);
++
++free_inherit:
+ 	kfree(inherit);
++free_args:
++	kfree(vol_args);
+ 	return ret;
+ }
+ 
+@@ -2649,7 +2653,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args)) {
+ 		ret = PTR_ERR(vol_args);
+-		goto out;
++		goto err_drop;
+ 	}
+ 
+ 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+@@ -2667,6 +2671,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
+ 
+ out:
+ 	kfree(vol_args);
++err_drop:
+ 	mnt_drop_write_file(file);
+ 	return ret;
+ }

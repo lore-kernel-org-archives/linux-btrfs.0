@@ -1,39 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f180.google.com ([209.85.217.180]:49885 "EHLO
-	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754265AbaIDNDG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 09:03:06 -0400
-Received: by mail-lb0-f180.google.com with SMTP id w7so11566179lbi.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 06:03:05 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CANg_oxxmR+qkSfZeVYK5dF1HnbSJapEF1tZ+3-9ij5hq7d2E=w@mail.gmail.com>
-References: <CANg_oxxmR+qkSfZeVYK5dF1HnbSJapEF1tZ+3-9ij5hq7d2E=w@mail.gmail.com>
-Date: Thu, 4 Sep 2014 15:03:04 +0200
-Message-ID: <CANg_oxzsAAV3S-Qc=mz0GTVXnPFrQ43riNXVbtT4Wjqtwsbo2A@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:37458 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754404AbaIDWGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 18:06:21 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XPfAY-0006eA-HF
+	for linux-btrfs@vger.kernel.org; Fri, 05 Sep 2014 00:06:18 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 00:06:18 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 00:06:18 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: BTRFS critical (device dm-0): invalid dir item name len: 45389
-From: john terragon <jterragon@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Thu, 4 Sep 2014 22:06:04 +0000 (UTC)
+Message-ID: <pan$68621$5f405fb4$84800416$5de9f6db@cox.net>
+References: <CANg_oxxmR+qkSfZeVYK5dF1HnbSJapEF1tZ+3-9ij5hq7d2E=w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some more details about this problem:
+john terragon posted on Thu, 04 Sep 2014 07:30:37 +0200 as excerpted:
 
--the directory involved is /lib/modules/3.17.0-rc3-cu3/kernel/drivers/iio/gyro
--in that dir there should be kernel object named hid-sensor-gyro-3d.ko
-but there's
- no trace of it
--that dir cannot be removed or overwritten. rm -rf fails saying that
-the dir cannot be
- removed because it's not empty (?, even with -rf ?) and trying to
-reinstall the .deb
- package for that kernel image (thus overwriting that dir) ends up in a segfault
+> dm-0 is the first dmcrypt device of a pair on which I have
+> btrfs in RAID0 (btrfs native raid).
+> 
+> I assume that a scrub would not do any good since it seems to be
+> related to btrfs data structures more than actual file data[.]
 
-The only workaround is to mv that dir (well, I simply mv the whole
-3.17.0-rc3-cu3 dir but it should work also for the gyro subdir) and
-reinstall the deb package.
+On btrfs raid0 scrub can't fix anything anyway, tho it might give you a 
+bit more information about problems it finds.
 
-So, it's pretty serious because there's actual loss of data (even
-though I was lucky I just lost a ko I don't use).
+The only thing scrub does is verify block checksums and if there's a 
+second copy (as there is in single-device dup mode for metadata, and 
+multi-device raid1 and raid10 modes, raid5/6 scrub is still broken), 
+verify its checksum and assuming it verifies, rewrite the bad copy with 
+the new copy.  The same thing happens in normal operation if btrfs 
+happens to come across the problem, but scrub gives you a way to 
+systematically check the entire filesystem.
 
-John
+If there's no valid second copy, either because the block was in a single-
+copy chunk (btrfs raid0 or single mode) or because the second copy is bad 
+or the device it was on is missing (raid1/10 with a missing device), 
+there's obviously no good copy to overwrite the bad one with, so the 
+problem cannot be fixed.  However, if it's in a data chunk, scrub should 
+log the file it was part of.  For metadata you simply get a number, and 
+have to use btrfs debugging tools to figure out what's affected.
+
+Since you said you're using btrfs raid0 mode, there's no second copy, so 
+scrub might find bad checksums and give you a bit of additional 
+information about what's affected, but it can never fix them, because 
+there's no second copy to fix them from.  Scrub for btrfs raid0 (or 
+single, and scrub for raid56 modes remains broken) mode is thus purely 
+diagnostics, no possibility of fix, at least from scrub.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

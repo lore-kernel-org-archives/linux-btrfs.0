@@ -1,98 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32982 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753041AbaIDLJb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 07:09:31 -0400
-Date: Thu, 4 Sep 2014 14:09:15 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
-        kernel-janitors@vger.kernel.org
-Subject: [patch] Btrfs: kfree()ing ERR_PTRs
-Message-ID: <20140904110915.GB21504@mwanda>
+Received: from mx01-fr.bfs.de ([193.174.231.67]:53874 "EHLO mx01-fr.bfs.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753774AbaIDMLJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 08:11:09 -0400
+Message-ID: <540856D4.8010903@bfs.de>
+Date: Thu, 04 Sep 2014 14:11:00 +0200
+From: walter harms <wharms@bfs.de>
+Reply-To: wharms@bfs.de
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Dan Carpenter <dan.carpenter@oracle.com>
+CC: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: Re: [patch] Btrfs: kfree()ing ERR_PTRs
+References: <20140904110915.GB21504@mwanda>
+In-Reply-To: <20140904110915.GB21504@mwanda>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The "inherit" in btrfs_ioctl_snap_create_v2() and "vol_args" in
-btrfs_ioctl_rm_dev() are ERR_PTRs so we can't call kfree() on them.
 
-These kind of bugs are "One Err Bugs" where there is just one error
-label that does everything.  I could set the "inherit = NULL" and keep
-the single out label but it ends up being more complicated that way.  It
-makes the code simpler to re-order the unwind so it's in the mirror
-order of the allocation and introduce some new error labels.
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Am 04.09.2014 13:09, schrieb Dan Carpenter:
+> The "inherit" in btrfs_ioctl_snap_create_v2() and "vol_args" in
+> btrfs_ioctl_rm_dev() are ERR_PTRs so we can't call kfree() on them.
+> 
+> These kind of bugs are "One Err Bugs" where there is just one error
+> label that does everything.  I could set the "inherit = NULL" and keep
+> the single out label but it ends up being more complicated that way.  It
+> makes the code simpler to re-order the unwind so it's in the mirror
+> order of the allocation and introduce some new error labels.
+> 
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index de505d5..741b92b 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1702,7 +1702,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+>  	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY |
+>  	      BTRFS_SUBVOL_QGROUP_INHERIT)) {
+>  		ret = -EOPNOTSUPP;
+> -		goto out;
+> +		goto free_args;
+>  	}
+>  
+>  	if (vol_args->flags & BTRFS_SUBVOL_CREATE_ASYNC)
+> @@ -1712,27 +1712,31 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+>  	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
+>  		if (vol_args->size > PAGE_CACHE_SIZE) {
+>  			ret = -EINVAL;
+> -			goto out;
+> +			goto free_args;
+>  		}
+>  		inherit = memdup_user(vol_args->qgroup_inherit, vol_args->size);
+>  		if (IS_ERR(inherit)) {
+>  			ret = PTR_ERR(inherit);
+> -			goto out;
+> +			goto free_args;
+>  		}
+>  	}
+>  
+>  	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
+>  					      vol_args->fd, subvol, ptr,
+>  					      readonly, inherit);
+> +	if (ret)
+> +		goto free_inherit;
+>  
+> -	if (ret == 0 && ptr &&
+> -	    copy_to_user(arg +
+> -			 offsetof(struct btrfs_ioctl_vol_args_v2,
+> -				  transid), ptr, sizeof(*ptr)))
+> +	if (ptr && copy_to_user(arg +
+> +				offsetof(struct btrfs_ioctl_vol_args_v2,
+> +					transid),
+> +				ptr, sizeof(*ptr)))
+>  		ret = -EFAULT;
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index de505d5..741b92b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1702,7 +1702,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY |
- 	      BTRFS_SUBVOL_QGROUP_INHERIT)) {
- 		ret = -EOPNOTSUPP;
--		goto out;
-+		goto free_args;
- 	}
- 
- 	if (vol_args->flags & BTRFS_SUBVOL_CREATE_ASYNC)
-@@ -1712,27 +1712,31 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
- 		if (vol_args->size > PAGE_CACHE_SIZE) {
- 			ret = -EINVAL;
--			goto out;
-+			goto free_args;
- 		}
- 		inherit = memdup_user(vol_args->qgroup_inherit, vol_args->size);
- 		if (IS_ERR(inherit)) {
- 			ret = PTR_ERR(inherit);
--			goto out;
-+			goto free_args;
- 		}
- 	}
- 
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
- 					      vol_args->fd, subvol, ptr,
- 					      readonly, inherit);
-+	if (ret)
-+		goto free_inherit;
- 
--	if (ret == 0 && ptr &&
--	    copy_to_user(arg +
--			 offsetof(struct btrfs_ioctl_vol_args_v2,
--				  transid), ptr, sizeof(*ptr)))
-+	if (ptr && copy_to_user(arg +
-+				offsetof(struct btrfs_ioctl_vol_args_v2,
-+					transid),
-+				ptr, sizeof(*ptr)))
- 		ret = -EFAULT;
--out:
--	kfree(vol_args);
-+
-+free_inherit:
- 	kfree(inherit);
-+free_args:
-+	kfree(vol_args);
- 	return ret;
- }
- 
-@@ -2649,7 +2653,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args)) {
- 		ret = PTR_ERR(vol_args);
--		goto out;
-+		goto err_drop;
- 	}
- 
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
-@@ -2667,6 +2671,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- 
- out:
- 	kfree(vol_args);
-+err_drop:
- 	mnt_drop_write_file(file);
- 	return ret;
- }
+
+this is hard to read.
+perhaps it would help to move ptr into the other other
+
+if (ret || !ptr )
+  goto free_inherit;
+
+both are modified by the call btrfs_ioctl_snap_create_transid().
+
+@Maintainer:
+can this really happen ?
+
+More over i would argue that it would nice to rename
+ptr in to transid_ptr or so, this is what the code is all about
+and it is not obvious for me.
+
+
+re,
+ wh
+
+> -out:
+> -	kfree(vol_args);
+> +
+> +free_inherit:
+>  	kfree(inherit);
+> +free_args:
+> +	kfree(vol_args);
+>  	return ret;
+>  }
+>  
+> @@ -2649,7 +2653,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
+>  	vol_args = memdup_user(arg, sizeof(*vol_args));
+>  	if (IS_ERR(vol_args)) {
+>  		ret = PTR_ERR(vol_args);
+> -		goto out;
+> +		goto err_drop;
+>  	}
+>  
+>  	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
+> @@ -2667,6 +2671,7 @@ static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
+>  
+>  out:
+>  	kfree(vol_args);
+> +err_drop:
+>  	mnt_drop_write_file(file);
+>  	return ret;
+>  }
+> --
+> To unsubscribe from this list: send the line "unsubscribe kernel-janitors" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,55 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27086 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752950AbaIDMXO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Sep 2014 08:23:14 -0400
-Date: Thu, 4 Sep 2014 15:23:02 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: walter harms <wharms@bfs.de>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: Re: [patch] Btrfs: kfree()ing ERR_PTRs
-Message-ID: <20140904122302.GP6549@mwanda>
-References: <20140904110915.GB21504@mwanda>
- <540856D4.8010903@bfs.de>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:35473 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750793AbaIDMsh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 08:48:37 -0400
+Message-ID: <54085F9E.80206@fb.com>
+Date: Thu, 4 Sep 2014 08:48:30 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <540856D4.8010903@bfs.de>
+To: Dan Carpenter <dan.carpenter@oracle.com>
+CC: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>,
+        <kernel-janitors@vger.kernel.org>
+Subject: Re: [patch] Btrfs: kfree()ing ERR_PTRs
+References: <20140904110915.GB21504@mwanda>
+In-Reply-To: <20140904110915.GB21504@mwanda>
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 04, 2014 at 02:11:00PM +0200, walter harms wrote:
-> >  	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
-> >  					      vol_args->fd, subvol, ptr,
-> >  					      readonly, inherit);
-> > +	if (ret)
-> > +		goto free_inherit;
-> >  
-> > -	if (ret == 0 && ptr &&
-> > -	    copy_to_user(arg +
-> > -			 offsetof(struct btrfs_ioctl_vol_args_v2,
-> > -				  transid), ptr, sizeof(*ptr)))
-> > +	if (ptr && copy_to_user(arg +
-> > +				offsetof(struct btrfs_ioctl_vol_args_v2,
-> > +					transid),
-> > +				ptr, sizeof(*ptr)))
-> >  		ret = -EFAULT;
-> 
-> 
-> this is hard to read.
-> perhaps it would help to move ptr into the other other
-> 
-> if (ret || !ptr )
->   goto free_inherit;
 
-I don't think that's an improvement.
 
+On 09/04/2014 07:09 AM, Dan Carpenter wrote:
+> The "inherit" in btrfs_ioctl_snap_create_v2() and "vol_args" in
+> btrfs_ioctl_rm_dev() are ERR_PTRs so we can't call kfree() on them.
 > 
-> both are modified by the call btrfs_ioctl_snap_create_transid().
-> 
+> These kind of bugs are "One Err Bugs" where there is just one error
+> label that does everything.  I could set the "inherit = NULL" and keep
+> the single out label but it ends up being more complicated that way.  It
+> makes the code simpler to re-order the unwind so it's in the mirror
+> order of the allocation and introduce some new error labels.
 
-I think you are mixing up ptr and *ptr so that's why you're confused.
+Thanks Dan, agreed on the unwinding.
 
-regards,
-dan carpenter
-
+-chris

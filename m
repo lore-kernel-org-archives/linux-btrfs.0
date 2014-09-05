@@ -1,45 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55047 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:43274 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751104AbaIECFd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Sep 2014 22:05:33 -0400
+	id S1755832AbaIECKJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Sep 2014 22:10:09 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XPiu2-0003zL-8f
-	for linux-btrfs@vger.kernel.org; Fri, 05 Sep 2014 04:05:30 +0200
+	id 1XPiyR-0006gP-RF
+	for linux-btrfs@vger.kernel.org; Fri, 05 Sep 2014 04:10:03 +0200
 Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 04:05:30 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 04:10:03 +0200
 Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 04:05:30 +0200
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Sep 2014 04:10:03 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: BTRFS critical (device dm-0): invalid dir item name len: 45389
-Date: Fri, 5 Sep 2014 02:05:17 +0000 (UTC)
-Message-ID: <pan$ce4d5$ba59968f$c3d9c659$6cf74c52@cox.net>
+Date: Fri, 5 Sep 2014 02:07:39 +0000 (UTC)
+Message-ID: <pan$5901d$624c09af$56db7999$22491b15@cox.net>
 References: <CANg_oxxmR+qkSfZeVYK5dF1HnbSJapEF1tZ+3-9ij5hq7d2E=w@mail.gmail.com>
 	<CANg_oxzsAAV3S-Qc=mz0GTVXnPFrQ43riNXVbtT4Wjqtwsbo2A@mail.gmail.com>
 	<pan$680f3$c4143e4$b1f456fa$d9f8eac0@cox.net>
 	<CANg_oxzTv3cDyS0prJc_ZLopt3YNvm7oa9dFnghV7aZGNiyMvA@mail.gmail.com>
+	<03A7512C-C195-4906-9995-945AF3D76EB2@colorremedies.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-john terragon posted on Fri, 05 Sep 2014 02:20:26 +0200 as excerpted:
+Chris Murphy posted on Thu, 04 Sep 2014 19:41:39 -0600 as excerpted:
 
-> Everyone knows what raid0 entails. Moreover, with btrfs being an
-> experimental fs, not having backups would obviously be pure idiocy.
-> 
-> I wrote that it was "pretty serious" because the situation came out of
-> nowhere on a low-traffic fs[.]
+>  Off chance scrub might fix the problem
 
-> I'm pretty sure about that because for obvious reasons I rsync the hell
-> out of that filesystem  every chance I get.
+How?  He said it's btrfs raid0.  There's no second copy to fix from.
 
-Mea culpa, then.
+(Of course if only the data is raid0, metadata being raid1, then if it's 
+metadata yes a scrub could fix it, but that's not what he said...)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

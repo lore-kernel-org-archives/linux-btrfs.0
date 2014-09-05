@@ -1,53 +1,457 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48846 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754274AbaIDRcP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 4 Sep 2014 13:32:15 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1XPatJ-0000MA-1Q
-	for linux-btrfs@vger.kernel.org; Thu, 04 Sep 2014 19:32:13 +0200
-Received: from pd953e3b4.dip0.t-ipconnect.de ([217.83.227.180])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 19:32:13 +0200
-Received: from holger.hoffstaette by pd953e3b4.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Sep 2014 19:32:13 +0200
+Received: from victor.provo.novell.com ([137.65.250.26]:52885 "EHLO
+	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932184AbaIENPS (ORCPT
+	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+	Fri, 5 Sep 2014 09:15:18 -0400
+From: Filipe Manana <fdmanana@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: Re: Btrfs stable updates for v3.16
-Date: Thu, 4 Sep 2014 17:31:59 +0000 (UTC)
-Message-ID: <pan.2014.09.04.17.31.59@googlemail.com>
-References: <54077F27.1040603@fb.com>
-	<pan.2014.09.03.23.36.00@googlemail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix data corruption after fast fsync and writeback error
+Date: Fri,  5 Sep 2014 15:14:39 +0100
+Message-Id: <1409926479-8870-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(removed stable@ for now)
+When we do a fast fsync, we start all ordered operations and then while
+they're running in parallel we visit the list of modified extent maps
+and construct their matching file extent items and write them to the
+log btree. After that, in btrfs_sync_log() we wait for all the ordered
+operations to finish (via btrfs_wait_logged_extents).
 
-Just to follow up on this -
+The problem with this is that we were completely ignoring errors that
+can happen in the extent write path, such as -ENOSPC, a temporary -ENOMEM
+or -EIO errors for example. When such error happens, it means we have parts
+of the on disk extent that weren't written to, and so we end up logging
+file extent items that point to these extents that contain garbage/random
+data - so after a crash/reboot plus log replay, we get our inode's metadata
+pointing to those extents.
 
-On Wed, 03 Sep 2014 23:36:00 +0000, Holger Hoffstätte wrote:
+This worked in contrast with the full (non-fast) fsync path, where we
+start all ordered operations, wait for them to finish and then write
+to the log btree. In this path, after each ordered operation completes
+we check if it's flagged with an error (BTRFS_ORDERED_IOERR) and return
+-EIO if so (via btrfs_wait_ordered_range).
 
-> [on backporting both:
->  8d875f95da43c6a8f18f77869f2ef26e9594fecc and
->  f6dc45c7a93a011dff6eb9b2ffda59c390c7705a to 3.14]
->
-> ...and I guess nobody will complain about slightly better performance
-> either.
+So if an error happens with any ordered operation, just return a -EIO
+error to userspace, so that it knows that not all of its previous writes
+were durably persisted and the application can take proper action (like
+redo the writes for e.g.) - and definitely not leave any file extent items
+in the log refer to non fully written extents.
 
-So "slightly" is an understatement: rename/replace/truncate without full
-immediate flushing - as done by rsync's copy+rename - is now indeed
-*much* faster, to the point that backups with many small files finish
-in a fraction of the time. Wonderful!
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-Please do get this into the next 3.14 cycle, I'll gladly help and test.
+This patch applies on top of the patches with the titles:
 
-Thanks!
+    "Btrfs: fix fsync data loss after a ranged fsync"
+    "Btrfs: fix fsync race leading to invalid data after log replay"
 
-Holger
+ fs/btrfs/file.c     |  19 ++++
+ fs/btrfs/tree-log.c | 247 ++++++++++++++++++++++++++++++----------------------
+ fs/btrfs/tree-log.h |   2 +
+ 3 files changed, 166 insertions(+), 102 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 5427ba8..4494b4e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2045,6 +2045,25 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 */
+ 	mutex_unlock(&inode->i_mutex);
+ 
++	/*
++	 * If any of the ordered extents had an error, just return it to user
++	 * space, so that the application knows some writes didn't succeed and
++	 * can take proper action (retry for e.g.). Blindly committing the
++	 * transaction in this case, would fool userspace that everything was
++	 * successful. And we also want to make sure our log doesn't contain
++	 * file extent items pointing to extents that weren't fully written to -
++	 * just like in the non fast fsync path, where we check for the ordered
++	 * operation's error flag before writing to the log tree and return -EIO
++	 * if any of them had this flag set (btrfs_wait_ordered_range) -
++	 * therefore we need to check for errors in the ordered operations,
++	 * which are indicated by ctx.io_err.
++	 */
++	if (ctx.io_err) {
++		btrfs_end_transaction(trans, root);
++		ret = ctx.io_err;
++		goto out;
++	}
++
+ 	if (ret != BTRFS_NO_LOG_SYNC) {
+ 		if (!ret) {
+ 			ret = btrfs_sync_log(trans, root, &ctx);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 93d3c16..128f301 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -97,7 +97,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, struct inode *inode,
+ 			   int inode_only,
+ 			   const loff_t start,
+-			   const loff_t end);
++			   const loff_t end,
++			   struct btrfs_log_ctx *ctx);
+ static int link_to_fixup_dir(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     struct btrfs_path *path, u64 objectid);
+@@ -3571,107 +3572,33 @@ static int extent_cmp(void *priv, struct list_head *a, struct list_head *b)
+ 	return 0;
+ }
+ 
+-static int log_one_extent(struct btrfs_trans_handle *trans,
+-			  struct inode *inode, struct btrfs_root *root,
+-			  struct extent_map *em, struct btrfs_path *path,
+-			  struct list_head *logged_list)
++static int wait_ordered_extents(struct btrfs_trans_handle *trans,
++				struct inode *inode,
++				struct btrfs_root *root,
++				const struct extent_map *em,
++				const struct list_head *logged_list,
++				bool *ordered_io_error)
+ {
+-	struct btrfs_root *log = root->log_root;
+-	struct btrfs_file_extent_item *fi;
+-	struct extent_buffer *leaf;
+ 	struct btrfs_ordered_extent *ordered;
+-	struct list_head ordered_sums;
+-	struct btrfs_map_token token;
+-	struct btrfs_key key;
++	struct btrfs_root *log = root->log_root;
+ 	u64 mod_start = em->mod_start;
+ 	u64 mod_len = em->mod_len;
++	const bool skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+ 	u64 csum_offset;
+ 	u64 csum_len;
+-	u64 extent_offset = em->start - em->orig_start;
+-	u64 block_len;
+-	int ret;
+-	bool skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+-	int extent_inserted = 0;
+-
+-	INIT_LIST_HEAD(&ordered_sums);
+-	btrfs_init_map_token(&token);
+-
+-	ret = __btrfs_drop_extents(trans, log, inode, path, em->start,
+-				   em->start + em->len, NULL, 0, 1,
+-				   sizeof(*fi), &extent_inserted);
+-	if (ret)
+-		return ret;
+-
+-	if (!extent_inserted) {
+-		key.objectid = btrfs_ino(inode);
+-		key.type = BTRFS_EXTENT_DATA_KEY;
+-		key.offset = em->start;
+-
+-		ret = btrfs_insert_empty_item(trans, log, path, &key,
+-					      sizeof(*fi));
+-		if (ret)
+-			return ret;
+-	}
+-	leaf = path->nodes[0];
+-	fi = btrfs_item_ptr(leaf, path->slots[0],
+-			    struct btrfs_file_extent_item);
+-
+-	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
+-					       &token);
+-	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+-		skip_csum = true;
+-		btrfs_set_token_file_extent_type(leaf, fi,
+-						 BTRFS_FILE_EXTENT_PREALLOC,
+-						 &token);
+-	} else {
+-		btrfs_set_token_file_extent_type(leaf, fi,
+-						 BTRFS_FILE_EXTENT_REG,
+-						 &token);
+-		if (em->block_start == EXTENT_MAP_HOLE)
+-			skip_csum = true;
+-	}
+-
+-	block_len = max(em->block_len, em->orig_block_len);
+-	if (em->compress_type != BTRFS_COMPRESS_NONE) {
+-		btrfs_set_token_file_extent_disk_bytenr(leaf, fi,
+-							em->block_start,
+-							&token);
+-		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, block_len,
+-							   &token);
+-	} else if (em->block_start < EXTENT_MAP_LAST_BYTE) {
+-		btrfs_set_token_file_extent_disk_bytenr(leaf, fi,
+-							em->block_start -
+-							extent_offset, &token);
+-		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, block_len,
+-							   &token);
+-	} else {
+-		btrfs_set_token_file_extent_disk_bytenr(leaf, fi, 0, &token);
+-		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, 0,
+-							   &token);
+-	}
+-
+-	btrfs_set_token_file_extent_offset(leaf, fi,
+-					   em->start - em->orig_start,
+-					   &token);
+-	btrfs_set_token_file_extent_num_bytes(leaf, fi, em->len, &token);
+-	btrfs_set_token_file_extent_ram_bytes(leaf, fi, em->ram_bytes, &token);
+-	btrfs_set_token_file_extent_compression(leaf, fi, em->compress_type,
+-						&token);
+-	btrfs_set_token_file_extent_encryption(leaf, fi, 0, &token);
+-	btrfs_set_token_file_extent_other_encoding(leaf, fi, 0, &token);
+-	btrfs_mark_buffer_dirty(leaf);
++	LIST_HEAD(ordered_sums);
++	int ret = 0;
+ 
+-	btrfs_release_path(path);
+-	if (ret) {
+-		return ret;
+-	}
++	*ordered_io_error = false;
+ 
+-	if (skip_csum)
++	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
++	    em->block_start == EXTENT_MAP_HOLE)
+ 		return 0;
+ 
+ 	/*
+-	 * First check and see if our csums are on our outstanding ordered
+-	 * extents.
++	 * Wait far any ordered extent that covers our extent map. If it
++	 * finishes without an error, first check and see if our csums are on
++	 * our outstanding ordered extents.
+ 	 */
+ 	list_for_each_entry(ordered, logged_list, log_list) {
+ 		struct btrfs_ordered_sum *sum;
+@@ -3683,6 +3610,24 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 		    mod_start + mod_len <= ordered->file_offset)
+ 			continue;
+ 
++		if (!test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags) &&
++		    !test_bit(BTRFS_ORDERED_IOERR, &ordered->flags) &&
++		    !test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags)) {
++			const u64 start = ordered->file_offset;
++			const u64 end = ordered->file_offset + ordered->len - 1;
++
++			WARN_ON(ordered->inode != inode);
++			filemap_fdatawrite_range(inode->i_mapping, start, end);
++		}
++
++		wait_event(ordered->wait,
++			   (test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags) ||
++			    test_bit(BTRFS_ORDERED_IOERR, &ordered->flags)));
++
++		if (test_bit(BTRFS_ORDERED_IOERR, &ordered->flags)) {
++			*ordered_io_error = true;
++			break;
++		}
+ 		/*
+ 		 * We are going to copy all the csums on this ordered extent, so
+ 		 * go ahead and adjust mod_start and mod_len in case this
+@@ -3714,6 +3659,9 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
+ 
++		if (skip_csum)
++			continue;
++
+ 		/*
+ 		 * To keep us from looping for the above case of an ordered
+ 		 * extent that falls inside of the logged extent.
+@@ -3731,18 +3679,16 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 		list_for_each_entry(sum, &ordered->list, list) {
+ 			ret = btrfs_csum_file_blocks(trans, log, sum);
+ 			if (ret)
+-				goto unlocked;
++				break;
+ 		}
+-
+ 	}
+-unlocked:
+ 
+-	if (!mod_len || ret)
++	if (*ordered_io_error || !mod_len || ret || skip_csum)
+ 		return ret;
+ 
+ 	if (em->compress_type) {
+ 		csum_offset = 0;
+-		csum_len = block_len;
++		csum_len = max(em->block_len, em->orig_block_len);
+ 	} else {
+ 		csum_offset = mod_start - em->start;
+ 		csum_len = mod_len;
+@@ -3769,11 +3715,106 @@ unlocked:
+ 	return ret;
+ }
+ 
++static int log_one_extent(struct btrfs_trans_handle *trans,
++			  struct inode *inode, struct btrfs_root *root,
++			  const struct extent_map *em,
++			  struct btrfs_path *path,
++			  const struct list_head *logged_list,
++			  struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_root *log = root->log_root;
++	struct btrfs_file_extent_item *fi;
++	struct extent_buffer *leaf;
++	struct btrfs_map_token token;
++	struct btrfs_key key;
++	u64 extent_offset = em->start - em->orig_start;
++	u64 block_len;
++	int ret;
++	int extent_inserted = 0;
++	bool ordered_io_err = false;
++
++	ret = wait_ordered_extents(trans, inode, root, em, logged_list,
++				   &ordered_io_err);
++	if (ret)
++		return ret;
++
++	if (ordered_io_err) {
++		ctx->io_err = -EIO;
++		return 0;
++	}
++
++	btrfs_init_map_token(&token);
++
++	ret = __btrfs_drop_extents(trans, log, inode, path, em->start,
++				   em->start + em->len, NULL, 0, 1,
++				   sizeof(*fi), &extent_inserted);
++	if (ret)
++		return ret;
++
++	if (!extent_inserted) {
++		key.objectid = btrfs_ino(inode);
++		key.type = BTRFS_EXTENT_DATA_KEY;
++		key.offset = em->start;
++
++		ret = btrfs_insert_empty_item(trans, log, path, &key,
++					      sizeof(*fi));
++		if (ret)
++			return ret;
++	}
++	leaf = path->nodes[0];
++	fi = btrfs_item_ptr(leaf, path->slots[0],
++			    struct btrfs_file_extent_item);
++
++	btrfs_set_token_file_extent_generation(leaf, fi, em->generation,
++					       &token);
++	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++		btrfs_set_token_file_extent_type(leaf, fi,
++						 BTRFS_FILE_EXTENT_PREALLOC,
++						 &token);
++	else
++		btrfs_set_token_file_extent_type(leaf, fi,
++						 BTRFS_FILE_EXTENT_REG,
++						 &token);
++
++	block_len = max(em->block_len, em->orig_block_len);
++	if (em->compress_type != BTRFS_COMPRESS_NONE) {
++		btrfs_set_token_file_extent_disk_bytenr(leaf, fi,
++							em->block_start,
++							&token);
++		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, block_len,
++							   &token);
++	} else if (em->block_start < EXTENT_MAP_LAST_BYTE) {
++		btrfs_set_token_file_extent_disk_bytenr(leaf, fi,
++							em->block_start -
++							extent_offset, &token);
++		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, block_len,
++							   &token);
++	} else {
++		btrfs_set_token_file_extent_disk_bytenr(leaf, fi, 0, &token);
++		btrfs_set_token_file_extent_disk_num_bytes(leaf, fi, 0,
++							   &token);
++	}
++
++	btrfs_set_token_file_extent_offset(leaf, fi, extent_offset, &token);
++	btrfs_set_token_file_extent_num_bytes(leaf, fi, em->len, &token);
++	btrfs_set_token_file_extent_ram_bytes(leaf, fi, em->ram_bytes, &token);
++	btrfs_set_token_file_extent_compression(leaf, fi, em->compress_type,
++						&token);
++	btrfs_set_token_file_extent_encryption(leaf, fi, 0, &token);
++	btrfs_set_token_file_extent_other_encoding(leaf, fi, 0, &token);
++	btrfs_mark_buffer_dirty(leaf);
++
++	btrfs_release_path(path);
++
++	return ret;
++}
++
+ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root,
+ 				     struct inode *inode,
+ 				     struct btrfs_path *path,
+-				     struct list_head *logged_list)
++				     struct list_head *logged_list,
++				     struct btrfs_log_ctx *ctx)
+ {
+ 	struct extent_map *em, *n;
+ 	struct list_head extents;
+@@ -3831,7 +3872,8 @@ process:
+ 
+ 		write_unlock(&tree->lock);
+ 
+-		ret = log_one_extent(trans, inode, root, em, path, logged_list);
++		ret = log_one_extent(trans, inode, root, em, path, logged_list,
++				     ctx);
+ 		write_lock(&tree->lock);
+ 		clear_em_logging(tree, em);
+ 		free_extent_map(em);
+@@ -3861,7 +3903,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, struct inode *inode,
+ 			   int inode_only,
+ 			   const loff_t start,
+-			   const loff_t end)
++			   const loff_t end,
++			   struct btrfs_log_ctx *ctx)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_path *dst_path;
+@@ -4044,7 +4087,7 @@ log_extents:
+ 	btrfs_release_path(dst_path);
+ 	if (fast_search) {
+ 		ret = btrfs_log_changed_extents(trans, root, inode, dst_path,
+-						&logged_list);
++						&logged_list, ctx);
+ 		if (ret) {
+ 			err = ret;
+ 			goto out_unlock;
+@@ -4234,7 +4277,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto end_no_trans;
+ 
+-	ret = btrfs_log_inode(trans, root, inode, inode_only, start, end);
++	ret = btrfs_log_inode(trans, root, inode, inode_only, start, end, ctx);
+ 	if (ret)
+ 		goto end_trans;
+ 
+@@ -4263,7 +4306,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		if (BTRFS_I(inode)->generation >
+ 		    root->fs_info->last_trans_committed) {
+ 			ret = btrfs_log_inode(trans, root, inode, inode_only,
+-					      0, LLONG_MAX);
++					      0, LLONG_MAX, ctx);
+ 			if (ret)
+ 				goto end_trans;
+ 		}
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index e2e798a..154990c 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -28,6 +28,7 @@
+ struct btrfs_log_ctx {
+ 	int log_ret;
+ 	int log_transid;
++	int io_err;
+ 	struct list_head list;
+ };
+ 
+@@ -35,6 +36,7 @@ static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx)
+ {
+ 	ctx->log_ret = 0;
+ 	ctx->log_transid = 0;
++	ctx->io_err = 0;
+ 	INIT_LIST_HEAD(&ctx->list);
+ }
+ 
+-- 
+1.9.1
 

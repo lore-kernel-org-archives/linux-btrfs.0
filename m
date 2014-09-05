@@ -1,32 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:45276 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756192AbaIEJtQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Sep 2014 05:49:16 -0400
-Date: Fri, 5 Sep 2014 11:49:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: print btrfs specific info for some fatal error
- cases
-Message-ID: <20140905094914.GE5636@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <53B645D4.1060003@cn.fujitsu.com>
- <1404467946-4429-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+Received: from bombadil.infradead.org ([198.137.202.9]:35054 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750775AbaIEQIN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Sep 2014 12:08:13 -0400
+Date: Fri, 5 Sep 2014 09:08:08 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: NeilBrown <neilb@suse.de>
+Cc: Christoph Hellwig <hch@infradead.org>, Dave Chinner <david@fromorbit.com>,
+        Nikolai Grigoriev <ngrigoriev@gmail.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        linux-mm@kvack.org, Jens Axboe <axboe@kernel.dk>
+Subject: Re: ext4 vs btrfs performance on SSD array
+Message-ID: <20140905160808.GA7967@infradead.org>
+References: <CAEp=YLgzsLbmEfGB5YKVcHP4CQ-_z1yxnZ0tpo7gjKZ2e1ma5g@mail.gmail.com>
+ <20140902000822.GA20473@dastard>
+ <20140902012222.GA21405@infradead.org>
+ <20140903100158.34916d34@notabene.brown>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1404467946-4429-1-git-send-email-wangsl.fnst@cn.fujitsu.com>
+In-Reply-To: <20140903100158.34916d34@notabene.brown>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 04, 2014 at 05:59:06PM +0800, Wang Shilong wrote:
-> @@ -351,9 +351,9 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
-> -	printk_ratelimited("parent transid verify failed on %llu wanted %llu "
-> -		       "found %llu\n",
-> -		       eb->start, parent_transid, btrfs_header_generation(eb));
-> +	printk_ratelimited("BTRFS (device %s): parent transid verify failed on %llu wanted %llu found %llu\n",
+On Wed, Sep 03, 2014 at 10:01:58AM +1000, NeilBrown wrote:
+> Do we still need maximums at all?
 
-Missing KERN_ message level, probably ERROR
+I don't think we do.  At least on any system I work with I have to
+increase them to get good performance without any adverse effect on
+throttling.
 
-> +			eb->fs_info->sb->s_id, eb->start,
-> +			parent_transid, btrfs_header_generation(eb));
+> So can we just remove the limit on max_sectors and the RAID5 stripe cache
+> size?  I'm certainly keen to remove the later and just use a mempool if the
+> limit isn't needed.
+> I have seen reports that a very large raid5 stripe cache size can cause
+> a reduction in performance.  I don't know why but I suspect it is a bug that
+> should be found and fixed.
+> 
+> Do we need max_sectors ??
+
+I'll send a patch to remove it and watch for the fireworks..

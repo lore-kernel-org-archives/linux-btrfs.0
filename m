@@ -1,89 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60451 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932827AbaICNev (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Sep 2014 09:34:51 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id s83DYl4G006734
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Sep 2014 21:34:47 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/5] block: export disk_class and disk_type for btrfs
-Date: Wed, 3 Sep 2014 21:36:29 +0800
-Message-ID: <1409751393-5403-2-git-send-email-miaox@cn.fujitsu.com>
-In-Reply-To: <1409751393-5403-1-git-send-email-miaox@cn.fujitsu.com>
-References: <1409751393-5403-1-git-send-email-miaox@cn.fujitsu.com>
+Received: from outrelay08.libero.it ([212.52.84.112]:44479 "EHLO
+	outrelay08.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750804AbaIFLl5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Sep 2014 07:41:57 -0400
+Message-ID: <540AF479.5050909@inwind.it>
+Date: Sat, 06 Sep 2014 13:48:09 +0200
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Miao Xie <miaox@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/5] Btrfs: scan all the devices and build the fs device
+ list by btrfs's self
+References: <1409751393-5403-1-git-send-email-miaox@cn.fujitsu.com> <1409751393-5403-6-git-send-email-miaox@cn.fujitsu.com>
+In-Reply-To: <1409751393-5403-6-git-send-email-miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs can make filesystem cross several disks/partitions, in order to
-load all the disks/partitions which belong to the same filesystem, we
-need scan the system and find all the devices, and then register them
-into the kernel. Currently, we do it by user tool. But if we forget to
-do it, we can not mount the filesystem. So I want btrfs scan the system
-and find all the devices by itself in the kernel. In order to implement
-it, we need disk_class and disk_type, so export them.
+On 09/03/2014 03:36 PM, Miao Xie wrote:
+> The original code need scan the devices and build the fs device list by the user
+> tool by udev or users' selves. It is flexible. But if someone re-install the
+> filesystem module, and forget to scan the devices by himself, or we plug some
+> devices with btrfs, but udev thread is blocked and doesn't register the disk
+> into btrfs in time, the filesystem would report that "can not open some device"
+> when mounting the filesystem, it was uncomfortable, this patch fixes this problem
+> by scanning all the devices if we find the number of devices is not right when
+> we mount the filesystem.
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+[....]
+> +
+> +void btrfs_scan_all_devices(void *holder)
+> +{
+> +	struct class_dev_iter iter;
+> +	struct device *dev;
+> +	struct gendisk *disk;
+> +
+> +	mutex_lock(&uuid_mutex);
+> +	class_dev_iter_init(&iter, &block_class, NULL, &disk_type);
+> +	while ((dev = class_dev_iter_next(&iter))) {
+> +		disk = dev_to_disk(dev);
+> +
+> +		if (!get_capacity(disk) ||
+> +		    (!disk_max_parts(disk) &&
+> +		     (disk->flags & GENHD_FL_REMOVABLE)))
+                                    ^^^^^^^^^^^^^^^^^^
+> +			continue;
+> +
+> +		if (disk->flags & GENHD_FL_SUPPRESS_PARTITION_INFO)
+> +			continue;
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- block/genhd.c         | 7 +++++--
- include/linux/genhd.h | 1 +
- 2 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/block/genhd.c b/block/genhd.c
-index 791f419..8371c09 100644
---- a/block/genhd.c
-+++ b/block/genhd.c
-@@ -34,7 +34,7 @@ struct kobject *block_depr;
- static DEFINE_MUTEX(ext_devt_mutex);
- static DEFINE_IDR(ext_devt_idr);
- 
--static struct device_type disk_type;
-+struct device_type disk_type;
- 
- static void disk_check_events(struct disk_events *ev,
- 			      unsigned int *clearing_ptr);
-@@ -1107,9 +1107,11 @@ static void disk_release(struct device *dev)
- 		blk_put_queue(disk->queue);
- 	kfree(disk);
- }
-+
- struct class block_class = {
- 	.name		= "block",
- };
-+EXPORT_SYMBOL(block_class);
- 
- static char *block_devnode(struct device *dev, umode_t *mode,
- 			   kuid_t *uid, kgid_t *gid)
-@@ -1121,12 +1123,13 @@ static char *block_devnode(struct device *dev, umode_t *mode,
- 	return NULL;
- }
- 
--static struct device_type disk_type = {
-+struct device_type disk_type = {
- 	.name		= "disk",
- 	.groups		= disk_attr_groups,
- 	.release	= disk_release,
- 	.devnode	= block_devnode,
- };
-+EXPORT_SYMBOL(disk_type);
- 
- #ifdef CONFIG_PROC_FS
- /*
-diff --git a/include/linux/genhd.h b/include/linux/genhd.h
-index ec274e0..a701ace 100644
---- a/include/linux/genhd.h
-+++ b/include/linux/genhd.h
-@@ -22,6 +22,7 @@
- #define part_to_dev(part)	(&((part)->__dev))
- 
- extern struct device_type part_type;
-+extern struct device_type disk_type;
- extern struct kobject *block_depr;
- extern struct class block_class;
- 
+Hi, could you elaborate why a removable disk should be not scan-ned ? How
+a removble usb disk is classified ?
+
+Thanks.
+G.Baroncelli
+
+[...]
+
+
 -- 
-1.9.3
-
+gpg @keyserver.linux.it: Goffredo Baroncelli (kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

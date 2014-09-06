@@ -1,240 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:56886 "EHLO
-	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750826AbaIFUfo (ORCPT
-	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Sat, 6 Sep 2014 16:35:44 -0400
-From: Filipe Manana <fdmanana@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v4] Btrfs: fix fsync data loss after a ranged fsync
-Date: Sat,  6 Sep 2014 22:34:39 +0100
-Message-Id: <1410039279-9905-1-git-send-email-fdmanana@suse.com>
-In-Reply-To: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
-References: <1409418015-30041-1-git-send-email-fdmanana@suse.com>
+Received: from magic.merlins.org ([209.81.13.136]:36723 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751543AbaIFV6o (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Sep 2014 17:58:44 -0400
+Date: Sat, 6 Sep 2014 14:58:30 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Mason <clm@fb.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20140906215830.GK23400@merlins.org>
+References: <54077F27.1040603@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <54077F27.1040603@fb.com>
+Subject: Re: Btrfs stable updates for v3.16
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While we're doing a full fsync (when the inode has the flag
-BTRFS_INODE_NEEDS_FULL_SYNC set) that is ranged too (covers only a
-portion of the file), we might have ordered operations that are started
-before or while we're logging the inode and that fall outside the fsync
-range.
+On Wed, Sep 03, 2014 at 04:50:47PM -0400, Chris Mason wrote:
+> Hi everyone,
+> 
+> For 3.16, please pull these into stable, I've cherry picked and tested
+> them here.  For 3.15 and earlier there are a few conflicts, so I'll make
+> a git tree with things to pull.
+> 
+> 8d875f95da43c6a8f18f77869f2ef26e9594fecc v3.15+
 
-Therefore when a full ranged fsync finishes don't remove every extent
-map from the list of modified extent maps - as for some of them, that
-fall outside our fsync range, their respective ordered operation hasn't
-finished yet, meaning the corresponding file extent item wasn't inserted
-into the fs/subvol tree yet and therefore we didn't log it, and we must
-let the next fast fsync (one that checks only the modified list) see this
-extent map and log a matching file extent item to the log btree and wait
-for its ordered operation to finish (if it's still ongoing).
+Hi Chris,
 
-A test case for xfstests follows.
+Would this patch you submitted be likely to fix the chrome profile
+corruption needing restore from earlier snapshot problem we discussed a
+few weeks back?
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+If so, yeah and thanks! :)
+(compiling 3.16.2 now)
 
-V2: No code change, only updated the changelog and the comment, to make
-    them more clear and accurate.
 
-V3: Added missing condition to exclude extent map from the modified list
-    and ensure btrfs_log_inode() is called for the next fsync if the
-    modified list didn't get empty after logging the inode. This time this
-    follows with a test case for xfstests that is better then my previous
-    local test and benefits everyone.
+    btrfs: disable strict file flushes for renames and truncates
+    
+    commit 8d875f95da43c6a8f18f77869f2ef26e9594fecc upstream.
+    
+    Truncates and renames are often used to replace old versions of a file
+    with new versions.  Applications often expect this to be an atomic
+    replacement, even if they haven't done anything to make sure the new
+    version is fully on disk.
+    
+    Btrfs has strict flushing in place to make sure that renaming over an
+    old file with a new file will fully flush out the new file before
+    allowing the transaction commit with the rename to complete.
+    
+    This ordering means the commit code needs to be able to lock file pages,
+    and there are a few paths in the filesystem where we will try to end a
+    transaction with the page lock held.  It's rare, but these things can
+    deadlock.
+    
+    This patch removes the ordered flushes and switches to a best effort
+    filemap_flush like ext4 uses. It's not perfect, but it should fix the
+    deadlocks.
+    
+    Signed-off-by: Chris Mason <clm@fb.com>
+    Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
-V4: Simplifed em exclusion logic.
 
- fs/btrfs/file.c     |  2 +-
- fs/btrfs/tree-log.c | 77 ++++++++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/tree-log.h |  2 ++
- 3 files changed, 64 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 66c4076..e5534c1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1979,7 +1979,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 
- 	btrfs_init_log_ctx(&ctx);
- 
--	ret = btrfs_log_dentry_safe(trans, root, dentry, &ctx);
-+	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
- 	if (ret < 0) {
- 		/* Fallthrough and commit/free transaction. */
- 		ret = 1;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 5a917a6..82db14f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -94,8 +94,10 @@
- #define LOG_WALK_REPLAY_ALL 3
- 
- static int btrfs_log_inode(struct btrfs_trans_handle *trans,
--			     struct btrfs_root *root, struct inode *inode,
--			     int inode_only);
-+			   struct btrfs_root *root, struct inode *inode,
-+			   int inode_only,
-+			   const loff_t start,
-+			   const loff_t end);
- static int link_to_fixup_dir(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct btrfs_path *path, u64 objectid);
-@@ -3856,8 +3858,10 @@ process:
-  * This handles both files and directories.
-  */
- static int btrfs_log_inode(struct btrfs_trans_handle *trans,
--			     struct btrfs_root *root, struct inode *inode,
--			     int inode_only)
-+			   struct btrfs_root *root, struct inode *inode,
-+			   int inode_only,
-+			   const loff_t start,
-+			   const loff_t end)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_path *dst_path;
-@@ -3874,6 +3878,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	int ins_nr;
- 	bool fast_search = false;
- 	u64 ino = btrfs_ino(inode);
-+	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -4046,13 +4051,35 @@ log_extents:
- 			goto out_unlock;
- 		}
- 	} else if (inode_only == LOG_INODE_ALL) {
--		struct extent_map_tree *tree = &BTRFS_I(inode)->extent_tree;
- 		struct extent_map *em, *n;
- 
--		write_lock(&tree->lock);
--		list_for_each_entry_safe(em, n, &tree->modified_extents, list)
--			list_del_init(&em->list);
--		write_unlock(&tree->lock);
-+		write_lock(&em_tree->lock);
-+		/*
-+		 * We can't just remove every em if we're called for a ranged
-+		 * fsync - that is, one that doesn't cover the whole possible
-+		 * file range (0 to LLONG_MAX). This is because we can have
-+		 * em's that fall outside the range we're logging and therefore
-+		 * their ordered operations haven't completed yet
-+		 * (btrfs_finish_ordered_io() not invoked yet). This means we
-+		 * didn't get their respective file extent item in the fs/subvol
-+		 * tree yet, and need to let the next fast fsync (one which
-+		 * consults the list of modified extent maps) find the em so
-+		 * that it logs a matching file extent item and waits for the
-+		 * respective ordered operation to complete (if it's still
-+		 * running).
-+		 *
-+		 * Removing every em outside the range we're logging would make
-+		 * the next fast fsync not log their matching file extent items,
-+		 * therefore making us lose data after a log replay.
-+		 */
-+		list_for_each_entry_safe(em, n, &em_tree->modified_extents,
-+					 list) {
-+			const u64 mod_end = em->mod_start + em->mod_len - 1;
-+
-+			if (em->mod_start >= start && mod_end <= end)
-+				list_del_init(&em->list);
-+		}
-+		write_unlock(&em_tree->lock);
- 	}
- 
- 	if (inode_only == LOG_INODE_ALL && S_ISDIR(inode->i_mode)) {
-@@ -4062,8 +4089,19 @@ log_extents:
- 			goto out_unlock;
- 		}
- 	}
--	BTRFS_I(inode)->logged_trans = trans->transid;
--	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->last_sub_trans;
-+
-+	write_lock(&em_tree->lock);
-+	/*
-+	 * If we're doing a ranged fsync and there are still modified extents
-+	 * in the list, we must run on the next fsync call as it might cover
-+	 * those extents (a full fsync or an fsync for other range).
-+	 */
-+	if (list_empty(&em_tree->modified_extents)) {
-+		BTRFS_I(inode)->logged_trans = trans->transid;
-+		BTRFS_I(inode)->last_log_commit =
-+			BTRFS_I(inode)->last_sub_trans;
-+	}
-+	write_unlock(&em_tree->lock);
- out_unlock:
- 	if (unlikely(err))
- 		btrfs_put_logged_extents(&logged_list);
-@@ -4158,7 +4196,10 @@ out:
-  */
- static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 			    	  struct btrfs_root *root, struct inode *inode,
--			    	  struct dentry *parent, int exists_only,
-+				  struct dentry *parent,
-+				  const loff_t start,
-+				  const loff_t end,
-+				  int exists_only,
- 				  struct btrfs_log_ctx *ctx)
- {
- 	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
-@@ -4204,7 +4245,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto end_no_trans;
- 
--	ret = btrfs_log_inode(trans, root, inode, inode_only);
-+	ret = btrfs_log_inode(trans, root, inode, inode_only, start, end);
- 	if (ret)
- 		goto end_trans;
- 
-@@ -4232,7 +4273,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 
- 		if (BTRFS_I(inode)->generation >
- 		    root->fs_info->last_trans_committed) {
--			ret = btrfs_log_inode(trans, root, inode, inode_only);
-+			ret = btrfs_log_inode(trans, root, inode, inode_only,
-+					      0, LLONG_MAX);
- 			if (ret)
- 				goto end_trans;
- 		}
-@@ -4266,13 +4308,15 @@ end_no_trans:
-  */
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct dentry *dentry,
-+			  const loff_t start,
-+			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx)
- {
- 	struct dentry *parent = dget_parent(dentry);
- 	int ret;
- 
- 	ret = btrfs_log_inode_parent(trans, root, dentry->d_inode, parent,
--				     0, ctx);
-+				     start, end, 0, ctx);
- 	dput(parent);
- 
- 	return ret;
-@@ -4509,6 +4553,7 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 		    root->fs_info->last_trans_committed))
- 		return 0;
- 
--	return btrfs_log_inode_parent(trans, root, inode, parent, 1, NULL);
-+	return btrfs_log_inode_parent(trans, root, inode, parent, 0,
-+				      LLONG_MAX, 1, NULL);
- }
- 
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 7f5b41b..e2e798a 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -59,6 +59,8 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- int btrfs_recover_log_trees(struct btrfs_root *tree_root);
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct dentry *dentry,
-+			  const loff_t start,
-+			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx);
- int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
 -- 
-1.9.1
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

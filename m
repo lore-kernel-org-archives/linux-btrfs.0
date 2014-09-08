@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36503 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38996 "EHLO
 	victor.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753416AbaIHUzw (ORCPT
+	with ESMTP id S1754980AbaIHV0m (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-	Mon, 8 Sep 2014 16:55:52 -0400
+	Mon, 8 Sep 2014 17:26:42 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] xfstests: generic: add dir fsync test, motivated by a btrfs bug
-Date: Mon,  8 Sep 2014 22:55:29 +0100
-Message-Id: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
+Subject: [PATCH v2] xfstests: generic: add dir fsync test, motivated by a btrfs bug
+Date: Mon,  8 Sep 2014 23:26:17 +0100
+Message-Id: <1410215177-5444-1-git-send-email-fdmanana@suse.com>
+In-Reply-To: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
+References: <1410213329-11043-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -23,6 +25,9 @@ with the following linux kernel patch:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Replaced direct use of "xfs_io" with "$XFS_IO_PROG".
+
  tests/generic/326     | 95 +++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/generic/326.out |  2 ++
  tests/generic/group   |  1 +
@@ -32,7 +37,7 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 diff --git a/tests/generic/326 b/tests/generic/326
 new file mode 100755
-index 0000000..47f4558
+index 0000000..886c856
 --- /dev/null
 +++ b/tests/generic/326
 @@ -0,0 +1,95 @@
@@ -107,8 +112,8 @@ index 0000000..47f4558
 +sync
 +
 +touch $SCRATCH_MNT/bar
-+xfs_io -c "fsync" $SCRATCH_MNT
-+xfs_io -c "fsync" $SCRATCH_MNT/bar
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
 +
 +_load_flakey_table $FLAKEY_DROP_WRITES
 +_unmount_flakey

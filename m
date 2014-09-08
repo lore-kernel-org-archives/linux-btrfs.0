@@ -1,178 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp05.in.ibm.com ([122.248.162.5]:47065 "EHLO
-	e28smtp05.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754056AbaIHOPM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 10:15:12 -0400
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:56787 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753988AbaIHOPL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 10:15:11 -0400
 Received: from /spool/local
-	by e28smtp05.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 8 Sep 2014 19:45:10 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id EAB74125804F
-	for <linux-btrfs@vger.kernel.org>; Mon,  8 Sep 2014 19:45:33 +0530 (IST)
+	Mon, 8 Sep 2014 19:45:09 +0530
+Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 27F1AE0053
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Sep 2014 19:47:31 +0530 (IST)
 Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s88EFXvN1179934
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:33 +0530
+	by d28relay02.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id s88EFUBg58589344
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:31 +0530
 Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s88EF5OP023033
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:06 +0530
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s88EF3jk022872
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Sep 2014 19:45:04 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        aneesh.kumar@linux.vnet.ibm.com, linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH V6 09/15] Btrfs: subpagesize-blocksize: __extent_writepage: Write only dirty blocks of a page.
-Date: Mon,  8 Sep 2014 19:44:20 +0530
-Message-Id: <1410185666-23308-10-git-send-email-chandan@linux.vnet.ibm.com>
+Cc: Chandra Seetharaman <sekharan@us.ibm.com>, aneesh.kumar@linux.vnet.ibm.com,
+        linux-btrfs@vger.kernel.org,
+        Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V6 07/15] Btrfs: subpagesize-blocksize: Allow mounting filesystems where sectorsize != PAGE_SIZE
+Date: Mon,  8 Sep 2014 19:44:18 +0530
+Message-Id: <1410185666-23308-8-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1410185666-23308-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1410185666-23308-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The code now loops across 'ordered extents' instead of 'extent maps' to figure
-out the dirty blocks of the page to be submitted for a write operation.
+From: Chandra Seetharaman <sekharan@us.ibm.com>
 
+This patch allows mounting filesystems with blocksize smaller than the
+PAGE_SIZE.
+
+Signed-off-by: Chandra Seetharaman <sekharan@us.ibm.com>
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c | 74 ++++++++++++++++++++--------------------------------
- 1 file changed, 29 insertions(+), 45 deletions(-)
+ fs/btrfs/disk-io.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a3b3d01..37d845d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3186,18 +3186,18 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 				 int write_flags, int *nr_ret)
- {
- 	struct extent_io_tree *tree = epd->tree;
-+	struct btrfs_ordered_extent *ordered;
- 	u64 start = page_offset(page);
- 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	u64 end;
- 	u64 cur = start;
- 	u64 extent_offset;
--	u64 block_start;
-+	u64 extent_end;
- 	u64 iosize;
- 	sector_t sector;
- 	struct extent_state *cached_state = NULL;
--	struct extent_map *em;
- 	struct block_device *bdev;
--	size_t pg_offset = 0;
-+	size_t pg_offset;
- 	size_t blocksize;
- 	int ret = 0;
- 	int nr = 0;
-@@ -3237,59 +3237,46 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 	blocksize = inode->i_sb->s_blocksize;
- 
- 	while (cur <= end) {
--		u64 em_end;
- 		if (cur >= i_size) {
- 			if (tree->ops && tree->ops->writepage_end_io_hook)
- 				tree->ops->writepage_end_io_hook(page, cur,
- 							 page_end, NULL, 1);
- 			break;
- 		}
--		em = epd->get_extent(inode, page, pg_offset, cur,
--				     end - cur + 1, 1);
--		if (IS_ERR_OR_NULL(em)) {
--			SetPageError(page);
--			ret = PTR_ERR_OR_ZERO(em);
--			break;
--		}
- 
--		extent_offset = cur - em->start;
--		em_end = extent_map_end(em);
--		BUG_ON(em_end <= cur);
-+		ordered = btrfs_lookup_ordered_extent(inode, cur);
-+		if (!ordered) {
-+			cur += blocksize;
-+			continue;
-+ 		}
-+
-+		pg_offset = cur & (PAGE_CACHE_SIZE - 1);
-+
-+		extent_offset = cur - ordered->file_offset;
-+		extent_end = ordered->file_offset + ordered->len;
-+		extent_end = (extent_end < ordered->file_offset) ? -1 : extent_end;
-+		BUG_ON(extent_end <= cur);
- 		BUG_ON(end < cur);
--		iosize = min(em_end - cur, end - cur + 1);
-+		iosize = min(extent_end - cur, end - cur + 1);
- 		iosize = ALIGN(iosize, blocksize);
--		sector = (em->block_start + extent_offset) >> 9;
--		bdev = em->bdev;
--		block_start = em->block_start;
--		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
--		free_extent_map(em);
--		em = NULL;
-+
-+		sector = (ordered->start + extent_offset) >> 9;
-+		bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
-+		compressed = test_bit(BTRFS_ORDERED_COMPRESSED, &ordered->flags);
-+		btrfs_put_ordered_extent(ordered);
-+		ordered = NULL;
- 
- 		/*
- 		 * compressed and inline extents are written through other
- 		 * paths in the FS
- 		 */
--		if (compressed || block_start == EXTENT_MAP_HOLE ||
--		    block_start == EXTENT_MAP_INLINE) {
--			/*
--			 * end_io notification does not happen here for
--			 * compressed extents
--			 */
--			if (!compressed && tree->ops &&
--			    tree->ops->writepage_end_io_hook)
--				tree->ops->writepage_end_io_hook(page, cur,
--							 cur + iosize - 1,
--							 NULL, 1);
--			else if (compressed) {
--				/* we don't want to end_page_writeback on
--				 * a compressed extent.  this happens
--				 * elsewhere
--				 */
--				nr++;
--			}
--
-+		if (compressed) {
-+			/* we don't want to end_page_writeback on
-+			 * a compressed extent.  this happens
-+			 * elsewhere
-+ 			 */
-+			nr++;
- 			cur += iosize;
--			pg_offset += iosize;
- 			continue;
- 		}
- 
-@@ -3320,7 +3307,6 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 				SetPageError(page);
- 		}
- 		cur = cur + iosize;
--		pg_offset += iosize;
- 		nr++;
- 	}
- done:
-@@ -3348,7 +3334,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	u64 page_end = start + PAGE_CACHE_SIZE - 1;
- 	int ret;
- 	int nr = 0;
--	size_t pg_offset = 0;
-+	size_t pg_offset;
- 	loff_t i_size = i_size_read(inode);
- 	unsigned long end_index = i_size >> PAGE_CACHE_SHIFT;
- 	int write_flags;
-@@ -3383,8 +3369,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 		flush_dcache_page(page);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 6c6e8bb..2f3caaf 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2634,12 +2634,6 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_sb_buffer;
  	}
  
--	pg_offset = 0;
+-	if (sectorsize != PAGE_SIZE) {
+-		printk(KERN_WARNING "BTRFS: Incompatible sector size(%lu) "
+-		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
+-		goto fail_sb_buffer;
+-	}
 -
- 	set_page_extent_mapped(page);
- 
- 	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_sys_array(tree_root);
+ 	mutex_unlock(&fs_info->chunk_mutex);
 -- 
 1.8.3.1
 

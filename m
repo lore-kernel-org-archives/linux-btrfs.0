@@ -1,61 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from licorne.daevel.fr ([178.32.94.222]:45552 "EHLO
-	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752421AbaIHJpQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Sep 2014 05:45:16 -0400
-Message-ID: <1410169197.2383.3.camel@daevel.fr>
-Subject: Re: Linux 3.14.18 : kernel BUG at fs/btrfs/file.c:890!
-From: Olivier Bonvalet <btrfs.list@daevel.fr>
-To: Holger =?ISO-8859-1?Q?Hoffst=E4tte?=
+Received: from plane.gmane.org ([80.91.229.3]:60711 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752776AbaIHKAH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Sep 2014 06:00:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1XQvju-0001pO-FK
+	for linux-btrfs@vger.kernel.org; Mon, 08 Sep 2014 12:00:02 +0200
+Received: from pd953ec5f.dip0.t-ipconnect.de ([217.83.236.95])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Sep 2014 12:00:02 +0200
+Received: from holger.hoffstaette by pd953ec5f.dip0.t-ipconnect.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Sep 2014 12:00:02 +0200
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Mon, 08 Sep 2014 11:39:57 +0200
-In-Reply-To: <pan.2014.09.07.17.48.53@googlemail.com>
+Subject: Re: Linux 3.14.18 : kernel BUG at fs/btrfs/file.c:890!
+Date: Mon, 8 Sep 2014 09:59:46 +0000 (UTC)
+Message-ID: <pan.2014.09.08.09.59.46@googlemail.com>
 References: <1410107980.2832.41.camel@localhost>
-	 <pan.2014.09.07.17.48.53@googlemail.com>
-Content-Type: text/plain; charset="UTF-8"
+	<pan.2014.09.07.17.48.53@googlemail.com>
+	<1410169197.2383.3.camel@daevel.fr>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, 08 Sep 2014 11:39:57 +0200, Olivier Bonvalet wrote:
 
-Le dimanche 07 septembre 2014 à 17:48 +0000, Holger Hoffstätte a écrit :
-> On Sun, 07 Sep 2014 18:39:40 +0200, Olivier Bonvalet wrote:
->
-> I cannot really offer much assistance, but that particular area of code
-> looks suspiciously like something fixed later and *not* yet backported
-> to 3.14.8:
-> 
-> "Btrfs: fix leaf corruption caused by ENOSPC while hole punching"
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/fs/btrfs?id=fc19c5e73645f95d3eca12b4e91e7b56faf1e4a4
-> 
-> The symptoms described in the patch sound like they might be your OOPS.
-> Unfortunately (I think) that would mean that just installing different
-> kernels will not fix the problem, since the problem is on disk. :/
-> 
-> So to me it seems your best course of action is to backup/mkfs/restore
-> the affected partition and stick with 3.17-rc3, since that has tons
-> more fixes.
-> 
-> If you really need/want 3.14.x and are not afraid of building your
-> own kernel, you can try applying my btrfs-* patches from:
-> https://github.com/hhoffstaette/kernel-patches/tree/master/3.14
-> which apply cleanly to the latest 3.14.18-stable.
-> 
-> However even that will not fix a bungled tree on disk.
-> 
-> -h
-> 
-> --
+> Ok, so the cause is probably solved, this is a very good news, thanks.
 
-Ok, so the cause is probably solved, this is a very good news, thanks.
-And yes, I can easily use 3.17-rc3 kernel.
+I don't *know* that this is your specific problem, it just looks like it
+might be judging by the description in the patch.
 
-So the problem is with current data : I don't know an easy way to
-export/restore subvolumes & snapshots thought network, and I don't have
-physical access to this rent servers.
+> And yes, I can easily use 3.17-rc3 kernel.
 
-Any hope that btrfsck be updated to fix that ?
+Good.
 
-Olivier
+> So the problem is with current data : I don't know an easy way to
+> export/restore subvolumes & snapshots thought network, and I don't have
+> physical access to this rent servers.
+
+That's tricky, especially the snapshots. I don't remember seeing how
+large the partition in question is, but is there really no place where
+you can store a simple tar.gz dump, nuke & recreate the partition and
+restore the tarball? If so I'm afraid you are what's known as
+"up shit creek without a paddle"..
+
+> Any hope that btrfsck be updated to fix that ?
+
+By default btrfsck doesn't do anything. What happens when you run it
+without --repair, just to see what it finds?
+
+-h
 
